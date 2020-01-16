@@ -1,2 +1,1 @@
-# ga-index
-Fron page of GA
+GA git.
