@@ -4,14 +4,14 @@ body {
 }
 
 h1 {
-    font-size: 49px;
+    font-size: 35px;
     font-weight: 400;
     color: white;
     text-align: center;
 }
 
-h2 { /* Test 1 */
-    text-align: center;
+#wallpaper {
+    border: 3px solid white;
 }
 
 .z {    
