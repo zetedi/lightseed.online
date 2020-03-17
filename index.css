@@ -9,7 +9,8 @@ h1 {
     text-align: center;
 }
 #wallpaper {
-    border: 3px solid white;
+    background-color: white;
+    padding: 2em;
 }
 #main-container {
     align-items: center;
