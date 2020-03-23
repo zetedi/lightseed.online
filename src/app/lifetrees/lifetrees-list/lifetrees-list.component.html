@@ -1,0 +1,31 @@
+<div>
+    <app-lifetrees-filter (changed)="filter($event)"></app-lifetrees-filter>
+    <table>
+        <thead>
+            <tr>
+                <th (click)="sort('name')">Name</th>
+                <th (click)="sort('city')">City</th>
+                <th (click)="sort('orderTotal')">Order Total</th>
+            </tr>
+        </thead>
+        <tr *ngFor="let lifetree of filteredLifetrees">
+            <td>
+                <a [routerLink]="['/orders', lifetree.id]">
+                    {{ lifetree.name | capitalize }}
+                </a>
+            </td>
+            <td>{{ lifetree.city }}</td>
+            <td>{{ lifetree.orderTotal | currency:currencyCode:'symbol' }}</td>
+        </tr>
+        <tr *ngIf="filteredLifetrees && filteredLifetrees.length">
+            <td colspan="2">&nbsp;</td>
+            <td>
+                {{ lifetreesOrderTotal | currency:currencyCode:'symbol'}}
+            </td>
+        </tr>
+        <tr *ngIf="!filteredLifetrees || !filteredLifetrees.length">
+            <td colspan="4">No lifetrees found</td>
+        </tr>
+    </table>
+    Number of Lifetrees: {{ filteredLifetrees.length }}
+</div>
