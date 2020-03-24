@@ -1,7 +1,11 @@
 /* You can add global styles to this file, and also import other style files */
+
 body {
     /* background: linear-gradient(to right, rgb(0,49,0), rgba(0,49,0,0)); */
-    font-family: 'Roboto', sans-serif;
+    /* font-family: 'Roboto', sans-serif; */
+    display: grid;
+    place-content: center; 
+    height: 70vh;
 }
 html {
     overflow-y: scroll;

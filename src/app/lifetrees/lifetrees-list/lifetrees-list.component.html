@@ -6,6 +6,7 @@
                 <th (click)="sort('name')">Name</th>
                 <th (click)="sort('city')">City</th>
                 <th (click)="sort('orderTotal')">Order Total</th>
+                <th></th>
             </tr>
         </thead>
         <tr *ngFor="let lifetree of filteredLifetrees">
@@ -16,6 +17,11 @@
             </td>
             <td>{{ lifetree.city }}</td>
             <td>{{ lifetree.orderTotal | currency:currencyCode:'symbol' }}</td>
+                <td>
+                    <a [routerLink]="['/lifetree-details', lifetree.id]">
+                        details
+                    </a>
+                </td>
         </tr>
         <tr *ngIf="filteredLifetrees && filteredLifetrees.length">
             <td colspan="2">&nbsp;</td>

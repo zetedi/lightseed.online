@@ -9,7 +9,7 @@ const routes: Routes = [
   { path: 'login', pathMatch: 'full', redirectTo: '/login'},
   { path: 'orders/:id', component: OrdersComponent },
   { path: 'map', component: MapComponent },
-  { path: 'lifetree-details', component: LifetreeDetailsComponent },
+  { path: 'lifetree-details/:id', component: LifetreeDetailsComponent },
   { path: '', pathMatch: 'full', redirectTo: '/lifetrees'},
   { path: '**', pathMatch: 'full', redirectTo: '/lifetrees' }
 ];

@@ -15,7 +15,7 @@ export class LifetreesComponent implements OnInit {
 
   ngOnInit() {
 
-    this.title = 'Lifetrees';
+    this.title = 'lifetrees';
     this.dataService.getLifetrees()
     .subscribe((lifetrees: ILifetree[]) => this.lifetrees = lifetrees);
 
