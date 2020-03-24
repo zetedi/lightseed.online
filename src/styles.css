@@ -2,14 +2,18 @@
 
 body {
     /* background: linear-gradient(to right, rgb(0,49,0), rgba(0,49,0,0)); */
-    /* font-family: 'Roboto', sans-serif; */
+    font-family: 'Roboto', sans-serif;
     display: grid;
     place-content: center; 
+    text-align: center;
+    margin: 0;
+    padding: 0;
     height: 70vh;
 }
+
 html {
-    overflow-y: scroll;
-    overflow-x: hidden;
+    /* overflow-x: hidden; */
+    /* overflow-y: scroll; */
 }
 
 main {
@@ -24,20 +28,20 @@ footer {
     margin-top: 15px;
 }
 
-th {
-    cursor: pointer;
-}
-
-td {
-    width:33%;
-}
-
 .app-title {
     line-height:50px;
     font-size:20px;
     color: white;
 }
 
-thead {
-    background-color: #efefef;
-}
+/*
+
+- White Space
+- Color 
+- Contrast 
+- Scale
+- Alignment
+- Typography
+- Visual Hierarchy
+
+*/
