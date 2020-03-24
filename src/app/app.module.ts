@@ -8,7 +8,7 @@ import { LoginModule } from './login/login.module';
 import { SharedModule } from './shared/shared.module';
 import { CoreModule } from './core/core.module';
 import { OrdersModule } from './orders/orders.module';
-import { DetailsComponent } from './details/details.component';
+import { MapComponent } from './map/map.component';
 
 @NgModule({
   imports: [
@@ -21,7 +21,7 @@ import { DetailsComponent } from './details/details.component';
     SharedModule],
   declarations: [
     AppComponent,
-    DetailsComponent
+    MapComponent
   ],
   bootstrap: [AppComponent]
 })
