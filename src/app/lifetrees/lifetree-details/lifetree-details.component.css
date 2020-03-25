@@ -1,9 +1,80 @@
+/* Coolors Exported Palette - coolors.co/004900-ffff82-fffcf2-ccc5b9-403d39 */
+.container {
+    /* background: black; */
+    background: #403d39;
+    color: white;
+    /* height: 100vh; */
+    /* width: 100vw; */
+    /* overflow: hidden; */
+    padding: 7em;   
+}
 h1 {
     font-size: 2.4em;
-    margin-top: 0px;
+    margin-top: 0;
 }
 
 p {
     font-size: 1.2em;
     margin-bottom: .5em;
+}
+
+a {
+    color: #F4F4F4;    
+}
+
+a:visited {
+    color: #ccc5b9;
+}
+
+span {
+    /* position: relative; */
+}
+/* 
+span:before {
+    content: 'lifeseed';
+    font-size: 7em;
+    position: absolute;
+    color: #F4F4F4;
+    z-index: -1;
+    white-space: nowrap;
+    left: 50%;
+}
+*/
+
+/* span:before {
+    position: absolute;
+    content: '';
+    height: .2em;
+    width: 80%;
+    bottom: .1em;
+    z-index: -1;
+    background: #ffff82; 
+} */
+
+#anime {
+    animation-name: blink;
+    animation-duration: 3s;
+    animation-timing-function: ease;
+    animation-delay: 2s;
+    animation-iteration-count: infinite;
+}
+@keyframes blink {
+    0% {
+        /* transform: translate(20px, 20px); */
+    }
+    25% {
+        background: white;
+        color: rgba(0,49,0,49);
+        /* transform: translate(20px, 20px); */
+    }
+    50% {
+        background: rgba(0,49,0,49);
+        color: white;
+        /* transform: translate(0px, 0px); */
+    }
+    100% {
+        background: white;
+        color: rgb(0,49,0);
+        /* transform: translate(20px, 20px); */
+    }
 }

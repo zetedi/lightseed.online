@@ -1,20 +1,59 @@
 /* You can add global styles to this file, and also import other style files */
 
-body {
-    /* background: linear-gradient(to right, rgb(0,49,0), rgba(0,49,0,0)); */
-    font-family: 'Roboto', sans-serif;
-    display: grid;
-    place-content: center; 
-    text-align: center;
+html, body {
     margin: 0;
     padding: 0;
-    height: 70vh;
+    height: 100vh;
 }
 
-html {
-    /* overflow-x: hidden; */
-    /* overflow-y: scroll; */
+body {
+    /* background: linear-gradient(to right, rgb(0,49,0), rgba(0,49,0,0)); */
+    /* background: linear-gradient(270deg, rgba(39,39,39,1) 43%, rgba(28,28,28,1) 43%, rgba(28,28,28,1) 100%); */
+    background: linear-gradient(333deg, rgba(43,46,39,1) 29%, rgba(28,28,28,1) 29%, rgba(28,28,28,1) 40%,
+     rgba(43,46,39,1) 40%, rgba(43,46,39,1) 48%, rgba(28,28,28,1) 48%, rgba(28,28,28,1) 92%, rgba(0,49,0,1) 92%, rgba(113,174,33,1) 100%);
+    font-family: 'Roboto', sans-serif;
+    display: grid;
+    align-items: center; 
+    /* text-align: center; */
 }
+
+.logo-small {
+    margin-left: 21px;
+    padding: 4em;
+    width: 40px;
+}
+
+.container {
+    /* background: black; */
+    background: #403d39;
+    color: white;
+    /* height: 100vh; */
+    /* width: 100vw; */
+    /* overflow: hidden; */
+    padding: 7em;   
+}
+h1 {
+    font-size: 2.4em;
+    margin-top: 0;
+}
+
+p {
+    font-size: 1.2em;
+    margin-bottom: .5em;
+}
+
+a {
+    color: #F4F4F4;    
+}
+
+a:visited {
+    color: #ccc5b9;
+}
+/* 
+html {
+    overflow-x: hidden;
+    overflow-y: scroll;
+} */
 
 main {
     position: relative;
