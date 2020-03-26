@@ -1,22 +1,13 @@
-<div id="main-container">
-    <div id="logo-container">
-        <img id="logo-img" src="assets/img/lifeseed_bold.svg" alt="logo" height="140vw">
-    </div>
-    <div id="login-container">
-        <p id="login-message">The name and the GPS coordinates of your <span
-                style="color: rgb(0,49,0)"><b>lifetree</b></span>
-        </p>
-        <form>
-            <label for="name">Name <span style="font-size: 0.5em;">(7 characters minimum)</span></label>
-            <input type="text" id="name">
-            <label for="gps-lat">Latitude <span style="font-size: 0.5em;">(7 digits precision, e.g.
-                    0.1234567)</span></label>
-            <input type="text" id="gps-lat">
-            <label for="gps-lon">Longitude <span style="font-size: 0.5em;">(7 digits precision e.g.
-                    0.1234567)</span></label>
-            <input type="text" id="gps-lon">
-            <a routerLink="/lifetrees"><input type="submit" value="Login"></a>
-        </form>
-    </div>
+<!-- <img id="login-img" src="assets/img/lifeseed_bold.svg" alt="logo" height="100vw"> -->
+<p id="login-message">The name and the GPS coordinates of your <b>lifetree</b></p>
+<div id="login-container">
+    <form>
+        <label for="name">Name:</label>
+        <input type="text" id="name">
+        <label for="gps-lat">lat.</label>
+        <input type="text" id="gps-lat">
+        <label for="gps-lon">lon.</label>
+        <input type="text" id="gps-lon">
+        <a routerLink="/lifetrees"><input type="submit" value="Login" style="float:right"></a>
+    </form>
 </div>
-<div id="z-container"><span>ζ</span></div>

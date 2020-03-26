@@ -1,16 +1,22 @@
 /* Coolors Exported Palette - coolors.co/004900-ffff82-fffcf2-ccc5b9-403d39 */
-.container {
-    /* background: black; */
-    background: #403d39;
-    color: white;
-    /* height: 100vh; */
-    /* width: 100vw; */
-    /* overflow: hidden; */
-    padding: 7em;   
+#lifetrees-container {
+    background: rgba(64,61,57,0.9);
 }
+
 h1 {
     font-size: 2.4em;
     margin-top: 0;
+    position: relative;
+}
+h1:before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: -20%;
+    height: 25px;
+    width: 40%;
+    background: #FF0077;
+    z-index: -1;
 }
 
 p {

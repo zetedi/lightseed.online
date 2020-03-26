@@ -13,8 +13,8 @@ export class MapComponent implements OnInit {
 
   constructor() { }
 
-  latitude: number = 50.8355;
-  longitude: number = 4.4035;
+  latitude1: number = 50.8355;
+  longitude1: number = 4.4035;
 
   map: any;
 
@@ -27,17 +27,17 @@ export class MapComponent implements OnInit {
         })
       ],
       view: new ol.View({
-        center: ol.proj.fromLonLat([this.longitude, this.latitude]),
+        center: ol.proj.fromLonLat([this.longitude1, this.latitude1]),
         zoom: 12
       })
     });
-    this.addPoint(this.latitude, this.longitude);
+    this.addPoint(this.latitude1, this.longitude1);
   }
 
   setCenter() {
     var view = this.map.getView();
-    view.setCenter(ol.proj.fromLonLat([this.longitude, this.latitude]));
-    view.addMarker(ol.proj.fromLonLat([this.longitude, this.latitude]));
+    view.setCenter(ol.proj.fromLonLat([this.longitude1, this.latitude1]));
+    view.addMarker(ol.proj.fromLonLat([this.longitude1, this.latitude1]));
     view.setZoom(12);
   }
 
@@ -53,7 +53,8 @@ export class MapComponent implements OnInit {
           anchor: [0.5, 0.5],
           anchorXUnits: "fraction",
           anchorYUnits: "fraction",
-          src: "/assets/img/lifeseed_bold_white.svg"
+          src: "/assets/img/lifetree1_s.jpg"
+          // src: "/assets/img/lifeseed_bold_white.svg"
         })
       })
     });

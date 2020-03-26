@@ -7,11 +7,12 @@ import { LifetreeDetailsComponent } from './lifetrees/lifetree-details/lifetree-
 
 const routes: Routes = [
   { path: 'login', pathMatch: 'full', redirectTo: '/login'},
-  { path: 'orders/:id', component: OrdersComponent },
-  { path: 'map', component: MapComponent },
+  { path: 'lifetrees', pathMatch: 'full', redirectTo: '/lifetrees'},
   { path: 'lifetree-details/:id', component: LifetreeDetailsComponent },
-  { path: '', pathMatch: 'full', redirectTo: '/lifetrees'},
-  { path: '**', pathMatch: 'full', redirectTo: '/lifetrees' }
+  { path: 'map', component: MapComponent },
+  { path: 'orders/:id', component: OrdersComponent },
+  { path: '', pathMatch: 'full', redirectTo: '/login'},
+  { path: '**', pathMatch: 'full', redirectTo: '/login' }
 ];
 
 @NgModule({

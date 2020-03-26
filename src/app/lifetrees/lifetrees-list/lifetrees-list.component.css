@@ -1,13 +1,10 @@
-.lifetreelist {
-    text-align: center;
-}
-
 thead {
-    background-color: rgba(0, 49, 0, .49);
+    background-color: black;
 }
 
 th {
     cursor: pointer;
+    height: 2em;
 }
 
 td {

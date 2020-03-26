@@ -9,28 +9,32 @@ html, body {
 body {
     /* background: linear-gradient(to right, rgb(0,49,0), rgba(0,49,0,0)); */
     /* background: linear-gradient(270deg, rgba(39,39,39,1) 43%, rgba(28,28,28,1) 43%, rgba(28,28,28,1) 100%); */
-    background: linear-gradient(333deg, rgba(43,46,39,1) 29%, rgba(28,28,28,1) 29%, rgba(28,28,28,1) 40%,
-     rgba(43,46,39,1) 40%, rgba(43,46,39,1) 48%, rgba(28,28,28,1) 48%, rgba(28,28,28,1) 92%, rgba(0,49,0,1) 92%, rgba(113,174,33,1) 100%);
+    /* background: linear-gradient(333deg, rgba(43,46,39,1) 29%, rgba(28,28,28,1) 29%, rgba(28,28,28,1) 40%,
+     rgba(43,46,39,1) 40%, rgba(43,46,39,1) 48%, rgba(28,28,28,1) 48%, rgba(28,28,28,1) 92%, rgba(0,49,0,1) 92%, rgba(113,174,33,1) 100%); */
+    /* background-image: radial-gradient(263px at 100.2% 3%, rgb(0, 49, 0) 31.1%, rgb(205, 181, 93) 36.4%, rgb(244, 102, 90) 50.9%, rgb(199, 206, 187) 60.7%, rgb(249, 140, 69) 72.5%, rgb(0, 49, 0) 72.6%); */
+    background: #000 url('./assets/img/forest.jpg');
+    background-size: cover;
     font-family: 'Roboto', sans-serif;
     display: grid;
     align-items: center; 
     /* text-align: center; */
 }
 
-.logo-small {
-    margin-left: 21px;
-    padding: 4em;
-    width: 40px;
+#logo {
+	position: fixed;
+	top: .7em;
+    left: .7em;
 }
 
-.container {
+.content {
     /* background: black; */
-    background: #403d39;
+    background: rgba(64,61,57,0.93);
+    /* background: #403d39; */
     color: white;
     /* height: 100vh; */
     /* width: 100vw; */
     /* overflow: hidden; */
-    padding: 7em;   
+    padding: 1em;   
 }
 h1 {
     font-size: 2.4em;
@@ -57,7 +61,7 @@ html {
 
 main {
     position: relative;
-    padding-top: 55px;
+    /* padding-top: 55px; */
 }
 
 /* Ensure display:flex and others don't override a [hidden] */
@@ -71,6 +75,13 @@ footer {
     line-height:50px;
     font-size:20px;
     color: white;
+}
+
+#z-container {    
+    color: white;
+    float: right;
+    font-size: 7px;    
+    font-weight: bold;
 }
 
 /*
