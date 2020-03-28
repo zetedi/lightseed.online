@@ -1,12 +1,18 @@
 thead {
     background-color: black;
 }
-
 th {
     cursor: pointer;
     height: 2em;
 }
-
 td {
     width:33%;
+}
+a {
+    color: #F4F4F4;    
+    text-decoration: none;
+}
+a:visited {
+    color: #ccc5b9;
+    text-decoration: none;
 }

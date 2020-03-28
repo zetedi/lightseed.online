@@ -1,17 +1,17 @@
 #login-container {
-    /* width: 49vw; */
-    /* background: #403d39; */
-    /* background: rgba(64,61,57,0.9); */
-    /* background: linear-gradient(90deg, #403d39 0%, #fffcf2 0%); */
+    display: grid;
     text-align: center;
     white-space: normal;
     vertical-align: middle;
-    color: white;
-    padding: 0 .7em;
-    font-size: 1.4em;
+    color: #fffcf2;
+    padding: 0 .7em;    
+}
+#login-form {
+    font-size: 1em;
 }
 #login-message {
-    font-size: 2em;
+    font-size: 1.7em;
+    margin-bottom: 1.4em;
 }
 #login-img {
     background-color: white;
@@ -19,7 +19,7 @@
     padding: .7em;
 }
 input[type=text], textarea {
-    background: white;
+    background: #fffcf2;
     border: none;
     border-bottom: 1px solid lightgray;
     border-radius: .3em;
@@ -27,7 +27,7 @@ input[type=text], textarea {
     margin-bottom: 1.5em;
     outline: 0;
     padding: .3em;
-    width: 150px;
+    width: 210px;
     box-shadow: 10px 10px 5px -9px rgba(0,73,0,1);
     -webkit-box-shadow: 10px 10px 5px -9px rgba(0,73,0,1);
     -moz-box-shadow: 10px 10px 5px -9px rgba(0,73,0,1);
@@ -39,19 +39,10 @@ input[type=submit] {
     background: rgba(255,255,0,49);
     border: none;
     border-radius: .3em;
-    color: black;
-    font-size: .7em;
+    color: #403d39;
+    font-size: 1.2em;
     font-weight: bold;
-    padding: .7em 2em;
+    margin-top: 1.4em;
+    margin-bottom: 1.4em;
+    padding: .3em 1.4em;
 }
-/* #main-container {
-    background: #403d39;
-    font-family: 'Roboto', sans-serif;
-    padding: 2em;
-    align-items: center;
-    display: flex;
-    flex-flow: row;    
-    justify-content: center;
-    margin-top: 70px;
-    vertical-align: middle;
-} */

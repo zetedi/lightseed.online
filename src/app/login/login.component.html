@@ -1,13 +1,12 @@
 <!-- <img id="login-img" src="assets/img/lifeseed_bold.svg" alt="logo" height="100vw"> -->
-<p id="login-message">The name and the GPS coordinates of your <b>lifetree</b></p>
 <div id="login-container">
     <form>
-        <label for="name">Name:</label>
-        <input type="text" id="name">
-        <label for="gps-lat">lat.</label>
-        <input type="text" id="gps-lat">
-        <label for="gps-lon">lon.</label>
-        <input type="text" id="gps-lon">
-        <a routerLink="/lifetrees"><input type="submit" value="Login" style="float:right"></a>
+        <p id="login-message">The name and the GPS coordinates of your <b>lifetree</b></p>
+        <div id="login-form">
+            <input type="text" id="name" value="" placeholder="Name" required><br />
+            <input type="text" id="gps-lat" value="" placeholder="Latitude" required><br />
+            <input type="text" id="gps-lon" value="" placeholder="Longitude" required><br />
+            <a routerLink="/lifetrees"><input type="submit" value="Login"></a>
+        </div>
     </form>
 </div>
