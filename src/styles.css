@@ -113,6 +113,9 @@ a.app-btn {
     padding: .3em;
     font-size: .85em;
 }
+.circle {
+    border-radius: 50%;
+}
 /* For responsive design */
 @media (min-width: 343px) {
     header {

@@ -1,7 +1,4 @@
-#lifetrees-details-container {
-    /* background: rgba(64,61,57,0.9); */
-}
-h1 {
+/* h1 {
     font-size: 2.4em;
     margin-top: 0;
     position: relative;
@@ -15,75 +12,129 @@ h1:before {
     width: 40%;
     background: yellow;
     z-index: -1;
-}
+} */
 p {
     font-size: 1.2em;
     margin-bottom: .5em;
-}
-a {
-    color: #F4F4F4;    
-}
-a:visited {
-    color: #ccc5b9;
-    text-decoration: none;
 }
 img {
     width: 90%;
     position: absolute;
     /* z-index: -1; */
 }
-#img-grid {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-}
-#img-grid > img {
-    margin: .3em;
-}
-ul.treenotes {
-    margin-top: 3em;
-}
+.card {
+    padding: 1em;
+    margin: 0 1em;
+    /* background: #403d39; */
+    border-radius: .5em;
+    position: relative;
 
-ul.treenotes li {
-    background: #403d39;
-    padding: 2em;
-    margin-bottom: 1em;
-    text-align: center;
-    box-shadow: 10px 10px 18px 0px rgba(0,0,0,.09);
-}
-
-blockquote, blockquote p {
-    margin: 0;
-}
-blockquote p {
-    line-height: 1.4em;
 }
 
 span {
-    /* position: relative; */
-}
-/* 
-span:before {
-    content: 'lifeseed';
-    font-size: 7em;
+    width: 5em;
+    height: 5em;
+    background: white url('../../../assets/img/lifetree1_s.jpg');
     position: absolute;
-    color: #F4F4F4;
-    z-index: -1;
-    white-space: nowrap;
-    left: 50%;
+    top: -2.5em;
+    border-radius: 50%;
+    border: 5px solid #fffcf2;
 }
-*/
 
-/* span:before {
+h1 {
+    margin-top: 1.2em;
+}
+
+p {
+    line-height: 1.4em;
+    color: #fffcf2;
+}
+
+a {
+    text-decoration: none;
+    color: #ccc5b9;
+    display: block;
+    text-align: center;
+    padding: .8em 1em;
+    border: 1px solid #ccc5b9;
+    border-radius: .5em;
+    text-transform: uppercase;
+    font-weight: bold;
+    font-size: .85rem;
+    margin-top: 2em;
+}
+
+@media (min-width: 500px) {
+    .card {
+        display: grid;
+        grid-template-columns: repeat(2, auto);
+        grid-template-areas: 
+            "avatar content";
+        margin: 0 4em;
+        padding-right: 2em;
+        padding-bottom: 2em;
+    }
+    span {
+        position: initial;
+        display: block;
+        grid-area: avatar;
+        margin-left: -3.8em;
+        margin-top: .8em;
+    }
+    .card-details {
+        grid-area: content;
+        margin-left: 1.5em;
+    }
+    a {
+        display: inline-block;
+    }
+    
+}
+
+@media (min-width: 1000px) {
+    .card-details {
+        display: grid;
+        grid-template-columns: repeat(2,auto);
+        grid-template-areas: 
+            "name description"
+            "cta description";
+    }
+    
+    h1 {
+        grid-area: name;
+    }
+    p {
+        grid-area: description;
+        margin-left: 2em;
+        margin-top: 2.5em;
+    }
+    a {
+        grid-area: cta;
+        padding: .5em;
+        width: 60%;
+        font-size: .7em;
+        margin-top: 0;
+    }
+    
+}
+
+
+/* For the width display, ignore this */
+
+.width-container {
+    display: none;
+}
+
+.display-width {
+    display: block;
     position: absolute;
-    content: '';
-    height: .2em;
-    width: 80%;
-    bottom: .1em;
-    z-index: -1;
-    background: #ffff82; 
-} */
-
+    right: 0;
+    top: 0;
+    background-color: #E6E6E6;
+    padding: .3em;
+    font-size: .85em;
+    color: black;
+}
 #anime {
     animation-name: blink;
     animation-duration: 3s;
