@@ -12,54 +12,94 @@ and responsive design.
 
 Only leave commented out selectors/properties with an explanation, e.g.: */
 
-/* An alternaive font: @import url('https://fonts.googleapis.com/css?family=Nunito:400,700&display=swap'); */ */
+/* An alternaive font:  */
+/* @import url('https://fonts.googleapis.com/css?family=Nunito:400,700&display=swap'); */
 
 /* Current color palette - coolors.co/004900-ffff82-fffcf2-ccc5b9-403d39  (green, yellow and light, middle, dark colors) */
 
-html, body {
+@import url('https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap');
+
+html, body {    
+    font-family: 'Roboto', sans-serif;
+    /* font-family: 'Nunito'; */
     margin: 0;
     padding: 0;
-    height: 100vh;
 }
+
 body {
-    background: #000 url('./assets/img/forest.jpg');
-    background-size: cover;
-    font-family: 'Roboto', sans-serif;
-    display: grid;
-    align-items: center; 
+    background: #000 url('./assets/img/forest.jpg');    
+    height: 100vh;
+    padding: .7em .7em .7em;
 }
-.wrapper {
-    padding: 1em;
+
+header {
+    /* background: #3D5262; */
+    display: flex;
+    justify-content: space-between;
+    overflow: hidden;
 }
-#logo {
+
+a.logo {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    margin: 1em .5em 0;
+}
+
+nav {
     position: fixed;
-    top: .7em;
-    left: .7em;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    background: #403d39;
+    width: 50%;
+    visibility: hidden;
+    transform: translateX(50%);
+    opacity: 0;
+    transition: all .3s;
 }
+
+.open-nav {
+    visibility: unset;
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.exit {
+    width: 2em;
+    float: right;
+    margin: 1.4em;
+    cursor: pointer;
+}
+
 ul {
     list-style-type: none;
-    margin: 0;
     padding: 0;
+    margin-top: 4em;
 }
-nav {
-    float: right;
-    right: .7em;
-    top: .7em;
+
+li a {
+    color: #ccc5b9;
+    text-decoration: none;
+    display: block;
+    padding: .5em 1em;
 }
-nav ul {
-    display: flex;
-    margin-top: 1em;
+
+.open {
+    cursor: pointer;
+    margin: .5em;
 }
-nav li {
-    margin-right: .5em;
+
+.active a {
+    color: #fffcf2;
+    font-weight: bold;
 }
-nav li a {
-    color: black;
-    font-size: 0.7em;
-    padding: .3em .7em;
-    background-color: #fffcf2;
+
+li a:hover {
+    background: #72470f;
     border-radius: .3em;
 }
+
 .content {
     background: rgba(64,61,57,0.93);
     color: white;
@@ -80,11 +120,6 @@ a {
 a:visited {
     text-decoration: none;
 }
-main {
-    position: relative;
-}
-/* Ensure display:flex and others don't override a [hidden] */
-[hidden] { display: none !important; }
 footer {
     margin-top: 15px;
 }
@@ -116,26 +151,49 @@ a.app-btn {
 .circle {
     border-radius: 50%;
 }
-/* For responsive design */
-@media (min-width: 343px) {
-    header {
-        display: flex;
-        justify-content: space-between;
-    }
-    nav ul {
-        position: fixed;
-        top: .7em;
-        right: .7em;
-    
-        /* Shall the right menu go under the logo in case of small screens? margin-top: 3.43em; */
-    }
-    nav ul li:nth-of-type(1) {
-        margin-right: 0;
-    }
-}
+
 #z-container {    
     color: white;
     float: right;
     font-size: 7px;    
     font-weight: bold;
+}
+
+@media (min-width: 800px) {
+    .open, .exit {
+        display: none;
+    }
+    
+    nav {
+        visibility: unset;
+        background: none;
+        position: unset;
+        height: auto;
+        opacity: 1;
+        transform: translateX(0);
+    }
+    
+    ul {
+        display: flex;
+        margin-top: auto;
+        width: auto;
+        float: right;
+        margin: 0;
+    }
+    
+    li a {
+        color: #fffcf2;
+        display: block;
+        /* padding: 1em; */
+    }
+    
+    li a:hover {
+        /* padding: 1em; */
+    }
+    
+    .active a {
+        color: white;
+    }
+    
+    
 }
