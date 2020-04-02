@@ -1,13 +1,36 @@
+#login-container {
+    display: grid;
+    text-align: center;
+    white-space: normal;
+    vertical-align: middle;
+    color: #fffcf2;
+    padding: 0 .7em;    
+}
+#login-form {
+    font-size: 1em;
+}
+#login-message {
+    font-size: 1.7em;
+    margin-bottom: 1.4em;
+}
+#login-img {
+    background-color: white;
+    border-radius: .3em;
+    padding: .7em;
+}
 input[type=text], textarea {
-    background: white;
+    background: #fffcf2;
     border: none;
     border-bottom: 1px solid lightgray;
     border-radius: .3em;
-    display: block;
+    float: none;
     margin-bottom: 1.5em;
     outline: 0;
     padding: .3em;
-    width: 70%;
+    width: 210px;
+    box-shadow: 10px 10px 5px -9px rgba(0,73,0,1);
+    -webkit-box-shadow: 10px 10px 5px -9px rgba(0,73,0,1);
+    -moz-box-shadow: 10px 10px 5px -9px rgba(0,73,0,1);
 }
 input[type=text]:focus, textarea:focus {
     border-bottom: 1px solid red;
@@ -15,46 +38,11 @@ input[type=text]:focus, textarea:focus {
 input[type=submit] {
     background: rgba(255,255,0,49);
     border: none;
-    border-radius: .7em;
-    color: black;
-    font-size: .9em;
+    border-radius: .3em;
+    color: #403d39;
+    font-size: 1.2em;
     font-weight: bold;
-    padding: .7em 2em;
+    margin-top: 1.4em;
+    margin-bottom: 1.4em;
+    padding: .3em 1.4em;
 }
-#logo-container {
-    text-align: center;
-    vertical-align: middle;
-}
-#logo-img {
-    background-color: white;
-    border-radius: .7em;
-    margin-right: 1.4em;
-    padding: .7em;
-}
-#main-container {
-    background: linear-gradient(to right, rgb(0,49,0), rgba(0,49,0,0));
-    font-family: 'Roboto', sans-serif;
-    padding: 2em;
-    align-items: center;
-    display: flex;
-    flex-flow: row;    
-    justify-content: center;
-    margin-top: 70px;
-    vertical-align: middle;
-}
-#login-container {
-    border-left: .7em  solid rgba(0,49,0,255);
-    border-radius: .7em;
-    color: white;
-    padding: 0 1.4em;
-    vertical-align: middle;
-}
-#login-message {
-    font-size: 1.4em;
-}
-#z-container {    
-    color: #004900;
-    float: right;
-    font-size: 7px;    
-    font-weight: bold;
-  }

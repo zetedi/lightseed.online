@@ -3,15 +3,20 @@ import { RouterModule, Routes } from '@angular/router';
 import { OrdersComponent } from './orders/orders.component';
 import { MapComponent } from './map/map.component';
 import { LifetreeDetailsComponent } from './lifetrees/lifetree-details/lifetree-details.component';
+import { HomeComponent } from './home/home.component';
+import { RegisterComponent } from './register/register.component';
 
 
 const routes: Routes = [
+  { path: 'register', component: RegisterComponent},
   { path: 'login', pathMatch: 'full', redirectTo: '/login'},
-  { path: 'orders/:id', component: OrdersComponent },
-  { path: 'map', component: MapComponent },
+  { path: 'home', component: HomeComponent},
+  { path: 'lifetrees', pathMatch: 'full', redirectTo: '/lifetrees'},
   { path: 'lifetree-details/:id', component: LifetreeDetailsComponent },
-  { path: '', pathMatch: 'full', redirectTo: '/lifetrees'},
-  { path: '**', pathMatch: 'full', redirectTo: '/lifetrees' }
+  { path: 'map', component: MapComponent },
+  { path: 'orders/:id', component: OrdersComponent },
+  { path: '', pathMatch: 'full', redirectTo: '/login'},
+  { path: '**', pathMatch: 'full', redirectTo: '/login' }
 ];
 
 @NgModule({

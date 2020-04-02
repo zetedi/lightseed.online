@@ -1,9 +1,164 @@
-h1 {
+/* h1 {
     font-size: 2.4em;
-    margin-top: 0px;
+    margin-top: 0;
+    position: relative;
 }
-
+h1:before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: -20%;
+    height: 14px;
+    width: 40%;
+    background: yellow;
+    z-index: -1;
+} */
 p {
     font-size: 1.2em;
     margin-bottom: .5em;
+}
+img {
+    width: 90%;
+    position: absolute;
+    /* z-index: -1; */
+}
+.card {
+    padding: 1em;
+    margin: 0 1em;
+    /* background: #403d39; */
+    border-radius: .5em;
+    position: relative;
+
+}
+
+span {
+    width: 5em;
+    height: 5em;
+    background: white url('../../../assets/img/lifetree1_s.jpg');
+    position: absolute;
+    top: -2.5em;
+    border-radius: 50%;
+    border: 1px solid #fffcf2;
+}
+
+h1 {
+    margin-top: 1.2em;
+}
+
+p {
+    line-height: 1.4em;
+    color: #fffcf2;
+}
+
+a {
+    text-decoration: none;
+    color: #ccc5b9;
+    display: block;
+    text-align: center;
+    padding: .8em 1em;
+    border: 1px solid #ccc5b9;
+    border-radius: .5em;
+    text-transform: uppercase;
+    font-weight: bold;
+    font-size: .85rem;
+    margin-top: 2em;
+}
+
+@media (min-width: 500px) {
+    .card {
+        display: grid;
+        grid-template-columns: repeat(2, auto);
+        grid-template-areas: 
+            "avatar content";
+        margin: 0 4em;
+        padding-right: 2em;
+        padding-bottom: 2em;
+    }
+    span {
+        position: initial;
+        display: block;
+        grid-area: avatar;
+        margin-left: -3.8em;
+        margin-top: .8em;
+    }
+    .card-details {
+        grid-area: content;
+        margin-left: 1.5em;
+    }
+    a {
+        display: inline-block;
+    }
+    
+}
+
+@media (min-width: 1000px) {
+    .card-details {
+        display: grid;
+        grid-template-columns: repeat(2,auto);
+        grid-template-areas: 
+            "name description"
+            "cta description";
+    }
+    
+    h1 {
+        grid-area: name;
+    }
+    p {
+        grid-area: description;
+        margin-left: 2em;
+        margin-top: 2.5em;
+    }
+    a {
+        grid-area: cta;
+        padding: .5em;
+        width: 60%;
+        font-size: .7em;
+        margin-top: 0;
+    }
+    
+}
+
+
+/* For the width display, ignore this */
+
+.width-container {
+    display: none;
+}
+
+.display-width {
+    display: block;
+    position: absolute;
+    right: 0;
+    top: 0;
+    background-color: #E6E6E6;
+    padding: .3em;
+    font-size: .85em;
+    color: black;
+}
+#anime {
+    animation-name: blink;
+    animation-duration: 3s;
+    animation-timing-function: ease;
+    animation-delay: 2s;
+    animation-iteration-count: infinite;
+}
+@keyframes blink {
+    0% {
+        /* transform: translate(20px, 20px); */
+    }
+    25% {
+        background: white;
+        color: rgba(0,49,0,49);
+        /* transform: translate(20px, 20px); */
+    }
+    50% {
+        background: rgba(0,49,0,49);
+        color: white;
+        /* transform: translate(0px, 0px); */
+    }
+    100% {
+        background: white;
+        color: rgb(0,49,0);
+        /* transform: translate(20px, 20px); */
+    }
 }
