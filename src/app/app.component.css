@@ -187,10 +187,6 @@ a.app-btn {
         /* padding: 1em; */
     }
     
-    li a:hover {
-        /* padding: 1em; */
-    }
-    
     .active a {
         color: white;
     }
