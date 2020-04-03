@@ -19,5 +19,8 @@
   "angularCompilerOptions": {
     "fullTemplateTypeCheck": true,
     "strictInjectionParameters": true
+  },
+  "config": {
+    "apiUrl": "http://localhost:4000"
   }
 }

@@ -1,10 +1,35 @@
-<h1>Login page</h1>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 
+<div id="login-container">
+    <h2>Login</h2>
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        <div class="form-group">        
+            <input id="user-name" type="text" formControlName="username" class="form-control"
+                [ngClass]="{ 'is-invalid': submitted && f.username.errors }" placeholder="Username" />
+            <div *ngIf="submitted && f.username.errors" class="invalid-feedback">
+                <div *ngIf="f.username.errors.required">Username is required</div>
+            </div>
+        </div>
+        <div class="form-group">
+            <input id="password" type="password" formControlName="password" class="form-control"
+                [ngClass]="{ 'is-invalid': submitted && f.password.errors }" placeholder="Password" />
+            <div *ngIf="submitted && f.password.errors" class="invalid-feedback">
+                <div *ngIf="f.password.errors.required">Password is required</div>
+            </div>
+        </div>
+        <div class="form-group">
+            <button id="login-btn" [disabled]="loading" class="btn btn-primary">
+                <span *ngIf="loading" class="spinner-border spinner-border-sm mr-1"></span>
+                Login
+            </button>
+            <!-- <a routerLink="/register" class="btn btn-link">Register</a> -->
+        </div>
+    </form>
+    <div>
 
-
-
-<!-- <img id="login-img" src="assets/img/lifeseed_bold.svg" alt="logo" height="100vw"> -->
-<!-- <div id="login-container">
+        <!-- <img id="login-img" src="assets/img/lifeseed_bold.svg" alt="logo" height="100vw"> -->
+        <!-- <div id="login-container">
     <form>
         <p id="login-message">The name and the GPS coordinates of your <b>lifetree</b></p>
         <div id="login-form">

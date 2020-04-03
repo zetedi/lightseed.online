@@ -1,11 +1,14 @@
-<h1>Home page</h1>
-
-<!-- <h1>Hi {{currentUser.firstName}}!</h1>
-<p>You're logged in with Angular 8!!</p>
-<h3>All registered users:</h3>
-<ul>
-    <li *ngFor="let user of users">
-        {{user.username}} ({{user.firstName}} {{user.lastName}})
-        - <a (click)="deleteUser(user.id)" class="text-danger">Delete</a>
-    </li>
-</ul> -->
+<link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet" />
+<h1>Hello {{currentUser.firstName}}!</h1>
+<h3>The registered users on this machine:</h3>
+<table>
+    <tr *ngFor="let user of users">
+        <td>
+            {{user.username}} ({{user.firstName}} {{user.lastName}})
+        </td>
+        <td>
+            <a (click)="deleteUser(user.id)" class="text-danger">Delete</a>
+        </td>
+        <br>
+    </tr>
+</table>

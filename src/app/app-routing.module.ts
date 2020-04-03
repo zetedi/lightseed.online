@@ -5,9 +5,11 @@ import { MapComponent } from './map/map.component';
 import { LifetreeDetailsComponent } from './lifetrees/lifetree-details/lifetree-details.component';
 import { HomeComponent } from './home/home.component';
 import { RegisterComponent } from './register/register.component';
+import { AuthGuard } from './_helpers/auth.guard';
 
 
 const routes: Routes = [
+  { path: '', component: HomeComponent, canActivate: [AuthGuard]},
   { path: 'register', component: RegisterComponent},
   { path: 'login', pathMatch: 'full', redirectTo: '/login'},
   { path: 'home', component: HomeComponent},
@@ -15,7 +17,6 @@ const routes: Routes = [
   { path: 'lifetree-details/:id', component: LifetreeDetailsComponent },
   { path: 'map', component: MapComponent },
   { path: 'orders/:id', component: OrdersComponent },
-  { path: '', pathMatch: 'full', redirectTo: '/login'},
   { path: '**', pathMatch: 'full', redirectTo: '/login' }
 ];
 
