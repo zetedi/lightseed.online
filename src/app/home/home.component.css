@@ -1,3 +1,35 @@
+/* Coolors Exported Palette - coolors.co/004900-ffff00-069e2d-058e3f-04773b dark green-yellow-greens*/
+
 h3 {
     font-size: 1em;
+}
+
+#home-container {
+    padding: 1em;
+    text-align: center;
+}
+
+table {
+    margin: auto;
+    color: #069e2d;
+    width: 100%;
+}
+
+thead {
+    background-color: black;
+    color: #fffcf2;
+}
+
+th {
+    cursor: pointer;
+    height: 2em;
+    padding: .3em;
+}
+
+tr {
+    border-bottom: 1px solid #403d39;
+}
+td {
+    background-color: #fffcf2;
+    padding: .3em;
 }
