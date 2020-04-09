@@ -1,14 +1,38 @@
-<link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet" />
-<h1>Hello {{currentUser.firstName}}!</h1>
-<h3>The registered users on this machine:</h3>
-<table>
-    <tr *ngFor="let user of users">
-        <td>
-            {{user.username}} ({{user.firstName}} {{user.lastName}})
-        </td>
-        <td>
-            <a (click)="deleteUser(user.id)" class="text-danger">Delete</a>
-        </td>
-        <br>
-    </tr>
-</table>
+<div id="home-container">
+    <!-- <link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet" /> -->
+    <h1>Hello {{currentUser.firstName}}!</h1>
+    <h3>The registered users on this machine:</h3>
+    
+    <!-- <table>
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tr *ngFor="let user of users">
+            <td>
+                <b>{{user.username}}</b>
+            </td>
+            <td>
+                {{user.firstName}}
+            </td>
+            <td>
+                {{user.lastName}}
+            </td>
+            <td>
+                <a (click)="deleteUser(user.id)" class="text-danger">Delete</a>
+            </td>
+            <br>
+        </tr>
+    </table> -->
+
+ 
+    <div class="card" *ngFor="let user of users">
+        <p class="title">{{user.username}}</p>
+        <p class="desc">First name: {{user.firstName}} <br/> Last name: {{user.lastName}}</p>
+        <a href="#" (click)="deleteUser(user.id)">Delete</a>
+    </div>
+</div>
