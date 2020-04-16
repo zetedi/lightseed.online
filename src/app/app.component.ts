@@ -15,32 +15,18 @@ export class AppComponent implements OnInit {
 
   currentUser: User;
 
-    constructor(
-        private router: Router,
-        private authenticationService: AuthenticationService
-    ) {
-        this.authenticationService.currentUser.subscribe(x => this.currentUser = x);
-    }
+  constructor(
+    private router: Router,
+    private authenticationService: AuthenticationService
+  ) {
+    this.authenticationService.currentUser.subscribe(x => this.currentUser = x);
+  }
 
-    logout() {
-        this.authenticationService.logout();
-        this.router.navigate(['/login']);
-    }
+  logout() {
+    this.authenticationService.logout();
+    this.router.navigate(['/login']);
+  }
 
   ngOnInit() {
-
-    const get = element => document.getElementById(element);
-
-    let open = get("menu-btn");
-    let nav = get("nav");
-    let exit = get("exit-btn");
-
-    open.addEventListener('click', () => {
-      nav.classList.add('open-nav');
-    })
-
-    exit.addEventListener('click', () => {
-      nav.classList.remove('open-nav');
-    })
   }
 }

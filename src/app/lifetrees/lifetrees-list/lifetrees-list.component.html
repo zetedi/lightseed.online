@@ -1,5 +1,7 @@
-<div class="container">
-    <p>Updated: 2020.03<span style="float: right;"><app-lifetrees-filter (changed)="filter($event)"></app-lifetrees-filter></span></p>    
+<!-- <div class="container">
+    <p>Updated: 2020.03<span style="float: right;">
+            <app-lifetrees-filter (changed)="filter($event)"></app-lifetrees-filter>
+        </span></p>
     <table>
         <thead>
             <tr>
@@ -17,11 +19,11 @@
             </td>
             <td>{{ lifetree.city }}</td>
             <td><b>lt</b>{{ lifetree.orderTotal }}</td>
-                <td>
-                    <a [routerLink]="['/lifetree-details', lifetree.id]">
-                        details
-                    </a>
-                </td>
+            <td>
+                <a [routerLink]="['/lifetree-details', lifetree.id]">
+                    details
+                </a>
+            </td>
         </tr>
         <tr *ngIf="filteredLifetrees && filteredLifetrees.length">
             <td colspan="2">&nbsp;</td>
@@ -34,4 +36,31 @@
         </tr>
     </table>
     <span style="float: right;">Number of Lifetrees: {{ filteredLifetrees.length }}</span>
+</div> -->
+
+<!-- <h5>Updated: 2020.03</h5> -->
+<div *ngFor="let lifetree of filteredLifetrees">
+    <div class="row">
+        <div class="col-sm-6 col-md-3"><a [routerLink]="['/orders', lifetree.id]">
+                {{ lifetree.name | capitalize }}
+            </a></div>
+        <div class="col-sm-6 col-md-3">{{ lifetree.city }}</div>
+        <div class="col-sm-6 col-md-3"><b>lt</b>{{ lifetree.orderTotal }}</div>
+        <div class="col-sm-6 col-md-3"> <a [routerLink]="['/lifetree-details', lifetree.id]">
+                details
+            </a></div>
+    </div>
 </div>
+
+<!-- <div class="container">
+    <div class="row" *ngIf="filteredLifetrees && filteredLifetrees.length">
+        <div class="col-12">
+            <b>lt</b>{{ lifetreesOrderTotal}}
+        </div>
+    </div>
+    <div *ngIf="!filteredLifetrees || !filteredLifetrees.length">
+        <div class="col-12">
+            No lifetrees found
+        </div>
+    </div>
+</div> -->

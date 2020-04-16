@@ -2,20 +2,18 @@
 
 h1 {
     font-size: 2em;
-    color: #04773b;
+    color: #fffcf2;
 }
 
 h3 {
     font-size: 1em;
-    color: #04773b;
+    font-weight: lighter;
+    color: #fffcf2;
 }
 
 
-#home-container {
-    padding: 1em;
-    text-align: center;
-    /* background-color: rgba(49,81,0,.05); */
-    background-color: #d2f8db;
+.home-container {
+    padding-top: 54px;
 }
 
 table {

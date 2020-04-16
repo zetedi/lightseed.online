@@ -17,6 +17,8 @@ Only leave commented out selectors/properties with an explanation, e.g.: */
 
 /* Current color palette - coolors.co/004900-ffff82-fffcf2-ccc5b9-403d39  (green, yellow and light, middle, dark colors) */
 
+/* @import url('https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css'); */
+
 @import url('https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap');
 
 html, body {    
@@ -29,167 +31,18 @@ html, body {
 body {
     background: #000 url('./assets/img/forest.jpg');    
     height: 100vh;
-    padding: .7em .7em .7em;
-}
-
-header {
-    /* background: #3D5262; */
-    display: flex;
-    justify-content: space-between;
-    overflow: hidden;
-}
-
-a.logo {
-    color: white;
-    text-decoration: none;
-    font-weight: bold;
-    margin: 1em .5em 0;
-}
-
-nav {
-    position: fixed;
-    top: 0;
-    right: 0;
-    height: 100vh;
-    background: #403d39;
-    width: 50%;
-    visibility: hidden;
-    transform: translateX(50%);
-    opacity: 0;
-    transition: all .3s;
-}
-
-.open-nav {
-    visibility: unset;
-    opacity: 1;
-    transform: translateX(0);
-}
-
-.exit {
-    width: 2em;
-    float: right;
-    margin: 1.4em;
-    cursor: pointer;
-}
-
-ul {
-    list-style-type: none;
-    padding: 0;
-    margin-top: 4em;
-}
-
-li a {
-    color: #ccc5b9;
-    text-decoration: none;
-    display: block;
-    padding: .5em 1em;
-}
-
-.open {
-    cursor: pointer;
-    margin: .5em;
-}
-
-.active a {
-    color: #fffcf2;
-    font-weight: bold;
 }
 
 li a:hover {
-    background: #72470f;
+    background: rgba(4,119,59,0.93);;
     border-radius: .3em;
 }
-
+.navbar {
+    padding: 0.1rem .5rem;
+}
 .content {
     background: rgba(64,61,57,0.93);
-    color: white;
-    padding: 1em;   
-    margin-top: 2.1em;
-}
-h1 {
-    font-size: 2.4em;
-    margin-top: 0;
-}
-p {
-    font-size: 1.2em;
-    margin-bottom: .5em;
-}
-a {
-    text-decoration: none;
-}
-a:visited {
-    text-decoration: none;
-}
-footer {
-    margin-top: 15px;
-}
-.app-title {
-    line-height:50px;
-    font-size:20px;
-    color: white;
-}
-a.app-btn {
     color: black;
-    background: #fffcf2;
-    padding: .8em 1.5em;
-    border-radius: 2em;
-    margin: 1em 0 3em;
-    display: inline-block;
-}
-.width-container {
-    display: none;
-}
-.display-width {
-    display: block;
-    position: absolute;
-    right: 0;
-    top: 0;
-    background-color: #E6E6E6;
-    padding: .3em;
-    font-size: .85em;
-}
-.circle {
-    border-radius: 50%;
-}
-
-#z-container {    
-    color: white;
-    float: right;
-    font-size: 7px;    
-    font-weight: bold;
-}
-
-@media (min-width: 800px) {
-    .open, .exit {
-        display: none;
-    }
-    
-    nav {
-        visibility: unset;
-        background: none;
-        position: unset;
-        height: auto;
-        opacity: 1;
-        transform: translateX(0);
-    }
-    
-    ul {
-        display: flex;
-        margin-top: auto;
-        width: auto;
-        float: right;
-        margin: 0;
-    }
-    
-    li a {
-        color: #fffcf2;
-        display: block;
-        /* padding: 1em; */
-    }
-    
-    .active a {
-        color: white;
-    }
-    
-    
+    padding: 1em;   
+    margin-top: 60px;
 }

@@ -1,16 +1,3 @@
-#login-container {
-    text-align: center;
-    align-items: center;
-    vertical-align: middle;
-    color: #fffcf2;
-    padding: 0 .3em;    
-    margin: auto;
-}
-#user-name, #password {
-    width: 17em;
-    height: 2.1em;
-    margin: 1.4em;
-}
 #login-btn {
     background: rgba(255,255,0,49);
     border: none;
@@ -22,6 +9,31 @@
     margin-bottom: 1.4em;
     padding: .1em 1.4em;
 }
-h2 {
-    margin-bottom: 1em;
+#cover {
+    /* background: #222 url('https://unsplash.it/1920/1080/?random') center center no-repeat; */
+    background-size: cover;
+    height: 100%;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+#cover-caption {
+    width: 100%;
+    position: relative;
+    z-index: 1;
+}
+
+/* only used for background overlay not needed for centering */
+form:before {
+    content: '';
+    height: 100%;
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 100%;
+    background-color: rgba(0,0,0,0.3);
+    z-index: -1;
+    border-radius: 10px;
 }
