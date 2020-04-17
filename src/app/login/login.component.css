@@ -37,3 +37,7 @@ form:before {
     z-index: -1;
     border-radius: 10px;
 }
+.invalid-feedback {
+    border-radius: .3em;
+    background-color: white;
+}

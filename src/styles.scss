@@ -1,0 +1,50 @@
+@import "../node_modules/bootstrap/scss/bootstrap";
+
+/* Check before committing:
+
+- White Space
+- Color 
+- Contrast 
+- Scale
+- Alignment
+- Typography
+- Visual Hierarchy
+
+and responsive design. 
+
+Only leave commented out selectors/properties with an explanation, e.g.: */
+
+/* An alternaive font:  */
+/* @import url('https://fonts.googleapis.com/css?family=Nunito:400,700&display=swap'); */
+
+/* Current color palette - coolors.co/004900-ffff82-fffcf2-ccc5b9-403d39  (green, yellow and light, middle, dark colors) */
+
+/* @import url('https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css'); */
+
+@import url('https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap');
+
+html, body {    
+    font-family: 'Roboto', sans-serif;
+    /* font-family: 'Nunito'; */
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: #000 url('./assets/img/forest.jpg');    
+    height: 100vh;
+}
+
+li a:hover {
+    background: rgba(4,119,59,0.93);;
+    border-radius: .3em;
+}
+.navbar {
+    padding: 0.1rem .5rem;
+}
+.content {
+    background: rgba(64,61,57,0.93);
+    color: black;
+    padding: 1em;   
+    margin-top: 60px;
+}
