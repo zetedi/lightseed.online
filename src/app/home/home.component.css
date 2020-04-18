@@ -1,21 +1,40 @@
 /* Coolors Exported Palette - coolors.co/004900-ffff00-069e2d-058e3f-04773b dark green-yellow-greens*/
 
+body {
+    display: grid;
+    justify-content: center;
+}
+
 h1 {
     font-size: 2em;
-    color: #04773b;
+    color: #fffcf2;
 }
 
 h3 {
     font-size: 1em;
-    color: #04773b;
+    font-weight: lighter;
+    color: #fffcf2;
 }
 
 
-#home-container {
-    padding: 1em;
-    text-align: center;
-    /* background-color: rgba(49,81,0,.05); */
-    background-color: #d2f8db;
+.home-container {    
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(343px, 1fr));
+    margin-top: 3em;
+}
+
+span {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background: green;
+    margin-top: -4em;
+    border-radius: 50%;
+    border: solid 1px white;
+    margin-left: auto; 
+    margin-right: auto; 
+    left: 0;
+    right: 0;
 }
 
 table {
@@ -44,13 +63,15 @@ td {
 }
 
 .card {
-    width: 140px;
+    width: 343px;
     margin: 3em auto;
     padding: 2em;
     background: white;
     border-radius: .4em;
     text-align: center;
     box-shadow: 10px 10px 30px rgba(0,0,0,0.15);
+    position: relative;
+    /* background: linear-gradient(137deg, rgba(255,255,255,1) 70%, rgba(0,49,0,1) 100%); */
     /* box-shadow: horizontal vertical blur color; 
        box-shadow: 10px 10px 10px rgba(0,0,0,0.5); */
 }
