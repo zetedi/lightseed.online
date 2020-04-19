@@ -17,3 +17,6 @@ a:visited {
     color: #ccc5b9;
     text-decoration: none;
 }
+.container {
+    padding-top: 55px;
+}

@@ -10810,4 +10810,62 @@ li a:hover {
   padding: 1em;
   margin-top: 60px;
 }
+
+.circle {
+  border-radius: 50%;
+}
+
+.admin button {
+  background: yellow;
+  border: none;
+  border-radius: .3em;
+  color: #403d39;
+  font-size: 1.2em;
+  font-weight: bold;
+  margin-top: 1em;
+  margin-bottom: 1.4em;
+  padding: .1em 1.4em;
+}
+
+.admin button:hover {
+  background: yellow;
+  color: black;
+}
+
+.admin form:before {
+  content: '';
+  height: 100%;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.3);
+  z-index: -1;
+  border-radius: 10px;
+}
+
+.admin .invalid-feedback {
+  border-radius: .3em;
+  background-color: white;
+  padding: .1em .3em;
+}
+
+.cover {
+  background-size: cover;
+  height: 100%;
+  text-align: center;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  position: relative;
+}
+
+.cover-caption {
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
 /*# sourceMappingURL=styles.css.map */

@@ -1,34 +1,38 @@
-<section id="cover" class="min-vh-100">
-    <div id="cover-caption">
+<section class="min-vh-100 cover">
+    <div class="cover-caption">
         <div class="container">
             <div class="row text-white">
                 <div class="col-xl-5 col-lg-6 col-md-8 col-sm-10 mx-auto text-center form p-4">
                     <h1 class="display-6 py-2 text-truncate">Login</h1>
-                    <div class="px-2">
+                    <div class="admin px-2">
                         <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
                             <div class="form-group">
-                                <div>
+                                <div class="text-left">
+                                    <label for="user-name">User name (email):</label>
                                     <input id="user-name" type="text" formControlName="username" class="form-control"
-                                        [ngClass]="{ 'is-invalid': submitted && f.username.errors }"
-                                        placeholder="Username" />
+                                        [ngClass]="{ 'is-invalid': submitted && f.username.errors }" />
                                     <div *ngIf="submitted && f.username.errors" class="invalid-feedback">
                                         <div *ngIf="f.username.errors.required">Username is required</div>
                                     </div>
+                                    <small id="emailHelp" class="form-text text-light">We'll never share your email with
+                                        anyone else.</small>
                                 </div>
                             </div>
                             <div class="form-group">
-                                <div>
+                                <div class="text-left">
+                                    <label for="password" class="text-right">Password:</label>
                                     <input id="password" type="password" formControlName="password" class="form-control"
-                                        [ngClass]="{ 'is-invalid': submitted && f.password.errors }"
-                                        placeholder="Password" />
+                                        [ngClass]="{ 'is-invalid': submitted && f.password.errors }" />
                                     <div *ngIf="submitted && f.password.errors" class="invalid-feedback">
                                         <div *ngIf="f.password.errors.required">Password is required</div>
                                     </div>
+                                    <small id="passwordHelp" class="form-text text-light">Minimum 7 characters
+                                        long.</small>
                                 </div>
                             </div>
                             <div class="form-group">
                                 <div class="text-right">
-                                    <button id="login-btn" [disabled]="loading" class="btn btn-primary pull-right">
+                                    <button [disabled]="loading" class="btn pull-right admin-btn">
                                         <span *ngIf="loading" class="spinner-border spinner-border-sm mr-1"></span>
                                         Login
                                     </button>

@@ -2,6 +2,6 @@
     color: white;
 }
 
-.navbar-item {
-    color: yellow;
+.navbar-item .nav-link {
+    color: rgba(255, 255, 255, .8);
 }
