@@ -39,16 +39,18 @@
 </div> -->
 
 <!-- <h5>Updated: 2020.03</h5> -->
-<div *ngFor="let lifetree of filteredLifetrees">
-    <div class="row">
-        <div class="col-sm-6 col-md-3"><a [routerLink]="['/orders', lifetree.id]">
-                {{ lifetree.name | capitalize }}
-            </a></div>
-        <div class="col-sm-6 col-md-3">{{ lifetree.city }}</div>
-        <div class="col-sm-6 col-md-3"><b>lt</b>{{ lifetree.orderTotal }}</div>
-        <div class="col-sm-6 col-md-3"> <a [routerLink]="['/lifetree-details', lifetree.id]">
-                details
-            </a></div>
+<div class="container">
+    <div *ngFor="let lifetree of filteredLifetrees">
+        <div class="row">
+            <div class="col-sm-6 col-md-3"><a [routerLink]="['/orders', lifetree.id]">
+                    {{ lifetree.name | capitalize }}
+                </a></div>
+            <div class="col-sm-6 col-md-3">{{ lifetree.city }}</div>
+            <div class="col-sm-6 col-md-3"><b>lt</b>{{ lifetree.orderTotal }}</div>
+            <div class="col-sm-6 col-md-3"> <a [routerLink]="['/lifetree-details', lifetree.id]">
+                    details
+                </a></div>
+        </div>
     </div>
 </div>
 
