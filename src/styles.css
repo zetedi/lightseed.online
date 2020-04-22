@@ -10790,14 +10790,17 @@ html, body {
 }
 
 body {
-  background: #000 url("./assets/img/forest.jpg");
+  background: #222 url("https://source.unsplash.com/1920x1080/?forest") center center no-repeat;
   background-size: cover;
   height: 100vh;
 }
 
+li {
+  background: rgba(0, 0, 0, 0.7);
+}
+
 li a:hover {
   background: rgba(4, 119, 59, 0.93);
-  border-radius: .3em;
 }
 
 .navbar {
@@ -10846,7 +10849,7 @@ li a:hover {
 
 .admin .invalid-feedback {
   border-radius: .3em;
-  background: #ff9d9d;
+  background: #f5aaaa;
   display: inline-block;
   padding: .3em .5em;
   font-size: .7em;
@@ -10855,8 +10858,6 @@ li a:hover {
 }
 
 .cover {
-  background: #222 url("https://unsplash.it/1920/1080/?random") center center no-repeat;
-  background-size: cover;
   height: 100%;
   text-align: center;
   display: -webkit-box;
@@ -10871,6 +10872,6 @@ li a:hover {
 .cover-caption {
   width: 100%;
   position: relative;
-  z-index: 1;
+  background-color: rgba(0, 0, 0, 0.7);
 }
 /*# sourceMappingURL=styles.css.map */
