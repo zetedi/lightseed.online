@@ -10846,11 +10846,16 @@ li a:hover {
 
 .admin .invalid-feedback {
   border-radius: .3em;
-  background-color: white;
-  padding: .1em .3em;
+  background: #ff9d9d;
+  display: inline-block;
+  padding: .3em .5em;
+  font-size: .7em;
+  font-weight: bold;
+  margin-top: -.3em;
 }
 
 .cover {
+  background: #222 url("https://unsplash.it/1920/1080/?random") center center no-repeat;
   background-size: cover;
   height: 100%;
   text-align: center;
