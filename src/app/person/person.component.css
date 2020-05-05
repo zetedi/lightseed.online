@@ -16,6 +16,7 @@ h3 {
     color: #fffcf2;
 }
 
+
 .home-container {    
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(343px, 1fr));

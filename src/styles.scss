@@ -31,14 +31,18 @@ html, body {
 }
 
 body {
-    background: #000 url('./assets/img/forest.jpg');    
+    // background: #000 url('./assets/img/forest.jpg');    
+    background: #222 url('https://source.unsplash.com/1920x1080/?forest') center center no-repeat;
     background-size: cover;
     height: 100vh;
 }
 
+li {
+    background: rgba(0,0,0,0.7);
+}
+
 li a:hover {
     background: rgba(4,119,59,0.93);;
-    border-radius: .3em;
 }
 .navbar {
     padding: 0.1rem .5rem;
@@ -84,13 +88,18 @@ li a:hover {
 
 .admin .invalid-feedback {
     border-radius: .3em;
-    background-color: white;
-    padding: .1em .3em;
+    background: rgb(245, 170, 170);
+    display: inline-block;
+    padding: .3em .5em;
+    font-size: .7em;
+    font-weight: bold;
+    margin-top: -.3em;
 }
 
 .cover {
-    // background: #222 url('https://unsplash.it/1920/1080/?random') center center no-repeat;
-    background-size: cover;
+    // background: #222 url('https://unsplash.it/1920/1080/?forest') center center no-repeat;
+    // background: #222 url('https://source.unsplash.com/1920x1080/?forest') center center no-repeat;
+    // background-size: cover;
     height: 100%;
     text-align: center;
     display: flex;
@@ -101,5 +110,18 @@ li a:hover {
 .cover-caption {
     width: 100%;
     position: relative;
-    z-index: 1;
+    background-color: rgba(0,0,0,0.7);
+    // z-index: 1;
+}
+
+select {
+    appearance:none;
+	-webkit-appearance:none;
+	-moz-appearance:none;
+	-ms-appearance:none;
+	background:url('http://www.free-icons-download.net/images/small-down-arrow-icon-15593.png');
+	background-repeat: no-repeat;
+	background-size:16px 17px;
+	background-position: right;
+    background-origin: content-box;
 }

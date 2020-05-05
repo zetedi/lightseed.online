@@ -1,14 +1,33 @@
 [
-    {
-          "id": 1,
-          "name": "Mahameru",
-          "city": "Brussels",
-          "orderTotal": 0.98
-    },
-    {
-          "id": 2,
-          "name": "The Little Prince",
-          "city": "Budapest",
-          "orderTotal": 1
-    }
+      {
+            "id": 1,
+            "name": "Mahameru",
+            "city": "Brussels",
+            "orderTotal": 1000000
+      },
+      {
+            "id": 2,
+            "name": "Le Petit Prince",
+            "city": "Matra",
+            "orderTotal": 1000000
+      },
+      {
+            "id": 3,
+            "name": "Maya",
+            "city": "Budapest",
+            "orderTotal": 1000000
+      },
+      {
+            "id": 4,
+            "name": "Little Bird",
+            "city": "Hasselt",
+            "orderTotal": 1000000
+      },
+      {
+            "id": 5,
+            "name": "Opame",
+            "city": "Budapest",
+            "orderTotal": 1000000
+      }
+
 ]
