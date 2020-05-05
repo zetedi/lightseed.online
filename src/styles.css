@@ -10874,4 +10874,16 @@ li a:hover {
   position: relative;
   background-color: rgba(0, 0, 0, 0.7);
 }
+
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  -ms-appearance: none;
+  background: url("http://www.free-icons-download.net/images/small-down-arrow-icon-15593.png");
+  background-repeat: no-repeat;
+  background-size: 16px 17px;
+  background-position: right;
+  background-origin: content-box;
+}
 /*# sourceMappingURL=styles.css.map */

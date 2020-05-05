@@ -1,14 +1,23 @@
 <body>
   <nav class="navbar navbar-dark bg-none navbar-expand-lg fixed-top">
     <a href="#" class="navbar-brand"><img width="42px" src="assets/img/lifeseed_bold_white.svg" alt="lifeseed"></a>
-    <span class="text-white">{{currentUser.firstName}}</span>
+    <!-- <span class="text-white">{{currentUser.firstName}}</span> -->
     <button class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarCollapse">
       <ul class="navbar-nav ml-auto">
         <li class="navbar-item">
+          <a routerLink="/home" *ngIf="currentUser" class="nav-link">Home</a>
+        </li>
+        <li class="navbar-item">
           <a routerLink="/login" *ngIf="!currentUser" class="nav-link">Login</a>
+        </li>
+        <li class="navbar-item">
+          <a routerLink="/scout7" *ngIf="currentUser" class="nav-link">Scout 7</a>
+        </li>
+        <li class="navbar-item">
+          <a routerLink="/person" *ngIf="currentUser" class="nav-link">Lifeseeds</a>
         </li>
         <li class="navbar-item">
           <a routerLink="/register" *ngIf="!currentUser" class="nav-link">Connect</a>

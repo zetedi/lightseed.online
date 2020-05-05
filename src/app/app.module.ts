@@ -7,6 +7,7 @@ import { SharedModule } from './shared/shared.module';
 import { CoreModule } from './core/core.module';
 import { OrdersModule } from './orders/orders.module';
 import { HomeModule } from './home/home.module';
+import { PersonModule } from './person/person.module';
 import { RegisterModule } from './register/register.module';
 import { LoginModule } from './login/login.module';
 import { LifetreesModule } from './lifetrees/lifetrees.module';
@@ -30,6 +31,7 @@ import { LoginComponent } from './login/login.component';
     HttpClientModule,
     LoginModule,    
     HomeModule,
+    PersonModule,
     OrdersModule,
     LifetreesModule,
     RegisterModule],
