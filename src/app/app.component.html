@@ -8,34 +8,34 @@
     <div class="collapse navbar-collapse" id="navbarCollapse">
       <ul class="navbar-nav ml-auto">
         <li class="navbar-item">
-          <a routerLink="/home" *ngIf="currentUser" class="nav-link">Home</a>
+          <a routerLink="/home" *ngIf="currentUser" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse">Home</a>
         </li>
         <li class="navbar-item">
-          <a routerLink="/login" *ngIf="!currentUser" class="nav-link">Login</a>
+          <a routerLink="/login" *ngIf="!currentUser" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse">Login</a>
         </li>
         <li class="navbar-item">
-          <a routerLink="/scout7" *ngIf="currentUser" class="nav-link">Scout 7</a>
+          <a routerLink="/scout7" *ngIf="currentUser" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse">Scout 7</a>
         </li>
         <li class="navbar-item">
-          <a routerLink="/person" *ngIf="currentUser" class="nav-link">Lifeseeds</a>
+          <a routerLink="/person" *ngIf="currentUser" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse">Lifeseeds</a>
         </li>
         <li class="navbar-item">
-          <a routerLink="/register" *ngIf="!currentUser" class="nav-link">Connect</a>
+          <a routerLink="/register" *ngIf="!currentUser" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse">Connect</a>
         </li>
         <li class="navbar-item">
-          <a routerLink="/lifetrees" *ngIf="currentUser" class="nav-link">Lifetrees</a>
+          <a routerLink="/lifetrees" *ngIf="currentUser" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse">Lifetrees</a>
         </li>
         <li class="navbar-item">
-          <a routerLink="/map" *ngIf="currentUser" class="nav-link">Map</a>
+          <a routerLink="/map" *ngIf="currentUser" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse">Map</a>
         </li>
         <li class="navbar-item">
-          <a routerLink="#" *ngIf="currentUser" class="nav-link">FAQ</a>
+          <a routerLink="#" *ngIf="currentUser" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse">FAQ</a>
         </li>
         <li class="navbar-item">
-          <a routerLink="#" *ngIf="currentUser" (click)="logout()" class="nav-link">Logout</a>
+          <a routerLink="#" *ngIf="currentUser" (click)="logout()" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse">Logout</a>
         </li>
         <li class="navbar-item">
-          <a routerLink="#" style="white-space: nowrap;" class="nav-link"><span class="flag-icon flag-icon-us"></span>
+          <a routerLink="#" style="white-space: nowrap;" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse"><span class="flag-icon flag-icon-us"></span>
             English</a>
         </li>
       </ul>
