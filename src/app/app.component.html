@@ -20,7 +20,7 @@
           <a routerLink="/person" *ngIf="currentUser" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse">Lifeseeds</a>
         </li>
         <li class="navbar-item">
-          <a routerLink="/register" *ngIf="!currentUser" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse">Connect</a>
+          <a routerLink="/register" *ngIf="currentUser" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse">Connect</a>
         </li>
         <li class="navbar-item">
           <a routerLink="/lifetrees" *ngIf="currentUser" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse">Lifetrees</a>
