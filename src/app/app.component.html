@@ -11,7 +11,7 @@
           <a routerLink="/home" *ngIf="currentUser" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse">Home</a>
         </li>
         <li class="navbar-item">
-          <a routerLink="/login" *ngIf="!currentUser" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse">Login</a>
+          <!-- <a routerLink="/login" *ngIf="!currentUser" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse">Login</a> -->
         </li>
         <li class="navbar-item">
           <a routerLink="/scout7" *ngIf="currentUser" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse">Scout 7</a>
@@ -20,7 +20,7 @@
           <a routerLink="/person" *ngIf="currentUser" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse">Lifeseeds</a>
         </li>
         <li class="navbar-item">
-          <a routerLink="/register" *ngIf="!currentUser" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse">Connect</a>
+          <a routerLink="/register" *ngIf="currentUser" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse">Connect</a>
         </li>
         <li class="navbar-item">
           <a routerLink="/lifetrees" *ngIf="currentUser" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse">Lifetrees</a>
