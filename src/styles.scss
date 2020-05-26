@@ -105,9 +105,14 @@ li a:hover {
 
 .cover-caption {
     width: 100%;
-    position: relative;
-    background-color: rgba(0,0,0,0.7);
+    position: fixed;
+    // background-color: rgba(0,0,0,0.7); //todo
     // z-index: 1;
+}
+
+.admin-background {
+    background-color: rgba(0,0,0,0.42);
+    border-radius: .7em;
 }
 
 select {

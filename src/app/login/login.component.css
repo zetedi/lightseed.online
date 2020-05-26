@@ -1,4 +1,4 @@
-/* only used for background overlay not needed for centering */
+/* only used for background overlay not needed for centering
 form:before {
     content: '';
     height: 100%;
@@ -9,4 +9,4 @@ form:before {
     background-color: rgba(0,0,0,0.3);
     z-index: -1;
     border-radius: 10px;
-}
+} */
