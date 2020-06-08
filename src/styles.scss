@@ -32,7 +32,7 @@ html, body {
 
 body {
     // background: #000 url('./assets/img/forest.jpg');    
-    background: #222 url('https://source.unsplash.com/1920x1080/?forest') center center no-repeat;
+    // background: #222 url('https://source.unsplash.com/1920x1080/?forest') center center no-repeat;
     background-size: cover;
     height: 100vh;
 }
@@ -113,6 +113,21 @@ li a:hover {
 .admin-background {
     background-color: rgba(0,0,0,0.42);
     border-radius: .7em;
+}
+
+.container {
+    animation: fadeIn 1s;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20%);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 select {
