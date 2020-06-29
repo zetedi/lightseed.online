@@ -23,13 +23,19 @@ export class MapComponent implements OnInit {
   longitude3: number = 5.252158;
 
   map: any;
+  attribution = new ol.control.Attribution({
+    collapsible: false
+  });
 
   ngOnInit() {
     this.map = new ol.Map({
+      controls: ol.control.defaults({ attribution: false }).extend([this.attribution]),
       target: 'map',
       layers: [
         new ol.layer.Tile({
-          source: new ol.source.OSM()
+          source: new ol.source.OSM({
+            attributions: [ol.source.OSM.ATTRIBUTION],
+          })
         })
       ],
       view: new ol.View({
