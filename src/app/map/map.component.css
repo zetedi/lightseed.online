@@ -1,6 +1,16 @@
-.map {
+.map-container {
     padding-top: 55px;
-    height: 99vh;
-    width: 100vw;
+}
+.map {
+    height: 90%;
+    width: 100%;
     text-align: center;
+}
+
+.leaflet-control-layers-list {
+    text-align: left !important;
+}
+
+.leaflet-control-container {
+    text-align: left !important;
 }

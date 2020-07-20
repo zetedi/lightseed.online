@@ -12,6 +12,7 @@ import { RegisterModule } from './register/register.module';
 import { LoginModule } from './login/login.module';
 import { LifetreesModule } from './lifetrees/lifetrees.module';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { LeafletModule } from '@asymmetrik/ngx-leaflet';
 import { fakeBackendProvider } from './_helpers';
 import { JwtInterceptor, ErrorInterceptor } from './_helpers';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -20,6 +21,7 @@ import { MapComponent } from './map/map.component';
 import { HomeComponent } from './home/home.component';
 import { RegisterComponent } from './register/register.component';
 import { LoginComponent } from './login/login.component';
+import { MapModule } from './map/map.module';
 
 @NgModule({
   imports: [
@@ -29,11 +31,13 @@ import { LoginComponent } from './login/login.component';
     AppRoutingModule,
     ReactiveFormsModule,
     HttpClientModule,
+    LeafletModule,
     LoginModule,    
     HomeModule,
     PersonModule,
     OrdersModule,
     LifetreesModule,
+    MapModule,
     RegisterModule],
   declarations: [
     AppComponent,
