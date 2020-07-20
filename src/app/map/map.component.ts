@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
+import { icon, latLng, marker, polyline, tileLayer } from 'leaflet';
 
-declare var ol: any;
+// declare var ol: any;
 
 @Component({
   selector: 'app-map',
@@ -8,13 +9,10 @@ declare var ol: any;
   styleUrls: ['./map.component.css']
 })
 
-
 export class MapComponent implements OnInit {
 
-  constructor() { }
-
-  clat: number = 49.49;
-  clon: number = 11.49;
+  clat: number = 44.49;
+  clon: number = 4.49;
 
   latitude1: number = 50.8355;
   longitude1: number = 4.4035;
@@ -22,71 +20,61 @@ export class MapComponent implements OnInit {
   latitude3: number = 50.917434;
   longitude3: number = 5.252158;
 
-  map: any;
-  attribution = new ol.control.Attribution({
-    collapsible: false
+  // Define our base layers so we can reference them multiple times
+  streetMaps = tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    detectRetina: true,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  });
+  wMaps = tileLayer('http://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png', {
+    detectRetina: true,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   });
 
+  // Marker for the top of Mt. Ranier
+  lifetree1 = marker([ this.latitude1, this.longitude1 ], {
+    icon: icon({
+      iconSize: [ 49, 49 ],
+      iconAnchor: [ 13, 41 ],
+      popupAnchor: [ 10, -42],
+      iconUrl: '/assets/img/lifetree1_s.jpg',
+      shadowUrl: 'leaflet/marker-shadow.png'
+    })
+  }).bindPopup('This is <b>Mahameru</b>');
+
+  lifetree3 = marker([ this.latitude3, this.longitude3 ], {
+    icon: icon({
+      iconSize: [ 49, 49 ],
+      iconAnchor: [ 13, 41 ],
+      popupAnchor: [ 10, -42],
+      iconUrl: '/assets/img/lifetree3_s.jpg',
+      shadowUrl: 'leaflet/marker-shadow.png'
+    })
+  }).bindPopup('This is <b>Little Bird</b>');
+
+
+   // Layers control object with our two base layers and the three overlay layers
+   layersControl = {
+    baseLayers: {
+      'Street Maps': this.streetMaps,
+      'Wikimedia Maps': this.wMaps
+    },
+    overlays: {
+      'Mahameru': this.lifetree1,
+      'Little Bird': this.lifetree3
+    }
+  };
+
+  options = {
+    layers: [ this.streetMaps, this.lifetree1, this.lifetree3],
+    zoom: 4.5,
+    center: latLng([ this.clat, this.clon ])
+  };
+
+  constructor() { }
+
   ngOnInit() {
-    this.map = new ol.Map({
-      controls: ol.control.defaults({ attribution: false }).extend([this.attribution]),
-      target: 'map',
-      layers: [
-        new ol.layer.Tile({
-          source: new ol.source.OSM({
-            attributions: [ol.source.OSM.ATTRIBUTION],
-          })
-        })
-      ],
-      view: new ol.View({
-        center: ol.proj.fromLonLat([this.clon, this.clat]),
-        zoom: 7
-      })
-    });
-    this.addPoint(this.latitude1, this.longitude1, "/assets/img/lifetree1_s.jpg");
-    this.addPoint(this.latitude3, this.longitude3, "/assets/img/lifetree3_s.jpg");
 
-    // var element = document.getElementById('popup');
-
-    // var popup = new ol.Overlay({
-    //   element: element,
-    //   positioning: 'bottom-center',
-    //   stopEvent: false,
-    //   offset: [0, -50]
-    // });
-    // this.map.addOverlay(popup);
-
-    // // display popup on click
-    // this.map.on('click', function (evt) {
-    //   var feature = this.map.forEachFeatureAtPixel(evt.pixel,
-    //     function (feature) {
-    //       return feature;
-    //     });
-    //   if (feature) {
-    //     var coordinates = feature.getGeometry().getCoordinates();
-    //     popup.setPosition(coordinates);
-    //     console.log("Coordinates: " + coordinates);
-    //   }
-    // });
   }
 
-  addPoint(lat: number, lng: number, img: string) {
-    var vectorLayer = new ol.layer.Vector({
-      source: new ol.source.Vector({
-        features: [new ol.Feature({
-          geometry: new ol.geom.Point(ol.proj.transform([lng, lat], 'EPSG:4326', 'EPSG:3857')),
-        })]
-      }),
-      style: new ol.style.Style({
-        image: new ol.style.Icon({
-          anchor: [0.5, 0.5],
-          anchorXUnits: "fraction",
-          anchorYUnits: "fraction",
-          src: img
-        })
-      })
-    });
-    this.map.addLayer(vectorLayer);
-  }
 }
 
