@@ -27,6 +27,12 @@ export class MapComponent implements OnInit {
   latitude4: number = 32.800373;
   longitude4: number = -17.041834;
 
+  latitude5: number = 47.501433;
+  longitude5: number = 19.037258;
+
+  latitude6: number = 47.488396;
+  longitude6: number = 19.065012;
+
   // Define our base layers so we can reference them multiple times
   streetMaps = tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     detectRetina: true,
@@ -37,81 +43,53 @@ export class MapComponent implements OnInit {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   });
 
-  lifetree0 = marker([ this.latitude0, this.longitude0 ], {
-    icon: icon({
-      iconSize: [ 77, 77 ],
-      iconAnchor: [ 12, 42 ],
-      popupAnchor: [ 42, -42],
-      iconUrl: '/assets/img/lifetree0.png', //a tree in a 1749px circle with 49px width white stroke on a 2048px^2 page
-      shadowUrl: 'leaflet/marker-shadow.png'
-    })
-  }).bindPopup('<div style="text-align: center;"><b>Mahameru</b></div><br/><div style="text-align: center;"><img width="297px" src="/assets/img/lifetree0.png"/></div>');
+  lifetree0 = this.lifeseed(0, 'Mahameru', this.latitude0, this.longitude0)
+  lifetree1 = this.lifeseed(1, 'Phoenix', this.latitude1, this.longitude1);
+  lifetree2 = this.lifeseed(2, 'Le petit prince', this.latitude2, this.longitude2);
+  lifetree3 = this.lifeseed(3, 'Little Bird', this.latitude3, this.longitude3);
+  lifetree4 = this.lifeseed(0, 'Madeira', this.latitude4, this.longitude4);
+  lifetree5 = this.lifeseed(0, 'Hobbit', this.latitude5, this.longitude5);
+  lifetree6 = this.lifeseed(0, 'Maya', this.latitude6, this.longitude6);
 
-  lifetree1 = marker([ this.latitude1, this.longitude1 ], {
-    icon: icon({
-      iconSize: [ 77, 77 ],
-      iconAnchor: [ 12, 42 ],
-      popupAnchor: [ 42, -42],
-      iconUrl: '/assets/img/lifetree1.png', //a tree in a 1749px circle with 49px width white stroke on a 2048px^2 page
-      shadowUrl: 'leaflet/marker-shadow.png'
-    })
-  }).bindPopup('<div style="text-align: center;"><b>Phoenix</b></div><br/><div style="text-align: center;"><img width="297px" src="/assets/img/lifetree1.png"/></div>');
-
-  lifetree2 = marker([ this.latitude2, this.longitude2 ], {
-    icon: icon({
-      iconSize: [ 77, 77 ],
-      iconAnchor: [ 12, 42 ],
-      popupAnchor: [ 42, -42],
-      iconUrl: '/assets/img/lifetree2.png', //a tree in a 1749px circle with 49px width white stroke on a 2048px^2 page
-      shadowUrl: 'leaflet/marker-shadow.png'
-    })
-  }).bindPopup('<div style="text-align: center;"><b>Le petit prince</b></div><br/><div style="text-align: center;"><img width="297px" src="/assets/img/lifetree2.png"/></div>');
-
-  lifetree3 = marker([ this.latitude3, this.longitude3 ], {
-    icon: icon({
-      iconSize: [ 77, 77 ],
-      iconAnchor: [ 12, 42 ],
-      popupAnchor: [ 42, -42],
-      iconUrl: '/assets/img/lifetree_inge.png',
-      shadowUrl: 'leaflet/marker-shadow.png'
-    })
-  }).bindPopup('<div style="text-align: center;"><b>Little Bird</b></div><br/><div style="text-align: center;"><img width="297px" src="/assets/img/lifetree_inge.png"/></div>');
-
-  lifetree4 = marker([ this.latitude4, this.longitude4 ], {
-    icon: icon({
-      iconSize: [ 77, 77 ],
-      iconAnchor: [ 12, 42 ],
-      popupAnchor: [ 42, -42],
-      iconUrl: '/assets/img/lifetree0.png',
-      shadowUrl: 'leaflet/marker-shadow.png'
-    })
-  }).bindPopup('<div style="text-align: center;"><b>Madeira</b></div><br/><div style="text-align: center;"><img width="297px" src="/assets/img/lifetree0.png"/></div>');
-
-   // Layers control object with our two base layers and the three overlay layers
-   layersControl = {
+  // Layers control object with our two base layers and the tree overlay layers
+  leafletLayersControl = {
     baseLayers: {
       'Street Maps': this.streetMaps,
       'Wikimedia Maps': this.wMaps
     },
-    overlays: {
+    overlays: {      
       'Mahameru': this.lifetree0,
       'Phoenix': this.lifetree1,
-      'Le petite prince': this.lifetree2,
+      'Le petite prince': this.lifetree2,      
       'Little Bird': this.lifetree3,
-      'Madeira': this.lifetree4
+      'Madeira': this.lifetree4,
+      'Hobbit': this.lifetree5,
+      'Maya': this.lifetree6
     }
   };
 
-  options = {
-    layers: [ this.streetMaps, this.lifetree0, this.lifetree1, this.lifetree2, this.lifetree3, this.lifetree4],
+  leafletOptions = {
+    layers: [this.streetMaps, this.lifetree0, this.lifetree1, this.lifetree2, this.lifetree3, this.lifetree4, this.lifetree5, this.lifetree6],
     zoom: 4.5,
-    center: latLng([ this.center_lat, this.center_lon ])
+    center: latLng([this.center_lat, this.center_lon])
   };
 
   constructor() { }
 
   ngOnInit() {
 
+  }
+
+  lifeseed(id, name, latitude, longitude) {
+    return marker([latitude, longitude], {
+      icon: icon({
+        iconSize: [77, 77],
+        iconAnchor: [12, 42],
+        popupAnchor: [42, -42],
+        iconUrl: '/assets/img/lifetree' + id + '.png',
+        shadowUrl: 'leaflet/marker-shadow.png'
+      })
+    }).bindPopup('<div style="text-align: center;"><b>' + name + '</b></div><br/><div style="text-align: center;"><img width="297px" src="/assets/img/lifetree' + id + '.png"/></div>');
   }
 
 }
