@@ -43,13 +43,13 @@ export class MapComponent implements OnInit {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   });
 
-  lifetree0 = this.lifeseed(0, 'Mahameru', this.latitude0, this.longitude0)
+  lifetree0 = this.lifeseed0(0, 'Mahameru', this.latitude0, this.longitude0)
   lifetree1 = this.lifeseed(1, 'Phoenix', this.latitude1, this.longitude1);
   lifetree2 = this.lifeseed(2, 'Le petit prince', this.latitude2, this.longitude2);
   lifetree3 = this.lifeseed(3, 'Little Bird', this.latitude3, this.longitude3);
-  lifetree4 = this.lifeseed(0, 'Madeira', this.latitude4, this.longitude4);
-  lifetree5 = this.lifeseed(0, 'Hobbit', this.latitude5, this.longitude5);
-  lifetree6 = this.lifeseed(0, 'Maya', this.latitude6, this.longitude6);
+  lifetree4 = this.lifeseed0(0, 'Madeira', this.latitude4, this.longitude4);
+  lifetree5 = this.lifeseed0(0, 'Hobbit', this.latitude5, this.longitude5);
+  lifetree6 = this.lifeseed0(0, 'Maya', this.latitude6, this.longitude6);
 
   // Layers control object with our two base layers and the tree overlay layers
   leafletLayersControl = {
@@ -80,13 +80,25 @@ export class MapComponent implements OnInit {
 
   }
 
-  lifeseed(id, name, latitude, longitude) {
+  lifeseed(id, name, latitude, longitude) {    
     return marker([latitude, longitude], {
       icon: icon({
         iconSize: [77, 77],
         iconAnchor: [12, 42],
         popupAnchor: [42, -42],
         iconUrl: '/assets/img/lifetree' + id + '.png',
+        shadowUrl: 'leaflet/marker-shadow.png'
+      })
+    }).bindPopup('<div style="text-align: center;"><b>' + name + '</b></div><br/><div style="text-align: center;"><img width="297px" src="/assets/img/lifetree' + id + '.png"/></div>');
+  }
+
+  lifeseed0(id, name, latitude, longitude) {    
+    return marker([latitude, longitude], {
+      icon: icon({
+        iconSize: [49, 49],
+        iconAnchor: [12, 42],
+        popupAnchor: [42, -42],
+        iconUrl: '/assets/img/lifetree' + id + '.svg',
         shadowUrl: 'leaflet/marker-shadow.png'
       })
     }).bindPopup('<div style="text-align: center;"><b>' + name + '</b></div><br/><div style="text-align: center;"><img width="297px" src="/assets/img/lifetree' + id + '.png"/></div>');
