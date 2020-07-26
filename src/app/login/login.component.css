@@ -10,3 +10,7 @@ form:before {
     z-index: -1;
     border-radius: 10px;
 } */
+
+section {
+    background: #222 url('https://source.unsplash.com/1920x1080/?forest') center center no-repeat;
+}

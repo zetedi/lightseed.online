@@ -98,7 +98,7 @@ export class MapComponent implements OnInit {
         iconSize: [49, 49],
         iconAnchor: [12, 42],
         popupAnchor: [42, -42],
-        iconUrl: '/assets/img/lifetree' + id + '.png',
+        iconUrl: '/assets/img/lifetree' + id + '.svg',
         shadowUrl: 'leaflet/marker-shadow.png'
       })
     }).bindPopup('<div style="text-align: center;"><b>' + name + '</b></div><br/><div style="text-align: center;"><img width="297px" src="/assets/img/lifetree' + id + '.png"/></div>');
