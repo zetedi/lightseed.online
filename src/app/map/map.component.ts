@@ -9,8 +9,13 @@ import { icon, latLng, marker, polyline, tileLayer } from 'leaflet';
 
 export class MapComponent implements OnInit {
 
-  center_lat: number = 44.49;
-  center_lon: number = 4.49;
+  // Longeval centre (~)
+  // center_lat: number = 44.49;
+  // center_lon: number = 4.49;
+
+  // Erlangen centre (~)
+  center_lat: number = 49.49;
+  center_lon: number = 11.07;
 
   latitude0: number = 50.8355;
   longitude0: number = 4.4035;
@@ -33,6 +38,12 @@ export class MapComponent implements OnInit {
   latitude6: number = 47.488396;
   longitude6: number = 19.065012;
 
+  latitude7: number = 47.575019;
+  longitude7: number = 18.897243;
+
+  latitude8: number = 49.607740;
+  longitude8: number = 6.130938;
+
   // Define our base layers so we can reference them multiple times
   streetMaps = tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     detectRetina: true,
@@ -50,6 +61,8 @@ export class MapComponent implements OnInit {
   lifetree4 = this.lifeseed0(0, 'Madeira', this.latitude4, this.longitude4);
   lifetree5 = this.lifeseed0(0, 'Hobbit', this.latitude5, this.longitude5);
   lifetree6 = this.lifeseed0(0, 'Maya', this.latitude6, this.longitude6);
+  lifetree7 = this.lifeseed0(0, 'Opame', this.latitude7, this.longitude7);
+  lifetree8 = this.lifeseed0(0, 'Lumină', this.latitude7, this.longitude8);
 
   // Layers control object with our two base layers and the tree overlay layers
   leafletLayersControl = {
@@ -57,20 +70,22 @@ export class MapComponent implements OnInit {
       'Street Maps': this.streetMaps,
       'Wikimedia Maps': this.wMaps
     },
-    overlays: {      
+    overlays: {
       'Mahameru': this.lifetree0,
       'Phoenix': this.lifetree1,
-      'Le petite prince': this.lifetree2,      
+      'Le petite prince': this.lifetree2,
       'Little Bird': this.lifetree3,
       'Madeira': this.lifetree4,
       'Hobbit': this.lifetree5,
-      'Maya': this.lifetree6
+      'Maya': this.lifetree6,
+      'Opame': this.lifetree7,
+      'Lumină': this.lifetree7
     }
   };
 
   leafletOptions = {
-    layers: [this.streetMaps, this.lifetree0, this.lifetree1, this.lifetree2, this.lifetree3, this.lifetree4, this.lifetree5, this.lifetree6],
-    zoom: 4.5,
+    layers: [this.streetMaps, this.lifetree0, this.lifetree1, this.lifetree2, this.lifetree3, this.lifetree4, this.lifetree5, this.lifetree6, this.lifetree7, this.lifetree8],
+    zoom: 4.7,
     center: latLng([this.center_lat, this.center_lon])
   };
 
@@ -80,7 +95,7 @@ export class MapComponent implements OnInit {
 
   }
 
-  lifeseed(id, name, latitude, longitude) {    
+  lifeseed(id, name, latitude, longitude) {
     return marker([latitude, longitude], {
       icon: icon({
         iconSize: [77, 77],
@@ -92,7 +107,7 @@ export class MapComponent implements OnInit {
     }).bindPopup('<div style="text-align: center;"><b>' + name + '</b></div><br/><div style="text-align: center;"><img width="297px" src="/assets/img/lifetree' + id + '.png"/></div>');
   }
 
-  lifeseed0(id, name, latitude, longitude) {    
+  lifeseed0(id, name, latitude, longitude) {
     return marker([latitude, longitude], {
       icon: icon({
         iconSize: [49, 49],
