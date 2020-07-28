@@ -1,7 +1,9 @@
 <body>
   <nav class="navbar navbar-dark bg-dark navbar-expand-lg fixed-top">
     <!-- <a href="#" class="navbar-brand"><img width="42px" src="assets/img/lifeseed_bold_white.svg" alt="lifeseed"></a> -->
-    <a href="#" class="navbar-brand"><img width="42px" src="assets/img/lifetree0.svg" alt="lifeseed"></a>
+    <a href="." routerlink="." ng-reflect-router-link="." class="navbar-brand"><img width="42px" src="assets/img/lifetree0.svg" alt="lifeseed"></a>
+    <!-- <span class="text-white">{{currentUser.firstName}}</span> -->
+    <h1 id="mission">we tend to one lifeTree</h1>
     <!-- <span class="text-white">{{currentUser.firstName}}</span> -->
     <button class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
       <span class="navbar-toggler-icon"></span>
@@ -27,7 +29,7 @@
           <a routerLink="/lifetrees" *ngIf="currentUser" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse">Lifetrees</a>
         </li>
         <li class="navbar-item">
-          <a routerLink="/map" *ngIf="currentUser" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse">Map</a>
+          <a routerLink="/map" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse">Map</a>
         </li>
         <li class="navbar-item">
           <a routerLink="#" *ngIf="currentUser" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse">FAQ</a>
@@ -36,7 +38,7 @@
           <a routerLink="#" *ngIf="currentUser" (click)="logout()" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse">Logout</a>
         </li>
         <li class="navbar-item">
-          <a routerLink="/" style="white-space: nowrap;" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse"><span class="flag-icon flag-icon-us"></span>
+          <a style="white-space: nowrap;" class="nav-link" data-toggle="collapse" data-target="#navbarCollapse"><span class="flag-icon flag-icon-gb"></span>
             English</a>
         </li>
       </ul>
