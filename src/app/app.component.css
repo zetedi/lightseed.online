@@ -8,3 +8,17 @@
     padding: .3em;
     float: right;
 }
+
+#mission {
+    color: rgba(255,49,49,1) !important;
+    /* margin-top: 7px;    */
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    vertical-align: text-bottom;
+    padding-top: 20px;
+    margin-bottom: -7px;
+    text-align: left;
+    /* padding: 4.8px; */
+    /* margin: 0 0 0 11.2px; */
+}
