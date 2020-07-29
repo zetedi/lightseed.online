@@ -47,8 +47,10 @@ export class MapComponent implements OnInit {
   // Define our base layers so we can reference them multiple times
   streetMaps = tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     detectRetina: true,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 10
   });
+  
   wMaps = tileLayer('http://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png', {
     detectRetina: true,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -62,7 +64,7 @@ export class MapComponent implements OnInit {
   lifetree5 = this.lifeseed0(0, 'Hobbit', this.latitude5, this.longitude5);
   lifetree6 = this.lifeseed0(0, 'Maya', this.latitude6, this.longitude6);
   lifetree7 = this.lifeseed0(0, 'Opame', this.latitude7, this.longitude7);
-  lifetree8 = this.lifeseed0(0, 'Lumină', this.latitude7, this.longitude8);
+  lifetree8 = this.lifeseed0(0, 'Lumină', this.latitude8, this.longitude8);
 
   // Layers control object with our two base layers and the tree overlay layers
   leafletLayersControl = {
