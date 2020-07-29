@@ -44,6 +44,9 @@ export class MapComponent implements OnInit {
   latitude8: number = 49.607740;
   longitude8: number = 6.130938;
 
+  latitude9: number = 50.815643;
+  longitude9: number = 4.360744;
+
   // Define our base layers so we can reference them multiple times
   streetMaps = tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     detectRetina: true,
@@ -65,6 +68,7 @@ export class MapComponent implements OnInit {
   lifetree6 = this.lifeseed0(0, 'Maya', this.latitude6, this.longitude6);
   lifetree7 = this.lifeseed0(0, 'Opame', this.latitude7, this.longitude7);
   lifetree8 = this.lifeseed0(0, 'Lumină', this.latitude8, this.longitude8);
+  lifetree9 = this.lifeseed0(0, 'Chiquita boom-boom', this.latitude9, this.longitude9);
 
   // Layers control object with our two base layers and the tree overlay layers
   leafletLayersControl = {
@@ -81,12 +85,13 @@ export class MapComponent implements OnInit {
       'Hobbit': this.lifetree5,
       'Maya': this.lifetree6,
       'Opame': this.lifetree7,
-      'Lumină': this.lifetree7
+      'Lumină': this.lifetree8,
+      'Chiquita boom-boom': this.lifetree9
     }
   };
 
   leafletOptions = {
-    layers: [this.streetMaps, this.lifetree0, this.lifetree1, this.lifetree2, this.lifetree3, this.lifetree4, this.lifetree5, this.lifetree6, this.lifetree7, this.lifetree8],
+    layers: [this.streetMaps, this.lifetree0, this.lifetree1, this.lifetree2, this.lifetree3, this.lifetree4, this.lifetree5, this.lifetree6, this.lifetree7, this.lifetree8, this.lifetree9],
     zoom: 4.7,
     center: latLng([this.center_lat, this.center_lon])
   };
