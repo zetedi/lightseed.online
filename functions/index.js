@@ -5,10 +5,6 @@ const FBAuth = require("./util/fbAuth");
 const { getAllLights, createLight } = require("./handlers/lights");
 const { login, signup } = require("./handlers/lifeseeds");
 
-const {
-  _refWithOptions,
-} = require("firebase-functions/lib/providers/database");
-
 //Lights routes
 app.get("/lights", getAllLights);
 app.post("/light", FBAuth, createLight);

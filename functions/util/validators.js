@@ -11,18 +11,18 @@ const isEmpty = (string) => {
 exports.validateSignUpData = (data) => {
   let errors = {};
 
-  if (isEmpty(newLifeseed.email)) {
+  if (isEmpty(data.email)) {
     errors.email = "Must not be empty";
-  } else if (isEmail(newLifeseed.email)) {
+  } else if (!isEmail(data.email)) {
     errors.email = "Must be a valid email address";
   }
 
-  if (isEmpty(newLifeseed.password)) errors.password = "Must not be empty";
+  if (isEmpty(data.password)) errors.password = "Must not be empty";
 
-  if (newLifeseed.password !== newLifeseed.confirmPassword)
+  if (data.password !== data.confirmPassword)
     errors.confirmPassword = "Passwords must match";
 
-  if (isEmpty(newLifeseed.handle)) errors.handle = "Must not be empty";
+  if (isEmpty(data.handle)) errors.handle = "Must not be empty";
 
   return {
     errors,
@@ -33,8 +33,8 @@ exports.validateSignUpData = (data) => {
 exports.validateLoginData = (data) => {
   let errors = {};
 
-  if (isEmpty(lifeseed.email)) errors.email = "Must not be empty";
-  if (isEmpty(lifeseed.password)) errors.password = "Must not be empty";
+  if (isEmpty(data.email)) errors.email = "Must not be empty";
+  if (isEmpty(data.password)) errors.password = "Must not be empty";
 
   return {
     errors,
