@@ -1,0 +1,169 @@
+{
+	"info": {
+		"_postman_id": "8ac2ec75-5a17-41a3-a9fb-4213d5e6ca47",
+		"name": "light-local",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "api/lights",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:5000/light-5197c/us-central1/api/lights",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"light-5197c",
+						"us-central1",
+						"api",
+						"lights"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "api/light",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjQ5ZTg4YzUzNzYxOTk2YTczNjIzZjE5MWQ1MTJkMmI0N2RmODAyYTEiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vbGlnaHQtNTE5N2MiLCJhdWQiOiJsaWdodC01MTk3YyIsImF1dGhfdGltZSI6MTU5NzY3MTg0MCwidXNlcl9pZCI6Im9uSFAwQmVZa0FjMkV0c0VNaVRSOFloM1pIUDIiLCJzdWIiOiJvbkhQMEJlWWtBYzJFdHNFTWlUUjhZaDNaSFAyIiwiaWF0IjoxNTk3NjcxODQwLCJleHAiOjE1OTc2NzU0NDAsImVtYWlsIjoiZGl2eWFAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJmaXJlYmFzZSI6eyJpZGVudGl0aWVzIjp7ImVtYWlsIjpbImRpdnlhQGdtYWlsLmNvbSJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.hYoQF2N-Wa3YTR04A8ghUWDVeSlcctoX0isHGfca0w4RkYs4BUwM0ysdGY1SGQggKh_Qv1LRwtsNLohAx1M02MABzuGfSmMNQhKMIJmf86ouHdRJhsMUTcxDH3lNX4Wuf0eEf4bcfxWLJzUJpPZuWHgB_5HRLIr-3tkwqz0E3K1TjqsZrb3cPozyhJQHmK7so0cUNg0M11RhMm7b7wvnjrfQ1n0Jza7aN6AYKBnpnYddWYuNKVvDYRExRk-x3P2nWneujFzZyDWCHbHjHc4WcJkfnjyiQFs2IJMaQE9AQm5xzxHXWG4EIizsTW7rLTJ1a3AfPXqqw0PZq_rwtxENkA",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": " {\r\n \t\"body\": \"First light\",\r\n \t\"lightseedHandle\": \"lightseed\"\r\n }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5000/light-5197c/europe-west3/api/light",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"light-5197c",
+						"europe-west3",
+						"api",
+						"light"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "api/signup",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\": \"lightseed@lightseed.online\",\r\n    \"password\": \"108108108\",\r\n    \"confirmPassword\": \"108108108\",\r\n    \"handle\": \"lightseed\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5000/light-5197c/europe-west3/api/signup",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"light-5197c",
+						"europe-west3",
+						"api",
+						"signup"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "api/login",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\": \"lightseed@lightseed.online\",\r\n    \"password\": \"108108108\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5000/light-5197c/europe-west3/api/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"light-5197c",
+						"europe-west3",
+						"api",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "auth api/login",
+			"request": {
+				"auth": {
+					"type": "bearer"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\": \"lightseed@lightseed.online\",\r\n    \"password\": \"10810810s8\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5000/light-5197c/europe-west3/api/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"light-5197c",
+						"europe-west3",
+						"api",
+						"login"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}

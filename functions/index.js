@@ -12,7 +12,7 @@ app.post("/light", FBAuth, createLight);
 //Lightseeds routes
 app.post("/signup", signup);
 app.post("/login", login);
-// app.post("/lightseed/setPrism", setPrism);
+app.post("/lightseed/setPrism", FBAuth, setPrism);
 
 exports.api = functions.region("europe-west3").https.onRequest(app);
 // exports.api = functions.https.onRequest(app);
