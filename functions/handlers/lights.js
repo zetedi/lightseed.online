@@ -9,7 +9,7 @@ exports.getAllLights = (req, res) => {
         lights.push({
           lightId: doc.id,
           body: doc.data().body,
-          lifeseedHandle: doc.data().lifeseedHandle,
+          lightseedHandle: doc.data().lightseedHandle,
           createdAt: doc.data().createdAt,
         });
       });
@@ -21,7 +21,7 @@ exports.getAllLights = (req, res) => {
 exports.createLight = (req, res) => {
   const newLight = {
     body: req.body.body,
-    lifeseedHandle: req.user.handle,
+    lightseedHandle: req.user.handle,
     createdAt: new Date().toISOString(),
   };
   db.collection("lights")

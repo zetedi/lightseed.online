@@ -18,7 +18,7 @@ module.exports = (req, res, next) => {
       req.user = decodedToken;
       console.log(decodedToken);
       return db
-        .collection("lifeseeds")
+        .collection("lightseeds")
         .where("userId", "==", req.user.uid)
         .limit(1)
         .get();
