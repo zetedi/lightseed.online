@@ -1,1 +1,3 @@
-# core-light
+# Light functions
+
+Firebase, Express, React
