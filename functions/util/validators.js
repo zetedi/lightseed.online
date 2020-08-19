@@ -41,3 +41,18 @@ exports.validateLoginData = (data) => {
     valid: Object.keys(errors).length === 0 ? true : false,
   };
 };
+
+exports.reduceLightseedDetails = (data) => {
+  let lightseedDetails = {};
+
+  if (!isEmpty(data.bio.trim())) lightseedDetails.bio = data.bio;
+  if (!isEmpty(data.website.trim())) {
+    // https://website.com
+    if (data.website.trim().substring(0, 4) !== "http") {
+      lightseedDetails.website = `http://${data.website.trim()}`;
+    } else lightseedDetails.website = data.website;
+  }
+  if (!isEmpty(data.location.trim())) lightseedDetails.location = data.location;
+
+  return lightseedDetails;
+};

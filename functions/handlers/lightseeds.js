@@ -2,7 +2,11 @@ const { admin, db } = require("../util/admin");
 const firebase = require("firebase");
 const config = require("../util/config");
 firebase.initializeApp(config);
-const { validateSignUpData, validateLoginData } = require("../util/validators");
+const {
+  validateSignUpData,
+  validateLoginData,
+  reduceLightseedDetails,
+} = require("../util/validators");
 exports.login = (req, res) => {
   const lightseed = {
     email: req.body.email,
@@ -91,8 +95,106 @@ exports.signup = (req, res) => {
     });
 };
 
-// Upload a prism for lightseed - https://github.com/mscdex/busboy
-exports.setPrism = (req, res) => {
+// Add lightseed details
+exports.addLightseedDetails = (req, res) => {
+  let lightseedDetails = reduceLightseedDetails(req.body);
+  console.log(lightseedDetails);
+  db.doc(`/lightseeds/${req.user.handle}`)
+    .update(lightseedDetails)
+    .then(() => {
+      return res.json({ message: "Details added successfully" });
+    })
+    .catch((err) => {
+      console.error(err);
+      return res.status(500).json({ error: err.code });
+    });
+};
+// Get any lightseed's details
+exports.getLightseedDetails = (req, res) => {
+  let lightseedData = {};
+  db.doc(`/users/${req.params.handle}`)
+    .get()
+    .then((doc) => {
+      if (doc.exists) {
+        lightseedData.lightseed = doc.data();
+        return db
+          .collection("lights")
+          .where("lightseedHandle", "==", req.params.handle)
+          .orderBy("createdAt", "desc")
+          .get();
+      } else {
+        return res.status(404).json({ errror: "Lightseed not found" });
+      }
+    })
+    .then((data) => {
+      lightseedData.lights = [];
+      data.forEach((doc) => {
+        lightseedData.lights.push({
+          body: doc.data().body,
+          createdAt: doc.data().createdAt,
+          lightseedHandle: doc.data().lightseedHandle,
+          userImage: doc.data().userImage,
+          seeCount: doc.data().seeCount,
+          reflectCount: doc.data().reflectCount,
+          lightId: doc.id,
+        });
+      });
+      return res.json(lightseedData);
+    })
+    .catch((err) => {
+      console.error(err);
+      return res.status(500).json({ error: err.code });
+    });
+};
+// Get own user details
+exports.getAuthenticatedUser = (req, res) => {
+  let lightseedData = {};
+  db.doc(`/lightseeds/${req.user.handle}`)
+    .get()
+    .then((doc) => {
+      if (doc.exists) {
+        lightseedData.credentials = doc.data();
+        return db
+          .collection("likes")
+          .where("lightseedHandle", "==", req.lightseed.handle)
+          .get();
+      }
+    })
+    .then((data) => {
+      lightseedData.likes = [];
+      data.forEach((doc) => {
+        lightseedData.likes.push(doc.data());
+      });
+      return db
+        .collection("notifications")
+        .where("recipient", "==", req.user.handle)
+        .orderBy("createdAt", "desc")
+        .limit(10)
+        .get();
+    })
+    .then((data) => {
+      lightseedData.notifications = [];
+      data.forEach((doc) => {
+        userData.notifications.push({
+          recipient: doc.data().recipient,
+          sender: doc.data().sender,
+          createdAt: doc.data().createdAt,
+          lightId: doc.data().lightId,
+          type: doc.data().type,
+          read: doc.data().read,
+          notificationId: doc.id,
+        });
+      });
+      return res.json(userData);
+    })
+    .catch((err) => {
+      console.error(err);
+      return res.status(500).json({ error: err.code });
+    });
+};
+
+// Upload an image for lightseed - https://github.com/mscdex/busboy
+exports.uploadImage = (req, res) => {
   const BusBoy = require("busboy");
   const path = require("path");
   const os = require("os");
@@ -100,7 +202,7 @@ exports.setPrism = (req, res) => {
 
   const busboy = new BusBoy({ headers: req.headers });
 
-  let prismToBeUploaded = {};
+  let imageToBeUploaded = {};
   let imageFileName;
   // String for image token
   //let generatedToken = uuid();
@@ -118,18 +220,18 @@ exports.setPrism = (req, res) => {
       Math.random() * 1000000000000
     ).toString()}.${imageExtension}`;
     const filepath = path.join(os.tmpdir(), imageFileName);
-    prismToBeUploaded = { filepath, mimetype };
+    imageToBeUploaded = { filepath, mimetype };
     file.pipe(fs.createWriteStream(filepath));
   });
   busboy.on("finish", () => {
     admin
       .storage()
       .bucket(config.storageBucket)
-      .upload(prismToBeUploaded.filepath, {
+      .upload(imageToBeUploaded.filepath, {
         resumable: false,
         metadata: {
           metadata: {
-            contentType: prismToBeUploaded.mimetype,
+            contentType: imageToBeUploaded.mimetype,
           },
         },
       })

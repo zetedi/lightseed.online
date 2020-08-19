@@ -3,7 +3,12 @@ const app = require("express")();
 
 const FBAuth = require("./util/fbAuth");
 const { getAllLights, createLight } = require("./handlers/lights");
-const { login, signup, setPrism } = require("./handlers/lightseeds");
+const {
+  login,
+  signup,
+  uploadImage,
+  addLightseedDetails,
+} = require("./handlers/lightseeds");
 
 //Lights routes
 app.get("/lights", getAllLights);
@@ -12,7 +17,8 @@ app.post("/light", FBAuth, createLight);
 //Lightseeds routes
 app.post("/signup", signup);
 app.post("/login", login);
-app.post("/lightseed/setPrism", FBAuth, setPrism);
+app.post("/lightseed/uploadImage", FBAuth, uploadImage);
+app.post("/lightseed", FBAuth, addLightseedDetails);
 
 exports.api = functions.region("europe-west3").https.onRequest(app);
 // exports.api = functions.https.onRequest(app);
