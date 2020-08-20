@@ -5,13 +5,13 @@ let db = {
       email: "lightseed@email.com",
       handle: "lightseed",
       createdAt: "2019-03-15T10:59:52.798Z",
-      imageUrl: "image/dsfsdkfghskdfgs/dgfdhfgdh",
+      prism: "image/dsfsdkfghskdfgs/dgfdhfgdh",
       bio: "Hello, my name is lightseed, nice to meet you",
-      website: "https://lightseed.com",
+      link: "https://lightseed.com",
       location: "Lonodn, UK",
     },
   ],
-  lightss: [
+  lights: [
     {
       lightseedHandle: "lightseed",
       body: "This is a sample light",
@@ -24,11 +24,11 @@ let db = {
     {
       lightseedHandle: "lightseed",
       lightId: "kdjsfgdksuufhgkdsufky",
-      body: "nice one mate!",
+      body: "Resonates with this light:",
       createdAt: "2019-03-15T10:59:52.798Z",
     },
   ],
-  notifications: [
+  minders: [
     {
       recipient: "lightseed",
       sender: "john",
@@ -46,10 +46,10 @@ const lightseedDetails = {
     email: "lightseed@email.com",
     handle: "lightseed",
     createdAt: "2019-03-15T10:59:52.798Z",
-    imageUrl: "image/dsfsdkfghskdfgs/dgfdhfgdh",
+    prism: "image/dsfsdkfghskdfgs/dgfdhfgdh",
     bio: "Hello, my name is lightseed, nice to meet you",
-    website: "https://lightseed.com",
-    location: "Lonodn, UK",
+    link: "https://lightseed.com",
+    location: "Longeval",
   },
   sees: [
     {

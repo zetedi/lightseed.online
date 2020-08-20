@@ -2,11 +2,13 @@ const { admin, db } = require("../util/admin");
 const firebase = require("firebase");
 const config = require("../util/config");
 firebase.initializeApp(config);
+
 const {
   validateSignUpData,
   validateLoginData,
   reduceLightseedDetails,
 } = require("../util/validators");
+
 exports.login = (req, res) => {
   const lightseed = {
     email: req.body.email,
@@ -133,7 +135,7 @@ exports.getLightseedDetails = (req, res) => {
           body: doc.data().body,
           createdAt: doc.data().createdAt,
           lightseedHandle: doc.data().lightseedHandle,
-          userImage: doc.data().userImage,
+          prism: doc.data().prism,
           seeCount: doc.data().seeCount,
           reflectCount: doc.data().reflectCount,
           lightId: doc.id,
@@ -146,8 +148,9 @@ exports.getLightseedDetails = (req, res) => {
       return res.status(500).json({ error: err.code });
     });
 };
-// Get own user details
-exports.getAuthenticatedUser = (req, res) => {
+
+// Get own lightseed details
+exports.getAuthenticatedLightseed = (req, res) => {
   let lightseedData = {};
   db.doc(`/lightseeds/${req.user.handle}`)
     .get()
@@ -156,7 +159,7 @@ exports.getAuthenticatedUser = (req, res) => {
         lightseedData.credentials = doc.data();
         return db
           .collection("likes")
-          .where("lightseedHandle", "==", req.lightseed.handle)
+          .where("lightseedHandle", "==", req.user.handle)
           .get();
       }
     })
@@ -175,7 +178,7 @@ exports.getAuthenticatedUser = (req, res) => {
     .then((data) => {
       lightseedData.notifications = [];
       data.forEach((doc) => {
-        userData.notifications.push({
+        lightseedData.notifications.push({
           recipient: doc.data().recipient,
           sender: doc.data().sender,
           createdAt: doc.data().createdAt,
@@ -185,7 +188,7 @@ exports.getAuthenticatedUser = (req, res) => {
           notificationId: doc.id,
         });
       });
-      return res.json(userData);
+      return res.json(lightseedData);
     })
     .catch((err) => {
       console.error(err);

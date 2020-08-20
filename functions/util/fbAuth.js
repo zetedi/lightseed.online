@@ -24,6 +24,7 @@ module.exports = (req, res, next) => {
     })
     .then((data) => {
       req.user.handle = data.docs[0].data().handle;
+      req.user.prism = data.docs[0].data().prism;
       return next();
     })
     .catch((err) => {
