@@ -76,7 +76,7 @@ exports.signup = (req, res) => {
         handle: newLightseed.handle,
         email: newLightseed.email,
         createdAt: new Date().toISOString(),
-        imageUrl: `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/${noImg}?alt=media`,
+        prism: `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/${noImg}?alt=media`,
         userId,
       };
       return db.doc(`/lightseeds/${newLightseed.handle}`).set(userCredentials);
