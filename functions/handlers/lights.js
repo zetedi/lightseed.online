@@ -23,12 +23,17 @@ exports.createLight = (req, res) => {
   const newLight = {
     body: req.body.body,
     lightseedHandle: req.user.handle,
+    prism: req.user.prism,
     createdAt: new Date().toISOString(),
+    seeCount: 0,
+    reflectCount: 0,
   };
   db.collection("lights")
     .add(newLight)
     .then((doc) => {
-      res.json({ message: `document ${doc.id} created successfully` });
+      const resLight = newLight;
+      resLight.lightId = doc.id;
+      res.json({ resLight });
     })
     .catch((err) => {
       res.status(500).json({ error: "Something went wrong" });
@@ -120,7 +125,7 @@ exports.seeLight = (req, res) => {
       if (doc.exists) {
         lightData = doc.data();
         lightData.lightId = doc.id;
-        return likeDocument.get();
+        return seeDocument.get();
       } else {
         return res.status(404).json({ error: "Light not found" });
       }
@@ -128,20 +133,20 @@ exports.seeLight = (req, res) => {
     .then((data) => {
       if (data.empty) {
         return db
-          .collection("seeCount")
+          .collection("sees")
           .add({
             lightId: req.params.lightId,
             lightseedHandle: req.user.handle,
           })
           .then(() => {
-            lightData.likeCount++;
-            return lightDocument.update({ likeCount: lightData.likeCount });
+            lightData.seeCount++;
+            return lightDocument.update({ seeCount: lightData.seeCount });
           })
           .then(() => {
             return res.json(lightData);
           });
       } else {
-        return res.status(400).json({ error: "Light already liked" });
+        return res.status(400).json({ error: "Light already seen!" });
       }
     })
     .catch((err) => {
@@ -169,12 +174,12 @@ exports.unseeLight = (req, res) => {
         lightData.lightId = doc.id;
         return seeDocument.get();
       } else {
-        return res.status(404).json({ error: "Light not found" });
+        return res.status(404).json({ error: "Light not found." });
       }
     })
     .then((data) => {
       if (data.empty) {
-        return res.status(400).json({ error: "Light not liked" });
+        return res.status(400).json({ error: "Light not seen." });
       } else {
         return db
           .doc(`/sees/${data.docs[0].id}`)
