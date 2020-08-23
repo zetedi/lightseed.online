@@ -114,7 +114,7 @@ exports.addLightseedDetails = (req, res) => {
 // Get any lightseed's details
 exports.getLightseedDetails = (req, res) => {
   let lightseedData = {};
-  db.doc(`/users/${req.params.handle}`)
+  db.doc(`/lightseeds/${req.params.handle}`)
     .get()
     .then((doc) => {
       if (doc.exists) {
@@ -252,4 +252,21 @@ exports.uploadImage = (req, res) => {
       });
   });
   busboy.end(req.rawBody);
+};
+
+exports.markMindersRead = (req, res) => {
+  let batch = db.batch();
+  req.body.forEach((minderId) => {
+    const minder = db.doc(`/minders/${minderId}`);
+    batch.update(minder, { read: true });
+  });
+  batch
+    .commit()
+    .then(() => {
+      return res.json({ message: "Minders marked read" });
+    })
+    .catch((err) => {
+      console.error(err);
+      return res.status(500).json({ error: err.code });
+    });
 };

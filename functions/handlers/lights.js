@@ -14,6 +14,7 @@ exports.getAllLights = (req, res) => {
           createdAt: doc.data().createdAt,
           seeCount: doc.data().seeCount,
           reflectCount: doc.data().reflectCount,
+          prism: doc.data().prism,
         });
       });
       return res.json(lights);
@@ -76,7 +77,7 @@ exports.getLight = (req, res) => {
 // Reflect light
 exports.reflectLight = (req, res) => {
   if (req.body.body.trim() === "")
-    return res.status(400).json({ comment: "Must not be empty" });
+    return res.status(400).json({ reflect: "Must not be empty" });
 
   const newReflect = {
     body: req.body.body,

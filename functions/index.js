@@ -18,6 +18,8 @@ const {
   uploadImage,
   addLightseedDetails,
   getAuthenticatedLightseed,
+  markMindersRead,
+  getLightseedDetails,
 } = require("./handlers/lightseeds");
 
 //Lights routes
@@ -39,8 +41,11 @@ app.get(
   FBAuth,
   getAuthenticatedLightseed
 );
+app.get("/lightseed/:handle", getLightseedDetails);
+app.post("/minders", FBAuth, markMindersRead);
 
 exports.api = functions.region("europe-west3").https.onRequest(app);
+
 // exports.api = functions.https.onRequest(app);
 
 // exports.createMinderOnSee = functions
@@ -92,7 +97,6 @@ exports.createMinderOnReflect = functions
       })
       .catch((err) => {
         console.error(err);
-        return;
       });
   });
 
@@ -103,7 +107,7 @@ exports.onPrismChange = functions
     console.log(change.before.data());
     console.log(change.after.data());
     if (change.before.data().prism !== change.after.data().prism) {
-      console.log("prism has changed");
+      console.log("Prism has changed");
       const batch = db.batch();
       return db
         .collection("lights")
