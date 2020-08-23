@@ -12,6 +12,8 @@ exports.getAllLights = (req, res) => {
           body: doc.data().body,
           lightseedHandle: doc.data().lightseedHandle,
           createdAt: doc.data().createdAt,
+          seeCount: doc.data().seeCount,
+          reflectCount: doc.data().reflectCount,
         });
       });
       return res.json(lights);

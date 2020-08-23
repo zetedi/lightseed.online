@@ -169,23 +169,23 @@ exports.getAuthenticatedLightseed = (req, res) => {
         lightseedData.likes.push(doc.data());
       });
       return db
-        .collection("notifications")
+        .collection("minders")
         .where("recipient", "==", req.user.handle)
         .orderBy("createdAt", "desc")
         .limit(10)
         .get();
     })
     .then((data) => {
-      lightseedData.notifications = [];
+      lightseedData.minders = [];
       data.forEach((doc) => {
-        lightseedData.notifications.push({
+        lightseedData.minders.push({
           recipient: doc.data().recipient,
           sender: doc.data().sender,
           createdAt: doc.data().createdAt,
           lightId: doc.data().lightId,
           type: doc.data().type,
           read: doc.data().read,
-          notificationId: doc.id,
+          minderId: doc.id,
         });
       });
       return res.json(lightseedData);
