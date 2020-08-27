@@ -1,6 +1,9 @@
 import React, { Component } from "react";
 import withStyles from "@material-ui/core/styles/withStyles";
-import Link from "react-router-dom/Link";
+import { Link } from "react-router-dom";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+
 //Material UI
 import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
@@ -16,8 +19,8 @@ const styles = {
     marginBottom: 20,
   },
   image: {
-    minWidth: 200,
-    minHeight: 200,
+    minWidth: 108,
+    // minHeight: 100,
     backgroundColor: "yellow",
   },
   content: {
@@ -28,6 +31,7 @@ const styles = {
 
 class Light extends Component {
   render() {
+    dayjs.extend(relativeTime);
     const {
       classes,
       light: {
@@ -57,7 +61,7 @@ class Light extends Component {
             {lightseedHandle}
           </Typography>
           <Typography variant="body2" color="textSecondary">
-            {createdAt}
+            {dayjs(createdAt).fromNow()}
           </Typography>
           <Typography variant="body1">{body}</Typography>
         </CardContent>
