@@ -15,9 +15,7 @@ export const loginLightseed = (lightseedData, history) => (dispatch) => {
   axios
     .post("/login", lightseedData)
     .then((res) => {
-      const FBIdToken = `Bearer ${res.data.token}`;
-      localStorage.setItem("FBIdToken", FBIdToken);
-      axios.defaults.headers.common["Authorization"] = FBIdToken;
+      setAuthorizationHeader(res.data.token);
       dispatch(getLightseedData());
       dispatch({ type: CLEAR_ERRORS });
       history.push("/");
@@ -28,22 +26,6 @@ export const loginLightseed = (lightseedData, history) => (dispatch) => {
         payload: err.response.data,
       });
     });
-
-  // *** future ***
-  // axios
-  //   .post("/login", lightseedData)
-  //   .then((res) => {
-  //     setAuthorizationHeader(res.data.token);
-  //     dispatch(getLightseedData());
-  //     dispatch({ type: CLEAR_ERRORS });
-  //     history.push("/");
-  //   })
-  //   .catch((err) => {
-  //     dispatch({
-  //       type: SET_ERRORS,
-  //       payload: err.response.data,
-  //     });
-  //   });
 };
 
 export const signupLightseed = (newLightseedData, history) => (dispatch) => {
@@ -64,16 +46,10 @@ export const signupLightseed = (newLightseedData, history) => (dispatch) => {
     });
 };
 
-export const logoutLightseed = () => (dispatch) => {
-  localStorage.removeItem("FBIdToken");
-  delete axios.defaults.headers.common["Authorization"];
-  dispatch({ type: SET_UNAUTHENTICATED });
-};
-
 export const getLightseedData = () => (dispatch) => {
   dispatch({ type: LOADING_LIGHTSEED });
   axios
-    .get("/lightseed/")
+    .get("/lightseed")
     .then((res) => {
       dispatch({
         type: SET_LIGHTSEED,
@@ -118,4 +94,10 @@ const setAuthorizationHeader = (token) => {
   const FBIdToken = `Bearer ${token}`;
   localStorage.setItem("FBIdToken", FBIdToken);
   axios.defaults.headers.common["Authorization"] = FBIdToken;
+};
+
+export const logoutLightseed = () => (dispatch) => {
+  localStorage.removeItem("FBIdToken");
+  delete axios.defaults.headers.common["Authorization"];
+  dispatch({ type: SET_UNAUTHENTICATED });
 };

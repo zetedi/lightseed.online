@@ -3,7 +3,6 @@ import withStyles from "@material-ui/core/styles/withStyles";
 import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
 import AppIcon from "../images/mala.jpg";
-import axios from "axios";
 
 // MUI
 import Grid from "@material-ui/core/Grid";
@@ -29,7 +28,6 @@ class login extends Component {
     this.state = {
       email: "",
       password: "",
-      loading: false,
       errors: {},
     };
   }
@@ -128,10 +126,6 @@ const mapStateToProps = (state) => ({
   UI: state.UI,
 });
 
-const mapActionsToProps = {
-  loginLightseed,
-};
-
 login.propTypes = {
   classes: PropTypes.object.isRequired,
   loginLightseed: PropTypes.func.isRequired,
@@ -139,7 +133,6 @@ login.propTypes = {
   UI: PropTypes.object.isRequired,
 };
 
-export default connect(
-  mapStateToProps,
-  mapActionsToProps
-)(withStyles(styles)(login));
+export default connect(mapStateToProps, { loginLightseed })(
+  withStyles(styles)(login)
+);

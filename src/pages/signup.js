@@ -3,7 +3,6 @@ import withStyles from "@material-ui/core/styles/withStyles";
 import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
 import AppIcon from "../images/mala.jpg";
-import axios from "axios";
 
 // MUI
 import Grid from "@material-ui/core/Grid";
@@ -11,6 +10,10 @@ import Typography from "@material-ui/core/Typography";
 import TextField from "@material-ui/core/TextField";
 import Button from "@material-ui/core/Button";
 import CircularProgress from "@material-ui/core/CircularProgress";
+
+// Redux
+import { connect } from "react-redux";
+import { signupLightseed } from "../redux/actions/lightseedActions";
 
 // Styling
 import themeData from "../util/theme";
@@ -24,7 +27,8 @@ class signup extends Component {
     this.state = {
       email: "",
       password: "",
-      loading: false,
+      confirmPassword: "",
+      handle: "",
       errors: {},
     };
   }
@@ -33,7 +37,11 @@ class signup extends Component {
       [event.target.name]: event.target.value,
     });
   };
-
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.UI.errors) {
+      this.setState({ errors: nextProps.UI.errors });
+    }
+  }
   handleSubmit = (event) => {
     this.setState({
       loading: true,
@@ -45,30 +53,14 @@ class signup extends Component {
       password: this.state.password,
       confirmPassword: this.state.confirmPassword,
     };
-
-    axios
-      .post("/signup", newLightseedData)
-      .then((res) => {
-        console.log(res.data);
-        localStorage.setItem("FBIdToken", `Bearer ${res.data.token}`);
-        this.setState({
-          loading: false,
-        });
-        this.props.history.push("/");
-      })
-      .catch((err) => {
-        this.setState({
-          errors: err.response.data,
-          loading: false,
-        });
-      });
+    this.props.signupLightseed(newLightseedData, this.props.history);
   };
   render() {
     const {
       classes,
-      //   UI: { loading },
+      UI: { loading },
     } = this.props;
-    const { errors, loading } = this.state;
+    const { errors } = this.state;
 
     return (
       <Grid container className={classes.form}>
@@ -158,6 +150,16 @@ class signup extends Component {
 
 signup.propTypes = {
   classes: PropTypes.object.isRequired,
+  signupLightseed: PropTypes.func.isRequired,
+  lightseed: PropTypes.object.isRequired,
+  UI: PropTypes.object.isRequired,
 };
 
-export default withStyles(styles)(signup);
+const mapStateToProps = (state) => ({
+  lightseed: state.lightseed,
+  UI: state.UI,
+});
+
+export default connect(mapStateToProps, { signupLightseed })(
+  withStyles(styles)(signup)
+);
