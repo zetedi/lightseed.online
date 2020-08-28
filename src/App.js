@@ -2,8 +2,9 @@ import React from "react";
 import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
 import "./App.css";
 import createMuiTheme from "@material-ui/core/styles/createMuiTheme";
-import { ThemeProvider } from "@material-ui/styles";
-import themeFile from "./util/theme";
+import createPalette from "@material-ui/core/styles/createPalette";
+import { MuiThemeProvider } from "@material-ui/core/styles";
+import themeData from "./util/theme";
 import jwtDecode from "jwt-decode";
 //Pages
 import home from "./pages/home";
@@ -14,7 +15,9 @@ import signup from "./pages/signup";
 import Navbar from "./components/Navbar";
 import AuthRoute from "./util/AuthRoute";
 
-const theme = createMuiTheme({ themeFile });
+const theme = createMuiTheme({
+  ...themeData,
+});
 
 let authenticated;
 
@@ -28,15 +31,10 @@ if (token) {
     authenticated = true;
   }
 }
-const darkTheme = createMuiTheme({
-  palette: {
-    type: "dark",
-  },
-});
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
+    <MuiThemeProvider theme={theme}>
       <div className="App">
         <Router>
           <Navbar />
@@ -59,7 +57,7 @@ function App() {
           </div>
         </Router>
       </div>
-    </ThemeProvider>
+    </MuiThemeProvider>
   );
 }
 

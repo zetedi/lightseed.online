@@ -1,15 +1,6 @@
-import { purple } from "@material-ui/core/colors";
-
 export default {
   palette: {
-    primary: {
-      // Purple a nd green play nicely together.
-      main: purple[500],
-    },
-    secondary: {
-      // This is green.A700 as hex.
-      main: "#11cb5f",
-    },
+    primary: { 500: "#004900" },
   },
   form: {
     textAlign: "center",
