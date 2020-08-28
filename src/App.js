@@ -6,6 +6,16 @@ import createPalette from "@material-ui/core/styles/createPalette";
 import { MuiThemeProvider } from "@material-ui/core/styles";
 import themeData from "./util/theme";
 import jwtDecode from "jwt-decode";
+
+//REDUX
+import { Provider } from "react-redux";
+import store from "./redux/store";
+import { SET_AUTHENTICATED } from "./redux/types";
+import {
+  logoutLightseed,
+  getLightseedData,
+} from "./redux/actions/lightseedActions";
+
 //Pages
 import home from "./pages/home";
 import login from "./pages/login";
@@ -35,7 +45,7 @@ if (token) {
 function App() {
   return (
     <MuiThemeProvider theme={theme}>
-      <div className="App">
+      <Provider store={store}>
         <Router>
           <Navbar />
           <div className="container">
@@ -56,7 +66,7 @@ function App() {
             </Switch>
           </div>
         </Router>
-      </div>
+      </Provider>
     </MuiThemeProvider>
   );
 }

@@ -13,6 +13,10 @@ import Button from "@material-ui/core/Button";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import { red } from "@material-ui/core/colors";
 
+// Redux
+import { connect } from "react-redux";
+import { loginLightseed } from "../redux/actions/lightseedActions";
+
 // Styling
 import themeData from "../util/theme";
 const styles = {
@@ -35,44 +39,26 @@ class login extends Component {
     });
   };
 
-  //   componentWillReceiveProps(nextProps) {
-  //     if (nextProps.UI.errors) {
-  //       this.setState({ errors: nextProps.UI.errors });
-  //     }
-  //   }
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.UI.errors) {
+      this.setState({ errors: nextProps.UI.errors });
+    }
+  }
+
   handleSubmit = (event) => {
-    this.setState({
-      loading: true,
-    });
     event.preventDefault();
     const lightseedData = {
       email: this.state.email,
       password: this.state.password,
     };
-
-    axios
-      .post("/login", lightseedData)
-      .then((res) => {
-        console.log(res.data);
-        localStorage.setItem("FBIdToken", `Bearer ${res.data.token}`);
-        this.setState({
-          loading: false,
-        });
-        this.props.history.push("/");
-      })
-      .catch((err) => {
-        this.setState({
-          errors: err.response.data,
-          loading: false,
-        });
-      });
+    this.props.loginLightseed(lightseedData, this.props.history);
   };
   render() {
     const {
       classes,
-      //   UI: { loading },
+      UI: { loading },
     } = this.props;
-    const { errors, loading } = this.state;
+    const { errors } = this.state;
 
     return (
       <Grid container className={classes.form}>
@@ -137,25 +123,23 @@ class login extends Component {
   }
 }
 
-// const mapStateToProps = (state) => ({
-//   user: state.user,
-//   UI: state.UI,
-// });
+const mapStateToProps = (state) => ({
+  lightseed: state.lightseed,
+  UI: state.UI,
+});
 
-// const mapActionsToProps = {
-//   loginUser,
-// };
-
-// export default connect(
-//   mapStateToProps,
-//   mapActionsToProps
-// )(withStyles(styles)(login));
+const mapActionsToProps = {
+  loginLightseed,
+};
 
 login.propTypes = {
   classes: PropTypes.object.isRequired,
-  // loginUser: PropTypes.func.isRequired,
-  // user: PropTypes.object.isRequired,
-  // UI: PropTypes.object.isRequired
+  loginLightseed: PropTypes.func.isRequired,
+  lightseed: PropTypes.object.isRequired,
+  UI: PropTypes.object.isRequired,
 };
 
-export default withStyles(styles)(login);
+export default connect(
+  mapStateToProps,
+  mapActionsToProps
+)(withStyles(styles)(login));
