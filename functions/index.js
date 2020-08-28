@@ -36,11 +36,7 @@ app.post("/signup", signup);
 app.post("/login", login);
 app.post("/lightseed/uploadImage", FBAuth, uploadImage);
 app.post("/lightseed", FBAuth, addLightseedDetails);
-app.get(
-  "/lightseed/getAuthenticatedLightseed",
-  FBAuth,
-  getAuthenticatedLightseed
-);
+app.get("/lightseed", FBAuth, getAuthenticatedLightseed);
 app.get("/lightseed/:handle", getLightseedDetails);
 app.post("/minders", FBAuth, markMindersRead);
 

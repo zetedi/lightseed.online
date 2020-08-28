@@ -1,0 +1,337 @@
+{
+	"info": {
+		"_postman_id": "2aee4c3b-aceb-42b7-afbd-2d2fbdf02387",
+		"name": "lights-online",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "api/login",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\": \"lightseed@lightseed.online\",\r\n    \"password\": \"108108108\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://europe-west3-light-5197c.cloudfunctions.net/api/login",
+					"protocol": "https",
+					"host": [
+						"europe-west3-light-5197c",
+						"cloudfunctions",
+						"net"
+					],
+					"path": [
+						"api",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "api/lights/<lightId>/reflect",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjEyODA5ZGQyMzlkMjRiZDM3OWMwYWQxOTFmOGIwZWRjZGI5ZDM5MTQiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vbGlnaHQtNTE5N2MiLCJhdWQiOiJsaWdodC01MTk3YyIsImF1dGhfdGltZSI6MTU5ODE4Mzc1NywidXNlcl9pZCI6IlgyZEhvdkhWODdUMXRTcjdoekJ3VThnZ0hwbTIiLCJzdWIiOiJYMmRIb3ZIVjg3VDF0U3I3aHpCd1U4Z2dIcG0yIiwiaWF0IjoxNTk4MTgzNzU3LCJleHAiOjE1OTgxODczNTcsImVtYWlsIjoibGlnaHRzZWVkX29ubGluZUBsaWdodGVzZWVkLm9ubGluZSIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyJsaWdodHNlZWRfb25saW5lQGxpZ2h0ZXNlZWQub25saW5lIl19LCJzaWduX2luX3Byb3ZpZGVyIjoicGFzc3dvcmQifX0.ccfHW6EM-wd2I0okOUbNRMfC2kFA11SmrveWmlphqnAwpad89EuFvOyLi6xwbFuphtq-xY8Z9sTMLtYnt8H1CEAS07RN3_97biOTvSi_9e8KbIZTPYN7T2cFDcoXoEwgkh_nIR7sBV0DNZou2rcdMedudskoCZs--04PaL-DZNI9-KElKwwBCYGUfvgwIYeKQzOHKC5QtjHnyNrOIRf_J9jFgS5fa1PW9ixUauYe4_SxD03QaYn89Ry5IudV-P4_vMYoVkAA_WOAW_Yk2BcVEP5hf8iola25W0rz89gflJypsr4ntnMKmSGoLNlXN6zIdastEOFaqK3a8SYGIw1A-g",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"body\": \"Resonates with this light: QBO6aOeHC6533cV6IpbX\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://europe-west3-light-5197c.cloudfunctions.net/api/lights/F42Yx5RJnqEgHMtXZB2F/reflect",
+					"protocol": "https",
+					"host": [
+						"europe-west3-light-5197c",
+						"cloudfunctions",
+						"net"
+					],
+					"path": [
+						"api",
+						"lights",
+						"F42Yx5RJnqEgHMtXZB2F",
+						"reflect"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "api/lights",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://europe-west3-light-5197c.cloudfunctions.net/api/lights",
+					"protocol": "https",
+					"host": [
+						"europe-west3-light-5197c",
+						"cloudfunctions",
+						"net"
+					],
+					"path": [
+						"api",
+						"lights"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "api/light",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjEyODA5ZGQyMzlkMjRiZDM3OWMwYWQxOTFmOGIwZWRjZGI5ZDM5MTQiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vbGlnaHQtNTE5N2MiLCJhdWQiOiJsaWdodC01MTk3YyIsImF1dGhfdGltZSI6MTU5ODA4NTYyOSwidXNlcl9pZCI6IlpwZEJTeEV5NVNXb05jOWhYanlsc0tZRHhIRzMiLCJzdWIiOiJacGRCU3hFeTVTV29OYzloWGp5bHNLWUR4SEczIiwiaWF0IjoxNTk4MDg1NjI5LCJleHAiOjE1OTgwODkyMjksImVtYWlsIjoibGlmZXNlZWRfb25saW5lQGxpZmVzZWVkLm9ubGluZSIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyJsaWZlc2VlZF9vbmxpbmVAbGlmZXNlZWQub25saW5lIl19LCJzaWduX2luX3Byb3ZpZGVyIjoicGFzc3dvcmQifX0.ceSOKwsZQvuyDQ1FkFTTjkiKOXC86PH6NYFsWx-YkOiPg3FJvZNK2xy2wRdzjeuLtqhrc5ii2mL4xFXbjYm45-cSYgU4kPJybKcAk5AebSGgVlhy8GrPivnI8etgnqngNkV73SzBXpAUi3lrwQWWrDzZhpBAlnDPWEEyXwtd_5ohJWtrebT7zluRgFvJN6gn2O9d75mmdjlrZq9WOO5Tf6dNDLIC-XUrGZfj8aXKu0JAdIcVF-NqNsUUP3WKbPrhzVh-iNwNTsBB9X5_1S_Vf77GFmIfc7kcx5CbNDnn6XdglNypwuNFzCuLW79xabYI48DcQLaqBC4_uU_-awYwNg",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"body\": \"New light\",\n\t\"lifeseedHandle\": \"new\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://europe-west3-light-5197c.cloudfunctions.net/api/light",
+					"protocol": "https",
+					"host": [
+						"europe-west3-light-5197c",
+						"cloudfunctions",
+						"net"
+					],
+					"path": [
+						"api",
+						"light"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "api/lights/<lightId>",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjEyODA5ZGQyMzlkMjRiZDM3OWMwYWQxOTFmOGIwZWRjZGI5ZDM5MTQiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vbGlnaHQtNTE5N2MiLCJhdWQiOiJsaWdodC01MTk3YyIsImF1dGhfdGltZSI6MTU5ODEwMTMwMSwidXNlcl9pZCI6IjRGV1h4TXlNR2pndGM2M0lSTVFQd3NVa1Z5MjMiLCJzdWIiOiI0RldYeE15TUdqZ3RjNjNJUk1RUHdzVWtWeTIzIiwiaWF0IjoxNTk4MTAxMzAxLCJleHAiOjE1OTgxMDQ5MDEsImVtYWlsIjoibGlnaHRzZWVkQGxpZ2h0c2VlZC5vbmxpbmUiLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZW1haWwiOlsibGlnaHRzZWVkQGxpZ2h0c2VlZC5vbmxpbmUiXX0sInNpZ25faW5fcHJvdmlkZXIiOiJwYXNzd29yZCJ9fQ.bsCiOS2V1EHnHpcZDabfME7mh2SjIxqiQHmlW_ZhI0jC8LoK7UKr9IkbGeA33YbFplPLU9reqTaw9iO1mbnk7KF0hb8pzEV8XWNyiJ7i08GcE1uc2YC3ybEFjl9VVa2bcJcytbfVZwbajCkpQ3XDbWMU0251dZKYt54hm04nYz4irUx9n8zbFOycdns35lK4jj-eriGrCpGe00nFJnaZAl57KQ7Or3anu7uOvyDYSYflhv9hr724gqrrwz5sp8W0fL8BKpxIVJ_fp5-aenYgh74UQxXWlh7u6UlocV8T2I_-acm3yGzhCTz1P7Lb3etsL0DOjzG8xIqi52HEyLGf9A",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "https://europe-west3-light-5197c.cloudfunctions.net/api/lights/Fg4iFgJJlVdRkhDncENW",
+					"protocol": "https",
+					"host": [
+						"europe-west3-light-5197c",
+						"cloudfunctions",
+						"net"
+					],
+					"path": [
+						"api",
+						"lights",
+						"Fg4iFgJJlVdRkhDncENW"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "api/lights/<lightId>/see",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjEyODA5ZGQyMzlkMjRiZDM3OWMwYWQxOTFmOGIwZWRjZGI5ZDM5MTQiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vbGlnaHQtNTE5N2MiLCJhdWQiOiJsaWdodC01MTk3YyIsImF1dGhfdGltZSI6MTU5ODEwMDY2MiwidXNlcl9pZCI6IjRGV1h4TXlNR2pndGM2M0lSTVFQd3NVa1Z5MjMiLCJzdWIiOiI0RldYeE15TUdqZ3RjNjNJUk1RUHdzVWtWeTIzIiwiaWF0IjoxNTk4MTAwNjYyLCJleHAiOjE1OTgxMDQyNjIsImVtYWlsIjoibGlnaHRzZWVkQGxpZ2h0c2VlZC5vbmxpbmUiLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZW1haWwiOlsibGlnaHRzZWVkQGxpZ2h0c2VlZC5vbmxpbmUiXX0sInNpZ25faW5fcHJvdmlkZXIiOiJwYXNzd29yZCJ9fQ.aIGON68a6JSbXBmqevgyNJ1CTKvcFE_aFLqi1WkJZePP_ghDfoF8Wc5PsjqfLR6rKIl0hWfj89fyxT8ZBl_QKcWHAZeN1nKjunS_YhyawkvAhq7FRL0dtMefTavm_XBJKwdfjwsEICuFFGuqkBaRhIaQiq45s519QUZeii7dD1_78PY1vy4V7vGCewVjp0LW_eKkJDU0M48mhu4u04rHqVrIbqkmgMeOmpRT4tntYlOguSqpFqXb7tJ4ruRcgX7wQEfZsj9acBB4R1A8j2CU8LCdIJHHSAaSFDUtkW36Pqy-v4sJZhINAfLAaX9mLi04AGLis3jku2VNgDAJm2qL2g",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://europe-west3-light-5197c.cloudfunctions.net/api/lights/aIHiED9SN1zSwZx5n8lE/see",
+					"protocol": "https",
+					"host": [
+						"europe-west3-light-5197c",
+						"cloudfunctions",
+						"net"
+					],
+					"path": [
+						"api",
+						"lights",
+						"aIHiED9SN1zSwZx5n8lE",
+						"see"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "api/lights/<lightId>/unsee",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjEyODA5ZGQyMzlkMjRiZDM3OWMwYWQxOTFmOGIwZWRjZGI5ZDM5MTQiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vbGlnaHQtNTE5N2MiLCJhdWQiOiJsaWdodC01MTk3YyIsImF1dGhfdGltZSI6MTU5ODE3OTA5MywidXNlcl9pZCI6IjRGV1h4TXlNR2pndGM2M0lSTVFQd3NVa1Z5MjMiLCJzdWIiOiI0RldYeE15TUdqZ3RjNjNJUk1RUHdzVWtWeTIzIiwiaWF0IjoxNTk4MTc5MDkzLCJleHAiOjE1OTgxODI2OTMsImVtYWlsIjoibGlnaHRzZWVkQGxpZ2h0c2VlZC5vbmxpbmUiLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZW1haWwiOlsibGlnaHRzZWVkQGxpZ2h0c2VlZC5vbmxpbmUiXX0sInNpZ25faW5fcHJvdmlkZXIiOiJwYXNzd29yZCJ9fQ.jBGE9RusBRLmtFJ64FaVJD6glUtGyw6cCh_FJu_bGLvH4g-m5BHseER8Bp1JRaINLkfRCZNd11EcKpdb2RdJpmL5oFt1oB8LZeIdxyHTHm5B3JZV9t0zTw2n_nJ4jW_dvCZ4Lk0F9qPQTcUbU9SSmRr6ANwTyHwutxhMb-UjJVSe8KOC6QjSVBh_YjxT3us-MFaBkRhrd9MSKlqqX2AKuIq4RsigmkpP7khi8tL9gHipvolIQm69SJqXGcylfwzeuhlaY4REcfz44Ax8dt-2vRxRyuIUgHCSdd8QlWdAC_tcmFnCHcsDOFen78OUXRSPCB6hSUyh5Yw7RaMGL_l-Hg",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://europe-west3-light-5197c.cloudfunctions.net/api/lights/F42Yx5RJnqEgHMtXZB2F/unsee",
+					"protocol": "https",
+					"host": [
+						"europe-west3-light-5197c",
+						"cloudfunctions",
+						"net"
+					],
+					"path": [
+						"api",
+						"lights",
+						"F42Yx5RJnqEgHMtXZB2F",
+						"unsee"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "api/signup",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjEyODA5ZGQyMzlkMjRiZDM3OWMwYWQxOTFmOGIwZWRjZGI5ZDM5MTQiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vbGlnaHQtNTE5N2MiLCJhdWQiOiJsaWdodC01MTk3YyIsImF1dGhfdGltZSI6MTU5ODE3OTA5MywidXNlcl9pZCI6IjRGV1h4TXlNR2pndGM2M0lSTVFQd3NVa1Z5MjMiLCJzdWIiOiI0RldYeE15TUdqZ3RjNjNJUk1RUHdzVWtWeTIzIiwiaWF0IjoxNTk4MTc5MDkzLCJleHAiOjE1OTgxODI2OTMsImVtYWlsIjoibGlnaHRzZWVkQGxpZ2h0c2VlZC5vbmxpbmUiLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZW1haWwiOlsibGlnaHRzZWVkQGxpZ2h0c2VlZC5vbmxpbmUiXX0sInNpZ25faW5fcHJvdmlkZXIiOiJwYXNzd29yZCJ9fQ.jBGE9RusBRLmtFJ64FaVJD6glUtGyw6cCh_FJu_bGLvH4g-m5BHseER8Bp1JRaINLkfRCZNd11EcKpdb2RdJpmL5oFt1oB8LZeIdxyHTHm5B3JZV9t0zTw2n_nJ4jW_dvCZ4Lk0F9qPQTcUbU9SSmRr6ANwTyHwutxhMb-UjJVSe8KOC6QjSVBh_YjxT3us-MFaBkRhrd9MSKlqqX2AKuIq4RsigmkpP7khi8tL9gHipvolIQm69SJqXGcylfwzeuhlaY4REcfz44Ax8dt-2vRxRyuIUgHCSdd8QlWdAC_tcmFnCHcsDOFen78OUXRSPCB6hSUyh5Yw7RaMGL_l-Hg",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\": \"lightseed_online@lightseed.online\",\r\n    \"password\": \"108108108\",\r\n    \"confirmPassword\": \"108108108\",\r\n    \"handle\": \"lightseed online\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://europe-west3-light-5197c.cloudfunctions.net/api/signup",
+					"protocol": "https",
+					"host": [
+						"europe-west3-light-5197c",
+						"cloudfunctions",
+						"net"
+					],
+					"path": [
+						"api",
+						"signup"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "api/lightseed/getAuthenticatedLightseed",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjEyODA5ZGQyMzlkMjRiZDM3OWMwYWQxOTFmOGIwZWRjZGI5ZDM5MTQiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vbGlnaHQtNTE5N2MiLCJhdWQiOiJsaWdodC01MTk3YyIsImF1dGhfdGltZSI6MTU5Nzk5NTk2NywidXNlcl9pZCI6IjRGV1h4TXlNR2pndGM2M0lSTVFQd3NVa1Z5MjMiLCJzdWIiOiI0RldYeE15TUdqZ3RjNjNJUk1RUHdzVWtWeTIzIiwiaWF0IjoxNTk3OTk1OTY3LCJleHAiOjE1OTc5OTk1NjcsImVtYWlsIjoibGlnaHRzZWVkQGxpZ2h0c2VlZC5vbmxpbmUiLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZW1haWwiOlsibGlnaHRzZWVkQGxpZ2h0c2VlZC5vbmxpbmUiXX0sInNpZ25faW5fcHJvdmlkZXIiOiJwYXNzd29yZCJ9fQ.KIhAqbFoyBHVivxZ-xH70u8CcsFk7LK02n5VRoZNIV2gsi35a86f8Rr5RhrhD1n6hy5sxiKP39MFySHUiAopkK912xi7QuDWQqyH4iZW_UeWtrdajswuEwdu3i-h2mF1ssAiCpgcZEPS8nO3cINSs_-CI3bRkZUhOpieu5aCyV7JtvNsslRtXx5aoM_GpbPSo49O7B2mvMeLDEMFVY23s_NFAWnPAez7lLVK-ddRdT8N9_edmOe8Cf-9kHf7-8bIFh8JXO13U2iZVRCTwzUiCc4SJV4LLZOYgGcD01W_va4Kf-ffEmf1tGYbpISY9sOIRUW72SahLW7hO4gTRzlefQ",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:5000/light-5197c/europe-west3/api/lightseed",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"light-5197c",
+						"europe-west3",
+						"api",
+						"lightseed"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}
