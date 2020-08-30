@@ -62,7 +62,7 @@ export const getLightseedData = () => (dispatch) => {
 export const uploadImage = (formData) => (dispatch) => {
   dispatch({ type: LOADING_LIGHTSEED });
   axios
-    .post("/lightseed/image", formData)
+    .post("/lightseed/uploadImage", formData)
     .then(() => {
       dispatch(getLightseedData());
     })

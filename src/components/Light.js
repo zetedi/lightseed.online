@@ -9,6 +9,7 @@ import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
 import CardMedia from "@material-ui/core/CardMedia";
 import Typography from "@material-ui/core/Typography";
+import { Grid } from "@material-ui/core";
 
 // import { makeStyles } from "@material-ui/core/styles";
 
@@ -19,13 +20,15 @@ const styles = {
     marginBottom: 20,
   },
   image: {
-    minWidth: 108,
+    minWidth: 150,
+    margin: "14px auto 14px 14px",
     // minHeight: 100,
-    backgroundColor: "yellow",
+    backgroundColor: "#004900",
+    borderRadius: "50%",
   },
   content: {
     padding: 25,
-    objectFit: "cover",
+    // objectFit: "cover",
   },
 };
 
@@ -46,9 +49,10 @@ class Light extends Component {
     } = this.props;
     return (
       <Card className={classes.card}>
+        <span className={classes.span}></span>
         <CardMedia
           image={prism}
-          title="Profile image"
+          title="Prism"
           className={classes.image}
         ></CardMedia>
         <CardContent className={classes.content}>
