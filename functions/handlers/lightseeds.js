@@ -240,8 +240,8 @@ exports.uploadImage = (req, res) => {
       })
       .then(() => {
         // Append token to url
-        const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/${imageFileName}?alt=media&token`;
-        return db.doc(`/lightseeds/${req.user.handle}`).update({ imageUrl });
+        const prism = `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/${imageFileName}?alt=media&token`;
+        return db.doc(`/lightseeds/${req.user.handle}`).update({ prism });
       })
       .then(() => {
         return res.json({ message: "Image uploaded successfully" });
