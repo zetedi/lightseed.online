@@ -4,6 +4,7 @@ import withStyles from "@material-ui/core/styles/withStyles";
 import { Link } from "react-router-dom";
 import dayjs from "dayjs";
 import MyButton from "../util/MyButton";
+import EditDetails from "./EditDetails";
 // MUI stuff
 import Button from "@material-ui/core/Button";
 import Typography from "@material-ui/core/Typography";
@@ -72,18 +73,19 @@ class Profile extends Component {
                 onClick={this.handleEditPicture}
                 btnClassName="button"
               >
-                <EditIcon color="primary" />
+                <EditIcon color="secondary" />
               </MyButton>
             </div>
             <hr />
             <div className="profile-details">
               <MuiLink
                 component={Link}
-                to={`/users/${handle}`}
-                color="primary"
+                to={`/lightseed/${handle}`}
                 variant="h5"
               >
-                @{handle}
+                <Typography color="secondary" variant="h5">
+                  @{handle}
+                </Typography>
               </MuiLink>
               <hr />
               {bio && <Typography variant="body2">{bio}</Typography>}
@@ -112,6 +114,7 @@ class Profile extends Component {
                 <KeyboardReturn color="primary"></KeyboardReturn>
               </MyButton>
             </Tooltip>
+            <EditDetails />
           </div>
         </Paper>
       ) : (

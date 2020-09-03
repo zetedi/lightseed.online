@@ -1,6 +1,9 @@
 export default {
   palette: {
+    // primary: { 500: "#004900" },
     primary: { 500: "#637081" },
+    secondary: { main: "#f50057" },
+    //#f50057
   },
   form: {
     textAlign: "center",

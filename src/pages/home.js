@@ -27,6 +27,7 @@ export class home extends Component {
       <p>Loading...</p>
     );
     return (
+      // <MuiThemeProvider theme={theme}>
       <Grid container spacing={10}>
         <Grid item sm={8} xs={12}>
           {recentLightsMarkup}
@@ -35,6 +36,7 @@ export class home extends Component {
           <Profile></Profile>
         </Grid>
       </Grid>
+      // </MuiThemeProvider>
     );
   }
 }
