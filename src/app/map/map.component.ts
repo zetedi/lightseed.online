@@ -53,7 +53,7 @@ export class MapComponent implements OnInit {
     detectRetina: true,
     attribution:
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    maxZoom: 10,
+    maxZoom: 11,
   });
 
   wMaps = tileLayer("http://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png", {
