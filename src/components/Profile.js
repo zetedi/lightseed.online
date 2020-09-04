@@ -16,7 +16,7 @@ import LinkIcon from "@material-ui/icons/Link";
 import CalendarToday from "@material-ui/icons/CalendarToday";
 import EditIcon from "@material-ui/icons/Edit";
 import IconButton from "@material-ui/core/IconButton";
-import KeyboardReturn from "@material-ui/icons/KeyboardReturn";
+import ExitToApp from "@material-ui/icons/ExitToApp";
 //Redux
 import { connect } from "react-redux";
 import {
@@ -111,7 +111,7 @@ class Profile extends Component {
             </div>
             <Tooltip title="logout">
               <MyButton tip="Logout" onClick={this.handleLogout}>
-                <KeyboardReturn color="primary"></KeyboardReturn>
+                <ExitToApp color="primary"></ExitToApp>
               </MyButton>
             </Tooltip>
             <EditDetails />
@@ -119,9 +119,6 @@ class Profile extends Component {
         </Paper>
       ) : (
         <Paper className={classes.paper}>
-          <Typography variant="body2" align="center">
-            No profile found, please login again
-          </Typography>
           <div className={classes.buttons}>
             <Button
               variant="contained"
