@@ -21,7 +21,7 @@ class Navbar extends Component {
           {authenticated ? (
             <Fragment>
               <MyButton tip="Emit light">
-                <Flare color="yellow"></Flare>
+                <Flare color="primary"></Flare>
               </MyButton>
               <Link to="/">
                 <MyButton tip="Home">

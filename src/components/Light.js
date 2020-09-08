@@ -41,7 +41,7 @@ const styles = {
 class Light extends Component {
   seenLight = () => {
     if (
-      this.props.lighseed &&
+      this.props.lightseed.sees &&
       this.props.lightseed.sees.find(
         (see) => see.lightId === this.props.light.lightId
       )
@@ -79,7 +79,7 @@ class Light extends Component {
       </Link>
     ) : this.seenLight() ? (
       <MyButton tip="Unsee" onClick={this.unseeLight}>
-        <VisibilityIcon color="primary"></VisibilityIcon>
+        <VisibilityIcon color="secondary"></VisibilityIcon>
       </MyButton>
     ) : (
       <MyButton tip="See" onClick={this.seeLight}>
@@ -109,7 +109,7 @@ class Light extends Component {
           </Typography>
           <Typography variant="body1">{body}</Typography>
           {seeButton}
-          <span>seen by {seeCount} lightseeds</span>
+          <span>seen by {seeCount}</span>
           <MyButton tip="reflects">
             <ChatIcon color="primary" />
           </MyButton>
@@ -122,6 +122,7 @@ class Light extends Component {
 Light.propTypes = {
   seeLight: PropTypes.func.isRequired,
   unseeLight: PropTypes.func.isRequired,
+  lightId: PropTypes.string.isRequired,
   lightseed: PropTypes.object.isRequired,
   light: PropTypes.object.isRequired,
   classes: PropTypes.object.isRequired,
