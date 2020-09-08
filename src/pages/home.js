@@ -1,28 +1,20 @@
 import React, { Component } from "react";
 import Grid from "@material-ui/core/Grid";
-import axios from "axios";
+import PropTypes from "prop-types";
+
 import Light from "../components/Light";
 import Profile from "../components/Profile";
+import { connect } from "react-redux";
+import { getLights } from "../redux/actions/dataActions";
 
 export class home extends Component {
-  state = {
-    lights: null,
-  };
   componentDidMount() {
-    axios
-      .get("/lights")
-      .then((res) => {
-        this.setState({
-          lights: res.data,
-        });
-      })
-      .catch((err) => console.log(err));
+    this.props.getLights();
   }
   render() {
-    let recentLightsMarkup = this.state.lights ? (
-      this.state.lights.map((light) => (
-        <Light key={light.lightId} light={light} />
-      ))
+    const { lights, loading } = this.props.data;
+    let recentLightsMarkup = !loading ? (
+      lights.map((light) => <Light key={light.lightId} light={light} />)
     ) : (
       <p>Loading...</p>
     );
@@ -41,4 +33,13 @@ export class home extends Component {
   }
 }
 
-export default home;
+home.propTypes = {
+  getLights: PropTypes.func.isRequired,
+  data: PropTypes.object.isRequired,
+};
+
+const mapStateToProps = (state) => ({
+  data: state.data,
+});
+
+export default connect(mapStateToProps, { getLights })(home);

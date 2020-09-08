@@ -39,8 +39,8 @@ export default function (state = initialState, action) {
     case SEE_LIGHT:
       return {
         ...state,
-        likes: [
-          ...state.likes,
+        sees: [
+          ...state.sees,
           {
             lightseedHandle: state.credentials.handle,
             lightId: action.payload.lightId,
@@ -50,8 +50,8 @@ export default function (state = initialState, action) {
     case UNSEE_LIGHT:
       return {
         ...state,
-        likes: state.likes.filter(
-          (like) => like.lightId !== action.payload.lightId
+        sees: state.sees.filter(
+          (see) => see.lightId !== action.payload.lightId
         ),
       };
     case MARK_MINDERS_READ:

@@ -35,7 +35,7 @@ export const getLights = () => (dispatch) => {
 export const getLight = (lightId) => (dispatch) => {
   dispatch({ type: LOADING_UI });
   axios
-    .get(`/light/${lightId}`)
+    .get(`/lights/${lightId}`)
     .then((res) => {
       dispatch({
         type: SET_LIGHT,
@@ -49,10 +49,10 @@ export const getLight = (lightId) => (dispatch) => {
 export const emitLight = (newLight) => (dispatch) => {
   dispatch({ type: LOADING_UI });
   axios
-    .post("/light", newLight)
+    .post("/lights", newLight)
     .then((res) => {
       dispatch({
-        type: POST_LIGHT,
+        type: EMIT_LIGHT,
         payload: res.data,
       });
       dispatch(clearErrors());
@@ -64,10 +64,10 @@ export const emitLight = (newLight) => (dispatch) => {
       });
     });
 };
-// Like a light
+// See a light
 export const seeLight = (lightId) => (dispatch) => {
   axios
-    .get(`/light/${lightId}/see`)
+    .get(`/lights/${lightId}/see`)
     .then((res) => {
       dispatch({
         type: SEE_LIGHT,
@@ -76,10 +76,10 @@ export const seeLight = (lightId) => (dispatch) => {
     })
     .catch((err) => console.log(err));
 };
-// Unlike a light
+// Unsee a light
 export const unseeLight = (lightId) => (dispatch) => {
   axios
-    .get(`/light/${lightId}/unsee`)
+    .get(`/lights/${lightId}/unsee`)
     .then((res) => {
       dispatch({
         type: UNSEE_LIGHT,
@@ -91,10 +91,10 @@ export const unseeLight = (lightId) => (dispatch) => {
 // Reflect
 export const reflect = (lightId, reflectData) => (dispatch) => {
   axios
-    .post(`/light/${lightId}/reflect`, reflectData)
+    .post(`/lights/${lightId}/reflect`, reflectData)
     .then((res) => {
       dispatch({
-        type: SUBMIT_REFLECT,
+        type: REFLECT,
         payload: res.data,
       });
       dispatch(clearErrors());
@@ -108,9 +108,9 @@ export const reflect = (lightId, reflectData) => (dispatch) => {
 };
 export const deleteLight = (lightId) => (dispatch) => {
   axios
-    .delete(`/light/${lightId}`)
+    .delete(`/lights/${lightId}`)
     .then(() => {
-      dispatch({ type: DELETE_LIGHT, payload: lightId });
+      dispatch({ type: ABSORB_LIGHT, payload: lightId });
     })
     .catch((err) => console.log(err));
 };
