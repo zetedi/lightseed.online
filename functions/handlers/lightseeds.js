@@ -158,15 +158,15 @@ exports.getAuthenticatedLightseed = (req, res) => {
       if (doc.exists) {
         lightseedData.credentials = doc.data();
         return db
-          .collection("likes")
+          .collection("sees")
           .where("lightseedHandle", "==", req.user.handle)
           .get();
       }
     })
     .then((data) => {
-      lightseedData.likes = [];
+      lightseedData.sees = [];
       data.forEach((doc) => {
-        lightseedData.likes.push(doc.data());
+        lightseedData.sees.push(doc.data());
       });
       return db
         .collection("minders")

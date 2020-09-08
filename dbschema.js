@@ -34,7 +34,7 @@ let db = {
       sender: "john",
       read: "true | false",
       lightId: "kdjsfgdksuufhgkdsufky",
-      type: "like | comment",
+      type: "see | minder",
       createdAt: "2019-03-15T10:59:52.798Z",
     },
   ],
