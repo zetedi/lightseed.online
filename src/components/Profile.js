@@ -84,7 +84,7 @@ class Profile extends Component {
                 variant="h5"
               >
                 <Typography color="secondary" variant="h5">
-                  @{handle}
+                  &{handle}
                 </Typography>
               </MuiLink>
               <hr />

@@ -5,6 +5,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import PropTypes from "prop-types";
 import MyButton from "../util/MyButton";
+import AbsorbLight from "./AbsorbLight";
 //Material UI
 import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
@@ -17,6 +18,7 @@ import VisibilityOffIcon from "@material-ui/icons/VisibilityOff";
 
 import { connect } from "react-redux";
 import { seeLight, unseeLight } from "../redux/actions/dataActions";
+import { yellow } from "@material-ui/core/colors";
 // import { makeStyles } from "@material-ui/core/styles";
 
 const styles = {
@@ -35,6 +37,9 @@ const styles = {
   content: {
     padding: 25,
     // objectFit: "cover",
+  },
+  see: {
+    color: "yellow",
   },
 };
 
@@ -69,7 +74,10 @@ class Light extends Component {
         seeCount,
         reflectCount,
       },
-      lightseed: { authenticated },
+      lightseed: {
+        authenticated,
+        credentials: { handle },
+      },
     } = this.props;
     const seeButton = !authenticated ? (
       <Link to="/login">
@@ -79,14 +87,20 @@ class Light extends Component {
       </Link>
     ) : this.seenLight() ? (
       <MyButton tip="Unsee" onClick={this.unseeLight}>
-        <VisibilityIcon color="secondary"></VisibilityIcon>
+        <VisibilityIcon
+          color="secondary"
+          className={classes.see}
+        ></VisibilityIcon>
       </MyButton>
     ) : (
       <MyButton tip="See" onClick={this.seeLight}>
-        <VisibilityOffIcon color="primary"></VisibilityOffIcon>
+        <VisibilityIcon color="primary"></VisibilityIcon>
       </MyButton>
     );
-
+    const absorbButton =
+      authenticated && lightseedHandle === handle ? (
+        <AbsorbLight lightId={lightId} />
+      ) : null;
     return (
       <Card className={classes.card}>
         <span className={classes.span}></span>
@@ -104,6 +118,7 @@ class Light extends Component {
           >
             {lightseedHandle}
           </Typography>
+          {absorbButton}
           <Typography variant="body2" color="textSecondary">
             {dayjs(createdAt).fromNow()}
           </Typography>
@@ -122,7 +137,7 @@ class Light extends Component {
 Light.propTypes = {
   seeLight: PropTypes.func.isRequired,
   unseeLight: PropTypes.func.isRequired,
-  lightId: PropTypes.string.isRequired,
+  // lightId: PropTypes.string.isRequired,
   lightseed: PropTypes.object.isRequired,
   light: PropTypes.object.isRequired,
   classes: PropTypes.object.isRequired,

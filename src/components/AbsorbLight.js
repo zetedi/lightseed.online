@@ -1,0 +1,77 @@
+import React, { Component, Fragment } from "react";
+import withStyles from "@material-ui/core/styles/withStyles";
+import PropTypes from "prop-types";
+import MyButton from "../util/MyButton";
+
+// MUI
+import Button from "@material-ui/core/Button";
+import Dialog from "@material-ui/core/Dialog";
+import DialogTitle from "@material-ui/core/DialogTitle";
+import DialogActions from "@material-ui/core/DialogActions";
+import Flare from "@material-ui/icons/Flare";
+
+import { connect } from "react-redux";
+import { absorbLight } from "../redux/actions/dataActions";
+
+const styles = {
+  absorbButton: {
+    position: "absolute",
+    left: "90%",
+    top: "10%",
+  },
+};
+
+class AbsorbLight extends Component {
+  state = {
+    open: false,
+  };
+  handleOpen = () => {
+    this.setState({ open: true });
+  };
+  handleClose = () => {
+    this.setState({ open: false });
+  };
+  absorbLight = () => {
+    this.props.absorbLight(this.props.lightId);
+    this.setState({ open: false });
+  };
+  render() {
+    const { classes } = this.props;
+
+    return (
+      <Fragment>
+        <MyButton
+          tip="Absorb Light"
+          onClick={this.handleOpen}
+          btnClassName={classes.absorbButton}
+        >
+          <Flare color="primary" />
+        </MyButton>
+        <Dialog
+          open={this.state.open}
+          onClose={this.handleClose}
+          fullWidth
+          maxWidth="sm"
+        >
+          <DialogTitle>Absorb this light?</DialogTitle>
+          <DialogActions>
+            <Button onClick={this.handleClose} color="primary">
+              Leave on
+            </Button>
+            <Button onClick={this.absorbLight} color="secondary">
+              Absorb
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Fragment>
+    );
+  }
+}
+
+AbsorbLight.propTypes = {
+  absorbLight: PropTypes.func.isRequired,
+  classes: PropTypes.object.isRequired,
+  lightId: PropTypes.string.isRequired,
+};
+
+export default connect(null, { absorbLight })(withStyles(styles)(AbsorbLight));

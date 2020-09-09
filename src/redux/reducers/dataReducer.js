@@ -46,10 +46,10 @@ export default function (state = initialState, action) {
         ...state,
       };
     case ABSORB_LIGHT:
-      index = state.lights.findIndex(
+      let indexToSplice = state.lights.findIndex(
         (light) => light.lightId === action.payload
       );
-      state.lights.splice(index, 1);
+      state.lights.splice(indexToSplice, 1);
       return {
         ...state,
       };

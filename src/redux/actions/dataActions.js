@@ -106,7 +106,7 @@ export const reflect = (lightId, reflectData) => (dispatch) => {
       });
     });
 };
-export const deleteLight = (lightId) => (dispatch) => {
+export const absorbLight = (lightId) => (dispatch) => {
   axios
     .delete(`/lights/${lightId}`)
     .then(() => {
