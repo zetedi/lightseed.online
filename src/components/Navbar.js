@@ -3,13 +3,13 @@ import { Link } from "react-router-dom";
 import { connect } from "react-redux";
 import MyButton from "../util/MyButton";
 import PropTypes from "prop-types";
+import EmitLight from "./EmitLight";
 
 //Material UI
 import AppBar from "@material-ui/core/AppBar";
 import Toolbar from "@material-ui/core/Toolbar";
 import Button from "@material-ui/core/Button";
 import HomeIcon from "@material-ui/icons/Home";
-import Flare from "@material-ui/icons/Flare";
 import Notifications from "@material-ui/icons/Notifications";
 
 class Navbar extends Component {
@@ -20,9 +20,7 @@ class Navbar extends Component {
         <Toolbar className="nav-container">
           {authenticated ? (
             <Fragment>
-              <MyButton tip="Emit light">
-                <Flare color="primary"></Flare>
-              </MyButton>
+              <EmitLight />
               <Link to="/">
                 <MyButton tip="Home">
                   <HomeIcon />

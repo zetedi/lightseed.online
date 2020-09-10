@@ -56,7 +56,7 @@ export default function (state = initialState, action) {
     case EMIT_LIGHT:
       return {
         ...state,
-        lights: [action.payload, ...state.lights],
+        lights: [{ ...action.payload.light }, ...state.lights],
       };
     case REFLECT:
       return {

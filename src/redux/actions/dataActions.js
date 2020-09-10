@@ -49,7 +49,7 @@ export const getLight = (lightId) => (dispatch) => {
 export const emitLight = (newLight) => (dispatch) => {
   dispatch({ type: LOADING_UI });
   axios
-    .post("/lights", newLight)
+    .post("/light", newLight)
     .then((res) => {
       dispatch({
         type: EMIT_LIGHT,

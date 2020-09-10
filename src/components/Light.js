@@ -31,7 +31,7 @@ const styles = {
     minWidth: 150,
     margin: "14px auto 14px 14px",
     // minHeight: 100,
-    backgroundColor: "#004900",
+    backgroundColor: "#ffffff",
     borderRadius: "50%",
   },
   content: {
