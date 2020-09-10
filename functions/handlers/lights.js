@@ -34,9 +34,9 @@ exports.createLight = (req, res) => {
   db.collection("lights")
     .add(newLight)
     .then((doc) => {
-      const resLight = newLight;
-      resLight.lightId = doc.id;
-      res.json({ resLight });
+      const light = newLight;
+      light.lightId = doc.id;
+      res.json({ light });
     })
     .catch((err) => {
       res.status(500).json({ error: "Something went wrong" });
