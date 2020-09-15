@@ -17,6 +17,6 @@ const mapStateToProps = (state) => ({
 });
 
 AuthRoute.propTypes = {
-  lightseed: PropTypes.object.isRequired,
+  lightseed: PropTypes.object,
 };
 export default connect(mapStateToProps)(AuthRoute);

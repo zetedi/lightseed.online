@@ -36,7 +36,7 @@ const styles = {
   },
   content: {
     padding: 25,
-    // objectFit: "cover",
+    objectFit: "cover",
   },
   see: {
     color: "yellow",
@@ -103,7 +103,6 @@ class Light extends Component {
       ) : null;
     return (
       <Card className={classes.card}>
-        <span className={classes.span}></span>
         <CardMedia
           image={prism}
           title="Prism"

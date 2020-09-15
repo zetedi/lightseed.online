@@ -21,7 +21,7 @@ const styles = {
   submitButton: {
     position: "relative",
     float: "right",
-    marginTop: 10,
+    marginTop: 7,
   },
   progressSpinner: {
     position: "absolute",
@@ -29,7 +29,7 @@ const styles = {
   closeButton: {
     position: "absolute",
     left: "91%",
-    top: "6%",
+    top: "4%",
   },
 };
 
