@@ -23,6 +23,10 @@ exports.getAllLights = (req, res) => {
 };
 
 exports.createLight = (req, res) => {
+  if (req.body.body.trim() === "") {
+    return res.status(400).json({ body: "Your light is infinite!" });
+  }
+
   const newLight = {
     body: req.body.body,
     lightseedHandle: req.user.handle,
