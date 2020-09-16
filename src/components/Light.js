@@ -6,11 +6,13 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import PropTypes from "prop-types";
 import MyButton from "../util/MyButton";
 import AbsorbLight from "./AbsorbLight";
+import LightDialog from "./LightDialog";
 //Material UI
 import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
 import CardMedia from "@material-ui/core/CardMedia";
 import Typography from "@material-ui/core/Typography";
+import Grid from "@material-ui/core/Grid";
 // Icons
 import ChatIcon from "@material-ui/icons/Chat";
 import VisibilityIcon from "@material-ui/icons/Visibility";
@@ -27,19 +29,19 @@ const styles = {
     display: "flex",
     marginBottom: 20,
   },
-  image: {
-    minWidth: 150,
-    margin: "14px auto 14px 14px",
-    // minHeight: 100,
-    backgroundColor: "#ffffff",
-    borderRadius: "50%",
-  },
   content: {
     padding: 25,
     objectFit: "cover",
   },
   see: {
     color: "yellow",
+  },
+  prism: {
+    maxWidth: 108,
+    height: 108,
+    borderRadius: "50%",
+    objectFit: "cover",
+    margin: "10px 10px 10px 10px",
   },
 };
 
@@ -103,11 +105,9 @@ class Light extends Component {
       ) : null;
     return (
       <Card className={classes.card}>
-        <CardMedia
-          image={prism}
-          title="Prism"
-          className={classes.image}
-        ></CardMedia>
+        <Grid item sm={5}>
+          <img src={prism} alt="Profile" className={classes.prism} />
+        </Grid>
         <CardContent className={classes.content}>
           <Typography
             variant="h5"
@@ -128,6 +128,7 @@ class Light extends Component {
             <ChatIcon color="primary" />
           </MyButton>
           <span>{reflectCount} reflects</span>
+          <LightDialog lightId={lightId} lightseedHandle={lightseedHandle} />
         </CardContent>
       </Card>
     );
@@ -136,7 +137,7 @@ class Light extends Component {
 Light.propTypes = {
   seeLight: PropTypes.func.isRequired,
   unseeLight: PropTypes.func.isRequired,
-  // lightId: PropTypes.string.isRequired,
+  lightId: PropTypes.string.isRequired,
   lightseed: PropTypes.object.isRequired,
   light: PropTypes.object.isRequired,
   classes: PropTypes.object.isRequired,

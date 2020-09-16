@@ -14,7 +14,9 @@ export class home extends Component {
   render() {
     const { lights, loading } = this.props.data;
     let recentLightsMarkup = !loading ? (
-      lights.map((light) => <Light key={light.lightId} light={light} />)
+      lights.map((light) => (
+        <Light key={light.lightId} light={light} lightId={light.lightId} />
+      ))
     ) : (
       <p>Loading...</p>
     );
