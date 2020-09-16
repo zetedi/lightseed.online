@@ -32,6 +32,8 @@ const styles = {
   content: {
     padding: 25,
     objectFit: "cover",
+    width: 700,
+    marginRight: 49,
   },
   see: {
     color: "yellow",
