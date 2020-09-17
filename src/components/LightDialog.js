@@ -4,6 +4,7 @@ import withStyles from "@material-ui/core/styles/withStyles";
 import MyButton from "../util/MyButton";
 import dayjs from "dayjs";
 import { Link } from "react-router-dom";
+import SeeButton from "./SeeButton";
 //MUI
 import Dialog from "@material-ui/core/Dialog";
 import DialogContent from "@material-ui/core/DialogContent";
@@ -78,7 +79,7 @@ class LightDialog extends Component {
         <CircularProgress size={200} thickness={2} />
       </div>
     ) : (
-      <Grid container spacing={16}>
+      <Grid container spacing={0}>
         <Grid item sm={5}>
           <img src={prism} alt="Profile" className={classes.prism} />
         </Grid>
@@ -97,12 +98,12 @@ class LightDialog extends Component {
           </Typography>
           <hr className={classes.invisibleSeparator} />
           <Typography variant="body1">{body}</Typography>
-          {/* <LikeButton lightId={lightId} />
-          <span>{seeCount} sees</span> */}
-          {/* <MyButton tip="reflects">
+          <SeeButton lightId={lightId} />
+          <span>seen by {seeCount}</span>
+          <MyButton tip="reflects">
             <ChatIcon color="primary" />
-          </MyButton> */}
-          {/* <span>{reflectCount} reflects</span> */}
+          </MyButton>
+          <span>{reflectCount} reflects</span>
         </Grid>
         {/* <hr className={classes.visibleSeparator} />
         <CommentForm lightId={lightId} />

@@ -7,6 +7,7 @@ import PropTypes from "prop-types";
 import MyButton from "../util/MyButton";
 import AbsorbLight from "./AbsorbLight";
 import LightDialog from "./LightDialog";
+import SeeButton from "./SeeButton";
 //Material UI
 import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
@@ -15,12 +16,8 @@ import Typography from "@material-ui/core/Typography";
 import Grid from "@material-ui/core/Grid";
 // Icons
 import ChatIcon from "@material-ui/icons/Chat";
-import VisibilityIcon from "@material-ui/icons/Visibility";
-import VisibilityOffIcon from "@material-ui/icons/VisibilityOff";
 
 import { connect } from "react-redux";
-import { seeLight, unseeLight } from "../redux/actions/dataActions";
-import { yellow } from "@material-ui/core/colors";
 // import { makeStyles } from "@material-ui/core/styles";
 
 const styles = {
@@ -48,23 +45,6 @@ const styles = {
 };
 
 class Light extends Component {
-  seenLight = () => {
-    if (
-      this.props.lightseed.sees &&
-      this.props.lightseed.sees.find(
-        (see) => see.lightId === this.props.light.lightId
-      )
-    )
-      return true;
-    else return false;
-  };
-  seeLight = () => {
-    this.props.seeLight(this.props.light.lightId);
-  };
-  unseeLight = () => {
-    this.props.unseeLight(this.props.light.lightId);
-  };
-
   render() {
     dayjs.extend(relativeTime);
     const {
@@ -83,24 +63,7 @@ class Light extends Component {
         credentials: { handle },
       },
     } = this.props;
-    const seeButton = !authenticated ? (
-      <Link to="/login">
-        <MyButton tip="See">
-          <VisibilityOffIcon color="primary"></VisibilityOffIcon>
-        </MyButton>
-      </Link>
-    ) : this.seenLight() ? (
-      <MyButton tip="Unsee" onClick={this.unseeLight}>
-        <VisibilityIcon
-          color="secondary"
-          className={classes.see}
-        ></VisibilityIcon>
-      </MyButton>
-    ) : (
-      <MyButton tip="See" onClick={this.seeLight}>
-        <VisibilityIcon color="primary"></VisibilityIcon>
-      </MyButton>
-    );
+
     const absorbButton =
       authenticated && lightseedHandle === handle ? (
         <AbsorbLight lightId={lightId} />
@@ -124,7 +87,7 @@ class Light extends Component {
             {dayjs(createdAt).fromNow()}
           </Typography>
           <Typography variant="body1">{body}</Typography>
-          {seeButton}
+          <SeeButton lightId={lightId} />
           <span>seen by {seeCount}</span>
           <MyButton tip="reflects">
             <ChatIcon color="primary" />
@@ -137,8 +100,6 @@ class Light extends Component {
   }
 }
 Light.propTypes = {
-  seeLight: PropTypes.func.isRequired,
-  unseeLight: PropTypes.func.isRequired,
   lightId: PropTypes.string.isRequired,
   lightseed: PropTypes.object.isRequired,
   light: PropTypes.object.isRequired,
@@ -148,11 +109,5 @@ Light.propTypes = {
 const mapStateToProps = (state) => ({
   lightseed: state.lightseed,
 });
-const mapActionsToProps = {
-  seeLight,
-  unseeLight,
-};
-export default connect(
-  mapStateToProps,
-  mapActionsToProps
-)(withStyles(styles)(Light));
+
+export default connect(mapStateToProps)(withStyles(styles)(Light));
