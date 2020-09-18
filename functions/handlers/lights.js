@@ -150,6 +150,17 @@ exports.seeLight = (req, res) => {
             return lightDocument.update({ seeCount: lightData.seeCount });
           })
           .then(() => {
+            return db
+              .collection("reflects")
+              .orderBy("createdAt", "desc")
+              .where("lightId", "==", req.params.lightId)
+              .get();
+          })
+          .then((data) => {
+            lightData.reflects = [];
+            data.forEach((doc) => {
+              lightData.reflects.push(doc.data());
+            });
             return res.json(lightData);
           });
       } else {
@@ -196,7 +207,18 @@ exports.unseeLight = (req, res) => {
             return lightDocument.update({ seeCount: lightData.seeCount });
           })
           .then(() => {
-            res.json(lightData);
+            return db
+              .collection("reflects")
+              .orderBy("createdAt", "desc")
+              .where("lightId", "==", req.params.lightId)
+              .get();
+          })
+          .then((data) => {
+            lightData.reflects = [];
+            data.forEach((doc) => {
+              lightData.reflects.push(doc.data());
+            });
+            return res.json(lightData);
           });
       }
     })
