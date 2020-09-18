@@ -2,8 +2,8 @@ import React, { Component } from "react";
 import Grid from "@material-ui/core/Grid";
 import PropTypes from "prop-types";
 
-import Light from "../components/Light";
-import Profile from "../components/Profile";
+import Light from "../components/light/Light";
+import Profile from "../components/profile/Profile";
 import { connect } from "react-redux";
 import { getLights } from "../redux/actions/dataActions";
 

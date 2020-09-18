@@ -1,12 +1,12 @@
 import React, { Component, Fragment } from "react";
 import PropTypes from "prop-types";
 import withStyles from "@material-ui/core/styles/withStyles";
-import MyButton from "../util/MyButton";
-import themeData from "../util/theme";
+import MyButton from "../../util/MyButton";
+import themeData from "../../util/theme";
 import { Tooltip } from "@material-ui/core";
 
 import { connect } from "react-redux";
-import { editLightseedDetails } from "../redux/actions/lightseedActions";
+import { editLightseedDetails } from "../../redux/actions/lightseedActions";
 
 // MUI
 import Button from "@material-ui/core/Button";

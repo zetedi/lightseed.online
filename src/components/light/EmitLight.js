@@ -1,7 +1,7 @@
 import React, { Component, Fragment } from "react";
 import PropTypes from "prop-types";
 import withStyles from "@material-ui/core/styles/withStyles";
-import MyButton from "../util/MyButton";
+import MyButton from "../../util/MyButton";
 // MUI Stuff
 import Button from "@material-ui/core/Button";
 import TextField from "@material-ui/core/TextField";
@@ -13,9 +13,9 @@ import Flare from "@material-ui/icons/Flare";
 import CloseIcon from "@material-ui/icons/Close";
 // Redux stuff
 import { connect } from "react-redux";
-import { emitLight, clearErrors } from "../redux/actions/dataActions";
+import { emitLight, clearErrors } from "../../redux/actions/dataActions";
 // Styling
-import themeData from "../util/theme";
+import themeData from "../../util/theme";
 const styles = {
   ...themeData,
   submitButton: {

@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import withStyles from "@material-ui/core/styles/withStyles";
-import MyButton from "../util/MyButton";
+import MyButton from "../../util/MyButton";
 import { Link } from "react-router-dom";
 import PropTypes from "prop-types";
 // Icons
@@ -11,7 +11,7 @@ import VisibilityOffIcon from "@material-ui/icons/VisibilityOff";
 import { yellow } from "@material-ui/core/colors";
 // redux
 import { connect } from "react-redux";
-import { seeLight, unseeLight } from "../redux/actions/dataActions";
+import { seeLight, unseeLight } from "../../redux/actions/dataActions";
 
 const styles = {
   see: {

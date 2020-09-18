@@ -1,10 +1,11 @@
 import React, { Component, Fragment } from "react";
 import PropTypes from "prop-types";
 import withStyles from "@material-ui/core/styles/withStyles";
-import MyButton from "../util/MyButton";
+import MyButton from "../../util/MyButton";
 import dayjs from "dayjs";
 import { Link } from "react-router-dom";
 import SeeButton from "./SeeButton";
+import Reflects from "./Reflects";
 //MUI
 import Dialog from "@material-ui/core/Dialog";
 import DialogContent from "@material-ui/core/DialogContent";
@@ -18,9 +19,9 @@ import UnfoldMore from "@material-ui/icons/UnfoldMore";
 import ChatIcon from "@material-ui/icons/Chat";
 //Redux
 import { connect } from "react-redux";
-import { getLight } from "../redux/actions/dataActions";
+import { getLight } from "../../redux/actions/dataActions";
 // Styling
-import themeData from "../util/theme";
+import themeData from "../../util/theme";
 
 const styles = {
   ...themeData,
@@ -71,6 +72,7 @@ class LightDialog extends Component {
         reflectCount,
         prism,
         lightseedHandle,
+        reflects,
       },
       UI: { loading },
     } = this.props;
@@ -105,9 +107,8 @@ class LightDialog extends Component {
           </MyButton>
           <span>{reflectCount} reflects</span>
         </Grid>
-        {/* <hr className={classes.visibleSeparator} />
-        <CommentForm lightId={lightId} />
-        <Comments reflects={reflects} /> */}
+        <hr className={classes.visibleSeparator} />
+        <Reflects reflects={reflects} />
       </Grid>
     );
     return (

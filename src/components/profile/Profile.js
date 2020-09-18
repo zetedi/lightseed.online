@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import withStyles from "@material-ui/core/styles/withStyles";
 import { Link } from "react-router-dom";
 import dayjs from "dayjs";
-import MyButton from "../util/MyButton";
+import MyButton from "../../util/MyButton";
 import EditDetails from "./EditDetails";
 // MUI stuff
 import Button from "@material-ui/core/Button";
@@ -22,9 +22,9 @@ import { connect } from "react-redux";
 import {
   logoutLightseed,
   uploadImage,
-} from "../redux/actions/lightseedActions";
+} from "../../redux/actions/lightseedActions";
 // Styling
-import themeData from "../util/theme";
+import themeData from "../../util/theme";
 import { Tooltip } from "@material-ui/core";
 const styles = {
   ...themeData,

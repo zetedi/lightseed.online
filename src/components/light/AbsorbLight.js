@@ -1,7 +1,7 @@
 import React, { Component, Fragment } from "react";
 import withStyles from "@material-ui/core/styles/withStyles";
 import PropTypes from "prop-types";
-import MyButton from "../util/MyButton";
+import MyButton from "../../util/MyButton";
 
 // MUI
 import Button from "@material-ui/core/Button";
@@ -11,7 +11,7 @@ import DialogActions from "@material-ui/core/DialogActions";
 import Flare from "@material-ui/icons/Flare";
 
 import { connect } from "react-redux";
-import { absorbLight } from "../redux/actions/dataActions";
+import { absorbLight } from "../../redux/actions/dataActions";
 
 const styles = {
   absorbButton: {

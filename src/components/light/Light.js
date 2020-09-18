@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import PropTypes from "prop-types";
-import MyButton from "../util/MyButton";
+import MyButton from "../../util/MyButton";
 import AbsorbLight from "./AbsorbLight";
 import LightDialog from "./LightDialog";
 import SeeButton from "./SeeButton";
@@ -16,9 +16,7 @@ import Typography from "@material-ui/core/Typography";
 import Grid from "@material-ui/core/Grid";
 // Icons
 import ChatIcon from "@material-ui/icons/Chat";
-
 import { connect } from "react-redux";
-// import { makeStyles } from "@material-ui/core/styles";
 
 const styles = {
   card: {
