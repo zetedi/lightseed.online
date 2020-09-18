@@ -73,7 +73,7 @@ class Light extends Component {
         </Grid>
         <CardContent className={classes.content}>
           <Typography
-            variant="h5"
+            variant="h6"
             component={Link}
             color="primary"
             to={`/lightseeds/${lightseedHandle}/`}
@@ -84,7 +84,7 @@ class Light extends Component {
           <Typography variant="body2" color="textSecondary">
             {dayjs(createdAt).fromNow()}
           </Typography>
-          <Typography variant="body1">{body}</Typography>
+          <Typography variant="body2">{body}</Typography>
           <SeeButton lightId={lightId} />
           <span>seen by {seeCount}</span>
           <MyButton tip="reflects">
