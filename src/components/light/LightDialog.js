@@ -6,6 +6,7 @@ import dayjs from "dayjs";
 import { Link } from "react-router-dom";
 import SeeButton from "./SeeButton";
 import Reflects from "./Reflects";
+import ReflectForm from "./ReflectForm";
 //MUI
 import Dialog from "@material-ui/core/Dialog";
 import DialogContent from "@material-ui/core/DialogContent";
@@ -19,7 +20,7 @@ import UnfoldMore from "@material-ui/icons/UnfoldMore";
 import ChatIcon from "@material-ui/icons/Chat";
 //Redux
 import { connect } from "react-redux";
-import { getLight } from "../../redux/actions/dataActions";
+import { getLight, clearErrors } from "../../redux/actions/dataActions";
 // Styling
 import themeData from "../../util/theme";
 
@@ -59,6 +60,7 @@ class LightDialog extends Component {
   };
   handleClose = () => {
     this.setState({ open: false });
+    this.props.clearErrors();
   };
 
   render() {
@@ -108,6 +110,7 @@ class LightDialog extends Component {
           <span>{reflectCount} reflects</span>
         </Grid>
         <hr className={classes.visibleSeparator} />
+        <ReflectForm lightId={lightId} />
         <Reflects reflects={reflects} />
       </Grid>
     );
@@ -145,6 +148,7 @@ class LightDialog extends Component {
 
 LightDialog.propTypes = {
   getLight: PropTypes.func.isRequired,
+  clearErrors: PropTypes.func.isRequired,
   lightId: PropTypes.string.isRequired,
   lightseedHandle: PropTypes.string.isRequired,
   light: PropTypes.object.isRequired,
@@ -158,6 +162,7 @@ const mapStateToProps = (state) => ({
 
 const mapActionToProps = {
   getLight,
+  clearErrors,
 };
 export default connect(
   mapStateToProps,
