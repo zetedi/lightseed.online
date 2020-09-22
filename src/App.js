@@ -20,6 +20,7 @@ import axios from "axios";
 
 //Pages
 import home from "./pages/home";
+import lightseed from "./pages/lightseed";
 import login from "./pages/login";
 import signup from "./pages/signup";
 
@@ -55,6 +56,7 @@ function App() {
               <Route exact path="/" component={home} />
               <AuthRoute exact path="/login" component={login} />
               <AuthRoute exact path="/signup" component={signup} />
+              <Route exact path="/lightseeds/:handle" component={lightseed} />
             </Switch>
           </div>
         </Router>
