@@ -2,7 +2,8 @@ export default {
   palette: {
     // primary: { 500: "#004900" },
     // primary: { 500: "#637081" },
-    primary: { 500: "#42033d" },
+    // primary: { 500: "#2a4d14" },
+    primary: { 500: "#3d1308" },
     secondary: { main: "#f50057" },
     //#f50057
   },

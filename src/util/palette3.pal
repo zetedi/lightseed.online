@@ -1,0 +1,11 @@
+/* CSV */
+2a4d14,3d1308,edf060,f4d6cc,f7f7ff
+
+/* Array */
+["2a4d14","3d1308","edf060","f4d6cc","f7f7ff"]
+
+/* Object */
+{"Lincoln Green":"2a4d14","Black Bean":"3d1308","Icterine":"edf060","Unbleached Silk":"f4d6cc","Ghost White":"f7f7ff"}
+
+/* Extended Array */
+[{"name":"Lincoln Green","hex":"2a4d14","rgb":[42,77,20],"cmyk":[45,0,74,70],"hsb":[97,74,30],"hsl":[97,59,19],"lab":[29,-24,29]},{"name":"Black Bean","hex":"3d1308","rgb":[61,19,8],"cmyk":[0,69,87,76],"hsb":[12,87,24],"hsl":[12,77,14],"lab":[12,20,16]},{"name":"Icterine","hex":"edf060","rgb":[237,240,96],"cmyk":[1,0,60,6],"hsb":[61,60,94],"hsl":[61,83,66],"lab":[92,-19,67]},{"name":"Unbleached Silk","hex":"f4d6cc","rgb":[244,214,204],"cmyk":[0,12,16,4],"hsb":[15,16,96],"hsl":[15,65,88],"lab":[88,9,9]},{"name":"Ghost White","hex":"f7f7ff","rgb":[247,247,255],"cmyk":[3,3,0,0],"hsb":[240,3,100],"hsl":[240,100,98],"lab":[97,1,-4]}]
