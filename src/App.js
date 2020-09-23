@@ -57,6 +57,11 @@ function App() {
               <AuthRoute exact path="/login" component={login} />
               <AuthRoute exact path="/signup" component={signup} />
               <Route exact path="/lightseeds/:handle" component={lightseed} />
+              <Route
+                exact
+                path="/lightseeds/:handle/light/:lightId"
+                component={lightseed}
+              />
             </Switch>
           </div>
         </Router>

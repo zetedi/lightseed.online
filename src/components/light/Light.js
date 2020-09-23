@@ -91,7 +91,11 @@ class Light extends Component {
             <ChatIcon color="primary" />
           </MyButton>
           <span>{reflectCount} reflects</span>
-          <LightDialog lightId={lightId} lightseedHandle={lightseedHandle} />
+          <LightDialog
+            lightId={lightId}
+            lightseedHandle={lightseedHandle}
+            openDialog={this.props.openDialog}
+          />
         </CardContent>
       </Card>
     );
