@@ -79,9 +79,9 @@ export const editLightseedDetails = (lightseedDetails) => (dispatch) => {
     .catch((err) => console.log(err));
 };
 
-export const markMinderssRead = (notificationIds) => (dispatch) => {
+export const markMindersRead = (minderIds) => (dispatch) => {
   axios
-    .post("/notifications", notificationIds)
+    .post("/minders", minderIds)
     .then((res) => {
       dispatch({
         type: MARK_MINDERS_READ,

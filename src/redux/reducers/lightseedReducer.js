@@ -55,7 +55,7 @@ export default function (state = initialState, action) {
         ),
       };
     case MARK_MINDERS_READ:
-      state.reflects.forEach((not) => (not.read = true));
+      state.minders.forEach((minder) => (minder.read = true));
       return {
         ...state,
       };
