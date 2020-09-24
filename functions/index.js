@@ -44,30 +44,30 @@ exports.api = functions.region("europe-west3").https.onRequest(app);
 
 // exports.api = functions.https.onRequest(app);
 
-// exports.createMinderOnSee = functions
-//   .region("europe-west3")
-//   .firestore.document("sees/{id}")
-//   .onCreate((snapshot) => {
-//     return db
-//       .doc(`/lights/${snapshot.data().lightId}`)
-//       .get()
-//       .then((doc) => {
-//         if (
-//           doc.exists &&
-//           doc.data().lightseedHandle !== snapshot.data().lightseedHandle
-//         ) {
-//           return db.doc(`/minders/${snapshot.id}`).set({
-//             createdAt: new Date().toISOString(),
-//             recipient: doc.data().lightseedHandle,
-//             sender: snapshot.data().lightseedHandle,
-//             type: "see",
-//             read: false,
-//             lightId: doc.id,
-//           });
-//         }
-//       })
-//       .catch((err) => console.error(err));
-//   });
+exports.createMinderOnSee = functions
+  .region("europe-west3")
+  .firestore.document("sees/{id}")
+  .onCreate((snapshot) => {
+    return db
+      .doc(`/lights/${snapshot.data().lightId}`)
+      .get()
+      .then((doc) => {
+        if (
+          doc.exists &&
+          doc.data().lightseedHandle !== snapshot.data().lightseedHandle
+        ) {
+          return db.doc(`/minders/${snapshot.id}`).set({
+            createdAt: new Date().toISOString(),
+            recipient: doc.data().lightseedHandle,
+            sender: snapshot.data().lightseedHandle,
+            type: "see",
+            read: false,
+            lightId: doc.id,
+          });
+        }
+      })
+      .catch((err) => console.error(err));
+  });
 
 exports.createMinderOnReflect = functions
   .region("europe-west3")
