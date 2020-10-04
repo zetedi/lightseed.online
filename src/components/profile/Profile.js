@@ -4,7 +4,10 @@ import withStyles from "@material-ui/core/styles/withStyles";
 import { Link } from "react-router-dom";
 import dayjs from "dayjs";
 import MyButton from "../../util/MyButton";
+import ImageEditor from "../image/ImageEditor";
+// import AvatarEditor from "../image/AvatarEditor";
 import EditDetails from "./EditDetails";
+import ProfileSkeleton from "../../util/ProfileSkeleton";
 // MUI stuff
 import Button from "@material-ui/core/Button";
 import Typography from "@material-ui/core/Typography";
@@ -15,7 +18,6 @@ import LocationOn from "@material-ui/icons/LocationOn";
 import LinkIcon from "@material-ui/icons/Link";
 import CalendarToday from "@material-ui/icons/CalendarToday";
 import EditIcon from "@material-ui/icons/Edit";
-import IconButton from "@material-ui/core/IconButton";
 import ExitToApp from "@material-ui/icons/ExitToApp";
 //Redux
 import { connect } from "react-redux";
@@ -59,6 +61,8 @@ class Profile extends Component {
     let profileMarkup = !loading ? (
       authenticated ? (
         <Paper className={classes.paper}>
+          {/* <AvatarEditor /> */}
+          <ImageEditor />
           <div className={classes.profile}>
             <div className="image-wrapper">
               <img src={prism} alt="profile" className="profile-image" />
@@ -80,7 +84,7 @@ class Profile extends Component {
             <div className="profile-details">
               <MuiLink
                 component={Link}
-                to={`/lightseed/${handle}`}
+                to={`/lightseeds/${handle}`}
                 variant="h5"
               >
                 <Typography color="secondary" variant="h5">
@@ -140,7 +144,7 @@ class Profile extends Component {
         </Paper>
       )
     ) : (
-      <p>Loading...</p>
+      <ProfileSkeleton />
     );
     return profileMarkup;
   }

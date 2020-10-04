@@ -4,11 +4,7 @@ import MyButton from "../../util/MyButton";
 import { Link } from "react-router-dom";
 import PropTypes from "prop-types";
 // Icons
-import FavoriteIcon from "@material-ui/icons/Favorite";
-import FavoriteBorder from "@material-ui/icons/FavoriteBorder";
 import VisibilityIcon from "@material-ui/icons/Visibility";
-import VisibilityOffIcon from "@material-ui/icons/VisibilityOff";
-import { yellow } from "@material-ui/core/colors";
 // redux
 import { connect } from "react-redux";
 import { seeLight, unseeLight } from "../../redux/actions/dataActions";

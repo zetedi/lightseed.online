@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import Grid from "@material-ui/core/Grid";
 import PropTypes from "prop-types";
 
+import LightSkeleton from "../util/LightSkeleton";
 import Light from "../components/light/Light";
 import Profile from "../components/profile/Profile";
 import { connect } from "react-redux";
@@ -18,7 +19,7 @@ export class home extends Component {
         <Light key={light.lightId} light={light} lightId={light.lightId} />
       ))
     ) : (
-      <p>Loading...</p>
+      <LightSkeleton />
     );
     return (
       // <MuiThemeProvider theme={theme}>

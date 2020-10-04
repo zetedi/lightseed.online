@@ -11,7 +11,6 @@ import SeeButton from "./SeeButton";
 //Material UI
 import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
-import CardMedia from "@material-ui/core/CardMedia";
 import Typography from "@material-ui/core/Typography";
 import Grid from "@material-ui/core/Grid";
 // Icons
@@ -102,7 +101,6 @@ class Light extends Component {
   }
 }
 Light.propTypes = {
-  lightId: PropTypes.string.isRequired,
   lightseed: PropTypes.object.isRequired,
   light: PropTypes.object.isRequired,
   classes: PropTypes.object.isRequired,

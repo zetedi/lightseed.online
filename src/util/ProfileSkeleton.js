@@ -49,7 +49,7 @@ const ProfileSkeleton = (props) => {
           <hr />
           <LocationOn color="primary" /> <span>Location</span>
           <hr />
-          <LinkIcon color="primary" /> https://website.com
+          <LinkIcon color="primary" /> http://bhamala.online
           <hr />
           <CalendarToday color="primary" /> Joined date
         </div>

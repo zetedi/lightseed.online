@@ -2,7 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
 import "./App.css";
 import createMuiTheme from "@material-ui/core/styles/createMuiTheme";
-import createPalette from "@material-ui/core/styles/createPalette";
+// import createPalette from "@material-ui/core/styles/createPalette";
 import { MuiThemeProvider } from "@material-ui/core/styles";
 import themeData from "./util/theme";
 import jwtDecode from "jwt-decode";
@@ -31,6 +31,9 @@ import AuthRoute from "./util/AuthRoute";
 const theme = createMuiTheme({
   ...themeData,
 });
+
+axios.defaults.baseURL =
+  "https://europe-west3-light-5197c.cloudfunctions.net/api";
 
 const token = localStorage.FBIdToken;
 if (token) {
