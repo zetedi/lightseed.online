@@ -9,6 +9,8 @@ export default {
   },
   form: {
     textAlign: "center",
+    backgroundColor: "white",
+    borderRadius: "21px"
   },
   image: {
     margin: "20px auto 20px auto",
