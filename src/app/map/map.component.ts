@@ -12,8 +12,12 @@ export class MapComponent implements OnInit {
   // center_lon: number = 4.49;
 
   // Erlangen centre (~)
-  center_lat: number = 49.49;
-  center_lon: number = 11.07;
+  // center_lat: number = 49.49;
+  // center_lon: number = 11.07;
+
+  // Mahameru centre (~)
+  center_lat: number = 50.8355;
+  center_lon: number = 4.4035;
 
   latitude0: number = 50.8355;
   longitude0: number = 4.4035;
@@ -125,7 +129,7 @@ export class MapComponent implements OnInit {
       this.lifetree9,
       this.lifetree10,
     ],
-    zoom: 4.7,
+    zoom: 14,
     center: latLng([this.center_lat, this.center_lon]),
   };
 
