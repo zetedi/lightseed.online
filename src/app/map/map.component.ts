@@ -57,7 +57,7 @@ export class MapComponent implements OnInit {
     detectRetina: true,
     attribution:
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    maxZoom: 11,
+    maxZoom: 12,
   });
 
   wMaps = tileLayer("http://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png", {
@@ -129,7 +129,7 @@ export class MapComponent implements OnInit {
       this.lifetree9,
       this.lifetree10,
     ],
-    zoom: 14,
+    zoom: 11.5,
     center: latLng([this.center_lat, this.center_lon]),
   };
 
