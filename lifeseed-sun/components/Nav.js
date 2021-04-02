@@ -60,8 +60,8 @@ export default function Nav() {
               <ShoppingCartIcon onClick={openCart} />
             </Badge>
           </IconButton>
-          <IconButton>
-            <ExitToApp onClick={signout} />
+          <IconButton onClick={signout}>
+            <ExitToApp />
           </IconButton>
           {/* <SignOut className={classes.menuButton} /> */}
         </>
