@@ -4,6 +4,8 @@ import gql from 'graphql-tag';
 import { useQuery } from '@apollo/client';
 import { makeStyles } from '@material-ui/core/styles';
 import { Box } from '@material-ui/core';
+import NavigateBeforeIcon from '@material-ui/icons/NavigateBefore';
+import NavigateNextIcon from '@material-ui/icons/NavigateNext';
 import DisplayError from './ErrorMessage';
 import { perPage } from '../config';
 
@@ -25,7 +27,7 @@ const useStyles = makeStyles((theme) => ({
     justifyContent: 'center',
     alignContent: 'center',
     margin: '2rem 0',
-    border: '1px solid var(--lightGray)',
+    border: '1px solid black',
     borderRadius: '10px',
     '& > *': {
       margin: 0,
@@ -57,14 +59,18 @@ export default function Pagination({ page }) {
         </title>
       </Head>
       <Link href={`/products/${page - 1}`}>
-        <a aria-disabled={page <= 1}>⇦ Prev</a>
+        <a aria-disabled={page <= 1}>
+          <NavigateBeforeIcon />
+        </a>
       </Link>
       <p>
         Page {page} of {pageCount}{' '}
       </p>
       <p>{count} Items total</p>
       <Link href={`/products/${page + 1}`}>
-        <a aria-disabled={page >= pageCount}>Next ⇨</a>
+        <a aria-disabled={page >= pageCount}>
+          <NavigateNextIcon />
+        </a>
       </Link>
     </Box>
   );

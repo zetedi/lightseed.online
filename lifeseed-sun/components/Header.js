@@ -9,7 +9,7 @@ import Lifecircle from './Lifecircle';
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
   bar: {
-    backgroundColor: theme.palette.primary.active,
+    // backgroundColor: theme.palette.primary.active,
     display: 'grid',
     gridTemplateColumns: 'auto 1fr',
     padding: '.7rem',

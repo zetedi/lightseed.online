@@ -44,7 +44,7 @@ export default function Products({ page }) {
   if (error) return <p>Error: {error.message}</p>;
   return (
     <Box className={classes.productList}>
-      {data.allProducts.map((product) => (
+      {data?.allProducts.map((product) => (
         <Product key={product.id} product={product} />
       ))}
     </Box>

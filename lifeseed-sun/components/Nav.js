@@ -3,6 +3,10 @@ import { useMutation } from '@apollo/client';
 import { makeStyles } from '@material-ui/core/styles';
 import ShoppingCartIcon from '@material-ui/icons/ShoppingCart';
 import StorefrontIcon from '@material-ui/icons/Storefront';
+import AllInboxIcon from '@material-ui/icons/AllInbox';
+import TransitEnterexitIcon from '@material-ui/icons/TransitEnterexit';
+import AccountCircleIcon from '@material-ui/icons/AccountCircle';
+import AddCircleIcon from '@material-ui/icons/AddCircle';
 import { Box, IconButton, Badge, Button } from '@material-ui/core';
 import ExitToApp from '@material-ui/icons/ExitToApp';
 import gql from 'graphql-tag';
@@ -20,6 +24,7 @@ const useStyles = makeStyles((theme) => ({
   toolbar: {
     display: 'flex',
     justifyContent: 'flex-end',
+    height: 'fit-content',
   },
 }));
 
@@ -40,13 +45,19 @@ export default function Nav() {
       {user && (
         <>
           <Link href="/sell">
-            <Button className={classes.menuButton}>Offer</Button>
+            <IconButton>
+              <AddCircleIcon />
+            </IconButton>
           </Link>
           <Link href="/orders">
-            <Button className={classes.menuButton}>Orders</Button>
+            <IconButton>
+              <AllInboxIcon />
+            </IconButton>
           </Link>
           <Link href="/account">
-            <Button className={classes.menuButton}>Account</Button>
+            <IconButton>
+              <AccountCircleIcon />
+            </IconButton>
           </Link>
           <IconButton>
             <Badge
@@ -63,13 +74,14 @@ export default function Nav() {
           <IconButton onClick={signout}>
             <ExitToApp />
           </IconButton>
-          {/* <SignOut className={classes.menuButton} /> */}
         </>
       )}
       {!user && (
         <>
           <Link className={classes.link} href="/signin">
-            <Button className={classes.menuButton}>Sign in</Button>
+            <IconButton onClick={signout}>
+              <TransitEnterexitIcon />
+            </IconButton>
           </Link>
         </>
       )}

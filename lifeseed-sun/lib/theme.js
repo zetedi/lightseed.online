@@ -12,7 +12,8 @@ const defaultTheme = createMuiTheme({
       contrastText: '#f1f1f1',
       hover: '#00a484',
       active: '#379393',
-      focus: '#7f3fe9',
+      // focus: '#7f3fe9',
+      // background: '#fb5012',
       border: '#777777',
       get dark() {
         return this.hover;

@@ -1,0 +1,2 @@
+https://github.com/mui-org/material-ui/blob/master/examples/nextjs/pages/_app.js
+wesbos
