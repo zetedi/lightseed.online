@@ -43,7 +43,6 @@ const useStyles = makeStyles((theme) => ({
     position: 'absolute',
     width: '100%',
     zIndex: 2,
-    border: '1px solid red',
   },
   dropDownItem: {
     borderBottom: '1px solid #e3e3e3',
@@ -96,7 +95,7 @@ export default function Search() {
   } = useCombobox({
     items,
     onInputValueChange() {
-      console.log('Iput changed');
+      console.log('Input changed');
       findItemsButChill({
         variables: {
           searchTerm: inputValue,

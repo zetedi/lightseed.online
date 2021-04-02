@@ -1,6 +1,9 @@
 import { useMutation } from '@apollo/client';
+import { useTranslation } from 'react-i18next';
+import { Button, Divider, Grid, TextField } from '@material-ui/core';
 import gql from 'graphql-tag';
 import Router from 'next/router';
+import { makeStyles } from '@material-ui/core/styles';
 import useForm from '../lib/useForm';
 import DisplayError from './ErrorMessage';
 import { ALL_PRODUCTS_QUERY } from './Products';
@@ -29,7 +32,22 @@ const CREATE_PRODUCT_MUTATION = gql`
   }
 `;
 
+const useStyles = makeStyles((theme) => ({
+  root: {
+    '& .MuiTextField-root': {
+      margin: theme.spacing(1),
+      width: '25ch',
+    },
+  },
+  field: {
+    width: '100%',
+  },
+}));
+
 export default function CreateProduct() {
+  const { t } = useTranslation();
+  const classes = useStyles();
+
   const { inputs, handleChange, clearForm, resetForm } = useForm({
     name: '',
     image: '',
@@ -49,6 +67,7 @@ export default function CreateProduct() {
   return (
     <div>
       <form
+        className={classes.root}
         onSubmit={async (e) => {
           e.preventDefault();
           const res = await createProduct();
@@ -59,51 +78,68 @@ export default function CreateProduct() {
         }}
       >
         <DisplayError error={error} />
-        <fieldset disabled={loading} aria-busy={loading}>
-          {/* aria-busy> */}
-          <label htmlFor="name">
-            Name
-            <input
-              type="text"
+        <fieldset
+          disabled={loading}
+          aria-busy={loading}
+          style={{ display: 'flex' }}
+        >
+          <Grid container spacing={1}>
+            {/* aria-busy> */}
+            <TextField
+              aria-label={t('Name')}
+              label={t('Name')}
               id="name"
               name="name"
-              placeholde="Name"
+              size="small"
               value={inputs.name}
               onChange={handleChange}
+              variant="outlined"
+              className={classes.field}
             />
-          </label>
-          <label htmlFor="image">
-            Image
-            <input
-              required
-              type="file"
-              id="image"
-              name="image"
-              onChange={handleChange}
-            />
-          </label>
-          <label htmlFor="price">
-            Price
-            <input
-              type="number"
+            <Divider />
+            <label htmlFor="image">
+              Image
+              <input
+                required
+                type="file"
+                id="image"
+                name="image"
+                onChange={handleChange}
+                className={classes.field}
+              />
+            </label>
+            <Divider />
+            <TextField
+              aria-label={t('Price')}
+              label={t('Price')}
               id="price"
               name="price"
-              placeholde="price"
+              size="small"
               value={inputs.price}
               onChange={handleChange}
+              type="number"
+              variant="outlined"
+              className={classes.field}
             />
-          </label>
-          <label htmlFor="description">
-            Description
-            <textarea
+            <Divider />
+            <TextField
+              aria-label={t('Description')}
+              label={t('Description')}
               id="description"
               name="description"
-              placeholde="Description"
+              size="small"
               value={inputs.description}
               onChange={handleChange}
+              multiline
+              rowsMax={4}
+              variant="outlined"
+              className={classes.field}
             />
-          </label>
-          <button type="submit">+ Add product</button>
+            <Divider />
+            <Button type="submit" variant="outlined">
+              Add product
+            </Button>
+          </Grid>{' '}
         </fieldset>
       </form>
     </div>
