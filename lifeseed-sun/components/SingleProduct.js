@@ -1,7 +1,6 @@
 import { useQuery } from '@apollo/client';
 import gql from 'graphql-tag';
 import Head from 'next/head';
-import styled from 'styled-components';
 import { makeStyles } from '@material-ui/core/styles';
 import { Box } from '@material-ui/core';
 import React from 'react';
@@ -36,20 +35,6 @@ const useStyles = makeStyles((theme) => ({
     },
   },
 }));
-
-const ProductStyles = styled.div`
-  display: grid;
-  grid-auto-columns: 1fr;
-  grid-auto-flow: column;
-  max-width: var(--maxWidth);
-  align-items: top;
-  justify-content: center;
-  gap: 2rem;
-  img {
-    width: 100%;
-    object-fit: contain;
-  }
-`;
 
 const SINGLE_ITEM_QUERY = gql`
   query SINGLE_ITEM_QUERY($id: ID!) {

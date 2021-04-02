@@ -2,8 +2,6 @@ import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import { AppBar, Box, Toolbar, useMediaQuery } from '@material-ui/core';
 import { useLocation } from 'react-router-dom';
-import Logo from '../Logo/Logo';
-import Menu from '../menu/Menu';
 
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
