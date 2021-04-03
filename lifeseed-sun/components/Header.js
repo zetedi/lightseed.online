@@ -8,7 +8,7 @@ import Lifecircle from './Lifecircle';
 
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
-  bar: {
+  header: {
     // backgroundColor: theme.palette.primary.active,
     display: 'grid',
     gridTemplateColumns: 'auto 1fr',
@@ -22,7 +22,7 @@ export default function Header() {
   const classes = useStyles();
   return (
     <>
-      <div className={classes.bar}>
+      <div className={classes.header}>
         <Lifecircle />
         <Nav />
       </div>

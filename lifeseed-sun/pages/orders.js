@@ -3,7 +3,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import gql from 'graphql-tag';
 import Head from 'next/head';
 import { Box, Button } from '@material-ui/core';
-import Link from 'next/Link';
+import Link from 'next/link';
 import ErrorMessage from '../components/ErrorMessage';
 import formatMoney from '../lib/formatMoney';
 

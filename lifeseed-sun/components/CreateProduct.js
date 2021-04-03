@@ -1,6 +1,14 @@
 import { useMutation } from '@apollo/client';
 import { useTranslation } from 'react-i18next';
-import { Button, Divider, Grid, TextField } from '@material-ui/core';
+import {
+  Box,
+  Button,
+  Divider,
+  Grid,
+  Input,
+  LinearProgress,
+  TextField,
+} from '@material-ui/core';
 import gql from 'graphql-tag';
 import Router from 'next/router';
 import { makeStyles } from '@material-ui/core/styles';
@@ -33,14 +41,11 @@ const CREATE_PRODUCT_MUTATION = gql`
 `;
 
 const useStyles = makeStyles((theme) => ({
+  ...theme.customTheme,
   root: {
     '& .MuiTextField-root': {
       margin: theme.spacing(1),
-      width: '25ch',
     },
-  },
-  field: {
-    width: '100%',
   },
 }));
 
@@ -65,7 +70,7 @@ export default function CreateProduct() {
 
   console.log(createProduct);
   return (
-    <div>
+    <Box>
       <form
         className={classes.root}
         onSubmit={async (e) => {
@@ -78,13 +83,13 @@ export default function CreateProduct() {
         }}
       >
         <DisplayError error={error} />
+        {loading ? <LinearProgress color="secondary" /> : ''}
         <fieldset
           disabled={loading}
           aria-busy={loading}
-          style={{ display: 'flex' }}
+          className={classes.fieldset}
         >
           <Grid container spacing={1}>
-            {/* aria-busy> */}
             <TextField
               aria-label={t('Name')}
               label={t('Name')}
@@ -96,19 +101,15 @@ export default function CreateProduct() {
               variant="outlined"
               className={classes.field}
             />
-            <Divider />
-            <label htmlFor="image">
-              Image
-              <input
-                required
-                type="file"
-                id="image"
-                name="image"
-                onChange={handleChange}
-                className={classes.field}
-              />
-            </label>
-            <Divider />
+            {/* https://www.kurzor.net/blog/uploading-and-resizing-images-part1 */}
+            <Input
+              required
+              type="file"
+              id="image"
+              name="image"
+              onChange={handleChange}
+              className={classes.field}
+            />
             <TextField
               aria-label={t('Price')}
               label={t('Price')}
@@ -121,7 +122,6 @@ export default function CreateProduct() {
               variant="outlined"
               className={classes.field}
             />
-            <Divider />
             <TextField
               aria-label={t('Description')}
               label={t('Description')}
@@ -131,17 +131,27 @@ export default function CreateProduct() {
               value={inputs.description}
               onChange={handleChange}
               multiline
-              rowsMax={4}
+              rowsMax={10}
               variant="outlined"
               className={classes.field}
             />
             <Divider />
-            <Button type="submit" variant="outlined">
-              Add product
-            </Button>
-          </Grid>{' '}
+            <Box
+              className={classes.addButton}
+              style={{
+                width: '100%',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                padding: '3rem',
+              }}
+            >
+              <Button type="submit" variant="outlined">
+                Create
+              </Button>
+            </Box>
+          </Grid>
         </fieldset>
       </form>
-    </div>
+    </Box>
   );
 }

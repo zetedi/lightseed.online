@@ -6,8 +6,11 @@ import StorefrontIcon from '@material-ui/icons/Storefront';
 import AllInboxIcon from '@material-ui/icons/AllInbox';
 import TransitEnterexitIcon from '@material-ui/icons/TransitEnterexit';
 import AccountCircleIcon from '@material-ui/icons/AccountCircle';
+import NatureIcon from '@material-ui/icons/Nature';
+import MapIcon from '@material-ui/icons/Map';
+import LanguageIcon from '@material-ui/icons/Language';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
-import { Box, IconButton, Badge, Button } from '@material-ui/core';
+import { Box, IconButton, Badge } from '@material-ui/core';
 import ExitToApp from '@material-ui/icons/ExitToApp';
 import gql from 'graphql-tag';
 import { useCart } from '../lib/cartState';
@@ -57,6 +60,21 @@ export default function Nav() {
           <Link href="/account">
             <IconButton>
               <AccountCircleIcon />
+            </IconButton>
+          </Link>
+          <Link href="/lifetree">
+            <IconButton>
+              <NatureIcon />
+            </IconButton>
+          </Link>
+          <Link href="/map">
+            <IconButton>
+              <MapIcon />
+            </IconButton>
+          </Link>
+          <Link href="/lang">
+            <IconButton>
+              <LanguageIcon />
             </IconButton>
           </Link>
           <IconButton>

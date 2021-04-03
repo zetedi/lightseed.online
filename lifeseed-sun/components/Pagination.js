@@ -3,7 +3,7 @@ import Link from 'next/link';
 import gql from 'graphql-tag';
 import { useQuery } from '@apollo/client';
 import { makeStyles } from '@material-ui/core/styles';
-import { Box } from '@material-ui/core';
+import { Box, IconButton } from '@material-ui/core';
 import NavigateBeforeIcon from '@material-ui/icons/NavigateBefore';
 import NavigateNextIcon from '@material-ui/icons/NavigateNext';
 import DisplayError from './ErrorMessage';
@@ -24,23 +24,9 @@ const useStyles = makeStyles((theme) => ({
     display: 'inline-grid',
     gridTemplateColumns: 'repeat(4, auto)',
     alignItems: 'stretch',
-    justifyContent: 'center',
-    alignContent: 'center',
-    margin: '2rem 0',
-    border: '1px solid black',
-    borderRadius: '10px',
-    '& > *': {
-      margin: 0,
-      padding: '15px 30px',
-      borderRight: '1px solid var(--lightGray)',
-      '&:last-child': {
-        borderRight: 0,
-      },
-    },
-    'a[aria-disabled=true]': {
-      color: 'grey',
-      pointerEvents: 'none',
-    },
+    justifyContent: 'right',
+    margin: '.5rem',
+    alignContent: 'right',
   },
 }));
 
@@ -59,18 +45,19 @@ export default function Pagination({ page }) {
         </title>
       </Head>
       <Link href={`/products/${page - 1}`}>
-        <a aria-disabled={page <= 1}>
-          <NavigateBeforeIcon />
-        </a>
+        <IconButton disabled={page <= 1}>
+          <NavigateBeforeIcon color={page <= 1 ? 'secondary' : 'primary'} />
+        </IconButton>
       </Link>
       <p>
-        Page {page} of {pageCount}{' '}
+        Page <b>{page}</b>/{pageCount} of <b>{count}</b> items
       </p>
-      <p>{count} Items total</p>
       <Link href={`/products/${page + 1}`}>
-        <a aria-disabled={page >= pageCount}>
-          <NavigateNextIcon />
-        </a>
+        <IconButton disabled={page >= pageCount}>
+          <NavigateNextIcon
+            color={page >= pageCount ? 'secondary' : 'primary'}
+          />
+        </IconButton>
       </Link>
     </Box>
   );

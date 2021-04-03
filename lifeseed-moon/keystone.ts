@@ -9,6 +9,7 @@ import { ProductImage } from './schemas/ProductImage';
 import { User } from './schemas/User';
 import { Role } from './schemas/Role';
 import { Lifeseed } from './schemas/Lifeseed';
+import { Lifetree } from './schemas/Lifetree';
 import { CartItem } from './schemas/CartItem';
 import { OrderItem } from './schemas/OrderItem';
 import { Order } from './schemas/Order';
@@ -63,6 +64,7 @@ export default withAuth(
       // Schema items go in here
       User,
       Lifeseed,
+      Lifetree,
       Product,
       ProductImage,
       CartItem,

@@ -293,6 +293,19 @@ const theme = createMuiTheme({
       marginRight: defaultTheme.spacing(2),
       padding: '1rem',
     },
+    field: {
+      width: '100%',
+      margin: '2rem',
+    },
+    fieldset: {
+      margin: '1rem',
+      padding: '2rem',
+      minInlineSize: 'min-content',
+      borderWidth: '1px',
+      borderStyle: 'groove',
+      borderRadius: '4px',
+      display: 'flex',
+    },
   },
 });
 
