@@ -1,6 +1,6 @@
 import { makeStyles } from '@material-ui/core/styles';
 import { Box, Drawer, IconButton } from '@material-ui/core';
-import CloseCart from '@material-ui/icons/CancelPresentationOutlined';
+import CloseIcon from '@material-ui/icons/Close';
 import { useUser } from './User';
 import formatMoney from '../lib/formatMoney';
 import calcTotalPrice from '../lib/calcTotalPrice';
@@ -11,35 +11,41 @@ import Checkout from './Checkout';
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
   cartItem: {
-    padding: '1rem 0',
-    borderBottom: '1px solid var(--lightGrey)',
+    padding: '1rem',
+    paddingRight: 0,
+    // borderBottom: '1px solid grey',
     display: 'grid',
     gridTemplateColumns: 'auto 1fr auto',
     '& img': {
       marginRight: '1rem',
+      borderRadius: '8px',
     },
     '& h3 p': {
       margin: 0,
     },
   },
   cart: {
-    minWidth: '500px',
+    minWidth: '30rem',
     display: 'grid',
     gridTemplateRows: 'auto 1fr auto',
     '& header': {
       borderBottom: '5px solid var(--black)',
-      marginBottom: '2rem',
-      paddingBottom: '2rem',
+      marginBottom: '1rem',
+      paddingBottom: '1rem',
     },
     '& footer': {
-      borderTop: '10px double #000',
+      position: 'absolute',
+      bottom: 0,
+      width: '100%',
+      // height: '2.5rem',
+      // borderTop: '2px solid grey',
       marginTop: '2rem',
       paddingTop: '2rem',
-      /* display: grid;
-    grid-template-columns: auto auto; */
+      // display: 'grid',
+      // gridTemplateColumns: 'auto auto',
       alignItems: 'center',
-      fontSize: '3rem',
-      fontWeight: '900',
+      fontSize: '1.5rem',
+      fontWeight: '400',
       '& p': {
         margin: '0',
       },
@@ -48,7 +54,7 @@ const useStyles = makeStyles((theme) => ({
       margin: '0',
       padding: '0',
       listStyle: 'none',
-      overflow: 'scroll',
+      overflow: 'hidden',
     },
   },
 }));
@@ -58,24 +64,26 @@ function CartItem({ cartItem }) {
   const { product } = cartItem;
   if (!product) return null;
   return (
-    <Box className={classes.cartItem}>
-      <img
-        width="100"
-        src={product.photo.image.publicUrlTransformed}
-        alt={product.name}
-      />
-      <div>
-        <h3>{product.name}</h3>
-        <p>
-          {formatMoney(product.price * cartItem.quantity)}-
-          <em>
-            {cartItem.quantity} &times; {formatMoney(product.price)}
-            each
-          </em>
-        </p>
-      </div>
-      <RemoveFromCart id={cartItem.id} />
-    </Box>
+    <>
+      <Box className={classes.cartItem}>
+        <img
+          width="70"
+          src={product.photo.image.publicUrlTransformed}
+          alt={product.name}
+        />
+        <div>
+          <h3>{product.name}</h3>
+          <p>
+            {formatMoney(product.price * cartItem.quantity)}-
+            <em>
+              {cartItem.quantity} &times; {formatMoney(product.price)}
+              each
+            </em>
+          </p>
+        </div>
+        <RemoveFromCart id={cartItem.id} />
+      </Box>
+    </>
   );
 }
 export default function Cart() {
@@ -90,10 +98,21 @@ export default function Cart() {
       onClose={closeCart}
       className={classes.cart}
     >
-      <header style={{ display: 'flex', justifyContent: 'space-between' }}>
-        {me.name}'s carting
+      <header
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginLeft: '1rem',
+        }}
+      >
+        {/* {me.name}'s  */}
+        <Box
+          style={{ marginTop: '1rem', fontSize: '1.5rem', fontWeight: '400' }}
+        >
+          Cart
+        </Box>
         <IconButton aria-label="closecart" onClick={closeCart}>
-          <CloseCart fontSize="large" />
+          <CloseIcon fontSize="normal" />
         </IconButton>
       </header>
       <ul>
@@ -102,7 +121,9 @@ export default function Cart() {
         ))}
       </ul>
       <footer>
-        <p>{formatMoney(calcTotalPrice(me.cart))}</p>
+        <Box style={{ direction: 'rtl', marginRight: '1rem' }}>
+          {formatMoney(calcTotalPrice(me.cart))}
+        </Box>
         <Checkout />
       </footer>
     </Drawer>

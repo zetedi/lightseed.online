@@ -47,7 +47,7 @@ function Torus(props) {
   return (
     <mesh {...props} ref={mesh} scale={1}>
       <torusGeometry args={[10, 3, 16, 100]} />
-      <meshStandardMaterial color="orange" />
+      <meshStandardMaterial color="yellow" />
     </mesh>
   );
 }

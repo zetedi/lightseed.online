@@ -77,7 +77,7 @@ export default function Nav() {
               <LanguageIcon />
             </IconButton>
           </Link>
-          <IconButton>
+          <IconButton onClick={openCart}>
             <Badge
               badgeContent={user.cart.reduce(
                 (tally, cartItem) =>
@@ -86,7 +86,7 @@ export default function Nav() {
               )}
               color="secondary"
             >
-              <ShoppingCartIcon onClick={openCart} />
+              <ShoppingCartIcon />
             </Badge>
           </IconButton>
           <IconButton onClick={signout}>
