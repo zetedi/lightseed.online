@@ -3,7 +3,6 @@ import { useMutation } from '@apollo/client';
 import {
   Box,
   Drawer,
-  Hidden,
   IconButton,
   useMediaQuery,
   useTheme,
@@ -61,7 +60,6 @@ export default function Nav() {
               <MenuIcon size="large" />
             </IconButton>
           </Box>
-          {/* <Hidden xsDown implementation="css"> */}
           <Drawer
             anchor="right"
             open={mobileMenuOpen}
@@ -77,7 +75,6 @@ export default function Nav() {
               signout={signout}
             />
           </Drawer>
-          {/* </Hidden> */}
         </>
       )}
     </>

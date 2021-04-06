@@ -94,7 +94,7 @@ export default function OrdersPage() {
       <h2>You have {allOrders.length} orders</h2>
       <Box className={classes.order}>
         {allOrders.map((order) => (
-          <Box className={classes.orderItem}>
+          <Box className={classes.orderItem} key={order.id}>
             <Link href={`/order/${order.id}`} key={order.id}>
               <a>
                 <div className="order-meta">
