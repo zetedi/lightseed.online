@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import Link from 'next/link';
 import { useMutation } from '@apollo/client';
 import { makeStyles } from '@material-ui/core/styles';

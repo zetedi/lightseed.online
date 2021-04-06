@@ -1,7 +1,12 @@
 import Image from 'next/image';
+import Link from 'next/link';
 
 function Lifecircle() {
-  return <Image src="/static/lifeseed.svg" alt="me" width="64" height="64" />;
+  return (
+    <Link href="/">
+      <Image src="/static/lifeseed.svg" alt="me" width="64" height="64" />
+    </Link>
+  );
 }
 
 export default Lifecircle;
