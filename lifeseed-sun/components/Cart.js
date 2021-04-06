@@ -1,5 +1,5 @@
 import { makeStyles } from '@material-ui/core/styles';
-import { Box, Drawer, IconButton } from '@material-ui/core';
+import { Box, Drawer, IconButton, Paper } from '@material-ui/core';
 import CloseIcon from '@material-ui/icons/Close';
 import { useUser } from './User';
 import formatMoney from '../lib/formatMoney';
@@ -13,12 +13,14 @@ const useStyles = makeStyles((theme) => ({
   cartItem: {
     padding: '1rem',
     paddingRight: 0,
+    paddingTop: 0,
     // borderBottom: '1px solid grey',
     display: 'grid',
     gridTemplateColumns: 'auto 1fr auto',
     '& img': {
-      marginRight: '1rem',
       borderRadius: '8px',
+      marginRight: '1rem',
+      marginTop: '1rem',
     },
     '& h3 p': {
       margin: 0,
@@ -64,26 +66,28 @@ function CartItem({ cartItem }) {
   const { product } = cartItem;
   if (!product) return null;
   return (
-    <>
+    <Paper style={{ margin: '.3rem' }}>
       <Box className={classes.cartItem}>
         <img
           width="70"
           src={product.photo.image.publicUrlTransformed}
           alt={product.name}
         />
-        <div>
-          <h3>{product.name}</h3>
-          <p>
-            {formatMoney(product.price * cartItem.quantity)}-
+        <div style={{ marginTop: '1rem' }}>
+          <b>{product.name}</b>
+          <br />
+          <>
+            {formatMoney(product.price * cartItem.quantity)}
+            <br />
             <em>
               {cartItem.quantity} &times; {formatMoney(product.price)}
-              each
+              {' each'}
             </em>
-          </p>
+          </>
         </div>
         <RemoveFromCart id={cartItem.id} />
       </Box>
-    </>
+    </Paper>
   );
 }
 export default function Cart() {
