@@ -83,7 +83,7 @@ export default function SingleOrderPage({ query }) {
   return (
     <Box className={classes.placedOrder}>
       <Head>
-        <title>Webshop - {order.id}</title>
+        <title>Order - {order.id}</title>
       </Head>
       <p>
         <span>Order Id</span>

@@ -41,7 +41,7 @@ export default function Pagination({ page }) {
     <Box className={classes.pagination}>
       <Head>
         <title>
-          Webshop - Page {page} of {pageCount}
+          Goods and services - Page {page} of {pageCount}
         </title>
       </Head>
       <Link href={`/products/${page - 1}`}>

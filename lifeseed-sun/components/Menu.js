@@ -6,6 +6,8 @@ import AllInboxIcon from '@material-ui/icons/AllInbox';
 import TransitEnterexitIcon from '@material-ui/icons/TransitEnterexit';
 import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 import NatureIcon from '@material-ui/icons/Nature';
+import AccountBalanceWalletIcon from '@material-ui/icons/AccountBalanceWallet';
+import ForumIcon from '@material-ui/icons/Forum';
 import MapIcon from '@material-ui/icons/Map';
 import LanguageIcon from '@material-ui/icons/Language';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
@@ -25,6 +27,11 @@ export default function Menu({ user, openCart, toggleSearch, signout }) {
       </IconButton>
       {user && (
         <>
+          <Link href="/forum">
+            <IconButton>
+              <ForumIcon />
+            </IconButton>
+          </Link>
           <Link href="/sell">
             <IconButton>
               <AddCircleIcon />
@@ -53,6 +60,11 @@ export default function Menu({ user, openCart, toggleSearch, signout }) {
           <Link href="/lang">
             <IconButton>
               <LanguageIcon />
+            </IconButton>
+          </Link>
+          <Link href="/wallet">
+            <IconButton>
+              <AccountBalanceWalletIcon />
             </IconButton>
           </Link>
           <IconButton onClick={openCart}>

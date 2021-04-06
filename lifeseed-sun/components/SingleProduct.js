@@ -66,7 +66,7 @@ export default function SingleProduct({ id }) {
   return (
     <Box className={classes.product}>
       <Head>
-        <title>Webshop | {Product.name}</title>
+        <title>{Product.name}</title>
       </Head>
       <img
         src={Product.photo.image.publicUrlTransformed}

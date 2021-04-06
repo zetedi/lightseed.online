@@ -1,3 +1,4 @@
+import Head from 'next/head';
 import { Box } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import ReactDOM from 'react-dom';
@@ -69,19 +70,24 @@ export default function Index() {
   //     }));
 
   return (
-    <Box className={classes.landing}>
-      <Canvas style={{ height: '70vh' }}>
-        <ambientLight />
-        <pointLight position={[10, 10, 10]} />
-        <Sphere position={[0, 0, 0]} />
-        <Torus position={[0, 0, 0]} />
-      </Canvas>
-      {/* <DatGui data={state.data} onUpdate={handleUpdate}>
+    <>
+      <Head>
+        <title>lifeseed online</title>
+      </Head>
+      <Box className={classes.landing}>
+        <Canvas style={{ height: '70vh' }}>
+          <ambientLight />
+          <pointLight position={[10, 10, 10]} />
+          <Sphere position={[0, 0, 0]} />
+          <Torus position={[0, 0, 0]} />
+        </Canvas>
+        {/* <DatGui data={state.data} onUpdate={handleUpdate}>
         <DatString path="package" label="Package" />
         <DatNumber path="power" label="Power" min={9000} max={9999} step={1} />
         <DatBoolean path="isAwesome" label="Awesome?" />
         <DatColor path="feelsLike" label="Feels Like" />
       </DatGui> */}
-    </Box>
+      </Box>
+    </>
   );
 }
