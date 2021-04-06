@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import Link from 'next/link';
 import { useMutation } from '@apollo/client';
 import { makeStyles } from '@material-ui/core/styles';
@@ -10,10 +11,11 @@ import NatureIcon from '@material-ui/icons/Nature';
 import MapIcon from '@material-ui/icons/Map';
 import LanguageIcon from '@material-ui/icons/Language';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
+import SearchIcon from '@material-ui/icons/Search';
 import { Box, IconButton, Badge } from '@material-ui/core';
 import ExitToApp from '@material-ui/icons/ExitToApp';
 import gql from 'graphql-tag';
-import { useCart } from '../lib/cartState';
+import { useApp } from '../lib/appState';
 import { useUser, CURRENT_USER_QUERY } from './User';
 
 const SIGNOUT_MUTATION = gql`
@@ -34,10 +36,10 @@ const useStyles = makeStyles((theme) => ({
 export default function Nav() {
   const user = useUser();
   const classes = useStyles();
+  const { openCart, toggleSearch } = useApp();
   const [signout] = useMutation(SIGNOUT_MUTATION, {
     refetchQueries: [{ query: CURRENT_USER_QUERY }],
   });
-  const { openCart } = useCart();
   return (
     <Box className={classes.toolbar}>
       <Link href="/products">
@@ -45,6 +47,9 @@ export default function Nav() {
           <StorefrontIcon />
         </IconButton>
       </Link>
+      <IconButton onClick={toggleSearch}>
+        <SearchIcon />
+      </IconButton>
       {user && (
         <>
           <Link href="/sell">

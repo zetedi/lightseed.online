@@ -4,7 +4,7 @@ import CloseIcon from '@material-ui/icons/Close';
 import { useUser } from './User';
 import formatMoney from '../lib/formatMoney';
 import calcTotalPrice from '../lib/calcTotalPrice';
-import { useCart } from '../lib/cartState';
+import { useApp } from '../lib/appState';
 import RemoveFromCart from './RemoveFromCart';
 import Checkout from './Checkout';
 
@@ -93,7 +93,7 @@ function CartItem({ cartItem }) {
 export default function Cart() {
   const classes = useStyles();
   const me = useUser();
-  const { cartOpen, closeCart } = useCart();
+  const { cartOpen, closeCart } = useApp();
   if (!me) return null;
   return (
     <Drawer

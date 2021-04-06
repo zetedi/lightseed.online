@@ -9,7 +9,7 @@ import { ApolloProvider } from '@apollo/client';
 import theme from '../lib/theme';
 import '../lib/nprogress.css';
 import withData from '../lib/withData';
-import { CartStateProvider } from '../lib/cartState';
+import { AppStateProvider } from '../lib/appState';
 import Header from '../components/Header';
 
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -33,13 +33,13 @@ function MyApp({ Component, pageProps, apollo }) {
         />
       </Head>
       <ApolloProvider client={apollo}>
-        <CartStateProvider>
+        <AppStateProvider>
           <ThemeProvider theme={theme}>
             <CssBaseline />
             <Header />
             <Component {...pageProps} />
           </ThemeProvider>
-        </CartStateProvider>
+        </AppStateProvider>
       </ApolloProvider>
     </>
   );

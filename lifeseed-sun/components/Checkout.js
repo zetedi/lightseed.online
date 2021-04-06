@@ -12,7 +12,7 @@ import nProgress from 'nprogress';
 import { gql, useMutation } from '@apollo/client';
 import { useRouter } from 'next/dist/client/router';
 
-import { useCart } from '../lib/cartState';
+import { useApp } from '../lib/appState';
 import { CURRENT_USER_QUERY } from './User';
 
 const useStyles = makeStyles((theme) => ({
@@ -50,7 +50,7 @@ function CheckoutForm() {
   const stripe = useStripe();
   const elements = useElements();
   const router = useRouter();
-  const { closeCart } = useCart();
+  const { closeCart } = useApp();
 
   const [checkout, { error: graphQLError }] = useMutation(
     CREATE_ORDER_MUTATION,
