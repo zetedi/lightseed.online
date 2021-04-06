@@ -1,21 +1,19 @@
-import Link from 'next/link';
+import { useState } from 'react';
 import { useMutation } from '@apollo/client';
+import {
+  Box,
+  Drawer,
+  Hidden,
+  IconButton,
+  useMediaQuery,
+  useTheme,
+} from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
-import ShoppingCartIcon from '@material-ui/icons/ShoppingCart';
-import StorefrontIcon from '@material-ui/icons/Storefront';
-import AllInboxIcon from '@material-ui/icons/AllInbox';
-import TransitEnterexitIcon from '@material-ui/icons/TransitEnterexit';
-import AccountCircleIcon from '@material-ui/icons/AccountCircle';
-import NatureIcon from '@material-ui/icons/Nature';
-import MapIcon from '@material-ui/icons/Map';
-import LanguageIcon from '@material-ui/icons/Language';
-import AddCircleIcon from '@material-ui/icons/AddCircle';
-import SearchIcon from '@material-ui/icons/Search';
-import { Box, IconButton, Badge } from '@material-ui/core';
-import ExitToApp from '@material-ui/icons/ExitToApp';
+import MenuIcon from '@material-ui/icons/Menu';
 import gql from 'graphql-tag';
 import { useApp } from '../lib/appState';
 import { useUser, CURRENT_USER_QUERY } from './User';
+import Menu from './Menu';
 
 const SIGNOUT_MUTATION = gql`
   mutation {
@@ -35,78 +33,53 @@ const useStyles = makeStyles((theme) => ({
 export default function Nav() {
   const user = useUser();
   const classes = useStyles();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { openCart, toggleSearch } = useApp();
   const [signout] = useMutation(SIGNOUT_MUTATION, {
     refetchQueries: [{ query: CURRENT_USER_QUERY }],
   });
+  const theme = useTheme();
+  function toggleMobileMenuOpen() {
+    setMobileMenuOpen((prev) => !prev);
+  }
+  const isMediumOrBigger = useMediaQuery(theme.breakpoints.up('md'));
   return (
-    <Box className={classes.toolbar}>
-      <Link href="/products">
-        <IconButton>
-          <StorefrontIcon />
-        </IconButton>
-      </Link>
-      <IconButton onClick={toggleSearch}>
-        <SearchIcon />
-      </IconButton>
-      {user && (
+    <>
+      {isMediumOrBigger ? (
+        <Box className={classes.toolbar}>
+          <Menu
+            user={user}
+            openCart={openCart}
+            toggleSearch={toggleSearch}
+            signout={signout}
+          />
+        </Box>
+      ) : (
         <>
-          <Link href="/sell">
-            <IconButton>
-              <AddCircleIcon />
+          <Box className={classes.toolbar}>
+            <IconButton onClick={toggleMobileMenuOpen}>
+              <MenuIcon size="large" />
             </IconButton>
-          </Link>
-          <Link href="/orders">
-            <IconButton>
-              <AllInboxIcon />
-            </IconButton>
-          </Link>
-          <Link href="/account">
-            <IconButton>
-              <AccountCircleIcon />
-            </IconButton>
-          </Link>
-          <Link href="/lifetree">
-            <IconButton>
-              <NatureIcon />
-            </IconButton>
-          </Link>
-          <Link href="/map">
-            <IconButton>
-              <MapIcon />
-            </IconButton>
-          </Link>
-          <Link href="/lang">
-            <IconButton>
-              <LanguageIcon />
-            </IconButton>
-          </Link>
-          <IconButton onClick={openCart}>
-            <Badge
-              badgeContent={user.cart.reduce(
-                (tally, cartItem) =>
-                  tally + (cartItem.product ? cartItem.quantity : 0),
-                0
-              )}
-              color="secondary"
-            >
-              <ShoppingCartIcon />
-            </Badge>
-          </IconButton>
-          <IconButton onClick={signout}>
-            <ExitToApp />
-          </IconButton>
+          </Box>
+          {/* <Hidden xsDown implementation="css"> */}
+          <Drawer
+            anchor="right"
+            open={mobileMenuOpen}
+            onClose={toggleMobileMenuOpen}
+            classes={{
+              paper: classes.drawerPaper,
+            }}
+          >
+            <Menu
+              user={user}
+              openCart={openCart}
+              toggleSearch={toggleSearch}
+              signout={signout}
+            />
+          </Drawer>
+          {/* </Hidden> */}
         </>
       )}
-      {!user && (
-        <>
-          <Link className={classes.link} href="/signin">
-            <IconButton onClick={signout}>
-              <TransitEnterexitIcon />
-            </IconButton>
-          </Link>
-        </>
-      )}
-    </Box>
+    </>
   );
 }

@@ -119,17 +119,21 @@ export default function Cart() {
           <CloseIcon fontSize="normal" />
         </IconButton>
       </header>
-      <ul>
+      <Box style={{ minWidth: '30vw' }}>
         {me.cart.map((cartItem) => (
           <CartItem key={cartItem.id} cartItem={cartItem} />
         ))}
-      </ul>
-      <footer>
-        <Box style={{ direction: 'rtl', marginRight: '1rem' }}>
-          {formatMoney(calcTotalPrice(me.cart))}
-        </Box>
-        <Checkout />
-      </footer>
+      </Box>
+      {me.cart.length === 0 ? (
+        ''
+      ) : (
+        <footer>
+          <Box style={{ direction: 'rtl', marginRight: '1rem' }}>
+            {formatMoney(calcTotalPrice(me.cart))}
+          </Box>
+          <Checkout />
+        </footer>
+      )}
     </Drawer>
   );
 }
