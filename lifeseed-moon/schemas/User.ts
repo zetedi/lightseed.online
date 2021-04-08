@@ -1,6 +1,5 @@
 import { list } from '@keystone-next/keystone/schema';
 import { text, password, relationship } from '@keystone-next/fields';
-import { Order } from './Order';
 import { permissions, rules } from '../access';
 
 export const User = list({
@@ -35,5 +34,6 @@ export const User = list({
       },
     }),
     products: relationship({ ref: 'Product.user', many: true }),
+    lifeTree: relationship({ ref: 'LifeTree.user' }),
   },
 });

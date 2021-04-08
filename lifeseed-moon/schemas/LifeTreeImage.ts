@@ -10,7 +10,7 @@ export const cloudinary = {
   apiSecret: process.env.CLOUDINARY_SECRET,
   folder: 'lifeseed',
 };
-export const ProductImage = list({
+export const LifeTreeImage = list({
   access: {
     create: isSignedIn,
     read: () => true,
@@ -23,11 +23,11 @@ export const ProductImage = list({
       label: 'Source',
     }),
     altText: text(),
-    product: relationship({ ref: 'Product.photo' }),
+    lifeTree: relationship({ ref: 'LifeTree.photo' }),
   },
   ui: {
     listView: {
-      initialColumns: ['image', 'altText', 'product'],
+      initialColumns: ['image', 'altText', 'lifeTree'],
     },
   },
 });

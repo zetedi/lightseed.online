@@ -6,10 +6,11 @@ import {
 } from '@keystone-next/keystone/session';
 import { Product } from './schemas/Product';
 import { ProductImage } from './schemas/ProductImage';
+import { LifeTreeImage } from './schemas/LifeTreeImage';
 import { User } from './schemas/User';
 import { Role } from './schemas/Role';
-import { Lifeseed } from './schemas/Lifeseed';
-import { Lifetree } from './schemas/Lifetree';
+import { LifeSeed } from './schemas/LifeSeed';
+import { LifeTree } from './schemas/LifeTree';
 import { CartItem } from './schemas/CartItem';
 import { OrderItem } from './schemas/OrderItem';
 import { Order } from './schemas/Order';
@@ -63,8 +64,9 @@ export default withAuth(
     lists: createSchema({
       // Schema items go in here
       User,
-      Lifeseed,
-      Lifetree,
+      LifeSeed,
+      LifeTree,
+      LifeTreeImage,
       Product,
       ProductImage,
       CartItem,
