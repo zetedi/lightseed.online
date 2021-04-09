@@ -6,6 +6,9 @@ export const CURRENT_USER_QUERY = gql`
       ... on User {
         id
         email
+        lifeTree {
+          id
+        }
         name
         cart {
           id

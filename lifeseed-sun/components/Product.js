@@ -112,7 +112,7 @@ export default function Product({ product }) {
             },
           }}
         >
-          <Button>Edit</Button>
+          <Button variant="outlined">Edit</Button>
         </Link>
         <DeleteProduct id={product.id}>Delete</DeleteProduct>
         <AddToCart id={product.id} />
