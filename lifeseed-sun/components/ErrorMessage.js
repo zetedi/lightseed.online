@@ -7,18 +7,7 @@ import PropTypes from 'prop-types';
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
   error: {
-    padding: '2rem',
-    background: 'white',
-    margin: '2rem 0',
-    border: '1px solid rgba(0, 0, 0, 0.05)',
-    borderLeft: '5px solid red',
-    '& p': {
-      margin: '0',
-      fontWeight: '100',
-    },
-    '& strong': {
-      marginRight: '1rem',
-    },
+    color: 'red',
   },
 }));
 
@@ -33,7 +22,6 @@ const DisplayError = ({ error }) => {
     return error.networkError.result.errors.map((error, i) => (
       <Box className={classes.error} key={i}>
         <p data-test="graphql-error">
-          <strong>Shoot!</strong>
           {error.message.replace('GraphQL error: ', '')}
         </p>
       </Box>
@@ -42,7 +30,6 @@ const DisplayError = ({ error }) => {
   return (
     <Box className={classes.error}>
       <p data-test="graphql-error">
-        <strong>Shoot!</strong>
         {error.message.replace('GraphQL error: ', '')}
       </p>
     </Box>

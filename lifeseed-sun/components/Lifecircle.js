@@ -4,7 +4,7 @@ import Link from 'next/link';
 function Lifecircle() {
   return (
     <Link href="/">
-      <Image src="/static/lifeseed.svg" alt="me" width="64" height="64" />
+      <Image src="/static/lifeseed.svg" alt="lifeseed" width="64" height="64" />
     </Link>
   );
 }

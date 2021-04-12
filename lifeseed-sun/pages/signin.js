@@ -18,8 +18,8 @@ export default function SignInPage() {
   return (
     <Box className={classes.signIn}>
       <SignIn />
-      <SignUp />
-      <RequestReset />
+      {/* <SignUp /> */}
+      {/* <RequestReset /> */}
     </Box>
   );
 }
