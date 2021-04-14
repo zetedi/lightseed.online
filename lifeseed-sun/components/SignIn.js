@@ -97,87 +97,77 @@ export default function SignIn() {
     console.log(inputs);
     const res = await signin();
     console.log(res);
+    console.log('signin');
+    router.push('/');
     resetForm();
   }
-  const goHome = () => {
-    // router.push('/');
-  };
   const error =
     data?.authenticateUserWithPassword.__typename ===
     'UserAuthenticationWithPasswordFailure'
       ? data?.authenticateUserWithPassword
-      : goHome();
+      : undefined;
 
-  if (!error)
-    return (
-      <>
-        <Grid container component="main" className={classes.root}>
-          <CssBaseline />
-          <Grid item xs={false} sm={4} md={7} className={classes.image} />
-          <Grid
-            item
-            xs={12}
-            sm={8}
-            md={5}
-            component={Paper}
-            elevation={6}
-            square
-          >
-            <div className={classes.paper}>
-              <Avatar className={classes.avatar}>
-                <LockOutlinedIcon />
-              </Avatar>
-              <Typography component="h1" variant="h5">
-                Sign in
-              </Typography>
-              <Error error={error} />
-              {loading && (
-                <CircularProgress
-                  size={24}
-                  className={classes.circularProgress}
-                />
-              )}
-              <form onSubmit={handleSubmit} className={classes.form} noValidate>
-                <TextField
-                  variant="outlined"
-                  margin="normal"
-                  required
-                  fullWidth
-                  id="email"
-                  label="Email"
-                  name="email"
-                  autoComplete="email"
-                  value={inputs.email}
-                  error={!!inputs.email}
-                  onChange={handleChange}
-                />
-                <TextField
-                  variant="outlined"
-                  margin="normal"
-                  required
-                  fullWidth
-                  name="password"
-                  label="Password"
-                  type="password"
-                  id="password"
-                  value={inputs.password}
-                  error={!!inputs.password}
-                  onChange={handleChange}
-                />
-                <FormControlLabel
-                  control={<Checkbox value="remember" color="primary" />}
-                  label="Remember me"
-                />
-                <Button
-                  type="submit"
-                  fullWidth
-                  variant="contained"
-                  color="primary"
-                  className={classes.submit}
-                >
-                  Sign In
-                </Button>
-                {/* <Grid container>
+  return (
+    <>
+      <Grid container component="main" className={classes.root}>
+        <CssBaseline />
+        <Grid item xs={false} sm={4} md={7} className={classes.image} />
+        <Grid item xs={12} sm={8} md={5} component={Paper} elevation={6} square>
+          <div className={classes.paper}>
+            <Avatar className={classes.avatar}>
+              <LockOutlinedIcon />
+            </Avatar>
+            <Typography component="h1" variant="h5">
+              Sign in
+            </Typography>
+            <Error error={error} />
+            {loading && (
+              <CircularProgress
+                size={24}
+                className={classes.circularProgress}
+              />
+            )}
+            <form onSubmit={handleSubmit} className={classes.form} noValidate>
+              <TextField
+                variant="outlined"
+                margin="normal"
+                required
+                fullWidth
+                id="email"
+                label="Email"
+                name="email"
+                autoComplete="email"
+                value={inputs.email}
+                error={!!inputs.email}
+                onChange={handleChange}
+              />
+              <TextField
+                variant="outlined"
+                margin="normal"
+                required
+                fullWidth
+                name="password"
+                label="Password"
+                type="password"
+                id="password"
+                value={inputs.password}
+                error={!!inputs.password}
+                onChange={handleChange}
+              />
+              <FormControlLabel
+                control={<Checkbox value="remember" color="primary" />}
+                label="Remember me"
+              />
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                color="primary"
+                className={classes.submit}
+              >
+                Sign In
+              </Button>
+              {/* <Grid container>
                 <Grid item xs>
                   <Link
                     to="#"
@@ -197,13 +187,13 @@ export default function SignIn() {
                   </Link>
                 </Grid>
               </Grid> */}
-                <Box mt={5}>
-                  <Version />
-                </Box>
-              </form>
-            </div>
-          </Grid>
+              <Box mt={5}>
+                <Version />
+              </Box>
+            </form>
+          </div>
         </Grid>
-      </>
-    );
+      </Grid>
+    </>
+  );
 }
