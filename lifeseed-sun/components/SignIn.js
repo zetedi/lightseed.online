@@ -96,9 +96,8 @@ export default function SignIn() {
     e.preventDefault();
     console.log(inputs);
     const res = await signin();
-    console.log(res);
-    console.log('signin');
-    router.push('/');
+    if (res?.data?.authenticateUserWithPassword?.code !== 'FAILURE')
+      router.push('/');
     resetForm();
   }
   const error =
