@@ -10,7 +10,7 @@ import { useRouter } from 'next/router';
 import Paper from '@material-ui/core/Paper';
 import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';
-import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
+import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
 import Error from './ErrorMessage';
@@ -55,6 +55,12 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
+    // from here down up middle
+    position: 'relative',
+    left: '-7rem',
+    backgroundColor: 'rgba(256,256,256,0.9)',
+    borderRadius: '8px',
+    padding: '2rem',
   },
   avatar: {
     margin: theme.spacing(1),
@@ -109,10 +115,10 @@ export default function SignIn() {
       <Grid container component="main" className={classes.root}>
         <CssBaseline />
         <Grid item xs={false} sm={4} md={7} className={classes.image} />
-        <Grid item xs={12} sm={8} md={5} component={Paper} elevation={6} square>
-          <div className={classes.paper}>
+        <Grid item xs={12} sm={8} md={5}>
+          <Box className={classes.paper}>
             <Avatar className={classes.avatar}>
-              <LockOutlinedIcon />
+              <AccountCircleIcon />
             </Avatar>
             <Typography component="h1" variant="h5">
               Enter
@@ -186,7 +192,7 @@ export default function SignIn() {
                 <Version />
               </Box>
             </form>
-          </div>
+          </Box>
         </Grid>
       </Grid>
     </>
