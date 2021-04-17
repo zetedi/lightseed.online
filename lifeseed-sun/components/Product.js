@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { makeStyles } from '@material-ui/core/styles';
-import { Box, Button } from '@material-ui/core';
+import { Box, Button, Paper } from '@material-ui/core';
 import formatMoney from '../lib/formatMoney';
 import DeleteProduct from './DeleteProduct';
 import AddToCart from './AddToCart';
@@ -58,13 +58,13 @@ const useStyles = makeStyles((theme) => ({
 
   product: {
     backgroundColor: 'white',
-    boxShadow: '0 12px 24px 0 rgba(0,0,0,0.09)',
     position: 'relative',
+    margin: '1rem',
     display: 'flex',
     flexDirection: 'column',
     '& img': {
       width: '100%',
-      height: '20rem',
+      height: '15rem',
       objectFit: 'cover',
     },
     '& p': {
@@ -91,7 +91,7 @@ const useStyles = makeStyles((theme) => ({
 export default function Product({ product }) {
   const classes = useStyles();
   return (
-    <Box className={classes.product}>
+    <Paper className={classes.product} elevation={3}>
       <img
         src={product?.photo?.image?.publicUrlTransformed}
         alt={product.name}
@@ -117,6 +117,6 @@ export default function Product({ product }) {
         <DeleteProduct id={product.id}>Delete</DeleteProduct>
         <AddToCart id={product.id} />
       </div>
-    </Box>
+    </Paper>
   );
 }

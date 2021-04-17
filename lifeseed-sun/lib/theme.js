@@ -306,6 +306,54 @@ const theme = createMuiTheme({
       borderRadius: '4px',
       display: 'flex',
     },
+    adminRoot: {
+      height: '90vh',
+    },
+    image: {
+      backgroundRepeat: 'no-repeat',
+      backgroundColor:
+        defaultTheme.palette.type === 'light'
+          ? defaultTheme.palette.grey[50]
+          : defaultTheme.palette.grey[900],
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+    },
+    adminImage: {
+      backgroundImage:
+        'url(https://res.cloudinary.com/ezimg/image/upload/v1618246418/lifeseed/signin_xzwln8.jpg)',
+      backgroundRepeat: 'no-repeat',
+      backgroundColor:
+        defaultTheme.palette.type === 'light'
+          ? defaultTheme.palette.grey[50]
+          : defaultTheme.palette.grey[900],
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+    },
+    adminPaper: {
+      margin: defaultTheme.spacing(8, 4),
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      [defaultTheme.breakpoints.up('md')]: {
+        position: 'relative',
+        left: '-7rem',
+        backgroundColor: 'rgba(256,256,256,0.9)',
+        borderRadius: '8px',
+        padding: '2rem',
+      },
+    },
+    adminAvatar: {
+      margin: defaultTheme.spacing(1),
+      // color: 'yellow',
+      backgroundColor: defaultTheme.palette.secondary.main,
+    },
+    adminForm: {
+      width: '100%', // Fix IE 11 issue.
+      marginTop: defaultTheme.spacing(1),
+    },
+    adminSubmit: {
+      margin: defaultTheme.spacing(3, 0, 2),
+    },
   },
 });
 

@@ -13,8 +13,8 @@ import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
 import Error from './ErrorMessage';
+import Version from './Version';
 import useForm from '../lib/useForm';
-import { CURRENT_USER_QUERY } from './User';
 
 const REQUEST_RESET_MUTATION = gql`
   mutation REQUEST_RESET_MUTATION($email: String!) {
@@ -26,10 +26,8 @@ const REQUEST_RESET_MUTATION = gql`
 `;
 
 const useStyles = makeStyles((theme) => ({
-  root: {
-    height: '90vh',
-  },
-  image: {
+  ...theme.customTheme,
+  resetImage: {
     backgroundImage:
       'url(https://res.cloudinary.com/ezimg/image/upload/v1618617873/lifeseed/59b3485be0f19.image_jnn6tx.jpg)',
     backgroundRepeat: 'no-repeat',
@@ -40,34 +38,7 @@ const useStyles = makeStyles((theme) => ({
     backgroundSize: 'cover',
     backgroundPosition: 'center',
   },
-  paper: {
-    margin: theme.spacing(8, 4),
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-  },
-  avatar: {
-    margin: theme.spacing(1),
-    backgroundColor: theme.palette.secondary.main,
-  },
-  form: {
-    width: '100%', // Fix IE 11 issue.
-    marginTop: theme.spacing(1),
-  },
-  submit: {
-    margin: theme.spacing(3, 0, 2),
-  },
 }));
-
-function Version() {
-  return (
-    <Typography variant="body2" color="textSecondary" align="center">
-      {'Version 2.0 '}
-      {new Date().getFullYear()}
-      {' May'}
-    </Typography>
-  );
-}
 
 export default function RequestReset() {
   const classes = useStyles();
@@ -89,19 +60,15 @@ export default function RequestReset() {
     console.log({ data, loading, error });
     resetForm();
   }
-  //   const error2 =
-  //     data?.authenticateUserWithPassword.__typename ===
-  //     'UserAuthenticationWithPasswordFailure'
-  //       ? data?.authenticateUserWithPassword
-  //       : undefined;
+
   return (
     <>
-      <Grid container component="main" className={classes.root}>
+      <Grid container component="main" className={classes.adminRoot}>
         <CssBaseline />
-        <Grid item xs={false} sm={4} md={7} className={classes.image} />
-        <Grid item xs={12} sm={8} md={5} component={Paper} elevation={6} square>
-          <div className={classes.paper}>
-            <Avatar className={classes.avatar}>
+        <Grid item xs={false} sm={4} md={7} className={classes.resetImage} />
+        <Grid item xs={12} sm={8} md={5}>
+          <Paper className={classes.adminPaper} elevation={3}>
+            <Avatar className={classes.adminAvatar}>
               <LockOutlinedIcon />
             </Avatar>
             <Typography component="h1" variant="h5">
@@ -117,7 +84,11 @@ export default function RequestReset() {
                 className={classes.circularProgress}
               />
             )}
-            <form onSubmit={handleSubmit} className={classes.form} noValidate>
+            <form
+              onSubmit={handleSubmit}
+              className={classes.adminForm}
+              noValidate
+            >
               <TextField
                 variant="outlined"
                 margin="normal"
@@ -137,7 +108,7 @@ export default function RequestReset() {
                 fullWidth
                 variant="contained"
                 color="primary"
-                className={classes.submit}
+                className={classes.adminSubmit}
               >
                 Request Password Reset
               </Button>
@@ -145,14 +116,14 @@ export default function RequestReset() {
                 <Grid item xs>
                   <Link href="/signin">
                     <a style={{ color: 'black', textDecoration: 'none' }}>
-                      Enter
+                      Sign In
                     </a>
                   </Link>
                 </Grid>
                 <Grid item>
                   <Link href="/signup">
                     <a style={{ color: 'black', textDecoration: 'none' }}>
-                      Joyn
+                      Join
                     </a>
                   </Link>
                 </Grid>
@@ -161,7 +132,7 @@ export default function RequestReset() {
                 <Version />
               </Box>
             </form>
-          </div>
+          </Paper>
         </Grid>
       </Grid>
     </>

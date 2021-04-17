@@ -6,8 +6,6 @@ import Avatar from '@material-ui/core/Avatar';
 import Button from '@material-ui/core/Button';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import TextField from '@material-ui/core/TextField';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import Checkbox from '@material-ui/core/Checkbox';
 import { useRouter } from 'next/router';
 import Paper from '@material-ui/core/Paper';
 import Box from '@material-ui/core/Box';
@@ -16,6 +14,7 @@ import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
 import Error from './ErrorMessage';
+import Version from './Version';
 import { CURRENT_USER_QUERY } from './User';
 import useForm from '../lib/useForm';
 
@@ -34,10 +33,8 @@ const SIGNUP_MUTATION = gql`
 `;
 
 const useStyles = makeStyles((theme) => ({
-  root: {
-    height: '90vh',
-  },
-  image: {
+  ...theme.customTheme,
+  signupImage: {
     backgroundImage:
       'url(https://res.cloudinary.com/ezimg/image/upload/v1618521055/lifeseed/signup_uu9muu.jpg)',
     backgroundRepeat: 'no-repeat',
@@ -48,34 +45,7 @@ const useStyles = makeStyles((theme) => ({
     backgroundSize: 'cover',
     backgroundPosition: 'center',
   },
-  paper: {
-    margin: theme.spacing(8, 4),
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-  },
-  avatar: {
-    margin: theme.spacing(1),
-    backgroundColor: theme.palette.secondary.main,
-  },
-  form: {
-    width: '100%', // Fix IE 11 issue.
-    marginTop: theme.spacing(1),
-  },
-  submit: {
-    margin: theme.spacing(3, 0, 2),
-  },
 }));
-
-function Version() {
-  return (
-    <Typography variant="body2" color="textSecondary" align="center">
-      {'Version 2.0 '}
-      {new Date().getFullYear()}
-      {' May'}
-    </Typography>
-  );
-}
 
 export default function SignUp() {
   const classes = useStyles();
@@ -101,26 +71,22 @@ export default function SignUp() {
     console.log({ data, loading, error });
     resetForm();
   }
-  //   const error2 =
-  //     data?.authenticateUserWithPassword.__typename ===
-  //     'UserAuthenticationWithPasswordFailure'
-  //       ? data?.authenticateUserWithPassword
-  //       : undefined;
+
   return (
     <>
-      <Grid container component="main" className={classes.root}>
+      <Grid container component="main" className={classes.adminRoot}>
         <CssBaseline />
-        <Grid item xs={false} sm={4} md={7} className={classes.image} />
-        <Grid item xs={12} sm={8} md={5} component={Paper} elevation={6} square>
-          <div className={classes.paper}>
+        <Grid item xs={false} sm={4} md={7} className={classes.signupImage} />
+        <Grid item xs={12} sm={8} md={5}>
+          <Paper className={classes.adminPaper} elevation={3}>
             {data?.createUser && (
               <p>Signed up with {data.createUser.email} - Please sign in</p>
             )}
-            <Avatar className={classes.avatar}>
+            <Avatar className={classes.adminAvatar}>
               <LockOutlinedIcon />
             </Avatar>
             <Typography component="h1" variant="h5">
-              Joyn
+              Join
             </Typography>
             <Error error={error} />
             {loading && (
@@ -129,7 +95,11 @@ export default function SignUp() {
                 className={classes.circularProgress}
               />
             )}
-            <form onSubmit={handleSubmit} className={classes.form} noValidate>
+            <form
+              onSubmit={handleSubmit}
+              className={classes.adminForm}
+              noValidate
+            >
               <TextField
                 variant="outlined"
                 margin="normal"
@@ -191,9 +161,9 @@ export default function SignUp() {
                 fullWidth
                 variant="contained"
                 color="primary"
-                className={classes.submit}
+                className={classes.adminSubmit}
               >
-                Sign In
+                Sign Up
               </Button>
               <Grid container>
                 <Grid item xs>
@@ -206,7 +176,7 @@ export default function SignUp() {
                 <Grid item>
                   <Link href="/signin">
                     <a style={{ color: 'black', textDecoration: 'none' }}>
-                      Enter
+                      Sign in
                     </a>
                   </Link>
                 </Grid>
@@ -215,7 +185,7 @@ export default function SignUp() {
                 <Version />
               </Box>
             </form>
-          </div>
+          </Paper>
         </Grid>
       </Grid>
     </>

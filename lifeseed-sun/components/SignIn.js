@@ -14,6 +14,7 @@ import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
 import Error from './ErrorMessage';
+import Version from './Version';
 import { CURRENT_USER_QUERY } from './User';
 import useForm from '../lib/useForm';
 
@@ -36,10 +37,8 @@ const SIGNIN_MUTATION = gql`
 `;
 
 const useStyles = makeStyles((theme) => ({
-  root: {
-    height: '90vh',
-  },
-  image: {
+  ...theme.customTheme,
+  loginImage: {
     backgroundImage:
       'url(https://res.cloudinary.com/ezimg/image/upload/v1618246418/lifeseed/signin_xzwln8.jpg)',
     backgroundRepeat: 'no-repeat',
@@ -50,42 +49,7 @@ const useStyles = makeStyles((theme) => ({
     backgroundSize: 'cover',
     backgroundPosition: 'center',
   },
-  paper: {
-    margin: theme.spacing(8, 4),
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    [theme.breakpoints.up('md')]: {
-      position: 'relative',
-      left: '-7rem',
-      backgroundColor: 'rgba(256,256,256,0.9)',
-      borderRadius: '8px',
-      padding: '2rem',
-    },
-  },
-  avatar: {
-    margin: theme.spacing(1),
-    // color: 'yellow',
-    backgroundColor: theme.palette.secondary.main,
-  },
-  form: {
-    width: '100%', // Fix IE 11 issue.
-    marginTop: theme.spacing(1),
-  },
-  submit: {
-    margin: theme.spacing(3, 0, 2),
-  },
 }));
-
-function Version() {
-  return (
-    <Typography variant="body2" color="textSecondary" align="center">
-      {'Version 2.0 '}
-      {new Date().getFullYear()}
-      {' May'}
-    </Typography>
-  );
-}
 
 export default function SignIn() {
   const classes = useStyles();
@@ -114,16 +78,16 @@ export default function SignIn() {
 
   return (
     <>
-      <Grid container component="main" className={classes.root}>
+      <Grid container component="main" className={classes.adminRoot}>
         <CssBaseline />
-        <Grid item xs={false} sm={4} md={7} className={classes.image} />
+        <Grid item xs={false} sm={4} md={7} className={classes.loginImage} />
         <Grid item xs={12} sm={8} md={5}>
-          <Box className={classes.paper}>
-            <Avatar className={classes.avatar}>
+          <Paper className={classes.adminPaper} elevation={3}>
+            <Avatar className={classes.adminAvatar}>
               <AccountCircleIcon />
             </Avatar>
             <Typography component="h1" variant="h5">
-              Enter
+              Welcome!
             </Typography>
             <Error error={error} />
             {loading && (
@@ -132,7 +96,11 @@ export default function SignIn() {
                 className={classes.circularProgress}
               />
             )}
-            <form onSubmit={handleSubmit} className={classes.form} noValidate>
+            <form
+              onSubmit={handleSubmit}
+              className={classes.adminForm}
+              noValidate
+            >
               <TextField
                 variant="outlined"
                 margin="normal"
@@ -170,7 +138,7 @@ export default function SignIn() {
                 fullWidth
                 variant="contained"
                 color="primary"
-                className={classes.submit}
+                className={classes.adminSubmit}
               >
                 Sign In
               </Button>
@@ -185,7 +153,7 @@ export default function SignIn() {
                 <Grid item>
                   <Link href="/signup">
                     <a style={{ color: 'black', textDecoration: 'none' }}>
-                      Joyn
+                      Join
                     </a>
                   </Link>
                 </Grid>
@@ -194,7 +162,7 @@ export default function SignIn() {
                 <Version />
               </Box>
             </form>
-          </Box>
+          </Paper>
         </Grid>
       </Grid>
     </>
