@@ -55,15 +55,17 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    // from here down up middle
-    position: 'relative',
-    left: '-7rem',
-    backgroundColor: 'rgba(256,256,256,0.9)',
-    borderRadius: '8px',
-    padding: '2rem',
+    [theme.breakpoints.up('md')]: {
+      position: 'relative',
+      left: '-7rem',
+      backgroundColor: 'rgba(256,256,256,0.9)',
+      borderRadius: '8px',
+      padding: '2rem',
+    },
   },
   avatar: {
     margin: theme.spacing(1),
+    // color: 'yellow',
     backgroundColor: theme.palette.secondary.main,
   },
   form: {
