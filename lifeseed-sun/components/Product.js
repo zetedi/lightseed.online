@@ -40,7 +40,7 @@ const DELETE_PRODUCT_MUTATION = gql`
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
   priceTag: {
-    background: 'red',
+    background: theme.palette.secondary.contrastText,
     transform: 'rotate(-3deg)',
     color: 'white',
     borderRadius: '4px',
@@ -55,7 +55,7 @@ const useStyles = makeStyles((theme) => ({
     boxShadow: '5px 3px 3px  #FFFFFF',
   },
   ltcTag: {
-    background: 'green',
+    background: theme.palette.primary.main,
     transform: 'rotate(-3deg)',
     color: 'white',
     borderRadius: '4px',
@@ -76,7 +76,7 @@ const useStyles = makeStyles((theme) => ({
     marginTop: '-3rem',
     textShadow: '2px 2px 0 rgba(0, 0, 0, 0.1)',
     '& a': {
-      background: 'red',
+      background: theme.palette.secondary.main,
       display: 'inline',
       lineHeight: '1.3',
       fontSize: '4rem',
@@ -94,7 +94,7 @@ const useStyles = makeStyles((theme) => ({
     paddingTop: '56.25%', // 16:9
   },
   avatar: {
-    backgroundColor: 'yellow',
+    backgroundColor: 'violet',
     border: '1px solid lightgrey',
   },
 }));
@@ -124,7 +124,13 @@ export default function Product({ product }) {
           <CardHeader
             avatar={
               <Avatar aria-label="recipe" className={classes.avatar}>
-                R
+                <img
+                  src={
+                    product.user?.lifeTree?.photo?.image?.publicUrlTransformed
+                  }
+                  alt={product.user?.lifeTree?.photo?.image?.altText}
+                  style={{ width: '100%' }}
+                />
               </Avatar>
             }
             action={

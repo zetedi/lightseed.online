@@ -18,6 +18,16 @@ export const ALL_PRODUCTS_QUERY = gql`
           publicUrlTransformed
         }
       }
+      user {
+        lifeTree {
+          photo {
+            id
+            image {
+              publicUrlTransformed
+            }
+          }
+        }
+      }
     }
   }
 `;
