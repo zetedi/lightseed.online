@@ -17,7 +17,6 @@ import { makeStyles } from '@material-ui/core/styles';
 import Router from 'next/router';
 import useForm from '../lib/useForm';
 import DisplayError from './ErrorMessage';
-import { ALL_PRODUCTS_QUERY } from './Products';
 
 const SINGLE_PRODUCT_QUERY = gql`
   query SINGLE_PRODUCT_QUERY($id: ID!) {
@@ -204,8 +203,22 @@ export default function UpdateProduct({ id }) {
                 </Grid>
               )}
             </CardContent>
-            <CardActions>
-              <Button color="primary" type="submit">
+            <CardActions disableSpacing>
+              <Button
+                color="primary"
+                onClick={() =>
+                  Router.push({
+                    pathname: `/products`,
+                  })
+                }
+              >
+                Back
+              </Button>
+              <Button
+                color="primary"
+                type="submit"
+                style={{ marginLeft: 'auto' }}
+              >
                 Update
               </Button>
             </CardActions>
