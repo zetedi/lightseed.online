@@ -69,8 +69,8 @@ export default function SingleProduct({ id }) {
         <title>{Product.name}</title>
       </Head>
       <img
-        src={Product.photo.image.publicUrlTransformed}
-        alt={Product.photo.altText}
+        src={Product.photo?.image?.publicUrlTransformed}
+        alt={Product.photo?.altText}
       />
       <div className="details">
         <h2>{Product.name} </h2>

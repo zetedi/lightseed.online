@@ -295,7 +295,7 @@ const theme = createMuiTheme({
     },
     field: {
       width: '100%',
-      margin: '2rem',
+      margin: '1rem',
     },
     fieldset: {
       margin: '1rem',
@@ -353,6 +353,13 @@ const theme = createMuiTheme({
     },
     adminSubmit: {
       margin: defaultTheme.spacing(3, 0, 2),
+    },
+    space: {
+      backgroundColor: 'yellow',
+      backgroundImage:
+        'radial-gradient(yellow, yellow, lightyellow, #fafafa, #fafafa)',
+      display: 'grid',
+      justifyContent: 'center',
     },
   },
 });

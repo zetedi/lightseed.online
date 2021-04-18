@@ -1,11 +1,16 @@
 import { useMutation, useQuery } from '@apollo/client';
 import gql from 'graphql-tag';
+import Head from 'next/head';
 import {
   Box,
   Button,
   Grid,
   Input,
   LinearProgress,
+  Card,
+  CardActions,
+  CardContent,
+  Typography,
   TextField,
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
@@ -34,8 +39,28 @@ const SINGLE_PRODUCT_QUERY = gql`
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
   root: {
+    maxWidth: '25rem',
     '& .MuiTextField-root': {
       margin: theme.spacing(1),
+    },
+  },
+  updateProduct: {
+    margin: '1rem',
+    padding: '1rem',
+    maxWidth: '25rem',
+    width: '100%',
+  },
+  lifeTree: {
+    margin: '1rem',
+    width: 'fit-content',
+    maxWidth: '50rem',
+    alignItems: 'top',
+    justifyContent: 'center',
+    gap: '2rem',
+    '& img': {
+      width: '100%',
+      maxWidth: '30rem',
+      objectFit: 'contain',
     },
   },
 }));
@@ -88,85 +113,105 @@ export default function UpdateProduct({ id }) {
   if (loading) return <p>Loading...</p>;
 
   return (
-    <div>
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          const res = await updateProduct({
-            variables: {
-              id,
-              name: inputs.name,
-              description: inputs.description,
-              price: inputs.price,
-            },
-          }).catch(console.error);
-          console.log(res);
-          Router.push({
-            pathname: `/product/${res.data.updateProduct.id}`,
-          });
-        }}
-      >
-        <DisplayError error={error} />
-        {loading ? <LinearProgress color="secondary" /> : ''}
-        <fieldset
-          disabled={loading}
-          aria-busy={loading}
-          className={classes.fieldset}
+    <>
+      <Head>
+        <title>{inputs.name}</title>
+      </Head>
+      <Box className={classes.space}>
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const res = await updateProduct({
+              variables: {
+                id,
+                name: inputs.name,
+                description: inputs.description,
+                price: inputs.price,
+              },
+            }).catch(console.error);
+            console.log(res);
+            Router.push({
+              pathname: `/product/${res.data.updateProduct.id}`,
+            });
+          }}
         >
-          <Grid container spacing={1}>
-            <TextField
-              type="text"
-              id="name"
-              name="name"
-              placeholde="Name"
-              value={inputs.name}
-              onChange={handleChange}
-              variant="outlined"
-              className={classes.field}
-            />
-            <Input
-              type="file"
-              id="image"
-              name="image"
-              onChange={handleChange}
-              className={classes.field}
-            />
-            <TextField
-              type="number"
-              id="price"
-              name="price"
-              placeholde="price"
-              value={inputs.price}
-              onChange={handleChange}
-              variant="outlined"
-              className={classes.field}
-            />
-            <TextField
-              type="textarea"
-              id="description"
-              name="description"
-              placeholde="Description"
-              value={inputs.description}
-              onChange={handleChange}
-              variant="outlined"
-              className={classes.field}
-            />
-            <Box
-              className={classes.addButton}
-              style={{
-                width: '100%',
-                display: 'flex',
-                justifyContent: 'flex-end',
-                padding: '3rem',
-              }}
+          <Card className={classes.lifeTree}>
+            <Typography
+              variant="h1"
+              style={{ margin: '1rem', textAlign: 'center', color: '#272727' }}
             >
-              <Button type="submit" variant="outlined">
+              Update
+            </Typography>
+            <Box style={{ display: 'grid', justifyContent: 'center' }}>
+              <img
+                className={classes.image}
+                src={data.Product?.photo?.image?.publicUrlTransformed}
+                alt={data.Product?.photo?.altText}
+              />
+            </Box>
+            <CardContent>
+              <DisplayError error={error} />
+              {loading ? (
+                <LinearProgress color="secondary" />
+              ) : (
+                <Grid container>
+                  <TextField
+                    type="text"
+                    id="name"
+                    name="name"
+                    label="Name"
+                    placeholder="Name"
+                    value={inputs.name}
+                    onChange={handleChange}
+                    variant="outlined"
+                    className={classes.field}
+                    size="small"
+                  />
+                  <Input
+                    type="file"
+                    id="image"
+                    name="image"
+                    onChange={handleChange}
+                    className={classes.field}
+                    size="small"
+                  />
+                  <TextField
+                    type="number"
+                    id="price"
+                    name="price"
+                    label="Price"
+                    placeholder="Price"
+                    value={inputs.price}
+                    onChange={handleChange}
+                    variant="outlined"
+                    className={classes.field}
+                    size="small"
+                  />
+                  <TextField
+                    // type="textarea"
+                    multiline
+                    rows={4}
+                    id="description"
+                    name="description"
+                    label="Description"
+                    placeholder="Description"
+                    value={inputs.description}
+                    onChange={handleChange}
+                    variant="outlined"
+                    className={classes.field}
+                    size="small"
+                  />
+                </Grid>
+              )}
+            </CardContent>
+            <CardActions>
+              <Button color="primary" type="submit">
                 Update
               </Button>
-            </Box>
-          </Grid>
-        </fieldset>
-      </form>
-    </div>
+            </CardActions>
+          </Card>
+        </form>
+      </Box>
+    </>
   );
 }

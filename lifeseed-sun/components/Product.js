@@ -191,7 +191,9 @@ export default function Product({ product }) {
           </IconButton>
         </CardActions>
       </Card>
-      <Box className={classes.ltcTag}>{product.price / 100} ltc</Box>
+      <Box className={classes.ltcTag}>
+        {product.price / 100} <small>|=|</small>
+      </Box>
       <Box className={classes.priceTag}>{formatMoney(product.price)}</Box>
     </Box>
   );
