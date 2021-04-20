@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { useMutation } from '@apollo/client';
 import gql from 'graphql-tag';
 import { makeStyles } from '@material-ui/core/styles';
-import { Box, Button, Paper } from '@material-ui/core';
+import { Box } from '@material-ui/core';
 import React from 'react';
 import Card from '@material-ui/core/Card';
 import CardHeader from '@material-ui/core/CardHeader';
@@ -171,7 +171,7 @@ export default function Product({ product }) {
           </IconButton>
           <Link
             href={{
-              pathname: '/update',
+              pathname: '/updateProduct',
               query: {
                 id: product.id,
               },

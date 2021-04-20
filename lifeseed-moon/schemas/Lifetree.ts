@@ -54,8 +54,8 @@ export const LifeTree = list({
         createView: { fieldMode: 'hidden' },
       },
     }),
-    latitude: integer(),
-    longitude: integer(),
+    latitude: text(),
+    longitude: text(),
     user: relationship({
       ref: 'User.lifeTree',
       defaultValue: ({ context }) => ({

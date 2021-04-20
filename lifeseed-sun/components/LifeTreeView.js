@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { useQuery } from '@apollo/client';
 import gql from 'graphql-tag';
 import Head from 'next/head';
@@ -9,9 +10,11 @@ import {
   CardActions,
   CardContent,
   CircularProgress,
+  Divider,
   Typography,
 } from '@material-ui/core';
 import React from 'react';
+// import LifeTreePosition from './LifeTreePosition';
 
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
@@ -50,9 +53,11 @@ const useStyles = makeStyles((theme) => ({
 const LIFETREE_QUERY = gql`
   query LIFETREE_QUERY($id: ID!) {
     LifeTree(where: { id: $id }) {
+      id
       name
       description
-      id
+      latitude
+      longitude
       photo {
         altText
         image {
@@ -85,15 +90,37 @@ export default function LifeTreeView({ id }) {
           </Typography>
           <img
             className={classes.image}
-            src={LifeTree.photo.image.publicUrlTransformed}
-            alt={LifeTree.photo.altText}
+            src={LifeTree?.photo?.image?.publicUrlTransformed}
+            alt={LifeTree?.photo?.altText}
           />
           <CardContent>
             <Typography>{LifeTree.description}</Typography>
+            <Divider />
+            <Typography>
+              <b>Latitude:</b> {LifeTree.latitude}
+            </Typography>
+            <Typography>
+              <b>Longitude:</b> {LifeTree.longitude}
+            </Typography>
+            {/* <LifeTreePosition
+              latitude={LifeTree.latitude}
+              longitude={LifeTree.longitude}
+            /> */}
           </CardContent>
-          <CardActions>
-            <Button color="primary">Care</Button>
+          <CardActions disableSpacing>
             <Button color="primary">Learn More</Button>
+            <Link
+              href={{
+                pathname: '/updateLifeTree',
+                query: {
+                  id,
+                },
+              }}
+            >
+              <Button color="primary" style={{ marginLeft: 'auto' }}>
+                Care
+              </Button>
+            </Link>
           </CardActions>
         </Card>
       </Box>
