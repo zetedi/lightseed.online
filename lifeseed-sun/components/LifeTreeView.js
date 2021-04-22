@@ -111,7 +111,7 @@ export default function LifeTreeView({ id }) {
             <Button color="primary">Learn More</Button>
             <Link
               href={{
-                pathname: '/updateLifeTree',
+                pathname: '/saveLifeTree',
                 query: {
                   id,
                 },

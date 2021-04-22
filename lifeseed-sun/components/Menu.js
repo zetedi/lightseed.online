@@ -47,7 +47,13 @@ export default function Menu({ user, openCart, toggleSearch, signout }) {
               <AccountCircleIcon />
             </IconButton>
           </Link>
-          <Link href={`/lifetree/${user.lifeTree?.id}`}>
+          <Link
+            href={
+              user.lifeTree?.id
+                ? `/lifetree/${user.lifeTree?.id}`
+                : '/saveLifeTree'
+            }
+          >
             <IconButton>
               <NatureIcon />
             </IconButton>

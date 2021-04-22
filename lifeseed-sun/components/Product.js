@@ -123,7 +123,7 @@ export default function Product({ product }) {
         <Link href={`/product/${product.id}`}>
           <CardHeader
             avatar={
-              <Avatar aria-label="recipe" className={classes.avatar}>
+              <Avatar aria-label="lifeTree" className={classes.avatar}>
                 <img
                   src={
                     product.user?.lifeTree?.photo?.image?.publicUrlTransformed
