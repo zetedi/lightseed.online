@@ -1,19 +1,20 @@
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
-import L, { Point, DivIcon } from 'leaflet';
+import L, { Point } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import {
-  Avatar,
-  Box,
-  Button,
-  Grid,
-  Input,
-  LinearProgress,
-  Card,
-  CardActions,
-  CardContent,
-  Typography,
-  TextField,
-} from '@material-ui/core';
+
+function createLifeTreeMarkers(lifeTrees) {
+  return lifeTrees.map((lifeTree) => {
+    const r = {};
+    r.lifeTreeData = lifeTree;
+    r.lifeTreeIcon = L.icon({
+      iconUrl: lifeTree?.photo?.image?.publicUrlTransformed,
+      iconSize: new Point(70, 70),
+      className: 'leaflet-div-icon',
+    });
+    console.log(r);
+    return r;
+  });
+}
 
 const icon = L.icon({
   iconUrl: '/static/lifeseed.svg',
@@ -32,19 +33,19 @@ const LifeTreeMap = ({ lifeTrees }) => (
       attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
     />
-    {lifeTrees.map((lifeTree) => (
-      <Marker position={[lifeTree.latitude, lifeTree.longitude]} icon={icon}>
-        <Avatar aria-label="lifeTree">
-          <img
-            src={lifeTree?.photo?.image?.publicUrlTransformed}
-            alt={lifeTree?.photo?.altText}
-          />
-        </Avatar>
+    {createLifeTreeMarkers(lifeTrees).map((lifeTree) => (
+      <Marker
+        position={[
+          lifeTree?.lifeTreeData?.latitude,
+          lifeTree?.lifeTreeData?.longitude,
+        ]}
+        icon={lifeTree?.lifeTreeIcon}
+        opacity="1"
+      >
         <Popup>
           <img
-            width="100px"
-            src={lifeTree?.photo?.image?.publicUrlTransformed}
-            alt={lifeTree?.photo?.altText}
+            width="150px"
+            src={lifeTree?.lifeTreeData?.photo?.image?.publicUrlTransformed}
           />
         </Popup>
       </Marker>
