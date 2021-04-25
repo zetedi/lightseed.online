@@ -1,15 +1,10 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { CloudinaryContext, Image } from 'cloudinary-react';
 import Head from 'next/head';
 import { Box } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
-import ReactDOM from 'react-dom';
-import React, { useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import DatGui, {
-  DatBoolean,
-  DatColor,
-  DatNumber,
-  DatString,
-} from 'react-dat-gui';
+import { fetchPhotos, openUploadWidget } from '../lib/cloudinaryService';
 
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
@@ -56,21 +51,38 @@ function Torus(props) {
 export default function Index() {
   const classes = useStyles();
 
-  //   const [state, setState] = useState({
-  //     data: {
-  //       package: 'react-dat-gui',
-  //       power: 9000,
-  //       isAwesome: true,
-  //       feelsLike: '#2FA1D6',
-  //     },
-  //   });
-  //   const handleUpdate = (newData) =>
-  //     setState((prevState) => ({
-  //       data: { ...prevState.data, ...newData },
-  //     }));
+  const [images, setImages] = useState([]);
+
+  const beginUpload = (tag) => {
+    const uploadOptions = {
+      cloudName: 'ezimg',
+      tags: [tag, 'lifeseed'],
+      uploadPreset: 'wobiwbrp',
+      sources: ['local', 'camera'],
+    };
+    openUploadWidget(uploadOptions, (error, photos) => {
+      if (!error) {
+        console.log(photos);
+        if (photos.event === 'success') {
+          setImages([...images, photos.info.secure_url]);
+          console.log(photos.info);
+        }
+      } else {
+        console.log(error);
+      }
+    });
+  };
+
+  useEffect(() => {
+    fetchPhotos('image', setImages);
+  }, []);
 
   return (
     <>
+      <script
+        src="https://widget.cloudinary.com/v2.0/global/all.js"
+        type="text/javascript"
+      />
       <Head>
         <title>lifeseed online</title>
       </Head>
@@ -81,13 +93,17 @@ export default function Index() {
           <Sphere position={[0, 0, 0]} />
           <Torus position={[0, 0, 0]} />
         </Canvas>
-        {/* <DatGui data={state.data} onUpdate={handleUpdate}>
-        <DatString path="package" label="Package" />
-        <DatNumber path="power" label="Power" min={9000} max={9999} step={1} />
-        <DatBoolean path="isAwesome" label="Awesome?" />
-        <DatColor path="feelsLike" label="Feels Like" />
-      </DatGui> */}
       </Box>
+      <CloudinaryContext cloudName="ezimg">
+        <div className="App">
+          <button onClick={() => beginUpload('image')}>Upload Image</button>
+          <section>
+            {images.map((i) => (
+              <Image key={i} publicId={i} fetch-format="auto" quality="auto" />
+            ))}
+          </section>
+        </div>
+      </CloudinaryContext>
     </>
   );
 }
