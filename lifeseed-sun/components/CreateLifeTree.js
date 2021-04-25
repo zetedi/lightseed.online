@@ -1,4 +1,6 @@
 import { useMutation, useQuery } from '@apollo/client';
+import { CloudinaryContext, Image } from 'cloudinary-react';
+import React, { useState, useEffect } from 'react';
 import gql from 'graphql-tag';
 import Head from 'next/head';
 import {
@@ -18,6 +20,7 @@ import Router from 'next/router';
 import useForm from '../lib/useForm';
 import DisplayError from './ErrorMessage';
 import { CURRENT_USER_QUERY } from './User';
+import { fetchPhotos, openUploadWidget } from '../lib/cloudinaryService';
 
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
@@ -77,6 +80,32 @@ const CREATE_LIFETREE_MUTATION = gql`
 
 export default function CreateLifeTree() {
   const classes = useStyles();
+  const [images, setImages] = useState([]);
+
+  const beginUpload = (tag) => {
+    const uploadOptions = {
+      cloudName: 'ezimg',
+      tags: [tag, 'lifeseed'],
+      uploadPreset: 'wobiwbrp',
+      sources: ['local', 'camera'],
+    };
+    openUploadWidget(uploadOptions, (error, photos) => {
+      if (!error) {
+        console.log(photos);
+        if (photos.event === 'success') {
+          setImages([...images, photos.info.secure_url]);
+          console.log(photos.info);
+        }
+      } else {
+        console.log(error);
+      }
+    });
+  };
+
+  useEffect(() => {
+    fetchPhotos('image', setImages);
+  }, []);
+
   const { inputs, handleChange, clearForm } = useForm({
     name: '',
     latitude: '',
@@ -169,6 +198,21 @@ export default function CreateLifeTree() {
                     className={classes.field}
                     size="small"
                   />
+                  <CloudinaryContext cloudName="emkaydee">
+                    <Button onClick={() => beginUpload('image')}>
+                      Upload Image
+                    </Button>
+                    <section>
+                      {images.map((i) => (
+                        <Image
+                          key={i}
+                          publicId={i}
+                          fetch-format="auto"
+                          quality="auto"
+                        />
+                      ))}
+                    </section>
+                  </CloudinaryContext>
                   <TextField
                     type="text"
                     id="longitude"
