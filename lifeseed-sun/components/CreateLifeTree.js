@@ -173,16 +173,7 @@ export default function CreateLifeTree() {
                       Upload Image
                     </Button>
                   </CloudinaryContext>
-                  <Input
-                    type="file"
-                    id="image"
-                    name="image"
-                    onChange={handleChange}
-                    className={classes.field}
-                    size="small"
-                  />
                   <TextField
-                    // type="textarea"
                     multiline
                     rows={4}
                     id="description"
@@ -207,7 +198,6 @@ export default function CreateLifeTree() {
                     className={classes.field}
                     size="small"
                   />
-
                   <TextField
                     type="text"
                     id="longitude"

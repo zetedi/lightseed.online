@@ -95,26 +95,6 @@ const UPDATE_LIFETREE_MUTATION = gql`
 export default function UpdateLifeTree({ id }) {
   const classes = useStyles();
   const [image, setImage] = useState();
-  const beginUpload = (tag) => {
-    const uploadOptions = {
-      cloudName: 'ezimg',
-      tags: [tag, 'lifeseed'],
-      uploadPreset: 'wobiwbrp',
-      sources: ['local', 'camera'],
-    };
-    openUploadWidget(uploadOptions, (error, photos) => {
-      if (!error) {
-        console.log(photos);
-        if (photos.event === 'success') {
-          setImage(photos.info.secure_url);
-          inputs.image = photos.info.secure_url;
-          console.log(photos.info);
-        }
-      } else {
-        console.log(error);
-      }
-    });
-  };
   const { data = {}, loading } = useQuery(SINGLE_LIFETREE_QUERY, {
     variables: {
       id,
@@ -129,6 +109,26 @@ export default function UpdateLifeTree({ id }) {
       longitude: '',
     }
   );
+  const beginUpload = (tag) => {
+    const uploadOptions = {
+      cloudName: 'ezimg',
+      tags: [tag, 'lifeseed'],
+      uploadPreset: 'wobiwbrp',
+      sources: ['local', 'camera'],
+    };
+    openUploadWidget(uploadOptions, (error, photos) => {
+      if (!error) {
+        console.log(photos);
+        if (photos.event === 'success') {
+          setImage(photos.info.secure_url);
+          console.log(photos.info);
+        }
+      } else {
+        console.log(error);
+      }
+    });
+  };
+
   console.log(inputs);
   const [updateLifeTree, { loading: updating, error }] = useMutation(
     UPDATE_LIFETREE_MUTATION,
@@ -197,7 +197,7 @@ export default function UpdateLifeTree({ id }) {
                     className={classes.field}
                     size="small"
                   />
-                  <CloudinaryContext cloudName="emkaydee">
+                  <CloudinaryContext cloudName="ezimg">
                     <Image
                       key={image}
                       publicId={image}
