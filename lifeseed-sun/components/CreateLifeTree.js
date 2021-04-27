@@ -20,7 +20,7 @@ import Router from 'next/router';
 import useForm from '../lib/useForm';
 import DisplayError from './ErrorMessage';
 import { CURRENT_USER_QUERY } from './User';
-import { fetchPhotos, openUploadWidget } from '../lib/cloudinaryService';
+import { fetchPhotos, openCustomUploadWidget } from '../lib/cloudinaryService';
 
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
@@ -79,6 +79,51 @@ const CREATE_LIFETREE_MUTATION = gql`
   }
 `;
 
+function showUploadWidget() {
+  console.log('window');
+  console.log(window);
+  window.cloudinary.openUploadWidget(
+    {
+      cloudName: 'ezimg',
+      uploadPreset: 'wobiwbrp',
+      sources: ['local', 'camera'],
+      showAdvancedOptions: false,
+      cropping: true,
+      multiple: false,
+      defaultSource: 'local',
+      styles: {
+        palette: {
+          window: 'yellow',
+          sourceBg: '#f4f4f5',
+          windowBorder: '#90a0b3',
+          tabIcon: '#000000',
+          inactiveTabIcon: '#555a5f',
+          menuIcons: '#555a5f',
+          link: '#0433ff',
+          action: '#339933',
+          inProgress: '#0433ff',
+          complete: '#339933',
+          error: '#cc0000',
+          textDark: '#000000',
+          textLight: '#fcfffd',
+        },
+        fonts: {
+          default: null,
+          'sans-serif': {
+            url: null,
+            active: true,
+          },
+        },
+      },
+    },
+    (err, info) => {
+      if (!err) {
+        console.log('Upload Widget event - ', info);
+      }
+    }
+  );
+}
+
 export default function CreateLifeTree() {
   const classes = useStyles();
   const [image, setImage] = useState();
@@ -89,14 +134,8 @@ export default function CreateLifeTree() {
     latitude: '',
     longitude: '',
   });
-  const beginUpload = (tag) => {
-    const uploadOptions = {
-      cloudName: 'ezimg',
-      tags: [tag, 'lifeseed'],
-      uploadPreset: 'wobiwbrp',
-      sources: ['local', 'camera'],
-    };
-    openUploadWidget(uploadOptions, (error, photos) => {
+  const beginUpload = () => {
+    openCustomUploadWidget((error, photos) => {
       if (!error) {
         console.log(photos);
         if (photos.event === 'success') {
@@ -171,6 +210,9 @@ export default function CreateLifeTree() {
                     />
                     <Button onClick={() => beginUpload('image')}>
                       Upload Image
+                    </Button>
+                    <Button onClick={() => showUploadWidget()}>
+                      Upload Widget
                     </Button>
                   </CloudinaryContext>
                   <TextField
