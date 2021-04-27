@@ -1,11 +1,12 @@
 import { useMutation, useQuery } from '@apollo/client';
+import { CloudinaryContext, Image } from 'cloudinary-react';
+import React, { useState } from 'react';
 import gql from 'graphql-tag';
 import Head from 'next/head';
 import {
   Box,
   Button,
   Grid,
-  Input,
   LinearProgress,
   Card,
   CardActions,
@@ -15,25 +16,20 @@ import {
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import Router from 'next/router';
+import { openUploadWidget } from '../lib/cloudinaryService';
 import useForm from '../lib/useForm';
 import DisplayError from './ErrorMessage';
-import { CURRENT_USER_QUERY } from './User';
 
 const SINGLE_LIFETREE_QUERY = gql`
   query SINGLE_LIFETREE_QUERY($id: ID!) {
     LifeTree(where: { id: $id }) {
+      id
       name
+      image
       description
       status
       latitude
       longitude
-      id
-      photo {
-        altText
-        image {
-          publicUrlTransformed
-        }
-      }
     }
   }
 `;
@@ -71,23 +67,24 @@ const UPDATE_LIFETREE_MUTATION = gql`
   mutation UPDATE_LIFETREE_MUTATION(
     $id: ID!
     $name: String
+    $image: String
     $description: String
     $latitude: String
     $longitude: String
-    $image: Upload
   ) {
     updateLifeTree(
       id: $id
       data: {
         name: $name
         description: $description
+        image: $image
         latitude: $latitude
         longitude: $longitude
-        photo: { create: { image: $image, altText: $name } }
       }
     ) {
       id
       name
+      image
       description
       latitude
       longitude
@@ -97,13 +94,40 @@ const UPDATE_LIFETREE_MUTATION = gql`
 
 export default function UpdateLifeTree({ id }) {
   const classes = useStyles();
+  const [image, setImage] = useState();
+  const beginUpload = (tag) => {
+    const uploadOptions = {
+      cloudName: 'ezimg',
+      tags: [tag, 'lifeseed'],
+      uploadPreset: 'wobiwbrp',
+      sources: ['local', 'camera'],
+    };
+    openUploadWidget(uploadOptions, (error, photos) => {
+      if (!error) {
+        console.log(photos);
+        if (photos.event === 'success') {
+          setImage(photos.info.secure_url);
+          inputs.image = photos.info.secure_url;
+          console.log(photos.info);
+        }
+      } else {
+        console.log(error);
+      }
+    });
+  };
   const { data = {}, loading } = useQuery(SINGLE_LIFETREE_QUERY, {
     variables: {
       id,
     },
   });
   const { inputs, handleChange } = useForm(
-    data.LifeTree || { name: '', latitude: '', longitude: '', description: '' }
+    data.LifeTree || {
+      name: '',
+      image: '',
+      description: '',
+      latitude: '',
+      longitude: '',
+    }
   );
   console.log(inputs);
   const [updateLifeTree, { loading: updating, error }] = useMutation(
@@ -112,10 +136,12 @@ export default function UpdateLifeTree({ id }) {
       variables: {
         id,
         ...inputs,
+        image,
       },
       refetchQueries: [{ query: SINGLE_LIFETREE_QUERY, variables: { id } }],
     }
   );
+  console.log(image);
   if (loading) return <p>Loading...</p>;
 
   return (
@@ -131,6 +157,7 @@ export default function UpdateLifeTree({ id }) {
               variables: {
                 id,
                 name: inputs.name,
+                image,
                 description: inputs.description,
                 latitude: inputs.latitude,
                 longitude: inputs.longitude,
@@ -150,11 +177,7 @@ export default function UpdateLifeTree({ id }) {
               Care
             </Typography>
             <Box style={{ display: 'grid', justifyContent: 'center' }}>
-              <img
-                className={classes.image}
-                src={data.LifeTree?.photo?.image?.publicUrlTransformed}
-                alt={data.LifeTree?.photo?.altText}
-              />
+              <img className={classes.image} src={data.LifeTree?.image} />
             </Box>
             <CardContent>
               <DisplayError error={error} />
@@ -174,14 +197,17 @@ export default function UpdateLifeTree({ id }) {
                     className={classes.field}
                     size="small"
                   />
-                  <Input
-                    type="file"
-                    id="image"
-                    name="image"
-                    onChange={handleChange}
-                    className={classes.field}
-                    size="small"
-                  />
+                  <CloudinaryContext cloudName="emkaydee">
+                    <Image
+                      key={image}
+                      publicId={image}
+                      fetch-format="auto"
+                      quality="auto"
+                    />
+                    <Button onClick={() => beginUpload('image')}>
+                      Upload Image
+                    </Button>
+                  </CloudinaryContext>
                   <TextField
                     // type="textarea"
                     multiline

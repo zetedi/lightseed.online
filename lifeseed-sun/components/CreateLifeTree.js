@@ -57,7 +57,7 @@ const CREATE_LIFETREE_MUTATION = gql`
     $description: String
     $latitude: String
     $longitude: String
-    $image: Upload
+    $image: String
   ) {
     createLifeTree(
       data: {
@@ -66,12 +66,13 @@ const CREATE_LIFETREE_MUTATION = gql`
         latitude: $latitude
         longitude: $longitude
         status: "ALIVE"
-        photo: { create: { image: $image, altText: $name } }
+        image: $image
       }
     ) {
       id
       name
       description
+      image
       latitude
       longitude
     }
@@ -80,8 +81,14 @@ const CREATE_LIFETREE_MUTATION = gql`
 
 export default function CreateLifeTree() {
   const classes = useStyles();
-  const [images, setImages] = useState([]);
-
+  const [image, setImage] = useState();
+  const { inputs, handleChange, clearForm } = useForm({
+    name: '',
+    description: '',
+    image: '',
+    latitude: '',
+    longitude: '',
+  });
   const beginUpload = (tag) => {
     const uploadOptions = {
       cloudName: 'ezimg',
@@ -93,7 +100,8 @@ export default function CreateLifeTree() {
       if (!error) {
         console.log(photos);
         if (photos.event === 'success') {
-          setImages([...images, photos.info.secure_url]);
+          setImage(photos.info.secure_url);
+          inputs.image = photos.info.secure_url;
           console.log(photos.info);
         }
       } else {
@@ -102,21 +110,11 @@ export default function CreateLifeTree() {
     });
   };
 
-  useEffect(() => {
-    fetchPhotos('image', setImages);
-  }, []);
-
-  const { inputs, handleChange, clearForm } = useForm({
-    name: '',
-    latitude: '',
-    longitude: '',
-    description: '',
-  });
   console.log(inputs);
   const [createLifeTree, { data, error, loading }] = useMutation(
     CREATE_LIFETREE_MUTATION,
     {
-      variables: inputs,
+      variables: { ...inputs, image },
       refetchQueries: [{ query: CURRENT_USER_QUERY }],
     }
   );
@@ -164,6 +162,17 @@ export default function CreateLifeTree() {
                     className={classes.field}
                     size="small"
                   />
+                  <CloudinaryContext cloudName="ezimg">
+                    <Image
+                      key={image}
+                      publicId={image}
+                      fetch-format="auto"
+                      quality="auto"
+                    />
+                    <Button onClick={() => beginUpload('image')}>
+                      Upload Image
+                    </Button>
+                  </CloudinaryContext>
                   <Input
                     type="file"
                     id="image"
@@ -198,21 +207,7 @@ export default function CreateLifeTree() {
                     className={classes.field}
                     size="small"
                   />
-                  <CloudinaryContext cloudName="emkaydee">
-                    <Button onClick={() => beginUpload('image')}>
-                      Upload Image
-                    </Button>
-                    <section>
-                      {images.map((i) => (
-                        <Image
-                          key={i}
-                          publicId={i}
-                          fetch-format="auto"
-                          quality="auto"
-                        />
-                      ))}
-                    </section>
-                  </CloudinaryContext>
+
                   <TextField
                     type="text"
                     id="longitude"

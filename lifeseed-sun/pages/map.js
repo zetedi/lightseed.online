@@ -10,14 +10,9 @@ export const ALL_LIFETREES_QUERY = gql`
       id
       name
       description
+      image
       latitude
       longitude
-      photo {
-        id
-        image {
-          publicUrlTransformed
-        }
-      }
     }
   }
 `;

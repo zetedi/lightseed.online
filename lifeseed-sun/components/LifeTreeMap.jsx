@@ -7,20 +7,14 @@ function createLifeTreeMarkers(lifeTrees) {
     const r = {};
     r.lifeTreeData = lifeTree;
     r.lifeTreeIcon = L.icon({
-      iconUrl: lifeTree?.photo?.image?.publicUrlTransformed,
-      iconSize: new Point(70, 70),
+      iconUrl: lifeTree?.image ? lifeTree?.image : '/static/lifeseed.svg',
+      iconSize: new Point(70),
       className: 'leaflet-div-icon',
     });
     console.log(r);
     return r;
   });
 }
-
-const icon = L.icon({
-  iconUrl: '/static/lifeseed.svg',
-  iconSize: new Point(70, 70),
-  className: 'leaflet-div-icon',
-});
 
 const LifeTreeMap = ({ lifeTrees }) => (
   <MapContainer
@@ -43,10 +37,7 @@ const LifeTreeMap = ({ lifeTrees }) => (
         opacity="1"
       >
         <Popup>
-          <img
-            width="150px"
-            src={lifeTree?.lifeTreeData?.photo?.image?.publicUrlTransformed}
-          />
+          <img width="250px" src={lifeTree?.lifeTreeData?.image} />
         </Popup>
       </Marker>
     ))}

@@ -28,6 +28,7 @@ export const LifeTree = list({
         displayMode: 'textarea',
       },
     }),
+    image: text({ isRequired: false }),
     photo: relationship({
       ref: 'LifeTreeImage.lifeTree',
       ui: {

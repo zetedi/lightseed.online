@@ -39,7 +39,7 @@ function Sphere(props) {
 
 function Torus(props) {
   const mesh = useRef();
-  useFrame((state, delta) => (mesh.current.rotation.x += 0.01));
+  useFrame((state, delta) => (mesh.current.rotation.x += 0.0007));
   return (
     <mesh {...props} ref={mesh} scale={1}>
       <torusGeometry args={[10, 3, 16, 100]} />
