@@ -38,6 +38,7 @@ export default function LifeTreeMap({ lifeTrees }) {
           ]}
           icon={lifeTree?.lifeTreeIcon}
           opacity="1"
+          key={lifeTree?.lifeTreeData?.id}
         >
           <Popup>
             <img width="250px" src={lifeTree?.lifeTreeData?.image} />
