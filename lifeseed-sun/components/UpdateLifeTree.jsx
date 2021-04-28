@@ -26,7 +26,7 @@ const SINGLE_LIFETREE_QUERY = gql`
       id
       name
       image
-      description
+      body
       status
       latitude
       longitude
@@ -68,7 +68,7 @@ const UPDATE_LIFETREE_MUTATION = gql`
     $id: ID!
     $name: String
     $image: String
-    $description: String
+    $body: String
     $latitude: String
     $longitude: String
   ) {
@@ -76,7 +76,7 @@ const UPDATE_LIFETREE_MUTATION = gql`
       id: $id
       data: {
         name: $name
-        description: $description
+        body: $body
         image: $image
         latitude: $latitude
         longitude: $longitude
@@ -85,7 +85,7 @@ const UPDATE_LIFETREE_MUTATION = gql`
       id
       name
       image
-      description
+      body
       latitude
       longitude
     }
@@ -104,7 +104,7 @@ export default function UpdateLifeTree({ id }) {
     data.LifeTree || {
       name: '',
       image: '',
-      description: '',
+      body: '',
       latitude: '',
       longitude: '',
     }
@@ -158,7 +158,7 @@ export default function UpdateLifeTree({ id }) {
                 id,
                 name: inputs.name,
                 image,
-                description: inputs.description,
+                body: inputs.body,
                 latitude: inputs.latitude,
                 longitude: inputs.longitude,
               },
@@ -212,11 +212,11 @@ export default function UpdateLifeTree({ id }) {
                     // type="textarea"
                     multiline
                     rows={4}
-                    id="description"
-                    name="description"
-                    label="Description"
-                    placeholder="Description"
-                    value={inputs.description}
+                    id="body"
+                    name="body"
+                    label="Body"
+                    placeholder="Body"
+                    value={inputs.body}
                     onChange={handleChange}
                     variant="outlined"
                     className={classes.field}

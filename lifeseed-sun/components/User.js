@@ -10,14 +10,14 @@ export const CURRENT_USER_QUERY = gql`
           id
         }
         name
-        cart {
+        basket {
           id
           quantity
-          product {
+          present {
             id
             price
             name
-            description
+            body
             photo {
               image {
                 publicUrlTransformed

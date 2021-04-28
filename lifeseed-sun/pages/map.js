@@ -9,7 +9,7 @@ export const ALL_LIFETREES_QUERY = gql`
     allLifeTrees {
       id
       name
-      description
+      body
       image
       latitude
       longitude

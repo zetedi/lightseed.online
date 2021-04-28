@@ -5,15 +5,15 @@ import { isSignedIn, rules } from '../access';
 export const LifeTree = list({
   access: {
     create: isSignedIn,
-    read: rules.canReadProducts,
-    update: rules.canManageProducts,
-    delete: rules.canManageProducts,
+    read: rules.canReadPresents,
+    update: rules.canManagePresents,
+    delete: rules.canManagePresents,
   },
   ui: {
     listView: {
       initialColumns: [
         'name',
-        'description',
+        'body',
         'photo',
         'latitude',
         'longitude',
@@ -23,7 +23,7 @@ export const LifeTree = list({
   },
   fields: {
     name: text({ isRequired: true }),
-    description: text({
+    body: text({
       ui: {
         displayMode: 'textarea',
       },

@@ -4,16 +4,16 @@ import {
   withItemData,
   statelessSessions,
 } from '@keystone-next/keystone/session';
-import { Product } from './schemas/Product';
-import { ProductImage } from './schemas/ProductImage';
+import { Present } from './schemas/Present';
+import { PresentImage } from './schemas/PresentImage';
 import { LifeTreeImage } from './schemas/LifeTreeImage';
 import { User } from './schemas/User';
 import { Role } from './schemas/Role';
 import { LifeSeed } from './schemas/LifeSeed';
 import { LifeTree } from './schemas/LifeTree';
-import { CartItem } from './schemas/CartItem';
-import { OrderItem } from './schemas/OrderItem';
-import { Order } from './schemas/Order';
+import { BasketItem } from './schemas/BasketItem';
+import { PackageItem } from './schemas/PackageItem';
+import { Package } from './schemas/Package';
 import 'dotenv/config';
 import { insertSeedData } from './seed-data';
 import { sendPasswordResetEmail } from './lib/mail';
@@ -67,11 +67,11 @@ export default withAuth(
       LifeSeed,
       LifeTree,
       LifeTreeImage,
-      Product,
-      ProductImage,
-      CartItem,
-      OrderItem,
-      Order,
+      Present,
+      PresentImage,
+      BasketItem,
+      PackageItem,
+      Package,
       Role,
     }),
     extendGraphqlSchema,

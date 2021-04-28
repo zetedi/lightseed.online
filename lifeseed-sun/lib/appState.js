@@ -5,18 +5,18 @@ const LocalStateContext = createContext();
 const LocalStateProvider = LocalStateContext.Provider;
 
 function AppStateProvider({ children }) {
-  const [cartOpen, setCartOpen] = useState(false);
+  const [basketOpen, setBasketOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
-  function closeCart() {
-    setCartOpen(false);
+  function closeBasket() {
+    setBasketOpen(false);
   }
 
-  function openCart() {
-    setCartOpen(true);
+  function openBasket() {
+    setBasketOpen(true);
   }
-  function toggleCart() {
-    setCartOpen(!cartOpen);
+  function toggleBasket() {
+    setBasketOpen(!basketOpen);
   }
 
   function closeSearch() {
@@ -33,11 +33,11 @@ function AppStateProvider({ children }) {
   return (
     <LocalStateProvider
       value={{
-        cartOpen,
-        setCartOpen,
-        toggleCart,
-        closeCart,
-        openCart,
+        basketOpen,
+        setBasketOpen,
+        toggleBasket,
+        closeBasket,
+        openBasket,
         searchOpen,
         setSearchOpen,
         toggleSearch,

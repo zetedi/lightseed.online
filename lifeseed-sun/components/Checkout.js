@@ -19,16 +19,16 @@ const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
   checkoutForm: {
     boxShadow: '0 1px 2px 2px rgba(0, 0, 0, 0.04)',
-    border: '1px solid rgba(0, 0, 0, 0.06)',
-    borderRadius: '5px',
+    bpackage: '1px solid rgba(0, 0, 0, 0.06)',
+    bpackageRadius: '5px',
     padding: '1rem',
     display: 'grid',
     gridGap: '1rem',
   },
 }));
 
-const CREATE_ORDER_MUTATION = gql`
-  mutation CREATE_ORDER_MUTATION($token: String!) {
+const CREATE_PACKAGE_MUTATION = gql`
+  mutation CREATE_PACKAGE_MUTATION($token: String!) {
     checkout(token: $token) {
       id
       charge
@@ -50,10 +50,10 @@ function CheckoutForm() {
   const stripe = useStripe();
   const elements = useElements();
   const router = useRouter();
-  const { closeCart } = useApp();
+  const { closeBasket } = useApp();
 
   const [checkout, { error: graphQLError }] = useMutation(
-    CREATE_ORDER_MUTATION,
+    CREATE_PACKAGE_MUTATION,
     {
       refetchQueries: [{ query: CURRENT_USER_QUERY }],
     }
@@ -74,21 +74,21 @@ function CheckoutForm() {
       return;
     }
 
-    const order = await checkout({
+    const myPackage = await checkout({
       variables: {
         token: paymentMethod.id,
       },
     });
 
-    console.log(`Finished the order!`);
-    console.log(order);
+    console.log(`Finished the myP`);
+    console.log(myPackage);
 
     router.push({
-      pathname: `/order/[id]`,
-      query: { id: order.data.checkout.id },
+      pathname: `/package/[id]`,
+      query: { id: myPackage.data.checkout.id },
     });
 
-    closeCart();
+    closeBasket();
 
     setLoading(false);
     nProgress.done();

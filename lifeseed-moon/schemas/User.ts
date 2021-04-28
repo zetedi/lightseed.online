@@ -17,15 +17,15 @@ export const User = list({
     name: text({ isRequired: true }),
     email: text({ isRequired: true, isUnique: true }),
     password: password(),
-    cart: relationship({
-      ref: 'CartItem.user',
+    basket: relationship({
+      ref: 'BasketItem.user',
       many: true,
       ui: {
         createView: { fieldMode: 'hidden' },
         itemView: { fieldMode: 'read' },
       },
     }),
-    orders: relationship({ ref: 'Order.user', many: true }),
+    packages: relationship({ ref: 'Package.user', many: true }),
     role: relationship({
       ref: 'Role.assignedTo',
       access: {
@@ -33,7 +33,7 @@ export const User = list({
         update: permissions.canManageUsers,
       },
     }),
-    products: relationship({ ref: 'Product.user', many: true }),
+    presents: relationship({ ref: 'Present.user', many: true }),
     lifeTree: relationship({ ref: 'LifeTree.user' }),
   },
 });

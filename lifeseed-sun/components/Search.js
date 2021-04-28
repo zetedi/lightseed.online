@@ -6,14 +6,11 @@ import gql from 'graphql-tag';
 import { debounce } from 'lodash';
 import { useRouter } from 'next/dist/client/router';
 
-const SEARCH_PRODUCTS_QUERY = gql`
-  query SEARCH_PRODUCTS_QUERY($searchTerm: String!) {
-    searchTerms: allProducts(
+const SEARCH_PRESENTS_QUERY = gql`
+  query SEARCH_PRESENTS_QUERY($searchTerm: String!) {
+    searchTerms: allPresents(
       where: {
-        OR: [
-          { name_contains_i: $searchTerm }
-          { description_contains_i: $searchTerm }
-        ]
+        OR: [{ name_contains_i: $searchTerm }, { body_contains_i: $searchTerm }]
       }
     ) {
       id
@@ -76,7 +73,7 @@ export default function Search() {
   const classes = useStyles();
   const router = useRouter();
   const [findItems, { loading, data, error }] = useLazyQuery(
-    SEARCH_PRODUCTS_QUERY,
+    SEARCH_PRESENTS_QUERY,
     {
       fetchPolicy: 'no-cache',
     }
@@ -104,7 +101,7 @@ export default function Search() {
     },
     onSelectedItemChange({ selectedItem }) {
       router.push({
-        pathname: `/product/${selectedItem.id}`,
+        pathname: `/present/${selectedItem.id}`,
       });
     },
     itemToString: (item) => item?.name || '',

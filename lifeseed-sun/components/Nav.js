@@ -33,7 +33,7 @@ export default function Nav() {
   const user = useUser();
   const classes = useStyles();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { openCart, toggleSearch } = useApp();
+  const { openBasket, toggleSearch } = useApp();
   const [signout] = useMutation(SIGNOUT_MUTATION, {
     refetchQueries: [{ query: CURRENT_USER_QUERY }],
   });
@@ -48,7 +48,7 @@ export default function Nav() {
         <Box className={classes.toolbar}>
           <Menu
             user={user}
-            openCart={openCart}
+            openBasket={openBasket}
             toggleSearch={toggleSearch}
             signout={signout}
           />
@@ -70,7 +70,7 @@ export default function Nav() {
           >
             <Menu
               user={user}
-              openCart={openCart}
+              openBasket={openBasket}
               toggleSearch={toggleSearch}
               signout={signout}
             />

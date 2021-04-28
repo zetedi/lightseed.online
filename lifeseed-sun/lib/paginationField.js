@@ -9,7 +9,7 @@ export default function paginationField() {
 
       // Read the number of items on the page from the cache
       const data = cache.readQuery({ query: PAGINATION_QUERY });
-      const count = data?._allProductsMeta?.count;
+      const count = data?._allPresentsMeta?.count;
       const page = skip / first + 1;
       const pages = Math.ceil(count / first);
 
@@ -46,7 +46,7 @@ export default function paginationField() {
     },
     merge(existing, incoming, { args }) {
       const { skip, first } = args;
-      // This runs when the Apollo client comes back from the network with our product
+      // This runs when the Apollo client comes back from the network with our present
       console.log(`MErging items from the network ${incoming.length}`);
       const merged = existing ? existing.slice(0) : [];
       for (let i = skip; i < skip + incoming.length; ++i) {

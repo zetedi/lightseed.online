@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Box, Collapse } from '@material-ui/core';
 import makeStyles from '@material-ui/core/styles/makeStyles';
-import Cart from './Cart';
+import Basket from './Basket';
 import Nav from './Nav';
 import Search from './Search';
 import Lifecircle from './Lifecircle';
@@ -31,7 +31,7 @@ export default function Header() {
       <Collapse in={searchOpen}>
         <Search />
       </Collapse>
-      <Cart />
+      <Basket />
     </>
   );
 }

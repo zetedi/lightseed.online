@@ -2,27 +2,27 @@ import { integer, relationship, select, text } from '@keystone-next/fields';
 import { list } from '@keystone-next/keystone/schema';
 import { isSignedIn, rules } from '../access';
 
-export const Product = list({
+export const Present = list({
   access: {
     create: isSignedIn,
-    read: rules.canReadProducts,
-    update: rules.canManageProducts,
-    delete: rules.canManageProducts,
+    read: rules.canReadPresents,
+    update: rules.canManagePresents,
+    delete: rules.canManagePresents,
   },
   ui: {
     listView: {
-      initialColumns: ['name', 'description', 'photo', 'price', 'status'],
+      initialColumns: ['name', 'body', 'photo', 'price', 'status'],
     },
   },
   fields: {
     name: text({ isRequired: true }),
-    description: text({
+    body: text({
       ui: {
         displayMode: 'textarea',
       },
     }),
     photo: relationship({
-      ref: 'ProductImage.product',
+      ref: 'PresentImage.present',
       ui: {
         displayMode: 'cards',
         cardFields: ['image', 'altText'],
@@ -51,9 +51,26 @@ export const Product = list({
         createView: { fieldMode: 'hidden' },
       },
     }),
+    type: select({
+      options: [
+        {
+          label: 'Offer',
+          value: 'OFFER',
+        },
+        {
+          label: 'Message',
+          value: 'MESSAGE',
+        },
+      ],
+      defaultValue: 'MESSAGE',
+      ui: {
+        displayMode: 'segmented-control',
+        createView: { fieldMode: 'hidden' },
+      },
+    }),
     price: integer(),
     user: relationship({
-      ref: 'User.products',
+      ref: 'User.presents',
       defaultValue: ({ context }) => ({
         connect: { id: context.session.itemId },
       }),

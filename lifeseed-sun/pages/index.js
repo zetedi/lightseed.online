@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { CloudinaryContext, Image } from 'cloudinary-react';
+import React, { useState, useRef } from 'react';
 import Head from 'next/head';
 import { Box } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { fetchPhotos, openUploadWidget } from '../lib/cloudinaryService';
 
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
@@ -50,33 +48,6 @@ function Torus(props) {
 
 export default function Index() {
   const classes = useStyles();
-
-  const [images, setImages] = useState([]);
-
-  const beginUpload = (tag) => {
-    const uploadOptions = {
-      cloudName: 'ezimg',
-      tags: [tag, 'lifeseed'],
-      uploadPreset: 'wobiwbrp',
-      sources: ['local', 'camera'],
-    };
-    openUploadWidget(uploadOptions, (error, photos) => {
-      if (!error) {
-        console.log(photos);
-        if (photos.event === 'success') {
-          setImages([...images, photos.info.secure_url]);
-          console.log(photos.info);
-        }
-      } else {
-        console.log(error);
-      }
-    });
-  };
-
-  useEffect(() => {
-    fetchPhotos('image', setImages);
-  }, []);
-
   return (
     <>
       <script
@@ -94,16 +65,6 @@ export default function Index() {
           <Torus position={[0, 0, 0]} />
         </Canvas>
       </Box>
-      <CloudinaryContext cloudName="ezimg">
-        <div className="App">
-          <button onClick={() => beginUpload('image')}>Upload Image</button>
-          <section>
-            {images.map((i) => (
-              <Image key={i} publicId={i} fetch-format="auto" quality="auto" />
-            ))}
-          </section>
-        </div>
-      </CloudinaryContext>
     </>
   );
 }

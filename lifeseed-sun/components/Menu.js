@@ -14,10 +14,10 @@ import AddCircleIcon from '@material-ui/icons/AddCircle';
 import SearchIcon from '@material-ui/icons/Search';
 import ExitToApp from '@material-ui/icons/ExitToApp';
 
-export default function Menu({ user, openCart, toggleSearch, signout }) {
+export default function Menu({ user, openBasket, toggleSearch, signout }) {
   return (
     <>
-      <Link href="/products">
+      <Link href="/presents">
         <IconButton>
           <StorefrontIcon />
         </IconButton>
@@ -37,7 +37,7 @@ export default function Menu({ user, openCart, toggleSearch, signout }) {
               <AddCircleIcon />
             </IconButton>
           </Link>
-          <Link href="/orders">
+          <Link href="/packages">
             <IconButton>
               <AllInboxIcon />
             </IconButton>
@@ -73,11 +73,11 @@ export default function Menu({ user, openCart, toggleSearch, signout }) {
               <AccountBalanceWalletIcon />
             </IconButton>
           </Link>
-          <IconButton onClick={openCart}>
+          <IconButton onClick={openBasket}>
             <Badge
-              badgeContent={user.cart.reduce(
-                (tally, cartItem) =>
-                  tally + (cartItem.product ? cartItem.quantity : 0),
+              badgeContent={user.basket.reduce(
+                (tally, basketItem) =>
+                  tally + (basketItem.present ? basketItem.quantity : 0),
                 0
               )}
               color="secondary"

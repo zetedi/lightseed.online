@@ -2,22 +2,22 @@ import { integer, relationship, select, text } from '@keystone-next/fields';
 import { list } from '@keystone-next/keystone/schema';
 import { isSignedIn, rules } from '../access';
 
-export const OrderItem = list({
+export const PackageItem = list({
   access: {
     create: isSignedIn,
-    read: rules.canManageOrderItems,
+    read: rules.canManagePackageItems,
     update: () => false,
     delete: () => false,
   },
   fields: {
     name: text({ isRequired: true }),
-    description: text({
+    body: text({
       ui: {
         displayMode: 'textarea',
       },
     }),
     photo: relationship({
-      ref: 'ProductImage',
+      ref: 'PresentImage',
       ui: {
         displayMode: 'cards',
         cardFields: ['image', 'altText'],
@@ -27,6 +27,6 @@ export const OrderItem = list({
     }),
     price: integer(),
     quantity: integer(),
-    order: relationship({ ref: 'Order.items' }),
+    package: relationship({ ref: 'Package.items' }),
   },
 });

@@ -9,10 +9,10 @@ import { list } from '@keystone-next/keystone/schema';
 import { isSignedIn, rules } from '../access';
 import formatMoney from '../lib/formatMoney';
 
-export const Order = list({
+export const Package = list({
   access: {
     create: isSignedIn,
-    read: rules.canOrder,
+    read: rules.canPackage,
     update: () => false,
     delete: () => false,
   },
@@ -24,8 +24,8 @@ export const Order = list({
       },
     }),
     total: integer(),
-    items: relationship({ ref: 'OrderItem.order', many: true }),
-    user: relationship({ ref: 'User.orders' }),
+    items: relationship({ ref: 'PackageItem.package', many: true }),
+    user: relationship({ ref: 'User.packages' }),
     charge: text(),
   },
 });

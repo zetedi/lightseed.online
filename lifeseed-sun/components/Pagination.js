@@ -11,7 +11,7 @@ import { perPage } from '../config';
 
 export const PAGINATION_QUERY = gql`
   query PAGINATION_QUERY {
-    _allProductsMeta {
+    _allPresentsMeta {
       count
     }
   }
@@ -35,7 +35,7 @@ export default function Pagination({ page }) {
   const { error, loading, data } = useQuery(PAGINATION_QUERY);
   if (loading) return 'Loading...';
   if (error) return <DisplayError error={error} />;
-  const { count } = data._allProductsMeta;
+  const { count } = data._allPresentsMeta;
   const pageCount = Math.ceil(count / perPage);
   return (
     <Box className={classes.pagination}>
@@ -44,7 +44,7 @@ export default function Pagination({ page }) {
           Goods and services - Page {page} of {pageCount}
         </title>
       </Head>
-      <Link href={`/products/${page - 1}`}>
+      <Link href={`/presents/${page - 1}`}>
         <IconButton disabled={page <= 1}>
           <NavigateBeforeIcon color={page <= 1 ? 'secondary' : 'primary'} />
         </IconButton>
@@ -52,7 +52,7 @@ export default function Pagination({ page }) {
       <p>
         Page <b>{page}</b>/{pageCount} of <b>{count}</b> items
       </p>
-      <Link href={`/products/${page + 1}`}>
+      <Link href={`/presents/${page + 1}`}>
         <IconButton disabled={page >= pageCount}>
           <NavigateNextIcon
             color={page >= pageCount ? 'secondary' : 'primary'}

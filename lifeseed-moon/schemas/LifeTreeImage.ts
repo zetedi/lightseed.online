@@ -14,8 +14,8 @@ export const LifeTreeImage = list({
   access: {
     create: isSignedIn,
     read: () => true,
-    update: permissions.canManageProducts,
-    delete: permissions.canManageProducts,
+    update: permissions.canManagePresents,
+    delete: permissions.canManagePresents,
   },
   fields: {
     image: cloudinaryImage({

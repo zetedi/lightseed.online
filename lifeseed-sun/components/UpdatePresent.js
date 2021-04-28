@@ -1,6 +1,4 @@
 import { useMutation, useQuery } from '@apollo/client';
-import { CloudinaryContext, Image } from 'cloudinary-react';
-import React, { useState, useEffect } from 'react';
 import gql from 'graphql-tag';
 import Head from 'next/head';
 import {
@@ -19,8 +17,23 @@ import { makeStyles } from '@material-ui/core/styles';
 import Router from 'next/router';
 import useForm from '../lib/useForm';
 import DisplayError from './ErrorMessage';
-import { CURRENT_USER_QUERY } from './User';
-import { fetchPhotos, openCustomUploadWidget } from '../lib/cloudinaryService';
+
+const SINGLE_PRESENT_QUERY = gql`
+  query SINGLE_PRESENT_QUERY($id: ID!) {
+    Present(where: { id: $id }) {
+      name
+      price
+      body
+      id
+      photo {
+        altText
+        image {
+          publicUrlTransformed
+        }
+      }
+    }
+  }
+`;
 
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
@@ -30,7 +43,7 @@ const useStyles = makeStyles((theme) => ({
       margin: theme.spacing(1),
     },
   },
-  updateLifeTree: {
+  updatePresent: {
     margin: '1rem',
     padding: '1rem',
     maxWidth: '25rem',
@@ -51,65 +64,49 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const CREATE_LIFETREE_MUTATION = gql`
-  mutation CREATE_LIFETREE_MUTATION(
+const UPDATE_PRESENT_MUTATION = gql`
+  mutation UPDATE_PRESENT_MUTATION(
+    $id: ID!
     $name: String
     $body: String
-    $latitude: String
-    $longitude: String
-    $image: String
+    $price: Int
+    $image: Upload
   ) {
-    createLifeTree(
+    updatePresent(
+      id: $id
       data: {
         name: $name
         body: $body
-        latitude: $latitude
-        longitude: $longitude
-        status: "ALIVE"
-        image: $image
+        price: $price
+        photo: { create: { image: $image, altText: $name } }
       }
     ) {
       id
+      price
       name
       body
-      image
-      latitude
-      longitude
     }
   }
 `;
 
-export default function CreateLifeTree() {
+export default function UpdatePresent({ id }) {
   const classes = useStyles();
-  const [image, setImage] = useState();
-  const { inputs, handleChange, clearForm } = useForm({
-    name: '',
-    body: '',
-    image: '',
-    latitude: '',
-    longitude: '',
+  const { data = {}, loading } = useQuery(SINGLE_PRESENT_QUERY, {
+    variables: {
+      id,
+    },
   });
-  const beginUpload = () => {
-    openCustomUploadWidget((error, photos) => {
-      if (!error) {
-        console.log(photos);
-        if (photos.event === 'success') {
-          setImage(photos.info.secure_url);
-          inputs.image = photos.info.secure_url;
-          console.log(photos.info);
-        }
-      } else {
-        console.log(error);
-      }
-    });
-  };
-
+  const { inputs, handleChange } = useForm(
+    data.Present || { name: '', price: '', body: '' }
+  );
   console.log(inputs);
-  const [createLifeTree, { data, error, loading }] = useMutation(
-    CREATE_LIFETREE_MUTATION,
+  const [updatePresent, { loading: updating, error }] = useMutation(
+    UPDATE_PRESENT_MUTATION,
     {
-      variables: { ...inputs, image },
-      refetchQueries: [{ query: CURRENT_USER_QUERY }],
+      variables: {
+        id,
+        ...inputs,
+      },
     }
   );
   if (loading) return <p>Loading...</p>;
@@ -117,17 +114,23 @@ export default function CreateLifeTree() {
   return (
     <>
       <Head>
-        <title>Plant lifeTree</title>
+        <title>{inputs.name}</title>
       </Head>
       <Box className={classes.space}>
         <form
-          className={classes.root}
           onSubmit={async (e) => {
             e.preventDefault();
-            const res = await createLifeTree();
-            clearForm();
+            const res = await updatePresent({
+              variables: {
+                id,
+                name: inputs.name,
+                body: inputs.body,
+                price: inputs.price,
+              },
+            }).catch(console.error);
+            console.log(res);
             Router.push({
-              pathname: `/lifetree/${res?.data?.createLifeTree?.id}`,
+              pathname: `/present/${res.data.updatePresent.id}`,
             });
           }}
         >
@@ -136,8 +139,15 @@ export default function CreateLifeTree() {
               variant="h1"
               style={{ margin: '1rem', textAlign: 'center', color: '#272727' }}
             >
-              Plant
+              Update
             </Typography>
+            <Box style={{ display: 'grid', justifyContent: 'center' }}>
+              <img
+                className={classes.image}
+                src={data.Present?.photo?.image?.publicUrlTransformed}
+                alt={data.Present?.photo?.altText}
+              />
+            </Box>
             <CardContent>
               <DisplayError error={error} />
               {loading ? (
@@ -156,18 +166,28 @@ export default function CreateLifeTree() {
                     className={classes.field}
                     size="small"
                   />
-                  <CloudinaryContext cloudName="ezimg">
-                    <Image
-                      key={image}
-                      publicId={image}
-                      fetch-format="auto"
-                      quality="auto"
-                    />
-                    <Button onClick={() => beginUpload('image')}>
-                      Upload Image
-                    </Button>
-                  </CloudinaryContext>
+                  <Input
+                    type="file"
+                    id="image"
+                    name="image"
+                    onChange={handleChange}
+                    className={classes.field}
+                    size="small"
+                  />
                   <TextField
+                    type="number"
+                    id="price"
+                    name="price"
+                    label="Price"
+                    placeholder="Price"
+                    value={inputs.price}
+                    onChange={handleChange}
+                    variant="outlined"
+                    className={classes.field}
+                    size="small"
+                  />
+                  <TextField
+                    // type="textarea"
                     multiline
                     rows={4}
                     id="body"
@@ -180,50 +200,26 @@ export default function CreateLifeTree() {
                     className={classes.field}
                     size="small"
                   />
-                  <TextField
-                    type="text"
-                    id="latitude"
-                    name="latitude"
-                    label="Latitude"
-                    placeholder="Latitude"
-                    value={inputs.latitude}
-                    onChange={handleChange}
-                    variant="outlined"
-                    className={classes.field}
-                    size="small"
-                  />
-                  <TextField
-                    type="text"
-                    id="longitude"
-                    name="longitude"
-                    label="Longitude"
-                    placeholder="Longitude"
-                    value={inputs.longitude}
-                    onChange={handleChange}
-                    variant="outlined"
-                    className={classes.field}
-                    size="small"
-                  />
                 </Grid>
               )}
             </CardContent>
             <CardActions disableSpacing>
-              {/* <Button
+              <Button
                 color="primary"
                 onClick={() =>
                   Router.push({
-                    pathname: `/lifetree/${id}`,
+                    pathname: `/presents`,
                   })
                 }
               >
                 Back
-              </Button> */}
+              </Button>
               <Button
                 color="primary"
                 type="submit"
                 style={{ marginLeft: 'auto' }}
               >
-                Plant
+                Update
               </Button>
             </CardActions>
           </Card>

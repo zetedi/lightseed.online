@@ -55,7 +55,7 @@ const LIFETREE_QUERY = gql`
     LifeTree(where: { id: $id }) {
       id
       name
-      description
+      body
       image
       latitude
       longitude
@@ -91,7 +91,7 @@ export default function LifeTreeView({ id }) {
           </Typography>
           <img className={classes.image} src={LifeTree?.image} />
           <CardContent>
-            <Typography>{LifeTree.description}</Typography>
+            <Typography>{LifeTree.body}</Typography>
             <Divider />
             <Typography>
               <b>Latitude:</b> {LifeTree.latitude}

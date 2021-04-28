@@ -2,16 +2,16 @@ import { integer, relationship, select, text } from '@keystone-next/fields';
 import { list } from '@keystone-next/keystone/schema';
 import { isSignedIn, rules } from '../access';
 
-export const CartItem = list({
+export const BasketItem = list({
   access: {
     create: isSignedIn,
-    read: rules.canOrder,
-    update: rules.canOrder,
-    delete: rules.canOrder,
+    read: rules.canPackage,
+    update: rules.canPackage,
+    delete: rules.canPackage,
   },
   ui: {
     listView: {
-      initialColumns: ['product', 'quantity', 'user'],
+      initialColumns: ['present', 'quantity', 'user'],
     },
   },
   fields: {
@@ -20,7 +20,7 @@ export const CartItem = list({
       defaultValue: 1,
       isRequired: true,
     }),
-    product: relationship({ ref: 'Product' }),
-    user: relationship({ ref: 'User.cart' }),
+    present: relationship({ ref: 'Present' }),
+    user: relationship({ ref: 'User.basket' }),
   },
 });

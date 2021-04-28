@@ -1,11 +1,11 @@
 /* eslint-disable */
 import { KeystoneContext, SessionStore } from "@keystone-next/types";
-import { CartItem } from "../schemas/CartItem";
+import { BasketItem } from "../schemas/BasketItem";
 import { Session } from "../types";
 
 import {
-  CartItemCreateInput,
-  OrderCreateInput,
+  BasketItemCreateInput,
+  PackageCreateInput,
 } from "../.keystone/schema-types";
 import stripeConfig from "../lib/stripe";
 
@@ -19,10 +19,10 @@ async function checkout(
   root: any,
   { token }: Arguments,
   context: KeystoneContext
-): Promise<OrderCreateInput> {
+): Promise<PackageCreateInput> {
   const userId = context.session.itemId;
   if (!userId) {
-    throw new Error("Sorry, you must be signed in to create an order");
+    throw new Error("Sorry, you must be signed in to create a package.");
   }
 
   const user = await context.lists.User.findOne({
@@ -31,13 +31,13 @@ async function checkout(
       id
       name
       email
-      cart {
+      basket {
         id
         quantity
-        product {
+        present {
           name
           price
-          description
+          body
           id
           photo {
             id
@@ -52,12 +52,12 @@ async function checkout(
   });
   console.log(user);
   console.dir(user, { depth: null });
-  const cartItems = user.cart.filter((cartItem) => cartItem.product);
-  const amount = cartItems.reduce(function (
+  const basketItems = user.basket.filter((basketItem) => basketItem.present);
+  const amount = basketItems.reduce(function (
     tally: number,
-    cartItem: CartItemCreateInput
+    basketItem: BasketItemCreateInput
   ) {
-    return (tally + cartItem.quantity * cartItem.product.price);
+    return (tally + basketItem.quantity * basketItem.present.price);
   },
   0);
   console.log(amount);
@@ -75,31 +75,31 @@ async function checkout(
 
   console.log(charge);
 
-  const orderItems = cartItems.map((cartItem) => {
-    const orderItem = {
-      name: cartItem.product.name,
-      description: cartItem.product.description,
-      price: cartItem.product.price,
-      quantity: cartItem.quantity,
-      photo: { connect: { id: cartItem.product.photo.id } },
+  const packageItems = basketItems.map((basketItem) => {
+    const packageItem = {
+      name: basketItem.present.name,
+      body: basketItem.present.body,
+      price: basketItem.present.price,
+      quantity: basketItem.quantity,
+      photo: { connect: { id: basketItem.present.photo.id } },
     };
-    return orderItem;
+    return packageItem;
   });
 
-  const order = await context.lists.Order.createOne({
+  const myPackage = await context.lists.Package.createOne({
     data: {
       total: charge.amount,
       charge: charge.id,
-      items: { create: orderItems },
+      items: { create: packageItems },
       user: { connect: { id: userId } },
     },
   });
 
-  const cartItemIds = user.cart.map((cartItem) => cartItem.id);
-  await context.lists.CartItem.deleteMany({
-    ids: cartItemIds,
+  const basketItemIds = user.basket.map((basketItem) => basketItem.id);
+  await context.lists.BasketItem.deleteMany({
+    ids: basketItemIds,
   });
-  return order;
+  return myPackage;
 }
 
 export default checkout;
