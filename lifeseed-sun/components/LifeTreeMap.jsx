@@ -20,16 +20,10 @@ export default function LifeTreeMap({ lifeTrees }) {
       scrollWheelZoom
       style={{ height: '79vh', width: '100%', opacity: 1 }}
     >
-      {/* <TileLayer
-        attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      /> */}
-
       <TileLayer
-        url="https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/256/{z}/{x}/{y}@2x?access_token=pk.eyJ1IjoiemV0ZWRpIiwiYSI6ImNrbzA5Nmo5ZTA5MWUyd253dXRqcXdoMzgifQ.ivQr0qeW6C1kDwBDyTE6TQ"
+        url="https://api.mapbox.com/styles/v1/zetedi/cko2rvlqq0q6u19n9hkotfdry/tiles/256/{z}/{x}/{y}@2x?access_token=pk.eyJ1IjoiemV0ZWRpIiwiYSI6ImNrbzA5Nmo5ZTA5MWUyd253dXRqcXdoMzgifQ.ivQr0qeW6C1kDwBDyTE6TQ"
         attribution='Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery &copy; <a href="https://www.mapbox.com/">Mapbox</a>'
       />
-
       {lifeTreeMarkers.map((lifeTree) => (
         <Marker
           position={[
