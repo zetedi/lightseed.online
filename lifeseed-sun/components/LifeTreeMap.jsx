@@ -15,8 +15,8 @@ export default function LifeTreeMap({ lifeTrees }) {
   });
   return (
     <MapContainer
-      center={[51.505, -0.09]}
-      zoom={13}
+      center={[46.006502, 4.494195]}
+      zoom={7}
       scrollWheelZoom
       style={{ height: '79vh', width: '100%', opacity: 1 }}
     >
