@@ -64,6 +64,7 @@ export default function Nav() {
             anchor="right"
             open={mobileMenuOpen}
             onClose={toggleMobileMenuOpen}
+            onClick={toggleMobileMenuOpen}
             classes={{
               paper: classes.drawerPaper,
             }}
