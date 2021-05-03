@@ -16,7 +16,7 @@ import {
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import Router from 'next/router';
-import { openUploadWidget } from '../lib/cloudinaryService';
+import { openCustomUploadWidget } from '../lib/cloudinaryService';
 import useForm from '../lib/useForm';
 import DisplayError from './ErrorMessage';
 
@@ -109,14 +109,8 @@ export default function UpdateLifeTree({ id }) {
       longitude: '',
     }
   );
-  const beginUpload = (tag) => {
-    const uploadOptions = {
-      cloudName: 'ezimg',
-      tags: [tag, 'lifeseed'],
-      uploadPreset: 'wobiwbrp',
-      sources: ['local', 'camera'],
-    };
-    openUploadWidget(uploadOptions, (error, photos) => {
+  const beginUpload = () => {
+    openCustomUploadWidget((error, photos) => {
       if (!error) {
         console.log(photos);
         if (photos.event === 'success') {
@@ -146,9 +140,14 @@ export default function UpdateLifeTree({ id }) {
 
   return (
     <>
+      <script
+        src="https://widget.cloudinary.com/v2.0/global/all.js"
+        type="text/javascript"
+      />
       <Head>
         <title>{inputs.name}</title>
       </Head>
+
       <Box className={classes.space}>
         <form
           onSubmit={async (e) => {

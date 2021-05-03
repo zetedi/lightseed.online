@@ -2,8 +2,10 @@ import { useMutation, useQuery } from '@apollo/client';
 import gql from 'graphql-tag';
 import Head from 'next/head';
 import {
+  Backdrop,
   Box,
   Button,
+  CircularProgress,
   Grid,
   Input,
   LinearProgress,
@@ -15,8 +17,8 @@ import {
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import Router from 'next/router';
-import useForm from '../lib/useForm';
-import DisplayError from './ErrorMessage';
+import useForm from '../../lib/useForm';
+import DisplayError from '../ErrorMessage';
 
 const SINGLE_PRESENT_QUERY = gql`
   query SINGLE_PRESENT_QUERY($id: ID!) {
@@ -37,31 +39,6 @@ const SINGLE_PRESENT_QUERY = gql`
 
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
-  root: {
-    maxWidth: '25rem',
-    '& .MuiTextField-root': {
-      margin: theme.spacing(1),
-    },
-  },
-  updatePresent: {
-    margin: '1rem',
-    padding: '1rem',
-    maxWidth: '25rem',
-    width: '100%',
-  },
-  lifeTree: {
-    margin: '1rem',
-    width: 'fit-content',
-    maxWidth: '50rem',
-    alignItems: 'top',
-    justifyContent: 'center',
-    gap: '2rem',
-    '& img': {
-      width: '100%',
-      maxWidth: '30rem',
-      objectFit: 'contain',
-    },
-  },
 }));
 
 const UPDATE_PRESENT_MUTATION = gql`
@@ -89,7 +66,7 @@ const UPDATE_PRESENT_MUTATION = gql`
   }
 `;
 
-export default function UpdatePresent({ id }) {
+export default function PresentUpdate({ id }) {
   const classes = useStyles();
   const { data = {}, loading } = useQuery(SINGLE_PRESENT_QUERY, {
     variables: {
@@ -99,7 +76,6 @@ export default function UpdatePresent({ id }) {
   const { inputs, handleChange } = useForm(
     data.Present || { name: '', price: '', body: '' }
   );
-  console.log(inputs);
   const [updatePresent, { loading: updating, error }] = useMutation(
     UPDATE_PRESENT_MUTATION,
     {
@@ -109,7 +85,12 @@ export default function UpdatePresent({ id }) {
       },
     }
   );
-  if (loading) return <p>Loading...</p>;
+  if (updating)
+    return (
+      <Backdrop className={classes.backdrop} open={updating}>
+        <CircularProgress color="inherit" />
+      </Backdrop>
+    );
 
   return (
     <>
@@ -128,13 +109,12 @@ export default function UpdatePresent({ id }) {
                 price: inputs.price,
               },
             }).catch(console.error);
-            console.log(res);
             Router.push({
               pathname: `/present/${res.data.updatePresent.id}`,
             });
           }}
         >
-          <Card className={classes.lifeTree}>
+          <Card className={classes.cardView}>
             <Typography
               variant="h1"
               style={{ margin: '1rem', textAlign: 'center', color: '#272727' }}
@@ -189,7 +169,7 @@ export default function UpdatePresent({ id }) {
                   <TextField
                     // type="textarea"
                     multiline
-                    rows={4}
+                    rows={7}
                     id="body"
                     name="body"
                     label="Body"

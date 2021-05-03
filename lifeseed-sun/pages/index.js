@@ -50,10 +50,6 @@ export default function Index() {
   const classes = useStyles();
   return (
     <>
-      <script
-        src="https://widget.cloudinary.com/v2.0/global/all.js"
-        type="text/javascript"
-      />
       <Head>
         <title>lifeseed online</title>
       </Head>

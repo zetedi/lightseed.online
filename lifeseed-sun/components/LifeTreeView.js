@@ -1,3 +1,4 @@
+import React from 'react';
 import Link from 'next/link';
 import { useQuery } from '@apollo/client';
 import gql from 'graphql-tag';
@@ -13,7 +14,6 @@ import {
   Divider,
   Typography,
 } from '@material-ui/core';
-import React from 'react';
 // import LifeTreePosition from './LifeTreePosition';
 
 const useStyles = makeStyles((theme) => ({
@@ -40,13 +40,6 @@ const useStyles = makeStyles((theme) => ({
     margin: '1rem',
     textAlign: 'center',
     color: '#272727',
-  },
-  space: {
-    backgroundColor: 'yellow',
-    backgroundImage:
-      'radial-gradient(yellow, yellow, lightyellow, #fafafa, #fafafa)',
-    display: 'grid',
-    justifyContent: 'center',
   },
 }));
 

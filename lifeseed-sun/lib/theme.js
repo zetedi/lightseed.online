@@ -361,6 +361,24 @@ const theme = createMuiTheme({
       display: 'grid',
       justifyContent: 'center',
     },
+    cardView: {
+      margin: '1rem',
+      width: 'fit-content',
+      maxWidth: '50rem',
+      alignItems: 'top',
+      justifyContent: 'center',
+      gap: '2rem',
+      '& img': {
+        width: '100%',
+        maxWidth: '30rem',
+        objectFit: 'contain',
+      },
+    },
+    cardHeader: {
+      margin: '1rem',
+      textAlign: 'center',
+      color: '#272727',
+    },
   },
 });
 

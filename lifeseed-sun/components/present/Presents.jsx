@@ -2,7 +2,9 @@ import { useQuery } from '@apollo/client';
 import { makeStyles } from '@material-ui/core/styles';
 import gql from 'graphql-tag';
 import { Grid } from '@material-ui/core';
-import { perPage } from '../config';
+import Backdrop from '@material-ui/core/Backdrop';
+import CircularProgress from '@material-ui/core/CircularProgress';
+import { perPage } from '../../config';
 import Present from './Present';
 
 export const ALL_PRESENTS_QUERY = gql`
@@ -47,9 +49,7 @@ export default function Presents({ page }) {
       first: perPage,
     },
   });
-  console.log('Ehhhhh');
-  console.log(data);
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <CircularProgress color="inherit" />;
   if (error) return <p>Error: {error.message}</p>;
   return (
     <Grid container spacing={1} className={classes.presentList}>

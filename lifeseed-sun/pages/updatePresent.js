@@ -1,9 +1,9 @@
-import UpdatePresent from '../components/UpdatePresent';
+import PresentUpdate from '../components/present/PresentUpdate';
 
 export default function UpdatePage({ query }) {
   return (
     <div>
-      <UpdatePresent id={query.id} />
+      <PresentUpdate id={query.id} />
     </div>
   );
 }

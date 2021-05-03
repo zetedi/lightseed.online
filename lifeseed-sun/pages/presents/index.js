@@ -1,6 +1,6 @@
 import { useRouter } from 'next/dist/client/router';
 import { Box } from '@material-ui/core';
-import Presents from '../../components/Presents';
+import Presents from '../../components/present/Presents';
 import Pagination from '../../components/Pagination';
 
 export default function PresentsPage() {

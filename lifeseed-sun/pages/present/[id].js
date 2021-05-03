@@ -1,5 +1,5 @@
-import SinglePresent from '../../components/SinglePresent';
+import PresentView from '../../components/present/PresentView';
 
-export default function SinglePresentPage({ query }) {
-  return <SinglePresent id={query.id} />;
+export default function PresentViewPage({ query }) {
+  return <PresentView id={query.id} />;
 }

@@ -32,7 +32,7 @@ export default function Menu({ user, openBasket, toggleSearch, signout }) {
               <ForumIcon />
             </IconButton>
           </Link>
-          <Link href="/sell">
+          <Link href="/present">
             <IconButton>
               <AddCircleIcon />
             </IconButton>

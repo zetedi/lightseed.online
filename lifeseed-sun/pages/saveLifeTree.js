@@ -1,10 +1,9 @@
-import UpdateLifeTree from '../components/UpdateLifeTree';
-import CreateLifeTree from '../components/CreateLifeTree';
+import LifeTreeCreate from '../components/LifeTreeCreate';
 
 export default function SavePage({ query }) {
   return typeof query?.id !== 'undefined' ? (
-    <UpdateLifeTree id={query.id} />
+    <LifeTreeCreate id={query.id} />
   ) : (
-    <CreateLifeTree />
+    <LifeTreeCreate />
   );
 }
