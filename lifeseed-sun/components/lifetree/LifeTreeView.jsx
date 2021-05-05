@@ -11,6 +11,7 @@ import {
   CardActions,
   CardContent,
   CircularProgress,
+  Grid,
   Divider,
   Typography,
 } from '@material-ui/core';
@@ -18,29 +19,6 @@ import {
 
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
-  error: {
-    padding: '2rem',
-    background: 'white',
-    margin: '2rem',
-  },
-  lifeTree: {
-    margin: '1rem',
-    width: 'fit-content',
-    maxWidth: '50rem',
-    alignItems: 'top',
-    justifyContent: 'center',
-    gap: '2rem',
-    '& img': {
-      width: '100%',
-      maxWidth: '30rem',
-      objectFit: 'contain',
-    },
-  },
-  lifeTreeName: {
-    margin: '1rem',
-    textAlign: 'center',
-    color: '#272727',
-  },
 }));
 
 const LIFETREE_QUERY = gql`
@@ -78,27 +56,32 @@ export default function LifeTreeView({ id }) {
         <title>{LifeTree.name}</title>
       </Head>
       <Box className={classes.space}>
-        <Card className={classes.lifeTree}>
-          <Typography variant="h1" className={classes.lifeTreeName}>
+        <Card className={classes.cardView}>
+          <Typography variant="h1" className={classes.cardHeader}>
             {LifeTree.name}
           </Typography>
-          <img className={classes.image} src={LifeTree?.image} />
+          <Box style={{ display: 'grid', justifyContent: 'center' }}>
+            <img className={classes.image} src={LifeTree?.image} />
+          </Box>
           <CardContent>
-            <Typography>{LifeTree.body}</Typography>
-            <Divider />
-            <Typography>
-              <b>Latitude:</b> {LifeTree.latitude}
-            </Typography>
-            <Typography>
-              <b>Longitude:</b> {LifeTree.longitude}
-            </Typography>
-            {/* <LifeTreePosition
+            <Grid container>
+              <Typography>{LifeTree.body}</Typography>
+              <Typography>
+                <b>Latitude:</b> {LifeTree.latitude}
+              </Typography>
+              <Typography>
+                <b>Longitude:</b> {LifeTree.longitude}
+              </Typography>
+              {/* <LifeTreePosition
               latitude={LifeTree.latitude}
               longitude={LifeTree.longitude}
             /> */}
+            </Grid>
           </CardContent>
           <CardActions disableSpacing>
-            <Button color="primary">Learn More</Button>
+            <Button color="primary" variant="contained">
+              Map
+            </Button>
             <Link
               href={{
                 pathname: '/saveLifeTree',
@@ -107,8 +90,12 @@ export default function LifeTreeView({ id }) {
                 },
               }}
             >
-              <Button color="primary" style={{ marginLeft: 'auto' }}>
-                Care
+              <Button
+                color="primary"
+                style={{ marginLeft: 'auto' }}
+                variant="contained"
+              >
+                Grow
               </Button>
             </Link>
           </CardActions>

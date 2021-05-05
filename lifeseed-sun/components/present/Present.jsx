@@ -18,7 +18,7 @@ import DeleteOutlineIcon from '@material-ui/icons/DeleteOutline';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import AddShoppingCartIcon from '@material-ui/icons/AddShoppingCart';
 import formatMoney from '../../lib/formatMoney';
-import { CURRENT_USER_QUERY } from '../User';
+import { CURRENT_USER_QUERY } from '../admin/useUser';
 
 const ADD_TO_BASKET_MUTATION = gql`
   mutation ADD_TO_BASKET_MUTATION($id: ID!) {

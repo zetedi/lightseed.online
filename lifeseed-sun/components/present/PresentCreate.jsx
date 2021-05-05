@@ -18,7 +18,7 @@ import gql from 'graphql-tag';
 import Router from 'next/router';
 import { makeStyles } from '@material-ui/core/styles';
 import useForm from '../../lib/useForm';
-import DisplayError from '../ErrorMessage';
+import DisplayError from '../utils/ErrorMessage';
 import { ALL_PRESENTS_QUERY } from './Presents';
 
 const CREATE_PRESENT_MUTATION = gql`

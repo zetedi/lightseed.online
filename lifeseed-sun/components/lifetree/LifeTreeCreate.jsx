@@ -17,38 +17,16 @@ import {
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import Router from 'next/router';
-import useForm from '../lib/useForm';
-import DisplayError from './ErrorMessage';
-import { CURRENT_USER_QUERY } from './User';
-import { fetchPhotos, openCustomUploadWidget } from '../lib/cloudinaryService';
+import useForm from '../../lib/useForm';
+import DisplayError from '../utils/ErrorMessage';
+import { CURRENT_USER_QUERY } from '../admin/useUser';
+import {
+  fetchPhotos,
+  openCustomUploadWidget,
+} from '../../lib/cloudinaryService';
 
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
-  root: {
-    maxWidth: '25rem',
-    '& .MuiTextField-root': {
-      margin: theme.spacing(1),
-    },
-  },
-  updateLifeTree: {
-    margin: '1rem',
-    padding: '1rem',
-    maxWidth: '25rem',
-    width: '100%',
-  },
-  lifeTree: {
-    margin: '1rem',
-    width: 'fit-content',
-    maxWidth: '50rem',
-    alignItems: 'top',
-    justifyContent: 'center',
-    gap: '2rem',
-    '& img': {
-      width: '100%',
-      maxWidth: '30rem',
-      objectFit: 'contain',
-    },
-  },
 }));
 
 const CREATE_LIFETREE_MUTATION = gql`
@@ -222,6 +200,7 @@ export default function CreateLifeTree() {
                 color="primary"
                 type="submit"
                 style={{ marginLeft: 'auto' }}
+                variant="contained"
               >
                 Plant
               </Button>

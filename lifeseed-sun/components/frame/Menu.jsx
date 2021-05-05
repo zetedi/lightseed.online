@@ -37,16 +37,16 @@ export default function Menu({ user, openBasket, toggleSearch, signout }) {
               <AddCircleIcon />
             </IconButton>
           </Link>
-          <Link href="/packages">
+          {/* <Link href="/packages">
             <IconButton>
               <AllInboxIcon />
             </IconButton>
-          </Link>
-          <Link href="/account">
+          </Link> */}
+          {/* <Link href="/account">
             <IconButton>
               <AccountCircleIcon />
             </IconButton>
-          </Link>
+          </Link> */}
           <Link
             href={
               user.lifeTree?.id
@@ -63,11 +63,11 @@ export default function Menu({ user, openBasket, toggleSearch, signout }) {
               <MapIcon />
             </IconButton>
           </Link>
-          <Link href="/lang">
+          {/* <Link href="/lang">
             <IconButton>
               <LanguageIcon />
             </IconButton>
-          </Link>
+          </Link> */}
           <Link href="/wallet">
             <IconButton>
               <AccountBalanceWalletIcon />

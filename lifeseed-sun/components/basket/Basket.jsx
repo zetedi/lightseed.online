@@ -1,10 +1,10 @@
 import { makeStyles } from '@material-ui/core/styles';
 import { Box, Drawer, IconButton, Paper } from '@material-ui/core';
 import CloseIcon from '@material-ui/icons/Close';
-import { useUser } from './User';
-import formatMoney from '../lib/formatMoney';
-import calcTotalPrice from '../lib/calcTotalPrice';
-import { useApp } from '../lib/appState';
+import { useUser } from '../admin/useUser';
+import formatMoney from '../../lib/formatMoney';
+import calcTotalPrice from '../../lib/calcTotalPrice';
+import { useApp } from '../../lib/appState';
 import RemoveFromBasket from './RemoveFromBasket';
 import Checkout from './Checkout';
 

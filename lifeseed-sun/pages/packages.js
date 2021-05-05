@@ -4,7 +4,7 @@ import gql from 'graphql-tag';
 import Head from 'next/head';
 import { Box, Button } from '@material-ui/core';
 import Link from 'next/link';
-import ErrorMessage from '../components/ErrorMessage';
+import ErrorMessage from '../components/utils/ErrorMessage';
 import formatMoney from '../lib/formatMoney';
 
 const USER_PACKAGES_QUERY = gql`
@@ -79,8 +79,8 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-function countItemsInAnPackage(package) {
-  return package.items.reduce((tally, item) => tally + item.quantity, 0);
+function countItemsInAnPackage(myPackage) {
+  return myPackage.items.reduce((tally, item) => tally + item.quantity, 0);
 }
 
 export default function PackagesPage() {
@@ -93,17 +93,17 @@ export default function PackagesPage() {
     <div>
       <h2>You have {allPackages.length} packages</h2>
       <Box className={classes.package}>
-        {allPackages.map((package) => (
-          <Box className={classes.packageItem} key={package.id}>
-            <Link href={`/package/${package.id}`} key={package.id}>
+        {allPackages.map((ipackage) => (
+          <Box className={classes.packageItem} key={ipackage.id}>
+            <Link href={`/package/${ipackage.id}`} key={ipackage.id}>
               <a>
                 <div className="package-meta">
-                  <p>{countItemsInAnPackage(package)} item(s)</p>
-                  <p>{package.items.length} present(s)</p>
-                  <p>{formatMoney(package.total)}</p>
+                  <p>{countItemsInAnPackage(ipackage)} item(s)</p>
+                  <p>{ipackage.items.length} present(s)</p>
+                  <p>{formatMoney(ipackage.total)}</p>
                 </div>
                 <Box className={classes.images}>
-                  {package.items.map((item) => (
+                  {ipackage.items.map((item) => (
                     <img
                       key={`image-${item.id}`}
                       src={item.photo.image.publicUrlTransformed}

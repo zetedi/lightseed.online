@@ -364,7 +364,7 @@ const theme = createMuiTheme({
     cardView: {
       margin: '1rem',
       width: 'fit-content',
-      maxWidth: '50rem',
+      maxWidth: '30rem',
       alignItems: 'top',
       justifyContent: 'center',
       gap: '2rem',

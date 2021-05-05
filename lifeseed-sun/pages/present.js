@@ -1,12 +1,12 @@
 import PresentCreate from '../components/present/PresentCreate';
-import PleaseSignIn from '../components/PleaseSignIn';
+import SignInChecker from '../components/admin/SignInChecker';
 
 export default function PresentCreatePage() {
   return (
     <div>
-      <PleaseSignIn>
+      <SignInChecker>
         <PresentCreate />
-      </PleaseSignIn>
+      </SignInChecker>
     </div>
   );
 }

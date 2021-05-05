@@ -10,7 +10,7 @@ import theme from '../lib/theme';
 import '../lib/nprogress.css';
 import withData from '../lib/withData';
 import { AppStateProvider } from '../lib/appState';
-import Header from '../components/Header';
+import Header from '../components/frame/Header';
 
 Router.events.on('routeChangeStart', () => NProgress.start());
 Router.events.on('routeChangeComplete', () => NProgress.done());

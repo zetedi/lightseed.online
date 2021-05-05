@@ -2,7 +2,7 @@ import React from 'react';
 import { useQuery } from '@apollo/client';
 import dynamic from 'next/dynamic';
 import gql from 'graphql-tag';
-import PleaseSignIn from '../components/PleaseSignIn';
+import SignInChecker from '../components/admin/SignInChecker';
 
 export const ALL_LIFETREES_QUERY = gql`
   query {
@@ -23,16 +23,16 @@ export default function MapPage() {
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error.message}</p>;
 
-  const Map = dynamic(() => import('../components/LifeTreeMap'), {
+  const Map = dynamic(() => import('../components/lifetree/LifeTreeMap'), {
     loading: () => <p>The lifeTree map is loading</p>,
     ssr: false, // prevents server-side render
   });
 
   return (
     <div>
-      <PleaseSignIn>
+      <SignInChecker>
         <Map lifeTrees={data.allLifeTrees} />
-      </PleaseSignIn>
+      </SignInChecker>
     </div>
   );
 }

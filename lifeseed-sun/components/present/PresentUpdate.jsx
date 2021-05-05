@@ -18,7 +18,7 @@ import {
 import { makeStyles } from '@material-ui/core/styles';
 import Router from 'next/router';
 import useForm from '../../lib/useForm';
-import DisplayError from '../ErrorMessage';
+import DisplayError from '../utils/ErrorMessage';
 
 const SINGLE_PRESENT_QUERY = gql`
   query SINGLE_PRESENT_QUERY($id: ID!) {

@@ -16,9 +16,9 @@ import {
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import Router from 'next/router';
-import { openCustomUploadWidget } from '../lib/cloudinaryService';
-import useForm from '../lib/useForm';
-import DisplayError from './ErrorMessage';
+import { openCustomUploadWidget } from '../../lib/cloudinaryService';
+import useForm from '../../lib/useForm';
+import DisplayError from '../utils/ErrorMessage';
 
 const SINGLE_LIFETREE_QUERY = gql`
   query SINGLE_LIFETREE_QUERY($id: ID!) {
@@ -36,31 +36,6 @@ const SINGLE_LIFETREE_QUERY = gql`
 
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
-  root: {
-    maxWidth: '25rem',
-    '& .MuiTextField-root': {
-      margin: theme.spacing(1),
-    },
-  },
-  updateLifeTree: {
-    margin: '1rem',
-    padding: '1rem',
-    maxWidth: '25rem',
-    width: '100%',
-  },
-  lifeTree: {
-    margin: '1rem',
-    width: 'fit-content',
-    maxWidth: '50rem',
-    alignItems: 'top',
-    justifyContent: 'center',
-    gap: '2rem',
-    '& img': {
-      width: '100%',
-      maxWidth: '30rem',
-      objectFit: 'contain',
-    },
-  },
 }));
 
 const UPDATE_LIFETREE_MUTATION = gql`
@@ -122,8 +97,6 @@ export default function UpdateLifeTree({ id }) {
       }
     });
   };
-
-  console.log(inputs);
   const [updateLifeTree, { loading: updating, error }] = useMutation(
     UPDATE_LIFETREE_MUTATION,
     {
@@ -135,7 +108,6 @@ export default function UpdateLifeTree({ id }) {
       refetchQueries: [{ query: SINGLE_LIFETREE_QUERY, variables: { id } }],
     }
   );
-  console.log(image);
   if (loading) return <p>Loading...</p>;
 
   return (
@@ -168,12 +140,12 @@ export default function UpdateLifeTree({ id }) {
             });
           }}
         >
-          <Card className={classes.lifeTree}>
+          <Card className={classes.cardView}>
             <Typography
               variant="h1"
               style={{ margin: '1rem', textAlign: 'center', color: '#272727' }}
             >
-              Care
+              Grow {inputs.name}
             </Typography>
             <Box style={{ display: 'grid', justifyContent: 'center' }}>
               <img className={classes.image} src={data.LifeTree?.image} />
@@ -256,6 +228,7 @@ export default function UpdateLifeTree({ id }) {
                     pathname: `/lifetree/${id}`,
                   })
                 }
+                variant="contained"
               >
                 Back
               </Button>
@@ -263,8 +236,9 @@ export default function UpdateLifeTree({ id }) {
                 color="primary"
                 type="submit"
                 style={{ marginLeft: 'auto' }}
+                variant="contained"
               >
-                Care
+                Grow
               </Button>
             </CardActions>
           </Card>

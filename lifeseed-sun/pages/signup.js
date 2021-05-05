@@ -1,6 +1,6 @@
 import { Box } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
-import SignUp from '../components/SignUp';
+import SignUp from '../components/admin/SignUp';
 
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
