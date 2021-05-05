@@ -79,30 +79,30 @@ export default function SinglePackagePage({ query }) {
   });
   if (loading) return <p>Loading</p>;
   if (error) return <ErrorMessage error="error" />;
-  const { package } = data;
+  const { ipackage } = data;
   return (
     <Box className={classes.placedPackage}>
       <Head>
-        <title>Package - {package.id}</title>
+        <title>Package - {ipackage.id}</title>
       </Head>
       <p>
         <span>Package Id</span>
-        <span>{package.id}</span>
+        <span>{ipackage.id}</span>
       </p>
       <p>
         <span>Charge: </span>
-        <span>{package.charge}</span>
+        <span>{ipackage.charge}</span>
       </p>
       <p>
         <span>Package total: </span>
-        <span>{formatMoney(package.total)}</span>
+        <span>{formatMoney(ipackage.total)}</span>
       </p>
       <p>
         <span>ItemCount:</span>
-        <span>{package.items.length}</span>
+        <span>{ipackage.items.length}</span>
       </p>
       <div className="items">
-        {package.items.map((item) => (
+        {ipackage.items.map((item) => (
           <div className="package-item" key={item.id}>
             <img src={item.photo.image.publicUrlTransformed} alt={item.title} />
             <div className="item-details">
@@ -116,7 +116,7 @@ export default function SinglePackagePage({ query }) {
         ))}
       </div>
 
-      {formatMoney(package.total)}
+      {formatMoney(ipackage.total)}
     </Box>
   );
 }
