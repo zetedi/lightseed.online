@@ -41,6 +41,7 @@ const useStyles = makeStyles((theme) => ({
   loginImage: {
     backgroundImage:
       'url(https://res.cloudinary.com/ezimg/image/upload/v1618246418/lifeseed/signin_xzwln8.jpg)',
+    // 'url(https://res.cloudinary.com/ezimg/image/upload/ar_1,c_fill,r_max/v1618246418/lifeseed/signin_xzwln8.jpg)',
     backgroundRepeat: 'no-repeat',
     backgroundSize: 'cover',
     backgroundPosition: 'center',

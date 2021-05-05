@@ -99,7 +99,6 @@ export default function CreateLifeTree() {
       </Head>
       <Box className={classes.space}>
         <form
-          className={classes.root}
           onSubmit={async (e) => {
             e.preventDefault();
             const res = await createLifeTree();
@@ -109,11 +108,8 @@ export default function CreateLifeTree() {
             });
           }}
         >
-          <Card className={classes.lifeTree}>
-            <Typography
-              variant="h1"
-              style={{ margin: '1rem', textAlign: 'center', color: '#272727' }}
-            >
+          <Card className={classes.cardView}>
+            <Typography variant="h1" className={classes.cardHeader}>
               Plant
             </Typography>
             <CardContent>

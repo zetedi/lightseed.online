@@ -68,8 +68,8 @@ export default function Index() {
         {active ? (
           <Link
             href={
-              user.lifeTree?.id
-                ? `/lifetree/${user.lifeTree?.id}`
+              user?.lifeTree?.id
+                ? `/lifetree/${user?.lifeTree?.id}`
                 : '/saveLifeTree'
             }
           >
