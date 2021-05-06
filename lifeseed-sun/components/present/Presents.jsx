@@ -19,8 +19,8 @@ export const ALL_PRESENTS_QUERY = gql`
           publicUrlTransformed
         }
       }
-      user {
-        lifeTree {
+      lifeseed {
+        lifetree {
           photo {
             id
             image {

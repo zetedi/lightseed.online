@@ -11,7 +11,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import MenuIcon from '@material-ui/icons/Menu';
 import gql from 'graphql-tag';
 import { useApp } from '../../lib/appState';
-import { useUser, CURRENT_USER_QUERY } from '../admin/useUser';
+import { useLifeseed, CURRENT_LIFESEED_QUERY } from '../admin/useLifeseed';
 import Menu from './Menu';
 
 const SIGNOUT_MUTATION = gql`
@@ -30,12 +30,12 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export default function Nav() {
-  const user = useUser();
+  const lifeseed = useLifeseed();
   const classes = useStyles();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { openBasket, toggleSearch } = useApp();
   const [signout] = useMutation(SIGNOUT_MUTATION, {
-    refetchQueries: [{ query: CURRENT_USER_QUERY }],
+    refetchQueries: [{ query: CURRENT_LIFESEED_QUERY }],
   });
   const theme = useTheme();
   function toggleMobileMenuOpen() {
@@ -47,7 +47,7 @@ export default function Nav() {
       {isMediumOrBigger ? (
         <Box className={classes.toolbar}>
           <Menu
-            user={user}
+            lifeseed={lifeseed}
             openBasket={openBasket}
             toggleSearch={toggleSearch}
             signout={signout}
@@ -70,7 +70,7 @@ export default function Nav() {
             }}
           >
             <Menu
-              user={user}
+              lifeseed={lifeseed}
               openBasket={openBasket}
               toggleSearch={toggleSearch}
               signout={signout}

@@ -1,7 +1,7 @@
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
-export default function LifeTreeView({ latitude, longitude }) {
+export default function LifetreeView({ latitude, longitude }) {
   return (
     <MapContainer
       center={[latitude, longitude]}

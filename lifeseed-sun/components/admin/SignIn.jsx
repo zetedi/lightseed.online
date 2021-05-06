@@ -15,20 +15,20 @@ import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
 import Error from '../utils/ErrorMessage';
 import Version from './Version';
-import { CURRENT_USER_QUERY } from './useUser';
+import { CURRENT_LIFESEED_QUERY } from './useLifeseed';
 import useForm from '../../lib/useForm';
 
 const SIGNIN_MUTATION = gql`
   mutation SIGNIN_MUTATION($email: String!, $password: String!) {
-    authenticateUserWithPassword(email: $email, password: $password) {
-      ... on UserAuthenticationWithPasswordSuccess {
+    authenticateLifeseedWithPassword(email: $email, password: $password) {
+      ... on LifeseedAuthenticationWithPasswordSuccess {
         item {
           id
           email
           name
         }
       }
-      ... on UserAuthenticationWithPasswordFailure {
+      ... on LifeseedAuthenticationWithPasswordFailure {
         code
         message
       }
@@ -57,20 +57,20 @@ export default function SignIn() {
   });
   const [signin, { data, loading }] = useMutation(SIGNIN_MUTATION, {
     variables: inputs,
-    refetchQueries: [{ query: CURRENT_USER_QUERY }],
+    refetchQueries: [{ query: CURRENT_LIFESEED_QUERY }],
   });
   async function handleSubmit(e) {
     e.preventDefault();
     console.log(inputs);
     const res = await signin();
-    if (res?.data?.authenticateUserWithPassword?.code !== 'FAILURE')
+    if (res?.data?.authenticateLifeseedWithPassword?.code !== 'FAILURE')
       router.push('/');
     resetForm();
   }
   const error =
-    data?.authenticateUserWithPassword.__typename ===
-    'UserAuthenticationWithPasswordFailure'
-      ? data?.authenticateUserWithPassword
+    data?.authenticateLifeseedWithPassword.__typename ===
+    'LifeseedAuthenticationWithPasswordFailure'
+      ? data?.authenticateLifeseedWithPassword
       : undefined;
 
   return (

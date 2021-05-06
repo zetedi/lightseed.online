@@ -7,13 +7,13 @@ import Link from 'next/link';
 import ErrorMessage from '../components/utils/ErrorMessage';
 import formatMoney from '../lib/formatMoney';
 
-const USER_PACKAGES_QUERY = gql`
-  query USER_PACKAGES_QUERY {
+const LIFESEED_PACKAGES_QUERY = gql`
+  query LIFESEED_PACKAGES_QUERY {
     allPackages {
       id
       charge
       total
-      user {
+      lifeseed {
         id
       }
       items {
@@ -85,7 +85,7 @@ function countItemsInAnPackage(myPackage) {
 
 export default function PackagesPage() {
   const classes = useStyles();
-  const { data, error, loading } = useQuery(USER_PACKAGES_QUERY);
+  const { data, error, loading } = useQuery(LIFESEED_PACKAGES_QUERY);
   if (loading) return <p>Loading</p>;
   if (error) return <ErrorMessage error="error" />;
   const { allPackages } = data;

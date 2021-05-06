@@ -2,28 +2,28 @@ import { checkbox } from '@keystone-next/fields';
 
 export const permissionFields = {
   canManagePresents: checkbox({
-    defaultValue: false,
-    label: 'User can Update and delete any present',
+    defaultValue: true,
+    label: 'present manager',
   }),
-  canSeeOtherUsers: checkbox({
+  canSeeOtherLifeseeds: checkbox({
     defaultValue: false,
-    label: 'User can query other users',
+    label: 'view lifeseeds',
   }),
-  canManageUsers: checkbox({
+  canManageLifeseeds: checkbox({
     defaultValue: false,
-    label: 'User can Edit other users',
+    label: 'edit lifeseeds',
   }),
   canManageRoles: checkbox({
     defaultValue: false,
-    label: 'User can CRUD roles',
+    label: 'role manager',
   }),
   canManageBasket: checkbox({
     defaultValue: false,
-    label: 'User can see and manage basket and basket items',
+    label: 'basket and basket item manager',
   }),
   canManagePackages: checkbox({
     defaultValue: false,
-    label: 'User can see and manage packages',
+    label: 'package manager',
   }),
 };
 

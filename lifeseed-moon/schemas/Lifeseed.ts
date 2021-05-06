@@ -1,13 +1,39 @@
 import { list } from '@keystone-next/keystone/schema';
 import { text, password, relationship } from '@keystone-next/fields';
+import { permissions, rules } from '../access';
 
-export const LifeSeed = list({
-  // access
-  // ui
+export const Lifeseed = list({
+  access: {
+    create: () => true,
+    read: rules.canManageLifeseeds,
+    update: rules.canManageLifeseeds,
+    delete: permissions.canManageLifeseeds,
+  },
+  ui: {
+    hideCreate: (args) => !permissions.canManageLifeseeds(args),
+    hideDelete: (args) => !permissions.canManageLifeseeds(args),
+  },
   fields: {
     name: text({ isRequired: true }),
     email: text({ isRequired: true, isUnique: true }),
-    lid: text(),
     password: password(),
+    basket: relationship({
+      ref: 'BasketItem.lifeseed',
+      many: true,
+      ui: {
+        createView: { fieldMode: 'hidden' },
+        itemView: { fieldMode: 'read' },
+      },
+    }),
+    packages: relationship({ ref: 'Package.lifeseed', many: true }),
+    role: relationship({
+      ref: 'Role.assignedTo',
+      access: {
+        create: permissions.canManageLifeseeds,
+        update: permissions.canManageLifeseeds,
+      },
+    }),
+    presents: relationship({ ref: 'Present.lifeseed', many: true }),
+    lifetree: relationship({ ref: 'Lifetree.lifeseed' }),
   },
 });

@@ -12,7 +12,7 @@ const SINGLE_PACKAGE_QUERY = gql`
       id
       charge
       total
-      user {
+      lifeseed {
         id
       }
       items {

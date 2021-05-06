@@ -4,7 +4,10 @@ import Head from 'next/head';
 import { Box } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { useUser, CURRENT_USER_QUERY } from '../components/admin/useUser';
+import {
+  useLifeseed,
+  CURRENT_LIFESEED_QUERY,
+} from '../components/admin/useLifeseed';
 
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
@@ -51,7 +54,7 @@ function Torus(props) {
 
 export default function Index() {
   const classes = useStyles();
-  const user = useUser();
+  const lifeseed = useLifeseed();
   const [active, setActive] = useState(false);
   return (
     <>
@@ -68,9 +71,9 @@ export default function Index() {
         {active ? (
           <Link
             href={
-              user?.lifeTree?.id
-                ? `/lifetree/${user?.lifeTree?.id}`
-                : '/saveLifeTree'
+              lifeseed?.lifetree?.id
+                ? `/lifetree/${lifeseed?.lifetree?.id}`
+                : '/saveLifetree'
             }
           >
             <Box

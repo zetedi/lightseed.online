@@ -18,7 +18,7 @@ import useForm from '../../lib/useForm';
 
 const REQUEST_RESET_MUTATION = gql`
   mutation REQUEST_RESET_MUTATION($email: String!) {
-    sendUserPasswordResetLink(email: $email) {
+    sendLifeseedPasswordResetLink(email: $email) {
       message
       code
     }
@@ -49,7 +49,7 @@ export default function RequestReset() {
     REQUEST_RESET_MUTATION,
     {
       variables: inputs,
-      // refetchQueries: [{ query: CURRENT_USER_QUERY }],
+      // refetchQueries: [{ query: CURRENT_LIFESEED_QUERY }],
     }
   );
   async function handleSubmit(e) {
@@ -75,7 +75,7 @@ export default function RequestReset() {
               Request a password reset
             </Typography>
             <Error error={error} />
-            {data?.sendUserPasswordResetLink === null && (
+            {data?.sendLifeseedPasswordResetLink === null && (
               <p>Success! Check your email for a link!</p>
             )}
             {loading && (

@@ -2,12 +2,12 @@ import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 import L, { Point } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-export default function LifeTreeMap({ lifeTrees }) {
-  const lifeTreeMarkers = lifeTrees.map((lifeTree) => {
+export default function LifetreeMap({ lifetrees }) {
+  const lifetreeMarkers = lifetrees.map((lifetree) => {
     const r = {};
-    r.lifeTreeData = lifeTree;
-    r.lifeTreeIcon = L.icon({
-      iconUrl: lifeTree?.image ? lifeTree?.image : '/static/lifeseed.svg',
+    r.lifetreeData = lifetree;
+    r.lifetreeIcon = L.icon({
+      iconUrl: lifetree?.image ? lifetree?.image : '/static/lifeseed.svg',
       iconSize: new Point(70),
       className: 'leaflet-div-icon',
     });
@@ -24,18 +24,19 @@ export default function LifeTreeMap({ lifeTrees }) {
         url="https://api.mapbox.com/styles/v1/zetedi/cko2rvlqq0q6u19n9hkotfdry/tiles/256/{z}/{x}/{y}@2x?access_token=pk.eyJ1IjoiemV0ZWRpIiwiYSI6ImNrbzA5Nmo5ZTA5MWUyd253dXRqcXdoMzgifQ.ivQr0qeW6C1kDwBDyTE6TQ"
         attribution='Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery &copy; <a href="https://www.mapbox.com/">Mapbox</a>'
       />
-      {lifeTreeMarkers.map((lifeTree) => (
+      {lifetreeMarkers.map((lifetree) => (
         <Marker
           position={[
-            lifeTree?.lifeTreeData?.latitude,
-            lifeTree?.lifeTreeData?.longitude,
+            lifetree?.lifetreeData?.latitude,
+            lifetree?.lifetreeData?.longitude,
           ]}
-          icon={lifeTree?.lifeTreeIcon}
+          icon={lifetree?.lifetreeIcon}
+          t
           opacity="1"
-          key={lifeTree?.lifeTreeData?.id}
+          key={lifetree?.lifetreeData?.id}
         >
           <Popup>
-            <img width="250px" src={lifeTree?.lifeTreeData?.image} />
+            <img width="250px" src={lifetree?.lifetreeData?.image} />
           </Popup>
         </Marker>
       ))}

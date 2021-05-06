@@ -70,8 +70,8 @@ export const Present = list({
       },
     }),
     price: integer(),
-    user: relationship({
-      ref: 'User.presents',
+    lifeseed: relationship({
+      ref: 'Lifeseed.presents',
       defaultValue: ({ context }) => ({
         connect: { id: context.session.itemId },
       }),

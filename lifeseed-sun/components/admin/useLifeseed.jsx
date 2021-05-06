@@ -1,12 +1,12 @@
 import { gql, useQuery } from '@apollo/client';
 
-export const CURRENT_USER_QUERY = gql`
+export const CURRENT_LIFESEED_QUERY = gql`
   query {
     authenticatedItem {
-      ... on User {
+      ... on Lifeseed {
         id
         email
-        lifeTree {
+        lifetree {
           id
         }
         name
@@ -30,7 +30,7 @@ export const CURRENT_USER_QUERY = gql`
   }
 `;
 
-export function useUser() {
-  const { data } = useQuery(CURRENT_USER_QUERY);
+export function useLifeseed() {
+  const { data } = useQuery(CURRENT_LIFESEED_QUERY);
   return data?.authenticatedItem;
 }

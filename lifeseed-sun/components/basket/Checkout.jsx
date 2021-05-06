@@ -13,7 +13,7 @@ import { gql, useMutation } from '@apollo/client';
 import { useRouter } from 'next/dist/client/router';
 
 import { useApp } from '../../lib/appState';
-import { CURRENT_USER_QUERY } from '../admin/useUser';
+import { CURRENT_LIFESEED_QUERY } from '../admin/useLifeseed';
 
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
@@ -55,7 +55,7 @@ function CheckoutForm() {
   const [checkout, { error: graphQLError }] = useMutation(
     CREATE_PACKAGE_MUTATION,
     {
-      refetchQueries: [{ query: CURRENT_USER_QUERY }],
+      refetchQueries: [{ query: CURRENT_LIFESEED_QUERY }],
     }
   );
 

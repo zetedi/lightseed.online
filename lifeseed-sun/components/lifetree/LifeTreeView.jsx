@@ -15,7 +15,7 @@ import {
   Divider,
   Typography,
 } from '@material-ui/core';
-// import LifeTreePosition from './LifeTreePosition';
+// import LifetreePosition from './LifetreePosition';
 
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
@@ -23,7 +23,7 @@ const useStyles = makeStyles((theme) => ({
 
 const LIFETREE_QUERY = gql`
   query LIFETREE_QUERY($id: ID!) {
-    LifeTree(where: { id: $id }) {
+    Lifetree(where: { id: $id }) {
       id
       name
       body
@@ -40,7 +40,7 @@ const LIFETREE_QUERY = gql`
   }
 `;
 
-export default function LifeTreeView({ id }) {
+export default function LifetreeView({ id }) {
   const classes = useStyles();
   const { data, loading, error } = useQuery(LIFETREE_QUERY, {
     variables: { id },
@@ -48,33 +48,33 @@ export default function LifeTreeView({ id }) {
 
   if (loading) return <CircularProgress />;
   if (error) return <Box className={classes.error} error={error} />;
-  const { LifeTree } = data;
-  console.log(LifeTree);
+  const { Lifetree } = data;
+  console.log(Lifetree);
   return (
     <>
       <Head>
-        <title>{LifeTree.name}</title>
+        <title>{Lifetree.name}</title>
       </Head>
       <Box className={classes.space}>
         <Card className={classes.cardView}>
           <Typography variant="h1" className={classes.cardHeader}>
-            {LifeTree.name}
+            {Lifetree.name}
           </Typography>
           <Box style={{ display: 'grid', justifyContent: 'center' }}>
-            <img className={classes.image} src={LifeTree?.image} />
+            <img className={classes.image} src={Lifetree?.image} />
           </Box>
           <CardContent>
             <Grid container>
-              <Typography>{LifeTree.body}</Typography>
+              <Typography>{Lifetree.body}</Typography>
               <Typography>
-                <b>Latitude:</b> {LifeTree.latitude}
+                <b>Latitude:</b> {Lifetree.latitude}
               </Typography>
               <Typography>
-                <b>Longitude:</b> {LifeTree.longitude}
+                <b>Longitude:</b> {Lifetree.longitude}
               </Typography>
-              {/* <LifeTreePosition
-              latitude={LifeTree.latitude}
-              longitude={LifeTree.longitude}
+              {/* <LifetreePosition
+              latitude={Lifetree.latitude}
+              longitude={Lifetree.longitude}
             /> */}
             </Grid>
           </CardContent>
@@ -84,7 +84,7 @@ export default function LifeTreeView({ id }) {
             </Button>
             <Link
               href={{
-                pathname: '/saveLifeTree',
+                pathname: '/saveLifetree',
                 query: {
                   id,
                 },

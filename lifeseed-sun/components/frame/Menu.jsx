@@ -14,7 +14,7 @@ import AddCircleIcon from '@material-ui/icons/AddCircle';
 import SearchIcon from '@material-ui/icons/Search';
 import ExitToApp from '@material-ui/icons/ExitToApp';
 
-export default function Menu({ user, openBasket, toggleSearch, signout }) {
+export default function Menu({ lifeseed, openBasket, toggleSearch, signout }) {
   return (
     <>
       <Link href="/presents">
@@ -25,7 +25,7 @@ export default function Menu({ user, openBasket, toggleSearch, signout }) {
       <IconButton onClick={toggleSearch}>
         <SearchIcon />
       </IconButton>
-      {user && (
+      {lifeseed && (
         <>
           <Link href="/forum">
             <IconButton>
@@ -49,9 +49,9 @@ export default function Menu({ user, openBasket, toggleSearch, signout }) {
           </Link> */}
           <Link
             href={
-              user.lifeTree?.id
-                ? `/lifetree/${user.lifeTree?.id}`
-                : '/saveLifeTree'
+              lifeseed.lifetree?.id
+                ? `/lifetree/${lifeseed.lifetree?.id}`
+                : '/saveLifetree'
             }
           >
             <IconButton>
@@ -75,7 +75,7 @@ export default function Menu({ user, openBasket, toggleSearch, signout }) {
           </Link>
           <IconButton onClick={openBasket}>
             <Badge
-              badgeContent={user.basket.reduce(
+              badgeContent={lifeseed.basket.reduce(
                 (tally, basketItem) =>
                   tally + (basketItem.present ? basketItem.quantity : 0),
                 0
@@ -90,7 +90,7 @@ export default function Menu({ user, openBasket, toggleSearch, signout }) {
           </IconButton>
         </>
       )}
-      {!user && (
+      {!lifeseed && (
         <>
           <Link href="/signin">
             <IconButton onClick={signout}>

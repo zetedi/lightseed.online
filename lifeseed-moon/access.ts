@@ -16,9 +16,9 @@ const generatedPermissions = Object.fromEntries(
 
 export const permissions = {
   ...generatedPermissions,
-  isAwesome({ session }: ListAccessArgs): boolean {
-    return session?.data.name.includes('et');
-  },
+  // isPermissionExample({ session }: ListAccessArgs): boolean {
+  //   return session?.data.name.includes('example');
+  // },
 };
 
 export const rules = {
@@ -30,7 +30,7 @@ export const rules = {
       return true;
     }
 
-    return { user: { id: session.itemId } };
+    return { lifeseed: { id: session.itemId } };
   },
 
   canPackage({ session }: ListAccessArgs) {
@@ -41,7 +41,7 @@ export const rules = {
       return true;
     }
 
-    return { user: { id: session.itemId } };
+    return { lifeseed: { id: session.itemId } };
   },
 
   canManagePackageItems({ session }: ListAccessArgs) {
@@ -52,7 +52,7 @@ export const rules = {
       return true;
     }
 
-    return { package: { user: { id: session.itemId } } };
+    return { package: { lifeseed: { id: session.itemId } } };
   },
 
   canReadPresents({ session }: ListAccessArgs) {
@@ -66,11 +66,11 @@ export const rules = {
     return { status: 'AVAILABLE' };
   },
 
-  canManageUsers({ session }: ListAccessArgs) {
+  canManageLifeseeds({ session }: ListAccessArgs) {
     if (!isSignedIn({ session })) {
       return false;
     }
-    if (permissions.canManageUsers({ session })) {
+    if (permissions.canManageLifeseeds({ session })) {
       return true;
     }
 

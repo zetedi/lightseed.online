@@ -1,6 +1,6 @@
-import LifeTreeView from '../../components/lifetree/LifeTreeView';
-import LifeTreeCreate from '../../components/lifetree/LifeTreeCreate';
+import LifetreeView from '../../components/lifetree/LifetreeView';
+import LifetreeCreate from '../../components/lifetree/LifetreeCreate';
 
-export default function LifeTreeViewPage({ query }) {
-  return query.id ? <LifeTreeView id={query.id} /> : <LifeTreeCreate />;
+export default function LifetreeViewPage({ query }) {
+  return query.id ? <LifetreeView id={query.id} /> : <LifetreeCreate />;
 }

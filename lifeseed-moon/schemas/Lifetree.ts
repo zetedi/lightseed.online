@@ -2,7 +2,7 @@ import { integer, relationship, select, text } from '@keystone-next/fields';
 import { list } from '@keystone-next/keystone/schema';
 import { isSignedIn, rules } from '../access';
 
-export const LifeTree = list({
+export const Lifetree = list({
   access: {
     create: isSignedIn,
     read: rules.canReadPresents,
@@ -30,7 +30,7 @@ export const LifeTree = list({
     }),
     image: text({ isRequired: false }),
     photo: relationship({
-      ref: 'LifeTreeImage.lifeTree',
+      ref: 'LifetreeImage.lifetree',
       ui: {
         displayMode: 'cards',
         cardFields: ['image', 'altText'],
@@ -57,8 +57,8 @@ export const LifeTree = list({
     }),
     latitude: text(),
     longitude: text(),
-    user: relationship({
-      ref: 'User.lifeTree',
+    lifeseed: relationship({
+      ref: 'Lifeseed.lifetree',
       defaultValue: ({ context }) => ({
         connect: { id: context.session.itemId },
       }),

@@ -6,11 +6,10 @@ import {
 } from '@keystone-next/keystone/session';
 import { Present } from './schemas/Present';
 import { PresentImage } from './schemas/PresentImage';
-import { LifeTreeImage } from './schemas/LifeTreeImage';
-import { User } from './schemas/User';
+import { LifetreeImage } from './schemas/LifetreeImage';
+import { Lifeseed } from './schemas/Lifeseed';
 import { Role } from './schemas/Role';
-import { LifeSeed } from './schemas/LifeSeed';
-import { LifeTree } from './schemas/LifeTree';
+import { Lifetree } from './schemas/Lifetree';
 import { BasketItem } from './schemas/BasketItem';
 import { PackageItem } from './schemas/PackageItem';
 import { Package } from './schemas/Package';
@@ -29,7 +28,7 @@ const sessionConfig = {
 };
 
 const { withAuth } = createAuth({
-  listKey: 'User',
+  listKey: 'Lifeseed',
   identityField: 'email',
   secretField: 'password',
   initFirstItem: {
@@ -63,10 +62,9 @@ export default withAuth(
     },
     lists: createSchema({
       // Schema items go in here
-      User,
-      LifeSeed,
-      LifeTree,
-      LifeTreeImage,
+      Lifeseed,
+      Lifetree,
+      LifetreeImage,
       Present,
       PresentImage,
       BasketItem,
@@ -83,7 +81,7 @@ export default withAuth(
     },
     session: withItemData(statelessSessions(sessionConfig), {
       // GraphQL Query
-      User: `id name email role { ${permissionsList.join(' ')}}`,
+      Lifeseed: `id name email role { ${permissionsList.join(' ')}}`,
     }),
   })
 );

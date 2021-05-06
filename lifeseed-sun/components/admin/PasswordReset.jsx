@@ -22,7 +22,7 @@ const RESET_MUTATION = gql`
     $password: String!
     $token: String!
   ) {
-    redeemUserPasswordResetToken(
+    redeemLifeseedPasswordResetToken(
       email: $email
       token: $token
       password: $password
@@ -67,8 +67,8 @@ export default function Reset({ token }) {
     console.log({ data, loading });
     resetForm();
   }
-  const goodError = data?.redeemUserPasswordResetToken?.code
-    ? data?.redeemUserPasswordResetToken
+  const goodError = data?.redeemLifeseedPasswordResetToken?.code
+    ? data?.redeemLifeseedPasswordResetToken
     : undefined;
   return (
     <>
@@ -90,7 +90,7 @@ export default function Reset({ token }) {
                 className={classes.circularProgress}
               />
             )}
-            {data?.redeemUserPasswordResetToken === null && (
+            {data?.redeemLifeseedPasswordResetToken === null && (
               <p>Success! You can now sign in.</p>
             )}
 

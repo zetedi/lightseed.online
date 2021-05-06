@@ -11,14 +11,14 @@ async function addToBasket(
   context: KeystoneContext
 ): Promise<BasketItemCreateInput> {
   console.log('ADDING TO BASKET!');
-  // 1. Query the current user see if they are signed in
+  // 1. Query the current lifeseed see if they are signed in
   const sesh = context.session as Session;
   if (!sesh.itemId) {
     throw new Error('You must be logged in to do this!');
   }
-  // 2. Query the current users basket
+  // 2. Query the current lifeseeds basket
   const allBasketItems = await context.lists.BasketItem.findMany({
-    where: { user: { id: sesh.itemId }, present: { id: presentId } },
+    where: { lifeseed: { id: sesh.itemId }, present: { id: presentId } },
     resolveFields: 'id,quantity'
   });
 
@@ -40,7 +40,7 @@ async function addToBasket(
   return await context.lists.BasketItem.createOne({
     data: {
       present: { connect: { id: presentId }},
-      user: { connect: { id: sesh.itemId }},
+      lifeseed: { connect: { id: sesh.itemId }},
     },
     resolveFields: false,
   })

@@ -25,7 +25,7 @@ export const Package = list({
     }),
     total: integer(),
     items: relationship({ ref: 'PackageItem.package', many: true }),
-    user: relationship({ ref: 'User.packages' }),
+    lifeseed: relationship({ ref: 'Lifeseed.packages' }),
     charge: text(),
   },
 });

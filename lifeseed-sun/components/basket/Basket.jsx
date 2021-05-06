@@ -1,7 +1,7 @@
 import { makeStyles } from '@material-ui/core/styles';
 import { Box, Drawer, IconButton, Paper } from '@material-ui/core';
 import CloseIcon from '@material-ui/icons/Close';
-import { useUser } from '../admin/useUser';
+import { useLifeseed } from '../admin/useLifeseed';
 import formatMoney from '../../lib/formatMoney';
 import calcTotalPrice from '../../lib/calcTotalPrice';
 import { useApp } from '../../lib/appState';
@@ -92,7 +92,7 @@ function BasketItem({ basketItem }) {
 }
 export default function Basket() {
   const classes = useStyles();
-  const me = useUser();
+  const me = useLifeseed();
   const { basketOpen, closeBasket } = useApp();
   if (!me) return null;
   return (

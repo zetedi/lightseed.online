@@ -20,13 +20,13 @@ async function checkout(
   { token }: Arguments,
   context: KeystoneContext
 ): Promise<PackageCreateInput> {
-  const userId = context.session.itemId;
-  if (!userId) {
+  const lifeseedId = context.session.itemId;
+  if (!lifeseedId) {
     throw new Error("Sorry, you must be signed in to create a package.");
   }
 
-  const user = await context.lists.User.findOne({
-    where: { id: userId },
+  const lifeseed = await context.lists.Lifeseed.findOne({
+    where: { id: lifeseedId },
     resolveFields: graphql`
       id
       name
@@ -50,9 +50,9 @@ async function checkout(
       }
     `,
   });
-  console.log(user);
-  console.dir(user, { depth: null });
-  const basketItems = user.basket.filter((basketItem) => basketItem.present);
+  console.log(lifeseed);
+  console.dir(lifeseed, { depth: null });
+  const basketItems = lifeseed.basket.filter((basketItem) => basketItem.present);
   const amount = basketItems.reduce(function (
     tally: number,
     basketItem: BasketItemCreateInput
@@ -91,11 +91,11 @@ async function checkout(
       total: charge.amount,
       charge: charge.id,
       items: { create: packageItems },
-      user: { connect: { id: userId } },
+      lifeseed: { connect: { id: lifeseedId } },
     },
   });
 
-  const basketItemIds = user.basket.map((basketItem) => basketItem.id);
+  const basketItemIds = lifeseed.basket.map((basketItem) => basketItem.id);
   await context.lists.BasketItem.deleteMany({
     ids: basketItemIds,
   });

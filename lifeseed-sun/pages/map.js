@@ -6,7 +6,7 @@ import SignInChecker from '../components/admin/SignInChecker';
 
 export const ALL_LIFETREES_QUERY = gql`
   query {
-    allLifeTrees {
+    allLifetrees {
       id
       name
       body
@@ -23,15 +23,15 @@ export default function MapPage() {
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error.message}</p>;
 
-  const Map = dynamic(() => import('../components/lifetree/LifeTreeMap'), {
-    loading: () => <p>The lifeTree map is loading</p>,
+  const Map = dynamic(() => import('../components/lifetree/LifetreeMap'), {
+    loading: () => <p>The lifetree map is loading</p>,
     ssr: false, // prevents server-side render
   });
 
   return (
     <div>
       <SignInChecker>
-        <Map lifeTrees={data.allLifeTrees} />
+        <Map lifetrees={data.allLifetrees} />
       </SignInChecker>
     </div>
   );

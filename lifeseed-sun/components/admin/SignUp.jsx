@@ -15,7 +15,7 @@ import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
 import Error from '../utils/ErrorMessage';
 import Version from './Version';
-import { CURRENT_USER_QUERY } from './useUser';
+import { CURRENT_LIFESEED_QUERY } from './useLifeseed';
 import useForm from '../../lib/useForm';
 
 const SIGNUP_MUTATION = gql`
@@ -24,7 +24,7 @@ const SIGNUP_MUTATION = gql`
     $name: String!
     $password: String!
   ) {
-    createUser(data: { email: $email, name: $name, password: $password }) {
+    createLifeseed(data: { email: $email, name: $name, password: $password }) {
       id
       email
       name
@@ -55,13 +55,13 @@ export default function SignUp() {
   });
   const [signup, { data, loading, error }] = useMutation(SIGNUP_MUTATION, {
     variables: inputs,
-    refetchQueries: [{ query: CURRENT_USER_QUERY }],
+    refetchQueries: [{ query: CURRENT_LIFESEED_QUERY }],
   });
   async function handleSubmit(e) {
     e.preventDefault();
     console.log(inputs);
     const res = await signup().catch(console.error);
-    if (res?.data?.authenticateUserWithPassword?.code !== 'FAILURE')
+    if (res?.data?.authenticateLifeseedWithPassword?.code !== 'FAILURE')
       router.push('/signin');
     console.log(res);
     console.log({ data, loading, error });
@@ -75,8 +75,8 @@ export default function SignUp() {
         <Grid item xs={false} sm={4} md={7} className={classes.signupImage} />
         <Grid item xs={12} sm={8} md={5}>
           <Paper className={classes.adminPaper} elevation={3}>
-            {data?.createUser && (
-              <p>Signed up with {data.createUser.email} - Please sign in</p>
+            {data?.createLifeseed && (
+              <p>Signed up with {data.createLifeseed.email} - Please sign in</p>
             )}
             <Avatar className={classes.adminAvatar}>
               <LockOutlinedIcon />
@@ -145,7 +145,7 @@ export default function SignUp() {
                 fullWidth
                 name="confirmPassword"
                 label="Confirm Password"
-                type="confirmPassword"
+                type="password"
                 id="confirmPassword"
                 value={inputs.confirmPassword}
                 error={!!inputs.confirmPassword}

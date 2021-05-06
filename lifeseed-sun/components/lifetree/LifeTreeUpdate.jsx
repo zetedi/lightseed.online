@@ -22,7 +22,7 @@ import DisplayError from '../utils/ErrorMessage';
 
 const SINGLE_LIFETREE_QUERY = gql`
   query SINGLE_LIFETREE_QUERY($id: ID!) {
-    LifeTree(where: { id: $id }) {
+    Lifetree(where: { id: $id }) {
       id
       name
       image
@@ -47,7 +47,7 @@ const UPDATE_LIFETREE_MUTATION = gql`
     $latitude: String
     $longitude: String
   ) {
-    updateLifeTree(
+    updateLifetree(
       id: $id
       data: {
         name: $name
@@ -67,7 +67,7 @@ const UPDATE_LIFETREE_MUTATION = gql`
   }
 `;
 
-export default function UpdateLifeTree({ id }) {
+export default function UpdateLifetree({ id }) {
   const classes = useStyles();
   const [image, setImage] = useState();
   const { data = {}, loading } = useQuery(SINGLE_LIFETREE_QUERY, {
@@ -76,7 +76,7 @@ export default function UpdateLifeTree({ id }) {
     },
   });
   const { inputs, handleChange } = useForm(
-    data.LifeTree || {
+    data.Lifetree || {
       name: '',
       image: '',
       body: '',
@@ -97,7 +97,7 @@ export default function UpdateLifeTree({ id }) {
       }
     });
   };
-  const [updateLifeTree, { loading: updating, error }] = useMutation(
+  const [updateLifetree, { loading: updating, error }] = useMutation(
     UPDATE_LIFETREE_MUTATION,
     {
       variables: {
@@ -124,7 +124,7 @@ export default function UpdateLifeTree({ id }) {
         <form
           onSubmit={async (e) => {
             e.preventDefault();
-            const res = await updateLifeTree({
+            const res = await updateLifetree({
               variables: {
                 id,
                 name: inputs.name,
@@ -136,7 +136,7 @@ export default function UpdateLifeTree({ id }) {
             }).catch(console.error);
             console.log(res);
             Router.push({
-              pathname: `/lifetree/${res?.data?.updateLifeTree?.id}`,
+              pathname: `/lifetree/${res?.data?.updateLifetree?.id}`,
             });
           }}
         >
@@ -148,7 +148,7 @@ export default function UpdateLifeTree({ id }) {
               Grow {inputs.name}
             </Typography>
             <Box style={{ display: 'grid', justifyContent: 'center' }}>
-              <img className={classes.image} src={data.LifeTree?.image} />
+              <img className={classes.image} src={data.Lifetree?.image} />
             </Box>
             <CardContent>
               <DisplayError error={error} />

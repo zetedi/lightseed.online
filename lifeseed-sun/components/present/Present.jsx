@@ -18,7 +18,7 @@ import DeleteOutlineIcon from '@material-ui/icons/DeleteOutline';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import AddShoppingCartIcon from '@material-ui/icons/AddShoppingCart';
 import formatMoney from '../../lib/formatMoney';
-import { CURRENT_USER_QUERY } from '../admin/useUser';
+import { CURRENT_LIFESEED_QUERY } from '../admin/useLifeseed';
 
 const ADD_TO_BASKET_MUTATION = gql`
   mutation ADD_TO_BASKET_MUTATION($id: ID!) {
@@ -113,7 +113,7 @@ export default function Present({ present }) {
   });
   const [addToBasket, { loadingAdd }] = useMutation(ADD_TO_BASKET_MUTATION, {
     variables: { id },
-    refetchQueries: [{ query: CURRENT_USER_QUERY }],
+    refetchQueries: [{ query: CURRENT_LIFESEED_QUERY }],
   });
 
   const classes = useStyles();
@@ -123,12 +123,13 @@ export default function Present({ present }) {
         <Link href={`/present/${present.id}`}>
           <CardHeader
             avatar={
-              <Avatar aria-label="lifeTree" className={classes.avatar}>
+              <Avatar aria-label="lifetree" className={classes.avatar}>
                 <img
                   src={
-                    present.user?.lifeTree?.photo?.image?.publicUrlTransformed
+                    present.lifeseed?.lifetree?.photo?.image
+                      ?.publicUrlTransformed
                   }
-                  alt={present.user?.lifeTree?.photo?.image?.altText}
+                  alt={present.lifeseed?.lifetree?.photo?.image?.altText}
                   style={{ width: '100%' }}
                 />
               </Avatar>

@@ -19,7 +19,7 @@ export const Role = list({
     name: text({ isRequired: true }),
     ...permissionFields,
     assignedTo: relationship({
-      ref: 'User.role',
+      ref: 'Lifeseed.role',
       many: true,
       ui: {
         itemView: { fieldMode: 'read' },

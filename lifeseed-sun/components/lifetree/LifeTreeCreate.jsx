@@ -19,7 +19,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import Router from 'next/router';
 import useForm from '../../lib/useForm';
 import DisplayError from '../utils/ErrorMessage';
-import { CURRENT_USER_QUERY } from '../admin/useUser';
+import { CURRENT_LIFESEED_QUERY } from '../admin/useLifeseed';
 import {
   fetchPhotos,
   openCustomUploadWidget,
@@ -37,7 +37,7 @@ const CREATE_LIFETREE_MUTATION = gql`
     $longitude: String
     $image: String
   ) {
-    createLifeTree(
+    createLifetree(
       data: {
         name: $name
         body: $body
@@ -57,7 +57,7 @@ const CREATE_LIFETREE_MUTATION = gql`
   }
 `;
 
-export default function CreateLifeTree() {
+export default function CreateLifetree() {
   const classes = useStyles();
   const [image, setImage] = useState();
   const { inputs, handleChange, clearForm } = useForm({
@@ -83,11 +83,11 @@ export default function CreateLifeTree() {
   };
 
   console.log(inputs);
-  const [createLifeTree, { data, error, loading }] = useMutation(
+  const [createLifetree, { data, error, loading }] = useMutation(
     CREATE_LIFETREE_MUTATION,
     {
       variables: { ...inputs, image },
-      refetchQueries: [{ query: CURRENT_USER_QUERY }],
+      refetchQueries: [{ query: CURRENT_LIFESEED_QUERY }],
     }
   );
   if (loading) return <p>Loading...</p>;
@@ -95,16 +95,16 @@ export default function CreateLifeTree() {
   return (
     <>
       <Head>
-        <title>Plant lifeTree</title>
+        <title>Plant lifetree</title>
       </Head>
       <Box className={classes.space}>
         <form
           onSubmit={async (e) => {
             e.preventDefault();
-            const res = await createLifeTree();
+            const res = await createLifetree();
             clearForm();
             Router.push({
-              pathname: `/lifetree/${res?.data?.createLifeTree?.id}`,
+              pathname: `/lifetree/${res?.data?.createLifetree?.id}`,
             });
           }}
         >

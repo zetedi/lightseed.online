@@ -11,7 +11,7 @@ export const BasketItem = list({
   },
   ui: {
     listView: {
-      initialColumns: ['present', 'quantity', 'user'],
+      initialColumns: ['present', 'quantity', 'lifeseed'],
     },
   },
   fields: {
@@ -21,6 +21,6 @@ export const BasketItem = list({
       isRequired: true,
     }),
     present: relationship({ ref: 'Present' }),
-    user: relationship({ ref: 'User.basket' }),
+    lifeseed: relationship({ ref: 'Lifeseed.basket' }),
   },
 });
