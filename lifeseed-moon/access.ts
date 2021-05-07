@@ -1,4 +1,4 @@
-import { permissionsList } from './schemas/fields';
+import { permissionsList } from './schemas/PermissionFields';
 import { ListAccessArgs } from './types';
 
 export function isSignedIn({ session }: ListAccessArgs) {

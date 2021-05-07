@@ -20,7 +20,7 @@ export const openCustomUploadWidget = (callback) => {
       showAdvancedOptions: false,
       // cropping: true,
       multiple: false,
-      defaultSource: 'local',
+      defaultSource: 'camera',
       styles: {
         palette: {
           window: 'yellow',

@@ -11,9 +11,11 @@ import {
   Card,
   CardActions,
   CardContent,
+  IconButton,
   Typography,
   TextField,
 } from '@material-ui/core';
+import EditIcon from '@material-ui/icons/Edit';
 import { makeStyles } from '@material-ui/core/styles';
 import Router from 'next/router';
 import { openCustomUploadWidget } from '../../lib/cloudinaryService';
@@ -141,21 +143,37 @@ export default function UpdateLifetree({ id }) {
           }}
         >
           <Card className={classes.cardView}>
-            <Typography
-              variant="h1"
-              style={{ margin: '1rem', textAlign: 'center', color: '#272727' }}
-            >
+            <Typography variant="h1" className={classes.cardHeader}>
               Grow {inputs.name}
             </Typography>
-            <Box style={{ display: 'grid', justifyContent: 'center' }}>
-              <img className={classes.image} src={data.Lifetree?.image} />
-            </Box>
+            <img
+              className={classes.image}
+              src={image || data.Lifetree?.image}
+            />
             <CardContent>
               <DisplayError error={error} />
               {loading ? (
                 <LinearProgress color="secondary" />
               ) : (
-                <Grid container>
+                <Grid container style={{ position: 'relative' }}>
+                  <CloudinaryContext
+                    cloudName="ezimg"
+                    style={{ position: 'absolute', top: '-17%', right: '7%' }}
+                  >
+                    {/* <Image
+                      key={image}
+                      publicId={image}
+                      fetch-format="auto"
+                      quality="auto"
+                    /> */}
+
+                    <IconButton
+                      onClick={() => beginUpload('image')}
+                      style={{ backgroundColor: '#fafafa' }}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                  </CloudinaryContext>
                   <TextField
                     type="text"
                     id="name"
@@ -168,17 +186,6 @@ export default function UpdateLifetree({ id }) {
                     className={classes.field}
                     size="small"
                   />
-                  <CloudinaryContext cloudName="ezimg">
-                    <Image
-                      key={image}
-                      publicId={image}
-                      fetch-format="auto"
-                      quality="auto"
-                    />
-                    <Button onClick={() => beginUpload('image')}>
-                      Upload Image
-                    </Button>
-                  </CloudinaryContext>
                   <TextField
                     // type="textarea"
                     multiline

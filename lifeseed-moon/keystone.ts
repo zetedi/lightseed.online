@@ -17,7 +17,7 @@ import 'dotenv/config';
 import { insertSeedData } from './seed-data';
 import { sendPasswordResetEmail } from './lib/mail';
 import { extendGraphqlSchema } from './mutations';
-import { permissionsList } from './schemas/fields';
+import { permissionsList } from './schemas/PermissionFields';
 
 const databaseURL =
   process.env.DATABASE_URL || 'mongodb://localhost/keystone-sick-fits-tutorial';

@@ -4,14 +4,11 @@ import Head from 'next/head';
 import { Box } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import { Canvas, useFrame } from '@react-three/fiber';
-import {
-  useLifeseed,
-  CURRENT_LIFESEED_QUERY,
-} from '../components/admin/useLifeseed';
+import { useLifeseed } from '../components/admin/useLifeseed';
 
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
-  landing: {
+  main: {
     display: 'grid',
     position: 'relative',
   },
@@ -61,7 +58,7 @@ export default function Index() {
       <Head>
         <title>lifeseed online</title>
       </Head>
-      <Box className={classes.landing}>
+      <Box className={classes.main}>
         <Canvas style={{ height: '70vh' }}>
           <ambientLight />
           <pointLight position={[10, 10, 10]} />
@@ -78,6 +75,7 @@ export default function Index() {
           >
             <Box
               style={{
+                color: '#fafafa',
                 position: 'absolute',
                 width: '100%',
                 textAlign: 'center',

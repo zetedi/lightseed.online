@@ -64,12 +64,15 @@ export default function LifetreeView({ id }) {
             <img className={classes.image} src={Lifetree?.image} />
           </Box>
           <CardContent>
-            <Grid container>
-              <Typography>{Lifetree.body}</Typography>
-              <Typography>
+            <Grid
+              container
+              style={{ display: 'flex', flexDirection: 'column' }}
+            >
+              <Typography variant="body1">{Lifetree.body}</Typography>
+              <Typography variant="body1">
                 <b>Latitude:</b> {Lifetree.latitude}
               </Typography>
-              <Typography>
+              <Typography variant="body1">
                 <b>Longitude:</b> {Lifetree.longitude}
               </Typography>
               {/* <LifetreePosition
