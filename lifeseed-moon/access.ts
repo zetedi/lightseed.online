@@ -57,7 +57,7 @@ export const rules = {
 
   canReadPresents({ session }: ListAccessArgs) {
     if (!isSignedIn({ session })) {
-      return false;
+      return true;
     }
     if (permissions.canManagePresents({ session })) {
       return true;

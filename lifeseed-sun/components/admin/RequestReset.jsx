@@ -110,7 +110,7 @@ export default function RequestReset() {
                 color="primary"
                 className={classes.adminSubmit}
               >
-                Request Password Reset
+                Password Reset
               </Button>
               <Grid container>
                 <Grid item xs>

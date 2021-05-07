@@ -83,7 +83,8 @@ export default function Index() {
                 textAlign: 'center',
                 // top: '7%',
                 fontSize: '5rem',
-                textShadow: '2px 2px 5px #076f50',
+                // textShadow: '2px 2px 5px #076ff0',
+                textShadow: '2px 2px 7px #004943',
               }}
             >
               grow

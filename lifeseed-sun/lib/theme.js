@@ -330,16 +330,16 @@ const theme = createMuiTheme({
       backgroundPosition: 'center',
     },
     adminPaper: {
-      margin: defaultTheme.spacing(8, 4),
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
+      padding: '2rem',
       [defaultTheme.breakpoints.up('md')]: {
         position: 'relative',
         left: '-7rem',
+        margin: defaultTheme.spacing(8, 4),
         backgroundColor: 'rgba(256,256,256,0.9)',
         borderRadius: '8px',
-        padding: '2rem',
       },
     },
     adminAvatar: {
@@ -353,6 +353,8 @@ const theme = createMuiTheme({
     },
     adminSubmit: {
       margin: defaultTheme.spacing(3, 0, 2),
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
     },
     space: {
       backgroundColor: 'yellow',
