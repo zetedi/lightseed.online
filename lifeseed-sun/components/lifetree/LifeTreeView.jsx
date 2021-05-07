@@ -82,9 +82,18 @@ export default function LifetreeView({ id }) {
             </Grid>
           </CardContent>
           <CardActions disableSpacing>
-            <Button color="primary" variant="contained">
-              Map
-            </Button>
+            <Link
+              href={{
+                pathname: '/map',
+                query: {
+                  id,
+                },
+              }}
+            >
+              <Button color="primary" variant="contained">
+                Map
+              </Button>
+            </Link>
             <Link
               href={{
                 pathname: '/saveLifetree',
