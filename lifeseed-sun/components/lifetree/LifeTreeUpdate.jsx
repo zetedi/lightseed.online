@@ -160,13 +160,6 @@ export default function UpdateLifetree({ id }) {
                     cloudName="ezimg"
                     style={{ position: 'absolute', top: '-17%', right: '7%' }}
                   >
-                    {/* <Image
-                      key={image}
-                      publicId={image}
-                      fetch-format="auto"
-                      quality="auto"
-                    /> */}
-
                     <IconButton
                       onClick={() => beginUpload('image')}
                       style={{ backgroundColor: '#fafafa' }}
@@ -187,7 +180,6 @@ export default function UpdateLifetree({ id }) {
                     size="small"
                   />
                   <TextField
-                    // type="textarea"
                     multiline
                     rows={4}
                     id="body"

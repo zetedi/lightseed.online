@@ -75,16 +75,18 @@ export default function Index() {
           >
             <Box
               style={{
+                fontFamily: 'Lobster, cursive',
                 color: '#fafafa',
                 position: 'absolute',
                 width: '100%',
+                cursor: 'pointer',
                 textAlign: 'center',
-                top: '7%',
+                // top: '7%',
                 fontSize: '5rem',
-                textShadow: '2px 2px 5px #004900',
+                textShadow: '2px 2px 5px #074937',
               }}
             >
-              GROW
+              grow
             </Box>
           </Link>
         ) : (
