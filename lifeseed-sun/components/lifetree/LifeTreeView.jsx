@@ -12,7 +12,7 @@ import {
   CardContent,
   CircularProgress,
   Grid,
-  Divider,
+  Paper,
   Typography,
 } from '@material-ui/core';
 // import LifetreePosition from './LifetreePosition';
@@ -68,7 +68,9 @@ export default function LifetreeView({ id }) {
               container
               style={{ display: 'flex', flexDirection: 'column' }}
             >
-              <Typography variant="body1">{Lifetree.body}</Typography>
+              <Box style={{ padding: '.25rem', marginBottom: '1rem' }}>
+                <Typography variant="body1">{Lifetree.body}</Typography>
+              </Box>
               <Typography variant="body1">
                 <b>Latitude:</b> {Lifetree.latitude}
               </Typography>

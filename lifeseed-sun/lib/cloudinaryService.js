@@ -18,7 +18,7 @@ export const openCustomUploadWidget = (callback) => {
       uploadPreset: 'wobiwbrp',
       sources: ['local', 'camera'],
       showAdvancedOptions: false,
-      // cropping: true,
+      cropping: true,
       multiple: false,
       defaultSource: 'camera',
       styles: {
