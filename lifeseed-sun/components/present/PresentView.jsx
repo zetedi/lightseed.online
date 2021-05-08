@@ -10,6 +10,7 @@ import {
   Card,
   CardActions,
   CardContent,
+  Grid,
   CircularProgress,
   Typography,
 } from '@material-ui/core';
@@ -36,7 +37,7 @@ const SINGLE_ITEM_QUERY = gql`
   }
 `;
 
-export default function ViewPresent({ id }) {
+export default function PresentView({ id }) {
   const classes = useStyles();
   const { data, loading, error } = useQuery(SINGLE_ITEM_QUERY, {
     variables: { id },
@@ -57,11 +58,19 @@ export default function ViewPresent({ id }) {
           </Typography>
           <img
             className={classes.image}
-            src={Present.photo?.image?.publicUrlTransformed}
-            alt={Present.photo?.altText}
+            src={Present.image}
+            alt={Present.name}
           />
           <CardContent>
-            <Typography>{Present.body}</Typography>
+            <Grid
+              container
+              style={{ display: 'flex', flexDirection: 'column' }}
+            >
+              <Box style={{ padding: '.25rem', marginBottom: '1rem' }}>
+                <Typography>{Present.body}</Typography>
+              </Box>
+              <Typography>Price: {Present.price}</Typography>
+            </Grid>
           </CardContent>
           <CardActions disableSpacing>
             <Link
@@ -69,7 +78,9 @@ export default function ViewPresent({ id }) {
                 pathname: '/presents',
               }}
             >
-              <Button color="primary">Back</Button>
+              <Button color="primary" variant="contained">
+                Back
+              </Button>
             </Link>
           </CardActions>
         </Card>

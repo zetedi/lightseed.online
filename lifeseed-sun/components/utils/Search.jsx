@@ -15,11 +15,7 @@ const SEARCH_PRESENTS_QUERY = gql`
     ) {
       id
       name
-      photo {
-        image {
-          publicUrlTransformed
-        }
-      }
+      image
     }
   }
 `;
@@ -43,14 +39,12 @@ const useStyles = makeStyles((theme) => ({
   },
   dropDownItem: {
     borderBottom: '1px solid #e3e3e3',
-    // background: ${(props) => (props.highlighted ? '#f7f7f7' : 'white')};
+    background: 'white',
     padding: '1rem',
     transition: 'all 0.2s',
-    // ${(props) => (props.highlighted ? 'padding-left: 2rem;' : null)};
     display: 'flex',
     alignItems: 'center',
     borderLeft: '7px solid',
-    //  ${(props) => (props.highlighted ? props.theme.lightgrey : 'white')};
     '& img': {
       marginRight: '10px',
     },
@@ -62,9 +56,9 @@ const useStyles = makeStyles((theme) => ({
       padding: '10px',
       border: 0,
       fontSize: '1rem',
-      // "& .loading" {
-      //   animation: "${glow} 0.5s ease-in-out infinite alternate";
-      // }
+      '& .loading': {
+        animation: '${glow} 0.5s ease-in-out infinite alternate',
+      },
     },
   },
 }));
@@ -112,7 +106,7 @@ export default function Search() {
         <input
           {...getInputProps({
             type: 'search',
-            placeholder: 'Search',
+            placeholder: 'Find',
             id: 'search',
             className: loading ? 'loading' : '',
           })}
@@ -128,11 +122,7 @@ export default function Search() {
               {...getItemProps({ item })}
               highlighted={index === highlightedIndex}
             >
-              <img
-                src={item.photo.image.publicUrlTransformed}
-                alt={item.name}
-                width="50"
-              />
+              <img src={item.image} alt={item.name} width="50" />
               {item.name}
             </Box>
           ))}

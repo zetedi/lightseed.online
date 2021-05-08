@@ -68,7 +68,7 @@ export default function PresentUpdate({ id }) {
     },
   });
   const { inputs, handleChange } = useForm(
-    data.Present || { name: '', price: '', body: '' }
+    data.Present || { name: '', price: '', body: '', image: '' }
   );
   const [updatePresent, { loading: updating, error }] = useMutation(
     UPDATE_PRESENT_MUTATION,
@@ -114,12 +114,9 @@ export default function PresentUpdate({ id }) {
               variant="h1"
               style={{ margin: '1rem', textAlign: 'center', color: '#272727' }}
             >
-              Update
+              Update {inputs.name}
             </Typography>
-            <img
-              className={classes.image}
-              src={image || data.updatePresent?.image}
-            />
+            <img className={classes.image} src={image || data.Present.image} />
             <CardContent>
               <DisplayError error={error} />
               {loading ? (
@@ -139,14 +136,6 @@ export default function PresentUpdate({ id }) {
                     className={classes.field}
                     size="small"
                   />
-                  <Input
-                    type="file"
-                    id="image"
-                    name="image"
-                    onChange={handleChange}
-                    className={classes.field}
-                    size="small"
-                  />
                   <TextField
                     type="number"
                     id="price"
@@ -160,7 +149,6 @@ export default function PresentUpdate({ id }) {
                     size="small"
                   />
                   <TextField
-                    // type="textarea"
                     multiline
                     rows={7}
                     id="body"
@@ -184,6 +172,7 @@ export default function PresentUpdate({ id }) {
                     pathname: `/presents`,
                   })
                 }
+                variant="contained"
               >
                 Back
               </Button>
@@ -191,6 +180,7 @@ export default function PresentUpdate({ id }) {
                 color="primary"
                 type="submit"
                 style={{ marginLeft: 'auto' }}
+                variant="contained"
               >
                 Update
               </Button>
