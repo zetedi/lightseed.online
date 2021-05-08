@@ -18,6 +18,7 @@ import Router from 'next/router';
 import useForm from '../../lib/useForm';
 import DisplayError from '../utils/ErrorMessage';
 import CloudinaryImage from '../utils/CloudinaryImage';
+import { CURRENT_LIFESEED_QUERY } from '../admin/useLifeseed';
 
 const SINGLE_LIFETREE_QUERY = gql`
   query SINGLE_LIFETREE_QUERY($id: ID!) {
@@ -91,7 +92,10 @@ export default function UpdateLifetree({ id }) {
         ...inputs,
         image,
       },
-      refetchQueries: [{ query: SINGLE_LIFETREE_QUERY, variables: { id } }],
+      refetchQueries: [
+        { query: SINGLE_LIFETREE_QUERY, variables: { id } },
+        { query: CURRENT_LIFESEED_QUERY },
+      ],
     }
   );
   if (loading) return <p>Loading...</p>;

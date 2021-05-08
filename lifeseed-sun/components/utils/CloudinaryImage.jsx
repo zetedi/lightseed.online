@@ -1,6 +1,6 @@
 import { CloudinaryContext } from 'cloudinary-react';
 import { IconButton } from '@material-ui/core';
-import EditIcon from '@material-ui/icons/Edit';
+import PhotoIcon from '@material-ui/icons/PhotoCameraOutlined';
 
 export const openUploadWidget = (callback) => {
   window.cloudinary.openUploadWidget(
@@ -64,7 +64,7 @@ export default function cloudinaryImage({ setImage }) {
         onClick={() => beginUpload('image')}
         style={{ backgroundColor: '#fafafa' }}
       >
-        <EditIcon />
+        <PhotoIcon />
       </IconButton>
     </CloudinaryContext>
   );
