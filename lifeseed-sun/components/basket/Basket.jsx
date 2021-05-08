@@ -2,7 +2,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import { Box, Drawer, IconButton, Paper } from '@material-ui/core';
 import CloseIcon from '@material-ui/icons/Close';
 import { useLifeseed } from '../admin/useLifeseed';
-import formatMoney from '../../lib/formatMoney';
+import formatPrice from '../../lib/formatter';
 import calcTotalPrice from '../../lib/calcTotalPrice';
 import { useApp } from '../../lib/appState';
 import RemoveFromBasket from './RemoveFromBasket';
@@ -77,10 +77,10 @@ function BasketItem({ basketItem }) {
           <b>{present.name}</b>
           <br />
           <>
-            {formatMoney(present.price * basketItem.quantity)}
+            {formatPrice(present.price * basketItem.quantity)}
             <br />
             <em>
-              {basketItem.quantity} &times; {formatMoney(present.price)}
+              {basketItem.quantity} &times; {formatPrice(present.price)}
               {' each'}
             </em>
           </>
@@ -129,7 +129,7 @@ export default function Basket() {
       ) : (
         <footer>
           <Box style={{ direction: 'rtl', marginRight: '1rem' }}>
-            {formatMoney(calcTotalPrice(me.basket))}
+            {formatPrice(calcTotalPrice(me.basket))}
           </Box>
           <Checkout />
         </footer>

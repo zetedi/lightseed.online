@@ -17,7 +17,8 @@ import EditIcon from '@material-ui/icons/Edit';
 import DeleteOutlineIcon from '@material-ui/icons/DeleteOutline';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import AddShoppingCartIcon from '@material-ui/icons/AddShoppingCart';
-import formatMoney from '../../lib/formatMoney';
+import moment from 'moment';
+import formatPrice from '../../lib/formatter';
 import { CURRENT_LIFESEED_QUERY } from '../admin/useLifeseed';
 
 const ADD_TO_BASKET_MUTATION = gql`
@@ -125,12 +126,8 @@ export default function Present({ present }) {
             avatar={
               <Avatar aria-label="lifetree" className={classes.avatar}>
                 <img
-                  src={
-                    present.lifeseed?.lifetree?.photo?.image
-                      ?.publicUrlTransformed
-                  }
-                  alt={present.lifeseed?.lifetree?.photo?.image?.altText}
-                  style={{ width: '100%' }}
+                  src={present.lifeseed?.lifetree?.image}
+                  style={{ height: '100%' }}
                 />
               </Avatar>
             }
@@ -140,12 +137,13 @@ export default function Present({ present }) {
               </IconButton>
             }
             title={present.name}
-            subheader="September 14, 2016"
+            style={{ cursor: 'pointer' }}
+            subheader={moment(present.creationTime).fromNow()}
           />
         </Link>
         <CardMedia
           className={classes.media}
-          image={present?.photo?.image?.publicUrlTransformed}
+          image={present?.image}
           title={present.name}
         />
         <CardContent>
@@ -195,7 +193,7 @@ export default function Present({ present }) {
       <Box className={classes.ltcTag}>
         {present.price / 100} <small>|=|</small>
       </Box>
-      <Box className={classes.priceTag}>{formatMoney(present.price)}</Box>
+      <Box className={classes.priceTag}>{formatPrice(present.price)}</Box>
     </Box>
   );
 }

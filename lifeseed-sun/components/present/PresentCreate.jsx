@@ -1,5 +1,6 @@
 import { useMutation } from '@apollo/client';
 import Head from 'next/head';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -7,9 +8,7 @@ import {
   Card,
   CardActions,
   CardContent,
-  Divider,
   Grid,
-  Input,
   LinearProgress,
   TextField,
   Typography,
@@ -18,6 +17,7 @@ import gql from 'graphql-tag';
 import Router from 'next/router';
 import { makeStyles } from '@material-ui/core/styles';
 import useForm from '../../lib/useForm';
+import CloudinaryImage from '../utils/CloudinaryImage';
 import DisplayError from '../utils/ErrorMessage';
 import { ALL_PRESENTS_QUERY } from './Presents';
 
@@ -26,15 +26,17 @@ const CREATE_PRESENT_MUTATION = gql`
     $name: String!
     $body: String!
     $price: Int!
-    $image: Upload
+    $image: String
+    $creationTime: String!
   ) {
     createPresent(
       data: {
-        name: $name
         body: $body
+        creationTime: $creationTime
+        image: $image
+        name: $name
         price: $price
         status: "AVAILABLE"
-        photo: { create: { image: $image, altText: $name } }
       }
     ) {
       id
@@ -52,6 +54,8 @@ const useStyles = makeStyles((theme) => ({
 export default function PresentCreate() {
   const { t } = useTranslation();
   const classes = useStyles();
+  const [image, setImage] = useState();
+  const now = new Date().toISOString();
 
   const { inputs, handleChange, clearForm, resetForm } = useForm({
     name: '',
@@ -63,7 +67,7 @@ export default function PresentCreate() {
   const [createPresent, { data, error, loading }] = useMutation(
     CREATE_PRESENT_MUTATION,
     {
-      variables: inputs,
+      variables: { ...inputs, image, creationTime: now },
       refetchQueries: [{ query: ALL_PRESENTS_QUERY }],
     }
   );
@@ -91,11 +95,12 @@ export default function PresentCreate() {
           ) : (
             <Card className={classes.cardView}>
               <Typography variant="h1" className={classes.cardHeader}>
-                Create
+                Create present d
               </Typography>
-
+              <img className={classes.image} src={image} />
               <CardContent>
-                <Grid container>
+                <Grid container style={{ position: 'relative' }}>
+                  <CloudinaryImage setImage={setImage} />
                   <TextField
                     aria-label={t('Name')}
                     label={t('Name')}
@@ -105,15 +110,6 @@ export default function PresentCreate() {
                     value={inputs.name}
                     onChange={handleChange}
                     variant="outlined"
-                    className={classes.field}
-                  />
-                  {/* https://www.kurzor.net/blog/uploading-and-resizing-images-part1 */}
-                  <Input
-                    required
-                    type="file"
-                    id="image"
-                    name="image"
-                    onChange={handleChange}
                     className={classes.field}
                   />
                   <TextField
@@ -151,10 +147,16 @@ export default function PresentCreate() {
                       pathname: `/presents`,
                     })
                   }
+                  variant="contained"
                 >
                   List
                 </Button>
-                <Button type="submit" style={{ marginLeft: 'auto' }}>
+                <Button
+                  color="primary"
+                  type="submit"
+                  style={{ marginLeft: 'auto' }}
+                  variant="contained"
+                >
                   Create
                 </Button>
               </CardActions>

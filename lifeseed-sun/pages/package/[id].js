@@ -1,10 +1,10 @@
 import { useQuery } from '@apollo/client';
 import gql from 'graphql-tag';
 import Head from 'next/head';
-import { Box, Button } from '@material-ui/core';
+import { Box } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
-import ErrorMessage from '../../components/ErrorMessage';
-import formatMoney from '../../lib/formatMoney';
+import ErrorMessage from '../../components/utils/ErrorMessage';
+import formatPrice from '../../lib/formatter';
 
 const SINGLE_PACKAGE_QUERY = gql`
   query SINGLE_PACKAGE_QUERY($id: ID!) {
@@ -95,7 +95,7 @@ export default function SinglePackagePage({ query }) {
       </p>
       <p>
         <span>Package total: </span>
-        <span>{formatMoney(ipackage.total)}</span>
+        <span>{formatPrice(ipackage.total)}</span>
       </p>
       <p>
         <span>ItemCount:</span>
@@ -108,15 +108,15 @@ export default function SinglePackagePage({ query }) {
             <div className="item-details">
               <h2>{item.name}</h2>
               <p>Qty: {item.quantity}</p>
-              <p>Each: {formatMoney(item.price)}</p>
-              <p>Sub Total: {formatMoney(item.price * item.quantity)}</p>
+              <p>Each: {formatPrice(item.price)}</p>
+              <p>Sub Total: {formatPrice(item.price * item.quantity)}</p>
               <p>{item.body}</p>
             </div>
           </div>
         ))}
       </div>
 
-      {formatMoney(ipackage.total)}
+      {formatPrice(ipackage.total)}
     </Box>
   );
 }

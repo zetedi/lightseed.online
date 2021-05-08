@@ -9,26 +9,17 @@ import Present from './Present';
 export const ALL_PRESENTS_QUERY = gql`
   query ALL_PRESENTS_QUERY($skip: Int = 0, $first: Int) {
     allPresents(first: $first, skip: $skip) {
-      id
-      name
-      price
       body
-      photo {
-        id
-        image {
-          publicUrlTransformed
-        }
-      }
+      creationTime
+      id
+      image
       lifeseed {
         lifetree {
-          photo {
-            id
-            image {
-              publicUrlTransformed
-            }
-          }
+          image
         }
       }
+      name
+      price
     }
   }
 `;

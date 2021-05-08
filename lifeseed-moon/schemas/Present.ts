@@ -31,6 +31,7 @@ export const Present = list({
         inlineEdit: { fields: ['image', 'altText'] },
       },
     }),
+    creationTime: text({ isRequired: true }),
     status: select({
       options: [
         {

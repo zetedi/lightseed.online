@@ -5,7 +5,7 @@ import Head from 'next/head';
 import { Box, Button } from '@material-ui/core';
 import Link from 'next/link';
 import ErrorMessage from '../components/utils/ErrorMessage';
-import formatMoney from '../lib/formatMoney';
+import formatPrice from '../lib/formatter';
 
 const LIFESEED_PACKAGES_QUERY = gql`
   query LIFESEED_PACKAGES_QUERY {
@@ -100,7 +100,7 @@ export default function PackagesPage() {
                 <div className="package-meta">
                   <p>{countItemsInAnPackage(ipackage)} item(s)</p>
                   <p>{ipackage.items.length} present(s)</p>
-                  <p>{formatMoney(ipackage.total)}</p>
+                  <p>{formatPrice(ipackage.total)}</p>
                 </div>
                 <Box className={classes.images}>
                   {ipackage.items.map((item) => (

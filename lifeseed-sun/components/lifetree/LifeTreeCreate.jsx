@@ -1,5 +1,4 @@
 import { useMutation, useQuery } from '@apollo/client';
-import { CloudinaryContext, Image } from 'cloudinary-react';
 import React, { useState, useEffect } from 'react';
 import gql from 'graphql-tag';
 import Head from 'next/head';
@@ -20,10 +19,7 @@ import Router from 'next/router';
 import useForm from '../../lib/useForm';
 import DisplayError from '../utils/ErrorMessage';
 import { CURRENT_LIFESEED_QUERY } from '../admin/useLifeseed';
-import {
-  fetchPhotos,
-  openCustomUploadWidget,
-} from '../../lib/cloudinaryService';
+import CloudinaryImage from '../utils/CloudinaryImage';
 
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
@@ -112,12 +108,14 @@ export default function CreateLifetree() {
             <Typography variant="h1" className={classes.cardHeader}>
               Plant
             </Typography>
+            <img className={classes.image} src={image} />
             <CardContent>
               <DisplayError error={error} />
               {loading ? (
                 <LinearProgress color="secondary" />
               ) : (
                 <Grid container>
+                  <CloudinaryImage setImage={setImage} />
                   <TextField
                     type="text"
                     id="name"
@@ -130,17 +128,6 @@ export default function CreateLifetree() {
                     className={classes.field}
                     size="small"
                   />
-                  <CloudinaryContext cloudName="ezimg">
-                    <Image
-                      key={image}
-                      publicId={image}
-                      fetch-format="auto"
-                      quality="auto"
-                    />
-                    <Button onClick={() => beginUpload('image')}>
-                      Upload Image
-                    </Button>
-                  </CloudinaryContext>
                   <TextField
                     multiline
                     rows={4}

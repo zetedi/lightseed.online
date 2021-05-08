@@ -1,5 +1,4 @@
 import { useMutation, useQuery } from '@apollo/client';
-import { CloudinaryContext, Image } from 'cloudinary-react';
 import React, { useState } from 'react';
 import gql from 'graphql-tag';
 import Head from 'next/head';
@@ -11,16 +10,14 @@ import {
   Card,
   CardActions,
   CardContent,
-  IconButton,
   Typography,
   TextField,
 } from '@material-ui/core';
-import EditIcon from '@material-ui/icons/Edit';
 import { makeStyles } from '@material-ui/core/styles';
 import Router from 'next/router';
-import { openCustomUploadWidget } from '../../lib/cloudinaryService';
 import useForm from '../../lib/useForm';
 import DisplayError from '../utils/ErrorMessage';
+import CloudinaryImage from '../utils/CloudinaryImage';
 
 const SINGLE_LIFETREE_QUERY = gql`
   query SINGLE_LIFETREE_QUERY($id: ID!) {
@@ -86,19 +83,6 @@ export default function UpdateLifetree({ id }) {
       longitude: '',
     }
   );
-  const beginUpload = () => {
-    openCustomUploadWidget((error, photos) => {
-      if (!error) {
-        console.log(photos);
-        if (photos.event === 'success') {
-          setImage(photos.info.secure_url);
-          console.log(photos.info);
-        }
-      } else {
-        console.log(error);
-      }
-    });
-  };
   const [updateLifetree, { loading: updating, error }] = useMutation(
     UPDATE_LIFETREE_MUTATION,
     {
@@ -156,17 +140,7 @@ export default function UpdateLifetree({ id }) {
                 <LinearProgress color="secondary" />
               ) : (
                 <Grid container style={{ position: 'relative' }}>
-                  <CloudinaryContext
-                    cloudName="ezimg"
-                    style={{ position: 'absolute', top: '-17%', right: '7%' }}
-                  >
-                    <IconButton
-                      onClick={() => beginUpload('image')}
-                      style={{ backgroundColor: '#fafafa' }}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                  </CloudinaryContext>
+                  <CloudinaryImage setImage={setImage} />
                   <TextField
                     type="text"
                     id="name"
