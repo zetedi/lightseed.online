@@ -8,6 +8,7 @@ export const CURRENT_LIFESEED_QUERY = gql`
         email
         lifetree {
           id
+          image
         }
         name
         basket {
@@ -15,14 +16,10 @@ export const CURRENT_LIFESEED_QUERY = gql`
           quantity
           present {
             id
+            image
             price
             name
             body
-            photo {
-              image {
-                publicUrlTransformed
-              }
-            }
           }
         }
       }

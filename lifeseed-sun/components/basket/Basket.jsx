@@ -68,11 +68,7 @@ function BasketItem({ basketItem }) {
   return (
     <Paper style={{ margin: '.3rem' }}>
       <Box className={classes.basketItem}>
-        <img
-          width="70"
-          src={present.photo.image.publicUrlTransformed}
-          alt={present.name}
-        />
+        <img width="70" src={present.image} alt={present.name} />
         <div style={{ marginTop: '1rem' }}>
           <b>{present.name}</b>
           <br />

@@ -211,7 +211,7 @@ export default function UpdateLifetree({ id }) {
                 style={{ marginLeft: 'auto' }}
                 variant="contained"
               >
-                Grow
+                Save
               </Button>
             </CardActions>
           </Card>

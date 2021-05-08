@@ -106,7 +106,7 @@ export default function CreateLifetree() {
         >
           <Card className={classes.cardView}>
             <Typography variant="h1" className={classes.cardHeader}>
-              Plant
+              {inputs.name || 'Plant a liftree'}
             </Typography>
             <img className={classes.image} src={image} />
             <CardContent>

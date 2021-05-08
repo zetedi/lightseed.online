@@ -88,6 +88,7 @@ const useStyles = makeStyles((theme) => ({
   },
   root: {
     maxWidth: 340,
+    minWidth: 320,
     margin: '1.2rem',
   },
   media: {
