@@ -27,16 +27,16 @@ export default function Menu({ lifeseed, openBasket, toggleSearch, signout }) {
       </IconButton>
       {lifeseed && (
         <>
-          <Link href="/forum">
+          <Link href="/posts">
             <IconButton>
               <ForumIcon />
             </IconButton>
           </Link>
-          <Link href="/present">
+          {/* <Link href="/present">
             <IconButton>
               <AddCircleIcon />
             </IconButton>
-          </Link>
+          </Link> */}
           {/* <Link href="/packages">
             <IconButton>
               <AllInboxIcon />
@@ -47,7 +47,7 @@ export default function Menu({ lifeseed, openBasket, toggleSearch, signout }) {
               <AccountCircleIcon />
             </IconButton>
           </Link> */}
-          <Link
+          {/* <Link
             href={
               lifeseed.lifetree?.id
                 ? `/lifetree/${lifeseed.lifetree?.id}`
@@ -57,7 +57,7 @@ export default function Menu({ lifeseed, openBasket, toggleSearch, signout }) {
             <IconButton>
               <NatureIcon />
             </IconButton>
-          </Link>
+          </Link> */}
           <Link href="/map">
             <IconButton>
               <MapIcon />

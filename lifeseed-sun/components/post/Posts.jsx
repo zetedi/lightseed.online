@@ -4,36 +4,22 @@ import gql from 'graphql-tag';
 import { Grid } from '@material-ui/core';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { perPage } from '../../config';
-import Present from './Present';
-import { useLifeseed } from '../admin/useLifeseed';
+import Post from './Post';
+
+// allPresents(first: $first, skip: $skip, where: { type: 'MESSAGE' }) {
 
 export const ALL_PRESENTS_QUERY = gql`
   query ALL_PRESENTS_QUERY($skip: Int = 0, $first: Int) {
-    allPresents(first: $first, skip: $skip, where: { type: "OFFER" }) {
+    allPresents(first: $first, skip: $skip, where: { type: "MESSAGE" }) {
       body
       creationTime
       id
-      image
       lifeseed {
         lifetree {
           image
         }
       }
       name
-      price
-    }
-  }
-`;
-
-export const ALL_PRESENTS_QUERY_LIGHT = gql`
-  query ALL_PRESENTS_QUERY_LIGHT($skip: Int = 0, $first: Int) {
-    allPresents(first: $first, skip: $skip, where: { type: "OFFER" }) {
-      body
-      creationTime
-      id
-      image
-      name
-      price
     }
   }
 `;
@@ -46,23 +32,19 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export default function Presents({ page }) {
-  const lifeseed = useLifeseed();
   const classes = useStyles();
-  const { data, error, loading } = useQuery(
-    lifeseed ? ALL_PRESENTS_QUERY : ALL_PRESENTS_QUERY_LIGHT,
-    {
-      variables: {
-        skip: page * perPage - perPage,
-        first: perPage,
-      },
-    }
-  );
+  const { data, error, loading } = useQuery(ALL_PRESENTS_QUERY, {
+    variables: {
+      skip: page * perPage - perPage,
+      first: perPage,
+    },
+  });
   if (loading) return <CircularProgress color="inherit" />;
   if (error) return <p>Error: {error.message}</p>;
   return (
     <Grid container spacing={1} className={classes.presentList}>
       {data?.allPresents.map((present) => (
-        <Present key={present.id} present={present} />
+        <Post key={present.id} present={present} />
       ))}
     </Grid>
   );

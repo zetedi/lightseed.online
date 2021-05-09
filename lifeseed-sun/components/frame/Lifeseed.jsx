@@ -19,24 +19,22 @@ function Lifeseed() {
   const classes = useStyles();
   const lifeseed = useLifeseed();
   return (
-    <Link href="/home">
+    <Link
+      href={
+        lifeseed?.lifetree?.id
+          ? `/lifetree/${lifeseed.lifetree?.id}`
+          : '/saveLifetree'
+      }
+    >
       <Box className={classes.lifeseed}>
         {lifeseed ? (
           <Avatar aria-label="lifetree" className={classes.avatar}>
             {lifeseed?.lifetree?.image ? (
               <img src={lifeseed?.lifetree?.image} style={{ height: '100%' }} />
             ) : (
-              <Link
-                href={
-                  lifeseed.lifetree?.id
-                    ? `/lifetree/${lifeseed.lifetree?.id}`
-                    : '/saveLifetree'
-                }
-              >
-                <IconButton style={{ backgroundColor: 'rgba(255,255,0,1)' }}>
-                  <NaturePeopleOutlinedIcon />
-                </IconButton>
-              </Link>
+              <IconButton style={{ backgroundColor: 'rgba(255,255,0,1)' }}>
+                <NaturePeopleOutlinedIcon />
+              </IconButton>
             )}
           </Avatar>
         ) : (

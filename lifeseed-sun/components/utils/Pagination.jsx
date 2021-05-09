@@ -10,8 +10,8 @@ import DisplayError from './ErrorMessage';
 import { perPage } from '../../config';
 
 export const PAGINATION_QUERY = gql`
-  query PAGINATION_QUERY {
-    _allPresentsMeta {
+  query PAGINATION_QUERY($type: String!) {
+    _allPresentsMeta(where: { type: $type }) {
       count
     }
   }
@@ -25,14 +25,15 @@ const useStyles = makeStyles((theme) => ({
     gridTemplateColumns: 'repeat(4, auto)',
     alignItems: 'stretch',
     justifyContent: 'right',
-    margin: '.5rem',
-    alignContent: 'right',
+    alignContent: 'left',
   },
 }));
 
-export default function Pagination({ page }) {
+export default function Pagination({ page, type }) {
   const classes = useStyles();
-  const { error, loading, data } = useQuery(PAGINATION_QUERY);
+  const { error, loading, data } = useQuery(PAGINATION_QUERY, {
+    variables: { type: type === 'posts' ? 'MESSAGE' : 'OFFER' },
+  });
   if (loading) return 'Loading...';
   if (error) return <DisplayError error={error} />;
   const { count } = data._allPresentsMeta;
@@ -41,18 +42,18 @@ export default function Pagination({ page }) {
     <Box className={classes.pagination}>
       <Head>
         <title>
-          Goods and services - Page {page} of {pageCount}
+          Presents - Page {page} of {pageCount}
         </title>
       </Head>
-      <Link href={`/presents/${page - 1}`}>
+      <Link href={`/${type}/${page - 1}`}>
         <IconButton disabled={page <= 1}>
           <NavigateBeforeIcon color={page <= 1 ? 'secondary' : 'primary'} />
         </IconButton>
       </Link>
-      <p>
+      <Box style={{ alignSelf: 'center' }}>
         Page <b>{page}</b>/{pageCount} of <b>{count}</b> items
-      </p>
-      <Link href={`/presents/${page + 1}`}>
+      </Box>
+      <Link href={`/${type}/${page + 1}`}>
         <IconButton disabled={page >= pageCount}>
           <NavigateNextIcon
             color={page >= pageCount ? 'secondary' : 'primary'}

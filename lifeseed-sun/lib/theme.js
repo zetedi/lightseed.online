@@ -13,7 +13,7 @@ const defaultTheme = createMuiTheme({
       hover: '#00a484',
       active: '#379393',
       // focus: '#7f3fe9',
-      // background: '#fb5012',
+      background: '#fb5012',
       border: '#777777',
       get dark() {
         return this.hover;
@@ -259,6 +259,9 @@ const theme = createMuiTheme({
     },
   },
   customTheme: {
+    addIcon: {
+      color: defaultTheme.palette.primary.background,
+    },
     root: {
       backgroundColor: defaultTheme.palette.backgroundWave,
       position: 'static',

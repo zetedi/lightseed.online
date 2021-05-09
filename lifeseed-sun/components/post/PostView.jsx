@@ -50,11 +50,6 @@ export default function PresentView({ id }) {
           <Typography variant="h1" className={classes.cardHeader}>
             {Present.name}
           </Typography>
-          <img
-            className={classes.image}
-            src={Present.image}
-            alt={Present.name}
-          />
           <CardContent>
             <Grid
               container
@@ -63,13 +58,12 @@ export default function PresentView({ id }) {
               <Box style={{ padding: '.25rem', marginBottom: '1rem' }}>
                 <Typography>{Present.body}</Typography>
               </Box>
-              <Typography>Price: {Present.price}</Typography>
             </Grid>
           </CardContent>
           <CardActions disableSpacing>
             <Link
               href={{
-                pathname: '/presents',
+                pathname: '/posts',
               }}
             >
               <Button color="primary" variant="contained">

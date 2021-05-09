@@ -19,29 +19,24 @@ import { makeStyles } from '@material-ui/core/styles';
 import useForm from '../../lib/useForm';
 import CloudinaryImage from '../utils/CloudinaryImage';
 import DisplayError from '../utils/ErrorMessage';
-import { ALL_PRESENTS_QUERY } from './Presents';
+import { ALL_PRESENTS_QUERY } from './Posts';
 
 const CREATE_PRESENT_MUTATION = gql`
   mutation CREATE_PRESENT_MUTATION(
     $name: String!
     $body: String!
-    $price: Int!
-    $image: String
     $creationTime: String!
   ) {
     createPresent(
       data: {
         body: $body
         creationTime: $creationTime
-        image: $image
         name: $name
-        price: $price
         status: "AVAILABLE"
-        type: "OFFER"
+        type: "MESSAGE"
       }
     ) {
       id
-      price
       name
       body
     }
@@ -52,23 +47,20 @@ const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
 }));
 
-export default function PresentCreate() {
+export default function PostCreate() {
   const { t } = useTranslation();
   const classes = useStyles();
-  const [image, setImage] = useState();
   const now = new Date().toISOString();
 
   const { inputs, handleChange, clearForm, resetForm } = useForm({
     name: '',
-    image: '',
-    price: 0,
     body: '',
   });
 
   const [createPresent, { data, error, loading }] = useMutation(
     CREATE_PRESENT_MUTATION,
     {
-      variables: { ...inputs, image, creationTime: now },
+      variables: { ...inputs, creationTime: now },
       refetchQueries: [{ query: ALL_PRESENTS_QUERY }],
     }
   );
@@ -87,7 +79,7 @@ export default function PresentCreate() {
             const res = await createPresent();
             clearForm();
             Router.push({
-              pathname: `/present/${res.data.createPresent.id}`,
+              pathname: `/post/${res.data.createPresent.id}`,
             });
           }}
         >
@@ -96,32 +88,18 @@ export default function PresentCreate() {
           ) : (
             <Card className={classes.cardView}>
               <Typography variant="h1" className={classes.cardHeader}>
-                Create present
+                Create post
               </Typography>
-              <img className={classes.image} src={image} />
               <CardContent>
                 <Grid container style={{ position: 'relative' }}>
-                  <CloudinaryImage setImage={setImage} />
                   <TextField
-                    aria-label={t('Name')}
-                    label={t('Name')}
+                    aria-label={t('Title')}
+                    label={t('Title')}
                     id="name"
                     name="name"
                     size="small"
                     value={inputs.name}
                     onChange={handleChange}
-                    variant="outlined"
-                    className={classes.field}
-                  />
-                  <TextField
-                    aria-label={t('Price')}
-                    label={t('Price')}
-                    id="price"
-                    name="price"
-                    size="small"
-                    value={inputs.price}
-                    onChange={handleChange}
-                    type="number"
                     variant="outlined"
                     className={classes.field}
                   />
@@ -145,7 +123,7 @@ export default function PresentCreate() {
                   color="primary"
                   onClick={() =>
                     Router.push({
-                      pathname: `/presents`,
+                      pathname: `/posts`,
                     })
                   }
                   variant="contained"
@@ -158,7 +136,7 @@ export default function PresentCreate() {
                   style={{ marginLeft: 'auto' }}
                   variant="contained"
                 >
-                  Create
+                  Post
                 </Button>
               </CardActions>
             </Card>
