@@ -50,11 +50,15 @@ export default function PresentView({ id }) {
           <Typography variant="h1" className={classes.cardHeader}>
             {Present.name}
           </Typography>
-          <img
-            className={classes.image}
-            src={Present.image}
-            alt={Present.name}
-          />
+          {Present.image ? (
+            <img
+              className={classes.image}
+              src={Present.image}
+              alt={Present.name}
+            />
+          ) : (
+            ''
+          )}
           <CardContent>
             <Grid
               container

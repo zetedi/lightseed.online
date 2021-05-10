@@ -20,6 +20,7 @@ import useForm from '../../lib/useForm';
 import CloudinaryImage from '../utils/CloudinaryImage';
 import DisplayError from '../utils/ErrorMessage';
 import { ALL_PRESENTS_QUERY } from './Presents';
+import { CURRENT_LIFESEED_QUERY } from '../admin/useLifeseed';
 
 const CREATE_PRESENT_MUTATION = gql`
   mutation CREATE_PRESENT_MUTATION(
@@ -69,7 +70,10 @@ export default function PresentCreate() {
     CREATE_PRESENT_MUTATION,
     {
       variables: { ...inputs, image, creationTime: now },
-      refetchQueries: [{ query: ALL_PRESENTS_QUERY }],
+      refetchQueries: [
+        { query: ALL_PRESENTS_QUERY },
+        { query: CURRENT_LIFESEED_QUERY },
+      ],
     }
   );
 

@@ -10,6 +10,7 @@ import { LifetreeImage } from './schemas/LifetreeImage';
 import { Lifeseed } from './schemas/Lifeseed';
 import { Role } from './schemas/Role';
 import { Lifetree } from './schemas/Lifetree';
+import { Comment } from './schemas/Comment';
 import { BasketItem } from './schemas/BasketItem';
 import { PackageItem } from './schemas/PackageItem';
 import { Package } from './schemas/Package';
@@ -62,14 +63,15 @@ export default withAuth(
     },
     lists: createSchema({
       // Schema items go in here
+      BasketItem,
+      Comment,
       Lifeseed,
       Lifetree,
       LifetreeImage,
+      Package,
+      PackageItem,
       Present,
       PresentImage,
-      BasketItem,
-      PackageItem,
-      Package,
       Role,
     }),
     extendGraphqlSchema,

@@ -2,9 +2,8 @@ import Link from 'next/link';
 import { useMutation } from '@apollo/client';
 import gql from 'graphql-tag';
 import { makeStyles } from '@material-ui/core/styles';
-import { Box } from '@material-ui/core';
-import React from 'react';
-import Card from '@material-ui/core/Card';
+import { Box, Dialog, Button, Card } from '@material-ui/core';
+import React, { useState } from 'react';
 import CardHeader from '@material-ui/core/CardHeader';
 import CardMedia from '@material-ui/core/CardMedia';
 import CardContent from '@material-ui/core/CardContent';
@@ -107,6 +106,7 @@ function update(cache, payload) {
 
 export default function Present({ present }) {
   const { id } = present;
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [deletePresent, { loading }] = useMutation(DELETE_PRESENT_MUTATION, {
     variables: {
       id,
@@ -120,81 +120,112 @@ export default function Present({ present }) {
 
   const classes = useStyles();
   return (
-    <Box style={{ position: 'relative', maxWidth: 350 }}>
-      <Card className={classes.root}>
-        <Link href={`/present/${present.id}`}>
-          <CardHeader
-            avatar={
-              <Avatar aria-label="lifetree" className={classes.avatar}>
-                <img
-                  src={present.lifeseed?.lifetree?.image}
-                  style={{ height: '100%' }}
-                />
-              </Avatar>
-            }
-            action={
-              <IconButton aria-label="settings">
-                <MoreVertIcon />
-              </IconButton>
-            }
-            title={present.name}
-            style={{ cursor: 'pointer' }}
-            subheader={moment(present.creationTime).fromNow()}
-          />
-        </Link>
-        <CardMedia
-          className={classes.media}
-          image={present?.image}
-          title={present.name}
-        />
-        <CardContent>
-          <Typography variant="body2" color="textSecondary" component="p">
-            {present.body}
-          </Typography>
-        </CardContent>
-
-        <CardActions disableSpacing>
-          <IconButton aria-label="add to favorites">
-            <FavoriteIcon />
-          </IconButton>
-          <IconButton
-            aria-label="share"
-            disabled={loading}
-            variant="outlined"
-            onClick={() => {
-              if (confirm('Are you sure you want to delete it?')) {
-                deletePresent().catch((err) => alert(err.message));
+    <>
+      <Box style={{ position: 'relative', maxWidth: 350 }}>
+        <Card className={classes.root}>
+          <Link href={`/present/${present.id}`}>
+            <CardHeader
+              avatar={
+                <Avatar aria-label="lifetree" className={classes.avatar}>
+                  <img
+                    src={present.lifeseed?.lifetree?.image}
+                    style={{ height: '100%' }}
+                  />
+                </Avatar>
               }
-            }}
-          >
-            <DeleteOutlineIcon />
-          </IconButton>
-          <Link
-            href={{
-              pathname: '/updatePresent',
-              query: {
-                id: present.id,
-              },
-            }}
-          >
-            <IconButton>
-              <EditIcon />
-            </IconButton>
+              action={
+                <IconButton aria-label="settings">
+                  <MoreVertIcon />
+                </IconButton>
+              }
+              title={present.name}
+              style={{ cursor: 'pointer' }}
+              subheader={moment(present.creationTime).fromNow()}
+            />
           </Link>
-          <IconButton
-            disabled={loading}
-            endIcon={<AddShoppingCartIcon />}
-            variant="outlined"
-            onClick={addToBasket}
-          >
-            <AddShoppingCartIcon />
-          </IconButton>
-        </CardActions>
-      </Card>
-      <Box className={classes.ltcTag}>
-        {present.price / 100} <small>|=|</small>
+          <CardMedia
+            className={classes.media}
+            image={present?.image}
+            title={present.name}
+          />
+          <CardContent>
+            <Typography variant="body2" color="textSecondary" component="p">
+              {present.body}
+            </Typography>
+          </CardContent>
+
+          <CardActions disableSpacing>
+            <IconButton aria-label="add to favorites">
+              <FavoriteIcon />
+            </IconButton>
+            <IconButton
+              aria-label="share"
+              disabled={loading}
+              variant="outlined"
+              onClick={() => {
+                setConfirmOpen(true);
+              }}
+            >
+              <DeleteOutlineIcon />
+            </IconButton>
+            <Link
+              href={{
+                pathname: '/updatePresent',
+                query: {
+                  id: present.id,
+                },
+              }}
+            >
+              <IconButton>
+                <EditIcon />
+              </IconButton>
+            </Link>
+            <IconButton
+              disabled={loading}
+              endIcon={<AddShoppingCartIcon />}
+              variant="outlined"
+              onClick={addToBasket}
+            >
+              <AddShoppingCartIcon />
+            </IconButton>
+          </CardActions>
+        </Card>
+        <Box className={classes.ltcTag}>
+          {present.price / 100} <small>|=|</small>
+        </Box>
+        <Box className={classes.priceTag}>{formatPrice(present.price)}</Box>
       </Box>
-      <Box className={classes.priceTag}>{formatPrice(present.price)}</Box>
-    </Box>
+
+      <Dialog open={confirmOpen} fullWidth>
+        <Box p={4}>
+          <Typography variant="h5" gutterBottom>
+            Would you like to delete present {present.name} ?
+          </Typography>
+
+          <Box display="flex" justifyContent="flex-end">
+            <Button
+              variant="outlined"
+              color="primary"
+              id="cancel"
+              onClick={() => setConfirmOpen(false)}
+              style={{ marginRight: '7px' }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              id="post"
+              type="submit"
+              onClick={() => {
+                deletePresent().catch((err) => alert(err.message));
+              }}
+            >
+              Delete
+            </Button>
+          </Box>
+        </Box>
+      </Dialog>
+    </>
   );
 }

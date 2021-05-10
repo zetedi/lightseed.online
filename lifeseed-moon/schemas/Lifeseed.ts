@@ -34,6 +34,7 @@ export const Lifeseed = list({
       },
     }),
     presents: relationship({ ref: 'Present.lifeseed', many: true }),
+    comments: relationship({ ref: 'Comment.lifeseed', many: true }),
     lifetree: relationship({ ref: 'Lifetree.lifeseed' }),
   },
 });

@@ -21,6 +21,7 @@ export const Present = list({
         displayMode: 'textarea',
       },
     }),
+    comments: relationship({ ref: 'Comment.present', many: true }),
     image: text({ isRequired: false }),
     photo: relationship({
       ref: 'PresentImage.present',

@@ -1,4 +1,5 @@
 import { useMutation } from '@apollo/client';
+import { useRouter } from 'next/dist/client/router';
 import Head from 'next/head';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -17,9 +18,11 @@ import gql from 'graphql-tag';
 import Router from 'next/router';
 import { makeStyles } from '@material-ui/core/styles';
 import useForm from '../../lib/useForm';
-import CloudinaryImage from '../utils/CloudinaryImage';
 import DisplayError from '../utils/ErrorMessage';
 import { ALL_PRESENTS_QUERY } from './Posts';
+import { perPage } from '../../config';
+
+import { PAGINATION_QUERY } from '../utils/Pagination';
 
 const CREATE_PRESENT_MUTATION = gql`
   mutation CREATE_PRESENT_MUTATION(
@@ -61,7 +64,27 @@ export default function PostCreate() {
     CREATE_PRESENT_MUTATION,
     {
       variables: { ...inputs, creationTime: now },
-      refetchQueries: [{ query: ALL_PRESENTS_QUERY }],
+      refetchQueries: [
+        {
+          query: ALL_PRESENTS_QUERY,
+          variables: {
+            skip: 0,
+            first: perPage,
+          },
+        },
+        {
+          query: ALL_PRESENTS_QUERY,
+          variables: {
+            skip: 0,
+            first: perPage,
+          },
+        },
+        {
+          query: PAGINATION_QUERY,
+          variables: { type: 'MESSAGE' },
+        },
+      ],
+      awaitRefetchQueries: true,
     }
   );
 
@@ -79,8 +102,12 @@ export default function PostCreate() {
             const res = await createPresent();
             clearForm();
             Router.push({
-              pathname: `/post/${res.data.createPresent.id}`,
+              pathname: `/posts`,
             });
+
+            // Router.push({
+            //   pathname: `/post/${res.data.createPresent.id}`,
+            // });
           }}
         >
           {loading ? (

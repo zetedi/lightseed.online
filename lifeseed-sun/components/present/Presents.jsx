@@ -9,7 +9,12 @@ import { useLifeseed } from '../admin/useLifeseed';
 
 export const ALL_PRESENTS_QUERY = gql`
   query ALL_PRESENTS_QUERY($skip: Int = 0, $first: Int) {
-    allPresents(first: $first, skip: $skip, where: { type: "OFFER" }) {
+    allPresents(
+      first: $first
+      skip: $skip
+      where: { type: "OFFER" }
+      orderBy: "creationTime_DESC"
+    ) {
       body
       creationTime
       id

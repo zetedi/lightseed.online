@@ -10,8 +10,17 @@ import Post from './Post';
 
 export const ALL_PRESENTS_QUERY = gql`
   query ALL_PRESENTS_QUERY($skip: Int = 0, $first: Int) {
-    allPresents(first: $first, skip: $skip, where: { type: "MESSAGE" }) {
+    allPresents(
+      first: $first
+      skip: $skip
+      where: { type: "MESSAGE" }
+      orderBy: "creationTime_DESC"
+    ) {
       body
+      comments {
+        creationTime
+        body
+      }
       creationTime
       id
       lifeseed {

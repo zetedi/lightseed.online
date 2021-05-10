@@ -6,13 +6,13 @@ import {
   Box,
   Button,
   Grid,
-  Input,
   LinearProgress,
   Card,
   CardActions,
   CardContent,
   Typography,
   TextField,
+  CircularProgress,
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import Router from 'next/router';
@@ -63,22 +63,6 @@ export default function CreateLifetree() {
     latitude: '',
     longitude: '',
   });
-  const beginUpload = () => {
-    openCustomUploadWidget((error, photos) => {
-      if (!error) {
-        console.log(photos);
-        if (photos.event === 'success') {
-          setImage(photos.info.secure_url);
-          inputs.image = photos.info.secure_url;
-          console.log(photos.info);
-        }
-      } else {
-        console.log(error);
-      }
-    });
-  };
-
-  console.log(inputs);
   const [createLifetree, { data, error, loading }] = useMutation(
     CREATE_LIFETREE_MUTATION,
     {
@@ -86,7 +70,7 @@ export default function CreateLifetree() {
       refetchQueries: [{ query: CURRENT_LIFESEED_QUERY }],
     }
   );
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <CircularProgress />;
 
   return (
     <>

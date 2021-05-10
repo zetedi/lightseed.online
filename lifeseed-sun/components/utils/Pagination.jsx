@@ -3,7 +3,7 @@ import Link from 'next/link';
 import gql from 'graphql-tag';
 import { useQuery } from '@apollo/client';
 import { makeStyles } from '@material-ui/core/styles';
-import { Box, IconButton } from '@material-ui/core';
+import { Box, CircularProgress, IconButton } from '@material-ui/core';
 import NavigateBeforeIcon from '@material-ui/icons/NavigateBefore';
 import NavigateNextIcon from '@material-ui/icons/NavigateNext';
 import DisplayError from './ErrorMessage';
@@ -34,7 +34,7 @@ export default function Pagination({ page, type }) {
   const { error, loading, data } = useQuery(PAGINATION_QUERY, {
     variables: { type: type === 'posts' ? 'MESSAGE' : 'OFFER' },
   });
-  if (loading) return 'Loading...';
+  if (loading) return <CircularProgress />;
   if (error) return <DisplayError error={error} />;
   const { count } = data._allPresentsMeta;
   const pageCount = Math.ceil(count / perPage);
@@ -42,7 +42,7 @@ export default function Pagination({ page, type }) {
     <Box className={classes.pagination}>
       <Head>
         <title>
-          Presents - Page {page} of {pageCount}
+          {type} - Page {page} of {pageCount}
         </title>
       </Head>
       <Link href={`/${type}/${page - 1}`}>
