@@ -18,6 +18,7 @@ export const Comment = list({
     creationTime: text({ isRequired: true }),
     lifeseed: relationship({
       ref: 'Lifeseed.comments',
+      many: false,
       defaultValue: ({ context }) => ({
         connect: { id: context.session.itemId },
       }),

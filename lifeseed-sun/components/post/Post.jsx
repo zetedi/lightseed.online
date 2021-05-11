@@ -37,6 +37,14 @@ const DELETE_PRESENT_MUTATION = gql`
   }
 `;
 
+const CREATE_COMMENT_MUTATION = gql`
+  mutation CREATE_COMMENT_MUTATION($id: ID!) {
+    createComment(presentId: $id) {
+      id
+    }
+  }
+`;
+
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
   title: {
@@ -104,6 +112,20 @@ export default function Post({ present, page }) {
     },
     update,
   });
+
+  const now = new Date().toISOString();
+
+  const [createComment, { data, error, loadingComment }] = useMutation(
+    CREATE_COMMENT_MUTATION,
+    {
+      variables: {
+        id: present.id,
+        creationTime: now,
+        body: comment,
+      },
+    }
+  );
+
   return (
     <>
       <Box style={{ position: 'relative', maxWidth: 350 }}>
@@ -171,7 +193,7 @@ export default function Post({ present, page }) {
           </CardActions>
           <Collapse in={commentExpanded} timeout="auto" unmountOnExit>
             <form>
-              <div>
+              <Box style={{ margin: '.75rem', position: 'relative' }}>
                 <TextField
                   id="outlined-basic"
                   label="Comment"
@@ -185,7 +207,9 @@ export default function Post({ present, page }) {
                   onChange={(event) => setComment(event.target.value)}
                   ref={commentInputRef}
                   style={{
-                    marginBottom: '14px',
+                    // position: 'absolute',
+                    // top: '1rem',
+                    marginBottom: '.875rem',
                     width: '100%',
                   }}
                 />
@@ -195,13 +219,19 @@ export default function Post({ present, page }) {
                     color="primary"
                     disabled={comment.trim() === ''}
                     onClick={() => {
-                      console.log('Comment!');
+                      createComment().catch((err) => alert(err.message));
                     }}
+                    style={{
+                      height: '1.75rem',
+                      marginBottom: '.15rem',
+                      fontWeight: '200',
+                    }}
+                    size="small"
                   >
-                    Submit
+                    Discuss
                   </Button>
                 </Box>
-              </div>
+              </Box>
             </form>
           </Collapse>
           <Collapse in={expanded} timeout="auto" unmountOnExit>

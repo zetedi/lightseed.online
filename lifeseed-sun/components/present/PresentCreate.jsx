@@ -20,7 +20,8 @@ import useForm from '../../lib/useForm';
 import CloudinaryImage from '../utils/CloudinaryImage';
 import DisplayError from '../utils/ErrorMessage';
 import { ALL_PRESENTS_QUERY } from './Presents';
-import { CURRENT_LIFESEED_QUERY } from '../admin/useLifeseed';
+import { PAGINATION_QUERY } from '../utils/Pagination';
+import { perPage } from '../../config';
 
 const CREATE_PRESENT_MUTATION = gql`
   mutation CREATE_PRESENT_MUTATION(
@@ -71,9 +72,19 @@ export default function PresentCreate() {
     {
       variables: { ...inputs, image, creationTime: now },
       refetchQueries: [
-        { query: ALL_PRESENTS_QUERY },
-        { query: CURRENT_LIFESEED_QUERY },
+        {
+          query: ALL_PRESENTS_QUERY,
+          variables: {
+            skip: 0,
+            first: perPage,
+          },
+        },
+        {
+          query: PAGINATION_QUERY,
+          variables: { type: 'OFFER' },
+        },
       ],
+      awaitRefetchQueries: true,
     }
   );
 
@@ -88,10 +99,10 @@ export default function PresentCreate() {
         <form
           onSubmit={async (e) => {
             e.preventDefault();
-            const res = await createPresent();
+            createPresent();
             clearForm();
             Router.push({
-              pathname: `/present/${res.data.createPresent.id}`,
+              pathname: '/presents',
             });
           }}
         >

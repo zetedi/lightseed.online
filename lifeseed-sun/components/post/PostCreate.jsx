@@ -21,7 +21,6 @@ import useForm from '../../lib/useForm';
 import DisplayError from '../utils/ErrorMessage';
 import { ALL_PRESENTS_QUERY } from './Posts';
 import { perPage } from '../../config';
-
 import { PAGINATION_QUERY } from '../utils/Pagination';
 
 const CREATE_PRESENT_MUTATION = gql`
@@ -73,13 +72,6 @@ export default function PostCreate() {
           },
         },
         {
-          query: ALL_PRESENTS_QUERY,
-          variables: {
-            skip: 0,
-            first: perPage,
-          },
-        },
-        {
           query: PAGINATION_QUERY,
           variables: { type: 'MESSAGE' },
         },
@@ -99,15 +91,11 @@ export default function PostCreate() {
         <form
           onSubmit={async (e) => {
             e.preventDefault();
-            const res = await createPresent();
+            createPresent();
             clearForm();
             Router.push({
               pathname: `/posts`,
             });
-
-            // Router.push({
-            //   pathname: `/post/${res.data.createPresent.id}`,
-            // });
           }}
         >
           {loading ? (
