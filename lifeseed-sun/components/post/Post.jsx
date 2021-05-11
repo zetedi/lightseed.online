@@ -165,7 +165,10 @@ export default function Post({ present, page }) {
                 aria-label="Comment"
                 onClick={handleExpandCommentClick}
               >
-                <Badge badgeContent="0" color="secondary">
+                <Badge
+                  badgeContent={present.comments?.length}
+                  color="secondary"
+                >
                   <ChatIcon />
                 </Badge>
               </IconButton>
