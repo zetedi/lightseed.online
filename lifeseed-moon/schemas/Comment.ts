@@ -6,8 +6,8 @@ export const Comment = list({
   access: {
     create: isSignedIn,
     read: rules.canReadPresents,
-    update: rules.canManagePresents,
-    delete: rules.canManagePresents,
+    update: rules.canManageComments,
+    delete: rules.canManageComments,
   },
   ui: {
     hideCreate: (args) => !permissions.canManagePresents(args),

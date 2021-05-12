@@ -5,6 +5,10 @@ export const permissionFields = {
     defaultValue: true,
     label: 'present manager',
   }),
+  canManageComments: checkbox({
+    defaultValue: true,
+    label: 'comment manager',
+  }),
   canSeeOtherLifeseeds: checkbox({
     defaultValue: false,
     label: 'view lifeseeds',

@@ -18,8 +18,15 @@ export const ALL_PRESENTS_QUERY = gql`
     ) {
       body
       comments {
+        id
         creationTime
         body
+        lifeseed {
+          id
+          lifetree {
+            image
+          }
+        }
       }
       creationTime
       id

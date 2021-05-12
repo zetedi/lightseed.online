@@ -99,6 +99,12 @@ const theme = createMuiTheme({
       marginTop: '0.5rem',
       marginBottom: '0.5rem',
     },
+    h5: {
+      fontSize: '.5rem',
+      fontWeight: '100',
+      marginTop: '0.1rem',
+      marginBottom: '0.1rem',
+    },
     button: {
       height: '2.75rem',
       textTransform: 'none',

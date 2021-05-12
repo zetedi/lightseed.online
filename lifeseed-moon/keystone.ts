@@ -20,11 +20,10 @@ import { sendPasswordResetEmail } from './lib/mail';
 import { extendGraphqlSchema } from './mutations';
 import { permissionsList } from './schemas/PermissionFields';
 
-const databaseURL =
-  process.env.DATABASE_URL || 'mongodb://localhost/keystone-sick-fits-tutorial';
+const databaseURL = process.env.DATABASE_URL;
 
 const sessionConfig = {
-  maxAge: 60 * 60 * 24 * 360, // how long should they stay signed in
+  maxAge: 60 * 60 * 24 * 360,
   secret: process.env.COOKIE_SECRET,
 };
 
@@ -34,7 +33,6 @@ const { withAuth } = createAuth({
   secretField: 'password',
   initFirstItem: {
     fields: ['name', 'email', 'password'],
-    // TODO: Add data seeding here
   },
   passwordResetLink: {
     async sendToken(args) {
@@ -62,7 +60,6 @@ export default withAuth(
       },
     },
     lists: createSchema({
-      // Schema items go in here
       BasketItem,
       Comment,
       Lifeseed,
@@ -76,13 +73,10 @@ export default withAuth(
     }),
     extendGraphqlSchema,
     ui: {
-      // Show the UI only for people who pass this test
       isAccessAllowed: ({ session }) =>
-        // console.log(session);
         !!session?.data,
     },
     session: withItemData(statelessSessions(sessionConfig), {
-      // GraphQL Query
       Lifeseed: `id name email role { ${permissionsList.join(' ')}}`,
     }),
   })

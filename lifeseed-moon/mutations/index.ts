@@ -8,7 +8,7 @@ export const extendGraphqlSchema = graphQLSchemaExtension({
   typeDefs: graphql`
     type Mutation {
       addToBasket(presentId: ID): BasketItem
-      createComment(presentId: ID): Comment
+      createComment(presentId: ID, body: String): Comment
       checkout(token: String!): Package
     }
   `,
