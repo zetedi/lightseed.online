@@ -205,6 +205,12 @@ export default function UpdateLifetree({ id }) {
                     pathname: `/lifetree/${id}`,
                   })
                 }
+                style={{
+                  paddingRight: '1.4rem',
+                  borderTopRightRadius: '50%',
+                  borderBottomRightRadius: '50%',
+                  boxShadow: '3px 3px 3px yellow',
+                }}
                 variant="contained"
               >
                 Back
@@ -212,7 +218,13 @@ export default function UpdateLifetree({ id }) {
               <Button
                 color="primary"
                 type="submit"
-                style={{ marginLeft: 'auto' }}
+                style={{
+                  marginLeft: 'auto',
+                  paddingLeft: '1.4rem',
+                  borderTopLeftRadius: '50%',
+                  borderBottomLeftRadius: '50%',
+                  boxShadow: '3px 3px 3px yellow',
+                }}
                 variant="contained"
               >
                 Save

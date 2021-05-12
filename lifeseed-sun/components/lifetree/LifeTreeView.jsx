@@ -12,9 +12,9 @@ import {
   CardContent,
   CircularProgress,
   Grid,
-  Paper,
   Typography,
 } from '@material-ui/core';
+import MapIcon from '@material-ui/icons/Map';
 // import LifetreePosition from './LifetreePosition';
 
 const useStyles = makeStyles((theme) => ({
@@ -92,7 +92,7 @@ export default function LifetreeView({ id }) {
                 },
               }}
             >
-              <Button color="primary" variant="contained">
+              <Button color="primary" variant="text" endIcon={<MapIcon />}>
                 Map
               </Button>
             </Link>
