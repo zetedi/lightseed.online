@@ -14,20 +14,29 @@ async function createLove(
   { presentId }: Arguments,
   context: KeystoneContext
 ): Promise<CommentCreateInput> {
-    console.log("LOVE! LOVE! LOVE! LOVE! LOVE! LOVE! LOVE! LOVE! LOVE! LOVE! LOVE! LOVE! LOVE! LOVE! LOVE! LOVE! ")
   const sesh = context.session as Session;
   if (!sesh?.itemId) {
     throw new Error("Who would like to do this?");
   }
-  const now = new Date().toISOString();
-  return await context.lists.Love.createOne({
-    data: {
-      creationTime: now,
-      present: { connect: { id: presentId } },
-      lifeseed: { connect: { id: sesh.itemId } },
-    },
-    resolveFields: false,
+  const love = await context.lists.Love.findMany({
+    where: { lifeseed: { id: sesh.itemId }, present: { id: presentId } },
+    resolveFields: "id",
   });
+  if (love[0]) {
+    await context.lists.Love.deleteOne({
+      id: love[0].id,
+    });
+  } else {
+    const now = new Date().toISOString();
+    return await context.lists.Love.createOne({
+      data: {
+        creationTime: now,
+        present: { connect: { id: presentId } },
+        lifeseed: { connect: { id: sesh.itemId } },
+      },
+      resolveFields: false,
+    });
+  }
 }
 
 export default createLove;
