@@ -67,6 +67,9 @@ const SINGLE_PRESENT_QUERY = gql`
           image
         }
       }
+      loves {
+        id
+      }
       name
     }
   }
@@ -75,6 +78,14 @@ const SINGLE_PRESENT_QUERY = gql`
 const CREATE_COMMENT_MUTATION = gql`
   mutation CREATE_COMMENT_MUTATION($id: ID!, $body: String!) {
     createComment(presentId: $id, body: $body) {
+      id
+    }
+  }
+`;
+
+const CREATE_LOVE_MUTATION = gql`
+  mutation CREATE_LOVE_MUTATION($id: ID!) {
+    createLove(presentId: $id) {
       id
     }
   }
@@ -176,6 +187,21 @@ export default function Post({ present, page }) {
     awaitRefetchQueries: true,
   });
 
+  const [createLove] = useMutation(CREATE_LOVE_MUTATION, {
+    variables: {
+      id: present.id,
+    },
+    refetchQueries: [
+      {
+        query: SINGLE_PRESENT_QUERY,
+        variables: {
+          id: present.id,
+        },
+      },
+    ],
+    awaitRefetchQueries: true,
+  });
+
   return (
     <>
       <Box style={{ position: 'relative', maxWidth: 350 }}>
@@ -207,8 +233,25 @@ export default function Post({ present, page }) {
           </CardContent>
 
           <CardActions disableSpacing>
-            <IconButton aria-label="add to favorites">
-              <FavoriteIcon />
+            <IconButton
+              aria-label="love"
+              onClick={() => {
+                createLove().catch((err) => alert(err.message));
+              }}
+            >
+              <Badge badgeContent={present.loves?.length} color="secondary">
+                {lifeseed ? (
+                  present.loves?.find(
+                    (love) => love.lifeseed.id === lifeseed.id
+                  ) ? (
+                    <FavoriteIcon color="secondary" style={{ color: 'red' }} />
+                  ) : (
+                    <FavoriteIcon />
+                  )
+                ) : (
+                  <FavoriteIcon />
+                )}
+              </Badge>
             </IconButton>
             <Tooltip title="Comment on post">
               <IconButton

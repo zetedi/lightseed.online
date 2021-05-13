@@ -29,15 +29,6 @@ export const Lifetree = list({
       },
     }),
     image: text({ isRequired: false }),
-    photo: relationship({
-      ref: 'LifetreeImage.lifetree',
-      ui: {
-        displayMode: 'cards',
-        cardFields: ['image', 'altText'],
-        inlineCreate: { fields: ['image', 'altText'] },
-        inlineEdit: { fields: ['image', 'altText'] },
-      },
-    }),
     status: select({
       options: [
         {

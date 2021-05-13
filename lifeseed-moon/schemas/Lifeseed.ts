@@ -25,7 +25,6 @@ export const Lifeseed = list({
         itemView: { fieldMode: 'read' },
       },
     }),
-    packages: relationship({ ref: 'Package.lifeseed', many: true }),
     role: relationship({
       ref: 'Role.assignedTo',
       access: {
@@ -33,8 +32,10 @@ export const Lifeseed = list({
         update: permissions.canManageLifeseeds,
       },
     }),
-    presents: relationship({ ref: 'Present.lifeseed', many: true }),
     comments: relationship({ ref: 'Comment.lifeseed', many: true }),
     lifetree: relationship({ ref: 'Lifetree.lifeseed' }),
+    loves: relationship({ ref: 'Love.lifeseed', many: true }),
+    packages: relationship({ ref: 'Package.lifeseed', many: true }),
+    presents: relationship({ ref: 'Present.lifeseed', many: true }),
   },
 });

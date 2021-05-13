@@ -16,15 +16,6 @@ export const PackageItem = list({
         displayMode: 'textarea',
       },
     }),
-    photo: relationship({
-      ref: 'PresentImage',
-      ui: {
-        displayMode: 'cards',
-        cardFields: ['image', 'altText'],
-        inlineCreate: { fields: ['image', 'altText'] },
-        inlineEdit: { fields: ['image', 'altText'] },
-      },
-    }),
     price: integer(),
     quantity: integer(),
     package: relationship({ ref: 'Package.items' }),

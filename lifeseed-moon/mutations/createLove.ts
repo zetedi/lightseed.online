@@ -7,22 +7,21 @@ import { CommentCreateInput } from "../.keystone/schema-types";
 
 interface Arguments {
   presentId: string;
-  body: string;
 }
 
-async function createComment(
+async function createLove(
   root: any,
-  { presentId, body }: Arguments,
+  { presentId }: Arguments,
   context: KeystoneContext
 ): Promise<CommentCreateInput> {
+    console.log("LOVE! LOVE! LOVE! LOVE! LOVE! LOVE! LOVE! LOVE! LOVE! LOVE! LOVE! LOVE! LOVE! LOVE! LOVE! LOVE! ")
   const sesh = context.session as Session;
   if (!sesh?.itemId) {
     throw new Error("Who would like to do this?");
   }
   const now = new Date().toISOString();
-  return await context.lists.Comment.createOne({
+  return await context.lists.Love.createOne({
     data: {
-      body: body,
       creationTime: now,
       present: { connect: { id: presentId } },
       lifeseed: { connect: { id: sesh.itemId } },
@@ -31,4 +30,4 @@ async function createComment(
   });
 }
 
-export default createComment;
+export default createLove;

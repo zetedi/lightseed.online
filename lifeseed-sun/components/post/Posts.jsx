@@ -28,6 +28,12 @@ export const ALL_PRESENTS_QUERY = gql`
           }
         }
       }
+      loves {
+        id
+        lifeseed {
+          id
+        }
+      }
       creationTime
       id
       lifeseed {

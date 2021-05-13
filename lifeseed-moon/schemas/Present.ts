@@ -22,16 +22,8 @@ export const Present = list({
       },
     }),
     comments: relationship({ ref: 'Comment.present', many: true }),
+    loves: relationship({ ref: 'Love.present', many: true }),
     image: text({ isRequired: false }),
-    photo: relationship({
-      ref: 'PresentImage.present',
-      ui: {
-        displayMode: 'cards',
-        cardFields: ['image', 'altText'],
-        inlineCreate: { fields: ['image', 'altText'] },
-        inlineEdit: { fields: ['image', 'altText'] },
-      },
-    }),
     creationTime: text({ isRequired: true }),
     status: select({
       options: [

@@ -5,9 +5,9 @@ import {
   statelessSessions,
 } from '@keystone-next/keystone/session';
 import { Present } from './schemas/Present';
-import { PresentImage } from './schemas/PresentImage';
-import { LifetreeImage } from './schemas/LifetreeImage';
+import { CloudinaryImage } from './schemas/CloudinaryImage';
 import { Lifeseed } from './schemas/Lifeseed';
+import { Love } from './schemas/Love';
 import { Role } from './schemas/Role';
 import { Lifetree } from './schemas/Lifetree';
 import { Comment } from './schemas/Comment';
@@ -64,17 +64,16 @@ export default withAuth(
       Comment,
       Lifeseed,
       Lifetree,
-      LifetreeImage,
+      CloudinaryImage,
+      Love,
       Package,
       PackageItem,
       Present,
-      PresentImage,
       Role,
     }),
     extendGraphqlSchema,
     ui: {
-      isAccessAllowed: ({ session }) =>
-        !!session?.data,
+      isAccessAllowed: ({ session }) => !!session?.data,
     },
     session: withItemData(statelessSessions(sessionConfig), {
       Lifeseed: `id name email role { ${permissionsList.join(' ')}}`,
