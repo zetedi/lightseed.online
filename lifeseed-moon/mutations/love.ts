@@ -9,7 +9,7 @@ interface Arguments {
   presentId: string;
 }
 
-async function createLove(
+async function love(
   root: any,
   { presentId }: Arguments,
   context: KeystoneContext
@@ -39,4 +39,4 @@ async function createLove(
   }
 }
 
-export default createLove;
+export default love;

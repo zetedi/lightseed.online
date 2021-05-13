@@ -83,9 +83,9 @@ const CREATE_COMMENT_MUTATION = gql`
   }
 `;
 
-const CREATE_LOVE_MUTATION = gql`
-  mutation CREATE_LOVE_MUTATION($id: ID!) {
-    createLove(presentId: $id) {
+const LOVE_MUTATION = gql`
+  mutation LOVE_MUTATION($id: ID!) {
+    love(presentId: $id) {
       id
     }
   }
@@ -187,7 +187,7 @@ export default function Post({ present, page }) {
     awaitRefetchQueries: true,
   });
 
-  const [createLove] = useMutation(CREATE_LOVE_MUTATION, {
+  const [love] = useMutation(LOVE_MUTATION, {
     variables: {
       id: present.id,
     },
@@ -236,7 +236,7 @@ export default function Post({ present, page }) {
             <IconButton
               aria-label="love"
               onClick={() => {
-                createLove().catch((err) => alert(err.message));
+                love().catch((err) => alert(err.message));
               }}
             >
               <Badge badgeContent={present.loves?.length} color="secondary">
