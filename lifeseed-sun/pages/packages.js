@@ -22,11 +22,6 @@ const LIFESEED_PACKAGES_QUERY = gql`
         body
         price
         quantity
-        photo {
-          image {
-            publicUrlTransformed
-          }
-        }
       }
     }
   }
@@ -106,7 +101,7 @@ export default function PackagesPage() {
                   {ipackage.items.map((item) => (
                     <img
                       key={`image-${item.id}`}
-                      src={item.photo.image.publicUrlTransformed}
+                      src={item.image}
                       alt={item.name}
                     />
                   ))}

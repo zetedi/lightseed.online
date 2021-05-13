@@ -6,33 +6,11 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import { perPage } from '../../config';
 import Present from './Present';
 import { useLifeseed } from '../admin/useLifeseed';
-
-export const ALL_PRESENTS_QUERY = gql`
-  query ALL_PRESENTS_QUERY($skip: Int = 0, $first: Int) {
-    allPresents(
-      first: $first
-      skip: $skip
-      where: { type: "OFFER" }
-      orderBy: "creationTime_DESC"
-    ) {
-      body
-      creationTime
-      id
-      image
-      lifeseed {
-        lifetree {
-          image
-        }
-      }
-      name
-      price
-    }
-  }
-`;
+import { ALL_PRESENTS_QUERY } from '../common/PresentMutations';
 
 export const ALL_PRESENTS_QUERY_LIGHT = gql`
-  query ALL_PRESENTS_QUERY_LIGHT($skip: Int = 0, $first: Int) {
-    allPresents(first: $first, skip: $skip, where: { type: "OFFER" }) {
+  query ALL_PRESENTS_QUERY_LIGHT($skip: Int = 0, $first: Int, $type: String) {
+    allPresents(first: $first, skip: $skip, where: { type: $type }) {
       body
       creationTime
       id
@@ -59,6 +37,7 @@ export default function Presents({ page }) {
       variables: {
         skip: page * perPage - perPage,
         first: perPage,
+        type: 'OFFER',
       },
     }
   );

@@ -1,7 +1,5 @@
 import { useMutation } from '@apollo/client';
-import { useRouter } from 'next/dist/client/router';
 import Head from 'next/head';
-import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -14,36 +12,16 @@ import {
   TextField,
   Typography,
 } from '@material-ui/core';
-import gql from 'graphql-tag';
 import Router from 'next/router';
 import { makeStyles } from '@material-ui/core/styles';
 import useForm from '../../lib/useForm';
 import DisplayError from '../utils/ErrorMessage';
-import { ALL_PRESENTS_QUERY } from './Posts';
 import { perPage } from '../../config';
 import { PAGINATION_QUERY } from '../utils/Pagination';
-
-const CREATE_PRESENT_MUTATION = gql`
-  mutation CREATE_PRESENT_MUTATION(
-    $name: String!
-    $body: String!
-    $creationTime: String!
-  ) {
-    createPresent(
-      data: {
-        body: $body
-        creationTime: $creationTime
-        name: $name
-        status: "AVAILABLE"
-        type: "MESSAGE"
-      }
-    ) {
-      id
-      name
-      body
-    }
-  }
-`;
+import {
+  CREATE_PRESENT_MUTATION,
+  ALL_PRESENTS_QUERY,
+} from '../common/PresentMutations';
 
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
@@ -62,7 +40,7 @@ export default function PostCreate() {
   const [createPresent, { data, error, loading }] = useMutation(
     CREATE_PRESENT_MUTATION,
     {
-      variables: { ...inputs, creationTime: now },
+      variables: { ...inputs, creationTime: now, type: 'MESSAGE' },
       refetchQueries: [
         {
           query: ALL_PRESENTS_QUERY,

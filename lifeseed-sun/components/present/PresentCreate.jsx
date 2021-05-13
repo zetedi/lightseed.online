@@ -19,36 +19,12 @@ import { makeStyles } from '@material-ui/core/styles';
 import useForm from '../../lib/useForm';
 import CloudinaryImage from '../utils/CloudinaryImage';
 import DisplayError from '../utils/ErrorMessage';
-import { ALL_PRESENTS_QUERY } from './Presents';
+import {
+  ALL_PRESENTS_QUERY,
+  CREATE_PRESENT_MUTATION,
+} from '../common/PresentMutations';
 import { PAGINATION_QUERY } from '../utils/Pagination';
 import { perPage } from '../../config';
-
-const CREATE_PRESENT_MUTATION = gql`
-  mutation CREATE_PRESENT_MUTATION(
-    $name: String!
-    $body: String!
-    $price: Int!
-    $image: String
-    $creationTime: String!
-  ) {
-    createPresent(
-      data: {
-        body: $body
-        creationTime: $creationTime
-        image: $image
-        name: $name
-        price: $price
-        status: "AVAILABLE"
-        type: "OFFER"
-      }
-    ) {
-      id
-      price
-      name
-      body
-    }
-  }
-`;
 
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
@@ -70,7 +46,7 @@ export default function PresentCreate() {
   const [createPresent, { data, error, loading }] = useMutation(
     CREATE_PRESENT_MUTATION,
     {
-      variables: { ...inputs, image, creationTime: now },
+      variables: { ...inputs, image, creationTime: now, type: 'OFFER' },
       refetchQueries: [
         {
           query: ALL_PRESENTS_QUERY,

@@ -30,12 +30,6 @@ const LIFETREE_QUERY = gql`
       image
       latitude
       longitude
-      photo {
-        altText
-        image {
-          publicUrlTransformed
-        }
-      }
     }
   }
 `;

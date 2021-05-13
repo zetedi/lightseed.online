@@ -1,17 +1,8 @@
 import Link from 'next/link';
 import { useMutation } from '@apollo/client';
-import gql from 'graphql-tag';
 import { makeStyles } from '@material-ui/core/styles';
-import {
-  Box,
-  Button,
-  Collapse,
-  Dialog,
-  Divider,
-  TextField,
-  Tooltip,
-} from '@material-ui/core';
-import React, { useState, useRef } from 'react';
+import { Box, Button, Dialog, Tooltip } from '@material-ui/core';
+import React, { useState } from 'react';
 import Card from '@material-ui/core/Card';
 import CardHeader from '@material-ui/core/CardHeader';
 import CardContent from '@material-ui/core/CardContent';
@@ -27,69 +18,15 @@ import moment from 'moment';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import clsx from 'clsx';
 import Badge from '@material-ui/core/Badge';
-import ChatIcon from '@material-ui/icons/Chat';
-import { AddCommentSharp } from '@material-ui/icons';
-import { array } from 'prop-types';
+import AddCommentSharp from '@material-ui/icons/AddCommentSharp';
 import { useLifeseed } from '../admin/useLifeseed';
-
-const DELETE_PRESENT_MUTATION = gql`
-  mutation DELETE_PRESENT_MUTATION($id: ID!) {
-    deletePresent(id: $id) {
-      id
-    }
-  }
-`;
-
-const DELETE_COMMENT_MUTATION = gql`
-  mutation DELETE_COMMENT_MUTATION($id: ID!) {
-    deleteComment(id: $id) {
-      id
-    }
-  }
-`;
-
-const SINGLE_PRESENT_QUERY = gql`
-  query SINGLE_PRESENT_QUERY($id: ID!) {
-    present: Present(where: { id: $id }) {
-      body
-      comments {
-        id
-        creationTime
-        body
-        lifeseed {
-          id
-        }
-      }
-      creationTime
-      id
-      lifeseed {
-        lifetree {
-          image
-        }
-      }
-      loves {
-        id
-      }
-      name
-    }
-  }
-`;
-
-const CREATE_COMMENT_MUTATION = gql`
-  mutation CREATE_COMMENT_MUTATION($id: ID!, $body: String!) {
-    createComment(presentId: $id, body: $body) {
-      id
-    }
-  }
-`;
-
-const LOVE_MUTATION = gql`
-  mutation LOVE_MUTATION($id: ID!) {
-    love(presentId: $id) {
-      id
-    }
-  }
-`;
+import CommentPresent from '../common/CommentPresent';
+import {
+  LOVE_MUTATION,
+  SINGLE_PRESENT_QUERY,
+  DELETE_PRESENT_MUTATION,
+  update,
+} from '../common/PresentMutations';
 
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
@@ -130,23 +67,13 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-function update(cache, payload) {
-  cache.evict(cache.identify(payload.data.deletePresent));
-}
-
-function updateComment(cache, payload) {
-  cache.evict(cache.identify(payload.data.deleteComment));
-}
-
-export default function Post({ present, page }) {
+export default function Post({ present }) {
   const { id } = present;
   const lifeseed = useLifeseed();
   const classes = useStyles();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [addCommentExpanded, setAddCommentExpanded] = useState(false);
   const [commentsExpanded, setCommentsExpanded] = useState(false);
-  const [comment, setComment] = useState('');
-  const commentInputRef = useRef(null);
 
   const handleAddCommentClick = () => {
     setAddCommentExpanded(!addCommentExpanded);
@@ -164,38 +91,15 @@ export default function Post({ present, page }) {
     update,
   });
 
-  const [deleteComment] = useMutation(DELETE_COMMENT_MUTATION, {
+  const [love] = useMutation(LOVE_MUTATION, {
     variables: {
       id,
     },
-    updateComment,
-  });
-
-  const [createComment] = useMutation(CREATE_COMMENT_MUTATION, {
-    variables: {
-      id: present.id,
-      body: comment,
-    },
     refetchQueries: [
       {
         query: SINGLE_PRESENT_QUERY,
         variables: {
-          id: present.id,
-        },
-      },
-    ],
-    awaitRefetchQueries: true,
-  });
-
-  const [love] = useMutation(LOVE_MUTATION, {
-    variables: {
-      id: present.id,
-    },
-    refetchQueries: [
-      {
-        query: SINGLE_PRESENT_QUERY,
-        variables: {
-          id: present.id,
+          id,
         },
       },
     ],
@@ -270,7 +174,7 @@ export default function Post({ present, page }) {
               <AddCommentSharp />
             </IconButton>
             <IconButton
-              aria-label="share"
+              aria-label="delete"
               disabled={loading}
               variant="outlined"
               onClick={() => {
@@ -290,109 +194,12 @@ export default function Post({ present, page }) {
               <ExpandMoreIcon />
             </IconButton>
           </CardActions>
-          <Collapse in={addCommentExpanded} timeout="auto" unmountOnExit>
-            <form>
-              <Box style={{ margin: '.75rem', position: 'relative' }}>
-                <TextField
-                  id="outlined-basic"
-                  label="Comment"
-                  variant="outlined"
-                  placeholder=""
-                  multiline
-                  rows={3}
-                  type="text"
-                  name="comment"
-                  value={comment}
-                  onChange={(event) => setComment(event.target.value)}
-                  ref={commentInputRef}
-                  style={{
-                    // position: 'absolute',
-                    // top: '1rem',
-                    marginBottom: '.875rem',
-                    width: '100%',
-                  }}
-                />
-                <Box display="flex" justifyContent="flex-end">
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    disabled={comment.trim() === ''}
-                    onClick={() => {
-                      createComment().catch((err) => alert(err.message));
-                      setComment('');
-                    }}
-                    style={{
-                      height: '1.75rem',
-                      marginBottom: '.15rem',
-                      fontWeight: '200',
-                    }}
-                    size="small"
-                  >
-                    Discuss
-                  </Button>
-                </Box>
-              </Box>
-            </form>
-          </Collapse>
-          <Collapse in={commentsExpanded} timeout="auto" unmountOnExit>
-            <Divider style={{ margin: '.3rem .7rem' }} />
-
-            {present?.comments
-              ?.slice()
-              .reverse()
-              .map((comment) => (
-                <Box
-                  key={comment.id}
-                  style={{
-                    display: 'grid',
-                    justifyContent: 'space-between',
-                    gridTemplateColumns: '1fr 5fr 1fr',
-                    margin: '.3rem',
-                    marginLeft: '.3rem',
-                    marginRight: '.3rem',
-                    borderRadius: '4px',
-                    backgroundColor: '#fafafa',
-                  }}
-                >
-                  <Avatar
-                    aria-label="recipe"
-                    className={classes.avatar}
-                    style={{ margin: '.3rem', transform: 'scale(0.8)' }}
-                  >
-                    <img
-                      src={comment.lifeseed?.lifetree?.image}
-                      style={{ height: '100%' }}
-                    />
-                  </Avatar>
-                  <Box
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'left',
-                      margin: '.2rem',
-                    }}
-                  >
-                    <Typography variant="body2" paragraph>
-                      {comment.body}
-                    </Typography>
-                    <Typography variant="h5">
-                      {moment(comment.creationTime).fromNow()}
-                    </Typography>
-                  </Box>
-                  {lifeseed && lifeseed.id === comment?.lifeseed?.id && (
-                    <IconButton
-                      size="small"
-                      style={{ margin: 'auto', transform: 'scale(0.8)' }}
-                      onClick={() => {
-                        deleteComment(comment.id);
-                      }}
-                    >
-                      <DeleteOutlineIcon />
-                    </IconButton>
-                  )}
-                </Box>
-              ))}
-          </Collapse>
+          <CommentPresent
+            commentsExpanded={commentsExpanded}
+            addCommentExpanded={addCommentExpanded}
+            present={present}
+            lifeseed={lifeseed}
+          />
         </Card>
       </Box>
       <Dialog open={confirmOpen} fullWidth>

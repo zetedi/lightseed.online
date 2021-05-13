@@ -1,50 +1,10 @@
 import { useQuery } from '@apollo/client';
 import { makeStyles } from '@material-ui/core/styles';
-import gql from 'graphql-tag';
 import { Grid } from '@material-ui/core';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { perPage } from '../../config';
 import Post from './Post';
-
-// allPresents(first: $first, skip: $skip, where: { type: 'MESSAGE' }) {
-
-export const ALL_PRESENTS_QUERY = gql`
-  query ALL_PRESENTS_QUERY($skip: Int = 0, $first: Int) {
-    allPresents(
-      first: $first
-      skip: $skip
-      where: { type: "MESSAGE" }
-      orderBy: "creationTime_DESC"
-    ) {
-      body
-      comments {
-        id
-        creationTime
-        body
-        lifeseed {
-          id
-          lifetree {
-            image
-          }
-        }
-      }
-      loves {
-        id
-        lifeseed {
-          id
-        }
-      }
-      creationTime
-      id
-      lifeseed {
-        lifetree {
-          image
-        }
-      }
-      name
-    }
-  }
-`;
+import { ALL_PRESENTS_QUERY } from '../common/PresentMutations';
 
 const useStyles = makeStyles((theme) => ({
   ...theme.customTheme,
@@ -59,6 +19,7 @@ export default function Presents({ page }) {
     variables: {
       skip: page * perPage - perPage,
       first: perPage,
+      type: 'MESSAGE',
     },
   });
   if (loading) return <CircularProgress color="inherit" />;
