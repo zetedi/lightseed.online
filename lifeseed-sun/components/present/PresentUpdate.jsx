@@ -8,7 +8,6 @@ import {
   Button,
   CircularProgress,
   Grid,
-  Input,
   LinearProgress,
   Card,
   CardActions,
@@ -18,6 +17,7 @@ import {
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import Router from 'next/router';
+import { ArrowBack } from '@material-ui/icons';
 import useForm from '../../lib/useForm';
 import DisplayError from '../utils/ErrorMessage';
 import CloudinaryImage from '../utils/CloudinaryImage';
@@ -116,7 +116,7 @@ export default function PresentUpdate({ id }) {
             >
               Update {inputs.name}
             </Typography>
-            <img className={classes.image} src={image || data.Present.image} />
+            <img className={classes.image} src={image || data.Present?.image} />
             <CardContent>
               <DisplayError error={error} />
               {loading ? (
@@ -172,7 +172,8 @@ export default function PresentUpdate({ id }) {
                     pathname: `/presents`,
                   })
                 }
-                variant="contained"
+                endIcon={<ArrowBack />}
+                variant="text"
               >
                 Back
               </Button>
