@@ -248,7 +248,6 @@ export default function Present({ present }) {
             </Link>
             <IconButton
               disabled={loading}
-              endIcon={<AddShoppingCartIcon />}
               variant="outlined"
               onClick={addToBasket}
             >

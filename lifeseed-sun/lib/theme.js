@@ -390,6 +390,17 @@ const theme = createMuiTheme({
       textAlign: 'center',
       color: '#272727',
     },
+    growButton: {
+      fontFamily: 'Lobster, cursive',
+      color: '#fafafa',
+      position: 'absolute',
+      right: '7%',
+      bottom: '10%',
+      cursor: 'pointer',
+      textAlign: 'center',
+      fontSize: '3rem',
+      textShadow: '2px 2px 7px #004943',
+    },
   },
 });
 

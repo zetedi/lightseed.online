@@ -15,6 +15,7 @@ import {
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import Router from 'next/router';
+import { ArrowBack, BackspaceOutlined } from '@material-ui/icons';
 import useForm from '../../lib/useForm';
 import DisplayError from '../utils/ErrorMessage';
 import CloudinaryImage from '../utils/CloudinaryImage';
@@ -197,7 +198,7 @@ export default function UpdateLifetree({ id }) {
                 </Grid>
               )}
             </CardContent>
-            <CardActions disableSpacing>
+            <CardActions disableSpacing style={{ position: 'relative' }}>
               <Button
                 color="primary"
                 onClick={() =>
@@ -205,29 +206,16 @@ export default function UpdateLifetree({ id }) {
                     pathname: `/lifetree/${id}`,
                   })
                 }
-                style={{
-                  paddingRight: '1.4rem',
-                  borderTopRightRadius: '50%',
-                  borderBottomRightRadius: '50%',
-                  boxShadow: '3px 3px 3px yellow',
-                }}
-                variant="contained"
+                endIcon={<ArrowBack />}
+                variant="text"
               >
                 Back
               </Button>
               <Button
-                color="primary"
                 type="submit"
-                style={{
-                  marginLeft: 'auto',
-                  paddingLeft: '1.4rem',
-                  borderTopLeftRadius: '50%',
-                  borderBottomLeftRadius: '50%',
-                  boxShadow: '3px 3px 3px yellow',
-                }}
-                variant="contained"
+                style={{ right: '7%', bottom: '10%', position: 'absolute' }}
               >
-                Save
+                <Box className={classes.growButton}>grow</Box>
               </Button>
             </CardActions>
           </Card>

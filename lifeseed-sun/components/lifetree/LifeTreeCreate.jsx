@@ -152,24 +152,12 @@ export default function CreateLifetree() {
                 </Grid>
               )}
             </CardContent>
-            <CardActions disableSpacing>
-              {/* <Button
-                color="primary"
-                onClick={() =>
-                  Router.push({
-                    pathname: `/lifetree/${id}`,
-                  })
-                }
-              >
-                Back
-              </Button> */}
+            <CardActions disableSpacing style={{ position: 'relative' }}>
               <Button
-                color="primary"
                 type="submit"
-                style={{ marginLeft: 'auto' }}
-                variant="contained"
+                style={{ right: '7%', bottom: '10%', position: 'absolute' }}
               >
-                Plant
+                <Box className={classes.growButton}>grow</Box>
               </Button>
             </CardActions>
           </Card>

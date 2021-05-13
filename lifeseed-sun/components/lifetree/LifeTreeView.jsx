@@ -77,7 +77,7 @@ export default function LifetreeView({ id }) {
             /> */}
             </Grid>
           </CardContent>
-          <CardActions disableSpacing>
+          <CardActions disableSpacing style={{ position: 'relative' }}>
             <Link
               href={{
                 pathname: '/map',
@@ -98,13 +98,7 @@ export default function LifetreeView({ id }) {
                 },
               }}
             >
-              <Button
-                color="primary"
-                style={{ marginLeft: 'auto' }}
-                variant="contained"
-              >
-                Grow
-              </Button>
+              <Box className={classes.growButton}>grow</Box>
             </Link>
           </CardActions>
         </Card>

@@ -112,7 +112,7 @@ export default function Basket() {
           Basket
         </Box>
         <IconButton aria-label="closebasket" onClick={closeBasket}>
-          <CloseIcon fontSize="normal" />
+          <CloseIcon />
         </IconButton>
       </header>
       <Box style={{ minWidth: '30vw' }}>
