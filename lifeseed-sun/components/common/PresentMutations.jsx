@@ -14,7 +14,7 @@ export const CREATE_PRESENT_MUTATION = gql`
     $name: String!
     $body: String!
     $creationTime: String!
-    $price: Int!
+    $price: Int
   ) {
     createPresent(
       data: {

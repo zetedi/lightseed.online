@@ -19,7 +19,7 @@ export default function Presents({ page }) {
     variables: {
       skip: page * perPage - perPage,
       first: perPage,
-      type: 'MESSAGE',
+      type: 'POST',
     },
   });
   if (loading) return <CircularProgress color="inherit" />;

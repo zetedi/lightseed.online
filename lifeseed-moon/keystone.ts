@@ -10,7 +10,6 @@ import { Lifeseed } from './schemas/Lifeseed';
 import { Love } from './schemas/Love';
 import { Role } from './schemas/Role';
 import { Lifetree } from './schemas/Lifetree';
-import { Comment } from './schemas/Comment';
 import { BasketItem } from './schemas/BasketItem';
 import { PackageItem } from './schemas/PackageItem';
 import { Package } from './schemas/Package';
@@ -61,7 +60,6 @@ export default withAuth(
     },
     lists: createSchema({
       BasketItem,
-      Comment,
       Lifeseed,
       Lifetree,
       CloudinaryImage,

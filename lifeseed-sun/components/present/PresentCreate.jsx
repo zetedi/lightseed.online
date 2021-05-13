@@ -53,6 +53,7 @@ export default function PresentCreate() {
           variables: {
             skip: 0,
             first: perPage,
+            type: 'OFFER',
           },
         },
         {

@@ -15,13 +15,14 @@ export const Present = list({
     },
   },
   fields: {
-    name: text({ isRequired: true }),
+    name: text({ isRequired: false }),
     body: text({
       ui: {
         displayMode: 'textarea',
       },
     }),
-    comments: relationship({ ref: 'Comment.present', many: true }),
+    comment: relationship({ ref: 'Present.comments' }),
+    comments: relationship({ ref: 'Present.comment', many: true }),
     loves: relationship({ ref: 'Love.present', many: true }),
     image: text({ isRequired: false }),
     creationTime: text({ isRequired: true }),
@@ -53,11 +54,15 @@ export const Present = list({
           value: 'OFFER',
         },
         {
-          label: 'Message',
-          value: 'MESSAGE',
+          label: 'Post',
+          value: 'POST',
+        },
+        {
+          label: 'Comment',
+          value: 'COMMENT',
         },
       ],
-      defaultValue: 'MESSAGE',
+      defaultValue: 'POST',
       ui: {
         displayMode: 'segmented-control',
         createView: { fieldMode: 'hidden' },

@@ -32,7 +32,7 @@ const useStyles = makeStyles((theme) => ({
 export default function Pagination({ page, type }) {
   const classes = useStyles();
   const { error, loading, data } = useQuery(PAGINATION_QUERY, {
-    variables: { type: type === 'posts' ? 'MESSAGE' : 'OFFER' },
+    variables: { type: type === 'posts' ? 'POST' : 'OFFER' },
   });
   if (loading) return <CircularProgress />;
   if (error) return <DisplayError error={error} />;

@@ -40,18 +40,19 @@ export default function PostCreate() {
   const [createPresent, { data, error, loading }] = useMutation(
     CREATE_PRESENT_MUTATION,
     {
-      variables: { ...inputs, creationTime: now, type: 'MESSAGE' },
+      variables: { ...inputs, creationTime: now, type: 'POST' },
       refetchQueries: [
         {
           query: ALL_PRESENTS_QUERY,
           variables: {
             skip: 0,
             first: perPage,
+            type: 'POST',
           },
         },
         {
           query: PAGINATION_QUERY,
-          variables: { type: 'MESSAGE' },
+          variables: { type: 'POST' },
         },
       ],
       awaitRefetchQueries: true,

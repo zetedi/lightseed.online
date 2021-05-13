@@ -32,7 +32,6 @@ export const Lifeseed = list({
         update: permissions.canManageLifeseeds,
       },
     }),
-    comments: relationship({ ref: 'Comment.lifeseed', many: true }),
     lifetree: relationship({ ref: 'Lifetree.lifeseed' }),
     loves: relationship({ ref: 'Love.lifeseed', many: true }),
     packages: relationship({ ref: 'Package.lifeseed', many: true }),
