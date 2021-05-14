@@ -3,7 +3,6 @@ import addToBasket from './addToBasket';
 import checkout from './checkout';
 import love from './love';
 import createComment from './createComment';
-import deleteComment from './deleteComment';
 
 const graphql = String.raw;
 export const extendGraphqlSchema = graphQLSchemaExtension({
@@ -20,7 +19,6 @@ export const extendGraphqlSchema = graphQLSchemaExtension({
     Mutation: {
       addToBasket,
       createComment,
-      deleteComment,
       love,
       checkout,
     },

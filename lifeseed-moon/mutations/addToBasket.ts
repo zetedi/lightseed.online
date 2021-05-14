@@ -10,7 +10,7 @@ async function addToBasket(
   { presentId }: { presentId: string },
   context: KeystoneContext
 ): Promise<BasketItemCreateInput> {
-  console.log('ADDING TO BASKET!');
+  // console.log('ADDING TO BASKET!');
   // 1. Query the current lifeseed see if they are signed in
   const sesh = context.session as Session;
   if (!sesh.itemId) {
@@ -24,10 +24,10 @@ async function addToBasket(
 
   const [existingBasketItem] = allBasketItems;
   if (existingBasketItem) {
-    console.log(existingBasketItem)
-    console.log(
-      `There are already ${existingBasketItem.quantity}, increment by 1!`
-    );
+    // console.log(existingBasketItem)
+    // console.log(
+    //   `There are already ${existingBasketItem.quantity}, increment by 1!`
+    // );
     // 3. See if the current item is in their basket
     // 4. if itis, increment by 1
     return await context.lists.BasketItem.updateOne({

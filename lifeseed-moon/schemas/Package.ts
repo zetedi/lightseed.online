@@ -7,7 +7,7 @@ import {
 } from '@keystone-next/fields';
 import { list } from '@keystone-next/keystone/schema';
 import { isSignedIn, rules } from '../access';
-import formatMoney from '../lib/formatMoney';
+import formatPrice from '../lib/formatter';
 
 export const Package = list({
   access: {
@@ -20,7 +20,7 @@ export const Package = list({
     label: virtual({
       graphQLReturnType: 'String',
       resolver(item) {
-        return `${formatMoney(item.total)}`;
+        return `${formatPrice(item.total)}`;
       },
     }),
     total: integer(),

@@ -1,4 +1,4 @@
-import { integer, relationship, select, text } from '@keystone-next/fields';
+import { relationship, select, text } from '@keystone-next/fields';
 import { list } from '@keystone-next/keystone/schema';
 import { isSignedIn, rules } from '../access';
 
@@ -11,14 +11,7 @@ export const Lifetree = list({
   },
   ui: {
     listView: {
-      initialColumns: [
-        'name',
-        'body',
-        'photo',
-        'latitude',
-        'longitude',
-        'status',
-      ],
+      initialColumns: ['name', 'body', 'latitude', 'longitude', 'status'],
     },
   },
   fields: {

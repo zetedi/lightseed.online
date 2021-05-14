@@ -3,7 +3,7 @@ import { KeystoneContext, SessionStore } from "@keystone-next/types";
 import { BasketItem } from "../schemas/BasketItem";
 import { Session } from "../types";
 
-import { CommentCreateInput } from "../.keystone/schema-types";
+import { PresentCreateInput } from "../.keystone/schema-types";
 
 interface Arguments {
   presentId: string;
@@ -13,7 +13,7 @@ async function love(
   root: any,
   { presentId }: Arguments,
   context: KeystoneContext
-): Promise<CommentCreateInput> {
+): Promise<PresentCreateInput> {
   const sesh = context.session as Session;
   if (!sesh?.itemId) {
     throw new Error("Who would like to do this?");

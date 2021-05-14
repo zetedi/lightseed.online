@@ -11,7 +11,7 @@ export const Present = list({
   },
   ui: {
     listView: {
-      initialColumns: ['name', 'body', 'photo', 'price', 'status'],
+      initialColumns: ['name', 'body', 'price', 'status'],
     },
   },
   fields: {

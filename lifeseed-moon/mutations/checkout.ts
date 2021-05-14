@@ -50,7 +50,7 @@ async function checkout(
       }
     `,
   });
-  console.log(lifeseed);
+  // console.log(lifeseed);
   console.dir(lifeseed, { depth: null });
   const basketItems = lifeseed.basket.filter((basketItem) => basketItem.present);
   const amount = basketItems.reduce(function (
@@ -60,7 +60,7 @@ async function checkout(
     return (tally + basketItem.quantity * basketItem.present.price);
   },
   0);
-  console.log(amount);
+  // console.log(amount);
   const charge = await stripeConfig.paymentIntents
     .create({
       amount,
@@ -69,11 +69,11 @@ async function checkout(
       payment_method: token,
     })
     .catch((err) => {
-      console.log(err);
+      // console.log(err);
       throw new Error(err.message);
     });
 
-  console.log(charge);
+  // console.log(charge);
 
   const packageItems = basketItems.map((basketItem) => {
     const packageItem = {

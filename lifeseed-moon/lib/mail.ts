@@ -9,19 +9,13 @@ const transport = createTransport({
   },
 });
 
-function makeANiceEmail(text: string) {
+function emailFrame(text: string) {
   return `
-      <div className="email" style="
-        border: 1px solid black;
-        padding: 20px;
-        font-family: sans-serif;
-        line-height: 2;
-        font-size: 20px;
-      ">
-        <h2>Hello There!</h2>
+      <div className="email" 
+        style="padding: 20px; font-family: sans-serif; line-height: 2; font-size: 1rem;">
+        <h2>Hello,</h2>
         <p>${text}</p>
-  
-        <p>😘, Zon</p>
+        <p>lifeseed.online</p>
       </div>
     `;
 }
@@ -49,9 +43,9 @@ export async function sendPasswordResetEmail(
   const info = (await transport.sendMail({
     to,
     from: 'test@example.com',
-    subject: 'Your password reset token!',
-    html: makeANiceEmail(`Your Password Reset Token is here!
-        <a href="${process.env.FRONTEND_URL}/reset?token=${resetToken}">Click Here to reset</a>
+    subject: 'lifeseed.online password reset token',
+    html: emailFrame(`By clicking the following link you can reset you password.
+        <a href="${process.env.FRONTEND_URL}/reset?token=${resetToken}">Reset password</a>
       `),
   })) as MailResponse;
   if (process.env.MAIL_USER.includes('ethereal.email')) {

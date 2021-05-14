@@ -7,7 +7,7 @@ export const Lifeseed = list({
     create: () => true,
     read: rules.canManageLifeseeds,
     update: rules.canManageLifeseeds,
-    delete: permissions.canManageLifeseeds,
+    delete: rules.canManageLifeseeds,
   },
   ui: {
     hideCreate: (args) => !permissions.canManageLifeseeds(args),
