@@ -66,6 +66,27 @@ export const rules = {
     return { status: 'AVAILABLE' };
   },
 
+  canReadLifetrees({ session }: ListAccessArgs) {
+    if (!isSignedIn({ session })) {
+      return false;
+    }
+    if (permissions.canManageLifetrees({ session })) {
+      return true;
+    }
+
+    return { status: 'ALIVE' };
+  },
+
+  canManageLifetrees({ session }: ListAccessArgs) {
+    if (!isSignedIn({ session })) {
+      return false;
+    }
+    if (permissions.canManageLifetrees({ session })) {
+      return true;
+    }
+    return { lifeseed: { id: session.itemId } };
+  },
+
   canManageLifeseeds({ session }: ListAccessArgs) {
     if (!isSignedIn({ session })) {
       return false;

@@ -1,0 +1,1 @@
+## seeding the database is through creating a user who has a role manager permission

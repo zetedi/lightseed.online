@@ -1,13 +1,13 @@
 import { relationship, select, text } from '@keystone-next/fields';
 import { list } from '@keystone-next/keystone/schema';
-import { isSignedIn, rules } from '../access';
+import { isSignedIn, permissions, rules } from '../access';
 
 export const Lifetree = list({
   access: {
     create: isSignedIn,
-    read: rules.canReadPresents,
-    update: rules.canManagePresents,
-    delete: rules.canManagePresents,
+    read: rules.canReadLifetrees,
+    update: rules.canManageLifetrees,
+    delete: permissions.canManageLifetrees,
   },
   ui: {
     listView: {
