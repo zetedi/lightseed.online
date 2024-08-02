@@ -34,7 +34,7 @@ function App() {
             </CardHeader>
             <CardContent>
               <p className=" w-full text-justify">
-                The purpose of this server and this seed is to bring joy. The
+                The purpose of lightseed is to bring joy. The
                 joy of realizing the bliss of conscious, compassionate, grateful
                 existence by means of creating a portal, a bridge between
                 creator and creation, science and spirituality, virtual and
