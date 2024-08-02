@@ -53,7 +53,7 @@ export function LanguageSwitcher() {
         >
           {value
             ? languages.find((language) => language.value === value)?.label
-            : "Switch language..."}
+            : "Language"}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
