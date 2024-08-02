@@ -1,6 +1,6 @@
 # React + TypeScript + Vite
 
-Firebase deployment: https://www.freecodecamp.org/news/how-to-deploy-a-react-app-with-firebase/
+Firebase deployment: https://www.freecodecamp.org/news/how-to-deploy-a-react-app-with-firebase/ with the change of the build directory being dist.
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
