@@ -70,11 +70,6 @@ export function SubscriptionDialog() {
           />
 
           <DialogFooter className="sm:justify-end">
-            <DialogClose asChild>
-              <Button type="button" variant="secondary">
-                Cancel
-              </Button>
-            </DialogClose>
             <Button
               className="redbutton dark:text-white light:text-black"
               onClick={submitHandler}

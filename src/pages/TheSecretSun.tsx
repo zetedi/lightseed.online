@@ -33,7 +33,7 @@ function TheSecretSun() {
                 &nbsp;&nbsp;The Secret Sun is the third part of the path of
                 lightseed. After planting our intention in our heart, we plant a
                 tree. Then the third part is to plant a seed in the community to
-                fostering a deeper connection with trees. For that a natural
+                foster a deeper connection with trees. For that a natural
                 choice for example is to build a platform, a fountain, a bench,
                 a guild, a bird feeder, a beehive or a piece of art close to the
                 tree together with the members of the community.
@@ -103,7 +103,7 @@ function TheSecretSun() {
                 seventh month, however the last layer of oil on top was soaking
                 in the night of 3/7 and was sealed on that day with Shambo, a
                 powerful shamanic drum. The reason why 37 was central to the
-                symbolism is to emphasize the principles conductive to bodhi:
+                symbolism is to emphasize the principles conducive to bodhi:
               </p>
               <br />
               <p className="text-center w-full text-justify">
@@ -159,11 +159,11 @@ function TheSecretSun() {
                 Assisi, and from there are four stones embedded in the concrete
                 on each corner of the platform. The water contains water from
                 the temple where St. Francis’s final resting place is. The tap
-                was just above it:
+                was just above his chamber.
               </p>
               <br />
               <p className="text-center w-full text-justify">
-                And from an even more overarching path the unmarked corner has a
+                And from an even more overarching perspective the unmarked corner has a
                 flower of life pendant embedded from the temple of Osiris in
                 Abydos, Egypt, where the flower of life symbol appeared the
                 first time.
