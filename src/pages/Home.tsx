@@ -45,7 +45,7 @@ function Home() {
                 vibration, sound and light. It aims to merge us into a common
                 flow for all beings to be liberated, wise, strong, courageous
                 and connected. It is rooted in nonviolence, compassion,
-                generosity, gratitude and love. It is blockchain (truthful),
+                generosity, gratitude and love. It is blockchain (truthfulness),
                 cloud (global, distributed, resilient), ai (for connecting
                 dreams and technology), regen (nature centric) native. It is an
                 inspiration, an impulse towards a quantum leap in consciousness,
