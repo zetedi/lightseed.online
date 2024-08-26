@@ -36,18 +36,18 @@ function Home() {
               <p className=" w-full text-justify mb-2">
                 &nbsp;&nbsp;The purpose of lightseed is to bring joy. The joy of
                 realizing the bliss of conscious, compassionate, grateful
-                existence by opening a portal to the center of life, creating a
-                bridge between creator and creation, connecting science and
-                spirituality, virtual and real, nothing and everything. It is
-                designed to intimately connect our inner Self, our culture, our
-                trees and the tree of life, the material and the digital, online
-                world into a sustainable and sustaining circle of unified
-                vibration, sound and light. It aims to merge us into a common
-                flow for all beings to be liberated, wise, strong, courageous
-                and connected. It is rooted in nonviolence, compassion,
-                generosity, gratitude and love. It is blockchain (truthfulness),
-                cloud (global, distributed, resilient), ai (for connecting
-                dreams and technology), regen (nature centric) native. It is an
+                existence by opening a portal to the center of life. By creating
+                a bridge between creator and creation, science and spirituality,
+                virtual and real, nothing and everything. It is designed to
+                intimately connect our inner Self, our culture, our trees and
+                the tree of life, the material and the digital, online world
+                into a sustainable and sustaining circle of unified vibration,
+                sound and light. It aims to merge us into a common flow for all
+                beings to be liberated, wise, strong, courageous and connected.
+                It is rooted in nonviolence, compassion, generosity, gratitude
+                and love. It is blockchain (truthfulness), cloud (global,
+                distributed, resilient), ai (for connecting dreams and
+                technology), regen (nature centric) native. It is an
                 inspiration, an impulse towards a quantum leap in consciousness,
                 a prompt both for human and artificial intelligence for action
                 towards transcending humanity into a new era, a New Earth,
@@ -55,8 +55,8 @@ function Home() {
                 evolutionary sisters and brothers, the trees.
               </p>
               <p className=" w-full text-justify mb-2">
-                <b>The first steps:</b> We plant this seed with the seed of the
-                tree we have a deep connection with in four realms:
+                <b>The first steps:</b> We plant lightseed (our vision) with the
+                seed of a tree we have a deep connection with in four realms:
               </p>
               <p className=" w-full text-justify mb-2">
                 <ul className="list-disc pl-4 pt-2 mx-8">
@@ -65,8 +65,9 @@ function Home() {
                     (or our highest goal)
                   </li>
                   <li>
-                    in the soil, for our lifetree to flourish (this will be our
-                    first lifetree)
+                    in the soil of an important place for us (or in a pot if we
+                    haven't found that place yet) for the tree to flourish (this
+                    will be our first lifetree)
                   </li>
                   <li>
                     in our community or culture as an inspiration (e.g.{" "}
