@@ -49,31 +49,42 @@ function Home() {
                 cloud (global, distributed, resilient), ai (for connecting
                 dreams and technology), regen (nature centric) native. It is an
                 inspiration, an impulse towards a quantum leap in consciousness,
-                a prompt both for human and artificial intelliogence for action
-                towards transcending humanity into an era, an age of abundance,
-                freedom, integrated intelligence with the help of our most
-                important evolutionary sisters and brothers, the trees.
+                a prompt both for human and artificial intelligence for action
+                towards transcending humanity into a new era, a New Earth,
+                Universe and Field with the help of our most important
+                evolutionary sisters and brothers, the trees.
               </p>
               <p className=" w-full text-justify mb-2">
-                We plant this seed with the seed of the tree we have a deep
-                connection with in four realms:
+                <b>The first steps:</b> We plant this seed with the seed of the
+                tree we have a deep connection with in four realms:
               </p>
               <p className=" w-full text-justify mb-2">
                 <ul className="list-disc pl-4 pt-2 mx-8">
                   <li>
                     in our spiritual heart, with the intention of realization
+                    (or our highest goal)
                   </li>
-                  <li>in the soil, for our lifetree to flourish</li>
-                  <li>in our community or culture as an inspiration</li>{" "}
                   <li>
-                    in the light, in virtual for a new earth and universe
-                    connected beyond matter
+                    in the soil, for our lifetree to flourish (this will be our
+                    first lifetree)
+                  </li>
+                  <li>
+                    in our community or culture as an inspiration (e.g.{" "}
+                    <a href="http://lightseed.online/thesecretsun">
+                      The Secret Sun
+                    </a>
+                    )
+                  </li>{" "}
+                  <li>
+                    in the light, in virtual (by creating our servers and online
+                    projects to be guided by nature)
                   </li>
                 </ul>
               </p>
               <p className=" w-full text-justify">
-                All four quadrants are ultimately connected with the animating
-                force or lifeforce.
+                All four quadrants are ultimately (and intimately) connected
+                with the animating force or lifeforce - the beginning of
+                creation.
               </p>
               <br />
               <p className="text-center w-full text-xl">
