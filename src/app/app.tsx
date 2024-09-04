@@ -8,7 +8,7 @@ import { TailwindIndicator } from "@/components/tailwind-indicator";
 export default function App() {
   return (
     <>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <ThemeProvider defaultTheme="system">
         <div className="relative flex min-h-screen flex-col">
           <div className="flex-1">
             <Routes>
