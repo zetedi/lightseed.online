@@ -10,7 +10,7 @@ export type Icon = LucideIcon
 export const Icons = {
   sun: SunMedium,
   moon: Moon,
-  logo: (props: LucideProps) => (
+  logo: () => (
 
     <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg">
     <path d="M 12, 12 m -10, 0 a 10,10 0 1,0 20,0 a 10,10 0 1,0 -20,0" fill="currentColor"/>
