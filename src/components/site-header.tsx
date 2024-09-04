@@ -3,7 +3,6 @@ import { buttonVariants } from "@/components/ui/button";
 import { Icons } from "@/components/icons";
 import { MainNav } from "@/components/main-nav";
 import { ModeToggle } from "@/components/utils/mode-toggle";
-import { LanguageSwitcher } from "@/components/utils/language-switcher";
 
 export function SiteHeader() {
   return (
@@ -21,7 +20,6 @@ export function SiteHeader() {
               <Icons.gitHub className="h-5 w-5" />
               <span className="sr-only">GitHub</span>
             </div>
-            {/* <LanguageSwitcher /> */}
             <ModeToggle />
           </nav>
         </div>
