@@ -1,21 +1,16 @@
-import {
-  LucideProps,
-  Moon,
-  SunMedium,
-  type Icon as LucideIcon,
-} from "lucide-react"
-
-export type Icon = LucideIcon
+import { LucideProps, Moon, SunMedium } from "lucide-react";
 
 export const Icons = {
   sun: SunMedium,
   moon: Moon,
   logo: () => (
-
     <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg">
-    <path d="M 12, 12 m -10, 0 a 10,10 0 1,0 20,0 a 10,10 0 1,0 -20,0" fill="currentColor"/>
-    <circle cx="12" cy="12" r="1.5" fill="white" />
-  </svg>
+      <path
+        d="M 12, 12 m -10, 0 a 10,10 0 1,0 20,0 a 10,10 0 1,0 -20,0"
+        fill="currentColor"
+      />
+      <circle cx="12" cy="12" r="1.5" fill="white" />
+    </svg>
   ),
   gitHub: (props: LucideProps) => (
     <svg viewBox="0 0 438.549 438.549" {...props}>
@@ -25,4 +20,4 @@ export const Icons = {
       ></path>
     </svg>
   ),
-}
+};
