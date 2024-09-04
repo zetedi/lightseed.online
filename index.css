@@ -151,3 +151,21 @@ body {
   justify-content: center;
   width: 100%;
 }
+
+.outerCircle {
+  fill: white;
+  stroke: #555;
+  stroke-width: 7;
+}
+
+.circle {
+  fill: none;
+  stroke: #555;
+  stroke-width: .7;
+}
+
+.innerCircle {
+  fill: white;
+  stroke: #555;
+  stroke-width: 3;
+}

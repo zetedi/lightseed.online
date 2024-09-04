@@ -1,14 +1,12 @@
-import { ThemeProvider } from "@/components/theme-provider/ThemeProvider";
+import { ThemeProvider } from "@/components/theme-provider";
 import {
   Card,
   CardContent,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Toaster } from "@/components/ui/toaster";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
 
 function TheSecretSun() {
   return (
@@ -21,7 +19,7 @@ function TheSecretSun() {
                 <img
                   src="tss.jpg"
                   alt="The Secret Sun"
-                  width="90%"
+                  width="50%"
                   className="pb-8 rounded-md"
                 />
                 <br />
@@ -170,13 +168,6 @@ function TheSecretSun() {
               </p>
               <br />
             </CardContent>
-            <CardFooter>
-              <p className="text-center">
-                <Button>
-                  <Link to="/">Home</Link>
-                </Button>
-              </p>
-            </CardFooter>
           </Card>
         </div>
       </div>
