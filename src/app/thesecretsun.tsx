@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/card";
 import { Toaster } from "@/components/ui/toaster";
 import { Button } from "@/components/ui/button";
+import { TssImageCarousel } from "@/components/carousel/tss-carousel";
 
 function TheSecretSun() {
   return (
@@ -16,14 +17,8 @@ function TheSecretSun() {
           <Card className="dark:bg-black light:text-black dark:text-white">
             <CardHeader>
               <CardTitle className="centered-holder">
-                <img
-                  src="tss.jpg"
-                  alt="The Secret Sun"
-                  width="50%"
-                  className="pb-8 rounded-md"
-                />
-                <br />
-                <p className="text-center w-full md:text-5xl">The Secret Sun</p>
+                <TssImageCarousel />
+                <p className="text-center w-full md:text-5xl mt-2">The Secret Sun</p>
               </CardTitle>
             </CardHeader>
             <CardContent>

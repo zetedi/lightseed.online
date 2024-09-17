@@ -3,6 +3,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Icons } from "@/components/icons";
 import { MainNav } from "@/components/main-nav";
 import { ModeToggle } from "@/components/utils/mode-toggle";
+import { DotMenu } from "@/components/utils/nav/dot-menu";
 
 export function SiteHeader() {
   return (
@@ -21,6 +22,7 @@ export function SiteHeader() {
               <span className="sr-only">GitHub</span>
             </div>
             <ModeToggle />
+            <DotMenu />
           </nav>
         </div>
       </div>
