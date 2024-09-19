@@ -8,26 +8,26 @@ import {
 import { Toaster } from "@/components/ui/toaster";
 import { SubscriptionDialog } from "@/components/newsletter/subscription-dialog";
 
-
 function Home() {
   return (
     <div>
       <div className="tree">
-
         <div id="lifeseed-holder" className="centered-holder">
-          <div className="lifeseed " />
+          <div id="lifeseed-holder" className="centered-holder">
+            <div className="lifeseed " />
+          </div>
         </div>
 
         <Card className="dark:bg-black light:text-black dark:text-white">
           <CardHeader>
             <CardTitle>
-              <p className="text-center w-full text-5xl">lightseed</p>
+              <p className="text-center w-full text-4xl">live light</p>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className=" w-full text-justify mb-2">
-              &nbsp;&nbsp;The purpose of lightseed is to bring joy. The joy of
-              realizing the bliss of conscious, compassionate, grateful
+              &nbsp;&nbsp;The purpose of <b>lightseed</b> is to bring joy. The
+              joy of realizing the bliss of conscious, compassionate, grateful
               existence by opening a portal to the center of life. By creating a
               bridge between creator and creation, science and spirituality,
               virtual and real, nothing and everything. It is designed to

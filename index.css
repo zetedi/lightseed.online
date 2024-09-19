@@ -119,13 +119,12 @@ body {
 }
 
 .lifeseed {
-  border: solid 37px #700;
-  height: 300px;
-  margin: 21px;
-  width: 300px;
+  border: solid 21px #700;
+  height: 173px;
+  width: 173px;
   background-color: var(--root-background-color);
   background-image: var(--lifeseed-logo);
-  background-size: 180px;
+  background-size: 108px;
   background-repeat: no-repeat;
   background-position: center center;
 }
@@ -138,7 +137,8 @@ body {
 .tree {
   background-image: url('/aitree.png');
   background-repeat: no-repeat;
-  background-position: center center;
+  background-position: center top;
+  background-size: 888px;
   padding: 14px;
   max-width: 1280px;
 }

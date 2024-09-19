@@ -1,5 +1,5 @@
 import { MoreVertical } from "lucide-react";
-
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -18,10 +18,10 @@ export function DotMenu() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem>The Beginning</DropdownMenuItem>
-        <DropdownMenuItem>Phoenix</DropdownMenuItem>
-        <DropdownMenuItem>The Secret Sun</DropdownMenuItem>
-        <DropdownMenuItem>The Sigil</DropdownMenuItem>
+        <DropdownMenuItem><Link to="/">The Beginning</Link></DropdownMenuItem>
+        <DropdownMenuItem><Link to="/">Phoenix</Link></DropdownMenuItem>
+        <DropdownMenuItem><Link to="/thesecretsun">The Secret Sun</Link></DropdownMenuItem>
+        <DropdownMenuItem><Link to="/">The Sigil</Link></DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
