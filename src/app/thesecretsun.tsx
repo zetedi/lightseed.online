@@ -14,7 +14,7 @@ function TheSecretSun() {
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <div>
         <div className="tree">
-          <Card className="dark:bg-black light:text-black dark:text-white">
+          <Card className="dark:bg-black light:text-black dark:text-white mx-auto p-6 border border-gray-300 shadow-lg rounded-lg">
             <CardHeader>
               <CardTitle className="centered-holder">
                 <TssImageCarousel />

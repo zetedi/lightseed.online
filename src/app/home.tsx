@@ -18,7 +18,7 @@ function Home() {
           </div>
         </div>
 
-        <Card className="dark:bg-black light:text-black dark:text-white">
+        <Card className="dark:bg-black light:text-black dark:text-white mx-auto p-6 border border-gray-300 shadow-lg rounded-lg">
           <CardHeader>
             <CardTitle>
               <p className="text-center w-full text-4xl">live light</p>
@@ -62,9 +62,11 @@ function Home() {
                 </li>
                 <li>
                   in our community or culture as an inspiration (e.g.{" "}
-                  <a href="http://lightseed.online/thesecretsun">
-                    The Secret Sun
-                  </a>
+                  <b>
+                    <a href="http://lightseed.online/thesecretsun">
+                      The Secret Sun
+                    </a>
+                  </b>
                   )
                 </li>{" "}
                 <li>

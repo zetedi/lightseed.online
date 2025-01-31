@@ -2,7 +2,7 @@ import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyDx1zmerwuXi5_jkEIKkIg8il6DTlJiemE",
+    apiKey: import.meta.env.FIREBASE_API_KEY,
     authDomain: "lightseed-online.firebaseapp.com",
     projectId: "lightseed-online",
     storageBucket: "lightseed-online.appspot.com",

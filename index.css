@@ -169,3 +169,7 @@ body {
   stroke: #555;
   stroke-width: 3;
 }
+
+.markdown > * {
+  all: revert;
+}

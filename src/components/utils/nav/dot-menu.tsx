@@ -18,6 +18,7 @@ export function DotMenu() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+      <DropdownMenuItem><Link to="/white">The White Paper</Link></DropdownMenuItem>
         <DropdownMenuItem><Link to="/">The Beginning</Link></DropdownMenuItem>
         <DropdownMenuItem><Link to="/">Phoenix</Link></DropdownMenuItem>
         <DropdownMenuItem><Link to="/thesecretsun">The Secret Sun</Link></DropdownMenuItem>

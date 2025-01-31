@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import TheSecretSun from "@/app/thesecretsun";
+import TheWhitePaper from "@/app/white";
 import Home from "@/app/home";
 import Layout from "@/app/layout";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -16,6 +17,7 @@ export default function App() {
                 <Route index element={<Home />} />
                 <Route path="*" element={<hr />} />
                 <Route path="thesecretsun" element={<TheSecretSun />} />
+                <Route path="white" element={<TheWhitePaper />} />
               </Route>
             </Routes>
           </div>
