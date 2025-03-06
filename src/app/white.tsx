@@ -11,15 +11,15 @@ import remarkGfm from "remark-gfm";
 const whitepaperMarkdown = `
 # Lifetree Network: A Decentralized, Regenerative Economy & Governance Model
 
-The **Lifetree Network** is more than a digital system — it is a living, evolving ecosystem **rooted in the physical world**. Every participant starts by planting a **real tree**, called a **Lifetree**, which becomes their **living connection to the network**.
+The **Lifetree Network** is more than a digital system — it is a living, evolving ecosystem **rooted in the physical world**. It is a **digital mycellium**. Every participant starts by planting a **real tree**, called a **lifetree**, which becomes their **living connection to the network**. 
 
 This is not just symbolic. It is a **practical, biological, and spiritual initiation** into a regenerative system that aligns human intelligence, AI, and ecological cycles. **Your tree is your anchor, your identity, and your contribution to a thriving future**. It is the way to root in the wisdom of trees, the interconnectedness of mycelium, and the regenerative cycles of life itself. Every tree represents a **gateway into a world of reciprocity, wisdom, and co-creation**.
 
 ### Lifetrees as Avatars of a New World
-Each lifetree is both real and digital — planted in the physical world and mirrored in the network as a symbolic representation of its caretaker. As these trees grow, they forge bonds with other lifetrees, forming networks of trust, support, and shared purpose. Identity in this world is fluid, pseudonymity is protected, with layers of transparency unlocking only through trusted interactions. They form forests of communities, creating forests spanning continents.
+Each **lifetree** is both real and digital — planted in the physical world and mirrored in the network as a symbolic representation of its caretaker. As these trees grow, they forge bonds with other lifetrees, forming networks of trust, support, and shared purpose. Identity in this world is fluid, pseudonymity is protected, with layers of transparency unlocking only through trusted interactions. They form forests of communities, creating forests spanning continents.
 
 ### The Economy of the Living, the Economy of Flow
-Traditional monetary systems disconnect value from life and cause hoarding. The Lifetree Network operates on a hybrid model where bartering, teaching, and artistic expression are valued alongside a new regenerative currency: **NetLeaves**. Created when a good is offered, these Leaves are not hoarded, they decay, returning to the roots of the system, ensuring continuous engagement and organic balance. They are the New Earth Token, are a type of demurrage currency, represent real (net) value and are connected to the leaves of real trees. Every action within the Lifetree Network is grounded in real-world impact — caring for your tree, supporting others, and ensuring the regeneration of life itself.
+Traditional monetary systems disconnect value from life and cause hoarding. The Lifetree Network operates on a hybrid model where bartering, teaching, and artistic expression are valued alongside a class of a new regenerative currency: **NetLeaves**. Created when a good is offered, these tokens are not hoarded, they decay, returning to the roots of the system, ensuring continuous engagement and organic balance. They are the **N**ew **E**arth **T**oken, and they are a digital demurrage currency, represent real (net) value and are connected to the leaves of real trees. Every action within the Lifetree Network is grounded in real-world impact — caring for your tree, supporting others, and ensuring the regeneration of life itself.
 
 ### Circular NetLeaves Economy: NetLeaves and Physical Products as Living Systems
 - NetLeaves do not just represent exchange; they carry **a historical record** of the value they create. They circulate based on real acts of reciprocity.
@@ -31,7 +31,7 @@ Traditional monetary systems disconnect value from life and cause hoarding. The 
 - Every physical item created for NetLeaves has an identifier, allowing it to be **followed from creation to recycling**.
 - It is ensured that the physical products are **used, repaired, and ultimately returned to nature or repurposed**.
 - This system **sequesters carbon** by ensuring **products re-enter ecological cycles** rather than accumulating as waste.
-- The network becomes eligible for **carbon credits**, which can be used to **cover costs of goods and services needed from the old money economy**.
+- The network becomes eligible for **carbon credits**, which can be used to **cover costs of goods and services needed from the money economy**.
 
 ### AI as the Mycelial Guide
 In this world, AI is not an overlord but a river of inspiration, whispering the wisdom of the trees. Each Lifetree can opt for AI guidance, receiving multi-step decision-making support based on humanity’s collective knowledge and the needs of the Earth. Dreams and contributions define connections, with **AI facilitating partnerships between lifetrees to bring visions to reality**.
@@ -85,10 +85,11 @@ The Lifetree Network is not bound by rigid structures. It can be restarted at an
 ---
 
 ### Next Steps
-1. **Prototype Development**: Implement the first **AI matchmaking model** at ** at **lifeseed.online**.
+1. **Prototype Development**: Implement a reference node with **AI matchmaking model** at **lifeseed.online**. This node would make it possible to bootstrap an oasis.
 2. **Community Trials**: Create more real-world **mentorship & Lifetree Market offerings**.
 3. **Decentralized Hosting**: Ensure nodes run on **member-powered servers using renewable energy**.
 4. **Global Tree Adoption & Gathering Initiatives**: Encourage selection of **Mother Trees** for real-world activism & connection.
+
 `;
 
 function TheWhitePaper() {
