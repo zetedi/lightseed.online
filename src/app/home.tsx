@@ -26,7 +26,7 @@ function Home() {
           </CardHeader>
           <CardContent>
             <p className=" w-full text-justify mb-2">
-              &nbsp;&nbsp;The purpose of <b>lightseed</b> is to bring joy. The
+              &nbsp;&nbsp;The purpose of <b>lightseed</b> is to bring conscient joy. The
               joy of realizing the bliss of conscious, compassionate, grateful
               existence by opening a portal to the center of life. By creating a
               bridge between creator and creation, science and spirituality,
