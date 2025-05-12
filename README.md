@@ -1,3 +1,9 @@
+# 🌱 lightseed.online
+
+The Lightseed portal — a web interface to plant, interact, and grow visions through trees, rituals, and AI.  
+Built with React + Tailwind + Vite, designed for symbolic interaction, collective creation, and graceful decentralization.
+
+
 # React + TypeScript + Vite
 
 Firebase deployment: https://www.freecodecamp.org/news/how-to-deploy-a-react-app-with-firebase/ with the change of the build directory being dist.
