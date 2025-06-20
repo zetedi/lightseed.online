@@ -22,6 +22,7 @@ export function DotMenu() {
         <DropdownMenuItem><Link to="/">The Beginning</Link></DropdownMenuItem>
         <DropdownMenuItem><Link to="/">Phoenix</Link></DropdownMenuItem>
         <DropdownMenuItem><Link to="/thesecretsun">The Secret Sun</Link></DropdownMenuItem>
+        <DropdownMenuItem><Link to="/photos">Photos</Link></DropdownMenuItem>
         <DropdownMenuItem><Link to="/">The Sigil</Link></DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

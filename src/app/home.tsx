@@ -5,6 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Link } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { SubscriptionDialog } from "@/components/newsletter/subscription-dialog";
 
@@ -15,7 +16,25 @@ function Home() {
         <div id="lifeseed-holder" className="centered-holder">
           <div id="lifeseed-holder" className="centered-holder">
             <div className="lifeseed " />
+            <div className="flex flex-col items-center space-y-2 mt-4">
+              <Link
+                to="/white"
+                className="bg-white text-black p-2 rounded-lg text-center w-full max-w-xs hover:bg-gray-200"
+              >
+                The White Paper
+              </Link>
+              <Link
+                to="/thesecretsun"
+                className="bg-white text-black p-2 rounded-lg text-center w-full max-w-xs hover:bg-gray-200"
+              >
+                The Secret Sun
+              </Link>
+            </div>
           </div>
+        </div>
+
+        <div id="lifeseed-holder" className="centered-holder">
+          <div id="lifeseed-holder" className="centered-holder"></div>
         </div>
 
         <Card className="dark:bg-black light:text-black dark:text-white mx-auto p-6 border border-gray-300 shadow-lg rounded-lg">
@@ -26,7 +45,7 @@ function Home() {
           </CardHeader>
           <CardContent>
             <p className=" w-full text-justify mb-2">
-              &nbsp;&nbsp;The purpose of <b>lightseed</b> is to bring conscient joy. The
+              &nbsp;&nbsp;The purpose of <b>lightseed</b> is to bring joy. The
               joy of realizing the bliss of conscious, compassionate, grateful
               existence by opening a portal to the center of life. By creating a
               bridge between creator and creation, science and spirituality,
