@@ -16,7 +16,7 @@ function Home() {
         <div id="lifeseed-holder" className="centered-holder">
           <div id="lifeseed-holder" className="centered-holder">
             <div className="lifeseed " />
-            <div className="flex flex-col items-center space-y-2 mt-4">
+            <div className="flex flex-col items-center space-y-2 mt-4 m-1">
               <Link
                 to="/white"
                 className="bg-white text-black p-2 rounded-lg text-center w-full max-w-xs hover:bg-gray-200"
