@@ -1,93 +1,97 @@
 @tailwind base;
-  @tailwind components;
-  @tailwind utilities;
+@tailwind components;
+@tailwind utilities;
 
-  @layer base {
-    :root {
-      --background: 0 0% 100%;
-      --foreground: 222.2 84% 4.9%;
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
 
-      --card: 0 0% 100%;
-      --card-foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
 
-      --popover: 0 0% 100%;
-      --popover-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
 
-      --primary: 222.2 47.4% 11.2%;
-      --primary-foreground: 210 40% 98%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
 
-      --secondary: 210 40% 96.1%;
-      --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
 
-      --muted: 210 40% 96.1%;
-      --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
-      --accent: 210 40% 96.1%;
-      --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
 
-      --destructive: 0 84.2% 60.2%;
-      --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
-      --border: 214.3 31.8% 91.4%;
-      --input: 214.3 31.8% 91.4%;
-      --ring: 222.2 84% 4.9%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
 
-      --radius: 0.5rem;
+    --radius: 0.5rem;
 
-      --root-background-color: hsl(0, 20%, 98%);
-      --root-background-image: url('/harmony.svg');
-      --root-background-size: 108px;
+    --root-background-color: hsl(0, 20%, 98%);
+    --root-background-image: url("/harmony.svg");
+    --root-background-size: 108px;
 
-      --lifeseed-logo: url('/lifeseed.svg');
-
-    }
-
-    .dark {
-      --background: 222.2 84% 4.9%;
-      --foreground: 210 40% 98%;
-
-      --card: 222.2 84% 4.9%;
-      --card-foreground: 210 40% 98%;
-
-      --popover: 222.2 84% 4.9%;
-      --popover-foreground: 210 40% 98%;
-
-      --primary: 210 40% 98%;
-      --primary-foreground: 222.2 47.4% 11.2%;
-
-      --secondary: 217.2 32.6% 17.5%;
-      --secondary-foreground: 210 40% 98%;
-
-      --muted: 217.2 32.6% 17.5%;
-      --muted-foreground: 215 20.2% 65.1%;
-
-      --accent: 217.2 32.6% 17.5%;
-      --accent-foreground: 210 40% 98%;
-
-      --destructive: 0 62.8% 30.6%;
-      --destructive-foreground: 210 40% 98%;
-
-      --border: 217.2 32.6% 17.5%;
-      --input: 217.2 32.6% 17.5%;
-      --ring: 212.7 26.8% 83.9%;
-
-      --root-background-color: hsl(0, 20%, 2%);
-      --root-background-image: url('/harmony-dark.svg');
-      --root-background-size: 108px;
-
-      --lifeseed-logo: url('/lifeseed-dark.svg');
-    }
-
+    --lifeseed-logo: url("/lifeseed.svg");
   }
 
-  @layer base {
-    * {
-      @apply border-border;
-    }
-    body {
-      @apply bg-background text-foreground;
-    }
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+
+    --root-background-color: hsl(0, 20%, 2%);
+    --root-background-image: url("/harmony-dark.svg");
+    --root-background-size: 108px;
+
+    --lifeseed-logo: url("/lifeseed-dark.svg");
   }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+*,
+::before,
+::after {
+  box-sizing: border-box;
+}
 
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -97,11 +101,10 @@
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
 
-  font-synthesis: none; 
+  font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
 }
 
 body {
@@ -135,7 +138,7 @@ body {
 }
 
 .tree {
-  background-image: url('/aitree.png');
+  background-image: url("/aitree.png");
   background-repeat: no-repeat;
   background-position: center top;
   background-size: 888px;
@@ -161,7 +164,7 @@ body {
 .circle {
   fill: none;
   stroke: #555;
-  stroke-width: .7;
+  stroke-width: 0.7;
 }
 
 .innerCircle {
@@ -172,4 +175,342 @@ body {
 
 .markdown > * {
   all: revert;
+}
+
+/* Carousel Container */
+.carousel-container {
+  margin-bottom: 30px;
+  border-radius: 8px;
+  overflow: hidden; /* Ensures content (like legends) respects rounded corners */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background: #efefef; /* Optional: A light background for the carousel area itself */
+}
+
+.carousel .slide {
+  background: #fff; /* Or var(--card) */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  text-align: center;
+  padding-top: 10px; /* Default top padding */
+  padding-bottom: 10px; /* Default bottom padding */
+  box-sizing: border-box;
+}
+.dark .carousel .slide {
+  background: #2d3748; /* Or var(--card) from dark theme */
+}
+
+.carousel .slide img {
+  width: 100% !important;
+  height: auto !important;
+  display: block;
+  object-fit: contain;
+  max-height: 75vh; /* ADD THIS: Cap image height relative to viewport height.
+                       Adjust 75vh as needed. Good for preventing very tall
+                       portrait images from taking over the screen. */
+}
+
+.carousel .legend {
+  background-color: rgba(0, 0, 0, 0.75) !important;
+  opacity: 1 !important;
+  font-size: 1em !important; /* Default size, Tailwind: text-base */
+  padding: 10px 12px !important; /* Default padding, approx p-2.5 or p-3 */
+  color: #fff !important;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
+  /* Consider reducing line-height if legend wraps and takes too much space */
+  /* line-height: 1.2; */
+}
+
+.filmstrip-outer-container {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  margin-top: 15px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.filmstrip-gallery-container {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 8px 0;
+  background-color: #333; /* Or your theme variable */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  flex-grow: 1;
+  min-width: 0; /* The critical line */
+}
+.filmstrip-gallery-container::-webkit-scrollbar {
+  display: none;
+}
+
+.filmstrip-thumbnail {
+  flex-grow: 0;
+  flex-shrink: 0;
+  flex-basis: 80px;
+  width: 80px; /* Default: Tailwind w-20 */
+  height: 60px; /* Default: Tailwind h-[60px] or h-15 */
+  margin: 0 4px; /* Tailwind: mx-1 */
+  cursor: pointer;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: border-color 0.2s ease-in-out, opacity 0.2s ease-in-out;
+  opacity: 0.7;
+  position: relative;
+}
+
+.filmstrip-thumbnail:first-child {
+  margin-left: 8px; /* Space from the edge if no left arrow, or from the left arrow */
+}
+.filmstrip-thumbnail:last-child {
+  margin-right: 8px; /* Space from the edge if no right arrow, or from the right arrow */
+}
+
+.filmstrip-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.filmstrip-thumbnail:hover {
+  opacity: 1;
+  border-color: #888;
+}
+
+.filmstrip-thumbnail.active {
+  border-color: #007bff;
+  opacity: 1;
+  box-shadow: 0 0 8px rgba(0, 123, 255, 0.7);
+}
+
+.filmstrip-thumbnail:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 1px;
+  opacity: 1;
+}
+
+/* Filmstrip Navigation Arrows */
+.filmstrip-arrow {
+  background-color: rgba(
+    51,
+    51,
+    51,
+    0.9
+  ); /* Match filmstrip bg, slightly more opaque */
+  color: #fff;
+  border: none;
+  /* padding: 10px 8px; Height is now controlled by align-items: stretch */
+  padding-left: 8px; /* Horizontal padding for the arrow character */
+  padding-right: 8px;
+  cursor: pointer;
+  font-size: 1.5em;
+  line-height: 1; /* Helps center the arrow character if font-size is large */
+  z-index: 10;
+  /* height: 100%; REMOVE THIS - align-items: stretch will handle it */
+  display: flex; /* Use flex to center the arrow character within the button */
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+  flex-shrink: 0; /* Prevent arrows from shrinking */
+}
+
+.filmstrip-arrow:hover {
+  background-color: rgba(0, 0, 0, 0.9);
+}
+
+.filmstrip-arrow:focus {
+  outline: 1px solid #007bff;
+  /* outline-offset: -1px; Optional: if outline appears outside rounded corners */
+}
+
+.filmstrip-arrow.left {
+  border-top-left-radius: 6px;
+  border-bottom-left-radius: 6px;
+  /* No margin needed if they are direct children of the flex container */
+}
+
+.filmstrip-arrow.right {
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+}
+
+.filmstrip-gallery-container.radius-left {
+  border-top-left-radius: 6px;
+  border-bottom-left-radius: 6px;
+}
+.filmstrip-gallery-container.radius-right {
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+}
+
+.filmstrip-arrow.left {
+  border-top-left-radius: 6px;
+  border-bottom-left-radius: 6px;
+}
+
+.filmstrip-arrow.right {
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 767px) {
+  .carousel .legend {
+    font-size: 0.8em !important; /* Tailwind: text-xs or text-sm */
+    padding: 6px 8px !important; /* Tailwind: p-1.5 or p-2 */
+  }
+
+  .carousel .slide {
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+
+  .carousel .slide img {
+    max-height: 70vh; /* Slightly smaller max-height for images on mobile */
+  }
+
+  .contact-button {
+    font-size: 1em;
+    padding: 10px 20px;
+  }
+
+  #pcc {
+    overflow-x: hidden;
+  }
+
+  .filmstrip-outer-container {
+    max-width: 280px;
+    margin-left: auto !important; 
+    margin-right: auto !important;
+  }
+
+  filmstrip-gallery-container {
+    padding: 6px 0;
+  }
+
+  .filmstrip-thumbnail {
+    flex-basis: 60px;
+    width: 60px;
+    height: 45px;
+    margin: 0 3px;
+    width: 60px; /* Tailwind: w-15 (approx) or w-[60px] */
+    height: 45px; /* Tailwind: h-[45px] */
+    margin: 0 3px; /* Tailwind: mx-0.5 or mx-1 */
+  }
+  .filmstrip-arrow {
+    font-size: 1.2em; /* Tailwind: text-lg */
+    padding-left: 6px; /* Tailwind: pl-1.5 */
+    padding-right: 6px; /* Tailwind: pr-1.5 */
+  }
+
+  .carousel .control-dots {
+    /* Example of hiding dots specifically on mobile via CSS */
+    display: none !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  /* Adjust max-height as needed */
+  .app-header {
+    padding: 10px 15px; /* Even smaller padding in landscape */
+    margin-bottom: 10px; /* Reduce bottom margin */
+    display: none;
+  }
+  .app-header h1 {
+    font-size: 1.3em; /* Significantly smaller h1 in landscape */
+  }
+  .app-header p {
+    font-size: 0.8em; /* Smaller subtitle in landscape */
+    /* display: none; */ /* Optionally hide the subtitle entirely if space is very tight */
+  }
+  .carousel-container {
+    margin-bottom: 15px; /* Reduce space below carousel */
+  }
+
+  .carousel .slide {
+    padding-top: 2px; /* Minimal padding */
+    padding-bottom: 2px;
+  }
+
+  .carousel .slide img {
+    max-height: 80vh; /* Can allow a bit more viewport height in landscape if header is gone */
+    /* Be careful this doesn't make it too tall relative to width */
+  }
+
+  .carousel .legend {
+    font-size: 0.75em !important; /* Tailwind: text-xs */
+    padding: 4px 6px !important; /* Tailwind: p-1 */
+  }
+
+  .filmstrip-outer-container {
+    margin-top: 10px; /* Reduce space above filmstrip */
+  }
+  .filmstrip-thumbnail {
+    width: 50px; /* Tailwind: w-[50px] or w-12 */
+    height: 35px; /* Tailwind: h-[35px] */
+  }
+  .filmstrip-arrow {
+    font-size: 1em; /* Tailwind: text-base */
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) and (orientation: portrait) {
+  .carousel .slide img {
+    max-height: 70vh;
+  }
+  .carousel .legend {
+    font-size: 0.9em !important; /* Tailwind: text-sm */
+  }
+  .filmstrip-thumbnail {
+    width: 70px;
+    height: 50px;
+  }
+}
+
+.carousel .control-dots {
+  display: none !important;
+}
+
+/* You might also consider a breakpoint based on width for landscape */
+@media (orientation: landscape) and (max-width: 900px) {
+  /* Example for wider landscape screens like tablets */
+  /* .app-header h1 { font-size: 1.5em; } */ /* Slightly different size for wider landscape */
+  /* Hide carousel dots explicitly via CSS if the prop wasn't enough or for conditional display */
+  /* You might not need this if showIndicators={false} works well */
+
+  .carousel .control-dots {
+    display: none !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .carousel .slide img {
+    max-height: 80vh; /* For landscape phones */
+  }
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Placeholder for when images are loading or not found in App.js */
+.loading-placeholder {
+  text-align: center;
+  padding: 40px 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin: 20px 0;
+  color: #555;
 }
