@@ -86,7 +86,7 @@ function TheWhitePaper() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="prose prose-lg max-w-none">
-                            <Markdown remarkPlugins={[remarkGfm]} className="markdown">
+                            <Markdown remarkPlugins={[remarkGfm]} className="markdown text-justify">
                                 {whitepaperMarkdown}
                             </Markdown>
                         </CardContent>
