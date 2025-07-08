@@ -107,6 +107,10 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   display: flex;
@@ -175,6 +179,19 @@ body {
 
 .markdown > * {
   all: revert;
+}
+
+@layer components {
+  .text-strip {
+    /* Background color with opacity to allow background image to be seen */
+    @apply bg-white bg-opacity-80 dark:bg-black dark:bg-opacity-80 text-gray-800 dark:text-gray-200;
+    
+    /* Padding and centering */
+    @apply p-8 md:p-16 flex flex-col items-center justify-center text-center;
+    
+    /* Subtle shadow for depth */
+    @apply shadow-2xl;
+  }
 }
 
 /* Carousel Container */

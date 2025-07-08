@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import TheSecretSun from "@/app/thesecretsun";
 import TheWhitePaper from "@/app/white";
 import Photography from "@/app/photography";
+import Phoenix from "@/app/phoenix";
 import Home from "@/app/home";
 import Layout from "@/app/layout";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -19,6 +20,7 @@ export default function App() {
                 <Route path="*" element={<hr />} />
                 <Route path="thesecretsun" element={<TheSecretSun />} />
                 <Route path="white" element={<TheWhitePaper />} />
+                <Route path="phoenix" element={<Phoenix />} />
                 <Route path="photos" element={<Photography />} />
               </Route>
             </Routes>

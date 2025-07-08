@@ -16,18 +16,24 @@ function Home() {
         <div id="lifeseed-holder" className="centered-holder">
           <div id="lifeseed-holder" className="centered-holder">
             <div className="lifeseed " />
-            <div className="flex flex-col items-center space-y-2 mt-4 m-1">
+            <div className="flex flex-col items-center space-y-2 mt-1 m-1">
               <Link
-                to="/white"
-                className="bg-white text-black p-2 rounded-lg text-center w-full max-w-xs hover:bg-gray-200"
+                to="/phoenix"
+                className="bg-white text-black p-2 rounded-lg text-center w-full max-w-xs hover:bg-green-50 border-2 border-green-900 shadow-md shadow-white"
               >
-                The White Paper
+                Phoenix
               </Link>
               <Link
                 to="/thesecretsun"
-                className="bg-white text-black p-2 rounded-lg text-center w-full max-w-xs hover:bg-gray-200"
+                className="bg-white text-black p-2 rounded-lg text-center w-full max-w-xs hover:bg-green-50 border-2 border-green-900 shadow-md shadow-white"
               >
                 The Secret Sun
+              </Link>
+              <Link
+                to="/white"
+                className="bg-white text-black p-2 rounded-lg text-center w-full max-w-xs hover:bg-green-50 border-2 border-green-900 shadow-md shadow-white"
+              >
+                The White Paper
               </Link>
             </div>
           </div>
