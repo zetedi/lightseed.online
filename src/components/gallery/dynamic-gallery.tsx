@@ -73,8 +73,8 @@ const DynamicGallery: React.FC<DynamicGalleryProps> = ({ imageGlobPattern }) => 
       if (imageGlobPattern === '../../../assets/photography/*.{png,jpg,jpeg,svg,gif}') {
         return import.meta.glob('../../../assets/photography/*.{png,jpg,jpeg,svg,gif}', { eager: true }) as Record<string, ImageModule>;
       }
-      if (imageGlobPattern === '../../../assets/another-gallery/*.{png,jpg,jpeg,svg,gif}') {
-        return import.meta.glob('../../../assets/another-gallery/*.{png,jpg,jpeg,svg,gif}', { eager: true }) as Record<string, ImageModule>;
+      if (imageGlobPattern === '../../../assets/tss/*.{png,jpg,jpeg,svg,gif}') {
+        return import.meta.glob('../../../assets/tss/*.{png,jpg,jpeg,svg,gif}', { eager: true }) as Record<string, ImageModule>;
       }
       // Add more known patterns here
 

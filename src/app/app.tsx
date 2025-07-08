@@ -3,6 +3,7 @@ import TheSecretSun from "@/app/thesecretsun";
 import TheWhitePaper from "@/app/white";
 import Photography from "@/app/photography";
 import Phoenix from "@/app/phoenix";
+import Yantra from "@/app/yantra";
 import Home from "@/app/home";
 import Layout from "@/app/layout";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -22,6 +23,7 @@ export default function App() {
                 <Route path="white" element={<TheWhitePaper />} />
                 <Route path="phoenix" element={<Phoenix />} />
                 <Route path="photos" element={<Photography />} />
+                <Route path="yantra" element={<Yantra />} />
               </Route>
             </Routes>
           </div>

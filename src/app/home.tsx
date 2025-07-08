@@ -1,55 +1,54 @@
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { SubscriptionDialog } from "@/components/newsletter/subscription-dialog";
+import { useParallaxScroll } from "../hooks/useParallaxScroll";
+import TextStrip from "../components/text-strip/text-strip";
+import { ThemeProvider } from "../components/theme-provider";
+
+const Spacer = ({ height }: { height: string }) => <div style={{ height }} />;
 
 function Home() {
+  const offsetY = useParallaxScroll();
+  const parallaxFactor = 0.3;
+
   return (
-    <div>
-      <div className="tree">
-        <div id="lifeseed-holder" className="centered-holder">
-          <div id="lifeseed-holder" className="centered-holder">
-            <div className="lifeseed " />
-            <div className="flex flex-col items-center space-y-2 mt-1 m-1">
-              <Link
-                to="/phoenix"
-                className="bg-white text-black p-2 rounded-lg text-center w-full max-w-xs hover:bg-green-50 border-2 border-green-900 shadow-md shadow-white"
-              >
-                Phoenix
-              </Link>
-              <Link
-                to="/thesecretsun"
-                className="bg-white text-black p-2 rounded-lg text-center w-full max-w-xs hover:bg-green-50 border-2 border-green-900 shadow-md shadow-white"
-              >
-                The Secret Sun
-              </Link>
-              <Link
-                to="/white"
-                className="bg-white text-black p-2 rounded-lg text-center w-full max-w-xs hover:bg-green-50 border-2 border-green-900 shadow-md shadow-white"
-              >
-                The White Paper
-              </Link>
-            </div>
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+      <div className="relative h-auto overflow-x-hidden">
+        {/* BACKGROUND LAYER */}
+        <div
+          className="fixed top-0 left-0 w-full h-[150vh] bg-cover bg-center -z-10"
+          style={{
+            backgroundImage: `url('/trees/phoenix.jpg')`,
+            transform: `translateY(-${offsetY * parallaxFactor}px)`,
+          }}
+        />
+        {/* FOREGROUND CONTENT LAYER */}
+        /*{" "}
+        <div className="relative z-10">
+          <div className="w-full flex flex-col md:flex-row items-center justify-evenly gap-4 p-1">
+            <Link
+              to="/phoenix"
+              className="bg-white text-black dark:bg-black dark:text-white p-2 rounded-lg text-center w-full max-w-xs border-2 border-green-900 hover:bg-green-50 dark:hover:bg-gray-800 shadow-md shadow-green-900 dark:shadow-white transition-colors"
+            >
+              Phoenix - Lifetree
+            </Link>
+            <Link
+              to="/thesecretsun"
+              className="bg-white text-black dark:bg-black dark:text-white p-2 rounded-lg text-center w-full max-w-xs border-2 border-green-900 hover:bg-green-50 dark:hover:bg-gray-800 shadow-md shadow-green-900 dark:shadow-white transition-colors"
+            >
+              The Secret Sun
+            </Link>
+            <Link
+              to="/white"
+              className="bg-white text-black dark:bg-black dark:text-white p-2 rounded-lg text-center w-full max-w-xs border-2 border-green-900 hover:bg-green-50 dark:hover:bg-gray-800 shadow-md shadow-green-900 dark:shadow-white transition-colors"
+            >
+              The White Paper
+            </Link>
           </div>
-        </div>
 
-        <div id="lifeseed-holder" className="centered-holder">
-          <div id="lifeseed-holder" className="centered-holder"></div>
-        </div>
+          <Spacer height="1vh" />
 
-        <Card className="dark:bg-black light:text-black dark:text-white mx-auto p-6 border border-gray-300 shadow-lg rounded-lg">
-          <CardHeader>
-            <CardTitle>
-              <p className="text-center w-full text-4xl">live light</p>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+          <TextStrip title={`live light`}>
             <p className=" w-full text-justify mb-2">
               &nbsp;&nbsp;The purpose of <b>lightseed</b> is to bring joy. The
               joy of realizing the bliss of conscious, compassionate, grateful
@@ -70,12 +69,17 @@ function Home() {
               Earth, Universe and Field with the help of our most important
               evolutionary sisters and brothers, the trees.
             </p>
+          </TextStrip>
+
+          <Spacer height="3vh" />
+
+          <TextStrip title={`The first steps`}>
             <p className=" w-full text-justify mb-2">
-              <b>The first steps:</b> We plant lightseed (our vision) with the
-              seed of a tree we have a deep connection with in four realms:
+              We plant lightseed (our vision) with the seed of a tree we have a
+              deep connection with in four realms:
             </p>
-            <p className=" w-full text-justify mb-2">
-              <ul className="list-disc pl-4 pt-2 mx-8">
+            <p className=" w-full text-justify mb-1">
+              <ul className="list-disc pl-4 pt-2 mx-1">
                 <li>
                   in our spiritual heart, with the intention of realization (or
                   our highest goal)
@@ -104,20 +108,22 @@ function Home() {
               All four quadrants are ultimately (and intimately) connected with
               the animating force or lifeforce - the beginning of creation.
             </p>
-            <br />
-            <p className="text-center w-full text-xl">
-              <b>We stand for trees.</b>
+          </TextStrip>
+
+          <Spacer height="3vh" />
+
+          <TextStrip title={`We stand for trees`}>
+            <p className=" w-full text-justify">
+              Subscribe to a very rare newsletter with the button below:<br/><br/>
             </p>
-          </CardContent>
-          <CardFooter>
             <div className="centered-holder">
               <SubscriptionDialog />
             </div>
-          </CardFooter>
-        </Card>
+          </TextStrip>
+        </div>
+        <Toaster />
       </div>
-      <Toaster />
-    </div>
+    </ThemeProvider>
   );
 }
 

@@ -19,10 +19,7 @@ export function DotMenu() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem>
-          <Link to="/white">The White Paper</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem>
-          <Link to="/">The Beginning</Link>
+          <Link to="/">The Vision</Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
           <Link to="/phoenix">Phoenix</Link>
@@ -31,10 +28,13 @@ export function DotMenu() {
           <Link to="/thesecretsun">The Secret Sun</Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
-          <Link to="/photos">Photos</Link>
+          <Link to="/photos">Images</Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
-          <Link to="/">The Sigil</Link>
+          <Link to="/yantra">The Yantra</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem>
+          <Link to="/white">The White Paper</Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
