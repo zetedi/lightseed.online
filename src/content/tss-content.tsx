@@ -1,4 +1,3 @@
-import React from "react"; // Required for JSX
 import { Button } from "@/components/ui/button";
 import DynamicGallery from "../components/gallery/dynamic-gallery";
 

@@ -3,7 +3,6 @@ import React from "react";
 import { useParallaxScroll } from "../hooks/useParallaxScroll";
 import TextStrip from "../components/text-strip/text-strip";
 import { tssContent } from "../content/tss-content";
-import DynamicGallery from "../components/gallery/dynamic-gallery";
 
 // A simple spacer component for clarity in the map function
 const Spacer = ({ height }: { height: string }) => <div style={{ height }} />;
@@ -11,8 +10,6 @@ const Spacer = ({ height }: { height: string }) => <div style={{ height }} />;
 const TheSecretSun = () => {
   const offsetY = useParallaxScroll();
   const parallaxFactor = 0.3;
-
-  const PHOTOFOLDER = "../../../assets/tss/*.{png,jpg,jpeg,svg,gif}";
 
   return (
     <div className="relative h-auto overflow-x-hidden">
