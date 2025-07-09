@@ -8,7 +8,7 @@ import { phoenixContent } from '../content/phoenix-content';
 const Spacer = ({ height }: { height: string }) => <div style={{ height }} />;
 
 const Phoenix = () => {
-  // 1. All scroll logic is now hidden in this custom hook.
+
   const offsetY = useParallaxScroll();
   const parallaxFactor = 0.3;
 
@@ -33,7 +33,7 @@ const Phoenix = () => {
           // React Fragment is used to provide a key for each item in the loop.
           <React.Fragment key={section.title}>
             <TextStrip title={section.title}>
-              {section.text}
+              {section.content}
             </TextStrip>
             
             {/* Don't add a spacer after the very last text strip */}

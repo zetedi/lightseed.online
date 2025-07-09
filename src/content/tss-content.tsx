@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import DynamicGallery from "../components/gallery/dynamic-gallery";
+import ArticleImage from '../components/image/article-image';
 
 const PHOTOFOLDER = "../../../assets/tss/*.{png,jpg,jpeg,svg,gif}";
 
@@ -7,11 +8,26 @@ const PHOTOFOLDER = "../../../assets/tss/*.{png,jpg,jpeg,svg,gif}";
 export const tssContent = [
   {
     title: "The Secret Sun",
-    text: `The Secret Sun is the third part of the path of lightseed. After planting our intention in our heart, we plant a tree. Then the third part is to plant a seed in the community to foster a deeper connection with trees. For that a natural choice for example is to build a platform, a fountain, a bench, a guild, a bird feeder, a beehive or a piece of art close to the tree together with the members of the community.`,
+    content: (
+      <p className="text-justify indent-8">
+        <ArticleImage
+          src='/tss.png'
+          alt='The Secret Sun'
+          // caption='The Secret Sun'
+        />
+        The Secret Sun is the third part of the path of lightseed. After
+        planting our intention in our heart, we plant a tree. Then the third
+        part is to plant a seed in the community to foster a deeper connection
+        with trees. For that a natural choice for example is to build a
+        platform, a fountain, a bench, a guild, a bird feeder, a beehive or a
+        piece of art close to the tree together with the members of the
+        community.
+      </p>
+    ),
   },
   {
-    title: "Images",
-    text: (
+    title: "Images of the Process",
+    content: (
       <div className="centered-holder">
         <DynamicGallery imageGlobPattern={PHOTOFOLDER} />
       </div>
@@ -19,7 +35,7 @@ export const tssContent = [
   },
   {
     title: "Auspicious Signs",
-    text: (
+    content: (
       <>
         For the tree named Phoenix, the platform was the best choice. Since it
         is very close to the mediation path around the chateau of Hridaya France
@@ -37,7 +53,7 @@ export const tssContent = [
   },
   {
     title: "Sacred Alignments",
-    text: (
+    content: (
       <>
         The second auspicious sign was the holly tree, which in folklore is a
         sacred tree protecting the area from evil spirits and should not be cut,
@@ -55,7 +71,7 @@ export const tssContent = [
   },
   {
     title: "Cosmic Timing and Symbolism",
-    text: (
+    content: (
       <>
         The building took place through the summer solstice, the international
         yoga day and the full moon the next day, St John’s day (with a fire
@@ -96,7 +112,7 @@ export const tssContent = [
   },
   {
     title: "Numbers of the Universe",
-    text: (
+    content: (
       <>
         The other symbolic number present was the number 108. The reinforcing
         beams are 108 cm long each, pointing at the cosmic number prevalent in
@@ -107,7 +123,7 @@ export const tssContent = [
   },
   {
     title: "Polarity and Unity",
-    text: (
+    content: (
       <>
         The Yin-Yang symbol and the polarities are represented by how the middle
         beam is on different sides of the middle supporting beams. The handmade
@@ -137,6 +153,6 @@ export const tssContent = [
   },
   {
     title: "Sacred Foundations",
-    text: `The bigger path towards the building one one hand took through Assisi, and from there are four stones embedded in the concrete on each corner of the platform. The water contains water from the temple where St. Francis’s final resting place is. The tap was just above his chamber. And from an even more overarching perspective the unmarked corner has a flower of life pendant embedded from the temple of Osiris in Abydos, Egypt, where the flower of life symbol appeared the first time according to some archeologists.`,
+    content: `The bigger path towards the building one one hand took through Assisi, and from there are four stones embedded in the concrete on each corner of the platform. The water contains water from the temple where St. Francis’s final resting place is. The tap was just above his chamber. And from an even more overarching perspective the unmarked corner has a flower of life pendant embedded from the temple of Osiris in Abydos, Egypt, where the flower of life symbol appeared the first time according to some archeologists.`,
   },
 ];

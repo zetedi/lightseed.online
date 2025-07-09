@@ -40,7 +40,7 @@ const Yantra = () => {
           // React Fragment is used to provide a key for each item in the loop.
           <React.Fragment key={section.title}>
             <TextStrip title={section.title}>
-              {section.text}
+              {section.content}
             </TextStrip>
 
             {/* Don't add a spacer after the very last text strip */}

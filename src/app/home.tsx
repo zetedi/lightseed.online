@@ -1,8 +1,8 @@
-import { Link } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { SubscriptionDialog } from "@/components/newsletter/subscription-dialog";
 import { useParallaxScroll } from "../hooks/useParallaxScroll";
 import TextStrip from "../components/text-strip/text-strip";
+import ImageLink from "../components/image/image-link";
 import { ThemeProvider } from "../components/theme-provider";
 
 const Spacer = ({ height }: { height: string }) => <div style={{ height }} />;
@@ -25,25 +25,27 @@ function Home() {
         {/* FOREGROUND CONTENT LAYER */}
         /*{" "}
         <div className="relative z-10">
-          <div className="w-full flex flex-col md:flex-row items-center justify-evenly gap-4 p-1">
-            <Link
-              to="/phoenix"
-              className="bg-white text-black dark:bg-black dark:text-white p-2 rounded-lg text-center w-full max-w-xs border-2 border-green-900 hover:bg-green-50 dark:hover:bg-gray-800 shadow-md shadow-green-900 dark:shadow-white transition-colors"
-            >
-              Phoenix - Lifetree
-            </Link>
-            <Link
-              to="/thesecretsun"
-              className="bg-white text-black dark:bg-black dark:text-white p-2 rounded-lg text-center w-full max-w-xs border-2 border-green-900 hover:bg-green-50 dark:hover:bg-gray-800 shadow-md shadow-green-900 dark:shadow-white transition-colors"
-            >
+          <div
+            className="
+          w-full 
+    flex flex-wrap items-center justify-center 
+    md:grid md:grid-cols-2 lg:grid-cols-4 gap-3 p-3"
+          >
+            <ImageLink to="/phoenix" imageUrl="/phoenix-willow-fire.png">
+              Phoenix
+            </ImageLink>
+
+            <ImageLink to="/thesecretsun" imageUrl="/tss.png">
               The Secret Sun
-            </Link>
-            <Link
-              to="/white"
-              className="bg-white text-black dark:bg-black dark:text-white p-2 rounded-lg text-center w-full max-w-xs border-2 border-green-900 hover:bg-green-50 dark:hover:bg-gray-800 shadow-md shadow-green-900 dark:shadow-white transition-colors"
-            >
+            </ImageLink>
+
+            <ImageLink to="/yantra" imageUrl="/yantra.png">
+              The Yantra
+            </ImageLink>
+
+            <ImageLink to="/white" imageUrl="/white.png">
               The White Paper
-            </Link>
+            </ImageLink>
           </div>
 
           <Spacer height="1vh" />
@@ -114,7 +116,9 @@ function Home() {
 
           <TextStrip title={`We stand for trees`}>
             <p className=" w-full text-justify">
-              Subscribe to a very rare newsletter with the button below:<br/><br/>
+              Subscribe to a very rare newsletter with the button below:
+              <br />
+              <br />
             </p>
             <div className="centered-holder">
               <SubscriptionDialog />
