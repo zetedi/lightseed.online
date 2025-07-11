@@ -8,11 +8,13 @@ import Home from "@/app/home";
 import Layout from "@/app/layout";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TailwindIndicator } from "@/components/tailwind-indicator";
+import GlowBorder from "@/components/glow-border";
 
 export default function App() {
   return (
     <>
       <ThemeProvider defaultTheme="system">
+        <GlowBorder />
         <div className="relative flex min-h-screen flex-col">
           <div className="flex-1">
             <Routes>
