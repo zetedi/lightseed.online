@@ -154,9 +154,10 @@ export const whitePaperContent = [
           the creation is changing hands, ensuring that value remains tied to
           ongoing ecological and communal impact. Circular product cycles
           sequester carbon, earning credits e.g. via Verra’s API, ultimately
-          optimized by quantum AI. It is a dawn of transformational economy,
-          where NetLeaves are the currency of the future, a new paradigm for
-          human engagement with the natural world.
+          optimized by quantum AI. It is a dawn of{" "}
+          <b>transformational economy</b>, where NetLeaves are the currency of
+          the future, a new paradigm for human engagement with the natural
+          world.
         </p>
       </>
     ),
@@ -171,9 +172,10 @@ export const whitePaperContent = [
           and needs (e.g., dreams, ecological visions) to foster regenerative
           partnerships. Delivered via lifeseed.online’s interfaces, AI aligns
           matches with ecological goals like carbon sequestration, using QML on
-          quantum simulators to optimize connections. <b>Mother Trees</b>,
-          hosting edge AI servers, act as hubs, enhancing network coordination
-          and trust with transparent, ethical algorithms.
+          quantum simulators to optimize connections.
+          <b>Digital Mother Trees</b>, hosting edge AI servers, act as hubs,
+          enhancing network coordination and trust with transparent, ethical
+          algorithms.
         </p>
       </>
     ),
@@ -214,18 +216,17 @@ export const whitePaperContent = [
     content: (
       <>
         <p className="indent-8 my-2">
-          lightseed.online serves both as as an exaple of a journey of planting
-          the seed of an intention (in this case to create the Lifetree Network)
-          in the four realms and the source of the API and architecture. The
-          singular lifetree journey will be very different, however the Tree we
-          share. The Tree is the tree of life and the blockchain of the whole
-          forest containing reference or the actual individual blockchains of
-          the distributed nodes. <br />
+          <b>lightseed.online</b> serves both as as an exaple of a journey of
+          planting the seed of an intention (in this case to create the Lifetree
+          Network) in the four realms and the source of the API and
+          architecture. The singular lifetree journey will be very different,
+          however the Tree we share. The Tree is the tree of life and the
+          blockchain of the whole forest containing reference or the actual
+          individual blockchains of the distributed nodes. <br />
         </p>
-        <p className="my-2">
-          lifeseed.online is a where individual lifetrees become a forest. It is
-          also a reference implementation of a lightseed node. implementation —
-          a prototype app showcasing the network’s functionality in action.
+        <p className="indent-8 my-2">
+          <b>lifeseed.online</b> is a where individual lifetrees become a
+          forest. It is also a reference implementation of a lightseed node.
           Built to demonstrate key features like lifetree NFT minting and
           AI-driven matchmaking, lifeseed.online offers a tangible, working
           model to inspire developers and communities.

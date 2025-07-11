@@ -18,7 +18,7 @@ function TheWhitePaper() {
         <div
           className="fixed top-0 left-0 w-full h-[150vh] bg-cover bg-center -z-10"
           style={{
-            backgroundImage: `url('/trees/phoenix.jpg')`,
+            backgroundImage: `url('/phoenix.jpg')`,
             transform: `translateY(-${offsetY * parallaxFactor}px)`,
           }}
         />

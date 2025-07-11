@@ -18,7 +18,7 @@ function Home() {
         <div
           className="fixed top-0 left-0 w-full h-[150vh] bg-cover bg-center -z-10"
           style={{
-            backgroundImage: `url('/trees/phoenix.jpg')`,
+            backgroundImage: `url('/phoenix.jpg')`,
             transform: `translateY(-${offsetY * parallaxFactor}px)`,
           }}
         />
@@ -31,11 +31,11 @@ function Home() {
     flex flex-wrap items-center justify-center 
     md:grid md:grid-cols-2 lg:grid-cols-4 gap-3 p-3"
           >
-            <ImageLink to="/phoenix" imageUrl="/phoenix-willow-fire.png">
-              Phoenix
+            <ImageLink to="/phoenix" imageUrl="/phoenix.jpg">
+              The lifetree
             </ImageLink>
 
-            <ImageLink to="/thesecretsun" imageUrl="/tss.png">
+            <ImageLink to="/thesecretsun" imageUrl="/tss.jpg">
               The Secret Sun
             </ImageLink>
 
