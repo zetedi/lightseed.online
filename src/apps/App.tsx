@@ -3,7 +3,7 @@ import TheSecretSun from "@/pages/TheSecretSun";
 import TheWhitePaper from "@/pages/White";
 import Photography from "@/pages/Photography";
 import Phoenix from "@/pages/Phoenix";
-import Yantra from "@/pages/Yantra";
+// import Yantra from "@/pages/Yantra";
 import Simulator from "@/pages/Simulator";
 import TheTree from "@/pages/TheTree";
 import Home from "@/pages/Home";
@@ -26,7 +26,7 @@ export default function App() {
                 <Route path="white" element={<TheWhitePaper />} />
                 <Route path="phoenix" element={<Phoenix />} />
                 <Route path="photos" element={<Photography />} />
-                <Route path="yantra" element={<Yantra />} />
+                {/* <Route path="yantra" element={<Yantra />} /> */}
                 <Route path="simulator" element={<Simulator />} />
                 <Route path="thetree" element={<TheTree />} />
               </Route>
