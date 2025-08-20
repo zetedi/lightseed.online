@@ -1,5 +1,5 @@
 
-import { NavItem } from "@/types/nav"
+import { NavItem } from "@/types/Types"
 import { siteConfig } from "@/config/site"
 import { cn } from "@/lib/utils"
 import { Icons } from "@/components/LucideIcons"
