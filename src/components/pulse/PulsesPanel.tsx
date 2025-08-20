@@ -1,4 +1,4 @@
-import type { Pulse } from "../types";
+import type { Pulse } from "../../types/Types";
 
 export default function PulsesPanel({
   pulses, onAdd, onDelete, onAttach, onViewMatches
