@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import MapPanel from "@/components/map/MapPanel";
 import TreeModal from "@/components/tree/TreeModal";
 import PulsesPanel from "@/components/pulse/PulsesPanel";
 import ConnectionsPanel from "@/components/forest/ConnectionsPanel";
