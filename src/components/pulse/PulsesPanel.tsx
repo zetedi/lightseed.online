@@ -1,3 +1,4 @@
+import React, { useRef } from "react";
 import type { Pulse } from "../../types/Types";
 
 export default function PulsesPanel({
@@ -9,7 +10,14 @@ export default function PulsesPanel({
   onAttach: (id: string) => void;
   onViewMatches: () => void;
 }) {
-  let inputRef: HTMLInputElement | null = null;
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleAdd = () => {
+    const v = inputRef.current?.value?.trim();
+    if (!v) return;
+    onAdd(v);
+    if (inputRef.current) inputRef.current.value = "";
+  };
 
   return (
     <div className="card">
@@ -19,11 +27,13 @@ export default function PulsesPanel({
       </div>
 
       <div className="flex gap-2 mb-2">
-        <input ref={el => (inputRef = el)}
-               className="flex-1 bg-[#0f151b] border border-white/10 rounded-lg p-2"
-               placeholder="Enter a pulse..." />
-        <button className="btn btn-primary"
-          onClick={() => { const v = inputRef?.value?.trim(); if (!v) return; onAdd(v); if (inputRef) inputRef.value = ""; }}>
+        <input
+          ref={inputRef}
+          className="flex-1 bg-[#0f151b] border border-white/10 rounded-lg p-2"
+          placeholder="Enter a pulse..."
+          onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
+        />
+        <button className="btn btn-primary" onClick={handleAdd}>
           Add Pulse
         </button>
       </div>
@@ -39,8 +49,11 @@ export default function PulsesPanel({
               {!p.attachedTreeId && (
                 <button className="btn" onClick={() => onAttach(p.id)}>Attach</button>
               )}
-              <button className="btn" disabled={!!p.attachedTreeId}
-                      onClick={() => !p.attachedTreeId && onDelete(p.id)}>
+              <button
+                className="btn"
+                disabled={!!p.attachedTreeId}
+                onClick={() => { if (!p.attachedTreeId) onDelete(p.id); }}
+              >
                 Delete
               </button>
             </div>
