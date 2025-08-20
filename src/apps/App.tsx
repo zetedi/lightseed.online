@@ -1,17 +1,16 @@
 import { Routes, Route } from "react-router-dom";
-import TheSecretSun from "@/app/TheSecretSun";
-import TheWhitePaper from "@/app/White";
-import Photography from "@/app/Photography";
-import Phoenix from "@/app/Phoenix";
-import Yantra from "@/app/Yantra";
-import Simulator from "@/app/Simulator";
-import TheTree from "@/app/TheTree";
-import Home from "@/app/Home";
-import Layout from "@/app/Layout";
+import TheSecretSun from "@/pages/TheSecretSun";
+import TheWhitePaper from "@/pages/White";
+import Photography from "@/pages/Photography";
+import Phoenix from "@/pages/Phoenix";
+import Yantra from "@/pages/Yantra";
+import Simulator from "@/pages/Simulator";
+import TheTree from "@/pages/TheTree";
+import Home from "@/pages/Home";
+import Layout from "@/pages/Layout";
 import ThemeProvider from "@/components/ThemeProvider";
 import TailwindIndicator from "@/components/utils/TailwindIndicator";
 import GlowBorder from "@/components/utils/layout/GlowBorder";
-
 export default function App() {
   return (
     <>

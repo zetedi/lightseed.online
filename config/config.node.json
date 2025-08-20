@@ -1,0 +1,23 @@
+{
+  "app": {
+    "type": "node",
+    "title": "Lightseed Node • Sacred Valley",
+    "slug": "sv-node"
+  },
+  "theme": {
+    "accent": "#00d7c0",
+    "mode": "dark"
+  },
+  "features": {
+    "mastodonBridge": true,
+    "map": true
+  },
+  "node": {
+    "apiBaseUrl": "https://api.lightseed.online",
+    "chain": {
+      "networkName": "LTMX",
+      "rpcUrl": "https://rpc.lightseed.online",
+      "explorer": "https://explorer.lightseed.online"
+    }
+  }
+}

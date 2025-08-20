@@ -22,11 +22,17 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     }
   },
-  "include": ["src/components", "pages", "src/app/App.tsx", "main.tsx", "vite-env.d.ts", "src/app/TheSecretSun.tsx", "src/app/Home.tsx"],
+  "include": [
+    "src/components",
+    "pages",
+    "src/pages/App.tsx",
+    "main.tsx",
+    "vite-env.d.ts",
+    "src/pages/TheSecretSun.tsx",
+    "src/pages/Home.tsx"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

@@ -1,0 +1,15 @@
+{
+  "app": {
+    "type": "art",
+    "title": "Lightseed • The Divine Story",
+    "slug": "divine-story"
+  },
+  "theme": {
+    "accent": "#ffd166",
+    "mode": "dark"
+  },
+  "features": {
+    "mastodonBridge": false,
+    "map": false
+  }
+}
