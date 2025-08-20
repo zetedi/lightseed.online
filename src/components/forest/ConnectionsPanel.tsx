@@ -1,4 +1,4 @@
-import type { Connection } from "../types";
+import type { Connection } from "../../types/Types";
 
 export default function ConnectionsPanel({ connections }: { connections: Connection[] }) {
   return (
