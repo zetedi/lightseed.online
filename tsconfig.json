@@ -27,6 +27,6 @@
       ]
     }
   },
-  "include": ["src/components", "pages", "src/app/app.tsx", "main.tsx", "vite-env.d.ts", "src/app/thesecretsun.tsx", "src/app/home.tsx"],
+  "include": ["src/components", "pages", "src/app/App.tsx", "main.tsx", "vite-env.d.ts", "src/app/TheSecretSun.tsx", "src/app/Home.tsx"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

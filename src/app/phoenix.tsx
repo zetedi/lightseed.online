@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { useParallaxScroll } from '../hooks/useParallaxScroll';
-import TextStrip from '../components/text-strip/text-strip';
+import TextStrip from '../components/text-strip/TextStrip';
 import { phoenixContent } from '../content/phoenix-content';
 
 // A simple spacer component for clarity in the map function

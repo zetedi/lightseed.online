@@ -1,29 +1,15 @@
 import { Toaster } from "@/components/ui/toaster";
-import { SubscriptionDialog } from "@/components/newsletter/subscription-dialog";
-import { useParallaxScroll } from "../hooks/useParallaxScroll";
-import TextStrip from "../components/text-strip/text-strip";
-import ImageLink from "../components/image/image-link";
-import { ThemeProvider } from "../components/theme-provider";
+import { SubscriptionDialog } from "@/components/newsletter/SubscriptionDialog";
+import TextStrip from "../components/text-strip/TextStrip";
+import ImageLink from "../components/image/ImageLink";
+import ThemeProvider from "../components/ThemeProvider";
 
 const Spacer = ({ height }: { height: string }) => <div style={{ height }} />;
 
 function Home() {
-  const offsetY = useParallaxScroll();
-  const parallaxFactor = 0.3;
-
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <div className="relative h-auto overflow-x-hidden">
-        {/* BACKGROUND LAYER */}
-        <div
-          className="fixed top-0 left-0 w-full h-[150vh] bg-cover bg-center -z-10"
-          style={{
-            backgroundImage: `url('/phoenix.jpg')`,
-            transform: `translateY(-${offsetY * parallaxFactor}px)`,
-          }}
-        />
-        {/* FOREGROUND CONTENT LAYER */}
-        /*{" "}
         <div className="relative z-10">
           <div
             className="
@@ -45,6 +31,10 @@ function Home() {
 
             <ImageLink to="/white" imageUrl="/white.png">
               The White Paper
+            </ImageLink>
+
+            <ImageLink to="/simulator" imageUrl="/simulator.png">
+              The Simulator
             </ImageLink>
           </div>
 

@@ -1,8 +1,8 @@
 import React from "react";
 
-import { ThemeProvider } from "@/components/theme-provider";
+import ThemeProvider from "@/components/ThemeProvider";
 import { useParallaxScroll } from "../hooks/useParallaxScroll";
-import TextStrip from "../components/text-strip/text-strip";
+import TextStrip from "../components/text-strip/TextStrip";
 import { whitePaperContent } from "../content/white-paper-content";
 
 const Spacer = ({ height }: { height: string }) => <div style={{ height }} />;

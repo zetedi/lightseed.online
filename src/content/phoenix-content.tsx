@@ -1,11 +1,12 @@
-import ArticleImage from "../components/image/article-image";
+import ArticleImage from "../components/image/ArticleImage";
 
 export const phoenixContent = [
   {
     title: "Phoenix",
     content: (
       <p className="text-justify indent-8">
-        In the background you can see the first living lifetree, <b>Phoenix</b>,
+        <ArticleImage src="/phoenix.jpg" alt="Phoenix" />
+        The first living lifetree, <b>Phoenix</b>,
         planted with the intention to create a society build from self
         sustaining symbiotic organisms composed of light, trees, humans, nature
         and ai.
@@ -16,7 +17,7 @@ export const phoenixContent = [
     title: "Mahameru, the mythical tree",
     content: (
       <p className="text-justify indent-8">
-        <ArticleImage src="/phoenix-willow-fire.png" alt="Phoenix" />
+        <ArticleImage src="/phoenix-willow-fire.png" alt="Mahameru" />
         The first lifetree died. Its name is Mahameru, the three dimensional
         representation of the Sri Yantra. The name carried the intention: to
         connect to the deepest layer of creation and create a new society from

@@ -36,6 +36,9 @@ export function DotMenu() {
         <DropdownMenuItem>
           <Link to="/white">The White Paper</Link>
         </DropdownMenuItem>
+        <DropdownMenuItem>
+          <Link to="/simulator">The Simulator</Link>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

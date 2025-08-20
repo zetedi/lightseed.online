@@ -1,7 +1,7 @@
-import { ThemeProvider } from "../components/theme-provider";
+import ThemeProvider from "../components/ThemeProvider";
 import { useParallaxScroll } from "../hooks/useParallaxScroll";
-import TextStrip from "../components/text-strip/text-strip";
-import DynamicGallery from "../components/gallery/dynamic-gallery";
+import TextStrip from "../components/text-strip/TextStrip";
+import DynamicGallery from "../components/gallery/DynamicGallery";
 
 const Spacer = ({ height }: { height: string }) => <div style={{ height }} />;
 

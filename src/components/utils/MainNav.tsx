@@ -2,7 +2,7 @@
 import { NavItem } from "@/types/nav"
 import { siteConfig } from "@/config/site"
 import { cn } from "@/lib/utils"
-import { Icons } from "@/components/icons"
+import { Icons } from "@/components/LucideIcons"
 
 interface MainNavProps {
   items?: NavItem[]

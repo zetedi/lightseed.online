@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
-import DynamicGallery from "../components/gallery/dynamic-gallery";
-import ArticleImage from '../components/image/article-image';
+import DynamicGallery from "../components/gallery/DynamicGallery";
+import ArticleImage from '../components/image/ArticleImage';
 
 const PHOTOFOLDER = "../../../assets/tss/*.{png,jpg,jpeg,svg,gif}";
 

@@ -2,8 +2,8 @@
 
 // Removed 'React' if not explicitly used (new JSX transform)
 import { useState, useEffect, useMemo } from 'react';
-import PhotoCarousel from "../carousel/photo-carousel.jsx"; // Assuming these are still .jsx, rename to .tsx if they also use TS
-import FilmstripGallery from "../filmstrip/filmstrip-gallery.jsx"; // Or .tsx
+import PhotoCarousel from "../carousel/PhotoCarousel.js"; // Assuming these are still .jsx, rename to .tsx if they also use TS
+import FilmstripGallery from "../filmstrip/FilmstripGallery.js"; // Or .tsx
 
 // --- Type Definitions ---
 interface ImageModule {

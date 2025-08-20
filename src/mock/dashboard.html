@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<!-- saved from url=(0135)file:///private/var/folders/fy/pwy5cmsd5vg_tm1trf44xs4m0000gn/T/remote-file-preview-A029BA68-56DF-41BE-A79A-310401521453/dashboard.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <title>Lifetree Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Leaflet CSS for the map -->
+  <link rel="stylesheet" href="./map/leaflet.css" crossorigin="">
+  <style>
+    :root {
+      --bg: #0b0f12;
+      --card: #121820;
+      --muted: #96a0aa;
+      --text: #e6eef5;
+      --accent: #ffe100;
+      --border: 1px solid rgba(255, 255, 255, 0.08);
+      --radius: 12px;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      color: var(--text);
+      background: radial-gradient(1000px 700px at 10% -10%, rgba(255, 225, 0, 0.06), transparent), var(--bg);
+      min-height: 100vh;
+    }
+    h1 {
+      margin: 0;
+      padding: 16px;
+      font-size: 24px;
+      border-bottom: var(--border);
+    }
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      padding: 16px;
+    }
+    @media (min-width: 768px) {
+      .dashboard {
+        grid-template-columns: 2fr 1fr;
+      }
+    }
+    .card {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent), var(--card);
+      border: var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+    }
+    .card h2 {
+      margin-top: 0;
+      font-size: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    button {
+      appearance: none;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: #1f2633;
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover {
+      border-color: var(--accent);
+    }
+    input,
+    textarea {
+      width: 100%;
+      background: #0f151b;
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 8px;
+      margin-bottom: 8px;
+    }
+    textarea {
+      resize: vertical;
+    }
+    /* Map container */
+    #map {
+      width: 100%;
+      height: 350px;
+      border-radius: var(--radius);
+      margin-bottom: 8px;
+    }
+    /* Pulses list */
+    #pulseList {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    #pulseList li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px;
+      border-bottom: var(--border);
+    }
+    #pulseList li .title {
+      flex: 1;
+    }
+    #pulseList li .actions {
+      display: flex;
+      gap: 4px;
+    }
+    #connectionsList {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    #connectionsList li {
+      padding: 6px;
+      border-bottom: var(--border);
+    }
+    /* Chat styles */
+    #chatLog {
+      background: #0f151b;
+      border: var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      height: 200px;
+      overflow-y: auto;
+      margin-bottom: 8px;
+    }
+    #chatLog .msg {
+      margin-bottom: 6px;
+    }
+    #chatLog .me {
+      text-align: right;
+    }
+    #chatLog .assistant {
+      text-align: left;
+    }
+    /* Modal styling */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal.show {
+      display: flex;
+    }
+    .modal-content {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 20px;
+      max-width: 600px;
+      width: 100%;
+      color: var(--text);
+    }
+    .modal-content h3 {
+      margin-top: 0;
+      margin-bottom: 12px;
+    }
+    .modal-content label {
+      display: block;
+      margin-bottom: 4px;
+    }
+    #photoPreview {
+      max-width: 100%;
+      margin-top: 8px;
+    }
+    #fractalCanvas {
+      display: none;
+      border: var(--border);
+      border-radius: 8px;
+      margin-top: 8px;
+    }
+    .tree-icon {
+      margin-right: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Lifetree Dashboard</h1>
+  <div class="dashboard">
+    <!-- Map and add tree button -->
+    <div class="card">
+      <h2>
+        Map &amp; Trees
+        <button id="addTreeBtn" title="Add a new tree">+ Add Tree</button>
+      </h2>
+      <div id="map" class="leaflet-container leaflet-touch leaflet-fade-anim leaflet-grab leaflet-touch-drag leaflet-touch-zoom" tabindex="0" style="position: relative;"><div class="leaflet-pane leaflet-map-pane" style="transform: translate3d(0px, 0px, 0px);"><div class="leaflet-pane leaflet-tile-pane"><div class="leaflet-layer " style="z-index: 1; opacity: 1;"><div class="leaflet-tile-container leaflet-zoom-animated" style="z-index: 18; transform: translate3d(0px, 0px, 0px) scale(1);"><img alt="" src="./map/1.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(861px, -23px, 0px); opacity: 1;"><img alt="" src="./map/1(1).png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(1117px, -23px, 0px); opacity: 1;"><img alt="" src="./map/2.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(861px, 233px, 0px); opacity: 1;"><img alt="" src="./map/2(1).png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(1117px, 233px, 0px); opacity: 1;"><img alt="" src="./map/1(2).png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(605px, -23px, 0px); opacity: 1;"><img alt="" src="./map/1(3).png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(1373px, -23px, 0px); opacity: 1;"><img alt="" src="./map/2(2).png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(605px, 233px, 0px); opacity: 1;"><img alt="" src="./map/2(3).png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(1373px, 233px, 0px); opacity: 1;"><img alt="" src="./map/1(3).png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(349px, -23px, 0px); opacity: 1;"><img alt="" src="./map/1(2).png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(1629px, -23px, 0px); opacity: 1;"><img alt="" src="./map/2(3).png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(349px, 233px, 0px); opacity: 1;"><img alt="" src="./map/2(2).png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(1629px, 233px, 0px); opacity: 1;"><img alt="" src="./map/1(1).png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(93px, -23px, 0px); opacity: 1;"><img alt="" src="./map/1.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(1885px, -23px, 0px); opacity: 1;"><img alt="" src="./map/2(1).png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(93px, 233px, 0px); opacity: 1;"><img alt="" src="./map/2.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(1885px, 233px, 0px); opacity: 1;"><img alt="" src="./map/1.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-163px, -23px, 0px); opacity: 1;"><img alt="" src="./map/1(1).png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(2141px, -23px, 0px); opacity: 1;"><img alt="" src="./map/2.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-163px, 233px, 0px); opacity: 1;"><img alt="" src="./map/2(1).png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(2141px, 233px, 0px); opacity: 1;"></div></div></div><div class="leaflet-pane leaflet-overlay-pane"><svg pointer-events="none" class="leaflet-zoom-animated" width="2682" height="420" viewBox="-223 -35 2682 420" style="transform: translate3d(-223px, -35px, 0px);"><g><path class="leaflet-interactive" stroke="#007bff" stroke-opacity="1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="#007bff" fill-opacity="0.8" fill-rule="evenodd" d="M1356,150a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0 "></path><path class="leaflet-interactive" stroke="#28a745" stroke-opacity="1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="#28a745" fill-opacity="0.8" fill-rule="evenodd" d="M894,88a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0 "></path><path class="leaflet-interactive" stroke="#e67e22" stroke-opacity="1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="#e67e22" fill-opacity="0.8" fill-rule="evenodd" d="M1116,73a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0 "></path></g></svg></div><div class="leaflet-pane leaflet-shadow-pane"></div><div class="leaflet-pane leaflet-marker-pane"></div><div class="leaflet-pane leaflet-tooltip-pane"></div><div class="leaflet-pane leaflet-popup-pane"></div><div class="leaflet-proxy leaflet-zoom-animated" style="transform: translate3d(512px, 453.919px, 0px) scale(2);"></div></div><div class="leaflet-control-container"><div class="leaflet-top leaflet-left"><div class="leaflet-control-zoom leaflet-bar leaflet-control"><a class="leaflet-control-zoom-in" href="./dashboard.html#" title="Zoom in" role="button" aria-label="Zoom in" aria-disabled="false"><span aria-hidden="true">+</span></a><a class="leaflet-control-zoom-out" href="./dashboard.html#" title="Zoom out" role="button" aria-label="Zoom out" aria-disabled="false"><span aria-hidden="true">−</span></a></div></div><div class="leaflet-top leaflet-right"></div><div class="leaflet-bottom leaflet-left"></div><div class="leaflet-bottom leaflet-right"><div class="leaflet-control-attribution leaflet-control"><a href="https://leafletjs.com/" title="A JavaScript library for interactive maps"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8" class="leaflet-attribution-flag"><path fill="#4C7BE1" d="M0 0h12v4H0z"></path><path fill="#FFD500" d="M0 4h12v3H0z"></path><path fill="#E0BC00" d="M0 7h12v1H0z"></path></svg> Leaflet</a> <span aria-hidden="true">|</span> © OpenStreetMap contributors</div></div></div></div>
+    </div>
+    <!-- Pulses section -->
+    <div class="card">
+      <h2>
+        Pulses
+        <button id="intentionMatchesBtn" title="View intention matches">View Matches</button>
+      </h2>
+      <input type="text" id="pulseInput" placeholder="Enter a pulse...">
+      <button id="addPulseBtn">Add Pulse</button>
+      <ul id="pulseList"></ul>
+    </div>
+    <!-- Connections section -->
+    <div class="card">
+      <h2>Connected Lifetrees</h2>
+      <ul id="connectionsList"></ul>
+    </div>
+    <!-- Prompt/chat section -->
+    <div class="card">
+      <h2>Chat with AI</h2>
+      <div id="chatLog"></div>
+      <textarea id="chatInput" rows="3" placeholder="Type your message..."></textarea>
+      <button id="sendChatBtn">Send</button>
+    </div>
+  </div>
+
+  <!-- Add Tree Modal -->
+  <div id="treeModal" class="modal">
+    <div class="modal-content">
+      <h3>Add a New Tree</h3>
+      <label for="treeNameInput">Tree Name</label>
+      <input type="text" id="treeNameInput" placeholder="Give your tree a name">
+      <label for="latInput">Latitude</label>
+      <input type="number" id="latInput" placeholder="Latitude" step="any">
+      <label for="lngInput">Longitude</label>
+      <input type="number" id="lngInput" placeholder="Longitude" step="any">
+      <button id="getLocationBtn">Use my location</button>
+      <label for="treeNoteInput">Note</label>
+      <textarea id="treeNoteInput" rows="2" placeholder="Add a note (optional)"></textarea>
+      <label>Guardian Picture (upload or generate)</label>
+      <input type="file" id="photoInput" accept="image/*">
+      <img id="photoPreview" src="dashboard.html" alt="Guardian preview" style="display:none;">
+      <button id="generateFractalBtn">Generate Fractal</button>
+      <canvas id="fractalCanvas" width="200" height="200"></canvas>
+      <div style="margin-top:12px; display:flex; justify-content:flex-end; gap:8px;">
+        <button id="cancelAddTreeBtn">Cancel</button>
+        <button id="confirmAddTreeBtn" class="primary">Add Tree</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="./leaflet.js" crossorigin=""></script>
+  <script>
+    // Tree data structures
+    const trees = [
+      {
+        type: 'mother',
+        name: 'Mother Tree 1',
+        lat: 27.9881,
+        lng: 86.9250,
+        note: 'Mount Kailash',
+        color: '#007bff'
+      },
+      {
+        type: 'lifetree',
+        name: 'Lifetree 1',
+        lat: 45.4215,
+        lng: -75.6993,
+        note: 'Ottawa',
+        color: '#28a745'
+      },
+      {
+        type: 'guardian',
+        name: 'Guardian 1',
+        lat: 48.8566,
+        lng: 2.3522,
+        note: 'Paris',
+        color: '#e67e22'
+      }
+    ];
+
+    // Pulses array
+    const pulses = [];
+    // Connections array for lifetrees
+    const connections = [];
+    // Chat log
+    const chatLog = [];
+
+    // Initialize the map
+    const map = L.map('map').setView([20, 0], 2);
+    // Use an alternative OpenStreetMap tile provider. The default OSM tiles
+    // blocked our previous requests because they strictly enforce usage
+    // policies for heavy traffic. The French OSM community offers tiles
+    // at openstreetmap.fr that are accessible from our environment. We
+    // specify the subdomains explicitly because the server operates on
+    // multiple subdomains (a,b,c) and Leaflet will rotate between them.
+    L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      subdomains: ['a', 'b', 'c']
+    }).addTo(map);
+
+    function renderMap() {
+      // Clear all layers except tile layer
+      map.eachLayer(layer => {
+        if (layer instanceof L.Marker || layer instanceof L.CircleMarker) {
+          map.removeLayer(layer);
+        }
+      });
+      trees.forEach(tree => {
+        const marker = L.circleMarker([tree.lat, tree.lng], {
+          radius: 8,
+          color: tree.color,
+          fillColor: tree.color,
+          fillOpacity: 0.8
+        }).addTo(map);
+        marker.bindPopup(`<strong>${tree.name}</strong><br>${tree.note || ''}`);
+      });
+    }
+
+    // Render connections list
+    function renderConnections() {
+      const listEl = document.getElementById('connectionsList');
+      listEl.innerHTML = '';
+      connections.forEach(c => {
+        const li = document.createElement('li');
+        li.textContent = c;
+        listEl.appendChild(li);
+      });
+    }
+
+    // Render pulses list
+    function renderPulses() {
+      const listEl = document.getElementById('pulseList');
+      listEl.innerHTML = '';
+      pulses.forEach((pulse, idx) => {
+        const li = document.createElement('li');
+        const title = document.createElement('span');
+        title.className = 'title';
+        title.textContent = pulse.name;
+        // Icon if attached
+        if (pulse.attached) {
+          const icon = document.createElement('span');
+          icon.className = 'tree-icon';
+          icon.textContent = '🌳';
+          title.prepend(icon);
+        }
+        const actions = document.createElement('span');
+        actions.className = 'actions';
+        // Attach button if not attached
+        if (!pulse.attached) {
+          const attachBtn = document.createElement('button');
+          attachBtn.textContent = 'Attach';
+          attachBtn.onclick = () => {
+            pulse.attached = true;
+            renderPulses();
+          };
+          actions.appendChild(attachBtn);
+        }
+        // Delete button
+        const delBtn = document.createElement('button');
+        delBtn.textContent = 'Delete';
+        delBtn.disabled = pulse.attached;
+        delBtn.onclick = () => {
+          if (!pulse.attached) {
+            pulses.splice(idx, 1);
+            renderPulses();
+          }
+        };
+        actions.appendChild(delBtn);
+        li.appendChild(title);
+        li.appendChild(actions);
+        listEl.appendChild(li);
+      });
+    }
+
+    // Add pulse handler
+    document.getElementById('addPulseBtn').addEventListener('click', () => {
+      const input = document.getElementById('pulseInput');
+      const value = input.value.trim();
+      if (!value) return;
+      pulses.push({ name: value, attached: false });
+      input.value = '';
+      renderPulses();
+    });
+
+    // Intention matches button
+    document.getElementById('intentionMatchesBtn').addEventListener('click', () => {
+      // Navigate to existing interaction page (same as previous mock)
+      window.location.href = 'interaction-sim.html';
+    });
+
+    // Chat functionality
+    function renderChat() {
+      const log = document.getElementById('chatLog');
+      log.innerHTML = '';
+      chatLog.forEach(msg => {
+        const p = document.createElement('div');
+        p.className = 'msg ' + msg.from;
+        p.textContent = msg.text;
+        log.appendChild(p);
+      });
+      log.scrollTop = log.scrollHeight;
+    }
+    document.getElementById('sendChatBtn').addEventListener('click', () => {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+      chatLog.push({ from: 'me', text });
+      input.value = '';
+      // Simulate assistant response (for now just echo)
+      setTimeout(() => {
+        chatLog.push({ from: 'assistant', text: 'You said: ' + text });
+        renderChat();
+      }, 500);
+      renderChat();
+    });
+
+    // Tree modal controls
+    const treeModal = document.getElementById('treeModal');
+    document.getElementById('addTreeBtn').addEventListener('click', () => {
+      treeModal.classList.add('show');
+    });
+    document.getElementById('cancelAddTreeBtn').addEventListener('click', () => {
+      closeModal();
+    });
+    // Close modal when clicking outside content
+    treeModal.addEventListener('click', (e) => {
+      if (e.target === treeModal) {
+        closeModal();
+      }
+    });
+    function closeModal() {
+      treeModal.classList.remove('show');
+      // Reset fields
+      document.getElementById('treeNameInput').value = '';
+      document.getElementById('latInput').value = '';
+      document.getElementById('lngInput').value = '';
+      document.getElementById('treeNoteInput').value = '';
+      document.getElementById('photoInput').value = '';
+      document.getElementById('photoPreview').style.display = 'none';
+      document.getElementById('photoPreview').src = '';
+      document.getElementById('fractalCanvas').style.display = 'none';
+    }
+
+    // Use geolocation to fill coordinates
+    document.getElementById('getLocationBtn').addEventListener('click', () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            document.getElementById('latInput').value = position.coords.latitude.toFixed(6);
+            document.getElementById('lngInput').value = position.coords.longitude.toFixed(6);
+          },
+          (err) => {
+            alert('Unable to retrieve location: ' + err.message);
+          }
+        );
+      } else {
+        alert('Geolocation is not supported by your browser.');
+      }
+    });
+
+    // Preview uploaded photo
+    document.getElementById('photoInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          const img = document.getElementById('photoPreview');
+          img.src = ev.target.result;
+          img.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Fractal generation
+    document.getElementById('generateFractalBtn').addEventListener('click', () => {
+      const canvas = document.getElementById('fractalCanvas');
+      const ctx = canvas.getContext('2d');
+      canvas.style.display = 'block';
+      // Clear
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // Draw fractal tree
+      function drawBranch(x, y, length, angle, depth) {
+        if (depth === 0) return;
+        const x2 = x + length * Math.cos(angle);
+        const y2 = y - length * Math.sin(angle);
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = '#ffe100';
+        ctx.lineWidth = depth * 1.2;
+        ctx.stroke();
+        const newLen = length * (0.65 + Math.random() * 0.1);
+        const angleVar = 0.2 + Math.random() * 0.3;
+        drawBranch(x2, y2, newLen, angle - angleVar, depth - 1);
+        drawBranch(x2, y2, newLen, angle + angleVar, depth - 1);
+      }
+      drawBranch(canvas.width / 2, canvas.height, 60 + Math.random() * 20, -Math.PI / 2, 6);
+    });
+
+    // Add tree handler
+    document.getElementById('confirmAddTreeBtn').addEventListener('click', () => {
+      const name = document.getElementById('treeNameInput').value.trim();
+      const lat = parseFloat(document.getElementById('latInput').value);
+      const lng = parseFloat(document.getElementById('lngInput').value);
+      const note = document.getElementById('treeNoteInput').value.trim();
+      const photoInput = document.getElementById('photoInput');
+      const photoFile = photoInput.files[0];
+      // Validate required fields
+      if (!name || isNaN(lat) || isNaN(lng)) {
+        alert('Please fill in the tree name and coordinates.');
+        return;
+      }
+      const newTree = {
+        type: 'lifetree',
+        name,
+        lat,
+        lng,
+        note,
+        color: '#28a745'
+      };
+      // If user uploaded photo, store it (for this demo we don't need to use it further)
+      if (photoFile) {
+        newTree.guardianImage = photoFile.name;
+      }
+      // Check if fractal was drawn
+      const fractalCanvas = document.getElementById('fractalCanvas');
+      if (fractalCanvas.style.display === 'block') {
+        newTree.fractal = fractalCanvas.toDataURL();
+      }
+      trees.push(newTree);
+      connections.push(name);
+      renderMap();
+      renderConnections();
+      closeModal();
+    });
+
+    // Render initial state
+    renderMap();
+    renderConnections();
+    renderPulses();
+    renderChat();
+  </script>
+
+</body></html>
