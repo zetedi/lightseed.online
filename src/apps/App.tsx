@@ -3,7 +3,7 @@ import TheSecretSun from "@/pages/TheSecretSun";
 import TheWhitePaper from "@/pages/White";
 import Photography from "@/pages/Photography";
 import Phoenix from "@/pages/Phoenix";
-import Yantra from "@/pages/Yantra";
+import Yantra from "../pages/Yantra";
 import Simulator from "@/pages/Simulator";
 import TheTree from "@/pages/TheTree";
 import Home from "@/pages/Home";
