@@ -20,19 +20,21 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
+
+    /* Alias */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
-    }
+      "@/*": ["src/*"]
+    },
+
+    /* Types for Vite */
+    "types": ["vite/client"]
   },
   "include": [
-    "src/components",
-    "pages",
-    "src/pages/App.tsx",
-    "main.tsx",
-    "vite-env.d.ts",
-    "src/pages/TheSecretSun.tsx",
-    "src/pages/Home.tsx"
+    "src",
+    "vite-env.d.ts"
   ],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "references": [
+    { "path": "./tsconfig.node.json" }
+  ]
 }

@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import type { Pulse } from "../../types/Types";
 
 export default function PulsesPanel({
