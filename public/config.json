@@ -1,7 +1,8 @@
 {
-  "app": {
+  "appConfig": {
     "type": "lightseed",
-    "title": "lightseed",
+    "title": "lightseed.online",
+    "description": "live light",
     "slug": "main"
   },
   "theme": {
@@ -11,5 +12,10 @@
   "features": {
     "mastodonBridge": false,
     "map": true
+  },
+  "mainNav": [],
+  "links": {
+    "github": "https://github.com/zetedi/lightseed.online",
+    "docs": "https://lightseed.online"
   }
 }

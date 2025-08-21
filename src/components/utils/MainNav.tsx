@@ -1,6 +1,6 @@
 
+import { useConfig } from "@/context/ConfigContext";
 import { NavItem } from "@/types/Types"
-import { siteConfig } from "@/config/site"
 import { cn } from "@/lib/utils"
 import { Icons } from "@/components/LucideIcons"
 
@@ -9,11 +9,14 @@ interface MainNavProps {
 }
 
 export function MainNav({ items }: MainNavProps) {
+
+  const { appConfig } = useConfig();
+
   return (
     <div className="flex gap-6 md:gap-10">
       <a href="/" className="flex items-center space-x-2">
         <Icons.logo />
-        <span className="inline-block font-bold">{siteConfig.name}</span>
+        <span className="inline-block font-bold">{appConfig.title}</span>
       </a>
       {items?.length ? (
         <nav className="flex gap-6">

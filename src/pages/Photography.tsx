@@ -1,31 +1,15 @@
 import ThemeProvider from "../components/ThemeProvider";
-import { useParallaxScroll } from "../hooks/useParallaxScroll";
 import TextStrip from "../components/text-strip/TextStrip";
 import DynamicGallery from "../components/gallery/DynamicGallery";
 
-const Spacer = ({ height }: { height: string }) => <div style={{ height }} />;
-
 function Photography() {
-  const offsetY = useParallaxScroll();
-  const parallaxFactor = 0.3;
 
   const PHOTOFOLDER = "../../../assets/photography/*.{png,jpg,jpeg,svg,gif}";
 
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+    <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
       <div className="relative h-auto overflow-x-hidden">
-        {/* BACKGROUND LAYER */}
-        <div
-          className="fixed top-0 left-0 w-full h-[150vh] bg-cover bg-center -z-10"
-          style={{
-            backgroundImage: `url('/phoenix.jpg')`,
-            transform: `translateY(-${offsetY * parallaxFactor}px)`,
-          }}
-        />
-
-        <Spacer height="3vh" />
-
-        <TextStrip title={`Images`}>
+        <TextStrip title={``}>
           <div className="centered-holder">
             <DynamicGallery imageGlobPattern={PHOTOFOLDER} />
           </div>

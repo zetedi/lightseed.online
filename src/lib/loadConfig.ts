@@ -1,5 +1,5 @@
-import type { LightseedConfig } from "../types/config";
-import { ConfigSchema } from "../types/config";
+import type { LightseedConfig } from "../types/Config";
+import { ConfigSchema } from "../types/Config";
 
 // Runtime fetch of /config.json. Mount/replace this file per deploy.
 export async function loadConfig(): Promise<LightseedConfig> {
