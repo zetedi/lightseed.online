@@ -1,0 +1,15 @@
+{
+  "app": {
+    "type": "lightseed",
+    "title": "lightseed",
+    "slug": "main"
+  },
+  "theme": {
+    "accent": "#6c5ce7",
+    "mode": "light"
+  },
+  "features": {
+    "mastodonBridge": false,
+    "map": true
+  }
+}
