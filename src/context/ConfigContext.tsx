@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from "react";
-import type { LightseedConfig } from "@/types/Config";
+import type { LightseedConfig } from "@/types/ConfigTypes";
 
 const Ctx = createContext<LightseedConfig | null>(null);
 export const useConfig = () => {

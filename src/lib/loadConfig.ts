@@ -1,6 +1,6 @@
 // src/lib/loadConfig.ts
-import type { LightseedConfig } from '@/types/Config';
-import { ConfigSchema } from '@/types/Config';
+import type { LightseedConfig } from '@/types/ConfigTypes';
+import { ConfigSchema } from '@/types/ConfigTypes';
 
 // Runtime fetch of /config.json. Mount/replace this file per deploy.
 export async function loadConfig(): Promise<LightseedConfig> {
