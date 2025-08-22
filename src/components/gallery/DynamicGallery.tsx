@@ -70,10 +70,9 @@ const DynamicGallery: React.FC<DynamicGalleryProps> = ({ imageGlobPattern }) => 
       // --- IMPORTANT LIMITATION & WORKAROUND ---
       // Vite's import.meta.glob needs a static string literal.
       // This part of the logic remains the same, but ensure paths are correct.
-      if (imageGlobPattern === '../../../assets/photography/*.{png,jpg,jpeg,svg,gif}') {
-        return import.meta.glob('../../../assets/photography/*.{png,jpg,jpeg,svg,gif}', { eager: true }) as Record<string, ImageModule>;
-      }
-      if (imageGlobPattern === '../../../assets/tss/*.{png,jpg,jpeg,svg,gif}') {
+      if (imageGlobPattern === '@/assets/photography/*.{png,jpg,jpeg,svg,gif}') {
+        return import.meta.glob('@/assets/photography/*.{png,jpg,jpeg,svg,gif}', { eager: true }) as Record<string, ImageModule>;
+      } else if (imageGlobPattern === '../../../assets/tss/*.{png,jpg,jpeg,svg,gif}') {
         return import.meta.glob('../../../assets/tss/*.{png,jpg,jpeg,svg,gif}', { eager: true }) as Record<string, ImageModule>;
       }
       // Add more known patterns here

@@ -1,6 +1,7 @@
-import { z } from "zod";
+// src/types/Config.ts
+import { z } from 'zod';
 
-export const AppType = z.enum(["lightseed", "art", "node", "photography", "docs"]);
+export const AppType = z.enum(['lightseed', 'art', 'node', 'photography', 'docs']);
 
 export const ConfigSchema = z.object({
   appConfig: z.object({
@@ -11,7 +12,7 @@ export const ConfigSchema = z.object({
   }),
   theme: z.object({
     accent: z.string().regex(/^#?[0-9a-fA-F]{3,8}$/),
-    mode: z.enum(["light", "dark"]).default("dark"),
+    mode: z.enum(['light', 'dark']).default('dark'),
   }),
   features: z
     .object({
@@ -19,12 +20,14 @@ export const ConfigSchema = z.object({
       map: z.boolean().default(false),
     })
     .default({ mastodonBridge: false, map: false }),
-  mainNav: z.array(
-    z.object({
-      title: z.string().min(1),
-      href: z.string().min(1),
-    })
-  ).default([]),
+  mainNav: z
+    .array(
+      z.object({
+        title: z.string().min(1),
+        href: z.string().min(1),
+      })
+    )
+    .default([]),
   links: z
     .object({
       github: z.string().url().optional(),

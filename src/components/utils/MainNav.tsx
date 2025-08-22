@@ -1,12 +1,8 @@
 
 import { useConfig } from "@/context/ConfigContext";
-import { NavItem } from "@/types/Types"
+import { MainNavProps } from "@/types/Types"
 import { cn } from "@/lib/utils"
 import { Icons } from "@/components/LucideIcons"
-
-interface MainNavProps {
-  items?: NavItem[]
-}
 
 export function MainNav({ items }: MainNavProps) {
 

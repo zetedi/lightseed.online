@@ -1,8 +1,11 @@
 export interface NavItem {
-  title: string
-  href?: string
-  disabled?: boolean
-  external?: boolean
+  title?: string;
+  href?: string;
+  disabled?: boolean;
+}
+
+export interface MainNavProps {
+  items?: NavItem[]
 }
 
 export type TreeKind = "mother" | "lifetree" | "guardian";
