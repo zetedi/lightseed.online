@@ -18,7 +18,7 @@ const FilmstripGallery: React.FC<FilmstripGalleryProps> = ({ photosData, current
   const activeThumbnailRef = useRef<HTMLButtonElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
-  const SCROLL_AMOUNT = 150; // Reduced for smaller screens
+  const SCROLL_AMOUNT = 150;
 
   const isScrollable = useCallback(() => {
     if (!filmstripRef.current) return false;
@@ -95,7 +95,7 @@ const FilmstripGallery: React.FC<FilmstripGalleryProps> = ({ photosData, current
   }
 
   return (
-    <div className="relative w-full max-w-[90vw] sm:max-w-md md:max-w-lg px-1 sm:px-2 md:px-4" role="navigation" aria-label="Thumbnail navigation">
+    <div className="relative w-[90%] mx-auto sm:w-[80%] md:w-[70%] px-1 sm:px-2 md:px-4 py-2" role="navigation" aria-label="Thumbnail navigation">
       {showLeftArrow && isScrollable() && (
         <button
           type="button"

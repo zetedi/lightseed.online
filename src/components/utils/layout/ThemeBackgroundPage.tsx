@@ -5,7 +5,7 @@ interface ThemeBackgroundPageProps {
   content: { title: string; content: React.ReactNode }[];
 }
 
-const Spacer = ({ height = '7vh' }: { height?: string }) => <div style={{ height }} />;
+const Spacer = ({ height = '3vh' }: { height?: string }) => <div style={{ height }} />;
 
 const ThemeBackgroundPage: React.FC<ThemeBackgroundPageProps> = ({ content }) => {
   return (
