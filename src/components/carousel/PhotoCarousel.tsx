@@ -1,19 +1,18 @@
+import { lazy, Suspense } from 'react';
 import { Carousel } from 'react-responsive-carousel';
 import 'react-responsive-carousel/lib/styles/carousel.min.css';
 
-// Define the shape of a single photo object
 interface Photo {
-  id?: string | number; // Optional, as you use `photo.id || index`
+  id?: string | number;
   src: string;
   alt: string;
-  legend?: string; // Optional, as it's commented out but may be used later
+  legend?: string;
 }
 
-// Define props for PhotoCarousel
 interface PhotoCarouselProps {
-  photosData: Photo[] | null; // Allow null to match your check
+  photosData: Photo[] | null;
   selectedItem: number;
-  onChange: (index: number, item: React.ReactNode) => void; // Type from react-responsive-carousel
+  onChange: (index: number, item: React.ReactNode) => void;
 }
 
 const PhotoCarousel: React.FC<PhotoCarouselProps> = ({ photosData, selectedItem, onChange }) => {
@@ -21,6 +20,7 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({ photosData, selectedItem,
     return (
       <div
         className="carousel-container"
+        role="alert"
         style={{
           padding: '20px',
           textAlign: 'center',
@@ -35,10 +35,8 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({ photosData, selectedItem,
   }
 
   return (
-    <div className="carousel-container">
+    <div className="carousel-container" role="region" aria-label="Photo carousel">
       <Carousel
-        // autoPlay
-        // infiniteLoop
         showThumbs={false}
         showStatus={false}
         dynamicHeight={true}
@@ -46,12 +44,17 @@ const PhotoCarousel: React.FC<PhotoCarouselProps> = ({ photosData, selectedItem,
         selectedItem={selectedItem}
         onChange={onChange}
         useKeyboardArrows={true}
-        // showIndicators={false} // <--- ADD THIS TO HIDE DOTS
+        showIndicators={false}
+        ariaLabel="Photo carousel"
       >
         {photosData.map((photo, index) => (
-          <div key={photo.id || index}>
-            <img src={photo.src} alt={photo.alt} />
-            {/* <p className="legend">{photo.legend}</p> */}
+          <div key={photo.id || index} role="group" aria-label={`Slide ${index + 1}`}>
+            <img
+              src={photo.src}
+              alt={photo.alt}
+              loading="lazy"
+              style={{ maxWidth: '100%', height: 'auto' }}
+            />
           </div>
         ))}
       </Carousel>

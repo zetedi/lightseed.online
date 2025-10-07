@@ -5,7 +5,7 @@ export const phoenixContent = [
     title: "Phoenix",
     content: (
       <p className="text-justify indent-8">
-        <ArticleImage src="/phoenix.jpg" alt="Phoenix" />
+        <ArticleImage src="/phoenix.jpg" alt="Phoenix"/>
         The first living lifetree, <b>Phoenix</b>,
         planted with the intention to create a society build from self
         sustaining symbiotic organisms composed of light, trees, humans, nature

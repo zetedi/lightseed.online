@@ -1,15 +1,20 @@
 import ThemeProvider from "@/components/ThemeProvider";
+import ThemeBackgroundPage from "@/components/utils/layout/ThemeBackgroundPage";
+import TheTree from "@/components/tree/TheTree";
 
-import TheTree from "@/components//tree/TheTree";
+const treeContent = [
+  {
+    title: "Intention Matches",
+    content: <TheTree />,
+  },
+];
 
-// A simple spacer component for clarity in the map function
-
-const Yantra = () => {
+const TheTreePage = () => {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-      <TheTree />
+      <ThemeBackgroundPage content={treeContent} />
     </ThemeProvider>
   );
 };
 
-export default Yantra;
+export default TheTreePage;

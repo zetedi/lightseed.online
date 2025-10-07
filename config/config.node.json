@@ -2,15 +2,19 @@
   "app": {
     "type": "node",
     "title": "Lightseed Node • Sacred Valley",
-    "slug": "sv-node"
+    "slug": "sv-node",
+    "imageGlob": "../../../assets/photography/*.{png,jpg,jpeg,svg,gif}"
   },
   "theme": {
     "accent": "#00d7c0",
-    "mode": "dark"
+    "mode": "dark",
+    "backgroundImage": "/harmony.svg",
+    "logo": "/lifeseed.svg"
   },
   "features": {
     "mastodonBridge": true,
-    "map": true
+    "map": true,
+    "filmstrip": true
   },
   "node": {
     "apiBaseUrl": "https://api.lightseed.online",
@@ -19,5 +23,15 @@
       "rpcUrl": "https://rpc.lightseed.online",
       "explorer": "https://explorer.lightseed.online"
     }
-  }
+  },
+  "mainNav": [
+    { "title": "Home", "href": "/" },
+    { "title": "The Secret Sun", "href": "/thesecretsun" },
+    { "title": "White Paper", "href": "/white" },
+    { "title": "Phoenix", "href": "/phoenix" },
+    { "title": "Photography", "href": "/photos" },
+    { "title": "Yantra", "href": "/yantra" },
+    { "title": "Simulator", "href": "/simulator" },
+    { "title": "The Tree", "href": "/thetree" }
+  ]
 }

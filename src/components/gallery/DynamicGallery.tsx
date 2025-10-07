@@ -1,134 +1,109 @@
-// src/components/gallery/dynamic-gallery.tsx
+import { useState, useEffect, lazy, Suspense, Component, ErrorInfo } from "react";
+import { useConfig } from "@/context/ConfigContext";
 
-// Removed 'React' if not explicitly used (new JSX transform)
-import { useState, useEffect, useMemo } from 'react';
-import PhotoCarousel from "../carousel/PhotoCarousel.js"; // Assuming these are still .jsx, rename to .tsx if they also use TS
-import FilmstripGallery from "../filmstrip/FilmstripGallery.js"; // Or .tsx
-
-// --- Type Definitions ---
-interface ImageModule {
-  default: string; // The URL of the image
-  // Add other properties if your globbed modules have them
-}
+const PhotoCarousel = lazy(() => import("../carousel/PhotoCarousel"));
+const FilmstripGallery = lazy(() => import("./FilmstripGallery"));
 
 interface Photo {
+  id?: string | number;
   src: string;
-  legend: string;
   alt: string;
-  id: string;
+  legend?: string;
 }
 
 interface DynamicGalleryProps {
-  imageGlobPattern?: string; // Make it optional if it can be undefined
+  imageGlobPattern?: string;
 }
 
-// --- Helper Function ---
-// Type the parameters and return value of the helper
-const processImageModules = (imageModules: Record<string, ImageModule>): Photo[] => {
-  const photos: Photo[] = Object.entries(imageModules).map(([path, module]) => {
-    // 'module' is now typed as ImageModule, so module.default is known
-    const src = module.default;
-    const filenameWithExtension = path.substring(path.lastIndexOf('/') + 1);
-    let name = filenameWithExtension.replace(/\.(png|jpe?g|svg|gif)$/, '');
-    name = name.replace(/[-_]/g, ' ');
-    const legend = name.charAt(0).toUpperCase() + name.slice(1) || `Image ${path}`; // Ensure legend has a fallback
+interface ErrorBoundaryState {
+  hasError: boolean;
+  errorMessage: string | null;
+}
 
-    return {
-      src: src,
-      legend: legend,
-      alt: legend, // Use legend as alt for simplicity, or generate more descriptive alt
-      id: path,
-    };
-  });
+class ErrorBoundary extends Component<{ children: React.ReactNode }, ErrorBoundaryState> {
+  state: ErrorBoundaryState = { hasError: false, errorMessage: null };
 
-  photos.sort((a, b) => {
-    const getSortableName = (item: Photo) => item.id.substring(item.id.lastIndexOf('/') + 1).replace(/\.(png|jpe?g|svg|gif)$/, '');
-    const nameA = getSortableName(a);
-    const nameB = getSortableName(b);
-    const numA = parseInt(nameA.match(/\d+/)?.[0] || '0', 10);
-    const numB = parseInt(nameB.match(/\d+/)?.[0] || '0', 10);
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, errorMessage: error.message };
+  }
 
-    if (numA && numB && numA !== numB) {
-      return numA - numB;
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("Error in gallery component:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="loading-placeholder" role="alert">
+          <p>Error loading gallery: {this.state.errorMessage || "Unknown error"}</p>
+        </div>
+      );
     }
-    return nameA.localeCompare(nameB);
-  });
-  return photos;
-};
-
+    return this.props.children;
+  }
+}
 
 const DynamicGallery: React.FC<DynamicGalleryProps> = ({ imageGlobPattern }) => {
-  // Provide types for useState
-  const [photos, setPhotos] = useState<Photo[]>([]); // Array of Photo objects
-  const [currentSlide, setCurrentSlide] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null); // Can be string or null
-
-  const imageModules: Record<string, ImageModule> = useMemo(() => {
-    if (!imageGlobPattern) return {};
-    try {
-      // --- IMPORTANT LIMITATION & WORKAROUND ---
-      // Vite's import.meta.glob needs a static string literal.
-      // This part of the logic remains the same, but ensure paths are correct.
-      if (imageGlobPattern === '@/assets/photography/*.{png,jpg,jpeg,svg,gif}') {
-        return import.meta.glob('@/assets/photography/*.{png,jpg,jpeg,svg,gif}', { eager: true }) as Record<string, ImageModule>;
-      } else if (imageGlobPattern === '../../../assets/tss/*.{png,jpg,jpeg,svg,gif}') {
-        return import.meta.glob('../../../assets/tss/*.{png,jpg,jpeg,svg,gif}', { eager: true }) as Record<string, ImageModule>;
-      }
-      // Add more known patterns here
-
-      console.warn(`DynamicGallery: Unknown or unhandled imageGlobPattern: ${imageGlobPattern}. Image loading might fail.`);
-      return {};
-    } catch (e) {
-      console.error("Error during import.meta.glob:", e);
-      setError("Failed to initialize image loading."); // Now type-compatible
-      return {};
-    }
-  }, [imageGlobPattern]);
-
+  const { appConfig, features } = useConfig();
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Make sure imageModules is not just an empty object from a failed pattern match before processing
-    if (imageModules && Object.keys(imageModules).length > 0) {
+    async function loadImages() {
       try {
-        const loadedPhotosData = processImageModules(imageModules);
-        setPhotos(loadedPhotosData); // Now type-compatible
-        setIsLoading(false);
-        setError(null); // Type-compatible
-      } catch (e) {
-        console.error("Error processing image modules:", e);
-        setError("Failed to process images."); // Type-compatible
+        setIsLoading(true);
+        const glob = imageGlobPattern || appConfig.imageGlob || "../../../assets/tss/*.{png,jpg,jpeg,svg,gif}";
+        const modules = (import.meta.glob as (pattern: string, options: { eager: boolean }) => Record<string, () => Promise<{ default: string }>>)(
+          "../../../assets/tss/*.{png,jpg,jpeg,svg,gif}",
+          { eager: false }
+        );
+        if (Object.keys(modules).length === 0) {
+          throw new Error(`No images found for pattern: ${glob}`);
+        }
+        const loadedPhotos: Photo[] = await Promise.all(
+          Object.keys(modules).map(async (path, index) => {
+            const module = await modules[path]();
+            return {
+              id: index,
+              src: module.default,
+              alt: `Gallery image ${index + 1}`,
+            };
+          })
+        );
+        setPhotos(loadedPhotos);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load images");
+      } finally {
         setIsLoading(false);
       }
-    } else if (imageGlobPattern && !error) { // Only set error if not already set, to avoid loops if error is in dependency array
-        setIsLoading(false);
-        setError("No image modules loaded for the provided pattern. Check pattern or glob limitations."); // Type-compatible
-    } else if (!imageGlobPattern) { // No pattern provided initially
-        setIsLoading(false);
     }
-  }, [imageModules, imageGlobPattern, error]);
+    loadImages();
+  }, [imageGlobPattern, appConfig.imageGlob]);
 
-
-  const handleThumbnailClick = (index: number) => { // Typed index
-    setCurrentSlide(index);
-  };
-
-  const handleCarouselChange = (index: number) => { // Typed index
-    setCurrentSlide(index);
-  };
+  const handleCarouselChange = (index: number) => setCurrentSlide(index);
+  const handleThumbnailClick = (index: number) => setCurrentSlide(index);
 
   if (isLoading) {
-    return <div className="loading-placeholder"><p>Loading gallery...</p></div>;
+    return (
+      <div className="loading-placeholder" role="status">
+        <p>Loading gallery...</p>
+      </div>
+    );
   }
 
   if (error) {
-    // Added a key here for stability if error message changes
-    return <div className="loading-placeholder" key="error"><p>Error: {error}</p></div>;
+    return (
+      <div className="loading-placeholder" role="alert">
+        <p>Error: {error}</p>
+      </div>
+    );
   }
 
   if (photos.length === 0) {
     return (
-      <div className="loading-placeholder" key="no-photos">
+      <div className="loading-placeholder" role="status">
         <p>
           No images found for pattern: <code>{imageGlobPattern || "N/A"}</code>
         </p>
@@ -136,23 +111,19 @@ const DynamicGallery: React.FC<DynamicGalleryProps> = ({ imageGlobPattern }) => 
     );
   }
 
-  // Generate a more stable ID for the gallery wrapper
-  const galleryIdSuffix = imageGlobPattern ? imageGlobPattern.replace(/[^a-zA-Z0-9_]/g, '-') : 'default-gallery';
-
+  const galleryIdSuffix = imageGlobPattern ? imageGlobPattern.replace(/[^a-zA-Z0-9_]/g, "-") : `gallery-${appConfig.slug || "default"}`;
   return (
-    <div className="w-full mx-auto max-w-3xl px-2 sm:px-4" id={`gallery-${galleryIdSuffix}`}>
-      <PhotoCarousel
-        photosData={photos} // photos is Photo[]
-        selectedItem={currentSlide}
-        onChange={handleCarouselChange}
-      />
-      <FilmstripGallery
-        photosData={photos} // photos is Photo[]
-        currentIndex={currentSlide}
-        onThumbnailClick={handleThumbnailClick}
-      />
+    <div className="carousel-container" id={`gallery-${galleryIdSuffix}`} role="region" aria-label="Photo gallery">
+      <ErrorBoundary>
+        <Suspense fallback={<div className="loading-placeholder"><p>Loading carousel...</p></div>}>
+          <PhotoCarousel photosData={photos} selectedItem={currentSlide} onChange={handleCarouselChange} />
+          {features?.filmstrip && (
+            <FilmstripGallery photosData={photos} currentIndex={currentSlide} onThumbnailClick={handleThumbnailClick} />
+          )}
+        </Suspense>
+      </ErrorBoundary>
     </div>
   );
-}
+};
 
 export default DynamicGallery;

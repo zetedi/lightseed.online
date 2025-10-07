@@ -10,28 +10,31 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { db } from "../../../firebase";
-import { collection, addDoc } from "firebase/firestore";
-import { serverTimestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase"; // Updated to firebase.ts
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/components/ui/use-toast";
 
 export function SubscriptionDialog() {
   const [email, setEmail] = useState("");
   const { toast } = useToast();
 
-  const inputHandler = (e) => {
-    console.log(email);
+  const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+  const inputHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
   };
 
-  const submitHandler = async (e) => {
+  const submitHandler = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateEmail(email)) {
+      toast({ title: "Invalid email", variant: "destructive" });
+      return;
+    }
     try {
-      const docRef = await addDoc(collection(db, "emails"), {
-        email: email,
-        timestamp: serverTimestamp()
+      await addDoc(collection(db, "emails"), {
+        email,
+        timestamp: serverTimestamp(),
       });
-      console.log("Document written with ID: ", docRef.id);
       setEmail("");
       toast({
         title: "Thank you! The email you subscribed with is:",
@@ -43,8 +46,10 @@ export function SubscriptionDialog() {
       });
     } catch (e) {
       console.error("Error adding document: ", e);
+      toast({ title: "Subscription failed", variant: "destructive" });
     }
   };
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -52,32 +57,28 @@ export function SubscriptionDialog() {
           One email every seven weeks
         </Button>
       </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>One email every seven weeks.</DialogTitle>
-            <DialogDescription>
-              You might get the first one earlier
-            </DialogDescription>
-          </DialogHeader>
-
-          <Input
-            id="name"
-            type="email"
-            placeholder="Email address"
-            onChange={inputHandler}
-            value={email}
-          />
-
-          <DialogFooter className="sm:justify-end">
-            <Button
-              className="redbutton dark:text-white light:text-black"
-              onClick={submitHandler}
-            >
-              Subscribe
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>One email every seven weeks.</DialogTitle>
+          <DialogDescription>You might get the first one earlier</DialogDescription>
+        </DialogHeader>
+        <Input
+          id="name"
+          type="email"
+          placeholder="Email address"
+          onChange={inputHandler}
+          value={email}
+          required
+        />
+        <DialogFooter className="sm:justify-end">
+          <Button
+            className="redbutton dark:text-white light:text-black"
+            onClick={submitHandler}
+          >
+            Subscribe
+          </Button>
+        </DialogFooter>
+      </DialogContent>
     </Dialog>
   );
 }

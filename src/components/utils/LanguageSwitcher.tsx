@@ -1,8 +1,5 @@
-"use client";
-
 import * as React from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
-
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,8 +27,7 @@ export function LanguageSwitcher() {
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState("");
 
-  function handleToast(value) {
-    console.log("test");
+  function handleToast(value: string) {
     toast({
       title: "You submitted the following values:",
       description: (
@@ -67,12 +63,11 @@ export function LanguageSwitcher() {
                 <CommandItem
                   key={language.value}
                   value={language.value}
-                  onSelect={(currentValue) => {
+                  onSelect={(currentValue: React.SetStateAction<string>) => {
                     setValue(currentValue === value ? "" : currentValue);
                     setOpen(false);
-                    handleToast(currentValue);
+                    handleToast("cv");
                   }}
-                  onClick={handleToast}
                 >
                   <Check
                     className={cn(

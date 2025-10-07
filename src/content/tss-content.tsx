@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import DynamicGallery from "../components/gallery/DynamicGallery";
+import DynamicGallery from "@/components/gallery/DynamicGallery";
 import ArticleImage from '../components/image/ArticleImage';
 
 const PHOTOFOLDER = "../../../assets/tss/*.{png,jpg,jpeg,svg,gif}";
@@ -10,11 +10,6 @@ export const tssContent = [
     title: "The Secret Sun",
     content: (
       <p className="text-justify indent-8">
-        <ArticleImage
-          src='/tss.png'
-          alt='The Secret Sun'
-          // caption='The Secret Sun'
-        />
         The Secret Sun is the third part of the path of lightseed. After
         planting our intention in our heart, we plant a tree. Then the third
         part is to plant a seed in the community to foster a deeper connection

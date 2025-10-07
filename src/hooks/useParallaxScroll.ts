@@ -2,15 +2,24 @@ import { useState, useEffect } from 'react';
 
 export const useParallaxScroll = () => {
   const [offsetY, setOffsetY] = useState(0);
+  let frameId: number;
 
   useEffect(() => {
-    const handleScroll = () => setOffsetY(window.scrollY);
+    const handleScroll = () => {
+      if (!frameId) {
+        frameId = requestAnimationFrame(() => {
+          setOffsetY(window.scrollY);
+          frameId = 0;
+        });
+      }
+    };
 
     window.addEventListener('scroll', handleScroll);
-    
-    // Cleanup the event listener when the hook is unmounted
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []); // Empty dependency array ensures this effect runs only once
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (frameId) cancelAnimationFrame(frameId);
+    };
+  }, []);
 
   return offsetY;
 };

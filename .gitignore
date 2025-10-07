@@ -24,5 +24,8 @@ dist-ssr
 *.sln
 *.sw?
 
+flattened_project.txt
+flattened_project.txt.debug
+
 # Branch config
 # public/config.json

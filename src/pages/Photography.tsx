@@ -1,9 +1,8 @@
-import ThemeProvider from "../components/ThemeProvider";
-import TextStrip from "../components/text-strip/TextStrip";
-import DynamicGallery from "../components/gallery/DynamicGallery";
+import ThemeProvider from "@/components/ThemeProvider";
+import TextStrip from "@/components/text-strip/TextStrip";
+import DynamicGallery from "@/components/gallery/DynamicGallery";
 
 function Photography() {
-
   const PHOTOFOLDER = "../../../assets/photography/*.{png,jpg,jpeg,svg,gif}";
 
   return (

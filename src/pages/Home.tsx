@@ -13,26 +13,22 @@ function Home() {
         <div className="relative z-10">
           <div
             className="
-          w-full 
-    flex flex-wrap items-center justify-center 
-    md:grid md:grid-cols-2 lg:grid-cols-4 gap-3 p-3"
+              w-full 
+              flex flex-wrap items-center justify-center 
+              md:grid md:grid-cols-2 lg:grid-cols-4 gap-3 p-3"
           >
             <ImageLink to="/phoenix" imageUrl="/phoenix.jpg">
               The lifetree
             </ImageLink>
-
             <ImageLink to="/thesecretsun" imageUrl="/tss.jpg">
               The Secret Sun
             </ImageLink>
-
             <ImageLink to="/yantra" imageUrl="/yantra.png">
               The Yantra
             </ImageLink>
-
             <ImageLink to="/white" imageUrl="/white.png">
               The White Paper
             </ImageLink>
-
             <ImageLink to="/simulator" imageUrl="/simulator.png">
               The Simulator
             </ImageLink>
@@ -40,8 +36,8 @@ function Home() {
 
           <Spacer height="1vh" />
 
-          <TextStrip title={`live light`}>
-            <p className=" w-full text-justify mb-2">
+          <TextStrip title="live light">
+            <p className="w-full text-justify mb-2">
               &nbsp;&nbsp;The purpose of <b>lightseed</b> is to bring joy. The
               joy of realizing the bliss of conscious, compassionate, grateful
               existence by opening a portal to the center of life. By creating a
@@ -65,12 +61,12 @@ function Home() {
 
           <Spacer height="3vh" />
 
-          <TextStrip title={`The first steps`}>
-            <p className=" w-full text-justify mb-2">
+          <TextStrip title="The first steps">
+            <p className="w-full text-justify mb-2">
               We plant lightseed (our vision) with the seed of a tree we have a
               deep connection with in four realms:
             </p>
-            <p className=" w-full text-justify mb-1">
+            <p className="w-full text-justify mb-1">
               <ul className="list-disc pl-4 pt-2 mx-1">
                 <li>
                   in our spiritual heart, with the intention of realization (or
@@ -89,14 +85,14 @@ function Home() {
                     </a>
                   </b>
                   )
-                </li>{" "}
+                </li>
                 <li>
                   in the light, in virtual (by creating our servers and online
                   projects to be guided by nature)
                 </li>
               </ul>
             </p>
-            <p className=" w-full text-justify">
+            <p className="w-full text-justify">
               All four quadrants are ultimately (and intimately) connected with
               the animating force or lifeforce - the beginning of creation.
             </p>
@@ -104,8 +100,8 @@ function Home() {
 
           <Spacer height="3vh" />
 
-          <TextStrip title={`We stand for trees`}>
-            <p className=" w-full text-justify">
+          <TextStrip title="We stand for trees">
+            <p className="w-full text-justify">
               Subscribe to a very rare newsletter with the button below:
               <br />
               <br />

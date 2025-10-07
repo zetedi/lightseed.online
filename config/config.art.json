@@ -2,14 +2,22 @@
   "app": {
     "type": "art",
     "title": "Lightseed • The Divine Story",
-    "slug": "divine-story"
+    "slug": "divine-story",
+    "imageGlob": "../../../assets/photography/*.{png,jpg,jpeg,svg,gif}"
   },
   "theme": {
     "accent": "#ffd166",
-    "mode": "dark"
+    "mode": "dark",
+    "backgroundImage": "/harmony.svg",
+    "logo": "/lifeseed.svg"
   },
   "features": {
     "mastodonBridge": false,
-    "map": false
-  }
+    "map": false,
+    "filmstrip": true
+  },
+  "mainNav": [
+    { "title": "Home", "href": "/" },
+    { "title": "Photography", "href": "/photos" }
+  ]
 }
