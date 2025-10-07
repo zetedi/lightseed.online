@@ -1,36 +1,60 @@
-import { useState } from "react";
-import axios from "axios";
+import { useState, useEffect, useRef } from "react";
 
-type Msg = { from: "me" | "ai"; text: string };
+interface ChatMessage {
+  id: string;
+  text: string;
+  sender: "user" | "ai";
+}
 
-export default function ChatPanel() {
-  const [msgs, setMsgs] = useState<Msg[]>([]);
-  const [text, setText] = useState("");
+interface ChatPanelProps {
+  apiKey: string;
+}
+
+export default function ChatPanel({ apiKey }: ChatPanelProps) {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const send = async () => {
-    const t = text.trim();
-    if (!t) return;
-    setMsgs((m) => [...m, { from: "me", text: t }]);
-    setText("");
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const sendMessage = async () => {
+    if (!input.trim() || !apiKey) return;
+
+    const userMessage: ChatMessage = { id: crypto.randomUUID(), text: input, sender: "user" };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
     setIsLoading(true);
+
     try {
-      const apiKey = (import.meta.env as ImportMetaEnv).VITE_XAI_API_KEY;
-      if (!apiKey) {
-        throw new Error("VITE_XAI_API_KEY is not defined in .env");
-      }
-      const response = await axios.post(
-        "https://api.x.ai/v1/chat",
-        { message: t },
-        {
-          headers: { Authorization: `Bearer ${apiKey}` },
-        }
-      );
-      setMsgs((m) => [...m, { from: "ai", text: response.data.reply }]);
+      const response = await fetch("https://api.x.ai/v1/grok", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "grok",
+          messages: [{ role: "user", content: input }],
+          max_tokens: 150,
+        }),
+      });
+
+      if (!response.ok) throw new Error("API request failed");
+      const data = await response.json();
+      const aiMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        text: data.choices[0].message.content,
+        sender: "ai",
+      };
+      setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
-      setMsgs((m) => [
-        ...m,
-        { from: "ai", text: `Error: ${error instanceof Error ? error.message : "Unknown error"}` },
+      const errorMessage = error instanceof Error ? `Error: ${error.message}` : "An unknown error occurred";
+      setMessages((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), text: errorMessage, sender: "ai" },
       ]);
     } finally {
       setIsLoading(false);
@@ -38,26 +62,35 @@ export default function ChatPanel() {
   };
 
   return (
-    <div className="card">
-      <h2 className="text-base text-muted mb-2">Chat with AI</h2>
-      <div className="chat-log mb-2">
-        {msgs.map((m, i) => (
-          <div key={i} className={`chat-msg ${m.from === "me" ? "chat-me" : "chat-ai"}`}>
-            {m.text}
+    <div className="card bg-card border border-border p-3 rounded-2xl h-[300px] flex flex-col">
+      <h2 className="text-base text-muted-foreground">Chat with AI</h2>
+      <div className="flex-1 overflow-y-auto mb-2">
+        {messages.map((msg) => (
+          <div
+            key={msg.id}
+            className={`my-2 p-2 rounded-lg ${
+              msg.sender === "user" ? "bg-accent text-accent-foreground ml-auto" : "bg-muted text-muted-foreground"
+            }`}
+          >
+            {msg.text}
           </div>
         ))}
-        {isLoading && <div className="chat-msg chat-ai">Thinking...</div>}
+        <div ref={chatEndRef} />
       </div>
       <div className="flex gap-2">
-        <textarea
-          className="flex-1 bg-[#0f151b] border border-white/10 rounded-lg p-2"
-          rows={3}
-          placeholder="Type your message..."
-          value={text}
-          onChange={(e) => setText(e.target.value)}
+        <input
+          className="flex-1 bg-card border border-border rounded-lg p-2 text-foreground"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+          placeholder="Type a message..."
           disabled={isLoading}
         />
-        <button className="btn btn-primary h-fit" onClick={send} disabled={isLoading}>
+        <button
+          className="btn btn-primary text-primary-foreground"
+          onClick={sendMessage}
+          disabled={isLoading}
+        >
           Send
         </button>
       </div>

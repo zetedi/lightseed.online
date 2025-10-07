@@ -77,11 +77,19 @@
     @apply bg-background/80 border border-[var(--accent-color)] text-foreground rounded-full flex items-center justify-center hover:bg-accent transition-all;
     font-size: 1rem;
     line-height: 1;
-    margin: 0 4px;
+    margin: 0 2px;
   }
 
   .carousel-container {
     @apply w-full max-w-none sm:max-w-lg md:max-w-3xl px-2 sm:px-4;
+  }
+
+  .text-light-fallback {
+    color: hsl(var(--foreground)); /* Should use light mode foreground */
+  }
+
+  .light .text-light-fallback {
+    color: hsl(210, 40%, 98%); /* Explicit light mode fallback */
   }
 }
 
@@ -165,17 +173,17 @@ body {
 }
 
 .btn {
-  @apply border border-white/20 bg-[#1f2633] text-white px-3 py-1.5 rounded-lg font-semibold;
+  @apply border border-border bg-card text-foreground px-3 py-1.5 rounded-lg font-semibold;
 }
 
-.btn:hover { @apply border-[var(--accent-color)]; }
+.btn:hover { @apply border-accent; }
 
 .btn-primary {
-  @apply border-yellow-300/60 bg-[#171d06] text-[#fff2a8] shadow-glow;
+  @apply border-accent/60 bg-primary text-primary-foreground shadow-glow;
 }
 
 .image-link {
-  @apply relative flex items-start justify-start p-2 sm:p-3 text-white font-bold text-lg w-[150px] h-[100px] md:w-auto md:h-32 rounded-lg border-2 border-[#700] shadow-lg shadow-green-900/50 dark:shadow-white/30 overflow-hidden transition-all duration-300;
+  @apply relative flex items-start justify-start p-2 sm:p-3 text-foreground font-bold text-lg w-[150px] h-[100px] md:w-auto md:h-32 rounded-lg border-2 border-[#700] shadow-lg shadow-green-900/50 dark:shadow-white/30 overflow-hidden transition-all duration-300;
   background-size: cover;
   background-position: center top;
 }

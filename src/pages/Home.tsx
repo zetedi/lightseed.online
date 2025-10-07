@@ -23,7 +23,7 @@ function Home() {
             <ImageLink to="/thesecretsun" imageUrl="/tss.jpg">
               The Secret Sun
             </ImageLink>
-            <ImageLink to="/yantra" imageUrl="/yantra.png">
+            <ImageLink to="/" imageUrl="/yantra.png">
               The Yantra
             </ImageLink>
             <ImageLink to="/white" imageUrl="/white.png">

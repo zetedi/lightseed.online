@@ -7,14 +7,13 @@ import { useNavigate } from "react-router-dom";
 import type { Connection, Pulse, Tree } from "@/types/Types";
 
 export default function Simulator() {
-
   const navigate = useNavigate();
 
   // Mock initial data
   const [trees, setTrees] = useState<Tree[]>([
-    { id: crypto.randomUUID(), kind: "mother",  name: "Mother Tree 1",  lat: 27.9881, lng: 86.9250, note: "Kailash", color: "#007bff" },
-    { id: crypto.randomUUID(), kind: "lifetree", name: "Lifetree 1",     lat: 45.4215, lng: -75.6993, note: "Ottawa", color: "#28a745" },
-    { id: crypto.randomUUID(), kind: "guardian", name: "Guardian 1",     lat: 48.8566, lng: 2.3522,   note: "Paris",  color: "#e67e22" },
+    { id: crypto.randomUUID(), kind: "mother", name: "Mother Tree 1", lat: 27.9881, lng: 86.9250, note: "Kailash", color: "#007bff" },
+    { id: crypto.randomUUID(), kind: "lifetree", name: "Lifetree 1", lat: 45.4215, lng: -75.6993, note: "Ottawa", color: "#28a745" },
+    { id: crypto.randomUUID(), kind: "guardian", name: "Guardian 1", lat: 48.8566, lng: 2.3522, note: "Paris", color: "#e67e22" },
   ]);
   const [pulses, setPulses] = useState<Pulse[]>([]);
   const [connections] = useState<Connection[]>([
@@ -26,20 +25,19 @@ export default function Simulator() {
   const [modalOpen, setModalOpen] = useState(false);
 
   const addTree = (t: Tree) => {
-    setTrees(ts => [...ts, t]);
+    setTrees((ts) => [...ts, t]);
   };
 
   const addPulse = (text: string) => {
-    setPulses(ps => [...ps, { id: crypto.randomUUID(), text }]);
+    setPulses((ps) => [...ps, { id: crypto.randomUUID(), text }]);
   };
   const deletePulse = (id: string) => {
-    setPulses(ps => ps.filter(p => p.id !== id));
+    setPulses((ps) => ps.filter((p) => p.id !== id));
   };
   const attachPulse = (id: string) => {
-    // naive attach to the first lifetree
-    const firstTree = trees.find(t => t.kind !== "mother");
+    const firstTree = trees.find((t) => t.kind !== "mother");
     if (!firstTree) return;
-    setPulses(ps => ps.map(p => (p.id === id ? { ...p, attachedTreeId: firstTree.id } : p)));
+    setPulses((ps) => ps.map((p) => (p.id === id ? { ...p, attachedTreeId: firstTree.id } : p)));
   };
 
   const onViewMatches = () => {
@@ -52,25 +50,17 @@ export default function Simulator() {
   );
 
   return (
-    <>
-      <main className={gridClasses}>
-        {/* <MapPanel trees={trees} onOpenAddTree={() => setModalOpen(true)} /> */}
-        <PulsesPanel
-          pulses={pulses}
-          onAdd={addPulse}
-          onDelete={deletePulse}
-          onAttach={attachPulse}
-          onViewMatches={onViewMatches}
-        />
-        <ConnectionsPanel connections={connections} />
-        <ChatPanel />
-      </main>
-
-      <TreeModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onAdd={addTree}
+    <main className={`${gridClasses} bg-background text-foreground`}>
+      <PulsesPanel
+        pulses={pulses}
+        onAdd={addPulse}
+        onDelete={deletePulse}
+        onAttach={attachPulse}
+        onViewMatches={onViewMatches}
       />
-    </>
+      <ConnectionsPanel connections={connections} />
+      <ChatPanel apiKey={import.meta.env.VITE_APP_XAI_API_KEY || ""} />
+      <TreeModal open={modalOpen} onClose={() => setModalOpen(false)} onAdd={addTree} />
+    </main>
   );
 }

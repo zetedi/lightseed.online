@@ -31,9 +31,6 @@ export function DotMenu() {
           <Link to="/photos">Images</Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
-          <Link to="/yantra">The Yantra</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem>
           <Link to="/white">The White Paper</Link>
         </DropdownMenuItem>
         <DropdownMenuItem>

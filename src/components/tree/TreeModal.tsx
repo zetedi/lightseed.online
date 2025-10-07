@@ -17,17 +17,27 @@ export default function TreeModal({ open, onClose, onAdd }: Props) {
 
   useEffect(() => {
     if (!open) {
-      setName(""); setLat(""); setLng(""); setNote("");
+      setName("");
+      setLat("");
+      setLng("");
+      setNote("");
       setPhotoDataUrl(undefined);
-      const c = canvasRef.current; if (c) { c.style.display = "none"; c.getContext("2d")?.clearRect(0,0,c.width,c.height); }
+      const c = canvasRef.current;
+      if (c) {
+        c.style.display = "none";
+        c.getContext("2d")?.clearRect(0, 0, c.width, c.height);
+      }
     }
   }, [open]);
 
   const geolocate = () => {
     if (!navigator.geolocation) return alert("Geolocation not supported.");
     navigator.geolocation.getCurrentPosition(
-      pos => { setLat(pos.coords.latitude.toFixed(6)); setLng(pos.coords.longitude.toFixed(6)); },
-      err => alert("Geolocation error: " + err.message)
+      (pos) => {
+        setLat(pos.coords.latitude.toFixed(6));
+        setLng(pos.coords.longitude.toFixed(6));
+      },
+      (err) => alert("Geolocation error: " + err.message)
     );
   };
 
@@ -35,7 +45,7 @@ export default function TreeModal({ open, onClose, onAdd }: Props) {
     const f = e.target.files?.[0];
     if (!f) return;
     const reader = new FileReader();
-    reader.onload = ev => setPhotoDataUrl(ev.target?.result as string);
+    reader.onload = (ev) => setPhotoDataUrl(ev.target?.result as string);
     reader.readAsDataURL(f);
   };
 
@@ -63,7 +73,8 @@ export default function TreeModal({ open, onClose, onAdd }: Props) {
   };
 
   const submit = () => {
-    const latN = parseFloat(lat), lngN = parseFloat(lng);
+    const latN = parseFloat(lat);
+    const lngN = parseFloat(lng);
     if (!name || Number.isNaN(latN) || Number.isNaN(lngN)) {
       alert("Please fill tree name and coordinates.");
       return;
@@ -89,40 +100,95 @@ export default function TreeModal({ open, onClose, onAdd }: Props) {
   };
 
   return (
-    <div className={`modal ${open ? "show" : ""}`} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal-content">
-        <h3 className="text-lg mb-3">Add a New Tree</h3>
-        <label className="block text-sm mb-1">Tree Name</label>
-        <input className="w-full bg-[#0f151b] border border-white/10 rounded-lg p-2 mb-2"
-               value={name} onChange={e=>setName(e.target.value)} placeholder="Give your tree a name" />
+    <div
+      className={`modal fixed inset-0 bg-black/50 ${open ? "block" : "hidden"}`}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="modal-content bg-card p-4 rounded-lg max-w-md mx-auto mt-10">
+        <h3 className="text-lg mb-3 text-card-foreground">Add a New Tree</h3>
+        <label className="block text-sm mb-1 text-muted-foreground">Tree Name</label>
+        <input
+          className="w-full bg-card border border-border rounded-lg p-2 mb-2 text-foreground"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Give your tree a name"
+        />
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="block text-sm mb-1">Latitude</label>
-            <input className="w-full bg-[#0f151b] border border-white/10 rounded-lg p-2 mb-2"
-                   value={lat} onChange={e=>setLat(e.target.value)} placeholder="Latitude" />
+            <label className="block text-sm mb-1 text-muted-foreground">Latitude</label>
+            <input
+              className="w-full bg-card border border-border rounded-lg p-2 mb-2 text-foreground"
+              value={lat}
+              onChange={(e) => setLat(e.target.value)}
+              placeholder="Latitude"
+            />
           </div>
           <div>
-            <label className="block text-sm mb-1">Longitude</label>
-            <input className="w-full bg-[#0f151b] border border-white/10 rounded-lg p-2 mb-2"
-                   value={lng} onChange={e=>setLng(e.target.value)} placeholder="Longitude" />
+            <label className="block text-sm mb-1 text-muted-foreground">Longitude</label>
+            <input
+              className="w-full bg-card border border-border rounded-lg p-2 mb-2 text-foreground"
+              value={lng}
+              onChange={(e) => setLng(e.target.value)}
+              placeholder="Longitude"
+            />
           </div>
         </div>
-        <button className="btn mb-2" onClick={geolocate}>Use my location</button>
+        <button
+          className="btn mb-2 text-foreground hover:border-accent"
+          onClick={geolocate}
+        >
+          Use my location
+        </button>
 
-        <label className="block text-sm mb-1">Note</label>
-        <textarea className="w-full bg-[#0f151b] border border-white/10 rounded-lg p-2 mb-2"
-                  rows={2} value={note} onChange={e=>setNote(e.target.value)} placeholder="Add a note (optional)"></textarea>
+        <label className="block text-sm mb-1 text-muted-foreground">Note</label>
+        <textarea
+          className="w-full bg-card border border-border rounded-lg p-2 mb-2 text-foreground"
+          rows={2}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="Add a note (optional)"
+        ></textarea>
 
-        <label className="block text-sm mb-1">Guardian Picture (upload or generate)</label>
-        <input type="file" accept="image/*" onChange={onPickPhoto} className="mb-2" placeholder="Guardian Picture" />
-        {photoDataUrl && <img src={photoDataUrl} alt="preview" className="max-w-full mb-2 rounded-lg" />}
+        <label className="block text-sm mb-1 text-muted-foreground">Guardian Picture (upload or generate)</label>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={onPickPhoto}
+          className="mb-2"
+          placeholder="Guardian Picture"
+        />
+        {photoDataUrl && (
+          <img src={photoDataUrl} alt="preview" className="max-w-full mb-2 rounded-lg" />
+        )}
 
-        <button className="btn mb-2" onClick={genFractal}>Generate Fractal</button>
-        <canvas ref={canvasRef} width={200} height={200} className="hidden border border-white/10 rounded-lg"></canvas>
+        <button
+          className="btn mb-2 text-foreground hover:border-accent"
+          onClick={genFractal}
+        >
+          Generate Fractal
+        </button>
+        <canvas
+          ref={canvasRef}
+          width={200}
+          height={200}
+          className="hidden border border-border rounded-lg"
+        ></canvas>
 
         <div className="flex justify-end gap-2 mt-3">
-          <button className="btn" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" onClick={submit}>Add Tree</button>
+          <button
+            className="btn text-foreground hover:border-accent"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+          <button
+            className="btn btn-primary text-primary-foreground"
+            onClick={submit}
+          >
+            Add Tree
+          </button>
         </div>
       </div>
     </div>

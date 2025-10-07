@@ -10,7 +10,6 @@ import Layout from "@/pages/Layout";
 import ThemeProvider from "@/components/ThemeProvider";
 import TailwindIndicator from "@/components/utils/TailwindIndicator";
 import GlowBorder from "@/components/utils/layout/GlowBorder";
-import Yantra from "@/pages/Yantra";
 
 export default function App() {
   return (
@@ -26,7 +25,6 @@ export default function App() {
               <Route path="white" element={<TheWhitePaper />} />
               <Route path="phoenix" element={<Phoenix />} />
               <Route path="photos" element={<Photography />} />
-              <Route path="yantra" element={<Yantra />} />
               <Route path="simulator" element={<Simulator />} />
               <Route path="thetree" element={<TheTree />} />
             </Route>

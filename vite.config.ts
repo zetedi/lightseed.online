@@ -9,4 +9,15 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    proxy: {
+      '/api/xai': {
+        target: 'https://api.x.ai/v1/grok',
+        changeOrigin: true,
+        headers: {
+          'Authorization': `Bearer ${process.env.VITE_APP_XAI_API_KEY}`,
+        },
+      },
+    },
+  },
 });
