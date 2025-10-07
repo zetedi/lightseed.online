@@ -1,6 +1,5 @@
 import { useState, useEffect, lazy, Suspense, Component, ErrorInfo } from "react";
 import { useConfig } from "@/context/ConfigContext";
-
 const PhotoCarousel = lazy(() => import("../carousel/PhotoCarousel"));
 const FilmstripGallery = lazy(() => import("./FilmstripGallery"));
 
@@ -22,15 +21,12 @@ interface ErrorBoundaryState {
 
 class ErrorBoundary extends Component<{ children: React.ReactNode }, ErrorBoundaryState> {
   state: ErrorBoundaryState = { hasError: false, errorMessage: null };
-
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, errorMessage: error.message };
   }
-
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Error in gallery component:", error, errorInfo);
   }
-
   render() {
     if (this.state.hasError) {
       return (
@@ -112,8 +108,9 @@ const DynamicGallery: React.FC<DynamicGalleryProps> = ({ imageGlobPattern }) => 
   }
 
   const galleryIdSuffix = imageGlobPattern ? imageGlobPattern.replace(/[^a-zA-Z0-9_]/g, "-") : `gallery-${appConfig.slug || "default"}`;
+
   return (
-    <div className="carousel-container" id={`gallery-${galleryIdSuffix}`} role="region" aria-label="Photo gallery">
+    <div className="carousel-container w-full max-w-none sm:max-w-lg md:max-w-3xl px-2 sm:px-4" id={`gallery-${galleryIdSuffix}`} role="region" aria-label="Photo gallery">
       <ErrorBoundary>
         <Suspense fallback={<div className="loading-placeholder"><p>Loading carousel...</p></div>}>
           <PhotoCarousel photosData={photos} selectedItem={currentSlide} onChange={handleCarouselChange} />
