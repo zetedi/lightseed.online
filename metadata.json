@@ -1,0 +1,7 @@
+{
+  "name": "LifeSeed on Firebase",
+  "description": "A modern social sharing platform built with React and Firebase, inspired by LifeSeed. Users can create posts, share ideas, and interact with a community. Features AI-powered title suggestions using the Gemini API and an interactive map of user Lifetrees.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
