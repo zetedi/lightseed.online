@@ -21,6 +21,8 @@ export interface Comment {
   authorId: string;
   authorName: string;
   createdAt: Timestamp;
+  // FIX: Added postId to link comments to posts.
+  postId: string;
 }
 
 export interface Lifetree {
