@@ -11,8 +11,9 @@ export default defineConfig(({ mode }) => {
       },
       plugins: [react()],
       define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+        // We map process.env to window.process.env to allow runtime injection of the API Key
+        // by the AI Studio environment. If we hardcode it here, it becomes static and empty.
+        'process.env': 'window.process?.env || {}',
       },
       resolve: {
         alias: {

@@ -1,22 +1,18 @@
+import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 
-import { GoogleGenAI } from "@google/genai";
-import { type GenerateContentResponse } from "@google/genai";
-
-// Read API Key from Vite Environment Variables
-const API_KEY = (import.meta as any).env.VITE_API_KEY;
-
-// Lazy initialization to prevent top-level crash
-let aiClient: GoogleGenAI | null = null;
-
-const getAiClient = () => {
-    if (!aiClient) {
-        if (!API_KEY) {
-            console.warn("LifeSeed: VITE_API_KEY is missing in .env");
-            return null;
-        }
-        aiClient = new GoogleGenAI({ apiKey: API_KEY });
+// Helper to get a fresh client instance every time.
+// This ensures we capture the API Key if it is injected dynamically by the UI (window.aistudio).
+const getAiClient = (): GoogleGenAI | null => {
+    // process.env.API_KEY is the strict requirement.
+    // We access it dynamically to support runtime injection.
+    const apiKey = process.env.API_KEY;
+    
+    if (!apiKey) {
+        console.warn("LifeSeed: process.env.API_KEY is missing. Please select an API key via the UI.");
+        return null;
     }
-    return aiClient;
+    
+    return new GoogleGenAI({ apiKey });
 }
 
 export const generatePostTitle = async (body: string): Promise<string> => {
@@ -49,8 +45,9 @@ export const generateLifetreeBio = async (seed: string): Promise<string> => {
   
   const ai = getAiClient();
   if (!ai) {
+      // Return a fallback so the UI doesn't crash, but warn user
       console.warn("Gemini API Key missing");
-      return "Roots run deep... (AI key missing)";
+      return "Roots run deep... (Please connect AI Key via the Key icon)";
   }
 
   try {
@@ -71,7 +68,7 @@ export const generateLifetreeBio = async (seed: string): Promise<string> => {
     return response.text ? response.text.trim() : "";
   } catch (error) {
     console.error("Error generating bio:", error);
-    return "";
+    return "The forest whispers quietly... (AI Error)";
   }
 }
 
@@ -80,7 +77,7 @@ export const generateVisionImage = async (prompt: string): Promise<string | null
     if (!prompt.trim()) return null;
     const ai = getAiClient();
     if (!ai) {
-        throw new Error("API Key Missing");
+        throw new Error("API Key Missing. Please click the Key icon in the top menu to connect Gemini.");
     }
 
     try {
@@ -93,7 +90,7 @@ export const generateVisionImage = async (prompt: string): Promise<string | null
             config: {
                 imageConfig: {
                     aspectRatio: "1:1",
-                    // imageSize is NOT supported by gemini-2.5-flash-image, only pro models
+                    // imageSize is NOT supported by gemini-2.5-flash-image
                 }
             }
         });
@@ -113,6 +110,9 @@ export const generateVisionImage = async (prompt: string): Promise<string | null
         const errorMsg = e.toString().toLowerCase();
         if (errorMsg.includes("429") || errorMsg.includes("quota") || errorMsg.includes("resource_exhausted")) {
              throw new Error("Daily quota or rate limit exceeded. Please wait 30 seconds and try again.");
+        }
+        if (errorMsg.includes("key not valid") || errorMsg.includes("api_key_invalid")) {
+            throw new Error("Invalid API Key. Please re-select your key using the Key icon.");
         }
 
         // Throw specific error message to be caught by UI

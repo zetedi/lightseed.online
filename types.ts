@@ -28,6 +28,17 @@ export interface Lifetree {
   blockHeight: number;
 }
 
+export interface Vision {
+  id: string;
+  lifetreeId: string;
+  authorId: string;
+  title: string;
+  body: string;
+  link?: string;
+  imageUrl?: string;
+  createdAt: Timestamp;
+}
+
 // The Block
 export interface Pulse {
   id: string;
