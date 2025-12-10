@@ -13,9 +13,11 @@ export default defineConfig(({ mode }) => {
       },
       plugins: [react()],
       define: {
-        // Polyfill process.env to work locally (from .env file) AND in AI Studio (from window.process)
-        // Checks if window.process exists before accessing it to avoid errors in some environments
-        'process.env': `Object.assign({}, ${JSON.stringify(env)}, (typeof window !== "undefined" && window.process ? window.process.env : {}) || {})`,
+        // Expose loaded env vars as a global constant
+        '__STATIC_ENV__': JSON.stringify(env),
+        // Remap process.env to window.process.env to support runtime injection + static build
+        // This satisfies esbuild (it's a simple identifier replacement)
+        'process.env': 'window.process.env',
       },
       resolve: {
         alias: {
