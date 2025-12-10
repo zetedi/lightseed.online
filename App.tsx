@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, FormEvent, useRef, ChangeEvent } from 'react';
 import {
   signInWithGoogle,
@@ -23,11 +24,12 @@ import {
   createVision,
   getMyVisions
 } from './services/firebase';
-import { generateLifetreeBio, generateVisionImage } from './services/gemini';
+import { generateLifetreeBio, generateVisionImage, createOracleChat } from './services/gemini';
 import { type Lightseed, type Pulse, type Lifetree, type MatchProposal, type Vision } from './types';
 import Logo from './components/Logo';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { type Language } from './utils/translations';
+import { Chat, GenerateContentResponse } from "@google/genai";
 
 // --- THEME ---
 const colors = {
@@ -67,7 +69,9 @@ const Icons = {
   Search: () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>,
   Sparkles: () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" /></svg>,
   Globe: () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" /></svg>,
-  Key: () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" /></svg>
+  Key: () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" /></svg>,
+  Send: () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>,
+  SparkleFill: () => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M9 4.5a.75.75 0 01.721.544l.813 2.846a3.75 3.75 0 002.576 2.576l2.846.813a.75.75 0 010 1.442l-2.846.813a3.75 3.75 0 00-2.576 2.576l-.813 2.846a.75.75 0 01-1.442 0l-.813-2.846a3.75 3.75 0 00-2.576-2.576l-2.846-.813a.75.75 0 010-1.442l2.846-.813a3.75 3.75 0 002.576-2.576l.813-2.846A.75.75 0 019 4.5zM18 1.5a.75.75 0 01.728.568l.258 1.036c.236.94.97 1.674 1.91 1.91l1.036.258a.75.75 0 010 1.456l-1.036.258c-.94.236-1.674.97-1.91 1.91l-.258 1.036a.75.75 0 01-1.456 0l-.258-1.036a2.625 2.625 0 00-1.91-1.91l-1.036-.258a.75.75 0 010-1.456l1.036-.258a2.625 2.625 0 001.91-1.91l.258-1.036A.75.75 0 0118 1.5zM16.5 15a.75.75 0 01.712.513l.394 1.183c.15.447.5.799.948.948l1.183.394a.75.75 0 010 1.422l-1.183.394c-.447.15-.799.5-.948.948l-.394 1.183a.75.75 0 01-1.422 0l-.394-1.183a1.5 1.5 0 00-.948-.948l-1.183-.394a.75.75 0 010-1.422l1.183-.394a1.5 1.5 0 00.948-.948l.394-1.183A.75.75 0 0116.5 15z" clipRule="evenodd" /></svg>
 };
 
 const useLifeseed = () => {
@@ -117,8 +121,7 @@ const Navigation = ({ lightseed, activeTab, setTab, onPlant, onPulse, onLogin, o
                  const has = await aiStudio.hasSelectedApiKey();
                  setHasApiKey(has);
              } else {
-                 // If not in AI Studio environment, we can't really check, but assume false/manual
-                 // However, for this demo we assume AI Studio environment
+                 // If not in AI Studio environment, check process.env
                  setHasApiKey(!!process.env.API_KEY);
              }
         }
@@ -137,7 +140,7 @@ const Navigation = ({ lightseed, activeTab, setTab, onPlant, onPulse, onLogin, o
                 console.error("API Key selection cancelled or failed", e);
             }
         } else {
-            alert("AI Studio environment not detected. Cannot select key.");
+            alert("Local environment detected. Please set API_KEY in your .env file.");
         }
     }
     
@@ -147,6 +150,7 @@ const Navigation = ({ lightseed, activeTab, setTab, onPlant, onPulse, onLogin, o
             if (key === 'visions') return `bg-amber-500 text-white shadow-lg shadow-amber-500/30`;
             if (key === 'forest') return `bg-emerald-600 text-white shadow-lg shadow-emerald-500/30`;
             if (key === 'pulses') return `bg-sky-600 text-white shadow-lg shadow-sky-500/30`;
+            if (key === 'oracle') return `bg-indigo-600 text-white shadow-lg shadow-indigo-500/30`;
             return `bg-slate-700 text-white`;
         }
         return `text-slate-300 hover:text-white hover:bg-white/5`;
@@ -164,7 +168,7 @@ const Navigation = ({ lightseed, activeTab, setTab, onPlant, onPulse, onLogin, o
                     </div>
 
                     <div className="hidden md:flex space-x-3 rtl:space-x-reverse">
-                        {['forest', 'pulses', 'visions', 'matches'].map((tabKey) => (
+                        {['forest', 'pulses', 'visions', 'oracle', 'matches'].map((tabKey) => (
                             <button 
                                 key={tabKey}
                                 onClick={() => setTab(tabKey)}
@@ -179,7 +183,7 @@ const Navigation = ({ lightseed, activeTab, setTab, onPlant, onPulse, onLogin, o
                          <button 
                              onClick={handleApiKeySelect}
                              className={`p-2 rounded-full transition-all flex items-center space-x-2 ${!hasApiKey ? 'bg-amber-500/20 text-amber-500 animate-pulse ring-1 ring-amber-500' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}
-                             title={hasApiKey ? "Manage Gemini API Key" : "Connect Gemini API"}
+                             title={hasApiKey ? "Gemini Connected" : "Connect Gemini API"}
                          >
                              <Icons.Key />
                              {!hasApiKey && <span className="text-xs font-bold">Connect AI</span>}
@@ -259,7 +263,7 @@ const Navigation = ({ lightseed, activeTab, setTab, onPlant, onPulse, onLogin, o
                                 <span className="text-white font-medium">{t('profile')}</span>
                              </button>
                          )}
-                        {['forest', 'pulses', 'visions', 'matches'].map((tabKey) => (
+                        {['forest', 'pulses', 'visions', 'oracle', 'matches'].map((tabKey) => (
                             <button 
                                 key={tabKey}
                                 onClick={() => { setTab(tabKey); setIsMenuOpen(false); }}
@@ -290,6 +294,7 @@ const Navigation = ({ lightseed, activeTab, setTab, onPlant, onPulse, onLogin, o
     );
 };
 
+// ... [Existing LightseedProfile, ForestMap, LifetreeCard, VisionCard components remain unchanged] ...
 const LightseedProfile = ({ lightseed, myTrees, onViewTree }: any) => {
     const { t } = useLanguage();
     const [activeTab, setActiveTab] = useState<'trees' | 'pulses' | 'visions' | 'history'>('trees');
@@ -433,8 +438,7 @@ const LightseedProfile = ({ lightseed, myTrees, onViewTree }: any) => {
         </div>
     );
 };
-
-// ... ForestMap, LifetreeCard, VisionCard components remain the same ...
+// ... [Existing ForestMap, LifetreeCard, VisionCard components remain the same] ...
 const ForestMap = ({ trees }: { trees: Lifetree[] }) => {
     const mapContainer = useRef<HTMLDivElement>(null);
     const mapInstance = useRef<any>(null);
@@ -919,6 +923,89 @@ const ImagePicker = ({ onChange, previewUrl, loading }: any) => {
     );
 };
 
+// --- ORACLE CHAT ---
+const OracleChat = () => {
+    const { t } = useLanguage();
+    const [messages, setMessages] = useState<{role: 'user' | 'model', text: string}[]>([]);
+    const [input, setInput] = useState('');
+    const [chat, setChat] = useState<Chat | null>(null);
+    const [isTyping, setIsTyping] = useState(false);
+    const bottomRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        try {
+            const c = createOracleChat();
+            setChat(c);
+            setMessages([{role: 'model', text: "I am the LifeSeed Oracle. Ask me of roots, seeds, and the digital winds..."}]);
+        } catch(e) {
+            setMessages([{role: 'model', text: "The connection to the spirits (API) is severed. Please check your Key."}]);
+        }
+    }, []);
+
+    useEffect(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
+
+    const handleSend = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!input.trim() || !chat) return;
+
+        const userMsg = input;
+        setInput('');
+        setMessages(prev => [...prev, {role: 'user', text: userMsg}]);
+        setIsTyping(true);
+
+        try {
+            const response: GenerateContentResponse = await chat.sendMessage({ message: userMsg });
+            setMessages(prev => [...prev, {role: 'model', text: response.text || "..."}]);
+        } catch(e) {
+            setMessages(prev => [...prev, {role: 'model', text: "The wind is too strong (Error connecting to AI)."}]);
+        }
+        setIsTyping(false);
+    }
+
+    return (
+        <div className="max-w-2xl mx-auto h-[70vh] flex flex-col bg-white rounded-xl shadow-lg border border-indigo-100 overflow-hidden">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+                {messages.map((m, i) => (
+                    <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
+                            m.role === 'user' 
+                                ? 'bg-indigo-600 text-white rounded-br-none' 
+                                : 'bg-white border border-slate-200 text-slate-700 rounded-bl-none shadow-sm'
+                        }`}>
+                            {m.text}
+                        </div>
+                    </div>
+                ))}
+                {isTyping && (
+                    <div className="flex justify-start">
+                        <div className="bg-white border border-slate-200 rounded-2xl rounded-bl-none px-4 py-3 shadow-sm">
+                            <div className="flex space-x-1">
+                                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
+                                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-75"></div>
+                                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-150"></div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                <div ref={bottomRef}></div>
+            </div>
+            <form onSubmit={handleSend} className="p-4 bg-white border-t border-slate-100 flex space-x-2">
+                <input 
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    placeholder="Ask the Oracle..."
+                    className="flex-1 border border-slate-200 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <button type="submit" disabled={isTyping || !input.trim()} className="bg-indigo-600 text-white p-2 rounded-full hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+                    <Icons.Send />
+                </button>
+            </form>
+        </div>
+    )
+}
+
 const AppContent = () => {
     const { t } = useLanguage();
     const { lightseed, myTrees, activeTree, loading: authLoading, refreshTrees } = useLifeseed();
@@ -1167,8 +1254,8 @@ const AppContent = () => {
             />
             
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-                {/* Search Bar for all tabs except matches/profile */}
-                {tab !== 'matches' && tab !== 'profile' && (
+                {/* Search Bar for all tabs except matches/profile/oracle */}
+                {tab !== 'matches' && tab !== 'profile' && tab !== 'oracle' && (
                     <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                         <div className="relative w-full md:max-w-md">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -1222,6 +1309,9 @@ const AppContent = () => {
                     </div>
                 )}
 
+                {/* Oracle Chat */}
+                {tab === 'oracle' && <OracleChat />}
+
                 {/* Content Area */}
                 {tab === 'forest' ? (
                     viewMode === 'map' ? (
@@ -1251,7 +1341,7 @@ const AppContent = () => {
                             filteredData.map((item: any) => <VisionCard key={item.id} vision={item} />)
                         }
                     </div>
-                ) : tab !== 'matches' && tab !== 'profile' && (
+                ) : tab !== 'matches' && tab !== 'profile' && tab !== 'oracle' && (
                     <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                         {data.map((item) => (
                              <PulseCard key={item.id} pulse={item} lightseed={lightseed} onMatch={(p: Pulse) => { setMatchCandidate(p); setShowPulseModal(true); }} />

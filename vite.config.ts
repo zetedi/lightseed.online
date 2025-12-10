@@ -1,9 +1,11 @@
+
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, '.', '');
+    // Use process.cwd() to ensure we look in the project root for .env
+    const env = loadEnv(mode, process.cwd(), '');
     return {
       server: {
         port: 3000,
@@ -11,9 +13,9 @@ export default defineConfig(({ mode }) => {
       },
       plugins: [react()],
       define: {
-        // We map process.env to window.process.env to allow runtime injection of the API Key
-        // by the AI Studio environment. If we hardcode it here, it becomes static and empty.
-        'process.env': 'window.process?.env || {}',
+        // Polyfill process.env to work locally (from .env file) AND in AI Studio (from window.process)
+        // Checks if window.process exists before accessing it to avoid errors in some environments
+        'process.env': `Object.assign({}, ${JSON.stringify(env)}, (typeof window !== "undefined" && window.process ? window.process.env : {}) || {})`,
       },
       resolve: {
         alias: {
