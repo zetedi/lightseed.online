@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Logo from './Logo';
 import { Icons } from './ui/Icons';
@@ -103,7 +102,7 @@ const SymbolCard = ({ title, description, type, link }: { title: string, descrip
 
 export const AboutPage = ({ onClose }: { onClose: () => void }) => {
     const { t } = useLanguage();
-    const [activeTab, setActiveTab] = useState<'vision' | 'phoenix' | 'sun' | 'path' | 'yantra'>('vision');
+    const [activeTab, setActiveTab] = useState<'vision' | 'phoenix' | 'sun' | 'path' | 'yantra' | 'design'>('design');
     const [showSubModal, setShowSubModal] = useState(false);
     const [email, setEmail] = useState("");
     const [submitting, setSubmitting] = useState(false);
@@ -126,7 +125,8 @@ export const AboutPage = ({ onClose }: { onClose: () => void }) => {
         { id: 'phoenix', label: 'Phoenix' },
         { id: 'sun', label: 'The Secret Sun' },
         { id: 'path', label: 'The Path' },
-        { id: 'yantra', label: 'The Yantra' }
+        { id: 'yantra', label: 'The Yantra' },
+        { id: 'design', label: 'Design Brief' }
     ];
 
     return (
@@ -405,6 +405,121 @@ export const AboutPage = ({ onClose }: { onClose: () => void }) => {
                                 type="infinity"
                                 link="https://en.wikipedia.org/wiki/Infinity_symbol"
                             />
+                        </div>
+
+                    </div>
+                )}
+
+                {/* DESIGN BRIEF (FOR DESIGNER) */}
+                {activeTab === 'design' && (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-16 pb-20">
+                        
+                        {/* Header Section */}
+                        <div className="text-center space-y-4">
+                            <div className="inline-block p-4 rounded-full bg-slate-50 mb-4">
+                                <Logo width={80} height={80} />
+                            </div>
+                            <h1 className="text-4xl font-bold text-slate-900 tracking-tight">.seed</h1>
+                            <p className="text-xl text-slate-500 font-light uppercase tracking-widest">Design System & Brand Identity</p>
+                        </div>
+
+                        {/* 01. Manifesto */}
+                        <div className="grid md:grid-cols-12 gap-8 items-center">
+                            <div className="md:col-span-4">
+                                <h2 className="text-emerald-600 font-bold uppercase tracking-widest text-xs mb-2">01. Philosophy</h2>
+                                <h3 className="text-3xl font-serif text-slate-800 leading-tight">Solar Punk meets Ancient Wisdom.</h3>
+                            </div>
+                            <div className="md:col-span-8 bg-slate-50 p-8 rounded-2xl border border-slate-100">
+                                <p className="text-lg leading-relaxed text-slate-600 font-serif italic">
+                                    "We are building a bridge between the digital and the organic. The interface should feel less like a database and more like a forest. Every interaction—planting, pulsing, growing—should carry weight and biological resonance."
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* 02. Color System */}
+                        <div>
+                            <div className="flex items-end justify-between mb-6">
+                                <h2 className="text-emerald-600 font-bold uppercase tracking-widest text-xs">02. Atomic Palette</h2>
+                                <span className="text-xs text-slate-400 font-mono">Tailwind CSS Variables</span>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="space-y-3 group">
+                                    <div className="h-32 w-full bg-emerald-600 rounded-xl shadow-lg shadow-emerald-200 group-hover:scale-105 transition-transform"></div>
+                                    <div>
+                                        <p className="font-bold text-slate-800">Life Emerald</p>
+                                        <p className="text-xs text-slate-400 font-mono">bg-emerald-600</p>
+                                        <p className="text-xs text-slate-400 font-mono">#059669</p>
+                                    </div>
+                                </div>
+                                <div className="space-y-3 group">
+                                    <div className="h-32 w-full bg-slate-900 rounded-xl shadow-lg shadow-slate-200 group-hover:scale-105 transition-transform"></div>
+                                    <div>
+                                        <p className="font-bold text-slate-800">Deep Space</p>
+                                        <p className="text-xs text-slate-400 font-mono">bg-slate-900</p>
+                                        <p className="text-xs text-slate-400 font-mono">#0f172a</p>
+                                    </div>
+                                </div>
+                                <div className="space-y-3 group">
+                                    <div className="h-32 w-full bg-amber-500 rounded-xl shadow-lg shadow-amber-200 group-hover:scale-105 transition-transform"></div>
+                                    <div>
+                                        <p className="font-bold text-slate-800">Solar Amber</p>
+                                        <p className="text-xs text-slate-400 font-mono">bg-amber-500</p>
+                                        <p className="text-xs text-slate-400 font-mono">#f59e0b</p>
+                                    </div>
+                                </div>
+                                <div className="space-y-3 group">
+                                    <div className="h-32 w-full bg-purple-900 rounded-xl shadow-lg shadow-purple-200 group-hover:scale-105 transition-transform"></div>
+                                    <div>
+                                        <p className="font-bold text-slate-800">Mystic Purple</p>
+                                        <p className="text-xs text-slate-400 font-mono">bg-purple-900</p>
+                                        <p className="text-xs text-slate-400 font-mono">#581c87</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 03. Typography */}
+                        <div className="grid md:grid-cols-2 gap-12">
+                            <div>
+                                <h2 className="text-emerald-600 font-bold uppercase tracking-widest text-xs mb-6">03. Typography</h2>
+                                <div className="space-y-8">
+                                    <div>
+                                        <p className="text-xs text-slate-400 mb-2 font-mono">Primary Font (UI & Headings)</p>
+                                        <h3 className="text-4xl font-sans font-thin text-slate-900">Inter Sans</h3>
+                                        <p className="text-slate-600 mt-2">Clean, modern, legible. Used for UI elements, navigation, and primary headers to convey digital clarity.</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-slate-400 mb-2 font-mono">Secondary Font (Content & Soul)</p>
+                                        <h3 className="text-4xl font-serif italic text-slate-900">Serif (System)</h3>
+                                        <p className="text-slate-600 mt-2">Classic, organic, rooted. Used for user generated content, visions, and 'Pulse' bodies to convey human touch and wisdom.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 04. Iconography & Shape */}
+                            <div>
+                                <h2 className="text-emerald-600 font-bold uppercase tracking-widest text-xs mb-6">04. Shape Language</h2>
+                                <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm space-y-6">
+                                    <div className="flex items-center gap-4">
+                                        <button className="bg-emerald-600 text-white px-6 py-3 rounded-full font-bold shadow-lg">Pill Shape</button>
+                                        <p className="text-sm text-slate-500">All interactive elements use fully rounded corners (`rounded-full`) to feel organic and soft.</p>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center border border-slate-200">
+                                            <Icons.Tree />
+                                        </div>
+                                        <p className="text-sm text-slate-500">Containers use `rounded-xl` or `rounded-2xl` for a card-like, approachable feel.</p>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex -space-x-2">
+                                            <div className="w-8 h-8 rounded-full bg-emerald-500 border-2 border-white"></div>
+                                            <div className="w-8 h-8 rounded-full bg-sky-500 border-2 border-white"></div>
+                                            <div className="w-8 h-8 rounded-full bg-amber-500 border-2 border-white"></div>
+                                        </div>
+                                        <p className="text-sm text-slate-500">Overlapping elements invoke connection and unity (The Flower of Life).</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                     </div>
