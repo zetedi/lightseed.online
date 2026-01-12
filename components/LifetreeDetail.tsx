@@ -29,6 +29,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    // Local state for immediate UI feedback on actions
    const [localIsGuardian, setLocalIsGuardian] = useState(isGuardian);
    const [localStatus, setLocalStatus] = useState(tree.status || 'HEALTHY');
+   const [isLocating, setIsLocating] = useState(false);
 
    useEffect(() => {
         setLoadingChain(true);
@@ -71,6 +72,18 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
        }
        setIsSaving(false);
    };
+
+   const handleLocateMe = () => {
+       setIsLocating(true);
+       navigator.geolocation.getCurrentPosition((pos) => {
+           setEditLat(pos.coords.latitude);
+           setEditLng(pos.coords.longitude);
+           setIsLocating(false);
+       }, (err) => {
+           alert("Location failed: " + err.message);
+           setIsLocating(false);
+       });
+   }
 
    const handleToggleGuardian = async () => {
        if (!currentUserId) return;
@@ -273,21 +286,32 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                             <div className="py-2 border-b border-slate-50">
                                 <span className="text-slate-500 text-sm block mb-1">GPS Coordinates</span>
                                 {isEditing ? (
-                                    <div className="flex space-x-2">
-                                        <input 
-                                            type="number" step="any"
-                                            className="border p-1 rounded w-1/2 text-sm" 
-                                            value={editLat} 
-                                            onChange={e => setEditLat(e.target.value)}
-                                            placeholder="Lat"
-                                        />
-                                        <input 
-                                            type="number" step="any"
-                                            className="border p-1 rounded w-1/2 text-sm" 
-                                            value={editLng} 
-                                            onChange={e => setEditLng(e.target.value)}
-                                            placeholder="Lng"
-                                        />
+                                    <div className="flex space-x-2 items-center">
+                                        <div className="flex-1 flex space-x-2">
+                                            <input 
+                                                type="number" step="any"
+                                                className="border p-1 rounded w-full text-sm" 
+                                                value={editLat} 
+                                                onChange={e => setEditLat(e.target.value)}
+                                                placeholder="Lat"
+                                            />
+                                            <input 
+                                                type="number" step="any"
+                                                className="border p-1 rounded w-full text-sm" 
+                                                value={editLng} 
+                                                onChange={e => setEditLng(e.target.value)}
+                                                placeholder="Lng"
+                                            />
+                                        </div>
+                                        <button 
+                                            type="button" 
+                                            onClick={handleLocateMe} 
+                                            disabled={isLocating}
+                                            className="bg-emerald-100 text-emerald-600 p-2 rounded hover:bg-emerald-200 disabled:opacity-50"
+                                            title="Use My Location"
+                                        >
+                                            {isLocating ? <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div> : <Icons.Loc />}
+                                        </button>
                                     </div>
                                 ) : (
                                     <span className="text-slate-800 font-mono text-sm">{tree.latitude?.toFixed(4)}, {tree.longitude?.toFixed(4)}</span>

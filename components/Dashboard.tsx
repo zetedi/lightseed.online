@@ -70,6 +70,7 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, onSetTab, onPlant,
                         <div>
                             <h2 className="text-sm sm:text-lg font-bold uppercase tracking-widest text-white drop-shadow-md">My Light</h2>
                             <div className="text-lg sm:text-xl font-light truncate max-w-[120px]">{lightseed ? lightseed.displayName : t('sign_in')}</div>
+                            <div className="text-[10px] text-amber-200 font-mono uppercase tracking-widest mt-1">The Light of Value</div>
                         </div>
                         <div className="p-2 bg-white/10 backdrop-blur rounded-lg"><Icons.FingerPrint /></div>
                     </div>

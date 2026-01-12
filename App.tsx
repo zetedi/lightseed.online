@@ -133,6 +133,8 @@ const AppContent = () => {
     const [treeSeed, setTreeSeed] = useState('');
     const [treeBio, setTreeBio] = useState('');
     const [treeImageUrl, setTreeImageUrl] = useState('');
+    const [plantLocation, setPlantLocation] = useState<{lat: number, lng: number} | null>(null);
+    const [isLocating, setIsLocating] = useState(false);
     
     // Tree Type State
     const [treeType, setTreeType] = useState<'LIFETREE' | 'GUARDED' | 'KABBALISTIC' | 'FAMILY'>('LIFETREE');
@@ -198,11 +200,14 @@ const AppContent = () => {
     }, [loadingMore, hasMore, tab, lastDoc]);
 
     useEffect(() => {
-        if (showPlantModal && treeType === 'GUARDED') {
-            setTreeName("Humanity's Tree!");
-            setTreeBio(""); 
-        } else if (showPlantModal && treeType !== 'GUARDED') {
-            if (treeName === "Humanity's Tree!") setTreeName("");
+        if (showPlantModal) {
+            if (treeType === 'GUARDED') {
+                setTreeName("Humanity's Tree!");
+                setTreeBio(""); 
+            } else if (treeName === "Humanity's Tree!") {
+                setTreeName("");
+            }
+            setPlantLocation(null);
         }
     }, [showPlantModal, treeType]);
 
@@ -323,6 +328,21 @@ const AppContent = () => {
         }
     }
 
+    const handleLocate = () => {
+        setIsLocating(true);
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                setPlantLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                setIsLocating(false);
+            },
+            (err) => {
+                console.error(err);
+                alert("Could not get location. Please allow access in browser settings.");
+                setIsLocating(false);
+            }
+        );
+    };
+
     const handlePlant = async (e: FormEvent) => {
         e.preventDefault();
         if (!lightseed || isSubmitting) return;
@@ -331,7 +351,7 @@ const AppContent = () => {
         const finalName = treeName.trim() || lightseed.displayName || "Anonymous Tree";
         const isNature = treeType === 'GUARDED';
 
-        navigator.geolocation.getCurrentPosition(async (pos) => {
+        const submitTree = async (lat?: number, lng?: number) => {
             try {
                 await plantLifetree({ 
                     ownerId: lightseed.uid, 
@@ -339,8 +359,8 @@ const AppContent = () => {
                     shortTitle: treeShortTitle,
                     body: treeBio, 
                     imageUrl: treeImageUrl, 
-                    lat: pos.coords.latitude, 
-                    lng: pos.coords.longitude, 
+                    lat: lat, 
+                    lng: lng, 
                     isNature: isNature,
                     treeType: treeType
                 });
@@ -350,23 +370,16 @@ const AppContent = () => {
                 alert(e.message); 
             }
             finally { setIsSubmitting(false); }
-        }, (err) => {
-             plantLifetree({ 
-                 ownerId: lightseed.uid, 
-                 name: finalName, 
-                 shortTitle: treeShortTitle,
-                 body: treeBio, 
-                 imageUrl: treeImageUrl, 
-                 isNature: isNature,
-                 treeType: treeType
-             })
-                .then(async () => { await refreshTrees(); setShowPlantModal(false); loadContent(true); })
-                .catch(e => {
-                    console.error("Plant Tree Error:", e);
-                    alert(e.message);
-                })
-                .finally(() => setIsSubmitting(false));
-        });
+        };
+
+        if (plantLocation) {
+            await submitTree(plantLocation.lat, plantLocation.lng);
+        } else {
+            navigator.geolocation.getCurrentPosition(
+                async (pos) => await submitTree(pos.coords.latitude, pos.coords.longitude), 
+                async (err) => await submitTree() // Plant without location if failed/denied
+            );
+        }
     };
 
     const handleDeleteTree = async (treeId: string) => {
@@ -890,6 +903,34 @@ const AppContent = () => {
                                     <span>{type.label}</span>
                                 </button>
                             ))}
+                        </div>
+
+                        {/* Location Picker */}
+                        <div className={`flex items-center justify-between p-3 rounded-lg border ${treeType === 'GUARDED' ? 'bg-slate-50 border-slate-200 text-slate-800' : 'bg-black/30 border-white/20 text-white'}`}>
+                            <div className="flex items-center gap-2">
+                                <div className={`p-2 rounded-full ${plantLocation ? 'bg-emerald-100 text-emerald-600' : (treeType === 'GUARDED' ? 'bg-slate-200 text-slate-500' : 'bg-white/10 text-white/50')}`}>
+                                    <Icons.Loc />
+                                </div>
+                                <div className="text-xs">
+                                    {plantLocation ? (
+                                        <span className="font-mono text-emerald-500 font-bold">{plantLocation.lat.toFixed(6)}, {plantLocation.lng.toFixed(6)}</span>
+                                    ) : (
+                                        <span className="opacity-70">Location not set (Will auto-detect)</span>
+                                    )}
+                                </div>
+                            </div>
+                            <button 
+                                type="button" 
+                                onClick={handleLocate} 
+                                disabled={isLocating} 
+                                className={`text-xs px-3 py-1.5 rounded-full font-bold uppercase tracking-wider transition-colors ${
+                                    isLocating 
+                                        ? 'bg-slate-300 text-slate-500 cursor-not-allowed' 
+                                        : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm'
+                                }`}
+                            >
+                                {isLocating ? 'Locating...' : 'Locate Me'}
+                            </button>
                         </div>
 
                         <input 

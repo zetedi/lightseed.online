@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Logo from './Logo';
 import { Icons } from './ui/Icons';
@@ -5,13 +6,13 @@ import { subscribeToNewsletter } from '../services/firebase';
 import { Modal } from './ui/Modal';
 import { useLanguage } from '../contexts/LanguageContext';
 
-const SectionHeader = ({ children }: { children: React.ReactNode }) => (
+const SectionHeader = ({ children }: { children?: React.ReactNode }) => (
     <h2 className="text-2xl font-light text-purple-900 mb-6 mt-12 tracking-wide flex items-center gap-3">
         {children}
     </h2>
 );
 
-const Paragraph = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
+const Paragraph = ({ children, className = "" }: { children?: React.ReactNode, className?: string }) => (
     <p className={`text-slate-700 leading-relaxed font-serif mb-6 text-justify text-lg ${className}`}>
         {children}
     </p>
@@ -150,6 +151,7 @@ export const AboutPage = ({ onClose }: { onClose: () => void }) => {
                         </button>
                     </div>
                     <h1 className="text-3xl font-light tracking-[0.2em] uppercase text-purple-100">.seed</h1>
+                    <p className="text-sm text-purple-300 font-mono tracking-widest uppercase mt-2 opacity-80">The Light of Value</p>
                 </div>
             </div>
 
