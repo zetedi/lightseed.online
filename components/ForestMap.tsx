@@ -200,24 +200,28 @@ export const ForestMap = ({ trees, onView }: { trees: Lifetree[], onView: (tree:
 
         sortedTrees.forEach(tree => {
             if (processed.has(tree.id)) return;
-            if (!tree.latitude || !tree.longitude) return;
+            const lat = tree.latitude || (tree as any).lat;
+            const lng = tree.longitude || (tree as any).lng;
+            if (!lat || !lng) return;
 
-            const treePoint = map.latLngToLayerPoint([tree.latitude, tree.longitude]);
+            const treePoint = map.latLngToLayerPoint([lat, lng]);
             const cluster: Cluster = {
                 id: tree.id,
                 center: tree,
                 children: [],
-                lat: tree.latitude,
-                lng: tree.longitude
+                lat: lat,
+                lng: lng
             };
             processed.add(tree.id);
 
             // Find neighbors
             sortedTrees.forEach(other => {
                 if (processed.has(other.id)) return;
-                if (!other.latitude || !other.longitude) return;
+                const oLat = other.latitude || (other as any).lat;
+                const oLng = other.longitude || (other as any).lng;
+                if (!oLat || !oLng) return;
 
-                const otherPoint = map.latLngToLayerPoint([other.latitude, other.longitude]);
+                const otherPoint = map.latLngToLayerPoint([oLat, oLng]);
                 if (treePoint.distanceTo(otherPoint) < CLUSTER_THRESHOLD_PX) {
                     cluster.children.push(other);
                     processed.add(other.id);

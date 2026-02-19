@@ -16,8 +16,8 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const [editName, setEditName] = useState(tree.name);
    const [editShortTitle, setEditShortTitle] = useState(tree.shortTitle || '');
    const [editBody, setEditBody] = useState(tree.body);
-   const [editLat, setEditLat] = useState(tree.latitude || 0);
-   const [editLng, setEditLng] = useState(tree.longitude || 0);
+   const [editLat, setEditLat] = useState(tree.latitude || (tree as any).lat || 0);
+   const [editLng, setEditLng] = useState(tree.longitude || (tree as any).lng || 0);
    const [isSaving, setIsSaving] = useState(false);
    
    // Blockchain Visualization State

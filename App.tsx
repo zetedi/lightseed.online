@@ -133,7 +133,7 @@ const AppContent = () => {
     const [treeSeed, setTreeSeed] = useState('');
     const [treeBio, setTreeBio] = useState('');
     const [treeImageUrl, setTreeImageUrl] = useState('');
-    const [plantLocation, setPlantLocation] = useState<{lat: number, lng: number} | null>(null);
+    const [plantLocation, setPlantLocation] = useState<{latitude: number, longitude: number} | null>(null);
     const [isLocating, setIsLocating] = useState(false);
     
     // Tree Type State
@@ -332,7 +332,7 @@ const AppContent = () => {
         setIsLocating(true);
         navigator.geolocation.getCurrentPosition(
             (pos) => {
-                setPlantLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                setPlantLocation({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
                 setIsLocating(false);
             },
             (err) => {
@@ -359,8 +359,8 @@ const AppContent = () => {
                     shortTitle: treeShortTitle,
                     body: treeBio, 
                     imageUrl: treeImageUrl, 
-                    lat: lat, 
-                    lng: lng, 
+                    latitude: lat, 
+                    longitude: lng, 
                     isNature: isNature,
                     treeType: treeType
                 });
@@ -373,7 +373,7 @@ const AppContent = () => {
         };
 
         if (plantLocation) {
-            await submitTree(plantLocation.lat, plantLocation.lng);
+            await submitTree(plantLocation.latitude, plantLocation.longitude);
         } else {
             navigator.geolocation.getCurrentPosition(
                 async (pos) => await submitTree(pos.coords.latitude, pos.coords.longitude), 
@@ -913,7 +913,7 @@ const AppContent = () => {
                                 </div>
                                 <div className="text-xs">
                                     {plantLocation ? (
-                                        <span className="font-mono text-emerald-500 font-bold">{plantLocation.lat.toFixed(6)}, {plantLocation.lng.toFixed(6)}</span>
+                                        <span className="font-mono text-emerald-500 font-bold">{plantLocation.latitude.toFixed(6)}, {plantLocation.longitude.toFixed(6)}</span>
                                     ) : (
                                         <span className="opacity-70">Location not set (Will auto-detect)</span>
                                     )}
@@ -1015,3 +1015,4 @@ const App = () => {
 };
 
 export default App;
+
