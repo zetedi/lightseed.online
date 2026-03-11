@@ -6,6 +6,100 @@ import { subscribeToNewsletter } from '../services/firebase';
 import { Modal } from './ui/Modal';
 import { useLanguage } from '../contexts/LanguageContext';
 
+type YantraSymbolType =
+    | 'yinYang'
+    | 'heart'
+    | 'sun'
+    | 'seed'
+    | 'hexagram'
+    | 'shambhala'
+    | 'lotus'
+    | 'honeycomb'
+    | 'grid'
+    | 'kabbalah'
+    | 'infinity'
+    | 'triskelion';
+
+const yantraSymbols: Array<{
+    title: string;
+    description: string;
+    type: YantraSymbolType;
+    link: string;
+}> = [
+    {
+        title: 'Yin & Yang',
+        description: 'Opposite and contrary forces become complementary, interconnected, and interdependent inside the same field.',
+        type: 'yinYang',
+        link: 'https://en.wikipedia.org/wiki/Yin_and_yang'
+    },
+    {
+        title: 'Heart',
+        description: 'The mirrored arcs of the yantra can be read as a heart form, linking the geometry directly with love.',
+        type: 'heart',
+        link: 'https://en.wikipedia.org/wiki/Heart_symbol'
+    },
+    {
+        title: 'Sun & Consciousness',
+        description: 'The circled dot appears as the bindu: the sun, the center of the center, and awakened consciousness.',
+        type: 'sun',
+        link: 'https://en.wikipedia.org/wiki/Circled_dot'
+    },
+    {
+        title: 'Seed of Life',
+        description: 'The seven-circle seed pattern implies that all life on Earth and in the Universe is interconnected.',
+        type: 'seed',
+        link: 'https://www.uniguide.com/seed-of-life-number-7-sacred-geometry/'
+    },
+    {
+        title: 'Hexagram',
+        description: 'Two interwoven triangles suggest Heaven and Earth meeting, with the yantra acting as the shared field between them.',
+        type: 'hexagram',
+        link: 'https://en.wikipedia.org/wiki/Hexagram'
+    },
+    {
+        title: 'Shambhala',
+        description: 'The yantra can also be read as a mandalic inner kingdom, a protected spiritual center ordered around one source.',
+        type: 'shambhala',
+        link: 'https://en.wikipedia.org/wiki/Shambhala'
+    },
+    {
+        title: 'Sacred Lotus',
+        description: 'Petal-like arcs emerge from the circle intersections, pointing to inner unfolding and the realization of potential.',
+        type: 'lotus',
+        link: 'https://en.wikipedia.org/wiki/Sacred_lotus_in_religious_art'
+    },
+    {
+        title: 'Honeycomb',
+        description: 'Hexagonal order appears naturally in the yantra grid, echoing nature, cooperation, and efficient structure.',
+        type: 'honeycomb',
+        link: 'https://en.wikipedia.org/wiki/Honeycomb'
+    },
+    {
+        title: 'Overlapping Circles Grid',
+        description: 'The larger construction is itself a circle lattice, connecting the mark to the grid of life, DNA-like patterning, and expansion beyond.',
+        type: 'grid',
+        link: 'https://en.wikipedia.org/wiki/Overlapping_circles_grid'
+    },
+    {
+        title: 'Tree of Life (Kabbalah)',
+        description: 'A vertical path with balanced side pillars can be traced through the inner nodes, suggesting emanation, ascent, and return.',
+        type: 'kabbalah',
+        link: 'https://en.wikipedia.org/wiki/Tree_of_life_(Kabbalah)'
+    },
+    {
+        title: 'Infinity',
+        description: 'The left and right loops emerge from the same central field, expressing continuity, recurrence, and the unified flow.',
+        type: 'infinity',
+        link: 'https://en.wikipedia.org/wiki/Infinity_symbol'
+    },
+    {
+        title: 'Triskelion',
+        description: 'Three spiraling arms can be aligned with the yantra around the center, expressing motion, cycles, and living emergence.',
+        type: 'triskelion',
+        link: 'https://en.wikipedia.org/wiki/Triskelion'
+    }
+];
+
 const SectionHeader = ({ children }: { children?: React.ReactNode }) => (
     <h2 className="text-2xl font-light text-purple-900 mb-6 mt-12 tracking-wide flex items-center gap-3">
         {children}
@@ -19,7 +113,7 @@ const Paragraph = ({ children, className = "" }: { children?: React.ReactNode, c
 );
 
 // Helper to render specific geometric overlays for the Yantra section
-const SymbolOverlay = ({ type }: { type: string }) => {
+const SymbolOverlay = ({ type }: { type: YantraSymbolType }) => {
     const commonProps = {
         viewBox: "0 0 262 262",
         className: "absolute inset-0 w-full h-full",
@@ -29,11 +123,39 @@ const SymbolOverlay = ({ type }: { type: string }) => {
     };
 
     switch (type) {
+        case 'yinYang':
+            return (
+                <svg {...commonProps}>
+                    <path d="M131 43a88 88 0 1 1 0 176a44 44 0 1 0 0-88a44 44 0 1 1 0-88" />
+                    <path d="M131 43a44 44 0 1 0 0 88a44 44 0 1 1 0 88" />
+                    <circle cx="131" cy="87" r="8" fill="#F59E0B" stroke="none" />
+                    <circle cx="131" cy="175" r="8" fill="#F59E0B" stroke="none" />
+                    <circle cx="131" cy="131" r="88" strokeOpacity="0.55" />
+                </svg>
+            );
+        case 'heart':
+            return (
+                <svg {...commonProps}>
+                    <path d="M131 214C92 188 54 154 54 108C54 81 76 61 103 61C118 61 129 69 131 81C133 69 144 61 159 61C186 61 208 81 208 108C208 154 170 188 131 214Z" />
+                </svg>
+            );
         case 'sun': // Circled Dot
             return (
                 <svg {...commonProps}>
                     <circle cx="131" cy="131" r="64" />
                     <circle cx="131" cy="131" r="6" fill="#F59E0B" stroke="none" />
+                </svg>
+            );
+        case 'seed':
+            return (
+                <svg {...commonProps}>
+                    <circle cx="131" cy="131" r="42" />
+                    <circle cx="131" cy="89" r="42" />
+                    <circle cx="167.4" cy="110" r="42" />
+                    <circle cx="167.4" cy="152" r="42" />
+                    <circle cx="131" cy="173" r="42" />
+                    <circle cx="94.6" cy="152" r="42" />
+                    <circle cx="94.6" cy="110" r="42" />
                 </svg>
             );
         case 'hexagram': // Star
@@ -43,38 +165,75 @@ const SymbolOverlay = ({ type }: { type: string }) => {
                     <polygon points="131,227 48,83 214,83" />
                 </svg>
             );
+        case 'shambhala':
+            return (
+                <svg {...commonProps}>
+                    <circle cx="131" cy="131" r="72" />
+                    <circle cx="131" cy="131" r="32" strokeOpacity="0.7" />
+                    <path d="M131 59V203M59 131H203M80 80L182 182M80 182L182 80" strokeLinecap="round" />
+                </svg>
+            );
         case 'honeycomb': // Hexagon
             return (
                 <svg {...commonProps}>
                     <polygon points="131,35 214,83 214,179 131,227 48,179 48,83" />
                 </svg>
             );
+        case 'grid':
+            return (
+                <svg {...commonProps}>
+                    <circle cx="131" cy="131" r="36" />
+                    <circle cx="131" cy="95" r="36" />
+                    <circle cx="162" cy="113" r="36" />
+                    <circle cx="162" cy="149" r="36" />
+                    <circle cx="131" cy="167" r="36" />
+                    <circle cx="100" cy="149" r="36" />
+                    <circle cx="100" cy="113" r="36" />
+                </svg>
+            );
         case 'infinity':
             return (
                 <svg {...commonProps}>
-                     <path d="M75 131 a 32 32 0 1 0 64 0 a 32 32 0 1 0 -64 0 M187 131 a 32 32 0 1 0 64 0 a 32 32 0 1 0 -64 0" strokeWidth="4" />
+                     <path d="M43 131c18-30 40-46 66-46c18 0 32 10 45 26c13-16 27-26 45-26c26 0 48 16 66 46c-18 30-40 46-66 46c-18 0-32-10-45-26c-13 16-27 26-45 26c-26 0-48-16-66-46Z" strokeWidth="4" />
                 </svg>
             );
         case 'lotus': // Petals
             return (
                 <svg {...commonProps}>
-                     <path d="M131 131 Q 163 99 131 67 Q 99 99 131 131" fill="rgba(245, 158, 11, 0.2)" />
-                     <path d="M131 131 Q 163 163 131 195 Q 99 163 131 131" fill="rgba(245, 158, 11, 0.2)" />
-                     <path d="M131 131 Q 99 99 67 131 Q 99 163 131 131" fill="rgba(245, 158, 11, 0.2)" />
-                     <path d="M131 131 Q 163 99 195 131 Q 163 163 131 131" fill="rgba(245, 158, 11, 0.2)" />
+                     <path d="M131 131 Q 163 99 131 55 Q 99 99 131 131" fill="rgba(245, 158, 11, 0.15)" />
+                     <path d="M131 131 Q 195 111 187 59 Q 143 71 131 131" fill="rgba(245, 158, 11, 0.15)" />
+                     <path d="M131 131 Q 207 147 187 203 Q 143 191 131 131" fill="rgba(245, 158, 11, 0.15)" />
+                     <path d="M131 131 Q 163 163 131 207 Q 99 163 131 131" fill="rgba(245, 158, 11, 0.15)" />
+                     <path d="M131 131 Q 55 147 75 203 Q 119 191 131 131" fill="rgba(245, 158, 11, 0.15)" />
+                     <path d="M131 131 Q 67 111 75 59 Q 119 71 131 131" fill="rgba(245, 158, 11, 0.15)" />
                 </svg>
             );
         case 'kabbalah': // Tree structure approximation
             return (
                 <svg {...commonProps}>
-                    <line x1="131" y1="35" x2="131" y2="227" />
-                    <line x1="48" y1="83" x2="48" y2="179" />
-                    <line x1="214" y1="83" x2="214" y2="179" />
+                    <line x1="131" y1="43" x2="131" y2="219" />
+                    <line x1="87" y1="75" x2="175" y2="75" />
+                    <line x1="87" y1="187" x2="175" y2="187" />
+                    <line x1="87" y1="75" x2="131" y2="131" />
+                    <line x1="175" y1="75" x2="131" y2="131" />
+                    <line x1="87" y1="187" x2="131" y2="131" />
+                    <line x1="175" y1="187" x2="131" y2="131" />
                     <circle cx="131" cy="35" r="4" fill="#F59E0B" />
+                    <circle cx="87" cy="75" r="4" fill="#F59E0B" />
+                    <circle cx="175" cy="75" r="4" fill="#F59E0B" />
                     <circle cx="131" cy="131" r="4" fill="#F59E0B" />
+                    <circle cx="87" cy="187" r="4" fill="#F59E0B" />
+                    <circle cx="175" cy="187" r="4" fill="#F59E0B" />
                     <circle cx="131" cy="227" r="4" fill="#F59E0B" />
-                    <circle cx="48" cy="83" r="4" fill="#F59E0B" />
-                    <circle cx="214" cy="83" r="4" fill="#F59E0B" />
+                </svg>
+            );
+        case 'triskelion':
+            return (
+                <svg {...commonProps}>
+                    <circle cx="131" cy="131" r="11" fill="#F59E0B" stroke="none" />
+                    <path d="M131 131c0-31 17-55 50-71c9 24 6 45-10 62c-12 13-25 18-40 18" strokeLinecap="round" />
+                    <path d="M131 131c-27 15-56 15-88 0c8-24 23-39 45-44c17-4 32-1 43 8" strokeLinecap="round" />
+                    <path d="M131 131c-5 31 7 56 38 80c18-18 25-38 20-59c-4-16-13-28-28-36" strokeLinecap="round" />
                 </svg>
             );
         default: 
@@ -82,13 +241,12 @@ const SymbolOverlay = ({ type }: { type: string }) => {
     }
 }
 
-const SymbolCard = ({ title, description, type, link }: { title: string, description: string, type: string, link: string }) => (
+const SymbolCard = ({ title, description, type, link }: { title: string, description: string, type: YantraSymbolType, link: string }) => (
     <div className="flex flex-col md:flex-row gap-6 items-center bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-        <div className="relative w-32 h-32 shrink-0">
-             <div className="absolute inset-0 opacity-20">
-                 <Logo width={128} height={128} />
+        <div className="relative w-40 h-40 shrink-0 rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 via-white to-purple-50 shadow-inner overflow-hidden">
+             <div className="absolute inset-4">
+                <SymbolOverlay type={type} />
              </div>
-             <SymbolOverlay type={type} />
         </div>
         <div>
             <h3 className="text-amber-600 font-bold uppercase tracking-wider mb-2">{title}</h3>
@@ -342,6 +500,9 @@ export const AboutPage = ({ onClose }: { onClose: () => void }) => {
                             <Paragraph>
                                 A Yantra is a geometric diagram, mainly from the Tantric traditions of the Indian religions. It is used for the worship of deities in temples or at home; as an aid in meditation; used for the benefits given by their supposed occult powers based on Hindu astrology and tantric texts. They are also used for adornment of temple floors, due mainly to their aesthetic and symmetric qualities.
                             </Paragraph>
+                            <Paragraph className="text-base text-slate-600">
+                                A little deeper exploration of the yantra: the symbol families below can be overlapped with the Lifeseed geometry in surprisingly strong alignment. The seven inner circles are half of the main circle, and the seven small inner seeds are one eighth of the main circle.
+                            </Paragraph>
                             <p className="text-sm text-slate-500 italic">It is a true yantra I believe.</p>
                         </div>
 
@@ -353,60 +514,15 @@ export const AboutPage = ({ onClose }: { onClose: () => void }) => {
                         </div>
 
                         <div className="space-y-4">
-                            <SymbolCard 
-                                title="Sun & Consciousness" 
-                                description="The circled dot represents the sun and consciousness. It is the center of the center, the bindu."
-                                type="sun"
-                                link="https://en.wikipedia.org/wiki/Circled_dot"
-                            />
-                            <SymbolCard 
-                                title="Seed of Life" 
-                                description="The seven circles imply that all life on Earth and the Universe is interconnected."
-                                type="seed"
-                                link="https://www.uniguide.com/seed-of-life-number-7-sacred-geometry/"
-                            />
-                            <SymbolCard 
-                                title="Hexagram" 
-                                description="It symbolizes God reaching down to man and man reaching up to God, the union of Heaven and earth."
-                                type="hexagram"
-                                link="https://en.wikipedia.org/wiki/Hexagram"
-                            />
-                            <SymbolCard 
-                                title="Shambhala" 
-                                description="The hidden inner and spiritual kingdom."
-                                type="hexagram" // Reusing hexagram shape as it often relates to the heart chakra/kingdom
-                                link="https://en.wikipedia.org/wiki/Shambhala"
-                            />
-                            <SymbolCard 
-                                title="Sacred Lotus" 
-                                description="It symbolizes the realization of inner potential."
-                                type="lotus"
-                                link="https://en.wikipedia.org/wiki/Sacred_lotus_in_religious_art"
-                            />
-                            <SymbolCard 
-                                title="Honeycomb" 
-                                description="The hexagonal structure symbolizing connection with nature and community."
-                                type="honeycomb"
-                                link="https://en.wikipedia.org/wiki/Honeycomb"
-                            />
-                             <SymbolCard 
-                                title="Overlapping Circles" 
-                                description="Connections to the DNA, the grid of life, and beyond."
-                                type="infinity"
-                                link="https://en.wikipedia.org/wiki/Overlapping_circles_grid"
-                            />
-                            <SymbolCard 
-                                title="Tree of Life (Kabbalah)" 
-                                description="The path of divine emanation and the map of the soul."
-                                type="kabbalah"
-                                link="https://en.wikipedia.org/wiki/Tree_of_life_(Kabbalah)"
-                            />
-                            <SymbolCard 
-                                title="Infinity" 
-                                description="The eternal flow of energy and the unified field."
-                                type="infinity"
-                                link="https://en.wikipedia.org/wiki/Infinity_symbol"
-                            />
+                            {yantraSymbols.map((symbol) => (
+                                <SymbolCard
+                                    key={symbol.title}
+                                    title={symbol.title}
+                                    description={symbol.description}
+                                    type={symbol.type}
+                                    link={symbol.link}
+                                />
+                            ))}
                         </div>
 
                     </div>
