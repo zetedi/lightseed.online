@@ -33,16 +33,13 @@ const languages = [
 export const Navigation = ({ lightseed, activeTab, setTab, onPlant, onPulse, onLogin, onLogout, onProfile, onCreateVision, pendingMatchesCount, myTreesCount = 0, dangerTreesCount = 0 }: NavigationProps) => {
     const { t, language, setLanguage } = useLanguage();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [isMoreOpen, setIsMoreOpen] = useState(false);
     const [isLangOpen, setIsLangOpen] = useState(false);
-    const moreRef = useRef<HTMLDivElement>(null);
     const langRef = useRef<HTMLDivElement>(null);
     
     const hasNotification = pendingMatchesCount > 0 || dangerTreesCount > 0;
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (moreRef.current && !moreRef.current.contains(event.target as Node)) setIsMoreOpen(false);
             if (langRef.current && !langRef.current.contains(event.target as Node)) setIsLangOpen(false);
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -62,6 +59,7 @@ export const Navigation = ({ lightseed, activeTab, setTab, onPlant, onPulse, onL
 
     const mainTabs = ['forest', 'visions', 'pulses'];
     const moreTabs = ['matches', 'oracle', 'about'];
+    const desktopTabs = [...mainTabs, ...moreTabs];
 
     return (
         <nav className="sticky top-0 z-30 bg-emerald-900 border-b border-emerald-800 text-white shadow-md">
@@ -75,28 +73,17 @@ export const Navigation = ({ lightseed, activeTab, setTab, onPlant, onPulse, onL
                     </div>
 
                     {/* Desktop Navigation Tabs */}
-                    <div className="hidden lg:flex items-center gap-2">
-                        {mainTabs.map(tab => (
-                            <button key={tab} onClick={() => setTab(tab)} className={`px-5 py-2.5 rounded-full text-sm transition-all ${getTabStyle(tab)}`}>
+                    <div className="hidden lg:flex items-center gap-1 xl:gap-2">
+                        {desktopTabs.map(tab => (
+                            <button key={tab} onClick={() => setTab(tab)} className={`px-3 xl:px-4 py-2.5 rounded-full text-xs xl:text-sm transition-all flex items-center gap-2 ${getTabStyle(tab)}`}>
                                 {t(tab as any)}
+                                {tab === 'matches' && pendingMatchesCount > 0 && (
+                                    <span className="bg-red-500 text-white text-[10px] px-1.5 rounded-full">
+                                        {pendingMatchesCount}
+                                    </span>
+                                )}
                             </button>
                         ))}
-                        <div className="relative" ref={moreRef}>
-                            <button onClick={() => setIsMoreOpen(!isMoreOpen)} className="flex items-center px-5 py-2.5 rounded-full text-sm font-medium text-emerald-100 hover:bg-white/10">
-                                <span>{t('more')}</span>
-                                {hasNotification && <span className="ml-2 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>}
-                            </button>
-                            {isMoreOpen && (
-                                <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50 text-slate-700">
-                                    {moreTabs.map(tab => (
-                                        <button key={tab} onClick={() => { setTab(tab); setIsMoreOpen(false); }} className="w-full text-left px-6 py-3 text-sm hover:bg-slate-50 flex justify-between font-medium">
-                                            <span>{t(tab as any)}</span>
-                                            {tab === 'matches' && pendingMatchesCount > 0 && <span className="bg-red-500 text-white text-[10px] px-2 rounded-full">{pendingMatchesCount}</span>}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
                     </div>
 
                     {/* Action Buttons: Visible on MD+ (Mid size and up) */}
@@ -125,7 +112,7 @@ export const Navigation = ({ lightseed, activeTab, setTab, onPlant, onPulse, onL
                     </div>
 
                     {/* Right Side UI Controls */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 md:gap-3">
                          <div className="relative" ref={langRef}>
                             <button onClick={() => setIsLangOpen(!isLangOpen)} className="bg-emerald-800 text-xs border border-emerald-700 rounded-full px-3 py-1 uppercase font-bold hover:bg-emerald-700 transition-colors flex items-center gap-1">
                                 <Icons.Globe />

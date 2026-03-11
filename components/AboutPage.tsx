@@ -296,6 +296,16 @@ export const AboutPage = ({ onClose }: { onClose: () => void }) => {
                     <Icons.ArrowLeft />
                     <span>{t('back')}</span>
                 </button>
+                <a
+                    href="https://github.com/zetedi/lifeseed.online"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Lifeseed GitHub repository"
+                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 shadow-sm transition-colors hover:text-slate-900 hover:border-slate-300"
+                >
+                    <Icons.GitHub />
+                    <span className="hidden sm:inline">GitHub</span>
+                </a>
             </div>
 
             {/* Header with Bigger Logo & Less Space */}
