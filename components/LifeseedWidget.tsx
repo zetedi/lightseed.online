@@ -12,12 +12,13 @@ interface Props {
 export const LifeseedWidget: React.FC<Props> = ({ domain, onClose }) => {
     const [trees, setTrees] = useState<Lifetree[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!domain) { setLoading(false); return; }
         getTreesByDomain(domain)
             .then(setTrees)
-            .catch(console.error)
+            .catch(e => { console.error(e); setError(e?.message || 'Failed to load trees'); })
             .finally(() => setLoading(false));
     }, [domain]);
 
@@ -50,6 +51,11 @@ export const LifeseedWidget: React.FC<Props> = ({ domain, onClose }) => {
             <div className="flex-1 overflow-y-auto">
                 {loading ? (
                     <div className="flex items-center justify-center h-40 text-slate-400 text-sm">Loading...</div>
+                ) : error ? (
+                    <div className="flex flex-col items-center justify-center h-40 gap-2 text-red-400 text-xs text-center px-6">
+                        <p className="font-medium">Could not load trees</p>
+                        <p className="text-slate-400">{error}</p>
+                    </div>
                 ) : trees.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-40 gap-3 text-slate-400 text-sm text-center px-6">
                         <Logo width={40} height={40} />

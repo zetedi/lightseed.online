@@ -6,12 +6,13 @@ import Logo from './Logo';
 import { updateLifetree, toggleGuardianship, setTreeStatus, getPulsesByTreeId } from '../services/firebase';
 import { Pulse } from '../types';
 
-export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onViewPulse, myActiveTree, currentUserId, isAdmin }: any) => {
+export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onViewPulse, myActiveTree, currentUserId, isAdmin, isSuperAdmin }: any) => {
    const { t } = useLanguage();
    const isOwner = currentUserId === tree.ownerId;
    const isNature = tree.isNature;
    const isGuardian = tree.guardians && currentUserId && tree.guardians.includes(currentUserId);
-   const canDeleteGuarded = isNature && (isOwner || isAdmin);
+   const canDeleteGuarded = isNature && (isOwner || isAdmin || isSuperAdmin);
+   const canEdit = isOwner || isGuardian || isSuperAdmin;
 
    const [isEditing, setIsEditing] = useState(false);
    const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -20,6 +21,13 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const [editBody, setEditBody] = useState(tree.body);
    const [editLat, setEditLat] = useState(tree.latitude || (tree as any).lat || 0);
    const [editLng, setEditLng] = useState(tree.longitude || (tree as any).lng || 0);
+   const [editLocationName, setEditLocationName] = useState(tree.locationName || '');
+   const [editCreatedAt, setEditCreatedAt] = useState(() => {
+       if (!tree.createdAt) return '';
+       const d = tree.createdAt.toDate ? tree.createdAt.toDate() : new Date(tree.createdAt);
+       const offset = d.getTimezoneOffset() * 60000;
+       return new Date(d.getTime() - offset).toISOString().slice(0, 16);
+   });
    const [editDomain, setEditDomain] = useState(tree.domain || '');
    const [isSaving, setIsSaving] = useState(false);
    
@@ -65,7 +73,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                body: editBody,
                latitude: Number(editLat),
                longitude: Number(editLng),
-               domain: editDomain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '') || null
+               locationName: editLocationName.trim() || null,
+               domain: editDomain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '') || null,
+               ...(editCreatedAt && { createdAt: new Date(editCreatedAt) })
            };
            await updateLifetree(tree.id, updates);
            if (onUpdate) onUpdate(updates);
@@ -195,8 +205,8 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                             <Icons.Trash />
                         </button>
                     )}
-                    {/* EDIT Button: Allowed for Owner OR Guardian */}
-                    {((isOwner && !isNature) || isGuardian) && !isEditing && (
+                    {/* EDIT Button: Allowed for Owner, Guardian, or SuperAdmin */}
+                    {canEdit && !isEditing && (
                         <button onClick={() => setIsEditing(true)} className="bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 px-4 py-2 rounded-full font-bold text-sm shadow-sm transition-colors flex items-center gap-1 border border-slate-200">
                             <Icons.Sparkles />
                             <span>{t('edit')}</span>
@@ -289,9 +299,19 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                 <span className="text-slate-500 text-sm">{t('steward')}</span>
                                 <span dir="ltr" className="text-slate-800 font-mono text-sm">{isNature ? "Nature (System)" : tree.ownerId.substring(0, 10) + "..."}</span>
                             </div>
-                            <div className="flex justify-between py-2 border-b border-slate-50">
+                            <div className="flex justify-between py-2 border-b border-slate-50 items-center">
                                 <span className="text-slate-500 text-sm">{t('location')}</span>
-                                <span dir="auto" className="text-slate-800 font-mono text-sm">{tree.locationName}</span>
+                                {isEditing ? (
+                                    <input
+                                        type="text"
+                                        className="border p-1 rounded text-sm w-48"
+                                        value={editLocationName}
+                                        onChange={e => setEditLocationName(e.target.value)}
+                                        placeholder="Location name"
+                                    />
+                                ) : (
+                                    <span dir="auto" className="text-slate-800 font-mono text-sm">{tree.locationName}</span>
+                                )}
                             </div>
                             <div className="py-2 border-b border-slate-50">
                                 <span className="text-slate-500 text-sm block mb-1">GPS Coordinates</span>
@@ -327,6 +347,21 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                     <span className="text-slate-800 font-mono text-sm">{tree.latitude?.toFixed(4)}, {tree.longitude?.toFixed(4)}</span>
                                 )}
                             </div>
+                            <div className="flex justify-between py-2 border-b border-slate-50 items-center">
+                                <span className="text-slate-500 text-sm">Planted</span>
+                                {isEditing ? (
+                                    <input
+                                        type="datetime-local"
+                                        className="border p-1 rounded text-sm"
+                                        value={editCreatedAt}
+                                        onChange={e => setEditCreatedAt(e.target.value)}
+                                    />
+                                ) : (
+                                    <span className="text-slate-800 font-mono text-sm">
+                                        {tree.createdAt?.toDate ? tree.createdAt.toDate().toLocaleString() : '—'}
+                                    </span>
+                                )}
+                            </div>
                              <div className="flex justify-between py-2">
                                 <span className="text-slate-500 text-sm">Validator</span>
                                 <span className="text-slate-800 font-mono text-sm">{tree.validatorId ? (tree.validatorId === 'GENESIS' || tree.validatorId === 'SYSTEM' ? 'Nature' : tree.validatorId.substring(0, 8) + '...') : t('unvalidated')}</span>
@@ -353,7 +388,20 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                     <button onClick={handleSave} disabled={isSaving} className="flex-1 bg-emerald-600 text-white py-2 rounded-lg text-sm font-bold hover:bg-emerald-700">
                                         {isSaving ? "Saving..." : "Save Changes"}
                                     </button>
-                                    <button onClick={() => { setIsEditing(false); setEditName(tree.name); setEditShortTitle(tree.shortTitle || ''); setEditBody(tree.body); setEditLat(tree.latitude); setEditLng(tree.longitude); setEditDomain(tree.domain || ''); }} disabled={isSaving} className="flex-1 bg-slate-200 text-slate-700 py-2 rounded-lg text-sm font-bold hover:bg-slate-300">
+                                    <button onClick={() => {
+                                        setIsEditing(false);
+                                        setEditName(tree.name);
+                                        setEditShortTitle(tree.shortTitle || '');
+                                        setEditBody(tree.body);
+                                        setEditLat(tree.latitude);
+                                        setEditLng(tree.longitude);
+                                        setEditLocationName(tree.locationName || '');
+                                        setEditDomain(tree.domain || '');
+                                        if (tree.createdAt) {
+                                            const d = tree.createdAt.toDate ? tree.createdAt.toDate() : new Date(tree.createdAt);
+                                            setEditCreatedAt(new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16));
+                                        }
+                                    }} disabled={isSaving} className="flex-1 bg-slate-200 text-slate-700 py-2 rounded-lg text-sm font-bold hover:bg-slate-300">
                                         Cancel
                                     </button>
                                 </div>

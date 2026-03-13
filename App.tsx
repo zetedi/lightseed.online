@@ -833,6 +833,7 @@ const AppContent = () => {
                         myActiveTree={activeTree}
                         currentUserId={lightseed?.uid}
                         isAdmin={isAdmin}
+                        isSuperAdmin={isSuperAdmin}
                     />
                     {showGrowthPlayer && <GrowthPlayerModal treeId={showGrowthPlayer} onClose={() => setShowGrowthPlayer(null)} />}
                 </DetailWrapper>

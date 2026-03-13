@@ -314,7 +314,8 @@ export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot) => {
 export const getMyLifetrees = async (uid: string) => (await getDocs(query(lifetreesCollection, where('ownerId', '==', uid)))).docs.map(d => ({ id: d.id, ...d.data() } as Lifetree));
 
 export const getTreesByDomain = async (domain: string): Promise<Lifetree[]> => {
-    const q = query(lifetreesCollection, where('domain', '==', domain), orderBy('createdAt', 'desc'));
+    // No orderBy — avoids requiring a composite Firestore index
+    const q = query(lifetreesCollection, where('domain', '==', domain));
     const snap = await getDocs(q);
     return snap.docs.map(d => ({ id: d.id, ...d.data() } as Lifetree));
 };
