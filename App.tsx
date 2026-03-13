@@ -116,6 +116,7 @@ const AppContent = () => {
     const [lastDoc, setLastDoc] = useState<any>(null);
     const [loadingMore, setLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
+    const forestSentinelRef = useRef<HTMLDivElement>(null);
 
     // UI State
     const [showPlantModal, setShowPlantModal] = useState(false);
@@ -190,7 +191,7 @@ const AppContent = () => {
     useEffect(() => {
         const handleScroll = () => {
             if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
-                if (!loadingMore && hasMore && tab !== 'dashboard' && tab !== 'matches' && tab !== 'oracle' && tab !== 'profile' && tab !== 'about') {
+                if (!loadingMore && hasMore && tab !== 'dashboard' && tab !== 'matches' && tab !== 'oracle' && tab !== 'profile' && tab !== 'about' && tab !== 'forest') {
                     loadContent(false);
                 }
             }
@@ -198,6 +199,23 @@ const AppContent = () => {
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, [loadingMore, hasMore, tab, lastDoc]);
+
+    // IntersectionObserver sentinel for forest list view
+    useEffect(() => {
+        if (tab !== 'forest' || viewMode !== 'grid') return;
+        const sentinel = forestSentinelRef.current;
+        if (!sentinel) return;
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasMore && !loadingMore) {
+                    loadContent(false);
+                }
+            },
+            { rootMargin: '200px' }
+        );
+        observer.observe(sentinel);
+        return () => observer.disconnect();
+    }, [tab, viewMode, hasMore, loadingMore, lastDoc]);
 
     useEffect(() => {
         if (showPlantModal) {
@@ -694,25 +712,28 @@ const AppContent = () => {
                         {viewMode === 'map' ? (
                             <ForestMap trees={filteredData} onView={setSelectedTree} />
                         ) : (
-                            <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                                {filteredData.length === 0 && !loadingMore ? (
-                                    <p className="col-span-full text-center text-slate-400 py-10">{t('no_trees_found')}</p>
-                                ) : (
-                                    filteredData.map((item: any) => (
-                                        <React.Fragment key={item.id}>
-                                            <LifetreeCard 
-                                                tree={item} 
-                                                myActiveTree={activeTree} 
-                                                currentUserId={lightseed?.uid}
-                                                onPlayGrowth={setShowGrowthPlayer} 
-                                                onQuickSnap={handleQuickSnap}
-                                                onValidate={(id: string) => validateLifetree(id, activeTree!.id).then(() => { alert("Validated!"); loadContent(true); })}
-                                                onView={setSelectedTree}
-                                            />
-                                        </React.Fragment>
-                                    ))
-                                )}
-                            </div>
+                            <>
+                                <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                                    {filteredData.length === 0 && !loadingMore ? (
+                                        <p className="col-span-full text-center text-slate-400 py-10">{t('no_trees_found')}</p>
+                                    ) : (
+                                        filteredData.map((item: any) => (
+                                            <React.Fragment key={item.id}>
+                                                <LifetreeCard
+                                                    tree={item}
+                                                    myActiveTree={activeTree}
+                                                    currentUserId={lightseed?.uid}
+                                                    onPlayGrowth={setShowGrowthPlayer}
+                                                    onQuickSnap={handleQuickSnap}
+                                                    onValidate={(id: string) => validateLifetree(id, activeTree!.id).then(() => { alert("Validated!"); loadContent(true); })}
+                                                    onView={setSelectedTree}
+                                                />
+                                            </React.Fragment>
+                                        ))
+                                    )}
+                                </div>
+                                <div ref={forestSentinelRef} className="h-1" />
+                            </>
                         )}
                     </>
                 ) : tab === 'visions' ? (
