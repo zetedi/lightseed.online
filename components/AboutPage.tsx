@@ -261,7 +261,7 @@ const SymbolCard = ({ title, description, type, link }: { title: string, descrip
 
 export const AboutPage = ({ onClose }: { onClose: () => void }) => {
     const { t } = useLanguage();
-    const [activeTab, setActiveTab] = useState<'vision' | 'phoenix' | 'sun' | 'path' | 'yantra' | 'design'>('design');
+    const [activeTab, setActiveTab] = useState<'vision' | 'phoenix' | 'sun' | 'path' | 'yantra' | 'design'>('vision');
     const [showSubModal, setShowSubModal] = useState(false);
     const [email, setEmail] = useState("");
     const [submitting, setSubmitting] = useState(false);
