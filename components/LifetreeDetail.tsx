@@ -6,13 +6,15 @@ import Logo from './Logo';
 import { updateLifetree, toggleGuardianship, setTreeStatus, getPulsesByTreeId } from '../services/firebase';
 import { Pulse } from '../types';
 
-export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onCreatePulse, onViewPulse, myActiveTree, currentUserId }: any) => {
+export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onViewPulse, myActiveTree, currentUserId, isAdmin }: any) => {
    const { t } = useLanguage();
    const isOwner = currentUserId === tree.ownerId;
    const isNature = tree.isNature;
    const isGuardian = tree.guardians && currentUserId && tree.guardians.includes(currentUserId);
-   
+   const canDeleteGuarded = isNature && (isOwner || isAdmin);
+
    const [isEditing, setIsEditing] = useState(false);
+   const [showDeleteModal, setShowDeleteModal] = useState(false);
    const [editName, setEditName] = useState(tree.name);
    const [editShortTitle, setEditShortTitle] = useState(tree.shortTitle || '');
    const [editBody, setEditBody] = useState(tree.body);
@@ -162,6 +164,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    );
     
     return (
+        <>
         <div className="min-h-screen animate-in fade-in zoom-in-95 duration-300">
             {/* Danger Banner */}
             {localStatus === 'DANGER' && (
@@ -184,11 +187,16 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     <h2 dir="auto" className="text-xl font-light tracking-wide truncate max-w-[200px]">{isEditing ? "Editing..." : tree.name}</h2>
                     {tree.shortTitle && !isEditing && <span dir="auto" className="text-xs text-slate-400 font-bold uppercase tracking-widest">{tree.shortTitle}</span>}
                 </div>
-                <div className="min-w-[80px] flex justify-end">
+                <div className="min-w-[80px] flex justify-end gap-2">
+                    {canDeleteGuarded && !isEditing && (
+                        <button onClick={() => setShowDeleteModal(true)} className="bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 p-2 rounded-full shadow-sm transition-colors border border-red-200" title="Delete tree">
+                            <Icons.Trash />
+                        </button>
+                    )}
                     {/* EDIT Button: Allowed for Owner OR Guardian */}
                     {((isOwner && !isNature) || isGuardian) && !isEditing && (
                         <button onClick={() => setIsEditing(true)} className="bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 px-4 py-2 rounded-full font-bold text-sm shadow-sm transition-colors flex items-center gap-1 border border-slate-200">
-                            <Icons.Sparkles /> 
+                            <Icons.Sparkles />
                             <span>{t('edit')}</span>
                         </button>
                     )}
@@ -512,5 +520,41 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                 )}
             </div>
         </div>
+
+        {/* Delete confirmation modal */}
+        {showDeleteModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 animate-in fade-in zoom-in-95 duration-200">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 shrink-0">
+                            <Icons.Trash />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-slate-800">Delete Guarded Tree</h3>
+                            <p className="text-xs text-slate-500">This action cannot be undone.</p>
+                        </div>
+                    </div>
+                    <p className="text-sm text-slate-600 mb-6">
+                        You are about to permanently delete <span className="font-semibold text-slate-800">"{tree.name}"</span>.
+                        All associated data will be lost.
+                    </p>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => setShowDeleteModal(false)}
+                            className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-medium hover:bg-slate-50 transition-colors text-sm"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={() => { setShowDeleteModal(false); onDelete?.(); }}
+                            className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold transition-colors text-sm"
+                        >
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+        </>
     )
 };

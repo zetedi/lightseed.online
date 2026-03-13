@@ -21,7 +21,10 @@ import {
   checkAndIncrementAiUsage,
   getMyPulses,
   getMyVisions,
-  getMyMatchesHistory
+  getMyMatchesHistory,
+  claimSuperAdmin,
+  grantAdmin,
+  revokeAdmin
 } from './services/firebase';
 import { generateLifetreeBio, generateVisionImage } from './services/gemini';
 import { type Pulse, type Lifetree, type MatchProposal, type Vision } from './types';
@@ -99,7 +102,7 @@ const GDPRBanner = () => {
 
 const AppContent = () => {
     const { t } = useLanguage();
-    const { lightseed, myTrees, guardedTrees, activeTree, loading: authLoading, refreshTrees } = useLifeseed();
+    const { lightseed, myTrees, guardedTrees, activeTree, isAdmin, isSuperAdmin, superAdminExists, loading: authLoading, refreshTrees } = useLifeseed();
     const [tab, setTab] = useState('dashboard');
     const [viewMode, setViewMode] = useState<'grid' | 'map'>('map');
     const [data, setData] = useState<any[]>([]);
@@ -412,6 +415,17 @@ const AppContent = () => {
         }
     }
 
+    // Used by LifetreeDetail modal (confirmation is handled by the modal itself)
+    const handleDeleteTreeConfirmed = async (treeId: string) => {
+        try {
+            await deleteLifetree(treeId);
+            await refreshTrees();
+            loadContent(true);
+        } catch (e: any) {
+            alert("Error deleting tree: " + e.message);
+        }
+    }
+
     const handleDeleteVisionInApp = async (visionId: string) => {
         if (!confirm("Are you sure you want to delete this vision?")) return;
         try {
@@ -578,13 +592,23 @@ const AppContent = () => {
 
         if (tab === 'profile' && lightseed) {
             return (
-                <LightseedProfile 
-                    lightseed={lightseed} 
-                    myTrees={myTrees} 
+                <LightseedProfile
+                    lightseed={lightseed}
+                    myTrees={myTrees}
+                    isAdmin={isAdmin}
+                    isSuperAdmin={isSuperAdmin}
+                    superAdminExists={superAdminExists}
                     onViewTree={(tree: Lifetree) => setSelectedTree(tree)}
                     onDeleteTree={handleDeleteTree}
                     onViewVision={(v: Vision) => setSelectedVision(v)}
                     onPlant={() => { setTreeType('LIFETREE'); setShowPlantModal(true); }}
+                    onClaimSuperAdmin={async () => {
+                        const ok = await claimSuperAdmin(lightseed.uid);
+                        if (ok) window.location.reload();
+                        else alert('SuperAdmin already claimed.');
+                    }}
+                    onGrantAdmin={async (uid: string) => { await grantAdmin(uid); }}
+                    onRevokeAdmin={async (uid: string) => { await revokeAdmin(uid); }}
                 />
             );
         }
@@ -794,16 +818,18 @@ const AppContent = () => {
 
             {selectedTree && (
                 <DetailWrapper>
-                    <LifetreeDetail 
-                        tree={selectedTree} 
-                        onClose={() => setSelectedTree(null)} 
+                    <LifetreeDetail
+                        tree={selectedTree}
+                        onClose={() => setSelectedTree(null)}
                         onPlayGrowth={setShowGrowthPlayer}
                         onValidate={(id: string) => validateLifetree(id, activeTree!.id).then(() => { alert("Validated!"); setSelectedTree(null); loadContent(true); })}
                         onUpdate={(updates: Partial<Lifetree>) => handleTreeUpdate(selectedTree.id, updates)}
+                        onDelete={() => { handleDeleteTreeConfirmed(selectedTree.id); setSelectedTree(null); }}
                         onCreatePulse={() => { setShowPulseModal(true); }}
                         onViewPulse={(p: Pulse) => { setSelectedTree(null); setSelectedPulse(p); }}
                         myActiveTree={activeTree}
                         currentUserId={lightseed?.uid}
+                        isAdmin={isAdmin}
                     />
                     {showGrowthPlayer && <GrowthPlayerModal treeId={showGrowthPlayer} onClose={() => setShowGrowthPlayer(null)} />}
                 </DetailWrapper>

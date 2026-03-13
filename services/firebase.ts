@@ -312,6 +312,23 @@ export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot) => {
 }
 
 export const getMyLifetrees = async (uid: string) => (await getDocs(query(lifetreesCollection, where('ownerId', '==', uid)))).docs.map(d => ({ id: d.id, ...d.data() } as Lifetree));
+export const checkIsAdmin = async (uid: string): Promise<boolean> => (await getDoc(doc(db, 'admins', uid))).exists();
+
+export const getSuperAdminUid = async (): Promise<string | null> => {
+    const snap = await getDoc(doc(db, 'config', 'superadmin'));
+    return snap.exists() ? (snap.data() as any).uid : null;
+};
+export const checkIsSuperAdmin = async (uid: string): Promise<boolean> => (await getSuperAdminUid()) === uid;
+export const claimSuperAdmin = async (uid: string): Promise<boolean> => {
+    const ref = doc(db, 'config', 'superadmin');
+    if ((await getDoc(ref)).exists()) return false;
+    await setDoc(ref, { uid, claimedAt: serverTimestamp() });
+    return true;
+};
+export const grantAdmin = (uid: string) => setDoc(doc(db, 'admins', uid), { grantedAt: serverTimestamp() });
+export const revokeAdmin = (uid: string) => deleteDoc(doc(db, 'admins', uid));
+export const getAdmins = async (): Promise<{ uid: string }[]> =>
+    (await getDocs(collection(db, 'admins'))).docs.map(d => ({ uid: d.id }));
 export const getGuardedTrees = async (uid: string) => (await getDocs(query(lifetreesCollection, where('guardians', 'array-contains', uid)))).docs.map(d => ({ id: d.id, ...d.data() } as Lifetree));
 export const toggleGuardianship = (id: string, uid: string, join: boolean) => updateDoc(doc(db, 'lifetrees', id), { guardians: join ? arrayUnion(uid) : arrayRemove(uid) });
 export const setTreeStatus = (id: string, status: string) => updateDoc(doc(db, 'lifetrees', id), { status });

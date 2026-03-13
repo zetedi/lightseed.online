@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { type Pulse, type Lifetree, type MatchProposal, type Vision, type VisionSynergy } from '../types';
-import { getMyPulses, getMyVisions, getJoinedVisions, getMyMatchesHistory, deleteUserAccount, logout, triggerSystemEmail, monitorMailStatus, sendInvite, listenToUserProfile, deleteVision } from '../services/firebase';
+import { getMyPulses, getMyVisions, getJoinedVisions, getMyMatchesHistory, deleteUserAccount, logout, triggerSystemEmail, monitorMailStatus, sendInvite, listenToUserProfile, deleteVision, getAdmins } from '../services/firebase';
 import { findVisionSynergies } from '../services/gemini';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
@@ -9,7 +9,7 @@ import { VisionCard } from './VisionCard';
 import { Modal } from './ui/Modal';
 import { Loading } from './ui/Loading';
 
-export const LightseedProfile = ({ lightseed, myTrees, onViewTree, onDeleteTree, onViewVision, onPlant }: any) => {
+export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, superAdminExists, onViewTree, onDeleteTree, onViewVision, onPlant, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin }: any) => {
     const { t } = useLanguage();
     const [activeTab, setActiveTab] = useState<'trees' | 'pulses' | 'visions' | 'history'>('trees');
     const [pulses, setPulses] = useState<Pulse[]>([]);
@@ -34,9 +34,17 @@ export const LightseedProfile = ({ lightseed, myTrees, onViewTree, onDeleteTree,
     const [synergies, setSynergies] = useState<VisionSynergy[]>([]);
     const [analyzing, setAnalyzing] = useState(false);
 
+    // Admin management state (superadmin only)
+    const [admins, setAdmins] = useState<{ uid: string }[]>([]);
+    const [newAdminUid, setNewAdminUid] = useState('');
+    const [adminActionLoading, setAdminActionLoading] = useState(false);
     const hasValidatedTree = myTrees.some((t: Lifetree) => t.validated);
     const allValidated = myTrees.length > 0 && myTrees.every((t: Lifetree) => t.validated);
     const inviteLink = `${window.location.origin}?invite=${lightseed.uid}`;
+
+    useEffect(() => {
+        if (isSuperAdmin) getAdmins().then(setAdmins);
+    }, [isSuperAdmin]);
 
     useEffect(() => {
         if (!lightseed) return;
@@ -222,7 +230,26 @@ export const LightseedProfile = ({ lightseed, myTrees, onViewTree, onDeleteTree,
                         <div className="absolute bottom-1 right-1 bg-emerald-500 w-6 h-6 rounded-full border-4 border-slate-900"></div>
                     </div>
                     <div className="text-center md:text-left flex-1">
-                        <h1 className="text-3xl font-light tracking-wide">{lightseed.displayName}</h1>
+                        <div className="flex items-center gap-3 flex-wrap justify-center md:justify-start">
+                            <h1 className="text-3xl font-light tracking-wide">{lightseed.displayName}</h1>
+                            {isSuperAdmin ? (
+                                <span className="flex items-center gap-1 bg-amber-400/20 border border-amber-400/50 text-amber-300 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                                    <Icons.Sparkles /> SuperAdmin
+                                </span>
+                            ) : isAdmin ? (
+                                <span className="flex items-center gap-1 bg-indigo-400/20 border border-indigo-400/50 text-indigo-300 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                                    <Icons.Shield /> Admin
+                                </span>
+                            ) : hasValidatedTree ? (
+                                <span className="flex items-center gap-1 bg-emerald-400/20 border border-emerald-400/50 text-emerald-300 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                                    <Icons.ShieldCheck /> Validated
+                                </span>
+                            ) : (
+                                <span className="bg-slate-600/50 border border-slate-500/50 text-slate-400 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                                    User
+                                </span>
+                            )}
+                        </div>
                         <p className="text-slate-400 text-sm font-mono mt-1">{lightseed.email}</p>
                         
                         <div className="flex flex-col md:flex-row items-center md:items-start gap-4 mt-4">
@@ -277,6 +304,72 @@ export const LightseedProfile = ({ lightseed, myTrees, onViewTree, onDeleteTree,
                             <span>zetedi/lifeseed.online</span>
                             <Icons.Link />
                         </a>
+                    </div>
+                )}
+
+                {/* Claim SuperAdmin — visible only when no superadmin exists yet */}
+                {!superAdminExists && (
+                    <div className="max-w-4xl mx-auto mt-4 bg-amber-500/10 border border-amber-400/40 p-4 rounded-xl flex items-center justify-between gap-4">
+                        <div>
+                            <h4 className="font-bold text-amber-300 text-sm">Genesis SuperAdmin unclaimed</h4>
+                            <p className="text-xs text-slate-400">Be the first to claim the SuperAdmin role.</p>
+                        </div>
+                        <button
+                            onClick={onClaimSuperAdmin}
+                            className="bg-amber-500 hover:bg-amber-400 text-white text-xs font-bold px-4 py-2 rounded-full shadow transition-colors whitespace-nowrap"
+                        >
+                            Claim SuperAdmin
+                        </button>
+                    </div>
+                )}
+
+                {/* Admin Management — superadmin only */}
+                {isSuperAdmin && (
+                    <div className="max-w-4xl mx-auto mt-4 bg-indigo-900/30 border border-indigo-500/30 p-5 rounded-xl">
+                        <h4 className="font-bold text-indigo-300 mb-3 flex items-center gap-2 text-sm uppercase tracking-wider">
+                            <Icons.Shield /> Admin Management
+                        </h4>
+                        <div className="flex gap-2 mb-4">
+                            <input
+                                value={newAdminUid}
+                                onChange={e => setNewAdminUid(e.target.value)}
+                                placeholder="User UID"
+                                className="flex-1 bg-slate-800 border border-slate-600 text-white text-xs rounded-lg px-3 py-2 font-mono focus:outline-none focus:border-indigo-400"
+                            />
+                            <button
+                                disabled={!newAdminUid || adminActionLoading}
+                                onClick={async () => {
+                                    setAdminActionLoading(true);
+                                    await onGrantAdmin(newAdminUid.trim());
+                                    setNewAdminUid('');
+                                    const updated = await getAdmins();
+                                    setAdmins(updated);
+                                    setAdminActionLoading(false);
+                                }}
+                                className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors"
+                            >
+                                Grant
+                            </button>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            {admins.length === 0 && <p className="text-xs text-slate-500">No admins yet.</p>}
+                            {admins.map(a => (
+                                <div key={a.uid} className="flex items-center justify-between bg-slate-800/50 px-3 py-2 rounded-lg">
+                                    <span className="text-xs font-mono text-slate-300">{a.uid}</span>
+                                    <button
+                                        onClick={async () => {
+                                            setAdminActionLoading(true);
+                                            await onRevokeAdmin(a.uid);
+                                            setAdmins(prev => prev.filter(x => x.uid !== a.uid));
+                                            setAdminActionLoading(false);
+                                        }}
+                                        className="text-red-400 hover:text-red-300 text-xs font-bold ml-3 transition-colors"
+                                    >
+                                        Revoke
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
             </div>
