@@ -51,6 +51,7 @@ import { LightseedProfile } from './components/LightseedProfile';
 import { AboutPage } from './components/AboutPage';
 import { Dashboard } from './components/Dashboard';
 import { Loading } from './components/ui/Loading';
+import { LifeseedWidget } from './components/LifeseedWidget';
 
 const lifetreeImage = '/mother.jpg';
 
@@ -137,6 +138,7 @@ const AppContent = () => {
     const [treeSeed, setTreeSeed] = useState('');
     const [treeBio, setTreeBio] = useState('');
     const [treeImageUrl, setTreeImageUrl] = useState('');
+    const [treeDomain, setTreeDomain] = useState('');
     const [plantLocation, setPlantLocation] = useState<{latitude: number, longitude: number} | null>(null);
     const [isLocating, setIsLocating] = useState(false);
     
@@ -374,16 +376,17 @@ const AppContent = () => {
 
         const submitTree = async (lat?: number, lng?: number) => {
             try {
-                await plantLifetree({ 
-                    ownerId: lightseed.uid, 
-                    name: finalName, 
+                await plantLifetree({
+                    ownerId: lightseed.uid,
+                    name: finalName,
                     shortTitle: treeShortTitle,
-                    body: treeBio, 
-                    imageUrl: treeImageUrl, 
-                    latitude: lat, 
-                    longitude: lng, 
+                    body: treeBio,
+                    imageUrl: treeImageUrl,
+                    latitude: lat,
+                    longitude: lng,
                     isNature: isNature,
-                    treeType: treeType
+                    treeType: treeType,
+                    ...(treeDomain.trim() && { domain: treeDomain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '') })
                 });
                 await refreshTrees(); setShowPlantModal(false); loadContent(true);
             } catch(e: any) { 
@@ -1017,6 +1020,13 @@ const AppContent = () => {
                             required 
                         />
                         
+                        <input
+                            type="text"
+                            className="block w-full border border-slate-300 p-3 rounded-lg bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow shadow-sm"
+                            placeholder="Website domain (e.g. myproject.com)"
+                            value={treeDomain}
+                            onChange={e => setTreeDomain(e.target.value)}
+                        />
                         <button type="submit" disabled={uploading || isSubmitting} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold uppercase tracking-widest shadow-lg active:scale-95 transition-all mt-4 mb-4">
                             {isSubmitting ? t('planting') : t('plant_lifetree')}
                         </button>
@@ -1054,6 +1064,12 @@ const AppContent = () => {
 }
 
 const App = () => {
+  const params = new URLSearchParams(window.location.search);
+  const isWidget = params.get('widget') === 'true';
+  const widgetDomain = params.get('domain') || '';
+
+  if (isWidget) return <LifeseedWidget domain={widgetDomain} />;
+
   return (
     <LanguageProvider>
       <AppContent />

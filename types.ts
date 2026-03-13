@@ -19,6 +19,7 @@ export interface Lifetree {
   latitude?: number;
   longitude?: number;
   locationName?: string;
+  domain?: string; // Associated website domain, e.g. "example.com"
   createdAt: Timestamp;
   
   // Validation Logic

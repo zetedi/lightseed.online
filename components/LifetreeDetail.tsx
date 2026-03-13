@@ -20,6 +20,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const [editBody, setEditBody] = useState(tree.body);
    const [editLat, setEditLat] = useState(tree.latitude || (tree as any).lat || 0);
    const [editLng, setEditLng] = useState(tree.longitude || (tree as any).lng || 0);
+   const [editDomain, setEditDomain] = useState(tree.domain || '');
    const [isSaving, setIsSaving] = useState(false);
    
    // Blockchain Visualization State
@@ -58,12 +59,13 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const handleSave = async () => {
        setIsSaving(true);
        try {
-           const updates = {
+           const updates: any = {
                name: editName,
                shortTitle: editShortTitle,
                body: editBody,
                latitude: Number(editLat),
-               longitude: Number(editLng)
+               longitude: Number(editLng),
+               domain: editDomain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '') || null
            };
            await updateLifetree(tree.id, updates);
            if (onUpdate) onUpdate(updates);
@@ -329,13 +331,29 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                 <span className="text-slate-500 text-sm">Validator</span>
                                 <span className="text-slate-800 font-mono text-sm">{tree.validatorId ? (tree.validatorId === 'GENESIS' || tree.validatorId === 'SYSTEM' ? 'Nature' : tree.validatorId.substring(0, 8) + '...') : t('unvalidated')}</span>
                             </div>
+                            <div className="flex justify-between py-2 items-center">
+                                <span className="text-slate-500 text-sm">Website</span>
+                                {isEditing ? (
+                                    <input
+                                        type="text"
+                                        className="border p-1 rounded text-sm w-48"
+                                        value={editDomain}
+                                        onChange={e => setEditDomain(e.target.value)}
+                                        placeholder="e.g. myproject.com"
+                                    />
+                                ) : (
+                                    tree.domain
+                                        ? <a href={`https://${tree.domain}`} target="_blank" rel="noreferrer" className="text-emerald-600 text-sm hover:underline font-mono">{tree.domain}</a>
+                                        : <span className="text-slate-400 text-sm">—</span>
+                                )}
+                            </div>
 
                             {isEditing && (
                                 <div className="flex space-x-2 mt-4 pt-4 border-t border-slate-100">
                                     <button onClick={handleSave} disabled={isSaving} className="flex-1 bg-emerald-600 text-white py-2 rounded-lg text-sm font-bold hover:bg-emerald-700">
                                         {isSaving ? "Saving..." : "Save Changes"}
                                     </button>
-                                    <button onClick={() => { setIsEditing(false); setEditName(tree.name); setEditShortTitle(tree.shortTitle || ''); setEditBody(tree.body); setEditLat(tree.latitude); setEditLng(tree.longitude); }} disabled={isSaving} className="flex-1 bg-slate-200 text-slate-700 py-2 rounded-lg text-sm font-bold hover:bg-slate-300">
+                                    <button onClick={() => { setIsEditing(false); setEditName(tree.name); setEditShortTitle(tree.shortTitle || ''); setEditBody(tree.body); setEditLat(tree.latitude); setEditLng(tree.longitude); setEditDomain(tree.domain || ''); }} disabled={isSaving} className="flex-1 bg-slate-200 text-slate-700 py-2 rounded-lg text-sm font-bold hover:bg-slate-300">
                                         Cancel
                                     </button>
                                 </div>
