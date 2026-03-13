@@ -161,16 +161,21 @@ export const ForestMap = ({ trees, onView }: { trees: Lifetree[], onView: (tree:
                 <img src="${displayImage}" style="${imgStyle}" class="w-full h-full object-cover" />
             </div>
             ${tree.validated ? '<div class="absolute -top-1 -right-1 bg-emerald-500 border border-white w-3 h-3 rounded-full"></div>' : ''}
+            ${isDanger ? `<div class="absolute -top-1 -left-1 z-20 w-3 h-3 bg-red-500 border border-white rounded-full animate-bounce"></div>` : ''}
         </div>`;
     }
 
     const createPopupContent = (tree: Lifetree) => {
+        const displayImage = tree.latestGrowthUrl || tree.imageUrl;
         const div = document.createElement('div');
         div.innerHTML = `
-            <div class="text-center p-2 min-w-[150px]">
-                <h3 class="font-bold text-lg text-slate-800 mb-1">${tree.name}</h3>
-                <p class="text-xs text-slate-500 line-clamp-2 italic mb-2">"${tree.body}"</p>
-                <button class="view-btn mt-2 bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-full w-full">View Tree</button>
+            <div class="text-center min-w-[160px]">
+                ${displayImage ? `<img src="${displayImage}" style="width:100%;height:120px;object-fit:cover;display:block;" class="rounded-t-lg" />` : ''}
+                <div class="p-2">
+                    <h3 class="font-bold text-sm text-slate-800 mb-1">${tree.name}</h3>
+                    <p class="text-xs text-slate-500 line-clamp-2 italic mb-2">"${tree.body}"</p>
+                    <button class="view-btn bg-emerald-600 text-white text-xs font-bold px-4 py-1.5 rounded-full w-full">View Tree</button>
+                </div>
             </div>
         `;
         div.querySelector('.view-btn')?.addEventListener('click', (e) => {
@@ -350,8 +355,7 @@ export const ForestMap = ({ trees, onView }: { trees: Lifetree[], onView: (tree:
 
                 } else {
                     // --- COLLAPSED CLUSTER (Logo) ---
-                    // Using w-20 h-20 (80px) container to show the SVG clearly
-                    // SVG is set to fill width/height
+                    const hasDanger = [cluster.center, ...cluster.children].some(t => t.status === 'DANGER');
                     const html = `
                     <div class="relative w-16 h-16 group cursor-pointer hover:scale-110 transition-transform duration-300">
                         <div class="absolute inset-0 drop-shadow-xl">
@@ -360,6 +364,7 @@ export const ForestMap = ({ trees, onView }: { trees: Lifetree[], onView: (tree:
                         <div class="absolute top-0 right-0 w-6 h-6 bg-emerald-600 border-2 border-white text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-md z-20">
                             ${count}
                         </div>
+                        ${hasDanger ? `<div class="absolute top-0 left-0 w-3.5 h-3.5 bg-red-500 border-2 border-white rounded-full animate-bounce z-20"></div>` : ''}
                     </div>
                     `;
 

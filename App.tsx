@@ -101,7 +101,7 @@ const AppContent = () => {
     const { t } = useLanguage();
     const { lightseed, myTrees, guardedTrees, activeTree, loading: authLoading, refreshTrees } = useLifeseed();
     const [tab, setTab] = useState('dashboard');
-    const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
+    const [viewMode, setViewMode] = useState<'grid' | 'map'>('map');
     const [data, setData] = useState<any[]>([]);
     const [matches, setMatches] = useState<MatchProposal[]>([]);
     const [selectedTree, setSelectedTree] = useState<Lifetree | null>(null);
