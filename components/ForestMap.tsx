@@ -3,9 +3,16 @@ import React, { useRef, useEffect, useState } from 'react';
 import { type Lifetree } from '../types';
 
 interface Cluster {
-    id: string; // ID of the center tree
+    id: string;
     center: Lifetree;
     children: Lifetree[];
+    lat: number;
+    lng: number;
+}
+
+interface StackLevel {
+    clusterId: string;  // ID of the root cluster (for matching which cluster is open)
+    trees: Lifetree[];  // [center, ...petals, ...remaining]
     lat: number;
     lng: number;
 }
@@ -14,10 +21,8 @@ export const ForestMap = ({ trees, onView }: { trees: Lifetree[], onView: (tree:
     const mapContainer = useRef<HTMLDivElement>(null);
     const mapInstance = useRef<any>(null);
     const markersLayer = useRef<any>(null);
-    
-    // State to track expanded clusters and their pagination page
-    const [expandedClusterId, setExpandedClusterId] = useState<string | null>(null);
-    const [clusterPage, setClusterPage] = useState<number>(0);
+
+    const [expansionStack, setExpansionStack] = useState<StackLevel[]>([]);
 
     // Lightseed Logo SVG String for Cluster Icon
     const logoSvg = `
@@ -92,8 +97,7 @@ export const ForestMap = ({ trees, onView }: { trees: Lifetree[], onView: (tree:
             zoomControl: false,
             attributionControl: false
         }).setView([20, 0], 2);
-        
-        // Use Esri World Imagery for Globe/Earth look
+
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
             maxZoom: 19
@@ -101,15 +105,15 @@ export const ForestMap = ({ trees, onView }: { trees: Lifetree[], onView: (tree:
 
         L.control.zoom({ position: 'bottomright' }).addTo(mapInstance.current);
         markersLayer.current = L.layerGroup().addTo(mapInstance.current);
-        
+
         mapInstance.current.on('zoomend', () => {
-            setExpandedClusterId(null); // Close clusters on zoom
+            setExpansionStack([]);
             updateMarkers(L);
         });
 
-        // Click on map background closes cluster
+        // Click on map background collapses everything
         mapInstance.current.on('click', () => {
-            setExpandedClusterId(null);
+            setExpansionStack([]);
         });
 
         setTimeout(() => {
@@ -118,13 +122,10 @@ export const ForestMap = ({ trees, onView }: { trees: Lifetree[], onView: (tree:
         }, 250);
     }
 
-    // Re-render markers when trees change or expansion state changes
     useEffect(() => {
         const L = (window as any).L;
-        if (L && mapInstance.current) {
-            updateMarkers(L);
-        }
-    }, [trees, expandedClusterId, clusterPage]);
+        if (L && mapInstance.current) updateMarkers(L);
+    }, [trees, expansionStack]);
 
     const getHtmlForTree = (tree: Lifetree, isSmall = false, delay = 0) => {
         const isNature = tree.isNature;
@@ -132,11 +133,7 @@ export const ForestMap = ({ trees, onView }: { trees: Lifetree[], onView: (tree:
         const guardianCount = tree.guardians ? tree.guardians.length : 0;
         const sizeClass = isSmall ? 'w-10 h-10' : 'w-12 h-12';
         const borderClass = isSmall ? 'border' : 'border-2';
-        
-        // Prioritize latestGrowthUrl over standard imageUrl
         const displayImage = tree.latestGrowthUrl || tree.imageUrl || 'https://via.placeholder.com/150';
-        
-        // Force image fill
         const imgStyle = "width: 100%; height: 100%; object-fit: cover; display: block;";
         const animStyle = `animation-delay: ${delay}ms;`;
 
@@ -153,7 +150,7 @@ export const ForestMap = ({ trees, onView }: { trees: Lifetree[], onView: (tree:
                 ${isDanger ? `<div class="absolute -top-1 -left-1 z-20 w-3 h-3 bg-red-500 border border-white rounded-full animate-bounce"></div>` : ''}
             </div>`;
         }
-        
+
         return `
         <div class="marker-pop relative ${sizeClass} hover:scale-110 transition-transform duration-300" style="${animStyle}">
             <div class="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-20"></div>
@@ -189,17 +186,12 @@ export const ForestMap = ({ trees, onView }: { trees: Lifetree[], onView: (tree:
         if (!markersLayer.current || !mapInstance.current) return;
         markersLayer.current.clearLayers();
 
-        // 1. Cluster Logic
-        // We use pixels to determine clustering based on current zoom
-        // Modified threshold to 50px so clustering only happens when markers (approx 48px)
-        // physically touch or overlap, preventing premature clustering.
-        const CLUSTER_THRESHOLD_PX = 50; 
+        const CLUSTER_THRESHOLD_PX = 50;
         const clusters: Cluster[] = [];
         const processed = new Set<string>();
         const map = mapInstance.current;
 
-        // Sort trees by age (Oldest first) to ensure the oldest is the "Seed" of the cluster
-        const sortedTrees = [...trees].sort((a, b) => 
+        const sortedTrees = [...trees].sort((a, b) =>
             (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0)
         );
 
@@ -210,22 +202,14 @@ export const ForestMap = ({ trees, onView }: { trees: Lifetree[], onView: (tree:
             if (!lat || !lng) return;
 
             const treePoint = map.latLngToLayerPoint([lat, lng]);
-            const cluster: Cluster = {
-                id: tree.id,
-                center: tree,
-                children: [],
-                lat: lat,
-                lng: lng
-            };
+            const cluster: Cluster = { id: tree.id, center: tree, children: [], lat, lng };
             processed.add(tree.id);
 
-            // Find neighbors
             sortedTrees.forEach(other => {
                 if (processed.has(other.id)) return;
                 const oLat = other.latitude || (other as any).lat;
                 const oLng = other.longitude || (other as any).lng;
                 if (!oLat || !oLng) return;
-
                 const otherPoint = map.latLngToLayerPoint([oLat, oLng]);
                 if (treePoint.distanceTo(otherPoint) < CLUSTER_THRESHOLD_PX) {
                     cluster.children.push(other);
@@ -236,10 +220,12 @@ export const ForestMap = ({ trees, onView }: { trees: Lifetree[], onView: (tree:
             clusters.push(cluster);
         });
 
-        // 2. Render Clusters/Markers
+        // Determine active expansion state
+        const topLevel = expansionStack.length > 0 ? expansionStack[expansionStack.length - 1] : null;
+        const activeClusterId = expansionStack.length > 0 ? expansionStack[0].clusterId : null;
+
         clusters.forEach(cluster => {
-            const isExpanded = expandedClusterId === cluster.id;
-            const count = 1 + cluster.children.length; // Center + Children
+            const count = 1 + cluster.children.length;
 
             if (count === 1) {
                 // SINGLE TREE
@@ -253,145 +239,165 @@ export const ForestMap = ({ trees, onView }: { trees: Lifetree[], onView: (tree:
                 L.marker([cluster.lat, cluster.lng], { icon })
                  .addTo(markersLayer.current)
                  .bindPopup(createPopupContent(cluster.center));
-            } else {
-                // CLUSTER
-                if (isExpanded) {
-                    // --- SEED OF LIFE EXPANSION ---
-                    
-                    // 1. Render Center (Oldest) - Animate it too
-                    const centerIcon = L.divIcon({
-                        html: getHtmlForTree(cluster.center, false, 0),
-                        className: 'z-[1000]', // Ensure center is on top
-                        iconSize: [48, 48],
-                        iconAnchor: [24, 24]
+
+            } else if (cluster.id === activeClusterId && topLevel) {
+                // EXPANDED — Seed of Life using current top-of-stack level
+                // Deeper stack levels get higher z-index so they render on top
+                const stackDepth = expansionStack.length;
+                const depthZOffset = stackDepth * 1000;
+
+                const centerTree = topLevel.trees[0];
+                const children = topLevel.trees.slice(1);
+                const hasMore = children.length > 6;
+                // If overflow exists, reserve slot 5 (index 5) for the sub-cluster node
+                const visibleChildren = hasMore ? children.slice(0, 5) : children;
+                const remainingTrees = hasMore ? children.slice(5) : [];
+
+                const centerPoint = map.latLngToLayerPoint([topLevel.lat, topLevel.lng]);
+
+                // Sun-to-emerald vignette circle behind the expansion
+                const vignetteSize = 180;
+                const vignetteHtml = `<div style="width:${vignetteSize}px;height:${vignetteSize}px;border-radius:50%;background:radial-gradient(circle, rgba(253,224,71,0.5) 0%, rgba(167,243,208,0.3) 35%, rgba(110,231,183,0.15) 60%, transparent 80%);pointer-events:none;"></div>`;
+                const vignetteIcon = L.divIcon({
+                    html: vignetteHtml,
+                    className: '',
+                    iconSize: [vignetteSize, vignetteSize],
+                    iconAnchor: [vignetteSize / 2, vignetteSize / 2]
+                });
+                L.marker([topLevel.lat, topLevel.lng], { icon: vignetteIcon, interactive: false, zIndexOffset: depthZOffset - 500 })
+                 .addTo(markersLayer.current);
+
+                // X button — positioned above the center
+                const xPoint = map.layerPointToLatLng(L.point(centerPoint.x, centerPoint.y - 72));
+                const isDeep = expansionStack.length > 1;
+                const xHtml = `
+                <div class="marker-pop flex items-center justify-center w-8 h-8 rounded-full border-2 border-white shadow-lg cursor-pointer hover:scale-110 transition-transform"
+                     style="background:${isDeep ? '#f59e0b' : '#ef4444'};animation-delay:0ms;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" style="width:12px;height:12px;">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </div>`;
+                const xIcon = L.divIcon({ html: xHtml, className: '', iconSize: [32, 32], iconAnchor: [16, 16] });
+                const xMarker = L.marker(xPoint, { icon: xIcon, zIndexOffset: depthZOffset + 500 });
+                xMarker.on('click', (e: any) => {
+                    L.DomEvent.stopPropagation(e);
+                    setExpansionStack(prev => prev.slice(0, -1));
+                });
+                xMarker.addTo(markersLayer.current);
+
+                // Center tree
+                const centerIcon = L.divIcon({
+                    html: getHtmlForTree(centerTree, false, 0),
+                    className: '',
+                    iconSize: [48, 48],
+                    iconAnchor: [24, 24]
+                });
+                L.marker([topLevel.lat, topLevel.lng], { icon: centerIcon, zIndexOffset: depthZOffset })
+                 .addTo(markersLayer.current)
+                 .bindPopup(createPopupContent(centerTree));
+
+                // Petals
+                visibleChildren.forEach((child, index) => {
+                    const angle = (index * 60) * (Math.PI / 180);
+                    const radius = 45;
+                    const childPoint = L.point(
+                        centerPoint.x + radius * Math.cos(angle),
+                        centerPoint.y + radius * Math.sin(angle)
+                    );
+                    const childLatLng = map.layerPointToLatLng(childPoint);
+
+                    L.polyline([[topLevel.lat, topLevel.lng], childLatLng], {
+                        color: 'white', weight: 1, opacity: 0.3
+                    }).addTo(markersLayer.current);
+
+                    const childIcon = L.divIcon({
+                        html: getHtmlForTree(child, true, (index + 1) * 50),
+                        className: '',
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 20],
+                        popupAnchor: [0, -20]
                     });
-                    
-                    const centerMarker = L.marker([cluster.lat, cluster.lng], { icon: centerIcon })
-                        .addTo(markersLayer.current);
-                    
-                    centerMarker.bindPopup(createPopupContent(cluster.center));
+                    L.marker(childLatLng, { icon: childIcon, zIndexOffset: depthZOffset })
+                     .addTo(markersLayer.current)
+                     .bindPopup(createPopupContent(child));
+                });
 
-                    // 2. Render Petals (Paged)
-                    const ITEMS_PER_PAGE = 6;
-                    const totalChildren = cluster.children.length;
-                    
-                    const showNextButton = totalChildren > (clusterPage + 1) * ITEMS_PER_PAGE;
-                    const renderCount = showNextButton ? 5 : 6;
-                    
-                    const startIdx = clusterPage * ITEMS_PER_PAGE;
-                    const visibleChildren = cluster.children.slice(startIdx, startIdx + renderCount);
+                // Sub-cluster node at slot 5 if there are more trees
+                if (hasMore) {
+                    const angle = (5 * 60) * (Math.PI / 180);
+                    const radius = 45;
+                    const morePoint = L.point(
+                        centerPoint.x + radius * Math.cos(angle),
+                        centerPoint.y + radius * Math.sin(angle)
+                    );
+                    const moreLatLng = map.layerPointToLatLng(morePoint);
+                    const moreDanger = remainingTrees.some(t => t.status === 'DANGER');
 
-                    visibleChildren.forEach((child, index) => {
-                        // Calculate position in circle (Seed of Life pattern)
-                        // To make them "touch" or "kiss":
-                        // Center Radius (24px) + Child Radius (20px) + Gap (1px) = 45px Radius
-                        const angle = (index * 60) * (Math.PI / 180); 
-                        const radius = 45; 
-                        
-                        const centerPoint = map.latLngToLayerPoint([cluster.lat, cluster.lng]);
-                        const childPoint = L.point(
-                            centerPoint.x + radius * Math.cos(angle),
-                            centerPoint.y + radius * Math.sin(angle)
-                        );
-                        const childLatLng = map.layerPointToLatLng(childPoint);
+                    L.polyline([[topLevel.lat, topLevel.lng], moreLatLng], {
+                        color: 'white', weight: 1, opacity: 0.3
+                    }).addTo(markersLayer.current);
 
-                        // Draw Stem Line (Optional, keeping it subtle as per previous structure)
-                        // Using white/opacity to be visible on dark satellite map
-                        L.polyline([[cluster.lat, cluster.lng], childLatLng], {
-                            color: 'white',
-                            weight: 1,
-                            opacity: 0.3
-                        }).addTo(markersLayer.current);
-
-                        const childIcon = L.divIcon({
-                            // Add delay based on index for bloom effect
-                            html: getHtmlForTree(child, true, (index + 1) * 50), // Small version (40px)
-                            className: '',
-                            iconSize: [40, 40],
-                            iconAnchor: [20, 20],
-                            popupAnchor: [0, -20]
-                        });
-
-                        L.marker(childLatLng, { icon: childIcon })
-                         .addTo(markersLayer.current)
-                         .bindPopup(createPopupContent(child));
-                    });
-
-                    // Render "More" Button if needed (at the 6th position usually)
-                    if (showNextButton || clusterPage > 0) {
-                        // Position at 300 degrees (bottom rightish) or where the 6th item would be
-                        const nextIndex = 5; 
-                        const angle = (nextIndex * 60) * (Math.PI / 180);
-                        const radius = 45;
-                        const centerPoint = map.latLngToLayerPoint([cluster.lat, cluster.lng]);
-                        const btnPoint = L.point(
-                            centerPoint.x + radius * Math.cos(angle),
-                            centerPoint.y + radius * Math.sin(angle)
-                        );
-                        const btnLatLng = map.layerPointToLatLng(btnPoint);
-
-                        const btnHtml = `
-                        <div class="marker-pop w-10 h-10 rounded-full bg-amber-500 border-2 border-white shadow-lg flex items-center justify-center text-white cursor-pointer hover:bg-amber-600 transition-colors" style="animation-delay: 300ms;">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
-                        </div>`;
-
-                        const btnIcon = L.divIcon({
-                            html: btnHtml,
-                            className: '',
-                            iconSize: [40, 40],
-                            iconAnchor: [20, 20]
-                        });
-
-                        const btnMarker = L.marker(btnLatLng, { icon: btnIcon }).addTo(markersLayer.current);
-                        btnMarker.on('click', (e: any) => {
-                            L.DomEvent.stopPropagation(e);
-                            if (showNextButton) {
-                                setClusterPage(p => p + 1);
-                            } else {
-                                setClusterPage(0); // Reset to start
-                            }
-                        });
-                    }
-
-                } else {
-                    // --- COLLAPSED CLUSTER (Logo) ---
-                    const hasDanger = [cluster.center, ...cluster.children].some(t => t.status === 'DANGER');
-                    const html = `
-                    <div class="relative w-16 h-16 group cursor-pointer hover:scale-110 transition-transform duration-300">
-                        <div class="absolute inset-0 drop-shadow-xl">
+                    const moreHtml = `
+                    <div class="marker-pop relative w-10 h-10 cursor-pointer hover:scale-110 transition-transform duration-300" style="animation-delay:${6 * 50}ms;">
+                        <div class="absolute inset-0 drop-shadow-lg">
                             ${logoSvg}
                         </div>
-                        <div class="absolute top-0 right-0 w-6 h-6 bg-emerald-600 border-2 border-white text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-md z-20">
-                            ${count}
+                        <div class="absolute -top-1 -right-1 w-5 h-5 bg-emerald-600 border-2 border-white text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow z-20">
+                            ${remainingTrees.length}
                         </div>
-                        ${hasDanger ? `<div class="absolute top-0 left-0 w-3.5 h-3.5 bg-red-500 border-2 border-white rounded-full animate-bounce z-20"></div>` : ''}
-                    </div>
-                    `;
+                        ${moreDanger ? `<div class="absolute -top-1 -left-1 w-3 h-3 bg-red-500 border border-white rounded-full animate-bounce z-20"></div>` : ''}
+                    </div>`;
 
-                    const icon = L.divIcon({
-                        html: html,
-                        className: '',
-                        iconSize: [64, 64],
-                        iconAnchor: [32, 32]
-                    });
-
-                    const marker = L.marker([cluster.lat, cluster.lng], { icon });
-                    marker.on('click', (e: any) => {
+                    const moreIcon = L.divIcon({ html: moreHtml, className: '', iconSize: [40, 40], iconAnchor: [20, 20] });
+                    const moreMarker = L.marker(moreLatLng, { icon: moreIcon, zIndexOffset: depthZOffset });
+                    moreMarker.on('click', (e: any) => {
                         L.DomEvent.stopPropagation(e);
-                        // Center map on cluster slightly to give space for expansion
-                        map.setView([cluster.lat, cluster.lng], map.getZoom(), { animate: true });
-                        setExpandedClusterId(cluster.id);
-                        setClusterPage(0);
+                        // Push new level: remaining trees become the next center + petals
+                        setExpansionStack(prev => [...prev, {
+                            clusterId: prev[0].clusterId,
+                            trees: remainingTrees,
+                            lat: topLevel.lat,
+                            lng: topLevel.lng
+                        }]);
                     });
-                    marker.addTo(markersLayer.current);
+                    moreMarker.addTo(markersLayer.current);
                 }
+
+            } else {
+                // COLLAPSED CLUSTER (Logo)
+                const hasDanger = [cluster.center, ...cluster.children].some(t => t.status === 'DANGER');
+                const html = `
+                <div class="relative w-16 h-16 group cursor-pointer hover:scale-110 transition-transform duration-300">
+                    <div class="absolute inset-0 drop-shadow-xl">
+                        ${logoSvg}
+                    </div>
+                    <div class="absolute top-0 right-0 w-6 h-6 bg-emerald-600 border-2 border-white text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-md z-20">
+                        ${count}
+                    </div>
+                    ${hasDanger ? `<div class="absolute top-0 left-0 w-3.5 h-3.5 bg-red-500 border-2 border-white rounded-full animate-bounce z-20"></div>` : ''}
+                </div>`;
+
+                const icon = L.divIcon({ html, className: '', iconSize: [64, 64], iconAnchor: [32, 32] });
+                const marker = L.marker([cluster.lat, cluster.lng], { icon });
+                marker.on('click', (e: any) => {
+                    L.DomEvent.stopPropagation(e);
+                    map.setView([cluster.lat, cluster.lng], map.getZoom(), { animate: true });
+                    // Push first level: all trees in this cluster
+                    setExpansionStack([{
+                        clusterId: cluster.id,
+                        trees: [cluster.center, ...cluster.children],
+                        lat: cluster.lat,
+                        lng: cluster.lng
+                    }]);
+                });
+                marker.addTo(markersLayer.current);
             }
         });
     }
 
     useEffect(() => {
         return () => {
-             if (mapInstance.current) {
+            if (mapInstance.current) {
                 mapInstance.current.remove();
                 mapInstance.current = null;
             }
