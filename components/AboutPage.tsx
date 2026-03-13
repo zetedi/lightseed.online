@@ -280,12 +280,12 @@ export const AboutPage = ({ onClose }: { onClose: () => void }) => {
     const GENESIS_TEXT = `The purpose of lightseed is to bring joy. The joy of realizing the bliss of conscious, compassionate, grateful existence by opening a portal to the center of life. By creating a bridge between creator and creation, science and spirituality, virtual and real, nothing and everything. It is designed to intimately connect our inner Self, our culture, our trees and the tree of life, the material and the digital, online world into a sustainable and sustaining circle of unified vibration, sound and light. It aims to merge us into a common flow for all beings to be liberated, wise, strong, courageous and connected. It is rooted in nonviolence, compassion, generosity, gratitude and love. It is blockchain (truthfulness), cloud (global, distributed, resilient), ai (for connecting dreams and technology), regen (nature centric) native. It is an inspiration, an impulse towards a quantum leap in consciousness, a prompt both for human and artificial intelligence for action towards transcending humanity into a new era, a New Earth, Universe and Field with the help of our most important evolutionary sisters and brothers, the trees.`;
 
     const tabs = [
-        { id: 'vision', label: 'The Vision' },
-        { id: 'phoenix', label: 'Phoenix' },
-        { id: 'sun', label: 'The Secret Sun' },
-        { id: 'path', label: 'The Path' },
-        { id: 'yantra', label: 'The Yantra' },
-        { id: 'design', label: 'Design Brief' }
+        { id: 'vision', label: 'The Vision', meta: 'Genesis' },
+        { id: 'phoenix', label: 'Phoenix', meta: 'First lifetree' },
+        { id: 'sun', label: 'The Secret Sun', meta: 'Sacred platform' },
+        { id: 'path', label: 'The Path', meta: '4 steps' },
+        { id: 'yantra', label: 'The Yantra', meta: 'Symbol language' },
+        { id: 'design', label: 'Design Brief', meta: 'Identity system' }
     ];
 
     return (
@@ -309,35 +309,52 @@ export const AboutPage = ({ onClose }: { onClose: () => void }) => {
             </div>
 
             {/* Header with Bigger Logo & Less Space */}
-            <div className="bg-purple-900 text-white pt-8 pb-12 px-4 relative overflow-hidden">
+            <div className="bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.22),_transparent_28%),linear-gradient(135deg,#2e1065_0%,#4c1d95_48%,#0f172a_100%)] text-white pt-8 pb-12 px-4 relative overflow-hidden">
                 <div className="absolute inset-0 bg-[url('/bg-noise.png')] opacity-10"></div>
+                <div className="absolute -top-14 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full border border-amber-200/30 bg-amber-300/10 blur-2xl"></div>
                 <div className="max-w-4xl mx-auto text-center relative z-10">
                     <div className="flex justify-center mb-4">
                         {/* Increased Logo size, reduced padding around it. Clickable to go home. */}
-                        <button onClick={onClose} className="bg-white/10 p-2 rounded-full backdrop-blur-sm hover:bg-white/20 transition-colors cursor-pointer active:scale-95">
+                        <button onClick={onClose} className="relative bg-white/10 p-2 rounded-full backdrop-blur-sm hover:bg-white/20 transition-colors cursor-pointer active:scale-95">
+                            <span className="absolute inset-[-10px] rounded-full border-2 border-amber-300/70"></span>
                             <Logo width={100} height={100} />
                         </button>
                     </div>
-                    <h1 className="text-3xl font-light tracking-[0.2em] uppercase text-purple-100">.seed</h1>
-                    <p className="text-sm text-purple-300 font-mono tracking-widest uppercase mt-2 opacity-80">The Light of Value</p>
+                    <div className="inline-flex items-center gap-2 rounded-full border border-amber-300/50 bg-amber-400/10 px-4 py-1 text-xs font-bold uppercase tracking-[0.28em] text-amber-100">
+                        <span className="h-2 w-2 rounded-full bg-amber-300"></span>
+                        <span>.seed</span>
+                    </div>
+                    <h1 className="mt-4 text-3xl md:text-4xl font-light tracking-[0.16em] uppercase text-purple-50">The Light of Value</h1>
+                    <p className="text-sm text-purple-200 font-mono tracking-[0.24em] uppercase mt-3 opacity-90">Vision, symbols, sacred geometry, and design language</p>
+                    <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs uppercase tracking-[0.18em] text-purple-100/90">
+                        <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5">Genesis</span>
+                        <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5">Phoenix</span>
+                        <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5">Yantra</span>
+                        <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5">Design</span>
+                    </div>
                 </div>
             </div>
 
             {/* Navigation Tabs - Top adjusted for sticky header */}
             <div className="sticky top-[68px] z-40 bg-[#FDFCFB]/95 backdrop-blur border-b border-slate-200 shadow-sm">
-                <div className="max-w-5xl mx-auto px-0 md:px-4">
-                    <div className="flex overflow-x-auto no-scrollbar md:justify-center">
+                <div className="max-w-5xl mx-auto px-4 py-3">
+                    <div className="flex gap-3 overflow-x-auto no-scrollbar md:justify-center">
                         {tabs.map(tab => (
                             <button 
                                 key={tab.id} 
                                 onClick={() => setActiveTab(tab.id as any)} 
-                                className={`flex-shrink-0 px-6 py-4 text-xs font-bold uppercase tracking-[0.15em] transition-all border-b-2 ${
+                                className={`group flex-shrink-0 min-w-[132px] rounded-2xl border px-4 py-3 text-left transition-all ${
                                     activeTab === tab.id 
-                                        ? 'text-purple-900 border-purple-600 bg-purple-50/50' 
-                                        : 'text-slate-400 border-transparent hover:text-slate-600 hover:bg-slate-50'
+                                        ? 'text-purple-950 border-purple-300 bg-white shadow-md shadow-purple-100'
+                                        : 'text-slate-500 border-slate-200/80 bg-white/70 hover:text-slate-700 hover:bg-white'
                                 }`}
                             >
-                                {tab.label}
+                                <span className={`block text-[10px] font-bold uppercase tracking-[0.24em] ${activeTab === tab.id ? 'text-amber-600' : 'text-slate-400 group-hover:text-amber-500'}`}>
+                                    {tab.meta}
+                                </span>
+                                <span className="mt-1 block text-sm font-bold tracking-wide">
+                                    {tab.label}
+                                </span>
                             </button>
                         ))}
                     </div>

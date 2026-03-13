@@ -47,6 +47,12 @@ export const Navigation = ({ lightseed, activeTab, setTab, onPlant, onPulse, onL
     }, []);
 
     const getTabStyle = (key: string) => {
+        if (key === 'about') {
+            if (activeTab === key) {
+                return 'bg-amber-400 text-emerald-950 shadow-lg shadow-amber-900/30 font-bold ring-2 ring-amber-200 tracking-wide';
+            }
+            return 'text-amber-50 bg-amber-500/15 border border-amber-300/60 hover:bg-amber-400 hover:text-emerald-950 hover:border-amber-200 font-bold';
+        }
         if (activeTab === key) {
             const themes: any = { 
                 dashboard: 'bg-indigo-600', visions: 'bg-amber-500', forest: 'bg-emerald-600', 
@@ -76,7 +82,16 @@ export const Navigation = ({ lightseed, activeTab, setTab, onPlant, onPulse, onL
                     <div className="hidden lg:flex items-center gap-1 xl:gap-2">
                         {desktopTabs.map(tab => (
                             <button key={tab} onClick={() => setTab(tab)} className={`px-3 xl:px-4 py-2.5 rounded-full text-xs xl:text-sm transition-all flex items-center gap-2 ${getTabStyle(tab)}`}>
-                                {t(tab as any)}
+                                {tab === 'about' ? (
+                                    <>
+                                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border-2 border-current">
+                                            <span className="h-2.5 w-2.5 rounded-full bg-current"></span>
+                                        </span>
+                                        <span>.seed</span>
+                                    </>
+                                ) : (
+                                    <span>{t(tab as any)}</span>
+                                )}
                                 {tab === 'matches' && pendingMatchesCount > 0 && (
                                     <span className="bg-red-500 text-white text-[10px] px-1.5 rounded-full">
                                         {pendingMatchesCount}
@@ -173,8 +188,15 @@ export const Navigation = ({ lightseed, activeTab, setTab, onPlant, onPulse, onL
                     )}
                     <button onClick={() => { setTab('dashboard'); setIsMenuOpen(false); }} className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium ${activeTab === 'dashboard' ? 'bg-emerald-800 text-white' : 'text-emerald-100 hover:bg-emerald-900'}`}>Home</button>
                     {[...mainTabs, ...moreTabs].map(tab => (
-                        <button key={tab} onClick={() => { setTab(tab); setIsMenuOpen(false); }} className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium flex justify-between items-center ${activeTab === tab ? 'bg-emerald-800 text-white' : 'text-emerald-100 hover:bg-emerald-900'}`}>
-                            <span>{t(tab as any)}</span>
+                        <button key={tab} onClick={() => { setTab(tab); setIsMenuOpen(false); }} className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium flex justify-between items-center ${tab === 'about' ? 'border border-amber-300/50' : ''} ${activeTab === tab ? 'bg-emerald-800 text-white' : 'text-emerald-100 hover:bg-emerald-900'}`}>
+                            <span className="flex items-center gap-3">
+                                {tab === 'about' && (
+                                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border-2 border-amber-300 text-amber-200">
+                                        <span className="h-2.5 w-2.5 rounded-full bg-amber-300"></span>
+                                    </span>
+                                )}
+                                <span>{tab === 'about' ? '.seed' : t(tab as any)}</span>
+                            </span>
                             {tab === 'matches' && pendingMatchesCount > 0 && <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">{pendingMatchesCount}</span>}
                         </button>
                     ))}
