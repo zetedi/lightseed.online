@@ -68,6 +68,7 @@
   function openWidget() {
     overlay.style.display = 'flex';
     document.body.style.overflow = 'hidden';
+    try { iframe.contentWindow.postMessage('lifeseed-refresh', ORIGIN); } catch (e) {}
   }
   function closeWidget() {
     overlay.style.display = 'none';

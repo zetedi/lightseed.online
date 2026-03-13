@@ -14,12 +14,30 @@ export const LifeseedWidget: React.FC<Props> = ({ domain, onClose }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
+    const fetchTrees = async () => {
         if (!domain) { setLoading(false); return; }
-        getTreesByDomain(domain)
-            .then(setTrees)
-            .catch(e => { console.error(e); setError(e?.message || 'Failed to load trees'); })
-            .finally(() => setLoading(false));
+        setLoading(true);
+        setError(null);
+        try {
+            setTrees(await getTreesByDomain(domain));
+        } catch (e: any) {
+            console.error(e);
+            setError(e?.message || 'Failed to load trees');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Initial load
+    useEffect(() => { fetchTrees(); }, [domain]);
+
+    // Re-fetch whenever the parent page signals the widget was opened
+    useEffect(() => {
+        const handler = (e: MessageEvent) => {
+            if (e.data === 'lifeseed-refresh') fetchTrees();
+        };
+        window.addEventListener('message', handler);
+        return () => window.removeEventListener('message', handler);
     }, [domain]);
 
     const handleClose = () => {
