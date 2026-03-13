@@ -213,9 +213,31 @@ export const monitorMailStatus = (docId: string, onChange: (status: any) => void
 
 export const subscribeToNewsletter = async (email: string) => addDoc(subsCollection, { email, createdAt: serverTimestamp() });
 
+const toWebP = (file: File, quality = 0.85): Promise<Blob> =>
+    new Promise((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            canvas.getContext('2d')!.drawImage(img, 0, 0);
+            URL.revokeObjectURL(url);
+            canvas.toBlob(
+                blob => blob ? resolve(blob) : reject(new Error('WebP conversion failed')),
+                'image/webp',
+                quality
+            );
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Image load failed')); };
+        img.src = url;
+    });
+
 export const uploadImage = async (file: File, path: string): Promise<string> => {
-    const storageRef = ref(storage, path);
-    await uploadBytes(storageRef, file);
+    const webpPath = path.replace(/\.[^.]+$/, '') + '.webp';
+    const blob = await toWebP(file);
+    const storageRef = ref(storage, webpPath);
+    await uploadBytes(storageRef, blob, { contentType: 'image/webp' });
     return await getDownloadURL(storageRef);
 };
 
