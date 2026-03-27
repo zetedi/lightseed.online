@@ -88,6 +88,18 @@ export const ForestMap = ({ trees, onView, loading = false }: { trees: Lifetree[
         </g>
     </svg>`;
 
+    const getPopupOptions = (lat: number, lng: number) => {
+        const point = mapInstance.current?.latLngToContainerPoint([lat, lng]);
+        const openBelow = point ? point.y < 170 : false;
+
+        return {
+            autoPan: false,
+            closeButton: false,
+            offset: openBelow ? ([0, 18] as [number, number]) : ([0, -18] as [number, number]),
+            className: openBelow ? 'forest-popup-below' : 'forest-popup-above',
+        };
+    };
+
     useEffect(() => {
         const checkLeaflet = setInterval(() => {
             const L = (window as any).L;
@@ -266,7 +278,7 @@ export const ForestMap = ({ trees, onView, loading = false }: { trees: Lifetree[
                 });
                 L.marker([cluster.lat, cluster.lng], { icon })
                  .addTo(nextLayer)
-                 .bindPopup(createPopupContent(cluster.center));
+                 .bindPopup(createPopupContent(cluster.center), getPopupOptions(cluster.lat, cluster.lng));
                 nextMarkerCount += 1;
 
             } else if (cluster.id === activeClusterId && topLevel) {
@@ -325,7 +337,7 @@ export const ForestMap = ({ trees, onView, loading = false }: { trees: Lifetree[
                 });
                 L.marker([topLevel.lat, topLevel.lng], { icon: centerIcon, zIndexOffset: depthZOffset })
                  .addTo(nextLayer)
-                 .bindPopup(createPopupContent(centerTree));
+                 .bindPopup(createPopupContent(centerTree), getPopupOptions(topLevel.lat, topLevel.lng));
                 nextMarkerCount += 1;
 
                 // Petals
@@ -351,7 +363,7 @@ export const ForestMap = ({ trees, onView, loading = false }: { trees: Lifetree[
                     });
                     L.marker(childLatLng, { icon: childIcon, zIndexOffset: depthZOffset })
                      .addTo(nextLayer)
-                     .bindPopup(createPopupContent(child));
+                     .bindPopup(createPopupContent(child), getPopupOptions(childLatLng.lat, childLatLng.lng));
                     nextMarkerCount += 1;
                 });
 
@@ -458,6 +470,17 @@ export const ForestMap = ({ trees, onView, loading = false }: { trees: Lifetree[
                 .marker-pop {
                     animation: pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
                     opacity: 0;
+                }
+                .leaflet-popup.forest-popup-below .leaflet-popup-content-wrapper {
+                    margin-top: 14px;
+                }
+                .leaflet-popup.forest-popup-below .leaflet-popup-tip-container {
+                    position: absolute;
+                    top: 0;
+                    bottom: auto;
+                    left: 50%;
+                    margin-top: 0;
+                    transform: translate(-50%, -50%) rotate(180deg);
                 }
             `}</style>
             <div className="relative">
