@@ -4,11 +4,14 @@ import { type Lifetree } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
 import Logo from './Logo';
+import { ValidationBadge } from './ValidationBadge';
 import { colors } from '../utils/theme';
+import { canValidateTree, isExplicitlyValidatedTree } from '../utils/validation';
 
 interface LifetreeCardProps {
     tree: Lifetree;
     myActiveTree: Lifetree | null;
+    isSuperAdmin?: boolean;
     currentUserId?: string;
     onValidate: (id: string) => Promise<void>;
     onPlayGrowth: (id: string) => void;
@@ -16,12 +19,14 @@ interface LifetreeCardProps {
     onView: (tree: Lifetree) => void;
 }
 
-export const LifetreeCard = ({ tree, myActiveTree, currentUserId, onValidate, onPlayGrowth, onQuickSnap, onView }: LifetreeCardProps) => {
+export const LifetreeCard = ({ tree, myActiveTree, isSuperAdmin, currentUserId, onValidate, onPlayGrowth, onQuickSnap, onView }: LifetreeCardProps) => {
     const { t } = useLanguage();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
     
     const isGuardian = currentUserId && tree.guardians && tree.guardians.includes(currentUserId);
+    const hasValidationBadge = isExplicitlyValidatedTree(tree);
+    const showValidateAction = canValidateTree({ tree, myActiveTree, isSuperAdmin });
 
     const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -40,7 +45,7 @@ export const LifetreeCard = ({ tree, myActiveTree, currentUserId, onValidate, on
     return (
         <div 
             onClick={() => onView(tree)}
-            className={`bg-white rounded-xl overflow-hidden shadow-sm border border-slate-200 hover:shadow-lg transition-all duration-300 group relative cursor-pointer ${tree.isNature ? 'ring-1 ring-sky-100' : (tree.validated ? 'ring-1 ring-emerald-100' : '')}`}
+            className={`bg-white rounded-xl overflow-hidden shadow-sm border border-slate-200 hover:shadow-lg transition-all duration-300 group relative cursor-pointer ${tree.isNature ? 'ring-1 ring-sky-100' : (hasValidationBadge ? 'ring-1 ring-emerald-100' : '')}`}
         >
              <div className="absolute top-2 right-2 z-20 flex flex-col items-end gap-1">
                 {tree.isNature ? (
@@ -48,11 +53,8 @@ export const LifetreeCard = ({ tree, myActiveTree, currentUserId, onValidate, on
                         <Icons.Shield />
                         <span className="ml-1 text-[9px]">NATURE</span>
                     </span>
-                ) : tree.validated && (
-                    <span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center shadow-sm">
-                        <Icons.ShieldCheck />
-                        <span className="ml-1 text-[9px]">{t('validated')}</span>
-                    </span>
+                ) : hasValidationBadge && (
+                    <ValidationBadge compact />
                 )}
                 {isGuardian && (
                     <span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center shadow-sm w-fit">
@@ -123,7 +125,7 @@ export const LifetreeCard = ({ tree, myActiveTree, currentUserId, onValidate, on
                     </button>
                     
                     <div className="flex gap-2">
-                        {myActiveTree && myActiveTree.validated && !tree.validated && myActiveTree.id !== tree.id && !tree.isNature && (
+                        {showValidateAction && (
                             <button onClick={(e) => { e.stopPropagation(); onValidate(tree.id); }} className="text-[10px] bg-emerald-600 text-white px-3 py-1.5 rounded-full shadow hover:bg-emerald-700 transition-colors uppercase font-bold tracking-wider animate-pulse">
                                 {t('validate_action')}
                             </button>

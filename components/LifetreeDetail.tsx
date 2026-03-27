@@ -3,8 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
 import Logo from './Logo';
+import { ValidationBadge } from './ValidationBadge';
 import { updateLifetree, toggleGuardianship, setTreeStatus, getPulsesByTreeId } from '../services/firebase';
 import { Pulse } from '../types';
+import { canValidateTree, isExplicitlyValidatedTree } from '../utils/validation';
 
 export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onViewPulse, myActiveTree, currentUserId, isAdmin, isSuperAdmin }: any) => {
    const { t } = useLanguage();
@@ -13,6 +15,8 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const isGuardian = tree.guardians && currentUserId && tree.guardians.includes(currentUserId);
    const canDeleteGuarded = isNature && (isOwner || isAdmin || isSuperAdmin);
    const canEdit = isOwner || isGuardian || isSuperAdmin;
+   const hasValidationBadge = isExplicitlyValidatedTree(tree);
+   const showValidateAction = canValidateTree({ tree, myActiveTree, isSuperAdmin });
 
    const [isEditing, setIsEditing] = useState(false);
    const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -190,14 +194,14 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
             )}
 
             {/* Header */}
-            <div className={`sticky ${localStatus === 'DANGER' ? 'top-10' : 'top-0'} z-30 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-4 flex items-center justify-between`}>
-                <button onClick={onClose} className="flex items-center space-x-2 text-slate-600 hover:text-slate-900 font-medium">
+            <div className={`sticky ${localStatus === 'DANGER' ? 'top-10' : 'top-0'} z-30 border-b border-emerald-200 bg-emerald-50/90 px-4 py-4 backdrop-blur-md flex items-center justify-between`}>
+                <button onClick={onClose} className="flex items-center space-x-2 text-emerald-700 hover:text-emerald-900 font-medium">
                     <Icons.ArrowLeft />
                     <span>{t('back_forest')}</span>
                 </button>
                 <div className="flex flex-col items-center">
-                    <h2 dir="auto" className="text-xl font-light tracking-wide truncate max-w-[200px]">{isEditing ? "Editing..." : tree.name}</h2>
-                    {tree.shortTitle && !isEditing && <span dir="auto" className="text-xs text-slate-400 font-bold uppercase tracking-widest">{tree.shortTitle}</span>}
+                    <h2 dir="auto" className="text-xl font-light tracking-wide truncate max-w-[200px] text-emerald-950">{isEditing ? "Editing..." : tree.name}</h2>
+                    {tree.shortTitle && !isEditing && <span dir="auto" className="text-xs text-emerald-600 font-bold uppercase tracking-widest">{tree.shortTitle}</span>}
                 </div>
                 <div className="min-w-[80px] flex justify-end gap-2">
                     {canDeleteGuarded && !isEditing && (
@@ -207,8 +211,8 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     )}
                     {/* EDIT Button: Allowed for Owner, Guardian, or SuperAdmin */}
                     {canEdit && !isEditing && (
-                        <button onClick={() => setIsEditing(true)} className="bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 px-4 py-2 rounded-full font-bold text-sm shadow-sm transition-colors flex items-center gap-1 border border-slate-200">
-                            <Icons.Sparkles />
+                        <button onClick={() => setIsEditing(true)} className="bg-white hover:bg-emerald-100 text-emerald-700 hover:text-emerald-900 px-4 py-2 rounded-full font-bold text-sm shadow-sm transition-colors flex items-center gap-1 border border-emerald-200">
+                            <Icons.Pencil />
                             <span>{t('edit')}</span>
                         </button>
                     )}
@@ -231,11 +235,8 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                     <Icons.Shield />
                                     <span className="ml-1">NATURE</span>
                                 </span>
-                            ) : tree.validated && (
-                                <span className="bg-emerald-500 text-white text-xs px-2 py-0.5 rounded-full font-bold flex items-center">
-                                    <Icons.ShieldCheck />
-                                    <span className="ml-1">{t('validated')}</span>
-                                </span>
+                            ) : hasValidationBadge && (
+                                <ValidationBadge />
                             )}
                             <button onClick={() => onPlayGrowth(tree.id)} className="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1 rounded-full flex items-center space-x-1 backdrop-blur-sm transition-colors">
                                 <Icons.Play />
@@ -364,7 +365,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                             </div>
                              <div className="flex justify-between py-2">
                                 <span className="text-slate-500 text-sm">Validator</span>
-                                <span className="text-slate-800 font-mono text-sm">{tree.validatorId ? (tree.validatorId === 'GENESIS' || tree.validatorId === 'SYSTEM' ? 'Nature' : tree.validatorId.substring(0, 8) + '...') : t('unvalidated')}</span>
+                                <span className="text-slate-800 font-mono text-sm">
+                                    {isNature ? 'Nature' : hasValidationBadge && tree.validatorId ? `${tree.validatorId.substring(0, 8)}...` : t('unvalidated')}
+                                </span>
                             </div>
                             <div className="flex justify-between py-2 items-center">
                                 <span className="text-slate-500 text-sm">Website</span>
@@ -444,7 +447,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                         )}
 
                         {/* Validation Action */}
-                        {myActiveTree && myActiveTree.validated && !tree.validated && myActiveTree.id !== tree.id && !isNature && (
+                        {showValidateAction && (
                              <button onClick={() => onValidate(tree.id)} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-bold uppercase tracking-widest shadow-lg shadow-emerald-200 transition-all active:scale-95">
                                 {t('validate_action')}
                             </button>

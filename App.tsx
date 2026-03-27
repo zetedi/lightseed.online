@@ -749,10 +749,11 @@ const AppContent = () => {
                                                 <LifetreeCard
                                                     tree={item}
                                                     myActiveTree={activeTree}
+                                                    isSuperAdmin={isSuperAdmin}
                                                     currentUserId={lightseed?.uid}
                                                     onPlayGrowth={setShowGrowthPlayer}
                                                     onQuickSnap={handleQuickSnap}
-                                                    onValidate={(id: string) => validateLifetree(id, activeTree!.id).then(() => { alert("Validated!"); loadContent(true); })}
+                                                    onValidate={(id: string) => validateLifetree(id, isSuperAdmin ? lightseed!.uid : activeTree!.id).then(() => { alert("Validated!"); loadContent(true); })}
                                                     onView={setSelectedTree}
                                                 />
                                             </React.Fragment>
@@ -825,7 +826,7 @@ const AppContent = () => {
                         tree={selectedTree}
                         onClose={() => setSelectedTree(null)}
                         onPlayGrowth={setShowGrowthPlayer}
-                        onValidate={(id: string) => validateLifetree(id, activeTree!.id).then(() => { alert("Validated!"); setSelectedTree(null); loadContent(true); })}
+                        onValidate={(id: string) => validateLifetree(id, isSuperAdmin ? lightseed!.uid : activeTree!.id).then(() => { alert("Validated!"); setSelectedTree(null); loadContent(true); })}
                         onUpdate={(updates: Partial<Lifetree>) => handleTreeUpdate(selectedTree.id, updates)}
                         onDelete={() => { handleDeleteTreeConfirmed(selectedTree.id); setSelectedTree(null); }}
                         onCreatePulse={() => { setShowPulseModal(true); }}
@@ -1079,4 +1080,3 @@ const App = () => {
 };
 
 export default App;
-

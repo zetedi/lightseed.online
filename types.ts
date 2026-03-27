@@ -24,7 +24,7 @@ export interface Lifetree {
   
   // Validation Logic
   validated: boolean; 
-  validatorId?: string;
+  validatorId?: string | null;
 
   // Nature & Guardian Logic
   isNature?: boolean;

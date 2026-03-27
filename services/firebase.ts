@@ -292,7 +292,7 @@ export const plantLifetree = async (data: any) => {
         ...data, 
         treeType: data.treeType || (data.isNature ? 'GUARDED' : 'LIFETREE'),
         createdAt: serverTimestamp(), genesisHash, latestHash: genesisHash, blockHeight: 0,
-        validated: true, validatorId: "SYSTEM", guardians: [], status: 'HEALTHY'
+        validated: false, validatorId: null, guardians: [], status: 'HEALTHY'
     });
     await addDoc(visionsCollection, {
         lifetreeId: treeDoc.id, authorId: data.ownerId, title: "Root Vision", body: data.body, createdAt: serverTimestamp(), joinedUserIds: []

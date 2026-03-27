@@ -5,9 +5,11 @@ import { getMyPulses, getMyVisions, getJoinedVisions, getMyMatchesHistory, delet
 import { findVisionSynergies } from '../services/gemini';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
+import { ValidationBadge } from './ValidationBadge';
 import { VisionCard } from './VisionCard';
 import { Modal } from './ui/Modal';
 import { Loading } from './ui/Loading';
+import { isExplicitlyValidatedTree } from '../utils/validation';
 
 export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, superAdminExists, onViewTree, onDeleteTree, onViewVision, onPlant, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin }: any) => {
     const { t } = useLanguage();
@@ -38,8 +40,8 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
     const [admins, setAdmins] = useState<{ uid: string }[]>([]);
     const [newAdminUid, setNewAdminUid] = useState('');
     const [adminActionLoading, setAdminActionLoading] = useState(false);
-    const hasValidatedTree = myTrees.some((t: Lifetree) => t.validated);
-    const allValidated = myTrees.length > 0 && myTrees.every((t: Lifetree) => t.validated);
+    const hasValidatedTree = myTrees.some((t: Lifetree) => isExplicitlyValidatedTree(t));
+    const allValidated = myTrees.length > 0 && myTrees.every((t: Lifetree) => isExplicitlyValidatedTree(t));
     const inviteLink = `${window.location.origin}?invite=${lightseed.uid}`;
 
     useEffect(() => {
@@ -241,9 +243,7 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                                     <Icons.Shield /> Admin
                                 </span>
                             ) : hasValidatedTree ? (
-                                <span className="flex items-center gap-1 bg-emerald-400/20 border border-emerald-400/50 text-emerald-300 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
-                                    <Icons.ShieldCheck /> Validated
-                                </span>
+                                <ValidationBadge className="border-emerald-400/50 bg-emerald-400/20" compact />
                             ) : (
                                 <span className="bg-slate-600/50 border border-slate-500/50 text-slate-400 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
                                     User
@@ -287,9 +287,7 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                 {hasValidatedTree && (
                     <div className="max-w-4xl mx-auto mt-8 bg-slate-700/50 backdrop-blur border border-slate-600 p-4 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div className="flex items-center space-x-3">
-                            <div className="bg-emerald-500 p-2 rounded-full shrink-0">
-                                <Icons.ShieldCheck />
-                            </div>
+                            <ValidationBadge />
                             <div className="text-center sm:text-left">
                                 <h4 className="font-bold text-emerald-400">Contributor Access Unlocked</h4>
                                 <p className="text-xs text-slate-300">You are a validated node in the .seed network.</p>
@@ -445,8 +443,8 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                                                 <div>
                                                     <h3 className="font-bold text-slate-800">{tree.name}</h3>
                                                     <p className="text-xs text-slate-500">Block Height: {tree.blockHeight}</p>
-                                                    {tree.validated ? (
-                                                        <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">VALIDATED</span>
+                                                    {isExplicitlyValidatedTree(tree) ? (
+                                                        <ValidationBadge compact />
                                                     ) : (
                                                         <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">Pending</span>
                                                     )}
