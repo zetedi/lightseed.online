@@ -48,7 +48,7 @@ const SYSTEM_EMAIL_FROM = "lightseed <admin@lightseed.online>";
 
 const firebaseConfig = {
   apiKey: process.env.VITE_FIREBASE_API_KEY || "AIzaSyCDcg27BljgJsVGuzNgS0NQWOgFIuDMlYI",
-  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || "lifeseed-75dfe.firebaseapp.com",
+  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || "lightseed.online",
   projectId: process.env.VITE_FIREBASE_PROJECT_ID || "lifeseed-75dfe",
   storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "lifeseed-75dfe.firebasestorage.app",
   messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "110675956366",

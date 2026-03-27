@@ -25,6 +25,13 @@ export const ForestMap = ({ trees, onView, loading = false }: { trees: Lifetree[
     const markersLayer = useRef<any>(null);
 
     const [expansionStack, setExpansionStack] = useState<StackLevel[]>([]);
+    const [isMapReady, setIsMapReady] = useState(false);
+    const [markerCount, setMarkerCount] = useState(0);
+    const visibleTreeCount = trees.filter(tree => {
+        const lat = tree.latitude || (tree as any).lat;
+        const lng = tree.longitude || (tree as any).lng;
+        return lat !== undefined && lat !== null && lng !== undefined && lng !== null;
+    }).length;
 
     // Lightseed Logo SVG String for Cluster Icon
     const logoSvg = `
@@ -99,6 +106,7 @@ export const ForestMap = ({ trees, onView, loading = false }: { trees: Lifetree[
             zoomControl: false,
             attributionControl: false
         }).setView([20, 0], 2);
+        mapInstance.current.whenReady(() => setIsMapReady(true));
 
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
@@ -132,6 +140,19 @@ export const ForestMap = ({ trees, onView, loading = false }: { trees: Lifetree[
             updateMarkers(L);
         }, 50);
     }, [trees, expansionStack, loading]);
+
+    useEffect(() => {
+        if (!isMapReady || loading || visibleTreeCount === 0 || markerCount > 0) return;
+        const L = (window as any).L;
+        if (!L || !mapInstance.current) return;
+
+        const retry = window.setTimeout(() => {
+            mapInstance.current?.invalidateSize();
+            updateMarkers(L);
+        }, 250);
+
+        return () => window.clearTimeout(retry);
+    }, [isMapReady, loading, visibleTreeCount, markerCount]);
 
     const getHtmlForTree = (tree: Lifetree, isSmall = false, delay = 0) => {
         const isNature = tree.isNature;
@@ -190,12 +211,13 @@ export const ForestMap = ({ trees, onView, loading = false }: { trees: Lifetree[
 
     const updateMarkers = (L: any) => {
         if (!markersLayer.current || !mapInstance.current) return;
-        markersLayer.current.clearLayers();
 
         const CLUSTER_THRESHOLD_PX = 50;
         const clusters: Cluster[] = [];
         const processed = new Set<string>();
         const map = mapInstance.current;
+        const nextLayer = L.layerGroup();
+        let nextMarkerCount = 0;
 
         const sortedTrees = [...trees].sort((a, b) =>
             (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0)
@@ -243,8 +265,9 @@ export const ForestMap = ({ trees, onView, loading = false }: { trees: Lifetree[
                     popupAnchor: [0, -24]
                 });
                 L.marker([cluster.lat, cluster.lng], { icon })
-                 .addTo(markersLayer.current)
+                 .addTo(nextLayer)
                  .bindPopup(createPopupContent(cluster.center));
+                nextMarkerCount += 1;
 
             } else if (cluster.id === activeClusterId && topLevel) {
                 // EXPANDED — Seed of Life using current top-of-stack level
@@ -271,7 +294,8 @@ export const ForestMap = ({ trees, onView, loading = false }: { trees: Lifetree[
                     iconAnchor: [vignetteSize / 2, vignetteSize / 2]
                 });
                 L.marker([topLevel.lat, topLevel.lng], { icon: vignetteIcon, interactive: false, zIndexOffset: depthZOffset - 500 })
-                 .addTo(markersLayer.current);
+                 .addTo(nextLayer);
+                nextMarkerCount += 1;
 
                 // X button — positioned above the center
                 const xPoint = map.layerPointToLatLng(L.point(centerPoint.x, centerPoint.y - 72));
@@ -289,7 +313,8 @@ export const ForestMap = ({ trees, onView, loading = false }: { trees: Lifetree[
                     L.DomEvent.stopPropagation(e);
                     setExpansionStack(prev => prev.slice(0, -1));
                 });
-                xMarker.addTo(markersLayer.current);
+                xMarker.addTo(nextLayer);
+                nextMarkerCount += 1;
 
                 // Center tree
                 const centerIcon = L.divIcon({
@@ -299,8 +324,9 @@ export const ForestMap = ({ trees, onView, loading = false }: { trees: Lifetree[
                     iconAnchor: [24, 24]
                 });
                 L.marker([topLevel.lat, topLevel.lng], { icon: centerIcon, zIndexOffset: depthZOffset })
-                 .addTo(markersLayer.current)
+                 .addTo(nextLayer)
                  .bindPopup(createPopupContent(centerTree));
+                nextMarkerCount += 1;
 
                 // Petals
                 visibleChildren.forEach((child, index) => {
@@ -314,7 +340,7 @@ export const ForestMap = ({ trees, onView, loading = false }: { trees: Lifetree[
 
                     L.polyline([[topLevel.lat, topLevel.lng], childLatLng], {
                         color: 'white', weight: 1, opacity: 0.3
-                    }).addTo(markersLayer.current);
+                    }).addTo(nextLayer);
 
                     const childIcon = L.divIcon({
                         html: getHtmlForTree(child, true, (index + 1) * 50),
@@ -324,8 +350,9 @@ export const ForestMap = ({ trees, onView, loading = false }: { trees: Lifetree[
                         popupAnchor: [0, -20]
                     });
                     L.marker(childLatLng, { icon: childIcon, zIndexOffset: depthZOffset })
-                     .addTo(markersLayer.current)
+                     .addTo(nextLayer)
                      .bindPopup(createPopupContent(child));
+                    nextMarkerCount += 1;
                 });
 
                 // Sub-cluster node at slot 5 if there are more trees
@@ -341,7 +368,7 @@ export const ForestMap = ({ trees, onView, loading = false }: { trees: Lifetree[
 
                     L.polyline([[topLevel.lat, topLevel.lng], moreLatLng], {
                         color: 'white', weight: 1, opacity: 0.3
-                    }).addTo(markersLayer.current);
+                    }).addTo(nextLayer);
 
                     const moreHtml = `
                     <div class="marker-pop relative w-10 h-10 cursor-pointer hover:scale-110 transition-transform duration-300" style="animation-delay:${6 * 50}ms;">
@@ -366,7 +393,8 @@ export const ForestMap = ({ trees, onView, loading = false }: { trees: Lifetree[
                             lng: topLevel.lng
                         }]);
                     });
-                    moreMarker.addTo(markersLayer.current);
+                    moreMarker.addTo(nextLayer);
+                    nextMarkerCount += 1;
                 }
 
             } else {
@@ -396,9 +424,18 @@ export const ForestMap = ({ trees, onView, loading = false }: { trees: Lifetree[
                         lng: cluster.lng
                     }]);
                 });
-                marker.addTo(markersLayer.current);
+                marker.addTo(nextLayer);
+                nextMarkerCount += 1;
             }
         });
+
+        if (nextMarkerCount > 0 || visibleTreeCount === 0) {
+            map.removeLayer(markersLayer.current);
+            markersLayer.current = nextLayer.addTo(map);
+            setMarkerCount(nextMarkerCount);
+        } else {
+            setMarkerCount(0);
+        }
     }
 
     useEffect(() => {
@@ -425,11 +462,11 @@ export const ForestMap = ({ trees, onView, loading = false }: { trees: Lifetree[
             `}</style>
             <div className="relative">
                 <div ref={mapContainer} style={{ width: '100%', height: '60vh', minHeight: '400px', zIndex: 1 }} className="w-full rounded-xl shadow-inner border border-slate-700 bg-slate-900" />
-                {loading && (
+                {(loading || (isMapReady && visibleTreeCount > 0 && markerCount === 0)) && (
                     <div className="absolute inset-0 z-20 flex items-center justify-center rounded-xl bg-slate-950/30 backdrop-blur-[2px]">
                         <div className="flex flex-col items-center gap-3 rounded-2xl bg-white/90 px-6 py-5 shadow-lg">
                             <Loading />
-                            <span className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">Loading Forest</span>
+                            <span className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">{loading ? 'Loading Forest' : 'Rendering Trees'}</span>
                         </div>
                     </div>
                 )}
