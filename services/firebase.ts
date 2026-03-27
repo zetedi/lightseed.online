@@ -264,6 +264,12 @@ export const ensureGenesis = async () => {
             await setDoc(doc(db, 'visions', 'GENESIS_VISION'), {
                 lifetreeId: genesisId, authorId: 'GENESIS_SYSTEM', title: "Mahameru", body: genesisBody, createdAt: serverTimestamp(), joinedUserIds: []
             });
+        } else {
+            await updateDoc(genesisRef, {
+                validated: true,
+                validatorId: 'SYSTEM',
+                isNature: true,
+            });
         }
     } catch (e) { console.warn("Genesis skip", e); }
 }
@@ -303,12 +309,25 @@ export const plantLifetree = async (data: any) => {
 export const updateLifetree = (id: string, data: any) => updateDoc(doc(db, 'lifetrees', id), data);
 export const deleteLifetree = (id: string) => deleteDoc(doc(db, 'lifetrees', id));
 export const validateLifetree = (targetId: string, validatorId: string) => updateDoc(doc(db, 'lifetrees', targetId), { validated: true, validatorId });
+export const unvalidateLifetree = (targetId: string) => updateDoc(doc(db, 'lifetrees', targetId), { validated: false, validatorId: null });
 
 export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot) => {
     let q = query(lifetreesCollection, orderBy('createdAt', 'desc'), limit(12));
     if (lastD) q = query(q, startAfter(lastD));
     const snap = await getDocs(q);
-    return { items: snap.docs.map(d => ({ id: d.id, ...d.data() } as Lifetree)), lastDoc: snap.docs[snap.docs.length-1] || null };
+    const items = snap.docs.map(d => ({ id: d.id, ...d.data() } as Lifetree));
+
+    if (!lastD) {
+        const genesisSnap = await getDoc(doc(db, 'lifetrees', 'GENESIS_TREE'));
+        if (genesisSnap.exists()) {
+            const genesisTree = { id: genesisSnap.id, ...genesisSnap.data() } as Lifetree;
+            if (!items.some(tree => tree.id === genesisTree.id)) {
+                items.unshift(genesisTree);
+            }
+        }
+    }
+
+    return { items, lastDoc: snap.docs[snap.docs.length-1] || null };
 }
 
 export const getMyLifetrees = async (uid: string) => (await getDocs(query(lifetreesCollection, where('ownerId', '==', uid)))).docs.map(d => ({ id: d.id, ...d.data() } as Lifetree));

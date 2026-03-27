@@ -10,6 +10,7 @@ import {
   uploadImage,
   uploadBase64Image,
   validateLifetree,
+  unvalidateLifetree,
   proposeMatch,
   getPendingMatches,
   acceptMatch,
@@ -52,8 +53,9 @@ import { AboutPage } from './components/AboutPage';
 import { Dashboard } from './components/Dashboard';
 import { Loading } from './components/ui/Loading';
 import { LifeseedWidget } from './components/LifeseedWidget';
+import { isExplicitlyValidatedTree } from './utils/validation';
 
-const lifetreeImage = '/mother.jpg';
+const lifetreeImage = '/mother.webp';
 
 const GDPRBanner = () => {
     const [visible, setVisible] = useState(false);
@@ -131,6 +133,7 @@ const AppContent = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showNatureTrees, setShowNatureTrees] = useState(true);
     const [showUserTrees, setShowUserTrees] = useState(true);
+    const [showValidatedTrees, setShowValidatedTrees] = useState(false);
 
     // Form State
     const [treeName, setTreeName] = useState('');
@@ -552,6 +555,9 @@ const AppContent = () => {
             if (!showUserTrees && !item.isNature) {
                 matches = false;
             }
+            if (showValidatedTrees && !isExplicitlyValidatedTree(item)) {
+                matches = false;
+            }
         }
         return matches;
     });
@@ -734,10 +740,21 @@ const AppContent = () => {
                                     <span className="mr-1"><Icons.Tree /></span> {t('lifetrees')}
                                 </span>
                             </label>
+                            <label className="flex items-center gap-2 cursor-pointer bg-[#B2713A]/60 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20 hover:bg-[#B2713A]/80 transition-colors shadow-sm">
+                                <input 
+                                    type="checkbox" 
+                                    checked={showValidatedTrees} 
+                                    onChange={(e) => setShowValidatedTrees(e.target.checked)} 
+                                    className="rounded text-emerald-300 focus:ring-emerald-300 bg-white/20 border-white/30"
+                                />
+                                <span className="text-xs text-white font-medium flex items-center">
+                                    <span className="mr-1"><Icons.ShieldCheck /></span> {t('validated_trees')}
+                                </span>
+                            </label>
                         </div>
 
                         {viewMode === 'map' ? (
-                            <ForestMap trees={filteredData} onView={setSelectedTree} />
+                            <ForestMap trees={filteredData} onView={setSelectedTree} loading={loadingMore && filteredData.length === 0} />
                         ) : (
                             <>
                                 <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -749,11 +766,15 @@ const AppContent = () => {
                                                 <LifetreeCard
                                                     tree={item}
                                                     myActiveTree={activeTree}
+                                                    isAdmin={isAdmin}
                                                     isSuperAdmin={isSuperAdmin}
                                                     currentUserId={lightseed?.uid}
                                                     onPlayGrowth={setShowGrowthPlayer}
                                                     onQuickSnap={handleQuickSnap}
-                                                    onValidate={(id: string) => validateLifetree(id, isSuperAdmin ? lightseed!.uid : activeTree!.id).then(() => { alert("Validated!"); loadContent(true); })}
+                                                    onValidate={(id: string, nextValidated: boolean) => (nextValidated
+                                                        ? validateLifetree(id, isSuperAdmin ? lightseed!.uid : activeTree!.id)
+                                                        : unvalidateLifetree(id)
+                                                    ).then(() => { alert(nextValidated ? "Validated!" : "Validation removed."); loadContent(true); })}
                                                     onView={setSelectedTree}
                                                 />
                                             </React.Fragment>
@@ -826,7 +847,17 @@ const AppContent = () => {
                         tree={selectedTree}
                         onClose={() => setSelectedTree(null)}
                         onPlayGrowth={setShowGrowthPlayer}
-                        onValidate={(id: string) => validateLifetree(id, isSuperAdmin ? lightseed!.uid : activeTree!.id).then(() => { alert("Validated!"); setSelectedTree(null); loadContent(true); })}
+                        onValidate={(id: string, nextValidated: boolean) => (nextValidated
+                            ? validateLifetree(id, isSuperAdmin ? lightseed!.uid : activeTree!.id)
+                            : unvalidateLifetree(id)
+                        ).then(() => {
+                            handleTreeUpdate(id, {
+                                validated: nextValidated,
+                                validatorId: nextValidated ? (isSuperAdmin ? lightseed!.uid : activeTree!.id) : null,
+                            });
+                            alert(nextValidated ? "Validated!" : "Validation removed.");
+                            loadContent(true);
+                        })}
                         onUpdate={(updates: Partial<Lifetree>) => handleTreeUpdate(selectedTree.id, updates)}
                         onDelete={() => { handleDeleteTreeConfirmed(selectedTree.id); setSelectedTree(null); }}
                         onCreatePulse={() => { setShowPulseModal(true); }}
@@ -891,10 +922,16 @@ const AppContent = () => {
                         
                         <textarea 
                             dir="auto" 
-                            className="block w-full border border-slate-300 p-2 rounded-lg min-h-[100px]" 
+                            rows={3}
+                            className="block w-full resize-none overflow-hidden border border-slate-300 p-2 rounded-lg min-h-[76px]" 
                             placeholder={t('body')} 
                             value={visionBody} 
-                            onChange={e=>setVisionBody(e.target.value)} 
+                            onChange={e=>setVisionBody(e.target.value)}
+                            onInput={(e) => {
+                                const target = e.currentTarget;
+                                target.style.height = '0px';
+                                target.style.height = `${target.scrollHeight}px`;
+                            }}
                             required 
                         />
 

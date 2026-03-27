@@ -141,7 +141,7 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, onSetTab, onPlant,
             {/* Box 3: Oracle (Dynamic Quote) */}
             <div onClick={() => onSetTab('oracle')} className="relative h-56 md:h-64 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
                 <div className="absolute inset-0 bg-slate-900"></div>
-                <img src="/oracle.jpg" className="absolute inset-0 w-full h-full object-cover opacity-30" alt="Oracle" />
+                <img src="/oracle.webp" className="absolute inset-0 w-full h-full object-cover opacity-30" alt="Oracle" />
                 <div className="relative h-full p-4 flex flex-col justify-between text-white">
                     <div className="flex justify-between items-start">
                         <h2 className="text-sm sm:text-lg font-bold uppercase tracking-widest text-white drop-shadow-md">{t('oracle')}</h2>
@@ -158,7 +158,7 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, onSetTab, onPlant,
 
             {/* Box 4: Forest (Banner Style + Stats) */}
             <div onClick={() => onSetTab('forest')} className="relative h-56 md:h-64 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
-                <img src="/mother.jpg" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                <img src="/mother.webp" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform" />
                 <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors"></div>
                 <div className="relative h-full p-4 flex flex-col justify-between text-white">
                     <div className="flex justify-between items-start">

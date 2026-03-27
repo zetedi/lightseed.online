@@ -6,27 +6,28 @@ import { Icons } from './ui/Icons';
 import Logo from './Logo';
 import { ValidationBadge } from './ValidationBadge';
 import { colors } from '../utils/theme';
-import { canValidateTree, isExplicitlyValidatedTree } from '../utils/validation';
+import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
 
 interface LifetreeCardProps {
     tree: Lifetree;
     myActiveTree: Lifetree | null;
+    isAdmin?: boolean;
     isSuperAdmin?: boolean;
     currentUserId?: string;
-    onValidate: (id: string) => Promise<void>;
+    onValidate: (id: string, nextValidated: boolean) => Promise<void>;
     onPlayGrowth: (id: string) => void;
     onQuickSnap: (id: string, file: File) => Promise<void>;
     onView: (tree: Lifetree) => void;
 }
 
-export const LifetreeCard = ({ tree, myActiveTree, isSuperAdmin, currentUserId, onValidate, onPlayGrowth, onQuickSnap, onView }: LifetreeCardProps) => {
+export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, currentUserId, onValidate, onPlayGrowth, onQuickSnap, onView }: LifetreeCardProps) => {
     const { t } = useLanguage();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
     
     const isGuardian = currentUserId && tree.guardians && tree.guardians.includes(currentUserId);
     const hasValidationBadge = isExplicitlyValidatedTree(tree);
-    const showValidateAction = canValidateTree({ tree, myActiveTree, isSuperAdmin });
+    const showValidateAction = canToggleValidation({ tree, myActiveTree, isAdmin, isSuperAdmin });
 
     const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -53,9 +54,7 @@ export const LifetreeCard = ({ tree, myActiveTree, isSuperAdmin, currentUserId, 
                         <Icons.Shield />
                         <span className="ml-1 text-[9px]">NATURE</span>
                     </span>
-                ) : hasValidationBadge && (
-                    <ValidationBadge compact />
-                )}
+                ) : null}
                 {isGuardian && (
                     <span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center shadow-sm w-fit">
                         <Icons.Shield />
@@ -101,6 +100,11 @@ export const LifetreeCard = ({ tree, myActiveTree, isSuperAdmin, currentUserId, 
                 )}
 
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent pointer-events-none"></div>
+                {hasValidationBadge && (
+                    <div className="absolute bottom-2 right-2 z-20">
+                        <ValidationBadge compact />
+                    </div>
+                )}
                 <div className="absolute bottom-2 left-3 right-3 text-white pointer-events-none">
                     <h3 dir="auto" className="text-lg font-light tracking-wide truncate">{tree.name}</h3>
                     {tree.shortTitle && <p dir="auto" className="text-xs font-bold text-emerald-200 uppercase tracking-widest truncate">{tree.shortTitle}</p>}
@@ -118,16 +122,24 @@ export const LifetreeCard = ({ tree, myActiveTree, isSuperAdmin, currentUserId, 
                 <p dir="auto" className="text-slate-600 text-xs font-light italic leading-relaxed truncate">
                     "{tree.body}"
                 </p>
-                <div className="mt-3 pt-2 border-t border-slate-100 flex justify-between items-center">
+                <div className="mt-3 pt-2 border-t border-slate-100 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <button onClick={(e) => { e.stopPropagation(); onPlayGrowth(tree.id); }} className="flex items-center gap-1 text-[10px] bg-emerald-50 hover:bg-emerald-100 text-emerald-600 px-2 py-1 rounded transition-colors uppercase tracking-wider font-semibold">
                         <Icons.Play />
                         <span>Growth</span>
                     </button>
                     
-                    <div className="flex gap-2">
+                    <div className="flex w-full flex-col items-start gap-2 sm:w-auto sm:flex-row">
                         {showValidateAction && (
-                            <button onClick={(e) => { e.stopPropagation(); onValidate(tree.id); }} className="text-[10px] bg-emerald-600 text-white px-3 py-1.5 rounded-full shadow hover:bg-emerald-700 transition-colors uppercase font-bold tracking-wider animate-pulse">
-                                {t('validate_action')}
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const nextValidated = !hasValidationBadge;
+                                    const message = nextValidated ? 'Validate this tree?' : 'Remove validation from this tree?';
+                                    if (window.confirm(message)) onValidate(tree.id, nextValidated);
+                                }}
+                                className="text-[10px] bg-emerald-600 text-white px-3 py-1.5 rounded-full shadow hover:bg-emerald-700 transition-colors uppercase font-bold tracking-wider animate-pulse"
+                            >
+                                {hasValidationBadge ? 'Remove Validation' : t('validate_action')}
                             </button>
                         )}
                     </div>

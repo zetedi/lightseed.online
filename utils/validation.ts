@@ -18,3 +18,20 @@ export const canValidateTree = ({
   if (isSuperAdmin) return true;
   return Boolean(myActiveTree && isExplicitlyValidatedTree(myActiveTree) && myActiveTree.id !== tree.id);
 };
+
+export const canToggleValidation = ({
+  tree,
+  myActiveTree,
+  isAdmin,
+  isSuperAdmin,
+}: {
+  tree?: Lifetree | null;
+  myActiveTree?: Lifetree | null;
+  isAdmin?: boolean;
+  isSuperAdmin?: boolean;
+}) => {
+  if (!tree || tree.isNature) return false;
+  if (isExplicitlyValidatedTree(tree)) return Boolean(isSuperAdmin || isAdmin);
+  if (isSuperAdmin || isAdmin) return true;
+  return Boolean(myActiveTree && isExplicitlyValidatedTree(myActiveTree) && myActiveTree.id !== tree.id);
+};

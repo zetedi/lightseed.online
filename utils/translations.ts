@@ -14,6 +14,7 @@ const baseKeys = {
   edit: "Edit", be_mother_tree: "Plant a Lifetree", guard_tree: "Guard Tree", matches: "Matches",
   pending_matches: "Pending Matches", no_pending_resonance: "No Resonance", search_placeholder: "Search...",
   guard: "Guard", nature: "Nature", lifetrees: "Lifetrees", no_trees_found: "None found", pending: "Pending",
+  validated_trees: "Validated",
   growth: "Growth", loves: "Loves", oracle_greeting: "Greetings, Seeker. I am the Oracle. Shall I help you plant your Lifetree, or guide you on the path to realizing your Vision?", ask_oracle: "Ask the Oracle...",
   more: "More", send_invite: "Send Invite", invitations: "Invitations", invites_remaining: "Invites Remaining",
   copy_invite: "Copy Link", delete_account: "Delete Account", delete_confirm_title: "Delete Profile",

@@ -395,7 +395,7 @@ export const AboutPage = ({ onClose }: { onClose: () => void }) => {
                 {activeTab === 'phoenix' && (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
                         <div className="relative h-64 md:h-96 w-full rounded-2xl overflow-hidden shadow-2xl group">
-                            <img src="/phoenix.jpg" alt="Phoenix Tree" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-[3s]" />
+                            <img src="/phoenix.webp" alt="Phoenix Tree" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-[3s]" />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                             <div className="absolute bottom-6 left-6 text-white">
                                 <h2 className="text-3xl font-light tracking-wide">Phoenix</h2>
@@ -425,7 +425,7 @@ export const AboutPage = ({ onClose }: { onClose: () => void }) => {
                 {activeTab === 'sun' && (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <div className="relative h-64 md:h-96 w-full rounded-2xl overflow-hidden shadow-2xl mb-8 group">
-                             <img src="/tss.jpg" alt="The Secret Sun" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-[3s]" />
+                             <img src="/tss.webp" alt="The Secret Sun" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-[3s]" />
                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                              <div className="absolute bottom-6 left-6 text-white">
                                  <h2 className="text-3xl font-light tracking-wide">The Secret Sun</h2>

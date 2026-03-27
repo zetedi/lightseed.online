@@ -6,7 +6,7 @@ import Logo from './Logo';
 import { ValidationBadge } from './ValidationBadge';
 import { updateLifetree, toggleGuardianship, setTreeStatus, getPulsesByTreeId } from '../services/firebase';
 import { Pulse } from '../types';
-import { canValidateTree, isExplicitlyValidatedTree } from '../utils/validation';
+import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
 
 export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onViewPulse, myActiveTree, currentUserId, isAdmin, isSuperAdmin }: any) => {
    const { t } = useLanguage();
@@ -16,7 +16,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const canDeleteGuarded = isNature && (isOwner || isAdmin || isSuperAdmin);
    const canEdit = isOwner || isGuardian || isSuperAdmin;
    const hasValidationBadge = isExplicitlyValidatedTree(tree);
-   const showValidateAction = canValidateTree({ tree, myActiveTree, isSuperAdmin });
+   const showValidateAction = canToggleValidation({ tree, myActiveTree, isAdmin, isSuperAdmin });
+   const hasCoordinates = Number.isFinite(tree.latitude) && Number.isFinite(tree.longitude);
+   const fieldClassName = "h-10 w-full max-w-sm rounded border border-slate-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500";
 
    const [isEditing, setIsEditing] = useState(false);
    const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -199,7 +201,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     <Icons.ArrowLeft />
                     <span>{t('back_forest')}</span>
                 </button>
-                <div className="flex flex-col items-center">
+                <div className="hidden md:flex flex-col items-center">
                     <h2 dir="auto" className="text-xl font-light tracking-wide truncate max-w-[200px] text-emerald-950">{isEditing ? "Editing..." : tree.name}</h2>
                     {tree.shortTitle && !isEditing && <span dir="auto" className="text-xs text-emerald-600 font-bold uppercase tracking-widest">{tree.shortTitle}</span>}
                 </div>
@@ -228,20 +230,39 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                         alt={tree.name}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                    {hasValidationBadge && (
+                        <div className="absolute bottom-4 right-4 z-20">
+                            <ValidationBadge />
+                        </div>
+                    )}
                     <div className="absolute bottom-6 left-6 text-white w-full pr-12">
-                        <div className="flex items-center space-x-3 mb-2">
+                        <div className="mb-2 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
                             {isNature ? (
                                 <span className="bg-sky-500 text-white text-xs px-2 py-0.5 rounded-full font-bold flex items-center">
                                     <Icons.Shield />
                                     <span className="ml-1">NATURE</span>
                                 </span>
-                            ) : hasValidationBadge && (
-                                <ValidationBadge />
-                            )}
-                            <button onClick={() => onPlayGrowth(tree.id)} className="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1 rounded-full flex items-center space-x-1 backdrop-blur-sm transition-colors">
-                                <Icons.Play />
-                                <span>PLAY GROWTH</span>
-                            </button>
+                            ) : null}
+                            <div className="flex items-center gap-2 sm:gap-3">
+                                <button onClick={() => onPlayGrowth(tree.id)} className="min-h-0 w-fit bg-white/20 hover:bg-white/30 text-white text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 rounded-full flex items-center space-x-1 backdrop-blur-sm transition-colors">
+                                    <Icons.Play />
+                                    <span>PLAY GROWTH</span>
+                                </button>
+                                {showValidateAction && (
+                                    <button
+                                        onClick={() => {
+                                            const nextValidated = !hasValidationBadge;
+                                            const message = nextValidated ? 'Validate this tree?' : 'Remove validation from this tree?';
+                                            if (window.confirm(message)) onValidate(tree.id, nextValidated);
+                                        }}
+                                        className="min-h-0 w-fit bg-emerald-600/90 hover:bg-emerald-600 text-white text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 rounded-full flex items-center justify-center gap-1.5 backdrop-blur-sm transition-colors"
+                                        title={hasValidationBadge ? 'Remove validation' : t('validate_action')}
+                                    >
+                                        <Icons.ShieldCheck />
+                                        <span className="hidden sm:inline">{hasValidationBadge ? 'Remove Validation' : t('validate_action')}</span>
+                                    </button>
+                                )}
+                            </div>
                         </div>
                         {isEditing ? (
                             <div className="space-y-2 max-w-md">
@@ -296,39 +317,40 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4">
                             <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">{t('tree_details')}</h3>
                             
-                            <div className="flex justify-between py-2 border-b border-slate-50">
-                                <span className="text-slate-500 text-sm">{t('steward')}</span>
-                                <span dir="ltr" className="text-slate-800 font-mono text-sm">{isNature ? "Nature (System)" : tree.ownerId.substring(0, 10) + "..."}</span>
+                            <div className="flex items-start gap-4 py-2 border-b border-slate-50">
+                                <span className="w-24 shrink-0 text-slate-500 text-sm">{t('steward')}</span>
+                                <span dir="ltr" className="flex-1 text-left text-slate-800 font-mono text-sm">{isNature ? "Nature (System)" : tree.ownerId.substring(0, 10) + "..."}</span>
                             </div>
-                            <div className="flex justify-between py-2 border-b border-slate-50 items-center">
-                                <span className="text-slate-500 text-sm">{t('location')}</span>
+                            <div className="flex items-center gap-4 py-2 border-b border-slate-50">
+                                <span className="w-24 shrink-0 text-slate-500 text-sm">{t('location')}</span>
                                 {isEditing ? (
                                     <input
                                         type="text"
-                                        className="border p-1 rounded text-sm w-48"
+                                        className={fieldClassName}
                                         value={editLocationName}
                                         onChange={e => setEditLocationName(e.target.value)}
                                         placeholder="Location name"
                                     />
                                 ) : (
-                                    <span dir="auto" className="text-slate-800 font-mono text-sm">{tree.locationName}</span>
+                                    <span dir="auto" className="flex-1 text-left text-slate-800 font-mono text-sm">{tree.locationName}</span>
                                 )}
                             </div>
                             <div className="py-2 border-b border-slate-50">
-                                <span className="text-slate-500 text-sm block mb-1">GPS Coordinates</span>
+                                <div className="flex items-start gap-4">
+                                <span className="w-24 shrink-0 pt-2 text-slate-500 text-sm">GPS</span>
                                 {isEditing ? (
-                                    <div className="flex space-x-2 items-center">
+                                    <div className="flex w-full max-w-sm space-x-2 items-center">
                                         <div className="flex-1 flex space-x-2">
                                             <input 
                                                 type="number" step="any"
-                                                className="border p-1 rounded w-full text-sm" 
+                                                className={fieldClassName}
                                                 value={editLat} 
                                                 onChange={e => setEditLat(e.target.value)}
                                                 placeholder="Lat"
                                             />
                                             <input 
                                                 type="number" step="any"
-                                                className="border p-1 rounded w-full text-sm" 
+                                                className={fieldClassName}
                                                 value={editLng} 
                                                 onChange={e => setEditLng(e.target.value)}
                                                 placeholder="Lng"
@@ -345,44 +367,45 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                         </button>
                                     </div>
                                 ) : (
-                                    <span className="text-slate-800 font-mono text-sm">{tree.latitude?.toFixed(4)}, {tree.longitude?.toFixed(4)}</span>
+                                    <span className="flex-1 pt-2 text-left text-slate-800 font-mono text-sm">{tree.latitude?.toFixed(4)}, {tree.longitude?.toFixed(4)}</span>
                                 )}
+                                </div>
                             </div>
-                            <div className="flex justify-between py-2 border-b border-slate-50 items-center">
-                                <span className="text-slate-500 text-sm">Planted</span>
+                            <div className="flex items-center gap-4 py-2 border-b border-slate-50">
+                                <span className="w-24 shrink-0 text-slate-500 text-sm">Planted</span>
                                 {isEditing ? (
                                     <input
                                         type="datetime-local"
-                                        className="border p-1 rounded text-sm"
+                                        className={fieldClassName}
                                         value={editCreatedAt}
                                         onChange={e => setEditCreatedAt(e.target.value)}
                                     />
                                 ) : (
-                                    <span className="text-slate-800 font-mono text-sm">
+                                    <span className="flex-1 text-left text-slate-800 font-mono text-sm">
                                         {tree.createdAt?.toDate ? tree.createdAt.toDate().toLocaleString() : '—'}
                                     </span>
                                 )}
                             </div>
-                             <div className="flex justify-between py-2">
-                                <span className="text-slate-500 text-sm">Validator</span>
-                                <span className="text-slate-800 font-mono text-sm">
+                             <div className="flex items-start gap-4 py-2">
+                                <span className="w-24 shrink-0 text-slate-500 text-sm">Validator</span>
+                                <span className="flex-1 text-left text-slate-800 font-mono text-sm">
                                     {isNature ? 'Nature' : hasValidationBadge && tree.validatorId ? `${tree.validatorId.substring(0, 8)}...` : t('unvalidated')}
                                 </span>
                             </div>
-                            <div className="flex justify-between py-2 items-center">
-                                <span className="text-slate-500 text-sm">Website</span>
+                            <div className="flex items-center gap-4 py-2">
+                                <span className="w-24 shrink-0 text-slate-500 text-sm">Website</span>
                                 {isEditing ? (
                                     <input
                                         type="text"
-                                        className="border p-1 rounded text-sm w-48"
+                                        className={fieldClassName}
                                         value={editDomain}
                                         onChange={e => setEditDomain(e.target.value)}
                                         placeholder="e.g. myproject.com"
                                     />
                                 ) : (
                                     tree.domain
-                                        ? <a href={`https://${tree.domain}`} target="_blank" rel="noreferrer" className="text-emerald-600 text-sm hover:underline font-mono">{tree.domain}</a>
-                                        : <span className="text-slate-400 text-sm">—</span>
+                                        ? <a href={`https://${tree.domain}`} target="_blank" rel="noreferrer" className="flex-1 text-left text-emerald-600 text-sm hover:underline font-mono">{tree.domain}</a>
+                                        : <span className="flex-1 text-left text-slate-400 text-sm">—</span>
                                 )}
                             </div>
 
@@ -410,6 +433,23 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                 </div>
                             )}
                         </div>
+
+                        {hasCoordinates && (
+                            <div className="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
+                                <div className="mb-2 flex items-center justify-between">
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Map</h4>
+                                    {tree.locationName && <span dir="auto" className="text-xs text-emerald-700">{tree.locationName}</span>}
+                                </div>
+                                <div className="overflow-hidden rounded-xl border border-slate-200">
+                                    <iframe
+                                        title={`Map of ${tree.name}`}
+                                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${Number(tree.longitude) - 0.01}%2C${Number(tree.latitude) - 0.01}%2C${Number(tree.longitude) + 0.01}%2C${Number(tree.latitude) + 0.01}&layer=mapnik&marker=${Number(tree.latitude)}%2C${Number(tree.longitude)}`}
+                                        className="h-40 w-full"
+                                        loading="lazy"
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Right: Blockchain & Guard Panel */}
@@ -444,13 +484,6 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                 </div>
                                 <GuardianshipPanel />
                             </>
-                        )}
-
-                        {/* Validation Action */}
-                        {showValidateAction && (
-                             <button onClick={() => onValidate(tree.id)} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-bold uppercase tracking-widest shadow-lg shadow-emerald-200 transition-all active:scale-95">
-                                {t('validate_action')}
-                            </button>
                         )}
                     </div>
                 </div>

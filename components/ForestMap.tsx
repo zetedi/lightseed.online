@@ -2,6 +2,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { type Lifetree } from '../types';
 import { isExplicitlyValidatedTree } from '../utils/validation';
+import { Loading } from './ui/Loading';
 
 interface Cluster {
     id: string;
@@ -18,7 +19,7 @@ interface StackLevel {
     lng: number;
 }
 
-export const ForestMap = ({ trees, onView }: { trees: Lifetree[], onView: (tree: Lifetree) => void }) => {
+export const ForestMap = ({ trees, onView, loading = false }: { trees: Lifetree[], onView: (tree: Lifetree) => void, loading?: boolean }) => {
     const mapContainer = useRef<HTMLDivElement>(null);
     const mapInstance = useRef<any>(null);
     const markersLayer = useRef<any>(null);
@@ -125,8 +126,12 @@ export const ForestMap = ({ trees, onView }: { trees: Lifetree[], onView: (tree:
 
     useEffect(() => {
         const L = (window as any).L;
-        if (L && mapInstance.current) updateMarkers(L);
-    }, [trees, expansionStack]);
+        if (!L || !mapInstance.current) return;
+        setTimeout(() => {
+            mapInstance.current?.invalidateSize();
+            updateMarkers(L);
+        }, 50);
+    }, [trees, expansionStack, loading]);
 
     const getHtmlForTree = (tree: Lifetree, isSmall = false, delay = 0) => {
         const isNature = tree.isNature;
@@ -418,7 +423,17 @@ export const ForestMap = ({ trees, onView }: { trees: Lifetree[], onView: (tree:
                     opacity: 0;
                 }
             `}</style>
-            <div ref={mapContainer} style={{ width: '100%', height: '60vh', minHeight: '400px', zIndex: 1 }} className="w-full rounded-xl shadow-inner border border-slate-700 bg-slate-900" />
+            <div className="relative">
+                <div ref={mapContainer} style={{ width: '100%', height: '60vh', minHeight: '400px', zIndex: 1 }} className="w-full rounded-xl shadow-inner border border-slate-700 bg-slate-900" />
+                {loading && (
+                    <div className="absolute inset-0 z-20 flex items-center justify-center rounded-xl bg-slate-950/30 backdrop-blur-[2px]">
+                        <div className="flex flex-col items-center gap-3 rounded-2xl bg-white/90 px-6 py-5 shadow-lg">
+                            <Loading />
+                            <span className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">Loading Forest</span>
+                        </div>
+                    </div>
+                )}
+            </div>
         </>
     );
 };
