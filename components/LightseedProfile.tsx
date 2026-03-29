@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { type Pulse, type Lifetree, type MatchProposal, type Vision, type VisionSynergy } from '../types';
-import { getMyPulses, getMyVisions, getJoinedVisions, getMyMatchesHistory, deleteUserAccount, logout, triggerSystemEmail, monitorMailStatus, sendInvite, listenToUserProfile, deleteVision, getAdmins } from '../services/firebase';
+import { getMyPulses, getMyVisions, getJoinedVisions, getMyMatchesHistory, deleteUserAccount, logout, triggerSystemEmail, monitorMailStatus, sendInvite, listenToUserProfile, deleteVision, getAdmins, setNewsletterSubscription } from '../services/firebase';
 import { findVisionSynergies } from '../services/gemini';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
@@ -11,7 +11,7 @@ import { Modal } from './ui/Modal';
 import { Loading } from './ui/Loading';
 import { isExplicitlyValidatedTree } from '../utils/validation';
 
-export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, superAdminExists, onViewTree, onDeleteTree, onViewVision, onPlant, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin }: any) => {
+export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, superAdminExists, onViewTree, onDeleteTree, onViewVision, onPlant, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin }: any) => {
     const { t } = useLanguage();
     const [activeTab, setActiveTab] = useState<'trees' | 'pulses' | 'visions' | 'history'>('trees');
     const [pulses, setPulses] = useState<Pulse[]>([]);
@@ -31,6 +31,9 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviteMessage, setInviteMessage] = useState('');
     const [sendingInvite, setSendingInvite] = useState(false);
+    const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
+    const [togglingNewsletter, setTogglingNewsletter] = useState(false);
+    const [dialogMessage, setDialogMessage] = useState<string | null>(null);
 
     // AI Matchmaking State
     const [synergies, setSynergies] = useState<VisionSynergy[]>([]);
@@ -56,6 +59,7 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
             if (data && typeof data.invitesRemaining === 'number') {
                 setInvitesRemaining(data.invitesRemaining);
             }
+            setNewsletterSubscribed(Boolean(data?.newsletterSubscribed));
         });
 
         const fetchData = async () => {
@@ -88,7 +92,7 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
         if (visions.length < 2) {
              const data = await getMyVisions(lightseed.uid);
              if (data.length < 2) {
-                 alert("You need at least 2 visions to find synergies.");
+                 setDialogMessage("You need at least 2 visions to find synergies.");
                  return;
              }
              setVisions(data);
@@ -106,14 +110,14 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
             setSynergies(results);
         } catch (e: any) {
             console.error("AI Analysis Error:", e);
-            alert("Analysis failed: " + e.message);
+            setDialogMessage("Analysis failed: " + e.message);
         }
         setAnalyzing(false);
     }
 
     const copyInvite = () => {
         navigator.clipboard.writeText(inviteLink);
-        alert("Invite link copied to clipboard!");
+        setDialogMessage("Invite link copied to clipboard!");
     }
 
     const handleSendInvite = async (e: React.FormEvent) => {
@@ -122,12 +126,12 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
         setSendingInvite(true);
         try {
             await sendInvite(inviteEmail, inviteMessage, lightseed.uid, inviteLink);
-            alert(t('invite_sent'));
+            setDialogMessage(t('invite_sent'));
             setShowInviteModal(false);
             setInviteEmail('');
             setInviteMessage('');
         } catch (e: any) {
-            alert(e.message || "Failed to send invite");
+            setDialogMessage(e.message || "Failed to send invite");
         }
         setSendingInvite(false);
     }
@@ -142,6 +146,20 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
             alert("Delete failed: " + e.message);
         }
     }
+
+    const handleNewsletterToggle = async () => {
+        if (!lightseed?.email || togglingNewsletter) return;
+        setTogglingNewsletter(true);
+        try {
+            const nextValue = !newsletterSubscribed;
+            await setNewsletterSubscription(lightseed.uid, lightseed.email, nextValue);
+            setNewsletterSubscribed(nextValue);
+            setDialogMessage(nextValue ? 'Newsletter subscribed.' : 'Newsletter unsubscribed.');
+        } catch (e: any) {
+            setDialogMessage(e.message || 'Failed to update newsletter preference.');
+        }
+        setTogglingNewsletter(false);
+    };
 
     const handleTestEmail = async () => {
         const targetEmail = prompt("Enter the email address to send test to:", lightseed.email);
@@ -164,7 +182,7 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
             const timeoutCheck = setTimeout(() => {
                 setMailStatus((current) => {
                     if (current === "QUEUED") {
-                        alert("The email is in the DB, but the Extension didn't send it.");
+                        setDialogMessage("The email is in the DB, but the Extension didn't send it.");
                         return "TIMEOUT: Check Extension Config";
                     }
                     return current;
@@ -186,7 +204,7 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
             });
 
         } catch (e: any) {
-            alert("Failed to write to database: " + e.message);
+            setDialogMessage("Failed to write to database: " + e.message);
             setSendingTest(false);
             setMailStatus(null);
         }
@@ -197,17 +215,17 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
         try {
             await deleteUserAccount();
             await logout();
-            alert(t('delete_goodbye'));
+            setDialogMessage(t('delete_goodbye'));
             window.location.reload();
         } catch (e: any) {
             console.error("Delete Account Error:", e);
             if (e.message && (e.message.includes("log out") || e.message.includes("recent-login"))) {
-                alert("Security Check: Please sign in again to confirm deletion.");
+                setDialogMessage("Security Check: Please sign in again to confirm deletion.");
                 await logout();
                 window.location.reload();
                 return;
             }
-            alert(e.message);
+            setDialogMessage(e.message);
             setIsDeleting(false);
             setShowDeleteConfirm(false);
         }
@@ -275,6 +293,15 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                                     <span>{mailStatus || "Test Email"}</span>
                                 </button>
 
+                                <button
+                                    onClick={handleNewsletterToggle}
+                                    disabled={togglingNewsletter || !lightseed.email}
+                                    className={`px-3 py-2 rounded-full text-xs font-bold transition-colors flex items-center space-x-1 border ${newsletterSubscribed ? 'bg-amber-900/60 border-amber-700 text-amber-100' : 'bg-emerald-700 hover:bg-emerald-600 border-emerald-600 text-white'} disabled:opacity-50`}
+                                >
+                                    <Icons.Send />
+                                    <span>{togglingNewsletter ? 'Working...' : (newsletterSubscribed ? 'Unsubscribe' : 'Subscribe to Newsletter')}</span>
+                                </button>
+
                                 <button onClick={() => setShowDeleteConfirm(true)} className="bg-slate-700 hover:bg-red-900/50 text-slate-300 hover:text-red-200 px-3 py-2 rounded-full text-xs font-bold transition-colors flex items-center space-x-1 border border-slate-600 hover:border-red-800">
                                     <Icons.Trash />
                                     <span>{t('delete_account')}</span>
@@ -324,9 +351,18 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                 {/* Admin Management — superadmin only */}
                 {isSuperAdmin && (
                     <div className="max-w-4xl mx-auto mt-4 bg-indigo-900/30 border border-indigo-500/30 p-5 rounded-xl">
-                        <h4 className="font-bold text-indigo-300 mb-3 flex items-center gap-2 text-sm uppercase tracking-wider">
-                            <Icons.Shield /> Admin Management
-                        </h4>
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                            <h4 className="font-bold text-indigo-300 flex items-center gap-2 text-sm uppercase tracking-wider">
+                                <Icons.Shield /> Admin Management
+                            </h4>
+                            <button
+                                onClick={onOpenNewsletterAdmin}
+                                className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors flex items-center gap-2"
+                            >
+                                <Icons.Send />
+                                <span>Send Newsletter</span>
+                            </button>
+                        </div>
                         <div className="flex gap-2 mb-4">
                             <input
                                 value={newAdminUid}
@@ -371,6 +407,15 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                     </div>
                 )}
             </div>
+
+            {dialogMessage && (
+                <Modal title="Notice" onClose={() => setDialogMessage(null)}>
+                    <div className="space-y-4">
+                        <p className="text-sm text-slate-600">{dialogMessage}</p>
+                        <button onClick={() => setDialogMessage(null)} className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white">Close</button>
+                    </div>
+                </Modal>
+            )}
 
             <div className="max-w-4xl mx-auto px-4 mt-8">
                 {myTrees.length > 0 && (

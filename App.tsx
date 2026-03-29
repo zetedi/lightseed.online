@@ -53,6 +53,7 @@ import { AboutPage } from './components/AboutPage';
 import { Dashboard } from './components/Dashboard';
 import { Loading } from './components/ui/Loading';
 import { LifeseedWidget } from './components/LifeseedWidget';
+import { NewsletterAdmin } from './components/NewsletterAdmin';
 import { isExplicitlyValidatedTree } from './utils/validation';
 
 const lifetreeImage = '/mother.webp';
@@ -618,8 +619,13 @@ const AppContent = () => {
                     }}
                     onGrantAdmin={async (uid: string) => { await grantAdmin(uid); }}
                     onRevokeAdmin={async (uid: string) => { await revokeAdmin(uid); }}
+                    onOpenNewsletterAdmin={() => setTab('newsletter')}
                 />
             );
+        }
+
+        if (tab === 'newsletter' && lightseed && isSuperAdmin) {
+            return <NewsletterAdmin senderUid={lightseed.uid} onBack={() => setTab('profile')} />;
         }
         
         if (tab === 'about') {
@@ -628,7 +634,7 @@ const AppContent = () => {
 
         return (
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 min-h-[80vh]">
-                {tab !== 'matches' && tab !== 'profile' && tab !== 'oracle' && tab !== 'about' && tab !== 'dashboard' && (
+                {tab !== 'matches' && tab !== 'profile' && tab !== 'oracle' && tab !== 'about' && tab !== 'dashboard' && tab !== 'newsletter' && (
                     <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                         <div className="relative w-full md:max-w-md">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">

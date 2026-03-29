@@ -32,7 +32,8 @@ import {
   arrayRemove,
   writeBatch,
   onSnapshot,
-  getCountFromServer
+  getCountFromServer,
+  Timestamp
 } from 'firebase/firestore';
 import { 
   getStorage, 
@@ -69,6 +70,7 @@ const lifetreesCollection = collection(db, 'lifetrees');
 const visionsCollection = collection(db, 'visions');
 const pulsesCollection = collection(db, 'pulses');
 const matchesCollection = collection(db, 'matches');
+const newsletterConfigRef = doc(db, 'config', 'newsletter');
 
 export const onAuthChange = (callback: (user: FirebaseUser | null) => void) => onAuthStateChanged(auth, callback);
 
@@ -86,6 +88,7 @@ export const signInWithGoogle = async () => {
               email: user.email,
               displayName: user.displayName,
               createdAt: serverTimestamp(),
+              newsletterSubscribed: false,
               invitesRemaining: 7,
               dailyAiText: 0,
               dailyAiImage: 0,
@@ -212,6 +215,103 @@ export const monitorMailStatus = (docId: string, onChange: (status: any) => void
 }
 
 export const subscribeToNewsletter = async (email: string) => addDoc(subsCollection, { email, createdAt: serverTimestamp() });
+
+const normalizeSubscriptionId = (email: string) => encodeURIComponent(email.trim().toLowerCase());
+
+export const setNewsletterSubscription = async (uid: string, email: string, subscribe: boolean) => {
+    const userRef = doc(db, 'users', uid);
+    const subRef = doc(db, 'subscriptions', normalizeSubscriptionId(email));
+    const normalizedEmail = email.trim().toLowerCase();
+
+    await setDoc(userRef, { newsletterSubscribed: subscribe }, { merge: true });
+
+    if (subscribe) {
+        await setDoc(subRef, {
+            uid,
+            email: normalizedEmail,
+            active: true,
+            updatedAt: serverTimestamp(),
+            createdAt: serverTimestamp(),
+        }, { merge: true });
+    } else {
+        await setDoc(subRef, {
+            uid,
+            email: normalizedEmail,
+            active: false,
+            updatedAt: serverTimestamp(),
+        }, { merge: true });
+    }
+
+    try {
+        await triggerSystemEmail(
+            email,
+            subscribe ? "Newsletter subscription confirmed" : "Newsletter unsubscribed",
+            subscribe
+                ? "You are now subscribed to the lightseed newsletter. We will send you updates from the network."
+                : "You have been unsubscribed from the lightseed newsletter. You can subscribe again anytime from your profile.",
+            uid
+        );
+    } catch (e) {
+        console.warn('Newsletter confirmation email failed', e);
+    }
+};
+
+const fetchNewsletterChanges = async <T>(collectionRef: any, lastSentAt: Timestamp | null, mapper: (doc: any) => T) => {
+    const q = lastSentAt
+        ? query(collectionRef, where('createdAt', '>', lastSentAt), orderBy('createdAt', 'desc'), limit(8))
+        : query(collectionRef, orderBy('createdAt', 'desc'), limit(8));
+
+    const snap = await getDocs(q);
+    return snap.docs.map(mapper);
+};
+
+export const getNewsletterDraftData = async () => {
+    let lastSentAt = null;
+    try {
+        const configSnap = await getDoc(newsletterConfigRef);
+        lastSentAt = (configSnap.exists() ? (configSnap.data() as any).lastSentAt : null) || null;
+    } catch (e) {
+        console.warn('Newsletter config read skipped', e);
+    }
+
+    const [trees, visions, pulses] = await Promise.all([
+        fetchNewsletterChanges(lifetreesCollection, lastSentAt, (d) => ({ id: d.id, ...d.data() } as Lifetree)),
+        fetchNewsletterChanges(visionsCollection, lastSentAt, (d) => ({ id: d.id, ...d.data() } as Vision)),
+        fetchNewsletterChanges(pulsesCollection, lastSentAt, (d) => ({ id: d.id, ...d.data() } as Pulse)),
+    ]);
+
+    return { lastSentAt, trees, visions, pulses };
+};
+
+export const sendNewsletter = async ({ subject, html, senderUid }: { subject: string; html: string; senderUid: string }) => {
+    const activeSubs = await getDocs(subsCollection);
+    const recipients = activeSubs.docs
+        .map(d => d.data() as any)
+        .filter(sub => sub.email && sub.active === true)
+        .map(sub => sub.email as string);
+
+    if (recipients.length === 0) throw new Error("No newsletter subscribers found.");
+
+    await Promise.all(recipients.map((email) =>
+        addDoc(mailCollection, {
+            to: [email],
+            uid: senderUid,
+            message: {
+                from: SYSTEM_EMAIL_FROM,
+                subject,
+                text: "This newsletter contains HTML content.",
+                html,
+            }
+        })
+    ));
+
+    await setDoc(newsletterConfigRef, {
+        lastSentAt: serverTimestamp(),
+        lastSubject: subject,
+    }, { merge: true });
+
+    return recipients.length;
+};
 
 const toWebP = (file: File, quality = 0.85): Promise<Blob> =>
     new Promise((resolve, reject) => {

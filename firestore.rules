@@ -2,10 +2,35 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isRootSuperAdmin() {
+      return isSignedIn() && request.auth.token.email == 'zetedi@gmail.com';
+    }
+
+    function isConfiguredSuperAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/config/superadmin)
+        && get(/databases/$(database)/documents/config/superadmin).data.uid == request.auth.uid;
+    }
+
+    function isSuperAdmin() {
+      return isRootSuperAdmin() || isConfiguredSuperAdmin();
+    }
+
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isStaff() {
+      return isSuperAdmin() || isAdmin();
+    }
     
     // Allow users to access their own profile
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
     }
 
     // Email System: 
@@ -13,14 +38,26 @@ service cloud.firestore {
     // Read: Users can read their own email logs to check delivery status.
     // We allow reading if resource is null to handle the race condition where the client listens before the server commits the write.
     match /mail/{mailId} {
-      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
-      allow read: if request.auth != null && (resource == null || resource.data.uid == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow read: if isSignedIn() && (resource == null || resource.data.uid == request.auth.uid);
     }
 
     // Newsletter: Public write access for signups
     match /subscriptions/{subId} {
       allow create: if true;
-      allow read: if false;
+      allow update: if isSignedIn();
+      allow delete: if (isSignedIn() && resource.data.uid == request.auth.uid) || isStaff();
+      allow read: if isStaff();
+    }
+
+    match /admins/{adminId} {
+      allow read: if isStaff();
+      allow write: if isSuperAdmin();
+    }
+
+    match /config/{configId} {
+      allow read: if isStaff();
+      allow write: if isSuperAdmin();
     }
 
     // Lifetrees: Read public, Write auth
@@ -49,7 +86,7 @@ service cloud.firestore {
     // Matches: Read public, Write auth
     match /matches/{matchId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isSignedIn();
     }
   }
 }
