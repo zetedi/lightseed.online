@@ -13,7 +13,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const isOwner = currentUserId === tree.ownerId;
    const isNature = tree.isNature;
    const isGuardian = tree.guardians && currentUserId && tree.guardians.includes(currentUserId);
-   const canDeleteGuarded = isNature && (isOwner || isAdmin || isSuperAdmin);
+   const canDelete = isOwner || isAdmin || isSuperAdmin;
    const canEdit = isOwner || isGuardian || isSuperAdmin;
    const hasValidationBadge = isExplicitlyValidatedTree(tree);
    const showValidateAction = canToggleValidation({ tree, myActiveTree, isAdmin, isSuperAdmin });

@@ -30,7 +30,7 @@ const baseKeys = {
   cancel: "Cancel", back: "Back", subscription_failed: "Failed.", stand_for_trees: "Stand for the Trees",
   subscribe: "Subscribe", subscription_desc: "Email every 7 weeks.", guard_tree_action: "Guard Tree",
   create_new_world: "Create a New World",
-  type_lifetree: "Lifetree", type_guarded: "Guarded", type_kabbalistic: "Kabbalistic", type_family: "Family"
+  type_lifetree: "Lifetree", type_guarded: "Guarded", type_family: "Family"
 };
 
 export const translations: Record<Language, typeof baseKeys> = {
