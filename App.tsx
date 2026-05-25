@@ -374,7 +374,7 @@ const AppContent = () => {
     const handleQuickSnap = async (treeId: string, file: File) => {
         if (!lightseed) return;
         try {
-            const url = await handleImageUpload(file, `growth/${treeId}/${Date.now()}`);
+            const url = await handleImageUpload(file, `users/${lightseed.uid}/growth/${treeId}/${Date.now()}`);
             await mintPulse({
                 lifetreeId: treeId,
                 type: 'GROWTH',
@@ -500,7 +500,7 @@ const AppContent = () => {
             let finalImageUrl = pulseImageUrl;
             if (pulseImageUrl.startsWith('data:')) {
                  try {
-                     finalImageUrl = await uploadBase64Image(pulseImageUrl, `pulses/ai/${Date.now()}`);
+                     finalImageUrl = await uploadBase64Image(pulseImageUrl, `users/${lightseed.uid}/pulses/ai/${Date.now()}`);
                  } catch(e) {
                      alert("Failed to upload AI image");
                      setIsSubmitting(false);
@@ -535,7 +535,7 @@ const AppContent = () => {
             let finalImageUrl = visionImageUrl;
             if (visionImageUrl.startsWith('data:')) {
                  try {
-                     finalImageUrl = await uploadBase64Image(visionImageUrl, `visions/ai/${Date.now()}`);
+                     finalImageUrl = await uploadBase64Image(visionImageUrl, `users/${lightseed.uid}/visions/ai/${Date.now()}`);
                  } catch(e) {
                      alert("Failed to upload AI image");
                      setIsSubmitting(false);
@@ -947,7 +947,7 @@ const AppContent = () => {
                 <Modal title={t('create_vision')} onClose={() => setShowVisionModal(false)}>
                     <form onSubmit={handleCreateVision} className="flex flex-col gap-4">
                         <ImagePicker 
-                            onChange={(e: any) => handleImageUpload(e.target.files[0], `visions/${Date.now()}`).then(setVisionImageUrl)} 
+                            onChange={(e: any) => handleImageUpload(e.target.files[0], `users/${lightseed.uid}/visions/${Date.now()}`).then(setVisionImageUrl)} 
                             previewUrl={visionImageUrl} 
                             loading={uploading} 
                         />
@@ -1136,7 +1136,7 @@ const AppContent = () => {
                                             const file = e.target.files[0];
                                             if (file) {
                                                 setTreeFile(file);
-                                                handleImageUpload(file, `trees/${Date.now()}`).then(setTreeImageUrl);
+                                                handleImageUpload(file, `users/${lightseed.uid}/trees/${Date.now()}`).then(setTreeImageUrl);
                                             }
                                         }} 
                                         previewUrl={treeImageUrl} 
@@ -1219,7 +1219,7 @@ const AppContent = () => {
                              </div>
                         ) : (
                             <>
-                                <ImagePicker onChange={(e: any) => handleImageUpload(e.target.files[0], `pulses/${Date.now()}`).then(setPulseImageUrl)} previewUrl={pulseImageUrl} loading={uploading} />
+                                <ImagePicker onChange={(e: any) => handleImageUpload(e.target.files[0], `users/${lightseed.uid}/pulses/${Date.now()}`).then(setPulseImageUrl)} previewUrl={pulseImageUrl} loading={uploading} />
                                 <div className="flex items-center gap-2">
                                     <input type="checkbox" id="growth" checked={isGrowth} onChange={e => setIsGrowth(e.target.checked)} className="rounded text-emerald-600 focus:ring-emerald-500" />
                                     <label htmlFor="growth" className="text-sm font-medium text-slate-700">{t('internal_pulse')}</label>

@@ -38,7 +38,7 @@ service cloud.firestore {
     // Read: Users can read their own email logs to check delivery status.
     // We allow reading if resource is null to handle the race condition where the client listens before the server commits the write.
     match /mail/{mailId} {
-      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow create: if false; // Disabled to prevent spam. Use Cloud Functions instead.
       allow read: if isSignedIn() && (resource == null || resource.data.uid == request.auth.uid);
     }
 
@@ -60,33 +60,39 @@ service cloud.firestore {
       allow write: if isSuperAdmin();
     }
 
-    // Lifetrees: Read public, Write auth
+    // Lifetrees: Read public, Write auth (ownership check)
     match /lifetrees/{treeId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
     }
 
-    // Visions: Read public, Write auth
+    // Visions: Read public, Write auth (ownership check)
     match /visions/{visionId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
     }
 
-    // Pulses: Read public, Write auth
+    // Pulses: Read public, Write auth (ownership check)
     match /pulses/{pulseId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
+      allow update, delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff());
 
       // Subcollection for Loves
       match /loves/{userId} {
-        allow read, write: if request.auth != null;
+        allow read: if true;
+        allow write: if isSignedIn() && userId == request.auth.uid;
       }
     }
     
     // Matches: Read public, Write auth
     match /matches/{matchId} {
-      allow read: if true;
-      allow write: if isSignedIn();
+      allow read: if isSignedIn() && (resource.data.initiatorUid == request.auth.uid || resource.data.targetUid == request.auth.uid || isStaff());
+      allow create: if isSignedIn() && request.resource.data.initiatorUid == request.auth.uid;
+      allow update: if isSignedIn() && (resource.data.initiatorUid == request.auth.uid || resource.data.targetUid == request.auth.uid);
+      allow delete: if isStaff();
     }
   }
 }

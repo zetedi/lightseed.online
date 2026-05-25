@@ -42,25 +42,27 @@ import {
   getDownloadURL,
   uploadString
 } from 'firebase/storage';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { type Pulse, type PulseType, type Lifetree, type MatchProposal, type Vision } from '../types';
 import { createBlock } from '../utils/crypto';
 
 const SYSTEM_EMAIL_FROM = "lightseed <admin@lightseed.online>";
 
 const firebaseConfig = {
-  apiKey: process.env.VITE_FIREBASE_API_KEY || "AIzaSyCDcg27BljgJsVGuzNgS0NQWOgFIuDMlYI",
-  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || "lifeseed-75dfe.firebaseapp.com",
-  projectId: process.env.VITE_FIREBASE_PROJECT_ID || "lifeseed-75dfe",
-  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "lifeseed-75dfe.firebasestorage.app",
-  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "110675956366",
-  appId: process.env.VITE_FIREBASE_APP_ID || "1:110675956366:web:3cbc94aff415a800e6efdf",
-  measurementId: process.env.VITE_FIREBASE_MEASUREMENT_ID || "G-L95JY61SWQ"
+  apiKey: process.env.VITE_FIREBASE_API_KEY || "",
+  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || "",
+  projectId: process.env.VITE_FIREBASE_PROJECT_ID || "",
+  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: process.env.VITE_FIREBASE_APP_ID || "",
+  measurementId: process.env.VITE_FIREBASE_MEASUREMENT_ID || ""
 };
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = initializeFirestore(app, { ignoreUndefinedProperties: true });
 export const storage = getStorage(app);
+export const functions = getFunctions(app);
 const googleProvider = new GoogleAuthProvider();
 
 const mailCollection = collection(db, 'mail');
@@ -180,18 +182,19 @@ export const checkAndIncrementAiUsage = async (type: 'text' | 'image'): Promise<
 export const triggerSystemEmail = async (to: string, subject: string, text: string, userId?: string) => {
     const effectiveUid = userId || auth.currentUser?.uid;
     if (!effectiveUid) throw new Error("User ID required for email triggering.");
+    
     try {
-        return await addDoc(mailCollection, {
+        const sendEmailFn = httpsCallable(functions, 'sendSystemEmail');
+        return await sendEmailFn({
             to: [to],
-            uid: effectiveUid,
-            message: {
-                from: SYSTEM_EMAIL_FROM,
-                subject: subject,
-                text: text,
-                html: `<div style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;"><h2 style="color: #059669; font-weight: 300; letter-spacing: 1px; margin-bottom: 20px;">.seed</h2><div style="font-size: 16px; margin-bottom: 30px;">${text.replace(/\n/g, '<br>')}</div><hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" /><p style="font-size: 12px; color: #9ca3af; text-align: center;">Sent from the <a href="https://lightseed.online" style="color: #059669; text-decoration: none;">Lifetree Network</a></p></div>`
-            }
+            subject: subject,
+            text: text,
+            html: `<div style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;"><h2 style="color: #059669; font-weight: 300; letter-spacing: 1px; margin-bottom: 20px;">.seed</h2><div style="font-size: 16px; margin-bottom: 30px;">${text.replace(/\n/g, '<br>')}</div><hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" /><p style="font-size: 12px; color: #9ca3af; text-align: center;">Sent from the <a href="https://lightseed.online" style="color: #059669; text-decoration: none;">Lifetree Network</a></p></div>`
         });
-    } catch (e) { throw e; }
+    } catch (e) { 
+        console.error("Email trigger failed:", e);
+        throw e; 
+    }
 }
 
 export const sendInvite = async (targetEmail: string, customMessage: string, userId: string, inviteLink: string) => {
@@ -292,16 +295,15 @@ export const sendNewsletter = async ({ subject, html, senderUid }: { subject: st
 
     if (recipients.length === 0) throw new Error("No newsletter subscribers found.");
 
+    const sendEmailFn = httpsCallable(functions, 'sendSystemEmail');
+    
+    // We send emails in parallel using the Cloud Function
     await Promise.all(recipients.map((email) =>
-        addDoc(mailCollection, {
+        sendEmailFn({
             to: [email],
-            uid: senderUid,
-            message: {
-                from: SYSTEM_EMAIL_FROM,
-                subject,
-                text: "This newsletter contains HTML content.",
-                html,
-            }
+            subject,
+            text: "This newsletter contains HTML content.",
+            html,
         })
     ));
 

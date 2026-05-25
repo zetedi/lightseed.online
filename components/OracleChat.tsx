@@ -1,10 +1,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { createOracleChat, generateImage } from '../services/gemini';
+import { sendMessageToOracle, generateImage } from '../services/gemini';
 import { checkAndIncrementAiUsage, mintPulse, uploadBase64Image, listenToUserProfile } from '../services/firebase';
 import { useLifeseed } from '../hooks/useLifeseed';
-import { Chat, GenerateContentResponse } from "@google/genai";
 import { Icons } from './ui/Icons';
 
 export const OracleChat = () => {
@@ -12,27 +11,13 @@ export const OracleChat = () => {
     const { lightseed, activeTree } = useLifeseed();
     const [messages, setMessages] = useState<{role: 'user' | 'model', text: string}[]>([]);
     const [input, setInput] = useState('');
-    const [chat, setChat] = useState<Chat | null>(null);
     const [isTyping, setIsTyping] = useState(false);
     const [isMinting, setIsMinting] = useState(false);
     const [usage, setUsage] = useState(0);
     const bottomRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        try {
-            const c = createOracleChat();
-            setChat(c);
-            setMessages([{role: 'model', text: t('oracle_greeting')}]);
-        } catch(e: any) {
-            console.error("Oracle Init Error:", e);
-            let errorText = "The connection to the spirits (API) is severed.";
-            if (e.message && (e.message.includes("API Key") || e.message.includes("apiKey"))) {
-                errorText = "Connection severed: Spirit Key (API Key) is missing in deployment.";
-            } else if (e.message) {
-                errorText = `Connection severed: ${e.message}`;
-            }
-            setMessages([{role: 'model', text: errorText}]);
-        }
+        setMessages([{role: 'model', text: t('oracle_greeting')}]);
     }, []);
 
     useEffect(() => {
@@ -52,12 +37,6 @@ export const OracleChat = () => {
         e.preventDefault();
         if (!input.trim()) return;
         
-        if (!chat) {
-             setMessages(prev => [...prev, {role: 'user', text: input}, {role: 'model', text: "The Oracle is not connected."}]);
-             setInput('');
-             return;
-        }
-
         // Check daily limit before proceeding
         try {
             const allowed = await checkAndIncrementAiUsage('text');
@@ -73,13 +52,14 @@ export const OracleChat = () => {
         }
 
         const userMsg = input;
+        const history = [...messages];
         setInput('');
         setMessages(prev => [...prev, {role: 'user', text: userMsg}]);
         setIsTyping(true);
 
         try {
-            const response: GenerateContentResponse = await chat.sendMessage({ message: userMsg });
-            setMessages(prev => [...prev, {role: 'model', text: response.text || "..."}]);
+            const responseText = await sendMessageToOracle(userMsg, history);
+            setMessages(prev => [...prev, {role: 'model', text: responseText || "..."}]);
         } catch(e: any) {
             console.error("Oracle Error:", e);
             let msg = "The wind is too strong (Error connecting to AI).";
@@ -119,7 +99,7 @@ export const OracleChat = () => {
             let finalImageUrl = "";
 
             if (imageUrl && imageUrl.startsWith('data:')) {
-                 finalImageUrl = await uploadBase64Image(imageUrl, `pulses/ai/${Date.now()}`);
+                 finalImageUrl = await uploadBase64Image(imageUrl, `users/${lightseed.uid}/pulses/ai/${Date.now()}`);
             }
 
             await mintPulse({
