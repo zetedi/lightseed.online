@@ -20,6 +20,11 @@ if (typeof window !== 'undefined') {
   
   // Merge: Static envs form the base, runtime envs override them.
   window.process.env = { ...staticEnv, ...runtimeEnv };
+  
+  // Explicitly set as global if not already present
+  if (typeof (window as any).process !== 'undefined') {
+    (globalThis as any).process = (window as any).process;
+  }
 }
 
 export {};
