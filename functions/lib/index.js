@@ -40,11 +40,11 @@ const genai_1 = require("@google/genai");
 admin.initializeApp();
 const db = admin.firestore();
 // Secure Gemini API Proxy
-exports.generateAIContent = (0, https_1.onCall)(async (request) => {
+exports.generateAIContent = (0, https_1.onCall)({ secrets: ["GEMINI_API_KEY"] }, async (request) => {
     if (!request.auth) {
         throw new https_1.HttpsError('unauthenticated', 'User must be logged in.');
     }
-    const { prompt, contents, model = 'gemini-2.5-flash', config, systemInstruction } = request.data;
+    const { prompt, contents, model = 'gemini-1.5-flash', config, systemInstruction } = request.data;
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
         throw new https_1.HttpsError('failed-precondition', 'Gemini API key is not configured on the server.');

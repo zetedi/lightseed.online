@@ -7,12 +7,12 @@ admin.initializeApp();
 const db = admin.firestore();
 
 // Secure Gemini API Proxy
-export const generateAIContent = onCall(async (request) => {
+export const generateAIContent = onCall({ secrets: ["GEMINI_API_KEY"] }, async (request) => {
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be logged in.');
     }
 
-    const { prompt, contents, model = 'gemini-2.5-flash', config, systemInstruction } = request.data;
+    const { prompt, contents, model = 'gemini-1.5-flash', config, systemInstruction } = request.data;
     
     const apiKey = process.env.GEMINI_API_KEY;
     
