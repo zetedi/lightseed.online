@@ -4,7 +4,7 @@ import { functions } from "./firebase";
 import { Vision, VisionSynergy } from "../types";
 import config from "../lifeseed.config.json";
 
-const MODEL = config.model || 'gemini-3.5-flash';
+const MODEL = config.model || 'gemini-2.5-flash';
 
 
 // Genesis Vision Text - Original

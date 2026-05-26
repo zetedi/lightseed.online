@@ -66,7 +66,7 @@ export const OracleChat = () => {
             
             if (e.message?.includes("403")) {
                 msg = "Forbidden (403): The Oracle cannot hear you. Please ensure your API Key is valid.";
-            } else if (e.message?.includes("429")) {
+            } else if (e.message?.includes("429") || e.code === 'resource-exhausted') {
                 msg = "The spirits are overwhelmed (Rate Limit). Please wait a moment.";
             } else if (e.message) {
                 msg = `Error: ${e.message}`;

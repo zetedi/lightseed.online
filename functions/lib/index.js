@@ -44,14 +44,14 @@ exports.generateAIContent = (0, https_1.onCall)({ secrets: ["GEMINI_API_KEY"] },
     if (!request.auth) {
         throw new https_1.HttpsError('unauthenticated', 'User must be logged in.');
     }
-    const { prompt, contents, model = 'gemini-3.5-flash', config, systemInstruction } = request.data;
+    const { prompt, contents, model = 'gemini-2.5-flash', config, systemInstruction } = request.data;
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
         throw new https_1.HttpsError('failed-precondition', 'Gemini API key is not configured on the server.');
     }
     try {
         const ai = new genai_1.GoogleGenAI({ apiKey });
-        const maxRetries = 3;
+        const maxRetries = 5; // Increased retries for better rate limit handling
         let lastError;
         for (let i = 0; i <= maxRetries; i++) {
             try {
@@ -81,10 +81,13 @@ exports.generateAIContent = (0, https_1.onCall)({ secrets: ["GEMINI_API_KEY"] },
                 lastError = error;
                 const isRateLimit = error.message?.includes('429') || error.status === 429 || error.message?.includes('quota');
                 if (isRateLimit && i < maxRetries) {
-                    const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                    const delay = Math.pow(2, i) * 2000 + Math.random() * 1000; // Increased base delay
                     console.warn(`Gemini Rate Limit (429). Retrying in ${Math.round(delay)}ms... (Attempt ${i + 1}/${maxRetries})`);
                     await new Promise(resolve => setTimeout(resolve, delay));
                     continue;
+                }
+                if (isRateLimit && i === maxRetries) {
+                    throw new https_1.HttpsError('resource-exhausted', 'The AI service is currently overwhelmed. Please try again in a few moments.');
                 }
                 throw error;
             }
