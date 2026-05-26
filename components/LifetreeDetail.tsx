@@ -206,7 +206,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     {tree.shortTitle && !isEditing && <span dir="auto" className="text-xs text-emerald-600 font-bold uppercase tracking-widest">{tree.shortTitle}</span>}
                 </div>
                 <div className="min-w-[80px] flex justify-end gap-2">
-                    {canDeleteGuarded && !isEditing && (
+                    {canDelete && !isEditing && (
                         <button onClick={() => setShowDeleteModal(true)} className="bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 p-2 rounded-full shadow-sm transition-colors border border-red-200" title="Delete tree">
                             <Icons.Trash />
                         </button>

@@ -8,8 +8,19 @@ permissions:
   contents: read
   pull-requests: write
 jobs:
+  check_enabled:
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: check
+        run: |
+          ENABLED=$(node -e "try { console.log(require('./lifeseed.config.json').githubActionsEnabled !== false) } catch(e) { console.log(true) }")
+          echo "enabled=$ENABLED" >> $GITHUB_OUTPUT
   build_and_preview:
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    needs: check_enabled
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && needs.check_enabled.outputs.enabled == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

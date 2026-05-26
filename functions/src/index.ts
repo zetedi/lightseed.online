@@ -12,7 +12,7 @@ export const generateAIContent = onCall({ secrets: ["GEMINI_API_KEY"] }, async (
         throw new HttpsError('unauthenticated', 'User must be logged in.');
     }
 
-    const { prompt, contents, model = 'gemini-1.5-flash', config, systemInstruction } = request.data;
+    const { prompt, contents, model = 'gemini-3.5-flash', config, systemInstruction } = request.data;
     
     const apiKey = process.env.GEMINI_API_KEY;
     
@@ -23,28 +23,49 @@ export const generateAIContent = onCall({ secrets: ["GEMINI_API_KEY"] }, async (
     try {
         const ai = new GoogleGenAI({ apiKey });
         
-        const response = await ai.models.generateContent({
-            model: model as string,
-            contents: contents || [{ role: 'user', parts: [{ text: prompt }] }],
-            config: {
-                ...(config || {}),
-                systemInstruction: systemInstruction as string
-            }
-        });
-        
-        // Handle potential inline data (like images)
-        const parts = response.candidates?.[0]?.content?.parts || [];
-        for (const part of parts) {
-            if (part.inlineData && part.inlineData.data) {
-                const mimeType = part.inlineData.mimeType || 'image/png';
-                return { 
-                    image: `data:${mimeType};base64,${part.inlineData.data}`,
-                    text: response.text 
-                };
+        const maxRetries = 3;
+        let lastError: any;
+
+        for (let i = 0; i <= maxRetries; i++) {
+            try {
+                const result = await ai.models.generateContent({
+                    model: model as string,
+                    contents: contents || prompt,
+                    config: {
+                        systemInstruction: systemInstruction as string,
+                        ...config
+                    }
+                });
+                
+                const text = result.text;
+                
+                // Handle potential inline data (like images)
+                const parts = result.candidates?.[0]?.content?.parts || [];
+                for (const part of parts) {
+                    if (part.inlineData && part.inlineData.data) {
+                        const mimeType = part.inlineData.mimeType || 'image/png';
+                        return { 
+                            image: `data:${mimeType};base64,${part.inlineData.data}`,
+                            text: text 
+                        };
+                    }
+                }
+
+                return { text: text };
+            } catch (error: any) {
+                lastError = error;
+                const isRateLimit = error.message?.includes('429') || error.status === 429 || error.message?.includes('quota');
+                
+                if (isRateLimit && i < maxRetries) {
+                    const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                    console.warn(`Gemini Rate Limit (429). Retrying in ${Math.round(delay)}ms... (Attempt ${i + 1}/${maxRetries})`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    continue;
+                }
+                throw error;
             }
         }
-
-        return { text: response.text };
+        throw lastError;
     } catch (error: any) {
         console.error("Gemini Error:", error);
         throw new HttpsError('internal', error.message || 'AI Generation failed');

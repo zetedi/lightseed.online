@@ -241,7 +241,7 @@ const SymbolOverlay = ({ type }: { type: YantraSymbolType }) => {
     }
 }
 
-const SymbolCard = ({ title, description, type, link }: { title: string, description: string, type: YantraSymbolType, link: string }) => (
+const SymbolCard = ({ title, description, type, link }: { title: string, description: string, type: YantraSymbolType, link: string, key?: string | number }) => (
     <div className="flex flex-col md:flex-row gap-6 items-center bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
         <div className="relative w-40 h-40 shrink-0 rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 via-white to-purple-50 shadow-inner overflow-hidden">
              <div className="absolute inset-4">

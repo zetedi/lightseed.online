@@ -2,11 +2,15 @@
 import { httpsCallable } from "firebase/functions";
 import { functions } from "./firebase";
 import { Vision, VisionSynergy } from "../types";
+import config from "../lifeseed.config.json";
+
+const MODEL = config.model || 'gemini-3.5-flash';
+
 
 // Genesis Vision Text - Original
 const GENESIS_VISION = `The purpose of lightseed is to bring joy. The joy of realizing the bliss of conscious, compassionate, grateful existence by opening a portal to the center of life. By creating a bridge between creator and creation, science and spirituality, virtual and real, nothing and everything. It is designed to intimately connect our inner Self, our culture, our trees and the tree of life, the material and the digital, online world into a sustainable and sustaining circle of unified vibration, sound and light. It aims to merge us into a common flow for all beings to be liberated, wise, strong, courageous and connected. It is rooted in nonviolence, compassion, generosity, gratitude and love. It is blockchain (truthfulness), cloud (global, distributed, resilient), ai (for connecting dreams and technology), regen (nature centric) native. It is an inspiration, an impulse towards a quantum leap in consciousness, a prompt both for human and artificial intelligence for action towards transcending humanity into a new era, a New Earth, Universe and Field with the help of our most important evolutionary sisters and brothers, the trees.`;
 
-const callGemini = async (prompt: string, model: string = 'gemini-1.5-flash', config?: any): Promise<{text?: string, image?: string}> => {
+const callGemini = async (prompt: string, model: string = MODEL, config?: any): Promise<{text?: string, image?: string}> => {
     try {
         const generateAIContent = httpsCallable(functions, 'generateAIContent');
         const result = await generateAIContent({ prompt, model, config });
@@ -51,7 +55,7 @@ export const generateImage = async (prompt: string): Promise<string | null> => {
     if (!prompt.trim()) return null;
     try {
         console.log("Generating image for:", prompt);
-        const res = await callGemini(prompt, 'gemini-1.5-flash-image', { imageConfig: { aspectRatio: "1:1" } });
+        const res = await callGemini(prompt, MODEL, { imageConfig: { aspectRatio: "1:1" } });
         return res.image || res.text || null; 
     } catch (e: any) {
         console.error("Gemini Image Error:", e);
@@ -97,7 +101,7 @@ export const sendMessageToOracle = async (message: string, history: {role: 'user
     const result = await generateAIContent({ 
         contents, 
         systemInstruction,
-        model: 'gemini-1.5-flash' 
+        model: MODEL
     });
     
     return (result.data as any).text || "";
@@ -115,12 +119,12 @@ export const findVisionSynergies = async (visions: Vision[]): Promise<VisionSyne
             Visions:
             ${visionsList}`;
         
-        const text = await callGemini(prompt, 'gemini-1.5-flash', {
+        const res = await callGemini(prompt, MODEL, {
             responseMimeType: "application/json"
         });
 
-        if (text) {
-            return JSON.parse(text) as VisionSynergy[];
+        if (res.text) {
+            return JSON.parse(res.text) as VisionSynergy[];
         }
         return [];
     } catch (e) {
