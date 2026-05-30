@@ -9,8 +9,8 @@ const db = admin.firestore();
 // Secure Gemini API Proxy
 export const generateAIContent = onCall({ 
     secrets: ["GEMINI_API_KEY"],
-    timeoutSeconds: 300, // Increased for stability
-    memory: "1GiB",      // Increased for stability
+    timeoutSeconds: 300, 
+    memory: "1GiB",      
     cors: true 
 }, async (request) => {
     // Log request for debugging
@@ -20,10 +20,9 @@ export const generateAIContent = onCall({
         throw new HttpsError('unauthenticated', 'User must be logged in.');
     }
 
-    // Default to gemini-1.5-flash if not provided, as it's the most stable
-    const { prompt, contents, model = 'gemini-1.5-flash', config, systemInstruction } = request.data;
+    const { prompt, contents, model = 'gemini-2.0-flash', config, systemInstruction } = request.data;
     
-    console.log(`Using model: ${model}`);
+    console.log(`Model: ${model}`);
 
     const apiKey = process.env.GEMINI_API_KEY;
     
@@ -40,7 +39,7 @@ export const generateAIContent = onCall({
             generationConfig: config
         });
         
-        const maxRetries = 2; 
+        const maxRetries = 4; // Increased retries
         let lastError: any;
 
         for (let i = 0; i <= maxRetries; i++) {
@@ -71,17 +70,20 @@ export const generateAIContent = onCall({
                 return { text: text };
             } catch (error: any) {
                 lastError = error;
-                const isRateLimit = error.message?.includes('429') || error.status === 429 || error.message?.includes('quota');
+                const errorText = error.message || "";
+                const isRateLimit = errorText.includes('429') || error.status === 429 || errorText.toLowerCase().includes('quota') || errorText.toLowerCase().includes('overwhelmed');
                 
+                console.warn(`Attempt ${i+1} failed:`, errorText);
+
                 if (isRateLimit && i < maxRetries) {
-                    const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
-                    console.warn(`Gemini Rate Limit (429). Retrying in ${Math.round(delay)}ms...`);
+                    const delay = Math.pow(2, i) * 2000 + Math.random() * 1000; // Heavier backoff
+                    console.warn(`Gemini Rate Limit. Retrying in ${Math.round(delay)}ms...`);
                     await new Promise(resolve => setTimeout(resolve, delay));
                     continue;
                 }
                 
                 if (isRateLimit && i === maxRetries) {
-                   throw new HttpsError('resource-exhausted', 'The AI service is currently overwhelmed. Please try again in a few moments.');
+                   throw new HttpsError('resource-exhausted', 'The AI service is currently overwhelmed. Please wait a minute and try again.');
                 }
                 
                 throw error;
@@ -89,7 +91,7 @@ export const generateAIContent = onCall({
         }
         throw lastError;
     } catch (error: any) {
-        console.error("Gemini Function Error:", error);
+        console.error("Gemini Function Error Final:", error);
         if (error instanceof HttpsError) throw error;
         throw new HttpsError('internal', error.message || 'AI Generation failed');
     }
