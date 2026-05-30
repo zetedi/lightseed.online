@@ -26,10 +26,11 @@ import {
   getMyMatchesHistory,
   claimSuperAdmin,
   grantAdmin,
-  revokeAdmin
+  revokeAdmin,
+  fetchOrganisations
 } from './services/firebase';
 import { generateLifetreeBio, generateVisionImage } from './services/gemini';
-import { type Pulse, type Lifetree, type MatchProposal, type Vision } from './types';
+import { type Pulse, type Lifetree, type MatchProposal, type Vision, type Organisation } from './types';
 import Logo from './components/Logo';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { colors } from './utils/theme';
@@ -55,6 +56,9 @@ import { Dashboard } from './components/Dashboard';
 import { Loading } from './components/ui/Loading';
 import { LifeseedWidget } from './components/LifeseedWidget';
 import { NewsletterAdmin } from './components/NewsletterAdmin';
+import { OrganisationList } from './components/OrganisationList';
+import { OrganisationProfile } from './components/OrganisationProfile';
+import { AutocompleteInput } from './components/ui/AutocompleteInput';
 import { isExplicitlyValidatedTree } from './utils/validation';
 
 const lifetreeImage = '/mother.webp';
@@ -149,6 +153,8 @@ const AppContent = () => {
     const [selectedTree, setSelectedTree] = useState<Lifetree | null>(null);
     const [selectedVision, setSelectedVision] = useState<Vision | null>(null);
     const [selectedPulse, setSelectedPulse] = useState<Pulse | null>(null);
+    const [selectedOrganisation, setSelectedOrganisation] = useState<Organisation | null>(null);
+    const [hostOrganisation, setHostOrganisation] = useState<Organisation | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     
     // Stats State for Dashboard
@@ -232,6 +238,11 @@ const AppContent = () => {
             loadContent(true);
         }
         ensureGenesis(); 
+        // Fetch host organisation
+        const domain = window.location.hostname;
+        import('./services/firebase').then(({ getOrganisationByDomain }) => {
+            getOrganisationByDomain(domain).then(setHostOrganisation);
+        });
     }, [tab, lightseed]);
     
     useEffect(() => {
@@ -639,6 +650,8 @@ const AppContent = () => {
                             danger: guardedTrees.filter(t => t.status === 'DANGER').length
                         }}
                         firstTreeImage={activeTree?.latestGrowthUrl || activeTree?.imageUrl}
+                        hostOrganisation={hostOrganisation}
+                        onViewOrganisation={setSelectedOrganisation}
                         onSetTab={setTab} 
                         onPlant={() => { setTreeType('LIFETREE'); setShowPlantModal(true); }}
                         onLogin={signInWithGoogle} 
@@ -677,6 +690,16 @@ const AppContent = () => {
         
         if (tab === 'about') {
             return <AboutPage onClose={() => setTab('dashboard')} />;
+        }
+
+        if (tab === 'organisations') {
+            return (
+                <OrganisationList 
+                    onSelect={(org) => setSelectedOrganisation(org)}
+                    myTrees={myTrees}
+                    currentUserId={lightseed?.uid}
+                />
+            );
         }
 
         return (
@@ -941,6 +964,20 @@ const AppContent = () => {
                 </DetailWrapper>
             )}
 
+            {selectedOrganisation && (
+                <DetailWrapper>
+                    <OrganisationProfile 
+                        organisation={selectedOrganisation}
+                        onClose={() => setSelectedOrganisation(null)}
+                        onUpdate={(updates) => {
+                            setSelectedOrganisation(prev => prev ? { ...prev, ...updates } : null);
+                        }}
+                        currentUserId={lightseed?.uid}
+                        isAdmin={isAdmin}
+                    />
+                </DetailWrapper>
+            )}
+
             {showGrowthPlayer && !selectedTree && <GrowthPlayerModal treeId={showGrowthPlayer} onClose={() => setShowGrowthPlayer(null)} />}
 
             {showVisionModal && (
@@ -1187,14 +1224,13 @@ const AppContent = () => {
                                         </button>
                                     </div>
 
-                                    <input
-                                        type="text"
+                                    <AutocompleteInput
                                         className={`block w-full border p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-inner ${
                                             treeType !== 'GUARDED' ? 'bg-white/10 border-white/20 text-white placeholder:text-white/50' : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400'
                                         }`}
                                         placeholder="Website domain (e.g. myproject.com)"
                                         value={treeDomain}
-                                        onChange={e => setTreeDomain(e.target.value)}
+                                        onChange={setTreeDomain}
                                     />
                                 </div>
                                 <div className="flex gap-2 mt-auto pb-4">

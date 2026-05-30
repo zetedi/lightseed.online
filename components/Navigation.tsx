@@ -63,7 +63,7 @@ export const Navigation = ({ lightseed, activeTab, setTab, onPlant, onPulse, onL
         return `text-emerald-100 hover:text-white hover:bg-white/10 font-medium`;
     }
 
-    const mainTabs = ['forest', 'visions', 'pulses'];
+    const mainTabs = ['forest', 'visions', 'pulses', 'organisations'];
     const moreTabs = ['matches', 'oracle', 'about'];
     const desktopTabs = [...mainTabs, ...moreTabs];
 

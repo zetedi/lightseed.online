@@ -1,17 +1,36 @@
 
-import React, { useRef, ChangeEvent } from 'react';
+import React, { useRef, ChangeEvent, ReactNode } from 'react';
 import { Icons } from './Icons';
 
 interface ImagePickerProps {
-    onChange: (e: ChangeEvent<HTMLInputElement>) => void;
-    previewUrl: string;
+    onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
+    onImageSelect?: (file: File) => void;
+    previewUrl?: string;
     loading: boolean;
     isDark?: boolean;
+    children?: ReactNode;
+    className?: string;
 }
 
-export const ImagePicker = ({ onChange, previewUrl, loading, isDark = false }: ImagePickerProps) => {
+export const ImagePicker = ({ onChange, onImageSelect, previewUrl, loading, isDark = false, children, className }: ImagePickerProps) => {
     const fileInput = useRef<HTMLInputElement>(null);
     
+    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+        if (onChange) onChange(e);
+        if (onImageSelect && e.target.files?.[0]) {
+            onImageSelect(e.target.files[0]);
+        }
+    };
+
+    if (children) {
+        return (
+            <div className={className} onClick={() => fileInput.current?.click()}>
+                <input type="file" ref={fileInput} className="hidden" accept="image/*" onChange={handleFileChange} />
+                {loading ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div> : children}
+            </div>
+        );
+    }
+
     const borderColor = isDark ? 'border-white/50' : 'border-slate-300';
     const bgColor = isDark ? 'bg-black/20 hover:bg-black/30' : 'hover:bg-slate-50';
     const textColor = isDark ? 'text-white' : 'text-slate-400';
@@ -23,7 +42,7 @@ export const ImagePicker = ({ onChange, previewUrl, loading, isDark = false }: I
                 onClick={() => fileInput.current?.click()} 
                 className={`border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition-colors h-40 relative overflow-hidden group ${previewUrl ? 'border-none p-0' : `${borderColor} ${bgColor} ${hoverBorder}`}`}
              >
-                <input type="file" ref={fileInput} className="hidden" accept="image/*" onChange={onChange} />
+                <input type="file" ref={fileInput} className="hidden" accept="image/*" onChange={handleFileChange} />
                 
                 {loading ? (
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>

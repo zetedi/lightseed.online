@@ -110,3 +110,15 @@ export interface VisionSynergy {
     reasoning: string;
     score: number;
 }
+
+export interface Organisation {
+  id: string;
+  ownerId: string;
+  name: string;
+  domain: string; // The link to Lifetree
+  vision: string; // Rich text
+  imageUrls: string[]; // For carousel
+  logoUrl?: string;
+  createdAt: Timestamp;
+  updatedAt?: Timestamp;
+}

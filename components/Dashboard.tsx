@@ -5,6 +5,7 @@ import { generateOracleQuote } from '../services/gemini';
 import { getNetworkStats } from '../services/firebase';
 import { Icons } from './ui/Icons';
 import Logo from './Logo';
+import { Organisation } from '../types';
 
 export interface DashboardProps {
     lightseed: any;
@@ -16,6 +17,8 @@ export interface DashboardProps {
         danger: number;
     };
     firstTreeImage?: string;
+    hostOrganisation?: Organisation | null;
+    onViewOrganisation?: (org: Organisation) => void;
     onSetTab: (tab: string) => void;
     onPlant: () => void;
     onLogin: () => void;
@@ -34,7 +37,7 @@ const GenesisSymbol = () => (
 
 const lifetreeImage = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 800'%3E%3Cdefs%3E%3CradialGradient id='g' cx='50%25' cy='50%25' r='60%25'%3E%3Cstop offset='0%25' stop-color='%23d1fae5'/%3E%3Cstop offset='100%25' stop-color='%23047857'/%3E%3C/radialGradient%3E%3Cfilter id='glow'%3E%3CfeGaussianBlur stdDeviation='8' result='coloredBlur'/%3E%3CfeMerge%3E%3CfeMergeNode in='coloredBlur'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23g)'/%3E%3Cg opacity='0.3'%3E%3Ccircle cx='400' cy='400' r='350' fill='none' stroke='%23fff' stroke-width='1'/%3E%3Ccircle cx='400' cy='400' r='250' fill='none' stroke='%23fff' stroke-width='1'/%3E%3Cpath d='M400 50 L400 750 M50 400 L750 400' stroke='%23fff' stroke-width='1' stroke-dasharray='10 10'/%3E%3C/g%3E%3Cpath d='M400 800 C 350 700 300 650 400 550 C 500 650 450 700 400 800' fill='%235d4037' opacity='0.8'/%3E%3Cg transform='translate(0,-50)'%3E%3Ccircle cx='400' cy='400' r='160' fill='%2310b981'/%3E%3Ccircle cx='300' cy='350' r='100' fill='%2334d399' opacity='0.9'/%3E%3Ccircle cx='500' cy='350' r='100' fill='%2334d399' opacity='0.9'/%3E%3Ccircle cx='400' cy='250' r='120' fill='%23059669' opacity='0.9'/%3E%3Ccircle cx='250' cy='450' r='80' fill='%236ee7b7' opacity='0.8'/%3E%3Ccircle cx='550' cy='450' r='80' fill='%236ee7b7' opacity='0.8'/%3E%3C/g%3E%3Cg filter='url(%23glow)'%3E%3Ccircle cx='400' cy='350' r='15' fill='%23fcd34d'/%3E%3Ccircle cx='320' cy='300' r='12' fill='%23fcd34d' opacity='0.8'/%3E%3Ccircle cx='480' cy='300' r='12' fill='%23fcd34d' opacity='0.8'/%3E%3Ccircle cx='280' cy='420' r='10' fill='%23fbbf24' opacity='0.8'/%3E%3Ccircle cx='520' cy='420' r='10' fill='%23fbbf24' opacity='0.8'/%3E%3Ccircle cx='400' cy='220' r='18' fill='%23fff' opacity='0.9'/%3E%3C/g%3E%3Cpath d='M400 350 L 320 300 M 400 350 L 480 300 M 400 350 L 400 220' stroke='%23fff' stroke-width='2' opacity='0.4'/%3E%3C/svg%3E`;
 
-export const Dashboard = ({ lightseed, stats, firstTreeImage, onSetTab, onPlant, onLogin }: DashboardProps) => {
+export const Dashboard = ({ lightseed, stats, firstTreeImage, hostOrganisation, onViewOrganisation, onSetTab, onPlant, onLogin }: DashboardProps) => {
     const { t } = useLanguage();
     const [quote, setQuote] = useState<string>("Loading Oracle...");
     const [networkStats, setNetworkStats] = useState({ trees: 0, pulses: 0, visions: 0 });
@@ -58,7 +61,46 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, onSetTab, onPlant,
     };
 
     return (
-        <div className="grid grid-cols-2 gap-3 sm:gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            {/* White-Label Organization Hero */}
+            {!lightseed && hostOrganisation && (
+                <div 
+                    onClick={() => onViewOrganisation?.(hostOrganisation)}
+                    className="relative h-64 md:h-80 rounded-3xl overflow-hidden shadow-2xl cursor-pointer group border-4 border-white/20"
+                >
+                    <div className="absolute inset-0 bg-slate-900"></div>
+                    {hostOrganisation.imageUrls && hostOrganisation.imageUrls.length > 0 && (
+                        <img 
+                            src={hostOrganisation.imageUrls[0]} 
+                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-[10s] opacity-60" 
+                            alt={hostOrganisation.name} 
+                        />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-emerald-950 via-emerald-950/40 to-transparent"></div>
+                    <div className="absolute inset-0 p-8 flex flex-col justify-end">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="bg-white/20 backdrop-blur-md p-3 rounded-2xl border border-white/30 group-hover:scale-110 transition-transform">
+                                <Icons.Building size={32} className="text-white" />
+                            </div>
+                            <div>
+                                <h1 className="text-3xl md:text-4xl font-thin tracking-tight text-white">{hostOrganisation.name}</h1>
+                                <p className="text-emerald-300 text-xs font-mono">{hostOrganisation.domain}</p>
+                            </div>
+                        </div>
+                        <div 
+                            className="text-emerald-50/80 text-sm md:text-base line-clamp-3 max-w-2xl leading-relaxed"
+                            dangerouslySetInnerHTML={{ __html: hostOrganisation.vision || "<p>Connecting this vertical forest node with the global network.</p>" }}
+                        />
+                        <div className="mt-6 flex gap-3">
+                            <button className="bg-white text-emerald-900 px-6 py-2.5 rounded-full font-bold text-sm shadow-xl hover:bg-emerald-50 transition-all flex items-center gap-2">
+                                Explore Vision <Icons.ArrowRight size={18} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3 sm:gap-6">
             {/* Box 1: My Light HUD */}
             <div onClick={() => lightseed ? onSetTab('profile') : onLogin()} className="relative h-56 md:h-64 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
                 <div className="absolute inset-0 bg-gradient-to-br from-amber-400 to-purple-600"></div>
@@ -184,6 +226,7 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, onSetTab, onPlant,
                     <div className="text-sm font-medium uppercase tracking-wide border-t border-white/30 pt-2">{t('explore')}</div>
                 </div>
             </div>
+        </div>
         </div>
     );
 };

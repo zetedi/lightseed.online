@@ -4,6 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
 import Logo from './Logo';
 import { ValidationBadge } from './ValidationBadge';
+import { AutocompleteInput } from './ui/AutocompleteInput';
 import { updateLifetree, toggleGuardianship, setTreeStatus, getPulsesByTreeId } from '../services/firebase';
 import { Pulse } from '../types';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
@@ -395,12 +396,11 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                             <div className="flex items-center gap-4 py-2">
                                 <span className="w-24 shrink-0 text-slate-500 text-sm">Website</span>
                                 {isEditing ? (
-                                    <input
-                                        type="text"
-                                        className={fieldClassName}
+                                    <AutocompleteInput
                                         value={editDomain}
-                                        onChange={e => setEditDomain(e.target.value)}
+                                        onChange={setEditDomain}
                                         placeholder="e.g. myproject.com"
+                                        className={fieldClassName}
                                     />
                                 ) : (
                                     tree.domain

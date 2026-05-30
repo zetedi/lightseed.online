@@ -43,7 +43,7 @@ import {
   uploadString
 } from 'firebase/storage';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { type Pulse, type PulseType, type Lifetree, type MatchProposal, type Vision } from '../types';
+import { type Pulse, type PulseType, type Lifetree, type MatchProposal, type Vision, type Organisation } from '../types';
 import { createBlock } from '../utils/crypto';
 
 const SYSTEM_EMAIL_FROM = "lightseed <admin@lightseed.online>";
@@ -75,6 +75,7 @@ const lifetreesCollection = collection(db, 'lifetrees');
 const visionsCollection = collection(db, 'visions');
 const pulsesCollection = collection(db, 'pulses');
 const matchesCollection = collection(db, 'matches');
+const organisationsCollection = collection(db, 'organisations');
 const newsletterConfigRef = doc(db, 'config', 'newsletter');
 
 export const onAuthChange = (callback: (user: FirebaseUser | null) => void) => onAuthStateChanged(auth, callback);
@@ -482,6 +483,37 @@ export const createVision = (data: any) => addDoc(visionsCollection, { ...data, 
 export const deleteVision = (id: string) => deleteDoc(doc(db, 'visions', id));
 export const joinVision = (id: string, uid: string) => updateDoc(doc(db, 'visions', id), { joinedUserIds: arrayUnion(uid) });
 export const leaveVision = (id: string, uid: string) => updateDoc(doc(db, 'visions', id), { joinedUserIds: arrayRemove(uid) });
+
+// Organisations
+export const fetchOrganisations = async () => {
+    const snap = await getDocs(query(organisationsCollection, orderBy('createdAt', 'desc')));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as Organisation));
+}
+
+export const getOrganisationByDomain = async (domain: string): Promise<Organisation | null> => {
+    const normalized = domain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    const q = query(organisationsCollection, where('domain', '==', normalized), limit(1));
+    const snap = await getDocs(q);
+    if (snap.empty) return null;
+    return { id: snap.docs[0].id, ...snap.docs[0].data() } as Organisation;
+};
+
+export const getMyOrganisations = async (uid: string) => 
+    (await getDocs(query(organisationsCollection, where('ownerId', '==', uid)))).docs.map(d => ({ id: d.id, ...d.data() } as Organisation));
+
+export const createOrganisation = async (data: any) => {
+    const docRef = await addDoc(organisationsCollection, {
+        ...data,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+    });
+    return { id: docRef.id, ...data };
+};
+
+export const updateOrganisation = (id: string, data: any) => 
+    updateDoc(doc(db, 'organisations', id), { ...data, updatedAt: serverTimestamp() });
+
+export const deleteOrganisation = (id: string) => deleteDoc(doc(db, 'organisations', id));
 
 export const fetchPulses = async (lastD?: QueryDocumentSnapshot) => {
     let q = query(pulsesCollection, orderBy('createdAt', 'desc'), limit(12));
