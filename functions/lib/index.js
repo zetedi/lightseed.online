@@ -51,7 +51,7 @@ exports.generateAIContent = (0, https_1.onCall)({
     if (!request.auth) {
         throw new https_1.HttpsError('unauthenticated', 'User must be logged in.');
     }
-    const { prompt, contents, model = 'gemini-2.0-flash', config, systemInstruction } = request.data;
+    const { prompt, contents, model = 'gemini-3.5-flash', config, systemInstruction } = request.data;
     console.log(`Model: ${model}`);
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {

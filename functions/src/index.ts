@@ -20,7 +20,7 @@ export const generateAIContent = onCall({
         throw new HttpsError('unauthenticated', 'User must be logged in.');
     }
 
-    const { prompt, contents, model = 'gemini-2.0-flash', config, systemInstruction } = request.data;
+    const { prompt, contents, model = 'gemini-3.5-flash', config, systemInstruction } = request.data;
     
     console.log(`Model: ${model}`);
 

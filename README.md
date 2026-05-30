@@ -37,8 +37,9 @@ Since the application supports Arabic (`ar`) and other RTL languages, specific r
 ### 2. AI & Gemini Integration
 *   **Library**: Use `@google/generative-ai` for interaction with the Gemini API.
 *   **Models**:
-    *   Text/Reasoning: `gemini-2.0-flash`
-    *   Images: `gemini-2.0-flash`
+    *   Text/Reasoning: `gemini-3.5-flash`
+    *   Images: `gemini-3.5-flash`
+
 *   **API Key**: The key is injected via `process.env.GEMINI_API_KEY` in Cloud Functions.
 
 ### 3. Database & Genesis

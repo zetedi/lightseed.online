@@ -4,7 +4,7 @@ import { functions } from "./firebase";
 import { Vision, VisionSynergy } from "../types";
 import config from "../lifeseed.config.json";
 
-const MODEL = config.model || 'gemini-2.0-flash';
+const MODEL = config.model || 'gemini-3.5-flash';
 
 
 // Genesis Vision Text - Original
@@ -97,14 +97,23 @@ export const sendMessageToOracle = async (message: string, history: {role: 'user
     Answer questions by weaving in these themes of connection, nature, and the original vision of Lightseed. 
     Be helpful and supportive, like a wise but playful friend. Keep your answers concise and warm.`;
 
-    // Map history to Gemini format
-    const contents = [
-        ...history.map(m => ({
-            role: m.role,
-            parts: [{ text: m.text }]
-        })),
-        { role: 'user', parts: [{ text: message }] }
-    ];
+    // Map history to Gemini format, ensuring it starts with a 'user' role
+    // Many versions of the Gemini API require the first message in contents/history to be from 'user'
+    let contents = history.map(m => ({
+        role: m.role,
+        parts: [{ text: m.text }]
+    }));
+
+    // Find first 'user' message index
+    const firstUserIndex = contents.findIndex(c => c.role === 'user');
+    if (firstUserIndex !== -1) {
+        contents = contents.slice(firstUserIndex);
+    } else {
+        // If no user message found in history, clear it (it was just the model greeting)
+        contents = [];
+    }
+
+    contents.push({ role: 'user', parts: [{ text: message }] });
 
     const result = await generateAIContent({ 
         contents, 

@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "dotenv": "^17.4.2",
     "exif-js": "^2.3.0",
     "firebase": "^12.6.0",
     "react": "^19.2.0",
