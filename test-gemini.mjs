@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -9,29 +9,27 @@ if (!apiKey) {
   process.exit(1);
 }
 
-const ai = new GoogleGenAI({ apiKey });
+const genAI = new GoogleGenerativeAI(apiKey);
 
 async function run() {
   try {
-    console.log("Testing gemini-3.5-flash...");
-    await ai.models.generateContent({
-      model: "gemini-3.5-flash",
-      contents: "Hello"
-    });
-    console.log("Success with gemini-3.5-flash!");
+    console.log("Testing gemini-2.0-flash...");
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const result = await model.generateContent("Hello");
+    console.log("Success with gemini-2.0-flash!");
+    console.log("Response:", result.response.text());
   } catch (e) {
-    console.error("Error with gemini-3.5-flash:", e.status, e.message);
+    console.error("Error with gemini-2.0-flash:", e.message);
   }
 
   try {
-    console.log("\nTesting gemini-2.5-flash...");
-    await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: "Hello"
-    });
-    console.log("Success with gemini-2.5-flash!");
+    console.log("\nTesting gemini-1.5-flash...");
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent("Hello");
+    console.log("Success with gemini-1.5-flash!");
+    console.log("Response:", result.response.text());
   } catch (e) {
-    console.error("Error with gemini-2.5-flash:", e.status, e.message);
+    console.error("Error with gemini-1.5-flash:", e.message);
   }
 }
 

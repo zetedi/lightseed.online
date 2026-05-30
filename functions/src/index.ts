@@ -1,6 +1,6 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 admin.initializeApp();
 
@@ -9,9 +9,9 @@ const db = admin.firestore();
 // Secure Gemini API Proxy
 export const generateAIContent = onCall({ 
     secrets: ["GEMINI_API_KEY"],
-    timeoutSeconds: 120,
-    memory: "512MiB",
-    cors: true // Explicitly enable CORS
+    timeoutSeconds: 300, // Increased for stability
+    memory: "1GiB",      // Increased for stability
+    cors: true 
 }, async (request) => {
     // Log request for debugging
     console.log("AI Request received. Authenticated:", !!request.auth);
@@ -20,8 +20,11 @@ export const generateAIContent = onCall({
         throw new HttpsError('unauthenticated', 'User must be logged in.');
     }
 
-    const { prompt, contents, model = 'gemini-2.0-flash', config, systemInstruction } = request.data;
+    // Default to gemini-1.5-flash if not provided, as it's the most stable
+    const { prompt, contents, model = 'gemini-1.5-flash', config, systemInstruction } = request.data;
     
+    console.log(`Using model: ${model}`);
+
     const apiKey = process.env.GEMINI_API_KEY;
     
     if (!apiKey) {
@@ -30,7 +33,7 @@ export const generateAIContent = onCall({
     }
 
     try {
-        const genAI = new GoogleGenAI(apiKey);
+        const genAI = new GoogleGenerativeAI(apiKey);
         const generativeModel = genAI.getGenerativeModel({
             model: model as string,
             systemInstruction: systemInstruction as string,

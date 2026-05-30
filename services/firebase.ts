@@ -354,11 +354,18 @@ export const uploadBase64Image = async (base64String: string, path: string): Pro
 }
 
 export const ensureGenesis = async () => {
+    const user = auth.currentUser;
+    if (!user) return; // Skip if not logged in to avoid permission errors on config/superadmin
+
     const genesisId = 'GENESIS_TREE';
     const genesisRef = doc(db, 'lifetrees', genesisId);
     try {
         const genesisSnap = await getDoc(genesisRef);
         if (!genesisSnap.exists()) {
+            // Only Super Admins can initialize genesis on a new node
+            const isSuper = await checkIsSuperAdmin(user.uid);
+            if (!isSuper) return;
+
             const genesisBody = `The purpose of lightseed is to bring joy. The joy of realizing the bliss of conscious, compassionate, grateful existence by opening a portal to the center of life. By creating a bridge between creator and creation, science and spirituality, virtual and real, nothing and everything. It is designed to intimately connect our inner Self, our culture, our trees and the tree of life, the material and the digital, online world into a sustainable and sustaining circle of unified vibration, sound and light. It aims to merge us into a common flow for all beings to be liberated, wise, strong, courageous and connected. It is rooted in nonviolence, compassion, generosity, gratitude and love. It is blockchain (truthfulness), cloud (global, distributed, resilient), ai (for connecting dreams and technology), regen (nature centric) native. It is an inspiration, an impulse towards a quantum leap in consciousness, a prompt both for human and artificial intelligence for action towards transcending humanity into a new era, a New Earth, Universe and Field with the help of our most important evolutionary sisters and brothers, the trees.`;
             const genesisHash = await createBlock("0", { message: "Genesis Pulse" }, Date.now());
             await setDoc(genesisRef, {
@@ -371,11 +378,18 @@ export const ensureGenesis = async () => {
                 lifetreeId: genesisId, authorId: 'GENESIS_SYSTEM', title: "Mahameru", body: genesisBody, createdAt: serverTimestamp(), joinedUserIds: []
             });
         } else {
-            await updateDoc(genesisRef, {
-                validated: true,
-                validatorId: 'SYSTEM',
-                isNature: true,
-            });
+            // Check if repair is needed AND if user has permission
+            const data = genesisSnap.data();
+            if (!data?.validated || !data?.isNature) {
+                const isSuper = await checkIsSuperAdmin(auth.currentUser?.uid || "");
+                if (isSuper) {
+                    await updateDoc(genesisRef, {
+                        validated: true,
+                        validatorId: 'SYSTEM',
+                        isNature: true,
+                    });
+                }
+            }
         }
     } catch (e) { console.warn("Genesis skip", e); }
 }

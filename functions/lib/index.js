@@ -36,36 +36,50 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendSystemEmail = exports.generateAIContent = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const admin = __importStar(require("firebase-admin"));
-const genai_1 = require("@google/genai");
+const generative_ai_1 = require("@google/generative-ai");
 admin.initializeApp();
 const db = admin.firestore();
 // Secure Gemini API Proxy
-exports.generateAIContent = (0, https_1.onCall)({ secrets: ["GEMINI_API_KEY"] }, async (request) => {
+exports.generateAIContent = (0, https_1.onCall)({
+    secrets: ["GEMINI_API_KEY"],
+    timeoutSeconds: 300, // Increased for stability
+    memory: "1GiB", // Increased for stability
+    cors: true
+}, async (request) => {
+    // Log request for debugging
+    console.log("AI Request received. Authenticated:", !!request.auth);
     if (!request.auth) {
         throw new https_1.HttpsError('unauthenticated', 'User must be logged in.');
     }
-    const { prompt, contents, model = 'gemini-2.5-flash', config, systemInstruction } = request.data;
+    // Default to gemini-1.5-flash if not provided, as it's the most stable
+    const { prompt, contents, model = 'gemini-1.5-flash', config, systemInstruction } = request.data;
+    console.log(`Using model: ${model}`);
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
+        console.error("GEMINI_API_KEY missing from environment secrets.");
         throw new https_1.HttpsError('failed-precondition', 'Gemini API key is not configured on the server.');
     }
     try {
-        const ai = new genai_1.GoogleGenAI({ apiKey });
-        const maxRetries = 5; // Increased retries for better rate limit handling
+        const genAI = new generative_ai_1.GoogleGenerativeAI(apiKey);
+        const generativeModel = genAI.getGenerativeModel({
+            model: model,
+            systemInstruction: systemInstruction,
+            generationConfig: config
+        });
+        const maxRetries = 2;
         let lastError;
         for (let i = 0; i <= maxRetries; i++) {
             try {
-                const result = await ai.models.generateContent({
-                    model: model,
-                    contents: contents || prompt,
-                    config: {
-                        systemInstruction: systemInstruction,
-                        ...config
-                    }
+                console.log(`Attempting generation (${i + 1}/${maxRetries + 1})...`);
+                const formattedContents = contents || [{ role: 'user', parts: [{ text: prompt }] }];
+                const result = await generativeModel.generateContent({
+                    contents: formattedContents
                 });
-                const text = result.text;
+                const response = result.response;
+                const text = response.text();
                 // Handle potential inline data (like images)
-                const parts = result.candidates?.[0]?.content?.parts || [];
+                const candidate = response.candidates?.[0];
+                const parts = candidate?.content?.parts || [];
                 for (const part of parts) {
                     if (part.inlineData && part.inlineData.data) {
                         const mimeType = part.inlineData.mimeType || 'image/png';
@@ -81,8 +95,8 @@ exports.generateAIContent = (0, https_1.onCall)({ secrets: ["GEMINI_API_KEY"] },
                 lastError = error;
                 const isRateLimit = error.message?.includes('429') || error.status === 429 || error.message?.includes('quota');
                 if (isRateLimit && i < maxRetries) {
-                    const delay = Math.pow(2, i) * 2000 + Math.random() * 1000; // Increased base delay
-                    console.warn(`Gemini Rate Limit (429). Retrying in ${Math.round(delay)}ms... (Attempt ${i + 1}/${maxRetries})`);
+                    const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                    console.warn(`Gemini Rate Limit (429). Retrying in ${Math.round(delay)}ms...`);
                     await new Promise(resolve => setTimeout(resolve, delay));
                     continue;
                 }
@@ -95,7 +109,9 @@ exports.generateAIContent = (0, https_1.onCall)({ secrets: ["GEMINI_API_KEY"] },
         throw lastError;
     }
     catch (error) {
-        console.error("Gemini Error:", error);
+        console.error("Gemini Function Error:", error);
+        if (error instanceof https_1.HttpsError)
+            throw error;
         throw new https_1.HttpsError('internal', error.message || 'AI Generation failed');
     }
 });

@@ -35,11 +35,11 @@ Since the application supports Arabic (`ar`) and other RTL languages, specific r
 *   **Logos & Brand**: The `.seed` logo text should be forced `dir="ltr"` to maintain the dot position.
 
 ### 2. AI & Gemini Integration
-*   **Library**: Use `@google/genai` exclusively. Do not use the deprecated `GoogleGenerativeAI` class directly if possible, or legacy packages.
+*   **Library**: Use `@google/generative-ai` for interaction with the Gemini API.
 *   **Models**:
-    *   Text/Reasoning: `gemini-2.5-flash`
-    *   Images: `gemini-2.5-flash-image`
-*   **API Key**: The key is injected via `process.env.API_KEY`. Never prompt the user for a key in the UI unless using the specific `window.aistudio` shim.
+    *   Text/Reasoning: `gemini-2.0-flash`
+    *   Images: `gemini-2.0-flash`
+*   **API Key**: The key is injected via `process.env.GEMINI_API_KEY` in Cloud Functions.
 
 ### 3. Database & Genesis
 *   **Genesis Tree**: The app automatically checks for a "GENESIS_TREE" (Mahameru) on load.
