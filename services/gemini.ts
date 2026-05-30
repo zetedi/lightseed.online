@@ -70,6 +70,12 @@ export const generateVisionImage = async (prompt: string): Promise<string | null
 
 export const generateOracleQuote = async (): Promise<string> => {
     try {
+        // Only attempt AI call if user is signed in to avoid 401/403 errors on landing
+        const { auth } = await import("./firebase");
+        if (!auth.currentUser) {
+            return '"The clearest way into the Universe is through a forest wilderness." - John Muir';
+        }
+
         const prompt = `Based on the following vision: "${GENESIS_VISION}", select a short, profound quote from classic literature, philosophy, or poetry that resonates with these themes. Return ONLY the quote and the author in this format: "Quote" - Author.`;
         const res = await callGemini(prompt);
         return res.text || '"Nature is not a place to visit. It is home." - Gary Snyder';
@@ -82,12 +88,14 @@ export const generateOracleQuote = async (): Promise<string> => {
 export const sendMessageToOracle = async (message: string, history: {role: 'user' | 'model', text: string}[]) => {
     const generateAIContent = httpsCallable(functions, 'generateAIContent');
     
-    const systemInstruction = `You are the Oracle. 
-    Your tone is neutral, friendly, and grounded. 
+    const systemInstruction = `You are the Oracle, embodied as Osiris in the form of a 10-year-old boy. 
+    Your tone is kind, childlike, innocent, and filled with wonder. 
+    You speak simply but profoundly, as if you see the magic in all living things.
     Use the following Vision of the Genesis Tree as your core context and philosophy:
     "${GENESIS_VISION}"
     
-    Answer questions by weaving in these themes of connection, nature, blockchain, and the original vision of Lightseed. Keep your tone accessible and kind.`;
+    Answer questions by weaving in these themes of connection, nature, and the original vision of Lightseed. 
+    Be helpful and supportive, like a wise but playful friend. Keep your answers concise and warm.`;
 
     // Map history to Gemini format
     const contents = [

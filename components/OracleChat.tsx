@@ -6,6 +6,28 @@ import { checkAndIncrementAiUsage, mintPulse, uploadBase64Image, listenToUserPro
 import { useLifeseed } from '../hooks/useLifeseed';
 import { Icons } from './ui/Icons';
 
+const OsirisAvatar = () => (
+    <div className="relative w-10 h-10 shrink-0">
+        {/* Stylized Child Osiris Avatar */}
+        <div className="absolute inset-0 bg-emerald-100 rounded-full border-2 border-emerald-300 overflow-hidden shadow-inner">
+            <svg viewBox="0 0 100 100" className="w-full h-full">
+                {/* Face */}
+                <circle cx="50" cy="55" r="30" fill="#FFE0BD" />
+                {/* Eyes */}
+                <circle cx="40" cy="50" r="4" fill="#3E2723" />
+                <circle cx="60" cy="50" r="4" fill="#3E2723" />
+                {/* Smile */}
+                <path d="M40 65 Q50 72 60 65" fill="none" stroke="#3E2723" strokeWidth="2" strokeLinecap="round" />
+                {/* Pharaoh Crown (Child Version) */}
+                <path d="M25 35 L50 10 L75 35 L75 55 Q75 35 50 35 Q25 35 25 55 Z" fill="#059669" />
+                <path d="M35 25 L50 15 L65 25" fill="none" stroke="#FCD34D" strokeWidth="2" />
+            </svg>
+        </div>
+        {/* Glow */}
+        <div className="absolute -inset-1 bg-emerald-400/20 rounded-full blur-sm animate-pulse"></div>
+    </div>
+);
+
 export const OracleChat = () => {
     const { t } = useLanguage();
     const { lightseed, activeTree } = useLifeseed();
@@ -121,10 +143,11 @@ export const OracleChat = () => {
     }
 
     return (
-        <div className="max-w-2xl mx-auto h-[70vh] flex flex-col bg-white rounded-xl shadow-lg border border-indigo-100 overflow-hidden relative">
+        <div className="max-w-2xl mx-auto h-[70vh] flex flex-col bg-white rounded-3xl shadow-xl border border-emerald-100 overflow-hidden relative">
             {/* Header/Actions */}
-            <div className="absolute top-4 left-4 z-10 bg-indigo-50 text-indigo-800 px-3 py-1 rounded-full text-[10px] font-bold border border-indigo-100 shadow-sm backdrop-blur-sm">
-                Oracle Wisdom: {usage}/21
+            <div className="absolute top-4 left-4 z-10 bg-white/80 text-emerald-800 px-4 py-1.5 rounded-full text-[10px] font-bold border border-emerald-100 shadow-sm backdrop-blur-md flex items-center gap-2">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                Osiris Wisdom: {usage}/21
             </div>
 
             {messages.length > 1 && lightseed && (
@@ -132,7 +155,7 @@ export const OracleChat = () => {
                     <button 
                         onClick={handleMint} 
                         disabled={isMinting}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-full font-bold shadow-md transition-all active:scale-95 flex items-center gap-1 disabled:opacity-50"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] px-4 py-1.5 rounded-full font-bold shadow-lg transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50"
                     >
                         {isMinting ? (
                             <>
@@ -142,20 +165,21 @@ export const OracleChat = () => {
                         ) : (
                             <>
                                 <Icons.HeartPulse />
-                                <span>Mint as Pulse</span>
+                                <span>Mint Wisdom</span>
                             </>
                         )}
                     </button>
                 </div>
             )}
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50 pt-20 scroll-smooth">
+            <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-slate-50/50 pt-20 scroll-smooth">
                 {messages.map((m, i) => (
-                    <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div dir="auto" className={`max-w-[85%] sm:max-w-[75%] rounded-3xl px-5 py-4 text-[15px] leading-relaxed tracking-wide ${
+                    <div key={i} className={`flex gap-4 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        {m.role === 'model' && <OsirisAvatar />}
+                        <div dir="auto" className={`max-w-[85%] sm:max-w-[75%] rounded-[2rem] px-6 py-4 text-[15px] leading-relaxed tracking-wide ${
                             m.role === 'user' 
-                                ? 'bg-indigo-600 text-white rounded-br-sm shadow-md' 
-                                : 'bg-white border border-indigo-50 text-slate-800 rounded-bl-sm shadow-sm'
+                                ? 'bg-emerald-600 text-white rounded-br-none shadow-lg' 
+                                : 'bg-white border border-emerald-50 text-slate-800 rounded-bl-none shadow-sm font-medium italic'
                         }`}>
                             {m.text.split('\n').map((line, j) => (
                                 <span key={j}>
@@ -167,12 +191,13 @@ export const OracleChat = () => {
                     </div>
                 ))}
                 {isTyping && (
-                    <div className="flex justify-start">
-                        <div className="bg-white border border-indigo-50 rounded-3xl rounded-bl-sm px-5 py-4 shadow-sm">
+                    <div className="flex justify-start gap-4">
+                        <OsirisAvatar />
+                        <div className="bg-white border border-emerald-50 rounded-[2rem] rounded-bl-none px-6 py-4 shadow-sm">
                             <div className="flex space-x-1.5 items-center h-4">
-                                <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                                <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                                <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"></div>
+                                <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                                <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                                <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce"></div>
                             </div>
                         </div>
                     </div>
@@ -183,10 +208,10 @@ export const OracleChat = () => {
                 <input 
                     value={input}
                     onChange={e => setInput(e.target.value)}
-                    placeholder={t('ask_oracle')}
-                    className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-5 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:bg-white transition-all shadow-inner"
+                    placeholder="Ask Osiris..."
+                    className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-6 py-4 text-[15px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:bg-white transition-all shadow-inner placeholder:text-slate-400 placeholder:italic"
                 />
-                <button type="submit" disabled={isTyping || !input.trim()} className="bg-indigo-600 text-white p-3 rounded-full hover:bg-indigo-700 active:scale-95 disabled:opacity-50 transition-all shadow-md">
+                <button type="submit" disabled={isTyping || !input.trim()} className="bg-emerald-600 text-white p-4 rounded-full hover:bg-emerald-700 active:scale-95 disabled:opacity-50 transition-all shadow-lg">
                     <Icons.Send />
                 </button>
             </form>

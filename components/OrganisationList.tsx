@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
 import { Organisation, Lifetree } from '../types';
-import { fetchOrganisations, createOrganisation } from '../services/firebase';
+import { fetchOrganisations, createOrganisation, getOrganisationByDomain } from '../services/firebase';
 
 interface OrganisationListProps {
   onSelect: (org: Organisation) => void;
@@ -14,6 +14,7 @@ interface OrganisationListProps {
 export const OrganisationList: React.FC<OrganisationListProps> = ({ onSelect, myTrees, currentUserId }) => {
   const { t } = useLanguage();
   const [orgs, setOrgs] = useState<Organisation[]>([]);
+  const [genesisOrg, setGenesisOrg] = useState<Organisation | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
@@ -21,8 +22,19 @@ export const OrganisationList: React.FC<OrganisationListProps> = ({ onSelect, my
   const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
-    fetchOrganisations().then(orgs => {
-      setOrgs(orgs);
+    const domain = window.location.hostname;
+    
+    Promise.all([
+        fetchOrganisations(),
+        getOrganisationByDomain(domain)
+    ]).then(([allOrgs, currentDomainOrg]) => {
+      // If we found an org for current domain, mark it as genesis and filter it from the main list
+      if (currentDomainOrg) {
+          setGenesisOrg(currentDomainOrg);
+          setOrgs(allOrgs.filter(o => o.id !== currentDomainOrg.id));
+      } else {
+          setOrgs(allOrgs);
+      }
       setLoading(false);
     });
   }, []);
@@ -52,6 +64,46 @@ export const OrganisationList: React.FC<OrganisationListProps> = ({ onSelect, my
     setIsCreating(false);
   };
 
+  const OrgCard = ({ org, isGenesis = false }: { org: Organisation, isGenesis?: boolean }) => (
+    <div 
+        onClick={() => onSelect(org)}
+        className={`group bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl border transition-all cursor-pointer hover:-translate-y-1 relative ${isGenesis ? 'border-amber-400 ring-4 ring-amber-400/20 md:col-span-2 lg:col-span-1' : 'border-slate-100'}`}
+    >
+        {isGenesis && (
+            <div className="absolute top-4 left-4 z-20 bg-amber-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg flex items-center gap-1 uppercase tracking-tighter">
+                <Icons.SparkleFill size={10} /> Organisation 0
+            </div>
+        )}
+        <div className="aspect-[16/9] relative overflow-hidden bg-slate-100">
+            {org.imageUrls && org.imageUrls.length > 0 ? (
+                <img 
+                src={org.imageUrls[0]} 
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+                alt={org.name} 
+                />
+            ) : (
+                <div className="flex items-center justify-center h-full group-hover:bg-slate-200 transition-colors">
+                <Icons.Building className="text-slate-300" size={48} />
+                </div>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
+            <div className="absolute bottom-4 left-4 right-4">
+                <h2 className="text-white font-bold text-lg truncate drop-shadow-md">{org.name}</h2>
+                <p className="text-emerald-300 text-xs font-mono drop-shadow-md">{org.domain}</p>
+            </div>
+        </div>
+        <div className="p-6">
+            <div 
+                className="text-slate-600 text-sm line-clamp-3 mb-4 h-11 leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: org.vision || 'No vision shared yet.' }}
+            />
+            <button className="text-emerald-600 font-bold text-xs uppercase tracking-widest flex items-center gap-1 group-hover:gap-2 transition-all">
+                View Profile <Icons.ArrowRight size={16} />
+            </button>
+        </div>
+    </div>
+  );
+
   return (
     <div className="max-w-6xl mx-auto p-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-6 bg-white/10 backdrop-blur-md p-8 rounded-3xl border border-white/10 shadow-xl">
@@ -74,43 +126,10 @@ export const OrganisationList: React.FC<OrganisationListProps> = ({ onSelect, my
         <div className="flex justify-center py-24">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-emerald-500 border-t-transparent"></div>
         </div>
-      ) : orgs.length > 0 ? (
+      ) : (orgs.length > 0 || genesisOrg) ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {orgs.map(org => (
-            <div 
-              key={org.id} 
-              onClick={() => onSelect(org)}
-              className="group bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl border border-slate-100 transition-all cursor-pointer hover:-translate-y-1"
-            >
-              <div className="aspect-[16/9] relative overflow-hidden bg-slate-100">
-                {org.imageUrls && org.imageUrls.length > 0 ? (
-                  <img 
-                    src={org.imageUrls[0]} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
-                    alt={org.name} 
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-full group-hover:bg-slate-200 transition-colors">
-                    <Icons.Building className="text-slate-300" size={48} />
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
-                <div className="absolute bottom-4 left-4 right-4">
-                  <h2 className="text-white font-bold text-lg truncate drop-shadow-md">{org.name}</h2>
-                  <p className="text-emerald-300 text-xs font-mono drop-shadow-md">{org.domain}</p>
-                </div>
-              </div>
-              <div className="p-6">
-                <div 
-                  className="text-slate-600 text-sm line-clamp-3 mb-4 h-11 leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: org.vision || 'No vision shared yet.' }}
-                />
-                <button className="text-emerald-600 font-bold text-xs uppercase tracking-widest flex items-center gap-1 group-hover:gap-2 transition-all">
-                  View Profile <Icons.ArrowRight size={16} />
-                </button>
-              </div>
-            </div>
-          ))}
+          {genesisOrg && <OrgCard org={genesisOrg} isGenesis={true} />}
+          {orgs.map(org => <OrgCard key={org.id} org={org} />)}
         </div>
       ) : (
         <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-[3rem] p-12 md:p-24 text-center flex flex-col items-center shadow-2xl animate-in zoom-in-95 duration-700">
