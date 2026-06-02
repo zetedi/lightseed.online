@@ -1,6 +1,13 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+@theme {
+  --color-primary-theme: var(--color-primary);
+  --color-secondary-theme: var(--color-secondary);
+  --color-accent-theme: var(--color-accent);
+  --color-background-theme: var(--color-background);
+}
+
 :root {
   --color-primary: #059669;
   --color-secondary: #0284c7;

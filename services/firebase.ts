@@ -372,21 +372,55 @@ export const ensureGenesis = async () => {
                 ownerId: 'GENESIS_SYSTEM', name: 'Mahameru', shortTitle: 'Live Light', body: genesisBody,
                 imageUrl: "", latitude: 50.8354, longitude: 4.4145, locationName: 'The Source',
                 createdAt: serverTimestamp(), genesisHash, latestHash: genesisHash, blockHeight: 0,
-                validated: true, validatorId: 'SYSTEM', isNature: true
+                validated: true, validatorId: 'SYSTEM', isNature: true, domain: 'lightseed.online'
             });
             await setDoc(doc(db, 'visions', 'GENESIS_VISION'), {
-                lifetreeId: genesisId, authorId: 'GENESIS_SYSTEM', title: "Mahameru", body: genesisBody, createdAt: serverTimestamp(), joinedUserIds: []
+                lifetreeId: genesisId, authorId: 'GENESIS_SYSTEM', title: "Mahameru", body: genesisBody, createdAt: serverTimestamp(), joinedUserIds: [], domain: 'lightseed.online'
             });
-        } else {
-            // Check if repair is needed AND if user has permission
-            const data = genesisSnap.data();
-            if (!data?.validated || !data?.isNature) {
-                const isSuper = await checkIsSuperAdmin(auth.currentUser?.uid || "");
-                if (isSuper) {
-                    await updateDoc(genesisRef, {
-                        validated: true,
-                        validatorId: 'SYSTEM',
-                        isNature: true,
+        }
+
+        // Ensure default organizations for white-labeling
+        const isSuper = await checkIsSuperAdmin(user.uid);
+        if (isSuper) {
+            const orgs = [
+                {
+                    id: 'LIGHTSEED_ORG',
+                    name: 'lightseed',
+                    domain: 'lightseed.online',
+                    vision: 'Universal connection through nature and digital roots.',
+                    ownerId: user.uid,
+                    theme: {
+                        primary: '#059669',
+                        secondary: '#0284c7',
+                        accent: '#f59e0b',
+                        neutral: '#334155',
+                        background: '#B2713A'
+                    }
+                },
+                {
+                    id: 'LIFESEED_ORG',
+                    name: 'lifeseed',
+                    domain: 'lifeseed.online',
+                    vision: 'A lively network for seeding growth and vitality.',
+                    ownerId: user.uid,
+                    theme: {
+                        primary: '#10b981', // emerald-500 (brighter)
+                        secondary: '#3b82f6', // blue-500
+                        accent: '#facc15', // yellow-400
+                        neutral: '#475569',
+                        background: '#D97706' // amber-600 (more lively background)
+                    }
+                }
+            ];
+
+            for (const org of orgs) {
+                const orgRef = doc(db, 'organisations', org.id);
+                const orgSnap = await getDoc(orgRef);
+                if (!orgSnap.exists()) {
+                    await setDoc(orgRef, {
+                        ...org,
+                        createdAt: serverTimestamp(),
+                        updatedAt: serverTimestamp()
                     });
                 }
             }
@@ -414,14 +448,16 @@ export const getNetworkStats = async () => {
 
 export const plantLifetree = async (data: any) => {
     const genesisHash = await createBlock("0", { msg: "Birth" }, Date.now());
+    const domain = data.domain || window.location.hostname.replace(/^www\./, '');
     const treeDoc = await addDoc(lifetreesCollection, {
         ...data, 
+        domain,
         treeType: data.treeType || (data.isNature ? 'GUARDED' : 'LIFETREE'),
         createdAt: serverTimestamp(), genesisHash, latestHash: genesisHash, blockHeight: 0,
         validated: false, validatorId: null, guardians: [], status: 'HEALTHY'
     });
     await addDoc(visionsCollection, {
-        lifetreeId: treeDoc.id, authorId: data.ownerId, title: "Root Vision", body: data.body, createdAt: serverTimestamp(), joinedUserIds: []
+        lifetreeId: treeDoc.id, authorId: data.ownerId, title: "Root Vision", body: data.body, createdAt: serverTimestamp(), joinedUserIds: [], domain
     });
     return treeDoc;
 };
@@ -431,13 +467,22 @@ export const deleteLifetree = (id: string) => deleteDoc(doc(db, 'lifetrees', id)
 export const validateLifetree = (targetId: string, validatorId: string) => updateDoc(doc(db, 'lifetrees', targetId), { validated: true, validatorId });
 export const unvalidateLifetree = (targetId: string) => updateDoc(doc(db, 'lifetrees', targetId), { validated: false, validatorId: null });
 
-export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot) => {
+const isHubDomain = (domain?: string) => {
+    if (!domain) return true;
+    const d = domain.toLowerCase().replace(/^www\./, '');
+    return d === 'lightseed.online' || d === 'localhost' || d === '127.0.0.1' || d.startsWith('192.168.') || d.endsWith('.local');
+};
+
+export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {
     let q = query(lifetreesCollection, orderBy('createdAt', 'desc'), limit(12));
+    if (domainFilter && !isHubDomain(domainFilter)) {
+        q = query(lifetreesCollection, where('domain', '==', domainFilter.replace(/^www\./, '')), orderBy('createdAt', 'desc'), limit(12));
+    }
     if (lastD) q = query(q, startAfter(lastD));
     const snap = await getDocs(q);
     const items = snap.docs.map(d => ({ id: d.id, ...d.data() } as Lifetree));
 
-    if (!lastD) {
+    if (!lastD && isHubDomain(domainFilter)) {
         const genesisSnap = await getDoc(doc(db, 'lifetrees', 'GENESIS_TREE'));
         if (genesisSnap.exists()) {
             const genesisTree = { id: genesisSnap.id, ...genesisSnap.data() } as Lifetree;
@@ -483,8 +528,11 @@ export const getGuardedTrees = async (uid: string) => (await getDocs(query(lifet
 export const toggleGuardianship = (id: string, uid: string, join: boolean) => updateDoc(doc(db, 'lifetrees', id), { guardians: join ? arrayUnion(uid) : arrayRemove(uid) });
 export const setTreeStatus = (id: string, status: string) => updateDoc(doc(db, 'lifetrees', id), { status });
 
-export const fetchVisions = async (lastD?: QueryDocumentSnapshot) => {
+export const fetchVisions = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {
     let q = query(visionsCollection, orderBy('createdAt', 'desc'), limit(12));
+    if (domainFilter && !isHubDomain(domainFilter)) {
+        q = query(visionsCollection, where('domain', '==', domainFilter.replace(/^www\./, '')), orderBy('createdAt', 'desc'), limit(12));
+    }
     if (lastD) q = query(q, startAfter(lastD));
     const snap = await getDocs(q);
     return { items: snap.docs.map(d => ({ id: d.id, ...d.data() } as Vision)), lastDoc: snap.docs[snap.docs.length-1] || null };
@@ -493,7 +541,10 @@ export const fetchVisions = async (lastD?: QueryDocumentSnapshot) => {
 export const getMyVisions = async (uid: string) => (await getDocs(query(visionsCollection, where('authorId', '==', uid)))).docs.map(d => ({ id: d.id, ...d.data() } as Vision));
 export const getJoinedVisions = async (uid: string) => (await getDocs(query(visionsCollection, where('joinedUserIds', 'array-contains', uid)))).docs.map(d => ({ id: d.id, ...d.data() } as Vision));
 
-export const createVision = (data: any) => addDoc(visionsCollection, { ...data, createdAt: serverTimestamp(), joinedUserIds: [] });
+export const createVision = async (data: any) => {
+    const domain = data.domain || window.location.hostname.replace(/^www\./, '');
+    return addDoc(visionsCollection, { ...data, domain, createdAt: serverTimestamp(), joinedUserIds: [] });
+};
 export const deleteVision = (id: string) => deleteDoc(doc(db, 'visions', id));
 export const joinVision = (id: string, uid: string) => updateDoc(doc(db, 'visions', id), { joinedUserIds: arrayUnion(uid) });
 export const leaveVision = (id: string, uid: string) => updateDoc(doc(db, 'visions', id), { joinedUserIds: arrayRemove(uid) });
@@ -529,8 +580,11 @@ export const updateOrganisation = (id: string, data: any) =>
 
 export const deleteOrganisation = (id: string) => deleteDoc(doc(db, 'organisations', id));
 
-export const fetchPulses = async (lastD?: QueryDocumentSnapshot) => {
+export const fetchPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {
     let q = query(pulsesCollection, orderBy('createdAt', 'desc'), limit(12));
+    if (domainFilter && !isHubDomain(domainFilter)) {
+        q = query(pulsesCollection, where('domain', '==', domainFilter.replace(/^www\./, '')), orderBy('createdAt', 'desc'), limit(12));
+    }
     if (lastD) q = query(q, startAfter(lastD));
     const snap = await getDocs(q);
     return { items: snap.docs.map(d => ({ id: d.id, ...d.data() } as Pulse)), lastDoc: snap.docs[snap.docs.length-1] || null };
@@ -556,7 +610,8 @@ export const mintPulse = async (pulseData: any) => {
         const tree = treeDoc.data() as Lifetree;
         const newHash = await createBlock(tree.latestHash, pulseData, Date.now());
         const newPulseRef = doc(pulsesCollection);
-        t.set(newPulseRef, { ...pulseData, id: newPulseRef.id, createdAt: serverTimestamp(), hash: newHash, previousHash: tree.latestHash });
+        const domain = tree.domain || window.location.hostname.replace(/^www\./, '');
+        t.set(newPulseRef, { ...pulseData, domain, id: newPulseRef.id, createdAt: serverTimestamp(), hash: newHash, previousHash: tree.latestHash });
         
         const updateData: any = { latestHash: newHash, blockHeight: (tree.blockHeight || 0) + 1 };
         // If this is a growth pulse with an image, update the tree's latest growth view

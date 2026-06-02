@@ -152,7 +152,11 @@ export const Navigation = ({
                          {lightseed ? (
                             <div className="flex items-center gap-3">
                                 <button onClick={onProfile} className="relative group">
-                                    <img src={lightseed.photoURL || `https://ui-avatars.com/api/?name=${lightseed.displayName}`} className="w-9 h-9 rounded-full border-2 border-white/20 shadow-md group-hover:border-white transition-all" />
+                                    <img 
+                                        src={lightseed.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(lightseed.displayName || 'User')}&background=random&color=fff`} 
+                                        className="w-9 h-9 rounded-full border-2 border-white/20 shadow-md group-hover:border-white transition-all object-cover" 
+                                        alt={lightseed.displayName || 'Profile'}
+                                    />
                                     {hasNotification && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-500 border-2 border-emerald-900 rounded-full"></span>}
                                 </button>
                                 <button onClick={onLogout} className="hidden lg:block text-[10px] font-bold uppercase tracking-widest text-emerald-200 hover:text-white transition-colors">

@@ -123,7 +123,7 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, curren
                     "{tree.body}"
                 </p>
                 <div className="mt-3 pt-2 border-t border-slate-100 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <button onClick={(e) => { e.stopPropagation(); onPlayGrowth(tree.id); }} className="flex items-center gap-1 text-[10px] bg-emerald-50 hover:bg-emerald-100 text-emerald-600 px-2 py-1 rounded transition-colors uppercase tracking-wider font-semibold">
+                    <button onClick={(e) => { e.stopPropagation(); onPlayGrowth(tree.id); }} className="flex items-center gap-1 text-[10px] bg-primary/10 hover:bg-primary/20 text-primary px-2 py-1 rounded transition-colors uppercase tracking-wider font-semibold">
                         <Icons.Play />
                         <span>Growth</span>
                     </button>
@@ -137,7 +137,7 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, curren
                                     const message = nextValidated ? 'Validate this tree?' : 'Remove validation from this tree?';
                                     if (window.confirm(message)) onValidate(tree.id, nextValidated);
                                 }}
-                                className="text-[10px] bg-emerald-600 text-white px-3 py-1.5 rounded-full shadow hover:bg-emerald-700 transition-colors uppercase font-bold tracking-wider animate-pulse"
+                                className="text-[10px] bg-primary text-white px-3 py-1.5 rounded-full shadow hover:opacity-90 transition-all uppercase font-bold tracking-wider"
                             >
                                 {hasValidationBadge ? 'Remove Validation' : t('validate_action')}
                             </button>
