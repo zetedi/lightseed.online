@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
 import { Organisation, Lifetree } from '../types';
-import { updateOrganisation, uploadImage, getTreesByDomain } from '../services/firebase';
+import { updateOrganisation, uploadImage, getTreesByDomain, deleteOrganisation } from '../services/firebase';
 import RichTextEditor from './ui/RichTextEditor';
 import { ImagePicker } from './ui/ImagePicker';
 
@@ -13,6 +13,7 @@ interface OrganisationProfileProps {
   onClose: () => void;
   currentUserId?: string;
   isAdmin?: boolean;
+  isSuperAdmin?: boolean;
 }
 
 export const OrganisationProfile: React.FC<OrganisationProfileProps> = ({ 
@@ -20,7 +21,8 @@ export const OrganisationProfile: React.FC<OrganisationProfileProps> = ({
   onUpdate, 
   onClose, 
   currentUserId, 
-  isAdmin 
+  isAdmin,
+  isSuperAdmin
 }) => {
   const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
@@ -31,9 +33,11 @@ export const OrganisationProfile: React.FC<OrganisationProfileProps> = ({
   const [imageUrls, setImageUrls] = useState<string[]>(organisation.imageUrls || []);
   const [linkedTrees, setLinkedTrees] = useState<Lifetree[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
-  const canEdit = currentUserId === organisation.ownerId || isAdmin;
+  const canEdit = currentUserId === organisation.ownerId || isSuperAdmin || isAdmin;
+  const canDelete = currentUserId === organisation.ownerId || isSuperAdmin;
 
   useEffect(() => {
     getTreesByDomain(organisation.domain).then(setLinkedTrees);
@@ -58,6 +62,21 @@ export const OrganisationProfile: React.FC<OrganisationProfileProps> = ({
     }
     setIsSaving(false);
   };
+
+  const handleDelete = async () => {
+      if (!window.confirm("Are you sure you want to delete this organisation? This cannot be undone.")) return;
+      setIsDeleting(true);
+      try {
+          await deleteOrganisation(organisation.id);
+          alert("Organisation deleted.");
+          onClose();
+          window.location.reload(); // Refresh to update lists
+      } catch (e) {
+          console.error(e);
+          alert("Failed to delete organisation.");
+      }
+      setIsDeleting(false);
+  }
 
   const handleLogoUpload = async (file: File) => {
     try {
@@ -97,7 +116,7 @@ export const OrganisationProfile: React.FC<OrganisationProfileProps> = ({
         <h2 className="text-xl font-light tracking-wide text-slate-950">
           {isEditing ? "Editing Organisation" : organisation.name}
         </h2>
-        <div className="min-w-[80px] flex justify-end">
+        <div className="min-w-[80px] flex justify-end gap-2">
           {canEdit && !isEditing && (
             <button 
               onClick={() => setIsEditing(true)} 
@@ -106,6 +125,16 @@ export const OrganisationProfile: React.FC<OrganisationProfileProps> = ({
               <Icons.Pencil />
               <span>Edit</span>
             </button>
+          )}
+          {canDelete && !isEditing && (
+              <button 
+                onClick={handleDelete} 
+                disabled={isDeleting}
+                className="bg-red-50 hover:bg-red-100 text-red-700 px-4 py-2 rounded-full font-bold text-sm shadow-sm transition-colors flex items-center gap-1 border border-red-200"
+              >
+                <Icons.Trash />
+                <span>Delete</span>
+              </button>
           )}
         </div>
       </div>

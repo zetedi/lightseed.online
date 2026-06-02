@@ -48,14 +48,18 @@ import { createBlock } from '../utils/crypto';
 
 const SYSTEM_EMAIL_FROM = "lightseed <admin@lightseed.online>";
 
+const getEnv = (key: string) => {
+    return (window as any).process?.env?.[key] || (import.meta as any).env?.[key] || "";
+};
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || ""
+  apiKey: getEnv('VITE_FIREBASE_API_KEY'),
+  authDomain: getEnv('VITE_FIREBASE_AUTH_DOMAIN'),
+  projectId: getEnv('VITE_FIREBASE_PROJECT_ID'),
+  storageBucket: getEnv('VITE_FIREBASE_STORAGE_BUCKET'),
+  messagingSenderId: getEnv('VITE_FIREBASE_MESSAGING_SENDER_ID'),
+  appId: getEnv('VITE_FIREBASE_APP_ID'),
+  measurementId: getEnv('VITE_FIREBASE_MEASUREMENT_ID')
 };
 
 console.log("Firebase Init - Project:", firebaseConfig.projectId, "Has Key:", !!firebaseConfig.apiKey);
@@ -101,16 +105,22 @@ export const signInWithGoogle = async () => {
               lastAiReset: Date.now()
           });
 
-          await triggerSystemEmail(
-              user.email || "", 
-              "Welcome to lightseed", 
-              `Welcome to lightseed, ${user.displayName}. You have planted your intention. Now you may plant your tree.`,
-              user.uid
-          );
+          // Welcome email - optional to prevent failure on dev/localhost
+          try {
+              await triggerSystemEmail(
+                  user.email || "", 
+                  "Welcome to lightseed", 
+                  `Welcome to lightseed, ${user.displayName}. You have planted your intention. Now you may plant your tree.`,
+                  user.uid
+              );
+          } catch (emailError) {
+              console.warn("Welcome email could not be sent:", emailError);
+          }
       }
       return user; 
   } catch (error: any) { 
       console.error("Login Failed:", error); 
+      alert("Sign-in failed: " + (error.message || "Unknown error"));
       throw error; 
   }
 };
@@ -382,9 +392,9 @@ export const ensureGenesis = async () => {
         // Ensure default organizations for white-labeling
         const isSuper = await checkIsSuperAdmin(user.uid);
         if (isSuper) {
-            const orgs = [
+            const defaultOrgs = [
                 {
-                    id: 'LIGHTSEED_ORG',
+                    id: 'lightseed.online',
                     name: 'lightseed',
                     domain: 'lightseed.online',
                     vision: 'Universal connection through nature and digital roots.',
@@ -398,7 +408,7 @@ export const ensureGenesis = async () => {
                     }
                 },
                 {
-                    id: 'LIFESEED_ORG',
+                    id: 'lifeseed.online',
                     name: 'lifeseed',
                     domain: 'lifeseed.online',
                     vision: 'A lively network for seeding growth and vitality.',
@@ -413,15 +423,17 @@ export const ensureGenesis = async () => {
                 }
             ];
 
-            for (const org of orgs) {
-                const orgRef = doc(db, 'organisations', org.id);
-                const orgSnap = await getDoc(orgRef);
-                if (!orgSnap.exists()) {
+            for (const org of defaultOrgs) {
+                // Check by domain first to see if an org already exists for this hub
+                const existingOrg = await getOrganisationByDomain(org.domain);
+                if (!existingOrg) {
+                    const orgRef = doc(db, 'organisations', org.id);
                     await setDoc(orgRef, {
                         ...org,
                         createdAt: serverTimestamp(),
                         updatedAt: serverTimestamp()
                     });
+                    console.log(`Initialized default org: ${org.domain}`);
                 }
             }
         }
