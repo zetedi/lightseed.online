@@ -1,6 +1,5 @@
 
-import React, { useState, useEffect, FormEvent, useRef } from 'react';
-import EXIF from 'exif-js';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   signInWithGoogle,
   logout,
@@ -20,26 +19,22 @@ import {
   deleteLifetree,
   deleteVision,
   ensureGenesis,
-  checkAndIncrementAiUsage,
   getMyPulses,
   getMyVisions,
   getMyMatchesHistory,
   claimSuperAdmin,
   grantAdmin,
-  revokeAdmin,
-  fetchOrganisations
+  revokeAdmin
 } from './services/firebase';
-import { generateLifetreeBio, generateVisionImage } from './services/gemini';
-import { type Pulse, type Lifetree, type MatchProposal, type Vision, type Organisation } from './types';
+import { findVisionSynergies } from './services/gemini';
+import { type Pulse, type Lifetree, type MatchProposal, type Vision, type Organisation, type VisionSynergy } from './types';
 import Logo from './components/Logo';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
-import { colors } from './utils/theme';
 import { useLifeseed } from './hooks/useLifeseed';
+import { useConfig } from './hooks/useConfig';
 
 // Components
 import { Icons } from './components/ui/Icons';
-import { Modal } from './components/ui/Modal';
-import { ImagePicker } from './components/ui/ImagePicker';
 import { Navigation } from './components/Navigation';
 import { LifetreeCard } from './components/LifetreeCard';
 import { VisionCard } from './components/VisionCard';
@@ -58,10 +53,47 @@ import { LifeseedWidget } from './components/LifeseedWidget';
 import { NewsletterAdmin } from './components/NewsletterAdmin';
 import { OrganisationList } from './components/OrganisationList';
 import { OrganisationProfile } from './components/OrganisationProfile';
-import { AutocompleteInput } from './components/ui/AutocompleteInput';
 import { isExplicitlyValidatedTree } from './utils/validation';
 
-const lifetreeImage = '/mother.webp';
+// Modals
+import { PlantTreeModal } from './components/modals/PlantTreeModal';
+import { EmitPulseModal } from './components/modals/EmitPulseModal';
+import { CreateVisionModal } from './components/modals/CreateVisionModal';
+
+const extractGpsFromImage = async (file: File): Promise<{latitude: number, longitude: number} | null> => {
+    const EXIF = (await import('exif-js')).default;
+    return new Promise((resolve) => {
+        try {
+            EXIF.getData(file as any, function(this: any) {
+                const lat = EXIF.getTag(this, "GPSLatitude");
+                const latRef = EXIF.getTag(this, "GPSLatitudeRef");
+                const lng = EXIF.getTag(this, "GPSLongitude");
+                const lngRef = EXIF.getTag(this, "GPSLongitudeRef");
+
+                if (lat && latRef && lng && lngRef) {
+                    const convertToDecimal = (gpsArr: any, ref: string) => {
+                        const d = gpsArr[0].numerator / gpsArr[0].denominator;
+                        const m = gpsArr[1].numerator / gpsArr[1].denominator;
+                        const s = gpsArr[2].numerator / gpsArr[2].denominator;
+                        let decimal = d + (m / 60) + (s / 3600);
+                        if (ref === "S" || ref === "W") decimal = -decimal;
+                        return decimal;
+                    };
+
+                    resolve({
+                        latitude: convertToDecimal(lat, latRef),
+                        longitude: convertToDecimal(lng, lngRef)
+                    });
+                } else {
+                    resolve(null);
+                }
+            });
+        } catch (e) {
+            console.error("EXIF Error:", e);
+            resolve(null);
+        }
+    });
+};
 
 const GDPRBanner = () => {
     const [visible, setVisible] = useState(false);
@@ -109,40 +141,6 @@ const GDPRBanner = () => {
     );
 }
 
-const extractGpsFromImage = (file: File): Promise<{latitude: number, longitude: number} | null> => {
-    return new Promise((resolve) => {
-        try {
-            EXIF.getData(file as any, function(this: any) {
-                const lat = EXIF.getTag(this, "GPSLatitude");
-                const latRef = EXIF.getTag(this, "GPSLatitudeRef");
-                const lng = EXIF.getTag(this, "GPSLongitude");
-                const lngRef = EXIF.getTag(this, "GPSLongitudeRef");
-
-                if (lat && latRef && lng && lngRef) {
-                    const convertToDecimal = (gpsArr: any, ref: string) => {
-                        const d = gpsArr[0].numerator / gpsArr[0].denominator;
-                        const m = gpsArr[1].numerator / gpsArr[1].denominator;
-                        const s = gpsArr[2].numerator / gpsArr[2].denominator;
-                        let decimal = d + (m / 60) + (s / 3600);
-                        if (ref === "S" || ref === "W") decimal = -decimal;
-                        return decimal;
-                    };
-
-                    resolve({
-                        latitude: convertToDecimal(lat, latRef),
-                        longitude: convertToDecimal(lng, lngRef)
-                    });
-                } else {
-                    resolve(null);
-                }
-            });
-        } catch (e) {
-            console.error("EXIF Error:", e);
-            resolve(null);
-        }
-    });
-};
-
 const AppContent = () => {
     const { t } = useLanguage();
     const { lightseed, myTrees, guardedTrees, activeTree, isAdmin, isSuperAdmin, superAdminExists, loading: authLoading, refreshTrees } = useLifeseed();
@@ -172,39 +170,28 @@ const AppContent = () => {
     const [showVisionModal, setShowVisionModal] = useState(false);
     const [showGrowthPlayer, setShowGrowthPlayer] = useState<string | null>(null);
     const [matchCandidate, setMatchCandidate] = useState<Pulse | null>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const [showNatureTrees, setShowNatureTrees] = useState(true);
     const [showUserTrees, setShowUserTrees] = useState(true);
     const [showValidatedTrees, setShowValidatedTrees] = useState(false);
 
-    // Form State
-    const [treeName, setTreeName] = useState('');
-    const [treeShortTitle, setTreeShortTitle] = useState('');
-    const [treeSeed, setTreeSeed] = useState('');
-    const [treeBio, setTreeBio] = useState('');
-    const [treeImageUrl, setTreeImageUrl] = useState('');
-    const [treeDomain, setTreeDomain] = useState('');
-    const [plantLocation, setPlantLocation] = useState<{latitude: number, longitude: number} | null>(null);
-    const [isLocating, setIsLocating] = useState(false);
-    
-    // Tree Type State
-    const [treeType, setTreeType] = useState<'LIFETREE' | 'GUARDED' | 'FAMILY'>('LIFETREE');
-    const [plantStep, setPlantStep] = useState(1);
-    const [treeFile, setTreeFile] = useState<File | null>(null);
-    
-    const [pulseTitle, setPulseTitle] = useState('');
-    const [pulseBody, setPulseBody] = useState('');
-    const [pulseImageUrl, setPulseImageUrl] = useState('');
-    const [isGrowth, setIsGrowth] = useState(false);
-    const [uploading, setUploading] = useState(false);
-    
-    // Vision Form State
-    const [visionTitle, setVisionTitle] = useState('');
-    const [visionBody, setVisionBody] = useState('');
-    const [visionLink, setVisionLink] = useState('');
-    const [visionImageUrl, setVisionImageUrl] = useState('');
+    // AI Synergy State
+    const [synergies, setSynergies] = useState<VisionSynergy[]>([]);
+    const [isAnalyzingSynergy, setIsAnalyzingSynergy] = useState(false);
 
-    const svgBackground = `data:image/svg+xml,%3Csvg width='332.5537705' height='320' xmlns='http://www.w3.org/2000/svg'%3E%3Cstyle%3E .outerCircle %7B fill: %23B2713A; stroke: %23fff; stroke-width: 7; stroke-opacity: .3; %7D .circle %7B fill: none; stroke: %23fff; stroke-width: .3; stroke-opacity: .3; %7D .innerCircle %7B fill: %23B2713A; stroke: %23fff; stroke-width: 1.7; stroke-opacity: .4; %7D %3C/style%3E%3Crect width='100%25' height='100%25' fill='%23B2713A'/%3E%3Cdefs%3E%3CclipPath id='clean'%3E%3Crect width='332.5537705' height='320' /%3E%3C/clipPath%3E%3C/defs%3E%3Cg%3E%3Ccircle cx='-38.2768775' cy='-32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='96' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='160' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='224' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='288' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='352' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='0' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='64' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='128' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='192' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='256' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='320' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='-32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='96' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='160' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='224' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='288' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='352' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='0' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='64' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='128' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='192' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='256' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='320' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='-32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='96' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='160' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='224' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='288' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='352' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512516' cy='0' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512516' cy='64' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512516' cy='128' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512516' cy='192' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512516' cy='256' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512516' cy='320' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='-32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='96' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='160' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='224' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='288' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='352' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='0' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='64' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='128' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='192' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='256' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='320' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='96' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='160' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='64' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='128' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='192' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='96' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='160' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='288' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3C/g%3E%3C/svg%3E`;
+    const config = useConfig(hostOrganisation);
+
+    useEffect(() => {
+        const root = document.documentElement;
+        if (config.theme) {
+            root.style.setProperty('--color-primary', config.theme.primary);
+            root.style.setProperty('--color-secondary', config.theme.secondary);
+            root.style.setProperty('--color-accent', config.theme.accent);
+            root.style.setProperty('--color-background', config.theme.background);
+        }
+    }, [config]);
+
+    const svgBackground = `data:image/svg+xml,%3Csvg width='332.5537705' height='320' xmlns='http://www.w3.org/2000/svg'%3E%3Cstyle%3E .outerCircle %7B fill: ${config.theme.background}; stroke: %23fff; stroke-width: 7; stroke-opacity: .3; %7D .circle %7B fill: none; stroke: %23fff; stroke-width: .3; stroke-opacity: .3; %7D .innerCircle %7B fill: ${config.theme.background}; stroke: %23fff; stroke-width: 1.7; stroke-opacity: .4; %7D %3C/style%3E%3Crect width='100%25' height='100%25' fill='${config.theme.background.replace('#', '%23')}'/%3E%3Cdefs%3E%3CclipPath id='clean'%3E%3Crect width='332.5537705' height='320' /%3E%3C/clipPath%3E%3C/defs%3E%3Cg%3E%3Ccircle cx='-38.2768775' cy='-32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='96' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='160' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='224' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='288' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='352' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='0' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='64' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='128' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='192' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='256' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='320' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='-32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='96' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='160' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='224' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='288' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='352' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='0' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='64' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='128' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='192' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='256' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='320' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256259' cy='-32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256259' cy='32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256259' cy='96' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256259' cy='160' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256259' cy='224' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256259' cy='288' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256259' cy='352' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512517' cy='0' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512517' cy='64' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512517' cy='128' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512517' cy='192' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512517' cy='256' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512517' cy='320' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='-32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='96' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='160' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='224' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='288' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='352' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='0' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='64' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='128' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='192' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='256' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='320' r='64' class='circle' clip-path='url(%23clean)' /%3E%3C/g%3E%3C/svg%3E`;
 
     const backgroundStyle = {
         backgroundImage: `url("${svgBackground}")`,
@@ -274,23 +261,12 @@ const AppContent = () => {
         return () => observer.disconnect();
     }, [tab, viewMode, hasMore, loadingMore, lastDoc]);
 
-    useEffect(() => {
-        if (showPlantModal) {
-            if (treeType === 'GUARDED') {
-                setTreeName("Humanity's Tree!");
-                setTreeBio(""); 
-            } else if (treeName === "Humanity's Tree!") {
-                setTreeName("");
-            }
-            setPlantLocation(null);
-        }
-    }, [showPlantModal, treeType]);
-
     const loadContent = async (reset = false) => {
         if (reset) {
             setData([]);
             setLastDoc(null);
             setHasMore(true);
+            setSynergies([]);
         }
 
         if (!reset && !hasMore) return;
@@ -343,6 +319,19 @@ const AppContent = () => {
         setLoadingMore(false);
     };
 
+    const handleAnalyzeSynergy = async () => {
+        if (data.length < 2) return;
+        setIsAnalyzingSynergy(true);
+        try {
+            const results = await findVisionSynergies(data);
+            setSynergies(results);
+        } catch (e) {
+            console.error(e);
+            alert("Synergy analysis failed. Try again later.");
+        }
+        setIsAnalyzingSynergy(false);
+    };
+
     const handleTreeUpdate = (treeId: string, updates: any) => {
         setData(prev => prev.map(item => item.id === treeId ? { ...item, ...updates } : item));
         if (selectedTree?.id === treeId) {
@@ -358,30 +347,6 @@ const AppContent = () => {
         return url;
     };
     
-    const handleGenerateVisionImage = async () => {
-        if (!visionBody) { alert("Please enter a vision description first."); return; }
-        setUploading(true);
-        try {
-            const allowed = await checkAndIncrementAiUsage('image');
-            if (!allowed) {
-                alert(t('ai_login_required'));
-                setUploading(false);
-                return;
-            }
-
-            const url = await generateVisionImage(visionBody);
-            if (url) {
-                setVisionImageUrl(url);
-            } else {
-                throw new Error("No image data returned from AI service.");
-            }
-        } catch (e: any) {
-             console.error("Image Gen Error:", e);
-             alert(`Image generation failed: ${e.message || t('daily_limit_image')}`);
-        }
-        setUploading(false);
-    }
-
     const handleQuickSnap = async (treeId: string, file: File) => {
         if (!lightseed) return;
         try {
@@ -403,71 +368,6 @@ const AppContent = () => {
         }
     }
 
-    const handleLocate = () => {
-        setIsLocating(true);
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                setPlantLocation({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
-                setIsLocating(false);
-            },
-            async (err) => {
-                console.error(err);
-                if (treeFile) {
-                    const coords = await extractGpsFromImage(treeFile);
-                    if (coords) {
-                        setPlantLocation(coords);
-                        alert("Location extracted from image!");
-                    } else {
-                        alert("Could not get location from browser or image. Please set it manually if needed.");
-                    }
-                } else {
-                    alert("Could not get location. Try uploading a photo with GPS first, or allow browser location.");
-                }
-                setIsLocating(false);
-            }
-        );
-    };
-
-    const handlePlant = async (e: FormEvent) => {
-        e.preventDefault();
-        if (!lightseed || isSubmitting) return;
-        setIsSubmitting(true);
-        
-        const finalName = treeName.trim() || lightseed.displayName || "Anonymous Tree";
-        const isNature = treeType === 'GUARDED';
-
-        const submitTree = async (lat?: number, lng?: number) => {
-            try {
-                await plantLifetree({
-                    ownerId: lightseed.uid,
-                    name: finalName,
-                    shortTitle: treeShortTitle,
-                    body: treeBio,
-                    imageUrl: treeImageUrl,
-                    latitude: lat,
-                    longitude: lng,
-                    isNature: isNature,
-                    treeType: treeType,
-                    ...(treeDomain.trim() && { domain: treeDomain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '') })
-                });
-                await refreshTrees(); setShowPlantModal(false); loadContent(true);
-            } catch(e: any) { 
-                console.error("Plant Tree Error:", e);
-                alert(e.message); 
-            }
-            finally { setIsSubmitting(false); }
-        };
-
-        if (plantLocation) {
-            await submitTree(plantLocation.latitude, plantLocation.longitude);
-        } else {
-            navigator.geolocation.getCurrentPosition(
-                async (pos) => await submitTree(pos.coords.latitude, pos.coords.longitude), 
-                async (err) => await submitTree() // Plant without location if failed/denied
-            );
-        }
-    };
-
     const handleDeleteTree = async (treeId: string) => {
         if (!window.confirm("Are you sure you want to delete this lifetree? This cannot be undone.")) return;
         try {
@@ -480,7 +380,6 @@ const AppContent = () => {
         }
     }
 
-    // Used by LifetreeDetail modal (confirmation is handled by the modal itself)
     const handleDeleteTreeConfirmed = async (treeId: string) => {
         try {
             await deleteLifetree(treeId);
@@ -500,96 +399,6 @@ const AppContent = () => {
         } catch (e: any) {
             alert("Delete failed: " + e.message);
         }
-    }
-
-    const handleEmitPulse = async (e: FormEvent) => {
-        e.preventDefault();
-        if (!lightseed || !activeTree || isSubmitting) return;
-        setIsSubmitting(true);
-        
-        try {
-            let finalImageUrl = pulseImageUrl;
-            if (pulseImageUrl.startsWith('data:')) {
-                 try {
-                     finalImageUrl = await uploadBase64Image(pulseImageUrl, `users/${lightseed.uid}/pulses/ai/${Date.now()}`);
-                 } catch(e) {
-                     alert("Failed to upload AI image");
-                     setIsSubmitting(false);
-                     return;
-                 }
-            }
-
-            await mintPulse({
-                lifetreeId: activeTree.id,
-                type: isGrowth ? 'GROWTH' : 'STANDARD',
-                title: pulseTitle,
-                body: pulseBody,
-                imageUrl: finalImageUrl,
-                authorId: lightseed.uid,
-                authorName: lightseed.displayName || "Soul",
-                authorPhoto: lightseed.photoURL || undefined,
-            });
-            setShowPulseModal(false); setPulseTitle(''); setPulseBody(''); setPulseImageUrl(''); setIsGrowth(false); loadContent(true);
-        } catch(e: any) { 
-            console.error("Emit Pulse Error:", e);
-            alert(e.message); 
-        }
-        finally { setIsSubmitting(false); }
-    };
-    
-    const handleCreateVision = async (e: FormEvent) => {
-        e.preventDefault();
-        if (!lightseed || !activeTree || isSubmitting) return;
-        setIsSubmitting(true);
-
-        try {
-            let finalImageUrl = visionImageUrl;
-            if (visionImageUrl.startsWith('data:')) {
-                 try {
-                     finalImageUrl = await uploadBase64Image(visionImageUrl, `users/${lightseed.uid}/visions/ai/${Date.now()}`);
-                 } catch(e) {
-                     alert("Failed to upload AI image");
-                     setIsSubmitting(false);
-                     return;
-                 }
-            }
-
-            await createVision({
-                lifetreeId: activeTree.id,
-                authorId: lightseed.uid,
-                title: visionTitle,
-                body: visionBody,
-                link: visionLink,
-                imageUrl: finalImageUrl
-            });
-            setShowVisionModal(false); setVisionTitle(''); setVisionBody(''); setVisionLink(''); setVisionImageUrl(''); loadContent(true);
-        } catch(e:any) { 
-            console.error("Create Vision Error:", e);
-            alert(e.message); 
-        }
-        finally { setIsSubmitting(false); }
-    }
-    
-    const initiateMatch = async (e: FormEvent) => {
-        e.preventDefault();
-        if (!lightseed || !activeTree || !matchCandidate || isSubmitting) return;
-        setIsSubmitting(true);
-        try {
-             await proposeMatch({
-                 initiatorPulseId: "PENDING_CREATION",
-                 initiatorTreeId: activeTree.id,
-                 initiatorUid: lightseed.uid,
-                 targetPulseId: matchCandidate.id,
-                 targetTreeId: matchCandidate.lifetreeId,
-                 targetUid: matchCandidate.authorId
-             });
-             alert("Match Proposed! Waiting for resonance.");
-             setShowPulseModal(false); setMatchCandidate(null);
-        } catch(e:any) { 
-            console.error("Match Error:", e);
-            alert(e.message); 
-        }
-        finally { setIsSubmitting(false); }
     }
 
     const onAcceptMatch = async (id: string) => {
@@ -653,7 +462,7 @@ const AppContent = () => {
                         hostOrganisation={hostOrganisation}
                         onViewOrganisation={setSelectedOrganisation}
                         onSetTab={setTab} 
-                        onPlant={() => { setTreeType('LIFETREE'); setShowPlantModal(true); }}
+                        onPlant={() => { setShowPlantModal(true); }}
                         onLogin={signInWithGoogle} 
                     />
                 </div>
@@ -671,7 +480,7 @@ const AppContent = () => {
                     onViewTree={(tree: Lifetree) => setSelectedTree(tree)}
                     onDeleteTree={handleDeleteTree}
                     onViewVision={(v: Vision) => setSelectedVision(v)}
-                    onPlant={() => { setTreeType('LIFETREE'); setShowPlantModal(true); }}
+                    onPlant={() => { setShowPlantModal(true); }}
                     onClaimSuperAdmin={async () => {
                         const ok = await claimSuperAdmin(lightseed.uid);
                         if (ok) window.location.reload();
@@ -718,6 +527,7 @@ const AppContent = () => {
                                 placeholder={t('search_placeholder')}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
+                                style={{ borderColor: config.theme.primary }}
                             />
                             <datalist id="search-suggestions">
                                 {searchSuggestions.map((s, i) => <option key={i} value={s} />)}
@@ -727,8 +537,9 @@ const AppContent = () => {
                         <div className="flex items-center gap-2 shrink-0">
                             {tab === 'forest' && (
                                 <button 
-                                    onClick={() => { setTreeType('LIFETREE'); setShowPlantModal(true); }}
+                                    onClick={() => { setShowPlantModal(true); }}
                                     className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2 transition-colors h-10"
+                                    style={{ backgroundColor: config.theme.primary }}
                                 >
                                     <Icons.Tree />
                                     <span className="hidden sm:inline">{t('plant_lifetree')}</span>
@@ -738,8 +549,9 @@ const AppContent = () => {
 
                             {tab === 'forest' && myTrees.length > 0 && (
                                 <button 
-                                    onClick={() => { setTreeType('GUARDED'); setShowPlantModal(true); }}
+                                    onClick={() => { setShowPlantModal(true); }}
                                     className="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2 transition-colors h-10"
+                                    style={{ backgroundColor: config.theme.secondary }}
                                 >
                                     <Icons.Shield />
                                     <span className="hidden sm:inline">{t('guard_tree')}</span>
@@ -748,10 +560,11 @@ const AppContent = () => {
                             )}
 
                             {tab === 'forest' && (
-                                <div className="bg-[#B2713A]/80 backdrop-blur p-1 rounded-lg border border-emerald-700 flex shadow-sm h-10">
+                                <div className="bg-[#B2713A]/80 backdrop-blur p-1 rounded-lg border border-emerald-700 flex shadow-sm h-10" style={{ borderColor: config.theme.primary }}>
                                     <button 
                                         onClick={() => setViewMode('grid')}
                                         className={`px-3 py-1 text-sm font-medium rounded-md transition-all flex items-center justify-center ${viewMode === 'grid' ? 'bg-emerald-600 text-white shadow' : 'text-emerald-300 hover:text-white'}`}
+                                        style={viewMode === 'grid' ? { backgroundColor: config.theme.primary } : {}}
                                     >
                                         <Icons.List />
                                         <span className="hidden lg:inline ml-2">{t('list_view')}</span>
@@ -759,6 +572,7 @@ const AppContent = () => {
                                     <button 
                                         onClick={() => setViewMode('map')}
                                         className={`px-3 py-1 text-sm font-medium rounded-md transition-all flex items-center justify-center ${viewMode === 'map' ? 'bg-emerald-600 text-white shadow' : 'text-emerald-300 hover:text-white'}`}
+                                        style={viewMode === 'map' ? { backgroundColor: config.theme.primary } : {}}
                                     >
                                         <Icons.Map />
                                         <span className="hidden lg:inline ml-2">{t('map_view')}</span>
@@ -862,14 +676,47 @@ const AppContent = () => {
                         )}
                     </>
                 ) : tab === 'visions' ? (
-                    <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                        {filteredData.length === 0 && !loadingMore ? <p className="col-span-full text-center text-slate-400 py-10">{t('no_visions_found')}</p> : 
-                            filteredData.map((item: any) => (
-                                <div key={item.id} onClick={() => setSelectedVision(item)} className="cursor-pointer">
-                                    <VisionCard vision={item} />
+                    <div className="space-y-6">
+                        <div className="flex justify-between items-center">
+                            <h2 className="text-2xl font-light text-white">Visions</h2>
+                            <button 
+                                onClick={handleAnalyzeSynergy}
+                                disabled={isAnalyzingSynergy || data.length < 2}
+                                className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-md flex items-center gap-2 transition-all disabled:opacity-50"
+                            >
+                                <Icons.Sparkles />
+                                {isAnalyzingSynergy ? "Analyzing..." : "Find Synergies"}
+                            </button>
+                        </div>
+
+                        {synergies.length > 0 && (
+                            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 animate-in fade-in slide-in-from-top-4">
+                                <h3 className="text-amber-400 font-bold uppercase tracking-widest text-xs mb-4 flex items-center gap-2">
+                                    <Icons.Sparkles /> AI Synergy Analysis
+                                </h3>
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    {synergies.map((s, i) => (
+                                        <div key={i} className="bg-white/90 p-4 rounded-xl shadow-sm border border-amber-100">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div className="text-sm font-bold text-slate-800">{s.vision1Title} + {s.vision2Title}</div>
+                                                <div className="bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Match: {s.score}%</div>
+                                            </div>
+                                            <p className="text-xs text-slate-600 italic">"{s.reasoning}"</p>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))
-                        }
+                            </div>
+                        )}
+
+                        <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                            {filteredData.length === 0 && !loadingMore ? <p className="col-span-full text-center text-slate-400 py-10">{t('no_visions_found')}</p> : 
+                                filteredData.map((item: any) => (
+                                    <div key={item.id} onClick={() => setSelectedVision(item)} className="cursor-pointer">
+                                        <VisionCard vision={item} />
+                                    </div>
+                                ))
+                            }
+                        </div>
                     </div>
                 ) : tab !== 'matches' && tab !== 'profile' && tab !== 'oracle' && tab !== 'about' && tab !== 'dashboard' && (
                     <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -903,13 +750,14 @@ const AppContent = () => {
                         setTab={setTab} 
                         onLogin={signInWithGoogle} 
                         onLogout={logout} 
-                        onPlant={() => { setTreeType('LIFETREE'); setShowPlantModal(true); }} 
+                        onPlant={() => { setShowPlantModal(true); }} 
                         onPulse={() => setShowPulseModal(true)}
                         onCreateVision={() => setShowVisionModal(true)}
                         onProfile={() => setTab('profile')} 
                         pendingMatchesCount={matches.length}
                         myTreesCount={myTrees.length}
                         dangerTreesCount={guardedTrees.filter(t => t.status === 'DANGER').length}
+                        logoUrl={config.logoUrl}
                     />
                 )}
                 
@@ -980,295 +828,41 @@ const AppContent = () => {
 
             {showGrowthPlayer && !selectedTree && <GrowthPlayerModal treeId={showGrowthPlayer} onClose={() => setShowGrowthPlayer(null)} />}
 
-            {showVisionModal && (
-                <Modal title={t('create_vision')} onClose={() => setShowVisionModal(false)}>
-                    <form onSubmit={handleCreateVision} className="flex flex-col gap-4">
-                        <ImagePicker 
-                            onChange={(e: any) => handleImageUpload(e.target.files[0], `users/${lightseed.uid}/visions/${Date.now()}`).then(setVisionImageUrl)} 
-                            previewUrl={visionImageUrl} 
-                            loading={uploading} 
-                        />
-                        
-                        <div className="flex justify-end">
-                             <button 
-                                type="button" 
-                                onClick={handleGenerateVisionImage}
-                                disabled={uploading || !visionBody}
-                                className="text-xs bg-amber-100 text-amber-700 px-3 py-1 rounded-full font-bold hover:bg-amber-200 disabled:opacity-50 flex items-center gap-1"
-                             >
-                                 <Icons.Sparkles /> 
-                                 <span>{t('generate_image')}</span>
-                             </button>
-                        </div>
-
-                        <input 
-                            dir="auto" 
-                            className="block w-full border border-slate-300 p-2 rounded-lg" 
-                            placeholder={t('title')} 
-                            value={visionTitle} 
-                            onChange={e=>setVisionTitle(e.target.value)} 
-                            required 
-                        />
-                        
-                        <textarea 
-                            dir="auto" 
-                            rows={3}
-                            className="block w-full resize-none overflow-hidden border border-slate-300 p-2 rounded-lg min-h-[76px]" 
-                            placeholder={t('body')} 
-                            value={visionBody} 
-                            onChange={e=>setVisionBody(e.target.value)}
-                            onInput={(e) => {
-                                const target = e.currentTarget;
-                                target.style.height = '0px';
-                                target.style.height = `${target.scrollHeight}px`;
-                            }}
-                            required 
-                        />
-
-                        <input 
-                            dir="ltr" 
-                            className="block w-full border border-slate-300 p-2 rounded-lg" 
-                            placeholder={t('webpage')} 
-                            value={visionLink} 
-                            onChange={e=>setVisionLink(e.target.value)} 
-                        />
-
-                        <button 
-                            type="submit" 
-                            disabled={uploading || isSubmitting} 
-                            className="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-bold shadow-md disabled:opacity-50"
-                        >
-                            {isSubmitting ? t('creating') : t('create_vision')}
-                        </button>
-                    </form>
-                </Modal>
-            )}
-
             {showPlantModal && (
-                <Modal 
-                    title={treeType === 'GUARDED' ? t('guard_tree') : t('plant_lifetree')} 
-                    onClose={() => { setShowPlantModal(false); setPlantStep(1); }}
-                    backgroundImage={treeType !== 'GUARDED' ? lifetreeImage : undefined}
-                >
-                    <div className="flex flex-col h-full min-h-[450px]">
-                        {/* Step 1: Type Selection */}
-                        {plantStep === 1 && (
-                            <div className="flex-1 flex flex-col gap-6 animate-in fade-in slide-in-from-right-4">
-                                <div className="text-center">
-                                    <h2 className="text-xl font-bold mb-2">Choose Tree Type</h2>
-                                    <p className="text-sm opacity-70">What kind of life are you planting today?</p>
-                                </div>
-                                <div className="grid grid-cols-1 gap-3">
-                                    {[
-                                        { id: 'LIFETREE', label: t('type_lifetree'), icon: <Icons.Tree />, desc: 'Your personal digital-physical avatar' },
-                                        { id: 'GUARDED', label: t('type_guarded'), icon: <Icons.Shield />, desc: 'Protect a physical tree in nature' },
-                                        { id: 'FAMILY', label: t('type_family'), icon: <Icons.Heart filled={true} />, desc: 'Shared roots with your loved ones' }
-                                    ].map((type: any) => (
-                                        <button
-                                            key={type.id}
-                                            type="button"
-                                            onClick={() => { setTreeType(type.id); setPlantStep(2); }}
-                                            className={`flex items-center gap-4 p-4 rounded-xl text-left transition-all border ${
-                                                treeType === type.id 
-                                                    ? 'bg-emerald-600 text-white border-emerald-500 shadow-lg scale-[1.02]' 
-                                                    : treeType !== 'GUARDED' 
-                                                        ? 'bg-white/10 text-white border-white/10 hover:bg-white/20' 
-                                                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                                            }`}
-                                        >
-                                            <span className="text-2xl">{type.icon}</span>
-                                            <div>
-                                                <div className="font-bold uppercase tracking-wider text-xs">{type.label}</div>
-                                                <div className="text-xs opacity-70">{type.desc}</div>
-                                            </div>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Step 2: Identity */}
-                        {plantStep === 2 && (
-                            <div className="flex-1 flex flex-col gap-6 animate-in fade-in slide-in-from-right-4">
-                                <div className="text-center">
-                                    <h2 className="text-xl font-bold mb-2">Identify Your Tree</h2>
-                                    <p className="text-sm opacity-70">Give your tree a name and a short title.</p>
-                                </div>
-                                <div className="flex flex-col gap-4">
-                                    <input 
-                                        dir="auto" 
-                                        className={`block w-full border p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-inner ${
-                                            treeType !== 'GUARDED' ? 'bg-white/10 border-white/20 text-white placeholder:text-white/50' : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400'
-                                        }`} 
-                                        placeholder={`Tree Name (Default: ${lightseed?.displayName || 'Anonymous'})`} 
-                                        value={treeName} 
-                                        onChange={e=>setTreeName(e.target.value)} 
-                                        autoFocus
-                                    />
-                                    <input 
-                                        dir="auto" 
-                                        className={`block w-full border p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-inner ${
-                                            treeType !== 'GUARDED' ? 'bg-white/10 border-white/20 text-white placeholder:text-white/50' : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400'
-                                        }`} 
-                                        placeholder={t('short_title')} 
-                                        value={treeShortTitle} 
-                                        onChange={e=>setTreeShortTitle(e.target.value)} 
-                                    />
-                                </div>
-                                <div className="flex gap-2 mt-auto pb-4">
-                                    <button onClick={() => setPlantStep(1)} className={`flex-1 py-3 rounded-xl font-bold uppercase tracking-widest transition-all ${treeType !== 'GUARDED' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Back</button>
-                                    <button onClick={() => setPlantStep(3)} className="flex-[2] py-3 rounded-xl font-bold uppercase tracking-widest bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg transition-all">Next</button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Step 3: Vision */}
-                        {plantStep === 3 && (
-                            <div className="flex-1 flex flex-col gap-6 animate-in fade-in slide-in-from-right-4">
-                                <div className="text-center">
-                                    <h2 className="text-xl font-bold mb-2">Plant the Vision</h2>
-                                    <p className="text-sm opacity-70">Describe the intention behind this tree.</p>
-                                </div>
-                                <div className="flex flex-col gap-4">
-                                    {treeType !== 'GUARDED' && (
-                                        <div className="flex gap-2">
-                                            <input 
-                                                dir="auto" 
-                                                className="flex-1 border border-white/20 p-3 rounded-xl bg-white/10 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all" 
-                                                placeholder="Seed keywords" 
-                                                value={treeSeed} 
-                                                onChange={e=>setTreeSeed(e.target.value)} 
-                                            />
-                                            <button type="button" onClick={() => generateLifetreeBio(treeSeed).then(setTreeBio)} disabled={uploading} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 rounded-xl disabled:opacity-50 font-bold text-xs shadow-md transition-colors">AI</button>
-                                        </div>
-                                    )}
-                                    <textarea 
-                                        dir="auto"
-                                        className={`block w-full border p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all min-h-[150px] resize-none ${
-                                            treeType !== 'GUARDED' ? 'bg-white/10 border-white/20 text-white placeholder:text-white/50' : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400'
-                                        }`} 
-                                        placeholder={treeType === 'GUARDED' ? "Description" : "Vision"} 
-                                        value={treeBio} 
-                                        onChange={e=>setTreeBio(e.target.value)} 
-                                        required 
-                                    />
-                                </div>
-                                <div className="flex gap-2 mt-auto pb-4">
-                                    <button onClick={() => setPlantStep(2)} className={`flex-1 py-3 rounded-xl font-bold uppercase tracking-widest transition-all ${treeType !== 'GUARDED' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Back</button>
-                                    <button onClick={() => setPlantStep(4)} className="flex-[2] py-3 rounded-xl font-bold uppercase tracking-widest bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg transition-all">Next</button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Step 4: Visual */}
-                        {plantStep === 4 && (
-                            <div className="flex-1 flex flex-col gap-6 animate-in fade-in slide-in-from-right-4">
-                                <div className="text-center">
-                                    <h2 className="text-xl font-bold mb-2">Give it a Face</h2>
-                                    <p className="text-sm opacity-70">Upload an image of your tree or its intention.</p>
-                                </div>
-                                <div className="flex-1 flex items-center justify-center">
-                                    <ImagePicker 
-                                        onChange={(e: any) => {
-                                            const file = e.target.files[0];
-                                            if (file) {
-                                                setTreeFile(file);
-                                                handleImageUpload(file, `users/${lightseed.uid}/trees/${Date.now()}`).then(setTreeImageUrl);
-                                            }
-                                        }} 
-                                        previewUrl={treeImageUrl} 
-                                        loading={uploading} 
-                                        isDark={treeType !== 'GUARDED'}
-                                    />
-                                </div>
-                                <div className="flex gap-2 mt-auto pb-4">
-                                    <button onClick={() => setPlantStep(3)} className={`flex-1 py-3 rounded-xl font-bold uppercase tracking-widest transition-all ${treeType !== 'GUARDED' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Back</button>
-                                    <button onClick={() => setPlantStep(5)} className="flex-[2] py-3 rounded-xl font-bold uppercase tracking-widest bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg transition-all">Next</button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Step 5: Presence */}
-                        {plantStep === 5 && (
-                            <form onSubmit={handlePlant} className="flex-1 flex flex-col gap-6 animate-in fade-in slide-in-from-right-4">
-                                <div className="text-center">
-                                    <h2 className="text-xl font-bold mb-2">Ground Your Tree</h2>
-                                    <p className="text-sm opacity-70">Final details to connect your tree to the world.</p>
-                                </div>
-                                <div className="flex flex-col gap-4">
-                                    {/* Location Picker */}
-                                    <div className={`flex items-center justify-between p-4 rounded-xl border ${treeType === 'GUARDED' ? 'bg-slate-50 border-slate-200 text-slate-800' : 'bg-black/30 border-white/10 text-white'}`}>
-                                        <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-full ${plantLocation ? 'bg-emerald-500 text-white' : (treeType === 'GUARDED' ? 'bg-slate-200 text-slate-500' : 'bg-white/10 text-white/50')}`}>
-                                                <Icons.Loc />
-                                            </div>
-                                            <div className="text-xs">
-                                                {plantLocation ? (
-                                                    <span className="font-mono text-emerald-400 font-bold">{plantLocation.latitude.toFixed(6)}, {plantLocation.longitude.toFixed(6)}</span>
-                                                ) : (
-                                                    <span className="opacity-70">Location not set</span>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <button 
-                                            type="button" 
-                                            onClick={handleLocate} 
-                                            disabled={isLocating} 
-                                            className={`text-xs px-4 py-2 rounded-lg font-bold uppercase tracking-wider transition-colors ${
-                                                isLocating 
-                                                    ? 'bg-slate-300 text-slate-500 cursor-not-allowed' 
-                                                    : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm'
-                                            }`}
-                                        >
-                                            {isLocating ? 'Locating...' : 'Locate'}
-                                        </button>
-                                    </div>
-
-                                    <AutocompleteInput
-                                        className={`block w-full border p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-inner ${
-                                            treeType !== 'GUARDED' ? 'bg-white/10 border-white/20 text-white placeholder:text-white/50' : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400'
-                                        }`}
-                                        placeholder="Website domain (e.g. myproject.com)"
-                                        value={treeDomain}
-                                        onChange={setTreeDomain}
-                                    />
-                                </div>
-                                <div className="flex gap-2 mt-auto pb-4">
-                                    <button type="button" onClick={() => setPlantStep(4)} className={`flex-1 py-3 rounded-xl font-bold uppercase tracking-widest transition-all ${treeType !== 'GUARDED' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Back</button>
-                                    <button type="submit" disabled={uploading || isSubmitting} className="flex-[2] bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold uppercase tracking-widest shadow-lg active:scale-95 transition-all">
-                                        {isSubmitting ? t('planting') : t('plant_lifetree')}
-                                    </button>
-                                </div>
-                            </form>
-                        )}
-                    </div>
-                </Modal>
+                <PlantTreeModal 
+                    lightseed={lightseed}
+                    onClose={() => setShowPlantModal(false)}
+                    onPlant={plantLifetree}
+                    uploading={uploading}
+                    handleImageUpload={handleImageUpload}
+                    extractGpsFromImage={extractGpsFromImage}
+                />
             )}
 
             {showPulseModal && (
-                <Modal title={matchCandidate ? t('propose_match') : t('emit_pulse')} onClose={() => { setShowPulseModal(false); setMatchCandidate(null); }}>
-                    <form onSubmit={matchCandidate ? initiateMatch : handleEmitPulse} className="flex flex-col gap-4">
-                        {matchCandidate ? (
-                             <div className="bg-sky-50 p-4 rounded text-sky-800">
-                                {t('matching_with')} <strong>{matchCandidate.title}</strong>. 
-                                <br/><span className="text-xs">{t('match_request_desc')}</span>
-                             </div>
-                        ) : (
-                            <>
-                                <ImagePicker onChange={(e: any) => handleImageUpload(e.target.files[0], `users/${lightseed.uid}/pulses/${Date.now()}`).then(setPulseImageUrl)} previewUrl={pulseImageUrl} loading={uploading} />
-                                <div className="flex items-center gap-2">
-                                    <input type="checkbox" id="growth" checked={isGrowth} onChange={e => setIsGrowth(e.target.checked)} className="rounded text-emerald-600 focus:ring-emerald-500" />
-                                    <label htmlFor="growth" className="text-sm font-medium text-slate-700">{t('internal_pulse')}</label>
-                                </div>
-                                <input dir="auto" className="block w-full border p-2 rounded" placeholder={t('title')} value={pulseTitle} onChange={e=>setPulseTitle(e.target.value)} required />
-                                <textarea dir="auto" className="block w-full border p-2 rounded" placeholder={t('body')} value={pulseBody} onChange={e=>setPulseBody(e.target.value)} required />
-                            </>
-                        )}
-                        <button type="submit" disabled={uploading || isSubmitting} className="w-full bg-emerald-600 text-white py-2 rounded disabled:opacity-50">
-                            {isSubmitting ? t('minting') : (matchCandidate ? t('send_request') : t('mint'))}
-                        </button>
-                    </form>
-                </Modal>
+                <EmitPulseModal 
+                    lightseed={lightseed}
+                    activeTree={activeTree}
+                    matchCandidate={matchCandidate}
+                    onClose={() => setShowPulseModal(false)}
+                    onMint={mintPulse}
+                    onProposeMatch={proposeMatch}
+                    uploading={uploading}
+                    handleImageUpload={handleImageUpload}
+                    uploadBase64Image={uploadBase64Image}
+                />
+            )}
+
+            {showVisionModal && (
+                <CreateVisionModal 
+                    lightseed={lightseed}
+                    activeTree={activeTree}
+                    onClose={() => setShowVisionModal(false)}
+                    onCreate={createVision}
+                    uploading={uploading}
+                    handleImageUpload={handleImageUpload}
+                    uploadBase64Image={uploadBase64Image}
+                />
             )}
         </div>
     );

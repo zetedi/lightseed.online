@@ -4,6 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
 import Logo from './Logo';
 
+
 interface NavigationProps {
   lightseed: any;
   activeTab: string;
@@ -17,6 +18,7 @@ interface NavigationProps {
   pendingMatchesCount: number;
   myTreesCount: number;
   dangerTreesCount: number;
+  logoUrl?: string;
 }
 
 const languages = [
@@ -30,7 +32,21 @@ const languages = [
     { code: 'sw', name: 'Kiswahili' },
 ];
 
-export const Navigation = ({ lightseed, activeTab, setTab, onPlant, onPulse, onLogin, onLogout, onProfile, onCreateVision, pendingMatchesCount, myTreesCount = 0, dangerTreesCount = 0 }: NavigationProps) => {
+export const Navigation = ({ 
+    lightseed, 
+    activeTab, 
+    setTab, 
+    onPlant, 
+    onPulse, 
+    onLogin, 
+    onLogout, 
+    onProfile, 
+    onCreateVision, 
+    pendingMatchesCount, 
+    myTreesCount = 0, 
+    dangerTreesCount = 0,
+    logoUrl
+}: NavigationProps) => {
     const { t, language, setLanguage } = useLanguage();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isLangOpen, setIsLangOpen] = useState(false);
@@ -96,7 +112,7 @@ export const Navigation = ({ lightseed, activeTab, setTab, onPlant, onPulse, onL
                 <div className="flex justify-between h-20 items-center">
                     <div className="flex items-center gap-3 cursor-pointer group shrink-0" onClick={() => setTab('dashboard')}>
                         <div className="bg-white p-1 rounded-full group-hover:scale-110 transition-transform">
-                             <Logo width={32} height={32} />
+                             {logoUrl ? <img src={logoUrl} className="w-8 h-8 rounded-full object-cover" alt="Logo" /> : <Logo width={32} height={32} />}
                         </div>
                         <span dir="ltr" className="hidden sm:inline font-light text-2xl lowercase tracking-wide">.seed</span>
                     </div>

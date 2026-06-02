@@ -119,6 +119,13 @@ export interface Organisation {
   vision: string; // Rich text
   imageUrls: string[]; // For carousel
   logoUrl?: string;
+  theme?: {
+    primary?: string;
+    secondary?: string;
+    accent?: string;
+    neutral?: string;
+    background?: string;
+  };
   createdAt: Timestamp;
   updatedAt?: Timestamp;
 }

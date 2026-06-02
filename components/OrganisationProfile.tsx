@@ -26,6 +26,8 @@ export const OrganisationProfile: React.FC<OrganisationProfileProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(organisation.name);
   const [editVision, setEditVision] = useState(organisation.vision);
+  const [editTheme, setEditTheme] = useState(organisation.theme || {});
+  const [logoUrl, setLogoUrl] = useState(organisation.logoUrl || '');
   const [imageUrls, setImageUrls] = useState<string[]>(organisation.imageUrls || []);
   const [linkedTrees, setLinkedTrees] = useState<Lifetree[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -43,7 +45,9 @@ export const OrganisationProfile: React.FC<OrganisationProfileProps> = ({
       const updates = {
         name: editName,
         vision: editVision,
-        imageUrls: imageUrls
+        imageUrls: imageUrls,
+        theme: editTheme,
+        logoUrl: logoUrl
       };
       await updateOrganisation(organisation.id, updates);
       if (onUpdate) onUpdate(updates);
@@ -53,6 +57,16 @@ export const OrganisationProfile: React.FC<OrganisationProfileProps> = ({
       alert("Failed to save organization profile.");
     }
     setIsSaving(false);
+  };
+
+  const handleLogoUpload = async (file: File) => {
+    try {
+      const url = await uploadImage(file, `organisations/${organisation.id}/logo_${Date.now()}`);
+      setLogoUrl(url);
+    } catch (e) {
+      console.error(e);
+      alert("Failed to upload logo.");
+    }
   };
 
   const handleAddImage = async (file: File) => {
@@ -182,6 +196,60 @@ export const OrganisationProfile: React.FC<OrganisationProfileProps> = ({
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {isEditing && (
+              <section className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Branding & Theme</h3>
+                
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Logo</label>
+                  <ImagePicker 
+                    onImageSelect={handleLogoUpload} 
+                    previewUrl={logoUrl} 
+                    className="w-full aspect-square max-w-[120px] mx-auto rounded-2xl border-2 border-dashed border-slate-200"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Primary</label>
+                    <input 
+                      type="color" 
+                      value={editTheme.primary || '#059669'} 
+                      onChange={e => setEditTheme({...editTheme, primary: e.target.value})}
+                      className="block w-full h-10 rounded-lg cursor-pointer border-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Secondary</label>
+                    <input 
+                      type="color" 
+                      value={editTheme.secondary || '#0284c7'} 
+                      onChange={e => setEditTheme({...editTheme, secondary: e.target.value})}
+                      className="block w-full h-10 rounded-lg cursor-pointer border-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Accent</label>
+                    <input 
+                      type="color" 
+                      value={editTheme.accent || '#f59e0b'} 
+                      onChange={e => setEditTheme({...editTheme, accent: e.target.value})}
+                      className="block w-full h-10 rounded-lg cursor-pointer border-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Background</label>
+                    <input 
+                      type="color" 
+                      value={editTheme.background || '#B2713A'} 
+                      onChange={e => setEditTheme({...editTheme, background: e.target.value})}
+                      className="block w-full h-10 rounded-lg cursor-pointer border-none"
+                    />
+                  </div>
+                </div>
+              </section>
+            )}
+
             <section className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
               <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Details</h3>
               <div className="space-y-4">
