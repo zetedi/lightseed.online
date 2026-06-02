@@ -3,7 +3,8 @@ import { useMemo } from 'react';
 import { defaultConfig } from '../config/default';
 import { Organisation } from '../types';
 
-const isHubDomain = (domain: string) => {
+export const isHubDomain = (domain?: string) => {
+    if (!domain) return true;
     const d = domain.toLowerCase().replace(/^www\./, '');
     return d === 'lightseed.online' || d === 'localhost' || d === '127.0.0.1' || d.startsWith('192.168.') || d.endsWith('.local');
 };

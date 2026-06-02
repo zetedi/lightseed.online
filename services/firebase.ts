@@ -460,7 +460,8 @@ export const getNetworkStats = async () => {
 
 export const plantLifetree = async (data: any) => {
     const genesisHash = await createBlock("0", { msg: "Birth" }, Date.now());
-    const domain = data.domain || window.location.hostname.replace(/^www\./, '');
+    const currentHost = window.location.hostname.replace(/^www\./, '');
+    const domain = data.domain || (isHubDomain(currentHost) ? 'lightseed.online' : currentHost);
     const treeDoc = await addDoc(lifetreesCollection, {
         ...data, 
         domain,
@@ -486,13 +487,22 @@ const isHubDomain = (domain?: string) => {
 };
 
 export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {
-    let q = query(lifetreesCollection, orderBy('createdAt', 'desc'), limit(12));
+    let q;
     if (domainFilter && !isHubDomain(domainFilter)) {
-        q = query(lifetreesCollection, where('domain', '==', domainFilter.replace(/^www\./, '')), orderBy('createdAt', 'desc'), limit(12));
+        // Community View: remove orderBy to avoid composite index requirement for now
+        q = query(lifetreesCollection, where('domain', '==', domainFilter.replace(/^www\./, '')), limit(24));
+    } else {
+        q = query(lifetreesCollection, orderBy('createdAt', 'desc'), limit(12));
     }
+
     if (lastD) q = query(q, startAfter(lastD));
     const snap = await getDocs(q);
-    const items = snap.docs.map(d => ({ id: d.id, ...d.data() } as Lifetree));
+    let items = snap.docs.map(d => ({ id: d.id, ...d.data() } as Lifetree));
+
+    // Sort community items client-side if we removed server-side sorting
+    if (domainFilter && !isHubDomain(domainFilter)) {
+        items = items.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+    }
 
     if (!lastD && isHubDomain(domainFilter)) {
         const genesisSnap = await getDoc(doc(db, 'lifetrees', 'GENESIS_TREE'));
@@ -541,13 +551,22 @@ export const toggleGuardianship = (id: string, uid: string, join: boolean) => up
 export const setTreeStatus = (id: string, status: string) => updateDoc(doc(db, 'lifetrees', id), { status });
 
 export const fetchVisions = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {
-    let q = query(visionsCollection, orderBy('createdAt', 'desc'), limit(12));
+    let q;
     if (domainFilter && !isHubDomain(domainFilter)) {
-        q = query(visionsCollection, where('domain', '==', domainFilter.replace(/^www\./, '')), orderBy('createdAt', 'desc'), limit(12));
+        q = query(visionsCollection, where('domain', '==', domainFilter.replace(/^www\./, '')), limit(24));
+    } else {
+        q = query(visionsCollection, orderBy('createdAt', 'desc'), limit(12));
     }
+    
     if (lastD) q = query(q, startAfter(lastD));
     const snap = await getDocs(q);
-    return { items: snap.docs.map(d => ({ id: d.id, ...d.data() } as Vision)), lastDoc: snap.docs[snap.docs.length-1] || null };
+    let items = snap.docs.map(d => ({ id: d.id, ...d.data() } as Vision));
+    
+    if (domainFilter && !isHubDomain(domainFilter)) {
+        items = items.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+    }
+
+    return { items, lastDoc: snap.docs[snap.docs.length-1] || null };
 }
 
 export const getMyVisions = async (uid: string) => (await getDocs(query(visionsCollection, where('authorId', '==', uid)))).docs.map(d => ({ id: d.id, ...d.data() } as Vision));
@@ -593,13 +612,22 @@ export const updateOrganisation = (id: string, data: any) =>
 export const deleteOrganisation = (id: string) => deleteDoc(doc(db, 'organisations', id));
 
 export const fetchPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {
-    let q = query(pulsesCollection, orderBy('createdAt', 'desc'), limit(12));
+    let q;
     if (domainFilter && !isHubDomain(domainFilter)) {
-        q = query(pulsesCollection, where('domain', '==', domainFilter.replace(/^www\./, '')), orderBy('createdAt', 'desc'), limit(12));
+        q = query(pulsesCollection, where('domain', '==', domainFilter.replace(/^www\./, '')), limit(24));
+    } else {
+        q = query(pulsesCollection, orderBy('createdAt', 'desc'), limit(12));
     }
+    
     if (lastD) q = query(q, startAfter(lastD));
     const snap = await getDocs(q);
-    return { items: snap.docs.map(d => ({ id: d.id, ...d.data() } as Pulse)), lastDoc: snap.docs[snap.docs.length-1] || null };
+    let items = snap.docs.map(d => ({ id: d.id, ...d.data() } as Pulse));
+    
+    if (domainFilter && !isHubDomain(domainFilter)) {
+        items = items.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+    }
+
+    return { items, lastDoc: snap.docs[snap.docs.length-1] || null };
 }
 
 export const getMyPulses = async (uid: string) => (await getDocs(query(pulsesCollection, where('authorId', '==', uid)))).docs.map(d => ({ id: d.id, ...d.data() } as Pulse)).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
