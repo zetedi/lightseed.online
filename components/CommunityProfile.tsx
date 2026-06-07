@@ -2,22 +2,22 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
-import { Organisation, Lifetree } from '../types';
-import { updateOrganisation, uploadImage, getTreesByDomain, deleteOrganisation } from '../services/firebase';
+import { Community, Lifetree } from '../types';
+import { updateCommunity, uploadImage, getTreesByDomain, deleteCommunity } from '../services/firebase';
 import RichTextEditor from './ui/RichTextEditor';
 import { ImagePicker } from './ui/ImagePicker';
 
-interface OrganisationProfileProps {
-  organisation: Organisation;
-  onUpdate?: (updates: Partial<Organisation>) => void;
+interface CommunityProfileProps {
+  community: Community;
+  onUpdate?: (updates: Partial<Community>) => void;
   onClose: () => void;
   currentUserId?: string;
   isAdmin?: boolean;
   isSuperAdmin?: boolean;
 }
 
-export const OrganisationProfile: React.FC<OrganisationProfileProps> = ({ 
-  organisation, 
+export const CommunityProfile: React.FC<CommunityProfileProps> = ({ 
+  community, 
   onUpdate, 
   onClose, 
   currentUserId, 
@@ -26,22 +26,22 @@ export const OrganisationProfile: React.FC<OrganisationProfileProps> = ({
 }) => {
   const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
-  const [editName, setEditName] = useState(organisation.name);
-  const [editVision, setEditVision] = useState(organisation.vision);
-  const [editTheme, setEditTheme] = useState(organisation.theme || {});
-  const [logoUrl, setLogoUrl] = useState(organisation.logoUrl || '');
-  const [imageUrls, setImageUrls] = useState<string[]>(organisation.imageUrls || []);
+  const [editName, setEditName] = useState(community.name);
+  const [editVision, setEditVision] = useState(community.vision);
+  const [editTheme, setEditTheme] = useState(community.theme || {});
+  const [logoUrl, setLogoUrl] = useState(community.logoUrl || '');
+  const [imageUrls, setImageUrls] = useState<string[]>(community.imageUrls || []);
   const [linkedTrees, setLinkedTrees] = useState<Lifetree[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
-  const canEdit = currentUserId === organisation.ownerId || isSuperAdmin || isAdmin;
-  const canDelete = currentUserId === organisation.ownerId || isSuperAdmin;
+  const canEdit = currentUserId === community.ownerId || isSuperAdmin || isAdmin;
+  const canDelete = currentUserId === community.ownerId || isSuperAdmin;
 
   useEffect(() => {
-    getTreesByDomain(organisation.domain).then(setLinkedTrees);
-  }, [organisation.domain]);
+    getTreesByDomain(community.domain).then(setLinkedTrees);
+  }, [community.domain]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -53,34 +53,34 @@ export const OrganisationProfile: React.FC<OrganisationProfileProps> = ({
         theme: editTheme,
         logoUrl: logoUrl
       };
-      await updateOrganisation(organisation.id, updates);
+      await updateCommunity(community.id, updates);
       if (onUpdate) onUpdate(updates);
       setIsEditing(false);
     } catch (e) {
       console.error(e);
-      alert("Failed to save organization profile.");
+      alert("Failed to save community profile.");
     }
     setIsSaving(false);
   };
 
   const handleDelete = async () => {
-      if (!window.confirm("Are you sure you want to delete this organisation? This cannot be undone.")) return;
+      if (!window.confirm("Are you sure you want to delete this community? This cannot be undone.")) return;
       setIsDeleting(true);
       try {
-          await deleteOrganisation(organisation.id);
-          alert("Organisation deleted.");
+          await deleteCommunity(community.id);
+          alert("Community deleted.");
           onClose();
           window.location.reload(); // Refresh to update lists
       } catch (e) {
           console.error(e);
-          alert("Failed to delete organisation.");
+          alert("Failed to delete community.");
       }
       setIsDeleting(false);
   }
 
   const handleLogoUpload = async (file: File) => {
     try {
-      const url = await uploadImage(file, `organisations/${organisation.id}/logo_${Date.now()}`);
+      const url = await uploadImage(file, `communities/${community.id}/logo_${Date.now()}`);
       setLogoUrl(url);
     } catch (e) {
       console.error(e);
@@ -90,7 +90,7 @@ export const OrganisationProfile: React.FC<OrganisationProfileProps> = ({
 
   const handleAddImage = async (file: File) => {
     try {
-      const url = await uploadImage(file, `organisations/${organisation.id}/${Date.now()}`);
+      const url = await uploadImage(file, `communities/${community.id}/${Date.now()}`);
       setImageUrls(prev => [...prev, url]);
     } catch (e) {
       console.error(e);
@@ -114,7 +114,7 @@ export const OrganisationProfile: React.FC<OrganisationProfileProps> = ({
           <span>Back</span>
         </button>
         <h2 className="text-xl font-light tracking-wide text-slate-950">
-          {isEditing ? "Editing Organisation" : organisation.name}
+          {isEditing ? "Editing Community" : community.name}
         </h2>
         <div className="min-w-[80px] flex justify-end gap-2">
           {canEdit && !isEditing && (
@@ -147,7 +147,7 @@ export const OrganisationProfile: React.FC<OrganisationProfileProps> = ({
               <img 
                 src={imageUrls[activeImageIndex]} 
                 className="w-full h-full object-cover transition-all duration-500"
-                alt={organisation.name}
+                alt={community.name}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
               
@@ -212,12 +212,12 @@ export const OrganisationProfile: React.FC<OrganisationProfileProps> = ({
                 <RichTextEditor 
                   value={editVision} 
                   onChange={setEditVision} 
-                  placeholder="Share your organization's vision..."
+                  placeholder="Share your community's vision..."
                 />
               ) : (
                 <div 
                   className="prose prose-slate max-w-none text-slate-700 leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: organisation.vision || "<p>No vision shared yet.</p>" }}
+                  dangerouslySetInnerHTML={{ __html: community.vision || "<p>No vision shared yet.</p>" }}
                 />
               )}
             </section>
@@ -284,12 +284,12 @@ export const OrganisationProfile: React.FC<OrganisationProfileProps> = ({
               <div className="space-y-4">
                 <div>
                   <label className="text-[10px] font-bold text-slate-400 uppercase">Domain</label>
-                  <p className="text-emerald-600 font-mono text-sm">{organisation.domain}</p>
+                  <p className="text-emerald-600 font-mono text-sm">{community.domain}</p>
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-slate-400 uppercase">Member since</label>
                   <p className="text-slate-600 text-sm">
-                    {organisation.createdAt?.toDate ? organisation.createdAt.toDate().toLocaleDateString() : '—'}
+                    {community.createdAt?.toDate ? community.createdAt.toDate().toLocaleDateString() : '—'}
                   </p>
                 </div>
               </div>
@@ -327,9 +327,9 @@ export const OrganisationProfile: React.FC<OrganisationProfileProps> = ({
                 <button 
                   onClick={() => {
                     setIsEditing(false);
-                    setEditName(organisation.name);
-                    setEditVision(organisation.vision);
-                    setImageUrls(organisation.imageUrls || []);
+                    setEditName(community.name);
+                    setEditVision(community.vision);
+                    setImageUrls(community.imageUrls || []);
                   }} 
                   disabled={isSaving} 
                   className="w-full bg-slate-200 text-slate-700 py-3 rounded-2xl font-bold hover:bg-slate-300 transition-all"

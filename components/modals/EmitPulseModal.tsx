@@ -12,7 +12,7 @@ interface EmitPulseModalProps {
   matchCandidate: Pulse | null;
   onClose: () => void;
   onMint: (data: any) => Promise<void>;
-  onProposeMatch: (data: any) => Promise<void>;
+  onProposeAlignment: (data: any) => Promise<void>;
   uploading: boolean;
   handleImageUpload: (file: File, path: string) => Promise<string>;
   uploadBase64Image: (base64: string, path: string) => Promise<string>;
@@ -24,7 +24,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
   matchCandidate,
   onClose,
   onMint,
-  onProposeMatch,
+  onProposeAlignment,
   uploading,
   handleImageUpload,
   uploadBase64Image
@@ -63,12 +63,12 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
     } finally { setIsSubmitting(false); }
   };
 
-  const handleMatch = async (e: FormEvent) => {
+  const handleAlignment = async (e: FormEvent) => {
     e.preventDefault();
     if (!lightseed || !activeTree || !matchCandidate || isSubmitting) return;
     setIsSubmitting(true);
     try {
-         await onProposeMatch({
+         await onProposeAlignment({
              initiatorPulseId: "PENDING_CREATION",
              initiatorTreeId: activeTree.id,
              initiatorUid: lightseed.uid,
@@ -76,7 +76,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
              targetTreeId: matchCandidate.lifetreeId,
              targetUid: matchCandidate.authorId
          });
-         alert("Match Proposed! Waiting for resonance.");
+         alert("Alignment Proposed! Waiting for resonance.");
          onClose();
     } catch(e:any) { 
         alert(e.message); 
@@ -84,12 +84,12 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
   }
 
   return (
-    <Modal title={matchCandidate ? t('propose_match') : t('emit_pulse')} onClose={onClose}>
-      <form onSubmit={matchCandidate ? handleMatch : handleMint} className="flex flex-col gap-4">
+    <Modal title={matchCandidate ? t('propose_alignment') : t('emit_pulse')} onClose={onClose}>
+      <form onSubmit={matchCandidate ? handleAlignment : handleMint} className="flex flex-col gap-4">
         {matchCandidate ? (
           <div className="bg-sky-50 p-4 rounded text-sky-800">
-            {t('matching_with')} <strong>{matchCandidate.title}</strong>. 
-            <br/><span className="text-xs">{t('match_request_desc')}</span>
+            {t('alignment_with')} <strong>{matchCandidate.title}</strong>. 
+            <br/><span className="text-xs">{t('alignment_request_desc')}</span>
           </div>
         ) : (
           <>

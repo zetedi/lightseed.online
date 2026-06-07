@@ -72,8 +72,13 @@ export const generateAIContent = onCall({
                 lastError = error;
                 const errorText = error.message || "";
                 const isRateLimit = errorText.includes('429') || error.status === 429 || errorText.toLowerCase().includes('quota') || errorText.toLowerCase().includes('overwhelmed');
+                const isForbidden = errorText.includes('403') || error.status === 403 || errorText.includes('CONSUMER_SUSPENDED');
                 
                 console.warn(`Attempt ${i+1} failed:`, errorText);
+
+                if (isForbidden) {
+                    throw new HttpsError('permission-denied', 'The AI service is currently unavailable. The API key may be suspended or restricted. Please contact support.');
+                }
 
                 if (isRateLimit && i < maxRetries) {
                     const delay = Math.pow(2, i) * 2000 + Math.random() * 1000; // Heavier backoff

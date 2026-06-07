@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { type Pulse, type Lifetree, type MatchProposal, type Vision, type VisionSynergy } from '../types';
-import { getMyPulses, getMyVisions, getJoinedVisions, getMyMatchesHistory, deleteUserAccount, logout, triggerSystemEmail, monitorMailStatus, sendInvite, listenToUserProfile, deleteVision, getAdmins, setNewsletterSubscription } from '../services/firebase';
+import { type Pulse, type Lifetree, type Alignment, type Vision, type VisionSynergy } from '../types';
+import { getMyPulses, getMyVisions, getJoinedVisions, getMyAlignmentsHistory, deleteUserAccount, logout, triggerSystemEmail, monitorMailStatus, sendInvite, listenToUserProfile, deleteVision, getAdmins, setNewsletterSubscription, migrateDataToV2 } from '../services/firebase';
 import { findVisionSynergies } from '../services/gemini';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
@@ -17,7 +17,7 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
     const [pulses, setPulses] = useState<Pulse[]>([]);
     const [visions, setVisions] = useState<Vision[]>([]);
     const [joinedVisions, setJoinedVisions] = useState<Vision[]>([]);
-    const [history, setHistory] = useState<MatchProposal[]>([]);
+    const [history, setHistory] = useState<Alignment[]>([]);
     const [loading, setLoading] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -35,7 +35,7 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
     const [togglingNewsletter, setTogglingNewsletter] = useState(false);
     const [dialogMessage, setDialogMessage] = useState<string | null>(null);
 
-    // AI Matchmaking State
+    // AI Alignment State
     const [synergies, setSynergies] = useState<VisionSynergy[]>([]);
     const [analyzing, setAnalyzing] = useState(false);
 
@@ -76,7 +76,7 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                     setVisions(created);
                     setJoinedVisions(joined);
                 } else if (activeTab === 'history') {
-                    const data = await getMyMatchesHistory(lightseed.uid);
+                    const data = await getMyAlignmentsHistory(lightseed.uid);
                     setHistory(data);
                 }
             } catch (e) {
@@ -88,11 +88,11 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
         return () => unsub();
     }, [activeTab, lightseed]);
 
-    const handleMatchmaking = async () => {
+    const handleAlignmentAnalysis = async () => {
         if (visions.length < 2) {
              const data = await getMyVisions(lightseed.uid);
              if (data.length < 2) {
-                 setDialogMessage("You need at least 2 visions to find synergies.");
+                 setDialogMessage("You need at least 2 visions to find alignments.");
                  return;
              }
              setVisions(data);
@@ -332,13 +332,31 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                             <h4 className="font-bold text-indigo-300 flex items-center gap-2 text-sm uppercase tracking-wider">
                                 <Icons.Shield /> Admin Management
                             </h4>
-                            <button
-                                onClick={onOpenNewsletterAdmin}
-                                className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors flex items-center gap-2"
-                            >
-                                <Icons.Send />
-                                <span>Send Newsletter</span>
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={async () => {
+                                        if(confirm('Are you sure you want to migrate all data to V2 schema? This is an irreversible operation.')) {
+                                            try {
+                                                const res = await migrateDataToV2();
+                                                alert(`Migration Complete! Trees: ${res.trees}, Visions: ${res.visions}, Pulses: ${res.pulses}`);
+                                            } catch (e: any) {
+                                                alert(`Migration failed: ${e.message}`);
+                                            }
+                                        }
+                                    }}
+                                    className="bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors flex items-center gap-2"
+                                >
+                                    <Icons.Sparkles />
+                                    <span>Migrate to V2</span>
+                                </button>
+                                <button
+                                    onClick={onOpenNewsletterAdmin}
+                                    className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors flex items-center gap-2"
+                                >
+                                    <Icons.Send />
+                                    <span>Send Newsletter</span>
+                                </button>
+                            </div>
                         </div>
                         <div className="flex gap-2 mb-4">
                             <input
@@ -439,7 +457,7 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                             onClick={() => setActiveTab('history')} 
                             className={`flex-1 min-w-[100px] py-4 text-sm font-medium transition-colors ${activeTab === 'history' ? 'text-slate-600 border-b-2 border-slate-500 bg-slate-50/50' : 'text-slate-500 hover:text-slate-800'}`}
                         >
-                            {t('my_matches')}
+                            {t('my_alignments')}
                         </button>
                     </div>
 
@@ -513,18 +531,18 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                                     <div className="flex justify-between items-center mb-6">
                                          <h3 className="text-lg font-bold">My Visions</h3>
                                          <button 
-                                            onClick={handleMatchmaking}
+                                            onClick={handleAlignmentAnalysis}
                                             disabled={analyzing}
                                             className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-full text-sm font-medium flex items-center space-x-2 transition-colors disabled:opacity-50"
                                          >
                                              {analyzing ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Icons.Sparkles />}
-                                             <span>AI Matchmaking</span>
+                                             <span>AI Alignment Analysis</span>
                                          </button>
                                     </div>
                                     
                                     {synergies.length > 0 && (
                                         <div className="mb-8 bg-indigo-50 border border-indigo-100 rounded-xl p-4">
-                                            <h4 className="font-bold text-indigo-900 mb-3 flex items-center"><Icons.SparkleFill /> <span className="ml-2">Synergy Report</span></h4>
+                                            <h4 className="font-bold text-indigo-900 mb-3 flex items-center"><Icons.SparkleFill /> <span className="ml-2">Alignment Report</span></h4>
                                             <div className="space-y-3">
                                                 {synergies.map((s, i) => (
                                                     <div key={i} className="bg-white p-3 rounded-lg shadow-sm border border-indigo-100/50">

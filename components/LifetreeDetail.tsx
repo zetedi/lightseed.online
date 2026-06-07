@@ -393,13 +393,14 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                     {isNature ? 'Nature' : hasValidationBadge && tree.validatorId ? `${tree.validatorId.substring(0, 8)}...` : t('unvalidated')}
                                 </span>
                             </div>
-                            <div className="flex items-center gap-4 py-2">
+                             <div className="flex items-center gap-4 py-2">
                                 <span className="w-24 shrink-0 text-slate-500 text-sm">Website</span>
                                 {isEditing ? (
                                     <AutocompleteInput
+                                        label="Community Hub"
                                         value={editDomain}
                                         onChange={setEditDomain}
-                                        placeholder="e.g. myproject.com"
+                                        placeholder="e.g. mycommunity.com"
                                         className={fieldClassName}
                                     />
                                 ) : (

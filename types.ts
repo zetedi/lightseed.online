@@ -1,24 +1,50 @@
 
 // Fix: Use proper type imports to resolve "no exported member" errors in some TS environments.
 import type { User as FirebaseUser } from 'firebase/auth';
-import type { Timestamp } from 'firebase/firestore';
+import type { Timestamp, GeoPoint } from 'firebase/firestore';
 
 export type Lightseed = Pick<FirebaseUser, 'uid' | 'email' | 'displayName' | 'photoURL'>;
 
-export type PulseType = 'STANDARD' | 'GROWTH';
+export type LegacyPulseType = 'STANDARD' | 'GROWTH';
+export type PulseType = 'observation' | 'dream' | 'offering' | 'request' | 'translation' | 'validation' | LegacyPulseType;
+export type LifetreeType = "human" | "ai" | "community" | "project" | "LIFETREE" | "GUARDED" | "FAMILY";
+export type VisionStatus = "seed" | "growing" | "flowering" | "dormant";
 
-// The Entity/Blockchain container
+export interface PulseInterpretation {
+    depth: number;
+    interpretation: string;
+    confidence: number;
+    alternatives?: string[];
+    growthSuggestion?: string;
+}
+
+// The Entity/Blockchain container / Living Identity
 export interface Lifetree {
   id: string;
-  ownerId: string;
+  ownerId: string; // Legacy
   name: string;
-  shortTitle?: string;
-  body: string; // The Vision
+  shortTitle?: string; // Legacy
+  body: string; // The Vision (Legacy)
   imageUrl?: string;
   latestGrowthUrl?: string; // URL of the most recent growth pulse image
+  
+  // V2 Fields
+  type?: LifetreeType;
+  visionIds?: string[];
+  pulseIds?: string[];
+  guardianIds?: string[];
+  parentTreeIds?: string[];
+  childTreeIds?: string[];
+  aiTokenBalance?: number;
+  coherenceScore?: number;
+
+  // Legacy location
   latitude?: number;
   longitude?: number;
   locationName?: string;
+  // V2 location
+  location?: GeoPoint;
+
   domain?: string; // Associated website domain, e.g. "example.com"
   createdAt: Timestamp;
   
@@ -26,10 +52,10 @@ export interface Lifetree {
   validated: boolean; 
   validatorId?: string | null;
 
-  // Nature & Guardian Logic
+  // Nature & Guardian Logic (Legacy)
   isNature?: boolean;
-  treeType?: 'LIFETREE' | 'GUARDED' | 'FAMILY';
-  guardians?: string[]; // Array of User IDs
+  treeType?: LifetreeType; // Legacy
+  guardians?: string[]; // Array of User IDs (Legacy)
   status?: 'HEALTHY' | 'DANGER';
 
   // Blockchain Props
@@ -38,31 +64,45 @@ export interface Lifetree {
   blockHeight: number;
 }
 
+// A direction of growth
 export interface Vision {
   id: string;
-  lifetreeId: string;
-  authorId: string;
+  lifetreeId?: string; // Legacy
+  treeId?: string; // V2
+  authorId: string; // Legacy
   title: string;
-  body: string;
+  body: string; // Legacy
+  description?: string; // V2
   link?: string;
   imageUrl?: string;
   createdAt: Timestamp;
   joinedUserIds?: string[]; // List of users who joined this vision
+  
+  // V2
+  status?: VisionStatus;
+  resonanceScore?: number;
 }
 
-// The Block
+// The fundamental unit of the network
 export interface Pulse {
   id: string;
-  lifetreeId: string;
-  type: PulseType; // GROWTH or STANDARD
+  lifetreeId?: string; // Legacy
+  treeId?: string; // V2
+  visionId?: string; // V2
+  type: PulseType;
   
   // Data Payload
-  title: string;
-  body: string;
+  title: string; // Legacy
+  body: string; // Legacy
+  content?: string; // V2
   imageUrl?: string;
   
-  // Match Logic (On Chain)
-  isMatch: boolean;
+  // V2 AI
+  aiInterpretation?: PulseInterpretation;
+  validationScore?: number;
+
+  // Alignment Logic (On Chain) (Legacy)
+  isMatch?: boolean;
   matchedLifetreeId?: string;
   matchId?: string; // Link to the handshake
   
@@ -81,8 +121,8 @@ export interface Pulse {
   hash: string;
 }
 
-// Off-Chain Match Handshake
-export interface MatchProposal {
+// Off-Chain Alignment Handshake (Former MatchProposal)
+export interface Alignment {
   id: string;
   initiatorPulseId: string;
   initiatorTreeId: string;
@@ -111,7 +151,7 @@ export interface VisionSynergy {
     score: number;
 }
 
-export interface Organisation {
+export interface Community {
   id: string;
   ownerId: string;
   name: string;

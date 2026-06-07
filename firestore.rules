@@ -1,102 +1,89 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Helper functions
     function isSignedIn() {
       return request.auth != null;
     }
-
-    function isRootSuperAdmin() {
-      return isSignedIn() && request.auth.token.email == 'zetedi@gmail.com';
+    function isOwner(userId) {
+      return request.auth.uid == userId;
     }
-
-    function isConfiguredSuperAdmin() {
-      return isSignedIn()
-        && exists(/databases/$(database)/documents/config/superadmin)
-        && get(/databases/$(database)/documents/config/superadmin).data.uid == request.auth.uid;
-    }
-
-    function isSuperAdmin() {
-      return isRootSuperAdmin() || isConfiguredSuperAdmin();
-    }
-
-    function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
-    }
-
     function isStaff() {
-      return isSuperAdmin() || isAdmin();
-    }
-    
-    // Allow users to access their own profile
-    match /users/{userId} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
+      return exists(/databases/$(database)/documents/admins/$(request.auth.uid)) || request.auth.token.admin == true;
     }
 
-    // Email System: 
-    // Create: Auth users can trigger emails, BUT must include their uid so they can read it back.
-    // Read: Users can read their own email logs to check delivery status.
-    // We allow reading if resource is null to handle the race condition where the client listens before the server commits the write.
-    match /mail/{mailId} {
-      allow create: if false; // Disabled to prevent spam. Use Cloud Functions instead.
-      allow read: if isSignedIn() && (resource == null || resource.data.uid == request.auth.uid);
-    }
-
-    // Newsletter: Public write access for signups
-    match /subscriptions/{subId} {
-      allow create: if true;
-      allow update: if isSignedIn();
-      allow delete: if (isSignedIn() && resource.data.uid == request.auth.uid) || isStaff();
-      allow read: if isStaff();
-    }
-
+    // Admins collection: read staff, no direct write
     match /admins/{adminId} {
-      allow read: if isStaff();
-      allow write: if isSuperAdmin();
+      allow read: if isSignedIn();
+      allow write: if false; 
     }
 
+    // Config collection: read staff/config-specific, no direct write
     match /config/{configId} {
+      allow read: if configId == 'superadmin' || isStaff();
+      allow write: if false; 
+    }
+
+    // Users collection: Read self/staff, Write self
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isStaff();
+      allow write: if isOwner(userId);
+    }
+
+    // Subscriptions: Create public, Read staff
+    match /subscriptions/{subId} {
       allow read: if isStaff();
-      allow write: if isSuperAdmin();
+      allow create: if true;
+      allow update, delete: if isStaff();
     }
 
-    // Lifetrees: Read public, Write auth (ownership check)
-    match /lifetrees/{treeId} {
-      allow read: if true;
-      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-      allow update, delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
-    }
-
-    // Visions: Read public, Write auth (ownership check)
-    match /visions/{visionId} {
-      allow read: if true;
-      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
-      allow update, delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
-    }
-
-    // Pulses: Read public, Write auth (ownership check)
-    match /pulses/{pulseId} {
-      allow read: if true;
-      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
-      allow update, delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff());
-
-      // Subcollection for Loves
-      match /loves/{userId} {
-        allow read: if true;
-        allow write: if isSignedIn() && userId == request.auth.uid;
-      }
-    }
-    
-    // Matches: Read public, Write auth
-    match /matches/{matchId} {
-      allow read: if isSignedIn() && (resource.data.initiatorUid == request.auth.uid || resource.data.targetUid == request.auth.uid || isStaff());
-      allow create: if isSignedIn() && request.resource.data.initiatorUid == request.auth.uid;
-      allow update: if isSignedIn() && (resource.data.initiatorUid == request.auth.uid || resource.data.targetUid == request.auth.uid);
+    // Mail: Read/Write self/staff
+    match /mail/{mailId} {
+      allow read: if isSignedIn() && (resource.data.uid == request.auth.uid || isStaff());
+      allow create: if isSignedIn();
       allow delete: if isStaff();
     }
 
-    // Organisations: Read public, Write staff/owner
-    match /organisations/{orgId} {
+    // Lifetrees: Read public, Write owner/staff
+    match /lifetrees/{treeId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff() || request.auth.uid in resource.data.guardians);
+      allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
+    }
+
+    // Visions: Read public, Write author/staff
+    match /visions/{visionId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn(); // For joining
+      allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff());
+    }
+
+    // Pulses: Read public, Write signed in
+    match /pulses/{pulseId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn(); // For loves
+      allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff());
+
+      // Loves subcollection
+      match /loves/{loveId} {
+          allow read: if true;
+          allow write: if isSignedIn() && isOwner(loveId);
+      }
+    }
+
+    // Alignments: Read public, Write signed in
+    match /alignments/{id} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (resource.data.targetUid == request.auth.uid || resource.data.initiatorUid == request.auth.uid);
+      allow delete: if isStaff();
+    }
+
+    // Communities: Read public, Write staff/owner
+    match /communities/{communityId} {
       allow read: if true;
       allow create: if isSignedIn();
       allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());

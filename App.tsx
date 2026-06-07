@@ -11,9 +11,9 @@ import {
   uploadBase64Image,
   validateLifetree,
   unvalidateLifetree,
-  proposeMatch,
-  getPendingMatches,
-  acceptMatch,
+  proposeAlignment,
+  getPendingAlignments,
+  acceptAlignment,
   fetchVisions,
   createVision,
   deleteLifetree,
@@ -21,13 +21,13 @@ import {
   ensureGenesis,
   getMyPulses,
   getMyVisions,
-  getMyMatchesHistory,
+  getMyAlignmentsHistory,
   claimSuperAdmin,
   grantAdmin,
   revokeAdmin
 } from './services/firebase';
 import { findVisionSynergies } from './services/gemini';
-import { type Pulse, type Lifetree, type MatchProposal, type Vision, type Organisation, type VisionSynergy } from './types';
+import { type Pulse, type Lifetree, type Alignment, type Vision, type Community, type VisionSynergy } from './types';
 import Logo from './components/Logo';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { useLifeseed } from './hooks/useLifeseed';
@@ -51,8 +51,8 @@ import { Dashboard } from './components/Dashboard';
 import { Loading } from './components/ui/Loading';
 import { LifeseedWidget } from './components/LifeseedWidget';
 import { NewsletterAdmin } from './components/NewsletterAdmin';
-import { OrganisationList } from './components/OrganisationList';
-import { OrganisationProfile } from './components/OrganisationProfile';
+import { CommunityList } from './components/CommunityList';
+import { CommunityProfile } from './components/CommunityProfile';
 import { isExplicitlyValidatedTree } from './utils/validation';
 
 // Modals
@@ -147,16 +147,16 @@ const AppContent = () => {
     const [tab, setTab] = useState('dashboard');
     const [viewMode, setViewMode] = useState<'grid' | 'map'>('map');
     const [data, setData] = useState<any[]>([]);
-    const [matches, setMatches] = useState<MatchProposal[]>([]);
+    const [alignments, setAlignments] = useState<Alignment[]>([]);
     const [selectedTree, setSelectedTree] = useState<Lifetree | null>(null);
     const [selectedVision, setSelectedVision] = useState<Vision | null>(null);
     const [selectedPulse, setSelectedPulse] = useState<Pulse | null>(null);
-    const [selectedOrganisation, setSelectedOrganisation] = useState<Organisation | null>(null);
-    const [hostOrganisation, setHostOrganisation] = useState<Organisation | null>(null);
+    const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
+    const [hostCommunity, setHostCommunity] = useState<Community | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     
     // Stats State for Dashboard
-    const [stats, setStats] = useState({ pulses: 0, visions: 0, matches: 0 });
+    const [stats, setStats] = useState({ pulses: 0, visions: 0, alignments: 0 });
     
     // Pagination State
     const [lastDoc, setLastDoc] = useState<any>(null);
@@ -179,7 +179,7 @@ const AppContent = () => {
     const [synergies, setSynergies] = useState<VisionSynergy[]>([]);
     const [isAnalyzingSynergy, setIsAnalyzingSynergy] = useState(false);
 
-    const config = useConfig(hostOrganisation);
+    const config = useConfig(hostCommunity);
 
     useEffect(() => {
         const root = document.documentElement;
@@ -210,16 +210,16 @@ const AppContent = () => {
             Promise.all([
                 getMyPulses(lightseed.uid),
                 getMyVisions(lightseed.uid),
-                getMyMatchesHistory(lightseed.uid)
+                getMyAlignmentsHistory(lightseed.uid)
             ]).then(([p, v, m]) => {
                 setStats({
                     pulses: p.length,
                     visions: v.length,
-                    matches: m.length
+                    alignments: m.length
                 });
             }).catch(console.error);
         } else {
-            setStats({ pulses: 0, visions: 0, matches: 0 });
+            setStats({ pulses: 0, visions: 0, alignments: 0 });
         }
     }, [lightseed, tab]); // Re-fetch when tab changes to refresh counts
 
@@ -228,17 +228,17 @@ const AppContent = () => {
             loadContent(true);
         }
         ensureGenesis(); 
-        // Fetch host organisation
+        // Fetch host community
         const domain = window.location.hostname;
-        import('./services/firebase').then(({ getOrganisationByDomain }) => {
-            getOrganisationByDomain(domain).then(setHostOrganisation);
+        import('./services/firebase').then(({ getCommunityByDomain }) => {
+            getCommunityByDomain(domain).then(setHostCommunity);
         });
     }, [tab, lightseed]);
     
     useEffect(() => {
         const handleScroll = () => {
             if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
-                if (!loadingMore && hasMore && tab !== 'dashboard' && tab !== 'matches' && tab !== 'oracle' && tab !== 'profile' && tab !== 'about' && tab !== 'forest') {
+                if (!loadingMore && hasMore && tab !== 'dashboard' && tab !== 'observatory' && tab !== 'oracle' && tab !== 'profile' && tab !== 'about' && tab !== 'forest') {
                     loadContent(false);
                 }
             }
@@ -313,9 +313,9 @@ const AppContent = () => {
                 setLastDoc(res.lastDoc);
                 setHasMore(!!res.lastDoc);
             }
-            else if (tab === 'matches' && lightseed) {
-                 const res = await getPendingMatches(lightseed.uid);
-                 setMatches(res);
+            else if (tab === 'observatory' && lightseed) {
+                 const res = await getPendingAlignments(lightseed.uid);
+                 setAlignments(res);
             }
         } catch(e) {
             console.error("Load Content Error:", e);
@@ -405,10 +405,10 @@ const AppContent = () => {
         }
     }
 
-    const onAcceptMatch = async (id: string) => {
-        try { await acceptMatch(id); alert("Match Accepted! Blocks synced."); loadContent(true); } 
+    const onAcceptAlignment = async (id: string) => {
+        try { await acceptAlignment(id); alert("Alignment Accepted! Blocks synced."); loadContent(true); } 
         catch(e:any) { 
-            console.error("Accept Match Error:", e);
+            console.error("Accept Alignment Error:", e);
             alert(e.message); 
         }
     }
@@ -459,12 +459,12 @@ const AppContent = () => {
                             trees: myTrees.length,
                             pulses: stats.pulses,
                             visions: stats.visions,
-                            matches: stats.matches,
+                            alignments: stats.alignments,
                             danger: guardedTrees.filter(t => t.status === 'DANGER').length
                         }}
                         firstTreeImage={activeTree?.latestGrowthUrl || activeTree?.imageUrl}
-                        hostOrganisation={hostOrganisation}
-                        onViewOrganisation={setSelectedOrganisation}
+                        hostCommunity={hostCommunity}
+                        onViewCommunity={setSelectedCommunity}
                         onSetTab={setTab} 
                         onPlant={() => { setShowPlantModal(true); }}
                         onLogin={signInWithGoogle} 
@@ -505,10 +505,10 @@ const AppContent = () => {
             return <AboutPage onClose={() => setTab('dashboard')} />;
         }
 
-        if (tab === 'organisations') {
+        if (tab === 'communities') {
             return (
-                <OrganisationList 
-                    onSelect={(org) => setSelectedOrganisation(org)}
+                <CommunityList 
+                    onSelect={(community) => setSelectedCommunity(community)}
                     myTrees={myTrees}
                     currentUserId={lightseed?.uid}
                 />
@@ -517,7 +517,7 @@ const AppContent = () => {
 
         return (
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 min-h-[80vh]">
-                {tab !== 'matches' && tab !== 'profile' && tab !== 'oracle' && tab !== 'about' && tab !== 'dashboard' && tab !== 'newsletter' && (
+                {tab !== 'observatory' && tab !== 'profile' && tab !== 'oracle' && tab !== 'about' && tab !== 'dashboard' && tab !== 'newsletter' && tab !== 'communities' && (
                     <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                         <div className="relative w-full md:max-w-md">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -587,10 +587,10 @@ const AppContent = () => {
                     </div>
                 )}
 
-                {tab === 'matches' && (
+                {tab === 'observatory' && (
                     <div className="max-w-2xl mx-auto text-white">
-                        <h2 className="text-2xl font-light mb-6">{t('pending_matches')}</h2>
-                        {matches.length === 0 ? (
+                        <h2 className="text-2xl font-light mb-6">{t('pending_alignments')}</h2>
+                        {alignments.length === 0 ? (
                             <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-slate-200 p-12 text-center flex flex-col items-center">
                                 <div className="mb-6 p-4 bg-slate-50 rounded-full">
                                     <Logo width={100} height={100} className="text-slate-800" />
@@ -598,10 +598,17 @@ const AppContent = () => {
                                 <h3 className="text-xl font-light text-slate-800 mb-2">{t('no_pending_resonance')}</h3>
                                 <p className="text-slate-500">{t('ether_quiet')}</p>
                             </div>
-                        ) : matches.map(m => (
-                            <div key={m.id} className="bg-white/90 p-4 rounded shadow-sm border border-slate-200 mb-4 flex justify-between items-center text-slate-800">
-                                <div><p className="font-bold">{t('match_request')}</p><p className="text-sm text-slate-500">{t('from_another_tree')}</p></div>
-                                <button onClick={() => onAcceptMatch(m.id)} className="bg-sky-500 text-white px-4 py-2 rounded">{t('accept_sync')}</button>
+                        ) : alignments.map(a => (
+                            <div key={a.id} className="bg-white/90 p-4 rounded-xl shadow-sm border border-slate-200 mb-4 flex flex-col gap-4 text-slate-800 animate-in fade-in slide-in-from-bottom-2">
+                                <div className="flex justify-between items-center">
+                                    <div><p className="font-bold">{t('alignment_request')}</p><p className="text-sm text-slate-500">{t('from_another_tree')}</p></div>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => { setTab('oracle'); }} className="bg-emerald-50 text-emerald-700 px-4 py-2 rounded-full text-xs font-bold border border-emerald-100 flex items-center gap-1.5 hover:bg-emerald-100 transition-all">
+                                            <Icons.MessageCircle size={14} /> Start Conversation
+                                        </button>
+                                        <button onClick={() => onAcceptAlignment(a.id)} className="bg-sky-500 text-white px-4 py-2 rounded-full text-xs font-bold shadow-md hover:bg-sky-600 transition-all">{t('accept_sync')}</button>
+                                    </div>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -680,30 +687,31 @@ const AppContent = () => {
                         )}
                     </>
                 ) : tab === 'visions' ? (
-                    <div className="space-y-6">
-                        <div className="flex justify-between items-center">
-                            <h2 className="text-2xl font-light text-white">Visions</h2>
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                         <div className="flex justify-between items-center mb-8 bg-white/10 backdrop-blur-md p-6 rounded-3xl border border-white/10 shadow-xl">
+                            <h2 className="text-4xl font-thin tracking-tight text-white">{t('visions')}</h2>
                             <button 
-                                onClick={handleAnalyzeSynergy}
+                                onClick={handleAnalyzeSynergy} 
                                 disabled={isAnalyzingSynergy || data.length < 2}
-                                className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-md flex items-center gap-2 transition-all disabled:opacity-50"
+                                className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2.5 rounded-full font-bold shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 border border-amber-400/30 active:scale-95 disabled:opacity-50"
                             >
-                                <Icons.Sparkles />
-                                {isAnalyzingSynergy ? "Analyzing..." : "Find Synergies"}
+                                {isAnalyzingSynergy ? <Loading /> : <Icons.Sparkles />}
+                                <span>{isAnalyzingSynergy ? 'Analyzing...' : 'Analyze Alignments'}</span>
                             </button>
                         </div>
 
                         {synergies.length > 0 && (
-                            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 animate-in fade-in slide-in-from-top-4">
-                                <h3 className="text-amber-400 font-bold uppercase tracking-widest text-xs mb-4 flex items-center gap-2">
-                                    <Icons.Sparkles /> AI Synergy Analysis
-                                </h3>
+                            <div className="mb-12 bg-amber-50/90 backdrop-blur-md p-8 rounded-[2rem] border-2 border-amber-200 shadow-2xl animate-in zoom-in-95 duration-500">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="bg-amber-500 text-white p-2 rounded-xl shadow-lg"><Icons.SparkleFill size={24} /></div>
+                                    <h3 className="text-2xl font-light text-amber-900 italic">Living Intelligence Resonance</h3>
+                                </div>
                                 <div className="grid gap-4 md:grid-cols-2">
                                     {synergies.map((s, i) => (
                                         <div key={i} className="bg-white/90 p-4 rounded-xl shadow-sm border border-amber-100">
                                             <div className="flex justify-between items-start mb-2">
                                                 <div className="text-sm font-bold text-slate-800">{s.vision1Title} + {s.vision2Title}</div>
-                                                <div className="bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Match: {s.score}%</div>
+                                                <div className="bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Resonance: {s.score}%</div>
                                             </div>
                                             <p className="text-xs text-slate-600 italic">"{s.reasoning}"</p>
                                         </div>
@@ -713,7 +721,7 @@ const AppContent = () => {
                         )}
 
                         <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                            {filteredData.length === 0 && !loadingMore ? <p className="col-span-full text-center text-slate-400 py-10">{t('no_visions_found')}</p> : 
+                            {filteredData.length === 0 && !loadingMore ? <p className="col-span-full text-center text-slate-400 py-10">{t('no_visions_found')}</p> :
                                 filteredData.map((item: any) => (
                                     <div key={item.id} onClick={() => setSelectedVision(item)} className="cursor-pointer">
                                         <VisionCard vision={item} />
@@ -722,7 +730,7 @@ const AppContent = () => {
                             }
                         </div>
                     </div>
-                ) : tab !== 'matches' && tab !== 'profile' && tab !== 'oracle' && tab !== 'about' && tab !== 'dashboard' && (
+                ) : tab !== 'observatory' && tab !== 'profile' && tab !== 'oracle' && tab !== 'about' && tab !== 'dashboard' && tab !== 'newsletter' && tab !== 'communities' && (
                     <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                         {data.map((item) => (
                              <React.Fragment key={item.id}>
@@ -740,7 +748,7 @@ const AppContent = () => {
                 {loadingMore && <div className="flex justify-center py-4"><Loading /></div>}
             </main>
         );
-    }
+    };
 
     return (
         <div className="min-h-screen relative font-sans text-slate-800">
@@ -758,7 +766,7 @@ const AppContent = () => {
                         onPulse={() => setShowPulseModal(true)}
                         onCreateVision={() => setShowVisionModal(true)}
                         onProfile={() => setTab('profile')} 
-                        pendingMatchesCount={matches.length}
+                        pendingAlignmentsCount={alignments.length}
                         myTreesCount={myTrees.length}
                         dangerTreesCount={guardedTrees.filter(t => t.status === 'DANGER').length}
                         logoUrl={config.logoUrl}
@@ -812,19 +820,20 @@ const AppContent = () => {
             
             {selectedPulse && (
                 <DetailWrapper>
-                    <PulseDetail pulse={selectedPulse} onClose={() => setSelectedPulse(null)} />
+                    <PulseDetail pulse={selectedPulse} activeTree={activeTree} onClose={() => setSelectedPulse(null)} />
                 </DetailWrapper>
             )}
 
-            {selectedOrganisation && (
+            {selectedCommunity && (
                 <DetailWrapper>
-                    <OrganisationProfile 
-                        organisation={selectedOrganisation}
-                        onClose={() => setSelectedOrganisation(null)}
+                    <CommunityProfile 
+                        community={selectedCommunity}
+                        onClose={() => setSelectedCommunity(null)}
                         onUpdate={(updates) => {
-                            setSelectedOrganisation(prev => prev ? { ...prev, ...updates } : null);
+                            setSelectedCommunity(prev => prev ? { ...prev, ...updates } : null);
                         }}
                         currentUserId={lightseed?.uid}
+                        isSuperAdmin={isSuperAdmin}
                         isAdmin={isAdmin}
                     />
                 </DetailWrapper>
@@ -850,7 +859,7 @@ const AppContent = () => {
                     matchCandidate={matchCandidate}
                     onClose={() => setShowPulseModal(false)}
                     onMint={mintPulse}
-                    onProposeMatch={proposeMatch}
+                    onProposeAlignment={proposeAlignment}
                     uploading={uploading}
                     handleImageUpload={handleImageUpload}
                     uploadBase64Image={uploadBase64Image}

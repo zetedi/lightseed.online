@@ -43,7 +43,7 @@ import {
   uploadString
 } from 'firebase/storage';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { type Pulse, type PulseType, type Lifetree, type MatchProposal, type Vision, type Organisation } from '../types';
+import { type Pulse, type PulseType, type Lifetree, type Alignment, type Vision, type Community } from '../types';
 import { createBlock } from '../utils/crypto';
 
 const SYSTEM_EMAIL_FROM = "lightseed <admin@lightseed.online>";
@@ -78,8 +78,8 @@ const usersCollection = collection(db, 'users');
 const lifetreesCollection = collection(db, 'lifetrees');
 const visionsCollection = collection(db, 'visions');
 const pulsesCollection = collection(db, 'pulses');
-const matchesCollection = collection(db, 'matches');
-const organisationsCollection = collection(db, 'organisations');
+const alignmentsCollection = collection(db, 'alignments');
+const communitiesCollection = collection(db, 'communities');
 const newsletterConfigRef = doc(db, 'config', 'newsletter');
 
 export const onAuthChange = (callback: (user: FirebaseUser | null) => void) => onAuthStateChanged(auth, callback);
@@ -580,25 +580,25 @@ export const deleteVision = (id: string) => deleteDoc(doc(db, 'visions', id));
 export const joinVision = (id: string, uid: string) => updateDoc(doc(db, 'visions', id), { joinedUserIds: arrayUnion(uid) });
 export const leaveVision = (id: string, uid: string) => updateDoc(doc(db, 'visions', id), { joinedUserIds: arrayRemove(uid) });
 
-// Organisations
-export const fetchOrganisations = async () => {
-    const snap = await getDocs(query(organisationsCollection, orderBy('createdAt', 'desc')));
-    return snap.docs.map(d => ({ id: d.id, ...d.data() } as Organisation));
+// Communities
+export const fetchCommunities = async () => {
+    const snap = await getDocs(query(communitiesCollection, orderBy('createdAt', 'desc')));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as Community));
 }
 
-export const getOrganisationByDomain = async (domain: string): Promise<Organisation | null> => {
+export const getCommunityByDomain = async (domain: string): Promise<Community | null> => {
     const normalized = domain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-    const q = query(organisationsCollection, where('domain', '==', normalized), limit(1));
+    const q = query(communitiesCollection, where('domain', '==', normalized), limit(1));
     const snap = await getDocs(q);
     if (snap.empty) return null;
-    return { id: snap.docs[0].id, ...snap.docs[0].data() } as Organisation;
+    return { id: snap.docs[0].id, ...snap.docs[0].data() } as Community;
 };
 
-export const getMyOrganisations = async (uid: string) => 
-    (await getDocs(query(organisationsCollection, where('ownerId', '==', uid)))).docs.map(d => ({ id: d.id, ...d.data() } as Organisation));
+export const getMyCommunities = async (uid: string) => 
+    (await getDocs(query(communitiesCollection, where('ownerId', '==', uid)))).docs.map(d => ({ id: d.id, ...d.data() } as Community));
 
-export const createOrganisation = async (data: any) => {
-    const docRef = await addDoc(organisationsCollection, {
+export const createCommunity = async (data: any) => {
+    const docRef = await addDoc(communitiesCollection, {
         ...data,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -606,10 +606,10 @@ export const createOrganisation = async (data: any) => {
     return { id: docRef.id, ...data };
 };
 
-export const updateOrganisation = (id: string, data: any) => 
-    updateDoc(doc(db, 'organisations', id), { ...data, updatedAt: serverTimestamp() });
+export const updateCommunity = (id: string, data: any) => 
+    updateDoc(doc(db, 'communities', id), { ...data, updatedAt: serverTimestamp() });
 
-export const deleteOrganisation = (id: string) => deleteDoc(doc(db, 'organisations', id));
+export const deleteCommunity = (id: string) => deleteDoc(doc(db, 'communities', id));
 
 export const fetchPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {
     let q;
@@ -663,26 +663,26 @@ export const mintPulse = async (pulseData: any) => {
     });
 }
 
-export const proposeMatch = (data: any) => addDoc(matchesCollection, { ...data, status: 'PENDING', createdAt: serverTimestamp() });
-export const getPendingMatches = async (uid: string) => (await getDocs(query(matchesCollection, where('targetUid', '==', uid), where('status', '==', 'PENDING')))).docs.map(d => ({ id: d.id, ...d.data() } as MatchProposal));
+export const proposeAlignment = (data: any) => addDoc(alignmentsCollection, { ...data, status: 'PENDING', createdAt: serverTimestamp() });
+export const getPendingAlignments = async (uid: string) => (await getDocs(query(alignmentsCollection, where('targetUid', '==', uid), where('status', '==', 'PENDING')))).docs.map(d => ({ id: d.id, ...d.data() } as Alignment));
 
-export const getMyMatchesHistory = async (uid: string) => {
-    const [s1, s2] = await Promise.all([getDocs(query(matchesCollection, where('targetUid', '==', uid), where('status', '==', 'ACCEPTED'))), getDocs(query(matchesCollection, where('initiatorUid', '==', uid), where('status', '==', 'ACCEPTED')))]);
-    return [...s1.docs, ...s2.docs].map(d => ({ id: d.id, ...d.data() } as MatchProposal)).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+export const getMyAlignmentsHistory = async (uid: string) => {
+    const [s1, s2] = await Promise.all([getDocs(query(alignmentsCollection, where('targetUid', '==', uid), where('status', '==', 'ACCEPTED'))), getDocs(query(alignmentsCollection, where('initiatorUid', '==', uid), where('status', '==', 'ACCEPTED')))]);
+    return [...s1.docs, ...s2.docs].map(d => ({ id: d.id, ...d.data() } as Alignment)).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 }
 
-export const acceptMatch = async (proposalId: string) => {
-    const matchRef = doc(db, 'matches', proposalId);
+export const acceptAlignment = async (proposalId: string) => {
+    const matchRef = doc(db, 'alignments', proposalId);
     return runTransaction(db, async (t) => {
         const matchDoc = await t.get(matchRef);
-        if (!matchDoc.exists() || matchDoc.data()?.status !== 'PENDING') throw new Error("Invalid match");
-        const proposal = matchDoc.data() as MatchProposal;
+        if (!matchDoc.exists() || matchDoc.data()?.status !== 'PENDING') throw new Error("Invalid alignment");
+        const proposal = matchDoc.data() as Alignment;
         
         const initTreeRef = doc(db, 'lifetrees', proposal.initiatorTreeId);
         const initTree = (await t.get(initTreeRef)).data() as Lifetree;
         const initHash = await createBlock(initTree.latestHash, { match: proposal.id }, Date.now());
         t.set(doc(pulsesCollection), { 
-            lifetreeId: proposal.initiatorTreeId, type: 'STANDARD', title: 'Match', body: 'Pulse Sync', 
+            lifetreeId: proposal.initiatorTreeId, type: 'STANDARD', title: 'Alignment', body: 'Pulse Sync', 
             isMatch: true, authorId: proposal.initiatorUid, authorName: 'System', 
             createdAt: serverTimestamp(), hash: initHash 
         });
@@ -692,7 +692,7 @@ export const acceptMatch = async (proposalId: string) => {
         const targetTree = (await t.get(targetTreeRef)).data() as Lifetree;
         const targetHash = await createBlock(targetTree.latestHash, { match: proposal.id }, Date.now());
         t.set(doc(pulsesCollection), { 
-            lifetreeId: proposal.targetTreeId, type: 'STANDARD', title: 'Match', body: 'Pulse Sync', 
+            lifetreeId: proposal.targetTreeId, type: 'STANDARD', title: 'Alignment', body: 'Pulse Sync', 
             isMatch: true, authorId: proposal.targetUid, authorName: 'System', 
             createdAt: serverTimestamp(), hash: targetHash 
         });
@@ -708,10 +708,113 @@ export const lovePulse = async (id: string, uid: string) => {
     const loveRef = doc(pulseRef, 'loves', uid);
     return runTransaction(db, async (t) => {
         const pulse = await t.get(pulseRef);
+        if (!pulse.exists()) return;
+        const pulseData = pulse.data();
+        
         const love = await t.get(loveRef);
-        let count = pulse.data()?.loveCount || 0;
-        if (love.exists()) { t.delete(loveRef); count--; }
-        else { t.set(loveRef, { uid, createdAt: serverTimestamp() }); count++; }
-        t.update(pulseRef, { loveCount: Math.max(0, count) });
+        let count = pulseData.loveCount || pulseData.validationScore || 0;
+        
+        if (love.exists()) { 
+            t.delete(loveRef); 
+            count--; 
+        } else { 
+            t.set(loveRef, { uid, createdAt: serverTimestamp() }); 
+            count++; 
+            
+            // Reward 1 Token to Pulse Author Tree (Living Intelligence Network economy)
+            const treeId = pulseData.lifetreeId || pulseData.treeId;
+            if (treeId) {
+                const authorTreeRef = doc(db, 'lifetrees', treeId);
+                const authorTree = await t.get(authorTreeRef);
+                if (authorTree.exists()) {
+                    const currentBalance = authorTree.data()?.aiTokenBalance || 0;
+                    t.update(authorTreeRef, { aiTokenBalance: currentBalance + 1 });
+                }
+            }
+        }
+        t.update(pulseRef, { loveCount: Math.max(0, count), validationScore: Math.max(0, count) });
     });
+}
+
+export const spendAiTokens = async (treeId: string, amount: number) => {
+    const treeRef = doc(db, 'lifetrees', treeId);
+    return runTransaction(db, async (t) => {
+        const tree = await t.get(treeRef);
+        if (!tree.exists()) throw new Error("Tree not found");
+        const balance = tree.data()?.aiTokenBalance || 0;
+        if (balance < amount) throw new Error("Not enough AI tokens (Attention-Energy). Validate pulses or visions to earn more.");
+        t.update(treeRef, { aiTokenBalance: balance - amount });
+        return balance - amount;
+    });
+}
+export const migrateDataToV2 = async () => {
+    const treesSnapshot = await getDocs(collection(db, 'lifetrees'));
+    const treesBatch = writeBatch(db);
+    let treeCount = 0;
+    
+    for (const d of treesSnapshot.docs) {
+        const data = d.data();
+        let type: any = 'human';
+        if (data.isNature) type = 'project';
+        if (data.treeType === 'FAMILY') type = 'community';
+        if (data.treeType === 'LIFETREE') type = 'human';
+        
+        let location = data.location;
+        if (!location && data.latitude && data.longitude) {
+            // Note: If GeoPoint is needed, it can be instantiated, but simple object might suffice for now or use firebase GeoPoint
+            // For now, let's skip converting to exact GeoPoint object if it's already separated, or create one if we import GeoPoint.
+        }
+
+        treesBatch.update(d.ref, {
+            type,
+            visionIds: data.visionIds || [],
+            pulseIds: data.pulseIds || [],
+            guardianIds: data.guardians || [],
+            parentTreeIds: data.parentTreeIds || [],
+            childTreeIds: data.childTreeIds || [],
+            aiTokenBalance: data.aiTokenBalance || 0,
+            coherenceScore: data.coherenceScore || 0,
+        });
+        treeCount++;
+        // Commit in chunks if > 400
+        if (treeCount % 400 === 0) {
+            await treesBatch.commit();
+        }
+    }
+    await treesBatch.commit();
+    
+    const visionsSnapshot = await getDocs(collection(db, 'visions'));
+    const visionsBatch = writeBatch(db);
+    let vCount = 0;
+    for (const d of visionsSnapshot.docs) {
+        const data = d.data();
+        visionsBatch.update(d.ref, {
+            treeId: data.lifetreeId || data.treeId,
+            description: data.body || data.description || '',
+            status: data.status || 'growing',
+            resonanceScore: data.resonanceScore || 0
+        });
+        vCount++;
+        if (vCount % 400 === 0) await visionsBatch.commit();
+    }
+    await visionsBatch.commit();
+
+    const pulsesSnapshot = await getDocs(collection(db, 'pulses'));
+    const pulsesBatch = writeBatch(db);
+    let pCount = 0;
+    for (const d of pulsesSnapshot.docs) {
+        const data = d.data();
+        const newType = (data.type === 'STANDARD' || data.type === 'GROWTH') ? 'observation' : data.type;
+        pulsesBatch.update(d.ref, {
+            treeId: data.lifetreeId || data.treeId,
+            content: data.body || data.content || '',
+            type: newType || 'observation',
+            validationScore: data.loveCount || 0
+        });
+        pCount++;
+        if (pCount % 400 === 0) await pulsesBatch.commit();
+    }
+    await pulsesBatch.commit();
+
+    return { trees: treeCount, visions: vCount, pulses: pCount };
 }

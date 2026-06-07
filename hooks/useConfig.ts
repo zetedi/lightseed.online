@@ -1,45 +1,27 @@
 
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
+import { Community } from '../types';
+import baseConfig from '../lifeseed.config.json';
 import { defaultConfig } from '../config/default';
-import { Organisation } from '../types';
 
 export const isHubDomain = (domain?: string) => {
     if (!domain) return true;
     const d = domain.toLowerCase().replace(/^www\./, '');
-    return d === 'lightseed.online' || d === 'localhost' || d === '127.0.0.1' || d.startsWith('192.168.') || d.endsWith('.local');
+    return d === 'lightseed.online' || d === 'lifeseed.online' || d === 'localhost' || d === '127.0.0.1' || d.startsWith('192.168.') || d.endsWith('.local');
 };
 
-export const useConfig = (hostOrganisation: Organisation | null) => {
-  const config = useMemo(() => {
-    const domain = window.location.hostname;
-    
-    // Default "lively" palette for lifeseed.online if no org config is present
-    const livelyPalette = {
-      primary: '#10b981',
-      secondary: '#3b82f6',
-      accent: '#facc15',
-      neutral: '#475569',
-      background: '#D97706'
-    };
-
-    const isLively = domain === 'lifeseed.online' || domain === 'www.lifeseed.online';
-
-    const baseConfig = isLively
-      ? { ...defaultConfig, name: 'lifeseed', theme: { ...defaultConfig.theme, ...livelyPalette } }
-      : defaultConfig;
-
-    if (!hostOrganisation) return baseConfig;
+export const useConfig = (hostCommunity: Community | null) => {
+  return useMemo(() => {
+    if (!hostCommunity) return defaultConfig;
 
     return {
-      ...baseConfig,
-      name: hostOrganisation.name || baseConfig.name,
-      logoUrl: hostOrganisation.logoUrl,
+      ...defaultConfig,
+      name: hostCommunity.name || defaultConfig.name,
+      logoUrl: hostCommunity.logoUrl,
       theme: {
-        ...baseConfig.theme,
-        ...(hostOrganisation.theme || {})
+        ...defaultConfig.theme,
+        ...(hostCommunity.theme || {})
       }
     };
-  }, [hostOrganisation]);
-
-  return config;
+  }, [hostCommunity]);
 };

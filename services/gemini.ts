@@ -4,6 +4,7 @@ import { functions } from "./firebase";
 import { Vision, VisionSynergy } from "../types";
 import config from "../lifeseed.config.json";
 
+// Default model as requested: gemini-3.5-flash
 const MODEL = config.model || 'gemini-3.5-flash';
 
 
@@ -17,6 +18,12 @@ const callGemini = async (prompt: string, model: string = MODEL, config?: any): 
         return result.data as any;
     } catch (error: any) {
         console.error("Cloud Gemini Error:", error);
+        
+        // Graceful handling of Forbidden (403) / Suspended API keys
+        if (error.code === 'permission-denied' || error.message?.includes('403') || error.message?.includes('suspended')) {
+            throw new Error("AI Service is currently suspended or unavailable (Forbidden). Please check back later.");
+        }
+        
         throw error;
     }
 }
@@ -43,9 +50,12 @@ export const generateLifetreeBio = async (seed: string): Promise<string> => {
       Write a short (max 40 words), mystical, and nature-inspired bio/description.
     `;
     const res = await callGemini(prompt);
-    return res.text || "";
-  } catch (error) {
+    return res.text || "A soul taking root in the digital forest.";
+  } catch (error: any) {
     console.error("Gemini Bio Error:", error);
+    if (error.message.includes("Forbidden") || error.message.includes("suspended")) {
+        return "The forest is currently dreaming... (AI Service Suspended)";
+    }
     return "The forest whispers quietly... (AI Error)";
   }
 }
@@ -86,6 +96,7 @@ export const generateOracleQuote = async (): Promise<string> => {
 
 // New Chat Interface (Stateless)
 export const sendMessageToOracle = async (message: string, history: {role: 'user' | 'model', text: string}[]) => {
+  try {
     const generateAIContent = httpsCallable(functions, 'generateAIContent');
     
     const systemInstruction = `You are the Oracle, embodied as Osiris in the form of a 10-year-old boy. 
@@ -122,6 +133,13 @@ export const sendMessageToOracle = async (message: string, history: {role: 'user
     });
     
     return (result.data as any).text || "";
+  } catch (error: any) {
+    console.error("Oracle Chat Error:", error);
+    if (error.message.includes("Forbidden") || error.message.includes("suspended")) {
+        return "The Oracle is currently in deep meditation. Please come back later.";
+    }
+    return "I'm sorry, my connection to the forest is a bit weak right now.";
+  }
 }
 
 // Analyze Vision Synergy
@@ -149,3 +167,70 @@ export const findVisionSynergies = async (visions: Vision[]): Promise<VisionSyne
         return [];
     }
 }
+
+// Living Intelligence Network - Translation Depth System
+export interface TranslationRequest {
+    senderTreeName: string;
+    receiverTreeName: string;
+    message: string;
+    depth: number;
+    context?: string; // Community history, shared values, prior pulses
+}
+
+export interface TranslationResponse {
+    interpretation: string;
+    confidence: number;
+    alternatives: string[];
+    growthSuggestion?: string;
+}
+
+export const translatePulse = async (req: TranslationRequest): Promise<TranslationResponse> => {
+    const { senderTreeName, receiverTreeName, message, depth, context } = req;
+    
+    let depthInstructions = "";
+    switch(depth) {
+        case 1: depthInstructions = "Provide a raw summary of the message."; break;
+        case 2: depthInstructions = "Focus on the underlying intent of the message."; break;
+        case 3: depthInstructions = "Reveal the underlying pulse or emotion driving this message."; break;
+        case 4: depthInstructions = "Contextualize this message within their broader vision or direction of growth."; break;
+        case 5: depthInstructions = "Contextualize this message regarding the relationship between the sender and receiver."; break;
+        case 6: depthInstructions = "Evaluate this message based on community context and shared values."; break;
+        case 7: depthInstructions = "Provide an initiation-level reflection, offering profound insight into what this message means for the spiritual or holistic growth of the network."; break;
+        default: depthInstructions = "Provide a basic interpretation.";
+    }
+
+    const prompt = `
+        You are the Translation engine of the Living Intelligence Network.
+        Your goal is to help life recognize life, reduce misunderstanding, and amplify coherence.
+        
+        Sender: ${senderTreeName}
+        Receiver: ${receiverTreeName}
+        Message: "${message}"
+        Depth Level: ${depth}
+        Instruction for this Depth: ${depthInstructions}
+        Additional Context (Integrator Trees): ${context || "None"}
+        
+        Respond with a JSON object in this exact structure:
+        {
+            "interpretation": "Your primary translated understanding of the message.",
+            "confidence": 95, // a number 1-100
+            "alternatives": ["alternative meaning 1", "alternative meaning 2"],
+            "growthSuggestion": "Optional suggestion on how the receiver might constructively respond."
+        }
+    `;
+
+    try {
+        const res = await callGemini(prompt, MODEL, {
+            responseMimeType: "application/json"
+        });
+
+        if (res.text) {
+            return JSON.parse(res.text) as TranslationResponse;
+        }
+        throw new Error("Empty translation response.");
+    } catch (e) {
+        console.error("Translation error", e);
+        throw e;
+    }
+}
+

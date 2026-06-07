@@ -1,66 +1,58 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Organisation } from '../../types';
-import { fetchOrganisations } from '../../services/firebase';
-import { Icons } from './Icons';
+import React, { useState, useEffect } from 'react';
+import { Community } from '../../types';
+import { fetchCommunities } from '../../services/firebase';
 
 interface AutocompleteInputProps {
+  label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
-  className?: string;
 }
 
-export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({ value, onChange, placeholder, className }) => {
-  const [orgs, setOrgs] = useState<Organisation[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({ label, value, onChange, placeholder }) => {
+  const [communities, setCommunities] = useState<Community[]>([]);
+  const [filtered, setFiltered] = useState<Community[]>([]);
+  const [show, setShow] = useState(false);
 
   useEffect(() => {
-    fetchOrganisations().then(setOrgs);
+    fetchCommunities().then(setCommunities);
   }, []);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) setShowSuggestions(false);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const filtered = orgs.filter(o => 
-    o.domain.toLowerCase().includes(value.toLowerCase()) || 
-    o.name.toLowerCase().includes(value.toLowerCase())
-  ).slice(0, 5);
+    if (value) {
+      setFiltered(communities.filter(c => c.name.toLowerCase().includes(value.toLowerCase()) || c.domain.toLowerCase().includes(value.toLowerCase())));
+    } else {
+      setFiltered([]);
+    }
+  }, [value, communities]);
 
   return (
-    <div ref={ref} className="relative w-full">
+    <div className="relative">
+      <label className="text-xs font-bold text-slate-400 uppercase ml-1">{label}</label>
       <input 
         type="text" 
         value={value} 
-        onChange={e => { onChange(e.target.value); setShowSuggestions(true); }}
-        onFocus={() => setShowSuggestions(true)}
-        placeholder={placeholder} 
-        className={className} 
+        onChange={e => { onChange(e.target.value); setShow(true); }}
+        onFocus={() => setShow(true)}
+        className="w-full h-12 bg-slate-50 border border-slate-100 rounded-2xl px-4 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        placeholder={placeholder}
       />
-      {showSuggestions && value && filtered.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-          {filtered.map(org => (
-            <button
-              key={org.id}
+      {show && filtered.length > 0 && (
+        <div className="absolute z-10 w-full mt-1 bg-white border border-slate-100 rounded-2xl shadow-xl overflow-hidden">
+          {filtered.map(c => (
+            <button 
+              key={c.id} 
               type="button"
-              onClick={() => { onChange(org.domain); setShowSuggestions(false); }}
-              className="w-full text-left px-4 py-3 hover:bg-slate-50 flex items-center justify-between border-b border-slate-50 last:border-b-0"
+              onClick={() => { onChange(c.domain); setShow(false); }}
+              className="w-full text-left px-4 py-3 hover:bg-emerald-50 flex flex-col"
             >
-              <div>
-                <p className="text-sm font-bold text-slate-800">{org.name}</p>
-                <p className="text-xs text-slate-400 font-mono">{org.domain}</p>
-              </div>
-              <Icons.ChevronRight size={16} className="text-slate-300" />
+              <span className="font-bold text-sm text-slate-800">{c.name}</span>
+              <span className="text-xs text-slate-500 font-mono">{c.domain}</span>
             </button>
           ))}
         </div>
       )}
     </div>
   );
-};
+}

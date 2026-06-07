@@ -15,7 +15,7 @@ interface NavigationProps {
   onLogout: () => void;
   onProfile: () => void;
   onCreateVision: () => void;
-  pendingMatchesCount: number;
+  pendingAlignmentsCount: number;
   myTreesCount: number;
   dangerTreesCount: number;
   logoUrl?: string;
@@ -42,7 +42,7 @@ export const Navigation = ({
     onLogout, 
     onProfile, 
     onCreateVision, 
-    pendingMatchesCount, 
+    pendingAlignmentsCount, 
     myTreesCount = 0, 
     dangerTreesCount = 0,
     logoUrl
@@ -52,7 +52,7 @@ export const Navigation = ({
     const [isLangOpen, setIsLangOpen] = useState(false);
     const langRef = useRef<HTMLDivElement>(null);
     
-    const hasNotification = pendingMatchesCount > 0 || dangerTreesCount > 0;
+    const hasNotification = pendingAlignmentsCount > 0 || dangerTreesCount > 0;
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -72,7 +72,7 @@ export const Navigation = ({
         if (activeTab === key) {
             const themes: any = { 
                 dashboard: 'bg-indigo-600', visions: 'bg-amber-500', forest: 'bg-emerald-600', 
-                pulses: 'bg-sky-600', matches: 'bg-rose-600', oracle: 'bg-indigo-600', about: 'bg-purple-600', organisations: 'bg-teal-600'
+                pulses: 'bg-sky-600', observatory: 'bg-rose-600', oracle: 'bg-indigo-600', about: 'bg-purple-600', communities: 'bg-teal-600'
             };
             return `${themes[key] || 'bg-slate-700'} text-white shadow-lg shadow-black/20 font-bold tracking-wide`;
         }
@@ -80,18 +80,25 @@ export const Navigation = ({
     }
 
     const lightEarthTabs = ['forest', 'visions', 'pulses'];
-    const intelligenceTabs = ['matches', 'oracle'];
-    const otherTabs = ['organisations', 'about'];
+    const intelligenceTabs = ['oracle', 'observatory'];
+    const otherTabs = ['communities', 'about'];
+
+    const getTabLabel = (tab: string) => {
+        if (tab === 'about') return '.seed';
+        // For standard translation fallback, capitalize the first letter
+        const fallback = tab.charAt(0).toUpperCase() + tab.slice(1);
+        return t(tab as any) || fallback;
+    };
 
     const NavTab = ({ tab, showCount = false }: { tab: string, showCount?: boolean }) => (
         <button 
             onClick={() => setTab(tab)} 
             className={`px-3 xl:px-4 py-2 rounded-full text-[10px] xl:text-xs transition-all flex items-center gap-1.5 ${getTabStyle(tab)}`}
         >
-            {tab === 'about' ? <span>.seed</span> : <span>{t(tab as any)}</span>}
-            {showCount && pendingMatchesCount > 0 && (
+            <span>{getTabLabel(tab)}</span>
+            {showCount && pendingAlignmentsCount > 0 && (
                 <span className="bg-red-500 text-white text-[9px] px-1.5 rounded-full min-w-[18px]">
-                    {pendingMatchesCount}
+                    {pendingAlignmentsCount}
                 </span>
             )}
         </button>
@@ -101,7 +108,7 @@ export const Navigation = ({
         <div className="flex flex-col gap-1">
             <span className="text-[9px] uppercase tracking-[0.2em] text-emerald-400/60 font-bold px-3">{label}</span>
             <div className="flex items-center gap-1">
-                {tabs.map(tab => <NavTab key={tab} tab={tab} showCount={tab === 'matches'} />)}
+                {tabs.map(tab => <NavTab key={tab} tab={tab} showCount={tab === 'observatory'} />)}
             </div>
         </div>
     );
@@ -209,7 +216,7 @@ export const Navigation = ({
                             {intelligenceTabs.map(tab => (
                                 <button key={tab} onClick={() => { setTab(tab); setIsMenuOpen(false); }} className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium flex justify-between items-center ${activeTab === tab ? 'bg-emerald-800 text-white' : 'text-emerald-100 hover:bg-emerald-900'}`}>
                                     <span>{t(tab as any)}</span>
-                                    {tab === 'matches' && pendingMatchesCount > 0 && <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">{pendingMatchesCount}</span>}
+                                    {tab === 'observatory' && pendingAlignmentsCount > 0 && <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">{pendingAlignmentsCount}</span>}
                                 </button>
                             ))}
                         </div>
