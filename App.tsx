@@ -5,6 +5,9 @@ import {
   logout,
   fetchPulses,
   fetchEventPulses,
+  fetchReachPulses,
+  fetchMyReaches,
+  listenToMyReaches,
   mintPulse,
   fetchLifetrees,
   plantLifetree,
@@ -27,9 +30,7 @@ import {
   grantAdmin,
   revokeAdmin,
   getCommunityByDomain,
-  listenForTreeChatNotifications,
-  listenToUserProfile,
-  markTreeChatSeen
+  listenToUserProfile
 } from './services/firebase';
 import { findVisionSynergies } from './services/gemini';
 import { type Pulse, type Lifetree, type Alignment, type Vision, type Community, type VisionSynergy } from './types';
@@ -50,13 +51,14 @@ import { LifetreeDetail } from './components/LifetreeDetail';
 import { VisionDetail } from './components/VisionDetail';
 import { PulseDetail } from './components/PulseDetail';
 import { GrowthPlayerModal } from './components/GrowthPlayerModal';
-import { OracleChat } from './components/OracleChat';
 import { LightseedProfile } from './components/LightseedProfile';
 import { AboutPage } from './components/AboutPage';
 import { Dashboard } from './components/Dashboard';
 import { Loading } from './components/ui/Loading';
+import { SectionHeader } from './components/ui/SectionHeader';
 import { LifeseedWidget } from './components/LifeseedWidget';
 import { NewsletterAdmin } from './components/NewsletterAdmin';
+import { ReachInbox } from './components/inspiration/ReachInbox';
 import { CommunityList } from './components/CommunityList';
 import { CommunityProfile } from './components/CommunityProfile';
 import { isExplicitlyValidatedTree } from './utils/validation';
@@ -160,10 +162,9 @@ const AppContent = () => {
     const [selectedVision, setSelectedVision] = useState<Vision | null>(null);
     const [selectedPulse, setSelectedPulse] = useState<Pulse | null>(null);
     const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
-    const [oracleTree, setOracleTree] = useState<Lifetree | null>(null);
+    const [reachTree, setReachTree] = useState<Lifetree | null>(null);
+    const [unreadReaches, setUnreadReaches] = useState(0);
     const [hostCommunity, setHostCommunity] = useState<Community | null>(null);
-    const [treeChatNotifications, setTreeChatNotifications] = useState<Pulse[]>([]);
-    const [treeChatToast, setTreeChatToast] = useState<Pulse | null>(null);
     const [personalSiteTheme, setPersonalSiteTheme] = useState<any>(null);
     const [personalSiteLogoUrl, setPersonalSiteLogoUrl] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
@@ -176,8 +177,6 @@ const AppContent = () => {
     const [loadingMore, setLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const forestSentinelRef = useRef<HTMLDivElement>(null);
-    const treeChatNotificationCountRef = useRef(0);
-    const treeChatNotificationsReadyRef = useRef(false);
 
     // UI State
     const [showPlantModal, setShowPlantModal] = useState(false);
@@ -307,46 +306,20 @@ const AppContent = () => {
         });
     }, [lightseed?.uid]);
 
+    // Live unread-reach count powering the red envelope indicator in the nav.
     useEffect(() => {
-        if (!lightseed || myTrees.length === 0) {
-            setTreeChatNotifications([]);
-            setTreeChatToast(null);
-            treeChatNotificationCountRef.current = 0;
-            treeChatNotificationsReadyRef.current = false;
+        if (!lightseed) {
+            setUnreadReaches(0);
             return;
         }
-
-        return listenForTreeChatNotifications(
-            myTrees.map(tree => tree.id),
-            lightseed.uid,
-            (notifications) => {
-                setTreeChatNotifications(notifications);
-                if (
-                    treeChatNotificationsReadyRef.current &&
-                    notifications.length > treeChatNotificationCountRef.current
-                ) {
-                    setTreeChatToast(notifications[0]);
-                }
-                treeChatNotificationCountRef.current = notifications.length;
-                treeChatNotificationsReadyRef.current = true;
-            }
-        );
-    }, [lightseed?.uid, myTrees.map(tree => tree.id).join('|')]);
-
-    useEffect(() => {
-        if (!treeChatToast) return;
-        const timer = window.setTimeout(() => setTreeChatToast(null), 8000);
-        return () => window.clearTimeout(timer);
-    }, [treeChatToast?.id]);
-
-    useEffect(() => {
-        if (!selectedPulse || selectedPulse.type !== 'tree_chat' || !lightseed) return;
-        if ((selectedPulse.seenBy || []).includes(lightseed.uid)) return;
-
-        markTreeChatSeen(selectedPulse.id, lightseed.uid).catch(console.error);
-        setTreeChatNotifications(prev => prev.filter(pulse => pulse.id !== selectedPulse.id));
-        setSelectedPulse(prev => prev ? { ...prev, seenBy: [...(prev.seenBy || []), lightseed.uid] } : prev);
-    }, [selectedPulse?.id, lightseed?.uid]);
+        return listenToMyReaches(lightseed.uid, (pulses) => {
+            const unread = pulses.filter(p =>
+                p.authorId !== lightseed.uid &&
+                !(p.seenBy || []).includes(lightseed.uid)
+            ).length;
+            setUnreadReaches(unread);
+        });
+    }, [lightseed?.uid]);
 
     useEffect(() => { 
         if (tab !== 'dashboard') {
@@ -361,7 +334,7 @@ const AppContent = () => {
     useEffect(() => {
         const handleScroll = () => {
             if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
-                if (!loadingMore && hasMore && tab !== 'dashboard' && tab !== 'observatory' && tab !== 'oracle' && tab !== 'profile' && tab !== 'about' && tab !== 'forest') {
+                if (!loadingMore && hasMore && tab !== 'dashboard' && tab !== 'observatory' && tab !== 'inspiration' && tab !== 'profile' && tab !== 'about' && tab !== 'forest') {
                     loadContent(false);
                 }
             }
@@ -436,6 +409,17 @@ const AppContent = () => {
                 setLastDoc(res.lastDoc);
                 setHasMore(!!res.lastDoc);
             }
+            else if (tab === 'inspiration') {
+                const res = await fetchReachPulses(currentLastDoc, currentDomain);
+                setData(prev => {
+                    const newItems = res.items;
+                    if (reset) return newItems;
+                    const existingIds = new Set(prev.map(p => p.id));
+                    return [...prev, ...newItems.filter(i => !existingIds.has(i.id))];
+                });
+                setLastDoc(res.lastDoc);
+                setHasMore(!!res.lastDoc);
+            }
             else if (tab === 'visions') {
                 const res = await fetchVisions(currentLastDoc, currentDomain);
                 setData(prev => {
@@ -478,20 +462,10 @@ const AppContent = () => {
         refreshTrees();
     };
 
-    const handleChatTree = (tree: Lifetree) => {
-        setOracleTree(tree);
+    const openReach = (tree: Lifetree | null) => {
         setSelectedTree(null);
-        setTab('oracle');
-    };
-
-    const handleOpenTreeChatInbox = () => {
-        const latest = treeChatNotifications[0];
-        if (latest) {
-            setSelectedPulse(latest);
-            setTreeChatToast(null);
-        } else {
-            setTab('oracle');
-        }
+        setReachTree(tree);
+        setTab('inspiration');
     };
 
     const handleImageUpload = async (file: File, path: string) => {
@@ -567,7 +541,7 @@ const AppContent = () => {
         let matches = true;
         if (searchTerm) {
             const term = searchTerm.toLowerCase();
-            const text = (item.title || item.name || "") + " " + (item.body || "") + " " + (item.locationName || "") + " " + (item.eventLocation || "") + " " + (item.chatTreeName || "");
+            const text = (item.title || item.name || "") + " " + (item.body || "") + " " + (item.locationName || "") + " " + (item.eventLocation || "") + " " + (item.reachTreeName || "");
             matches = matches && text.toLowerCase().includes(term);
         }
         if (tab === 'forest') {
@@ -669,7 +643,7 @@ const AppContent = () => {
 
         return (
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 min-h-[80vh]">
-                {tab !== 'observatory' && tab !== 'profile' && tab !== 'oracle' && tab !== 'about' && tab !== 'dashboard' && tab !== 'newsletter' && tab !== 'communities' && (
+                {tab !== 'observatory' && tab !== 'profile' && tab !== 'inspiration' && tab !== 'about' && tab !== 'dashboard' && tab !== 'newsletter' && tab !== 'communities' && (
                     <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                         <div className="relative w-full md:max-w-md">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -740,33 +714,47 @@ const AppContent = () => {
                 )}
 
                 {tab === 'observatory' && (
-                    <div className={`max-w-2xl mx-auto ${effectiveIsDark ? 'text-white' : 'text-slate-900'}`}>
-                        <h2 className="text-2xl font-light mb-6">{t('pending_alignments')}</h2>
-                        {alignments.length === 0 ? (
-                            <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-slate-200 p-12 text-center flex flex-col items-center">
-                                <div className="mb-6 p-4 bg-slate-50 rounded-full">
-                                    <Logo width={100} height={100} className="text-slate-800" />
+                    <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        <div className="overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-xl">
+                            {/* Unified header — sits together with the alignments in one panel */}
+                            <div className="flex items-center gap-3 border-b border-emerald-100 bg-gradient-to-r from-emerald-50 to-white px-6 py-5">
+                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                                    <Icons.Exchange />
                                 </div>
-                                <h3 className="text-xl font-light text-slate-800 mb-2">{t('no_pending_resonance')}</h3>
-                                <p className="text-slate-500">{t('ether_quiet')}</p>
+                                <div className="min-w-0">
+                                    <h2 className="truncate text-2xl font-light tracking-wide text-slate-900">{t('pending_alignments')}</h2>
+                                    <p className="text-sm text-slate-500">Resonances awaiting your acceptance to sync across the network.</p>
+                                </div>
                             </div>
-                        ) : alignments.map(a => (
-                            <div key={a.id} className="bg-white/90 p-4 rounded-xl shadow-sm border border-slate-200 mb-4 flex flex-col gap-4 text-slate-800 animate-in fade-in slide-in-from-bottom-2">
-                                <div className="flex justify-between items-center">
-                                    <div><p className="font-bold">{t('alignment_request')}</p><p className="text-sm text-slate-500">{t('from_another_tree')}</p></div>
-                                    <div className="flex gap-2">
-                                        <button onClick={() => { setTab('oracle'); }} className="bg-emerald-50 text-emerald-700 px-4 py-2 rounded-full text-xs font-bold border border-emerald-100 flex items-center gap-1.5 hover:bg-emerald-100 transition-all">
-                                            <Icons.MessageCircle size={14} /> Start Conversation
-                                        </button>
-                                        <button onClick={() => onAcceptAlignment(a.id)} className="bg-sky-500 text-white px-4 py-2 rounded-full text-xs font-bold shadow-md hover:bg-sky-600 transition-all">{t('accept_sync')}</button>
+
+                            <div className="p-6">
+                                {alignments.length === 0 ? (
+                                    <div className="flex flex-col items-center rounded-2xl border border-slate-100 bg-slate-50/60 p-12 text-center">
+                                        <div className="mb-6 rounded-full bg-white p-4 shadow-sm">
+                                            <Logo width={100} height={100} className="text-slate-800" />
+                                        </div>
+                                        <h3 className="mb-2 text-xl font-light text-slate-800">{t('no_pending_resonance')}</h3>
+                                        <p className="text-slate-500">{t('ether_quiet')}</p>
                                     </div>
-                                </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {alignments.map(a => (
+                                            <div key={a.id} className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 text-slate-800 shadow-sm animate-in fade-in slide-in-from-bottom-2">
+                                                <div className="flex items-center justify-between">
+                                                    <div><p className="font-bold">{t('alignment_request')}</p><p className="text-sm text-slate-500">{t('from_another_tree')}</p></div>
+                                                    <div className="flex gap-2">
+                                                        <button onClick={() => onAcceptAlignment(a.id)} className="rounded-full bg-sky-500 px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-sky-600">{t('accept_sync')}</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                        ))}
+                        </div>
                     </div>
                 )}
 
-                {tab === 'oracle' && <OracleChat initialTree={oracleTree} />}
 
                 {tab === 'forest' ? (
                     <>
@@ -807,7 +795,7 @@ const AppContent = () => {
                         </div>
 
                         {viewMode === 'map' ? (
-                            <ForestMap trees={filteredData} onView={setSelectedTree} onChat={handleChatTree} loading={loadingMore && filteredData.length === 0} />
+                            <ForestMap trees={filteredData} onView={setSelectedTree} onReach={openReach} loading={loadingMore && filteredData.length === 0} />
                         ) : (
                             <>
                                 <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -823,8 +811,8 @@ const AppContent = () => {
                                                     isSuperAdmin={isSuperAdmin}
                                                     currentUserId={lightseed?.uid}
                                                     onPlayGrowth={setShowGrowthPlayer}
+                                                    onReach={openReach}
                                                     onQuickSnap={handleQuickSnap}
-                                                    onChat={handleChatTree}
                                                     onValidate={(id: string, nextValidated: boolean) => (nextValidated
                                                         ? validateLifetree(id, isSuperAdmin ? lightseed!.uid : activeTree!.id)
                                                         : unvalidateLifetree(id)
@@ -841,17 +829,21 @@ const AppContent = () => {
                     </>
                 ) : tab === 'visions' ? (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-                         <div className={`flex justify-between items-center mb-8 backdrop-blur-md p-6 rounded-3xl border shadow-xl ${effectiveIsDark ? 'bg-white/10 border-white/10' : 'bg-white/90 border-slate-200'}`}>
-                            <h2 className={`text-4xl font-thin tracking-tight ${effectiveIsDark ? 'text-white' : 'text-slate-950'}`}>{t('visions')}</h2>
-                            <button 
-                                onClick={handleAnalyzeSynergy} 
-                                disabled={isAnalyzingSynergy || data.length < 2}
-                                className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2.5 rounded-full font-bold shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 border border-amber-400/30 active:scale-95 disabled:opacity-50"
-                            >
-                                {isAnalyzingSynergy ? <Loading /> : <Icons.Sparkles />}
-                                <span>{isAnalyzingSynergy ? 'Analyzing...' : 'Analyze Alignments'}</span>
-                            </button>
-                        </div>
+                        <SectionHeader
+                            icon={<Icons.Sparkles />}
+                            title={t('visions')}
+                            subtitle="Directions of growth seeking resonance and shared momentum."
+                            action={
+                                <button
+                                    onClick={handleAnalyzeSynergy}
+                                    disabled={isAnalyzingSynergy || data.length < 2}
+                                    className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2.5 rounded-full font-bold shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 border border-amber-400/30 active:scale-95 disabled:opacity-50"
+                                >
+                                    {isAnalyzingSynergy ? <Loading /> : <Icons.Sparkles />}
+                                    <span>{isAnalyzingSynergy ? 'Analyzing...' : 'Analyze Alignments'}</span>
+                                </button>
+                            }
+                        />
 
                         {synergies.length > 0 && (
                             <div className="mb-12 bg-amber-50/90 backdrop-blur-md p-8 rounded-[2rem] border-2 border-amber-200 shadow-2xl animate-in zoom-in-95 duration-500">
@@ -885,37 +877,55 @@ const AppContent = () => {
                     </div>
                 ) : tab === 'events' ? (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-                        <div className={`mb-8 rounded-3xl border p-6 shadow-xl backdrop-blur-md ${effectiveIsDark ? 'border-slate-700 bg-slate-900/80' : 'border-slate-200 bg-white/90'}`}>
-                            <h2 className={`text-4xl font-thin tracking-tight ${effectiveIsDark ? 'text-white' : 'text-slate-950'}`}>Events</h2>
-                            <p className={`mt-2 text-sm ${effectiveIsDark ? 'text-slate-300' : 'text-slate-500'}`}>Community gatherings, ceremonies, actions, and shared moments.</p>
-                        </div>
+                        <SectionHeader
+                            icon={<Icons.Loc />}
+                            title={t('events')}
+                            subtitle="Community gatherings, ceremonies, actions, and shared moments."
+                        />
 
                         <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                            {filteredData.length === 0 && !loadingMore ? <p className={`col-span-full py-10 text-center ${effectiveIsDark ? 'text-slate-400' : 'text-slate-500'}`}>No events found.</p> :
-                                filteredData.map((item: any) => (
+                            {filteredData.map((item: any) => (
+                                <div key={item.id}>
                                     <PulseCard
-                                        key={item.id}
                                         pulse={item}
                                         lightseed={lightseed}
-                                        onMatch={(p: Pulse) => { setMatchCandidate(p); setShowPulseModal(true); }}
+                                        onMatch={(p: Pulse) => { setSelectedPulse(p); setShowPulseModal(true); }}
                                         onView={(p: Pulse) => setSelectedPulse(p)}
                                     />
-                                ))
-                            }
+                                </div>
+                            ))}
                         </div>
                     </div>
-                ) : tab !== 'observatory' && tab !== 'profile' && tab !== 'oracle' && tab !== 'about' && tab !== 'dashboard' && tab !== 'newsletter' && tab !== 'communities' && (
-                    <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                ) : tab === 'inspiration' ? (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        <ReachInbox
+                            pulses={filteredData}
+                            myTrees={myTrees}
+                            lightseed={lightseed}
+                            title={t('inspiration')}
+                            requestedPartner={reachTree}
+                            onConsumeRequested={() => setReachTree(null)}
+                        />
+                    </div>
+                ) : tab !== 'observatory' && tab !== 'profile' && tab !== 'inspiration' && tab !== 'about' && tab !== 'dashboard' && tab !== 'newsletter' && tab !== 'communities' && (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        <SectionHeader
+                            icon={<Icons.HeartPulse />}
+                            title={t('pulses')}
+                            subtitle="Offerings, dreams, observations, and signals rippling through the network."
+                        />
+                        <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                         {filteredData.map((item) => (
                              <React.Fragment key={item.id}>
-                                 <PulseCard 
-                                    pulse={item} 
-                                    lightseed={lightseed} 
+                                 <PulseCard
+                                    pulse={item}
+                                    lightseed={lightseed}
                                     onMatch={(p: Pulse) => { setMatchCandidate(p); setShowPulseModal(true); }}
-                                    onView={(p: Pulse) => setSelectedPulse(p)} 
+                                    onView={(p: Pulse) => setSelectedPulse(p)}
                                 />
                             </React.Fragment>
                         ))}
+                        </div>
                     </div>
                 )}
 
@@ -943,33 +953,17 @@ const AppContent = () => {
                         pendingAlignmentsCount={alignments.length}
                         myTreesCount={myTrees.length}
                         dangerTreesCount={guardedTrees.filter(t => t.status === 'DANGER').length}
-                        treeChatNotificationsCount={treeChatNotifications.length}
+                        reachNotificationsCount={unreadReaches}
+                        onOpenReachInbox={() => setTab('inspiration')}
                         logoUrl={configuredLogoUrl}
                         appName={config.name}
                         isNightMode={effectiveIsDark}
                         theme={effectiveTheme}
                         onToggleNightMode={toggleNightMode}
-                        onOpenTreeChatInbox={handleOpenTreeChatInbox}
                     />
                 )}
                 
                 {renderMainContent()}
-                {treeChatToast && (
-                    <button
-                        onClick={() => {
-                            setSelectedPulse(treeChatToast);
-                            setTreeChatToast(null);
-                        }}
-                        className={`fixed right-4 top-24 z-50 max-w-sm rounded-2xl border p-4 text-left shadow-2xl transition-all ${effectiveIsDark ? 'border-indigo-400/30 bg-slate-950 text-white' : 'border-indigo-100 bg-white text-slate-900'}`}
-                    >
-                        <div className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-indigo-500">
-                            <Icons.Sun />
-                            <span>Tree chat received</span>
-                        </div>
-                        <div className="font-bold">{treeChatToast.chatTreeName || 'Your tree'}</div>
-                        <div className={`mt-1 line-clamp-2 text-sm ${effectiveIsDark ? 'text-slate-300' : 'text-slate-500'}`}>{treeChatToast.title}</div>
-                    </button>
-                )}
                 <GDPRBanner />
             </div>
 
@@ -993,7 +987,7 @@ const AppContent = () => {
                         onUpdate={(updates: Partial<Lifetree>) => handleTreeUpdate(selectedTree.id, updates)}
                         onDelete={() => { handleDeleteTreeConfirmed(selectedTree.id); setSelectedTree(null); }}
                         onCreatePulse={() => { setShowPulseModal(true); }}
-                        onChatTree={handleChatTree}
+                        onReachTree={(tree: Lifetree) => openReach(tree)}
                         onViewPulse={(p: Pulse) => { setSelectedTree(null); setSelectedPulse(p); }}
                         myActiveTree={activeTree}
                         currentUserId={lightseed?.uid}

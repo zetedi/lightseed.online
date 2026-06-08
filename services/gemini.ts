@@ -93,7 +93,7 @@ export const generateOracleQuote = async (): Promise<string> => {
     }
 }
 
-// New Chat Interface (Stateless)
+// Reach interface — Oracle voice (stateless)
 export const sendMessageToOracle = async (message: string, history: {role: 'user' | 'model', text: string}[]) => {
   try {
     const generateAIContent = httpsCallable(functions, 'generateAIContent');
@@ -133,7 +133,7 @@ export const sendMessageToOracle = async (message: string, history: {role: 'user
     
     return (result.data as any).text || "";
   } catch (error: any) {
-    console.error("Oracle Chat Error:", error);
+    console.error("Oracle Reach Error:", error);
     if (error.message.includes("Forbidden") || error.message.includes("suspended")) {
         return "The Oracle is currently in deep meditation. Please come back later.";
     }
@@ -173,7 +173,7 @@ export const sendMessageToTree = async (message: string, history: {role: 'user' 
 
     return (result.data as any).text || "";
   } catch (error: any) {
-    console.error("Tree Chat Error:", error);
+    console.error("Tree Reach Error:", error);
     if (error.message.includes("Forbidden") || error.message.includes("suspended")) {
         return "My roots are quiet right now. Please come back later.";
     }

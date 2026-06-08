@@ -114,11 +114,6 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel = "Back" }: 
                                 {pulse.eventLocation && <div><span className="font-bold">Where:</span> {pulse.eventLocation}</div>}
                             </div>
                         )}
-                        {pulse.type === 'tree_chat' && pulse.chatTreeName && (
-                            <div className="mb-4 rounded-2xl border border-indigo-100 bg-indigo-50 p-4 text-sm text-indigo-900">
-                                Conversation with <span className="font-bold">{pulse.chatTreeName}</span>
-                            </div>
-                        )}
                         <p dir="auto" className="text-slate-600 leading-relaxed whitespace-pre-wrap font-serif text-lg">
                             {pulse.content || pulse.body}
                         </p>

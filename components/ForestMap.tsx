@@ -29,7 +29,7 @@ const getTreeCoordinates = (tree: Lifetree) => {
     return { lat, lng };
 };
 
-export const ForestMap = ({ trees, onView, onChat, loading = false }: { trees: Lifetree[], onView: (tree: Lifetree) => void, onChat?: (tree: Lifetree) => void, loading?: boolean }) => {
+export const ForestMap = ({ trees, onView, onReach, loading = false }: { trees: Lifetree[], onView: (tree: Lifetree) => void, onReach?: (tree: Lifetree) => void, loading?: boolean }) => {
     const mapContainer = useRef<HTMLDivElement>(null);
     const mapInstance = useRef<any>(null);
     const markersLayer = useRef<any>(null);
@@ -248,7 +248,7 @@ export const ForestMap = ({ trees, onView, onChat, loading = false }: { trees: L
                     <p class="text-xs text-slate-500 line-clamp-2 italic mb-2">"${tree.body}"</p>
                     <div class="grid grid-cols-2 gap-2">
                         <button class="view-btn bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-full w-full">View</button>
-                        <button class="chat-btn bg-sky-600 text-white text-xs font-bold px-3 py-1.5 rounded-full w-full">Chat</button>
+                        <button class="reach-btn bg-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-full w-full">Reach</button>
                     </div>
                 </div>
             </div>
@@ -257,9 +257,9 @@ export const ForestMap = ({ trees, onView, onChat, loading = false }: { trees: L
             e.stopPropagation();
             onView(tree);
         });
-        div.querySelector('.chat-btn')?.addEventListener('click', (e) => {
+        div.querySelector('.reach-btn')?.addEventListener('click', (e) => {
             e.stopPropagation();
-            onChat?.(tree);
+            onReach?.(tree);
         });
         return div;
     }

@@ -137,6 +137,9 @@ export const listenToUserProfile = (userId: string, callback: (data: any) => voi
 export const updateUserSiteTheme = (userId: string, data: any) =>
     setDoc(doc(db, 'users', userId), { ...data, updatedAt: serverTimestamp() }, { merge: true });
 
+export const updateUserProfile = (userId: string, data: any) =>
+    setDoc(doc(db, 'users', userId), { ...data, updatedAt: serverTimestamp() }, { merge: true });
+
 export const deleteUserAccount = async () => {
     const user = auth.currentUser;
     if (!user) throw new Error("No user signed in");
@@ -296,9 +299,9 @@ export const getNewsletterDraftData = async () => {
     }
 
     const [trees, visions, pulses] = await Promise.all([
-        fetchNewsletterChanges(lifetreesCollection, lastSentAt, (d) => ({ id: d.id, ...d.data() } as Lifetree)),
-        fetchNewsletterChanges(visionsCollection, lastSentAt, (d) => ({ id: d.id, ...d.data() } as Vision)),
-        fetchNewsletterChanges(pulsesCollection, lastSentAt, (d) => ({ id: d.id, ...d.data() } as Pulse)),
+        fetchNewsletterChanges(lifetreesCollection, lastSentAt, (d) => ({ id: d.id, ...(d.data() as any) } as Lifetree)),
+        fetchNewsletterChanges(visionsCollection, lastSentAt, (d) => ({ id: d.id, ...(d.data() as any) } as Vision)),
+        fetchNewsletterChanges(pulsesCollection, lastSentAt, (d) => ({ id: d.id, ...(d.data() as any) } as Pulse)),
     ]);
 
     return { lastSentAt, trees, visions, pulses };
@@ -499,7 +502,7 @@ export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter
 
     if (lastD) q = query(q, startAfter(lastD));
     const snap = await getDocs(q);
-    let items = snap.docs.map(d => ({ id: d.id, ...d.data() } as Lifetree));
+    let items = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Lifetree));
 
     // Sort community items client-side if we removed server-side sorting
     if (domainFilter && !isHubDomain(domainFilter)) {
@@ -519,7 +522,7 @@ export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter
     return { items, lastDoc: snap.docs[snap.docs.length-1] || null };
 }
 
-export const getMyLifetrees = async (uid: string) => (await getDocs(query(lifetreesCollection, where('ownerId', '==', uid)))).docs.map(d => ({ id: d.id, ...d.data() } as Lifetree));
+export const getMyLifetrees = async (uid: string) => (await getDocs(query(lifetreesCollection, where('ownerId', '==', uid)))).docs.map(d => ({ id: d.id, ...(d.data() as any) } as Lifetree));
 
 const normalizeDomain = (domain: string) =>
     domain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
@@ -529,7 +532,7 @@ export const getTreesByDomain = async (domain: string): Promise<Lifetree[]> => {
     // No orderBy — avoids requiring a composite Firestore index
     const q = query(lifetreesCollection, where('domain', '==', normalized));
     const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() } as Lifetree));
+    return snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Lifetree));
 };
 export const checkIsAdmin = async (uid: string): Promise<boolean> => (await getDoc(doc(db, 'admins', uid))).exists();
 
@@ -548,7 +551,7 @@ export const grantAdmin = (uid: string) => setDoc(doc(db, 'admins', uid), { gran
 export const revokeAdmin = (uid: string) => deleteDoc(doc(db, 'admins', uid));
 export const getAdmins = async (): Promise<{ uid: string }[]> =>
     (await getDocs(collection(db, 'admins'))).docs.map(d => ({ uid: d.id }));
-export const getGuardedTrees = async (uid: string) => (await getDocs(query(lifetreesCollection, where('guardians', 'array-contains', uid)))).docs.map(d => ({ id: d.id, ...d.data() } as Lifetree));
+export const getGuardedTrees = async (uid: string) => (await getDocs(query(lifetreesCollection, where('guardians', 'array-contains', uid)))).docs.map(d => ({ id: d.id, ...(d.data() as any) } as Lifetree));
 export const toggleGuardianship = (id: string, uid: string, join: boolean) => updateDoc(doc(db, 'lifetrees', id), { guardians: join ? arrayUnion(uid) : arrayRemove(uid) });
 export const setTreeStatus = (id: string, status: string) => updateDoc(doc(db, 'lifetrees', id), { status });
 
@@ -562,7 +565,7 @@ export const fetchVisions = async (lastD?: QueryDocumentSnapshot, domainFilter?:
     
     if (lastD) q = query(q, startAfter(lastD));
     const snap = await getDocs(q);
-    let items = snap.docs.map(d => ({ id: d.id, ...d.data() } as Vision));
+    let items = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Vision));
     
     if (domainFilter && !isHubDomain(domainFilter)) {
         items = items.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
@@ -571,8 +574,8 @@ export const fetchVisions = async (lastD?: QueryDocumentSnapshot, domainFilter?:
     return { items, lastDoc: snap.docs[snap.docs.length-1] || null };
 }
 
-export const getMyVisions = async (uid: string) => (await getDocs(query(visionsCollection, where('authorId', '==', uid)))).docs.map(d => ({ id: d.id, ...d.data() } as Vision));
-export const getJoinedVisions = async (uid: string) => (await getDocs(query(visionsCollection, where('joinedUserIds', 'array-contains', uid)))).docs.map(d => ({ id: d.id, ...d.data() } as Vision));
+export const getMyVisions = async (uid: string) => (await getDocs(query(visionsCollection, where('authorId', '==', uid)))).docs.map(d => ({ id: d.id, ...(d.data() as any) } as Vision));
+export const getJoinedVisions = async (uid: string) => (await getDocs(query(visionsCollection, where('joinedUserIds', 'array-contains', uid)))).docs.map(d => ({ id: d.id, ...(d.data() as any) } as Vision));
 
 export const createVision = async (data: any) => {
     const domain = data.domain || window.location.hostname.replace(/^www\./, '');
@@ -585,7 +588,7 @@ export const leaveVision = (id: string, uid: string) => updateDoc(doc(db, 'visio
 // Communities
 export const fetchCommunities = async () => {
     const snap = await getDocs(query(communitiesCollection, orderBy('createdAt', 'desc')));
-    return snap.docs.map(d => ({ id: d.id, ...d.data() } as Community));
+    return snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Community));
 }
 
 export const getCommunityByDomain = async (domain: string): Promise<Community | null> => {
@@ -597,7 +600,7 @@ export const getCommunityByDomain = async (domain: string): Promise<Community | 
 };
 
 export const getMyCommunities = async (uid: string) => 
-    (await getDocs(query(communitiesCollection, where('ownerId', '==', uid)))).docs.map(d => ({ id: d.id, ...d.data() } as Community));
+    (await getDocs(query(communitiesCollection, where('ownerId', '==', uid)))).docs.map(d => ({ id: d.id, ...(d.data() as any) } as Community));
 
 export const createCommunity = async (data: any) => {
     const docRef = await addDoc(communitiesCollection, {
@@ -633,18 +636,18 @@ export const createCommunityEvent = async (community: Community, data: any) => {
     return { id: eventRef.id, ...eventPayload, loveCount: 0, commentCount: 0, previousHash: 'COMMUNITY_EVENT', hash } as Pulse;
 };
 
-export const fetchPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {
+const fetchPulsesRaw = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {
     let q;
     if (domainFilter && !isHubDomain(domainFilter)) {
         q = query(pulsesCollection, where('domain', '==', domainFilter.replace(/^www\./, '')), limit(24));
     } else {
         q = query(pulsesCollection, orderBy('createdAt', 'desc'), limit(12));
     }
-    
+
     if (lastD) q = query(q, startAfter(lastD));
     const snap = await getDocs(q);
-    let items = snap.docs.map(d => ({ id: d.id, ...d.data() } as Pulse));
-    
+    let items = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Pulse));
+
     if (domainFilter && !isHubDomain(domainFilter)) {
         items = items.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
     }
@@ -652,71 +655,92 @@ export const fetchPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: 
     return { items, lastDoc: snap.docs[snap.docs.length-1] || null };
 }
 
+// The main Pulses feed shows offerings, dreams and other content pulses.
+// Reaches live in the Inspiration view, so they are excluded here.
+export const fetchPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {
+    const res = await fetchPulsesRaw(lastD, domainFilter);
+    return {
+        items: res.items.filter(pulse => pulse.type !== 'reach' && (pulse as any).type !== 'tree_chat'),
+        lastDoc: res.lastDoc
+    };
+}
+
 export const fetchEventPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {
-    const res = await fetchPulses(lastD, domainFilter);
+    const res = await fetchPulsesRaw(lastD, domainFilter);
     return {
         items: res.items.filter(pulse => pulse.type === 'event'),
         lastDoc: res.lastDoc
     };
 };
 
-export const listenForTreeChatNotifications = (
-    treeIds: string[],
-    currentUserId: string,
-    callback: (pulses: Pulse[]) => void
-) => {
-    const uniqueIds = Array.from(new Set(treeIds.filter(Boolean)));
-    if (uniqueIds.length === 0) {
-        callback([]);
-        return () => {};
-    }
+// Reaches (and legacy 'tree_chat' pulses) power the Inspiration threads.
+const isReachPulse = (p: Pulse) => p.type === 'reach' || (p as any).type === 'tree_chat';
 
-    const chunks: string[][] = [];
-    for (let i = 0; i < uniqueIds.length; i += 10) {
-        chunks.push(uniqueIds.slice(i, i + 10));
-    }
-
-    const chunkMaps = chunks.map(() => new Map<string, Pulse>());
-    const emit = () => {
-        const combined = chunkMaps
-            .flatMap(map => Array.from(map.values()))
-            .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
-        callback(combined);
+export const fetchReachPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {
+    const res = await fetchPulsesRaw(lastD, domainFilter);
+    return {
+        items: res.items.filter(isReachPulse),
+        lastDoc: res.lastDoc
     };
-
-    const unsubscribers = chunks.map((chunk, index) => {
-        const q = query(pulsesCollection, where('chatTreeId', 'in', chunk));
-        return onSnapshot(q, (snap) => {
-            const map = chunkMaps[index];
-            map.clear();
-            snap.docs.forEach(d => {
-                const pulse = { id: d.id, ...d.data() } as Pulse;
-                if (pulse.type === 'tree_chat' && pulse.authorId !== currentUserId && !(pulse.seenBy || []).includes(currentUserId)) {
-                    map.set(pulse.id, pulse);
-                }
-            });
-            emit();
-        }, (error) => {
-            console.error("Tree chat notification listener failed", error);
-            chunkMaps[index].clear();
-            emit();
-        });
-    });
-
-    return () => unsubscribers.forEach(unsub => unsub());
 };
 
-export const markTreeChatSeen = (pulseId: string, userId: string) =>
-    updateDoc(doc(db, 'pulses', pulseId), { seenBy: arrayUnion(userId) });
 
-export const getMyPulses = async (uid: string) => (await getDocs(query(pulsesCollection, where('authorId', '==', uid)))).docs.map(d => ({ id: d.id, ...d.data() } as Pulse)).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-export const fetchGrowthPulses = async (treeId: string) => (await getDocs(query(pulsesCollection, where('lifetreeId', '==', treeId), where('type', '==', 'GROWTH')))).docs.map(d => ({ id: d.id, ...d.data() } as Pulse)).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+// Load every reach touching a partner tree (sent to it, sent by it, or legacy chats with it),
+// oldest first. Single-field queries only (no composite index); the caller orients by author.
+export const fetchReachThread = async (partnerId: string) => {
+    const [toPartner, fromPartner, legacy] = await Promise.all([
+        getDocs(query(pulsesCollection, where('reachTreeId', '==', partnerId))),
+        getDocs(query(pulsesCollection, where('lifetreeId', '==', partnerId))),
+        getDocs(query(pulsesCollection, where('chatTreeId', '==', partnerId))),
+    ]);
+    const byId = new Map<string, Pulse>();
+    [...toPartner.docs, ...fromPartner.docs, ...legacy.docs].forEach(d => {
+        const p = { id: d.id, ...(d.data() as any) } as Pulse;
+        if (isReachPulse(p)) byId.set(p.id, p);
+    });
+    return Array.from(byId.values()).sort((a, b) => (a.createdAt?.toMillis() || 0) - (b.createdAt?.toMillis() || 0));
+};
+
+// All reaches involving me, both directions, newest first — my personal Inspiration inbox.
+export const fetchMyReaches = async (uid: string) => {
+    const [authored, received] = await Promise.all([
+        getDocs(query(pulsesCollection, where('authorId', '==', uid))),
+        getDocs(query(pulsesCollection, where('recipientUid', '==', uid))),
+    ]);
+    const byId = new Map<string, Pulse>();
+    [...authored.docs, ...received.docs].forEach(d => {
+        const p = { id: d.id, ...(d.data() as any) } as Pulse;
+        if (isReachPulse(p)) byId.set(p.id, p);
+    });
+    const items = Array.from(byId.values()).sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+    return { items, lastDoc: null };
+};
+
+// Live stream of reaches addressed to me, for the unread (red envelope) indicator.
+export const listenToMyReaches = (uid: string, callback: (pulses: Pulse[]) => void) =>
+    onSnapshot(query(pulsesCollection, where('recipientUid', '==', uid)), (snap) => {
+        callback(snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Pulse)));
+    });
+
+export const markReachesSeen = async (pulseIds: string[], uid: string) => {
+    await Promise.all(pulseIds.map(id =>
+        updateDoc(doc(db, 'pulses', id), { seenBy: arrayUnion(uid) }).catch(() => {})
+    ));
+};
+
+export const getLifetreeById = async (id: string): Promise<Lifetree | null> => {
+    const snap = await getDoc(doc(db, 'lifetrees', id));
+    return snap.exists() ? ({ id: snap.id, ...(snap.data() as any) } as Lifetree) : null;
+};
+
+export const getMyPulses = async (uid: string) => (await getDocs(query(pulsesCollection, where('authorId', '==', uid)))).docs.map(d => ({ id: d.id, ...(d.data() as any) } as Pulse)).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+export const fetchGrowthPulses = async (treeId: string) => (await getDocs(query(pulsesCollection, where('lifetreeId', '==', treeId), where('type', '==', 'GROWTH')))).docs.map(d => ({ id: d.id, ...(d.data() as any) } as Pulse)).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 
 export const getPulsesByTreeId = async (treeId: string) => {
     // We fetch by ID and sort client-side to be robust against missing composite indexes
     const q = query(pulsesCollection, where('lifetreeId', '==', treeId));
     const snap = await getDocs(q);
-    const pulses = snap.docs.map(d => ({ id: d.id, ...d.data() } as Pulse));
+    const pulses = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Pulse));
     // Sort Descending (Newest -> Oldest/Genesis) so the timeline can be rendered top-down
     return pulses.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 }
@@ -752,11 +776,11 @@ export const mintPulse = async (pulseData: any) => {
 }
 
 export const proposeAlignment = (data: any) => addDoc(alignmentsCollection, { ...data, status: 'PENDING', createdAt: serverTimestamp() });
-export const getPendingAlignments = async (uid: string) => (await getDocs(query(alignmentsCollection, where('targetUid', '==', uid), where('status', '==', 'PENDING')))).docs.map(d => ({ id: d.id, ...d.data() } as Alignment));
+export const getPendingAlignments = async (uid: string) => (await getDocs(query(alignmentsCollection, where('targetUid', '==', uid), where('status', '==', 'PENDING')))).docs.map(d => ({ id: d.id, ...(d.data() as any) } as Alignment));
 
 export const getMyAlignmentsHistory = async (uid: string) => {
     const [s1, s2] = await Promise.all([getDocs(query(alignmentsCollection, where('targetUid', '==', uid), where('status', '==', 'ACCEPTED'))), getDocs(query(alignmentsCollection, where('initiatorUid', '==', uid), where('status', '==', 'ACCEPTED')))]);
-    return [...s1.docs, ...s2.docs].map(d => ({ id: d.id, ...d.data() } as Alignment)).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+    return [...s1.docs, ...s2.docs].map(d => ({ id: d.id, ...(d.data() as any) } as Alignment)).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 }
 
 export const acceptAlignment = async (proposalId: string) => {
@@ -834,75 +858,4 @@ export const spendAiTokens = async (treeId: string, amount: number) => {
         t.update(treeRef, { aiTokenBalance: balance - amount });
         return balance - amount;
     });
-}
-export const migrateDataToV2 = async () => {
-    const treesSnapshot = await getDocs(collection(db, 'lifetrees'));
-    const treesBatch = writeBatch(db);
-    let treeCount = 0;
-    
-    for (const d of treesSnapshot.docs) {
-        const data = d.data();
-        let type: any = 'human';
-        if (data.isNature) type = 'project';
-        if (data.treeType === 'FAMILY') type = 'community';
-        if (data.treeType === 'LIFETREE') type = 'human';
-        
-        let location = data.location;
-        if (!location && data.latitude && data.longitude) {
-            // Note: If GeoPoint is needed, it can be instantiated, but simple object might suffice for now or use firebase GeoPoint
-            // For now, let's skip converting to exact GeoPoint object if it's already separated, or create one if we import GeoPoint.
-        }
-
-        treesBatch.update(d.ref, {
-            type,
-            visionIds: data.visionIds || [],
-            pulseIds: data.pulseIds || [],
-            guardianIds: data.guardians || [],
-            parentTreeIds: data.parentTreeIds || [],
-            childTreeIds: data.childTreeIds || [],
-            aiTokenBalance: data.aiTokenBalance || 0,
-            coherenceScore: data.coherenceScore || 0,
-        });
-        treeCount++;
-        // Commit in chunks if > 400
-        if (treeCount % 400 === 0) {
-            await treesBatch.commit();
-        }
-    }
-    await treesBatch.commit();
-    
-    const visionsSnapshot = await getDocs(collection(db, 'visions'));
-    const visionsBatch = writeBatch(db);
-    let vCount = 0;
-    for (const d of visionsSnapshot.docs) {
-        const data = d.data();
-        visionsBatch.update(d.ref, {
-            treeId: data.lifetreeId || data.treeId,
-            description: data.body || data.description || '',
-            status: data.status || 'growing',
-            resonanceScore: data.resonanceScore || 0
-        });
-        vCount++;
-        if (vCount % 400 === 0) await visionsBatch.commit();
-    }
-    await visionsBatch.commit();
-
-    const pulsesSnapshot = await getDocs(collection(db, 'pulses'));
-    const pulsesBatch = writeBatch(db);
-    let pCount = 0;
-    for (const d of pulsesSnapshot.docs) {
-        const data = d.data();
-        const newType = (data.type === 'STANDARD' || data.type === 'GROWTH') ? 'observation' : data.type;
-        pulsesBatch.update(d.ref, {
-            treeId: data.lifetreeId || data.treeId,
-            content: data.body || data.content || '',
-            type: newType || 'observation',
-            validationScore: data.loveCount || 0
-        });
-        pCount++;
-        if (pCount % 400 === 0) await pulsesBatch.commit();
-    }
-    await pulsesBatch.commit();
-
-    return { trees: treeCount, visions: vCount, pulses: pCount };
 }

@@ -17,7 +17,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView }: PulseCardProps)
     const [loved, setLoved] = useState(false);
     const [count, setCount] = useState(pulse.loveCount || 0);
     const images = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
-    const badge = pulse.type === 'event' ? 'EVENT' : pulse.type === 'tree_chat' ? 'TREE CHAT' : pulse.type === 'GROWTH' ? 'GROWTH' : '';
+    const badge = pulse.type === 'event' ? 'EVENT' : pulse.type === 'GROWTH' ? 'GROWTH' : '';
 
     useEffect(() => {
         if (lightseed) isPulseLoved(pulse.id, lightseed.uid).then(setLoved);
@@ -44,7 +44,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView }: PulseCardProps)
         >
              <div className="relative h-36 bg-slate-100 overflow-hidden group">
                  <div className="absolute top-2 right-2 z-20 flex gap-1">
-                    {badge && <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm ${pulse.type === 'event' ? 'bg-sky-100 text-sky-700' : pulse.type === 'tree_chat' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-600'}`}>{badge}</span>}
+                    {badge && <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm ${pulse.type === 'event' ? 'bg-sky-100 text-sky-700' : 'bg-emerald-100 text-emerald-600'}`}>{badge}</span>}
                     {images.length > 1 && <span className="bg-white/90 text-slate-600 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm">{images.length} IMG</span>}
                     {pulse.isMatch && <span className="bg-sky-100 text-sky-600 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm">MATCH</span>}
                  </div>

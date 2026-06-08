@@ -33,8 +33,9 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendSystemEmail = exports.generateAIContent = void 0;
+exports.onReachCreated = exports.sendSystemEmail = exports.generateAIContent = void 0;
 const https_1 = require("firebase-functions/v2/https");
+const firestore_1 = require("firebase-functions/v2/firestore");
 const admin = __importStar(require("firebase-admin"));
 const generative_ai_1 = require("@google/generative-ai");
 admin.initializeApp();
@@ -94,7 +95,11 @@ exports.generateAIContent = (0, https_1.onCall)({
                 lastError = error;
                 const errorText = error.message || "";
                 const isRateLimit = errorText.includes('429') || error.status === 429 || errorText.toLowerCase().includes('quota') || errorText.toLowerCase().includes('overwhelmed');
+                const isForbidden = errorText.includes('403') || error.status === 403 || errorText.includes('CONSUMER_SUSPENDED');
                 console.warn(`Attempt ${i + 1} failed:`, errorText);
+                if (isForbidden) {
+                    throw new https_1.HttpsError('permission-denied', 'The AI service is currently unavailable. The API key may be suspended or restricted. Please contact support.');
+                }
                 if (isRateLimit && i < maxRetries) {
                     const delay = Math.pow(2, i) * 2000 + Math.random() * 1000; // Heavier backoff
                     console.warn(`Gemini Rate Limit. Retrying in ${Math.round(delay)}ms...`);
@@ -140,6 +145,62 @@ exports.sendSystemEmail = (0, https_1.onCall)(async (request) => {
     catch (error) {
         console.error("Email Error:", error);
         throw new https_1.HttpsError('internal', 'Failed to queue email.');
+    }
+});
+// Person-to-person reach delivery: when a reach pulse is created, email the
+// recipient — but only if they've turned on "Send threads to email" on their
+// profile. Runs server-side so it can read the recipient's private profile/email
+// (clients cannot read other users' docs) without exposing it to the sender.
+exports.onReachCreated = (0, firestore_1.onDocumentCreated)("pulses/{pulseId}", async (event) => {
+    const snap = event.data;
+    if (!snap)
+        return;
+    const pulse = snap.data();
+    // Only real reaches addressed to a specific person, and never self-reaches.
+    if (pulse.type !== 'reach')
+        return;
+    const recipientUid = pulse.recipientUid || undefined;
+    if (!recipientUid || recipientUid === pulse.authorId)
+        return;
+    try {
+        const userSnap = await db.collection('users').doc(recipientUid).get();
+        if (!userSnap.exists)
+            return;
+        const user = userSnap.data();
+        // Respect the recipient's opt-in preference.
+        if (user.sendThreadsToEmail !== true)
+            return;
+        const email = user.email;
+        if (!email)
+            return;
+        const message = pulse.content || pulse.body || '';
+        const fromName = pulse.authorName || 'A Lifetree';
+        const toName = pulse.recipientName || pulse.reachTreeName || 'your Lifetree';
+        const subject = `${fromName} reached ${toName} on lightseed`;
+        const text = `${fromName} sent a reach to ${toName}:\n\n"${message}"\n\nOpen your reaches: https://lightseed.online`;
+        const html = `<div style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">` +
+            `<h2 style="color: #059669; font-weight: 300; letter-spacing: 1px; margin-bottom: 6px;">.seed</h2>` +
+            `<p style="font-size: 13px; color: #9ca3af; margin: 0 0 24px;">A new reach for <strong style="color:#059669;">${toName}</strong></p>` +
+            `<p style="font-size: 15px; margin: 0 0 10px; color:#6b7280;"><strong>${fromName}</strong> reached you through the mycelial network:</p>` +
+            `<blockquote style="font-size: 16px; margin: 0 0 28px; padding: 16px 20px; background:#f0fdf4; border-left: 4px solid #059669; border-radius: 8px; color:#1f2937;">${message.replace(/\n/g, '<br>')}</blockquote>` +
+            `<a href="https://lightseed.online" style="display:inline-block; background:#059669; color:#fff; text-decoration:none; font-weight:bold; padding:10px 22px; border-radius:9999px; font-size:14px;">Open your reaches</a>` +
+            `<hr style="border: 0; border-top: 1px solid #eee; margin: 24px 0;" />` +
+            `<p style="font-size: 12px; color: #9ca3af;">You receive this because "Send threads to email" is on in your <a href="https://lightseed.online" style="color: #059669; text-decoration: none;">lightseed profile</a>. You can turn it off there anytime.</p>` +
+            `</div>`;
+        await db.collection('mail').add({
+            to: [email],
+            uid: recipientUid,
+            message: {
+                from: "lightseed <admin@lightseed.online>",
+                subject,
+                text,
+                html
+            },
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+    }
+    catch (error) {
+        console.error("Reach email trigger failed:", error);
     }
 });
 //# sourceMappingURL=index.js.map

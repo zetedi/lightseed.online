@@ -44,7 +44,7 @@ export const useConfig = (hostCommunity: Community | null) => {
         hostDomain === 'lifeseed.online' && isPreviousLifeseedDefaultTheme(hostCommunity.theme)
           ? undefined
           : hostCommunity.theme,
-        domainDefaultTheme
+        domainDefaultTheme as any
       )
     };
   }, [hostCommunity]);

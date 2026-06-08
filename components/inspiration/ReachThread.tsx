@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { useLanguage } from '../contexts/LanguageContext';
-import { sendMessageToOracle, generateImage } from '../services/gemini';
-import { checkAndIncrementAiUsage, mintPulse, uploadBase64Image, listenToUserProfile } from '../services/firebase';
-import { useLifeseed } from '../hooks/useLifeseed';
-import { Icons } from './ui/Icons';
-import { Lifetree } from '../types';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { sendMessageToOracle, generateImage } from '../../services/gemini';
+import { checkAndIncrementAiUsage, mintPulse, uploadBase64Image, listenToUserProfile, fetchReachThread, markReachesSeen, getLifetreeById } from '../../services/firebase';
+import { useLifeseed } from '../../hooks/useLifeseed';
+import { Icons } from '../ui/Icons';
+import { Lifetree } from '../../types';
 
 const SunAvatar = () => (
     <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-amber-200 bg-amber-50 text-amber-500 shadow-inner">
@@ -28,34 +27,77 @@ const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, message: string
             });
     });
 
-export const OracleChat = ({ initialTree = null }: { initialTree?: Lifetree | null }) => {
+export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetree | null, onBack?: () => void }) => {
     const { t } = useLanguage();
     const { lightseed, activeTree, myTrees } = useLifeseed();
     const [messages, setMessages] = useState<{role: 'user' | 'model', text: string}[]>([]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+    const [isSending, setIsSending] = useState(false);
     const [isMinting, setIsMinting] = useState(false);
     const [usage, setUsage] = useState(0);
-    const [mode, setMode] = useState<'oracle' | 'tree'>(initialTree ? 'tree' : 'oracle');
-    const [selectedTree, setSelectedTree] = useState<Lifetree | null>(initialTree);
+    const [mode, setMode] = useState<'oracle' | 'tree'>(targetTree ? 'tree' : 'oracle');
+    const [selectedTree, setSelectedTree] = useState<Lifetree | null>(targetTree);
     const bottomRef = useRef<HTMLDivElement>(null);
-    const treeChoices = [initialTree, ...myTrees].filter((tree): tree is Lifetree => !!tree)
-        .filter((tree, index, all) => all.findIndex(t => t.id === tree.id) === index);
 
     useEffect(() => {
-        if (initialTree) {
-            setSelectedTree(initialTree);
+        if (targetTree) {
+            setSelectedTree(targetTree);
             setMode('tree');
-        }
-    }, [initialTree?.id]);
-
-    useEffect(() => {
-        if (mode === 'tree' && selectedTree) {
-            setMessages([{role: 'model', text: `Mycelial communication ready. Messages here travel between your active tree and ${selectedTree.name}.`}]);
         } else {
-            setMessages([{role: 'model', text: t('oracle_greeting')}]);
+            setMode('oracle');
         }
-    }, [mode, selectedTree?.id]);
+    }, [targetTree?.id]);
+
+    // Load the persistent reach thread (full back-and-forth) when a tree is selected.
+    useEffect(() => {
+        let cancelled = false;
+        const greeting = (name: string) => `Mycelial communication ready. Reaches here travel between your active tree and ${name}.`;
+
+        if (mode === 'tree' && selectedTree) {
+            const partner = selectedTree;
+            const myIds = new Set<string>(myTrees.map((tree: Lifetree) => tree.id));
+            setMessages([]);
+            setIsTyping(true);
+            fetchReachThread(partner.id)
+                .then(pulses => {
+                    if (cancelled) return;
+                    const history: {role: 'user' | 'model', text: string}[] = [];
+                    pulses.forEach(p => {
+                        const text = p.content || p.body || '';
+                        // I sent it if I authored it (reliable even before myTrees loads).
+                        const outgoing = (!!lightseed && p.authorId === lightseed.uid) || myIds.has(p.lifetreeId || '');
+                        if (outgoing) {
+                            if (text) history.push({ role: 'user', text });
+                            if (p.reachResponse) history.push({ role: 'model', text: p.reachResponse });
+                        } else {
+                            if (text) history.push({ role: 'model', text });
+                            if (p.reachResponse) history.push({ role: 'user', text: p.reachResponse });
+                        }
+                    });
+                    if (history.length === 0) history.push({ role: 'model', text: greeting(partner.name) });
+                    setMessages(history);
+
+                    // Mark incoming reaches addressed to me as seen (clears the red envelope).
+                    if (lightseed) {
+                        const unseen = pulses
+                            .filter(p => p.recipientUid === lightseed.uid && !(p.seenBy || []).includes(lightseed.uid))
+                            .map(p => p.id);
+                        if (unseen.length) markReachesSeen(unseen, lightseed.uid);
+                    }
+                })
+                .catch(err => {
+                    if (cancelled) return;
+                    console.error('Failed to load reach thread:', err);
+                    setMessages([{ role: 'model', text: greeting(partner.name) }]);
+                })
+                .finally(() => { if (!cancelled) setIsTyping(false); });
+        } else {
+            setMessages([{ role: 'model', text: t('oracle_greeting') }]);
+        }
+
+        return () => { cancelled = true; };
+    }, [mode, selectedTree?.id, lightseed?.uid]);
 
     useEffect(() => {
         if (mode === 'tree' && !selectedTree && activeTree) {
@@ -76,46 +118,62 @@ export const OracleChat = ({ initialTree = null }: { initialTree?: Lifetree | nu
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
+    // Incoming bubbles: the partner tree's face in a reach, the sun for the Oracle.
+    const incomingAvatar = () => {
+        if (mode === 'tree' && selectedTree) {
+            return selectedTree.imageUrl
+                ? <img src={selectedTree.imageUrl} alt={selectedTree.name} className="h-10 w-10 shrink-0 rounded-full border-2 border-emerald-100 object-cover" />
+                : <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-emerald-100 bg-emerald-50 font-bold uppercase text-emerald-600">{selectedTree.name?.trim()?.charAt(0) || <Icons.Tree />}</div>;
+        }
+        return <SunAvatar />;
+    };
+
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!input.trim()) return;
 
         if (mode === 'tree') {
             if (!lightseed || !activeTree || !selectedTree) {
-                setMessages(prev => [...prev, {role: 'model', text: "Choose your active tree and a receiving tree before sending a mycelial message."}]);
+                setMessages(prev => [...prev, {role: 'model', text: "Choose your active tree and a receiving tree before sending a mycelial reach."}]);
                 return;
             }
 
             const mycelialText = input.trim();
             setInput('');
-            setMessages([{role: 'model', text: `Mycelial communication moving between ${activeTree.name} and ${selectedTree.name}.`}]);
-            setIsTyping(true);
+            setMessages(prev => [...prev, {role: 'user', text: mycelialText}]);
+            setIsSending(true);
 
             try {
+                // Real person-to-person delivery: resolve the recipient tree's owner so the
+                // reach lands in their inbox (and triggers their email if they opted in).
+                let recipientUid: string | undefined = (selectedTree as any).ownerId;
+                if (!recipientUid) {
+                    const full = await getLifetreeById(selectedTree.id);
+                    recipientUid = full?.ownerId;
+                }
+
                 await mintPulse({
                     lifetreeId: activeTree.id,
-                    type: 'tree_chat',
-                    title: `Mycelial message: ${activeTree.name} -> ${selectedTree.name}`,
+                    type: 'reach',
+                    title: `Reach: ${activeTree.name} -> ${selectedTree.name}`,
                     body: mycelialText,
                     content: mycelialText,
-                    chatTreeId: selectedTree.id,
-                    chatTreeName: selectedTree.name,
+                    reachTreeId: selectedTree.id,
+                    reachTreeName: selectedTree.name,
+                    recipientUid: recipientUid || null,
+                    recipientName: selectedTree.name,
                     authorId: lightseed.uid,
                     authorName: activeTree.name,
                     authorPhoto: activeTree.imageUrl || lightseed.photoURL || undefined,
                 });
-                setMessages([{
-                    role: 'model',
-                    text: `Mycelial communication sent between ${activeTree.name} and ${selectedTree.name}.`
-                }]);
             } catch (error: any) {
-                console.error("Mycelial message failed:", error);
-                setMessages([{
+                console.error("Reach failed:", error);
+                setMessages(prev => [...prev, {
                     role: 'model',
-                    text: error.message || "The mycelial message could not be sent."
+                    text: error.message || "The reach could not be sent."
                 }]);
             }
-            setIsTyping(false);
+            setIsSending(false);
             return;
         }
         
@@ -195,12 +253,12 @@ export const OracleChat = ({ initialTree = null }: { initialTree?: Lifetree | nu
 
             await mintPulse({
                 lifetreeId: activeTree.id,
-                type: mode === 'tree' ? 'tree_chat' : 'STANDARD',
-                title: mode === 'tree' && selectedTree ? `Tree Chat: ${selectedTree.name}` : 'Oracle Wisdom',
+                type: mode === 'tree' ? 'reach' : 'STANDARD',
+                title: mode === 'tree' && selectedTree ? `Mycelial Reach: ${selectedTree.name}` : 'Oracle Wisdom',
                 body: conversationText,
                 imageUrl: finalImageUrl,
-                chatTreeId: mode === 'tree' ? selectedTree?.id : undefined,
-                chatTreeName: mode === 'tree' ? selectedTree?.name : undefined,
+                reachTreeId: mode === 'tree' ? selectedTree?.id : undefined,
+                reachTreeName: mode === 'tree' ? selectedTree?.name : undefined,
                 authorId: lightseed.uid,
                 authorName: lightseed.displayName || "Soul",
                 authorPhoto: lightseed.photoURL,
@@ -214,43 +272,33 @@ export const OracleChat = ({ initialTree = null }: { initialTree?: Lifetree | nu
     }
 
     return (
-        <div className="max-w-2xl mx-auto h-[70vh] flex flex-col bg-white rounded-3xl shadow-xl border border-emerald-100 overflow-hidden relative">
-            <div className="border-b border-slate-100 bg-white/95 p-4 backdrop-blur-md">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-800">
-                        <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                        <span>{mode === 'tree' ? 'Mycelial Communication' : 'Osiris Wisdom'}{mode === 'oracle' ? `: ${usage}/21` : ''}</span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                        <div className="rounded-full border border-slate-200 bg-slate-50 p-1">
-                            <button
-                                type="button"
-                                onClick={() => setMode('oracle')}
-                                className={`rounded-full px-3 py-1 text-[10px] font-bold transition-colors ${mode === 'oracle' ? 'bg-emerald-600 text-white' : 'text-slate-500 hover:text-slate-900'}`}
-                            >
-                                Oracle
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setMode('tree')}
-                                className={`rounded-full px-3 py-1 text-[10px] font-bold transition-colors ${mode === 'tree' ? 'bg-sky-600 text-white' : 'text-slate-500 hover:text-slate-900'}`}
-                            >
-                                Tree
-                            </button>
+        <div className="flex-1 flex flex-col h-full bg-white relative">
+            <div className="border-b border-slate-100 bg-white/95 p-4 backdrop-blur-md sticky top-0 z-10">
+                <div className="flex items-center gap-3">
+                    {onBack && (
+                        <button onClick={onBack} className="text-slate-400 transition-colors hover:text-slate-600 md:hidden">
+                            <Icons.ChevronRight className="rotate-180" size={22} />
+                        </button>
+                    )}
+                    {mode === 'tree' && selectedTree ? (
+                        selectedTree.imageUrl ? (
+                            <img src={selectedTree.imageUrl} alt={selectedTree.name} className="h-10 w-10 shrink-0 rounded-full border-2 border-emerald-100 object-cover" />
+                        ) : (
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-emerald-100 bg-emerald-50 font-bold uppercase text-emerald-600">
+                                {selectedTree.name?.trim()?.charAt(0) || <Icons.Tree />}
+                            </div>
+                        )
+                    ) : (
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-amber-200 bg-amber-50 text-amber-500">
+                            <Icons.Sun />
                         </div>
-
-                        {mode === 'tree' && (
-                            <select
-                                value={selectedTree?.id || ''}
-                                onChange={(e) => setSelectedTree(treeChoices.find(tree => tree.id === e.target.value) || null)}
-                                className="h-8 max-w-[180px] rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                            >
-                                <option value="">Choose tree</option>
-                                {treeChoices.map(tree => (
-                                    <option key={tree.id} value={tree.id}>{tree.name}</option>
-                                ))}
-                            </select>
-                        )}
+                    )}
+                    <div className="min-w-0">
+                        <div className="truncate font-semibold text-slate-800">{mode === 'tree' && selectedTree ? selectedTree.name : 'Osiris · Oracle'}</div>
+                        <div className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-700">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span>{mode === 'tree' ? 'Mycelial reach' : `Oracle · ${usage}/21`}</span>
+                        </div>
                     </div>
                 </div>
 
@@ -280,7 +328,7 @@ export const OracleChat = ({ initialTree = null }: { initialTree?: Lifetree | nu
             <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-slate-50/50 scroll-smooth">
                 {messages.map((m, i) => (
                     <div key={i} className={`flex gap-4 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        {m.role === 'model' && <SunAvatar />}
+                        {m.role === 'model' && incomingAvatar()}
                         <div dir="auto" className={`max-w-[85%] sm:max-w-[75%] rounded-[2rem] px-6 py-4 text-[15px] leading-relaxed tracking-wide ${
                             m.role === 'user' 
                                 ? 'bg-emerald-600 text-white rounded-br-none shadow-lg' 
@@ -297,7 +345,7 @@ export const OracleChat = ({ initialTree = null }: { initialTree?: Lifetree | nu
                 ))}
                 {isTyping && (
                     <div className="flex justify-start gap-4">
-                        <SunAvatar />
+                        {incomingAvatar()}
                         <div className="bg-white border border-emerald-50 rounded-[2rem] rounded-bl-none px-6 py-4 shadow-sm">
                             <div className="flex space-x-1.5 items-center h-4">
                                 <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
@@ -309,15 +357,15 @@ export const OracleChat = ({ initialTree = null }: { initialTree?: Lifetree | nu
                 )}
                 <div ref={bottomRef}></div>
             </div>
-            <form onSubmit={handleSend} className="p-4 bg-white border-t border-slate-100 flex space-x-3 items-center">
+            <form onSubmit={handleSend} className="p-4 bg-white border-t border-slate-100 flex space-x-3 items-center sticky bottom-0 z-10">
                 <input 
                     value={input}
                     onChange={e => setInput(e.target.value)}
                     placeholder={mode === 'tree' && selectedTree ? `Send from ${activeTree?.name || 'your tree'} to ${selectedTree.name}...` : "Ask Osiris..."}
                     className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-6 py-4 text-[15px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:bg-white transition-all shadow-inner placeholder:text-slate-400 placeholder:italic"
                 />
-                <button type="submit" disabled={isTyping || !input.trim() || (mode === 'tree' && (!selectedTree || !activeTree))} className="bg-emerald-600 text-white p-4 rounded-full hover:bg-emerald-700 active:scale-95 disabled:opacity-50 transition-all shadow-lg">
-                    <Icons.Send />
+                <button type="submit" disabled={isTyping || isSending || !input.trim() || (mode === 'tree' && (!selectedTree || !activeTree))} className="bg-emerald-600 text-white p-4 rounded-full hover:bg-emerald-700 active:scale-95 disabled:opacity-50 transition-all shadow-lg">
+                    {isSending ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Icons.Send />}
                 </button>
             </form>
         </div>

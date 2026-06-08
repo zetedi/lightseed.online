@@ -14,7 +14,7 @@ const baseKeys = {
   edit: "Edit", be_mother_tree: "Plant a Lifetree", guard_tree: "Guard Tree", alignments: "Alignments",
   pending_alignments: "Pending Alignments", no_pending_resonance: "No Resonance", search_placeholder: "Search...",
   guard: "Guard", nature: "Nature", lifetrees: "Lifetrees", no_trees_found: "None found", pending: "Pending",
-  validated_trees: "Validated", observatory: "Observatory",
+  validated_trees: "Validated", observatory: "Observatory", inspiration: "Inspiration",
   growth: "Growth", loves: "Loves", oracle_greeting: "Greetings, Seeker. I am the Oracle. Shall I help you plant your Lifetree, or guide you on the path to realizing your Vision?", ask_oracle: "Ask the Oracle...",
   more: "More", send_invite: "Send Invite", invitations: "Invitations", invites_remaining: "Invites Remaining",
   copy_invite: "Copy Link", delete_account: "Delete Account", delete_confirm_title: "Delete Profile",
@@ -44,7 +44,7 @@ export const translations: Record<Language, typeof baseKeys> = {
     pending_alignments: "Coincidencias Pendientes", quick_snap: "Capturar Cambio", validated: "VALIDADO", 
     validate_action: "Validar Árbol", create_vision: "Nueva Visión", create_new_world: "Crea un Nuevo Mundo",
     light_earth: "Tierra de Luz", intelligence: "Inteligencia",
-    communities: "Comunidades", register_community: "Registrar Comunidad", observatory: "Observatorio"
+    communities: "Comunidades", register_community: "Registrar Comunidad", observatory: "Observatorio", inspiration: "Inspiración"
   },
   hu: { 
     ...baseKeys, forest: "Erdő", pulses: "Pulzusok", visions: "Víziók", oracle: "Orákulum", about: "Rólunk", explore: "Felfedezés", 
@@ -53,7 +53,7 @@ export const translations: Record<Language, typeof baseKeys> = {
     pending_alignments: "Függőben", quick_snap: "Gyors Fotó", validated: "HITELESÍTVE", 
     validate_action: "Hitelesítés", create_vision: "Új Vízió", create_new_world: "Teremts Új Világot",
     light_earth: "Fény Föld", intelligence: "Intelligencia",
-    communities: "Közösségek", register_community: "Közösség Regisztrálása", observatory: "Obszervatórium"
+    communities: "Közösségek", register_community: "Közösség Regisztrálása", observatory: "Obszervatórium", inspiration: "Inspiráció"
   },
   qu: { 
     ...baseKeys, forest: "Sach'a", pulses: "Sirkay", visions: "Musquy", oracle: "Willaq", about: "Kaymanta", explore: "Maskay", 
@@ -62,7 +62,7 @@ export const translations: Record<Language, typeof baseKeys> = {
     pending_alignments: "Suyaq", quick_snap: "Utqaylla", validated: "CHASKISQA", 
     validate_action: "Chaskiy", create_vision: "Musquy", create_new_world: "Musuq Pachata Ruray",
     light_earth: "K'anchay Allpa", intelligence: "Hamut'ay",
-    communities: "Ayllukuna", observatory: "Qhawana"
+    communities: "Ayllukuna", observatory: "Qhawana", inspiration: "Samay"
   },
   sa: { 
     ...baseKeys, forest: "अरण्यम्", pulses: "स्पन्दनानि", visions: "दृष्टयः", oracle: "दैववाणी", about: "विषये", explore: "अन्वेषणम्", 
@@ -71,7 +71,7 @@ export const translations: Record<Language, typeof baseKeys> = {
     pending_alignments: "लम्बित", quick_snap: "शीघ्रम्", validated: "प्रमाणित", 
     validate_action: "प्रमाणयतु", create_vision: "दृष्टिः", create_new_world: "नवं लोकं सृजतु",
     light_earth: "ज्योतिर्भूमि:", intelligence: "बुद्धि:",
-    communities: "समुदायाः", observatory: "वेधशाला"
+    communities: "समुदायाः", observatory: "वेधशाला", inspiration: "प्रेरणा"
   },
   ja: { 
     ...baseKeys, forest: "森", pulses: "パルス", visions: "ビジョン", oracle: "オラクル", about: "詳細", explore: "探索", 
@@ -80,7 +80,7 @@ export const translations: Record<Language, typeof baseKeys> = {
     pending_alignments: "保留中", quick_snap: "スナップ", validated: "認証済", 
     validate_action: "認証", create_vision: "ビジョン", create_new_world: "新しい世界を創造する",
     light_earth: "光の地球", intelligence: "知性",
-    communities: "コミュニティ", observatory: "展望台"
+    communities: "コミュニティ", observatory: "展望台", inspiration: "インスピレーション"
   },
   ar: { 
     ...baseKeys, forest: "الغابة", pulses: "نبضات", visions: "رؤى", oracle: "عراف", about: "عن", explore: "استكشاف", 
@@ -89,7 +89,7 @@ export const translations: Record<Language, typeof baseKeys> = {
     pending_alignments: "معلقة", quick_snap: "لقطة", validated: "مصدق", 
     validate_action: "صدق", create_vision: "رؤية", create_new_world: "اخلق عالما جديدا",
     light_earth: "أرض النور", intelligence: "ذكاء",
-    communities: "مجتمعات", observatory: "مرصد"
+    communities: "مجتمعات", observatory: "مرصد", inspiration: "إلهام"
   },
   sw: { 
     ...baseKeys, forest: "Msitu", pulses: "Mapigo", visions: "Maono", oracle: "Mtabiri", about: "Kuhusu", explore: "Chunguza", 
@@ -98,6 +98,6 @@ export const translations: Record<Language, typeof baseKeys> = {
     pending_alignments: "Subiri", quick_snap: "Picha", validated: "IMETHIBITISHWA", 
     validate_action: "Thibitisha", create_vision: "Ono", create_new_world: "Unda Ulimwengu Mpya",
     light_earth: "Dunia ya Nuru", intelligence: "Akili",
-    communities: "Jamii", observatory: "Kituo cha Uchunguzi"
+    communities: "Jamii", observatory: "Kituo cha Uchunguzi", inspiration: "Uvuvio"
   }
 };

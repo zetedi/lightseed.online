@@ -18,7 +18,7 @@ interface NavigationProps {
   pendingAlignmentsCount: number;
   myTreesCount: number;
   dangerTreesCount: number;
-  treeChatNotificationsCount?: number;
+  reachNotificationsCount?: number;
   logoUrl?: string;
   appName?: string;
   theme?: {
@@ -32,7 +32,7 @@ interface NavigationProps {
   };
   isNightMode?: boolean;
   onToggleNightMode?: () => void;
-  onOpenTreeChatInbox?: () => void;
+  onOpenReachInbox?: () => void;
 }
 
 const languages = [
@@ -70,20 +70,20 @@ export const Navigation = ({
     pendingAlignmentsCount, 
     myTreesCount = 0, 
     dangerTreesCount = 0,
-    treeChatNotificationsCount = 0,
+    reachNotificationsCount = 0,
     logoUrl,
     appName = '.seed',
     theme,
     isNightMode = false,
     onToggleNightMode,
-    onOpenTreeChatInbox
+    onOpenReachInbox
 }: NavigationProps) => {
     const { t, language, setLanguage } = useLanguage();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isLangOpen, setIsLangOpen] = useState(false);
     const langRef = useRef<HTMLDivElement>(null);
     
-    const hasNotification = pendingAlignmentsCount > 0 || dangerTreesCount > 0 || treeChatNotificationsCount > 0;
+    const hasNotification = pendingAlignmentsCount > 0 || dangerTreesCount > 0 || reachNotificationsCount > 0;
     const navBackground = theme?.surface || theme?.background || (isNightMode ? '#020617' : '#ffffff');
     const navIsDark = isDarkHex(navBackground, isNightMode);
     const navText = navIsDark ? '#f8fafc' : (theme?.text || '#0f172a');
@@ -110,7 +110,7 @@ export const Navigation = ({
         if (activeTab === key) {
             const themes: any = { 
                 dashboard: 'bg-indigo-600', visions: 'bg-amber-500', forest: 'bg-emerald-600', 
-                pulses: 'bg-sky-600', events: 'bg-teal-600', observatory: 'bg-rose-600', oracle: 'bg-indigo-600', about: 'bg-purple-600', communities: 'bg-teal-600'
+                pulses: 'bg-sky-600', events: 'bg-teal-600', observatory: 'bg-rose-600', inspiration: 'bg-indigo-600', about: 'bg-purple-600', communities: 'bg-teal-600'
             };
             return `${themes[key] || 'bg-slate-700'} text-white shadow-lg shadow-black/20 font-bold tracking-wide`;
         }
@@ -121,12 +121,12 @@ export const Navigation = ({
 
     const getActiveTabColor = (tab: string) => {
         if (tab === 'visions' || tab === 'about') return theme?.accent;
-        if (tab === 'pulses' || tab === 'events' || tab === 'oracle') return theme?.secondary;
+        if (tab === 'pulses' || tab === 'events' || tab === 'inspiration') return theme?.secondary;
         return theme?.primary;
     };
 
     const lightEarthTabs = ['forest', 'visions', 'events', 'pulses'];
-    const intelligenceTabs = ['oracle', 'observatory'];
+    const intelligenceTabs = ['inspiration', 'observatory'];
     const otherTabs = ['communities', 'about'];
 
     const getTabLabel = (tab: string) => {
@@ -138,7 +138,7 @@ export const Navigation = ({
 
     const getTabCount = (tab: string) => {
         if (tab === 'observatory') return pendingAlignmentsCount;
-        if (tab === 'oracle') return treeChatNotificationsCount;
+        if (tab === 'inspiration') return reachNotificationsCount;
         return 0;
     };
 
@@ -164,7 +164,7 @@ export const Navigation = ({
         <div className="flex flex-col gap-1">
             <span className="text-[9px] uppercase tracking-[0.2em] font-bold px-3" style={{ color: navMuted }}>{label}</span>
             <div className="flex items-center gap-1">
-                {tabs.map(tab => <NavTab key={tab} tab={tab} />)}
+                {tabs.map(tab => <div key={tab}><NavTab tab={tab} /></div>)}
             </div>
         </div>
     );
@@ -192,7 +192,7 @@ export const Navigation = ({
                         <div className="flex flex-col gap-1">
                             <span className="text-[9px] uppercase tracking-[0.2em] font-bold px-3" style={{ color: navMuted }}>Network</span>
                             <div className="flex items-center gap-1">
-                                {otherTabs.map(tab => <NavTab key={tab} tab={tab} />)}
+                                {otherTabs.map(tab => <div key={tab}><NavTab tab={tab} /></div>)}
                             </div>
                         </div>
                     </div>
@@ -244,14 +244,16 @@ export const Navigation = ({
                                     <button onClick={onLogout} className="text-[10px] font-bold uppercase tracking-widest transition-colors hover:opacity-80" style={{ color: navMuted }}>
                                         {t('sign_out')}
                                     </button>
-                                    {treeChatNotificationsCount > 0 && (
+                                    {reachNotificationsCount > 0 && (
                                         <button
-                                            onClick={onOpenTreeChatInbox}
-                                            className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-[10px] font-black text-amber-800 shadow-sm ring-1 ring-amber-200"
-                                            title="Unseen tree chat"
+                                            onClick={onOpenReachInbox}
+                                            className="relative text-red-500 transition-transform hover:text-red-600 active:scale-95"
+                                            title={`${reachNotificationsCount} new ${reachNotificationsCount === 1 ? 'reach' : 'reaches'}`}
                                         >
                                             <Icons.Mail />
-                                            <span>{treeChatNotificationsCount}</span>
+                                            <span className={`absolute -top-1.5 -right-2 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-red-500 px-1 text-[8px] font-black text-white ring-2 ${navIsDark ? 'ring-slate-900' : 'ring-white'}`}>
+                                                {reachNotificationsCount}
+                                            </span>
                                         </button>
                                     )}
                                 </div>
@@ -343,13 +345,13 @@ export const Navigation = ({
                                  <div className="scale-75"><Icons.Close /></div>
                                  <span>{t('sign_out')}</span>
                             </button>
-                            {treeChatNotificationsCount > 0 && (
+                            {reachNotificationsCount > 0 && (
                                 <button
-                                    onClick={() => { onOpenTreeChatInbox?.(); setIsMenuOpen(false); }}
-                                    className="w-full rounded-lg border border-amber-300 bg-amber-100 px-4 py-2.5 text-xs font-bold text-amber-900 transition-all flex items-center justify-center gap-2"
+                                    onClick={() => { onOpenReachInbox?.(); setIsMenuOpen(false); }}
+                                    className="w-full rounded-lg border border-red-300 bg-red-50 px-4 py-2.5 text-xs font-bold text-red-600 transition-all flex items-center justify-center gap-2"
                                 >
                                     <Icons.Mail />
-                                    <span>{treeChatNotificationsCount} unseen tree chat</span>
+                                    <span>{reachNotificationsCount} new {reachNotificationsCount === 1 ? 'reach' : 'reaches'}</span>
                                 </button>
                             )}
                         </div>

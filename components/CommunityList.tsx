@@ -6,6 +6,7 @@ import { Community, Lifetree } from '../types';
 import { fetchCommunities, createCommunity, getCommunityByDomain } from '../services/firebase';
 import { communityThemePresets } from '../utils/theme';
 import { Loading } from './ui/Loading';
+import { SectionHeader } from './ui/SectionHeader';
 
 interface CommunityListProps {
   onSelect: (community: Community) => void;
@@ -125,21 +126,20 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
 
   return (
     <div className="max-w-6xl mx-auto p-6 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-6 bg-white/90 backdrop-blur-md p-8 rounded-3xl border border-slate-200 shadow-xl">
-        <div className="text-center md:text-left">
-          <h1 className="text-4xl font-thin tracking-tight text-slate-950">{t('communities')}</h1>
-          <p className="text-slate-500 mt-2">Connecting vertical forests with global visions.</p>
-        </div>
-        {myTrees.length > 0 && (
-          <button 
-            onClick={() => setShowCreate(true)} 
+      <SectionHeader
+        icon={<Icons.Globe />}
+        title={t('communities')}
+        subtitle="Connecting vertical forests with global visions."
+        action={myTrees.length > 0 ? (
+          <button
+            onClick={() => setShowCreate(true)}
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2 border border-emerald-500/30 active:scale-95"
           >
             <Icons.Plus />
             <span>{t('register_community')}</span>
           </button>
-        )}
-      </div>
+        ) : undefined}
+      />
 
       {loading ? (
         <div className="flex justify-center py-24">
@@ -148,7 +148,11 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
       ) : (communities.length > 0 || genesisCommunity) ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {genesisCommunity && <CommunityCard community={genesisCommunity} isGenesis={true} />}
-          {communities.map(community => <CommunityCard key={community.id} community={community} />)}
+          {communities.map(community => (
+            <div key={community.id}>
+              <CommunityCard community={community} />
+            </div>
+          ))}
         </div>
       ) : (
         <div className="bg-white/90 backdrop-blur-sm border border-slate-200 rounded-[3rem] p-12 md:p-24 text-center flex flex-col items-center shadow-2xl animate-in zoom-in-95 duration-700">
@@ -168,7 +172,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
                     <span>Start a Community</span>
                 </button>
             ) : (
-                <div className="bg-amber-400/10 border border-amber-400/20 rounded-2xl p-4 text-amber-200 text-sm flex items-center gap-3">
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-amber-700 text-sm flex items-center gap-3">
                     <Icons.Tree />
                     <span>You need to plant a lifetree before you can start a community.</span>
                 </div>

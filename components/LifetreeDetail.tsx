@@ -9,7 +9,7 @@ import { updateLifetree, toggleGuardianship, setTreeStatus, getPulsesByTreeId } 
 import { Pulse } from '../types';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
 
-export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onChatTree, onViewPulse, myActiveTree, currentUserId, isAdmin, isSuperAdmin }: any) => {
+export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, myActiveTree, currentUserId, isAdmin, isSuperAdmin }: any) => {
    const { t } = useLanguage();
    const isOwner = currentUserId === tree.ownerId;
    const isNature = tree.isNature;
@@ -249,9 +249,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                     <Icons.Play />
                                     <span>PLAY GROWTH</span>
                                 </button>
-                                <button onClick={() => onChatTree?.(tree)} className="min-h-0 w-fit bg-sky-600/90 hover:bg-sky-600 text-white text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 rounded-full flex items-center space-x-1 backdrop-blur-sm transition-colors">
-                                    <Icons.Sparkles />
-                                    <span>CHAT</span>
+                                <button onClick={() => onReachTree?.(tree)} className="min-h-0 w-fit bg-amber-500/90 hover:bg-amber-600 text-white text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 rounded-full flex items-center space-x-1 backdrop-blur-sm transition-colors">
+                                    <Icons.Lightning />
+                                    <span>REACH</span>
                                 </button>
                                 {showValidateAction && (
                                     <button
@@ -528,7 +528,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                     // index 1, 3, 5 (Odd) -> Left Side (Desktop)
                                     const isRightSide = index % 2 === 0;
                                     const pulseImages = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
-                                    const pulseBadge = pulse.type === 'event' ? 'EVENT' : pulse.type === 'tree_chat' ? 'TREE CHAT' : pulse.type === 'GROWTH' ? 'GROWTH' : 'PULSE';
+                                    const pulseBadge = pulse.type === 'event' ? 'EVENT' : pulse.type === 'GROWTH' ? 'GROWTH' : 'PULSE';
                                     
                                     return (
                                         <div key={pulse.id} className={`flex w-full relative ${isRightSide ? 'md:justify-end' : 'md:justify-start'} justify-start`}>
@@ -581,8 +581,6 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                                                 <span className="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold">GROWTH</span>
                                                             ) : pulseBadge === 'EVENT' ? (
                                                                 <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 rounded-full font-bold">EVENT</span>
-                                                            ) : pulseBadge === 'TREE CHAT' ? (
-                                                                <span className="bg-indigo-100 text-indigo-700 text-[10px] px-2 py-0.5 rounded-full font-bold">TREE CHAT</span>
                                                             ) : (
                                                                 <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 rounded-full font-bold">PULSE</span>
                                                             )}

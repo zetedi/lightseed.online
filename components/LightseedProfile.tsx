@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { type Pulse, type Lifetree, type Alignment, type Vision, type VisionSynergy } from '../types';
-import { getMyPulses, getMyVisions, getJoinedVisions, getMyAlignmentsHistory, deleteUserAccount, logout, triggerSystemEmail, sendInvite, listenToUserProfile, deleteVision, getAdmins, setNewsletterSubscription, migrateDataToV2, updateUserSiteTheme, uploadImage } from '../services/firebase';
+import { getMyPulses, getMyVisions, getJoinedVisions, getMyAlignmentsHistory, deleteUserAccount, logout, triggerSystemEmail, sendInvite, listenToUserProfile, deleteVision, getAdmins, setNewsletterSubscription, updateUserSiteTheme, updateUserProfile, uploadImage } from '../services/firebase';
 import { findVisionSynergies } from '../services/gemini';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
@@ -35,6 +35,8 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
     const [sendingInvite, setSendingInvite] = useState(false);
     const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
     const [togglingNewsletter, setTogglingNewsletter] = useState(false);
+    const [sendThreadsToEmail, setSendThreadsToEmail] = useState(false);
+    const [togglingThreadsEmail, setTogglingThreadsEmail] = useState(false);
     const [dialogMessage, setDialogMessage] = useState<string | null>(null);
     const [siteTheme, setSiteTheme] = useState(normalizeTheme(undefined));
     const [siteLogoUrl, setSiteLogoUrl] = useState('');
@@ -66,6 +68,7 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                 setInvitesRemaining(data.invitesRemaining);
             }
             setNewsletterSubscribed(Boolean(data?.newsletterSubscribed));
+            setSendThreadsToEmail(Boolean(data?.sendThreadsToEmail));
             setSiteTheme(normalizeTheme(data?.siteTheme));
             setSiteLogoUrl(data?.siteLogoUrl || '');
         });
@@ -167,6 +170,22 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
             setDialogMessage(e.message || 'Failed to update newsletter preference.');
         }
         setTogglingNewsletter(false);
+    };
+
+    const handleThreadsEmailToggle = async () => {
+        if (!lightseed?.uid || togglingThreadsEmail) return;
+        setTogglingThreadsEmail(true);
+        try {
+            const nextValue = !sendThreadsToEmail;
+            await updateUserProfile(lightseed.uid, { sendThreadsToEmail: nextValue });
+            setSendThreadsToEmail(nextValue);
+            setDialogMessage(nextValue
+                ? 'Reaches sent to your trees will now also be delivered to your email.'
+                : 'Email delivery of reaches turned off.');
+        } catch (e: any) {
+            setDialogMessage(e.message || 'Failed to update reach email preference.');
+        }
+        setTogglingThreadsEmail(false);
     };
 
     const handleSiteLogoUpload = async (file: File) => {
@@ -329,6 +348,16 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                                     <span>{togglingNewsletter ? 'Working...' : (newsletterSubscribed ? 'Unsubscribe' : 'Subscribe to Newsletter')}</span>
                                 </button>
 
+                                <button
+                                    onClick={handleThreadsEmailToggle}
+                                    disabled={togglingThreadsEmail || !lightseed.email}
+                                    title="When on, reaches sent to your trees are also delivered to your email."
+                                    className={`px-3 py-2 rounded-full text-xs font-bold transition-colors flex items-center space-x-1 border ${sendThreadsToEmail ? 'bg-emerald-700 hover:bg-emerald-600 border-emerald-600 text-white' : 'bg-slate-700 hover:bg-slate-600 border-slate-600 text-slate-200'} disabled:opacity-50`}
+                                >
+                                    <Icons.Mail />
+                                    <span>{togglingThreadsEmail ? 'Working...' : (sendThreadsToEmail ? 'Threads → Email: On' : 'Threads → Email: Off')}</span>
+                                </button>
+
                                 <button onClick={() => setShowDeleteConfirm(true)} className="bg-slate-700 hover:bg-red-900/50 text-slate-300 hover:text-red-200 px-3 py-2 rounded-full text-xs font-bold transition-colors flex items-center space-x-1 border border-slate-600 hover:border-red-800">
                                     <Icons.Trash />
                                     <span>{t('delete_account')}</span>
@@ -383,22 +412,6 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                                 <Icons.Shield /> Admin Management
                             </h4>
                             <div className="flex items-center gap-2">
-                                <button
-                                    onClick={async () => {
-                                        if(confirm('Are you sure you want to migrate all data to V2 schema? This is an irreversible operation.')) {
-                                            try {
-                                                const res = await migrateDataToV2();
-                                                alert(`Migration Complete! Trees: ${res.trees}, Visions: ${res.visions}, Pulses: ${res.pulses}`);
-                                            } catch (e: any) {
-                                                alert(`Migration failed: ${e.message}`);
-                                            }
-                                        }
-                                    }}
-                                    className="bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors flex items-center gap-2"
-                                >
-                                    <Icons.Sparkles />
-                                    <span>Migrate to V2</span>
-                                </button>
                                 <button
                                     onClick={onOpenNewsletterAdmin}
                                     className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors flex items-center gap-2"
