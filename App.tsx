@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   signInWithGoogle,
   logout,
@@ -563,7 +563,7 @@ const AppContent = () => {
         }
     }
 
-    const filteredData = data.filter((item: any) => {
+    const filteredData = useMemo(() => data.filter((item: any) => {
         let matches = true;
         if (searchTerm) {
             const term = searchTerm.toLowerCase();
@@ -582,9 +582,11 @@ const AppContent = () => {
             }
         }
         return matches;
-    });
+    }), [data, searchTerm, tab, showNatureTrees, showUserTrees, showValidatedTrees]);
 
-    const searchSuggestions = Array.from(new Set(data.map((item: any) => item.title || item.name).filter(Boolean)));
+    const searchSuggestions = useMemo(() => (
+        Array.from(new Set(data.map((item: any) => item.title || item.name).filter(Boolean)))
+    ), [data]);
 
     if (authLoading) return (
         <div className="h-screen w-full flex items-center justify-center relative overflow-hidden">

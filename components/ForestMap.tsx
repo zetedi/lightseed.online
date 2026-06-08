@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useMemo, useState } from 'react';
 import { type Lifetree } from '../types';
 import { isExplicitlyValidatedTree } from '../utils/validation';
 import { Loading } from './ui/Loading';
@@ -19,19 +19,51 @@ interface StackLevel {
     lng: number;
 }
 
+const getTreeCoordinates = (tree: Lifetree) => {
+    const rawLat = tree.latitude ?? (tree as any).lat;
+    const rawLng = tree.longitude ?? (tree as any).lng;
+    const lat = Number(rawLat);
+    const lng = Number(rawLng);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    return { lat, lng };
+};
+
 export const ForestMap = ({ trees, onView, onChat, loading = false }: { trees: Lifetree[], onView: (tree: Lifetree) => void, onChat?: (tree: Lifetree) => void, loading?: boolean }) => {
     const mapContainer = useRef<HTMLDivElement>(null);
     const mapInstance = useRef<any>(null);
     const markersLayer = useRef<any>(null);
+    const updateMarkersRef = useRef<(L: any, force?: boolean) => void>(() => {});
+    const expansionStackRef = useRef<StackLevel[]>([]);
+    const lastMarkerRenderKeyRef = useRef('');
 
     const [expansionStack, setExpansionStack] = useState<StackLevel[]>([]);
     const [isMapReady, setIsMapReady] = useState(false);
     const [markerCount, setMarkerCount] = useState(0);
-    const visibleTreeCount = trees.filter(tree => {
-        const lat = tree.latitude || (tree as any).lat;
-        const lng = tree.longitude || (tree as any).lng;
-        return lat !== undefined && lat !== null && lng !== undefined && lng !== null;
-    }).length;
+    const visibleTrees = useMemo(() => trees.filter(tree => getTreeCoordinates(tree)), [trees]);
+    const visibleTreeCount = visibleTrees.length;
+    const treesSignature = visibleTrees.map(tree => {
+        const coords = getTreeCoordinates(tree);
+        return [
+            tree.id,
+            coords?.lat,
+            coords?.lng,
+            tree.name,
+            tree.body,
+            tree.status,
+            tree.isNature ? 'nature' : 'tree',
+            tree.imageUrl || '',
+            tree.latestGrowthUrl || '',
+            tree.guardians?.length || 0,
+            tree.validated ? 'validated' : '',
+            tree.validatorId || ''
+        ].join(':');
+    }).join('|');
+    const expansionSignature = expansionStack.map(level => `${level.clusterId}:${level.lat}:${level.lng}:${level.trees.map(tree => tree.id).join(',')}`).join('|');
+
+    useEffect(() => {
+        expansionStackRef.current = expansionStack;
+    }, [expansionStack]);
 
     // Lightseed Logo SVG String for Cluster Icon
     const logoSvg = `
@@ -129,29 +161,33 @@ export const ForestMap = ({ trees, onView, onChat, loading = false }: { trees: L
         markersLayer.current = L.layerGroup().addTo(mapInstance.current);
 
         mapInstance.current.on('zoomend', () => {
-            setExpansionStack([]);
-            updateMarkers(L);
+            if (expansionStackRef.current.length > 0) {
+                setExpansionStack([]);
+            } else {
+                updateMarkersRef.current(L, true);
+            }
         });
 
         // Click on map background collapses everything
         mapInstance.current.on('click', () => {
-            setExpansionStack([]);
+            setExpansionStack(prev => prev.length > 0 ? [] : prev);
         });
 
         setTimeout(() => {
             mapInstance.current?.invalidateSize();
-            updateMarkers(L);
+            updateMarkersRef.current(L, true);
         }, 250);
     }
 
     useEffect(() => {
         const L = (window as any).L;
-        if (!L || !mapInstance.current) return;
-        setTimeout(() => {
+        if (!L || !mapInstance.current || !isMapReady) return;
+        const timer = window.setTimeout(() => {
             mapInstance.current?.invalidateSize();
-            updateMarkers(L);
+            updateMarkersRef.current(L);
         }, 50);
-    }, [trees, expansionStack, loading]);
+        return () => window.clearTimeout(timer);
+    }, [treesSignature, expansionSignature, loading, isMapReady]);
 
     useEffect(() => {
         if (!isMapReady || loading || visibleTreeCount === 0 || markerCount > 0) return;
@@ -160,11 +196,11 @@ export const ForestMap = ({ trees, onView, onChat, loading = false }: { trees: L
 
         const retry = window.setTimeout(() => {
             mapInstance.current?.invalidateSize();
-            updateMarkers(L);
+            updateMarkersRef.current(L, true);
         }, 250);
 
         return () => window.clearTimeout(retry);
-    }, [isMapReady, loading, visibleTreeCount, markerCount]);
+    }, [isMapReady, loading, visibleTreeCount, markerCount, treesSignature, expansionSignature]);
 
     const getHtmlForTree = (tree: Lifetree, isSmall = false, delay = 0) => {
         const isNature = tree.isNature;
@@ -228,7 +264,7 @@ export const ForestMap = ({ trees, onView, onChat, loading = false }: { trees: L
         return div;
     }
 
-    const updateMarkers = (L: any) => {
+    const updateMarkers = (L: any, force = false) => {
         if (!markersLayer.current || !mapInstance.current) return;
 
         const CLUSTER_THRESHOLD_PX = 50;
@@ -237,16 +273,20 @@ export const ForestMap = ({ trees, onView, onChat, loading = false }: { trees: L
         const map = mapInstance.current;
         const nextLayer = L.layerGroup();
         let nextMarkerCount = 0;
+        const renderKey = `${map.getZoom?.() || ''}|${treesSignature}|${expansionSignature}|${loading ? 'loading' : 'ready'}`;
 
-        const sortedTrees = [...trees].sort((a, b) =>
+        if (!force && renderKey === lastMarkerRenderKeyRef.current) return;
+        lastMarkerRenderKeyRef.current = renderKey;
+
+        const sortedTrees = [...visibleTrees].sort((a, b) =>
             (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0)
         );
 
         sortedTrees.forEach(tree => {
             if (processed.has(tree.id)) return;
-            const lat = tree.latitude || (tree as any).lat;
-            const lng = tree.longitude || (tree as any).lng;
-            if (!lat || !lng) return;
+            const coords = getTreeCoordinates(tree);
+            if (!coords) return;
+            const { lat, lng } = coords;
 
             const treePoint = map.latLngToLayerPoint([lat, lng]);
             const cluster: Cluster = { id: tree.id, center: tree, children: [], lat, lng };
@@ -254,9 +294,9 @@ export const ForestMap = ({ trees, onView, onChat, loading = false }: { trees: L
 
             sortedTrees.forEach(other => {
                 if (processed.has(other.id)) return;
-                const oLat = other.latitude || (other as any).lat;
-                const oLng = other.longitude || (other as any).lng;
-                if (!oLat || !oLng) return;
+                const otherCoords = getTreeCoordinates(other);
+                if (!otherCoords) return;
+                const { lat: oLat, lng: oLng } = otherCoords;
                 const otherPoint = map.latLngToLayerPoint([oLat, oLng]);
                 if (treePoint.distanceTo(otherPoint) < CLUSTER_THRESHOLD_PX) {
                     cluster.children.push(other);
@@ -451,11 +491,13 @@ export const ForestMap = ({ trees, onView, onChat, loading = false }: { trees: L
         if (nextMarkerCount > 0 || visibleTreeCount === 0) {
             map.removeLayer(markersLayer.current);
             markersLayer.current = nextLayer.addTo(map);
-            setMarkerCount(nextMarkerCount);
+            setMarkerCount(prev => prev === nextMarkerCount ? prev : nextMarkerCount);
         } else {
-            setMarkerCount(0);
+            setMarkerCount(prev => prev === 0 ? prev : 0);
         }
     }
+
+    updateMarkersRef.current = updateMarkers;
 
     useEffect(() => {
         return () => {
