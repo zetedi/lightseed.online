@@ -2,7 +2,7 @@
 export type Language = 'en' | 'es' | 'hu' | 'qu' | 'sa' | 'ja' | 'ar' | 'sw';
 
 const baseKeys = {
-  forest: "Forest", pulses: "Pulses", visions: "Visions", oracle: "Oracle", about: "About", explore: "Explore",
+  forest: "Forest", pulses: "Pulses", events: "Events", visions: "Visions", oracle: "Oracle", about: "About", explore: "Explore",
   sign_in: "Sign in", sign_out: "Sign out", emit_pulse: "Emit Pulse", plant_lifetree: "Plant Lifetree",
   create_vision: "New Vision", short_title: "Short Title", vision: "Vision", title: "Title", body: "Body",
   webpage: "Webpage Link", mint: "Mint Pulse", generate: "Generate", generate_image: "Gen Image",

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { type Pulse, type Lifetree, type Alignment, type Vision, type VisionSynergy } from '../types';
-import { getMyPulses, getMyVisions, getJoinedVisions, getMyAlignmentsHistory, deleteUserAccount, logout, triggerSystemEmail, monitorMailStatus, sendInvite, listenToUserProfile, deleteVision, getAdmins, setNewsletterSubscription, migrateDataToV2 } from '../services/firebase';
+import { getMyPulses, getMyVisions, getJoinedVisions, getMyAlignmentsHistory, deleteUserAccount, logout, triggerSystemEmail, sendInvite, listenToUserProfile, deleteVision, getAdmins, setNewsletterSubscription, migrateDataToV2, updateUserSiteTheme, uploadImage } from '../services/firebase';
 import { findVisionSynergies } from '../services/gemini';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
@@ -10,10 +10,12 @@ import { VisionCard } from './VisionCard';
 import { Modal } from './ui/Modal';
 import { Loading } from './ui/Loading';
 import { isExplicitlyValidatedTree } from '../utils/validation';
+import { ImagePicker } from './ui/ImagePicker';
+import { communityThemePresets, normalizeTheme } from '../utils/theme';
 
 export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, superAdminExists, onViewTree, onDeleteTree, onViewVision, onPlant, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin }: any) => {
     const { t } = useLanguage();
-    const [activeTab, setActiveTab] = useState<'trees' | 'pulses' | 'visions' | 'history'>('trees');
+    const [activeTab, setActiveTab] = useState<'trees' | 'pulses' | 'visions' | 'history' | 'theme'>('trees');
     const [pulses, setPulses] = useState<Pulse[]>([]);
     const [visions, setVisions] = useState<Vision[]>([]);
     const [joinedVisions, setJoinedVisions] = useState<Vision[]>([]);
@@ -34,6 +36,10 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
     const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
     const [togglingNewsletter, setTogglingNewsletter] = useState(false);
     const [dialogMessage, setDialogMessage] = useState<string | null>(null);
+    const [siteTheme, setSiteTheme] = useState(normalizeTheme(undefined));
+    const [siteLogoUrl, setSiteLogoUrl] = useState('');
+    const [savingSiteTheme, setSavingSiteTheme] = useState(false);
+    const [uploadingSiteLogo, setUploadingSiteLogo] = useState(false);
 
     // AI Alignment State
     const [synergies, setSynergies] = useState<VisionSynergy[]>([]);
@@ -60,6 +66,8 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                 setInvitesRemaining(data.invitesRemaining);
             }
             setNewsletterSubscribed(Boolean(data?.newsletterSubscribed));
+            setSiteTheme(normalizeTheme(data?.siteTheme));
+            setSiteLogoUrl(data?.siteLogoUrl || '');
         });
 
         const fetchData = async () => {
@@ -159,6 +167,48 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
             setDialogMessage(e.message || 'Failed to update newsletter preference.');
         }
         setTogglingNewsletter(false);
+    };
+
+    const handleSiteLogoUpload = async (file: File) => {
+        setUploadingSiteLogo(true);
+        try {
+            const url = await uploadImage(file, `users/${lightseed.uid}/site-theme/logo_${Date.now()}`);
+            setSiteLogoUrl(url);
+        } catch (e: any) {
+            setDialogMessage(e.message || 'Failed to upload site logo.');
+        }
+        setUploadingSiteLogo(false);
+    };
+
+    const handleSaveSiteTheme = async () => {
+        setSavingSiteTheme(true);
+        try {
+            await updateUserSiteTheme(lightseed.uid, {
+                siteTheme: normalizeTheme(siteTheme),
+                siteLogoUrl,
+            });
+            setDialogMessage('Your lightseed.online theme has been saved.');
+        } catch (e: any) {
+            setDialogMessage(e.message || 'Failed to save theme.');
+        }
+        setSavingSiteTheme(false);
+    };
+
+    const handleResetSiteTheme = async () => {
+        const resetTheme = normalizeTheme(undefined);
+        setSavingSiteTheme(true);
+        try {
+            setSiteTheme(resetTheme);
+            setSiteLogoUrl('');
+            await updateUserSiteTheme(lightseed.uid, {
+                siteTheme: resetTheme,
+                siteLogoUrl: '',
+            });
+            setDialogMessage('Your lightseed.online theme has been reset.');
+        } catch (e: any) {
+            setDialogMessage(e.message || 'Failed to reset theme.');
+        }
+        setSavingSiteTheme(false);
     };
 
     const handleTestEmail = async () => {
@@ -453,7 +503,13 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                         >
                             {t('visions')}
                         </button>
-                        <button 
+                        <button
+                            onClick={() => setActiveTab('theme')}
+                            className={`flex-1 min-w-[100px] py-4 text-sm font-medium transition-colors ${activeTab === 'theme' ? 'text-teal-600 border-b-2 border-teal-500 bg-teal-50/50' : 'text-slate-500 hover:text-slate-800'}`}
+                        >
+                            Theme
+                        </button>
+                        <button
                             onClick={() => setActiveTab('history')} 
                             className={`flex-1 min-w-[100px] py-4 text-sm font-medium transition-colors ${activeTab === 'history' ? 'text-slate-600 border-b-2 border-slate-500 bg-slate-50/50' : 'text-slate-500 hover:text-slate-800'}`}
                         >
@@ -610,6 +666,95 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                                     </div>
                                 </div>
                              )
+                        )}
+                        {activeTab === 'theme' && (
+                            <div className="grid gap-8 lg:grid-cols-[1fr_280px]">
+                                <div className="space-y-6">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-slate-800">lightseed.online Theme</h3>
+                                        <p className="mt-1 text-sm text-slate-500">
+                                            This theme is personal to your login and takes precedence over community themes.
+                                        </p>
+                                    </div>
+
+                                    <div className="grid gap-3 md:grid-cols-2">
+                                        {communityThemePresets.map((preset) => {
+                                            const active = siteTheme.primary === preset.primary && siteTheme.surface === preset.surface && siteTheme.background === preset.background && siteTheme.mode === preset.mode;
+                                            return (
+                                                <button
+                                                    key={preset.id}
+                                                    type="button"
+                                                    onClick={() => setSiteTheme(normalizeTheme(preset))}
+                                                    className={`rounded-2xl border p-4 text-left transition-all ${active ? 'border-teal-500 bg-teal-50 ring-2 ring-teal-100' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}
+                                                >
+                                                    <div className="flex items-center justify-between gap-3">
+                                                        <div>
+                                                            <div className="text-sm font-bold text-slate-800">{preset.name}</div>
+                                                            <div className="text-xs text-slate-500">{preset.description}</div>
+                                                        </div>
+                                                        <div className="flex shrink-0 overflow-hidden rounded-full border border-white shadow-sm">
+                                                            {[preset.surface, preset.primary, preset.accent, preset.background].map((color, index) => (
+                                                                <span key={`${preset.id}-${index}`} className="h-7 w-7" style={{ backgroundColor: color }} />
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                        {[
+                                            ['surface', 'Header'],
+                                            ['primary', 'Primary'],
+                                            ['accent', 'Accent'],
+                                            ['background', 'Background']
+                                        ].map(([key, label]) => (
+                                            <label key={key} className="space-y-1">
+                                                <span className="text-[10px] font-bold uppercase text-slate-400">{label}</span>
+                                                <input
+                                                    type="color"
+                                                    value={(siteTheme as any)[key]}
+                                                    onChange={e => setSiteTheme(normalizeTheme({ ...siteTheme, [key]: e.target.value }))}
+                                                    className="block h-11 w-full cursor-pointer rounded-lg border border-slate-200 bg-white p-1"
+                                                />
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <aside className="space-y-4 rounded-3xl border border-slate-100 bg-slate-50 p-5">
+                                    <div>
+                                        <h4 className="text-sm font-bold uppercase tracking-widest text-slate-400">Site Logo</h4>
+                                        <p className="mt-1 text-xs text-slate-500">Optional. Used in the header on hub domains.</p>
+                                    </div>
+                                    <ImagePicker
+                                        onImageSelect={handleSiteLogoUpload}
+                                        previewUrl={siteLogoUrl}
+                                        loading={uploadingSiteLogo}
+                                        className="mx-auto aspect-square w-32 rounded-2xl border-2 border-dashed border-slate-200 bg-white"
+                                    />
+                                    <div className="overflow-hidden rounded-2xl border border-white shadow-sm">
+                                        {[siteTheme.surface, siteTheme.primary, siteTheme.accent, siteTheme.background].map((color, index) => (
+                                            <span key={`site-theme-${index}`} className="inline-block h-8 w-1/4" style={{ backgroundColor: color }} />
+                                        ))}
+                                    </div>
+                                    <button
+                                        onClick={handleSaveSiteTheme}
+                                        disabled={savingSiteTheme || uploadingSiteLogo}
+                                        className="w-full rounded-2xl bg-teal-600 py-3 text-sm font-bold text-white shadow-lg shadow-teal-600/20 transition-colors hover:bg-teal-700 disabled:opacity-50"
+                                    >
+                                        {savingSiteTheme ? 'Saving...' : 'Save Theme'}
+                                    </button>
+                                    <button
+                                        onClick={handleResetSiteTheme}
+                                        disabled={savingSiteTheme || uploadingSiteLogo}
+                                        className="w-full rounded-2xl bg-slate-200 py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-300 disabled:opacity-50"
+                                    >
+                                        Reset
+                                    </button>
+                                </aside>
+                            </div>
                         )}
                         {activeTab === 'history' && (
                              loading ? <div className="flex justify-center py-10"><Loading /></div> : (

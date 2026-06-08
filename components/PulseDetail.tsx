@@ -16,6 +16,8 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel = "Back" }: 
     const [depth, setDepth] = useState<number>(3);
     const [isTranslating, setIsTranslating] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [activeImageIndex, setActiveImageIndex] = useState(0);
+    const images = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
 
     const handleTranslate = async () => {
         if (!activeTree) {
@@ -79,9 +81,22 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel = "Back" }: 
             <div className="max-w-5xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
                  {/* Left Column: Visuals & Raw Pulse */}
                  <div className="space-y-6">
-                    {pulse.imageUrl && (
+                    {images.length > 0 && (
                         <div className="relative h-96 w-full rounded-2xl overflow-hidden shadow-2xl bg-white border border-slate-100 group">
-                            <img src={pulse.imageUrl} alt={pulse.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                            <img src={images[activeImageIndex]} alt={pulse.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                            {images.length > 1 && (
+                                <div className="absolute bottom-4 left-4 right-4 flex gap-2 overflow-x-auto rounded-2xl bg-black/30 p-2 backdrop-blur-md">
+                                    {images.map((url, index) => (
+                                        <button
+                                            key={url}
+                                            onClick={() => setActiveImageIndex(index)}
+                                            className={`h-14 w-14 shrink-0 overflow-hidden rounded-xl border-2 ${activeImageIndex === index ? 'border-white' : 'border-white/30'}`}
+                                        >
+                                            <img src={url} className="h-full w-full object-cover" alt="" />
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -93,6 +108,17 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel = "Back" }: 
                              <span>•</span>
                              <span>{new Date(pulse.createdAt?.toMillis()).toLocaleDateString()}</span>
                         </div>
+                        {pulse.type === 'event' && (
+                            <div className="mb-4 grid gap-2 rounded-2xl border border-sky-100 bg-sky-50 p-4 text-sm text-sky-900">
+                                {pulse.eventDate && <div><span className="font-bold">When:</span> {new Date(pulse.eventDate).toLocaleString()}</div>}
+                                {pulse.eventLocation && <div><span className="font-bold">Where:</span> {pulse.eventLocation}</div>}
+                            </div>
+                        )}
+                        {pulse.type === 'tree_chat' && pulse.chatTreeName && (
+                            <div className="mb-4 rounded-2xl border border-indigo-100 bg-indigo-50 p-4 text-sm text-indigo-900">
+                                Conversation with <span className="font-bold">{pulse.chatTreeName}</span>
+                            </div>
+                        )}
                         <p dir="auto" className="text-slate-600 leading-relaxed whitespace-pre-wrap font-serif text-lg">
                             {pulse.content || pulse.body}
                         </p>

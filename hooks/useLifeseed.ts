@@ -15,7 +15,13 @@ export const useLifeseed = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        const authTimeout = window.setTimeout(() => {
+            setLoading(false);
+            console.warn("Auth state took too long to resolve; continuing without blocking the app shell.");
+        }, 12000);
+
         const unsub = onAuthChange(async (user) => {
+            window.clearTimeout(authTimeout);
             if (user) {
                 setLightseed({
                     uid: user.uid,
@@ -69,7 +75,10 @@ export const useLifeseed = () => {
             }
             setLoading(false);
         });
-        return () => unsub();
+        return () => {
+            window.clearTimeout(authTimeout);
+            unsub();
+        };
     }, []);
 
     const refreshTrees = async () => {

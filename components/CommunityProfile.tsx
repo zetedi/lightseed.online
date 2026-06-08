@@ -2,15 +2,17 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
-import { Community, Lifetree } from '../types';
-import { updateCommunity, uploadImage, getTreesByDomain, deleteCommunity } from '../services/firebase';
+import { Community, Lifetree, Lightseed } from '../types';
+import { updateCommunity, uploadImage, getTreesByDomain, deleteCommunity, createCommunityEvent } from '../services/firebase';
 import RichTextEditor from './ui/RichTextEditor';
 import { ImagePicker } from './ui/ImagePicker';
+import { communityThemePresets, normalizeTheme } from '../utils/theme';
 
 interface CommunityProfileProps {
   community: Community;
   onUpdate?: (updates: Partial<Community>) => void;
   onClose: () => void;
+  currentUser?: Lightseed | null;
   currentUserId?: string;
   isAdmin?: boolean;
   isSuperAdmin?: boolean;
@@ -20,6 +22,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   community, 
   onUpdate, 
   onClose, 
+  currentUser,
   currentUserId, 
   isAdmin,
   isSuperAdmin
@@ -28,13 +31,20 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(community.name);
   const [editVision, setEditVision] = useState(community.vision);
-  const [editTheme, setEditTheme] = useState(community.theme || {});
+  const [editTheme, setEditTheme] = useState(normalizeTheme(community.theme));
   const [logoUrl, setLogoUrl] = useState(community.logoUrl || '');
   const [imageUrls, setImageUrls] = useState<string[]>(community.imageUrls || []);
   const [linkedTrees, setLinkedTrees] = useState<Lifetree[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [eventTitle, setEventTitle] = useState('');
+  const [eventDate, setEventDate] = useState('');
+  const [eventLocation, setEventLocation] = useState('');
+  const [eventBody, setEventBody] = useState('');
+  const [eventImageUrls, setEventImageUrls] = useState<string[]>([]);
+  const [isEventSaving, setIsEventSaving] = useState(false);
+  const [isUploadingEventImage, setIsUploadingEventImage] = useState(false);
 
   const canEdit = currentUserId === community.ownerId || isSuperAdmin || isAdmin;
   const canDelete = currentUserId === community.ownerId || isSuperAdmin;
@@ -50,7 +60,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
         name: editName,
         vision: editVision,
         imageUrls: imageUrls,
-        theme: editTheme,
+        theme: normalizeTheme(editTheme),
         logoUrl: logoUrl
       };
       await updateCommunity(community.id, updates);
@@ -98,6 +108,48 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     }
   };
 
+  const handleAddEventImage = async (file: File) => {
+    setIsUploadingEventImage(true);
+    try {
+      const url = await uploadImage(file, `communities/${community.id}/events/${Date.now()}`);
+      setEventImageUrls(prev => [...prev, url]);
+    } catch (e) {
+      console.error(e);
+      alert("Failed to upload event image.");
+    }
+    setIsUploadingEventImage(false);
+  };
+
+  const handleCreateEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUserId || !eventTitle.trim() || isEventSaving) return;
+    setIsEventSaving(true);
+    try {
+      await createCommunityEvent(community, {
+        title: eventTitle.trim(),
+        body: eventBody.trim(),
+        content: eventBody.trim(),
+        imageUrl: eventImageUrls[0] || '',
+        imageUrls: eventImageUrls,
+        eventDate: eventDate || '',
+        eventLocation: eventLocation.trim(),
+        authorId: currentUserId,
+        authorName: currentUser?.displayName || 'Community Admin',
+        authorPhoto: currentUser?.photoURL || undefined,
+      });
+      setEventTitle('');
+      setEventDate('');
+      setEventLocation('');
+      setEventBody('');
+      setEventImageUrls([]);
+      alert("Event created.");
+    } catch (error: any) {
+      console.error(error);
+      alert("Failed to create event: " + (error.message || 'Unknown error'));
+    }
+    setIsEventSaving(false);
+  };
+
   const handleRemoveImage = (index: number) => {
     setImageUrls(prev => prev.filter((_, i) => i !== index));
     if (activeImageIndex >= imageUrls.length - 1) {
@@ -113,9 +165,18 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
           <Icons.ArrowLeft />
           <span>Back</span>
         </button>
-        <h2 className="text-xl font-light tracking-wide text-slate-950">
-          {isEditing ? "Editing Community" : community.name}
-        </h2>
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            {logoUrl ? (
+              <img src={logoUrl} className="h-full w-full object-cover" alt={`${community.name} logo`} />
+            ) : (
+              <span className="text-slate-400"><Icons.Globe /></span>
+            )}
+          </div>
+          <h2 className="truncate text-xl font-light tracking-wide text-slate-950">
+            {isEditing ? "Editing Community" : community.name}
+          </h2>
+        </div>
         <div className="min-w-[80px] flex justify-end gap-2">
           {canEdit && !isEditing && (
             <button 
@@ -226,8 +287,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
           {/* Sidebar */}
           <div className="space-y-6">
             {isEditing && (
-              <section className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
-                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Branding & Theme</h3>
+              <section className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-5">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Branding & Theme</h3>
                 
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-slate-400 uppercase">Logo</label>
@@ -238,44 +299,140 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Primary</label>
-                    <input 
-                      type="color" 
-                      value={editTheme.primary || '#059669'} 
-                      onChange={e => setEditTheme({...editTheme, primary: e.target.value})}
-                      className="block w-full h-10 rounded-lg cursor-pointer border-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Secondary</label>
-                    <input 
-                      type="color" 
-                      value={editTheme.secondary || '#0284c7'} 
-                      onChange={e => setEditTheme({...editTheme, secondary: e.target.value})}
-                      className="block w-full h-10 rounded-lg cursor-pointer border-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Accent</label>
-                    <input 
-                      type="color" 
-                      value={editTheme.accent || '#f59e0b'} 
-                      onChange={e => setEditTheme({...editTheme, accent: e.target.value})}
-                      className="block w-full h-10 rounded-lg cursor-pointer border-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Background</label>
-                    <input 
-                      type="color" 
-                      value={editTheme.background || '#B2713A'} 
-                      onChange={e => setEditTheme({...editTheme, background: e.target.value})}
-                      className="block w-full h-10 rounded-lg cursor-pointer border-none"
-                    />
+                <div>
+                  <label className="mb-2 block text-[10px] font-bold uppercase text-slate-400">Theme mood</label>
+                  <div className="space-y-2">
+                    {communityThemePresets.map((preset) => {
+                      const active = editTheme.primary === preset.primary && editTheme.surface === preset.surface && editTheme.background === preset.background && editTheme.mode === preset.mode;
+                      return (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => setEditTheme(normalizeTheme(preset))}
+                          className={`w-full rounded-2xl border p-3 text-left transition-all ${active ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <div className="text-sm font-bold text-slate-800">{preset.name}</div>
+                              <div className="text-[11px] text-slate-500">{preset.description}</div>
+                            </div>
+                            <div className="flex shrink-0 overflow-hidden rounded-full border border-white shadow-sm">
+                              {[preset.surface, preset.primary, preset.accent, preset.background].map((color, index) => (
+                                <span key={`${preset.id}-${index}`} className="h-6 w-6" style={{ backgroundColor: color }} />
+                              ))}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
+
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {[
+                    ['surface', 'Header'],
+                    ['primary', 'Primary'],
+                    ['accent', 'Accent'],
+                    ['background', 'Background']
+                  ].map(([key, label]) => (
+                    <label key={key} className="space-y-1">
+                      <span className="text-[10px] font-bold uppercase text-slate-400">{label}</span>
+                      <input
+                        type="color"
+                        value={(editTheme as any)[key]}
+                        onChange={e => setEditTheme(normalizeTheme({ ...editTheme, [key]: e.target.value }))}
+                        className="block h-10 w-full cursor-pointer rounded-lg border border-slate-200 bg-white p-1"
+                      />
+                    </label>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {!isEditing && (
+              <section className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Brand</h3>
+                <div className="flex items-center gap-4">
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+                    {community.logoUrl ? <img src={community.logoUrl} className="h-full w-full object-cover" alt={`${community.name} logo`} /> : <Icons.Globe />}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate font-bold text-slate-800">{community.name}</p>
+                    <div className="mt-2 flex overflow-hidden rounded-full border border-white shadow-sm">
+                      {[editTheme.surface, editTheme.primary, editTheme.accent, editTheme.background].map((color, index) => (
+                        <span key={`community-theme-${index}`} className="h-5 w-8" style={{ backgroundColor: color }} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {canEdit && (
+              <section className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                <h3 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-slate-400">
+                  <Icons.Sparkles />
+                  <span>Create Event</span>
+                </h3>
+                <form onSubmit={handleCreateEvent} className="space-y-3">
+                  <input
+                    dir="auto"
+                    value={eventTitle}
+                    onChange={e => setEventTitle(e.target.value)}
+                    className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="Event title"
+                    required
+                  />
+                  <input
+                    type="datetime-local"
+                    value={eventDate}
+                    onChange={e => setEventDate(e.target.value)}
+                    className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                  <input
+                    dir="auto"
+                    value={eventLocation}
+                    onChange={e => setEventLocation(e.target.value)}
+                    className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="Location"
+                  />
+                  <textarea
+                    dir="auto"
+                    value={eventBody}
+                    onChange={e => setEventBody(e.target.value)}
+                    className="min-h-24 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="Event details"
+                  />
+                  <div className="grid grid-cols-3 gap-2">
+                    {eventImageUrls.map((url, index) => (
+                      <div key={url} className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                        <img src={url} className="h-full w-full object-cover" alt={`Event image ${index + 1}`} />
+                        <button
+                          type="button"
+                          onClick={() => setEventImageUrls(prev => prev.filter((_, i) => i !== index))}
+                          className="absolute right-1 top-1 rounded-full bg-white/90 p-1 text-red-500 shadow-sm"
+                          title="Remove image"
+                        >
+                          <Icons.Close />
+                        </button>
+                      </div>
+                    ))}
+                    <ImagePicker
+                      onImageSelect={handleAddEventImage}
+                      loading={isUploadingEventImage}
+                      className="flex aspect-square cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 text-slate-400 hover:border-emerald-400 hover:text-emerald-600"
+                    >
+                      <Icons.Plus />
+                    </ImagePicker>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isEventSaving || isUploadingEventImage || !eventTitle.trim()}
+                    className="w-full rounded-2xl bg-sky-600 py-3 text-sm font-bold text-white shadow-lg shadow-sky-600/20 transition-all hover:bg-sky-700 disabled:opacity-50"
+                  >
+                    {isEventSaving ? "Creating..." : "Create Event"}
+                  </button>
+                </form>
               </section>
             )}
 
@@ -330,6 +487,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                     setEditName(community.name);
                     setEditVision(community.vision);
                     setImageUrls(community.imageUrls || []);
+                    setLogoUrl(community.logoUrl || '');
+                    setEditTheme(normalizeTheme(community.theme));
                   }} 
                   disabled={isSaving} 
                   className="w-full bg-slate-200 text-slate-700 py-3 rounded-2xl font-bold hover:bg-slate-300 transition-all"

@@ -15,7 +15,9 @@ interface PulseCardProps {
 export const PulseCard = ({ pulse, lightseed, onMatch, onView }: PulseCardProps) => {
     const { t } = useLanguage();
     const [loved, setLoved] = useState(false);
-    const [count, setCount] = useState(pulse.loveCount);
+    const [count, setCount] = useState(pulse.loveCount || 0);
+    const images = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
+    const badge = pulse.type === 'event' ? 'EVENT' : pulse.type === 'tree_chat' ? 'TREE CHAT' : pulse.type === 'GROWTH' ? 'GROWTH' : '';
 
     useEffect(() => {
         if (lightseed) isPulseLoved(pulse.id, lightseed.uid).then(setLoved);
@@ -38,16 +40,17 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView }: PulseCardProps)
     return (
         <div 
             onClick={() => onView && onView(pulse)}
-            className={`bg-white rounded-xl overflow-hidden shadow-sm border border-slate-200 hover:shadow-lg transition-all duration-300 group cursor-pointer ${pulse.type === 'GROWTH' ? 'ring-2 ring-emerald-500 ring-opacity-20' : ''}`}
+            className={`bg-white rounded-xl overflow-hidden shadow-sm border border-slate-200 hover:shadow-lg transition-all duration-300 group cursor-pointer ${pulse.type === 'GROWTH' ? 'ring-2 ring-emerald-500 ring-opacity-20' : ''} ${pulse.type === 'event' ? 'ring-2 ring-sky-500 ring-opacity-20' : ''}`}
         >
              <div className="relative h-36 bg-slate-100 overflow-hidden group">
                  <div className="absolute top-2 right-2 z-20 flex gap-1">
-                    {pulse.type === 'GROWTH' && <span className="bg-emerald-100 text-emerald-600 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm">GROWTH</span>}
+                    {badge && <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm ${pulse.type === 'event' ? 'bg-sky-100 text-sky-700' : pulse.type === 'tree_chat' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-600'}`}>{badge}</span>}
+                    {images.length > 1 && <span className="bg-white/90 text-slate-600 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm">{images.length} IMG</span>}
                     {pulse.isMatch && <span className="bg-sky-100 text-sky-600 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm">MATCH</span>}
                  </div>
 
-                {pulse.imageUrl ? (
-                    <img src={pulse.imageUrl} alt={pulse.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                {images.length > 0 ? (
+                    <img src={images[0]} alt={pulse.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-50">
                         <Icons.Hash />
@@ -62,7 +65,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView }: PulseCardProps)
 
             <div className="p-3">
                 <p dir="auto" className="text-slate-600 text-xs font-light leading-relaxed truncate">
-                    {pulse.body}
+                    {pulse.type === 'event' && pulse.eventDate ? `${new Date(pulse.eventDate).toLocaleDateString()} · ${pulse.eventLocation || pulse.body}` : pulse.body}
                 </p>
                 <div className="mt-3 pt-2 border-t border-slate-100 flex justify-between items-center">
                     <button onClick={handleLove} disabled={!lightseed} className="flex items-center gap-1 text-slate-500 hover:text-red-500 transition-colors">

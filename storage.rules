@@ -8,6 +8,12 @@ service firebase.storage {
          firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid)));
     }
 
+    function ownsCommunity(communityId) {
+      return request.auth != null &&
+        firestore.exists(/databases/(default)/documents/communities/$(communityId)) &&
+        firestore.get(/databases/(default)/documents/communities/$(communityId)).data.ownerId == request.auth.uid;
+    }
+
     // Global rules for reading and staff writing
     match /{allPaths=**} {
       // Allow public reading of all images
@@ -20,6 +26,11 @@ service firebase.storage {
     match /users/{userId}/{allPaths=**} {
       // Allow users to write to their own folder
       allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Community owners can manage their own white-label assets and event galleries
+    match /communities/{communityId}/{allPaths=**} {
+      allow write: if isStaff() || ownsCommunity(communityId);
     }
   }
 }

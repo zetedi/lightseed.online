@@ -5,42 +5,63 @@ import { sendMessageToOracle, generateImage } from '../services/gemini';
 import { checkAndIncrementAiUsage, mintPulse, uploadBase64Image, listenToUserProfile } from '../services/firebase';
 import { useLifeseed } from '../hooks/useLifeseed';
 import { Icons } from './ui/Icons';
+import { Lifetree } from '../types';
 
-const OsirisAvatar = () => (
-    <div className="relative w-10 h-10 shrink-0">
-        {/* Stylized Child Osiris Avatar */}
-        <div className="absolute inset-0 bg-emerald-100 rounded-full border-2 border-emerald-300 overflow-hidden shadow-inner">
-            <svg viewBox="0 0 100 100" className="w-full h-full">
-                {/* Face */}
-                <circle cx="50" cy="55" r="30" fill="#FFE0BD" />
-                {/* Eyes */}
-                <circle cx="40" cy="50" r="4" fill="#3E2723" />
-                <circle cx="60" cy="50" r="4" fill="#3E2723" />
-                {/* Smile */}
-                <path d="M40 65 Q50 72 60 65" fill="none" stroke="#3E2723" strokeWidth="2" strokeLinecap="round" />
-                {/* Pharaoh Crown (Child Version) */}
-                <path d="M25 35 L50 10 L75 35 L75 55 Q75 35 50 35 Q25 35 25 55 Z" fill="#059669" />
-                <path d="M35 25 L50 15 L65 25" fill="none" stroke="#FCD34D" strokeWidth="2" />
-            </svg>
-        </div>
-        {/* Glow */}
-        <div className="absolute -inset-1 bg-emerald-400/20 rounded-full blur-sm animate-pulse"></div>
+const SunAvatar = () => (
+    <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-amber-200 bg-amber-50 text-amber-500 shadow-inner">
+        <div className="pointer-events-none absolute -inset-1 rounded-full bg-amber-300/20 blur-sm"></div>
+        <span className="relative z-10"><Icons.Sun /></span>
     </div>
 );
 
-export const OracleChat = () => {
+const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> =>
+    new Promise((resolve, reject) => {
+        const timer = window.setTimeout(() => reject(new Error(message)), timeoutMs);
+        promise
+            .then((value) => {
+                window.clearTimeout(timer);
+                resolve(value);
+            })
+            .catch((error) => {
+                window.clearTimeout(timer);
+                reject(error);
+            });
+    });
+
+export const OracleChat = ({ initialTree = null }: { initialTree?: Lifetree | null }) => {
     const { t } = useLanguage();
-    const { lightseed, activeTree } = useLifeseed();
+    const { lightseed, activeTree, myTrees } = useLifeseed();
     const [messages, setMessages] = useState<{role: 'user' | 'model', text: string}[]>([]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [isMinting, setIsMinting] = useState(false);
     const [usage, setUsage] = useState(0);
+    const [mode, setMode] = useState<'oracle' | 'tree'>(initialTree ? 'tree' : 'oracle');
+    const [selectedTree, setSelectedTree] = useState<Lifetree | null>(initialTree);
     const bottomRef = useRef<HTMLDivElement>(null);
+    const treeChoices = [initialTree, ...myTrees].filter((tree): tree is Lifetree => !!tree)
+        .filter((tree, index, all) => all.findIndex(t => t.id === tree.id) === index);
 
     useEffect(() => {
-        setMessages([{role: 'model', text: t('oracle_greeting')}]);
-    }, []);
+        if (initialTree) {
+            setSelectedTree(initialTree);
+            setMode('tree');
+        }
+    }, [initialTree?.id]);
+
+    useEffect(() => {
+        if (mode === 'tree' && selectedTree) {
+            setMessages([{role: 'model', text: `Mycelial communication ready. Messages here travel between your active tree and ${selectedTree.name}.`}]);
+        } else {
+            setMessages([{role: 'model', text: t('oracle_greeting')}]);
+        }
+    }, [mode, selectedTree?.id]);
+
+    useEffect(() => {
+        if (mode === 'tree' && !selectedTree && activeTree) {
+            setSelectedTree(activeTree);
+        }
+    }, [mode, selectedTree?.id, activeTree?.id]);
 
     useEffect(() => {
         if (lightseed) {
@@ -58,6 +79,45 @@ export const OracleChat = () => {
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!input.trim()) return;
+
+        if (mode === 'tree') {
+            if (!lightseed || !activeTree || !selectedTree) {
+                setMessages(prev => [...prev, {role: 'model', text: "Choose your active tree and a receiving tree before sending a mycelial message."}]);
+                return;
+            }
+
+            const mycelialText = input.trim();
+            setInput('');
+            setMessages([{role: 'model', text: `Mycelial communication moving between ${activeTree.name} and ${selectedTree.name}.`}]);
+            setIsTyping(true);
+
+            try {
+                await mintPulse({
+                    lifetreeId: activeTree.id,
+                    type: 'tree_chat',
+                    title: `Mycelial message: ${activeTree.name} -> ${selectedTree.name}`,
+                    body: mycelialText,
+                    content: mycelialText,
+                    chatTreeId: selectedTree.id,
+                    chatTreeName: selectedTree.name,
+                    authorId: lightseed.uid,
+                    authorName: activeTree.name,
+                    authorPhoto: activeTree.imageUrl || lightseed.photoURL || undefined,
+                });
+                setMessages([{
+                    role: 'model',
+                    text: `Mycelial communication sent between ${activeTree.name} and ${selectedTree.name}.`
+                }]);
+            } catch (error: any) {
+                console.error("Mycelial message failed:", error);
+                setMessages([{
+                    role: 'model',
+                    text: error.message || "The mycelial message could not be sent."
+                }]);
+            }
+            setIsTyping(false);
+            return;
+        }
         
         // Check daily limit before proceeding
         try {
@@ -80,7 +140,8 @@ export const OracleChat = () => {
         setIsTyping(true);
 
         try {
-            const responseText = await sendMessageToOracle(userMsg, history);
+            const responsePromise = sendMessageToOracle(userMsg, history);
+            const responseText = await withTimeout(responsePromise, 30000, "The reply took too long. Please try again.");
             setMessages(prev => [...prev, {role: 'model', text: responseText || "..."}]);
         } catch(e: any) {
             console.error("Oracle Error:", e);
@@ -104,12 +165,16 @@ export const OracleChat = () => {
             alert("You need a planted Lifetree to mint this conversation.");
             return;
         }
+        if (mode === 'tree' && !selectedTree) {
+            alert("Choose a tree before minting this conversation.");
+            return;
+        }
         if (messages.length <= 1) return; // Only greeting
 
         setIsMinting(true);
         try {
-            // Format conversation
-            const conversationText = messages.map(m => `${m.role === 'user' ? 'Seeker' : 'Oracle'}: ${m.text}`).join('\n\n');
+            const modelName = mode === 'tree' && selectedTree ? selectedTree.name : 'Oracle';
+            const conversationText = messages.map(m => `${m.role === 'user' ? 'Seeker' : modelName}: ${m.text}`).join('\n\n');
             const summaryPrompt = conversationText.substring(0, 1000); // Limit context for generation
 
             // Check AI limit for image
@@ -117,7 +182,11 @@ export const OracleChat = () => {
 
             // Generate Image
             const prompt = `Create an abstract, artistic image representing the essence of this conversation: ${summaryPrompt}. Do not contain any text, words, letters, or typography in the image.`;
-            const imageUrl = await generateImage(prompt);
+            const imageUrl = await withTimeout(
+                generateImage(prompt),
+                45000,
+                "The pulse image took too long to generate. Please try minting again."
+            );
             let finalImageUrl = "";
 
             if (imageUrl && imageUrl.startsWith('data:')) {
@@ -126,10 +195,12 @@ export const OracleChat = () => {
 
             await mintPulse({
                 lifetreeId: activeTree.id,
-                type: 'STANDARD',
-                title: 'Oracle Wisdom',
+                type: mode === 'tree' ? 'tree_chat' : 'STANDARD',
+                title: mode === 'tree' && selectedTree ? `Tree Chat: ${selectedTree.name}` : 'Oracle Wisdom',
                 body: conversationText,
                 imageUrl: finalImageUrl,
+                chatTreeId: mode === 'tree' ? selectedTree?.id : undefined,
+                chatTreeName: mode === 'tree' ? selectedTree?.name : undefined,
                 authorId: lightseed.uid,
                 authorName: lightseed.displayName || "Soul",
                 authorPhoto: lightseed.photoURL,
@@ -144,14 +215,47 @@ export const OracleChat = () => {
 
     return (
         <div className="max-w-2xl mx-auto h-[70vh] flex flex-col bg-white rounded-3xl shadow-xl border border-emerald-100 overflow-hidden relative">
-            {/* Header/Actions */}
-            <div className="absolute top-4 left-4 z-10 bg-white/80 text-emerald-800 px-4 py-1.5 rounded-full text-[10px] font-bold border border-emerald-100 shadow-sm backdrop-blur-md flex items-center gap-2">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                Osiris Wisdom: {usage}/21
-            </div>
+            <div className="border-b border-slate-100 bg-white/95 p-4 backdrop-blur-md">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-800">
+                        <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                        <span>{mode === 'tree' ? 'Mycelial Communication' : 'Osiris Wisdom'}{mode === 'oracle' ? `: ${usage}/21` : ''}</span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <div className="rounded-full border border-slate-200 bg-slate-50 p-1">
+                            <button
+                                type="button"
+                                onClick={() => setMode('oracle')}
+                                className={`rounded-full px-3 py-1 text-[10px] font-bold transition-colors ${mode === 'oracle' ? 'bg-emerald-600 text-white' : 'text-slate-500 hover:text-slate-900'}`}
+                            >
+                                Oracle
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setMode('tree')}
+                                className={`rounded-full px-3 py-1 text-[10px] font-bold transition-colors ${mode === 'tree' ? 'bg-sky-600 text-white' : 'text-slate-500 hover:text-slate-900'}`}
+                            >
+                                Tree
+                            </button>
+                        </div>
 
-            {messages.length > 1 && lightseed && (
-                <div className="absolute top-4 right-4 z-10">
+                        {mode === 'tree' && (
+                            <select
+                                value={selectedTree?.id || ''}
+                                onChange={(e) => setSelectedTree(treeChoices.find(tree => tree.id === e.target.value) || null)}
+                                className="h-8 max-w-[180px] rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            >
+                                <option value="">Choose tree</option>
+                                {treeChoices.map(tree => (
+                                    <option key={tree.id} value={tree.id}>{tree.name}</option>
+                                ))}
+                            </select>
+                        )}
+                    </div>
+                </div>
+
+                {messages.length > 1 && lightseed && mode === 'oracle' && (
+                  <div className="mt-3 flex justify-end">
                     <button 
                         onClick={handleMint} 
                         disabled={isMinting}
@@ -169,13 +273,14 @@ export const OracleChat = () => {
                             </>
                         )}
                     </button>
-                </div>
-            )}
+                  </div>
+                )}
+            </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-slate-50/50 pt-20 scroll-smooth">
+            <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-slate-50/50 scroll-smooth">
                 {messages.map((m, i) => (
                     <div key={i} className={`flex gap-4 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        {m.role === 'model' && <OsirisAvatar />}
+                        {m.role === 'model' && <SunAvatar />}
                         <div dir="auto" className={`max-w-[85%] sm:max-w-[75%] rounded-[2rem] px-6 py-4 text-[15px] leading-relaxed tracking-wide ${
                             m.role === 'user' 
                                 ? 'bg-emerald-600 text-white rounded-br-none shadow-lg' 
@@ -192,7 +297,7 @@ export const OracleChat = () => {
                 ))}
                 {isTyping && (
                     <div className="flex justify-start gap-4">
-                        <OsirisAvatar />
+                        <SunAvatar />
                         <div className="bg-white border border-emerald-50 rounded-[2rem] rounded-bl-none px-6 py-4 shadow-sm">
                             <div className="flex space-x-1.5 items-center h-4">
                                 <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
@@ -208,10 +313,10 @@ export const OracleChat = () => {
                 <input 
                     value={input}
                     onChange={e => setInput(e.target.value)}
-                    placeholder="Ask Osiris..."
+                    placeholder={mode === 'tree' && selectedTree ? `Send from ${activeTree?.name || 'your tree'} to ${selectedTree.name}...` : "Ask Osiris..."}
                     className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-6 py-4 text-[15px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:bg-white transition-all shadow-inner placeholder:text-slate-400 placeholder:italic"
                 />
-                <button type="submit" disabled={isTyping || !input.trim()} className="bg-emerald-600 text-white p-4 rounded-full hover:bg-emerald-700 active:scale-95 disabled:opacity-50 transition-all shadow-lg">
+                <button type="submit" disabled={isTyping || !input.trim() || (mode === 'tree' && (!selectedTree || !activeTree))} className="bg-emerald-600 text-white p-4 rounded-full hover:bg-emerald-700 active:scale-95 disabled:opacity-50 transition-all shadow-lg">
                     <Icons.Send />
                 </button>
             </form>

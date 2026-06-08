@@ -12,5 +12,19 @@
   --color-primary: #059669;
   --color-secondary: #0284c7;
   --color-accent: #f59e0b;
-  --color-background: #B2713A;
+  --color-background: #ffffff;
+  --color-surface: #ffffff;
+  --color-text: #0f172a;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  background: var(--color-background);
+  color: var(--color-text);
+}
+
+:root[data-mode="dark"] {
+  color-scheme: dark;
 }

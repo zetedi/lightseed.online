@@ -4,6 +4,8 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
 import { Community, Lifetree } from '../types';
 import { fetchCommunities, createCommunity, getCommunityByDomain } from '../services/firebase';
+import { communityThemePresets } from '../utils/theme';
+import { Loading } from './ui/Loading';
 
 interface CommunityListProps {
   onSelect: (community: Community) => void;
@@ -36,6 +38,11 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
           setCommunities(allCommunities);
       }
       setLoading(false);
+    }).catch((error) => {
+      console.error("Failed to load communities", error);
+      setCommunities([]);
+      setGenesisCommunity(null);
+      setLoading(false);
     });
   }, []);
 
@@ -50,6 +57,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
         domain: newDomain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, ''),
         vision: '',
         imageUrls: [],
+        theme: communityThemePresets[0],
         ownerId: currentUserId
       };
       const created = await createCommunity(newCommunity);
@@ -88,8 +96,19 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
             <div className="absolute bottom-4 left-4 right-4">
-                <h2 className="text-white font-bold text-lg truncate drop-shadow-md">{community.name}</h2>
-                <p className="text-emerald-300 text-xs font-mono drop-shadow-md">{community.domain}</p>
+                <div className="mb-3 flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/30 bg-white/20 backdrop-blur-md">
+                        {community.logoUrl ? (
+                            <img src={community.logoUrl} className="h-full w-full object-cover" alt={`${community.name} logo`} />
+                        ) : (
+                            <Icons.Globe />
+                        )}
+                    </div>
+                    <div className="min-w-0">
+                        <h2 className="truncate text-lg font-bold text-white drop-shadow-md">{community.name}</h2>
+                        <p className="truncate font-mono text-xs text-emerald-300 drop-shadow-md">{community.domain}</p>
+                    </div>
+                </div>
             </div>
         </div>
         <div className="p-6">
@@ -106,10 +125,10 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
 
   return (
     <div className="max-w-6xl mx-auto p-6 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-6 bg-white/10 backdrop-blur-md p-8 rounded-3xl border border-white/10 shadow-xl">
+      <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-6 bg-white/90 backdrop-blur-md p-8 rounded-3xl border border-slate-200 shadow-xl">
         <div className="text-center md:text-left">
-          <h1 className="text-4xl font-thin tracking-tight text-white">{t('communities')}</h1>
-          <p className="text-emerald-100/70 mt-2">Connecting vertical forests with global visions.</p>
+          <h1 className="text-4xl font-thin tracking-tight text-slate-950">{t('communities')}</h1>
+          <p className="text-slate-500 mt-2">Connecting vertical forests with global visions.</p>
         </div>
         {myTrees.length > 0 && (
           <button 
@@ -124,7 +143,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
 
       {loading ? (
         <div className="flex justify-center py-24">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-emerald-500 border-t-transparent"></div>
+          <Loading />
         </div>
       ) : (communities.length > 0 || genesisCommunity) ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -132,18 +151,18 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
           {communities.map(community => <CommunityCard key={community.id} community={community} />)}
         </div>
       ) : (
-        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-[3rem] p-12 md:p-24 text-center flex flex-col items-center shadow-2xl animate-in zoom-in-95 duration-700">
-            <div className="mb-8 p-6 bg-white/10 rounded-full border border-white/20 text-white/40 rotate-12 group hover:rotate-0 transition-transform duration-500">
+        <div className="bg-white/90 backdrop-blur-sm border border-slate-200 rounded-[3rem] p-12 md:p-24 text-center flex flex-col items-center shadow-2xl animate-in zoom-in-95 duration-700">
+            <div className="mb-8 p-6 bg-slate-50 rounded-full border border-slate-200 text-slate-300 rotate-12 group hover:rotate-0 transition-transform duration-500">
                 <Icons.Globe size={80} />
             </div>
-            <h2 className="text-3xl font-light text-white mb-4">No Communities Registered</h2>
-            <p className="text-emerald-100/60 max-w-md mx-auto mb-10 leading-relaxed">
+            <h2 className="text-3xl font-light text-slate-950 mb-4">No Communities Registered</h2>
+            <p className="text-slate-500 max-w-md mx-auto mb-10 leading-relaxed">
                 Be the first to plant a global vision. Communities connect vertical forest nodes into a unified brand and purpose.
             </p>
             {myTrees.length > 0 ? (
                 <button 
                     onClick={() => setShowCreate(true)} 
-                    className="bg-white text-emerald-900 px-10 py-4 rounded-full font-bold shadow-xl hover:bg-emerald-50 transition-all flex items-center gap-2 active:scale-95"
+                    className="bg-emerald-600 text-white px-10 py-4 rounded-full font-bold shadow-xl hover:bg-emerald-700 transition-all flex items-center gap-2 active:scale-95"
                 >
                     <Icons.Plus />
                     <span>Start a Community</span>

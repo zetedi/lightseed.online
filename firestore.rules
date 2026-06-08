@@ -11,6 +11,11 @@ service cloud.firestore {
     function isStaff() {
       return exists(/databases/$(database)/documents/admins/$(request.auth.uid)) || request.auth.token.admin == true;
     }
+    function isCommunityOwner(communityId) {
+      return communityId is string &&
+        exists(/databases/$(database)/documents/communities/$(communityId)) &&
+        get(/databases/$(database)/documents/communities/$(communityId)).data.ownerId == request.auth.uid;
+    }
 
     // Admins collection: read staff, no direct write
     match /admins/{adminId} {
@@ -63,7 +68,11 @@ service cloud.firestore {
     // Pulses: Read public, Write signed in
     match /pulses/{pulseId} {
       allow read: if true;
-      allow create: if isSignedIn();
+      allow create: if isSignedIn() && (
+        request.resource.data.type != 'event' ||
+        isStaff() ||
+        isCommunityOwner(request.resource.data.communityId)
+      );
       allow update: if isSignedIn(); // For loves
       allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff());
 
@@ -87,7 +96,7 @@ service cloud.firestore {
       allow read: if true;
       allow create: if isSignedIn();
       allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
-      allow delete: if isStaff();
+      allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
     }
   }
 }

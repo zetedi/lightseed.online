@@ -4,10 +4,14 @@ export interface ThemeConfig {
   accent: string;
   neutral: string;
   background: string;
+  mode?: 'light' | 'dark';
+  surface?: string;
+  text?: string;
 }
 
 export interface AppConfig {
   name: string;
+  logoUrl?: string;
   logo: {
     backgroundFill?: string;
     strokeColor?: string;

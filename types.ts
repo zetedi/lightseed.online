@@ -6,7 +6,7 @@ import type { Timestamp, GeoPoint } from 'firebase/firestore';
 export type Lightseed = Pick<FirebaseUser, 'uid' | 'email' | 'displayName' | 'photoURL'>;
 
 export type LegacyPulseType = 'STANDARD' | 'GROWTH';
-export type PulseType = 'observation' | 'dream' | 'offering' | 'request' | 'translation' | 'validation' | LegacyPulseType;
+export type PulseType = 'observation' | 'dream' | 'offering' | 'request' | 'translation' | 'validation' | 'event' | 'tree_chat' | LegacyPulseType;
 export type LifetreeType = "human" | "ai" | "community" | "project" | "LIFETREE" | "GUARDED" | "FAMILY";
 export type VisionStatus = "seed" | "growing" | "flowering" | "dormant";
 
@@ -96,6 +96,12 @@ export interface Pulse {
   body: string; // Legacy
   content?: string; // V2
   imageUrl?: string;
+  imageUrls?: string[];
+  eventDate?: string;
+  eventLocation?: string;
+  chatTreeId?: string;
+  chatTreeName?: string;
+  seenBy?: string[];
   
   // V2 AI
   aiInterpretation?: PulseInterpretation;
@@ -165,6 +171,9 @@ export interface Community {
     accent?: string;
     neutral?: string;
     background?: string;
+    mode?: 'light' | 'dark';
+    surface?: string;
+    text?: string;
   };
   createdAt: Timestamp;
   updatedAt?: Timestamp;

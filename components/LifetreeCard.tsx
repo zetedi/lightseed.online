@@ -18,9 +18,10 @@ interface LifetreeCardProps {
     onPlayGrowth: (id: string) => void;
     onQuickSnap: (id: string, file: File) => Promise<void>;
     onView: (tree: Lifetree) => void;
+    onChat?: (tree: Lifetree) => void;
 }
 
-export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, currentUserId, onValidate, onPlayGrowth, onQuickSnap, onView }: LifetreeCardProps) => {
+export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, currentUserId, onValidate, onPlayGrowth, onQuickSnap, onView, onChat }: LifetreeCardProps) => {
     const { t } = useLanguage();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
@@ -127,6 +128,12 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, curren
                         <Icons.Play />
                         <span>Growth</span>
                     </button>
+                    {onChat && (
+                        <button onClick={(e) => { e.stopPropagation(); onChat(tree); }} className="flex items-center gap-1 text-[10px] bg-sky-50 hover:bg-sky-100 text-sky-700 px-2 py-1 rounded transition-colors uppercase tracking-wider font-semibold">
+                            <Icons.Mail />
+                            <span>Chat</span>
+                        </button>
+                    )}
                     
                     <div className="flex w-full flex-col items-start gap-2 sm:w-auto sm:flex-row">
                         {showValidateAction && (

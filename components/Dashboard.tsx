@@ -79,8 +79,12 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, onV
                     <div className="absolute inset-0 bg-gradient-to-t from-emerald-950 via-emerald-950/40 to-transparent"></div>
                     <div className="absolute inset-0 p-8 flex flex-col justify-end">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="bg-white/20 backdrop-blur-md p-3 rounded-2xl border border-white/30 group-hover:scale-110 transition-transform">
-                                <Icons.Globe size={32} className="text-white" />
+                            <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-white/30 bg-white/20 p-2 backdrop-blur-md transition-transform group-hover:scale-110">
+                                {hostCommunity.logoUrl ? (
+                                    <img src={hostCommunity.logoUrl} className="h-full w-full rounded-xl object-cover" alt={`${hostCommunity.name} logo`} />
+                                ) : (
+                                    <Icons.Globe size={32} className="text-white" />
+                                )}
                             </div>
                             <div>
                                 <h1 className="text-3xl md:text-4xl font-thin tracking-tight text-white">{hostCommunity.name}</h1>

@@ -6,13 +6,13 @@ interface ImagePickerProps {
     onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
     onImageSelect?: (file: File) => void;
     previewUrl?: string;
-    loading: boolean;
+    loading?: boolean;
     isDark?: boolean;
     children?: ReactNode;
     className?: string;
 }
 
-export const ImagePicker = ({ onChange, onImageSelect, previewUrl, loading, isDark = false, children, className }: ImagePickerProps) => {
+export const ImagePicker = ({ onChange, onImageSelect, previewUrl, loading = false, isDark = false, children, className }: ImagePickerProps) => {
     const fileInput = useRef<HTMLInputElement>(null);
     
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {

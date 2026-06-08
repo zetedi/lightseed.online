@@ -9,7 +9,7 @@ import { updateLifetree, toggleGuardianship, setTreeStatus, getPulsesByTreeId } 
 import { Pulse } from '../types';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
 
-export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onViewPulse, myActiveTree, currentUserId, isAdmin, isSuperAdmin }: any) => {
+export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onChatTree, onViewPulse, myActiveTree, currentUserId, isAdmin, isSuperAdmin }: any) => {
    const { t } = useLanguage();
    const isOwner = currentUserId === tree.ownerId;
    const isNature = tree.isNature;
@@ -248,6 +248,10 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                 <button onClick={() => onPlayGrowth(tree.id)} className="min-h-0 w-fit bg-white/20 hover:bg-white/30 text-white text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 rounded-full flex items-center space-x-1 backdrop-blur-sm transition-colors">
                                     <Icons.Play />
                                     <span>PLAY GROWTH</span>
+                                </button>
+                                <button onClick={() => onChatTree?.(tree)} className="min-h-0 w-fit bg-sky-600/90 hover:bg-sky-600 text-white text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 rounded-full flex items-center space-x-1 backdrop-blur-sm transition-colors">
+                                    <Icons.Sparkles />
+                                    <span>CHAT</span>
                                 </button>
                                 {showValidateAction && (
                                     <button
@@ -523,6 +527,8 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                     // index 0, 2, 4 (Even) -> Right Side (Desktop)
                                     // index 1, 3, 5 (Odd) -> Left Side (Desktop)
                                     const isRightSide = index % 2 === 0;
+                                    const pulseImages = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
+                                    const pulseBadge = pulse.type === 'event' ? 'EVENT' : pulse.type === 'tree_chat' ? 'TREE CHAT' : pulse.type === 'GROWTH' ? 'GROWTH' : 'PULSE';
                                     
                                     return (
                                         <div key={pulse.id} className={`flex w-full relative ${isRightSide ? 'md:justify-end' : 'md:justify-start'} justify-start`}>
@@ -571,8 +577,12 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
 
                                                     <div className="p-4 md:p-6 relative z-10">
                                                         <div className={`flex items-center gap-2 mb-3 ${isRightSide ? '' : 'md:flex-row-reverse'} flex-row`}>
-                                                            {pulse.type === 'GROWTH' ? (
+                                                            {pulseBadge === 'GROWTH' ? (
                                                                 <span className="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold">GROWTH</span>
+                                                            ) : pulseBadge === 'EVENT' ? (
+                                                                <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 rounded-full font-bold">EVENT</span>
+                                                            ) : pulseBadge === 'TREE CHAT' ? (
+                                                                <span className="bg-indigo-100 text-indigo-700 text-[10px] px-2 py-0.5 rounded-full font-bold">TREE CHAT</span>
                                                             ) : (
                                                                 <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 rounded-full font-bold">PULSE</span>
                                                             )}
@@ -580,8 +590,13 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                                         </div>
 
                                                         <div className={`flex gap-4 ${isRightSide ? '' : 'md:flex-row-reverse'} flex-row items-start`}>
-                                                            {pulse.imageUrl && (
-                                                                <img src={pulse.imageUrl} className="w-16 h-16 rounded-lg object-cover bg-slate-50 shrink-0 border border-slate-100" />
+                                                            {pulseImages.length > 0 && (
+                                                                <div className="relative shrink-0">
+                                                                    <img src={pulseImages[0]} className="w-16 h-16 rounded-lg object-cover bg-slate-50 border border-slate-100" />
+                                                                    {pulseImages.length > 1 && (
+                                                                        <span className="absolute -right-1 -top-1 rounded-full bg-white px-1.5 py-0.5 text-[9px] font-bold text-slate-600 shadow">{pulseImages.length}</span>
+                                                                    )}
+                                                                </div>
                                                             )}
                                                             <div>
                                                                 <h4 dir="auto" className="font-bold text-slate-800 text-base md:text-lg leading-tight mb-1 md:mb-2">{pulse.title}</h4>

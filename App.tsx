@@ -4,6 +4,7 @@ import {
   signInWithGoogle,
   logout,
   fetchPulses,
+  fetchEventPulses,
   mintPulse,
   fetchLifetrees,
   plantLifetree,
@@ -24,14 +25,19 @@ import {
   getMyAlignmentsHistory,
   claimSuperAdmin,
   grantAdmin,
-  revokeAdmin
+  revokeAdmin,
+  getCommunityByDomain,
+  listenForTreeChatNotifications,
+  listenToUserProfile,
+  markTreeChatSeen
 } from './services/firebase';
 import { findVisionSynergies } from './services/gemini';
 import { type Pulse, type Lifetree, type Alignment, type Vision, type Community, type VisionSynergy } from './types';
 import Logo from './components/Logo';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { useLifeseed } from './hooks/useLifeseed';
-import { useConfig } from './hooks/useConfig';
+import { isHubDomain, useConfig } from './hooks/useConfig';
+import { normalizeTheme } from './utils/theme';
 
 // Components
 import { Icons } from './components/ui/Icons';
@@ -141,6 +147,8 @@ const GDPRBanner = () => {
     );
 }
 
+type ThemeModePreference = 'light' | 'dark' | null;
+
 const AppContent = () => {
     const { t } = useLanguage();
     const { lightseed, myTrees, guardedTrees, activeTree, isAdmin, isSuperAdmin, superAdminExists, loading: authLoading, refreshTrees } = useLifeseed();
@@ -152,7 +160,12 @@ const AppContent = () => {
     const [selectedVision, setSelectedVision] = useState<Vision | null>(null);
     const [selectedPulse, setSelectedPulse] = useState<Pulse | null>(null);
     const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
+    const [oracleTree, setOracleTree] = useState<Lifetree | null>(null);
     const [hostCommunity, setHostCommunity] = useState<Community | null>(null);
+    const [treeChatNotifications, setTreeChatNotifications] = useState<Pulse[]>([]);
+    const [treeChatToast, setTreeChatToast] = useState<Pulse | null>(null);
+    const [personalSiteTheme, setPersonalSiteTheme] = useState<any>(null);
+    const [personalSiteLogoUrl, setPersonalSiteLogoUrl] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     
     // Stats State for Dashboard
@@ -163,6 +176,8 @@ const AppContent = () => {
     const [loadingMore, setLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const forestSentinelRef = useRef<HTMLDivElement>(null);
+    const treeChatNotificationCountRef = useRef(0);
+    const treeChatNotificationsReadyRef = useRef(false);
 
     // UI State
     const [showPlantModal, setShowPlantModal] = useState(false);
@@ -180,23 +195,79 @@ const AppContent = () => {
     const [isAnalyzingSynergy, setIsAnalyzingSynergy] = useState(false);
 
     const config = useConfig(hostCommunity);
+    const [themeModePreference, setThemeModePreference] = useState<ThemeModePreference>(() => {
+        const savedMode = localStorage.getItem('lifeseed_theme_mode');
+        if (savedMode === 'light' || savedMode === 'dark') return savedMode;
+
+        const legacyNightMode = localStorage.getItem('lifeseed_night_mode');
+        if (legacyNightMode === 'true') return 'dark';
+        if (legacyNightMode === 'false') return 'light';
+
+        return null;
+    });
+    const configuredTheme = lightseed && personalSiteTheme
+        ? normalizeTheme(personalSiteTheme, config.theme)
+        : config.theme;
+    const configuredLogoUrl = lightseed && personalSiteLogoUrl && isHubDomain(window.location.hostname)
+        ? personalSiteLogoUrl
+        : config.logoUrl;
+    const effectiveThemeMode = themeModePreference || configuredTheme.mode || 'light';
+    const effectiveTheme = effectiveThemeMode === 'dark' ? {
+        ...configuredTheme,
+        background: '#020617',
+        surface: '#0f172a',
+        text: '#e2e8f0',
+        neutral: '#cbd5e1',
+        mode: 'dark' as const,
+    } : {
+        ...configuredTheme,
+        background: configuredTheme.mode === 'dark' ? '#ffffff' : configuredTheme.background,
+        surface: configuredTheme.mode === 'dark' ? '#ffffff' : (configuredTheme.surface || '#ffffff'),
+        text: configuredTheme.mode === 'dark' ? '#0f172a' : (configuredTheme.text || '#0f172a'),
+        neutral: configuredTheme.mode === 'dark' ? '#334155' : configuredTheme.neutral,
+        mode: 'light' as const,
+    };
+    const effectiveIsDark = effectiveTheme.mode === 'dark';
 
     useEffect(() => {
         const root = document.documentElement;
-        if (config.theme) {
-            root.style.setProperty('--color-primary', config.theme.primary);
-            root.style.setProperty('--color-secondary', config.theme.secondary);
-            root.style.setProperty('--color-accent', config.theme.accent);
-            root.style.setProperty('--color-background', config.theme.background);
+        if (effectiveTheme) {
+            root.style.setProperty('--color-primary', effectiveTheme.primary);
+            root.style.setProperty('--color-secondary', effectiveTheme.secondary);
+            root.style.setProperty('--color-accent', effectiveTheme.accent);
+            root.style.setProperty('--color-background', effectiveTheme.background);
+            root.style.setProperty('--color-surface', effectiveTheme.surface || '#ffffff');
+            root.style.setProperty('--color-text', effectiveTheme.text || '#0f172a');
+            root.dataset.mode = effectiveIsDark ? 'dark' : 'light';
         }
-    }, [config]);
+    }, [effectiveTheme.primary, effectiveTheme.secondary, effectiveTheme.accent, effectiveTheme.background, effectiveTheme.surface, effectiveTheme.text, effectiveIsDark]);
 
-    const bgHex = config.theme.background;
+    useEffect(() => {
+        if (localStorage.getItem('lifeseed_theme_mode') === null && localStorage.getItem('lifeseed_night_mode') === null) {
+            setThemeModePreference(null);
+        }
+    }, [configuredTheme.mode]);
+
+    const toggleNightMode = () => {
+        setThemeModePreference(prev => {
+            const currentMode = prev || configuredTheme.mode || 'light';
+            const next = currentMode === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('lifeseed_theme_mode', next);
+            localStorage.setItem('lifeseed_night_mode', String(next === 'dark'));
+            return next;
+        });
+    };
+
+    const bgHex = effectiveTheme.background;
     const bgEncoded = bgHex.replace('#', '%23');
+    const patternStrokeEncoded = effectiveIsDark ? '%23fff' : '%23000';
+    const patternStrokeOpacity = effectiveIsDark ? '.3' : '.14';
+    const patternInnerOpacity = effectiveIsDark ? '.4' : '.18';
     
-    const svgBackground = `data:image/svg+xml,%3Csvg width='332.5537705' height='320' xmlns='http://www.w3.org/2000/svg'%3E%3Cstyle%3E .outerCircle %7B fill: ${bgEncoded}; stroke: %23fff; stroke-width: 7; stroke-opacity: .3; %7D .circle %7B fill: none; stroke: %23fff; stroke-width: .3; stroke-opacity: .3; %7D .innerCircle %7B fill: ${bgEncoded}; stroke: %23fff; stroke-width: 1.7; stroke-opacity: .4; %7D %3C/style%3E%3Crect width='100%25' height='100%25' fill='${bgEncoded}'/%3E%3Cdefs%3E%3CclipPath id='clean'%3E%3Crect width='332.5537705' height='320' /%3E%3C/clipPath%3E%3C/defs%3E%3Cg%3E%3Ccircle cx='-38.2768775' cy='-32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='96' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='160' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='224' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='288' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='352' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='0' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='64' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='128' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='192' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='256' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='320' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='-32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='96' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='160' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='224' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='288' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='352' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='0' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='64' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='128' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='192' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='256' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='320' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='-32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='96' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='160' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='224' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='288' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='352' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512516' cy='0' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512516' cy='64' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512516' cy='128' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512516' cy='192' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512516' cy='256' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512516' cy='320' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='-32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='96' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='160' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='224' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='288' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='352' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='0' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='64' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='128' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='192' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='256' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='320' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='96' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='160' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='64' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='128' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='192' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='96' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='160' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='288' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3C/g%3E%3C/svg%3E`;
+    const svgBackground = `data:image/svg+xml,%3Csvg width='332.5537705' height='320' xmlns='http://www.w3.org/2000/svg'%3E%3Cstyle%3E .outerCircle %7B fill: ${bgEncoded}; stroke: ${patternStrokeEncoded}; stroke-width: 7; stroke-opacity: ${patternStrokeOpacity}; %7D .circle %7B fill: none; stroke: ${patternStrokeEncoded}; stroke-width: .3; stroke-opacity: ${patternStrokeOpacity}; %7D .innerCircle %7B fill: ${bgEncoded}; stroke: ${patternStrokeEncoded}; stroke-width: 1.7; stroke-opacity: ${patternInnerOpacity}; %7D %3C/style%3E%3Crect width='100%25' height='100%25' fill='${bgEncoded}'/%3E%3Cdefs%3E%3CclipPath id='clean'%3E%3Crect width='332.5537705' height='320' /%3E%3C/clipPath%3E%3C/defs%3E%3Cg%3E%3Ccircle cx='-38.2768775' cy='-32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='96' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='160' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='224' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='288' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='352' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='0' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='64' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='128' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='192' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='256' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='320' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='-32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='96' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='160' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='224' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='288' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='352' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='0' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='64' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='128' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='192' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='256' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='320' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='-32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='96' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='160' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='224' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='288' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='352' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512516' cy='0' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512516' cy='64' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512516' cy='128' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512516' cy='192' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512516' cy='256' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512516' cy='320' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='-32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='96' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='160' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='224' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='288' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='352' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='0' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='64' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='128' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='192' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='256' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='320' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='96' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='160' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='64' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='128' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='192' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='96' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='160' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='288' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3C/g%3E%3C/svg%3E`;
 
     const backgroundStyle = {
+        backgroundColor: bgHex,
         backgroundImage: `url("${svgBackground}")`,
         backgroundSize: '108px', 
         backgroundRepeat: 'repeat',
@@ -223,6 +294,60 @@ const AppContent = () => {
         }
     }, [lightseed, tab]); // Re-fetch when tab changes to refresh counts
 
+    useEffect(() => {
+        if (!lightseed) {
+            setPersonalSiteTheme(null);
+            setPersonalSiteLogoUrl('');
+            return;
+        }
+
+        return listenToUserProfile(lightseed.uid, (profile) => {
+            setPersonalSiteTheme(profile?.siteTheme || null);
+            setPersonalSiteLogoUrl(profile?.siteLogoUrl || '');
+        });
+    }, [lightseed?.uid]);
+
+    useEffect(() => {
+        if (!lightseed || myTrees.length === 0) {
+            setTreeChatNotifications([]);
+            setTreeChatToast(null);
+            treeChatNotificationCountRef.current = 0;
+            treeChatNotificationsReadyRef.current = false;
+            return;
+        }
+
+        return listenForTreeChatNotifications(
+            myTrees.map(tree => tree.id),
+            lightseed.uid,
+            (notifications) => {
+                setTreeChatNotifications(notifications);
+                if (
+                    treeChatNotificationsReadyRef.current &&
+                    notifications.length > treeChatNotificationCountRef.current
+                ) {
+                    setTreeChatToast(notifications[0]);
+                }
+                treeChatNotificationCountRef.current = notifications.length;
+                treeChatNotificationsReadyRef.current = true;
+            }
+        );
+    }, [lightseed?.uid, myTrees.map(tree => tree.id).join('|')]);
+
+    useEffect(() => {
+        if (!treeChatToast) return;
+        const timer = window.setTimeout(() => setTreeChatToast(null), 8000);
+        return () => window.clearTimeout(timer);
+    }, [treeChatToast?.id]);
+
+    useEffect(() => {
+        if (!selectedPulse || selectedPulse.type !== 'tree_chat' || !lightseed) return;
+        if ((selectedPulse.seenBy || []).includes(lightseed.uid)) return;
+
+        markTreeChatSeen(selectedPulse.id, lightseed.uid).catch(console.error);
+        setTreeChatNotifications(prev => prev.filter(pulse => pulse.id !== selectedPulse.id));
+        setSelectedPulse(prev => prev ? { ...prev, seenBy: [...(prev.seenBy || []), lightseed.uid] } : prev);
+    }, [selectedPulse?.id, lightseed?.uid]);
+
     useEffect(() => { 
         if (tab !== 'dashboard') {
             loadContent(true);
@@ -230,9 +355,7 @@ const AppContent = () => {
         ensureGenesis(); 
         // Fetch host community
         const domain = window.location.hostname;
-        import('./services/firebase').then(({ getCommunityByDomain }) => {
-            getCommunityByDomain(domain).then(setHostCommunity);
-        });
+        getCommunityByDomain(domain).then(setHostCommunity);
     }, [tab, lightseed]);
     
     useEffect(() => {
@@ -302,6 +425,17 @@ const AppContent = () => {
                 setLastDoc(res.lastDoc);
                 setHasMore(!!res.lastDoc);
             }
+            else if (tab === 'events') {
+                const res = await fetchEventPulses(currentLastDoc, currentDomain);
+                setData(prev => {
+                    const newItems = res.items;
+                    if (reset) return newItems;
+                    const existingIds = new Set(prev.map(p => p.id));
+                    return [...prev, ...newItems.filter(i => !existingIds.has(i.id))];
+                });
+                setLastDoc(res.lastDoc);
+                setHasMore(!!res.lastDoc);
+            }
             else if (tab === 'visions') {
                 const res = await fetchVisions(currentLastDoc, currentDomain);
                 setData(prev => {
@@ -342,6 +476,22 @@ const AppContent = () => {
             setSelectedTree(prev => prev ? { ...prev, ...updates } : null);
         }
         refreshTrees();
+    };
+
+    const handleChatTree = (tree: Lifetree) => {
+        setOracleTree(tree);
+        setSelectedTree(null);
+        setTab('oracle');
+    };
+
+    const handleOpenTreeChatInbox = () => {
+        const latest = treeChatNotifications[0];
+        if (latest) {
+            setSelectedPulse(latest);
+            setTreeChatToast(null);
+        } else {
+            setTab('oracle');
+        }
     };
 
     const handleImageUpload = async (file: File, path: string) => {
@@ -417,7 +567,7 @@ const AppContent = () => {
         let matches = true;
         if (searchTerm) {
             const term = searchTerm.toLowerCase();
-            const text = (item.title || item.name || "") + " " + (item.body || "") + " " + (item.locationName || "");
+            const text = (item.title || item.name || "") + " " + (item.body || "") + " " + (item.locationName || "") + " " + (item.eventLocation || "") + " " + (item.chatTreeName || "");
             matches = matches && text.toLowerCase().includes(term);
         }
         if (tab === 'forest') {
@@ -527,11 +677,11 @@ const AppContent = () => {
                                 dir="auto"
                                 type="text"
                                 list="search-suggestions"
-                                className="block w-full pl-10 pr-3 py-2 border border-emerald-700 rounded-lg leading-5 bg-[#B2713A]/80 backdrop-blur placeholder-slate-200 text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm shadow-sm"
+                                className={`block w-full pl-10 pr-3 py-2 border rounded-lg leading-5 backdrop-blur focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm shadow-sm ${effectiveIsDark ? 'border-slate-700 bg-slate-900/80 text-white placeholder-slate-400' : 'border-slate-200 bg-white/90 text-slate-900 placeholder-slate-400'}`}
                                 placeholder={t('search_placeholder')}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                style={{ borderColor: config.theme.primary }}
+                                style={{ borderColor: effectiveTheme.primary }}
                             />
                             <datalist id="search-suggestions">
                                 {searchSuggestions.map((s, i) => <option key={i} value={s} />)}
@@ -543,7 +693,7 @@ const AppContent = () => {
                                 <button 
                                     onClick={() => { setShowPlantModal(true); }}
                                     className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2 transition-colors h-10"
-                                    style={{ backgroundColor: config.theme.primary }}
+                                    style={{ backgroundColor: effectiveTheme.primary }}
                                 >
                                     <Icons.Tree />
                                     <span className="hidden sm:inline">{t('plant_lifetree')}</span>
@@ -555,7 +705,7 @@ const AppContent = () => {
                                 <button 
                                     onClick={() => { setShowPlantModal(true); }}
                                     className="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2 transition-colors h-10"
-                                    style={{ backgroundColor: config.theme.secondary }}
+                                    style={{ backgroundColor: effectiveTheme.secondary }}
                                 >
                                     <Icons.Shield />
                                     <span className="hidden sm:inline">{t('guard_tree')}</span>
@@ -564,19 +714,19 @@ const AppContent = () => {
                             )}
 
                             {tab === 'forest' && (
-                                <div className="bg-[#B2713A]/80 backdrop-blur p-1 rounded-lg border border-emerald-700 flex shadow-sm h-10" style={{ borderColor: config.theme.primary }}>
+                                <div className={`backdrop-blur p-1 rounded-lg border flex shadow-sm h-10 ${effectiveIsDark ? 'bg-slate-900/80 border-slate-700' : 'bg-white/90 border-slate-200'}`} style={{ borderColor: effectiveTheme.primary }}>
                                     <button 
                                         onClick={() => setViewMode('grid')}
-                                        className={`px-3 py-1 text-sm font-medium rounded-md transition-all flex items-center justify-center ${viewMode === 'grid' ? 'bg-emerald-600 text-white shadow' : 'text-emerald-300 hover:text-white'}`}
-                                        style={viewMode === 'grid' ? { backgroundColor: config.theme.primary } : {}}
+                                        className={`px-3 py-1 text-sm font-medium rounded-md transition-all flex items-center justify-center ${viewMode === 'grid' ? 'bg-emerald-600 text-white shadow' : effectiveIsDark ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-950'}`}
+                                        style={viewMode === 'grid' ? { backgroundColor: effectiveTheme.primary } : {}}
                                     >
                                         <Icons.List />
                                         <span className="hidden lg:inline ml-2">{t('list_view')}</span>
                                     </button>
                                     <button 
                                         onClick={() => setViewMode('map')}
-                                        className={`px-3 py-1 text-sm font-medium rounded-md transition-all flex items-center justify-center ${viewMode === 'map' ? 'bg-emerald-600 text-white shadow' : 'text-emerald-300 hover:text-white'}`}
-                                        style={viewMode === 'map' ? { backgroundColor: config.theme.primary } : {}}
+                                        className={`px-3 py-1 text-sm font-medium rounded-md transition-all flex items-center justify-center ${viewMode === 'map' ? 'bg-emerald-600 text-white shadow' : effectiveIsDark ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-950'}`}
+                                        style={viewMode === 'map' ? { backgroundColor: effectiveTheme.primary } : {}}
                                     >
                                         <Icons.Map />
                                         <span className="hidden lg:inline ml-2">{t('map_view')}</span>
@@ -588,7 +738,7 @@ const AppContent = () => {
                 )}
 
                 {tab === 'observatory' && (
-                    <div className="max-w-2xl mx-auto text-white">
+                    <div className={`max-w-2xl mx-auto ${effectiveIsDark ? 'text-white' : 'text-slate-900'}`}>
                         <h2 className="text-2xl font-light mb-6">{t('pending_alignments')}</h2>
                         {alignments.length === 0 ? (
                             <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-slate-200 p-12 text-center flex flex-col items-center">
@@ -614,48 +764,48 @@ const AppContent = () => {
                     </div>
                 )}
 
-                {tab === 'oracle' && <OracleChat />}
+                {tab === 'oracle' && <OracleChat initialTree={oracleTree} />}
 
                 {tab === 'forest' ? (
                     <>
                          <div className="flex justify-center mb-6 gap-3">
-                             <label className="flex items-center gap-2 cursor-pointer bg-[#B2713A]/60 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20 hover:bg-[#B2713A]/80 transition-colors shadow-sm">
+                             <label className={`flex items-center gap-2 cursor-pointer backdrop-blur-sm px-3 py-1.5 rounded-full border transition-colors shadow-sm ${effectiveIsDark ? 'bg-slate-900/70 border-white/10 hover:bg-slate-900' : 'bg-white/90 border-slate-200 hover:bg-slate-50'}`}>
                                 <input 
                                     type="checkbox" 
                                     checked={showNatureTrees} 
                                     onChange={(e) => setShowNatureTrees(e.target.checked)} 
                                     className="rounded text-sky-500 focus:ring-sky-500 bg-white/20 border-white/30"
                                 />
-                                <span className="text-xs text-white font-medium flex items-center">
+                                <span className={`text-xs font-medium flex items-center ${effectiveIsDark ? 'text-white' : 'text-slate-700'}`}>
                                     <span className="mr-1"><Icons.Nature /></span> {t('nature')}
                                 </span>
                             </label>
-                            <label className="flex items-center gap-2 cursor-pointer bg-[#B2713A]/60 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20 hover:bg-[#B2713A]/80 transition-colors shadow-sm">
+                            <label className={`flex items-center gap-2 cursor-pointer backdrop-blur-sm px-3 py-1.5 rounded-full border transition-colors shadow-sm ${effectiveIsDark ? 'bg-slate-900/70 border-white/10 hover:bg-slate-900' : 'bg-white/90 border-slate-200 hover:bg-slate-50'}`}>
                                 <input 
                                     type="checkbox" 
                                     checked={showUserTrees} 
                                     onChange={(e) => setShowUserTrees(e.target.checked)} 
                                     className="rounded text-emerald-400 focus:ring-emerald-400 bg-white/20 border-white/30"
                                 />
-                                <span className="text-xs text-white font-medium flex items-center">
+                                <span className={`text-xs font-medium flex items-center ${effectiveIsDark ? 'text-white' : 'text-slate-700'}`}>
                                     <span className="mr-1"><Icons.Tree /></span> {t('lifetrees')}
                                 </span>
                             </label>
-                            <label className="flex items-center gap-2 cursor-pointer bg-[#B2713A]/60 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20 hover:bg-[#B2713A]/80 transition-colors shadow-sm">
+                            <label className={`flex items-center gap-2 cursor-pointer backdrop-blur-sm px-3 py-1.5 rounded-full border transition-colors shadow-sm ${effectiveIsDark ? 'bg-slate-900/70 border-white/10 hover:bg-slate-900' : 'bg-white/90 border-slate-200 hover:bg-slate-50'}`}>
                                 <input 
                                     type="checkbox" 
                                     checked={showValidatedTrees} 
                                     onChange={(e) => setShowValidatedTrees(e.target.checked)} 
                                     className="rounded text-emerald-300 focus:ring-emerald-300 bg-white/20 border-white/30"
                                 />
-                                <span className="text-xs text-white font-medium flex items-center">
+                                <span className={`text-xs font-medium flex items-center ${effectiveIsDark ? 'text-white' : 'text-slate-700'}`}>
                                     <span className="mr-1"><Icons.ShieldCheck /></span> {t('validated_trees')}
                                 </span>
                             </label>
                         </div>
 
                         {viewMode === 'map' ? (
-                            <ForestMap trees={filteredData} onView={setSelectedTree} loading={loadingMore && filteredData.length === 0} />
+                            <ForestMap trees={filteredData} onView={setSelectedTree} onChat={handleChatTree} loading={loadingMore && filteredData.length === 0} />
                         ) : (
                             <>
                                 <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -672,6 +822,7 @@ const AppContent = () => {
                                                     currentUserId={lightseed?.uid}
                                                     onPlayGrowth={setShowGrowthPlayer}
                                                     onQuickSnap={handleQuickSnap}
+                                                    onChat={handleChatTree}
                                                     onValidate={(id: string, nextValidated: boolean) => (nextValidated
                                                         ? validateLifetree(id, isSuperAdmin ? lightseed!.uid : activeTree!.id)
                                                         : unvalidateLifetree(id)
@@ -688,8 +839,8 @@ const AppContent = () => {
                     </>
                 ) : tab === 'visions' ? (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-                         <div className="flex justify-between items-center mb-8 bg-white/10 backdrop-blur-md p-6 rounded-3xl border border-white/10 shadow-xl">
-                            <h2 className="text-4xl font-thin tracking-tight text-white">{t('visions')}</h2>
+                         <div className={`flex justify-between items-center mb-8 backdrop-blur-md p-6 rounded-3xl border shadow-xl ${effectiveIsDark ? 'bg-white/10 border-white/10' : 'bg-white/90 border-slate-200'}`}>
+                            <h2 className={`text-4xl font-thin tracking-tight ${effectiveIsDark ? 'text-white' : 'text-slate-950'}`}>{t('visions')}</h2>
                             <button 
                                 onClick={handleAnalyzeSynergy} 
                                 disabled={isAnalyzingSynergy || data.length < 2}
@@ -730,9 +881,30 @@ const AppContent = () => {
                             }
                         </div>
                     </div>
+                ) : tab === 'events' ? (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        <div className={`mb-8 rounded-3xl border p-6 shadow-xl backdrop-blur-md ${effectiveIsDark ? 'border-slate-700 bg-slate-900/80' : 'border-slate-200 bg-white/90'}`}>
+                            <h2 className={`text-4xl font-thin tracking-tight ${effectiveIsDark ? 'text-white' : 'text-slate-950'}`}>Events</h2>
+                            <p className={`mt-2 text-sm ${effectiveIsDark ? 'text-slate-300' : 'text-slate-500'}`}>Community gatherings, ceremonies, actions, and shared moments.</p>
+                        </div>
+
+                        <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                            {filteredData.length === 0 && !loadingMore ? <p className={`col-span-full py-10 text-center ${effectiveIsDark ? 'text-slate-400' : 'text-slate-500'}`}>No events found.</p> :
+                                filteredData.map((item: any) => (
+                                    <PulseCard
+                                        key={item.id}
+                                        pulse={item}
+                                        lightseed={lightseed}
+                                        onMatch={(p: Pulse) => { setMatchCandidate(p); setShowPulseModal(true); }}
+                                        onView={(p: Pulse) => setSelectedPulse(p)}
+                                    />
+                                ))
+                            }
+                        </div>
+                    </div>
                 ) : tab !== 'observatory' && tab !== 'profile' && tab !== 'oracle' && tab !== 'about' && tab !== 'dashboard' && tab !== 'newsletter' && tab !== 'communities' && (
                     <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                        {data.map((item) => (
+                        {filteredData.map((item) => (
                              <React.Fragment key={item.id}>
                                  <PulseCard 
                                     pulse={item} 
@@ -751,7 +923,7 @@ const AppContent = () => {
     };
 
     return (
-        <div className="min-h-screen relative font-sans text-slate-800">
+        <div className={`min-h-screen relative font-sans ${effectiveIsDark ? 'text-slate-100' : 'text-slate-800'}`}>
             <div className="fixed inset-0 z-0 pointer-events-none" style={backgroundStyle}></div>
             
             <div className="relative z-10">
@@ -769,11 +941,33 @@ const AppContent = () => {
                         pendingAlignmentsCount={alignments.length}
                         myTreesCount={myTrees.length}
                         dangerTreesCount={guardedTrees.filter(t => t.status === 'DANGER').length}
-                        logoUrl={config.logoUrl}
+                        treeChatNotificationsCount={treeChatNotifications.length}
+                        logoUrl={configuredLogoUrl}
+                        appName={config.name}
+                        isNightMode={effectiveIsDark}
+                        theme={effectiveTheme}
+                        onToggleNightMode={toggleNightMode}
+                        onOpenTreeChatInbox={handleOpenTreeChatInbox}
                     />
                 )}
                 
                 {renderMainContent()}
+                {treeChatToast && (
+                    <button
+                        onClick={() => {
+                            setSelectedPulse(treeChatToast);
+                            setTreeChatToast(null);
+                        }}
+                        className={`fixed right-4 top-24 z-50 max-w-sm rounded-2xl border p-4 text-left shadow-2xl transition-all ${effectiveIsDark ? 'border-indigo-400/30 bg-slate-950 text-white' : 'border-indigo-100 bg-white text-slate-900'}`}
+                    >
+                        <div className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-indigo-500">
+                            <Icons.Sun />
+                            <span>Tree chat received</span>
+                        </div>
+                        <div className="font-bold">{treeChatToast.chatTreeName || 'Your tree'}</div>
+                        <div className={`mt-1 line-clamp-2 text-sm ${effectiveIsDark ? 'text-slate-300' : 'text-slate-500'}`}>{treeChatToast.title}</div>
+                    </button>
+                )}
                 <GDPRBanner />
             </div>
 
@@ -797,6 +991,7 @@ const AppContent = () => {
                         onUpdate={(updates: Partial<Lifetree>) => handleTreeUpdate(selectedTree.id, updates)}
                         onDelete={() => { handleDeleteTreeConfirmed(selectedTree.id); setSelectedTree(null); }}
                         onCreatePulse={() => { setShowPulseModal(true); }}
+                        onChatTree={handleChatTree}
                         onViewPulse={(p: Pulse) => { setSelectedTree(null); setSelectedPulse(p); }}
                         myActiveTree={activeTree}
                         currentUserId={lightseed?.uid}
@@ -832,6 +1027,7 @@ const AppContent = () => {
                         onUpdate={(updates) => {
                             setSelectedCommunity(prev => prev ? { ...prev, ...updates } : null);
                         }}
+                        currentUser={lightseed}
                         currentUserId={lightseed?.uid}
                         isSuperAdmin={isSuperAdmin}
                         isAdmin={isAdmin}

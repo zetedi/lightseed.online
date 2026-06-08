@@ -1,7 +1,7 @@
 
 import { httpsCallable } from "firebase/functions";
-import { functions } from "./firebase";
-import { Vision, VisionSynergy } from "../types";
+import { auth, functions } from "./firebase";
+import { Lifetree, Vision, VisionSynergy } from "../types";
 import config from "../lifeseed.config.json";
 
 // Default model as requested: gemini-3.5-flash
@@ -81,7 +81,6 @@ export const generateVisionImage = async (prompt: string): Promise<string | null
 export const generateOracleQuote = async (): Promise<string> => {
     try {
         // Only attempt AI call if user is signed in to avoid 401/403 errors on landing
-        const { auth } = await import("./firebase");
         if (!auth.currentUser) {
             return '"The clearest way into the Universe is through a forest wilderness." - John Muir';
         }
@@ -139,6 +138,46 @@ export const sendMessageToOracle = async (message: string, history: {role: 'user
         return "The Oracle is currently in deep meditation. Please come back later.";
     }
     return "I'm sorry, my connection to the forest is a bit weak right now.";
+  }
+}
+
+export const sendMessageToTree = async (message: string, history: {role: 'user' | 'model', text: string}[], tree: Lifetree) => {
+  try {
+    const generateAIContent = httpsCallable(functions, 'generateAIContent');
+    const systemInstruction = `You are speaking as the living voice of a Lifetree in the Lightseed network.
+    Tree name: ${tree.name}
+    Short title: ${tree.shortTitle || "None"}
+    Vision/body: ${tree.body || "No vision provided"}
+    Location: ${tree.locationName || "Unknown"}
+    Type: ${tree.treeType || tree.type || "Lifetree"}
+
+    Speak in first person as this tree, but stay grounded and helpful.
+    Use the tree's vision, location, and role as your context.
+    Keep replies concise, sensory, practical, and poetic without pretending to know private facts.
+    If the seeker asks for action, suggest one clear next step they can take with or for this tree.`;
+
+    let contents = history.map(m => ({
+        role: m.role,
+        parts: [{ text: m.text }]
+    }));
+
+    const firstUserIndex = contents.findIndex(c => c.role === 'user');
+    contents = firstUserIndex !== -1 ? contents.slice(firstUserIndex) : [];
+    contents.push({ role: 'user', parts: [{ text: message }] });
+
+    const result = await generateAIContent({
+        contents,
+        systemInstruction,
+        model: MODEL
+    });
+
+    return (result.data as any).text || "";
+  } catch (error: any) {
+    console.error("Tree Chat Error:", error);
+    if (error.message.includes("Forbidden") || error.message.includes("suspended")) {
+        return "My roots are quiet right now. Please come back later.";
+    }
+    return "The signal through my branches is weak right now.";
   }
 }
 
@@ -233,4 +272,3 @@ export const translatePulse = async (req: TranslationRequest): Promise<Translati
         throw e;
     }
 }
-

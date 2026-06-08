@@ -45,6 +45,7 @@ import {
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { type Pulse, type PulseType, type Lifetree, type Alignment, type Vision, type Community } from '../types';
 import { createBlock } from '../utils/crypto';
+import { oldEmeraldEarthThemeValues } from '../utils/theme';
 
 const SYSTEM_EMAIL_FROM = "lightseed <admin@lightseed.online>";
 
@@ -132,6 +133,9 @@ export const listenToUserProfile = (userId: string, callback: (data: any) => voi
         if (docSnap.exists()) callback(docSnap.data());
     });
 }
+
+export const updateUserSiteTheme = (userId: string, data: any) =>
+    setDoc(doc(db, 'users', userId), { ...data, updatedAt: serverTimestamp() }, { merge: true });
 
 export const deleteUserAccount = async () => {
     const user = auth.currentUser;
@@ -398,13 +402,17 @@ export const ensureGenesis = async () => {
                     name: 'lightseed',
                     domain: 'lightseed.online',
                     vision: 'Universal connection through nature and digital roots.',
+                    imageUrls: [],
                     ownerId: user.uid,
                     theme: {
                         primary: '#059669',
                         secondary: '#0284c7',
                         accent: '#f59e0b',
                         neutral: '#334155',
-                        background: '#B2713A'
+                        background: '#ffffff',
+                        surface: '#ffffff',
+                        text: '#0f172a',
+                        mode: 'light'
                     }
                 },
                 {
@@ -412,28 +420,22 @@ export const ensureGenesis = async () => {
                     name: 'lifeseed',
                     domain: 'lifeseed.online',
                     vision: 'A lively network for seeding growth and vitality.',
+                    imageUrls: [],
                     ownerId: user.uid,
-                    theme: {
-                        primary: '#10b981', // emerald-500 (brighter)
-                        secondary: '#3b82f6', // blue-500
-                        accent: '#facc15', // yellow-400
-                        neutral: '#475569',
-                        background: '#D97706' // amber-600 (more lively background)
-                    }
+                    theme: { ...oldEmeraldEarthThemeValues }
                 }
             ];
 
-            for (const org of defaultOrgs) {
-                // Check by domain first to see if an org already exists for this hub
-                const existingOrg = await getOrganisationByDomain(org.domain);
-                if (!existingOrg) {
-                    const orgRef = doc(db, 'organisations', org.id);
-                    await setDoc(orgRef, {
-                        ...org,
+            for (const community of defaultOrgs) {
+                const existingCommunity = await getCommunityByDomain(community.domain);
+                if (!existingCommunity) {
+                    const communityRef = doc(db, 'communities', community.id);
+                    await setDoc(communityRef, {
+                        ...community,
                         createdAt: serverTimestamp(),
                         updatedAt: serverTimestamp()
                     });
-                    console.log(`Initialized default org: ${org.domain}`);
+                    console.log(`Initialized default community: ${community.domain}`);
                 }
             }
         }
@@ -483,7 +485,7 @@ export const unvalidateLifetree = (targetId: string) => updateDoc(doc(db, 'lifet
 const isHubDomain = (domain?: string) => {
     if (!domain) return true;
     const d = domain.toLowerCase().replace(/^www\./, '');
-    return d === 'lightseed.online' || d === 'localhost' || d === '127.0.0.1' || d.startsWith('192.168.') || d.endsWith('.local');
+    return d === 'lightseed.online' || d === 'lifeseed.online' || d === 'localhost' || d === '127.0.0.1' || d.startsWith('192.168.') || d.endsWith('.local');
 };
 
 export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {
@@ -611,6 +613,26 @@ export const updateCommunity = (id: string, data: any) =>
 
 export const deleteCommunity = (id: string) => deleteDoc(doc(db, 'communities', id));
 
+export const createCommunityEvent = async (community: Community, data: any) => {
+    const eventPayload = {
+        ...data,
+        type: 'event',
+        domain: normalizeDomain(community.domain),
+        communityId: community.id,
+        communityName: community.name,
+    };
+    const hash = await createBlock('COMMUNITY_EVENT', eventPayload, Date.now());
+    const eventRef = await addDoc(pulsesCollection, {
+        ...eventPayload,
+        loveCount: 0,
+        commentCount: 0,
+        previousHash: 'COMMUNITY_EVENT',
+        hash,
+        createdAt: serverTimestamp(),
+    });
+    return { id: eventRef.id, ...eventPayload, loveCount: 0, commentCount: 0, previousHash: 'COMMUNITY_EVENT', hash } as Pulse;
+};
+
 export const fetchPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {
     let q;
     if (domainFilter && !isHubDomain(domainFilter)) {
@@ -629,6 +651,63 @@ export const fetchPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: 
 
     return { items, lastDoc: snap.docs[snap.docs.length-1] || null };
 }
+
+export const fetchEventPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {
+    const res = await fetchPulses(lastD, domainFilter);
+    return {
+        items: res.items.filter(pulse => pulse.type === 'event'),
+        lastDoc: res.lastDoc
+    };
+};
+
+export const listenForTreeChatNotifications = (
+    treeIds: string[],
+    currentUserId: string,
+    callback: (pulses: Pulse[]) => void
+) => {
+    const uniqueIds = Array.from(new Set(treeIds.filter(Boolean)));
+    if (uniqueIds.length === 0) {
+        callback([]);
+        return () => {};
+    }
+
+    const chunks: string[][] = [];
+    for (let i = 0; i < uniqueIds.length; i += 10) {
+        chunks.push(uniqueIds.slice(i, i + 10));
+    }
+
+    const chunkMaps = chunks.map(() => new Map<string, Pulse>());
+    const emit = () => {
+        const combined = chunkMaps
+            .flatMap(map => Array.from(map.values()))
+            .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+        callback(combined);
+    };
+
+    const unsubscribers = chunks.map((chunk, index) => {
+        const q = query(pulsesCollection, where('chatTreeId', 'in', chunk));
+        return onSnapshot(q, (snap) => {
+            const map = chunkMaps[index];
+            map.clear();
+            snap.docs.forEach(d => {
+                const pulse = { id: d.id, ...d.data() } as Pulse;
+                if (pulse.type === 'tree_chat' && pulse.authorId !== currentUserId && !(pulse.seenBy || []).includes(currentUserId)) {
+                    map.set(pulse.id, pulse);
+                }
+            });
+            emit();
+        }, (error) => {
+            console.error("Tree chat notification listener failed", error);
+            chunkMaps[index].clear();
+            emit();
+        });
+    });
+
+    return () => unsubscribers.forEach(unsub => unsub());
+};
+
+export const markTreeChatSeen = (pulseId: string, userId: string) =>
+    updateDoc(doc(db, 'pulses', pulseId), { seenBy: arrayUnion(userId) });
 
 export const getMyPulses = async (uid: string) => (await getDocs(query(pulsesCollection, where('authorId', '==', uid)))).docs.map(d => ({ id: d.id, ...d.data() } as Pulse)).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 export const fetchGrowthPulses = async (treeId: string) => (await getDocs(query(pulsesCollection, where('lifetreeId', '==', treeId), where('type', '==', 'GROWTH')))).docs.map(d => ({ id: d.id, ...d.data() } as Pulse)).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
@@ -651,7 +730,16 @@ export const mintPulse = async (pulseData: any) => {
         const newHash = await createBlock(tree.latestHash, pulseData, Date.now());
         const newPulseRef = doc(pulsesCollection);
         const domain = tree.domain || window.location.hostname.replace(/^www\./, '');
-        t.set(newPulseRef, { ...pulseData, domain, id: newPulseRef.id, createdAt: serverTimestamp(), hash: newHash, previousHash: tree.latestHash });
+        t.set(newPulseRef, {
+            ...pulseData,
+            domain,
+            id: newPulseRef.id,
+            loveCount: pulseData.loveCount || 0,
+            commentCount: pulseData.commentCount || 0,
+            createdAt: serverTimestamp(),
+            hash: newHash,
+            previousHash: tree.latestHash
+        });
         
         const updateData: any = { latestHash: newHash, blockHeight: (tree.blockHeight || 0) + 1 };
         // If this is a growth pulse with an image, update the tree's latest growth view

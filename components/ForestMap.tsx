@@ -19,7 +19,7 @@ interface StackLevel {
     lng: number;
 }
 
-export const ForestMap = ({ trees, onView, loading = false }: { trees: Lifetree[], onView: (tree: Lifetree) => void, loading?: boolean }) => {
+export const ForestMap = ({ trees, onView, onChat, loading = false }: { trees: Lifetree[], onView: (tree: Lifetree) => void, onChat?: (tree: Lifetree) => void, loading?: boolean }) => {
     const mapContainer = useRef<HTMLDivElement>(null);
     const mapInstance = useRef<any>(null);
     const markersLayer = useRef<any>(null);
@@ -210,13 +210,20 @@ export const ForestMap = ({ trees, onView, loading = false }: { trees: Lifetree[
                 <div class="p-2">
                     <h3 class="font-bold text-sm text-slate-800 mb-1">${tree.name}</h3>
                     <p class="text-xs text-slate-500 line-clamp-2 italic mb-2">"${tree.body}"</p>
-                    <button class="view-btn bg-emerald-600 text-white text-xs font-bold px-4 py-1.5 rounded-full w-full">View Tree</button>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button class="view-btn bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-full w-full">View</button>
+                        <button class="chat-btn bg-sky-600 text-white text-xs font-bold px-3 py-1.5 rounded-full w-full">Chat</button>
+                    </div>
                 </div>
             </div>
         `;
         div.querySelector('.view-btn')?.addEventListener('click', (e) => {
             e.stopPropagation();
             onView(tree);
+        });
+        div.querySelector('.chat-btn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            onChat?.(tree);
         });
         return div;
     }

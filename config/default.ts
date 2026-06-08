@@ -12,7 +12,10 @@ export const defaultConfig: AppConfig = {
     secondary: '#0284c7', // sky-600
     accent: '#f59e0b', // amber-500
     neutral: '#334155', // slate-700
-    background: '#B2713A', // Current background color
+    background: '#ffffff',
+    mode: 'light',
+    surface: '#ffffff',
+    text: '#0f172a',
   },
   domain: 'lightseed.online',
   model: 'gemini-3.5-flash',
