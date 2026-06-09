@@ -16,7 +16,7 @@ import { communityThemePresets, normalizeTheme } from '../utils/theme';
 
 export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, superAdminExists, onViewTree, onDeleteTree, onViewVision, onPlant, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachOpenSignal, onConsumeReach }: any) => {
     const { t } = useLanguage();
-    const [activeTab, setActiveTab] = useState<'trees' | 'pulses' | 'visions' | 'history' | 'theme' | 'reaches'>('trees');
+    const [activeTab, setActiveTab] = useState<'trees' | 'pulses' | 'visions' | 'history' | 'reaches' | 'invites' | 'appearance' | 'settings' | 'admin'>('trees');
     const [reaches, setReaches] = useState<Pulse[]>([]);
     const [pulses, setPulses] = useState<Pulse[]>([]);
     const [visions, setVisions] = useState<Vision[]>([]);
@@ -293,191 +293,81 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
 
     if (!lightseed) return null;
 
+    const showAdmin = isAdmin || isSuperAdmin || !superAdminExists;
+
+    const navSections: { key: string; label: string; icon: React.ReactNode }[] = [
+        { key: 'trees', label: t('my_trees'), icon: <Icons.Tree /> },
+        { key: 'pulses', label: t('my_pulses'), icon: <Icons.HeartPulse /> },
+        { key: 'visions', label: t('visions'), icon: <Icons.Sparkles /> },
+        { key: 'reaches', label: t('inspiration'), icon: <Icons.Mail /> },
+        { key: 'history', label: t('alignments'), icon: <Icons.Venn /> },
+        { key: 'invites', label: t('invitations'), icon: <Icons.SparkleFill /> },
+        { key: 'appearance', label: 'Appearance', icon: <Icons.Image /> },
+        { key: 'settings', label: 'Settings', icon: <Icons.Key /> },
+        ...(showAdmin ? [{ key: 'admin', label: 'Admin', icon: <Icons.Shield /> }] : []),
+    ];
+
+    const Toggle = ({ on, onClick, disabled }: { on: boolean; onClick: () => void; disabled?: boolean }) => (
+        <button type="button" onClick={onClick} disabled={disabled} className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${on ? 'bg-emerald-500' : 'bg-slate-300'}`}>
+            <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${on ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
+        </button>
+    );
+
+    const SectionTitle = ({ title, sub }: { title: string; sub?: string }) => (
+        <div className="mb-6">
+            <h2 className="text-xl font-bold text-slate-900">{title}</h2>
+            {sub && <p className="mt-1 text-sm text-slate-500">{sub}</p>}
+        </div>
+    );
+
     return (
-        <div className="min-h-screen">
-            <div className="relative bg-gradient-to-b from-slate-800 to-slate-900 text-white pb-10 pt-10 px-4">
-                <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8">
+        <div className="min-h-screen pb-20">
+            {/* Hero */}
+            <div className="relative bg-gradient-to-b from-slate-800 to-slate-900 text-white pt-10 pb-16 px-4">
+                <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center md:items-end gap-6 md:gap-8">
                     <div className="relative">
-                        <img 
-                            src={lightseed.photoURL || `https://ui-avatars.com/api/?name=${lightseed.displayName}`} 
-                            className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white shadow-xl bg-white object-cover"
+                        <img
+                            src={lightseed.photoURL || `https://ui-avatars.com/api/?name=${lightseed.displayName}`}
+                            className="w-24 h-24 md:w-28 md:h-28 rounded-full border-4 border-white shadow-xl bg-white object-cover"
                             onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.onerror = null;
                                 target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(lightseed.displayName || 'User')}&background=random&color=fff`;
                             }}
                         />
-                        <div className="absolute bottom-1 right-1 bg-emerald-500 w-6 h-6 rounded-full border-4 border-slate-900"></div>
+                        <div className="absolute bottom-1 right-1 bg-emerald-500 w-5 h-5 rounded-full border-4 border-slate-900"></div>
                     </div>
-                    <div className="text-center md:text-left flex-1">
-                        <div className="flex items-center gap-3 flex-wrap justify-center md:justify-start">
+                    <div className="text-center md:text-left flex-1 min-w-0">
+                        {/* One line on desktop: name · email · tree count */}
+                        <div className="flex flex-col md:flex-row md:items-baseline md:flex-wrap gap-x-4 gap-y-1 justify-center md:justify-start">
                             <h1 className="text-3xl font-light tracking-wide">{lightseed.displayName}</h1>
-                            {isSuperAdmin ? (
-                                <span className="flex items-center gap-1 bg-amber-400/20 border border-amber-400/50 text-amber-300 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
-                                    <Icons.Sparkles /> SuperAdmin
-                                </span>
-                            ) : isAdmin ? (
-                                <span className="flex items-center gap-1 bg-indigo-400/20 border border-indigo-400/50 text-indigo-300 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
-                                    <Icons.Shield /> Admin
-                                </span>
-                            ) : hasValidatedTree ? (
-                                <ValidationBadge className="border-emerald-400/50 bg-emerald-400/20" compact />
-                            ) : (
-                                <span className="bg-slate-600/50 border border-slate-500/50 text-slate-400 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
-                                    User
-                                </span>
-                            )}
+                            <p className="text-slate-400 text-sm font-mono truncate">{lightseed.email}</p>
+                            <p className="text-sm text-slate-300">
+                                <span className="font-bold text-white">{myTrees.length}</span>
+                                <span className="ml-1 text-[10px] uppercase tracking-wider text-slate-400">{t('my_trees')}</span>
+                            </p>
                         </div>
-                        <p className="text-slate-400 text-sm font-mono mt-1">{lightseed.email}</p>
-                        
-                        <div className="flex flex-col md:flex-row items-center md:items-start gap-4 mt-4">
-                            <div className="text-center md:text-left">
-                                <span className="block text-2xl font-bold">{myTrees.length}</span>
-                                <span className="text-xs text-slate-400 uppercase tracking-wider">{t('my_trees')}</span>
-                            </div>
-
-                            <div className="flex flex-wrap items-center justify-center gap-3">
-                                {allValidated && (
-                                    <button onClick={onPlant} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg transition-transform active:scale-95 flex items-center space-x-2">
-                                        <Icons.Tree />
-                                        <span>Create Tree</span>
-                                    </button>
-                                )}
-                                
-                                <button 
-                                    onClick={handleTestEmail} 
-                                    disabled={sendingTest && mailStatus?.includes("SUCCESS")}
-                                    className={`px-3 py-2 rounded-full text-xs font-bold transition-colors flex items-center space-x-1 border ${mailStatus?.includes('ERROR') || mailStatus?.includes('TIMEOUT') ? 'bg-red-900 border-red-700 text-red-200' : 'bg-sky-700 hover:bg-sky-600 border-sky-600 text-sky-100'}`}
-                                >
-                                    <Icons.Send />
-                                    <span>{mailStatus || "Test Email"}</span>
+                        <div className="mt-3 flex items-center gap-2 flex-wrap justify-center md:justify-start">
+                            {isSuperAdmin && (
+                                <span className="bg-amber-400/20 border border-amber-400/50 text-amber-300 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">SuperAdmin</span>
+                            )}
+                            {isAdmin && !isSuperAdmin && (
+                                <span className="flex items-center gap-1 bg-indigo-400/20 border border-indigo-400/50 text-indigo-300 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider"><Icons.Shield /> Admin</span>
+                            )}
+                            {hasValidatedTree ? (
+                                <ValidationBadge className="border-emerald-400/50 bg-emerald-400/20" compact />
+                            ) : (!isSuperAdmin && !isAdmin && (
+                                <span className="bg-slate-600/50 border border-slate-500/50 text-slate-400 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">User</span>
+                            ))}
+                            {allValidated && (
+                                <button onClick={onPlant} className="ml-1 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-lg transition-transform active:scale-95 flex items-center gap-2">
+                                    <Icons.Tree />
+                                    <span>Plant a Tree</span>
                                 </button>
-
-                                <button
-                                    onClick={handleNewsletterToggle}
-                                    disabled={togglingNewsletter || !lightseed.email}
-                                    className={`px-3 py-2 rounded-full text-xs font-bold transition-colors flex items-center space-x-1 border ${newsletterSubscribed ? 'bg-amber-900/60 border-amber-700 text-amber-100' : 'bg-emerald-700 hover:bg-emerald-600 border-emerald-600 text-white'} disabled:opacity-50`}
-                                >
-                                    <Icons.Send />
-                                    <span>{togglingNewsletter ? 'Working...' : (newsletterSubscribed ? 'Unsubscribe' : 'Subscribe to Newsletter')}</span>
-                                </button>
-
-                                <button
-                                    onClick={handleThreadsEmailToggle}
-                                    disabled={togglingThreadsEmail || !lightseed.email}
-                                    title="When on, reaches sent to your trees are also delivered to your email."
-                                    className={`px-3 py-2 rounded-full text-xs font-bold transition-colors flex items-center space-x-1 border ${sendThreadsToEmail ? 'bg-emerald-700 hover:bg-emerald-600 border-emerald-600 text-white' : 'bg-slate-700 hover:bg-slate-600 border-slate-600 text-slate-200'} disabled:opacity-50`}
-                                >
-                                    <Icons.Mail />
-                                    <span>{togglingThreadsEmail ? 'Working...' : (sendThreadsToEmail ? 'Threads → Email: On' : 'Threads → Email: Off')}</span>
-                                </button>
-
-                                <button onClick={() => setShowDeleteConfirm(true)} className="bg-slate-700 hover:bg-red-900/50 text-slate-300 hover:text-red-200 px-3 py-2 rounded-full text-xs font-bold transition-colors flex items-center space-x-1 border border-slate-600 hover:border-red-800">
-                                    <Icons.Trash />
-                                    <span>{t('delete_account')}</span>
-                                </button>
-                            </div>
+                            )}
                         </div>
                     </div>
                 </div>
-
-                {hasValidatedTree && (
-                    <div className="max-w-4xl mx-auto mt-8 bg-slate-700/50 backdrop-blur border border-slate-600 p-4 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div className="flex items-center space-x-3">
-                            <ValidationBadge />
-                            <div className="text-center sm:text-left">
-                                <h4 className="font-bold text-emerald-400">Contributor Access Unlocked</h4>
-                                <p className="text-xs text-slate-300">You are a validated node in the .seed network.</p>
-                            </div>
-                        </div>
-                        <a 
-                            href="https://github.com/zetedi/lifeseed.online" 
-                            target="_blank" 
-                            rel="noreferrer" 
-                            className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg text-sm font-mono transition-colors border border-white/10 flex items-center space-x-2 whitespace-nowrap"
-                        >
-                            <span>zetedi/lifeseed.online</span>
-                            <Icons.Link />
-                        </a>
-                    </div>
-                )}
-
-                {/* Claim SuperAdmin — visible only when no superadmin exists yet */}
-                {!superAdminExists && (
-                    <div className="max-w-4xl mx-auto mt-4 bg-amber-500/10 border border-amber-400/40 p-4 rounded-xl flex items-center justify-between gap-4">
-                        <div>
-                            <h4 className="font-bold text-amber-300 text-sm">Genesis SuperAdmin unclaimed</h4>
-                            <p className="text-xs text-slate-400">Be the first to claim the SuperAdmin role.</p>
-                        </div>
-                        <button
-                            onClick={onClaimSuperAdmin}
-                            className="bg-amber-500 hover:bg-amber-400 text-white text-xs font-bold px-4 py-2 rounded-full shadow transition-colors whitespace-nowrap"
-                        >
-                            Claim SuperAdmin
-                        </button>
-                    </div>
-                )}
-
-                {/* Admin Management — superadmin only */}
-                {isSuperAdmin && (
-                    <div className="max-w-4xl mx-auto mt-4 bg-indigo-900/30 border border-indigo-500/30 p-5 rounded-xl">
-                        <div className="mb-3 flex items-center justify-between gap-3">
-                            <h4 className="font-bold text-indigo-300 flex items-center gap-2 text-sm uppercase tracking-wider">
-                                <Icons.Shield /> Admin Management
-                            </h4>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={onOpenNewsletterAdmin}
-                                    className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors flex items-center gap-2"
-                                >
-                                    <Icons.Send />
-                                    <span>Send Newsletter</span>
-                                </button>
-                            </div>
-                        </div>
-                        <div className="flex gap-2 mb-4">
-                            <input
-                                value={newAdminUid}
-                                onChange={e => setNewAdminUid(e.target.value)}
-                                placeholder="User UID"
-                                className="flex-1 bg-slate-800 border border-slate-600 text-white text-xs rounded-lg px-3 py-2 font-mono focus:outline-none focus:border-indigo-400"
-                            />
-                            <button
-                                disabled={!newAdminUid || adminActionLoading}
-                                onClick={async () => {
-                                    setAdminActionLoading(true);
-                                    await onGrantAdmin(newAdminUid.trim());
-                                    setNewAdminUid('');
-                                    const updated = await getAdmins();
-                                    setAdmins(updated);
-                                    setAdminActionLoading(false);
-                                }}
-                                className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors"
-                            >
-                                Grant
-                            </button>
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                            {admins.length === 0 && <p className="text-xs text-slate-500">No admins yet.</p>}
-                            {admins.map(a => (
-                                <div key={a.uid} className="flex items-center justify-between bg-slate-800/50 px-3 py-2 rounded-lg">
-                                    <span className="text-xs font-mono text-slate-300">{a.uid}</span>
-                                    <button
-                                        onClick={async () => {
-                                            setAdminActionLoading(true);
-                                            await onRevokeAdmin(a.uid);
-                                            setAdmins(prev => prev.filter(x => x.uid !== a.uid));
-                                            setAdminActionLoading(false);
-                                        }}
-                                        className="text-red-400 hover:text-red-300 text-xs font-bold ml-3 transition-colors"
-                                    >
-                                        Revoke
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
             </div>
 
             {dialogMessage && (
@@ -489,68 +379,27 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                 </Modal>
             )}
 
-            <div className="max-w-4xl mx-auto px-4 mt-8">
-                {myTrees.length > 0 && (
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div>
-                            <h3 className="text-lg font-bold text-slate-800 mb-1 flex items-center gap-2">
-                                <Icons.SparkleFill /> {t('invitations')}
-                            </h3>
-                            <p className="text-sm text-slate-500">{t('invites_remaining')}: <span className="font-bold text-emerald-600">{invitesRemaining}</span></p>
+            {/* Body: left sidebar + content (z-10 so the hero never covers the cards) */}
+            <div className="relative z-10 max-w-6xl mx-auto px-4 -mt-8">
+                <div className="lg:grid lg:grid-cols-[230px_1fr] lg:gap-6">
+                    <aside className="mb-4 lg:mb-0">
+                        <div className="rounded-2xl border border-slate-100 bg-white p-2.5 shadow-xl lg:sticky lg:top-24">
+                            <nav className="flex gap-1.5 overflow-x-auto lg:flex-col">
+                                {navSections.map(s => (
+                                    <button
+                                        key={s.key}
+                                        onClick={() => setActiveTab(s.key as any)}
+                                        className={`group flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all lg:w-full ${activeTab === s.key ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                                    >
+                                        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${activeTab === s.key ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400 group-hover:text-slate-600'}`}>{s.icon}</span>
+                                        <span className="truncate whitespace-nowrap">{s.label}</span>
+                                    </button>
+                                ))}
+                            </nav>
                         </div>
-                        <div className="flex w-full md:w-auto gap-2">
-                            <input readOnly value={inviteLink} className="flex-1 border border-slate-200 rounded px-3 py-2 text-xs bg-slate-50 text-slate-500 w-full md:w-64" />
-                            <button onClick={copyInvite} className="bg-slate-200 text-slate-700 px-4 py-2 rounded font-bold text-xs hover:bg-slate-300 transition-colors whitespace-nowrap">
-                                {t('copy_invite')}
-                            </button>
-                            <button onClick={() => setShowInviteModal(true)} disabled={invitesRemaining <= 0} className="bg-emerald-600 text-white px-4 py-2 rounded font-bold text-xs hover:bg-emerald-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
-                                {t('send_invite')}
-                            </button>
-                        </div>
-                    </div>
-                )}
+                    </aside>
 
-                <div className="bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden min-h-[500px] mb-20">
-                    <div className="flex border-b border-slate-100 overflow-x-auto">
-                        <button 
-                            onClick={() => setActiveTab('trees')} 
-                            className={`flex-1 min-w-[100px] py-4 text-sm font-medium transition-colors ${activeTab === 'trees' ? 'text-emerald-600 border-b-2 border-emerald-500 bg-emerald-50/50' : 'text-slate-500 hover:text-slate-800'}`}
-                        >
-                            {t('my_trees')}
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('pulses')} 
-                            className={`flex-1 min-w-[100px] py-4 text-sm font-medium transition-colors ${activeTab === 'pulses' ? 'text-sky-600 border-b-2 border-sky-500 bg-sky-50/50' : 'text-slate-500 hover:text-slate-800'}`}
-                        >
-                            {t('my_pulses')}
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('reaches')}
-                            className={`flex-1 min-w-[100px] py-4 text-sm font-medium transition-colors ${activeTab === 'reaches' ? 'text-rose-600 border-b-2 border-rose-500 bg-rose-50/50' : 'text-slate-500 hover:text-slate-800'}`}
-                        >
-                            {t('inspiration')}
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('visions')}
-                            className={`flex-1 min-w-[100px] py-4 text-sm font-medium transition-colors ${activeTab === 'visions' ? 'text-amber-600 border-b-2 border-amber-500 bg-amber-50/50' : 'text-slate-500 hover:text-slate-800'}`}
-                        >
-                            {t('visions')}
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('theme')}
-                            className={`flex-1 min-w-[100px] py-4 text-sm font-medium transition-colors ${activeTab === 'theme' ? 'text-teal-600 border-b-2 border-teal-500 bg-teal-50/50' : 'text-slate-500 hover:text-slate-800'}`}
-                        >
-                            Theme
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('history')} 
-                            className={`flex-1 min-w-[100px] py-4 text-sm font-medium transition-colors ${activeTab === 'history' ? 'text-slate-600 border-b-2 border-slate-500 bg-slate-50/50' : 'text-slate-500 hover:text-slate-800'}`}
-                        >
-                            {t('my_alignments')}
-                        </button>
-                    </div>
-
-                    <div className="p-6">
+                    <main className="rounded-2xl border border-slate-100 bg-white p-5 sm:p-6 shadow-xl min-h-[520px]">
                         {activeTab === 'reaches' && (
                             loading ? <div className="flex justify-center py-10"><Loading /></div> : (
                                 <ReachInbox
@@ -563,7 +412,104 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                                 />
                             )
                         )}
+
+                        {activeTab === 'invites' && (
+                            <div>
+                                <SectionTitle title={t('invitations')} sub="Invite kindred spirits to plant their roots in the network." />
+                                {myTrees.length === 0 ? (
+                                    <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400">
+                                        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100"><Icons.Tree /></div>
+                                        <p className="text-sm">Plant your first tree to unlock invitations.</p>
+                                    </div>
+                                ) : (
+                                    <div className="rounded-2xl border border-slate-100 p-5 space-y-4">
+                                        <p className="text-sm text-slate-500">{t('invites_remaining')}: <span className="font-bold text-emerald-600">{invitesRemaining}</span></p>
+                                        <div className="flex flex-col sm:flex-row gap-2">
+                                            <input readOnly value={inviteLink} className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-xs bg-slate-50 text-slate-500" />
+                                            <button onClick={copyInvite} className="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-bold text-xs hover:bg-slate-300 transition-colors whitespace-nowrap">{t('copy_invite')}</button>
+                                            <button onClick={() => setShowInviteModal(true)} disabled={invitesRemaining <= 0} className="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-emerald-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">{t('send_invite')}</button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {activeTab === 'settings' && (
+                            <div>
+                                <SectionTitle title="Settings" sub="Email, notifications, and your account." />
+                                <div className="rounded-2xl border border-slate-100 divide-y divide-slate-100">
+                                    <div className="p-4 flex items-center justify-between gap-4">
+                                        <div className="min-w-0">
+                                            <p className="font-semibold text-slate-800 text-sm">Newsletter</p>
+                                            <p className="text-xs text-slate-500">A gentle update from the network every few weeks.</p>
+                                        </div>
+                                        <Toggle on={newsletterSubscribed} onClick={handleNewsletterToggle} disabled={togglingNewsletter || !lightseed.email} />
+                                    </div>
+                                    <div className="p-4 flex items-center justify-between gap-4">
+                                        <div className="min-w-0">
+                                            <p className="font-semibold text-slate-800 text-sm">Reach threads to email</p>
+                                            <p className="text-xs text-slate-500">Get an email when someone reaches one of your trees.</p>
+                                        </div>
+                                        <Toggle on={sendThreadsToEmail} onClick={handleThreadsEmailToggle} disabled={togglingThreadsEmail || !lightseed.email} />
+                                    </div>
+                                    <div className="p-4 flex items-center justify-between gap-4">
+                                        <div className="min-w-0">
+                                            <p className="font-semibold text-slate-800 text-sm">Email delivery test</p>
+                                            <p className="text-xs text-slate-500">Send yourself a test message to verify delivery.</p>
+                                        </div>
+                                        <button onClick={handleTestEmail} className="rounded-full bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-4 py-2 whitespace-nowrap transition-colors">{mailStatus || 'Send test'}</button>
+                                    </div>
+                                </div>
+                                <div className="mt-6 rounded-2xl border border-red-100 bg-red-50/40 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div>
+                                        <p className="font-semibold text-red-700 text-sm">{t('delete_account')}</p>
+                                        <p className="text-xs text-red-500/80">Permanently remove your trees, pulses, visions and profile.</p>
+                                    </div>
+                                    <button onClick={() => setShowDeleteConfirm(true)} className="rounded-full border border-red-200 bg-white text-red-600 hover:bg-red-600 hover:text-white text-xs font-bold px-4 py-2 transition-colors whitespace-nowrap self-start sm:self-auto">{t('delete_account')}</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'admin' && (
+                            <div>
+                                <SectionTitle title="Admin" sub="Network stewardship and roles." />
+                                {!superAdminExists && (
+                                    <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 flex items-center justify-between gap-4">
+                                        <div>
+                                            <h4 className="font-bold text-amber-800 text-sm">Genesis SuperAdmin unclaimed</h4>
+                                            <p className="text-xs text-amber-700/80">Be the first to claim the SuperAdmin role.</p>
+                                        </div>
+                                        <button onClick={onClaimSuperAdmin} className="bg-amber-500 hover:bg-amber-400 text-white text-xs font-bold px-4 py-2 rounded-full shadow whitespace-nowrap">Claim</button>
+                                    </div>
+                                )}
+                                {isSuperAdmin && (
+                                    <div className="rounded-2xl border border-slate-100 p-5 space-y-4">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <h4 className="font-bold text-slate-800 flex items-center gap-2 text-sm uppercase tracking-wider"><Icons.Shield /> Admin Management</h4>
+                                            <button onClick={onOpenNewsletterAdmin} className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors flex items-center gap-2"><Icons.Send /><span>Send Newsletter</span></button>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <input value={newAdminUid} onChange={e => setNewAdminUid(e.target.value)} placeholder="User UID" className="flex-1 bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-3 py-2 font-mono focus:outline-none focus:border-indigo-400" />
+                                            <button disabled={!newAdminUid || adminActionLoading} onClick={async () => { setAdminActionLoading(true); await onGrantAdmin(newAdminUid.trim()); setNewAdminUid(''); const updated = await getAdmins(); setAdmins(updated); setAdminActionLoading(false); }} className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors">Grant</button>
+                                        </div>
+                                        <div className="flex flex-col gap-1.5">
+                                            {admins.length === 0 && <p className="text-xs text-slate-400">No admins yet.</p>}
+                                            {admins.map(a => (
+                                                <div key={a.uid} className="flex items-center justify-between bg-slate-50 px-3 py-2 rounded-lg">
+                                                    <span className="text-xs font-mono text-slate-600">{a.uid}</span>
+                                                    <button onClick={async () => { setAdminActionLoading(true); await onRevokeAdmin(a.uid); setAdmins(prev => prev.filter(x => x.uid !== a.uid)); setAdminActionLoading(false); }} className="text-red-500 hover:text-red-600 text-xs font-bold ml-3 transition-colors">Revoke</button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                {isAdmin && !isSuperAdmin && <p className="text-sm text-slate-500">You hold admin privileges in this network.</p>}
+                            </div>
+                        )}
+
                         {activeTab === 'trees' && (
+                            <div>
+                            <SectionTitle title={t('my_trees')} sub="Your living identities rooted in the network." />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {allValidated && (
                                      <div onClick={onPlant} className="border-2 border-dashed border-slate-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 hover:bg-slate-50 min-h-[100px] text-slate-400 hover:text-emerald-600 transition-all group">
@@ -602,9 +548,12 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                                     ))
                                 )}
                             </div>
+                            </div>
                         )}
                         {activeTab === 'pulses' && (
-                            loading ? <div className="flex justify-center py-10"><Loading /></div> : (
+                            <div>
+                            <SectionTitle title={t('my_pulses')} sub="Signals you've emitted into the network." />
+                            {loading ? <div className="flex justify-center py-10"><Loading /></div> : (
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                     {pulses.length === 0 ? <p className="col-span-full text-slate-400 text-center py-10">No pulses emitted yet.</p> : pulses.map((pulse) => (
                                         <div key={pulse.id} className="border border-slate-100 rounded-lg overflow-hidden group">
@@ -624,7 +573,8 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                                         </div>
                                     ))}
                                 </div>
-                            )
+                            )}
+                            </div>
                         )}
                          {activeTab === 'visions' && (
                              loading ? <div className="flex justify-center py-10"><Loading /></div> : (
@@ -712,7 +662,7 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                                 </div>
                              )
                         )}
-                        {activeTab === 'theme' && (
+                        {activeTab === 'appearance' && (
                             <div className="grid gap-8 lg:grid-cols-[1fr_280px]">
                                 <div className="space-y-6">
                                     <div>
@@ -802,7 +752,9 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                             </div>
                         )}
                         {activeTab === 'history' && (
-                             loading ? <div className="flex justify-center py-10"><Loading /></div> : (
+                            <div>
+                            <SectionTitle title={t('alignments')} sub="Resonances you've synced across the network." />
+                            {loading ? <div className="flex justify-center py-10"><Loading /></div> : (
                                 <div className="space-y-4">
                                     {history.length === 0 ? <p className="text-slate-400 text-center py-10">No history yet.</p> : history.map((h) => (
                                         <div key={h.id} className="border border-slate-200 p-4 rounded-lg bg-slate-50 flex justify-between items-center">
@@ -814,9 +766,10 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                                         </div>
                                     ))}
                                 </div>
-                             )
+                             )}
+                            </div>
                         )}
-                    </div>
+                    </main>
                 </div>
             </div>
 

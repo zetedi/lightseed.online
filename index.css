@@ -6,6 +6,15 @@
   --color-secondary-theme: var(--color-secondary);
   --color-accent-theme: var(--color-accent);
   --color-background-theme: var(--color-background);
+  --color-surface-theme: var(--color-surface);
+  --color-ink-theme: var(--color-text);
+}
+
+/* Visible keyboard focus everywhere (accessibility) */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 0.375rem;
 }
 
 :root {

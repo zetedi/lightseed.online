@@ -159,48 +159,49 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
 
   return (
     <div className="min-h-screen bg-slate-50 animate-in fade-in duration-300">
-      {/* Header */}
-      <div className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 px-4 py-4 backdrop-blur-md flex items-center justify-between">
-        <button onClick={onClose} className="flex items-center space-x-2 text-slate-600 hover:text-slate-900 font-medium">
-          <Icons.ArrowLeft />
-          <span>Back</span>
-        </button>
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      {/* Hero — mirrors the personal profile: logo as avatar, vision beside it, tree count */}
+      <div className="relative bg-gradient-to-b from-slate-800 to-slate-900 text-white pt-6 pb-16 px-4">
+        <div className="max-w-5xl mx-auto flex items-center justify-between mb-6">
+          <button onClick={onClose} className="flex items-center gap-2 text-white/70 hover:text-white text-sm font-medium">
+            <Icons.ArrowLeft />
+            <span>Back</span>
+          </button>
+          <div className="flex gap-2">
+            {canEdit && !isEditing && (
+              <button onClick={() => setIsEditing(true)} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-full font-bold text-xs transition-colors flex items-center gap-1 border border-white/15">
+                <Icons.Pencil /><span>Edit</span>
+              </button>
+            )}
+            {canDelete && !isEditing && (
+              <button onClick={handleDelete} disabled={isDeleting} className="bg-red-500/15 hover:bg-red-500 text-red-300 hover:text-white px-4 py-2 rounded-full font-bold text-xs transition-colors flex items-center gap-1 border border-red-400/30">
+                <Icons.Trash /><span>Delete</span>
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center md:items-end gap-6 md:gap-8">
+          <div className="flex h-24 w-24 md:h-28 md:w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-xl">
             {logoUrl ? (
               <img src={logoUrl} className="h-full w-full object-cover" alt={`${community.name} logo`} />
             ) : (
-              <span className="text-slate-400"><Icons.Globe /></span>
+              <span className="text-slate-300"><Icons.Globe /></span>
             )}
           </div>
-          <h2 className="truncate text-xl font-light tracking-wide text-slate-950">
-            {isEditing ? "Editing Community" : community.name}
-          </h2>
-        </div>
-        <div className="min-w-[80px] flex justify-end gap-2">
-          {canEdit && !isEditing && (
-            <button 
-              onClick={() => setIsEditing(true)} 
-              className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full font-bold text-sm shadow-sm transition-colors flex items-center gap-1 border border-emerald-200"
-            >
-              <Icons.Pencil />
-              <span>Edit</span>
-            </button>
-          )}
-          {canDelete && !isEditing && (
-              <button 
-                onClick={handleDelete} 
-                disabled={isDeleting}
-                className="bg-red-50 hover:bg-red-100 text-red-700 px-4 py-2 rounded-full font-bold text-sm shadow-sm transition-colors flex items-center gap-1 border border-red-200"
-              >
-                <Icons.Trash />
-                <span>Delete</span>
-              </button>
-          )}
+          <div className="text-center md:text-left flex-1 min-w-0">
+            <div className="flex flex-col md:flex-row md:items-baseline md:flex-wrap gap-x-4 gap-y-1 justify-center md:justify-start">
+              <h1 className="text-3xl font-light tracking-wide">{isEditing ? "Editing Community" : community.name}</h1>
+              <p className="text-emerald-300 text-sm font-mono">{community.domain}</p>
+              <p className="text-sm text-slate-300">
+                <span className="font-bold text-white">{linkedTrees.length}</span>
+                <span className="ml-1 text-[10px] uppercase tracking-wider text-slate-400">Trees</span>
+              </p>
+            </div>
+            <div className="mt-3 max-w-2xl text-sm text-slate-300/90 line-clamp-2" dangerouslySetInnerHTML={{ __html: community.vision || 'No vision shared yet.' }} />
+          </div>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto p-6 space-y-8">
+      <div className="relative z-10 max-w-5xl mx-auto p-6 space-y-8 -mt-8">
         {/* Image Carousel */}
         <div className="relative aspect-[21/9] w-full rounded-2xl overflow-hidden shadow-xl bg-slate-200 group">
           {imageUrls.length > 0 ? (

@@ -663,7 +663,20 @@ const AppContent = () => {
         }
         
         if (tab === 'about') {
-            return <AboutPage onClose={() => setTab('dashboard')} />;
+            // "About" is the host community's profile page (same component the community cards open).
+            return hostCommunity ? (
+                <CommunityProfile
+                    community={hostCommunity}
+                    onClose={() => setTab('dashboard')}
+                    onUpdate={(updates: Partial<Community>) => setHostCommunity(prev => prev ? { ...prev, ...updates } : null)}
+                    currentUser={lightseed}
+                    currentUserId={lightseed?.uid}
+                    isAdmin={isAdmin}
+                    isSuperAdmin={isSuperAdmin}
+                />
+            ) : (
+                <AboutPage onClose={() => setTab('dashboard')} />
+            );
         }
 
         if (tab === 'communities') {
