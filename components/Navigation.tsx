@@ -126,7 +126,7 @@ export const Navigation = ({
     };
 
     const lightEarthTabs = ['forest', 'visions', 'events', 'pulses'];
-    const intelligenceTabs = ['inspiration', 'observatory'];
+    const intelligenceTabs = ['observatory'];
     const otherTabs = ['communities', 'about'];
 
     const getTabLabel = (tab: string) => {
@@ -138,7 +138,6 @@ export const Navigation = ({
 
     const getTabCount = (tab: string) => {
         if (tab === 'observatory') return pendingAlignmentsCount;
-        if (tab === 'inspiration') return reachNotificationsCount;
         return 0;
     };
 
@@ -199,36 +198,38 @@ export const Navigation = ({
 
                     {/* Right Side UI Controls */}
                     <div className="flex items-center gap-2 md:gap-3 shrink-0">
-                         <div className="relative" ref={langRef}>
-                            <button
-                                onClick={() => setIsLangOpen(!isLangOpen)}
-                                className={`text-[10px] border rounded-full px-2.5 py-1 uppercase font-bold transition-colors flex items-center gap-1 ${navIsDark ? 'bg-black/20 hover:bg-black/30' : 'bg-white/70 hover:bg-white'}`}
-                                style={{ borderColor: navBorder, color: navText }}
-                            >
-                                <Icons.Globe size={14} />
-                                <span>{language}</span>
-                            </button>
-                            {isLangOpen && (
-                                <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-xl border py-2 z-50 text-slate-700">
-                                    {languages.map(l => (
-                                        <button key={l.code} onClick={() => { setLanguage(l.code as any); setIsLangOpen(false); }} className={`w-full text-left px-4 py-2 text-sm ${language === l.code ? 'bg-emerald-50 text-emerald-600 font-bold' : 'hover:bg-slate-50'}`}>
-                                            {l.name}
-                                        </button>
-                                    ))}
-                                </div>
+                         <div className="hidden lg:block w-px h-8 self-center" style={{ backgroundColor: navBorder }}></div>
+                         <div className="flex flex-col items-stretch gap-1">
+                            {onToggleNightMode && (
+                                <button
+                                    onClick={onToggleNightMode}
+                                    className={`h-8 flex items-center justify-center text-[10px] border rounded-full px-2.5 transition-colors ${navIsDark ? 'bg-black/20 text-amber-300 hover:bg-black/30' : 'bg-white/70 text-slate-600 hover:bg-white'}`}
+                                    style={{ borderColor: navBorder }}
+                                    title={isNightMode ? 'Switch to light mode' : 'Switch to night mode'}
+                                >
+                                    <span className="[&>svg]:h-4 [&>svg]:w-4">{isNightMode ? <Icons.Sun /> : <Icons.Moon />}</span>
+                                </button>
                             )}
+                            <div className="relative" ref={langRef}>
+                                <button
+                                    onClick={() => setIsLangOpen(!isLangOpen)}
+                                    className={`h-8 w-full text-[10px] border rounded-full px-2.5 uppercase font-bold transition-colors flex items-center justify-center gap-1 ${navIsDark ? 'bg-black/20 hover:bg-black/30' : 'bg-white/70 hover:bg-white'}`}
+                                    style={{ borderColor: navBorder, color: navText }}
+                                >
+                                    <Icons.Globe size={14} />
+                                    <span>{language}</span>
+                                </button>
+                                {isLangOpen && (
+                                    <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-xl border py-2 z-50 text-slate-700">
+                                        {languages.map(l => (
+                                            <button key={l.code} onClick={() => { setLanguage(l.code as any); setIsLangOpen(false); }} className={`w-full text-left px-4 py-2 text-sm ${language === l.code ? 'bg-emerald-50 text-emerald-600 font-bold' : 'hover:bg-slate-50'}`}>
+                                                {l.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                          </div>
-
-                         {onToggleNightMode && (
-                            <button
-                                onClick={onToggleNightMode}
-                                className={`rounded-full border p-2 transition-colors ${navIsDark ? 'bg-black/20 text-amber-300 hover:bg-black/30' : 'bg-white/70 text-slate-600 hover:bg-white'}`}
-                                style={{ borderColor: navBorder }}
-                                title={isNightMode ? 'Switch to light mode' : 'Switch to night mode'}
-                            >
-                                {isNightMode ? <Icons.Sun /> : <Icons.Moon />}
-                            </button>
-                         )}
 
                          {lightseed ? (
                             <div className="flex items-center gap-3">

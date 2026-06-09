@@ -37,10 +37,10 @@ export const ImagePicker = ({ onChange, onImageSelect, previewUrl, loading = fal
     const hoverBorder = isDark ? 'hover:border-white' : 'hover:border-emerald-500';
 
     return (
-        <div className="space-y-2">
-             <div 
-                onClick={() => fileInput.current?.click()} 
-                className={`border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition-colors h-40 relative overflow-hidden group ${previewUrl ? 'border-none p-0' : `${borderColor} ${bgColor} ${hoverBorder}`}`}
+        <div className={`space-y-2 ${className ? 'h-full w-full' : ''}`}>
+             <div
+                onClick={() => fileInput.current?.click()}
+                className={`border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition-colors ${className || 'h-40'} relative overflow-hidden group ${previewUrl ? 'border-none p-0' : `${borderColor} ${bgColor} ${hoverBorder}`}`}
              >
                 <input type="file" ref={fileInput} className="hidden" accept="image/*" onChange={handleFileChange} />
                 

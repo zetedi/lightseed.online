@@ -491,11 +491,12 @@ const isHubDomain = (domain?: string) => {
     return d === 'lightseed.online' || d === 'lifeseed.online' || d === 'localhost' || d === '127.0.0.1' || d.startsWith('192.168.') || d.endsWith('.local');
 };
 
-export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {
+export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, ownerUid?: string) => {
+    const communityScoped = !!(domainFilter && !isHubDomain(domainFilter));
     let q;
-    if (domainFilter && !isHubDomain(domainFilter)) {
-        // Community View: remove orderBy to avoid composite index requirement for now
-        q = query(lifetreesCollection, where('domain', '==', domainFilter.replace(/^www\./, '')), limit(24));
+    if (communityScoped) {
+        // Community View: narrow to the community's domain (remove orderBy to avoid composite index)
+        q = query(lifetreesCollection, where('domain', '==', domainFilter!.replace(/^www\./, '')), limit(24));
     } else {
         q = query(lifetreesCollection, orderBy('createdAt', 'desc'), limit(12));
     }
@@ -504,8 +505,17 @@ export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter
     const snap = await getDocs(q);
     let items = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Lifetree));
 
-    // Sort community items client-side if we removed server-side sorting
-    if (domainFilter && !isHubDomain(domainFilter)) {
+    if (communityScoped) {
+        // The creator always sees their own trees on a community/custom domain,
+        // even if those trees point at a different domain. Merge on the first page.
+        if (ownerUid && !lastD) {
+            const mine = await getDocs(query(lifetreesCollection, where('ownerId', '==', ownerUid)));
+            const seen = new Set(items.map(t => t.id));
+            mine.docs.forEach(d => {
+                if (!seen.has(d.id)) items.push({ id: d.id, ...(d.data() as any) } as Lifetree);
+            });
+        }
+        // Sort client-side since we removed server-side sorting
         items = items.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
     }
 
@@ -522,17 +532,53 @@ export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter
     return { items, lastDoc: snap.docs[snap.docs.length-1] || null };
 }
 
+// Whole forest at once (no pagination) — used by the map so every tree appears,
+// not just the first page. Includes the creator's own trees and Genesis on the hub.
+export const fetchAllLifetrees = async (domainFilter?: string, ownerUid?: string): Promise<Lifetree[]> => {
+    const communityScoped = !!(domainFilter && !isHubDomain(domainFilter));
+    const byId = new Map<string, Lifetree>();
+    const add = (d: any) => byId.set(d.id, { id: d.id, ...(d.data() as any) } as Lifetree);
+
+    if (communityScoped) {
+        (await getDocs(query(lifetreesCollection, where('domain', '==', domainFilter!.replace(/^www\./, ''))))).docs.forEach(add);
+    } else {
+        (await getDocs(query(lifetreesCollection, orderBy('createdAt', 'desc'), limit(1000)))).docs.forEach(add);
+    }
+
+    // The creator always sees their own trees, even pointed at another domain.
+    if (ownerUid) {
+        (await getDocs(query(lifetreesCollection, where('ownerId', '==', ownerUid)))).docs.forEach(add);
+    }
+
+    if (!communityScoped) {
+        const genesisSnap = await getDoc(doc(db, 'lifetrees', 'GENESIS_TREE'));
+        if (genesisSnap.exists()) byId.set(genesisSnap.id, { id: genesisSnap.id, ...(genesisSnap.data() as any) } as Lifetree);
+    }
+
+    return Array.from(byId.values());
+};
+
 export const getMyLifetrees = async (uid: string) => (await getDocs(query(lifetreesCollection, where('ownerId', '==', uid)))).docs.map(d => ({ id: d.id, ...(d.data() as any) } as Lifetree));
 
 const normalizeDomain = (domain: string) =>
     domain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
 
-export const getTreesByDomain = async (domain: string): Promise<Lifetree[]> => {
+export const getTreesByDomain = async (domain: string, ownerUid?: string): Promise<Lifetree[]> => {
     const normalized = normalizeDomain(domain);
     // No orderBy — avoids requiring a composite Firestore index
     const q = query(lifetreesCollection, where('domain', '==', normalized));
     const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Lifetree));
+    const byId = new Map<string, Lifetree>();
+    snap.docs.forEach(d => byId.set(d.id, { id: d.id, ...(d.data() as any) } as Lifetree));
+
+    // The creator always sees their own trees here, even if they pointed a tree
+    // at a different domain than this community.
+    if (ownerUid) {
+        const mine = await getDocs(query(lifetreesCollection, where('ownerId', '==', ownerUid)));
+        mine.docs.forEach(d => byId.set(d.id, { id: d.id, ...(d.data() as any) } as Lifetree));
+    }
+
+    return Array.from(byId.values());
 };
 export const checkIsAdmin = async (uid: string): Promise<boolean> => (await getDoc(doc(db, 'admins', uid))).exists();
 
@@ -721,6 +767,17 @@ export const listenToMyReaches = (uid: string, callback: (pulses: Pulse[]) => vo
     onSnapshot(query(pulsesCollection, where('recipientUid', '==', uid)), (snap) => {
         callback(snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Pulse)));
     });
+
+// Live stream of reaches addressed to any of my trees. Belt-and-braces alongside
+// listenToMyReaches: catches incoming reaches even when a legacy/edge send did not
+// capture recipientUid, so the recipient still gets notified. Firestore 'in' caps at 10.
+export const listenToReachesForTrees = (treeIds: string[], callback: (pulses: Pulse[]) => void) => {
+    const ids = treeIds.filter(Boolean).slice(0, 10);
+    if (ids.length === 0) { callback([]); return () => {}; }
+    return onSnapshot(query(pulsesCollection, where('reachTreeId', 'in', ids)), (snap) => {
+        callback(snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Pulse)).filter(isReachPulse));
+    });
+};
 
 export const markReachesSeen = async (pulseIds: string[], uid: string) => {
     await Promise.all(pulseIds.map(id =>

@@ -5,8 +5,10 @@ import { Icons } from '../ui/Icons';
 import { Modal } from '../ui/Modal';
 import { ImagePicker } from '../ui/ImagePicker';
 import { AutocompleteInput } from '../ui/AutocompleteInput';
+import { LocationPicker } from '../ui/LocationPicker';
 import { Lightseed } from '../../types';
-import { generateLifetreeBio } from '../../services/gemini';
+import { generateLifetreeBio, generateImage } from '../../services/gemini';
+import { checkAndIncrementAiUsage, uploadBase64Image } from '../../services/firebase';
 
 interface PlantTreeModalProps {
   lightseed: Lightseed | null;
@@ -40,6 +42,42 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
   const [isLocating, setIsLocating] = useState(false);
   const [treeFile, setTreeFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isImagining, setIsImagining] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 640px)').matches);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 640px)');
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  // Desktop advances like a wizard (slides in from the side); mobile reads top-to-bottom (slides up).
+  const stepAnim = isDesktop ? 'animate-in fade-in slide-in-from-right-6' : 'animate-in fade-in slide-in-from-bottom-6';
+
+  const handleImagine = async () => {
+    if (isImagining || uploading) return;
+    const seed = [treeName, treeShortTitle, treeBio, treeSeed].map(s => s.trim()).filter(Boolean).join('. ');
+    if (!seed) {
+      alert('Add a name or vision first so we can imagine a face for your tree.');
+      return;
+    }
+    setIsImagining(true);
+    try {
+      await checkAndIncrementAiUsage('image');
+      const prompt = `Create a luminous, symbolic portrait representing a Lifetree named "${treeName || 'a soul'}": ${seed}. Painterly, natural, sacred, glowing. Do not include any text, words, or letters.`;
+      const dataUrl = await generateImage(prompt);
+      if (dataUrl && dataUrl.startsWith('data:')) {
+        const url = await uploadBase64Image(dataUrl, `users/${lightseed?.uid}/trees/ai/${Date.now()}`);
+        setTreeImageUrl(url);
+      } else {
+        alert('The vision did not take form. Please try again.');
+      }
+    } catch (e: any) {
+      alert(e.message || 'Could not imagine an image right now.');
+    }
+    setIsImagining(false);
+  };
 
   useEffect(() => {
     if (treeType === 'GUARDED') {
@@ -106,14 +144,17 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
   };
 
   return (
-    <Modal 
-      title={treeType === 'GUARDED' ? t('guard_tree') : t('plant_lifetree')} 
+    <Modal
+      title={treeType === 'GUARDED' ? t('guard_tree') : t('plant_lifetree')}
       onClose={onClose}
       backgroundImage={treeType !== 'GUARDED' ? lifetreeImage : undefined}
+      fullScreenOnMobile
+      innerGlow
+      wide
     >
       <div className="flex flex-col h-full min-h-[450px]">
         {plantStep === 1 && (
-          <div className="flex-1 flex flex-col gap-6 animate-in fade-in slide-in-from-right-4">
+          <div className={`flex-1 flex flex-col gap-6 ${stepAnim}`}>
             <div className="text-center text-white">
               <h2 className="text-xl font-bold mb-2">Choose Tree Type</h2>
               <p className="text-sm opacity-70">What kind of life are you planting today?</p>
@@ -148,41 +189,32 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
         )}
 
         {plantStep === 2 && (
-          <div className="flex-1 flex flex-col gap-6 animate-in fade-in slide-in-from-right-4">
+          <div className={`flex-1 flex flex-col gap-6 ${stepAnim}`}>
             <div className={`text-center ${treeType !== 'GUARDED' ? 'text-white' : 'text-slate-800'}`}>
               <h2 className="text-xl font-bold mb-2">Identify Your Tree</h2>
-              <p className="text-sm opacity-70">Give your tree a name and a short title.</p>
+              <p className="text-sm opacity-70">Give your tree a name. You can add a short title later in its profile.</p>
             </div>
             <div className="flex flex-col gap-4">
-              <input 
-                dir="auto" 
+              <input
+                dir="auto"
                 className={`block w-full border p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-inner ${
                   treeType !== 'GUARDED' ? 'bg-white/10 border-white/20 text-white placeholder:text-white/50' : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400'
-                }`} 
-                placeholder={`Tree Name (Default: ${lightseed?.displayName || 'Anonymous'})`} 
-                value={treeName} 
-                onChange={e=>setTreeName(e.target.value)} 
+                }`}
+                placeholder={`Tree Name (Default: ${lightseed?.displayName || 'Anonymous'})`}
+                value={treeName}
+                onChange={e=>setTreeName(e.target.value)}
                 autoFocus
-              />
-              <input 
-                dir="auto" 
-                className={`block w-full border p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-inner ${
-                  treeType !== 'GUARDED' ? 'bg-white/10 border-white/20 text-white placeholder:text-white/50' : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400'
-                }`} 
-                placeholder={t('short_title')} 
-                value={treeShortTitle} 
-                onChange={e=>setTreeShortTitle(e.target.value)} 
               />
             </div>
             <div className="flex gap-2 mt-auto pb-4">
               <button onClick={() => setPlantStep(1)} className={`flex-1 py-3 rounded-xl font-bold uppercase tracking-widest transition-all ${treeType !== 'GUARDED' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Back</button>
-              <button onClick={() => setPlantStep(3)} className="flex-[2] py-3 rounded-xl font-bold uppercase tracking-widest bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg transition-all">Next</button>
+              <button onClick={() => setPlantStep(3)} className="flex-[2] py-3 rounded-xl font-bold uppercase tracking-widest bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg transition-all flex items-center justify-center gap-2"><span>Next</span><span className="sm:hidden animate-bounce"><Icons.ChevronRight className="rotate-90" /></span><span className="hidden sm:inline"><Icons.ChevronRight /></span></button>
             </div>
           </div>
         )}
 
         {plantStep === 3 && (
-          <div className="flex-1 flex flex-col gap-6 animate-in fade-in slide-in-from-right-4">
+          <div className={`flex-1 flex flex-col gap-6 ${stepAnim}`}>
             <div className={`text-center ${treeType !== 'GUARDED' ? 'text-white' : 'text-slate-800'}`}>
               <h2 className="text-xl font-bold mb-2">Plant the Vision</h2>
               <p className="text-sm opacity-70">Describe the intention behind this tree.</p>
@@ -213,37 +245,47 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
             </div>
             <div className="flex gap-2 mt-auto pb-4">
               <button onClick={() => setPlantStep(2)} className={`flex-1 py-3 rounded-xl font-bold uppercase tracking-widest transition-all ${treeType !== 'GUARDED' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Back</button>
-              <button onClick={() => setPlantStep(4)} className="flex-[2] py-3 rounded-xl font-bold uppercase tracking-widest bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg transition-all">Next</button>
+              <button onClick={() => setPlantStep(4)} className="flex-[2] py-3 rounded-xl font-bold uppercase tracking-widest bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg transition-all flex items-center justify-center gap-2"><span>Next</span><span className="sm:hidden animate-bounce"><Icons.ChevronRight className="rotate-90" /></span><span className="hidden sm:inline"><Icons.ChevronRight /></span></button>
             </div>
           </div>
         )}
 
         {plantStep === 4 && (
-          <div className="flex-1 flex flex-col gap-6 animate-in fade-in slide-in-from-right-4">
+          <div className={`flex-1 flex flex-col gap-6 ${stepAnim}`}>
             <div className={`text-center ${treeType !== 'GUARDED' ? 'text-white' : 'text-slate-800'}`}>
-              <h2 className="text-xl font-bold mb-2">Give it a Face</h2>
-              <p className="text-sm opacity-70">Upload an image of your tree or its intention.</p>
+              <h2 className="text-xl font-bold mb-2">Imagine</h2>
+              <p className="text-sm opacity-70">Upload a portrait of your tree — or let AI imagine one from your vision.</p>
             </div>
-            <div className="flex-1 flex items-center justify-center">
-              <ImagePicker 
+            <div className="flex-1 flex flex-col gap-3 min-h-[220px]">
+              <ImagePicker
                 onImageSelect={(file) => {
                   setTreeFile(file);
                   handleImageUpload(file, `users/${lightseed?.uid}/trees/${Date.now()}`).then(setTreeImageUrl);
-                }} 
-                previewUrl={treeImageUrl} 
-                loading={uploading} 
+                }}
+                previewUrl={treeImageUrl}
+                loading={uploading}
                 isDark={treeType !== 'GUARDED'}
+                className="h-full min-h-[180px]"
               />
+              <button
+                type="button"
+                onClick={handleImagine}
+                disabled={isImagining || uploading}
+                className={`flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-50 ${treeType !== 'GUARDED' ? 'bg-white/10 text-white hover:bg-white/20 border border-white/20' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'}`}
+              >
+                {isImagining ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div> : <Icons.Sparkles />}
+                <span>{isImagining ? 'Imagining…' : 'Imagine with AI'}</span>
+              </button>
             </div>
             <div className="flex gap-2 mt-auto pb-4">
               <button onClick={() => setPlantStep(3)} className={`flex-1 py-3 rounded-xl font-bold uppercase tracking-widest transition-all ${treeType !== 'GUARDED' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Back</button>
-              <button onClick={() => setPlantStep(5)} className="flex-[2] py-3 rounded-xl font-bold uppercase tracking-widest bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg transition-all">Next</button>
+              <button onClick={() => setPlantStep(5)} className="flex-[2] py-3 rounded-xl font-bold uppercase tracking-widest bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg transition-all flex items-center justify-center gap-2"><span>Next</span><span className="sm:hidden animate-bounce"><Icons.ChevronRight className="rotate-90" /></span><span className="hidden sm:inline"><Icons.ChevronRight /></span></button>
             </div>
           </div>
         )}
 
         {plantStep === 5 && (
-          <form onSubmit={handleSubmit} className="flex-1 flex flex-col gap-6 animate-in fade-in slide-in-from-right-4">
+          <form onSubmit={handleSubmit} className={`flex-1 flex flex-col gap-6 ${stepAnim}`}>
             <div className={`text-center ${treeType !== 'GUARDED' ? 'text-white' : 'text-slate-800'}`}>
               <h2 className="text-xl font-bold mb-2">Ground Your Tree</h2>
               <p className="text-sm opacity-70">Final details to connect your tree to the world.</p>
@@ -276,11 +318,19 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
                 </button>
               </div>
 
+              <div className="space-y-1.5">
+                <p className={`ml-1 text-[11px] ${treeType !== 'GUARDED' ? 'text-white/70' : 'text-slate-500'}`}>
+                  Tap the map to place your tree, or use Locate above.
+                </p>
+                <LocationPicker value={plantLocation} onChange={setPlantLocation} />
+              </div>
+
               <AutocompleteInput
                 className={`block w-full border p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-inner ${
                   treeType !== 'GUARDED' ? 'bg-white/10 border-white/20 text-white placeholder:text-white/50' : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400'
                 }`}
                 placeholder="Website domain (e.g. myproject.com)"
+                hint="Link this tree to a community or website domain. Leave blank to use this site."
                 value={treeDomain}
                 onChange={setTreeDomain}
               />

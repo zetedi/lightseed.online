@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { type Pulse, type Lifetree, type Alignment, type Vision, type VisionSynergy } from '../types';
-import { getMyPulses, getMyVisions, getJoinedVisions, getMyAlignmentsHistory, deleteUserAccount, logout, triggerSystemEmail, sendInvite, listenToUserProfile, deleteVision, getAdmins, setNewsletterSubscription, updateUserSiteTheme, updateUserProfile, uploadImage } from '../services/firebase';
+import { getMyPulses, getMyVisions, getJoinedVisions, getMyAlignmentsHistory, deleteUserAccount, logout, triggerSystemEmail, sendInvite, listenToUserProfile, deleteVision, getAdmins, setNewsletterSubscription, updateUserSiteTheme, updateUserProfile, uploadImage, fetchMyReaches } from '../services/firebase';
+import { ReachInbox } from './inspiration/ReachInbox';
 import { findVisionSynergies } from '../services/gemini';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
@@ -13,9 +14,10 @@ import { isExplicitlyValidatedTree } from '../utils/validation';
 import { ImagePicker } from './ui/ImagePicker';
 import { communityThemePresets, normalizeTheme } from '../utils/theme';
 
-export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, superAdminExists, onViewTree, onDeleteTree, onViewVision, onPlant, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin }: any) => {
+export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, superAdminExists, onViewTree, onDeleteTree, onViewVision, onPlant, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachOpenSignal, onConsumeReach }: any) => {
     const { t } = useLanguage();
-    const [activeTab, setActiveTab] = useState<'trees' | 'pulses' | 'visions' | 'history' | 'theme'>('trees');
+    const [activeTab, setActiveTab] = useState<'trees' | 'pulses' | 'visions' | 'history' | 'theme' | 'reaches'>('trees');
+    const [reaches, setReaches] = useState<Pulse[]>([]);
     const [pulses, setPulses] = useState<Pulse[]>([]);
     const [visions, setVisions] = useState<Vision[]>([]);
     const [joinedVisions, setJoinedVisions] = useState<Vision[]>([]);
@@ -78,7 +80,11 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
             try {
                 if (activeTab === 'pulses') {
                     const data = await getMyPulses(lightseed.uid);
-                    setPulses(data);
+                    // My Pulses excludes mycelial reach/chat messages — those live under Reaches.
+                    setPulses(data.filter((p: any) => p.type !== 'reach' && p.type !== 'tree_chat'));
+                } else if (activeTab === 'reaches') {
+                    const res = await fetchMyReaches(lightseed.uid);
+                    setReaches(res.items);
                 } else if (activeTab === 'visions') {
                     const [created, joined] = await Promise.all([
                         getMyVisions(lightseed.uid),
@@ -98,6 +104,14 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
         fetchData();
         return () => unsub();
     }, [activeTab, lightseed]);
+
+    // Opening the inbox (red envelope) or a specific reach jumps to the Reaches tab.
+    useEffect(() => {
+        if (reachOpenSignal) setActiveTab('reaches');
+    }, [reachOpenSignal]);
+    useEffect(() => {
+        if (reachPartner) setActiveTab('reaches');
+    }, [reachPartner]);
 
     const handleAlignmentAnalysis = async () => {
         if (visions.length < 2) {
@@ -510,8 +524,14 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                         >
                             {t('my_pulses')}
                         </button>
-                        <button 
-                            onClick={() => setActiveTab('visions')} 
+                        <button
+                            onClick={() => setActiveTab('reaches')}
+                            className={`flex-1 min-w-[100px] py-4 text-sm font-medium transition-colors ${activeTab === 'reaches' ? 'text-rose-600 border-b-2 border-rose-500 bg-rose-50/50' : 'text-slate-500 hover:text-slate-800'}`}
+                        >
+                            {t('inspiration')}
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('visions')}
                             className={`flex-1 min-w-[100px] py-4 text-sm font-medium transition-colors ${activeTab === 'visions' ? 'text-amber-600 border-b-2 border-amber-500 bg-amber-50/50' : 'text-slate-500 hover:text-slate-800'}`}
                         >
                             {t('visions')}
@@ -531,6 +551,18 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                     </div>
 
                     <div className="p-6">
+                        {activeTab === 'reaches' && (
+                            loading ? <div className="flex justify-center py-10"><Loading /></div> : (
+                                <ReachInbox
+                                    pulses={reaches}
+                                    myTrees={myTrees}
+                                    lightseed={lightseed}
+                                    title={t('inspiration')}
+                                    requestedPartner={reachPartner || null}
+                                    onConsumeRequested={onConsumeReach}
+                                />
+                            )
+                        )}
                         {activeTab === 'trees' && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {allValidated && (

@@ -42,23 +42,23 @@ export const ForestMap = ({ trees, onView, onReach, loading = false }: { trees: 
     const [markerCount, setMarkerCount] = useState(0);
     const visibleTrees = useMemo(() => trees.filter(tree => getTreeCoordinates(tree)), [trees]);
     const visibleTreeCount = visibleTrees.length;
-    const treesSignature = visibleTrees.map(tree => {
+    // Memoized + slimmed: only fields that change a marker's appearance. Excludes
+    // name/body (heavy text, irrelevant to markers) so this isn't rebuilt megabyte-sized
+    // on every render — a major cost once the map holds hundreds of trees.
+    const treesSignature = useMemo(() => visibleTrees.map(tree => {
         const coords = getTreeCoordinates(tree);
         return [
             tree.id,
             coords?.lat,
             coords?.lng,
-            tree.name,
-            tree.body,
             tree.status,
             tree.isNature ? 'nature' : 'tree',
             tree.imageUrl || '',
             tree.latestGrowthUrl || '',
             tree.guardians?.length || 0,
-            tree.validated ? 'validated' : '',
-            tree.validatorId || ''
+            tree.validated ? 'validated' : ''
         ].join(':');
-    }).join('|');
+    }).join('|'), [visibleTrees]);
     const expansionSignature = expansionStack.map(level => `${level.clusterId}:${level.lat}:${level.lng}:${level.trees.map(tree => tree.id).join(',')}`).join('|');
 
     useEffect(() => {
@@ -237,6 +237,36 @@ export const ForestMap = ({ trees, onView, onReach, loading = false }: { trees: 
         </div>`;
     }
 
+    const clusterImage = (tree: Lifetree) => tree.latestGrowthUrl || tree.imageUrl || 'https://via.placeholder.com/150';
+
+    // A cluster of nearby trees as a pie of their images (up to 4 slices, rest in the count badge).
+    const getClusterPieHtml = (trees: Lifetree[], clusterId: string) => {
+        const shown = trees.slice(0, 4);
+        const k = shown.length;
+        const size = 64;
+        const cx = size / 2, cy = size / 2, r = size / 2 - 2;
+        const safe = clusterId.replace(/[^a-zA-Z0-9]/g, '');
+
+        if (k <= 1) {
+            return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><defs><clipPath id="cc${safe}"><circle cx="${cx}" cy="${cy}" r="${r}"/></clipPath></defs><circle cx="${cx}" cy="${cy}" r="${r}" fill="#e2e8f0"/><image href="${clusterImage(shown[0])}" x="0" y="0" width="${size}" height="${size}" preserveAspectRatio="xMidYMid slice" clip-path="url(#cc${safe})"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="white" stroke-width="2"/></svg>`;
+        }
+
+        let defs = '';
+        let body = '';
+        for (let i = 0; i < k; i++) {
+            const a0 = (i / k) * 2 * Math.PI - Math.PI / 2;
+            const a1 = ((i + 1) / k) * 2 * Math.PI - Math.PI / 2;
+            const x0 = (cx + r * Math.cos(a0)).toFixed(2), y0 = (cy + r * Math.sin(a0)).toFixed(2);
+            const x1 = (cx + r * Math.cos(a1)).toFixed(2), y1 = (cy + r * Math.sin(a1)).toFixed(2);
+            const large = (a1 - a0) > Math.PI ? 1 : 0;
+            const path = `M ${cx} ${cy} L ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1} Z`;
+            const id = `s${safe}_${i}`;
+            defs += `<clipPath id="${id}"><path d="${path}"/></clipPath>`;
+            body += `<image href="${clusterImage(shown[i])}" x="0" y="0" width="${size}" height="${size}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${id})"/><path d="${path}" fill="none" stroke="white" stroke-width="1.5"/>`;
+        }
+        return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><defs>${defs}</defs><circle cx="${cx}" cy="${cy}" r="${r}" fill="#e2e8f0"/>${body}<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="white" stroke-width="2"/></svg>`;
+    };
+
     const createPopupContent = (tree: Lifetree) => {
         const displayImage = tree.latestGrowthUrl || tree.imageUrl;
         const div = document.createElement('div');
@@ -282,30 +312,35 @@ export const ForestMap = ({ trees, onView, onReach, loading = false }: { trees: 
             (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0)
         );
 
-        sortedTrees.forEach(tree => {
-            if (processed.has(tree.id)) return;
+        // Project every tree to pixel space ONCE (the costly step), then cluster on the
+        // cached points with squared-distance math — avoids ~n² Leaflet projections + sqrt.
+        const points = sortedTrees.map(tree => {
             const coords = getTreeCoordinates(tree);
-            if (!coords) return;
-            const { lat, lng } = coords;
+            if (!coords) return null;
+            const p = map.latLngToLayerPoint([coords.lat, coords.lng]);
+            return { tree, lat: coords.lat, lng: coords.lng, x: p.x, y: p.y };
+        });
+        const thresholdSq = CLUSTER_THRESHOLD_PX * CLUSTER_THRESHOLD_PX;
 
-            const treePoint = map.latLngToLayerPoint([lat, lng]);
-            const cluster: Cluster = { id: tree.id, center: tree, children: [], lat, lng };
-            processed.add(tree.id);
+        for (let i = 0; i < points.length; i++) {
+            const a = points[i];
+            if (!a || processed.has(a.tree.id)) continue;
+            const cluster: Cluster = { id: a.tree.id, center: a.tree, children: [], lat: a.lat, lng: a.lng };
+            processed.add(a.tree.id);
 
-            sortedTrees.forEach(other => {
-                if (processed.has(other.id)) return;
-                const otherCoords = getTreeCoordinates(other);
-                if (!otherCoords) return;
-                const { lat: oLat, lng: oLng } = otherCoords;
-                const otherPoint = map.latLngToLayerPoint([oLat, oLng]);
-                if (treePoint.distanceTo(otherPoint) < CLUSTER_THRESHOLD_PX) {
-                    cluster.children.push(other);
-                    processed.add(other.id);
+            for (let j = i + 1; j < points.length; j++) {
+                const b = points[j];
+                if (!b || processed.has(b.tree.id)) continue;
+                const dx = a.x - b.x;
+                const dy = a.y - b.y;
+                if (dx * dx + dy * dy < thresholdSq) {
+                    cluster.children.push(b.tree);
+                    processed.add(b.tree.id);
                 }
-            });
+            }
 
             clusters.push(cluster);
-        });
+        }
 
         // Determine active expansion state
         const topLevel = expansionStack.length > 0 ? expansionStack[expansionStack.length - 1] : null;
@@ -457,17 +492,18 @@ export const ForestMap = ({ trees, onView, onReach, loading = false }: { trees: 
                 }
 
             } else {
-                // COLLAPSED CLUSTER (Logo)
-                const hasDanger = [cluster.center, ...cluster.children].some(t => t.status === 'DANGER');
+                // COLLAPSED CLUSTER — pie of the member trees' images; grows on hover.
+                const clusterTrees = [cluster.center, ...cluster.children];
+                const hasDanger = clusterTrees.some(t => t.status === 'DANGER');
                 const html = `
-                <div class="relative w-16 h-16 group cursor-pointer hover:scale-110 transition-transform duration-300">
+                <div class="relative w-16 h-16 group cursor-pointer transition-transform duration-300 hover:scale-150 hover:z-[400]" style="transform-origin:center;">
                     <div class="absolute inset-0 drop-shadow-xl">
-                        ${logoSvg}
+                        ${getClusterPieHtml(clusterTrees, cluster.id)}
                     </div>
-                    <div class="absolute top-0 right-0 w-6 h-6 bg-emerald-600 border-2 border-white text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-md z-20">
+                    <div class="absolute -top-1 -right-1 w-6 h-6 bg-emerald-600 border-2 border-white text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-md z-20">
                         ${count}
                     </div>
-                    ${hasDanger ? `<div class="absolute top-0 left-0 w-3.5 h-3.5 bg-red-500 border-2 border-white rounded-full animate-bounce z-20"></div>` : ''}
+                    ${hasDanger ? `<div class="absolute -top-1 -left-1 w-3.5 h-3.5 bg-red-500 border-2 border-white rounded-full animate-bounce z-20"></div>` : ''}
                 </div>`;
 
                 const icon = L.divIcon({ html, className: '', iconSize: [64, 64], iconAnchor: [32, 32] });

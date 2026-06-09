@@ -50,8 +50,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const canDelete = currentUserId === community.ownerId || isSuperAdmin;
 
   useEffect(() => {
-    getTreesByDomain(community.domain).then(setLinkedTrees);
-  }, [community.domain]);
+    getTreesByDomain(community.domain, currentUserId).then(setLinkedTrees);
+  }, [community.domain, currentUserId]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -289,7 +289,19 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
             {isEditing && (
               <section className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-5">
                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Branding & Theme</h3>
-                
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Community Name</label>
+                  <input
+                    dir="auto"
+                    type="text"
+                    value={editName}
+                    onChange={e => setEditName(e.target.value)}
+                    className="w-full h-11 bg-slate-50 border border-slate-200 rounded-xl px-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="Community name"
+                  />
+                </div>
+
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-slate-400 uppercase">Logo</label>
                   <ImagePicker 

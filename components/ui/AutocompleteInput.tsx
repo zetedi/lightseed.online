@@ -4,13 +4,15 @@ import { Community } from '../../types';
 import { fetchCommunities } from '../../services/firebase';
 
 interface AutocompleteInputProps {
-  label: string;
+  label?: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  className?: string;
+  hint?: string;
 }
 
-export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({ label, value, onChange, placeholder }) => {
+export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({ label, value, onChange, placeholder, className, hint }) => {
   const [communities, setCommunities] = useState<Community[]>([]);
   const [filtered, setFiltered] = useState<Community[]>([]);
   const [show, setShow] = useState(false);
@@ -29,15 +31,16 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({ label, val
 
   return (
     <div className="relative">
-      <label className="text-xs font-bold text-slate-400 uppercase ml-1">{label}</label>
-      <input 
-        type="text" 
-        value={value} 
+      {label && <label className="text-xs font-bold text-slate-400 uppercase ml-1">{label}</label>}
+      <input
+        type="text"
+        value={value}
         onChange={e => { onChange(e.target.value); setShow(true); }}
         onFocus={() => setShow(true)}
-        className="w-full h-12 bg-slate-50 border border-slate-100 rounded-2xl px-4 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        className={className || "w-full h-12 bg-slate-50 border border-slate-100 rounded-2xl px-4 font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"}
         placeholder={placeholder}
       />
+      {hint && <p className="mt-1.5 ml-1 text-[11px] leading-snug opacity-70">{hint}</p>}
       {show && filtered.length > 0 && (
         <div className="absolute z-10 w-full mt-1 bg-white border border-slate-100 rounded-2xl shadow-xl overflow-hidden">
           {filtered.map(c => (

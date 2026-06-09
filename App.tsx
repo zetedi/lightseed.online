@@ -8,8 +8,10 @@ import {
   fetchReachPulses,
   fetchMyReaches,
   listenToMyReaches,
+  listenToReachesForTrees,
   mintPulse,
   fetchLifetrees,
+  fetchAllLifetrees,
   plantLifetree,
   uploadImage,
   uploadBase64Image,
@@ -58,7 +60,6 @@ import { Loading } from './components/ui/Loading';
 import { SectionHeader } from './components/ui/SectionHeader';
 import { LifeseedWidget } from './components/LifeseedWidget';
 import { NewsletterAdmin } from './components/NewsletterAdmin';
-import { ReachInbox } from './components/inspiration/ReachInbox';
 import { CommunityList } from './components/CommunityList';
 import { CommunityProfile } from './components/CommunityProfile';
 import { isExplicitlyValidatedTree } from './utils/validation';
@@ -163,6 +164,7 @@ const AppContent = () => {
     const [selectedPulse, setSelectedPulse] = useState<Pulse | null>(null);
     const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
     const [reachTree, setReachTree] = useState<Lifetree | null>(null);
+    const [reachOpenSignal, setReachOpenSignal] = useState(0);
     const [unreadReaches, setUnreadReaches] = useState(0);
     const [hostCommunity, setHostCommunity] = useState<Community | null>(null);
     const [personalSiteTheme, setPersonalSiteTheme] = useState<any>(null);
@@ -307,29 +309,48 @@ const AppContent = () => {
     }, [lightseed?.uid]);
 
     // Live unread-reach count powering the red envelope indicator in the nav.
+    // Two listeners: reaches addressed to me (recipientUid) AND reaches aimed at any
+    // of my trees (reachTreeId). The latter is a safety net so I'm still notified when
+    // a send didn't capture recipientUid. Results are merged and de-duplicated by id.
+    const myTreeIdsKey = myTrees.map((tree: Lifetree) => tree.id).join(',');
     useEffect(() => {
         if (!lightseed) {
             setUnreadReaches(0);
             return;
         }
-        return listenToMyReaches(lightseed.uid, (pulses) => {
-            const unread = pulses.filter(p =>
-                p.authorId !== lightseed.uid &&
-                !(p.seenBy || []).includes(lightseed.uid)
-            ).length;
+        const uid = lightseed.uid;
+        const byRecipient = new Map<string, Pulse>();
+        const byTree = new Map<string, Pulse>();
+        const recompute = () => {
+            const merged = new Map<string, Pulse>([...byRecipient, ...byTree]);
+            let unread = 0;
+            merged.forEach(p => {
+                if (p.authorId !== uid && !(p.seenBy || []).includes(uid)) unread++;
+            });
             setUnreadReaches(unread);
+        };
+        const unsubRecipient = listenToMyReaches(uid, (pulses) => {
+            byRecipient.clear();
+            pulses.forEach(p => byRecipient.set(p.id, p));
+            recompute();
         });
-    }, [lightseed?.uid]);
+        const unsubTrees = listenToReachesForTrees(myTreeIdsKey ? myTreeIdsKey.split(',') : [], (pulses) => {
+            byTree.clear();
+            pulses.forEach(p => byTree.set(p.id, p));
+            recompute();
+        });
+        return () => { unsubRecipient(); unsubTrees(); };
+    }, [lightseed?.uid, myTreeIdsKey]);
 
     useEffect(() => { 
         if (tab !== 'dashboard') {
             loadContent(true);
         }
-        ensureGenesis(); 
+        ensureGenesis();
         // Fetch host community
         const domain = window.location.hostname;
         getCommunityByDomain(domain).then(setHostCommunity);
-    }, [tab, lightseed]);
+    }, [tab, lightseed, viewMode]);
     
     useEffect(() => {
         const handleScroll = () => {
@@ -372,20 +393,30 @@ const AppContent = () => {
         
         setLoadingMore(true);
         const currentLastDoc = reset ? undefined : lastDoc;
-        const currentDomain = window.location.hostname;
+        const isDevHost = /localhost|127\.0\.0\.1|^192\.168\.|\.local$/.test(window.location.hostname);
+        // On dev hosts a superadmin sees the whole network (no domain scoping).
+        const currentDomain = (isDevHost && isSuperAdmin) ? 'lightseed.online' : window.location.hostname;
 
         try {
             if (tab === 'forest') {
-                const res = await fetchLifetrees(currentLastDoc, currentDomain);
-                setData(prev => {
-                    const newItems = res.items;
-                    if (reset) return newItems;
-                    // Deduplicate items based on ID to prevent visual duplicates
-                    const existingIds = new Set(prev.map(p => p.id));
-                    return [...prev, ...newItems.filter(i => !existingIds.has(i.id))];
-                });
-                setLastDoc(res.lastDoc);
-                setHasMore(!!res.lastDoc);
+                if (viewMode === 'map') {
+                    // The map shows the whole forest at once (no pagination) so every tree appears.
+                    const all = await fetchAllLifetrees(currentDomain, lightseed?.uid);
+                    setData(all);
+                    setLastDoc(null);
+                    setHasMore(false);
+                } else {
+                    const res = await fetchLifetrees(currentLastDoc, currentDomain, lightseed?.uid);
+                    setData(prev => {
+                        const newItems = res.items;
+                        if (reset) return newItems;
+                        // Deduplicate items based on ID to prevent visual duplicates
+                        const existingIds = new Set(prev.map(p => p.id));
+                        return [...prev, ...newItems.filter(i => !existingIds.has(i.id))];
+                    });
+                    setLastDoc(res.lastDoc);
+                    setHasMore(!!res.lastDoc);
+                }
             }
             else if (tab === 'pulses') {
                 const res = await fetchPulses(currentLastDoc, currentDomain);
@@ -465,7 +496,8 @@ const AppContent = () => {
     const openReach = (tree: Lifetree | null) => {
         setSelectedTree(null);
         setReachTree(tree);
-        setTab('inspiration');
+        setReachOpenSignal(s => s + 1);
+        setTab('profile');
     };
 
     const handleImageUpload = async (file: File, path: string) => {
@@ -619,6 +651,9 @@ const AppContent = () => {
                     onGrantAdmin={async (uid: string) => { await grantAdmin(uid); }}
                     onRevokeAdmin={async (uid: string) => { await revokeAdmin(uid); }}
                     onOpenNewsletterAdmin={() => setTab('newsletter')}
+                    reachPartner={reachTree}
+                    reachOpenSignal={reachOpenSignal}
+                    onConsumeReach={() => setReachTree(null)}
                 />
             );
         }
@@ -641,15 +676,36 @@ const AppContent = () => {
             );
         }
 
+        // Search box reused inside the Visions/Events/Pulses headers (under the title).
+        const searchBox = (
+            <div className="relative w-full">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <Icons.Search />
+                </div>
+                <input
+                    dir="auto"
+                    type="text"
+                    list="search-suggestions"
+                    className="block w-full pl-10 pr-3 py-2 border border-emerald-100 rounded-xl leading-5 bg-white/80 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm shadow-sm"
+                    placeholder={t('search_placeholder')}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <datalist id="search-suggestions">
+                    {searchSuggestions.map((s, i) => <option key={i} value={s} />)}
+                </datalist>
+            </div>
+        );
+
         return (
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 min-h-[80vh]">
-                {tab !== 'observatory' && tab !== 'profile' && tab !== 'inspiration' && tab !== 'about' && tab !== 'dashboard' && tab !== 'newsletter' && tab !== 'communities' && (
+                {tab === 'forest' && (
                     <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                         <div className="relative w-full md:max-w-md">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                                 <Icons.Search />
                             </div>
-                            <input 
+                            <input
                                 dir="auto"
                                 type="text"
                                 list="search-suggestions"
@@ -833,13 +889,14 @@ const AppContent = () => {
                             icon={<Icons.Sparkles />}
                             title={t('visions')}
                             subtitle="Directions of growth seeking resonance and shared momentum."
+                            footer={searchBox}
                             action={
                                 <button
                                     onClick={handleAnalyzeSynergy}
                                     disabled={isAnalyzingSynergy || data.length < 2}
                                     className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2.5 rounded-full font-bold shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 border border-amber-400/30 active:scale-95 disabled:opacity-50"
                                 >
-                                    {isAnalyzingSynergy ? <Loading /> : <Icons.Sparkles />}
+                                    {isAnalyzingSynergy ? <Loading /> : <Icons.Venn />}
                                     <span>{isAnalyzingSynergy ? 'Analyzing...' : 'Analyze Alignments'}</span>
                                 </button>
                             }
@@ -881,6 +938,7 @@ const AppContent = () => {
                             icon={<Icons.Loc />}
                             title={t('events')}
                             subtitle="Community gatherings, ceremonies, actions, and shared moments."
+                            footer={searchBox}
                         />
 
                         <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -896,23 +954,13 @@ const AppContent = () => {
                             ))}
                         </div>
                     </div>
-                ) : tab === 'inspiration' ? (
-                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-                        <ReachInbox
-                            pulses={filteredData}
-                            myTrees={myTrees}
-                            lightseed={lightseed}
-                            title={t('inspiration')}
-                            requestedPartner={reachTree}
-                            onConsumeRequested={() => setReachTree(null)}
-                        />
-                    </div>
                 ) : tab !== 'observatory' && tab !== 'profile' && tab !== 'inspiration' && tab !== 'about' && tab !== 'dashboard' && tab !== 'newsletter' && tab !== 'communities' && (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
                         <SectionHeader
                             icon={<Icons.HeartPulse />}
                             title={t('pulses')}
                             subtitle="Offerings, dreams, observations, and signals rippling through the network."
+                            footer={searchBox}
                         />
                         <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                         {filteredData.map((item) => (
@@ -954,9 +1002,9 @@ const AppContent = () => {
                         myTreesCount={myTrees.length}
                         dangerTreesCount={guardedTrees.filter(t => t.status === 'DANGER').length}
                         reachNotificationsCount={unreadReaches}
-                        onOpenReachInbox={() => setTab('inspiration')}
+                        onOpenReachInbox={() => { setReachTree(null); setReachOpenSignal(s => s + 1); setTab('profile'); }}
                         logoUrl={configuredLogoUrl}
-                        appName={config.name}
+                        appName={isHubDomain(window.location.hostname) ? '.seed' : config.name}
                         isNightMode={effectiveIsDark}
                         theme={effectiveTheme}
                         onToggleNightMode={toggleNightMode}
@@ -1034,10 +1082,14 @@ const AppContent = () => {
             {showGrowthPlayer && !selectedTree && <GrowthPlayerModal treeId={showGrowthPlayer} onClose={() => setShowGrowthPlayer(null)} />}
 
             {showPlantModal && (
-                <PlantTreeModal 
+                <PlantTreeModal
                     lightseed={lightseed}
                     onClose={() => setShowPlantModal(false)}
-                    onPlant={plantLifetree}
+                    onPlant={async (data: any) => {
+                        await plantLifetree(data);
+                        await refreshTrees();          // refresh the My Trees section immediately
+                        if (tab === 'forest') loadContent(true); // and the forest/map
+                    }}
                     uploading={uploading}
                     handleImageUpload={handleImageUpload}
                     extractGpsFromImage={extractGpsFromImage}
