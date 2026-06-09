@@ -144,19 +144,45 @@ export const Navigation = ({
 
     const NavTab = ({ tab }: { tab: string }) => {
         const count = getTabCount(tab);
+        const button = (
+            <button
+                type="button"
+                onClick={() => setTab(tab)}
+                aria-describedby={tab === 'about' ? 'about-lin-tooltip' : undefined}
+                className={`px-3 xl:px-4 py-2 rounded-full text-[10px] xl:text-xs transition-all flex items-center gap-1.5 ${getTabStyle(tab)}`}
+                style={activeTab === tab && getActiveTabColor(tab) ? { backgroundColor: getActiveTabColor(tab) } : undefined}
+            >
+                <span>{getTabLabel(tab)}</span>
+                {count > 0 && (
+                    <span className="bg-red-500 text-white text-[9px] px-1.5 rounded-full min-w-[18px]">
+                        {count}
+                    </span>
+                )}
+            </button>
+        );
+
+        if (tab !== 'about') return button;
+
         return (
-        <button 
-            onClick={() => setTab(tab)} 
-            className={`px-3 xl:px-4 py-2 rounded-full text-[10px] xl:text-xs transition-all flex items-center gap-1.5 ${getTabStyle(tab)}`}
-            style={activeTab === tab && getActiveTabColor(tab) ? { backgroundColor: getActiveTabColor(tab) } : undefined}
-        >
-            <span>{getTabLabel(tab)}</span>
-            {count > 0 && (
-                <span className="bg-red-500 text-white text-[9px] px-1.5 rounded-full min-w-[18px]">
-                    {count}
-                </span>
-            )}
-        </button>
+            <div className="relative group">
+                {button}
+                <div
+                    id="about-lin-tooltip"
+                    role="tooltip"
+                    className={`pointer-events-none absolute right-0 top-[calc(100%+0.75rem)] z-50 w-80 max-w-[calc(100vw-2rem)] translate-y-1 rounded-xl border px-4 py-3 text-left text-xs leading-relaxed opacity-0 shadow-xl transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 ${
+                        navIsDark
+                            ? 'border-amber-200/30 bg-slate-950/95 text-amber-50 shadow-black/40 backdrop-blur'
+                            : 'border-amber-200 bg-white/95 text-slate-700 shadow-amber-900/10 backdrop-blur'
+                    }`}
+                >
+                    <span
+                        className={`absolute -top-1.5 right-5 h-3 w-3 rotate-45 border-l border-t ${
+                            navIsDark ? 'border-amber-200/30 bg-slate-950' : 'border-amber-200 bg-white'
+                        }`}
+                    />
+                    {t('about_lin_description')}
+                </div>
+            </div>
         );
     };
 

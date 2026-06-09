@@ -32,7 +32,8 @@ const baseKeys = {
   create_new_world: "Create a New World",
   type_lifetree: "Lifetree", type_guarded: "Guarded", type_family: "Family",
   communities: "Communities", register_community: "Register Community",
-  light_earth: "Light Earth", intelligence: "Intelligence"
+  light_earth: "Living", intelligence: "Intelligence",
+  about_lin_description: "LIN, the Living Intelligence Network, is the intelligence layer of the Light Earth: a distributed system where humans, AI, trees, places, and communities become visible to each other through care, reciprocity, and shared purpose."
 };
 
 export const translations: Record<Language, typeof baseKeys> = {
@@ -43,7 +44,7 @@ export const translations: Record<Language, typeof baseKeys> = {
     be_mother_tree: "Planta un Árbol de Vida", loading: "Cargando...", my_trees: "Mis Árboles", profile: "Perfil",
     pending_alignments: "Coincidencias Pendientes", quick_snap: "Capturar Cambio", validated: "VALIDADO", 
     validate_action: "Validar Árbol", create_vision: "Nueva Visión", create_new_world: "Crea un Nuevo Mundo",
-    light_earth: "Tierra de Luz", intelligence: "Inteligencia",
+    light_earth: "Living", intelligence: "Inteligencia",
     communities: "Comunidades", register_community: "Registrar Comunidad", observatory: "Observatorio", inspiration: "Inspiración"
   },
   hu: { 
@@ -52,7 +53,7 @@ export const translations: Record<Language, typeof baseKeys> = {
     be_mother_tree: "Ültess Életfát", loading: "Töltés...", my_trees: "Fáim", profile: "Profil",
     pending_alignments: "Függőben", quick_snap: "Gyors Fotó", validated: "HITELESÍTVE", 
     validate_action: "Hitelesítés", create_vision: "Új Vízió", create_new_world: "Teremts Új Világot",
-    light_earth: "Fény Föld", intelligence: "Intelligencia",
+    light_earth: "Living", intelligence: "Intelligencia",
     communities: "Közösségek", register_community: "Közösség Regisztrálása", observatory: "Obszervatórium", inspiration: "Inspiráció"
   },
   qu: { 
@@ -61,7 +62,7 @@ export const translations: Record<Language, typeof baseKeys> = {
     be_mother_tree: "Mama Sach'a", loading: "Cargachkan...", my_trees: "Mallkikuna", profile: "Uyan",
     pending_alignments: "Suyaq", quick_snap: "Utqaylla", validated: "CHASKISQA", 
     validate_action: "Chaskiy", create_vision: "Musquy", create_new_world: "Musuq Pachata Ruray",
-    light_earth: "K'anchay Allpa", intelligence: "Hamut'ay",
+    light_earth: "Living", intelligence: "Hamut'ay",
     communities: "Ayllukuna", observatory: "Qhawana", inspiration: "Samay"
   },
   sa: { 
@@ -70,7 +71,7 @@ export const translations: Record<Language, typeof baseKeys> = {
     be_mother_tree: "जीवनवृक्षं रोपयतु", loading: "आरोचयति...", my_trees: "वृक्षाः", profile: "परिचयः",
     pending_alignments: "लम्बित", quick_snap: "शीघ्रम्", validated: "प्रमाणित", 
     validate_action: "प्रमाणयतु", create_vision: "दृष्टिः", create_new_world: "नवं लोकं सृजतु",
-    light_earth: "ज्योतिर्भूमि:", intelligence: "बुद्धि:",
+    light_earth: "Living", intelligence: "बुद्धि:",
     communities: "समुदायाः", observatory: "वेधशाला", inspiration: "प्रेरणा"
   },
   ja: { 
@@ -79,7 +80,7 @@ export const translations: Record<Language, typeof baseKeys> = {
     be_mother_tree: "命の木を植える", loading: "読込中...", my_trees: "木", profile: "プロフ",
     pending_alignments: "保留中", quick_snap: "スナップ", validated: "認証済", 
     validate_action: "認証", create_vision: "ビジョン", create_new_world: "新しい世界を創造する",
-    light_earth: "光の地球", intelligence: "知性",
+    light_earth: "Living", intelligence: "知性",
     communities: "コミュニティ", observatory: "展望台", inspiration: "インスピレーション"
   },
   ar: { 
@@ -88,7 +89,7 @@ export const translations: Record<Language, typeof baseKeys> = {
     be_mother_tree: "ازرع شجرة حياة", loading: "تحميل...", my_trees: "أشجاري", profile: "ملف",
     pending_alignments: "معلقة", quick_snap: "لقطة", validated: "مصدق", 
     validate_action: "صدق", create_vision: "رؤية", create_new_world: "اخلق عالما جديدا",
-    light_earth: "أرض النور", intelligence: "ذكاء",
+    light_earth: "Living", intelligence: "ذكاء",
     communities: "مجتمعات", observatory: "مرصد", inspiration: "إلهام"
   },
   sw: { 
@@ -97,7 +98,7 @@ export const translations: Record<Language, typeof baseKeys> = {
     be_mother_tree: "Panda Mti wa Uhai", loading: "Inapakia...", my_trees: "Miti yangu", profile: "Wasifu",
     pending_alignments: "Subiri", quick_snap: "Picha", validated: "IMETHIBITISHWA", 
     validate_action: "Thibitisha", create_vision: "Ono", create_new_world: "Unda Ulimwengu Mpya",
-    light_earth: "Dunia ya Nuru", intelligence: "Akili",
+    light_earth: "Living", intelligence: "Akili",
     communities: "Jamii", observatory: "Kituo cha Uchunguzi", inspiration: "Uvuvio"
   }
 };
