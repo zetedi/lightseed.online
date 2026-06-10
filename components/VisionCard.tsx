@@ -11,7 +11,7 @@ export const VisionCard = ({ vision }: { vision: Vision }) => {
                     <img src={vision.imageUrl} alt={vision.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center text-amber-300">
-                        <Icons.Sparkles />
+                        <Icons.Eye />
                     </div>
                 )}
                 

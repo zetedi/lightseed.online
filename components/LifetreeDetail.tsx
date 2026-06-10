@@ -8,8 +8,9 @@ import { AutocompleteInput } from './ui/AutocompleteInput';
 import { updateLifetree, toggleGuardianship, setTreeStatus, getPulsesByTreeId } from '../services/firebase';
 import { Pulse } from '../types';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
+import { canReachTree } from '../utils/reachPermissions';
 
-export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, myActiveTree, currentUserId, isAdmin, isSuperAdmin }: any) => {
+export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, myActiveTree, currentUserId, isAdmin, isSuperAdmin, targetUserProfile }: any) => {
    const { t } = useLanguage();
    const isOwner = currentUserId === tree.ownerId;
    const isNature = tree.isNature;
@@ -18,6 +19,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const canEdit = isOwner || isGuardian || isSuperAdmin;
    const hasValidationBadge = isExplicitlyValidatedTree(tree);
    const showValidateAction = canToggleValidation({ tree, myActiveTree, isAdmin, isSuperAdmin });
+   // Owner privacy flag is mirrored onto the (world-readable) tree, so we read it here.
+   const targetProfile = targetUserProfile ?? { onlyValidatedCanReach: tree.onlyValidatedCanReach };
+   const canReach = canReachTree({ targetTree: tree, targetUserProfile: targetProfile, myActiveTree, currentUserId, isAdmin, isSuperAdmin });
    const hasCoordinates = Number.isFinite(tree.latitude) && Number.isFinite(tree.longitude);
    const fieldClassName = "h-10 w-full max-w-sm rounded border border-slate-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500";
 
@@ -249,10 +253,22 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                     <Icons.Play />
                                     <span>PLAY GROWTH</span>
                                 </button>
-                                <button onClick={() => onReachTree?.(tree)} className="min-h-0 w-fit bg-amber-500/90 hover:bg-amber-600 text-white text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 rounded-full flex items-center space-x-1 backdrop-blur-sm transition-colors">
-                                    <Icons.Lightning />
-                                    <span>REACH</span>
-                                </button>
+                                {canReach ? (
+                                    <button onClick={() => onReachTree?.(tree)} className="min-h-0 w-fit bg-amber-500/90 hover:bg-amber-600 text-white text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 rounded-full flex items-center space-x-1 backdrop-blur-sm transition-colors">
+                                        <Icons.Lightning />
+                                        <span>REACH</span>
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        disabled
+                                        title={t('only_if_validated')}
+                                        className="min-h-0 w-fit bg-white/20 text-white/70 text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 rounded-full flex items-center space-x-1 backdrop-blur-sm cursor-not-allowed"
+                                    >
+                                        <Icons.Eye size={14} />
+                                        <span>{t('only_if_validated')}</span>
+                                    </button>
+                                )}
                                 {showValidateAction && (
                                     <button
                                         onClick={() => {

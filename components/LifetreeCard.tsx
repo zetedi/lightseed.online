@@ -7,6 +7,7 @@ import Logo from './Logo';
 import { ValidationBadge } from './ValidationBadge';
 import { colors } from '../utils/theme';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
+import { canReachTree, type ReachTargetProfile } from '../utils/reachPermissions';
 
 interface LifetreeCardProps {
     tree: Lifetree;
@@ -14,6 +15,7 @@ interface LifetreeCardProps {
     isAdmin?: boolean;
     isSuperAdmin?: boolean;
     currentUserId?: string;
+    targetUserProfile?: ReachTargetProfile | null;
     onValidate: (id: string, nextValidated: boolean) => Promise<void>;
     onPlayGrowth: (id: string) => void;
     onQuickSnap: (id: string, file: File) => Promise<void>;
@@ -21,14 +23,17 @@ interface LifetreeCardProps {
     onReach?: (tree: Lifetree) => void;
 }
 
-export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, currentUserId, onValidate, onPlayGrowth, onQuickSnap, onView, onReach }: LifetreeCardProps) => {
+export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, currentUserId, targetUserProfile, onValidate, onPlayGrowth, onQuickSnap, onView, onReach }: LifetreeCardProps) => {
     const { t } = useLanguage();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
-    
+
     const isGuardian = currentUserId && tree.guardians && tree.guardians.includes(currentUserId);
     const hasValidationBadge = isExplicitlyValidatedTree(tree);
     const showValidateAction = canToggleValidation({ tree, myActiveTree, isAdmin, isSuperAdmin });
+    // The owner's privacy flag is mirrored onto the (world-readable) tree, so we can read it here.
+    const targetProfile = targetUserProfile ?? { onlyValidatedCanReach: tree.onlyValidatedCanReach };
+    const canReach = canReachTree({ targetTree: tree, targetUserProfile: targetProfile, myActiveTree, currentUserId, isAdmin, isSuperAdmin });
 
     const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -129,10 +134,23 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, curren
                         <span>Growth</span>
                     </button>
                     {onReach && (
-                        <button onClick={(e) => { e.stopPropagation(); onReach(tree); }} className="flex items-center gap-1 text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-700 px-2 py-1 rounded transition-colors uppercase tracking-wider font-semibold">
-                            <Icons.Lightning />
-                            <span>Reach</span>
-                        </button>
+                        canReach ? (
+                            <button onClick={(e) => { e.stopPropagation(); onReach(tree); }} className="flex items-center gap-1 text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-700 px-2 py-1 rounded transition-colors uppercase tracking-wider font-semibold">
+                                <Icons.Lightning />
+                                <span>Reach</span>
+                            </button>
+                        ) : (
+                            <button
+                                type="button"
+                                disabled
+                                onClick={(e) => e.stopPropagation()}
+                                title={t('only_if_validated')}
+                                className="flex items-center gap-1 text-[10px] bg-slate-100 text-slate-400 px-2 py-1 rounded uppercase tracking-wider font-semibold cursor-not-allowed"
+                            >
+                                <Icons.Eye size={12} />
+                                <span>{t('only_if_validated')}</span>
+                            </button>
+                        )
                     )}
                     
                     <div className="flex w-full flex-col items-start gap-2 sm:w-auto sm:flex-row">

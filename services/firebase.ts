@@ -46,6 +46,12 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import { type Pulse, type PulseType, type Lifetree, type Alignment, type Vision, type Community } from '../types';
 import { createBlock } from '../utils/crypto';
 import { oldEmeraldEarthThemeValues } from '../utils/theme';
+import { isExplicitlyValidatedTree } from '../utils/validation';
+import { buildThreadId } from '../utils/reachPermissions';
+
+// Robustly read a millisecond timestamp from a Firestore Timestamp, a JS Date, or nothing.
+const toMillis = (value: any): number =>
+    value?.toMillis ? value.toMillis() : (value instanceof Date ? value.getTime() : 0);
 
 const SYSTEM_EMAIL_FROM = "lightseed <admin@lightseed.online>";
 
@@ -139,6 +145,23 @@ export const updateUserSiteTheme = (userId: string, data: any) =>
 
 export const updateUserProfile = (userId: string, data: any) =>
     setDoc(doc(db, 'users', userId), { ...data, updatedAt: serverTimestamp() }, { merge: true });
+
+// Contact privacy. The canonical flag lives on users/{uid}, but we mirror it onto every
+// tree the user owns because lifetrees are world-readable and the reach gate reads the
+// flag straight off the target tree (no cross-user profile read required).
+export const setOnlyValidatedCanReach = async (userId: string, value: boolean) => {
+    await setDoc(doc(db, 'users', userId), { onlyValidatedCanReach: value, updatedAt: serverTimestamp() }, { merge: true });
+    try {
+        const mine = await getDocs(query(lifetreesCollection, where('ownerId', '==', userId)));
+        if (!mine.empty) {
+            const batch = writeBatch(db);
+            mine.docs.forEach(d => batch.update(d.ref, { onlyValidatedCanReach: value }));
+            await batch.commit();
+        }
+    } catch (e) {
+        console.warn('Failed to mirror onlyValidatedCanReach onto trees', e);
+    }
+};
 
 export const deleteUserAccount = async () => {
     const user = auth.currentUser;
@@ -467,9 +490,20 @@ export const plantLifetree = async (data: any) => {
     const genesisHash = await createBlock("0", { msg: "Birth" }, Date.now());
     const currentHost = window.location.hostname.replace(/^www\./, '');
     const domain = data.domain || (isHubDomain(currentHost) ? 'lightseed.online' : currentHost);
+
+    // New trees inherit the owner's contact-privacy preference so the mirror stays consistent.
+    let onlyValidatedCanReach = false;
+    try {
+        if (data.ownerId) {
+            const ownerSnap = await getDoc(doc(db, 'users', data.ownerId));
+            onlyValidatedCanReach = ownerSnap.exists() && ownerSnap.data()?.onlyValidatedCanReach === true;
+        }
+    } catch { /* default false */ }
+
     const treeDoc = await addDoc(lifetreesCollection, {
-        ...data, 
+        ...data,
         domain,
+        onlyValidatedCanReach,
         treeType: data.treeType || (data.isNature ? 'GUARDED' : 'LIFETREE'),
         createdAt: serverTimestamp(), genesisHash, latestHash: genesisHash, blockHeight: 0,
         validated: false, validatorId: null, guardians: [], status: 'HEALTHY'
@@ -744,7 +778,7 @@ export const fetchReachThread = async (partnerId: string) => {
         const p = { id: d.id, ...(d.data() as any) } as Pulse;
         if (isReachPulse(p)) byId.set(p.id, p);
     });
-    return Array.from(byId.values()).sort((a, b) => (a.createdAt?.toMillis() || 0) - (b.createdAt?.toMillis() || 0));
+    return Array.from(byId.values()).sort((a, b) => toMillis(a.createdAt) - toMillis(b.createdAt));
 };
 
 // All reaches involving me, both directions, newest first — my personal Inspiration inbox.
@@ -758,14 +792,15 @@ export const fetchMyReaches = async (uid: string) => {
         const p = { id: d.id, ...(d.data() as any) } as Pulse;
         if (isReachPulse(p)) byId.set(p.id, p);
     });
-    const items = Array.from(byId.values()).sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+    const items = Array.from(byId.values()).sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
     return { items, lastDoc: null };
 };
 
-// Live stream of reaches addressed to me, for the unread (red envelope) indicator.
+// Live stream of reaches addressed to me, for the unread (green glow) indicator.
+// Single-field query (no composite index); we filter to reach pulses client-side.
 export const listenToMyReaches = (uid: string, callback: (pulses: Pulse[]) => void) =>
     onSnapshot(query(pulsesCollection, where('recipientUid', '==', uid)), (snap) => {
-        callback(snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Pulse)));
+        callback(snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Pulse)).filter(isReachPulse));
     });
 
 // Live stream of reaches addressed to any of my trees. Belt-and-braces alongside
@@ -783,6 +818,67 @@ export const markReachesSeen = async (pulseIds: string[], uid: string) => {
     await Promise.all(pulseIds.map(id =>
         updateDoc(doc(db, 'pulses', id), { seenBy: arrayUnion(uid) }).catch(() => {})
     ));
+};
+
+// Public alias — batch-mark reach pulses as seen by a user (seenBy arrayUnion).
+export const markReachPulsesSeen = markReachesSeen;
+
+// Send a direct message (reach) from one tree to another.
+//
+// The privacy gate is enforced here as well as in the UI: a "protected" target
+// (owner has onlyValidatedCanReach) only accepts reaches from the owner themselves,
+// an admin/super admin, or a sender whose active tree is explicitly validated.
+//
+// TODO(security): Firestore security rules cannot cheaply cross-read the target's
+// privacy flag at write time, so this rule is enforced in the service + UI layers.
+// The target's onlyValidatedCanReach is mirrored onto its (world-readable) tree doc,
+// which we read here to evaluate the gate without weakening the rules.
+export const sendReach = async ({
+    fromTree,
+    toTree,
+    text,
+    sender,
+    isAdmin = false,
+    isSuperAdmin = false,
+}: {
+    fromTree: Lifetree;
+    toTree: Lifetree;
+    text: string;
+    sender: { uid: string; displayName?: string | null; photoURL?: string | null };
+    isAdmin?: boolean;
+    isSuperAdmin?: boolean;
+}) => {
+    // Resolve the freshest target so we have its owner + privacy flag, even when the
+    // caller only had a lightweight tree object (e.g. a map marker or thread summary).
+    let target = toTree;
+    if (!target.ownerId) {
+        const full = await getLifetreeById(toTree.id);
+        if (full) target = full;
+    }
+    const recipientUid = target.ownerId || null;
+
+    const protectedTarget = target.onlyValidatedCanReach === true;
+    const isSelf = !!recipientUid && recipientUid === sender.uid;
+    if (protectedTarget && !isSelf && !isAdmin && !isSuperAdmin && !isExplicitlyValidatedTree(fromTree)) {
+        throw new Error('This Lifetree only accepts direct messages from validated trees.');
+    }
+
+    return mintPulse({
+        lifetreeId: fromTree.id,
+        type: 'reach',
+        title: `Reach: ${fromTree.name} -> ${target.name}`,
+        body: text,
+        content: text,
+        reachTreeId: target.id,
+        reachTreeName: target.name,
+        recipientUid,
+        recipientName: target.name,
+        threadId: buildThreadId(fromTree.id, target.id),
+        seenBy: [],
+        authorId: sender.uid,
+        authorName: fromTree.name,
+        authorPhoto: fromTree.imageUrl || sender.photoURL || undefined,
+    });
 };
 
 export const getLifetreeById = async (id: string): Promise<Lifetree | null> => {

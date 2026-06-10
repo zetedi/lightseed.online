@@ -31,9 +31,13 @@ export interface Lifetree {
 
   domain?: string; // Associated website domain, e.g. "example.com"
   createdAt: Timestamp;
-  
+
+  // Contact privacy — mirrored from the owner's users/{uid}.onlyValidatedCanReach so
+  // the world-readable tree carries the flag and the reach gate needs no cross-user read.
+  onlyValidatedCanReach?: boolean;
+
   // Validation Logic
-  validated: boolean; 
+  validated: boolean;
   validatorId?: string | null;
 
   // Nature & Guardian Logic (Legacy)

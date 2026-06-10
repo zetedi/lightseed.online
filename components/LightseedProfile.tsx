@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { type Pulse, type Lifetree, type Alignment, type Vision, type VisionSynergy } from '../types';
-import { getMyPulses, getMyVisions, getJoinedVisions, getMyAlignmentsHistory, deleteUserAccount, logout, triggerSystemEmail, sendInvite, listenToUserProfile, deleteVision, getAdmins, setNewsletterSubscription, updateUserSiteTheme, updateUserProfile, uploadImage, fetchMyReaches } from '../services/firebase';
+import { getMyPulses, getMyVisions, getJoinedVisions, getMyAlignmentsHistory, deleteUserAccount, logout, triggerSystemEmail, sendInvite, listenToUserProfile, deleteVision, getAdmins, setNewsletterSubscription, updateUserSiteTheme, updateUserProfile, uploadImage, fetchMyReaches, setOnlyValidatedCanReach } from '../services/firebase';
 import { ReachInbox } from './inspiration/ReachInbox';
 import { findVisionSynergies } from '../services/gemini';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -39,6 +39,8 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
     const [togglingNewsletter, setTogglingNewsletter] = useState(false);
     const [sendThreadsToEmail, setSendThreadsToEmail] = useState(false);
     const [togglingThreadsEmail, setTogglingThreadsEmail] = useState(false);
+    const [onlyValidatedCanReach, setOnlyValidatedCanReachState] = useState(false);
+    const [togglingValidatedReach, setTogglingValidatedReach] = useState(false);
     const [dialogMessage, setDialogMessage] = useState<string | null>(null);
     const [siteTheme, setSiteTheme] = useState(normalizeTheme(undefined));
     const [siteLogoUrl, setSiteLogoUrl] = useState('');
@@ -71,6 +73,7 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
             }
             setNewsletterSubscribed(Boolean(data?.newsletterSubscribed));
             setSendThreadsToEmail(Boolean(data?.sendThreadsToEmail));
+            setOnlyValidatedCanReachState(Boolean(data?.onlyValidatedCanReach));
             setSiteTheme(normalizeTheme(data?.siteTheme));
             setSiteLogoUrl(data?.siteLogoUrl || '');
         });
@@ -202,6 +205,22 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
         setTogglingThreadsEmail(false);
     };
 
+    const handleOnlyValidatedToggle = async () => {
+        if (!lightseed?.uid || togglingValidatedReach) return;
+        setTogglingValidatedReach(true);
+        try {
+            const nextValue = !onlyValidatedCanReach;
+            await setOnlyValidatedCanReach(lightseed.uid, nextValue);
+            setOnlyValidatedCanReachState(nextValue);
+            setDialogMessage(nextValue
+                ? 'Only validated trees can now send you direct messages.'
+                : 'Anyone can now send you direct messages.');
+        } catch (e: any) {
+            setDialogMessage(e.message || 'Failed to update contact privacy.');
+        }
+        setTogglingValidatedReach(false);
+    };
+
     const handleSiteLogoUpload = async (file: File) => {
         setUploadingSiteLogo(true);
         try {
@@ -298,8 +317,8 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
     const navSections: { key: string; label: string; icon: React.ReactNode }[] = [
         { key: 'trees', label: t('my_trees'), icon: <Icons.Tree /> },
         { key: 'pulses', label: t('my_pulses'), icon: <Icons.HeartPulse /> },
-        { key: 'visions', label: t('visions'), icon: <Icons.Sparkles /> },
-        { key: 'reaches', label: t('inspiration'), icon: <Icons.Mail /> },
+        { key: 'visions', label: t('visions'), icon: <Icons.Eye /> },
+        { key: 'reaches', label: t('direct_messages'), icon: <Icons.Chat /> },
         { key: 'history', label: t('alignments'), icon: <Icons.Venn /> },
         { key: 'invites', label: t('invitations'), icon: <Icons.SparkleFill /> },
         { key: 'appearance', label: 'Appearance', icon: <Icons.Image /> },
@@ -343,8 +362,8 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                             <h1 className="text-3xl font-light tracking-wide">{lightseed.displayName}</h1>
                             <p className="text-slate-400 text-sm font-mono truncate">{lightseed.email}</p>
                             <p className="text-sm text-slate-300">
-                                <span className="font-bold text-white">{myTrees.length}</span>
-                                <span className="ml-1 text-[10px] uppercase tracking-wider text-slate-400">{t('my_trees')}</span>
+                                <span className="font-bold text-white">{myTrees.length}</span>{' '}
+                                <span className="text-xs text-slate-400">{myTrees.length === 1 ? t('tree') : t('trees')}</span>
                             </p>
                         </div>
                         <div className="mt-3 flex items-center gap-2 flex-wrap justify-center md:justify-start">
@@ -406,7 +425,7 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                                     pulses={reaches}
                                     myTrees={myTrees}
                                     lightseed={lightseed}
-                                    title={t('inspiration')}
+                                    title={t('direct_messages')}
                                     requestedPartner={reachPartner || null}
                                     onConsumeRequested={onConsumeReach}
                                 />
@@ -436,8 +455,15 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
 
                         {activeTab === 'settings' && (
                             <div>
-                                <SectionTitle title="Settings" sub="Email, notifications, and your account." />
+                                <SectionTitle title="Settings" sub="Privacy, email, notifications, and your account." />
                                 <div className="rounded-2xl border border-slate-100 divide-y divide-slate-100">
+                                    <div className="p-4 flex items-center justify-between gap-4">
+                                        <div className="min-w-0">
+                                            <p className="font-semibold text-slate-800 text-sm">{t('only_validated_can_reach')}</p>
+                                            <p className="text-xs text-slate-500">{t('only_validated_can_reach_help')}</p>
+                                        </div>
+                                        <Toggle on={onlyValidatedCanReach} onClick={handleOnlyValidatedToggle} disabled={togglingValidatedReach} />
+                                    </div>
                                     <div className="p-4 flex items-center justify-between gap-4">
                                         <div className="min-w-0">
                                             <p className="font-semibold text-slate-800 text-sm">Newsletter</p>

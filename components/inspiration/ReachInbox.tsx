@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Icons } from '../ui/Icons';
 import { Lifetree, Lightseed, Pulse } from '../../types';
 import { ReachThread } from './ReachThread';
+import { markReachPulsesSeen } from '../../services/firebase';
 
 interface ReachThreadSummary {
     partnerId: string;
@@ -44,8 +45,8 @@ export const ReachInbox = ({
     lightseed,
     requestedPartner,
     onConsumeRequested,
-    title = 'Inspiration',
-    subtitle = 'Reach each other through the mycelial network.',
+    title = 'Direct Messages',
+    subtitle = 'Private reaches between your trees and the network.',
 }: {
     pulses: Pulse[];
     myTrees: Lifetree[];
@@ -64,6 +65,21 @@ export const ReachInbox = ({
             onConsumeRequested?.();
         }
     }, [requestedPartner?.id]);
+
+    // Opening Direct Messages marks every received message as seen, clearing the
+    // global unread glow. Sent messages (authored by me) are never marked/counted.
+    const markedRef = useRef<Set<string>>(new Set());
+    useEffect(() => {
+        if (!lightseed) return;
+        const uid = lightseed.uid;
+        const toMark = pulses
+            .filter(p => p.recipientUid === uid && p.authorId !== uid && !(p.seenBy || []).includes(uid) && !markedRef.current.has(p.id))
+            .map(p => p.id);
+        if (toMark.length) {
+            toMark.forEach(id => markedRef.current.add(id));
+            markReachPulsesSeen(toMark, uid);
+        }
+    }, [pulses, lightseed?.uid]);
 
     const threads = useMemo<ReachThreadSummary[]>(() => {
         const myIds = new Set(myTrees.map(t => t.id));
@@ -154,7 +170,7 @@ export const ReachInbox = ({
 
                     {threads.length === 0 ? (
                         <div className="px-5 py-12 text-center text-slate-400">
-                            <p className="text-sm">No reaches yet.</p>
+                            <p className="text-sm">No direct messages yet.</p>
                             <p className="mt-1 text-xs">Reach a Lifetree from the map or a tree's page.</p>
                         </div>
                     ) : (

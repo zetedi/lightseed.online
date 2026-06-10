@@ -34,6 +34,9 @@ service cloud.firestore {
     }
 
     // Users collection: Read self/staff, Write self
+    // Self-write covers the onlyValidatedCanReach contact-privacy flag. That flag is
+    // mirrored onto the user's (world-readable) lifetrees so the reach gate can read it
+    // without exposing the rest of the private user doc to other members.
     match /users/{userId} {
       allow read: if isOwner(userId) || isStaff();
       allow write: if isOwner(userId);
@@ -70,6 +73,11 @@ service cloud.firestore {
     }
 
     // Pulses: Read public, Write signed in
+    // NOTE: The validation-gated reach rule (a "protected" target only accepts reaches
+    // from validated trees) would require cross-document reads of the target tree's
+    // mirrored privacy flag at write time. To avoid weakening these rules with an
+    // expensive get(), that rule is enforced in the service layer (sendReach) and the
+    // UI (canReachTree). See services/firebase.ts -> sendReach.
     match /pulses/{pulseId} {
       allow read: if true;
       allow create: if isSignedIn() && (

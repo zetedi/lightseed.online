@@ -33,6 +33,7 @@ export interface Pulse {
   recipientUid?: string | null; // Owner of the reached tree — drives inbox routing + email delivery.
   recipientName?: string;
   seenBy?: string[];
+  threadId?: string; // Deterministic id for a reach thread: [fromTreeId, toTreeId].sort().join('__').
   
   // V2 AI
   aiInterpretation?: PulseInterpretation;

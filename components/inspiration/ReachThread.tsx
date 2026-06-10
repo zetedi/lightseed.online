@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { sendMessageToOracle, generateImage } from '../../services/gemini';
-import { checkAndIncrementAiUsage, mintPulse, uploadBase64Image, listenToUserProfile, fetchReachThread, markReachesSeen, getLifetreeById } from '../../services/firebase';
+import { checkAndIncrementAiUsage, mintPulse, uploadBase64Image, listenToUserProfile, fetchReachThread, markReachesSeen, sendReach } from '../../services/firebase';
 import { useLifeseed } from '../../hooks/useLifeseed';
 import { Icons } from '../ui/Icons';
 import { Lifetree } from '../../types';
@@ -29,7 +29,7 @@ const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, message: string
 
 export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetree | null, onBack?: () => void }) => {
     const { t } = useLanguage();
-    const { lightseed, activeTree, myTrees } = useLifeseed();
+    const { lightseed, activeTree, myTrees, isAdmin, isSuperAdmin } = useLifeseed();
     const [messages, setMessages] = useState<{role: 'user' | 'model', text: string}[]>([]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
@@ -144,27 +144,15 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
             setIsSending(true);
 
             try {
-                // Real person-to-person delivery: resolve the recipient tree's owner so the
-                // reach lands in their inbox (and triggers their email if they opted in).
-                let recipientUid: string | undefined = (selectedTree as any).ownerId;
-                if (!recipientUid) {
-                    const full = await getLifetreeById(selectedTree.id);
-                    recipientUid = full?.ownerId;
-                }
-
-                await mintPulse({
-                    lifetreeId: activeTree.id,
-                    type: 'reach',
-                    title: `Reach: ${activeTree.name} -> ${selectedTree.name}`,
-                    body: mycelialText,
-                    content: mycelialText,
-                    reachTreeId: selectedTree.id,
-                    reachTreeName: selectedTree.name,
-                    recipientUid: recipientUid || null,
-                    recipientName: selectedTree.name,
-                    authorId: lightseed.uid,
-                    authorName: activeTree.name,
-                    authorPhoto: activeTree.imageUrl || lightseed.photoURL || undefined,
+                // Person-to-person delivery. sendReach resolves the recipient tree's owner,
+                // enforces the validation-gated contact rule, and stamps threadId + seenBy.
+                await sendReach({
+                    fromTree: activeTree,
+                    toTree: selectedTree,
+                    text: mycelialText,
+                    sender: lightseed,
+                    isAdmin,
+                    isSuperAdmin,
                 });
             } catch (error: any) {
                 console.error("Reach failed:", error);

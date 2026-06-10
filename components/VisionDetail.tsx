@@ -96,7 +96,7 @@ export const VisionDetail = ({ vision, onClose, currentUserId, onDelete }: Visio
                          <img src={vision.imageUrl} alt={vision.title} className="w-full h-full object-cover" />
                      ) : (
                          <div className="w-full h-full flex items-center justify-center text-amber-200">
-                             <Icons.Sparkles />
+                             <Icons.Eye />
                          </div>
                      )}
                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
