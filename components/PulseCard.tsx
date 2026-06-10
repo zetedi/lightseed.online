@@ -4,6 +4,7 @@ import { type Pulse, type Lightseed } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { isPulseLoved, lovePulse } from '../services/firebase';
 import { Icons } from './ui/Icons';
+import { DefaultCardImage } from './ui/DefaultCardImage';
 
 interface PulseCardProps {
     pulse: Pulse;
@@ -52,9 +53,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView }: PulseCardProps)
                 {images.length > 0 ? (
                     <img src={images[0]} alt={pulse.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-50">
-                        <Icons.Hash />
-                    </div>
+                    <DefaultCardImage />
                 )}
                 
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent pointer-events-none"></div>

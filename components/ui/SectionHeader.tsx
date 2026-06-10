@@ -3,12 +3,13 @@ import React from 'react';
 // Shared section header — mirrors the unified header of the Threads/Inspiration
 // panel (emerald gradient, icon chip, title + subtitle) so the Visions, Events
 // and Pulses views share one consistent look and feel.
-export const SectionHeader = ({ icon, title, subtitle, action, footer }: {
+export const SectionHeader = ({ icon, title, subtitle, action, footer, children }: {
     icon: React.ReactNode;
     title: string;
     subtitle?: string;
     action?: React.ReactNode;
     footer?: React.ReactNode;
+    children?: React.ReactNode;
 }) => (
     <div className="mb-8 rounded-3xl border border-emerald-100 bg-gradient-to-r from-emerald-50 to-white px-6 py-5 shadow-xl">
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -24,5 +25,6 @@ export const SectionHeader = ({ icon, title, subtitle, action, footer }: {
             {action && <div className="shrink-0">{action}</div>}
         </div>
         {footer && <div className="mt-4">{footer}</div>}
+        {children && <div className="mt-6">{children}</div>}
     </div>
 );

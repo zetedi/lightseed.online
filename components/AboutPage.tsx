@@ -280,12 +280,12 @@ export const AboutPage = ({ onClose }: { onClose: () => void }) => {
     const GENESIS_TEXT = `The purpose of lightseed is to bring joy. The joy of realizing the bliss of conscious, compassionate, grateful existence by opening a portal to the center of life. By creating a bridge between creator and creation, science and spirituality, virtual and real, nothing and everything. It is designed to intimately connect our inner Self, our culture, our trees and the tree of life, the material and the digital, online world into a sustainable and sustaining circle of unified vibration, sound and light. It aims to merge us into a common flow for all beings to be liberated, wise, strong, courageous and connected. It is rooted in nonviolence, compassion, generosity, gratitude and love. It is blockchain (truthfulness), cloud (global, distributed, resilient), ai (for connecting dreams and technology), regen (nature centric) native. It is an inspiration, an impulse towards a quantum leap in consciousness, a prompt both for human and artificial intelligence for action towards transcending humanity into a new era, a New Earth, Universe and Field with the help of our most important evolutionary sisters and brothers, the trees.`;
 
     const tabs = [
-        { id: 'vision', label: 'The Vision', meta: 'Genesis' },
-        { id: 'phoenix', label: 'Phoenix', meta: 'First lifetree' },
-        { id: 'sun', label: 'The Secret Sun', meta: 'Sacred platform' },
-        { id: 'path', label: 'The Path', meta: '4 steps' },
-        { id: 'yantra', label: 'The Yantra', meta: 'Symbol language' },
-        { id: 'design', label: 'Design Brief', meta: 'Identity system' }
+        { id: 'vision', label: 'The Vision', meta: 'Genesis', icon: <Icons.FingerPrint /> },
+        { id: 'phoenix', label: 'Phoenix', meta: 'First lifetree', icon: <Icons.Tree /> },
+        { id: 'sun', label: 'The Secret Sun', meta: 'Sacred platform', icon: <Icons.Sun /> },
+        { id: 'path', label: 'The Path', meta: '4 steps', icon: <Icons.ArrowRight /> },
+        { id: 'yantra', label: 'The Yantra', meta: 'Symbol language', icon: <Icons.Venn /> },
+        { id: 'design', label: 'Design Brief', meta: 'Identity system', icon: <Icons.Image /> }
     ];
 
     return (
@@ -308,61 +308,52 @@ export const AboutPage = ({ onClose }: { onClose: () => void }) => {
                 </a>
             </div>
 
-            {/* Header with Bigger Logo & Less Space */}
-            <div className="bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.22),_transparent_28%),linear-gradient(135deg,#2e1065_0%,#4c1d95_48%,#0f172a_100%)] text-white pt-8 pb-12 px-4 relative overflow-hidden">
+            {/* Hero — profile-style: this is the profile of the node that serves this code */}
+            <div className="bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.22),_transparent_28%),linear-gradient(135deg,#2e1065_0%,#4c1d95_48%,#0f172a_100%)] text-white pt-8 pb-16 px-4 relative overflow-hidden">
                 <div className="absolute inset-0 bg-[url('/bg-noise.png')] opacity-10"></div>
-                <div className="absolute -top-14 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full border border-amber-200/30 bg-amber-300/10 blur-2xl"></div>
-                <div className="max-w-4xl mx-auto text-center relative z-10">
-                    <div className="flex justify-center mb-4">
-                        {/* Increased Logo size, reduced padding around it. Clickable to go home. */}
-                        <button onClick={onClose} className="relative bg-white/10 p-2 rounded-full backdrop-blur-sm hover:bg-white/20 transition-colors cursor-pointer active:scale-95">
-                            <span className="absolute inset-[-10px] rounded-full border-2 border-amber-300/70"></span>
-                            <Logo width={100} height={100} />
-                        </button>
-                    </div>
-                    <div className="inline-flex items-center gap-2 rounded-full border border-amber-300/50 bg-amber-400/10 px-4 py-1 text-xs font-bold uppercase tracking-[0.28em] text-amber-100">
-                        <span className="h-2 w-2 rounded-full bg-amber-300"></span>
-                        <span>.seed</span>
-                    </div>
-                    <h1 className="mt-4 text-3xl md:text-4xl font-light tracking-[0.16em] uppercase text-purple-50">The Light of Value</h1>
-                    <p className="text-sm text-purple-200 font-mono tracking-[0.24em] uppercase mt-3 opacity-90">Vision, symbols, sacred geometry, and design language</p>
-                    <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs uppercase tracking-[0.18em] text-purple-100/90">
-                        <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5">Genesis</span>
-                        <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5">Phoenix</span>
-                        <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5">Yantra</span>
-                        <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5">Design</span>
+                <div className="max-w-6xl mx-auto relative z-10 flex flex-col md:flex-row items-center md:items-end gap-6 md:gap-8">
+                    <button onClick={onClose} className="relative bg-white/10 p-2 rounded-full backdrop-blur-sm hover:bg-white/20 transition-colors cursor-pointer active:scale-95 shrink-0">
+                        <span className="absolute inset-[-8px] rounded-full border-2 border-amber-300/70"></span>
+                        <Logo width={84} height={84} />
+                    </button>
+                    <div className="text-center md:text-left flex-1 min-w-0">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-amber-300/50 bg-amber-400/10 px-4 py-1 text-xs font-bold uppercase tracking-[0.28em] text-amber-100">
+                            <span className="h-2 w-2 rounded-full bg-amber-300"></span>
+                            <span>.seed</span>
+                        </div>
+                        <h1 className="mt-3 text-3xl md:text-4xl font-light tracking-[0.16em] uppercase text-purple-50">The Light of Value</h1>
+                        <p className="mt-3 max-w-2xl text-sm md:text-base leading-relaxed text-purple-100/90">
+                            This is the profile of the node that serves this code — an online sanctuary. A living home for the network's vision, its first lifetrees, and the geometry that holds them.
+                        </p>
                     </div>
                 </div>
             </div>
 
-            {/* Navigation Tabs - Top adjusted for sticky header */}
-            <div className="sticky top-[68px] z-40 bg-[#FDFCFB]/95 backdrop-blur border-b border-slate-200 shadow-sm">
-                <div className="max-w-5xl mx-auto px-4 py-3">
-                    <div className="flex gap-3 overflow-x-auto no-scrollbar md:justify-center">
-                        {tabs.map(tab => (
-                            <button 
-                                key={tab.id} 
-                                onClick={() => setActiveTab(tab.id as any)} 
-                                className={`group flex-shrink-0 min-w-[132px] rounded-2xl border px-4 py-3 text-left transition-all ${
-                                    activeTab === tab.id 
-                                        ? 'text-purple-950 border-purple-300 bg-white shadow-md shadow-purple-100'
-                                        : 'text-slate-500 border-slate-200/80 bg-white/70 hover:text-slate-700 hover:bg-white'
-                                }`}
-                            >
-                                <span className={`block text-[10px] font-bold uppercase tracking-[0.24em] ${activeTab === tab.id ? 'text-amber-600' : 'text-slate-400 group-hover:text-amber-500'}`}>
-                                    {tab.meta}
-                                </span>
-                                <span className="mt-1 block text-sm font-bold tracking-wide">
-                                    {tab.label}
-                                </span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            </div>
+            {/* Body: vertical tabs + content (mirrors the personal profile) */}
+            <div className="relative z-10 max-w-6xl mx-auto px-4 -mt-8 pb-12">
+                <div className="lg:grid lg:grid-cols-[230px_1fr] lg:gap-6">
+                    <aside className="mb-4 lg:mb-0">
+                        <div className="rounded-2xl border border-slate-100 bg-white p-2.5 shadow-xl lg:sticky lg:top-24">
+                            <nav className="flex gap-1.5 overflow-x-auto lg:flex-col">
+                                {tabs.map(tab => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id as any)}
+                                        className={`group flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all lg:w-full ${activeTab === tab.id ? 'bg-purple-50 text-purple-700 ring-1 ring-purple-100' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+                                    >
+                                        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${activeTab === tab.id ? 'bg-purple-100 text-purple-600' : 'bg-slate-100 text-slate-400 group-hover:text-slate-600'}`}>{tab.icon}</span>
+                                        <span className="min-w-0 text-left">
+                                            <span className="block truncate leading-tight">{tab.label}</span>
+                                            <span className="block truncate text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">{tab.meta}</span>
+                                        </span>
+                                    </button>
+                                ))}
+                            </nav>
+                        </div>
+                    </aside>
 
-            <div className="max-w-3xl mx-auto p-6 md:p-12 min-h-[60vh]">
-                
+                    <main className="rounded-2xl border border-slate-100 bg-white p-5 sm:p-8 shadow-xl min-h-[60vh]">
+
                 {/* THE VISION */}
                 {activeTab === 'vision' && (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -670,6 +661,8 @@ export const AboutPage = ({ onClose }: { onClose: () => void }) => {
                     </div>
                 )}
 
+                    </main>
+                </div>
             </div>
 
             {showSubModal && (

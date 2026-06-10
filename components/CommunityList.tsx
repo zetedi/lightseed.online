@@ -7,6 +7,7 @@ import { fetchCommunities, createCommunity, getCommunityByDomain } from '../serv
 import { communityThemePresets } from '../utils/theme';
 import { Loading } from './ui/Loading';
 import { SectionHeader } from './ui/SectionHeader';
+import { DefaultCardImage } from './ui/DefaultCardImage';
 
 interface CommunityListProps {
   onSelect: (community: Community) => void;
@@ -23,6 +24,15 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
   const [newName, setNewName] = useState('');
   const [newDomain, setNewDomain] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const matchesSearch = (c: Community) => {
+    const term = search.trim().toLowerCase();
+    if (!term) return true;
+    return `${c.name || ''} ${c.domain || ''} ${c.vision || ''}`.toLowerCase().includes(term);
+  };
+  const filteredCommunities = communities.filter(matchesSearch);
+  const showGenesis = genesisCommunity && matchesSearch(genesisCommunity);
 
   useEffect(() => {
     const domain = window.location.hostname;
@@ -91,9 +101,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
                 alt={community.name} 
                 />
             ) : (
-                <div className="flex items-center justify-center h-full group-hover:bg-slate-200 transition-colors">
-                <Icons.Globe className="text-slate-300" size={48} />
-                </div>
+                <DefaultCardImage />
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
             <div className="absolute bottom-4 left-4 right-4">
@@ -130,6 +138,19 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
         icon={<Icons.Globe />}
         title={t('communities')}
         subtitle="Connecting vertical forests with global visions."
+        footer={
+          <div className="relative w-full">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Icons.Search /></div>
+            <input
+              dir="auto"
+              type="text"
+              className="block w-full pl-10 pr-3 py-2 border border-emerald-100 rounded-xl leading-5 bg-white/80 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm shadow-sm"
+              placeholder="Search communities..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+        }
         action={myTrees.length > 0 ? (
           <button
             onClick={() => setShowCreate(true)}
@@ -139,46 +160,48 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
             <span>{t('register_community')}</span>
           </button>
         ) : undefined}
-      />
-
-      {loading ? (
-        <div className="flex justify-center py-24">
-          <Loading />
-        </div>
-      ) : (communities.length > 0 || genesisCommunity) ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {genesisCommunity && <CommunityCard community={genesisCommunity} isGenesis={true} />}
-          {communities.map(community => (
-            <div key={community.id}>
-              <CommunityCard community={community} />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="bg-white/90 backdrop-blur-sm border border-slate-200 rounded-[3rem] p-12 md:p-24 text-center flex flex-col items-center shadow-2xl animate-in zoom-in-95 duration-700">
-            <div className="mb-8 p-6 bg-slate-50 rounded-full border border-slate-200 text-slate-300 rotate-12 group hover:rotate-0 transition-transform duration-500">
-                <Icons.Globe size={80} />
-            </div>
-            <h2 className="text-3xl font-light text-slate-950 mb-4">No Communities Registered</h2>
-            <p className="text-slate-500 max-w-md mx-auto mb-10 leading-relaxed">
-                Be the first to plant a global vision. Communities connect vertical forest nodes into a unified brand and purpose.
-            </p>
-            {myTrees.length > 0 ? (
-                <button 
-                    onClick={() => setShowCreate(true)} 
-                    className="bg-emerald-600 text-white px-10 py-4 rounded-full font-bold shadow-xl hover:bg-emerald-700 transition-all flex items-center gap-2 active:scale-95"
-                >
-                    <Icons.Plus />
-                    <span>Start a Community</span>
-                </button>
-            ) : (
-                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-amber-700 text-sm flex items-center gap-3">
-                    <Icons.Tree />
-                    <span>You need to plant a lifetree before you can start a community.</span>
-                </div>
-            )}
-        </div>
-      )}
+      >
+        {loading ? (
+          <div className="flex justify-center py-24">
+            <Loading />
+          </div>
+        ) : (communities.length === 0 && !genesisCommunity) ? (
+          <div className="bg-white/90 backdrop-blur-sm border border-slate-200 rounded-[2rem] p-12 md:p-20 text-center flex flex-col items-center shadow-xl animate-in zoom-in-95 duration-700">
+              <div className="mb-8 p-6 bg-slate-50 rounded-full border border-slate-200 text-slate-300 rotate-12 group hover:rotate-0 transition-transform duration-500">
+                  <Icons.Globe size={80} />
+              </div>
+              <h2 className="text-3xl font-light text-slate-950 mb-4">No Communities Registered</h2>
+              <p className="text-slate-500 max-w-md mx-auto mb-10 leading-relaxed">
+                  Be the first to plant a global vision. Communities connect vertical forest nodes into a unified brand and purpose.
+              </p>
+              {myTrees.length > 0 ? (
+                  <button
+                      onClick={() => setShowCreate(true)}
+                      className="bg-emerald-600 text-white px-10 py-4 rounded-full font-bold shadow-xl hover:bg-emerald-700 transition-all flex items-center gap-2 active:scale-95"
+                  >
+                      <Icons.Plus />
+                      <span>Start a Community</span>
+                  </button>
+              ) : (
+                  <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-amber-700 text-sm flex items-center gap-3">
+                      <Icons.Tree />
+                      <span>You need to plant a lifetree before you can start a community.</span>
+                  </div>
+              )}
+          </div>
+        ) : (filteredCommunities.length === 0 && !showGenesis) ? (
+          <p className="text-center text-slate-400 py-16">No communities match your search.</p>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {showGenesis && <CommunityCard community={genesisCommunity!} isGenesis={true} />}
+            {filteredCommunities.map(community => (
+              <div key={community.id}>
+                <CommunityCard community={community} />
+              </div>
+            ))}
+          </div>
+        )}
+      </SectionHeader>
 
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">

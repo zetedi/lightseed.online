@@ -2,10 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
-import { Community, Lifetree, Lightseed } from '../types';
-import { updateCommunity, uploadImage, getTreesByDomain, deleteCommunity, createCommunityEvent } from '../services/firebase';
+import { Community, Lifetree, Lightseed, Pulse } from '../types';
+import { updateCommunity, uploadImage, getTreesByDomain, deleteCommunity, createCommunityEvent, getCommunityByDomain, getCommunityEvents } from '../services/firebase';
 import RichTextEditor from './ui/RichTextEditor';
 import { ImagePicker } from './ui/ImagePicker';
+import { DefaultCardImage } from './ui/DefaultCardImage';
 import { communityThemePresets, normalizeTheme } from '../utils/theme';
 
 interface CommunityProfileProps {
@@ -18,26 +19,39 @@ interface CommunityProfileProps {
   isSuperAdmin?: boolean;
 }
 
-export const CommunityProfile: React.FC<CommunityProfileProps> = ({ 
-  community, 
-  onUpdate, 
-  onClose, 
+type TabKey = 'vision' | 'trees' | 'events' | 'appearance';
+
+export const CommunityProfile: React.FC<CommunityProfileProps> = ({
+  community,
+  onUpdate,
+  onClose,
   currentUser,
-  currentUserId, 
+  currentUserId,
   isAdmin,
   isSuperAdmin
 }) => {
   const { t } = useLanguage();
-  const [isEditing, setIsEditing] = useState(false);
+  const canEdit = currentUserId === community.ownerId || isSuperAdmin || isAdmin;
+  const canDelete = currentUserId === community.ownerId || isSuperAdmin;
+
+  const [activeTab, setActiveTab] = useState<TabKey>('vision');
+
+  // Editable copies of the community fields (branding + vision).
   const [editName, setEditName] = useState(community.name);
   const [editVision, setEditVision] = useState(community.vision);
   const [editTheme, setEditTheme] = useState(normalizeTheme(community.theme));
   const [logoUrl, setLogoUrl] = useState(community.logoUrl || '');
   const [imageUrls, setImageUrls] = useState<string[]>(community.imageUrls || []);
+
   const [linkedTrees, setLinkedTrees] = useState<Lifetree[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+
+  // Events
+  const [events, setEvents] = useState<Pulse[]>([]);
   const [eventTitle, setEventTitle] = useState('');
   const [eventDate, setEventDate] = useState('');
   const [eventLocation, setEventLocation] = useState('');
@@ -46,66 +60,87 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const [isEventSaving, setIsEventSaving] = useState(false);
   const [isUploadingEventImage, setIsUploadingEventImage] = useState(false);
 
-  const canEdit = currentUserId === community.ownerId || isSuperAdmin || isAdmin;
-  const canDelete = currentUserId === community.ownerId || isSuperAdmin;
+  // Keep editable copies in sync whenever the community prop changes (e.g. after refresh).
+  useEffect(() => {
+    setEditName(community.name);
+    setEditVision(community.vision);
+    setEditTheme(normalizeTheme(community.theme));
+    setLogoUrl(community.logoUrl || '');
+    setImageUrls(community.imageUrls || []);
+  }, [community.id, community.name, community.vision, community.logoUrl, community.theme, (community.imageUrls || []).join(',')]);
 
   useEffect(() => {
-    getTreesByDomain(community.domain, currentUserId).then(setLinkedTrees);
+    getTreesByDomain(community.domain, currentUserId).then(setLinkedTrees).catch(() => {});
   }, [community.domain, currentUserId]);
+
+  useEffect(() => {
+    getCommunityEvents(community.id).then(setEvents).catch(() => {});
+  }, [community.id]);
 
   const handleSave = async () => {
     setIsSaving(true);
+    setStatus(null);
     try {
       const updates = {
         name: editName,
         vision: editVision,
-        imageUrls: imageUrls,
+        imageUrls,
         theme: normalizeTheme(editTheme),
-        logoUrl: logoUrl
+        logoUrl,
       };
       await updateCommunity(community.id, updates);
-      if (onUpdate) onUpdate(updates);
-      setIsEditing(false);
+      // Refresh from Firestore so the view reflects exactly what was persisted.
+      const fresh = await getCommunityByDomain(community.domain);
+      if (onUpdate) onUpdate(fresh ? { ...fresh } : updates);
+      setStatus('Saved.');
+      setTimeout(() => setStatus(null), 2500);
     } catch (e) {
       console.error(e);
-      alert("Failed to save community profile.");
+      setStatus('Failed to save. Please try again.');
     }
     setIsSaving(false);
   };
 
   const handleDelete = async () => {
-      if (!window.confirm("Are you sure you want to delete this community? This cannot be undone.")) return;
-      setIsDeleting(true);
-      try {
-          await deleteCommunity(community.id);
-          alert("Community deleted.");
-          onClose();
-          window.location.reload(); // Refresh to update lists
-      } catch (e) {
-          console.error(e);
-          alert("Failed to delete community.");
-      }
-      setIsDeleting(false);
-  }
+    if (!window.confirm('Are you sure you want to delete this community? This cannot be undone.')) return;
+    setIsDeleting(true);
+    try {
+      await deleteCommunity(community.id);
+      onClose();
+      window.location.reload();
+    } catch (e) {
+      console.error(e);
+      alert('Failed to delete community.');
+    }
+    setIsDeleting(false);
+  };
 
   const handleLogoUpload = async (file: File) => {
+    setIsUploadingLogo(true);
     try {
       const url = await uploadImage(file, `communities/${community.id}/logo_${Date.now()}`);
       setLogoUrl(url);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert("Failed to upload logo.");
+      setStatus(e?.message || 'Failed to upload logo.');
     }
+    setIsUploadingLogo(false);
   };
 
   const handleAddImage = async (file: File) => {
+    setIsUploadingImage(true);
     try {
       const url = await uploadImage(file, `communities/${community.id}/${Date.now()}`);
       setImageUrls(prev => [...prev, url]);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert("Failed to upload image.");
+      setStatus(e?.message || 'Failed to upload image.');
     }
+    setIsUploadingImage(false);
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setImageUrls(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleAddEventImage = async (file: File) => {
@@ -115,7 +150,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       setEventImageUrls(prev => [...prev, url]);
     } catch (e) {
       console.error(e);
-      alert("Failed to upload event image.");
+      alert('Failed to upload event image.');
     }
     setIsUploadingEventImage(false);
   };
@@ -142,44 +177,54 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       setEventLocation('');
       setEventBody('');
       setEventImageUrls([]);
-      alert("Event created.");
+      getCommunityEvents(community.id).then(setEvents).catch(() => {});
     } catch (error: any) {
       console.error(error);
-      alert("Failed to create event: " + (error.message || 'Unknown error'));
+      alert('Failed to create event: ' + (error.message || 'Unknown error'));
     }
     setIsEventSaving(false);
   };
 
-  const handleRemoveImage = (index: number) => {
-    setImageUrls(prev => prev.filter((_, i) => i !== index));
-    if (activeImageIndex >= imageUrls.length - 1) {
-      setActiveImageIndex(Math.max(0, imageUrls.length - 2));
-    }
-  };
+  const navSections: { key: TabKey; label: string; icon: React.ReactNode }[] = [
+    { key: 'vision', label: 'Vision', icon: <Icons.FingerPrint /> },
+    { key: 'trees', label: 'Community Trees', icon: <Icons.Tree /> },
+    { key: 'events', label: 'Events', icon: <Icons.Loc /> },
+    ...(canEdit ? [{ key: 'appearance' as TabKey, label: 'Appearance', icon: <Icons.Image /> }] : []),
+  ];
+
+  const SectionTitle = ({ title, sub }: { title: string; sub?: string }) => (
+    <div className="mb-6">
+      <h2 className="text-xl font-bold text-slate-900">{title}</h2>
+      {sub && <p className="mt-1 text-sm text-slate-500">{sub}</p>}
+    </div>
+  );
+
+  const SaveBar = () => canEdit ? (
+    <div className="mt-6 flex items-center gap-3">
+      <button onClick={handleSave} disabled={isSaving || isUploadingLogo || isUploadingImage} className="rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-700 disabled:opacity-50">
+        {isSaving ? 'Saving...' : 'Save Changes'}
+      </button>
+      {status && <span className="text-sm text-slate-500">{status}</span>}
+    </div>
+  ) : null;
 
   return (
-    <div className="min-h-screen bg-slate-50 animate-in fade-in duration-300">
-      {/* Hero — mirrors the personal profile: logo as avatar, vision beside it, tree count */}
+    <div className="min-h-screen pb-20">
+      {/* Hero — mirrors the personal profile */}
       <div className="relative bg-gradient-to-b from-slate-800 to-slate-900 text-white pt-6 pb-16 px-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between mb-6">
+        <div className="max-w-6xl mx-auto flex items-center justify-between mb-6">
           <button onClick={onClose} className="flex items-center gap-2 text-white/70 hover:text-white text-sm font-medium">
             <Icons.ArrowLeft />
             <span>Back</span>
           </button>
-          <div className="flex gap-2">
-            {canEdit && !isEditing && (
-              <button onClick={() => setIsEditing(true)} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-full font-bold text-xs transition-colors flex items-center gap-1 border border-white/15">
-                <Icons.Pencil /><span>Edit</span>
-              </button>
-            )}
-            {canDelete && !isEditing && (
-              <button onClick={handleDelete} disabled={isDeleting} className="bg-red-500/15 hover:bg-red-500 text-red-300 hover:text-white px-4 py-2 rounded-full font-bold text-xs transition-colors flex items-center gap-1 border border-red-400/30">
-                <Icons.Trash /><span>Delete</span>
-              </button>
-            )}
-          </div>
+          {canDelete && (
+            <button onClick={handleDelete} disabled={isDeleting} className="bg-red-500/15 hover:bg-red-500 text-red-300 hover:text-white px-4 py-2 rounded-full font-bold text-xs transition-colors flex items-center gap-1 border border-red-400/30">
+              <Icons.Trash /><span>Delete</span>
+            </button>
+          )}
         </div>
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center md:items-end gap-6 md:gap-8">
+
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center md:items-end gap-6 md:gap-8">
           <div className="flex h-24 w-24 md:h-28 md:w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-xl">
             {logoUrl ? (
               <img src={logoUrl} className="h-full w-full object-cover" alt={`${community.name} logo`} />
@@ -189,328 +234,215 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
           </div>
           <div className="text-center md:text-left flex-1 min-w-0">
             <div className="flex flex-col md:flex-row md:items-baseline md:flex-wrap gap-x-4 gap-y-1 justify-center md:justify-start">
-              <h1 className="text-3xl font-light tracking-wide">{isEditing ? "Editing Community" : community.name}</h1>
-              <p className="text-emerald-300 text-sm font-mono">{community.domain}</p>
-              <p className="text-sm text-slate-300">
-                <span className="font-bold text-white">{linkedTrees.length}</span>
-                <span className="ml-1 text-[10px] uppercase tracking-wider text-slate-400">Trees</span>
-              </p>
+              <h1 className="text-3xl font-light tracking-wide">{community.name}</h1>
+              <span className="inline-flex items-baseline gap-1 text-slate-300">
+                <span className="text-lg font-bold text-white">{linkedTrees.length}</span>
+                <span className="text-sm text-slate-400">{linkedTrees.length === 1 ? t('tree') : t('trees')}</span>
+              </span>
             </div>
-            <div className="mt-3 max-w-2xl text-sm text-slate-300/90 line-clamp-2" dangerouslySetInnerHTML={{ __html: community.vision || 'No vision shared yet.' }} />
+            {/* Details live in the header */}
+            <div className="mt-3 flex items-center gap-2 flex-wrap justify-center md:justify-start text-xs">
+              <a href={`https://${community.domain}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-3 py-1 font-mono text-emerald-300 hover:bg-emerald-400/20">
+                <Icons.Globe size={12} /> {community.domain}
+              </a>
+              <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-slate-300">
+                Since {community.createdAt?.toDate ? community.createdAt.toDate().toLocaleDateString() : '—'}
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="relative z-10 max-w-5xl mx-auto p-6 space-y-8 -mt-8">
-        {/* Image Carousel */}
-        <div className="relative aspect-[21/9] w-full rounded-2xl overflow-hidden shadow-xl bg-slate-200 group">
-          {imageUrls.length > 0 ? (
-            <>
-              <img 
-                src={imageUrls[activeImageIndex]} 
-                className="w-full h-full object-cover transition-all duration-500"
-                alt={community.name}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-              
-              {imageUrls.length > 1 && (
-                <>
-                  <button 
-                    onClick={() => setActiveImageIndex(prev => (prev - 1 + imageUrls.length) % imageUrls.length)}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white p-2 rounded-full backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Icons.ArrowLeft />
-                  </button>
-                  <button 
-                    onClick={() => setActiveImageIndex(prev => (prev + 1) % imageUrls.length)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white p-2 rounded-full backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Icons.ArrowRight />
-                  </button>
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
-                    {imageUrls.map((_, i) => (
-                      <div 
-                        key={i} 
-                        className={`w-2 h-2 rounded-full transition-all ${i === activeImageIndex ? 'bg-white w-4' : 'bg-white/50'}`}
-                      />
-                    ))}
-                  </div>
-                </>
-              )}
-            </>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full text-slate-400">
-              <Icons.Image size={48} />
-              <p className="mt-2">No images yet</p>
-            </div>
-          )}
-
-          {isEditing && (
-            <div className="absolute top-4 right-4 flex space-x-2">
-              <ImagePicker onImageSelect={handleAddImage} className="bg-white/80 hover:bg-white p-2 rounded-full shadow-lg text-emerald-600 backdrop-blur-md">
-                <Icons.Plus />
-              </ImagePicker>
-              {imageUrls.length > 0 && (
-                <button 
-                  onClick={() => handleRemoveImage(activeImageIndex)}
-                  className="bg-white/80 hover:bg-red-50 p-2 rounded-full shadow-lg text-red-500 backdrop-blur-md"
-                >
-                  <Icons.Trash />
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="md:col-span-2 space-y-8">
-            <section className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
-              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center">
-                <Icons.FingerPrint />
-                <span className="ml-2">Our Vision</span>
-              </h3>
-              {isEditing ? (
-                <RichTextEditor 
-                  value={editVision} 
-                  onChange={setEditVision} 
-                  placeholder="Share your community's vision..."
-                />
-              ) : (
-                <div 
-                  className="prose prose-slate max-w-none text-slate-700 leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: community.vision || "<p>No vision shared yet.</p>" }}
-                />
-              )}
-            </section>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {isEditing && (
-              <section className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-5">
-                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Branding & Theme</h3>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Community Name</label>
-                  <input
-                    dir="auto"
-                    type="text"
-                    value={editName}
-                    onChange={e => setEditName(e.target.value)}
-                    className="w-full h-11 bg-slate-50 border border-slate-200 rounded-xl px-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    placeholder="Community name"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Logo</label>
-                  <ImagePicker 
-                    onImageSelect={handleLogoUpload} 
-                    previewUrl={logoUrl} 
-                    className="w-full aspect-square max-w-[120px] mx-auto rounded-2xl border-2 border-dashed border-slate-200"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-[10px] font-bold uppercase text-slate-400">Theme mood</label>
-                  <div className="space-y-2">
-                    {communityThemePresets.map((preset) => {
-                      const active = editTheme.primary === preset.primary && editTheme.surface === preset.surface && editTheme.background === preset.background && editTheme.mode === preset.mode;
-                      return (
-                        <button
-                          key={preset.id}
-                          type="button"
-                          onClick={() => setEditTheme(normalizeTheme(preset))}
-                          className={`w-full rounded-2xl border p-3 text-left transition-all ${active ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
-                              <div className="text-sm font-bold text-slate-800">{preset.name}</div>
-                              <div className="text-[11px] text-slate-500">{preset.description}</div>
-                            </div>
-                            <div className="flex shrink-0 overflow-hidden rounded-full border border-white shadow-sm">
-                              {[preset.surface, preset.primary, preset.accent, preset.background].map((color, index) => (
-                                <span key={`${preset.id}-${index}`} className="h-6 w-6" style={{ backgroundColor: color }} />
-                              ))}
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  {[
-                    ['surface', 'Header'],
-                    ['primary', 'Primary'],
-                    ['accent', 'Accent'],
-                    ['background', 'Background']
-                  ].map(([key, label]) => (
-                    <label key={key} className="space-y-1">
-                      <span className="text-[10px] font-bold uppercase text-slate-400">{label}</span>
-                      <input
-                        type="color"
-                        value={(editTheme as any)[key]}
-                        onChange={e => setEditTheme(normalizeTheme({ ...editTheme, [key]: e.target.value }))}
-                        className="block h-10 w-full cursor-pointer rounded-lg border border-slate-200 bg-white p-1"
-                      />
-                    </label>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {!isEditing && (
-              <section className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Brand</h3>
-                <div className="flex items-center gap-4">
-                  <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
-                    {community.logoUrl ? <img src={community.logoUrl} className="h-full w-full object-cover" alt={`${community.name} logo`} /> : <Icons.Globe />}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate font-bold text-slate-800">{community.name}</p>
-                    <div className="mt-2 flex overflow-hidden rounded-full border border-white shadow-sm">
-                      {[editTheme.surface, editTheme.primary, editTheme.accent, editTheme.background].map((color, index) => (
-                        <span key={`community-theme-${index}`} className="h-5 w-8" style={{ backgroundColor: color }} />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {canEdit && (
-              <section className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                <h3 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-slate-400">
-                  <Icons.Sparkles />
-                  <span>Create Event</span>
-                </h3>
-                <form onSubmit={handleCreateEvent} className="space-y-3">
-                  <input
-                    dir="auto"
-                    value={eventTitle}
-                    onChange={e => setEventTitle(e.target.value)}
-                    className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    placeholder="Event title"
-                    required
-                  />
-                  <input
-                    type="datetime-local"
-                    value={eventDate}
-                    onChange={e => setEventDate(e.target.value)}
-                    className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                  <input
-                    dir="auto"
-                    value={eventLocation}
-                    onChange={e => setEventLocation(e.target.value)}
-                    className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    placeholder="Location"
-                  />
-                  <textarea
-                    dir="auto"
-                    value={eventBody}
-                    onChange={e => setEventBody(e.target.value)}
-                    className="min-h-24 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    placeholder="Event details"
-                  />
-                  <div className="grid grid-cols-3 gap-2">
-                    {eventImageUrls.map((url, index) => (
-                      <div key={url} className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
-                        <img src={url} className="h-full w-full object-cover" alt={`Event image ${index + 1}`} />
-                        <button
-                          type="button"
-                          onClick={() => setEventImageUrls(prev => prev.filter((_, i) => i !== index))}
-                          className="absolute right-1 top-1 rounded-full bg-white/90 p-1 text-red-500 shadow-sm"
-                          title="Remove image"
-                        >
-                          <Icons.Close />
-                        </button>
-                      </div>
-                    ))}
-                    <ImagePicker
-                      onImageSelect={handleAddEventImage}
-                      loading={isUploadingEventImage}
-                      className="flex aspect-square cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 text-slate-400 hover:border-emerald-400 hover:text-emerald-600"
-                    >
-                      <Icons.Plus />
-                    </ImagePicker>
-                  </div>
+      {/* Body: sidebar + content */}
+      <div className="relative z-10 max-w-6xl mx-auto px-4 -mt-8">
+        <div className="lg:grid lg:grid-cols-[230px_1fr] lg:gap-6">
+          <aside className="mb-4 lg:mb-0">
+            <div className="rounded-2xl border border-slate-100 bg-white p-2.5 shadow-xl lg:sticky lg:top-24">
+              <nav className="flex gap-1.5 overflow-x-auto lg:flex-col">
+                {navSections.map(s => (
                   <button
-                    type="submit"
-                    disabled={isEventSaving || isUploadingEventImage || !eventTitle.trim()}
-                    className="w-full rounded-2xl bg-sky-600 py-3 text-sm font-bold text-white shadow-lg shadow-sky-600/20 transition-all hover:bg-sky-700 disabled:opacity-50"
+                    key={s.key}
+                    onClick={() => setActiveTab(s.key)}
+                    className={`group flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all lg:w-full ${activeTab === s.key ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
                   >
-                    {isEventSaving ? "Creating..." : "Create Event"}
+                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${activeTab === s.key ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400 group-hover:text-slate-600'}`}>{s.icon}</span>
+                    <span className="truncate whitespace-nowrap">{s.label}</span>
                   </button>
-                </form>
-              </section>
-            )}
+                ))}
+              </nav>
+            </div>
+          </aside>
 
-            <section className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Details</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Domain</label>
-                  <p className="text-emerald-600 font-mono text-sm">{community.domain}</p>
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Member since</label>
-                  <p className="text-slate-600 text-sm">
-                    {community.createdAt?.toDate ? community.createdAt.toDate().toLocaleDateString() : '—'}
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            <section className="bg-emerald-900 text-white p-6 rounded-3xl shadow-xl">
-              <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-widest mb-4 flex items-center">
-                <Icons.Tree />
-                <span className="ml-2 text-white">Connected Trees</span>
-              </h3>
-              <div className="space-y-3">
-                {linkedTrees.length > 0 ? linkedTrees.map(tree => (
-                  <div key={tree.id} className="flex items-center space-x-3 bg-white/10 p-2 rounded-xl border border-white/5">
-                    <img src={tree.imageUrl} className="w-10 h-10 rounded-lg object-cover" alt="" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold truncate">{tree.name}</p>
-                      <p className="text-[10px] text-emerald-300 uppercase tracking-tighter truncate">{tree.locationName}</p>
-                    </div>
-                  </div>
-                )) : (
-                  <p className="text-xs text-emerald-400 italic">No lifetrees linked to this domain yet.</p>
+          <main className="rounded-2xl border border-slate-100 bg-white p-5 sm:p-6 shadow-xl min-h-[520px]">
+            {activeTab === 'vision' && (
+              <div>
+                <SectionTitle title="Vision" sub="What this community is growing towards." />
+                {canEdit ? (
+                  <>
+                    <RichTextEditor value={editVision} onChange={setEditVision} placeholder="Share your community's vision..." />
+                    <SaveBar />
+                  </>
+                ) : (
+                  <div className="prose prose-slate max-w-none text-slate-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: community.vision || '<p>No vision shared yet.</p>' }} />
                 )}
               </div>
-            </section>
+            )}
 
-            {isEditing && (
-              <div className="flex flex-col space-y-2 pt-4">
-                <button 
-                  onClick={handleSave} 
-                  disabled={isSaving} 
-                  className="w-full bg-emerald-600 text-white py-3 rounded-2xl font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 transition-all disabled:opacity-50"
-                >
-                  {isSaving ? "Saving..." : "Save Profile"}
-                </button>
-                <button 
-                  onClick={() => {
-                    setIsEditing(false);
-                    setEditName(community.name);
-                    setEditVision(community.vision);
-                    setImageUrls(community.imageUrls || []);
-                    setLogoUrl(community.logoUrl || '');
-                    setEditTheme(normalizeTheme(community.theme));
-                  }} 
-                  disabled={isSaving} 
-                  className="w-full bg-slate-200 text-slate-700 py-3 rounded-2xl font-bold hover:bg-slate-300 transition-all"
-                >
-                  Cancel
-                </button>
+            {activeTab === 'trees' && (
+              <div>
+                <SectionTitle title="Community Trees" sub="Lifetrees rooted in this community's domain." />
+                {linkedTrees.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400">
+                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-500"><Icons.Tree /></div>
+                    <p className="text-sm">No lifetrees linked to this domain yet.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {linkedTrees.map(tree => (
+                      <div key={tree.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
+                        <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                          {tree.imageUrl ? <img src={tree.imageUrl} className="h-full w-full object-cover" alt={tree.name} /> : <DefaultCardImage />}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold text-slate-800">{tree.name}</p>
+                          <p className="truncate text-[11px] uppercase tracking-wide text-emerald-600">{tree.locationName || '—'}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
-          </div>
+
+            {activeTab === 'events' && (
+              <div>
+                <SectionTitle title="Events" sub="Gatherings and ceremonies for this community." />
+                {canEdit && (
+                  <form onSubmit={handleCreateEvent} className="mb-8 space-y-3 rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
+                    <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-slate-500"><Icons.Plus /> Create Event</h3>
+                    <input dir="auto" value={eventTitle} onChange={e => setEventTitle(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Event title" required />
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <input type="datetime-local" value={eventDate} onChange={e => setEventDate(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                      <input dir="auto" value={eventLocation} onChange={e => setEventLocation(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Location" />
+                    </div>
+                    <textarea dir="auto" value={eventBody} onChange={e => setEventBody(e.target.value)} className="min-h-24 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Event details" />
+                    <div className="grid grid-cols-3 gap-2">
+                      {eventImageUrls.map((url, index) => (
+                        <div key={url} className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                          <img src={url} className="h-full w-full object-cover" alt={`Event image ${index + 1}`} />
+                          <button type="button" onClick={() => setEventImageUrls(prev => prev.filter((_, i) => i !== index))} className="absolute right-1 top-1 rounded-full bg-white/90 p-1 text-red-500 shadow-sm" title="Remove image">
+                            <Icons.Close />
+                          </button>
+                        </div>
+                      ))}
+                      <ImagePicker onImageSelect={handleAddEventImage} loading={isUploadingEventImage} className="flex aspect-square cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-white text-slate-400 hover:border-emerald-400 hover:text-emerald-600">
+                        <Icons.Plus />
+                      </ImagePicker>
+                    </div>
+                    <button type="submit" disabled={isEventSaving || isUploadingEventImage || !eventTitle.trim()} className="w-full rounded-2xl bg-sky-600 py-3 text-sm font-bold text-white shadow-lg shadow-sky-600/20 transition-all hover:bg-sky-700 disabled:opacity-50">
+                      {isEventSaving ? 'Creating...' : 'Create Event'}
+                    </button>
+                  </form>
+                )}
+
+                {events.length === 0 ? (
+                  <p className="text-center text-slate-400 py-10 text-sm">No events yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {events.map(ev => (
+                      <div key={ev.id} className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
+                        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                          {ev.imageUrl ? <img src={ev.imageUrl} className="h-full w-full object-cover" alt={ev.title} /> : <DefaultCardImage />}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold text-slate-800">{ev.title}</p>
+                          <p className="truncate text-xs text-slate-500">
+                            {ev.eventDate ? new Date(ev.eventDate).toLocaleString() : ''}{ev.eventLocation ? ` · ${ev.eventLocation}` : ''}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'appearance' && canEdit && (
+              <div>
+                <SectionTitle title="Appearance" sub="Brand, logo, imagery and theme." />
+
+                <div className="space-y-6">
+                  <div className="grid gap-6 md:grid-cols-[160px_1fr]">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold uppercase text-slate-400">Logo</label>
+                      <ImagePicker onImageSelect={handleLogoUpload} previewUrl={logoUrl} loading={isUploadingLogo} className="aspect-square w-full max-w-[160px] rounded-2xl border-2 border-dashed border-slate-200" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold uppercase text-slate-400">Community Name</label>
+                      <input dir="auto" type="text" value={editName} onChange={e => setEditName(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Community name" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-[10px] font-bold uppercase text-slate-400">Gallery</label>
+                    <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                      {imageUrls.map((url, index) => (
+                        <div key={url} className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                          <img src={url} className="h-full w-full object-cover" alt={`Community image ${index + 1}`} />
+                          <button type="button" onClick={() => handleRemoveImage(index)} className="absolute right-1 top-1 rounded-full bg-white/90 p-1 text-red-500 shadow-sm" title="Remove image">
+                            <Icons.Close />
+                          </button>
+                        </div>
+                      ))}
+                      <ImagePicker onImageSelect={handleAddImage} loading={isUploadingImage} className="flex aspect-square cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 text-slate-400 hover:border-emerald-400 hover:text-emerald-600">
+                        <Icons.Plus />
+                      </ImagePicker>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-[10px] font-bold uppercase text-slate-400">Theme mood</label>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {communityThemePresets.map((preset) => {
+                        const active = editTheme.primary === preset.primary && editTheme.surface === preset.surface && editTheme.background === preset.background && editTheme.mode === preset.mode;
+                        return (
+                          <button key={preset.id} type="button" onClick={() => setEditTheme(normalizeTheme(preset))} className={`w-full rounded-2xl border p-3 text-left transition-all ${active ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}>
+                            <div className="flex items-center justify-between gap-3">
+                              <div>
+                                <div className="text-sm font-bold text-slate-800">{preset.name}</div>
+                                <div className="text-[11px] text-slate-500">{preset.description}</div>
+                              </div>
+                              <div className="flex shrink-0 overflow-hidden rounded-full border border-white shadow-sm">
+                                {[preset.surface, preset.primary, preset.accent, preset.background].map((color, index) => (
+                                  <span key={`${preset.id}-${index}`} className="h-6 w-6" style={{ backgroundColor: color }} />
+                                ))}
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {[
+                      ['surface', 'Header'],
+                      ['primary', 'Primary'],
+                      ['accent', 'Accent'],
+                      ['background', 'Background']
+                    ].map(([key, label]) => (
+                      <label key={key} className="space-y-1">
+                        <span className="text-[10px] font-bold uppercase text-slate-400">{label}</span>
+                        <input type="color" value={(editTheme as any)[key]} onChange={e => setEditTheme(normalizeTheme({ ...editTheme, [key]: e.target.value }))} className="block h-10 w-full cursor-pointer rounded-lg border border-slate-200 bg-white p-1" />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <SaveBar />
+              </div>
+            )}
+          </main>
         </div>
       </div>
     </div>

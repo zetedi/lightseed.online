@@ -139,22 +139,14 @@ export const ReachInbox = ({
 
     return (
         <div className="mx-auto max-w-5xl overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-xl">
-            {/* Unified header — sits together with the threads in one panel */}
-            <div className="flex items-center gap-3 border-b border-emerald-100 bg-gradient-to-r from-emerald-50 to-white px-6 py-5">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-                    <Icons.Lightning />
-                </div>
-                <div className="min-w-0">
-                    <h2 className="truncate text-2xl font-light tracking-wide text-slate-900">{title}</h2>
-                    <p className="text-sm text-slate-500">{subtitle}</p>
-                </div>
-            </div>
-
             <div className="flex h-[70vh]">
             {/* Thread list */}
             <div className={`${hasSelection ? 'hidden md:flex' : 'flex'} w-full shrink-0 flex-col border-r border-slate-100 md:w-80`}>
+                {/* Title sits with the Threads label; the standalone header was removed. */}
                 <div className="border-b border-slate-100 px-4 py-3">
                     <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Threads</span>
+                    <h2 className="mt-1 truncate text-base font-semibold text-slate-900">{title}</h2>
+                    <p className="text-xs text-slate-500">{subtitle}</p>
                 </div>
                 <div className="flex-1 overflow-y-auto">
                     <button
@@ -206,7 +198,7 @@ export const ReachInbox = ({
                         />
                     </div>
                 ) : (
-                    <div className="flex flex-1 flex-col items-center justify-center px-8 text-center text-slate-400">
+                    <div className="flex flex-1 flex-col items-center justify-start px-8 pt-10 text-center text-slate-400">
                         <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 text-amber-500">
                             <Icons.Lightning />
                         </div>

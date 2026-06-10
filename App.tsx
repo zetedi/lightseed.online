@@ -676,20 +676,9 @@ const AppContent = () => {
         }
         
         if (tab === 'about') {
-            // "About" is the host community's profile page (same component the community cards open).
-            return hostCommunity ? (
-                <CommunityProfile
-                    community={hostCommunity}
-                    onClose={() => setTab('dashboard')}
-                    onUpdate={(updates: Partial<Community>) => setHostCommunity(prev => prev ? { ...prev, ...updates } : null)}
-                    currentUser={lightseed}
-                    currentUserId={lightseed?.uid}
-                    isAdmin={isAdmin}
-                    isSuperAdmin={isSuperAdmin}
-                />
-            ) : (
-                <AboutPage onClose={() => setTab('dashboard')} />
-            );
+            // "About" is the profile of the node that serves this code — an online sanctuary.
+            // (The host community itself is editable from the Communities tab.)
+            return <AboutPage onClose={() => setTab('dashboard')} />;
         }
 
         if (tab === 'communities') {
@@ -928,37 +917,37 @@ const AppContent = () => {
                                     <span>{isAnalyzingSynergy ? 'Analyzing...' : 'Analyze Alignments'}</span>
                                 </button>
                             }
-                        />
-
-                        {synergies.length > 0 && (
-                            <div className="mb-12 bg-amber-50/90 backdrop-blur-md p-8 rounded-[2rem] border-2 border-amber-200 shadow-2xl animate-in zoom-in-95 duration-500">
-                                <div className="flex items-center gap-3 mb-6">
-                                    <div className="bg-amber-500 text-white p-2 rounded-xl shadow-lg"><Icons.SparkleFill size={24} /></div>
-                                    <h3 className="text-2xl font-light text-amber-900 italic">Living Intelligence Resonance</h3>
-                                </div>
-                                <div className="grid gap-4 md:grid-cols-2">
-                                    {synergies.map((s, i) => (
-                                        <div key={i} className="bg-white/90 p-4 rounded-xl shadow-sm border border-amber-100">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <div className="text-sm font-bold text-slate-800">{s.vision1Title} + {s.vision2Title}</div>
-                                                <div className="bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Resonance: {s.score}%</div>
-                                            </div>
-                                            <p className="text-xs text-slate-600 italic">"{s.reasoning}"</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                            {filteredData.length === 0 && !loadingMore ? <p className="col-span-full text-center text-slate-400 py-10">{t('no_visions_found')}</p> :
-                                filteredData.map((item: any) => (
-                                    <div key={item.id} onClick={() => setSelectedVision(item)} className="cursor-pointer">
-                                        <VisionCard vision={item} />
+                        >
+                            {synergies.length > 0 && (
+                                <div className="mb-6 bg-amber-50/90 backdrop-blur-md p-6 rounded-2xl border-2 border-amber-200 shadow-lg animate-in zoom-in-95 duration-500">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="bg-amber-500 text-white p-2 rounded-xl shadow-lg"><Icons.SparkleFill size={24} /></div>
+                                        <h3 className="text-2xl font-light text-amber-900 italic">Living Intelligence Resonance</h3>
                                     </div>
-                                ))
-                            }
-                        </div>
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        {synergies.map((s, i) => (
+                                            <div key={i} className="bg-white/90 p-4 rounded-xl shadow-sm border border-amber-100">
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <div className="text-sm font-bold text-slate-800">{s.vision1Title} + {s.vision2Title}</div>
+                                                    <div className="bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Resonance: {s.score}%</div>
+                                                </div>
+                                                <p className="text-xs text-slate-600 italic">"{s.reasoning}"</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                                {filteredData.length === 0 && !loadingMore ? <p className="col-span-full text-center text-slate-400 py-10">{t('no_visions_found')}</p> :
+                                    filteredData.map((item: any) => (
+                                        <div key={item.id} onClick={() => setSelectedVision(item)} className="cursor-pointer">
+                                            <VisionCard vision={item} />
+                                        </div>
+                                    ))
+                                }
+                            </div>
+                        </SectionHeader>
                     </div>
                 ) : tab === 'events' ? (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -967,20 +956,22 @@ const AppContent = () => {
                             title={t('events')}
                             subtitle="Community gatherings, ceremonies, actions, and shared moments."
                             footer={searchBox}
-                        />
-
-                        <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                            {filteredData.map((item: any) => (
-                                <div key={item.id}>
-                                    <PulseCard
-                                        pulse={item}
-                                        lightseed={lightseed}
-                                        onMatch={(p: Pulse) => { setSelectedPulse(p); setShowPulseModal(true); }}
-                                        onView={(p: Pulse) => setSelectedPulse(p)}
-                                    />
-                                </div>
-                            ))}
-                        </div>
+                        >
+                            <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                                {filteredData.length === 0 && !loadingMore ? <p className="col-span-full text-center text-slate-400 py-10">{t('no_trees_found')}</p> :
+                                    filteredData.map((item: any) => (
+                                        <div key={item.id}>
+                                            <PulseCard
+                                                pulse={item}
+                                                lightseed={lightseed}
+                                                onMatch={(p: Pulse) => { setSelectedPulse(p); setShowPulseModal(true); }}
+                                                onView={(p: Pulse) => setSelectedPulse(p)}
+                                            />
+                                        </div>
+                                    ))
+                                }
+                            </div>
+                        </SectionHeader>
                     </div>
                 ) : tab !== 'observatory' && tab !== 'profile' && tab !== 'inspiration' && tab !== 'about' && tab !== 'dashboard' && tab !== 'newsletter' && tab !== 'communities' && (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -989,19 +980,22 @@ const AppContent = () => {
                             title={t('pulses')}
                             subtitle="Offerings, dreams, observations, and signals rippling through the network."
                             footer={searchBox}
-                        />
-                        <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                        {filteredData.map((item) => (
-                             <React.Fragment key={item.id}>
-                                 <PulseCard
-                                    pulse={item}
-                                    lightseed={lightseed}
-                                    onMatch={(p: Pulse) => { setMatchCandidate(p); setShowPulseModal(true); }}
-                                    onView={(p: Pulse) => setSelectedPulse(p)}
-                                />
-                            </React.Fragment>
-                        ))}
-                        </div>
+                        >
+                            <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                                {filteredData.length === 0 && !loadingMore ? <p className="col-span-full text-center text-slate-400 py-10">{t('no_trees_found')}</p> :
+                                    filteredData.map((item) => (
+                                        <React.Fragment key={item.id}>
+                                            <PulseCard
+                                                pulse={item}
+                                                lightseed={lightseed}
+                                                onMatch={(p: Pulse) => { setMatchCandidate(p); setShowPulseModal(true); }}
+                                                onView={(p: Pulse) => setSelectedPulse(p)}
+                                            />
+                                        </React.Fragment>
+                                    ))
+                                }
+                            </div>
+                        </SectionHeader>
                     </div>
                 )}
 
@@ -1094,11 +1088,15 @@ const AppContent = () => {
 
             {selectedCommunity && (
                 <DetailWrapper>
-                    <CommunityProfile 
+                    <CommunityProfile
                         community={selectedCommunity}
                         onClose={() => setSelectedCommunity(null)}
                         onUpdate={(updates) => {
                             setSelectedCommunity(prev => prev ? { ...prev, ...updates } : null);
+                            // If this is the host community, refresh the app shell (theme/logo) too.
+                            if (selectedCommunity && hostCommunity && selectedCommunity.id === hostCommunity.id) {
+                                setHostCommunity(prev => prev ? { ...prev, ...updates } : null);
+                            }
                         }}
                         currentUser={lightseed}
                         currentUserId={lightseed?.uid}

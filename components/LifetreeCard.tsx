@@ -8,6 +8,7 @@ import { ValidationBadge } from './ValidationBadge';
 import { colors } from '../utils/theme';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
 import { canReachTree, type ReachTargetProfile } from '../utils/reachPermissions';
+import { DefaultCardImage } from './ui/DefaultCardImage';
 
 interface LifetreeCardProps {
     tree: Lifetree;
@@ -100,9 +101,7 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, curren
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-[3s]"
                     />
                 ) : (
-                    <div className={`w-full h-full ${colors.sky} flex items-center justify-center`}>
-                        <Logo width={50} height={50} className="opacity-20 text-white animate-pulse" />
-                    </div>
+                    <DefaultCardImage />
                 )}
 
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent pointer-events-none"></div>

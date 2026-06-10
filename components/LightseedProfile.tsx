@@ -323,9 +323,9 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
         { key: 'pulses', label: t('my_pulses'), icon: <Icons.Pulse /> },
         { key: 'visions', label: t('visions'), icon: <Icons.Eye /> },
         { key: 'history', label: t('alignments'), icon: <Icons.Venn /> },
-        { key: 'invites', label: t('invitations'), icon: <Icons.SparkleFill /> },
+        { key: 'invites', label: t('invitations'), icon: <Icons.UserPlus /> },
         { key: 'appearance', label: 'Appearance', icon: <Icons.Image /> },
-        { key: 'settings', label: 'Settings', icon: <Icons.Key /> },
+        { key: 'settings', label: 'Settings', icon: <Icons.Cog /> },
         ...(showAdmin ? [{ key: 'admin', label: 'Admin', icon: <Icons.Shield /> }] : []),
     ];
 
@@ -367,14 +367,10 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                         <div className="absolute bottom-1 right-1 bg-emerald-500 w-5 h-5 rounded-full border-4 border-slate-900"></div>
                     </div>
                     <div className="text-center md:text-left flex-1 min-w-0">
-                        {/* One line on desktop: name · email · tree count */}
+                        {/* One line on desktop: name · email */}
                         <div className="flex flex-col md:flex-row md:items-baseline md:flex-wrap gap-x-4 gap-y-1 justify-center md:justify-start">
                             <h1 className="text-3xl font-light tracking-wide">{lightseed.displayName}</h1>
                             <p className="text-slate-400 text-sm font-mono truncate">{lightseed.email}</p>
-                            <p className="text-base text-slate-300">
-                                <span className="text-xl font-bold text-white">{myTrees.length}</span>{' '}
-                                <span className="text-sm text-slate-400">{myTrees.length === 1 ? t('tree') : t('trees')}</span>
-                            </p>
                         </div>
                         <div className="mt-3 flex items-center gap-2 flex-wrap justify-center md:justify-start">
                             {isSuperAdmin && (
@@ -383,11 +379,17 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                             {isAdmin && !isSuperAdmin && (
                                 <span className="flex items-center gap-1 bg-indigo-400/20 border border-indigo-400/50 text-indigo-300 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider"><Icons.Shield /> Admin</span>
                             )}
-                            {hasValidatedTree ? (
+                            {/* The domain owner / super admin is a trusted validator, so always carry the badge. */}
+                            {(hasValidatedTree || isSuperAdmin) ? (
                                 <ValidationBadge className="border-emerald-400/50 bg-emerald-400/20" compact />
-                            ) : (!isSuperAdmin && !isAdmin && (
+                            ) : (!isAdmin && (
                                 <span className="bg-slate-600/50 border border-slate-500/50 text-slate-400 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">User</span>
                             ))}
+                            {/* Tree count sits right next to the validation icon */}
+                            <span className="inline-flex items-baseline gap-1 text-slate-300">
+                                <span className="text-lg font-bold text-white">{myTrees.length}</span>
+                                <span className="text-sm text-slate-400">{myTrees.length === 1 ? t('tree') : t('trees')}</span>
+                            </span>
                             {allValidated && (
                                 <button onClick={onPlant} className="ml-1 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-lg transition-transform active:scale-95 flex items-center gap-2">
                                     <Icons.Tree />
@@ -430,16 +432,16 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
 
                     <main className="rounded-2xl border border-slate-100 bg-white p-5 sm:p-6 shadow-xl min-h-[520px]">
                         {activeTab === 'reaches' && (
-                            loading ? <div className="flex justify-center py-10"><Loading /></div> : (
-                                <ReachInbox
-                                    pulses={reaches}
-                                    myTrees={myTrees}
-                                    lightseed={lightseed}
-                                    title={t('direct_messages')}
-                                    requestedPartner={reachPartner || null}
-                                    onConsumeRequested={onConsumeReach}
-                                />
-                            )
+                            // Rendered unconditionally (no loading gate) so opening a reach from a tree
+                            // keeps the requested thread — remounting on load would drop the selection.
+                            <ReachInbox
+                                pulses={reaches}
+                                myTrees={myTrees}
+                                lightseed={lightseed}
+                                title={t('direct_messages')}
+                                requestedPartner={reachPartner || null}
+                                onConsumeRequested={onConsumeReach}
+                            />
                         )}
 
                         {activeTab === 'invites' && (
@@ -519,25 +521,33 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                                     </div>
                                 )}
                                 {isSuperAdmin && (
-                                    <div className="rounded-2xl border border-slate-100 p-5 space-y-4">
-                                        <div className="flex items-center justify-between gap-3">
+                                    <>
+                                        <div className="rounded-2xl border border-slate-100 p-5 space-y-4">
                                             <h4 className="font-bold text-slate-800 flex items-center gap-2 text-sm uppercase tracking-wider"><Icons.Shield /> Admin Management</h4>
-                                            <button onClick={onOpenNewsletterAdmin} className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors flex items-center gap-2"><Icons.Send /><span>Send Newsletter</span></button>
+                                            <div className="flex gap-2">
+                                                <input value={newAdminUid} onChange={e => setNewAdminUid(e.target.value)} placeholder="User UID" className="flex-1 bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-3 py-2 font-mono focus:outline-none focus:border-indigo-400" />
+                                                <button disabled={!newAdminUid || adminActionLoading} onClick={async () => { setAdminActionLoading(true); await onGrantAdmin(newAdminUid.trim()); setNewAdminUid(''); const updated = await getAdmins(); setAdmins(updated); setAdminActionLoading(false); }} className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors">Grant</button>
+                                            </div>
+                                            <div className="flex flex-col gap-1.5">
+                                                {admins.length === 0 && <p className="text-xs text-slate-400">No admins yet.</p>}
+                                                {admins.map(a => (
+                                                    <div key={a.uid} className="flex items-center justify-between bg-slate-50 px-3 py-2 rounded-lg">
+                                                        <span className="text-xs font-mono text-slate-600">{a.uid}</span>
+                                                        <button onClick={async () => { setAdminActionLoading(true); await onRevokeAdmin(a.uid); setAdmins(prev => prev.filter(x => x.uid !== a.uid)); setAdminActionLoading(false); }} className="text-red-500 hover:text-red-600 text-xs font-bold ml-3 transition-colors">Revoke</button>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
-                                        <div className="flex gap-2">
-                                            <input value={newAdminUid} onChange={e => setNewAdminUid(e.target.value)} placeholder="User UID" className="flex-1 bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-3 py-2 font-mono focus:outline-none focus:border-indigo-400" />
-                                            <button disabled={!newAdminUid || adminActionLoading} onClick={async () => { setAdminActionLoading(true); await onGrantAdmin(newAdminUid.trim()); setNewAdminUid(''); const updated = await getAdmins(); setAdmins(updated); setAdminActionLoading(false); }} className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors">Grant</button>
+
+                                        {/* Newsletter — unrelated to admin management, so it lives in its own section */}
+                                        <div className="mt-4 rounded-2xl border border-slate-100 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                            <div>
+                                                <h4 className="font-bold text-slate-800 flex items-center gap-2 text-sm uppercase tracking-wider"><Icons.Send /> Newsletter</h4>
+                                                <p className="text-xs text-slate-500 mt-1">Send a network update to all subscribers.</p>
+                                            </div>
+                                            <button onClick={onOpenNewsletterAdmin} className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap self-start sm:self-auto"><Icons.Send /><span>Send Newsletter</span></button>
                                         </div>
-                                        <div className="flex flex-col gap-1.5">
-                                            {admins.length === 0 && <p className="text-xs text-slate-400">No admins yet.</p>}
-                                            {admins.map(a => (
-                                                <div key={a.uid} className="flex items-center justify-between bg-slate-50 px-3 py-2 rounded-lg">
-                                                    <span className="text-xs font-mono text-slate-600">{a.uid}</span>
-                                                    <button onClick={async () => { setAdminActionLoading(true); await onRevokeAdmin(a.uid); setAdmins(prev => prev.filter(x => x.uid !== a.uid)); setAdminActionLoading(false); }} className="text-red-500 hover:text-red-600 text-xs font-bold ml-3 transition-colors">Revoke</button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
+                                    </>
                                 )}
                                 {isAdmin && !isSuperAdmin && <p className="text-sm text-slate-500">You hold admin privileges in this network.</p>}
                             </div>

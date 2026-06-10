@@ -699,6 +699,16 @@ export const updateCommunity = (id: string, data: any) =>
 
 export const deleteCommunity = (id: string) => deleteDoc(doc(db, 'communities', id));
 
+// All events created under a community, newest first. Single-field query (no composite
+// index); we filter to event pulses and sort client-side.
+export const getCommunityEvents = async (communityId: string): Promise<Pulse[]> => {
+    const snap = await getDocs(query(pulsesCollection, where('communityId', '==', communityId)));
+    return snap.docs
+        .map(d => ({ id: d.id, ...(d.data() as any) } as Pulse))
+        .filter(p => p.type === 'event')
+        .sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
+};
+
 export const createCommunityEvent = async (community: Community, data: any) => {
     const eventPayload = {
         ...data,

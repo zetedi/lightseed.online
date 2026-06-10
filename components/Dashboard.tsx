@@ -105,7 +105,7 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, onV
             )}
 
             <div className="grid grid-cols-2 gap-3 sm:gap-6">
-            {/* Box 1: My Light HUD */}
+            {/* Box 1: Home HUD */}
             <div onClick={() => lightseed ? onSetTab('profile') : onLogin()} className="relative h-56 md:h-64 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
                 <div className="absolute inset-0 bg-gradient-to-br from-amber-400 to-purple-600"></div>
                 {lightseed && firstTreeImage && <img src={firstTreeImage} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-[5s]" />}
@@ -114,7 +114,7 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, onV
                 <div className="relative h-full p-4 flex flex-col justify-between text-white">
                     <div className="flex justify-between items-start">
                         <div>
-                            <h2 className="text-sm sm:text-lg font-bold uppercase tracking-widest text-white drop-shadow-md">My Light</h2>
+                            <h2 className="text-sm sm:text-lg font-bold uppercase tracking-widest text-white drop-shadow-md">Home</h2>
                             <div className="text-lg sm:text-xl font-light truncate max-w-[120px]">{lightseed ? lightseed.displayName : t('sign_in')}</div>
                             <div className="text-[10px] text-amber-200 font-mono uppercase tracking-widest mt-1">The Light of Value</div>
                         </div>
