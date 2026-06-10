@@ -106,6 +106,9 @@ export const signInWithGoogle = async () => {
               displayName: user.displayName,
               createdAt: serverTimestamp(),
               newsletterSubscribed: false,
+              // Direct-message email notifications are on by default for new users
+              // (early network — don't let people miss incoming reaches).
+              emailNotifications: { directMessages: true },
               invitesRemaining: 7,
               dailyAiText: 0,
               dailyAiImage: 0,

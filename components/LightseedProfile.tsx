@@ -14,7 +14,7 @@ import { isExplicitlyValidatedTree } from '../utils/validation';
 import { ImagePicker } from './ui/ImagePicker';
 import { communityThemePresets, normalizeTheme } from '../utils/theme';
 
-export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, superAdminExists, onViewTree, onDeleteTree, onViewVision, onPlant, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachOpenSignal, onConsumeReach }: any) => {
+export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmin, isSuperAdmin, superAdminExists, onViewTree, onDeleteTree, onViewVision, onPlant, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachOpenSignal, onConsumeReach }: any) => {
     const { t } = useLanguage();
     const [activeTab, setActiveTab] = useState<'trees' | 'pulses' | 'visions' | 'history' | 'reaches' | 'invites' | 'appearance' | 'settings' | 'admin'>('trees');
     const [reaches, setReaches] = useState<Pulse[]>([]);
@@ -37,8 +37,8 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
     const [sendingInvite, setSendingInvite] = useState(false);
     const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
     const [togglingNewsletter, setTogglingNewsletter] = useState(false);
-    const [sendThreadsToEmail, setSendThreadsToEmail] = useState(false);
-    const [togglingThreadsEmail, setTogglingThreadsEmail] = useState(false);
+    const [dmEmailNotifications, setDmEmailNotifications] = useState(true);
+    const [togglingDmEmail, setTogglingDmEmail] = useState(false);
     const [onlyValidatedCanReach, setOnlyValidatedCanReachState] = useState(false);
     const [togglingValidatedReach, setTogglingValidatedReach] = useState(false);
     const [dialogMessage, setDialogMessage] = useState<string | null>(null);
@@ -57,6 +57,8 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
     const [adminActionLoading, setAdminActionLoading] = useState(false);
     const hasValidatedTree = myTrees.some((t: Lifetree) => isExplicitlyValidatedTree(t));
     const allValidated = myTrees.length > 0 && myTrees.every((t: Lifetree) => isExplicitlyValidatedTree(t));
+    // Trees I guard but don't own — shown separately from my planted trees.
+    const guardedOnly = (guardedTrees as Lifetree[]).filter((tree: Lifetree) => tree.ownerId !== lightseed?.uid);
     const inviteLink = `${window.location.origin}?invite=${lightseed.uid}`;
 
     useEffect(() => {
@@ -72,7 +74,8 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                 setInvitesRemaining(data.invitesRemaining);
             }
             setNewsletterSubscribed(Boolean(data?.newsletterSubscribed));
-            setSendThreadsToEmail(Boolean(data?.sendThreadsToEmail));
+            // Direct-message email notifications are enabled unless explicitly turned off.
+            setDmEmailNotifications(data?.emailNotifications?.directMessages !== false);
             setOnlyValidatedCanReachState(Boolean(data?.onlyValidatedCanReach));
             setSiteTheme(normalizeTheme(data?.siteTheme));
             setSiteLogoUrl(data?.siteLogoUrl || '');
@@ -189,20 +192,20 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
         setTogglingNewsletter(false);
     };
 
-    const handleThreadsEmailToggle = async () => {
-        if (!lightseed?.uid || togglingThreadsEmail) return;
-        setTogglingThreadsEmail(true);
+    const handleDmEmailToggle = async () => {
+        if (!lightseed?.uid || togglingDmEmail) return;
+        setTogglingDmEmail(true);
         try {
-            const nextValue = !sendThreadsToEmail;
-            await updateUserProfile(lightseed.uid, { sendThreadsToEmail: nextValue });
-            setSendThreadsToEmail(nextValue);
+            const nextValue = !dmEmailNotifications;
+            await updateUserProfile(lightseed.uid, { emailNotifications: { directMessages: nextValue } });
+            setDmEmailNotifications(nextValue);
             setDialogMessage(nextValue
-                ? 'Reaches sent to your trees will now also be delivered to your email.'
-                : 'Email delivery of reaches turned off.');
+                ? 'You will be emailed when someone sends you a direct message.'
+                : 'Direct message email notifications turned off.');
         } catch (e: any) {
-            setDialogMessage(e.message || 'Failed to update reach email preference.');
+            setDialogMessage(e.message || 'Failed to update email notification preference.');
         }
-        setTogglingThreadsEmail(false);
+        setTogglingDmEmail(false);
     };
 
     const handleOnlyValidatedToggle = async () => {
@@ -316,9 +319,9 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
 
     const navSections: { key: string; label: string; icon: React.ReactNode }[] = [
         { key: 'trees', label: t('my_trees'), icon: <Icons.Tree /> },
+        { key: 'reaches', label: t('direct_messages'), icon: <Icons.Chat /> },
         { key: 'pulses', label: t('my_pulses'), icon: <Icons.HeartPulse /> },
         { key: 'visions', label: t('visions'), icon: <Icons.Eye /> },
-        { key: 'reaches', label: t('direct_messages'), icon: <Icons.Chat /> },
         { key: 'history', label: t('alignments'), icon: <Icons.Venn /> },
         { key: 'invites', label: t('invitations'), icon: <Icons.SparkleFill /> },
         { key: 'appearance', label: 'Appearance', icon: <Icons.Image /> },
@@ -361,9 +364,9 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                         <div className="flex flex-col md:flex-row md:items-baseline md:flex-wrap gap-x-4 gap-y-1 justify-center md:justify-start">
                             <h1 className="text-3xl font-light tracking-wide">{lightseed.displayName}</h1>
                             <p className="text-slate-400 text-sm font-mono truncate">{lightseed.email}</p>
-                            <p className="text-sm text-slate-300">
-                                <span className="font-bold text-white">{myTrees.length}</span>{' '}
-                                <span className="text-xs text-slate-400">{myTrees.length === 1 ? t('tree') : t('trees')}</span>
+                            <p className="text-base text-slate-300">
+                                <span className="text-xl font-bold text-white">{myTrees.length}</span>{' '}
+                                <span className="text-sm text-slate-400">{myTrees.length === 1 ? t('tree') : t('trees')}</span>
                             </p>
                         </div>
                         <div className="mt-3 flex items-center gap-2 flex-wrap justify-center md:justify-start">
@@ -473,10 +476,10 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                                     </div>
                                     <div className="p-4 flex items-center justify-between gap-4">
                                         <div className="min-w-0">
-                                            <p className="font-semibold text-slate-800 text-sm">Reach threads to email</p>
-                                            <p className="text-xs text-slate-500">Get an email when someone reaches one of your trees.</p>
+                                            <p className="font-semibold text-slate-800 text-sm">Email me when someone sends me a direct message</p>
+                                            <p className="text-xs text-slate-500">You can turn this off anytime.</p>
                                         </div>
-                                        <Toggle on={sendThreadsToEmail} onClick={handleThreadsEmailToggle} disabled={togglingThreadsEmail || !lightseed.email} />
+                                        <Toggle on={dmEmailNotifications} onClick={handleDmEmailToggle} disabled={togglingDmEmail || !lightseed.email} />
                                     </div>
                                     <div className="p-4 flex items-center justify-between gap-4">
                                         <div className="min-w-0">
@@ -534,46 +537,79 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                         )}
 
                         {activeTab === 'trees' && (
-                            <div>
-                            <SectionTitle title={t('my_trees')} sub="Your living identities rooted in the network." />
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {allValidated && (
-                                     <div onClick={onPlant} className="border-2 border-dashed border-slate-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 hover:bg-slate-50 min-h-[100px] text-slate-400 hover:text-emerald-600 transition-all group">
-                                        <div className="bg-slate-100 p-3 rounded-full group-hover:bg-emerald-100 transition-colors">
-                                             <Icons.Tree />
-                                        </div>
-                                        <span className="font-bold mt-2 text-sm">Plant New Tree</span>
-                                    </div>
-                                )}
+                            <div className="space-y-8">
+                                {/* Planted — trees you own and steward */}
+                                <div>
+                                    <SectionTitle title="Planted Trees" sub="Living identities you have planted and steward." />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {allValidated && (
+                                             <div onClick={onPlant} className="border-2 border-dashed border-slate-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 hover:bg-slate-50 min-h-[100px] text-slate-400 hover:text-emerald-600 transition-all group">
+                                                <div className="bg-slate-100 p-3 rounded-full group-hover:bg-emerald-100 transition-colors">
+                                                     <Icons.Tree />
+                                                </div>
+                                                <span className="font-bold mt-2 text-sm">Plant New Tree</span>
+                                            </div>
+                                        )}
 
-                                {myTrees.length === 0 ? (
-                                    !allValidated && <p className="text-slate-400 text-center py-10 col-span-full">No trees planted yet.</p>
-                                ) : (
-                                    myTrees.map((tree: Lifetree) => (
-                                        <div key={tree.id} onClick={() => onViewTree(tree)} className="border border-slate-200 rounded-lg p-4 hover:shadow-md cursor-pointer transition-all flex items-center justify-between group bg-white">
-                                            <div className="flex items-center space-x-4">
-                                                <img src={tree.imageUrl || 'https://via.placeholder.com/100'} className="w-16 h-16 rounded object-cover bg-slate-100" />
-                                                <div>
-                                                    <h3 className="font-bold text-slate-800">{tree.name}</h3>
-                                                    <p className="text-xs text-slate-500">Block Height: {tree.blockHeight}</p>
-                                                    {isExplicitlyValidatedTree(tree) ? (
-                                                        <ValidationBadge compact />
-                                                    ) : (
-                                                        <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">Pending</span>
+                                        {myTrees.length === 0 ? (
+                                            !allValidated && <p className="text-slate-400 text-center py-10 col-span-full">No trees planted yet.</p>
+                                        ) : (
+                                            myTrees.map((tree: Lifetree) => (
+                                                <div key={tree.id} onClick={() => onViewTree(tree)} className="border border-emerald-100 rounded-lg p-4 hover:shadow-md cursor-pointer transition-all flex items-center justify-between group bg-white">
+                                                    <div className="flex items-center space-x-4">
+                                                        <img src={tree.imageUrl || 'https://via.placeholder.com/100'} className="w-16 h-16 rounded object-cover bg-slate-100" />
+                                                        <div>
+                                                            <h3 className="font-bold text-slate-800">{tree.name}</h3>
+                                                            <p className="text-xs text-slate-500">Block Height: {tree.blockHeight}</p>
+                                                            {isExplicitlyValidatedTree(tree) ? (
+                                                                <ValidationBadge compact />
+                                                            ) : (
+                                                                <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">Pending</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); onDeleteTree(tree.id); }}
+                                                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                                                        title="Delete Tree"
+                                                    >
+                                                        <Icons.Trash />
+                                                    </button>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Guarded — trees you protect as a guardian (you don't own these) */}
+                                <div>
+                                    <SectionTitle title="Guarded Trees" sub="Trees you help protect as a guardian." />
+                                    {guardedOnly.length === 0 ? (
+                                        <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-slate-400">
+                                            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-sky-50 text-sky-500"><Icons.Shield /></div>
+                                            <p className="text-sm">You are not guarding any trees yet.</p>
+                                            <p className="mt-1 text-xs">Open a Nature tree on the map and join its guardians to help protect it.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {guardedOnly.map((tree: Lifetree) => (
+                                                <div key={tree.id} onClick={() => onViewTree(tree)} className="border border-sky-100 rounded-lg p-4 hover:shadow-md cursor-pointer transition-all flex items-center justify-between group bg-sky-50/40">
+                                                    <div className="flex items-center space-x-4">
+                                                        <img src={tree.imageUrl || 'https://via.placeholder.com/100'} className="w-16 h-16 rounded object-cover bg-slate-100" />
+                                                        <div>
+                                                            <h3 className="font-bold text-slate-800">{tree.name}</h3>
+                                                            <p className="text-xs text-slate-500">Block Height: {tree.blockHeight}</p>
+                                                            <span className="mt-1 inline-flex items-center gap-1 text-[10px] bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-bold"><Icons.Shield /> Guardian</span>
+                                                        </div>
+                                                    </div>
+                                                    {tree.status === 'DANGER' && (
+                                                        <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-[9px] font-bold">DANGER</span>
                                                     )}
                                                 </div>
-                                            </div>
-                                            <button 
-                                                onClick={(e) => { e.stopPropagation(); onDeleteTree(tree.id); }} 
-                                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors opacity-0 group-hover:opacity-100"
-                                                title="Delete Tree"
-                                            >
-                                                <Icons.Trash />
-                                            </button>
+                                            ))}
                                         </div>
-                                    ))
-                                )}
-                            </div>
+                                    )}
+                                </div>
                             </div>
                         )}
                         {activeTab === 'pulses' && (
@@ -607,13 +643,13 @@ export const LightseedProfile = ({ lightseed, myTrees, isAdmin, isSuperAdmin, su
                                 <div>
                                     <div className="flex justify-between items-center mb-6">
                                          <h3 className="text-lg font-bold">My Visions</h3>
-                                         <button 
+                                         <button
                                             onClick={handleAlignmentAnalysis}
                                             disabled={analyzing}
-                                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-full text-sm font-medium flex items-center space-x-2 transition-colors disabled:opacity-50"
+                                            className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2.5 rounded-full font-bold shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 border border-amber-400/30 active:scale-95 disabled:opacity-50"
                                          >
-                                             {analyzing ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Icons.Sparkles />}
-                                             <span>AI Alignment Analysis</span>
+                                             {analyzing ? <Loading /> : <Icons.Venn />}
+                                             <span>{analyzing ? 'Analyzing...' : 'Analyze Alignments'}</span>
                                          </button>
                                     </div>
                                     

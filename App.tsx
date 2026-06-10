@@ -648,6 +648,7 @@ const AppContent = () => {
                 <LightseedProfile
                     lightseed={lightseed}
                     myTrees={myTrees}
+                    guardedTrees={guardedTrees}
                     isAdmin={isAdmin}
                     isSuperAdmin={isSuperAdmin}
                     superAdminExists={superAdminExists}
@@ -1041,29 +1042,6 @@ const AppContent = () => {
                 {renderMainContent()}
                 <GDPRBanner />
             </div>
-
-            {/* Persistent Direct Messages button — globally visible while signed in.
-                Glows green when there are unread reaches, neutral otherwise. It sits at
-                z-30 so detail/modal overlays (z-40+) naturally cover it. */}
-            {lightseed && tab !== 'profile' && (
-                <button
-                    onClick={openDirectMessages}
-                    title={t('direct_messages')}
-                    aria-label={t('direct_messages')}
-                    className={`fixed bottom-5 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-xl transition-all active:scale-95 ${
-                        unreadReaches > 0
-                            ? 'bg-emerald-600 shadow-[0_0_18px_rgba(16,185,129,0.75)] ring-2 ring-emerald-300 animate-pulse'
-                            : (effectiveIsDark ? 'bg-slate-800 hover:bg-slate-700 ring-1 ring-white/10' : 'bg-slate-900/90 hover:bg-slate-900')
-                    }`}
-                >
-                    <Icons.Chat />
-                    {unreadReaches > 0 && (
-                        <span className="absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white ring-2 ring-white">
-                            {unreadReaches > 9 ? '9+' : unreadReaches}
-                        </span>
-                    )}
-                </button>
-            )}
 
             {selectedTree && (
                 <DetailWrapper>

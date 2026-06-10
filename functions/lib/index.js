@@ -147,16 +147,18 @@ exports.sendSystemEmail = (0, https_1.onCall)(async (request) => {
         throw new https_1.HttpsError('internal', 'Failed to queue email.');
     }
 });
-// Person-to-person reach delivery: when a reach pulse is created, email the
-// recipient — but only if they've turned on "Send threads to email" on their
-// profile. Runs server-side so it can read the recipient's private profile/email
-// (clients cannot read other users' docs) without exposing it to the sender.
+// Direct-message email delivery: when a reach pulse is created, email the recipient.
+// Runs server-side so it can read the recipient's private profile/email (clients cannot
+// read other users' docs) without exposing it to the sender. Direct-message email
+// notifications are ON by default for everyone (early network) — only an explicit
+// users/{uid}.emailNotifications.directMessages === false opts out. Newsletter
+// subscription status is intentionally NOT used here.
 exports.onReachCreated = (0, firestore_1.onDocumentCreated)("pulses/{pulseId}", async (event) => {
     const snap = event.data;
     if (!snap)
         return;
     const pulse = snap.data();
-    // Only real reaches addressed to a specific person, and never self-reaches.
+    // Only real reaches addressed to a specific person, and never self-sent messages.
     if (pulse.type !== 'reach')
         return;
     const recipientUid = pulse.recipientUid || undefined;
@@ -167,25 +169,41 @@ exports.onReachCreated = (0, firestore_1.onDocumentCreated)("pulses/{pulseId}", 
         if (!userSnap.exists)
             return;
         const user = userSnap.data();
-        // Respect the recipient's opt-in preference.
-        if (user.sendThreadsToEmail !== true)
+        // Enabled by default; only an explicit false disables direct-message emails.
+        if (user?.emailNotifications?.directMessages === false)
             return;
         const email = user.email;
         if (!email)
             return;
+        // Basic per-thread throttle: at most one DM email per thread per recipient within
+        // this window, so a burst of messages in one thread doesn't flood the inbox.
+        // TODO(notifications): consider a digest (e.g. "N new messages") instead of a hard
+        // skip, and make the window configurable per user.
+        const THROTTLE_MS = 10 * 60 * 1000; // 10 minutes
+        const threadKey = (pulse.threadId || `${pulse.reachTreeId || ''}_${pulse.lifetreeId || ''}`).replace(/\//g, '_');
+        const throttleRef = db.collection('mailThrottle').doc(`${recipientUid}__${threadKey}`);
+        try {
+            const throttleSnap = await throttleRef.get();
+            const lastSentAt = throttleSnap.exists ? (throttleSnap.data()?.lastSentAt?.toMillis?.() ?? 0) : 0;
+            if (Date.now() - lastSentAt < THROTTLE_MS)
+                return; // recently emailed for this thread
+        }
+        catch (e) {
+            console.warn("DM email throttle check failed; sending anyway", e);
+        }
         const message = pulse.content || pulse.body || '';
         const fromName = pulse.authorName || 'A Lifetree';
         const toName = pulse.recipientName || pulse.reachTreeName || 'your Lifetree';
-        const subject = `${fromName} reached ${toName} on lightseed`;
-        const text = `${fromName} sent a reach to ${toName}:\n\n"${message}"\n\nOpen your reaches: https://lightseed.online`;
+        const subject = `${fromName} sent ${toName} a direct message on lightseed`;
+        const text = `${fromName} sent a direct message to ${toName}:\n\n"${message}"\n\nOpen your messages: https://lightseed.online`;
         const html = `<div style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">` +
             `<h2 style="color: #059669; font-weight: 300; letter-spacing: 1px; margin-bottom: 6px;">.seed</h2>` +
-            `<p style="font-size: 13px; color: #9ca3af; margin: 0 0 24px;">A new reach for <strong style="color:#059669;">${toName}</strong></p>` +
-            `<p style="font-size: 15px; margin: 0 0 10px; color:#6b7280;"><strong>${fromName}</strong> reached you through the mycelial network:</p>` +
+            `<p style="font-size: 13px; color: #9ca3af; margin: 0 0 24px;">A new direct message for <strong style="color:#059669;">${toName}</strong></p>` +
+            `<p style="font-size: 15px; margin: 0 0 10px; color:#6b7280;"><strong>${fromName}</strong> sent you a direct message:</p>` +
             `<blockquote style="font-size: 16px; margin: 0 0 28px; padding: 16px 20px; background:#f0fdf4; border-left: 4px solid #059669; border-radius: 8px; color:#1f2937;">${message.replace(/\n/g, '<br>')}</blockquote>` +
-            `<a href="https://lightseed.online" style="display:inline-block; background:#059669; color:#fff; text-decoration:none; font-weight:bold; padding:10px 22px; border-radius:9999px; font-size:14px;">Open your reaches</a>` +
+            `<a href="https://lightseed.online" style="display:inline-block; background:#059669; color:#fff; text-decoration:none; font-weight:bold; padding:10px 22px; border-radius:9999px; font-size:14px;">Open your messages</a>` +
             `<hr style="border: 0; border-top: 1px solid #eee; margin: 24px 0;" />` +
-            `<p style="font-size: 12px; color: #9ca3af;">You receive this because "Send threads to email" is on in your <a href="https://lightseed.online" style="color: #059669; text-decoration: none;">lightseed profile</a>. You can turn it off there anytime.</p>` +
+            `<p style="font-size: 12px; color: #9ca3af;">You receive this because direct-message email notifications are on in your <a href="https://lightseed.online" style="color: #059669; text-decoration: none;">lightseed profile</a>. You can turn this off anytime.</p>` +
             `</div>`;
         await db.collection('mail').add({
             to: [email],
@@ -198,9 +216,15 @@ exports.onReachCreated = (0, firestore_1.onDocumentCreated)("pulses/{pulseId}", 
             },
             createdAt: admin.firestore.FieldValue.serverTimestamp()
         });
+        // Record the send so the per-thread throttle can skip rapid follow-ups.
+        await throttleRef.set({
+            lastSentAt: admin.firestore.FieldValue.serverTimestamp(),
+            recipientUid,
+            threadId: threadKey,
+        });
     }
     catch (error) {
-        console.error("Reach email trigger failed:", error);
+        console.error("Direct message email trigger failed:", error);
     }
 });
 //# sourceMappingURL=index.js.map

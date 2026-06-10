@@ -94,10 +94,10 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, curren
 
             <div className="relative h-36 bg-slate-200 overflow-hidden group">
                 {tree.latestGrowthUrl || tree.imageUrl ? (
-                    <img 
-                        src={tree.latestGrowthUrl || tree.imageUrl} 
-                        alt={tree.name} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-[3s] animate-[pulse_4s_ease-in-out_infinite]" 
+                    <img
+                        src={tree.latestGrowthUrl || tree.imageUrl}
+                        alt={tree.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-[3s]"
                     />
                 ) : (
                     <div className={`w-full h-full ${colors.sky} flex items-center justify-center`}>

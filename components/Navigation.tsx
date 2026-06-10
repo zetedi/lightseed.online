@@ -85,7 +85,6 @@ export const Navigation = ({
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const langRef = useRef<HTMLDivElement>(null);
     
-    const hasNotification = pendingAlignmentsCount > 0 || dangerTreesCount > 0 || reachNotificationsCount > 0;
     const navBackground = theme?.surface || theme?.background || (isNightMode ? '#020617' : '#ffffff');
     const navIsDark = isDarkHex(navBackground, isNightMode);
     const navText = navIsDark ? '#f8fafc' : (theme?.text || '#0f172a');
@@ -248,6 +247,24 @@ export const Navigation = ({
 
                          {lightseed ? (
                             <>
+                                {/* Direct messages — letter icon that glows green when there are unread messages */}
+                                <button
+                                    onClick={() => onOpenReachInbox?.()}
+                                    title={t('direct_messages')}
+                                    aria-label={t('direct_messages')}
+                                    className={`relative inline-flex rounded-full border p-2 transition-all ${
+                                        reachNotificationsCount > 0
+                                            ? 'border-emerald-300 bg-emerald-500/15 text-emerald-500 shadow-[0_0_14px_rgba(16,185,129,0.7)] ring-2 ring-emerald-300/70 animate-pulse'
+                                            : (navIsDark ? 'bg-black/20 text-slate-200 hover:bg-black/30' : 'bg-white/70 text-slate-600 hover:bg-white')
+                                    }`}
+                                    style={reachNotificationsCount > 0 ? undefined : { borderColor: navBorder }}
+                                >
+                                    <Icons.Mail />
+                                    {reachNotificationsCount > 0 && (
+                                        <span className={`absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[8px] font-black text-white ring-2 ${navIsDark ? 'ring-emerald-950' : 'ring-white'}`}>{reachNotificationsCount > 9 ? '9+' : reachNotificationsCount}</span>
+                                    )}
+                                </button>
+
                                 {/* Avatar with profile link beneath it */}
                                 <button onClick={onProfile} className="group flex flex-col items-center leading-none">
                                     <span className="relative">
@@ -256,11 +273,10 @@ export const Navigation = ({
                                             className="w-9 h-9 rounded-full border-2 border-white/20 shadow-md group-hover:border-white transition-all object-cover"
                                             alt={lightseed.displayName || 'Profile'}
                                         />
-                                        {reachNotificationsCount > 0 ? (
-                                            <span className={`absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[8px] font-black text-white ring-2 ${navIsDark ? 'ring-emerald-950' : 'ring-white'}`}>{reachNotificationsCount}</span>
-                                        ) : hasNotification ? (
+                                        {/* DM unread is shown by the letter icon; here we only flag other notifications. */}
+                                        {(pendingAlignmentsCount > 0 || dangerTreesCount > 0) && (
                                             <span className={`absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-500 border-2 rounded-full ${navIsDark ? 'border-emerald-950' : 'border-white'}`}></span>
-                                        ) : null}
+                                        )}
                                     </span>
                                     <span className="mt-1 text-[9px] font-bold uppercase tracking-wider transition-opacity group-hover:opacity-70" style={{ color: navMuted }}>{t('profile')}</span>
                                 </button>
