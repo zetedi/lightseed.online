@@ -3,6 +3,7 @@ import React, { useRef, useEffect, useMemo, useState } from 'react';
 import { type Lifetree } from '../types';
 import { isExplicitlyValidatedTree } from '../utils/validation';
 import { Loading } from './ui/Loading';
+import { Icons } from './ui/Icons';
 
 interface Cluster {
     id: string;
@@ -29,13 +30,16 @@ const getTreeCoordinates = (tree: Lifetree) => {
     return { lat, lng };
 };
 
-export const ForestMap = ({ trees, onView, onReach, loading = false }: { trees: Lifetree[], onView: (tree: Lifetree) => void, onReach?: (tree: Lifetree) => void, loading?: boolean }) => {
+export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, primaryTree = null }: { trees: Lifetree[], onView: (tree: Lifetree) => void, onReach?: (tree: Lifetree) => void, loading?: boolean, onRefresh?: () => void, primaryTree?: Lifetree | null }) => {
     const mapContainer = useRef<HTMLDivElement>(null);
     const mapInstance = useRef<any>(null);
     const markersLayer = useRef<any>(null);
     const updateMarkersRef = useRef<(L: any, force?: boolean) => void>(() => {});
     const expansionStackRef = useRef<StackLevel[]>([]);
     const lastMarkerRenderKeyRef = useRef('');
+    // Ensures we only auto-frame the primary lifetree once (not on every data refresh,
+    // so we never yank the view back while the user is panning around).
+    const didInitialFocusRef = useRef(false);
 
     const [expansionStack, setExpansionStack] = useState<StackLevel[]>([]);
     const [isMapReady, setIsMapReady] = useState(false);
@@ -201,6 +205,18 @@ export const ForestMap = ({ trees, onView, onReach, loading = false }: { trees: 
 
         return () => window.clearTimeout(retry);
     }, [isMapReady, loading, visibleTreeCount, markerCount, treesSignature, expansionSignature]);
+
+    // Default view: frame a ~100 km radius around the user's primary lifetree, once.
+    useEffect(() => {
+        if (!isMapReady || didInitialFocusRef.current) return;
+        const L = (window as any).L;
+        if (!L || !mapInstance.current || !primaryTree) return;
+        const coords = getTreeCoordinates(primaryTree);
+        if (!coords) return;
+        didInitialFocusRef.current = true;
+        // toBounds(200000) → each edge sits 100 km from the centre (a 100 km radius view).
+        mapInstance.current.fitBounds(L.latLng(coords.lat, coords.lng).toBounds(200000), { animate: false });
+    }, [isMapReady, primaryTree]);
 
     const getHtmlForTree = (tree: Lifetree, isSmall = false, delay = 0) => {
         const isNature = tree.isNature;
@@ -570,6 +586,25 @@ export const ForestMap = ({ trees, onView, onReach, loading = false }: { trees: 
             `}</style>
             <div className="relative">
                 <div ref={mapContainer} style={{ width: '100%', height: '60vh', minHeight: '400px', zIndex: 1 }} className="w-full rounded-xl shadow-inner border border-slate-700 bg-slate-900" />
+                {onRefresh && (
+                    <button
+                        onClick={() => {
+                            // Re-frame the primary lifetree (the default 100 km view), then reload the forest.
+                            const L = (window as any).L;
+                            const coords = primaryTree ? getTreeCoordinates(primaryTree) : null;
+                            if (L && mapInstance.current && coords) {
+                                mapInstance.current.fitBounds(L.latLng(coords.lat, coords.lng).toBounds(200000), { animate: true });
+                            }
+                            onRefresh();
+                        }}
+                        disabled={loading}
+                        title="Refresh forest"
+                        aria-label="Refresh forest"
+                        className="absolute top-3 right-3 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-lg ring-1 ring-slate-200 transition-all hover:bg-white hover:text-emerald-600 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <Icons.Refresh />
+                    </button>
+                )}
                 {(loading || (isMapReady && visibleTreeCount > 0 && markerCount === 0)) && (
                     <div className="absolute inset-0 z-20 flex items-center justify-center rounded-xl bg-slate-950/30 backdrop-blur-[2px]">
                         <div className="flex flex-col items-center gap-3 rounded-2xl bg-white/90 px-6 py-5 shadow-lg">

@@ -320,7 +320,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
     const navSections: { key: string; label: string; icon: React.ReactNode }[] = [
         { key: 'trees', label: t('my_trees'), icon: <Icons.Tree /> },
         { key: 'reaches', label: t('direct_messages'), icon: <Icons.Chat /> },
-        { key: 'pulses', label: t('my_pulses'), icon: <Icons.HeartPulse /> },
+        { key: 'pulses', label: t('my_pulses'), icon: <Icons.Pulse /> },
         { key: 'visions', label: t('visions'), icon: <Icons.Eye /> },
         { key: 'history', label: t('alignments'), icon: <Icons.Venn /> },
         { key: 'invites', label: t('invitations'), icon: <Icons.SparkleFill /> },
@@ -330,8 +330,15 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
     ];
 
     const Toggle = ({ on, onClick, disabled }: { on: boolean; onClick: () => void; disabled?: boolean }) => (
-        <button type="button" onClick={onClick} disabled={disabled} className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${on ? 'bg-emerald-500' : 'bg-slate-300'}`}>
-            <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${on ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
+        <button
+            type="button"
+            role="switch"
+            aria-checked={on}
+            onClick={onClick}
+            disabled={disabled}
+            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors disabled:opacity-50 ${on ? 'bg-emerald-500' : 'bg-slate-300'}`}
+        >
+            <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${on ? 'translate-x-5' : 'translate-x-0'}`} />
         </button>
     );
 

@@ -877,7 +877,7 @@ const AppContent = () => {
                         </div>
 
                         {viewMode === 'map' ? (
-                            <ForestMap trees={filteredData} onView={setSelectedTree} onReach={openReach} loading={loadingMore && filteredData.length === 0} />
+                            <ForestMap trees={filteredData} onView={setSelectedTree} onReach={openReach} loading={loadingMore && filteredData.length === 0} onRefresh={() => loadContent(true)} primaryTree={activeTree} />
                         ) : (
                             <>
                                 <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
