@@ -221,10 +221,15 @@ export const SymbolOverlay = ({ type }: { type: YantraSymbolType }) => {
                     <circle cx="100" cy="113" r="36" />
                 </svg>
             );
-        case 'infinity':
+        case 'infinity': // A clean lemniscate — two loops born from one centre
             return (
                 <svg {...commonProps}>
-                     <path d="M43 131c18-30 40-46 66-46c18 0 32 10 45 26c13-16 27-26 45-26c26 0 48 16 66 46c-18 30-40 46-66 46c-18 0-32-10-45-26c-13 16-27 26-45 26c-26 0-48-16-66-46Z" strokeWidth="4" />
+                    <path
+                        d="M131 131 C 108 102 64 102 64 131 C 64 160 108 160 131 131 C 154 102 198 102 198 131 C 198 160 154 160 131 131 Z"
+                        strokeWidth="4"
+                        strokeLinejoin="round"
+                    />
+                    <circle cx="131" cy="131" r="4" fill="#F59E0B" stroke="none" />
                 </svg>
             );
         case 'lotus': // Eight-petalled bloom unfolding from the centre

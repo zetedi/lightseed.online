@@ -11,7 +11,7 @@ const baseKeys = {
   unvalidated: "Unvalidated", validate_action: "Validate Tree", quick_snap: "Capture Change", back_forest: "Back",
   genesis: "Genesis Hash", steward: "Steward", location: "Location", tree_details: "Tree Details",
   profile: "Profile", my_trees: "My Trees", my_pulses: "My Pulses", my_alignments: "My Alignments",
-  edit: "Edit", be_mother_tree: "Plant a Lifetree", guard_tree: "Guard Tree", alignments: "Alignments",
+  edit: "Edit", be_mother_tree: "Plant or Stand for a tree", guard_tree: "Guard Tree", alignments: "Alignments",
   pending_alignments: "Pending Alignments", no_pending_resonance: "No Resonance", search_placeholder: "Search...",
   guard: "Guard", nature: "Nature", lifetrees: "Lifetrees", no_trees_found: "None found", pending: "Pending",
   validated_trees: "Validated", observatory: "Observatory", inspiration: "Inspiration",

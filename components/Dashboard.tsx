@@ -151,7 +151,7 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, onV
             </div>
 
             {/* Box 2: Plant a Lifetree */}
-            <div onClick={() => { if (!lightseed) onLogin(); else if (stats.trees === 0) onPlant(); else onSetTab('forest'); }} className="relative h-56 md:h-64 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
+            <div onClick={() => { if (!lightseed) onLogin(); else onPlant(); }} className="relative h-56 md:h-64 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
                 <img src={lifetreeImage} className="absolute inset-0 w-full h-full object-cover" alt="Lifetree" />
                 <video 
                     ref={videoRef}
@@ -177,10 +177,13 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, onV
 
                 <div className="relative h-full p-4 flex flex-col justify-between text-white">
                     <div className="flex justify-between items-start">
-                        <h2 className="text-sm sm:text-lg font-bold uppercase tracking-widest text-white drop-shadow-md">{t('be_mother_tree')}</h2>
+                        <span className="text-xs font-bold uppercase tracking-[0.25em] text-white/80 drop-shadow-md">{t('create_new_world')}</span>
                         <div className="p-2 bg-white/10 backdrop-blur rounded-lg"><Icons.Tree /></div>
                     </div>
-                    <div className="text-sm font-medium uppercase tracking-wide border-t border-white/30 pt-2">{t('create_new_world')}</div>
+                    <span className="self-start inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-bold uppercase tracking-widest shadow-lg ring-1 ring-white/25 transition-all group-hover:bg-emerald-500 group-hover:scale-[1.03]">
+                        {t('be_mother_tree')}
+                        <Icons.ChevronRight />
+                    </span>
                 </div>
             </div>
 

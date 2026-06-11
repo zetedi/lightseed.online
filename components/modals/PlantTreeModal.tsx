@@ -17,6 +17,10 @@ interface PlantTreeModalProps {
   uploading: boolean;
   handleImageUpload: (file: File, path: string) => Promise<string>;
   extractGpsFromImage: (file: File) => Promise<{latitude: number, longitude: number} | null>;
+  // Optionally open straight into a type's flow (e.g. the "Guard Tree" button skips
+  // the type selection and lands on the planting step).
+  initialType?: 'LIFETREE' | 'GUARDED';
+  initialStep?: number;
 }
 
 const lifetreeImage = '/mother.webp';
@@ -27,11 +31,13 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
   onPlant,
   uploading,
   handleImageUpload,
-  extractGpsFromImage
+  extractGpsFromImage,
+  initialType,
+  initialStep
 }) => {
   const { t } = useLanguage();
-  const [treeType, setTreeType] = useState<'LIFETREE' | 'GUARDED' | 'FAMILY'>('LIFETREE');
-  const [plantStep, setPlantStep] = useState(1);
+  const [treeType, setTreeType] = useState<'LIFETREE' | 'GUARDED'>(initialType || 'LIFETREE');
+  const [plantStep, setPlantStep] = useState(initialStep || 1);
   const [treeName, setTreeName] = useState('');
   const [treeShortTitle, setTreeShortTitle] = useState('');
   const [treeSeed, setTreeSeed] = useState('');
@@ -81,10 +87,9 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
 
   useEffect(() => {
     if (treeType === 'GUARDED') {
-      setTreeName("Humanity's Tree!");
-      setTreeBio(""); 
-    } else if (treeName === "Humanity's Tree!") {
+      // Leave the name empty so the grey "A tree to stand for" suggestion shows.
       setTreeName("");
+      setTreeBio("");
     }
     setPlantLocation(null);
   }, [treeType]);
@@ -147,7 +152,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
     <Modal
       title={treeType === 'GUARDED' ? t('guard_tree') : t('plant_lifetree')}
       onClose={onClose}
-      backgroundImage={treeType !== 'GUARDED' ? lifetreeImage : undefined}
+      backgroundImage={(plantStep === 1 || treeType !== 'GUARDED') ? lifetreeImage : undefined}
       fullScreenOnMobile
       innerGlow
       wide
@@ -159,28 +164,23 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
               <h2 className="text-xl font-bold mb-2">Choose Tree Type</h2>
               <p className="text-sm opacity-70">What kind of life are you planting today?</p>
             </div>
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2">
               {[
-                { id: 'LIFETREE', label: t('type_lifetree'), icon: <Icons.Tree />, desc: 'Your personal digital-physical avatar' },
-                { id: 'GUARDED', label: t('type_guarded'), icon: <Icons.Shield />, desc: 'Protect a physical tree in nature' },
-                { id: 'FAMILY', label: t('type_family'), icon: <Icons.Heart filled={true} />, desc: 'Shared roots with your loved ones' }
+                { id: 'LIFETREE', label: t('type_lifetree'), icon: <Icons.Tree />, desc: 'Your personal digital-physical avatar', image: '/seed.webp' },
+                { id: 'GUARDED', label: t('type_guarded'), icon: <Icons.Shield />, desc: 'Protect a physical tree in nature', image: '/phoenix.webp' }
               ].map((type: any) => (
                 <button
                   key={type.id}
                   type="button"
                   onClick={() => { setTreeType(type.id); setPlantStep(2); }}
-                  className={`flex items-center gap-4 p-4 rounded-xl text-left transition-all border ${
-                    treeType === type.id 
-                      ? 'bg-emerald-600 text-white border-emerald-500 shadow-lg scale-[1.02]' 
-                      : treeType !== 'GUARDED' 
-                        ? 'bg-white/10 text-white border-white/10 hover:bg-white/20' 
-                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                  }`}
+                  className="group relative min-h-[220px] overflow-hidden rounded-2xl border border-white/15 text-left shadow-lg transition-transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-emerald-400"
                 >
-                  <span className="text-2xl">{type.icon}</span>
-                  <div>
-                    <div className="font-bold uppercase tracking-wider text-xs">{type.label}</div>
-                    <div className="text-xs opacity-70">{type.desc}</div>
+                  <img src={type.image} alt={type.label} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/10" />
+                  <div className="relative flex h-full flex-col justify-end p-5 text-white">
+                    <span className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-xl backdrop-blur">{type.icon}</span>
+                    <div className="text-sm font-bold uppercase tracking-widest">{type.label}</div>
+                    <div className="mt-1 text-xs opacity-80">{type.desc}</div>
                   </div>
                 </button>
               ))}
@@ -200,7 +200,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
                 className={`block w-full border p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-inner ${
                   treeType !== 'GUARDED' ? 'bg-white/10 border-white/20 text-white placeholder:text-white/50' : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400'
                 }`}
-                placeholder={`Tree Name (Default: ${lightseed?.displayName || 'Anonymous'})`}
+                placeholder={treeType === 'GUARDED' ? 'A tree to stand for' : `Tree Name (Default: ${lightseed?.displayName || 'Anonymous'})`}
                 value={treeName}
                 onChange={e=>setTreeName(e.target.value)}
                 autoFocus

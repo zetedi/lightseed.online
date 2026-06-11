@@ -9,7 +9,8 @@
     "prod": "vite build --mode production",
     "build": "vite build",
     "build:clean": "vite build --mode clean",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "seed:phoenix": "node scripts/seed-phoenix.mjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -26,6 +27,7 @@
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.5.0",
+    "firebase-admin": "^12.6.0",
     "postcss": "^8.5.15",
     "tailwindcss": "^4.3.0",
     "typescript": "~5.8.2",

@@ -184,6 +184,13 @@ const AppContent = () => {
 
     // UI State
     const [showPlantModal, setShowPlantModal] = useState(false);
+    // How the plant modal should open: optionally straight to a type's plant step
+    // (e.g. the "Guard Tree" button jumps past the type selection).
+    const [plantInit, setPlantInit] = useState<{ type?: 'LIFETREE' | 'GUARDED'; step?: number }>({});
+    const openPlant = (init: { type?: 'LIFETREE' | 'GUARDED'; step?: number } = {}) => {
+        setPlantInit(init);
+        setShowPlantModal(true);
+    };
     const [showPulseModal, setShowPulseModal] = useState(false);
     const [showVisionModal, setShowVisionModal] = useState(false);
     const [showGrowthPlayer, setShowGrowthPlayer] = useState<string | null>(null);
@@ -649,7 +656,7 @@ const AppContent = () => {
                         hostCommunity={hostCommunity}
                         onViewCommunity={setSelectedCommunity}
                         onSetTab={setTab} 
-                        onPlant={() => { setShowPlantModal(true); }}
+                        onPlant={() => openPlant()}
                         onLogin={signInWithGoogle} 
                     />
                 </div>
@@ -668,7 +675,7 @@ const AppContent = () => {
                     onViewTree={(tree: Lifetree) => setSelectedTree(tree)}
                     onDeleteTree={handleDeleteTree}
                     onViewVision={(v: Vision) => setSelectedVision(v)}
-                    onPlant={() => { setShowPlantModal(true); }}
+                    onPlant={() => openPlant()}
                     onClaimSuperAdmin={async () => {
                         const ok = await claimSuperAdmin(lightseed.uid);
                         if (ok) window.location.reload();
@@ -769,7 +776,7 @@ const AppContent = () => {
                         <div className="flex items-center gap-2 shrink-0">
                             {tab === 'forest' && (
                                 <button 
-                                    onClick={() => { setShowPlantModal(true); }}
+                                    onClick={() => openPlant({ type: 'LIFETREE', step: 2 })}
                                     className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2 transition-colors h-10"
                                     style={{ backgroundColor: effectiveTheme.primary }}
                                 >
@@ -781,7 +788,7 @@ const AppContent = () => {
 
                             {tab === 'forest' && myTrees.length > 0 && (
                                 <button 
-                                    onClick={() => { setShowPlantModal(true); }}
+                                    onClick={() => openPlant({ type: 'GUARDED', step: 2 })}
                                     className="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2 transition-colors h-10"
                                     style={{ backgroundColor: effectiveTheme.secondary }}
                                 >
@@ -1047,7 +1054,7 @@ const AppContent = () => {
                         setTab={setTab} 
                         onLogin={signInWithGoogle} 
                         onLogout={logout} 
-                        onPlant={() => { setShowPlantModal(true); }} 
+                        onPlant={() => openPlant()} 
                         onPulse={() => setShowPulseModal(true)}
                         onCreateVision={() => setShowVisionModal(true)}
                         onProfile={() => setTab('profile')} 
@@ -1143,6 +1150,8 @@ const AppContent = () => {
             {showPlantModal && (
                 <PlantTreeModal
                     lightseed={lightseed}
+                    initialType={plantInit.type}
+                    initialStep={plantInit.step}
                     onClose={() => setShowPlantModal(false)}
                     onPlant={async (data: any) => {
                         await plantLifetree(data);
