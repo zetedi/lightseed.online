@@ -358,6 +358,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                         <img
                             src={lightseed.photoURL || `https://ui-avatars.com/api/?name=${lightseed.displayName}`}
                             className="w-24 h-24 md:w-28 md:h-28 rounded-full border-4 border-white shadow-xl bg-white object-cover"
+                            referrerPolicy="no-referrer"
                             onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.onerror = null;

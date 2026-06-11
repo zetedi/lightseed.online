@@ -110,5 +110,31 @@ service cloud.firestore {
       allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
       allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
     }
+
+    // Intelligence Commons -------------------------------------------------
+
+    // Intelligences: public ones are world-readable; private ones only to owner/staff.
+    match /intelligences/{intelligenceId} {
+      allow read: if resource.data.public == true ||
+        (isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff()));
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
+    }
+
+    // Personas: behaviour templates, world-readable; only staff curate them.
+    match /personas/{personaId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    // Memories: public to all, community memory to signed-in members, private to staff.
+    match /memories/{memoryId} {
+      allow read: if resource.data.visibility == 'public' ||
+        isStaff() ||
+        (isSignedIn() && resource.data.visibility == 'community');
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() &&
+        (isStaff() || isCommunityOwner(resource.data.communityId));
+    }
   }
 }

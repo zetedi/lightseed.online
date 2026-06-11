@@ -39,7 +39,7 @@ const lifetreeImage = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/s
 
 export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, onViewCommunity, onSetTab, onPlant, onLogin }: DashboardProps) => {
     const { t } = useLanguage();
-    const [quote, setQuote] = useState<string>("Loading Oracle...");
+    const [quote, setQuote] = useState<string>("Loading…");
     const [networkStats, setNetworkStats] = useState({ trees: 0, pulses: 0, visions: 0 });
     const videoRef = useRef<HTMLVideoElement>(null);
     const [videoEnded, setVideoEnded] = useState(false);
@@ -184,13 +184,13 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, onV
                 </div>
             </div>
 
-            {/* Box 3: Oracle (Dynamic Quote) */}
-            <div onClick={() => onSetTab('oracle')} className="relative h-56 md:h-64 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
+            {/* Box 3: Observatory (Dynamic Quote) */}
+            <div onClick={() => onSetTab('observatory')} className="relative h-56 md:h-64 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
                 <div className="absolute inset-0 bg-slate-900"></div>
-                <img src="/oracle.webp" className="absolute inset-0 w-full h-full object-cover opacity-30" alt="Oracle" />
+                <img src="/lighthouse.webp" className="absolute inset-0 w-full h-full object-cover opacity-30" alt="Observatory" />
                 <div className="relative h-full p-4 flex flex-col justify-between text-white">
                     <div className="flex justify-between items-start">
-                        <h2 className="text-sm sm:text-lg font-bold uppercase tracking-widest text-white drop-shadow-md">{t('oracle')}</h2>
+                        <h2 className="text-sm sm:text-lg font-bold uppercase tracking-widest text-white drop-shadow-md">{t('observatory')}</h2>
                         <div className="flex flex-col items-end">
                              <div className="p-2 bg-white/10 backdrop-blur rounded-lg mb-2"><Icons.SparkleFill /></div>
                              <GenesisSymbol />

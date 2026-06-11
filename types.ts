@@ -8,6 +8,7 @@ export * from './src/domain/pulse';
 export * from './src/domain/reach';
 export * from './src/domain/link';
 export * from './src/domain/community';
+export * from './src/domain/intelligence';
 
 export type Lightseed = Pick<FirebaseUser, 'uid' | 'email' | 'displayName' | 'photoURL'>;
 

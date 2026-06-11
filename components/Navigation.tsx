@@ -272,6 +272,12 @@ export const Navigation = ({
                                             src={lightseed.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(lightseed.displayName || 'User')}&background=random&color=fff`}
                                             className="w-9 h-9 rounded-full border-2 border-white/20 shadow-md group-hover:border-white transition-all object-cover"
                                             alt={lightseed.displayName || 'Profile'}
+                                            referrerPolicy="no-referrer"
+                                            onError={(e) => {
+                                                const target = e.target as HTMLImageElement;
+                                                target.onerror = null;
+                                                target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(lightseed.displayName || 'User')}&background=random&color=fff`;
+                                            }}
                                         />
                                         {/* DM unread is shown by the letter icon; here we only flag other notifications. */}
                                         {(pendingAlignmentsCount > 0 || dangerTreesCount > 0) && (

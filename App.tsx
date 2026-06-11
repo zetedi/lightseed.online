@@ -35,6 +35,7 @@ import {
   listenToUserProfile
 } from './services/firebase';
 import { findVisionSynergies } from './services/gemini';
+import { ensureIntelligenceCommons } from './services/intelligence';
 import { type Pulse, type Lifetree, type Alignment, type Vision, type Community, type VisionSynergy } from './types';
 import Logo from './components/Logo';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
@@ -54,7 +55,6 @@ import { VisionDetail } from './components/VisionDetail';
 import { PulseDetail } from './components/PulseDetail';
 import { GrowthPlayerModal } from './components/GrowthPlayerModal';
 import { LightseedProfile } from './components/LightseedProfile';
-import { AboutPage } from './components/AboutPage';
 import { Dashboard } from './components/Dashboard';
 import { Loading } from './components/ui/Loading';
 import { SectionHeader } from './components/ui/SectionHeader';
@@ -167,6 +167,8 @@ const AppContent = () => {
     const [reachOpenSignal, setReachOpenSignal] = useState(0);
     const [unreadReaches, setUnreadReaches] = useState(0);
     const [hostCommunity, setHostCommunity] = useState<Community | null>(null);
+    // The lightseed community is the default "About" page when this node has none of its own.
+    const [defaultCommunity, setDefaultCommunity] = useState<Community | null>(null);
     const [personalSiteTheme, setPersonalSiteTheme] = useState<any>(null);
     const [personalSiteLogoUrl, setPersonalSiteLogoUrl] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
@@ -351,6 +353,17 @@ const AppContent = () => {
         const domain = window.location.hostname;
         getCommunityByDomain(domain).then(setHostCommunity);
     }, [tab, lightseed, viewMode]);
+
+    // Load the lightseed community once as the default About page fallback.
+    useEffect(() => {
+        getCommunityByDomain('lightseed.online').then(setDefaultCommunity).catch(() => {});
+    }, []);
+
+    // Seed the Intelligence Commons (default personas + Gemini Oracle) once a super-admin
+    // is known. Idempotent and gated by Firestore rules.
+    useEffect(() => {
+        if (isSuperAdmin && lightseed?.uid) ensureIntelligenceCommons(lightseed.uid);
+    }, [isSuperAdmin, lightseed?.uid]);
     
     useEffect(() => {
         const handleScroll = () => {
@@ -676,9 +689,27 @@ const AppContent = () => {
         }
         
         if (tab === 'about') {
-            // "About" is the profile of the node that serves this code — an online sanctuary.
-            // (The host community itself is editable from the Communities tab.)
-            return <AboutPage onClose={() => setTab('dashboard')} />;
+            // "About" is the node's community page, driven entirely from the database and
+            // rendered by the same component used everywhere a community is shown. The host
+            // (domain) community is the node's own profile; off-domain or before it loads we
+            // fall back to the lightseed community as the default about page.
+            const aboutCommunity = hostCommunity || defaultCommunity;
+            if (!aboutCommunity) return <div className="min-h-screen flex items-center justify-center"><Loading /></div>;
+            return (
+                <CommunityProfile
+                    community={aboutCommunity}
+                    onViewTree={(tree: Lifetree) => setSelectedTree(tree)}
+                    onClose={() => setTab('dashboard')}
+                    onUpdate={(updates) => {
+                        if (hostCommunity && aboutCommunity.id === hostCommunity.id) setHostCommunity(prev => prev ? { ...prev, ...updates } : null);
+                        if (defaultCommunity && aboutCommunity.id === defaultCommunity.id) setDefaultCommunity(prev => prev ? { ...prev, ...updates } : null);
+                    }}
+                    currentUser={lightseed}
+                    currentUserId={lightseed?.uid}
+                    isSuperAdmin={isSuperAdmin}
+                    isAdmin={isAdmin}
+                />
+            );
         }
 
         if (tab === 'communities') {
@@ -1090,6 +1121,7 @@ const AppContent = () => {
                 <DetailWrapper>
                     <CommunityProfile
                         community={selectedCommunity}
+                        onViewTree={(tree: Lifetree) => { setSelectedCommunity(null); setSelectedTree(tree); }}
                         onClose={() => setSelectedCommunity(null)}
                         onUpdate={(updates) => {
                             setSelectedCommunity(prev => prev ? { ...prev, ...updates } : null);

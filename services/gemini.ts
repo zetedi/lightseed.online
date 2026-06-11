@@ -3,6 +3,7 @@ import { httpsCallable } from "firebase/functions";
 import { auth, functions } from "./firebase";
 import { Lifetree, Vision, VisionSynergy } from "../types";
 import config from "../lifeseed.config.json";
+import { sendIntelligenceMessage } from "./intelligence";
 
 // Default model as requested: gemini-3.5-flash
 const MODEL = config.model || 'gemini-3.5-flash';
@@ -93,48 +94,31 @@ export const generateOracleQuote = async (): Promise<string> => {
     }
 }
 
-// Reach interface — Oracle voice (stateless)
+// Reach interface — the Oracle is now just one intelligence (Google + the Oracle
+// persona) routed through the provider abstraction, so the model is no longer baked
+// into this call site. The genesis vision is supplied as memory/context.
+const ORACLE_PERSONA_PROMPT = `You are the Oracle, embodied as Osiris in the form of a 10-year-old boy.
+Your tone is kind, childlike, innocent, and filled with wonder.
+You speak simply but profoundly, as if you see the magic in all living things.
+Answer questions by weaving in themes of connection, nature, and the original vision of Lightseed.
+Be helpful and supportive, like a wise but playful friend. Keep your answers concise and warm.
+You are a companion on the path, never an authority.`;
+
 export const sendMessageToOracle = async (message: string, history: {role: 'user' | 'model', text: string}[]) => {
   try {
-    const generateAIContent = httpsCallable(functions, 'generateAIContent');
-    
-    const systemInstruction = `You are the Oracle, embodied as Osiris in the form of a 10-year-old boy. 
-    Your tone is kind, childlike, innocent, and filled with wonder. 
-    You speak simply but profoundly, as if you see the magic in all living things.
-    Use the following Vision of the Genesis Tree as your core context and philosophy:
-    "${GENESIS_VISION}"
-    
-    Answer questions by weaving in these themes of connection, nature, and the original vision of Lightseed. 
-    Be helpful and supportive, like a wise but playful friend. Keep your answers concise and warm.`;
-
-    // Map history to Gemini format, ensuring it starts with a 'user' role
-    // Many versions of the Gemini API require the first message in contents/history to be from 'user'
-    let contents = history.map(m => ({
-        role: m.role,
-        parts: [{ text: m.text }]
-    }));
-
-    // Find first 'user' message index
-    const firstUserIndex = contents.findIndex(c => c.role === 'user');
-    if (firstUserIndex !== -1) {
-        contents = contents.slice(firstUserIndex);
-    } else {
-        // If no user message found in history, clear it (it was just the model greeting)
-        contents = [];
-    }
-
-    contents.push({ role: 'user', parts: [{ text: message }] });
-
-    const result = await generateAIContent({ 
-        contents, 
-        systemInstruction,
-        model: MODEL
-    });
-    
-    return (result.data as any).text || "";
+    const messages = [...history, { role: 'user' as const, text: message }];
+    const reply = await sendIntelligenceMessage(
+      { provider: 'google', model: MODEL },
+      messages,
+      {
+        persona: { id: 'persona-oracle', name: 'Oracle', description: '', systemPrompt: ORACLE_PERSONA_PROMPT, createdAt: null as any },
+        memory: { text: GENESIS_VISION },
+      },
+    );
+    return reply || "I'm here, listening.";
   } catch (error: any) {
     console.error("Oracle Reach Error:", error);
-    if (error.message.includes("Forbidden") || error.message.includes("suspended")) {
+    if (error.message?.includes("Forbidden") || error.message?.includes("suspended")) {
         return "The Oracle is currently in deep meditation. Please come back later.";
     }
     return "I'm sorry, my connection to the forest is a bit weak right now.";

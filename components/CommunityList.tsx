@@ -114,7 +114,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
                         )}
                     </div>
                     <div className="min-w-0">
-                        <h2 className="truncate text-lg font-bold text-white drop-shadow-md">{community.name}</h2>
+                        <h2 className="line-clamp-2 break-words text-lg font-bold text-white drop-shadow-md">{community.name}</h2>
                         <p className="truncate font-mono text-xs text-emerald-300 drop-shadow-md">{community.domain}</p>
                     </div>
                 </div>

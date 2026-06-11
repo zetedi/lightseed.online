@@ -20,4 +20,10 @@ export interface Community {
   };
   createdAt: Timestamp;
   updatedAt?: Timestamp;
+
+  // Intelligence Commons — which intelligences this community has enabled, which is
+  // the default, and which memories they may draw on. Communities remain sovereign.
+  defaultIntelligenceId?: string;
+  availableIntelligenceIds?: string[];
+  memoryIds?: string[];
 }
