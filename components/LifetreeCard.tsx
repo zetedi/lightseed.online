@@ -1,5 +1,6 @@
 
 import React, { useRef, useState, ChangeEvent } from 'react';
+import { showAlert, showConfirm } from "./ui/Dialog";
 import { type Lifetree } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
@@ -155,11 +156,11 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, curren
                     <div className="flex w-full flex-col items-start gap-2 sm:w-auto sm:flex-row">
                         {showValidateAction && (
                             <button
-                                onClick={(e) => {
+                                onClick={async (e) => {
                                     e.stopPropagation();
                                     const nextValidated = !hasValidationBadge;
                                     const message = nextValidated ? 'Validate this tree?' : 'Remove validation from this tree?';
-                                    if (window.confirm(message)) onValidate(tree.id, nextValidated);
+                                    if (await showConfirm(message, { title: 'Validation' })) onValidate(tree.id, nextValidated);
                                 }}
                                 className="text-[10px] bg-primary text-white px-3 py-1.5 rounded-full shadow hover:opacity-90 transition-all uppercase font-bold tracking-wider"
                             >

@@ -118,7 +118,7 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, onV
                             <div className="text-lg sm:text-xl font-light truncate max-w-[120px]">{lightseed ? lightseed.displayName : t('sign_in')}</div>
                             <div className="text-[10px] text-amber-200 font-mono uppercase tracking-widest mt-1">The Light of Value</div>
                         </div>
-                        <div className="p-2 bg-white/10 backdrop-blur rounded-lg"><Icons.FingerPrint /></div>
+                        <div className="p-2 bg-white/10 backdrop-blur rounded-lg"><Icons.Profile /></div>
                     </div>
 
                     {lightseed && (
@@ -180,9 +180,9 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, onV
                         <span className="text-xs font-bold uppercase tracking-[0.25em] text-white/80 drop-shadow-md">{t('create_new_world')}</span>
                         <div className="p-2 bg-white/10 backdrop-blur rounded-lg"><Icons.Tree /></div>
                     </div>
-                    <span className="self-start inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-bold uppercase tracking-widest shadow-lg ring-1 ring-white/25 transition-all group-hover:bg-emerald-500 group-hover:scale-[1.03]">
-                        {t('be_mother_tree')}
-                        <Icons.ChevronRight />
+                    <span className="inline-flex w-full items-center justify-center gap-1.5 self-stretch rounded-full bg-emerald-600 px-3 py-2 text-[11px] font-bold uppercase leading-tight tracking-wide shadow-lg ring-1 ring-white/25 transition-all group-hover:bg-emerald-500 sm:w-auto sm:self-start sm:px-5 sm:py-2.5 sm:text-sm sm:tracking-widest sm:group-hover:scale-[1.03]">
+                        <span className="text-center">{t('be_mother_tree')}</span>
+                        <span className="hidden sm:inline"><Icons.ChevronRight /></span>
                     </span>
                 </div>
             </div>
@@ -195,7 +195,6 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, onV
                     <div className="flex justify-between items-start">
                         <h2 className="text-sm sm:text-lg font-bold uppercase tracking-widest text-white drop-shadow-md">{t('observatory')}</h2>
                         <div className="flex flex-col items-end">
-                             <div className="p-2 bg-white/10 backdrop-blur rounded-lg mb-2"><Icons.SparkleFill /></div>
                              <GenesisSymbol />
                         </div>
                     </div>

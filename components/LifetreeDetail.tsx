@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
+import { showAlert, showConfirm } from "./ui/Dialog";
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
 import Logo from './Logo';
 import { ValidationBadge } from './ValidationBadge';
 import { AutocompleteInput } from './ui/AutocompleteInput';
-import { updateLifetree, toggleGuardianship, setTreeStatus, getPulsesByTreeId } from '../services/firebase';
-import { Pulse } from '../types';
+import { updateLifetree, toggleGuardianship, setTreeStatus, getPulsesByTreeId, createTreeInvite } from '../services/firebase';
+import { Pulse, type InvitableRole, treeRelationLabels } from '../types';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
 import { canReachTree } from '../utils/reachPermissions';
 
@@ -53,6 +54,14 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const [localStatus, setLocalStatus] = useState(tree.status || 'HEALTHY');
    const [isLocating, setIsLocating] = useState(false);
 
+   // Tree Circle invite form
+   const [showInvite, setShowInvite] = useState(false);
+   const [inviteUserId, setInviteUserId] = useState('');
+   const [inviteRole, setInviteRole] = useState<InvitableRole>('co_owner');
+   const [inviteMessage, setInviteMessage] = useState('');
+   const [inviteBusy, setInviteBusy] = useState(false);
+   const [inviteStatus, setInviteStatus] = useState<string | null>(null);
+
    useEffect(() => {
         setLoadingChain(true);
         // Note: getPulsesByTreeId now returns Descending order (Newest First)
@@ -93,7 +102,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
            setIsEditing(false);
        } catch (e) {
            console.error(e);
-           alert("Failed to save changes.");
+           showAlert("Failed to save changes.");
        }
        setIsSaving(false);
    };
@@ -105,7 +114,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
            setEditLng(pos.coords.longitude);
            setIsLocating(false);
        }, (err) => {
-           alert("Location failed: " + err.message);
+           showAlert("Location failed: " + err.message);
            setIsLocating(false);
        });
    }
@@ -125,21 +134,21 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                    : currentGuardians.filter((id: string) => id !== currentUserId);
                onUpdate({ guardians: newGuardians });
            }
-       } catch(e: any) { alert(e.message); }
+       } catch(e: any) { showAlert(e.message); }
        setIsSaving(false);
    }
 
    const handleToggleDanger = async () => {
        if (!localIsGuardian) return;
        const newStatus = localStatus === 'DANGER' ? 'HEALTHY' : 'DANGER';
-       if (newStatus === 'DANGER' && !confirm("Are you sure you want to report this tree is in DANGER? This will alert all guardians.")) return;
+       if (newStatus === "DANGER" && !(await showConfirm("Are you sure you want to report this tree is in DANGER? This will alert all guardians.", { title: "Report Danger", confirmText: "Report", danger: true }))) return;
        
        setIsSaving(true);
        try {
            await setTreeStatus(tree.id, newStatus);
            setLocalStatus(newStatus);
            if (onUpdate) onUpdate({ status: newStatus });
-       } catch(e: any) { alert(e.message); }
+       } catch(e: any) { showAlert(e.message); }
        setIsSaving(false);
    }
 
@@ -184,6 +193,87 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                 Guardians: {tree.guardians ? tree.guardians.length + (localIsGuardian && !tree.guardians.includes(currentUserId) ? 1 : 0) - (!localIsGuardian && tree.guardians.includes(currentUserId) ? 1 : 0) : (localIsGuardian ? 1 : 0)}
             </div>
         </div>
+   );
+
+   // Tree Circle — shared care of this Lifetree. When someone accepts an invite a
+   // community circle forms around the tree (see acceptTreeInvite Cloud Function).
+   const canInviteToCircle = isOwner || isSuperAdmin;
+   const circleGroups = ([
+       ['owner', [tree.ownerId]],
+       ['co_owner', tree.coOwnerIds || []],
+       ['guardian', tree.guardians || []],
+       ['steward', tree.stewardIds || []],
+       ['observer', tree.observerIds || []],
+   ] as [keyof typeof treeRelationLabels, string[]][]).filter(([, ids]) => ids.length > 0);
+   const circleSize = new Set([tree.ownerId, ...(tree.coOwnerIds || []), ...(tree.guardians || []), ...(tree.stewardIds || []), ...(tree.observerIds || [])].filter(Boolean)).size;
+
+   const handleSendInvite = async (e: React.FormEvent) => {
+       e.preventDefault();
+       if (!currentUserId || !inviteUserId.trim() || inviteBusy) return;
+       setInviteBusy(true);
+       setInviteStatus(null);
+       try {
+           await createTreeInvite({
+               lifetree: tree,
+               invitedUserId: inviteUserId.trim(),
+               role: inviteRole,
+               message: inviteMessage.trim(),
+               invitedByUserId: currentUserId,
+           });
+           setInviteUserId('');
+           setInviteMessage('');
+           setShowInvite(false);
+           setInviteStatus('Invitation sent. When they accept, a circle opens around this tree.');
+       } catch (err: any) {
+           setInviteStatus(err?.message || 'Failed to send invitation.');
+       }
+       setInviteBusy(false);
+   };
+
+   const TreeCirclePanel = () => (
+       <div className="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50 p-6 text-emerald-900 shadow-inner">
+           <h3 className="mb-3 flex items-center gap-2 font-bold uppercase tracking-wider text-emerald-700">
+               <Icons.Venn /> <span>Tree Circle</span>
+           </h3>
+           {circleSize <= 1 ? (
+               <p className="mb-4 text-sm text-emerald-800/80">This tree does not have a circle yet. Invite someone to care for it with you — when they accept, a community grows around the tree.</p>
+           ) : (
+               <div className="mb-4">
+                   <p className="mb-3 text-sm text-emerald-800/80">This tree is cared for by:</p>
+                   <div className="space-y-1.5">
+                       {circleGroups.map(([role, ids]) => (
+                           <div key={role} className="flex items-center justify-between rounded-lg bg-white/60 px-3 py-1.5 text-sm">
+                               <span className="font-medium">{treeRelationLabels[role]}{ids.length > 1 ? 's' : ''}</span>
+                               <span className="font-bold text-emerald-700">{ids.length}</span>
+                           </div>
+                       ))}
+                   </div>
+               </div>
+           )}
+
+           {canInviteToCircle && (showInvite ? (
+               <form onSubmit={handleSendInvite} className="space-y-2 rounded-xl border border-emerald-200 bg-white p-4">
+                   <p className="text-xs text-emerald-700/80">Invite someone into shared care of this Lifetree.</p>
+                   <input value={inviteUserId} onChange={e => setInviteUserId(e.target.value)} placeholder="Their user ID" className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" required />
+                   <div className="grid grid-cols-2 gap-2">
+                       <select value={inviteRole} onChange={e => setInviteRole(e.target.value as InvitableRole)} className="h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                           <option value="co_owner">Co-guardian</option>
+                           <option value="guardian">Guardian</option>
+                           <option value="steward">Steward</option>
+                           <option value="observer">Observer</option>
+                       </select>
+                       <button type="submit" disabled={inviteBusy} className="h-10 rounded-lg bg-emerald-600 text-sm font-bold text-white shadow hover:bg-emerald-700 disabled:opacity-50">{inviteBusy ? 'Sending…' : 'Send'}</button>
+                   </div>
+                   <input value={inviteMessage} onChange={e => setInviteMessage(e.target.value)} placeholder="A short message (optional)" className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                   <button type="button" onClick={() => setShowInvite(false)} className="text-xs font-medium text-slate-500 hover:text-slate-700">Cancel</button>
+               </form>
+           ) : (
+               <button onClick={() => setShowInvite(true)} className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 font-bold uppercase tracking-widest text-white shadow-lg transition-all hover:bg-emerald-700 active:scale-95">
+                   <Icons.UserPlus /> <span>Invite to Tree Circle</span>
+               </button>
+           ))}
+           {inviteStatus && <p className="mt-3 text-xs text-emerald-700">{inviteStatus}</p>}
+       </div>
    );
     
     return (
@@ -271,10 +361,10 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                 )}
                                 {showValidateAction && (
                                     <button
-                                        onClick={() => {
+                                        onClick={async () => {
                                             const nextValidated = !hasValidationBadge;
                                             const message = nextValidated ? 'Validate this tree?' : 'Remove validation from this tree?';
-                                            if (window.confirm(message)) onValidate(tree.id, nextValidated);
+                                            if (await showConfirm(message, { title: 'Validation' })) onValidate(tree.id, nextValidated);
                                         }}
                                         className="min-h-0 w-fit bg-emerald-600/90 hover:bg-emerald-600 text-white text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 rounded-full flex items-center justify-center gap-1.5 backdrop-blur-sm transition-colors"
                                         title={hasValidationBadge ? 'Remove validation' : t('validate_action')}
@@ -506,6 +596,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                 <GuardianshipPanel />
                             </>
                         )}
+                        <TreeCirclePanel />
                     </div>
                 </div>
 

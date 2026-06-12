@@ -10,6 +10,7 @@ export * from './src/domain/link';
 export * from './src/domain/community';
 export * from './src/domain/intelligence';
 export * from './src/domain/sanctuary';
+export * from './src/domain/treeCircle';
 
 export type Lightseed = Pick<FirebaseUser, 'uid' | 'email' | 'displayName' | 'photoURL'>;
 

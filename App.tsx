@@ -32,7 +32,8 @@ import {
   grantAdmin,
   revokeAdmin,
   getCommunityByDomain,
-  listenToUserProfile
+  listenToUserProfile,
+  getPendingTreeInvites
 } from './services/firebase';
 import { findVisionSynergies } from './services/gemini';
 import { ensureIntelligenceCommons } from './services/intelligence';
@@ -62,6 +63,7 @@ import { LifeseedWidget } from './components/LifeseedWidget';
 import { NewsletterAdmin } from './components/NewsletterAdmin';
 import { CommunityList } from './components/CommunityList';
 import { CommunityProfile } from './components/CommunityProfile';
+import { DialogHost, showAlert, showConfirm } from './components/ui/Dialog';
 import { isExplicitlyValidatedTree } from './utils/validation';
 
 // Modals
@@ -166,6 +168,7 @@ const AppContent = () => {
     const [reachTree, setReachTree] = useState<Lifetree | null>(null);
     const [reachOpenSignal, setReachOpenSignal] = useState(0);
     const [unreadReaches, setUnreadReaches] = useState(0);
+    const [pendingTreeInvites, setPendingTreeInvites] = useState(0);
     const [hostCommunity, setHostCommunity] = useState<Community | null>(null);
     // The lightseed community is the default "About" page when this node has none of its own.
     const [defaultCommunity, setDefaultCommunity] = useState<Community | null>(null);
@@ -366,6 +369,12 @@ const AppContent = () => {
         getCommunityByDomain('lightseed.online').then(setDefaultCommunity).catch(() => {});
     }, []);
 
+    // Pending Tree Circle invites — surfaced (separately) on the DM button.
+    useEffect(() => {
+        if (lightseed?.uid) getPendingTreeInvites(lightseed.uid).then(invs => setPendingTreeInvites(invs.length)).catch(() => {});
+        else setPendingTreeInvites(0);
+    }, [lightseed?.uid, tab]);
+
     // Seed the Intelligence Commons (default personas + Gemini Oracle) once a super-admin
     // is known. Idempotent and gated by Firestore rules.
     useEffect(() => {
@@ -500,7 +509,7 @@ const AppContent = () => {
             setSynergies(results);
         } catch (e) {
             console.error(e);
-            alert("Synergy analysis failed. Try again later.");
+            showAlert("Synergy analysis failed. Try again later.");
         }
         setIsAnalyzingSynergy(false);
     };
@@ -556,19 +565,19 @@ const AppContent = () => {
             loadContent(true); 
         } catch (e: any) {
             console.error("Quick Snap Error:", e);
-            alert("Error taking picture: " + e.message);
+            showAlert("Error taking picture: " + e.message);
         }
     }
 
     const handleDeleteTree = async (treeId: string) => {
-        if (!window.confirm("Are you sure you want to delete this lifetree? This cannot be undone.")) return;
+        if (!(await showConfirm("Are you sure you want to delete this lifetree? This cannot be undone.", { title: 'Delete Lifetree', confirmText: 'Delete', danger: true }))) return;
         try {
             await deleteLifetree(treeId);
             await refreshTrees();
             loadContent(true);
         } catch (e: any) {
             console.error("Delete Tree Error:", e);
-            alert("Error deleting tree: " + e.message);
+            showAlert("Error deleting tree: " + e.message);
         }
     }
 
@@ -578,26 +587,26 @@ const AppContent = () => {
             await refreshTrees();
             loadContent(true);
         } catch (e: any) {
-            alert("Error deleting tree: " + e.message);
+            showAlert("Error deleting tree: " + e.message);
         }
     }
 
     const handleDeleteVisionInApp = async (visionId: string) => {
-        if (!confirm("Are you sure you want to delete this vision?")) return;
+        if (!(await showConfirm("Are you sure you want to delete this vision?", { title: 'Delete Vision', confirmText: 'Delete', danger: true }))) return;
         try {
             await deleteVision(visionId);
             setSelectedVision(null);
             loadContent(true);
         } catch (e: any) {
-            alert("Delete failed: " + e.message);
+            showAlert("Delete failed: " + e.message);
         }
     }
 
     const onAcceptAlignment = async (id: string) => {
-        try { await acceptAlignment(id); alert("Alignment Accepted! Blocks synced."); loadContent(true); } 
+        try { await acceptAlignment(id); showAlert("Alignment Accepted! Blocks synced."); loadContent(true); } 
         catch(e:any) { 
             console.error("Accept Alignment Error:", e);
-            alert(e.message); 
+            showAlert(e.message); 
         }
     }
 
@@ -679,7 +688,7 @@ const AppContent = () => {
                     onClaimSuperAdmin={async () => {
                         const ok = await claimSuperAdmin(lightseed.uid);
                         if (ok) window.location.reload();
-                        else alert('SuperAdmin already claimed.');
+                        else showAlert('SuperAdmin already claimed.');
                     }}
                     onGrantAdmin={async (uid: string) => { await grantAdmin(uid); }}
                     onRevokeAdmin={async (uid: string) => { await revokeAdmin(uid); }}
@@ -824,15 +833,19 @@ const AppContent = () => {
 
                 {tab === 'observatory' && (
                     <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
-                        <div className="overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-xl">
-                            {/* Unified header — sits together with the alignments in one panel */}
-                            <div className="flex items-center gap-3 border-b border-emerald-100 bg-gradient-to-r from-emerald-50 to-white px-6 py-5">
-                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-                                    <Icons.Exchange />
-                                </div>
-                                <div className="min-w-0">
-                                    <h2 className="truncate text-2xl font-light tracking-wide text-slate-900">{t('pending_alignments')}</h2>
-                                    <p className="text-sm text-slate-500">Resonances awaiting your acceptance to sync across the network.</p>
+                        <div className="overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-lg">
+                            {/* Lighthouse banner header */}
+                            <div className="relative h-36 sm:h-44 overflow-hidden">
+                                <img src="/lighthouse.webp" alt="Observatory" className="absolute inset-0 h-full w-full object-cover" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/85 via-slate-900/40 to-transparent"></div>
+                                <div className="absolute bottom-0 left-0 right-0 flex items-center gap-3 p-5">
+                                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur">
+                                        <Icons.Exchange />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <h2 className="break-words text-2xl font-light tracking-wide text-white drop-shadow">{t('pending_alignments')}</h2>
+                                        <p className="text-sm text-white/80 drop-shadow">Resonances awaiting your acceptance to sync across the network.</p>
+                                    </div>
                                 </div>
                             </div>
 
@@ -927,7 +940,7 @@ const AppContent = () => {
                                                     onValidate={(id: string, nextValidated: boolean) => (nextValidated
                                                         ? validateLifetree(id, isSuperAdmin ? lightseed!.uid : activeTree!.id)
                                                         : unvalidateLifetree(id)
-                                                    ).then(() => { alert(nextValidated ? "Validated!" : "Validation removed."); loadContent(true); })}
+                                                    ).then(() => { showAlert(nextValidated ? "Validated!" : "Validation removed."); loadContent(true); })}
                                                     onView={setSelectedTree}
                                                 />
                                             </React.Fragment>
@@ -946,14 +959,24 @@ const AppContent = () => {
                             subtitle="Directions of growth seeking resonance and shared momentum."
                             footer={searchBox}
                             action={
-                                <button
-                                    onClick={handleAnalyzeSynergy}
-                                    disabled={isAnalyzingSynergy || data.length < 2}
-                                    className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2.5 rounded-full font-bold shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 border border-amber-400/30 active:scale-95 disabled:opacity-50"
-                                >
-                                    {isAnalyzingSynergy ? <Loading /> : <Icons.Venn />}
-                                    <span>{isAnalyzingSynergy ? 'Analyzing...' : 'Analyze Alignments'}</span>
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    {lightseed && (
+                                        <button
+                                            onClick={() => setShowVisionModal(true)}
+                                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-full font-bold shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap"
+                                        >
+                                            <Icons.Sparkles /> <span>{t('create_vision')}</span>
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={handleAnalyzeSynergy}
+                                        disabled={isAnalyzingSynergy || data.length < 2}
+                                        className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-full font-bold shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 border border-amber-400/30 active:scale-95 disabled:opacity-50 whitespace-nowrap"
+                                    >
+                                        {isAnalyzingSynergy ? <Loading /> : <Icons.Venn />}
+                                        <span className="hidden sm:inline">{isAnalyzingSynergy ? 'Analyzing...' : 'Analyze'}</span>
+                                    </button>
+                                </div>
                             }
                         >
                             {synergies.length > 0 && (
@@ -1018,6 +1041,11 @@ const AppContent = () => {
                             title={t('pulses')}
                             subtitle="Offerings, dreams, observations, and signals rippling through the network."
                             footer={searchBox}
+                            action={lightseed && (
+                                <button onClick={() => setShowPulseModal(true)} className="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2.5 rounded-full font-bold shadow-lg shadow-sky-600/20 transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap">
+                                    <Icons.Pulse /> <span>{t('emit_pulse')}</span>
+                                </button>
+                            )}
                         >
                             <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                                 {filteredData.length === 0 && !loadingMore ? <p className="col-span-full text-center text-slate-400 py-10">{t('no_trees_found')}</p> :
@@ -1062,6 +1090,8 @@ const AppContent = () => {
                         myTreesCount={myTrees.length}
                         dangerTreesCount={guardedTrees.filter(t => t.status === 'DANGER').length}
                         reachNotificationsCount={unreadReaches}
+                        treeInviteCount={pendingTreeInvites}
+                        activeTreeImage={activeTree?.latestGrowthUrl || activeTree?.imageUrl}
                         onOpenReachInbox={openDirectMessages}
                         logoUrl={configuredLogoUrl}
                         appName={isHubDomain(window.location.hostname) ? '.seed' : config.name}
@@ -1073,6 +1103,7 @@ const AppContent = () => {
                 
                 {renderMainContent()}
                 <GDPRBanner />
+                <DialogHost />
             </div>
 
             {selectedTree && (
@@ -1089,7 +1120,7 @@ const AppContent = () => {
                                 validated: nextValidated,
                                 validatorId: nextValidated ? (isSuperAdmin ? lightseed!.uid : activeTree!.id) : null,
                             });
-                            alert(nextValidated ? "Validated!" : "Validation removed.");
+                            showAlert(nextValidated ? "Validated!" : "Validation removed.");
                             loadContent(true);
                         })}
                         onUpdate={(updates: Partial<Lifetree>) => handleTreeUpdate(selectedTree.id, updates)}

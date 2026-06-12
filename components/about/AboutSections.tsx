@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { showAlert } from "../ui/Dialog";
 import Logo from '../Logo';
 import { Icons } from '../ui/Icons';
 import { Modal } from '../ui/Modal';
@@ -322,9 +323,9 @@ export const MembershipPathSection = () => {
         setSubmitting(true);
         try {
             await subscribeToNewsletter(email);
-            alert(`${t('subscribed_success')} ${email}`);
+            showAlert(`${t('subscribed_success')} ${email}`);
             setShowSubModal(false);
-        } catch (e) { alert(t('subscription_failed')); }
+        } catch (e) { showAlert(t('subscription_failed')); }
         setSubmitting(false);
     };
 

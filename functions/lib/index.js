@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onReachCreated = exports.sendSystemEmail = exports.generateAIContent = void 0;
+exports.acceptTreeInvite = exports.onReachCreated = exports.sendSystemEmail = exports.generateAIContent = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 const admin = __importStar(require("firebase-admin"));
@@ -226,5 +226,86 @@ exports.onReachCreated = (0, firestore_1.onDocumentCreated)("pulses/{pulseId}", 
     catch (error) {
         console.error("Direct message email trigger failed:", error);
     }
+});
+// --- Tree Circle: accept a co-ownership / guardianship invite -------------------
+// Protected multi-document mutation: writes the tree's role array AND the rooted
+// community. Runs with admin rights so the invitee never writes those docs directly.
+const treeRoleToField = {
+    co_owner: "coOwnerIds",
+    guardian: "guardians",
+    observer: "observerIds",
+    steward: "stewardIds",
+};
+exports.acceptTreeInvite = (0, https_1.onCall)({ cors: true }, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "You must be signed in.");
+    }
+    const uid = request.auth.uid;
+    const inviteId = request.data?.inviteId;
+    if (!inviteId) {
+        throw new https_1.HttpsError("invalid-argument", "inviteId is required.");
+    }
+    return await db.runTransaction(async (tx) => {
+        const inviteRef = db.collection("treeOwnershipInvites").doc(inviteId);
+        const inviteSnap = await tx.get(inviteRef);
+        if (!inviteSnap.exists) {
+            throw new https_1.HttpsError("not-found", "Invite not found.");
+        }
+        const invite = inviteSnap.data();
+        if (invite.invitedUserId !== uid) {
+            throw new https_1.HttpsError("permission-denied", "This invite is not for you.");
+        }
+        if (invite.status !== "pending") {
+            throw new https_1.HttpsError("failed-precondition", "This invite is no longer pending.");
+        }
+        const treeRef = db.collection("lifetrees").doc(invite.lifetreeId);
+        const treeSnap = await tx.get(treeRef);
+        if (!treeSnap.exists) {
+            throw new https_1.HttpsError("not-found", "Lifetree not found.");
+        }
+        const tree = treeSnap.data();
+        const field = treeRoleToField[invite.role];
+        if (!field) {
+            throw new https_1.HttpsError("invalid-argument", "Unknown role.");
+        }
+        const treeUpdate = {
+            [field]: admin.firestore.FieldValue.arrayUnion(uid),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        };
+        let communityId = tree.communityId;
+        if (!communityId) {
+            const communityRef = db.collection("communities").doc();
+            communityId = communityRef.id;
+            tx.set(communityRef, {
+                name: `${tree.name || "Lifetree"} Circle`,
+                rootLifetreeId: invite.lifetreeId,
+                founderUserId: tree.ownerId,
+                ownerId: tree.ownerId,
+                memberIds: [tree.ownerId, uid],
+                formation: "tree_co_ownership",
+                visibility: "invited",
+                domain: tree.domain || "",
+                vision: "",
+                imageUrls: [],
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            treeUpdate.communityId = communityId;
+        }
+        else {
+            const communityRef = db.collection("communities").doc(communityId);
+            tx.update(communityRef, {
+                memberIds: admin.firestore.FieldValue.arrayUnion(uid),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+        }
+        tx.update(treeRef, treeUpdate);
+        tx.update(inviteRef, {
+            status: "accepted",
+            acceptedAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        return { communityId, lifetreeId: invite.lifetreeId };
+    });
 });
 //# sourceMappingURL=index.js.map

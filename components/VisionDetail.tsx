@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { showAlert } from "./ui/Dialog";
 import { Vision } from '../types';
 import { Icons } from './ui/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -45,7 +46,7 @@ export const VisionDetail = ({ vision, onClose, currentUserId, onDelete }: Visio
                 setParticipantCount(prev => prev + 1);
             }
         } catch (e: any) {
-            alert("Action failed: " + e.message);
+            showAlert("Action failed: " + e.message);
         }
         setIsUpdating(false);
     }

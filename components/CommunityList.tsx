@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { showAlert } from "./ui/Dialog";
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
 import { Community, Lifetree } from '../types';
@@ -78,7 +79,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
       setNewDomain('');
     } catch (e) {
       console.error(e);
-      alert("Failed to create community.");
+      showAlert("Failed to create community.");
     }
     setIsCreating(false);
   };
@@ -86,7 +87,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
   const CommunityCard = ({ community, isGenesis = false }: { community: Community, isGenesis?: boolean }) => (
     <div 
         onClick={() => onSelect(community)}
-        className={`group bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl border transition-all cursor-pointer hover:-translate-y-1 relative ${isGenesis ? 'border-amber-400 ring-4 ring-amber-400/20 md:col-span-2 lg:col-span-1' : 'border-slate-100'}`}
+        className={`group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl border transition-all cursor-pointer hover:-translate-y-1 relative ${isGenesis ? 'border-amber-400 ring-4 ring-amber-400/20 md:col-span-2 lg:col-span-1' : 'border-slate-100'}`}
     >
         {isGenesis && (
             <div className="absolute top-4 left-4 z-20 bg-amber-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg flex items-center gap-1 uppercase tracking-tighter">
@@ -121,8 +122,8 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
             </div>
         </div>
         <div className="p-6">
-            <div 
-                className="text-slate-600 text-sm line-clamp-3 mb-4 h-11 leading-relaxed"
+            <div
+                className="text-slate-600 text-sm line-clamp-3 mb-4 h-11 leading-relaxed overflow-hidden [&_img]:hidden"
                 dangerouslySetInnerHTML={{ __html: community.vision || 'No vision shared yet.' }}
             />
             <button className="text-emerald-600 font-bold text-xs uppercase tracking-widest flex items-center gap-1 group-hover:gap-2 transition-all">
@@ -133,7 +134,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
   );
 
   return (
-    <div className="max-w-6xl mx-auto p-6 animate-in fade-in duration-500">
+    <div className="max-w-6xl mx-auto p-4 sm:p-6 animate-in fade-in duration-500 overflow-x-hidden">
       <SectionHeader
         icon={<Icons.Globe />}
         title={t('communities')}
@@ -154,7 +155,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
         action={myTrees.length > 0 ? (
           <button
             onClick={() => setShowCreate(true)}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2 border border-emerald-500/30 active:scale-95"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-full text-sm font-bold shadow-md shadow-emerald-600/20 transition-all flex items-center gap-1.5 border border-emerald-500/30 active:scale-95"
           >
             <Icons.Plus />
             <span>{t('register_community')}</span>
@@ -192,7 +193,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
         ) : (filteredCommunities.length === 0 && !showGenesis) ? (
           <p className="text-center text-slate-400 py-16">No communities match your search.</p>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8">
             {showGenesis && <CommunityCard community={genesisCommunity!} isGenesis={true} />}
             {filteredCommunities.map(community => (
               <div key={community.id}>

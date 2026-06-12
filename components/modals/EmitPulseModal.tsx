@@ -1,5 +1,6 @@
 
 import React, { useState, FormEvent } from 'react';
+import { showAlert } from "../ui/Dialog";
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { Modal } from '../ui/Modal';
@@ -59,7 +60,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
       });
       onClose();
     } catch(e: any) { 
-        alert(e.message); 
+        showAlert(e.message); 
     } finally { setIsSubmitting(false); }
   };
 
@@ -76,10 +77,10 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
              targetTreeId: matchCandidate.lifetreeId,
              targetUid: matchCandidate.authorId
          });
-         alert("Alignment Proposed! Waiting for resonance.");
+         showAlert("Alignment Proposed! Waiting for resonance.");
          onClose();
     } catch(e:any) { 
-        alert(e.message); 
+        showAlert(e.message); 
     } finally { setIsSubmitting(false); }
   }
 

@@ -1,5 +1,6 @@
 
 import React, { useState, FormEvent } from 'react';
+import { showAlert } from "../ui/Dialog";
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { Modal } from '../ui/Modal';
@@ -36,12 +37,12 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
   const [localUploading, setLocalUploading] = useState(false);
 
   const handleGenerateImage = async () => {
-    if (!visionBody) { alert("Please enter a vision description first."); return; }
+    if (!visionBody) { showAlert("Please enter a vision description first."); return; }
     setLocalUploading(true);
     try {
         const allowed = await checkAndIncrementAiUsage('image');
         if (!allowed) {
-            alert(t('ai_login_required'));
+            showAlert(t('ai_login_required'));
             setLocalUploading(false);
             return;
         }
@@ -53,7 +54,7 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
             throw new Error("No image data returned from AI service.");
         }
     } catch (e: any) {
-         alert(`Image generation failed: ${e.message || t('daily_limit_image')}`);
+         showAlert(`Image generation failed: ${e.message || t('daily_limit_image')}`);
     } finally { setLocalUploading(true); }
     setLocalUploading(false);
   }
@@ -79,7 +80,7 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
         });
         onClose();
     } catch(e:any) { 
-        alert(e.message); 
+        showAlert(e.message); 
     } finally { setIsSubmitting(false); }
   }
 

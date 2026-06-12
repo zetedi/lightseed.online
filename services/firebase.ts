@@ -43,7 +43,7 @@ import {
   uploadString
 } from 'firebase/storage';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { type Pulse, type PulseType, type Lifetree, type Alignment, type Vision, type Community, type Sanctuary } from '../types';
+import { type Pulse, type PulseType, type Lifetree, type Alignment, type Vision, type Community, type Sanctuary, type TreeOwnershipInvite, type InvitableRole, roleToTreeField } from '../types';
 import { createBlock } from '../utils/crypto';
 import { oldEmeraldEarthThemeValues } from '../utils/theme';
 import { isExplicitlyValidatedTree } from '../utils/validation';
@@ -648,6 +648,83 @@ export const getAdmins = async (): Promise<{ uid: string }[]> =>
     (await getDocs(collection(db, 'admins'))).docs.map(d => ({ uid: d.id }));
 export const getGuardedTrees = async (uid: string) => (await getDocs(query(lifetreesCollection, where('guardians', 'array-contains', uid)))).docs.map(d => ({ id: d.id, ...(d.data() as any) } as Lifetree));
 export const toggleGuardianship = (id: string, uid: string, join: boolean) => updateDoc(doc(db, 'lifetrees', id), { guardians: join ? arrayUnion(uid) : arrayRemove(uid) });
+
+// --- Tree Circle: shared care of a Lifetree → a rooted community ---------------
+const treeInvitesCollection = collection(db, 'treeOwnershipInvites');
+
+export const createTreeInvite = async (params: {
+    lifetree: Lifetree;
+    invitedUserId: string;
+    role: InvitableRole;
+    message?: string;
+    invitedByUserId: string;
+    invitedByName?: string;
+}): Promise<string> => {
+    const { lifetree, invitedUserId, role } = params;
+    if (!invitedUserId.trim()) throw new Error('Choose someone to invite.');
+    if (invitedUserId === lifetree.ownerId) throw new Error('That person already owns this tree.');
+    if (((lifetree as any)[roleToTreeField[role]] || []).includes(invitedUserId)) throw new Error('That person already holds this role.');
+    // Single-field query + client filter, to avoid requiring a composite index.
+    const existing = await getDocs(query(treeInvitesCollection, where('lifetreeId', '==', lifetree.id)));
+    const hasPendingDupe = existing.docs.some(d => {
+        const x = d.data() as any;
+        return x.invitedUserId === invitedUserId && x.role === role && x.status === 'pending';
+    });
+    if (hasPendingDupe) throw new Error('There is already a pending invite for this person and role.');
+    const ref = await addDoc(treeInvitesCollection, {
+        lifetreeId: lifetree.id,
+        lifetreeName: lifetree.name || '',
+        invitedByUserId: params.invitedByUserId,
+        invitedByName: params.invitedByName || '',
+        invitedUserId,
+        role,
+        status: 'pending',
+        message: params.message || '',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+    });
+    return ref.id;
+};
+
+export const getPendingTreeInvites = async (userId: string): Promise<TreeOwnershipInvite[]> => {
+    // Single-field query + client filter, to avoid requiring a composite index.
+    const snap = await getDocs(query(treeInvitesCollection, where('invitedUserId', '==', userId)));
+    return snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as TreeOwnershipInvite)).filter(i => i.status === 'pending');
+};
+
+export const getSentTreeInvites = async (lifetreeId: string): Promise<TreeOwnershipInvite[]> => {
+    const snap = await getDocs(query(treeInvitesCollection, where('lifetreeId', '==', lifetreeId)));
+    return snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as TreeOwnershipInvite));
+};
+
+export const declineTreeInvite = (inviteId: string) =>
+    updateDoc(doc(db, 'treeOwnershipInvites', inviteId), { status: 'declined', declinedAt: serverTimestamp(), updatedAt: serverTimestamp() });
+
+export const revokeTreeInvite = (inviteId: string) =>
+    updateDoc(doc(db, 'treeOwnershipInvites', inviteId), { status: 'revoked', revokedAt: serverTimestamp(), updatedAt: serverTimestamp() });
+
+// Accepting writes the tree's role arrays AND the rooted community — a protected,
+// multi-document mutation, so it runs server-side (Cloud Function) with admin rights.
+export const acceptTreeInvite = async (inviteId: string): Promise<{ communityId: string; lifetreeId: string }> => {
+    const callable = httpsCallable(functions, 'acceptTreeInvite');
+    const res = await callable({ inviteId });
+    return res.data as { communityId: string; lifetreeId: string };
+};
+
+// The members of a tree's circle, grouped by role.
+export const getTreeCircle = async (lifetreeId: string) => {
+    const snap = await getDoc(doc(db, 'lifetrees', lifetreeId));
+    if (!snap.exists()) return null;
+    const t = snap.data() as any;
+    return {
+        ownerId: t.ownerId as string,
+        coOwnerIds: (t.coOwnerIds || []) as string[],
+        guardianIds: (t.guardians || []) as string[],
+        stewardIds: (t.stewardIds || []) as string[],
+        observerIds: (t.observerIds || []) as string[],
+        communityId: (t.communityId || undefined) as string | undefined,
+    };
+};
 export const setTreeStatus = (id: string, status: string) => updateDoc(doc(db, 'lifetrees', id), { status });
 
 export const fetchVisions = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {

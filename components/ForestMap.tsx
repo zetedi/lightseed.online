@@ -206,17 +206,35 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
         return () => window.clearTimeout(retry);
     }, [isMapReady, loading, visibleTreeCount, markerCount, treesSignature, expansionSignature]);
 
-    // Default view: frame a ~100 km radius around the user's primary lifetree, once.
+    // Default view: zoom in to frame at least the seven nearest lifetrees, so the user
+    // always lands on a populated view (not an empty ocean).
     useEffect(() => {
         if (!isMapReady || didInitialFocusRef.current) return;
         const L = (window as any).L;
         if (!L || !mapInstance.current || !primaryTree) return;
-        const coords = getTreeCoordinates(primaryTree);
-        if (!coords) return;
+        const center = getTreeCoordinates(primaryTree);
+        if (!center) return;
+
+        const located = visibleTrees
+            .map(getTreeCoordinates)
+            .filter(Boolean) as { lat: number; lng: number }[];
+        if (located.length === 0) return; // trees not loaded yet — retry when they arrive
         didInitialFocusRef.current = true;
-        // toBounds(200000) → each edge sits 100 km from the centre (a 100 km radius view).
-        mapInstance.current.fitBounds(L.latLng(coords.lat, coords.lng).toBounds(200000), { animate: false });
-    }, [isMapReady, primaryTree]);
+
+        const nearest = located
+            .map(c => ({ c, d: (c.lat - center.lat) ** 2 + (c.lng - center.lng) ** 2 }))
+            .sort((a, b) => a.d - b.d)
+            .slice(0, 7)
+            .map(x => x.c);
+
+        if (nearest.length >= 2) {
+            const bounds = L.latLngBounds(nearest.map(c => [c.lat, c.lng]));
+            mapInstance.current.fitBounds(bounds.pad(0.3), { animate: false, maxZoom: 16 });
+        } else {
+            // Only one tree to show — fall back to a ~100 km radius around it.
+            mapInstance.current.fitBounds(L.latLng(center.lat, center.lng).toBounds(200000), { animate: false });
+        }
+    }, [isMapReady, primaryTree, treesSignature]);
 
     const getHtmlForTree = (tree: Lifetree, isSmall = false, delay = 0) => {
         const isNature = tree.isNature;

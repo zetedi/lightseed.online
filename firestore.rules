@@ -118,6 +118,26 @@ service cloud.firestore {
       allow update, delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
     }
 
+    // Tree Circle invites. The Lifetree owner creates invites; the invitee or inviter
+    // can read theirs; the invitee declines and the inviter revokes. Acceptance (which
+    // also writes the tree's role arrays + the rooted community) goes through the
+    // acceptTreeInvite Cloud Function with admin rights — never a direct client write.
+    match /treeOwnershipInvites/{inviteId} {
+      allow read: if isSignedIn() && (
+        resource.data.invitedUserId == request.auth.uid ||
+        resource.data.invitedByUserId == request.auth.uid ||
+        isStaff()
+      );
+      allow create: if isSignedIn() &&
+        request.resource.data.invitedByUserId == request.auth.uid &&
+        (isStaff() || get(/databases/$(database)/documents/lifetrees/$(request.resource.data.lifetreeId)).data.ownerId == request.auth.uid);
+      // Decline (invitee) / revoke (inviter). Acceptance is server-only (admin SDK).
+      allow update: if isSignedIn() &&
+        (resource.data.invitedUserId == request.auth.uid || resource.data.invitedByUserId == request.auth.uid || isStaff()) &&
+        request.resource.data.status in ['declined', 'revoked'];
+      allow delete: if isStaff();
+    }
+
     // Intelligence Commons -------------------------------------------------
 
     // Intelligences: public ones are world-readable; private ones only to owner/staff.

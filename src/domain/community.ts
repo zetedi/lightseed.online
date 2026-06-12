@@ -26,4 +26,11 @@ export interface Community {
   defaultIntelligenceId?: string;
   availableIntelligenceIds?: string[];
   memoryIds?: string[];
+
+  // Tree Circle — communities that emerged from shared care of a Lifetree.
+  rootLifetreeId?: string;       // the living anchor this community grew from
+  founderUserId?: string;
+  memberIds?: string[];
+  formation?: 'tree_co_ownership' | 'project' | 'organization' | 'manual';
+  visibility?: 'private' | 'invited' | 'public';
 }

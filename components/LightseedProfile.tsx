@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { type Pulse, type Lifetree, type Alignment, type Vision, type VisionSynergy } from '../types';
-import { getMyPulses, getMyVisions, getJoinedVisions, getMyAlignmentsHistory, deleteUserAccount, logout, triggerSystemEmail, sendInvite, listenToUserProfile, deleteVision, getAdmins, setNewsletterSubscription, updateUserSiteTheme, updateUserProfile, uploadImage, fetchMyReaches, setOnlyValidatedCanReach } from '../services/firebase';
+import { showAlert, showConfirm } from "./ui/Dialog";
+import { type Pulse, type Lifetree, type Alignment, type Vision, type VisionSynergy, type TreeOwnershipInvite, treeRelationLabels } from '../types';
+import { getMyPulses, getMyVisions, getJoinedVisions, getMyAlignmentsHistory, deleteUserAccount, logout, triggerSystemEmail, sendInvite, listenToUserProfile, deleteVision, getAdmins, setNewsletterSubscription, updateUserSiteTheme, updateUserProfile, uploadImage, fetchMyReaches, setOnlyValidatedCanReach, getPendingTreeInvites, acceptTreeInvite, declineTreeInvite } from '../services/firebase';
 import { ReachInbox } from './inspiration/ReachInbox';
 import { findVisionSynergies } from '../services/gemini';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -24,6 +25,24 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
     const [history, setHistory] = useState<Alignment[]>([]);
     const [loading, setLoading] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [treeInvites, setTreeInvites] = useState<TreeOwnershipInvite[]>([]);
+    const [inviteBusyId, setInviteBusyId] = useState<string | null>(null);
+
+    const refreshTreeInvites = () => { if (lightseed?.uid) getPendingTreeInvites(lightseed.uid).then(setTreeInvites).catch(() => {}); };
+    useEffect(() => { refreshTreeInvites(); }, [lightseed?.uid]);
+
+    const handleAcceptInvite = async (id: string) => {
+        setInviteBusyId(id);
+        try { await acceptTreeInvite(id); refreshTreeInvites(); }
+        catch (e: any) { showAlert(e?.message || 'Failed to accept invitation.'); }
+        setInviteBusyId(null);
+    };
+    const handleDeclineInvite = async (id: string) => {
+        setInviteBusyId(id);
+        try { await declineTreeInvite(id); refreshTreeInvites(); }
+        catch (e: any) { showAlert(e?.message || 'Failed to decline invitation.'); }
+        setInviteBusyId(null);
+    };
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [sendingTest, setSendingTest] = useState(false);
     const [mailStatus, setMailStatus] = useState<string | null>(null);
@@ -169,12 +188,12 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
 
     const handleDeleteVision = async (e: React.MouseEvent, visionId: string) => {
         e.stopPropagation();
-        if (!confirm("Are you sure you want to delete this vision?")) return;
+        if (!(await showConfirm("Are you sure you want to delete this vision?", { title: "Delete Vision", confirmText: "Delete", danger: true }))) return;
         try {
             await deleteVision(visionId);
             setVisions(prev => prev.filter(v => v.id !== visionId));
         } catch (e: any) {
-            alert("Delete failed: " + e.message);
+            showAlert("Delete failed: " + e.message);
         }
     }
 
@@ -344,55 +363,51 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
 
     const SectionTitle = ({ title, sub }: { title: string; sub?: string }) => (
         <div className="mb-6">
-            <h2 className="text-xl font-bold text-slate-900">{title}</h2>
+            <h2 className="text-base sm:text-xl font-bold text-slate-900">{title}</h2>
             {sub && <p className="mt-1 text-sm text-slate-500">{sub}</p>}
         </div>
     );
 
     return (
         <div className="min-h-screen pb-20">
-            {/* Hero */}
-            <div className="relative bg-gradient-to-b from-slate-800 to-slate-900 text-white pt-10 pb-16 px-4">
-                <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center md:items-end gap-6 md:gap-8">
-                    <div className="relative">
+            {/* Hero — compact: avatar, name and all the meta sit on one wrapping row */}
+            <div className="relative bg-gradient-to-b from-slate-800 to-slate-900 text-white pt-6 pb-10 px-4">
+                <div className="max-w-6xl mx-auto flex flex-row items-center gap-3 sm:gap-5">
+                    <div className="relative shrink-0">
                         <img
                             src={lightseed.photoURL || `https://ui-avatars.com/api/?name=${lightseed.displayName}`}
-                            className="w-24 h-24 md:w-28 md:h-28 rounded-full border-4 border-white shadow-xl bg-white object-cover"
+                            className="w-14 h-14 md:w-20 md:h-20 rounded-full border-4 border-white shadow-xl bg-white object-cover"
                             referrerPolicy="no-referrer"
                             onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.onerror = null;
-                                target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(lightseed.displayName || 'User')}&background=random&color=fff`;
+                                target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(lightseed.displayName || 'Visitor')}&background=random&color=fff`;
                             }}
                         />
-                        <div className="absolute bottom-1 right-1 bg-emerald-500 w-5 h-5 rounded-full border-4 border-slate-900"></div>
+                        <div className="absolute bottom-0.5 right-0.5 bg-emerald-500 w-4 h-4 rounded-full border-[3px] border-slate-900"></div>
                     </div>
-                    <div className="text-center md:text-left flex-1 min-w-0">
-                        {/* One line on desktop: name · email */}
-                        <div className="flex flex-col md:flex-row md:items-baseline md:flex-wrap gap-x-4 gap-y-1 justify-center md:justify-start">
-                            <h1 className="text-3xl font-light tracking-wide">{lightseed.displayName}</h1>
-                            <p className="text-slate-400 text-sm font-mono truncate">{lightseed.email}</p>
-                        </div>
-                        <div className="mt-3 flex items-center gap-2 flex-wrap justify-center md:justify-start">
+                    <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 justify-start">
+                            <h1 className="text-2xl font-light tracking-wide break-words">{lightseed.displayName}</h1>
+                            <p className="text-slate-400 text-xs font-mono truncate max-w-full">{lightseed.email}</p>
                             {isSuperAdmin && (
-                                <span className="bg-amber-400/20 border border-amber-400/50 text-amber-300 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">SuperAdmin</span>
+                                <span className="bg-amber-400/20 border border-amber-400/50 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">SuperAdmin</span>
                             )}
                             {isAdmin && !isSuperAdmin && (
-                                <span className="flex items-center gap-1 bg-indigo-400/20 border border-indigo-400/50 text-indigo-300 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider"><Icons.Shield /> Admin</span>
+                                <span className="flex items-center gap-1 bg-indigo-400/20 border border-indigo-400/50 text-indigo-300 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider"><Icons.Shield /> Admin</span>
                             )}
                             {/* The domain owner / super admin is a trusted validator, so always carry the badge. */}
                             {(hasValidatedTree || isSuperAdmin) ? (
                                 <ValidationBadge className="border-emerald-400/50 bg-emerald-400/20" compact />
                             ) : (!isAdmin && (
-                                <span className="bg-slate-600/50 border border-slate-500/50 text-slate-400 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">User</span>
+                                <span className="bg-slate-600/50 border border-slate-500/50 text-slate-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Visitor</span>
                             ))}
-                            {/* Tree count sits right next to the validation icon */}
                             <span className="inline-flex items-baseline gap-1 text-slate-300">
-                                <span className="text-lg font-bold text-white">{myTrees.length}</span>
-                                <span className="text-sm text-slate-400">{myTrees.length === 1 ? t('tree') : t('trees')}</span>
+                                <span className="text-base font-bold text-white">{myTrees.length}</span>
+                                <span className="text-xs text-slate-400">{myTrees.length === 1 ? t('tree') : t('trees')}</span>
                             </span>
                             {allValidated && (
-                                <button onClick={onPlant} className="ml-1 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-lg transition-transform active:scale-95 flex items-center gap-2">
+                                <button onClick={onPlant} className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-full text-[11px] font-bold shadow-lg transition-transform active:scale-95 flex items-center gap-1.5">
                                     <Icons.Tree />
                                     <span>Plant a Tree</span>
                                 </button>
@@ -401,6 +416,28 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                     </div>
                 </div>
             </div>
+
+            {/* Tree Circle invitations — someone has invited you into shared care of a tree */}
+            {treeInvites.length > 0 && (
+                <div className="max-w-6xl mx-auto px-4 mt-6 space-y-3">
+                    {treeInvites.map(inv => (
+                        <div key={inv.id} className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm text-emerald-900">
+                                    <span className="font-bold">{inv.invitedByName || 'Someone'}</span> invited you to become a{' '}
+                                    <span className="font-bold">{(treeRelationLabels[inv.role] || inv.role).toLowerCase()}</span> of{' '}
+                                    <span className="font-bold">{inv.lifetreeName || 'a Lifetree'}</span>.
+                                </p>
+                                {inv.message && <p className="mt-1 text-xs italic text-emerald-700/80">“{inv.message}”</p>}
+                            </div>
+                            <div className="flex shrink-0 gap-2">
+                                <button onClick={() => handleAcceptInvite(inv.id)} disabled={inviteBusyId === inv.id} className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow hover:bg-emerald-700 disabled:opacity-50">{inviteBusyId === inv.id ? '…' : 'Accept'}</button>
+                                <button onClick={() => handleDeclineInvite(inv.id)} disabled={inviteBusyId === inv.id} className="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50">Decline</button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {dialogMessage && (
                 <Modal title="Notice" onClose={() => setDialogMessage(null)}>
@@ -411,11 +448,11 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                 </Modal>
             )}
 
-            {/* Body: left sidebar + content (z-10 so the hero never covers the cards) */}
-            <div className="relative z-10 max-w-6xl mx-auto px-4 -mt-8">
+            {/* Body: left sidebar + content, sitting below the hero with a little breathing room */}
+            <div className="relative z-10 max-w-6xl mx-auto px-4 mt-5">
                 <div className="lg:grid lg:grid-cols-[230px_1fr] lg:gap-6">
                     <aside className="mb-4 lg:mb-0">
-                        <div className="rounded-2xl border border-slate-100 bg-white p-2.5 shadow-xl lg:sticky lg:top-24">
+                        <div className="rounded-xl border border-slate-100 bg-white p-2.5 shadow-lg lg:sticky lg:top-24">
                             <nav className="flex gap-1.5 overflow-x-auto lg:flex-col">
                                 {navSections.map(s => (
                                     <button
@@ -431,7 +468,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                         </div>
                     </aside>
 
-                    <main className="rounded-2xl border border-slate-100 bg-white p-5 sm:p-6 shadow-xl min-h-[520px]">
+                    <main className="rounded-xl border border-slate-100 bg-white p-4 sm:p-6 shadow-lg min-h-[520px]">
                         {activeTab === 'reaches' && (
                             // Rendered unconditionally (no loading gate) so opening a reach from a tree
                             // keeps the requested thread — remounting on load would drop the selection.
@@ -743,8 +780,8 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                              )
                         )}
                         {activeTab === 'appearance' && (
-                            <div className="grid gap-8 lg:grid-cols-[1fr_280px]">
-                                <div className="space-y-6">
+                            <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
+                                <div className="min-w-0 space-y-6">
                                     <div>
                                         <h3 className="text-lg font-bold text-slate-800">lightseed.online Theme</h3>
                                         <p className="mt-1 text-sm text-slate-500">

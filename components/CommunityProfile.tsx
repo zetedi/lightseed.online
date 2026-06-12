@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { showAlert, showConfirm } from "./ui/Dialog";
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
 import { Community, Lifetree, Lightseed, Pulse, Intelligence, Persona, Sanctuary } from '../types';
@@ -135,7 +136,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const isGuardian = (tree: Lifetree) => !!currentUserId && (tree.guardians || []).includes(currentUserId);
 
   const handleToggleGuardian = async (tree: Lifetree) => {
-    if (!currentUserId) { alert('Sign in to join a guardianship.'); return; }
+    if (!currentUserId) { showAlert('Sign in to join a guardianship.'); return; }
     const join = !isGuardian(tree);
     setTogglingId(tree.id);
     try {
@@ -145,7 +146,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
         : t));
     } catch (e) {
       console.error(e);
-      alert('Failed to update guardianship.');
+      showAlert('Failed to update guardianship.');
     }
     setTogglingId(null);
   };
@@ -210,7 +211,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this community? This cannot be undone.')) return;
+    if (!(await showConfirm('Are you sure you want to delete this community? This cannot be undone.', { title: 'Delete Community', confirmText: 'Delete', danger: true }))) return;
     setIsDeleting(true);
     try {
       await deleteCommunity(community.id);
@@ -218,7 +219,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       window.location.reload();
     } catch (e) {
       console.error(e);
-      alert('Failed to delete community.');
+      showAlert('Failed to delete community.');
     }
     setIsDeleting(false);
   };
@@ -258,7 +259,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       setEventImageUrls(prev => [...prev, url]);
     } catch (e) {
       console.error(e);
-      alert('Failed to upload event image.');
+      showAlert('Failed to upload event image.');
     }
     setIsUploadingEventImage(false);
   };
@@ -288,7 +289,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       getCommunityEvents(community.id).then(setEvents).catch(() => {});
     } catch (error: any) {
       console.error(error);
-      alert('Failed to create event: ' + (error.message || 'Unknown error'));
+      showAlert('Failed to create event: ' + (error.message || 'Unknown error'));
     }
     setIsEventSaving(false);
   };
@@ -299,14 +300,18 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     yantra: <Icons.Venn />,
   };
 
+  // The Yantra (and the network's deeper lore) only belongs to the central nodes.
+  const isNetworkHub = ['lightseed.online', 'lifeseed.online'].includes(bareDomain(community.domain));
+
   const navSections: { key: TabKey; label: string; icon: React.ReactNode }[] = [
     { key: 'vision', label: 'Vision', icon: <Icons.FingerPrint /> },
     { key: 'firsttree', label: 'First Tree', icon: <Icons.Tree /> },
     { key: 'sanctuary', label: 'The Sanctuary', icon: <Icons.Sun /> },
     { key: 'trees', label: 'Community Trees', icon: <Icons.Tree /> },
     { key: 'events', label: 'Events', icon: <Icons.Loc /> },
-    // The network's foundational story travels to every node's about page.
-    ...loreTabs.map(tab => ({ key: tab.id as TabKey, label: tab.label, icon: loreIcons[tab.id] })),
+    // The network's foundational story travels to every node's about page (the Yantra
+    // stays with the central lightseed / lifeseed nodes).
+    ...loreTabs.filter(tab => isNetworkHub || tab.id !== 'yantra').map(tab => ({ key: tab.id as TabKey, label: tab.label, icon: loreIcons[tab.id] })),
     ...(canEdit ? [
       { key: 'intelligence' as TabKey, label: 'Intelligence', icon: <Icons.Sparkles /> },
       { key: 'appearance' as TabKey, label: 'Appearance', icon: <Icons.Image /> },
@@ -317,7 +322,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
 
   const SectionTitle = ({ title, sub }: { title: string; sub?: string }) => (
     <div className="mb-6">
-      <h2 className="text-xl font-bold text-slate-900">{title}</h2>
+      <h2 className="text-base sm:text-xl font-bold text-slate-900">{title}</h2>
       {sub && <p className="mt-1 text-sm text-slate-500">{sub}</p>}
     </div>
   );
@@ -351,7 +356,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   return (
     <div className="min-h-screen pb-20">
       {/* Hero — mirrors the personal profile */}
-      <div className="relative bg-gradient-to-b from-slate-800 to-slate-900 text-white pt-6 pb-16 px-4">
+      <div className="relative bg-gradient-to-b from-slate-800 to-slate-900 text-white pt-5 pb-12 px-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between mb-6">
           <button onClick={onClose} className="flex items-center gap-2 text-white/70 hover:text-white text-sm font-medium">
             <Icons.ArrowLeft />
@@ -364,28 +369,26 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
           )}
         </div>
 
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center md:items-end gap-6 md:gap-8">
-          <div className="flex h-24 w-24 md:h-28 md:w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-xl">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center gap-4 sm:gap-5">
+          <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-xl">
             {logoUrl ? (
               <img src={logoUrl} className="h-full w-full object-cover" alt={`${community.name} logo`} referrerPolicy="no-referrer" />
             ) : (
               <span className="text-slate-300"><Icons.Globe /></span>
             )}
           </div>
-          <div className="text-center md:text-left flex-1 min-w-0">
-            <div className="flex flex-col md:flex-row md:items-baseline md:flex-wrap gap-x-4 gap-y-1 justify-center md:justify-start">
-              <h1 className="min-w-0 break-words text-3xl font-light tracking-wide">{community.name}</h1>
+          <div className="min-w-0 flex-1">
+            {/* Name + all meta on one wrapping row */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 justify-center sm:justify-start">
+              <h1 className="min-w-0 break-words text-2xl font-light tracking-wide">{community.name}</h1>
               <span className="inline-flex items-baseline gap-1 text-slate-300">
-                <span className="text-lg font-bold text-white">{domainTrees.length}</span>
-                <span className="text-sm text-slate-400">{domainTrees.length === 1 ? t('tree') : t('trees')}</span>
+                <span className="text-base font-bold text-white">{domainTrees.length}</span>
+                <span className="text-xs text-slate-400">{domainTrees.length === 1 ? t('tree') : t('trees')}</span>
               </span>
-            </div>
-            {/* Details live in the header */}
-            <div className="mt-3 flex items-center gap-2 flex-wrap justify-center md:justify-start text-xs">
-              <a href={`https://${community.domain}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-3 py-1 font-mono text-emerald-300 hover:bg-emerald-400/20">
+              <a href={`https://${community.domain}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-0.5 text-xs font-mono text-emerald-300 hover:bg-emerald-400/20">
                 <Icons.Globe size={12} /> {community.domain}
               </a>
-              <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-slate-300">
+              <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-xs text-slate-300">
                 Since {community.createdAt?.toDate ? community.createdAt.toDate().toLocaleDateString() : '—'}
               </span>
             </div>
@@ -397,7 +400,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       <div className="relative z-10 max-w-6xl mx-auto px-4 -mt-8">
         <div className="lg:grid lg:grid-cols-[230px_1fr] lg:gap-6">
           <aside className="mb-4 lg:mb-0">
-            <div className="rounded-2xl border border-slate-100 bg-white p-2.5 shadow-xl lg:sticky lg:top-24">
+            <div className="rounded-xl border border-slate-100 bg-white p-2.5 shadow-lg lg:sticky lg:top-24">
               <nav className="flex gap-1.5 overflow-x-auto lg:flex-col">
                 {navSections.map(s => (
                   <button
@@ -413,7 +416,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
             </div>
           </aside>
 
-          <main className="rounded-2xl border border-slate-100 bg-white p-5 sm:p-6 shadow-xl min-h-[520px]">
+          <main className="rounded-xl border border-slate-100 bg-white p-4 sm:p-6 shadow-lg min-h-[520px]">
             {activeTab === 'vision' && (
               <div>
                 <SectionTitle title="Vision" sub="What this community is growing towards." />
@@ -423,7 +426,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                     <SaveBar />
                   </>
                 ) : (
-                  <div className="prose prose-slate max-w-none text-slate-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: community.vision || '<p>No vision shared yet.</p>' }} />
+                  <div className="prose prose-slate max-w-none text-slate-700 leading-relaxed break-words [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg" dangerouslySetInnerHTML={{ __html: community.vision || '<p>No vision shared yet.</p>' }} />
                 )}
               </div>
             )}

@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, FormEvent } from 'react';
+import { showAlert } from "../ui/Dialog";
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { Modal } from '../ui/Modal';
@@ -65,7 +66,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
     if (isImagining || uploading) return;
     const seed = [treeName, treeShortTitle, treeBio, treeSeed].map(s => s.trim()).filter(Boolean).join('. ');
     if (!seed) {
-      alert('Add a name or vision first so we can imagine a face for your tree.');
+      showAlert('Add a name or vision first so we can imagine a face for your tree.');
       return;
     }
     setIsImagining(true);
@@ -77,10 +78,10 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
         const url = await uploadBase64Image(dataUrl, `users/${lightseed?.uid}/trees/ai/${Date.now()}`);
         setTreeImageUrl(url);
       } else {
-        alert('The vision did not take form. Please try again.');
+        showAlert('The vision did not take form. Please try again.');
       }
     } catch (e: any) {
-      alert(e.message || 'Could not imagine an image right now.');
+      showAlert(e.message || 'Could not imagine an image right now.');
     }
     setIsImagining(false);
   };
@@ -107,12 +108,12 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
           const coords = await extractGpsFromImage(treeFile);
           if (coords) {
             setPlantLocation(coords);
-            alert("Location extracted from image!");
+            showAlert("Location extracted from image!");
           } else {
-            alert("Could not get location from browser or image. Please set it manually if needed.");
+            showAlert("Could not get location from browser or image. Please set it manually if needed.");
           }
         } else {
-          alert("Could not get location. Try uploading a photo with GPS first, or allow browser location.");
+          showAlert("Could not get location. Try uploading a photo with GPS first, or allow browser location.");
         }
         setIsLocating(false);
       }
@@ -142,7 +143,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
         });
         onClose();
     } catch (e: any) {
-        alert(e.message);
+        showAlert(e.message);
     } finally {
         setIsSubmitting(false);
     }

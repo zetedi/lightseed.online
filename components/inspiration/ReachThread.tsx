@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { showAlert } from "../ui/Dialog";
 import { useLanguage } from '../../contexts/LanguageContext';
 import { sendMessageToOracle, generateImage } from '../../services/gemini';
 import { checkAndIncrementAiUsage, mintPulse, uploadBase64Image, listenToUserProfile, fetchReachThread, markReachesSeen, sendReach } from '../../services/firebase';
@@ -208,11 +209,11 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
 
     const handleMint = async () => {
         if (!lightseed || !activeTree) {
-            alert("You need a planted Lifetree to mint this conversation.");
+            showAlert("You need a planted Lifetree to mint this conversation.");
             return;
         }
         if (mode === 'tree' && !selectedTree) {
-            alert("Choose a tree before minting this conversation.");
+            showAlert("Choose a tree before minting this conversation.");
             return;
         }
         if (messages.length <= 1) return; // Only greeting
@@ -251,10 +252,10 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
                 authorName: lightseed.displayName || "Soul",
                 authorPhoto: lightseed.photoURL,
             });
-            alert("Conversation minted as a Pulse!");
+            showAlert("Conversation minted as a Pulse!");
         } catch (e: any) {
             console.error(e);
-            alert("Minting failed: " + e.message);
+            showAlert("Minting failed: " + e.message);
         }
         setIsMinting(false);
     }

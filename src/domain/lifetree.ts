@@ -17,6 +17,12 @@ export interface Lifetree {
   visionIds?: string[];
   pulseIds?: string[];
   guardianIds?: string[];
+  // Tree Circle roles (shared care). `guardians` (below) remains the active guardian list.
+  coOwnerIds?: string[];
+  observerIds?: string[];
+  stewardIds?: string[];
+  communityId?: string; // The Tree Circle community rooted in this tree, once formed.
+  updatedAt?: Timestamp;
   parentTreeIds?: string[];
   childTreeIds?: string[];
   aiTokenBalance?: number;
