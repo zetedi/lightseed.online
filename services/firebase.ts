@@ -363,15 +363,27 @@ export const sendNewsletter = async ({ subject, html, senderUid }: { subject: st
     return recipients.length;
 };
 
-const toWebP = (file: File, quality = 0.85): Promise<Blob> =>
+// Resize (cap the longest edge) and re-encode as WebP — keeps uploads small.
+const toWebP = (file: File, quality = 0.82, maxDim = 1600): Promise<Blob> =>
     new Promise((resolve, reject) => {
         const img = new Image();
         const url = URL.createObjectURL(file);
         img.onload = () => {
+            let w = img.naturalWidth;
+            let h = img.naturalHeight;
+            const longest = Math.max(w, h);
+            if (longest > maxDim) {
+                const scale = maxDim / longest;
+                w = Math.round(w * scale);
+                h = Math.round(h * scale);
+            }
             const canvas = document.createElement('canvas');
-            canvas.width = img.naturalWidth;
-            canvas.height = img.naturalHeight;
-            canvas.getContext('2d')!.drawImage(img, 0, 0);
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d')!;
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(img, 0, 0, w, h);
             URL.revokeObjectURL(url);
             canvas.toBlob(
                 blob => blob ? resolve(blob) : reject(new Error('WebP conversion failed')),

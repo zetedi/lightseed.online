@@ -371,7 +371,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
     return (
         <div className="min-h-screen pb-20">
             {/* Hero — compact: avatar, name and all the meta sit on one wrapping row */}
-            <div className="relative bg-gradient-to-b from-slate-800 to-slate-900 text-white pt-6 pb-10 px-4">
+            <div className="relative bg-gradient-to-b from-slate-800 to-slate-900 text-white pt-6 pb-16 px-4">
                 <div className="max-w-6xl mx-auto flex flex-row items-center gap-3 sm:gap-5">
                     <div className="relative shrink-0">
                         <img
@@ -448,8 +448,9 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                 </Modal>
             )}
 
-            {/* Body: left sidebar + content, sitting below the hero with a little breathing room */}
-            <div className="relative z-10 max-w-6xl mx-auto px-4 mt-5">
+            {/* Body: the menu + content boxes sit ON the hero — the blue extends behind them.
+                The gap from the avatar down to these boxes matches the gap above the avatar. */}
+            <div className="relative z-10 max-w-6xl mx-auto px-4 -mt-10">
                 <div className="lg:grid lg:grid-cols-[230px_1fr] lg:gap-6">
                     <aside className="mb-4 lg:mb-0">
                         <div className="rounded-xl border border-slate-100 bg-white p-2.5 shadow-lg lg:sticky lg:top-24">
