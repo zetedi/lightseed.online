@@ -2,8 +2,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
-import { Community, Lifetree, Lightseed, Pulse, Intelligence, Persona } from '../types';
-import { updateCommunity, uploadImage, getTreesByDomain, deleteCommunity, createCommunityEvent, getCommunityByDomain, getCommunityEvents, toggleGuardianship } from '../services/firebase';
+import { Community, Lifetree, Lightseed, Pulse, Intelligence, Persona, Sanctuary } from '../types';
+import { updateCommunity, uploadImage, getTreesByDomain, deleteCommunity, createCommunityEvent, getCommunityByDomain, getCommunityEvents, toggleGuardianship, getSanctuariesByDomain } from '../services/firebase';
 import { getSelectableIntelligences, listPersonas } from '../services/intelligence';
 import RichTextEditor from './ui/RichTextEditor';
 import { ImagePicker } from './ui/ImagePicker';
@@ -22,7 +22,7 @@ interface CommunityProfileProps {
   isSuperAdmin?: boolean;
 }
 
-type TabKey = 'vision' | 'firsttree' | 'trees' | 'events' | LoreTabId | 'intelligence' | 'appearance';
+type TabKey = 'vision' | 'firsttree' | 'sanctuary' | 'trees' | 'events' | LoreTabId | 'intelligence' | 'appearance';
 
 const PROVIDER_LABELS: Record<string, string> = {
   google: 'Google · Gemini',
@@ -69,6 +69,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const [isSavingIntel, setIsSavingIntel] = useState(false);
 
   const [linkedTrees, setLinkedTrees] = useState<Lifetree[]>([]);
+  const [sanctuaries, setSanctuaries] = useState<Sanctuary[]>([]);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -114,6 +115,13 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   useEffect(() => {
     getCommunityEvents(community.id).then(setEvents).catch(() => {});
   }, [community.id]);
+
+  useEffect(() => {
+    getSanctuariesByDomain(community.domain).then(setSanctuaries).catch(() => {});
+  }, [community.domain]);
+
+  // The first sanctuary rooted in this domain (earliest), shown as "The Sanctuary".
+  const firstSanctuary = sanctuaries[0] || null;
 
   // The first lifetree rooted in this community's domain (earliest planted).
   const domainTrees = useMemo(() => {
@@ -285,17 +293,16 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     setIsEventSaving(false);
   };
 
-  // Icons for the shared network-lore tabs (Secret Sun, Path, Yantra, Design Brief).
+  // Icons for the shared network-lore tabs (Path, Yantra).
   const loreIcons: Record<LoreTabId, React.ReactNode> = {
-    sun: <Icons.Sun />,
     path: <Icons.ArrowRight />,
     yantra: <Icons.Venn />,
-    design: <Icons.Image />,
   };
 
   const navSections: { key: TabKey; label: string; icon: React.ReactNode }[] = [
     { key: 'vision', label: 'Vision', icon: <Icons.FingerPrint /> },
     { key: 'firsttree', label: 'First Tree', icon: <Icons.Tree /> },
+    { key: 'sanctuary', label: 'The Sanctuary', icon: <Icons.Sun /> },
     { key: 'trees', label: 'Community Trees', icon: <Icons.Tree /> },
     { key: 'events', label: 'Events', icon: <Icons.Loc /> },
     // The network's foundational story travels to every node's about page.
@@ -471,6 +478,43 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                         </button>
                       )}
                     </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'sanctuary' && (
+              <div>
+                <SectionTitle title="The Sanctuary" sub="The first sacred place that holds this community's lifetrees." />
+                {!firstSanctuary ? (
+                  <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400">
+                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-500"><Icons.Sun /></div>
+                    <p className="text-sm">No sanctuary has been consecrated for this community yet.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="relative h-64 md:h-80 w-full overflow-hidden rounded-2xl shadow-xl group">
+                      {firstSanctuary.imageUrl ? (
+                        <img src={firstSanctuary.imageUrl} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" alt={firstSanctuary.name} />
+                      ) : (
+                        <DefaultCardImage />
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                      <div className="absolute bottom-5 left-5 right-5 text-white">
+                        <h2 className="break-words text-3xl font-light tracking-wide">{firstSanctuary.name}</h2>
+                        {firstSanctuary.shortTitle && <p className="mt-1 text-sm font-bold uppercase tracking-widest text-emerald-300">{firstSanctuary.shortTitle}</p>}
+                      </div>
+                    </div>
+
+                    {firstSanctuary.locationName && (
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-slate-600"><Icons.Loc /> {firstSanctuary.locationName}</span>
+                      </div>
+                    )}
+
+                    {firstSanctuary.body && (
+                      <p className="whitespace-pre-line text-justify font-serif text-lg leading-relaxed text-slate-700">{firstSanctuary.body}</p>
+                    )}
                   </div>
                 )}
               </div>

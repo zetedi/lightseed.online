@@ -310,53 +310,6 @@ const SymbolCard = ({ title, description, type, link }: { title: string, descrip
     </div>
 );
 
-// The Secret Sun, the first sanctuary/platform.
-export const FirstSanctuarySection = () => (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="relative h-64 md:h-96 w-full rounded-2xl overflow-hidden shadow-2xl mb-8 group">
-             <img src="/tss.webp" alt="The Secret Sun" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-[3s]" />
-             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-             <div className="absolute bottom-6 left-6 text-white">
-                 <h2 className="text-3xl font-light tracking-wide">The Secret Sun</h2>
-                 <p className="text-emerald-300 text-sm font-bold uppercase tracking-widest mt-1">Sacred Platform</p>
-             </div>
-        </div>
-
-        <Paragraph>
-            For the tree named Phoenix, the platform was the best choice. Since it is very close to the mediation path around the chateau of Hridaya France we cut a new path through the brumble towards the direction which seemed a better place for a platform. And it happened that the area and the platform itself is interwoven with magic. The first auspicious sign for building was the finding of the Bodhisattva stone, a big stone on the path. The hill does not have many stones and the Kogi people believe that finding a stone while cutting a path is a very good sign. After a couple of days of listening and cutting the way we ended up on the exact place where the permaculture design marked a place for a platform years before.
-        </Paragraph>
-
-        <SectionHeader>Sacred Alignments</SectionHeader>
-        <Paragraph>
-            The second auspicious sign was the holly tree, which in folklore is a sacred tree protecting the area from evil spirits and should not be cut, thus marking one side of the platform. The other side there was a group of small oak trees. These two trees are in constant battle according to folklore, emphasizing the polarity aspect. The other ones were the two stumps of the douglas firs which were cut about three years before. They were exactly across the middle so we could use them as a base and as a symbolic rebirth of the trees in a different form. The third one is the wild rose island which became apparent after the second cutting of the path and before starting of the building of the platform. When we marked the corners of the platform we hit another stone, the Heart Stone.
-        </Paragraph>
-
-        <SectionHeader>Cosmic Timing and Symbolism</SectionHeader>
-        <Paragraph>
-            The building took place through the summer solstice, the international yoga day and the full moon the next day, St John’s day (with a fire ceremony), St Peter’s day, Madeira Day (madeira means wood in Portuguese) and Keti Koti, the celebration of freedom from slavery in Netherlands. The number 37 is present in every aspect of the platform, sometimes deeply hidden. The marking in the concrete in the North-East corner is the number 37. There are 3x7 planks on the top. The platform wes consecrated on the second day of the seventh month, however the last layer of oil on top was soaking in the night of 3/7 and was sealed on that day with Shambo, a powerful shamanic drum. The reason why 37 was central to the symbolism is to emphasize the principles conducive to bodhi:
-        </Paragraph>
-
-        <div className="bg-purple-50 p-6 rounded-r-2xl border-l-4 border-purple-500 italic text-purple-900 font-serif text-lg leading-relaxed shadow-sm mb-6">
-            “Bodhipakṣa-caryā, the practice of the 37 bodhipakṣadharmas (the principles conducive to bodhi) which are: the four applications of mindfulness, the four right efforts, the four bases of spiritual power, the five spiritual faculties, the five strengths, the seven factors of awakening and the noble eightfold path.” - Bodhipakkhiyādhammā
-        </div>
-
-        <SectionHeader>Numbers of the Universe</SectionHeader>
-        <Paragraph>
-            The other symbolic number present was the number 108. The reinforcing beams are 108 cm long each, pointing at the cosmic number prevalent in yoga, and the reason being that on average the Sun is 108 Suns away, the Moon is 108 Moons away and the Sun is 108 Earths wide.
-        </Paragraph>
-
-        <SectionHeader>Polarity and Unity</SectionHeader>
-        <Paragraph>
-            The Yin-Yang symbol and the polarities are represented by how the middle beam is on different sides of the middle supporting beams. The handmade marks in the opposing corners also represents polarity - the one opposed to one marked with the heart does not have a mark, it’s emptiness, nothing - it’s either love or nothing. The other two opposing corners are the 37 representing the bodhisattvas and selflessness and the R, the mark of the individual, anonymous people who build the pyramids, the R put down by a desire to leave a trace and to mark. The two tree stumps below the platform are also symbolizing polarities with their roots hugging each other underground. - Heartmantra
-        </Paragraph>
-
-        <SectionHeader>Sacred Foundations</SectionHeader>
-        <Paragraph>
-            The bigger path towards the building one one hand took through Assisi, and from there are four stones embedded in the concrete on each corner of the platform. The water contains water from the temple where St. Francis’s final resting place is. The tap was just above his chamber. And from an even more overarching perspective the unmarked corner has a flower of life pendant embedded from the temple of Osiris in Abydos, Egypt, where the flower of life symbol appeared the first time according to some archeologists.
-        </Paragraph>
-    </div>
-);
-
 // 03 — The path to become a member.
 export const MembershipPathSection = () => {
     const { t } = useLanguage();
@@ -481,127 +434,10 @@ export const YantraSection = () => (
     </div>
 );
 
-// 05 — Design brief: the brand identity & design system.
-export const DesignBriefSection = () => (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-16 pb-20">
-
-        {/* Header Section */}
-        <div className="text-center space-y-4">
-            <div className="inline-block p-4 rounded-full bg-slate-50 mb-4">
-                <Logo width={80} height={80} />
-            </div>
-            <h1 className="text-4xl font-bold text-slate-900 tracking-tight">.seed</h1>
-            <p className="text-xl text-slate-500 font-light uppercase tracking-widest">Design System & Brand Identity</p>
-        </div>
-
-        {/* 01. Manifesto */}
-        <div className="grid md:grid-cols-12 gap-8 items-center">
-            <div className="md:col-span-4">
-                <h2 className="text-emerald-600 font-bold uppercase tracking-widest text-xs mb-2">01. Philosophy</h2>
-                <h3 className="text-3xl font-serif text-slate-800 leading-tight">Solar Punk meets Ancient Wisdom.</h3>
-            </div>
-            <div className="md:col-span-8 bg-slate-50 p-8 rounded-2xl border border-slate-100">
-                <p className="text-lg leading-relaxed text-slate-600 font-serif italic">
-                    "We are building a bridge between the digital and the organic. The interface should feel less like a database and more like a forest. Every interaction—planting, pulsing, growing—should carry weight and biological resonance."
-                </p>
-            </div>
-        </div>
-
-        {/* 02. Color System */}
-        <div>
-            <div className="flex items-end justify-between mb-6">
-                <h2 className="text-emerald-600 font-bold uppercase tracking-widest text-xs">02. Atomic Palette</h2>
-                <span className="text-xs text-slate-400 font-mono">Tailwind CSS Variables</span>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="space-y-3 group">
-                    <div className="h-32 w-full bg-emerald-600 rounded-xl shadow-lg shadow-emerald-200 group-hover:scale-105 transition-transform"></div>
-                    <div>
-                        <p className="font-bold text-slate-800">Life Emerald</p>
-                        <p className="text-xs text-slate-400 font-mono">bg-emerald-600</p>
-                        <p className="text-xs text-slate-400 font-mono">#059669</p>
-                    </div>
-                </div>
-                <div className="space-y-3 group">
-                    <div className="h-32 w-full bg-slate-900 rounded-xl shadow-lg shadow-slate-200 group-hover:scale-105 transition-transform"></div>
-                    <div>
-                        <p className="font-bold text-slate-800">Deep Space</p>
-                        <p className="text-xs text-slate-400 font-mono">bg-slate-900</p>
-                        <p className="text-xs text-slate-400 font-mono">#0f172a</p>
-                    </div>
-                </div>
-                <div className="space-y-3 group">
-                    <div className="h-32 w-full bg-amber-500 rounded-xl shadow-lg shadow-amber-200 group-hover:scale-105 transition-transform"></div>
-                    <div>
-                        <p className="font-bold text-slate-800">Solar Amber</p>
-                        <p className="text-xs text-slate-400 font-mono">bg-amber-500</p>
-                        <p className="text-xs text-slate-400 font-mono">#f59e0b</p>
-                    </div>
-                </div>
-                <div className="space-y-3 group">
-                    <div className="h-32 w-full bg-purple-900 rounded-xl shadow-lg shadow-purple-200 group-hover:scale-105 transition-transform"></div>
-                    <div>
-                        <p className="font-bold text-slate-800">Mystic Purple</p>
-                        <p className="text-xs text-slate-400 font-mono">bg-purple-900</p>
-                        <p className="text-xs text-slate-400 font-mono">#581c87</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {/* 03. Typography */}
-        <div className="grid md:grid-cols-2 gap-12">
-            <div>
-                <h2 className="text-emerald-600 font-bold uppercase tracking-widest text-xs mb-6">03. Typography</h2>
-                <div className="space-y-8">
-                    <div>
-                        <p className="text-xs text-slate-400 mb-2 font-mono">Primary Font (UI & Headings)</p>
-                        <h3 className="text-4xl font-sans font-thin text-slate-900">Inter Sans</h3>
-                        <p className="text-slate-600 mt-2">Clean, modern, legible. Used for UI elements, navigation, and primary headers to convey digital clarity.</p>
-                    </div>
-                    <div>
-                        <p className="text-xs text-slate-400 mb-2 font-mono">Secondary Font (Content & Soul)</p>
-                        <h3 className="text-4xl font-serif italic text-slate-900">Serif (System)</h3>
-                        <p className="text-slate-600 mt-2">Classic, organic, rooted. Used for user generated content, visions, and 'Pulse' bodies to convey human touch and wisdom.</p>
-                    </div>
-                </div>
-            </div>
-
-            {/* 04. Iconography & Shape */}
-            <div>
-                <h2 className="text-emerald-600 font-bold uppercase tracking-widest text-xs mb-6">04. Shape Language</h2>
-                <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm space-y-6">
-                    <div className="flex items-center gap-4">
-                        <button className="bg-emerald-600 text-white px-6 py-3 rounded-full font-bold shadow-lg">Pill Shape</button>
-                        <p className="text-sm text-slate-500">All interactive elements use fully rounded corners (`rounded-full`) to feel organic and soft.</p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center border border-slate-200">
-                            <Icons.Tree />
-                        </div>
-                        <p className="text-sm text-slate-500">Containers use `rounded-xl` or `rounded-2xl` for a card-like, approachable feel.</p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <div className="flex -space-x-2">
-                            <div className="w-8 h-8 rounded-full bg-emerald-500 border-2 border-white"></div>
-                            <div className="w-8 h-8 rounded-full bg-sky-500 border-2 border-white"></div>
-                            <div className="w-8 h-8 rounded-full bg-amber-500 border-2 border-white"></div>
-                        </div>
-                        <p className="text-sm text-slate-500">Overlapping elements invoke connection and unity (The Flower of Life).</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-);
-
 // Tab metadata shared by both about pages, so the lore tabs read identically everywhere.
 export const loreTabs = [
-    { id: 'sun', label: 'The Secret Sun', meta: 'First sanctuary' },
     { id: 'path', label: 'The Path', meta: 'Become a member' },
     { id: 'yantra', label: 'The Yantra', meta: 'Logo & brand' },
-    { id: 'design', label: 'Design Brief', meta: 'Identity system' },
 ] as const;
 
 export type LoreTabId = typeof loreTabs[number]['id'];
@@ -609,10 +445,8 @@ export type LoreTabId = typeof loreTabs[number]['id'];
 // Renders the body for a given lore tab; used by the unified community/node about page.
 export const LoreSection = ({ id }: { id: LoreTabId }) => {
     switch (id) {
-        case 'sun': return <FirstSanctuarySection />;
         case 'path': return <MembershipPathSection />;
         case 'yantra': return <YantraSection />;
-        case 'design': return <DesignBriefSection />;
         default: return null;
     }
 };

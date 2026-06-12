@@ -43,7 +43,7 @@ import {
   uploadString
 } from 'firebase/storage';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { type Pulse, type PulseType, type Lifetree, type Alignment, type Vision, type Community } from '../types';
+import { type Pulse, type PulseType, type Lifetree, type Alignment, type Vision, type Community, type Sanctuary } from '../types';
 import { createBlock } from '../utils/crypto';
 import { oldEmeraldEarthThemeValues } from '../utils/theme';
 import { isExplicitlyValidatedTree } from '../utils/validation';
@@ -87,6 +87,7 @@ const visionsCollection = collection(db, 'visions');
 const pulsesCollection = collection(db, 'pulses');
 const alignmentsCollection = collection(db, 'alignments');
 const communitiesCollection = collection(db, 'communities');
+const sanctuariesCollection = collection(db, 'sanctuaries');
 const newsletterConfigRef = doc(db, 'config', 'newsletter');
 
 export const onAuthChange = (callback: (user: FirebaseUser | null) => void) => onAuthStateChanged(auth, callback);
@@ -617,6 +618,17 @@ export const getTreesByDomain = async (domain: string, ownerUid?: string): Promi
 
     return Array.from(byId.values());
 };
+
+// Sanctuaries rooted in a community's domain, earliest first. Mirrors getTreesByDomain
+// so the "First Tree" and "The Sanctuary" tabs behave identically.
+export const getSanctuariesByDomain = async (domain: string): Promise<Sanctuary[]> => {
+    const normalized = normalizeDomain(domain);
+    const snap = await getDocs(query(sanctuariesCollection, where('domain', '==', normalized)));
+    return snap.docs
+        .map(d => ({ id: d.id, ...(d.data() as any) } as Sanctuary))
+        .sort((a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0));
+};
+
 export const checkIsAdmin = async (uid: string): Promise<boolean> => (await getDoc(doc(db, 'admins', uid))).exists();
 
 export const getSuperAdminUid = async (): Promise<string | null> => {

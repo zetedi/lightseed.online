@@ -10,7 +10,7 @@
     "build": "vite build",
     "build:clean": "vite build --mode clean",
     "preview": "vite preview",
-    "seed:phoenix": "node scripts/seed-phoenix.mjs"
+    "seed:lightseed": "node scripts/seed-lightseed.mjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

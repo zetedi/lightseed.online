@@ -111,6 +111,13 @@ service cloud.firestore {
       allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
     }
 
+    // Sanctuaries: sacred places per domain (read public, write owner/staff).
+    match /sanctuaries/{sanctuaryId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
+    }
+
     // Intelligence Commons -------------------------------------------------
 
     // Intelligences: public ones are world-readable; private ones only to owner/staff.

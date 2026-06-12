@@ -19,10 +19,12 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeh
     ],
   };
 
+  // Quill 2 (react-quill-new) registers only 'list' — 'bullet' is a toolbar value, not a
+  // separate format, so listing it here throws "Cannot register 'bullet'".
   const formats = [
     'header',
     'bold', 'italic', 'underline', 'strike', 'blockquote',
-    'list', 'bullet',
+    'list',
     'link'
   ];
 
