@@ -1,5 +1,5 @@
 
-export type Language = 'en' | 'es' | 'hu' | 'qu' | 'sa' | 'ja' | 'ar' | 'sw';
+export type Language = 'en' | 'es' | 'hu' | 'qu' | 'sa' | 'ja' | 'ar' | 'sw' | 'zh';
 
 const baseKeys = {
   forest: "Forest", pulses: "Pulses", events: "Events", visions: "Visions", oracle: "Oracle", about: "About", explore: "Explore",
@@ -104,5 +104,46 @@ export const translations: Record<Language, typeof baseKeys> = {
     validate_action: "Thibitisha", create_vision: "Ono", create_new_world: "Unda Ulimwengu Mpya",
     light_earth: "Living", intelligence: "Akili",
     communities: "Jamii", observatory: "Kituo cha Uchunguzi", inspiration: "Uvuvio"
+  },
+  // Simplified Chinese — first complete pass.
+  zh: {
+    ...baseKeys,
+    forest: "森林", pulses: "脉动", events: "活动", visions: "愿景", oracle: "神谕", about: "关于", explore: "探索",
+    sign_in: "登录", sign_out: "退出", emit_pulse: "发送脉动", plant_lifetree: "种植生命树",
+    create_vision: "新愿景", short_title: "简短标题", vision: "愿景", title: "标题", body: "内容",
+    webpage: "网页链接", mint: "铸造脉动", generate: "生成", generate_image: "生成图像",
+    block: "区块", loading: "加载中...", planting: "种植中...", minting: "铸造中...", creating: "创建中...",
+    map_view: "地图视图", list_view: "列表视图", upload_photo: "上传照片", validated: "已验证",
+    unvalidated: "未验证", validate_action: "验证树", quick_snap: "记录变化", back_forest: "返回",
+    genesis: "创世哈希", steward: "守护者", location: "位置", tree_details: "树的详情",
+    profile: "个人主页", my_trees: "我的树", my_pulses: "我的脉动", my_alignments: "我的共鸣",
+    edit: "编辑", be_mother_tree: "种植或守护一棵树", guard_tree: "守护树", alignments: "共鸣",
+    pending_alignments: "待发现的共鸣", no_pending_resonance: "璀璨共鸣", search_placeholder: "搜索...",
+    guard: "守护", nature: "自然", lifetrees: "生命树", no_trees_found: "未找到", pending: "待定",
+    validated_trees: "已验证", observatory: "观象台", inspiration: "灵感",
+    direct_messages: "私信", tree: "树", trees: "树",
+    only_if_validated: "仅限已验证",
+    only_validated_can_reach: "仅允许已验证的用户联系我",
+    only_validated_can_reach_help: "启用后，只有拥有已验证生命树的用户才能给您发送私信。",
+    growth: "成长", loves: "喜爱",
+    oracle_greeting: "你好，探索者。我是神谕。需要我帮你种植生命树，或引导你实现你的愿景吗？", ask_oracle: "向神谕提问...",
+    more: "更多", send_invite: "发送邀请", invitations: "邀请", invites_remaining: "剩余邀请",
+    copy_invite: "复制链接", delete_account: "删除账户", delete_confirm_title: "删除个人资料",
+    delete_confirm_desc: "这将永久删除您的所有数据。", delete_goodbye: "再见。",
+    ai_login_required: "请登录以使用 AI。", subscription_title: "每 7 周一封邮件。", subscribe_action: "订阅",
+    subscribed_success: "订阅成功！", invalid_email: "邮箱无效", latest_hash: "最新哈希",
+    daily_limit_image: "已达每日愿景上限 (3/3)。", daily_limit_text: "已达每日神谕上限 (21/21)。",
+    ether_quiet: "共鸣仍有待揭示。", alignment_request: "共鸣请求",
+    from_another_tree: "来自另一棵树", accept_sync: "接受同步", no_visions_found: "未找到愿景。",
+    propose_alignment: "提出共鸣", alignment_with: "正在与", alignment_request_desc: "发送共鸣请求。",
+    internal_pulse: "内部（成长）脉动", send_request: "发送请求", invite_sent: "邀请已发送！",
+    invite_email_placeholder: "朋友的邮箱", invite_message_placeholder: "留言（可选）",
+    cancel: "取消", back: "返回", subscription_failed: "失败。", stand_for_trees: "为树木挺身而出",
+    subscribe: "订阅", subscription_desc: "每 7 周一封邮件。", guard_tree_action: "守护树",
+    create_new_world: "创造新世界",
+    type_lifetree: "生命树", type_guarded: "守护树", type_family: "家庭",
+    communities: "社区", register_community: "注册社区",
+    light_earth: "生机", intelligence: "智慧",
+    about_lin_description: "LIN，生命智慧网络，是光之地球的智慧层：一个分布式系统，让人类、AI、树木、地方与社区通过关怀、互惠与共同目标彼此可见。"
   }
 };

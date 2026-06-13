@@ -47,6 +47,7 @@ const languages = [
     { code: 'ja', name: '日本語' },
     { code: 'ar', name: 'العربية' },
     { code: 'sw', name: 'Kiswahili' },
+    { code: 'zh', name: '中文' },
 ];
 
 const isDarkHex = (hex: string | undefined, fallback: boolean) => {

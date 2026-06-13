@@ -43,7 +43,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const [editDomain, setEditDomain] = useState(tree.domain || '');
    const [isSaving, setIsSaving] = useState(false);
    
-   // Blockchain Visualization State
+   // Immutable chain Visualization State
    const [chain, setChain] = useState<Pulse[]>([]);
    const [genesisBlock, setGenesisBlock] = useState<Pulse | null>(null);
    const [growthBlocks, setGrowthBlocks] = useState<Pulse[]>([]);
@@ -563,7 +563,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                         )}
                     </div>
 
-                    {/* Right: Blockchain & Guard Panel */}
+                    {/* Right: Immutable chain & Guard Panel */}
                     <div className="space-y-6">
                         {isNature ? (
                             <GuardianshipPanel />
@@ -575,7 +575,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                     </div>
                                     <h3 className="text-emerald-400 font-bold uppercase tracking-wider mb-6 flex items-center">
                                         <Icons.Hash />
-                                        <span className="ml-2">Blockchain Ledger</span>
+                                        <span className="ml-2">Immutable Chain</span>
                                     </h3>
 
                                     <div className="space-y-4 relative z-10">
@@ -600,13 +600,13 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     </div>
                 </div>
 
-                {/* Blockchain Visualization Section */}
+                {/* Immutable chain Visualization Section */}
                 {!loadingChain && chain.length > 0 && (
                     <div className="mt-8 pt-8 border-t border-slate-200">
                         <div className="flex flex-col items-center mb-12">
                             <h3 className="text-xl font-light text-slate-800 mb-6 flex items-center gap-2">
                                 <span className="bg-emerald-100 p-2 rounded-full text-emerald-600"><Icons.Tree /></span>
-                                <span>Blockchain Growth Events</span>
+                                <span>Immutable Growth Chain</span>
                             </h3>
 
                             {/* Action Button at the Top */}

@@ -118,6 +118,24 @@ service cloud.firestore {
       allow update, delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
     }
 
+    // Invite requests — anyone (signed out) can ask to join; only staff can read/triage.
+    match /inviteRequests/{requestId} {
+      allow create: if request.resource.data.status == 'pending';
+      allow read, list: if isStaff();
+      allow update, delete: if isStaff();
+    }
+
+    // Network onboarding invites. The invite id is an unguessable token, so a single
+    // doc is fetchable by anyone holding the link (to lock the email on the sign-up
+    // page); listing is staff-only. The inviter creates; the invited user consumes it.
+    match /networkInvites/{inviteId} {
+      allow get: if true;
+      allow list: if isStaff();
+      allow create: if isSignedIn() && request.resource.data.invitedByUserId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.status == 'pending';
+      allow delete: if isStaff();
+    }
+
     // Tree Circle invites. The Lifetree owner creates invites; the invitee or inviter
     // can read theirs; the invitee declines and the inviter revokes. Acceptance (which
     // also writes the tree's role arrays + the rooted community) goes through the

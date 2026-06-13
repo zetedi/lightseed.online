@@ -1,11 +1,16 @@
 
 import '../utils/polyfill';
 import { initializeApp } from 'firebase/app';
-import { 
-  getAuth, 
+import {
+  getAuth,
   onAuthStateChanged,
   GoogleAuthProvider,
   signInWithPopup,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  updateProfile,
   type User as FirebaseUser,
   signOut as firebaseSignOut,
   deleteUser as firebaseDeleteUser
@@ -88,53 +93,148 @@ const pulsesCollection = collection(db, 'pulses');
 const alignmentsCollection = collection(db, 'alignments');
 const communitiesCollection = collection(db, 'communities');
 const sanctuariesCollection = collection(db, 'sanctuaries');
+const networkInvitesCollection = collection(db, 'networkInvites');
 const newsletterConfigRef = doc(db, 'config', 'newsletter');
 
 export const onAuthChange = (callback: (user: FirebaseUser | null) => void) => onAuthStateChanged(auth, callback);
 
-export const signInWithGoogle = async () => {
-  try { 
-      googleProvider.setCustomParameters({ prompt: 'select_account' });
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
-      const userDocRef = doc(db, 'users', user.uid);
-      const userSnap = await getDoc(userDocRef);
-      
-      if (!userSnap.exists()) {
-          await setDoc(userDocRef, {
-              uid: user.uid,
-              email: user.email,
-              displayName: user.displayName,
-              createdAt: serverTimestamp(),
-              newsletterSubscribed: false,
-              // Direct-message email notifications are on by default for new users
-              // (early network — don't let people miss incoming reaches).
-              emailNotifications: { directMessages: true },
-              invitesRemaining: 7,
-              dailyAiText: 0,
-              dailyAiImage: 0,
-              lastAiReset: Date.now()
-          });
-
-          // Welcome email - optional to prevent failure on dev/localhost
-          try {
-              await triggerSystemEmail(
-                  user.email || "", 
-                  "Welcome to lightseed", 
-                  `Welcome to lightseed, ${user.displayName}. You have planted your intention. Now you may plant your tree.`,
-                  user.uid
-              );
-          } catch (emailError) {
-              console.warn("Welcome email could not be sent:", emailError);
-          }
-      }
-      return user; 
-  } catch (error: any) { 
-      console.error("Login Failed:", error); 
-      alert("Sign-in failed: " + (error.message || "Unknown error"));
-      throw error; 
-  }
+// Create the user's profile document the first time they appear. Direct-message email
+// notifications are on by default (early network — don't let people miss reaches).
+const ensureUserProfile = async (user: FirebaseUser, extra: Record<string, any> = {}): Promise<boolean> => {
+    const ref = doc(db, 'users', user.uid);
+    if ((await getDoc(ref)).exists()) return false;
+    await setDoc(ref, {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName || (extra as any).displayName || '',
+        createdAt: serverTimestamp(),
+        newsletterSubscribed: false,
+        emailNotifications: { directMessages: true },
+        invitesRemaining: 7,
+        dailyAiText: 0,
+        dailyAiImage: 0,
+        lastAiReset: Date.now(),
+        ...extra,
+    });
+    try {
+        await triggerSystemEmail(user.email || "", "Welcome to lightseed",
+            `Welcome to lightseed${user.displayName ? ", " + user.displayName : ""}. You have planted your intention. Now you may plant your tree.`, user.uid);
+    } catch (e) { console.warn("Welcome email could not be sent:", e); }
+    return true;
 };
+
+// Throws Error('INVITE_ONLY') when a brand-new account is blocked by invite-only mode.
+const resolveInviteOnSignup = async (email: string | null, opts: { inviteId?: string; inviteOnly?: boolean }): Promise<{ invitedBy?: string; consume?: string }> => {
+    if (!opts.inviteOnly) {
+        if (!opts.inviteId) return {};
+        const invite = await getNetworkInvite(opts.inviteId);
+        return invite && invite.status === 'pending' ? { invitedBy: invite.invitedByUserId, consume: invite.id } : {};
+    }
+    const invite = opts.inviteId ? await getNetworkInvite(opts.inviteId) : null;
+    if (!invite || invite.status !== 'pending') throw new Error('INVITE_ONLY');
+    return { invitedBy: invite.invitedByUserId, consume: invite.id };
+};
+
+export const signInWithGoogle = async (opts: { inviteId?: string; inviteOnly?: boolean } = {}) => {
+    googleProvider.setCustomParameters({ prompt: 'select_account' });
+    const result = await signInWithPopup(auth, googleProvider);
+    const user = result.user;
+    const existing = await getDoc(doc(db, 'users', user.uid));
+    if (!existing.exists()) {
+        let resolved;
+        try {
+            resolved = await resolveInviteOnSignup(user.email, opts);
+        } catch (e) {
+            await firebaseSignOut(auth); // new account blocked by invite-only
+            throw e;
+        }
+        if (resolved.consume) await consumeNetworkInvite(resolved.consume, user.uid);
+        await ensureUserProfile(user, { acceptedTerms: true, ...(resolved.invitedBy ? { invitedBy: resolved.invitedBy } : {}) });
+    }
+    return user;
+};
+
+export const signUpWithEmail = async (email: string, password: string, displayName: string, opts: { inviteId?: string; inviteOnly?: boolean } = {}) => {
+    const resolved = await resolveInviteOnSignup(email, opts); // validate the invite before creating the account
+    const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
+    const user = cred.user;
+    if (displayName.trim()) { try { await updateProfile(user, { displayName: displayName.trim() }); } catch {} }
+    if (resolved.consume) await consumeNetworkInvite(resolved.consume, user.uid);
+    await ensureUserProfile(user, { displayName: displayName.trim(), acceptedTerms: true, ...(resolved.invitedBy ? { invitedBy: resolved.invitedBy } : {}) });
+    try { await sendEmailVerification(user); } catch (e) { console.warn("Verification email failed:", e); }
+    return user;
+};
+
+export const signInWithEmail = (email: string, password: string) =>
+    signInWithEmailAndPassword(auth, email.trim(), password).then(c => c.user);
+
+export const sendVerificationEmail = () =>
+    auth.currentUser ? sendEmailVerification(auth.currentUser) : Promise.reject(new Error('Not signed in'));
+
+export const resetPassword = (email: string) => sendPasswordResetEmail(auth, email.trim());
+
+// --- Network onboarding invites (distinct from Tree Circle role invites) ----------
+export const createNetworkInvite = async (email: string, invitedByUserId: string, message = ''): Promise<{ id: string; link: string }> => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) throw new Error('Please enter a valid email.');
+    // Spend one of the inviter's allotment atomically.
+    await runTransaction(db, async (t) => {
+        const ref = doc(db, 'users', invitedByUserId);
+        const snap = await t.get(ref);
+        if (!snap.exists()) throw new Error('User profile not found.');
+        const remaining = snap.data().invitesRemaining || 0;
+        if (remaining <= 0) throw new Error('No invites remaining.');
+        t.update(ref, { invitesRemaining: remaining - 1 });
+    });
+    const ref = await addDoc(networkInvitesCollection, {
+        email: cleanEmail, invitedByUserId, status: 'pending', message, createdAt: serverTimestamp(),
+    });
+    const link = `${window.location.origin}?invite=${ref.id}`;
+    try {
+        await triggerSystemEmail(cleanEmail, 'You are invited to lightseed',
+            `${message ? `"${message}"\n\n` : ''}You have been invited to join the lightseed network. Accept your invitation here: ${link}`, invitedByUserId);
+    } catch (e) { console.warn('Invite email failed:', e); }
+    return { id: ref.id, link };
+};
+
+export const getNetworkInvite = async (inviteId: string): Promise<any | null> => {
+    const snap = await getDoc(doc(db, 'networkInvites', inviteId));
+    return snap.exists() ? { id: snap.id, ...(snap.data() as any) } : null;
+};
+
+export const consumeNetworkInvite = (inviteId: string, acceptedByUserId: string) =>
+    updateDoc(doc(db, 'networkInvites', inviteId), { status: 'accepted', acceptedByUserId, acceptedAt: serverTimestamp() });
+
+// --- Invite requests (people without an invitation asking to join) ----------------
+const inviteRequestsCollection = collection(db, 'inviteRequests');
+
+export const createInviteRequest = async (email: string, reason: string) => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) throw new Error('Please enter a valid email.');
+    await addDoc(inviteRequestsCollection, {
+        email: cleanEmail, reason: reason.trim(), status: 'pending', createdAt: serverTimestamp(),
+    });
+};
+
+export const getInviteRequests = async (): Promise<any[]> => {
+    const snap = await getDocs(query(inviteRequestsCollection, where('status', '==', 'pending')));
+    return snap.docs
+        .map(d => ({ id: d.id, ...(d.data() as any) }))
+        .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+};
+
+// Approve → mint a real invitation to that email and mark the request handled.
+export const approveInviteRequest = async (requestId: string, adminUid: string) => {
+    const reqRef = doc(db, 'inviteRequests', requestId);
+    const snap = await getDoc(reqRef);
+    if (!snap.exists()) throw new Error('Request not found.');
+    const invite = await createNetworkInvite((snap.data() as any).email, adminUid);
+    await updateDoc(reqRef, { status: 'approved', approvedBy: adminUid, approvedAt: serverTimestamp() });
+    return invite;
+};
+
+export const declineInviteRequest = (requestId: string) =>
+    updateDoc(doc(db, 'inviteRequests', requestId), { status: 'declined', declinedAt: serverTimestamp() });
 
 export const logout = () => firebaseSignOut(auth);
 
@@ -648,10 +748,14 @@ export const getSuperAdminUid = async (): Promise<string | null> => {
     return snap.exists() ? (snap.data() as any).uid : null;
 };
 export const checkIsSuperAdmin = async (uid: string): Promise<boolean> => (await getSuperAdminUid()) === uid;
+export const SUPERADMIN_INVITE_ALLOTMENT = 144;
+
 export const claimSuperAdmin = async (uid: string): Promise<boolean> => {
     const ref = doc(db, 'config', 'superadmin');
     if ((await getDoc(ref)).exists()) return false;
     await setDoc(ref, { uid, claimedAt: serverTimestamp() });
+    // Super-admins seed the invite-only network: grant the full allotment.
+    try { await updateDoc(doc(db, 'users', uid), { invitesRemaining: SUPERADMIN_INVITE_ALLOTMENT }); } catch (e) { console.warn('Could not set superadmin invites', e); }
     return true;
 };
 export const grantAdmin = (uid: string) => setDoc(doc(db, 'admins', uid), { grantedAt: serverTimestamp() });

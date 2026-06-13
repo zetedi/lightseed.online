@@ -54,7 +54,7 @@ export interface Pulse {
   loveCount: number;
   commentCount: number;
 
-  // Blockchain Ledger
+  // Immutable chain Ledger
   previousHash: string;
   hash: string;
 }

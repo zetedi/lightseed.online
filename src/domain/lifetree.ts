@@ -2,7 +2,7 @@ import type { Timestamp, GeoPoint } from 'firebase/firestore';
 
 export type LifetreeType = "human" | "ai" | "community" | "project" | "LIFETREE" | "GUARDED" | "FAMILY";
 
-// The Entity/Blockchain container / Living Identity
+// The Entity/Immutable chain container / Living Identity
 export interface Lifetree {
   id: string;
   ownerId: string; // Legacy
@@ -52,7 +52,7 @@ export interface Lifetree {
   guardians?: string[]; // Array of User IDs (Legacy)
   status?: 'HEALTHY' | 'DANGER';
 
-  // Blockchain Props
+  // Immutable chain Props
   genesisHash: string;
   latestHash: string; 
   blockHeight: number;

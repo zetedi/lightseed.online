@@ -68,6 +68,7 @@ import { isExplicitlyValidatedTree } from './utils/validation';
 
 // Modals
 import { PlantTreeModal } from './components/modals/PlantTreeModal';
+import { AuthModal } from './components/modals/AuthModal';
 import { EmitPulseModal } from './components/modals/EmitPulseModal';
 import { CreateVisionModal } from './components/modals/CreateVisionModal';
 
@@ -186,6 +187,9 @@ const AppContent = () => {
     const forestSentinelRef = useRef<HTMLDivElement>(null);
 
     // UI State
+    const [showAuthModal, setShowAuthModal] = useState(false);
+    // An ?invite=<token> link opens the join flow with a locked email.
+    const inviteParam = useMemo(() => new URLSearchParams(window.location.search).get('invite') || undefined, []);
     const [showPlantModal, setShowPlantModal] = useState(false);
     // How the plant modal should open: optionally straight to a type's plant step
     // (e.g. the "Guard Tree" button jumps past the type selection).
@@ -374,6 +378,11 @@ const AppContent = () => {
         if (lightseed?.uid) getPendingTreeInvites(lightseed.uid).then(invs => setPendingTreeInvites(invs.length)).catch(() => {});
         else setPendingTreeInvites(0);
     }, [lightseed?.uid, tab]);
+
+    // Arriving on an invite link, signed out, opens the join flow.
+    useEffect(() => {
+        if (inviteParam && !lightseed && !authLoading) setShowAuthModal(true);
+    }, [inviteParam, lightseed, authLoading]);
 
     // Seed the Intelligence Commons (default personas + Gemini Oracle) once a super-admin
     // is known. Idempotent and gated by Firestore rules.
@@ -666,7 +675,7 @@ const AppContent = () => {
                         onViewCommunity={setSelectedCommunity}
                         onSetTab={setTab} 
                         onPlant={() => openPlant()}
-                        onLogin={signInWithGoogle} 
+                        onLogin={() => setShowAuthModal(true)} 
                     />
                 </div>
             );
@@ -1080,7 +1089,7 @@ const AppContent = () => {
                         lightseed={lightseed} 
                         activeTab={tab} 
                         setTab={setTab} 
-                        onLogin={signInWithGoogle} 
+                        onLogin={() => setShowAuthModal(true)} 
                         onLogout={logout} 
                         onPlant={() => openPlant()} 
                         onPulse={() => setShowPulseModal(true)}
@@ -1104,6 +1113,9 @@ const AppContent = () => {
                 {renderMainContent()}
                 <GDPRBanner />
                 <DialogHost />
+                {showAuthModal && !lightseed && (
+                    <AuthModal onClose={() => setShowAuthModal(false)} inviteId={inviteParam} inviteOnly={config.inviteOnly} />
+                )}
             </div>
 
             {selectedTree && (

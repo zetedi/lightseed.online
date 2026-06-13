@@ -222,7 +222,7 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel = "Back" }: 
                         </div>
                      </div>
 
-                     {/* Blockchain Ledger info - Repurposed for Memory / Validation */}
+                     {/* Immutable chain Ledger info - Repurposed for Memory / Validation */}
                      <div className="bg-white border border-slate-200 p-6 rounded-2xl">
                         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center">
                             <Icons.ShieldCheck />

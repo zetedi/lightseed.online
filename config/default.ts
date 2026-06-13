@@ -20,4 +20,5 @@ export const defaultConfig: AppConfig = {
   domain: 'lightseed.online',
   model: 'gemini-3.5-flash',
   githubActionsEnabled: false,
+  inviteOnly: true,
 };

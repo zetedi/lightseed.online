@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { showAlert, showConfirm } from "./ui/Dialog";
 import { type Pulse, type Lifetree, type Alignment, type Vision, type VisionSynergy, type TreeOwnershipInvite, treeRelationLabels } from '../types';
-import { getMyPulses, getMyVisions, getJoinedVisions, getMyAlignmentsHistory, deleteUserAccount, logout, triggerSystemEmail, sendInvite, listenToUserProfile, deleteVision, getAdmins, setNewsletterSubscription, updateUserSiteTheme, updateUserProfile, uploadImage, fetchMyReaches, setOnlyValidatedCanReach, getPendingTreeInvites, acceptTreeInvite, declineTreeInvite } from '../services/firebase';
+import { getMyPulses, getMyVisions, getJoinedVisions, getMyAlignmentsHistory, deleteUserAccount, logout, triggerSystemEmail, createNetworkInvite, listenToUserProfile, deleteVision, getAdmins, setNewsletterSubscription, updateUserSiteTheme, updateUserProfile, uploadImage, fetchMyReaches, setOnlyValidatedCanReach, getPendingTreeInvites, acceptTreeInvite, declineTreeInvite, getInviteRequests, approveInviteRequest, declineInviteRequest } from '../services/firebase';
 import { ReachInbox } from './inspiration/ReachInbox';
 import { findVisionSynergies } from '../services/gemini';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -74,15 +74,30 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
     const [admins, setAdmins] = useState<{ uid: string }[]>([]);
     const [newAdminUid, setNewAdminUid] = useState('');
     const [adminActionLoading, setAdminActionLoading] = useState(false);
+    const [inviteRequests, setInviteRequests] = useState<any[]>([]);
+    const [requestBusyId, setRequestBusyId] = useState<string | null>(null);
     const hasValidatedTree = myTrees.some((t: Lifetree) => isExplicitlyValidatedTree(t));
     const allValidated = myTrees.length > 0 && myTrees.every((t: Lifetree) => isExplicitlyValidatedTree(t));
     // Trees I guard but don't own — shown separately from my planted trees.
     const guardedOnly = (guardedTrees as Lifetree[]).filter((tree: Lifetree) => tree.ownerId !== lightseed?.uid);
-    const inviteLink = `${window.location.origin}?invite=${lightseed.uid}`;
 
+    const refreshInviteRequests = () => { if (isSuperAdmin) getInviteRequests().then(setInviteRequests).catch(() => {}); };
     useEffect(() => {
-        if (isSuperAdmin) getAdmins().then(setAdmins);
+        if (isSuperAdmin) { getAdmins().then(setAdmins); refreshInviteRequests(); }
     }, [isSuperAdmin]);
+
+    const handleApproveRequest = async (id: string) => {
+        setRequestBusyId(id);
+        try { await approveInviteRequest(id, lightseed.uid); setInviteRequests(prev => prev.filter(r => r.id !== id)); setDialogMessage('Invitation sent.'); }
+        catch (e: any) { setDialogMessage(e?.message || 'Failed to approve.'); }
+        setRequestBusyId(null);
+    };
+    const handleDeclineRequest = async (id: string) => {
+        setRequestBusyId(id);
+        try { await declineInviteRequest(id); setInviteRequests(prev => prev.filter(r => r.id !== id)); }
+        catch (e: any) { setDialogMessage(e?.message || 'Failed to decline.'); }
+        setRequestBusyId(null);
+    };
 
     useEffect(() => {
         if (!lightseed) return;
@@ -165,17 +180,12 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
         setAnalyzing(false);
     }
 
-    const copyInvite = () => {
-        navigator.clipboard.writeText(inviteLink);
-        setDialogMessage("Invite link copied to clipboard!");
-    }
-
     const handleSendInvite = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!inviteEmail) return;
         setSendingInvite(true);
         try {
-            await sendInvite(inviteEmail, inviteMessage, lightseed.uid, inviteLink);
+            await createNetworkInvite(inviteEmail, lightseed.uid, inviteMessage);
             setDialogMessage(t('invite_sent'));
             setShowInviteModal(false);
             setInviteEmail('');
@@ -494,11 +504,8 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                                 ) : (
                                     <div className="rounded-2xl border border-slate-100 p-5 space-y-4">
                                         <p className="text-sm text-slate-500">{t('invites_remaining')}: <span className="font-bold text-emerald-600">{invitesRemaining}</span></p>
-                                        <div className="flex flex-col sm:flex-row gap-2">
-                                            <input readOnly value={inviteLink} className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-xs bg-slate-50 text-slate-500" />
-                                            <button onClick={copyInvite} className="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-bold text-xs hover:bg-slate-300 transition-colors whitespace-nowrap">{t('copy_invite')}</button>
-                                            <button onClick={() => setShowInviteModal(true)} disabled={invitesRemaining <= 0} className="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-emerald-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">{t('send_invite')}</button>
-                                        </div>
+                                        <p className="text-xs text-slate-400">Invite someone by email — they'll receive a link that opens the join page with their email locked in.</p>
+                                        <button onClick={() => setShowInviteModal(true)} disabled={invitesRemaining <= 0} className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-emerald-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"><Icons.UserPlus /> <span>{t('send_invite')}</span></button>
                                     </div>
                                 )}
                             </div>
@@ -576,6 +583,32 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                                                     </div>
                                                 ))}
                                             </div>
+                                        </div>
+
+                                        {/* Invite requests — people asking to join the invite-only network */}
+                                        <div className="mt-4 rounded-2xl border border-slate-100 p-5">
+                                            <div className="mb-3 flex items-center justify-between">
+                                                <h4 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-800"><Icons.UserPlus /> Invite Requests</h4>
+                                                <button onClick={refreshInviteRequests} className="text-xs font-bold text-slate-400 hover:text-slate-700">Refresh</button>
+                                            </div>
+                                            {inviteRequests.length === 0 ? (
+                                                <p className="text-xs text-slate-400">No pending requests.</p>
+                                            ) : (
+                                                <div className="space-y-2">
+                                                    {inviteRequests.map(req => (
+                                                        <div key={req.id} className="flex flex-col gap-2 rounded-xl border border-slate-100 bg-slate-50/60 p-3 sm:flex-row sm:items-center sm:justify-between">
+                                                            <div className="min-w-0">
+                                                                <p className="truncate text-sm font-bold text-slate-800">{req.email}</p>
+                                                                {req.reason && <p className="mt-0.5 text-xs italic text-slate-500 line-clamp-3">“{req.reason}”</p>}
+                                                            </div>
+                                                            <div className="flex shrink-0 gap-2">
+                                                                <button onClick={() => handleApproveRequest(req.id)} disabled={requestBusyId === req.id} className="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50">{requestBusyId === req.id ? '…' : 'Invite'}</button>
+                                                                <button onClick={() => handleDeclineRequest(req.id)} disabled={requestBusyId === req.id} className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50">Decline</button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
 
                                         {/* Newsletter — unrelated to admin management, so it lives in its own section */}

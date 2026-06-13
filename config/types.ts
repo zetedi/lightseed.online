@@ -21,4 +21,6 @@ export interface AppConfig {
   domain: string;
   model: string;
   githubActionsEnabled: boolean;
+  // Invite-only growth: new accounts require a valid invitation. Flip to false to open signup.
+  inviteOnly: boolean;
 }
