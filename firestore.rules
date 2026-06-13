@@ -181,5 +181,12 @@ service cloud.firestore {
       allow update, delete: if isSignedIn() &&
         (isStaff() || isCommunityOwner(resource.data.communityId));
     }
+
+    // Provider credentials: third-party AI API keys. NEVER readable or writable by any
+    // client — they are managed exclusively by Cloud Functions via the Admin SDK
+    // (saveProviderCredential / generateClaudeContent), which bypass these rules.
+    match /providerCredentials/{credId} {
+      allow read, write: if false;
+    }
   }
 }

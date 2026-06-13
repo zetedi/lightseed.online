@@ -32,12 +32,16 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.requestInvite = exports.acceptTreeInvite = exports.onReachCreated = exports.sendSystemEmail = exports.generateAIContent = void 0;
+exports.generateClaudeContent = exports.saveProviderCredential = exports.requestInvite = exports.acceptTreeInvite = exports.onReachCreated = exports.sendSystemEmail = exports.generateAIContent = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 const admin = __importStar(require("firebase-admin"));
 const generative_ai_1 = require("@google/generative-ai");
+const sdk_1 = __importDefault(require("@anthropic-ai/sdk"));
 admin.initializeApp();
 const db = admin.firestore();
 // Secure Gemini API Proxy
@@ -332,5 +336,138 @@ exports.requestInvite = (0, https_1.onCall)({ cors: true }, async (request) => {
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
     return { status: "created" };
+});
+// ---------------------------------------------------------------------------
+// Intelligence Commons — provider credentials + live Claude (Anthropic)
+//
+// SECURITY: provider API keys live ONLY in the `providerCredentials` collection,
+// which Firestore rules make completely unreadable/unwritable by clients. Keys
+// reach the server over the encrypted callable channel and are read back only
+// here, with the Admin SDK. They never touch a browser.
+// ---------------------------------------------------------------------------
+const credentialDocId = (scope, ownerId, provider) => `${scope}_${ownerId}_${provider}`;
+// May the caller set a key for this scope/owner?
+//  - user scope:      only for their own uid
+//  - community scope: the community owner, or any staff/superadmin
+const canManageCredential = async (uid, scope, ownerId) => {
+    if (scope === "user")
+        return ownerId === uid;
+    if (scope === "community") {
+        if (!ownerId)
+            return false;
+        const [community, superadmin, adminDoc] = await Promise.all([
+            db.collection("communities").doc(ownerId).get(),
+            db.collection("config").doc("superadmin").get(),
+            db.collection("admins").doc(uid).get(),
+        ]);
+        if (community.exists && community.data()?.ownerId === uid)
+            return true;
+        if (superadmin.exists && superadmin.data()?.uid === uid)
+            return true;
+        if (adminDoc.exists)
+            return true;
+    }
+    return false;
+};
+// Store / rotate / remove a provider key. An empty key removes the credential.
+// Returns a non-secret hint the client can display ("connected" + last 4 chars).
+exports.saveProviderCredential = (0, https_1.onCall)({ cors: true }, async (request) => {
+    if (!request.auth)
+        throw new https_1.HttpsError("unauthenticated", "Sign in first.");
+    const uid = request.auth.uid;
+    const scope = String(request.data?.scope || "");
+    const ownerId = String(request.data?.ownerId || "");
+    const provider = String(request.data?.provider || "");
+    const key = String(request.data?.key || "").trim();
+    const intelligenceId = request.data?.intelligenceId ? String(request.data.intelligenceId) : null;
+    if (!["user", "community"].includes(scope))
+        throw new https_1.HttpsError("invalid-argument", "Bad scope.");
+    if (!["anthropic", "openai", "deepseek", "google"].includes(provider))
+        throw new https_1.HttpsError("invalid-argument", "Unknown provider.");
+    if (!(await canManageCredential(uid, scope, ownerId)))
+        throw new https_1.HttpsError("permission-denied", "Not allowed to set this key.");
+    const ref = db.collection("providerCredentials").doc(credentialDocId(scope, ownerId, provider));
+    if (!key) {
+        await ref.delete().catch(() => undefined);
+        if (intelligenceId) {
+            await db.collection("intelligences").doc(intelligenceId)
+                .set({ connected: false, keyHint: admin.firestore.FieldValue.delete() }, { merge: true }).catch(() => undefined);
+        }
+        return { connected: false };
+    }
+    const keyHint = key.length > 4 ? `…${key.slice(-4)}` : "set";
+    await ref.set({
+        provider, scope, ownerId, key,
+        keyHint,
+        updatedBy: uid,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    // Mirror the non-secret connection status onto the intelligence so the UI can show it.
+    if (intelligenceId) {
+        await db.collection("intelligences").doc(intelligenceId)
+            .set({ connected: true, keyHint, credentialScope: scope, credentialOwnerId: ownerId }, { merge: true }).catch(() => undefined);
+    }
+    return { connected: true, keyHint };
+});
+// Live Claude (Anthropic) proxy. Resolves a BYO key for the given scope/owner,
+// falling back to the node-wide ANTHROPIC_API_KEY secret when none is configured.
+exports.generateClaudeContent = (0, https_1.onCall)({
+    secrets: ["ANTHROPIC_API_KEY"],
+    timeoutSeconds: 120,
+    memory: "512MiB",
+    cors: true,
+}, async (request) => {
+    if (!request.auth)
+        throw new https_1.HttpsError("unauthenticated", "Sign in first.");
+    const messages = Array.isArray(request.data?.messages) ? request.data.messages : [];
+    const systemInstruction = String(request.data?.systemInstruction || "");
+    const model = String(request.data?.model || "claude-sonnet-4-6");
+    const credential = request.data?.credential;
+    // Resolve the key: BYO (user/community) first, node secret as fallback.
+    let apiKey;
+    if (credential?.scope && credential.scope !== "node" && credential.ownerId) {
+        const snap = await db.collection("providerCredentials")
+            .doc(credentialDocId(credential.scope, credential.ownerId, "anthropic")).get();
+        if (snap.exists)
+            apiKey = snap.data()?.key;
+    }
+    if (!apiKey)
+        apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+        throw new https_1.HttpsError("failed-precondition", "No Claude key is connected for this intelligence yet.");
+    }
+    // Map our transcript (user|model) to Anthropic's (user|assistant); it must open on a user turn.
+    const mapped = messages
+        .map((m) => ({ role: m.role === "model" ? "assistant" : "user", content: String(m.text || "") }))
+        .filter((m) => m.content);
+    const firstUser = mapped.findIndex((m) => m.role === "user");
+    const convo = firstUser === -1 ? [] : mapped.slice(firstUser);
+    if (convo.length === 0)
+        return { text: "" };
+    try {
+        const client = new sdk_1.default({ apiKey });
+        const result = await client.messages.create({
+            model,
+            max_tokens: 1024,
+            system: systemInstruction || undefined,
+            messages: convo,
+        });
+        const text = (result.content || [])
+            .filter((b) => b.type === "text")
+            .map((b) => b.text)
+            .join("");
+        return { text };
+    }
+    catch (error) {
+        console.error("Claude generation error:", error?.message || error);
+        const status = error?.status;
+        if (status === 401 || status === 403) {
+            throw new https_1.HttpsError("permission-denied", "The Claude key was rejected. Please check it in your AI settings.");
+        }
+        if (status === 429) {
+            throw new https_1.HttpsError("resource-exhausted", "Claude is rate-limited right now. Please try again in a moment.");
+        }
+        throw new https_1.HttpsError("internal", error?.message || "Claude generation failed.");
+    }
 });
 //# sourceMappingURL=index.js.map

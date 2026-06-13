@@ -29,6 +29,13 @@ export interface Intelligence {
   communityIds?: string[];
   memoryIds?: string[];
   personaId?: string;
+  // Connection status for BYO-key providers (anthropic, …). The secret key itself lives
+  // only in the locked `providerCredentials` collection; these are the non-secret mirror
+  // fields the UI reads to show "connected".
+  connected?: boolean;
+  keyHint?: string;                                  // e.g. "…aB3z"
+  credentialScope?: 'user' | 'community' | 'node';   // which key this intelligence draws on
+  credentialOwnerId?: string;                        // uid or communityId for that key
   createdAt: Timestamp;
 }
 
@@ -73,10 +80,12 @@ export interface MemoryContext {
 
 // Every provider implements the same contract. Adding Claude, DeepSeek or a local
 // model later is just another implementation of this interface — no call site changes.
+export type IntelligenceRef = Pick<Intelligence, 'provider' | 'model' | 'credentialScope' | 'credentialOwnerId'>;
+
 export interface IntelligenceProvider {
   id: IntelligenceProviderId;
   sendMessage(
-    intelligence: Pick<Intelligence, 'provider' | 'model'>,
+    intelligence: IntelligenceRef,
     messages: IntelligenceMessage[],
     options?: { persona?: Persona | null; memory?: MemoryContext | null }
   ): Promise<string>;

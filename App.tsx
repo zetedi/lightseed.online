@@ -36,7 +36,7 @@ import {
   getPendingTreeInvites
 } from './services/firebase';
 import { findVisionSynergies } from './services/gemini';
-import { ensureIntelligenceCommons } from './services/intelligence';
+import { ensureIntelligenceCommons, setActiveIntelligenceId } from './services/intelligence';
 import { type Pulse, type Lifetree, type Alignment, type Vision, type Community, type VisionSynergy } from './types';
 import Logo from './components/Logo';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
@@ -177,6 +177,7 @@ const AppContent = () => {
     // name, About page) renders as if this were the host community. Cleared via "Exit community".
     const [impersonatedCommunity, setImpersonatedCommunity] = useState<Community | null>(null);
     const [personalSiteTheme, setPersonalSiteTheme] = useState<any>(null);
+    const [preferredIntelligenceId, setPreferredIntelligenceId] = useState<string | undefined>(undefined);
     const [personalSiteLogoUrl, setPersonalSiteLogoUrl] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     
@@ -320,12 +321,16 @@ const AppContent = () => {
         if (!lightseed) {
             setPersonalSiteTheme(null);
             setPersonalSiteLogoUrl('');
+            setActiveIntelligenceId(undefined);
             return;
         }
 
         return listenToUserProfile(lightseed.uid, (profile) => {
             setPersonalSiteTheme(profile?.siteTheme || null);
             setPersonalSiteLogoUrl(profile?.siteLogoUrl || '');
+            setPreferredIntelligenceId(profile?.preferredIntelligenceId || undefined);
+            // Mirror the choice so stateless AI helpers route through it everywhere.
+            setActiveIntelligenceId(profile?.preferredIntelligenceId || undefined);
         });
     }, [lightseed?.uid]);
 
@@ -519,7 +524,7 @@ const AppContent = () => {
         if (data.length < 2) return;
         setIsAnalyzingSynergy(true);
         try {
-            const results = await findVisionSynergies(data);
+            const results = await findVisionSynergies(data, preferredIntelligenceId);
             setSynergies(results);
         } catch (e) {
             console.error(e);

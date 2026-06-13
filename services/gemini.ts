@@ -3,7 +3,8 @@ import { httpsCallable } from "firebase/functions";
 import { auth, functions } from "./firebase";
 import { Lifetree, Vision, VisionSynergy } from "../types";
 import config from "../lifeseed.config.json";
-import { sendIntelligenceMessage } from "./intelligence";
+import { sendIntelligenceMessage, getIntelligence, getPersona, getActiveIntelligenceId } from "./intelligence";
+import type { IntelligenceRef, Persona } from "../src/domain/intelligence";
 
 // Default model as requested: gemini-3.5-flash
 const MODEL = config.model || 'gemini-3.5-flash';
@@ -29,12 +30,34 @@ const callGemini = async (prompt: string, model: string = MODEL, config?: any): 
     }
 }
 
+// Route a text prompt through the active intelligence (an explicit id wins, else the
+// signed-in user's chosen one). Non-Google providers go through the provider abstraction;
+// Google — and the unconfigured default — fall back to the Gemini callable. Image
+// generation deliberately does NOT use this: only Gemini makes images.
+const runText = async (prompt: string, opts?: { json?: boolean; intelligenceId?: string; persona?: Persona | null }): Promise<string> => {
+    const id = opts?.intelligenceId ?? getActiveIntelligenceId();
+    if (id) {
+        const intel = await getIntelligence(id);
+        if (intel && intel.enabled !== false && intel.provider !== 'google') {
+            const persona = opts?.persona ?? (intel.personaId ? await getPersona(intel.personaId) : null);
+            const reply = await sendIntelligenceMessage(
+                { provider: intel.provider, model: intel.model, credentialScope: intel.credentialScope, credentialOwnerId: intel.credentialOwnerId },
+                [{ role: 'user', text: prompt }],
+                { persona },
+            );
+            return reply || '';
+        }
+    }
+    const res = await callGemini(prompt, MODEL, opts?.json ? { responseMimeType: 'application/json' } : undefined);
+    return res.text || '';
+};
+
 export const generatePostTitle = async (body: string): Promise<string> => {
   if (!body.trim()) return "";
   try {
     const prompt = `Generate a short, engaging title (maximum 10 words) for the following post body. Do not use quotation marks in the title:\n\n---\n${body}\n---`;
-    const res = await callGemini(prompt);
-    return res.text ? res.text.trim().replace(/["']/g, '') : ""; 
+    const text = await runText(prompt);
+    return text ? text.trim().replace(/["']/g, '') : "";
   } catch (error) {
     console.error("Gemini Title Error:", error);
     return "";
@@ -50,8 +73,8 @@ export const generateLifetreeBio = async (seed: string): Promise<string> => {
       They provided this seed thought: "${seed}".
       Write a short (max 40 words), mystical, and nature-inspired bio/description.
     `;
-    const res = await callGemini(prompt);
-    return res.text || "A soul taking root in the digital forest.";
+    const text = await runText(prompt);
+    return text || "A soul taking root in the digital forest.";
   } catch (error: any) {
     console.error("Gemini Bio Error:", error);
     if (error.message.includes("Forbidden") || error.message.includes("suspended")) {
@@ -87,8 +110,8 @@ export const generateOracleQuote = async (): Promise<string> => {
         }
 
         const prompt = `Based on the following vision: "${GENESIS_VISION}", select a short, profound quote from classic literature, philosophy, or poetry that resonates with these themes. Return ONLY the quote and the author in this format: "Quote" - Author.`;
-        const res = await callGemini(prompt);
-        return res.text || '"Nature is not a place to visit. It is home." - Gary Snyder';
+        const text = await runText(prompt);
+        return text || '"Nature is not a place to visit. It is home." - Gary Snyder';
     } catch (e) {
         return '"The clearest way into the Universe is through a forest wilderness." - John Muir';
     }
@@ -104,17 +127,33 @@ Answer questions by weaving in themes of connection, nature, and the original vi
 Be helpful and supportive, like a wise but playful friend. Keep your answers concise and warm.
 You are a companion on the path, never an authority.`;
 
-export const sendMessageToOracle = async (message: string, history: {role: 'user' | 'model', text: string}[]) => {
+// Talk to the listener's chosen intelligence. With no `intelligenceId` (or an
+// unresolvable one) it falls back to the default Gemini Oracle, so existing chats keep
+// working. When an intelligence is chosen, its provider/model/key and persona are used —
+// so a connected Claude answers as Claude, wearing whichever persona it's dressed in.
+export const sendMessageToOracle = async (
+  message: string,
+  history: {role: 'user' | 'model', text: string}[],
+  intelligenceId?: string,
+) => {
   try {
     const messages = [...history, { role: 'user' as const, text: message }];
-    const reply = await sendIntelligenceMessage(
-      { provider: 'google', model: MODEL },
-      messages,
-      {
-        persona: { id: 'persona-oracle', name: 'Oracle', description: '', systemPrompt: ORACLE_PERSONA_PROMPT, createdAt: null as any },
-        memory: { text: GENESIS_VISION },
-      },
-    );
+
+    let ref: IntelligenceRef = { provider: 'google', model: MODEL };
+    let persona: Persona = { id: 'persona-oracle', name: 'Oracle', description: '', systemPrompt: ORACLE_PERSONA_PROMPT, createdAt: null as any };
+
+    if (intelligenceId) {
+      const intel = await getIntelligence(intelligenceId);
+      if (intel && intel.enabled !== false) {
+        ref = { provider: intel.provider, model: intel.model, credentialScope: intel.credentialScope, credentialOwnerId: intel.credentialOwnerId };
+        if (intel.personaId) {
+          const p = await getPersona(intel.personaId);
+          if (p) persona = p;
+        }
+      }
+    }
+
+    const reply = await sendIntelligenceMessage(ref, messages, { persona, memory: { text: GENESIS_VISION } });
     return reply || "I'm here, listening.";
   } catch (error: any) {
     console.error("Oracle Reach Error:", error);
@@ -124,6 +163,30 @@ export const sendMessageToOracle = async (message: string, history: {role: 'user
     return "I'm sorry, my connection to the forest is a bit weak right now.";
   }
 }
+
+// Diagnostic: ask the chosen intelligence a genesis-grounded question and return both the
+// question and the live reply. Unlike sendMessageToOracle this DOES NOT swallow errors —
+// it throws the real cause, so the Intelligence panel can show exactly what's wrong.
+export const testIntelligenceConnection = async (intelligenceId?: string): Promise<{ question: string; reply: string }> => {
+  const question = "Reading the genesis vision you hold in memory, name in one warm sentence the single seed at its heart — in your own voice.";
+
+  let ref: IntelligenceRef = { provider: 'google', model: MODEL };
+  let persona: Persona = { id: 'persona-oracle', name: 'Oracle', description: '', systemPrompt: ORACLE_PERSONA_PROMPT, createdAt: null as any };
+
+  if (intelligenceId) {
+    const intel = await getIntelligence(intelligenceId);
+    if (!intel) throw new Error('That intelligence could not be found. Try re-selecting it.');
+    if (intel.enabled === false) throw new Error('That intelligence is disabled.');
+    ref = { provider: intel.provider, model: intel.model, credentialScope: intel.credentialScope, credentialOwnerId: intel.credentialOwnerId };
+    if (intel.personaId) {
+      const p = await getPersona(intel.personaId);
+      if (p) persona = p;
+    }
+  }
+
+  const reply = await sendIntelligenceMessage(ref, [{ role: 'user', text: question }], { persona, memory: { text: GENESIS_VISION } });
+  return { question, reply: reply || '(the intelligence returned an empty reply)' };
+};
 
 export const sendMessageToTree = async (message: string, history: {role: 'user' | 'model', text: string}[], tree: Lifetree) => {
   try {
@@ -139,6 +202,21 @@ export const sendMessageToTree = async (message: string, history: {role: 'user' 
     Use the tree's vision, location, and role as your context.
     Keep replies concise, sensory, practical, and poetic without pretending to know private facts.
     If the seeker asks for action, suggest one clear next step they can take with or for this tree.`;
+
+    // Route the tree's voice through the seeker's chosen intelligence when it isn't Google.
+    const id = getActiveIntelligenceId();
+    if (id) {
+        const intel = await getIntelligence(id);
+        if (intel && intel.enabled !== false && intel.provider !== 'google') {
+            const persona: Persona = { id: 'tree-voice', name: tree.name, description: '', systemPrompt: systemInstruction, createdAt: null as any };
+            const reply = await sendIntelligenceMessage(
+                { provider: intel.provider, model: intel.model, credentialScope: intel.credentialScope, credentialOwnerId: intel.credentialOwnerId },
+                [...history, { role: 'user' as const, text: message }],
+                { persona },
+            );
+            return reply || "";
+        }
+    }
 
     let contents = history.map(m => ({
         role: m.role,
@@ -165,26 +243,41 @@ export const sendMessageToTree = async (message: string, history: {role: 'user' 
   }
 }
 
-// Analyze Vision Synergy
-export const findVisionSynergies = async (visions: Vision[]): Promise<VisionSynergy[]> => {
+// Pull the first JSON array out of a model reply, tolerating prose or ```json fences.
+const parseJsonArray = <T,>(text: string): T[] => {
+    if (!text) return [];
+    const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const start = cleaned.indexOf('[');
+    const end = cleaned.lastIndexOf(']');
+    const slice = start !== -1 && end !== -1 ? cleaned.slice(start, end + 1) : cleaned;
+    try { return JSON.parse(slice) as T[]; } catch { return []; }
+};
+
+// Pull the first JSON object out of a model reply, tolerating prose or ```json fences.
+const parseJsonObject = <T,>(text: string): T | null => {
+    if (!text) return null;
+    const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const start = cleaned.indexOf('{');
+    const end = cleaned.lastIndexOf('}');
+    const slice = start !== -1 && end !== -1 ? cleaned.slice(start, end + 1) : cleaned;
+    try { return JSON.parse(slice) as T; } catch { return null; }
+};
+
+// Analyze Vision Synergy. With an `intelligenceId` the listener's own AI (e.g. their
+// connected Claude) does the matchmaking; otherwise the default Gemini path runs.
+export const findVisionSynergies = async (visions: Vision[], intelligenceId?: string): Promise<VisionSynergy[]> => {
     if (visions.length < 2) return [];
     const visionsList = visions.map(v => `- Title: ${v.title}, Body: ${v.body}`).join('\n');
 
-    try {
-        const prompt = `Analyze the following list of Visions and identify potential collaborations or thematic synergies between them. 
-            Return a JSON array of pairs that match well.
-            
-            Visions:
-            ${visionsList}`;
-        
-        const res = await callGemini(prompt, MODEL, {
-            responseMimeType: "application/json"
-        });
+    const prompt = `Analyze the following list of Visions and identify potential collaborations or thematic synergies between them.
+Return ONLY a JSON array of pairs that match well, no prose.
 
-        if (res.text) {
-            return JSON.parse(res.text) as VisionSynergy[];
-        }
-        return [];
+Visions:
+${visionsList}`;
+
+    try {
+        const reply = await runText(prompt, { json: true, intelligenceId });
+        return parseJsonArray<VisionSynergy>(reply);
     } catch (e) {
         console.error("Matchmaking error", e);
         return [];
@@ -207,7 +300,7 @@ export interface TranslationResponse {
     growthSuggestion?: string;
 }
 
-export const translatePulse = async (req: TranslationRequest): Promise<TranslationResponse> => {
+export const translatePulse = async (req: TranslationRequest, intelligenceId?: string): Promise<TranslationResponse> => {
     const { senderTreeName, receiverTreeName, message, depth, context } = req;
     
     let depthInstructions = "";
@@ -243,13 +336,11 @@ export const translatePulse = async (req: TranslationRequest): Promise<Translati
     `;
 
     try {
-        const res = await callGemini(prompt, MODEL, {
-            responseMimeType: "application/json"
-        });
-
-        if (res.text) {
-            return JSON.parse(res.text) as TranslationResponse;
-        }
+        // Route the interpretation through the reader's chosen intelligence (their Claude),
+        // else the default Gemini path.
+        const reply = await runText(prompt, { json: true, intelligenceId });
+        const parsed = parseJsonObject<TranslationResponse>(reply);
+        if (parsed) return parsed;
         throw new Error("Empty translation response.");
     } catch (e) {
         console.error("Translation error", e);

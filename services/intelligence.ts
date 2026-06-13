@@ -7,7 +7,7 @@ import { db, functions } from './firebase';
 import config from '../lifeseed.config.json';
 import type {
   Intelligence, Persona, Memory, IntelligenceMessage, MemoryContext,
-  IntelligenceProvider, IntelligenceProviderId,
+  IntelligenceProvider, IntelligenceProviderId, IntelligenceRef,
 } from '../src/domain/intelligence';
 
 const DEFAULT_MODEL = config.model || 'gemini-3.5-flash';
@@ -55,6 +55,25 @@ const googleProvider: IntelligenceProvider = {
   },
 };
 
+// Claude / Anthropic, reached through the `generateClaudeContent` Cloud Function. The
+// function resolves the BYO key (user or community), or the node-wide secret as fallback.
+const anthropicProvider: IntelligenceProvider = {
+  id: 'anthropic',
+  async sendMessage(intelligence, messages, options) {
+    const generateClaudeContent = httpsCallable(functions, 'generateClaudeContent');
+    const systemInstruction = composeSystemPrompt(options?.persona, options?.memory);
+    const result = await generateClaudeContent({
+      messages,
+      systemInstruction,
+      model: intelligence.model || 'claude-sonnet-4-6',
+      credential: intelligence.credentialScope && intelligence.credentialScope !== 'node'
+        ? { scope: intelligence.credentialScope, ownerId: intelligence.credentialOwnerId }
+        : undefined,
+    });
+    return (result.data as any)?.text || '';
+  },
+};
+
 // Providers that are part of the architecture but not yet wired to live keys on this
 // node. They answer honestly rather than crashing the chat, and become real simply by
 // replacing this stub with an implementation of the same interface.
@@ -68,16 +87,47 @@ const makeUnconfiguredProvider = (id: IntelligenceProviderId): IntelligenceProvi
 const providers: Record<IntelligenceProviderId, IntelligenceProvider> = {
   google: googleProvider,
   openai: makeUnconfiguredProvider('openai'),
-  anthropic: makeUnconfiguredProvider('anthropic'),
+  anthropic: anthropicProvider,
   deepseek: makeUnconfiguredProvider('deepseek'),
   local: makeUnconfiguredProvider('local'),
 };
 
+// ---------------------------------------------------------------------------
+// Provider credentials — the secret key never lives client-side. We hand it to a
+// Cloud Function over the encrypted callable channel; it stores it in the locked
+// `providerCredentials` collection and returns only a non-secret hint.
+// ---------------------------------------------------------------------------
+
+export type CredentialScope = 'user' | 'community';
+
+export const saveProviderCredential = async (params: {
+  scope: CredentialScope;
+  ownerId: string;
+  provider: IntelligenceProviderId;
+  key: string;
+  intelligenceId?: string;
+}): Promise<{ connected: boolean; keyHint?: string }> => {
+  const fn = httpsCallable(functions, 'saveProviderCredential');
+  const res = await fn(params);
+  return res.data as any;
+};
+
+export const disconnectProviderCredential = (params: {
+  scope: CredentialScope; ownerId: string; provider: IntelligenceProviderId; intelligenceId?: string;
+}) => saveProviderCredential({ ...params, key: '' });
+
 export const getProvider = (id: IntelligenceProviderId): IntelligenceProvider => providers[id] || googleProvider;
+
+// The signed-in user's chosen intelligence, mirrored here so stateless service helpers
+// (gemini.ts) can route through it without threading the id through every caller. Set
+// from App's profile listener; cleared on sign-out.
+let activeIntelligenceId: string | undefined;
+export const setActiveIntelligenceId = (id?: string) => { activeIntelligenceId = id || undefined; };
+export const getActiveIntelligenceId = (): string | undefined => activeIntelligenceId;
 
 // The one call site everything funnels through.
 export const sendIntelligenceMessage = (
-  intelligence: Pick<Intelligence, 'provider' | 'model'>,
+  intelligence: IntelligenceRef,
   messages: IntelligenceMessage[],
   options?: { persona?: Persona | null; memory?: MemoryContext | null },
 ): Promise<string> => getProvider(intelligence.provider).sendMessage(intelligence, messages, options);
@@ -185,6 +235,19 @@ const DEFAULT_PERSONAS: Array<Pick<Persona, 'id' | 'name' | 'description' | 'sys
 
 const DEFAULT_INTELLIGENCES: Array<Omit<Intelligence, 'createdAt'>> = [
   {
+    // Osiris — the default voice of Lightseed. The being is named; the model that breathes
+    // through it is a choice (Gemini out of the box, swappable to Claude with a key).
+    id: 'osiris',
+    name: 'Osiris',
+    description: 'The default voice of Lightseed. Choose which model breathes through it, and whose whispers to listen to.',
+    provider: 'google',
+    model: DEFAULT_MODEL,
+    enabled: true,
+    public: true,
+    personaId: 'persona-oracle',
+    credentialScope: 'node',
+  },
+  {
     id: 'gemini-oracle',
     name: 'Gemini Oracle',
     description: 'The original Lightseed voice — Google Gemini wearing the Oracle persona.',
@@ -195,6 +258,10 @@ const DEFAULT_INTELLIGENCES: Array<Omit<Intelligence, 'createdAt'>> = [
     personaId: 'persona-oracle',
   },
 ];
+
+// The id of the hub's default intelligence ("Osiris"). Callers fall back to this when a
+// user or community hasn't chosen their own.
+export const DEFAULT_INTELLIGENCE_ID = 'osiris';
 
 export const ensureIntelligenceCommons = async (ownerId?: string): Promise<void> => {
   try {

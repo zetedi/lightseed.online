@@ -15,10 +15,13 @@ import { isExplicitlyValidatedTree } from '../utils/validation';
 import { ImagePicker } from './ui/ImagePicker';
 import { normalizeTheme } from '../utils/theme';
 import { ThemeEditor } from './ui/ThemeEditor';
+import { IntelligencePanel } from './intelligence/IntelligencePanel';
+import { DEFAULT_INTELLIGENCE_ID } from '../services/intelligence';
 
 export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmin, isSuperAdmin, superAdminExists, onViewTree, onDeleteTree, onViewVision, onPlant, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachOpenSignal, onConsumeReach }: any) => {
     const { t } = useLanguage();
-    const [activeTab, setActiveTab] = useState<'trees' | 'pulses' | 'visions' | 'history' | 'reaches' | 'invites' | 'appearance' | 'settings' | 'admin'>('trees');
+    const [activeTab, setActiveTab] = useState<'trees' | 'pulses' | 'visions' | 'history' | 'reaches' | 'invites' | 'appearance' | 'intelligence' | 'settings' | 'admin'>('trees');
+    const [preferredIntelligenceId, setPreferredIntelligenceId] = useState<string>('');
     const [reaches, setReaches] = useState<Pulse[]>([]);
     const [pulses, setPulses] = useState<Pulse[]>([]);
     const [visions, setVisions] = useState<Vision[]>([]);
@@ -147,6 +150,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
             setOnlyValidatedCanReachState(Boolean(data?.onlyValidatedCanReach));
             setSiteTheme(normalizeTheme(data?.siteTheme));
             setSiteLogoUrl(data?.siteLogoUrl || '');
+            setPreferredIntelligenceId(data?.preferredIntelligenceId || DEFAULT_INTELLIGENCE_ID);
         });
 
         const fetchData = async () => {
@@ -389,6 +393,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
         { key: 'history', label: t('alignments'), icon: <Icons.Venn /> },
         { key: 'invites', label: t('invitations'), icon: <Icons.UserPlus /> },
         { key: 'appearance', label: 'Appearance', icon: <Icons.Image /> },
+        { key: 'intelligence', label: 'Intelligence', icon: <Icons.Sparkles /> },
         { key: 'settings', label: 'Settings', icon: <Icons.Cog /> },
         ...(showAdmin ? [{ key: 'admin', label: 'Admin', icon: <Icons.Shield /> }] : []),
     ];
@@ -937,6 +942,18 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                                     </button>
                                 </aside>
                             </div>
+                        )}
+                        {activeTab === 'intelligence' && lightseed?.uid && (
+                            <IntelligencePanel
+                                scope="user"
+                                credentialOwnerId={lightseed.uid}
+                                intelligenceOwnerUid={lightseed.uid}
+                                selectedIntelligenceId={preferredIntelligenceId}
+                                onSelect={(id) => {
+                                    setPreferredIntelligenceId(id);
+                                    updateUserProfile(lightseed.uid, { preferredIntelligenceId: id }).catch(() => {});
+                                }}
+                            />
                         )}
                         {activeTab === 'history' && (
                             <div>

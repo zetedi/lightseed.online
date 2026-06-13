@@ -3,6 +3,7 @@ import { Icons } from '../ui/Icons';
 import { Lifetree, Lightseed, Pulse } from '../../types';
 import { ReachThread } from './ReachThread';
 import { markReachPulsesSeen } from '../../services/firebase';
+import { getIntelligence, getActiveIntelligenceId } from '../../services/intelligence';
 
 interface ReachThreadSummary {
     partnerId: string;
@@ -57,6 +58,19 @@ export const ReachInbox = ({
     subtitle?: string;
 }) => {
     const [selection, setSelection] = useState<Selection>({ kind: 'none' });
+    const [aiName, setAiName] = useState('Osiris');
+
+    // Show the enabled, active intelligence's name for the AI thread.
+    useEffect(() => {
+        let cancelled = false;
+        const id = getActiveIntelligenceId();
+        if (id) {
+            getIntelligence(id).then(i => { if (!cancelled) setAiName(i && i.enabled !== false && i.name ? i.name : 'Osiris'); }).catch(() => {});
+        } else {
+            setAiName('Osiris');
+        }
+        return () => { cancelled = true; };
+    }, [lightseed?.uid]);
 
     // Open a thread when one is requested from outside (map marker, tree card/detail).
     useEffect(() => {
@@ -155,7 +169,7 @@ export const ReachInbox = ({
                     >
                         <OracleAvatar size="sm" />
                         <div className="min-w-0 flex-1">
-                            <span className="block truncate font-semibold text-slate-800">Osiris · Oracle</span>
+                            <span className="block truncate font-semibold text-slate-800">{aiName}</span>
                             <span className="block truncate text-xs text-slate-500 italic">Ask for wisdom & reflection</span>
                         </div>
                     </button>
@@ -203,7 +217,7 @@ export const ReachInbox = ({
                             <Icons.Lightning />
                         </div>
                         <p className="font-medium text-slate-500">Select a thread</p>
-                        <p className="mt-1 max-w-xs text-sm">Choose a Lifetree on the left to open your reach, or ask the Oracle.</p>
+                        <p className="mt-1 max-w-xs text-sm">Choose a Lifetree on the left to open your reach, or ask {aiName}.</p>
                     </div>
                 )}
             </div>

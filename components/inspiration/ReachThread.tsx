@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { showAlert } from "../ui/Dialog";
 import { useLanguage } from '../../contexts/LanguageContext';
-import { sendMessageToOracle, generateImage } from '../../services/gemini';
+import { sendMessageToOracle, generateImage, translatePulse, type TranslationResponse } from '../../services/gemini';
+import { getIntelligence } from '../../services/intelligence';
 import { checkAndIncrementAiUsage, mintPulse, uploadBase64Image, listenToUserProfile, fetchReachThread, markReachesSeen, sendReach } from '../../services/firebase';
 import { useLifeseed } from '../../hooks/useLifeseed';
 import { Icons } from '../ui/Icons';
@@ -37,6 +38,11 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
     const [isSending, setIsSending] = useState(false);
     const [isMinting, setIsMinting] = useState(false);
     const [usage, setUsage] = useState(0);
+    const [preferredIntelligenceId, setPreferredIntelligenceId] = useState<string | undefined>(undefined);
+    // The name of the enabled, active intelligence — shown throughout the DM in place of "Osiris".
+    const [aiName, setAiName] = useState('Osiris');
+    // Per-message AI interpretations — the "shadow text" beneath an incoming tree's words.
+    const [interpretations, setInterpretations] = useState<Record<number, TranslationResponse | 'loading'>>({});
     const [mode, setMode] = useState<'oracle' | 'tree'>(targetTree ? 'tree' : 'oracle');
     const [selectedTree, setSelectedTree] = useState<Lifetree | null>(targetTree);
     const bottomRef = useRef<HTMLDivElement>(null);
@@ -59,6 +65,7 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
             const partner = selectedTree;
             const myIds = new Set<string>(myTrees.map((tree: Lifetree) => tree.id));
             setMessages([]);
+            setInterpretations({});
             setIsTyping(true);
             fetchReachThread(partner.id)
                 .then(pulses => {
@@ -110,6 +117,7 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
         if (lightseed) {
             const unsub = listenToUserProfile(lightseed.uid, (data) => {
                 setUsage(data?.dailyAiText || 0);
+                setPreferredIntelligenceId(data?.preferredIntelligenceId || undefined);
             });
             return () => unsub();
         }
@@ -118,6 +126,44 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
+
+    // Resolve the active intelligence's display name (falls back to Osiris).
+    useEffect(() => {
+        let cancelled = false;
+        if (preferredIntelligenceId) {
+            getIntelligence(preferredIntelligenceId)
+                .then(i => { if (!cancelled) setAiName(i && i.enabled !== false && i.name ? i.name : 'Osiris'); })
+                .catch(() => {});
+        } else {
+            setAiName('Osiris');
+        }
+        return () => { cancelled = true; };
+    }, [preferredIntelligenceId]);
+
+    // Reveal what an incoming tree's message means — interpreted through the reader's
+    // chosen intelligence against both trees' visions, shown as greyed shadow text.
+    const revealInterpretation = async (index: number, text: string) => {
+        if (!selectedTree || !activeTree || interpretations[index]) return;
+        setInterpretations(prev => ({ ...prev, [index]: 'loading' }));
+        try {
+            const context = [selectedTree.shortTitle, selectedTree.body, activeTree.body]
+                .filter(Boolean).join(' — ');
+            const result = await translatePulse({
+                senderTreeName: selectedTree.name,
+                receiverTreeName: activeTree.name,
+                message: text,
+                depth: 4, // contextualize within their vision / direction of growth
+                context,
+            }, preferredIntelligenceId);
+            setInterpretations(prev => ({ ...prev, [index]: result }));
+        } catch {
+            setInterpretations(prev => {
+                const next = { ...prev };
+                delete next[index];
+                return next;
+            });
+        }
+    };
 
     // Incoming bubbles: the partner tree's face in a reach, the sun for the Oracle.
     const incomingAvatar = () => {
@@ -187,7 +233,7 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
         setIsTyping(true);
 
         try {
-            const responsePromise = sendMessageToOracle(userMsg, history);
+            const responsePromise = sendMessageToOracle(userMsg, history, preferredIntelligenceId);
             const responseText = await withTimeout(responsePromise, 30000, "The reply took too long. Please try again.");
             setMessages(prev => [...prev, {role: 'model', text: responseText || "..."}]);
         } catch(e: any) {
@@ -195,7 +241,7 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
             let msg = "The wind is too strong (Error connecting to AI).";
             
             if (e.message?.includes("403")) {
-                msg = "Forbidden (403): The Oracle cannot hear you. Please ensure your API Key is valid.";
+                msg = `Forbidden (403): ${aiName} cannot hear you. Please ensure your API Key is valid.`;
             } else if (e.message?.includes("429") || e.code === 'resource-exhausted') {
                 msg = "The spirits are overwhelmed (Rate Limit). Please wait a moment.";
             } else if (e.message) {
@@ -220,7 +266,7 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
 
         setIsMinting(true);
         try {
-            const modelName = mode === 'tree' && selectedTree ? selectedTree.name : 'Oracle';
+            const modelName = mode === 'tree' && selectedTree ? selectedTree.name : aiName;
             const conversationText = messages.map(m => `${m.role === 'user' ? 'Seeker' : modelName}: ${m.text}`).join('\n\n');
             const summaryPrompt = conversationText.substring(0, 1000); // Limit context for generation
 
@@ -243,7 +289,7 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
             await mintPulse({
                 lifetreeId: activeTree.id,
                 type: mode === 'tree' ? 'reach' : 'STANDARD',
-                title: mode === 'tree' && selectedTree ? `Mycelial Reach: ${selectedTree.name}` : 'Oracle Wisdom',
+                title: mode === 'tree' && selectedTree ? `Mycelial Reach: ${selectedTree.name}` : `${aiName} Wisdom`,
                 body: conversationText,
                 imageUrl: finalImageUrl,
                 reachTreeId: mode === 'tree' ? selectedTree?.id : undefined,
@@ -283,10 +329,10 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
                         </div>
                     )}
                     <div className="min-w-0">
-                        <div className="truncate font-semibold text-slate-800">{mode === 'tree' && selectedTree ? selectedTree.name : 'Osiris · Oracle'}</div>
+                        <div className="truncate font-semibold text-slate-800">{mode === 'tree' && selectedTree ? selectedTree.name : aiName}</div>
                         <div className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-700">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <span>{mode === 'tree' ? 'Mycelial reach' : `Oracle · ${usage}/21`}</span>
+                            <span>{mode === 'tree' ? 'Mycelial reach' : `${aiName} · ${usage}/21`}</span>
                         </div>
                     </div>
                 </div>
@@ -315,23 +361,50 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-slate-50/50 scroll-smooth">
-                {messages.map((m, i) => (
+                {messages.map((m, i) => {
+                    const canInterpret = mode === 'tree' && m.role === 'model' && !!selectedTree && !!activeTree;
+                    const interp = interpretations[i];
+                    return (
                     <div key={i} className={`flex gap-4 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         {m.role === 'model' && incomingAvatar()}
-                        <div dir="auto" className={`max-w-[85%] sm:max-w-[75%] rounded-[2rem] px-6 py-4 text-[15px] leading-relaxed tracking-wide ${
-                            m.role === 'user' 
-                                ? 'bg-emerald-600 text-white rounded-br-none shadow-lg' 
-                                : 'bg-white border border-emerald-50 text-slate-800 rounded-bl-none shadow-sm font-medium italic'
-                        }`}>
-                            {m.text.split('\n').map((line, j) => (
-                                <span key={j}>
-                                    {line}
-                                    {j < m.text.split('\n').length - 1 && <><br /><br /></>}
-                                </span>
-                            ))}
+                        <div className={`flex max-w-[85%] flex-col gap-1.5 sm:max-w-[75%] ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
+                            <div dir="auto" className={`w-fit rounded-[2rem] px-6 py-4 text-[15px] leading-relaxed tracking-wide ${
+                                m.role === 'user'
+                                    ? 'bg-emerald-600 text-white rounded-br-none shadow-lg'
+                                    : 'bg-white border border-emerald-50 text-slate-800 rounded-bl-none shadow-sm font-medium italic'
+                            }`}>
+                                {m.text.split('\n').map((line, j) => (
+                                    <span key={j}>
+                                        {line}
+                                        {j < m.text.split('\n').length - 1 && <><br /><br /></>}
+                                    </span>
+                                ))}
+                            </div>
+
+                            {/* Shadow text — what the message means, read through your intelligence. */}
+                            {canInterpret && (
+                                interp === 'loading' ? (
+                                    <div className="flex items-center gap-1.5 px-3 text-[12px] italic text-slate-400">
+                                        <div className="h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-transparent"></div>
+                                        reading between the lines…
+                                    </div>
+                                ) : interp ? (
+                                    <div dir="auto" className="px-3 text-[12.5px] italic leading-relaxed text-slate-400">
+                                        <span className="font-semibold text-slate-400/90">✦ </span>{interp.interpretation}
+                                        {interp.growthSuggestion && (
+                                            <span className="mt-1 block text-slate-400/80">↳ {interp.growthSuggestion}</span>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <button onClick={() => revealInterpretation(i, m.text)} className="inline-flex items-center gap-1 self-start px-3 text-[11px] font-medium text-slate-400 transition-colors hover:text-emerald-600">
+                                        <span aria-hidden>✦</span> reveal meaning
+                                    </button>
+                                )
+                            )}
                         </div>
                     </div>
-                ))}
+                    );
+                })}
                 {isTyping && (
                     <div className="flex justify-start gap-4">
                         {incomingAvatar()}
@@ -355,7 +428,7 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
                 <input 
                     value={input}
                     onChange={e => setInput(e.target.value)}
-                    placeholder={mode === 'tree' && selectedTree ? `Send from ${activeTree?.name || 'your tree'} to ${selectedTree.name}...` : "Ask Osiris..."}
+                    placeholder={mode === 'tree' && selectedTree ? `Send from ${activeTree?.name || 'your tree'} to ${selectedTree.name}...` : `Ask ${aiName}...`}
                     className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-6 py-4 text-[15px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:bg-white transition-all shadow-inner placeholder:text-slate-400 placeholder:italic"
                 />
                 <button type="submit" disabled={isTyping || isSending || !input.trim() || (mode === 'tree' && (!selectedTree || !activeTree))} className="bg-emerald-600 text-white p-4 rounded-full hover:bg-emerald-700 active:scale-95 disabled:opacity-50 transition-all shadow-lg">

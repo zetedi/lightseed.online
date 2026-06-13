@@ -11,6 +11,7 @@ import { ImagePicker } from './ui/ImagePicker';
 import { DefaultCardImage } from './ui/DefaultCardImage';
 import { normalizeTheme } from '../utils/theme';
 import { ThemeEditor } from './ui/ThemeEditor';
+import { IntelligencePanel } from './intelligence/IntelligencePanel';
 import { LoreSection, loreTabs, type LoreTabId } from './about/AboutSections';
 
 interface CommunityProfileProps {
@@ -638,6 +639,25 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
             {activeTab === 'intelligence' && canEdit && (
               <div>
                 <SectionTitle title="Community Intelligence" sub="Choose which intelligences serve this community and which is the default. An intelligence is a participant, never an authority — and always replaceable." />
+
+                <div className="mb-8">
+                  <IntelligencePanel
+                    scope="community"
+                    credentialOwnerId={community.id}
+                    intelligenceOwnerUid={community.ownerId}
+                    selectedIntelligenceId={editDefaultIntelligenceId}
+                    title="This community’s voice"
+                    subtitle="Name your community’s AI and choose which model breathes through it. Connect Claude with the community’s own key, or keep the shared Osiris."
+                    onSelect={(id) => {
+                      setEditDefaultIntelligenceId(id);
+                      const nextAvailable = Array.from(new Set([...editAvailableIntelligenceIds, id]));
+                      setEditAvailableIntelligenceIds(nextAvailable);
+                      updateCommunity(community.id, { defaultIntelligenceId: id, availableIntelligenceIds: nextAvailable }).catch(() => {});
+                    }}
+                  />
+                </div>
+
+                <h4 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-400">All available intelligences</h4>
                 {intelligences.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400">
                     <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-500"><Icons.Sparkles /></div>
