@@ -5,7 +5,7 @@ import { showAlert } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { TermsModal } from '../TermsModal';
 import { getTerms } from '../../utils/terms';
-import { signInWithGoogle, signUpWithEmail, signInWithEmail, resetPassword, getNetworkInvite, createInviteRequest } from '../../services/firebase';
+import { signInWithGoogle, signUpWithEmail, signInWithEmail, resetPassword, getNetworkInvite, submitInviteRequest } from '../../services/firebase';
 
 const field = "h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-slate-100 disabled:text-slate-500";
 
@@ -23,7 +23,7 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly }: { onClose: () => vo
   const [reason, setReason] = useState('');
   const [agreed, setAgreed] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [requestSent, setRequestSent] = useState(false);
+  const [requestResult, setRequestResult] = useState<string | null>(null);
   const [showTerms, setShowTerms] = useState(false);
 
   // Resolve an invitation → lock the email on the sign-up form.
@@ -73,7 +73,7 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly }: { onClose: () => vo
     e.preventDefault();
     if (busy) return;
     setBusy(true);
-    try { await createInviteRequest(email, reason); setRequestSent(true); }
+    try { setRequestResult(await submitInviteRequest(email, reason) || 'created'); }
     catch (e: any) { showAlert(e?.message || 'Could not send your request.'); }
     setBusy(false);
   };
@@ -89,11 +89,25 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly }: { onClose: () => vo
   return (
     <Modal title={title} onClose={onClose}>
       {mode === 'request' ? (
-        requestSent ? (
-          <div className="space-y-3 rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-center text-sm text-emerald-800">
-            <p className="text-base font-bold">Request received 🌱</p>
-            <p>A steward will read your words. If it resonates, you'll receive an invitation by email.</p>
-            <button onClick={() => { setRequestSent(false); setMode('signin'); }} className="font-bold text-emerald-700">Back to sign in</button>
+        requestResult ? (
+          <div className={`space-y-3 rounded-xl border p-5 text-center text-sm ${requestResult === 'pending_invite_exists' ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-emerald-200 bg-emerald-50 text-emerald-800'}`}>
+            {requestResult === 'pending_invite_exists' ? (
+              <>
+                <p className="text-base font-bold">An invitation is already waiting</p>
+                <p>There's a pending invitation for this email. Please check your inbox (and spam). If you can't find it, reach out to the member who invited you, or a community admin.</p>
+              </>
+            ) : requestResult === 'already_requested' ? (
+              <>
+                <p className="text-base font-bold">You've already requested 🌱</p>
+                <p>Your request is in — a steward will review it. Hang tight.</p>
+              </>
+            ) : (
+              <>
+                <p className="text-base font-bold">Request received 🌱</p>
+                <p>A steward will read your words. If it resonates, you'll receive an invitation by email.</p>
+              </>
+            )}
+            <button onClick={() => { setRequestResult(null); setMode('signin'); }} className="font-bold text-emerald-700">Back to sign in</button>
           </div>
         ) : (
           <form onSubmit={handleRequest} className="space-y-3">

@@ -9,7 +9,8 @@ import { getSelectableIntelligences, listPersonas } from '../services/intelligen
 import RichTextEditor from './ui/RichTextEditor';
 import { ImagePicker } from './ui/ImagePicker';
 import { DefaultCardImage } from './ui/DefaultCardImage';
-import { communityThemePresets, normalizeTheme, type CommunityThemePreset } from '../utils/theme';
+import { normalizeTheme } from '../utils/theme';
+import { ThemeEditor } from './ui/ThemeEditor';
 import { LoreSection, loreTabs, type LoreTabId } from './about/AboutSections';
 
 interface CommunityProfileProps {
@@ -21,6 +22,8 @@ interface CommunityProfileProps {
   currentUserId?: string;
   isAdmin?: boolean;
   isSuperAdmin?: boolean;
+  // Superadmin only — "switch to community view": render the whole app as this community.
+  onEnterCommunityView?: (community: Community) => void;
 }
 
 type TabKey = 'vision' | 'firsttree' | 'sanctuary' | 'trees' | 'events' | LoreTabId | 'intelligence' | 'appearance';
@@ -35,9 +38,6 @@ const PROVIDER_LABELS: Record<string, string> = {
 
 const bareDomain = (d?: string) => (d || '').toLowerCase().replace(/^www\./, '');
 
-const THEME_FIELDS = ['primary', 'secondary', 'accent', 'neutral', 'background', 'surface', 'text', 'mode'] as const;
-const themeEquals = (a: any, b: any) => THEME_FIELDS.every(k => a[k] === b[k]);
-
 export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   community,
   onUpdate,
@@ -46,7 +46,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   currentUser,
   currentUserId,
   isAdmin,
-  isSuperAdmin
+  isSuperAdmin,
+  onEnterCommunityView,
 }) => {
   const { t } = useLanguage();
   const canEdit = currentUserId === community.ownerId || isSuperAdmin || isAdmin;
@@ -58,9 +59,10 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const [editName, setEditName] = useState(community.name);
   const [editVision, setEditVision] = useState(community.vision);
   const [editTheme, setEditTheme] = useState(normalizeTheme(community.theme));
-  const [isCustomTheme, setIsCustomTheme] = useState(false);
   const [logoUrl, setLogoUrl] = useState(community.logoUrl || '');
+  const [heroImageUrl, setHeroImageUrl] = useState(community.heroImageUrl || '');
   const [imageUrls, setImageUrls] = useState<string[]>(community.imageUrls || []);
+  const [isUploadingHero, setIsUploadingHero] = useState(false);
 
   // Community Intelligence config
   const [intelligences, setIntelligences] = useState<Intelligence[]>([]);
@@ -92,15 +94,13 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   useEffect(() => {
     setEditName(community.name);
     setEditVision(community.vision);
-    const normalized = normalizeTheme(community.theme);
-    setEditTheme(normalized);
-    // A theme that matches no preset is, by definition, a saved custom theme.
-    setIsCustomTheme(!communityThemePresets.some(p => themeEquals(normalized, p)));
+    setEditTheme(normalizeTheme(community.theme));
     setLogoUrl(community.logoUrl || '');
+    setHeroImageUrl(community.heroImageUrl || '');
     setImageUrls(community.imageUrls || []);
     setEditDefaultIntelligenceId(community.defaultIntelligenceId || '');
     setEditAvailableIntelligenceIds(community.availableIntelligenceIds || []);
-  }, [community.id, community.name, community.vision, community.logoUrl, community.theme, (community.imageUrls || []).join(','), community.defaultIntelligenceId, (community.availableIntelligenceIds || []).join(',')]);
+  }, [community.id, community.name, community.vision, community.logoUrl, community.heroImageUrl, community.theme, (community.imageUrls || []).join(','), community.defaultIntelligenceId, (community.availableIntelligenceIds || []).join(',')]);
 
   // Intelligences an admin can choose from (public + owned), plus persona names.
   useEffect(() => {
@@ -196,6 +196,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
         imageUrls,
         theme: normalizeTheme(editTheme),
         logoUrl,
+        heroImageUrl,
       };
       await updateCommunity(community.id, updates);
       // Refresh from Firestore so the view reflects exactly what was persisted.
@@ -234,6 +235,18 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       setStatus(e?.message || 'Failed to upload logo.');
     }
     setIsUploadingLogo(false);
+  };
+
+  const handleHeroUpload = async (file: File) => {
+    setIsUploadingHero(true);
+    try {
+      const url = await uploadImage(file, `communities/${community.id}/hero_${Date.now()}`);
+      setHeroImageUrl(url);
+    } catch (e: any) {
+      console.error(e);
+      setStatus(e?.message || 'Failed to upload hero image.');
+    }
+    setIsUploadingHero(false);
   };
 
   const handleAddImage = async (file: File) => {
@@ -356,20 +369,33 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   return (
     <div className="min-h-screen pb-20">
       {/* Hero — mirrors the personal profile */}
-      <div className="relative bg-gradient-to-b from-slate-800 to-slate-900 text-white pt-5 pb-12 px-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between mb-6">
+      <div className="relative overflow-hidden bg-gradient-to-b from-slate-800 to-slate-900 text-white pt-5 pb-12 px-4">
+        {heroImageUrl && (
+          <>
+            <img src={heroImageUrl} alt={`${community.name} banner`} referrerPolicy="no-referrer" className="absolute inset-0 h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-b from-slate-900/55 via-slate-900/65 to-slate-900/85" />
+          </>
+        )}
+        <div className="relative max-w-6xl mx-auto flex items-center justify-between mb-6">
           <button onClick={onClose} className="flex items-center gap-2 text-white/70 hover:text-white text-sm font-medium">
             <Icons.ArrowLeft />
             <span>Back</span>
           </button>
-          {canDelete && (
-            <button onClick={handleDelete} disabled={isDeleting} className="bg-red-500/15 hover:bg-red-500 text-red-300 hover:text-white px-4 py-2 rounded-full font-bold text-xs transition-colors flex items-center gap-1 border border-red-400/30">
-              <Icons.Trash /><span>Delete</span>
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {onEnterCommunityView && (
+              <button onClick={() => onEnterCommunityView(community)} className="flex items-center gap-1 rounded-full border border-amber-300/40 bg-amber-400/15 px-4 py-2 text-xs font-bold text-amber-200 transition-colors hover:bg-amber-400 hover:text-white" title="See the whole site as this community">
+                <Icons.Eye /><span className="hidden sm:inline">Switch to community view</span><span className="sm:hidden">Community view</span>
+              </button>
+            )}
+            {canDelete && (
+              <button onClick={handleDelete} disabled={isDeleting} className="bg-red-500/15 hover:bg-red-500 text-red-300 hover:text-white px-4 py-2 rounded-full font-bold text-xs transition-colors flex items-center gap-1 border border-red-400/30">
+                <Icons.Trash /><span>Delete</span>
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center gap-4 sm:gap-5">
+        <div className="relative max-w-6xl mx-auto flex flex-col sm:flex-row items-center gap-4 sm:gap-5">
           <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-xl">
             {logoUrl ? (
               <img src={logoUrl} className="h-full w-full object-cover" alt={`${community.name} logo`} referrerPolicy="no-referrer" />
@@ -680,10 +706,22 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase text-slate-400">Logo</label>
                       <ImagePicker onImageSelect={handleLogoUpload} previewUrl={logoUrl} loading={isUploadingLogo} className="aspect-square w-full max-w-[160px] rounded-2xl border-2 border-dashed border-slate-200" />
+                      <p className="text-[11px] leading-snug text-slate-400">Square brand mark — shown as the avatar in lists and the page header.</p>
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold uppercase text-slate-400">Community Name</label>
                       <input dir="auto" type="text" value={editName} onChange={e => setEditName(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Community name" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase text-slate-400">Hero image</label>
+                    <ImagePicker onImageSelect={handleHeroUpload} previewUrl={heroImageUrl} loading={isUploadingHero} className="aspect-[3/1] w-full overflow-hidden rounded-2xl border-2 border-dashed border-slate-200" />
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-[11px] leading-snug text-slate-400">Wide banner shown behind the title on the community page. A landscape image works best.</p>
+                      {heroImageUrl && (
+                        <button type="button" onClick={() => setHeroImageUrl('')} className="shrink-0 text-[11px] font-bold text-red-500 hover:text-red-600">Remove</button>
+                      )}
                     </div>
                   </div>
 
@@ -706,72 +744,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
 
                   <div>
                     <label className="mb-2 block text-[10px] font-bold uppercase text-slate-400">Theme mood</label>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {communityThemePresets.map((preset) => {
-                        const active = !isCustomTheme && themeEquals(editTheme, preset);
-                        return (
-                          <button key={preset.id} type="button" onClick={() => { setEditTheme(normalizeTheme(preset)); setIsCustomTheme(false); }} className={`w-full rounded-2xl border p-3 text-left transition-all ${active ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}>
-                            <div className="flex items-center justify-between gap-3">
-                              <div>
-                                <div className="text-sm font-bold text-slate-800">{preset.name}</div>
-                                <div className="text-[11px] text-slate-500">{preset.description}</div>
-                              </div>
-                              <div className="flex shrink-0 overflow-hidden rounded-full border border-white shadow-sm">
-                                {[preset.surface, preset.primary, preset.accent, preset.background].map((color, index) => (
-                                  <span key={`${preset.id}-${index}`} className="h-6 w-6" style={{ backgroundColor: color }} />
-                                ))}
-                              </div>
-                            </div>
-                          </button>
-                        );
-                      })}
-
-                      {/* Custom theme — pick each colour separately and save. */}
-                      <button type="button" onClick={() => setIsCustomTheme(true)} className={`w-full rounded-2xl border p-3 text-left transition-all ${isCustomTheme ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}>
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <div className="text-sm font-bold text-slate-800">Custom</div>
-                            <div className="text-[11px] text-slate-500">Choose every colour yourself.</div>
-                          </div>
-                          <div className="flex shrink-0 overflow-hidden rounded-full border border-white shadow-sm">
-                            {[editTheme.surface, editTheme.primary, editTheme.accent, editTheme.background].map((color, index) => (
-                              <span key={`custom-${index}`} className="h-6 w-6" style={{ backgroundColor: color }} />
-                            ))}
-                          </div>
-                        </div>
-                      </button>
-                    </div>
+                    <ThemeEditor value={editTheme} onChange={setEditTheme} />
                   </div>
-
-                  {/* Per-colour pickers only appear in custom mode. */}
-                  {isCustomTheme && (
-                    <div className="space-y-4 rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold uppercase text-slate-400">Mode</span>
-                        {(['light', 'dark'] as const).map(m => (
-                          <button key={m} type="button" onClick={() => setEditTheme(normalizeTheme({ ...editTheme, mode: m }))} className={`rounded-full px-3 py-1 text-xs font-bold capitalize transition-colors ${editTheme.mode === m ? 'bg-emerald-600 text-white' : 'bg-white text-slate-500 border border-slate-200 hover:text-slate-800'}`}>
-                            {m}
-                          </button>
-                        ))}
-                      </div>
-                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                        {([
-                          ['surface', 'Header'],
-                          ['primary', 'Primary'],
-                          ['accent', 'Accent'],
-                          ['background', 'Background'],
-                          ['secondary', 'Secondary'],
-                          ['neutral', 'Neutral'],
-                          ['text', 'Text'],
-                        ] as Array<[keyof CommunityThemePreset, string]>).map(([key, label]) => (
-                          <label key={key} className="space-y-1">
-                            <span className="text-[10px] font-bold uppercase text-slate-400">{label}</span>
-                            <input type="color" value={(editTheme as any)[key]} onChange={e => setEditTheme(normalizeTheme({ ...editTheme, [key]: e.target.value }))} className="block h-10 w-full cursor-pointer rounded-lg border border-slate-200 bg-white p-1" />
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 <SaveBar />

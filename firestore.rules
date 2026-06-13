@@ -130,7 +130,7 @@ service cloud.firestore {
     // page); listing is staff-only. The inviter creates; the invited user consumes it.
     match /networkInvites/{inviteId} {
       allow get: if true;
-      allow list: if isStaff();
+      allow list: if isSignedIn() && (isStaff() || resource.data.invitedByUserId == request.auth.uid);
       allow create: if isSignedIn() && request.resource.data.invitedByUserId == request.auth.uid;
       allow update: if isSignedIn() && resource.data.status == 'pending';
       allow delete: if isStaff();

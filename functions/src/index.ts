@@ -299,3 +299,29 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
         return { communityId, lifetreeId: invite.lifetreeId };
     });
 });
+
+// Request an invitation (callable, may be unauthenticated). With admin rights it checks
+// whether a pending invite or request already exists for the email before creating one.
+// Returns { status: 'created' | 'pending_invite_exists' | 'already_requested' }.
+export const requestInvite = onCall({ cors: true }, async (request) => {
+    const email = String(request.data?.email || "").trim().toLowerCase();
+    const reason = String(request.data?.reason || "").trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+        throw new HttpsError("invalid-argument", "Please provide a valid email.");
+    }
+    const invites = await db.collection("networkInvites").where("email", "==", email).get();
+    if (invites.docs.some((d) => d.data().status === "pending")) {
+        return { status: "pending_invite_exists" };
+    }
+    const reqs = await db.collection("inviteRequests").where("email", "==", email).get();
+    if (reqs.docs.some((d) => d.data().status === "pending")) {
+        return { status: "already_requested" };
+    }
+    await db.collection("inviteRequests").add({
+        email,
+        reason,
+        status: "pending",
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    return { status: "created" };
+});

@@ -173,6 +173,9 @@ const AppContent = () => {
     const [hostCommunity, setHostCommunity] = useState<Community | null>(null);
     // The lightseed community is the default "About" page when this node has none of its own.
     const [defaultCommunity, setDefaultCommunity] = useState<Community | null>(null);
+    // Superadmin "switch to community view" — when set, the whole shell (theme, logo,
+    // name, About page) renders as if this were the host community. Cleared via "Exit community".
+    const [impersonatedCommunity, setImpersonatedCommunity] = useState<Community | null>(null);
     const [personalSiteTheme, setPersonalSiteTheme] = useState<any>(null);
     const [personalSiteLogoUrl, setPersonalSiteLogoUrl] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
@@ -211,7 +214,7 @@ const AppContent = () => {
     const [synergies, setSynergies] = useState<VisionSynergy[]>([]);
     const [isAnalyzingSynergy, setIsAnalyzingSynergy] = useState(false);
 
-    const config = useConfig(hostCommunity);
+    const config = useConfig(impersonatedCommunity || hostCommunity);
     const [themeModePreference, setThemeModePreference] = useState<ThemeModePreference>(() => {
         const savedMode = localStorage.getItem('lifeseed_theme_mode');
         if (savedMode === 'light' || savedMode === 'dark') return savedMode;
@@ -222,10 +225,12 @@ const AppContent = () => {
 
         return null;
     });
-    const configuredTheme = lightseed && personalSiteTheme
+    // While viewing as a community, the community's own branding wins over the
+    // signed-in user's personal site theme/logo.
+    const configuredTheme = !impersonatedCommunity && lightseed && personalSiteTheme
         ? normalizeTheme(personalSiteTheme, config.theme)
         : config.theme;
-    const configuredLogoUrl = lightseed && personalSiteLogoUrl && isHubDomain(window.location.hostname)
+    const configuredLogoUrl = !impersonatedCommunity && lightseed && personalSiteLogoUrl && isHubDomain(window.location.hostname)
         ? personalSiteLogoUrl
         : config.logoUrl;
     const effectiveThemeMode = themeModePreference || configuredTheme.mode || 'light';
@@ -718,7 +723,7 @@ const AppContent = () => {
             // rendered by the same component used everywhere a community is shown. The host
             // (domain) community is the node's own profile; off-domain or before it loads we
             // fall back to the lightseed community as the default about page.
-            const aboutCommunity = hostCommunity || defaultCommunity;
+            const aboutCommunity = impersonatedCommunity || hostCommunity || defaultCommunity;
             if (!aboutCommunity) return <div className="min-h-screen flex items-center justify-center"><Loading /></div>;
             return (
                 <CommunityProfile
@@ -726,6 +731,7 @@ const AppContent = () => {
                     onViewTree={(tree: Lifetree) => setSelectedTree(tree)}
                     onClose={() => setTab('dashboard')}
                     onUpdate={(updates) => {
+                        if (impersonatedCommunity && aboutCommunity.id === impersonatedCommunity.id) setImpersonatedCommunity(prev => prev ? { ...prev, ...updates } : null);
                         if (hostCommunity && aboutCommunity.id === hostCommunity.id) setHostCommunity(prev => prev ? { ...prev, ...updates } : null);
                         if (defaultCommunity && aboutCommunity.id === defaultCommunity.id) setDefaultCommunity(prev => prev ? { ...prev, ...updates } : null);
                     }}
@@ -1084,13 +1090,24 @@ const AppContent = () => {
             <div className="fixed inset-0 z-0 pointer-events-none" style={backgroundStyle}></div>
             
             <div className="relative z-10">
+                {impersonatedCommunity && (
+                    <div className="sticky top-0 z-40 flex items-center justify-center gap-3 bg-amber-500 px-4 py-1.5 text-center text-xs font-bold text-white shadow-md">
+                        <span className="truncate">Viewing as <span className="font-extrabold">{impersonatedCommunity.name}</span> — community view</span>
+                        <button
+                            onClick={() => { setImpersonatedCommunity(null); setTab('dashboard'); window.scrollTo(0, 0); }}
+                            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/25 px-2.5 py-0.5 font-bold uppercase tracking-wide hover:bg-white/40"
+                        >
+                            <Icons.Close /> Exit community
+                        </button>
+                    </div>
+                )}
                 {tab !== 'about' && (
-                    <Navigation 
+                    <Navigation
                         lightseed={lightseed} 
                         activeTab={tab} 
                         setTab={setTab} 
                         onLogin={() => setShowAuthModal(true)} 
-                        onLogout={logout} 
+                        onLogout={() => { logout(); setTab('dashboard'); }} 
                         onPlant={() => openPlant()} 
                         onPulse={() => setShowPulseModal(true)}
                         onCreateVision={() => setShowVisionModal(true)}
@@ -1184,6 +1201,12 @@ const AppContent = () => {
                         currentUserId={lightseed?.uid}
                         isSuperAdmin={isSuperAdmin}
                         isAdmin={isAdmin}
+                        onEnterCommunityView={isSuperAdmin ? (community) => {
+                            setImpersonatedCommunity(community);
+                            setSelectedCommunity(null);
+                            setTab('about');
+                            window.scrollTo(0, 0);
+                        } : undefined}
                     />
                 </DetailWrapper>
             )}

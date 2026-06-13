@@ -202,6 +202,16 @@ export const getNetworkInvite = async (inviteId: string): Promise<any | null> =>
     return snap.exists() ? { id: snap.id, ...(snap.data() as any) } : null;
 };
 
+const INVITE_PAGE = 12;
+type Paged = { items: any[]; lastDoc: QueryDocumentSnapshot | null; hasMore: boolean };
+
+export const getSentInvites = async (userId: string, lastDoc?: QueryDocumentSnapshot): Promise<Paged> => {
+    let q = query(networkInvitesCollection, where('invitedByUserId', '==', userId), orderBy('createdAt', 'desc'), limit(INVITE_PAGE));
+    if (lastDoc) q = query(q, startAfter(lastDoc));
+    const snap = await getDocs(q);
+    return { items: snap.docs.map(d => ({ id: d.id, ...(d.data() as any) })), lastDoc: snap.docs[snap.docs.length - 1] || null, hasMore: snap.docs.length === INVITE_PAGE };
+};
+
 export const consumeNetworkInvite = (inviteId: string, acceptedByUserId: string) =>
     updateDoc(doc(db, 'networkInvites', inviteId), { status: 'accepted', acceptedByUserId, acceptedAt: serverTimestamp() });
 
@@ -216,11 +226,21 @@ export const createInviteRequest = async (email: string, reason: string) => {
     });
 };
 
-export const getInviteRequests = async (): Promise<any[]> => {
-    const snap = await getDocs(query(inviteRequestsCollection, where('status', '==', 'pending')));
-    return snap.docs
-        .map(d => ({ id: d.id, ...(d.data() as any) }))
-        .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+// Requests (pending + approved + declined), newest first, paginated — the admin filters the view.
+export const getInviteRequests = async (lastDoc?: QueryDocumentSnapshot): Promise<Paged> => {
+    let q = query(inviteRequestsCollection, orderBy('createdAt', 'desc'), limit(INVITE_PAGE));
+    if (lastDoc) q = query(q, startAfter(lastDoc));
+    const snap = await getDocs(q);
+    return { items: snap.docs.map(d => ({ id: d.id, ...(d.data() as any) })), lastDoc: snap.docs[snap.docs.length - 1] || null, hasMore: snap.docs.length === INVITE_PAGE };
+};
+
+// Submitting a request goes through a Cloud Function so it can (with admin rights) check
+// whether a pending invitation or request already exists for that email.
+// Returns one of: 'created' | 'pending_invite_exists' | 'already_requested'.
+export const submitInviteRequest = async (email: string, reason: string): Promise<string> => {
+    const callable = httpsCallable(functions, 'requestInvite');
+    const res = await callable({ email, reason });
+    return (res.data as any)?.status as string;
 };
 
 // Approve → mint a real invitation to that email and mark the request handled.

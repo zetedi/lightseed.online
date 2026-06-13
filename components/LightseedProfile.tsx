@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { showAlert, showConfirm } from "./ui/Dialog";
 import { type Pulse, type Lifetree, type Alignment, type Vision, type VisionSynergy, type TreeOwnershipInvite, treeRelationLabels } from '../types';
-import { getMyPulses, getMyVisions, getJoinedVisions, getMyAlignmentsHistory, deleteUserAccount, logout, triggerSystemEmail, createNetworkInvite, listenToUserProfile, deleteVision, getAdmins, setNewsletterSubscription, updateUserSiteTheme, updateUserProfile, uploadImage, fetchMyReaches, setOnlyValidatedCanReach, getPendingTreeInvites, acceptTreeInvite, declineTreeInvite, getInviteRequests, approveInviteRequest, declineInviteRequest } from '../services/firebase';
+import { getMyPulses, getMyVisions, getJoinedVisions, getMyAlignmentsHistory, deleteUserAccount, logout, triggerSystemEmail, createNetworkInvite, listenToUserProfile, deleteVision, getAdmins, setNewsletterSubscription, updateUserSiteTheme, updateUserProfile, uploadImage, fetchMyReaches, setOnlyValidatedCanReach, getPendingTreeInvites, acceptTreeInvite, declineTreeInvite, getInviteRequests, approveInviteRequest, declineInviteRequest, getSentInvites } from '../services/firebase';
 import { ReachInbox } from './inspiration/ReachInbox';
 import { findVisionSynergies } from '../services/gemini';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -13,7 +13,8 @@ import { Modal } from './ui/Modal';
 import { Loading } from './ui/Loading';
 import { isExplicitlyValidatedTree } from '../utils/validation';
 import { ImagePicker } from './ui/ImagePicker';
-import { communityThemePresets, normalizeTheme } from '../utils/theme';
+import { normalizeTheme } from '../utils/theme';
+import { ThemeEditor } from './ui/ThemeEditor';
 
 export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmin, isSuperAdmin, superAdminExists, onViewTree, onDeleteTree, onViewVision, onPlant, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachOpenSignal, onConsumeReach }: any) => {
     const { t } = useLanguage();
@@ -76,26 +77,59 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
     const [adminActionLoading, setAdminActionLoading] = useState(false);
     const [inviteRequests, setInviteRequests] = useState<any[]>([]);
     const [requestBusyId, setRequestBusyId] = useState<string | null>(null);
+    const [sentInvites, setSentInvites] = useState<any[]>([]);
+    const [sentCursor, setSentCursor] = useState<any>(null);
+    const [sentHasMore, setSentHasMore] = useState(false);
+    const [reqCursor, setReqCursor] = useState<any>(null);
+    const [reqHasMore, setReqHasMore] = useState(false);
+    const [showDeclinedRequests, setShowDeclinedRequests] = useState(false);
+
+    const refreshSentInvites = () => {
+        if (!lightseed?.uid) return;
+        getSentInvites(lightseed.uid).then(res => { setSentInvites(res.items); setSentCursor(res.lastDoc); setSentHasMore(res.hasMore); }).catch(() => {});
+    };
+    const loadMoreSentInvites = () => {
+        if (!lightseed?.uid || !sentCursor) return;
+        getSentInvites(lightseed.uid, sentCursor).then(res => { setSentInvites(prev => [...prev, ...res.items]); setSentCursor(res.lastDoc); setSentHasMore(res.hasMore); }).catch(() => {});
+    };
+    useEffect(() => { if (activeTab === 'invites') refreshSentInvites(); }, [activeTab, lightseed?.uid]);
     const hasValidatedTree = myTrees.some((t: Lifetree) => isExplicitlyValidatedTree(t));
     const allValidated = myTrees.length > 0 && myTrees.every((t: Lifetree) => isExplicitlyValidatedTree(t));
     // Trees I guard but don't own — shown separately from my planted trees.
     const guardedOnly = (guardedTrees as Lifetree[]).filter((tree: Lifetree) => tree.ownerId !== lightseed?.uid);
 
-    const refreshInviteRequests = () => { if (isSuperAdmin) getInviteRequests().then(setInviteRequests).catch(() => {}); };
+    const refreshInviteRequests = () => {
+        if (!isSuperAdmin) return;
+        getInviteRequests().then(res => { setInviteRequests(res.items); setReqCursor(res.lastDoc); setReqHasMore(res.hasMore); }).catch(() => {});
+    };
+    const loadMoreInviteRequests = () => {
+        if (!isSuperAdmin || !reqCursor) return;
+        getInviteRequests(reqCursor).then(res => { setInviteRequests(prev => [...prev, ...res.items]); setReqCursor(res.lastDoc); setReqHasMore(res.hasMore); }).catch(() => {});
+    };
     useEffect(() => {
         if (isSuperAdmin) { getAdmins().then(setAdmins); refreshInviteRequests(); }
     }, [isSuperAdmin]);
 
+    const setRequestStatusLocal = (id: string, status: string) =>
+        setInviteRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+
     const handleApproveRequest = async (id: string) => {
         setRequestBusyId(id);
-        try { await approveInviteRequest(id, lightseed.uid); setInviteRequests(prev => prev.filter(r => r.id !== id)); setDialogMessage('Invitation sent.'); }
+        try { await approveInviteRequest(id, lightseed.uid); setRequestStatusLocal(id, 'approved'); setDialogMessage('Invitation sent.'); }
         catch (e: any) { setDialogMessage(e?.message || 'Failed to approve.'); }
         setRequestBusyId(null);
     };
-    const handleDeclineRequest = async (id: string) => {
-        setRequestBusyId(id);
-        try { await declineInviteRequest(id); setInviteRequests(prev => prev.filter(r => r.id !== id)); }
-        catch (e: any) { setDialogMessage(e?.message || 'Failed to decline.'); }
+    const handleDeclineRequest = async (req: any) => {
+        setRequestBusyId(req.id);
+        try {
+            // A kind rejection — they're welcome to ask again with more context.
+            try {
+                await triggerSystemEmail(req.email, 'About your lightseed invitation request',
+                    "Thank you for your interest in lightseed. For now, the reason to join wasn't yet clear to us, or didn't feel aligned with the spirit of the network. You are warmly welcome to request again, with a little more about your intention.\n\nWith care,\nthe lightseed stewards", lightseed.uid);
+            } catch (mailErr) { console.warn('Kind rejection email failed', mailErr); }
+            await declineInviteRequest(req.id);
+            setRequestStatusLocal(req.id, 'declined');
+        } catch (e: any) { setDialogMessage(e?.message || 'Failed to decline.'); }
         setRequestBusyId(null);
     };
 
@@ -186,6 +220,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
         setSendingInvite(true);
         try {
             await createNetworkInvite(inviteEmail, lightseed.uid, inviteMessage);
+            refreshSentInvites();
             setDialogMessage(t('invite_sent'));
             setShowInviteModal(false);
             setInviteEmail('');
@@ -494,18 +529,88 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                         )}
 
                         {activeTab === 'invites' && (
-                            <div>
-                                <SectionTitle title={t('invitations')} sub="Invite kindred spirits to plant their roots in the network." />
-                                {myTrees.length === 0 ? (
-                                    <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400">
-                                        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100"><Icons.Tree /></div>
-                                        <p className="text-sm">Plant your first tree to unlock invitations.</p>
+                            <div className="space-y-6">
+                                <div>
+                                    <SectionTitle title={t('invitations')} sub="Invite kindred spirits to plant their roots in the network." />
+                                    {(myTrees.length === 0 && !isSuperAdmin) ? (
+                                        <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400">
+                                            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100"><Icons.Tree /></div>
+                                            <p className="text-sm">Plant your first tree to unlock invitations.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="rounded-2xl border border-slate-100 p-5 space-y-3">
+                                            <p className="text-sm text-slate-500">{t('invites_remaining')}: <span className="font-bold text-emerald-600">{invitesRemaining}</span></p>
+                                            <p className="text-xs text-slate-400">Invite someone by email — they'll receive a link that opens the join page with their email locked in.</p>
+                                            <button onClick={() => setShowInviteModal(true)} disabled={invitesRemaining <= 0} className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-emerald-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"><Icons.UserPlus /> <span>{t('send_invite')}</span></button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Invitations you've sent */}
+                                {(myTrees.length > 0 || isSuperAdmin) && (
+                                    <div>
+                                        <h4 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-500">Sent Invitations</h4>
+                                        {sentInvites.length === 0 ? (
+                                            <p className="text-xs text-slate-400">You haven't sent any invitations yet.</p>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                {sentInvites.map(inv => (
+                                                    <div key={inv.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50/60 p-3">
+                                                        <span className="truncate text-sm font-medium text-slate-800">{inv.email}</span>
+                                                        <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${inv.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{inv.status === 'accepted' ? 'Joined' : 'Pending'}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {sentHasMore && (
+                                            <button onClick={loadMoreSentInvites} className="mt-3 w-full rounded-lg border border-slate-200 py-2 text-xs font-bold text-slate-500 hover:bg-slate-50">Load more</button>
+                                        )}
                                     </div>
-                                ) : (
-                                    <div className="rounded-2xl border border-slate-100 p-5 space-y-4">
-                                        <p className="text-sm text-slate-500">{t('invites_remaining')}: <span className="font-bold text-emerald-600">{invitesRemaining}</span></p>
-                                        <p className="text-xs text-slate-400">Invite someone by email — they'll receive a link that opens the join page with their email locked in.</p>
-                                        <button onClick={() => setShowInviteModal(true)} disabled={invitesRemaining <= 0} className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-emerald-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"><Icons.UserPlus /> <span>{t('send_invite')}</span></button>
+                                )}
+
+                                {/* Invite requests — people asking to join (super-admin) */}
+                                {isSuperAdmin && (
+                                    <div>
+                                        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                                            <h4 className="text-sm font-bold uppercase tracking-wider text-slate-500">Invite Requests</h4>
+                                            <div className="flex items-center gap-3">
+                                                <label className="flex items-center gap-1.5 text-xs text-slate-500">
+                                                    <input type="checkbox" checked={showDeclinedRequests} onChange={e => setShowDeclinedRequests(e.target.checked)} className="h-3.5 w-3.5 rounded text-emerald-600 focus:ring-emerald-500" />
+                                                    Show declined
+                                                </label>
+                                                <button onClick={refreshInviteRequests} className="text-xs font-bold text-slate-400 hover:text-slate-700">Refresh</button>
+                                            </div>
+                                        </div>
+                                        {(() => {
+                                            const visible = inviteRequests.filter(r => r.status !== 'declined' || showDeclinedRequests);
+                                            return visible.length === 0 ? (
+                                                <p className="text-xs text-slate-400">No requests{showDeclinedRequests ? '' : ' to review'}.</p>
+                                            ) : (
+                                                <div className="space-y-2">
+                                                    {visible.map(req => (
+                                                        <div key={req.id} className="flex flex-col gap-2 rounded-xl border border-slate-100 bg-slate-50/60 p-3 sm:flex-row sm:items-center sm:justify-between">
+                                                            <div className="min-w-0">
+                                                                <p className="truncate text-sm font-bold text-slate-800">{req.email}</p>
+                                                                {req.reason && <p className="mt-0.5 line-clamp-3 text-xs italic text-slate-500">“{req.reason}”</p>}
+                                                            </div>
+                                                            <div className="flex shrink-0 items-center gap-2">
+                                                                {req.status === 'pending' ? (
+                                                                    <>
+                                                                        <button onClick={() => handleApproveRequest(req.id)} disabled={requestBusyId === req.id} className="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50">{requestBusyId === req.id ? '…' : 'Invite'}</button>
+                                                                        <button onClick={() => handleDeclineRequest(req)} disabled={requestBusyId === req.id} className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50">Decline</button>
+                                                                    </>
+                                                                ) : (
+                                                                    <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${req.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>{req.status === 'approved' ? 'Invited' : 'Declined'}</span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            );
+                                        })()}
+                                        {reqHasMore && (
+                                            <button onClick={loadMoreInviteRequests} className="mt-3 w-full rounded-lg border border-slate-200 py-2 text-xs font-bold text-slate-500 hover:bg-slate-50">Load more</button>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -583,32 +688,6 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                                                     </div>
                                                 ))}
                                             </div>
-                                        </div>
-
-                                        {/* Invite requests — people asking to join the invite-only network */}
-                                        <div className="mt-4 rounded-2xl border border-slate-100 p-5">
-                                            <div className="mb-3 flex items-center justify-between">
-                                                <h4 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-800"><Icons.UserPlus /> Invite Requests</h4>
-                                                <button onClick={refreshInviteRequests} className="text-xs font-bold text-slate-400 hover:text-slate-700">Refresh</button>
-                                            </div>
-                                            {inviteRequests.length === 0 ? (
-                                                <p className="text-xs text-slate-400">No pending requests.</p>
-                                            ) : (
-                                                <div className="space-y-2">
-                                                    {inviteRequests.map(req => (
-                                                        <div key={req.id} className="flex flex-col gap-2 rounded-xl border border-slate-100 bg-slate-50/60 p-3 sm:flex-row sm:items-center sm:justify-between">
-                                                            <div className="min-w-0">
-                                                                <p className="truncate text-sm font-bold text-slate-800">{req.email}</p>
-                                                                {req.reason && <p className="mt-0.5 text-xs italic text-slate-500 line-clamp-3">“{req.reason}”</p>}
-                                                            </div>
-                                                            <div className="flex shrink-0 gap-2">
-                                                                <button onClick={() => handleApproveRequest(req.id)} disabled={requestBusyId === req.id} className="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50">{requestBusyId === req.id ? '…' : 'Invite'}</button>
-                                                                <button onClick={() => handleDeclineRequest(req.id)} disabled={requestBusyId === req.id} className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50">Decline</button>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
                                         </div>
 
                                         {/* Newsletter — unrelated to admin management, so it lives in its own section */}
@@ -823,50 +902,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                                         </p>
                                     </div>
 
-                                    <div className="grid gap-3 md:grid-cols-2">
-                                        {communityThemePresets.map((preset) => {
-                                            const active = siteTheme.primary === preset.primary && siteTheme.surface === preset.surface && siteTheme.background === preset.background && siteTheme.mode === preset.mode;
-                                            return (
-                                                <button
-                                                    key={preset.id}
-                                                    type="button"
-                                                    onClick={() => setSiteTheme(normalizeTheme(preset))}
-                                                    className={`rounded-2xl border p-4 text-left transition-all ${active ? 'border-teal-500 bg-teal-50 ring-2 ring-teal-100' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}
-                                                >
-                                                    <div className="flex items-center justify-between gap-3">
-                                                        <div>
-                                                            <div className="text-sm font-bold text-slate-800">{preset.name}</div>
-                                                            <div className="text-xs text-slate-500">{preset.description}</div>
-                                                        </div>
-                                                        <div className="flex shrink-0 overflow-hidden rounded-full border border-white shadow-sm">
-                                                            {[preset.surface, preset.primary, preset.accent, preset.background].map((color, index) => (
-                                                                <span key={`${preset.id}-${index}`} className="h-7 w-7" style={{ backgroundColor: color }} />
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                                        {[
-                                            ['surface', 'Header'],
-                                            ['primary', 'Primary'],
-                                            ['accent', 'Accent'],
-                                            ['background', 'Background']
-                                        ].map(([key, label]) => (
-                                            <label key={key} className="space-y-1">
-                                                <span className="text-[10px] font-bold uppercase text-slate-400">{label}</span>
-                                                <input
-                                                    type="color"
-                                                    value={(siteTheme as any)[key]}
-                                                    onChange={e => setSiteTheme(normalizeTheme({ ...siteTheme, [key]: e.target.value }))}
-                                                    className="block h-11 w-full cursor-pointer rounded-lg border border-slate-200 bg-white p-1"
-                                                />
-                                            </label>
-                                        ))}
-                                    </div>
+                                    <ThemeEditor value={siteTheme} onChange={setSiteTheme} />
                                 </div>
 
                                 <aside className="space-y-4 rounded-3xl border border-slate-100 bg-slate-50 p-5">

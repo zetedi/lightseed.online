@@ -7,7 +7,8 @@ export interface Community {
   domain: string; // The link to Lifetree
   vision: string; // Rich text
   imageUrls: string[]; // For carousel
-  logoUrl?: string;
+  logoUrl?: string;       // Square brand mark (avatar) — shown in lists and the hero badge
+  heroImageUrl?: string;  // Wide banner image shown behind the community page hero
   theme?: {
     primary?: string;
     secondary?: string;

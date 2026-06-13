@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.acceptTreeInvite = exports.onReachCreated = exports.sendSystemEmail = exports.generateAIContent = void 0;
+exports.requestInvite = exports.acceptTreeInvite = exports.onReachCreated = exports.sendSystemEmail = exports.generateAIContent = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 const admin = __importStar(require("firebase-admin"));
@@ -307,5 +307,30 @@ exports.acceptTreeInvite = (0, https_1.onCall)({ cors: true }, async (request) =
         });
         return { communityId, lifetreeId: invite.lifetreeId };
     });
+});
+// Request an invitation (callable, may be unauthenticated). With admin rights it checks
+// whether a pending invite or request already exists for the email before creating one.
+// Returns { status: 'created' | 'pending_invite_exists' | 'already_requested' }.
+exports.requestInvite = (0, https_1.onCall)({ cors: true }, async (request) => {
+    const email = String(request.data?.email || "").trim().toLowerCase();
+    const reason = String(request.data?.reason || "").trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+        throw new https_1.HttpsError("invalid-argument", "Please provide a valid email.");
+    }
+    const invites = await db.collection("networkInvites").where("email", "==", email).get();
+    if (invites.docs.some((d) => d.data().status === "pending")) {
+        return { status: "pending_invite_exists" };
+    }
+    const reqs = await db.collection("inviteRequests").where("email", "==", email).get();
+    if (reqs.docs.some((d) => d.data().status === "pending")) {
+        return { status: "already_requested" };
+    }
+    await db.collection("inviteRequests").add({
+        email,
+        reason,
+        status: "pending",
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    return { status: "created" };
 });
 //# sourceMappingURL=index.js.map

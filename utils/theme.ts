@@ -115,6 +115,9 @@ export const communityThemePresets: CommunityThemePreset[] = [
 const clampHex = (value: string | undefined, fallback: string) =>
   /^#[0-9A-Fa-f]{6}$/.test(value || '') ? value! : fallback;
 
+export const THEME_FIELDS = ['primary', 'secondary', 'accent', 'neutral', 'background', 'surface', 'text', 'mode'] as const;
+export const themeEquals = (a: any, b: any) => THEME_FIELDS.every(k => a?.[k] === b?.[k]);
+
 export const normalizeTheme = (theme: Partial<CommunityThemePreset> | undefined, fallback = canopyTheme) => ({
   primary: clampHex(theme?.primary, fallback.primary),
   secondary: clampHex(theme?.secondary, fallback.secondary),

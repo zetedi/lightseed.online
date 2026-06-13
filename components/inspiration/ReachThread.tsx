@@ -346,6 +346,11 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
                 )}
                 <div ref={bottomRef}></div>
             </div>
+            {mode === 'tree' && (
+                <p className="px-5 pt-2 text-center text-[11px] italic leading-snug text-slate-400">
+                    Kept on the immutable chain — remembered here. For everyday talk, meet outside; bring here only what is meant to stay. Even a dot, or a held silence, can be chosen to be remembered.
+                </p>
+            )}
             <form onSubmit={handleSend} className="p-4 bg-white border-t border-slate-100 flex space-x-3 items-center sticky bottom-0 z-10">
                 <input 
                     value={input}
