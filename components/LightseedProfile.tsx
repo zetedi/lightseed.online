@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { showAlert, showConfirm } from "./ui/Dialog";
 import { type Pulse, type Lifetree, type Alignment, type Vision, type VisionSynergy, type TreeOwnershipInvite, treeRelationLabels } from '../types';
-import { getMyPulses, getMyVisions, getJoinedVisions, getMyAlignmentsHistory, deleteUserAccount, logout, triggerSystemEmail, createNetworkInvite, listenToUserProfile, deleteVision, getAdmins, setNewsletterSubscription, updateUserSiteTheme, updateUserProfile, uploadImage, fetchMyReaches, setOnlyValidatedCanReach, getPendingTreeInvites, acceptTreeInvite, declineTreeInvite, getInviteRequests, approveInviteRequest, declineInviteRequest, getSentInvites, getLifetreeById } from '../services/firebase';
+import { getMyPulses, getMyVisions, getJoinedVisions, getMyAlignmentsHistory, deleteUserAccount, logout, triggerSystemEmail, createNetworkInvite, listenToUserProfile, deleteVision, getAdmins, setNewsletterSubscription, updateUserSiteTheme, updateUserProfile, uploadImage, fetchMyReaches, setOnlyValidatedCanReach, getPendingTreeInvites, acceptTreeInvite, declineTreeInvite, getInviteRequests, approveInviteRequest, declineInviteRequest, getSentInvites, getLifetreeById, tendTree } from '../services/firebase';
 import { ReachInbox } from './inspiration/ReachInbox';
 import { findVisionSynergies } from '../services/gemini';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -11,7 +11,7 @@ import { ValidationBadge } from './ValidationBadge';
 import { VisionCard } from './VisionCard';
 import { Modal } from './ui/Modal';
 import { Loading } from './ui/Loading';
-import { isExplicitlyValidatedTree } from '../utils/validation';
+import { isExplicitlyValidatedTree, isValidationLive, isValidationFading, daysUntilLapse } from '../utils/validation';
 import { normalizeTheme } from '../utils/theme';
 import { AppearanceEditor } from './ui/AppearanceEditor';
 import { IntelligencePanel } from './intelligence/IntelligencePanel';
@@ -115,8 +115,23 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
         if (activeTab !== 'history') return;
         try { const f = JSON.parse(localStorage.getItem('resonance_favorites_v1') || 'null'); if (Array.isArray(f)) setSavedResonances(f); } catch {}
     }, [activeTab]);
-    const hasValidatedTree = myTrees.some((t: Lifetree) => isExplicitlyValidatedTree(t));
-    const allValidated = myTrees.length > 0 && myTrees.every((t: Lifetree) => isExplicitlyValidatedTree(t));
+    // Validation is living care: a tree counts only while it's tended (live). `tendedIds`
+    // holds trees just re-tended this session so they re-light immediately.
+    const [tendedIds, setTendedIds] = useState<Set<string>>(new Set());
+    const [tendingId, setTendingId] = useState<string | null>(null);
+    const liveValidated = (tree: Lifetree) => tendedIds.has(tree.id) || isValidationLive(tree);
+    const lapsedValidated = (tree: Lifetree) => isExplicitlyValidatedTree(tree) && !liveValidated(tree);
+    const fadingValidated = (tree: Lifetree) => !tendedIds.has(tree.id) && isValidationFading(tree);
+    const handleTend = async (tree: Lifetree) => {
+        setTendingId(tree.id);
+        try { await tendTree(tree); setTendedIds(prev => new Set(prev).add(tree.id)); }
+        catch (e: any) { showAlert(e?.message || 'Could not tend the tree.'); }
+        setTendingId(null);
+    };
+    const treesNeedingCare = myTrees.filter((t: Lifetree) => lapsedValidated(t) || fadingValidated(t));
+
+    const hasValidatedTree = myTrees.some((t: Lifetree) => liveValidated(t));
+    const allValidated = myTrees.length > 0 && myTrees.every((t: Lifetree) => liveValidated(t));
     // Trees I guard but don't own — shown separately from my planted trees.
     const guardedOnly = (guardedTrees as Lifetree[]).filter((tree: Lifetree) => tree.ownerId !== lightseed?.uid);
 
@@ -489,6 +504,8 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                             {/* The domain owner / super admin is a trusted validator, so always carry the badge. */}
                             {(hasValidatedTree || isSuperAdmin) ? (
                                 <ValidationBadge className="border-emerald-400/50 bg-emerald-400/20" compact />
+                            ) : myTrees.some((t: Lifetree) => lapsedValidated(t)) ? (
+                                <ValidationBadge className="border-amber-400/40 bg-amber-400/20" compact lapsed />
                             ) : (!isAdmin && (
                                 <span className="bg-slate-600/50 border border-slate-500/50 text-slate-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Visitor</span>
                             ))}
@@ -754,6 +771,12 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                                 {/* Planted — trees you own and steward */}
                                 <div>
                                     <SectionTitle title={t('planted_trees')} sub={t('planted_trees_sub')} />
+                                    {treesNeedingCare.length > 0 && (
+                                        <div className="mb-4 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                                            <span className="mt-0.5 text-amber-500"><Icons.Eye /></span>
+                                            <p className="text-xs leading-relaxed text-amber-800">{t('care_nudge')}</p>
+                                        </div>
+                                    )}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {allValidated && (
                                              <div onClick={onPlant} className="border-2 border-dashed border-slate-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 hover:bg-slate-50 min-h-[100px] text-slate-400 hover:text-emerald-600 transition-all group">
@@ -775,9 +798,19 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                                                             <h3 className="font-bold text-slate-800">{tree.name}</h3>
                                                             <p className="text-xs text-slate-500">Block Height: {tree.blockHeight}</p>
                                                             {isExplicitlyValidatedTree(tree) ? (
-                                                                <ValidationBadge compact />
+                                                                <div className="mt-1 flex items-center gap-2">
+                                                                    <ValidationBadge compact lapsed={lapsedValidated(tree)} />
+                                                                    {(lapsedValidated(tree) || fadingValidated(tree)) && (
+                                                                        <button onClick={(e) => { e.stopPropagation(); handleTend(tree); }} disabled={tendingId === tree.id} className="rounded-full bg-emerald-600 px-3 py-1 text-[10px] font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
+                                                                            {tendingId === tree.id ? '…' : t('tend')}
+                                                                        </button>
+                                                                    )}
+                                                                    {fadingValidated(tree) && !lapsedValidated(tree) && (
+                                                                        <span className="text-[10px] font-bold text-amber-600">{daysUntilLapse(tree)}d</span>
+                                                                    )}
+                                                                </div>
                                                             ) : (
-                                                                <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">Pending</span>
+                                                                <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">{t('pending')}</span>
                                                             )}
                                                         </div>
                                                     </div>

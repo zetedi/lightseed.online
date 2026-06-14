@@ -40,6 +40,14 @@ const lifetreeImage = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/s
 export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, onViewCommunity, onSetTab, onPlant, onLogin }: DashboardProps) => {
     const { t } = useLanguage();
     const [quote, setQuote] = useState<string>("Loading…");
+    const [quoteCopied, setQuoteCopied] = useState(false);
+    const copyQuote = (e: React.MouseEvent) => {
+        e.stopPropagation(); // don't navigate into the Observatory
+        navigator.clipboard?.writeText(quote).then(() => {
+            setQuoteCopied(true);
+            setTimeout(() => setQuoteCopied(false), 1500);
+        }).catch(() => {});
+    };
     const [networkStats, setNetworkStats] = useState({ trees: 0, pulses: 0, visions: 0 });
     const videoRef = useRef<HTMLVideoElement>(null);
     const [videoEnded, setVideoEnded] = useState(false);
@@ -198,9 +206,23 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, onV
                              <GenesisSymbol />
                         </div>
                     </div>
-                    <p dir="auto" className="text-xs sm:text-base italic leading-relaxed line-clamp-4 opacity-90 font-serif drop-shadow-sm">
-                        {quote}
-                    </p>
+                    <div className="space-y-1">
+                        {quote && quote !== 'Loading…' && (
+                            <div className="flex justify-end">
+                                <button
+                                    onClick={copyQuote}
+                                    title="Copy quote"
+                                    aria-label="Copy quote"
+                                    className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1 text-white/80 backdrop-blur-sm transition-colors hover:bg-white/25 hover:text-white"
+                                >
+                                    {quoteCopied ? <span className="px-0.5 text-[10px] font-bold">✓</span> : <Icons.Copy size={13} />}
+                                </button>
+                            </div>
+                        )}
+                        <p dir="auto" className="text-xs sm:text-base italic leading-relaxed line-clamp-4 opacity-90 font-serif drop-shadow-sm">
+                            {quote}
+                        </p>
+                    </div>
                 </div>
             </div>
 

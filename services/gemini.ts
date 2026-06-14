@@ -3,7 +3,7 @@ import { httpsCallable } from "firebase/functions";
 import { auth, functions } from "./firebase";
 import { Lifetree, Vision, VisionSynergy } from "../types";
 import config from "../lifeseed.config.json";
-import { sendIntelligenceMessage, getIntelligence, getPersona, getActiveIntelligenceId } from "./intelligence";
+import { sendIntelligenceMessage, getIntelligence, getPersona, getActiveIntelligenceId, resolveIntelligenceMemoryText } from "./intelligence";
 import type { IntelligenceRef, Persona } from "../src/domain/intelligence";
 
 // Default model as requested: gemini-3.5-flash
@@ -141,6 +141,7 @@ export const sendMessageToOracle = async (
 
     let ref: IntelligenceRef = { provider: 'google', model: MODEL };
     let persona: Persona = { id: 'persona-oracle', name: 'Oracle', description: '', systemPrompt: ORACLE_PERSONA_PROMPT, createdAt: null as any };
+    let memoryText = GENESIS_VISION;
 
     if (intelligenceId) {
       const intel = await getIntelligence(intelligenceId);
@@ -150,10 +151,13 @@ export const sendMessageToOracle = async (
           const p = await getPersona(intel.personaId);
           if (p) persona = p;
         }
+        // The tree's own memory — what it has lived — folded in as recollection.
+        const recollection = await resolveIntelligenceMemoryText(intel);
+        if (recollection) memoryText += '\n\n' + recollection;
       }
     }
 
-    const reply = await sendIntelligenceMessage(ref, messages, { persona, memory: { text: GENESIS_VISION } });
+    const reply = await sendIntelligenceMessage(ref, messages, { persona, memory: { text: memoryText } });
     return reply || "I'm here, listening.";
   } catch (error: any) {
     console.error("Oracle Reach Error:", error);
@@ -172,6 +176,7 @@ export const testIntelligenceConnection = async (intelligenceId?: string): Promi
 
   let ref: IntelligenceRef = { provider: 'google', model: MODEL };
   let persona: Persona = { id: 'persona-oracle', name: 'Oracle', description: '', systemPrompt: ORACLE_PERSONA_PROMPT, createdAt: null as any };
+  let memoryText = GENESIS_VISION;
 
   if (intelligenceId) {
     const intel = await getIntelligence(intelligenceId);
@@ -182,9 +187,11 @@ export const testIntelligenceConnection = async (intelligenceId?: string): Promi
       const p = await getPersona(intel.personaId);
       if (p) persona = p;
     }
+    const recollection = await resolveIntelligenceMemoryText(intel);
+    if (recollection) memoryText += '\n\n' + recollection;
   }
 
-  const reply = await sendIntelligenceMessage(ref, [{ role: 'user', text: question }], { persona, memory: { text: GENESIS_VISION } });
+  const reply = await sendIntelligenceMessage(ref, [{ role: 'user', text: question }], { persona, memory: { text: memoryText } });
   return { question, reply: reply || '(the intelligence returned an empty reply)' };
 };
 

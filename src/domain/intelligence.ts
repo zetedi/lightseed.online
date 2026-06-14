@@ -58,6 +58,9 @@ export interface Memory {
   description?: string;
   visibility: MemoryVisibility;
   communityId?: string;
+  // Inline recollection — text poured directly into the memory (e.g. imported notes/journey).
+  // Injected into the intelligence's calls as recollection, not instruction.
+  text?: string;
   // Source documents this memory draws from: pulses, reaches, links, visions,
   // community charter, community documents, …
   sourceIds: string[];

@@ -5,7 +5,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import type { Intelligence } from '../../src/domain/intelligence';
 import {
   getManageableIntelligences, createIntelligence, updateIntelligence,
-  saveProviderCredential, disconnectProviderCredential, type CredentialScope,
+  saveProviderCredential, disconnectProviderCredential, addIntelligenceMemory, type CredentialScope,
 } from '../../services/intelligence';
 import { testIntelligenceConnection } from '../../services/gemini';
 
@@ -58,6 +58,8 @@ export const IntelligencePanel = ({
   const [testing, setTesting] = useState(false);
   const [test, setTest] = useState<{ question: string; reply: string } | null>(null);
   const [testError, setTestError] = useState<string | null>(null);
+  const [memText, setMemText] = useState('');
+  const [addingMem, setAddingMem] = useState(false);
 
   const refresh = () => {
     getManageableIntelligences(intelligenceOwnerUid).then(setIntelligences).catch(() => {});
@@ -130,6 +132,21 @@ export const IntelligencePanel = ({
       setTestError(e?.message || 'The test call failed.');
     }
     setTesting(false);
+  };
+
+  const selected = intelligences.find(i => i.id === selectedIntelligenceId);
+  const handleAddMemory = async () => {
+    if (!selectedIntelligenceId || !memText.trim()) return;
+    setAddingMem(true);
+    try {
+      const name = memText.trim().split('\n')[0].slice(0, 48) || 'Memory';
+      await addIntelligenceMemory(selectedIntelligenceId, name, memText.trim());
+      setMemText('');
+      refresh();
+    } catch (e: any) {
+      showAlert(e?.message || 'Could not add to memory.');
+    }
+    setAddingMem(false);
   };
 
   const handleDisconnect = async () => {
@@ -215,6 +232,19 @@ export const IntelligencePanel = ({
           </div>
         )}
       </div>
+
+      {/* Memory — pour in what this intelligence should remember (recalled, not obeyed) */}
+      {selected && (
+        <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+          <div className="flex items-center justify-between gap-2">
+            <h4 className="flex items-center gap-1.5 text-sm font-bold text-slate-800"><Icons.Leaf /> {t('intel_memory_title')}</h4>
+            <span className="text-[11px] text-slate-400">{(selected.memoryIds || []).length} {t('intel_memories')}</span>
+          </div>
+          <p className="mt-1 text-[11px] leading-snug text-slate-500">{t('intel_memory_desc')}</p>
+          <textarea value={memText} onChange={e => setMemText(e.target.value)} placeholder={t('intel_memory_ph')} className="mt-2 min-h-24 w-full rounded-lg border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          <button type="button" onClick={handleAddMemory} disabled={addingMem || !memText.trim()} className="mt-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">{addingMem ? '…' : t('intel_add_memory')}</button>
+        </div>
+      )}
 
       {/* Connect Claude with your own key */}
       <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">

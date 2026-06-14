@@ -1230,10 +1230,27 @@ export const mintPulse = async (pulseData: any) => {
         if (pulseData.type === 'GROWTH' && pulseData.imageUrl) {
             updateData.latestGrowthUrl = pulseData.imageUrl;
         }
-        
+        // A real growth is a tend — it keeps the tree's validation alive.
+        if (pulseData.type === 'GROWTH') {
+            updateData.lastTendedAt = serverTimestamp();
+        }
+
         t.update(treeRef, updateData);
     });
 }
+
+// An explicit tend — the lightweight "it still lives" confirmation. Writes a small TEND
+// block onto the tree's own chain and refreshes its validation liveness.
+export const tendTree = async (tree: Pick<Lifetree, 'id' | 'latestHash' | 'genesisHash' | 'blockHeight'>): Promise<void> => {
+    const prev = tree.latestHash || tree.genesisHash || '0';
+    const newHash = await createBlock(prev, { tend: true }, Date.now());
+    await updateDoc(doc(db, 'lifetrees', tree.id), {
+        lastTendedAt: serverTimestamp(),
+        latestHash: newHash,
+        blockHeight: (tree.blockHeight || 0) + 1,
+        updatedAt: serverTimestamp(),
+    });
+};
 
 export const proposeAlignment = (data: any) => addDoc(alignmentsCollection, { ...data, status: 'PENDING', createdAt: serverTimestamp() });
 export const getPendingAlignments = async (uid: string) => (await getDocs(query(alignmentsCollection, where('targetUid', '==', uid), where('status', '==', 'PENDING')))).docs.map(d => ({ id: d.id, ...(d.data() as any) } as Alignment));

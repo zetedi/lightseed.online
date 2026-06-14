@@ -42,9 +42,11 @@ export interface Lifetree {
   // the world-readable tree carries the flag and the reach gate needs no cross-user read.
   onlyValidatedCanReach?: boolean;
 
-  // Validation Logic
+  // Validation Logic — validation is LIVING: it stays lit only while the tree is tended
+  // (a growth pulse or an explicit confirm) within a year. Untended, it dims; re-tending re-lights it.
   validated: boolean;
   validatorId?: string | null;
+  lastTendedAt?: Timestamp;
 
   // Nature & Guardian Logic (Legacy)
   isNature?: boolean;

@@ -1,12 +1,12 @@
 import {
   collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
-  query, where, serverTimestamp,
+  query, where, serverTimestamp, arrayUnion,
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from './firebase';
 import config from '../lifeseed.config.json';
 import type {
-  Intelligence, Persona, Memory, IntelligenceMessage, MemoryContext,
+  Intelligence, Persona, Memory, MemoryVisibility, IntelligenceMessage, MemoryContext,
   IntelligenceProvider, IntelligenceProviderId, IntelligenceRef,
 } from '../src/domain/intelligence';
 
@@ -154,6 +154,42 @@ export const listPersonas = async (): Promise<Persona[]> =>
 export const getMemoriesByIds = async (ids: string[]): Promise<Memory[]> => {
   const results = await Promise.all(ids.map(id => getDoc(doc(db, 'memories', id))));
   return results.filter(s => s.exists()).map(s => mapDoc<Memory>(s));
+};
+
+// Pour text into a memory the AI can recall.
+export const createMemory = async (data: { name: string; text: string; visibility?: MemoryVisibility; communityId?: string }): Promise<string> => {
+  const ref = doc(memoriesCol);
+  await setDoc(ref, {
+    name: data.name,
+    text: data.text,
+    visibility: data.visibility || 'private',
+    ...(data.communityId ? { communityId: data.communityId } : {}),
+    sourceIds: [],
+    createdAt: serverTimestamp(),
+  });
+  return ref.id;
+};
+
+// Create a memory and attach it to an intelligence — the import path. Returns the memory id.
+// Visibility is 'community' so any signed-in member chatting with this intelligence can
+// have it recalled (the injection happens in their browser, so they must be able to read it).
+export const addIntelligenceMemory = async (intelligenceId: string, name: string, text: string): Promise<string> => {
+  const memoryId = await createMemory({ name, text, visibility: 'community' });
+  await updateDoc(doc(db, 'intelligences', intelligenceId), { memoryIds: arrayUnion(memoryId) });
+  return memoryId;
+};
+
+// The recollection an intelligence carries — its inline memories, joined for injection.
+// Resilient: a memory it can't read must never break the chat — it just recalls less.
+export const resolveIntelligenceMemoryText = async (intelligence?: Pick<Intelligence, 'memoryIds'> | null): Promise<string> => {
+  const ids = intelligence?.memoryIds;
+  if (!ids || ids.length === 0) return '';
+  try {
+    const mems = await getMemoriesByIds(ids);
+    return mems.map(m => m.text).filter(Boolean).join('\n\n');
+  } catch {
+    return '';
+  }
 };
 
 // Intelligences an admin may pick from for a community: every public one, plus any
