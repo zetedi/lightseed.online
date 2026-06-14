@@ -234,10 +234,10 @@ export const IntelligencePanel = ({
         {showConnect && (
           <div className="mt-4 space-y-3 border-t border-slate-200 pt-4">
             <ol className="list-decimal space-y-1 pl-5 text-xs text-slate-500">
-              <li>Open <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noreferrer" className="font-bold text-emerald-600 underline">console.anthropic.com → API Keys</a> and sign in (or create an account).</li>
-              <li>Click <span className="font-semibold">Create Key</span>, name it “Lightseed”, and copy it (it starts with <code className="rounded bg-slate-200 px-1">sk-ant-</code>).</li>
-              <li>Add a little credit under <span className="font-semibold">Billing</span> if you haven’t — Claude charges per use.</li>
-              <li>Paste the key below. It’s sent straight to our server, stored encrypted, and never shown in your browser again.</li>
+              <li>{t('intel_step1a')} <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noreferrer" className="font-bold text-emerald-600 underline">console.anthropic.com → API Keys</a> {t('intel_step1b')}</li>
+              <li>{t('intel_step2a')} <span className="font-semibold">Create Key</span>{t('intel_step2b')} <code className="rounded bg-slate-200 px-1">sk-ant-</code>{t('intel_step2c')}</li>
+              <li>{t('intel_step3a')} <span className="font-semibold">Billing</span> {t('intel_step3b')}</li>
+              <li>{t('intel_step4')}</li>
             </ol>
 
             <div className="rounded-lg border border-slate-200 bg-white p-3 text-[11px] leading-relaxed text-slate-500">

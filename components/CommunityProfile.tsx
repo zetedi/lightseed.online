@@ -10,7 +10,7 @@ import RichTextEditor from './ui/RichTextEditor';
 import { ImagePicker } from './ui/ImagePicker';
 import { DefaultCardImage } from './ui/DefaultCardImage';
 import { normalizeTheme } from '../utils/theme';
-import { ThemeEditor } from './ui/ThemeEditor';
+import { AppearanceEditor } from './ui/AppearanceEditor';
 import { IntelligencePanel } from './intelligence/IntelligencePanel';
 import { LoreSection, loreTabs, type LoreTabId } from './about/AboutSections';
 
@@ -721,56 +721,28 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
 
             {activeTab === 'appearance' && canEdit && (
               <div>
-                <SectionTitle title="Appearance" sub="Brand, logo, imagery and theme." />
+                <SectionTitle title={t('appearance')} sub="Brand, logo, imagery and theme." />
 
-                <div className="space-y-6">
-                  <div className="grid gap-6 md:grid-cols-[160px_1fr]">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase text-slate-400">Logo</label>
-                      <ImagePicker onImageSelect={handleLogoUpload} previewUrl={logoUrl} loading={isUploadingLogo} className="aspect-square w-full max-w-[160px] rounded-2xl border-2 border-dashed border-slate-200" />
-                      <p className="text-[11px] leading-snug text-slate-400">Square brand mark — shown as the avatar in lists and the page header.</p>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase text-slate-400">Community Name</label>
-                      <input dir="auto" type="text" value={editName} onChange={e => setEditName(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Community name" />
-                    </div>
-                  </div>
+                <AppearanceEditor
+                  theme={editTheme}
+                  onThemeChange={setEditTheme}
+                  logoUrl={logoUrl}
+                  onLogoUpload={handleLogoUpload}
+                  uploadingLogo={isUploadingLogo}
+                  heroUrl={heroImageUrl}
+                  onHeroUpload={handleHeroUpload}
+                  uploadingHero={isUploadingHero}
+                  onRemoveHero={() => setHeroImageUrl('')}
+                  heroHint={t('hero_hint_community')}
+                  name={editName}
+                  onNameChange={setEditName}
+                  imageUrls={imageUrls}
+                  onAddImage={handleAddImage}
+                  onRemoveImage={handleRemoveImage}
+                  uploadingImage={isUploadingImage}
+                />
 
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase text-slate-400">Hero image</label>
-                    <ImagePicker onImageSelect={handleHeroUpload} previewUrl={heroImageUrl} loading={isUploadingHero} className="aspect-[3/1] w-full overflow-hidden rounded-2xl border-2 border-dashed border-slate-200" />
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-[11px] leading-snug text-slate-400">Wide banner shown behind the title on the community page. A landscape image works best.</p>
-                      {heroImageUrl && (
-                        <button type="button" onClick={() => setHeroImageUrl('')} className="shrink-0 text-[11px] font-bold text-red-500 hover:text-red-600">Remove</button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-[10px] font-bold uppercase text-slate-400">Gallery</label>
-                    <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-                      {imageUrls.map((url, index) => (
-                        <div key={url} className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
-                          <img src={url} className="h-full w-full object-cover" alt={`Community image ${index + 1}`} />
-                          <button type="button" onClick={() => handleRemoveImage(index)} className="absolute right-1 top-1 rounded-full bg-white/90 p-1 text-red-500 shadow-sm" title="Remove image">
-                            <Icons.Close />
-                          </button>
-                        </div>
-                      ))}
-                      <ImagePicker onImageSelect={handleAddImage} loading={isUploadingImage} className="flex aspect-square cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 text-slate-400 hover:border-emerald-400 hover:text-emerald-600">
-                        <Icons.Plus />
-                      </ImagePicker>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-[10px] font-bold uppercase text-slate-400">{t('theme_mood')}</label>
-                    <ThemeEditor value={editTheme} onChange={setEditTheme} />
-                  </div>
-                </div>
-
-                <SaveBar />
+                <div className="mt-6"><SaveBar /></div>
               </div>
             )}
           </main>

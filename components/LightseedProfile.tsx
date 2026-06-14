@@ -12,9 +12,8 @@ import { VisionCard } from './VisionCard';
 import { Modal } from './ui/Modal';
 import { Loading } from './ui/Loading';
 import { isExplicitlyValidatedTree } from '../utils/validation';
-import { ImagePicker } from './ui/ImagePicker';
 import { normalizeTheme } from '../utils/theme';
-import { ThemeEditor } from './ui/ThemeEditor';
+import { AppearanceEditor } from './ui/AppearanceEditor';
 import { IntelligencePanel } from './intelligence/IntelligencePanel';
 import { ResonanceCard, resonanceId } from './ResonancePanel';
 import { DEFAULT_INTELLIGENCE_ID } from '../services/intelligence';
@@ -81,8 +80,10 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
     const [dialogMessage, setDialogMessage] = useState<string | null>(null);
     const [siteTheme, setSiteTheme] = useState(normalizeTheme(undefined));
     const [siteLogoUrl, setSiteLogoUrl] = useState('');
+    const [siteHeroUrl, setSiteHeroUrl] = useState('');
     const [savingSiteTheme, setSavingSiteTheme] = useState(false);
     const [uploadingSiteLogo, setUploadingSiteLogo] = useState(false);
+    const [uploadingSiteHero, setUploadingSiteHero] = useState(false);
 
     // AI Alignment State
     const [synergies, setSynergies] = useState<VisionSynergy[]>([]);
@@ -168,6 +169,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
             setOnlyValidatedCanReachState(Boolean(data?.onlyValidatedCanReach));
             setSiteTheme(normalizeTheme(data?.siteTheme));
             setSiteLogoUrl(data?.siteLogoUrl || '');
+            setSiteHeroUrl(data?.siteHeroUrl || '');
             setPreferredIntelligenceId(data?.preferredIntelligenceId || DEFAULT_INTELLIGENCE_ID);
         });
 
@@ -321,12 +323,24 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
         setUploadingSiteLogo(false);
     };
 
+    const handleSiteHeroUpload = async (file: File) => {
+        setUploadingSiteHero(true);
+        try {
+            const url = await uploadImage(file, `users/${lightseed.uid}/site-theme/hero_${Date.now()}`);
+            setSiteHeroUrl(url);
+        } catch (e: any) {
+            setDialogMessage(e.message || 'Failed to upload hero image.');
+        }
+        setUploadingSiteHero(false);
+    };
+
     const handleSaveSiteTheme = async () => {
         setSavingSiteTheme(true);
         try {
             await updateUserSiteTheme(lightseed.uid, {
                 siteTheme: normalizeTheme(siteTheme),
                 siteLogoUrl,
+                siteHeroUrl,
             });
             setDialogMessage('Your lightseed.online theme has been saved.');
         } catch (e: any) {
@@ -341,9 +355,11 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
         try {
             setSiteTheme(resetTheme);
             setSiteLogoUrl('');
+            setSiteHeroUrl('');
             await updateUserSiteTheme(lightseed.uid, {
                 siteTheme: resetTheme,
                 siteLogoUrl: '',
+                siteHeroUrl: '',
             });
             setDialogMessage('Your lightseed.online theme has been reset.');
         } catch (e: any) {
@@ -410,8 +426,8 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
         { key: 'visions', label: t('visions'), icon: <Icons.Eye /> },
         { key: 'history', label: t('alignments'), icon: <Icons.Venn /> },
         { key: 'invites', label: t('invitations'), icon: <Icons.UserPlus /> },
-        { key: 'appearance', label: 'Appearance', icon: <Icons.Image /> },
-        { key: 'intelligence', label: 'Intelligence', icon: <Icons.Sparkles /> },
+        { key: 'appearance', label: t('appearance'), icon: <Icons.Image /> },
+        { key: 'intelligence', label: t('intelligence'), icon: <Icons.Sparkles /> },
         { key: 'settings', label: t('settings_title'), icon: <Icons.Cog /> },
         ...(showAdmin ? [{ key: 'admin', label: t('admin_title'), icon: <Icons.Shield /> }] : []),
     ];
@@ -439,8 +455,14 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
     return (
         <div className="min-h-screen pb-20">
             {/* Hero — compact: avatar, name and all the meta sit on one wrapping row */}
-            <div className="relative bg-gradient-to-b from-slate-800 to-slate-900 text-white pt-6 pb-16 px-4">
-                <div className="max-w-6xl mx-auto flex flex-row items-center gap-3 sm:gap-5">
+            <div className="relative overflow-hidden bg-gradient-to-b from-slate-800 to-slate-900 text-white pt-6 pb-16 px-4">
+                {siteHeroUrl && (
+                    <>
+                        <img src={siteHeroUrl} alt="" referrerPolicy="no-referrer" className="absolute inset-0 h-full w-full object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/55 via-slate-900/65 to-slate-900/85" />
+                    </>
+                )}
+                <div className="relative max-w-6xl mx-auto flex flex-row items-center gap-3 sm:gap-5">
                     <div className="relative shrink-0">
                         <img
                             src={lightseed.photoURL || `https://ui-avatars.com/api/?name=${lightseed.displayName}`}
@@ -916,49 +938,42 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                              )
                         )}
                         {activeTab === 'appearance' && (
-                            <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
-                                <div className="min-w-0 space-y-6">
-                                    <div>
-                                        <h3 className="text-lg font-bold text-slate-800">{t('appearance_theme_title')}</h3>
-                                        <p className="mt-1 text-sm text-slate-500">
-                                            {t('appearance_theme_desc')}
-                                        </p>
-                                    </div>
-
-                                    <ThemeEditor value={siteTheme} onChange={setSiteTheme} />
+                            <div className="space-y-6">
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-800">{t('appearance_theme_title')}</h3>
+                                    <p className="mt-1 text-sm text-slate-500">{t('appearance_theme_desc')}</p>
                                 </div>
 
-                                <aside className="space-y-4 rounded-3xl border border-slate-100 bg-slate-50 p-5">
-                                    <div>
-                                        <h4 className="text-sm font-bold uppercase tracking-widest text-slate-400">{t('site_logo')}</h4>
-                                        <p className="mt-1 text-xs text-slate-500">{t('site_logo_desc')}</p>
-                                    </div>
-                                    <ImagePicker
-                                        onImageSelect={handleSiteLogoUpload}
-                                        previewUrl={siteLogoUrl}
-                                        loading={uploadingSiteLogo}
-                                        className="mx-auto aspect-square w-32 rounded-2xl border-2 border-dashed border-slate-200 bg-white"
-                                    />
-                                    <div className="overflow-hidden rounded-2xl border border-white shadow-sm">
-                                        {[siteTheme.surface, siteTheme.primary, siteTheme.accent, siteTheme.background].map((color, index) => (
-                                            <span key={`site-theme-${index}`} className="inline-block h-8 w-1/4" style={{ backgroundColor: color }} />
-                                        ))}
-                                    </div>
+                                <AppearanceEditor
+                                    theme={siteTheme}
+                                    onThemeChange={setSiteTheme}
+                                    logoUrl={siteLogoUrl}
+                                    onLogoUpload={handleSiteLogoUpload}
+                                    uploadingLogo={uploadingSiteLogo}
+                                    logoLabel={t('site_logo')}
+                                    logoHint={t('site_logo_desc')}
+                                    heroUrl={siteHeroUrl}
+                                    onHeroUpload={handleSiteHeroUpload}
+                                    uploadingHero={uploadingSiteHero}
+                                    onRemoveHero={() => setSiteHeroUrl('')}
+                                />
+
+                                <div className="flex flex-wrap gap-3">
                                     <button
                                         onClick={handleSaveSiteTheme}
-                                        disabled={savingSiteTheme || uploadingSiteLogo}
-                                        className="w-full rounded-2xl bg-teal-600 py-3 text-sm font-bold text-white shadow-lg shadow-teal-600/20 transition-colors hover:bg-teal-700 disabled:opacity-50"
+                                        disabled={savingSiteTheme || uploadingSiteLogo || uploadingSiteHero}
+                                        className="rounded-2xl bg-teal-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-teal-600/20 transition-colors hover:bg-teal-700 disabled:opacity-50"
                                     >
                                         {savingSiteTheme ? t('saving') : t('save_theme')}
                                     </button>
                                     <button
                                         onClick={handleResetSiteTheme}
-                                        disabled={savingSiteTheme || uploadingSiteLogo}
-                                        className="w-full rounded-2xl bg-slate-200 py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-300 disabled:opacity-50"
+                                        disabled={savingSiteTheme || uploadingSiteLogo || uploadingSiteHero}
+                                        className="rounded-2xl bg-slate-200 px-6 py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-300 disabled:opacity-50"
                                     >
                                         {t('reset')}
                                     </button>
-                                </aside>
+                                </div>
                             </div>
                         )}
                         {activeTab === 'intelligence' && lightseed?.uid && (
