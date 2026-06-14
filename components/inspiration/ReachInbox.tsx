@@ -2,8 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Icons } from '../ui/Icons';
 import { Lifetree, Lightseed, Pulse } from '../../types';
 import { ReachThread } from './ReachThread';
-import { markReachPulsesSeen } from '../../services/firebase';
-import { getIntelligence, getActiveIntelligenceId } from '../../services/intelligence';
+import { markReachPulsesSeen, listenToUserProfile } from '../../services/firebase';
+import { getIntelligence } from '../../services/intelligence';
 
 interface ReachThreadSummary {
     partnerId: string;
@@ -60,16 +60,17 @@ export const ReachInbox = ({
     const [selection, setSelection] = useState<Selection>({ kind: 'none' });
     const [aiName, setAiName] = useState('Osiris');
 
-    // Show the enabled, active intelligence's name for the AI thread.
+    // Show the enabled, active intelligence's name for the AI thread — reactively, so it
+    // tracks the user's chosen intelligence as soon as the profile loads/changes.
     useEffect(() => {
+        if (!lightseed?.uid) { setAiName('Osiris'); return; }
         let cancelled = false;
-        const id = getActiveIntelligenceId();
-        if (id) {
+        const unsub = listenToUserProfile(lightseed.uid, (profile) => {
+            const id = profile?.preferredIntelligenceId;
+            if (!id) { setAiName('Osiris'); return; }
             getIntelligence(id).then(i => { if (!cancelled) setAiName(i && i.enabled !== false && i.name ? i.name : 'Osiris'); }).catch(() => {});
-        } else {
-            setAiName('Osiris');
-        }
-        return () => { cancelled = true; };
+        });
+        return () => { cancelled = true; unsub(); };
     }, [lightseed?.uid]);
 
     // Open a thread when one is requested from outside (map marker, tree card/detail).

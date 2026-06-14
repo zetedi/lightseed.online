@@ -278,7 +278,7 @@ export const Navigation = ({
                         <NavGroup label={t('intelligence' as any)} tabs={intelligenceTabs} />
                         <div className="w-px h-8 self-end mb-1" style={{ backgroundColor: navBorder }}></div>
                         <div className="flex flex-col gap-1">
-                            <span className="text-[9px] uppercase tracking-[0.2em] font-bold px-3" style={{ color: navMuted }}>Network</span>
+                            <span className="text-[9px] uppercase tracking-[0.2em] font-bold px-3" style={{ color: navMuted }}>{t('network')}</span>
                             <div className="flex items-center gap-1">
                                 {otherTabs.map(tab => <div key={tab}><NavTab tab={tab} /></div>)}
                             </div>
@@ -329,7 +329,7 @@ export const Navigation = ({
                                     )}
                                     {/* Tree Circle invites — amber, bottom-right (marked separately) */}
                                     {treeInviteCount > 0 && (
-                                        <span title="Tree Circle invitations" className={`absolute -bottom-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500 px-1 text-[8px] font-black text-white ring-2 ${navIsDark ? 'ring-emerald-950' : 'ring-white'}`}>{treeInviteCount > 9 ? '9+' : treeInviteCount}</span>
+                                        <span title={t('tree_circle_invitations')} className={`absolute -bottom-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500 px-1 text-[8px] font-black text-white ring-2 ${navIsDark ? 'ring-emerald-950' : 'ring-white'}`}>{treeInviteCount > 9 ? '9+' : treeInviteCount}</span>
                                     )}
                                 </button>
 
@@ -452,7 +452,7 @@ export const Navigation = ({
                                 style={activeTab === 'about' ? { backgroundColor: getActiveTabColor('about') || navBorder } : undefined}
                             >
                                 <span className="[&>svg]:h-[18px] [&>svg]:w-[18px]"><Icons.Info /></span>
-                                <span>About the node</span>
+                                <span>{t('about_the_node')}</span>
                             </button>
 
                             {lightseed && (
@@ -462,7 +462,7 @@ export const Navigation = ({
                                             ? <img src={activeTreeImage} className="h-full w-full object-cover" alt="" referrerPolicy="no-referrer" />
                                             : <span className="text-emerald-500 [&>svg]:h-4 [&>svg]:w-4"><Icons.Tree /></span>}
                                     </span>
-                                    <span>Profile page</span>
+                                    <span>{t('profile_page')}</span>
                                 </button>
                             )}
                         </div>

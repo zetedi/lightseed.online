@@ -42,7 +42,7 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
     // The name of the enabled, active intelligence — shown throughout the DM in place of "Osiris".
     const [aiName, setAiName] = useState('Osiris');
     // Per-message AI interpretations — the "shadow text" beneath an incoming tree's words.
-    const [interpretations, setInterpretations] = useState<Record<number, TranslationResponse | 'loading'>>({});
+    const [interpretations, setInterpretations] = useState<Record<number, TranslationResponse | 'loading' | { error: string }>>({});
     const [mode, setMode] = useState<'oracle' | 'tree'>(targetTree ? 'tree' : 'oracle');
     const [selectedTree, setSelectedTree] = useState<Lifetree | null>(targetTree);
     const bottomRef = useRef<HTMLDivElement>(null);
@@ -143,7 +143,9 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
     // Reveal what an incoming tree's message means — interpreted through the reader's
     // chosen intelligence against both trees' visions, shown as greyed shadow text.
     const revealInterpretation = async (index: number, text: string) => {
-        if (!selectedTree || !activeTree || interpretations[index]) return;
+        if (!selectedTree || !activeTree) return;
+        const current = interpretations[index];
+        if (current === 'loading' || (current && !('error' in current))) return; // already loading or done
         setInterpretations(prev => ({ ...prev, [index]: 'loading' }));
         try {
             const context = [selectedTree.shortTitle, selectedTree.body, activeTree.body]
@@ -156,12 +158,8 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
                 context,
             }, preferredIntelligenceId);
             setInterpretations(prev => ({ ...prev, [index]: result }));
-        } catch {
-            setInterpretations(prev => {
-                const next = { ...prev };
-                delete next[index];
-                return next;
-            });
+        } catch (e: any) {
+            setInterpretations(prev => ({ ...prev, [index]: { error: e?.message || 'The interpreter could not be reached.' } }));
         }
     };
 
@@ -382,25 +380,36 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
                             </div>
 
                             {/* Shadow text — what the message means, read through your intelligence. */}
-                            {canInterpret && (
-                                interp === 'loading' ? (
+                            {canInterpret && (() => {
+                                if (interp === 'loading') return (
                                     <div className="flex items-center gap-1.5 px-3 text-[12px] italic text-slate-400">
                                         <div className="h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-transparent"></div>
                                         reading between the lines…
                                     </div>
-                                ) : interp ? (
-                                    <div dir="auto" className="px-3 text-[12.5px] italic leading-relaxed text-slate-400">
-                                        <span className="font-semibold text-slate-400/90">✦ </span>{interp.interpretation}
-                                        {interp.growthSuggestion && (
-                                            <span className="mt-1 block text-slate-400/80">↳ {interp.growthSuggestion}</span>
-                                        )}
+                                );
+                                if (interp && 'error' in interp) return (
+                                    <div className="px-3 text-[11.5px] text-red-400">
+                                        <span aria-hidden>✦</span> couldn’t read this — {interp.error}{' '}
+                                        <button onClick={() => revealInterpretation(i, m.text)} className="font-bold underline hover:text-red-500">try again</button>
                                     </div>
-                                ) : (
+                                );
+                                if (interp) {
+                                    const r = interp as TranslationResponse;
+                                    return (
+                                        <div dir="auto" className="px-3 text-[12.5px] italic leading-relaxed text-slate-400">
+                                            <span className="font-semibold text-slate-400/90">✦ </span>{r.interpretation}
+                                            {r.growthSuggestion && (
+                                                <span className="mt-1 block text-slate-400/80">↳ {r.growthSuggestion}</span>
+                                            )}
+                                        </div>
+                                    );
+                                }
+                                return (
                                     <button onClick={() => revealInterpretation(i, m.text)} className="inline-flex items-center gap-1 self-start px-3 text-[11px] font-medium text-slate-400 transition-colors hover:text-emerald-600">
                                         <span aria-hidden>✦</span> reveal meaning
                                     </button>
-                                )
-                            )}
+                                );
+                            })()}
                         </div>
                     </div>
                     );

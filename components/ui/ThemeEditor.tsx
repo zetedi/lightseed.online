@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { communityThemePresets, normalizeTheme, themeEquals, type CommunityThemePreset } from '../../utils/theme';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export type ThemeValue = ReturnType<typeof normalizeTheme>;
 
 const CUSTOM_FIELDS: Array<[keyof CommunityThemePreset, string]> = [
-  ['surface', 'Header'],
-  ['primary', 'Primary'],
-  ['accent', 'Accent'],
-  ['background', 'Background'],
-  ['secondary', 'Secondary'],
-  ['neutral', 'Neutral'],
-  ['text', 'Text'],
+  ['surface', 'color_header'],
+  ['primary', 'color_primary'],
+  ['accent', 'color_accent'],
+  ['background', 'color_background'],
+  ['secondary', 'color_secondary'],
+  ['neutral', 'color_neutral'],
+  ['text', 'color_text'],
 ];
 
 /**
@@ -20,6 +21,7 @@ const CUSTOM_FIELDS: Array<[keyof CommunityThemePreset, string]> = [
  * the same functionality.
  */
 export const ThemeEditor = ({ value, onChange }: { value: ThemeValue; onChange: (theme: ThemeValue) => void }) => {
+  const { t } = useLanguage();
   const [isCustom, setIsCustom] = useState(() => !communityThemePresets.some(p => themeEquals(value, p)));
 
   return (
@@ -48,8 +50,8 @@ export const ThemeEditor = ({ value, onChange }: { value: ThemeValue; onChange: 
         <button type="button" onClick={() => setIsCustom(true)} className={`w-full rounded-2xl border p-3 text-left transition-all ${isCustom ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}>
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-sm font-bold text-slate-800">Custom</div>
-              <div className="text-[11px] text-slate-500">Choose every colour yourself.</div>
+              <div className="text-sm font-bold text-slate-800">{t('theme_custom')}</div>
+              <div className="text-[11px] text-slate-500">{t('theme_custom_desc')}</div>
             </div>
             <div className="flex shrink-0 overflow-hidden rounded-full border border-white shadow-sm">
               {[value.surface, value.primary, value.accent, value.background].map((color, index) => (
@@ -64,7 +66,7 @@ export const ThemeEditor = ({ value, onChange }: { value: ThemeValue; onChange: 
       {isCustom && (
         <div className="space-y-4 rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold uppercase text-slate-400">Mode</span>
+            <span className="text-[10px] font-bold uppercase text-slate-400">{t('theme_mode')}</span>
             {(['light', 'dark'] as const).map(m => (
               <button key={m} type="button" onClick={() => onChange(normalizeTheme({ ...value, mode: m }))} className={`rounded-full px-3 py-1 text-xs font-bold capitalize transition-colors ${value.mode === m ? 'bg-emerald-600 text-white' : 'bg-white text-slate-500 border border-slate-200 hover:text-slate-800'}`}>
                 {m}
@@ -74,7 +76,7 @@ export const ThemeEditor = ({ value, onChange }: { value: ThemeValue; onChange: 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {CUSTOM_FIELDS.map(([key, label]) => (
               <label key={key} className="space-y-1">
-                <span className="text-[10px] font-bold uppercase text-slate-400">{label}</span>
+                <span className="text-[10px] font-bold uppercase text-slate-400">{t(label as any)}</span>
                 <input type="color" value={(value as any)[key]} onChange={e => onChange(normalizeTheme({ ...value, [key]: e.target.value }))} className="block h-10 w-full cursor-pointer rounded-lg border border-slate-200 bg-white p-1" />
               </label>
             ))}

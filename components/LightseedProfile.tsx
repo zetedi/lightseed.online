@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { showAlert, showConfirm } from "./ui/Dialog";
 import { type Pulse, type Lifetree, type Alignment, type Vision, type VisionSynergy, type TreeOwnershipInvite, treeRelationLabels } from '../types';
-import { getMyPulses, getMyVisions, getJoinedVisions, getMyAlignmentsHistory, deleteUserAccount, logout, triggerSystemEmail, createNetworkInvite, listenToUserProfile, deleteVision, getAdmins, setNewsletterSubscription, updateUserSiteTheme, updateUserProfile, uploadImage, fetchMyReaches, setOnlyValidatedCanReach, getPendingTreeInvites, acceptTreeInvite, declineTreeInvite, getInviteRequests, approveInviteRequest, declineInviteRequest, getSentInvites } from '../services/firebase';
+import { getMyPulses, getMyVisions, getJoinedVisions, getMyAlignmentsHistory, deleteUserAccount, logout, triggerSystemEmail, createNetworkInvite, listenToUserProfile, deleteVision, getAdmins, setNewsletterSubscription, updateUserSiteTheme, updateUserProfile, uploadImage, fetchMyReaches, setOnlyValidatedCanReach, getPendingTreeInvites, acceptTreeInvite, declineTreeInvite, getInviteRequests, approveInviteRequest, declineInviteRequest, getSentInvites, getLifetreeById } from '../services/firebase';
 import { ReachInbox } from './inspiration/ReachInbox';
 import { findVisionSynergies } from '../services/gemini';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -16,12 +16,26 @@ import { ImagePicker } from './ui/ImagePicker';
 import { normalizeTheme } from '../utils/theme';
 import { ThemeEditor } from './ui/ThemeEditor';
 import { IntelligencePanel } from './intelligence/IntelligencePanel';
+import { ResonanceCard, resonanceId } from './ResonancePanel';
 import { DEFAULT_INTELLIGENCE_ID } from '../services/intelligence';
 
-export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmin, isSuperAdmin, superAdminExists, onViewTree, onDeleteTree, onViewVision, onPlant, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachOpenSignal, onConsumeReach }: any) => {
+export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmin, isSuperAdmin, superAdminExists, onViewTree, onDeleteTree, onViewVision, onPlant, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachOpenSignal, onConsumeReach, onReachTree }: any) => {
     const { t } = useLanguage();
     const [activeTab, setActiveTab] = useState<'trees' | 'pulses' | 'visions' | 'history' | 'reaches' | 'invites' | 'appearance' | 'intelligence' | 'settings' | 'admin'>('trees');
     const [preferredIntelligenceId, setPreferredIntelligenceId] = useState<string>('');
+    // Resonances the user starred in the Observatory (kept in localStorage).
+    const [savedResonances, setSavedResonances] = useState<VisionSynergy[]>([]);
+    const unsaveResonance = (s: VisionSynergy) => {
+        setSavedResonances(prev => {
+            const next = prev.filter(f => resonanceId(f) !== resonanceId(s));
+            try { localStorage.setItem('resonance_favorites_v1', JSON.stringify(next)); } catch {}
+            return next;
+        });
+    };
+    const reachResonantTree = async (treeId: string) => {
+        try { const tree = await getLifetreeById(treeId); if (tree && onReachTree) onReachTree(tree); }
+        catch { showAlert('Could not open a conversation with that tree.'); }
+    };
     const [reaches, setReaches] = useState<Pulse[]>([]);
     const [pulses, setPulses] = useState<Pulse[]>([]);
     const [visions, setVisions] = useState<Vision[]>([]);
@@ -96,6 +110,10 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
         getSentInvites(lightseed.uid, sentCursor).then(res => { setSentInvites(prev => [...prev, ...res.items]); setSentCursor(res.lastDoc); setSentHasMore(res.hasMore); }).catch(() => {});
     };
     useEffect(() => { if (activeTab === 'invites') refreshSentInvites(); }, [activeTab, lightseed?.uid]);
+    useEffect(() => {
+        if (activeTab !== 'history') return;
+        try { const f = JSON.parse(localStorage.getItem('resonance_favorites_v1') || 'null'); if (Array.isArray(f)) setSavedResonances(f); } catch {}
+    }, [activeTab]);
     const hasValidatedTree = myTrees.some((t: Lifetree) => isExplicitlyValidatedTree(t));
     const allValidated = myTrees.length > 0 && myTrees.every((t: Lifetree) => isExplicitlyValidatedTree(t));
     // Trees I guard but don't own — shown separately from my planted trees.
@@ -394,8 +412,8 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
         { key: 'invites', label: t('invitations'), icon: <Icons.UserPlus /> },
         { key: 'appearance', label: 'Appearance', icon: <Icons.Image /> },
         { key: 'intelligence', label: 'Intelligence', icon: <Icons.Sparkles /> },
-        { key: 'settings', label: 'Settings', icon: <Icons.Cog /> },
-        ...(showAdmin ? [{ key: 'admin', label: 'Admin', icon: <Icons.Shield /> }] : []),
+        { key: 'settings', label: t('settings_title'), icon: <Icons.Cog /> },
+        ...(showAdmin ? [{ key: 'admin', label: t('admin_title'), icon: <Icons.Shield /> }] : []),
     ];
 
     const Toggle = ({ on, onClick, disabled }: { on: boolean; onClick: () => void; disabled?: boolean }) => (
@@ -490,7 +508,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
             )}
 
             {dialogMessage && (
-                <Modal title="Notice" onClose={() => setDialogMessage(null)}>
+                <Modal title={t('notice')} onClose={() => setDialogMessage(null)}>
                     <div className="space-y-4">
                         <p className="text-sm text-slate-600">{dialogMessage}</p>
                         <button onClick={() => setDialogMessage(null)} className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white">Close</button>
@@ -536,7 +554,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                         {activeTab === 'invites' && (
                             <div className="space-y-6">
                                 <div>
-                                    <SectionTitle title={t('invitations')} sub="Invite kindred spirits to plant their roots in the network." />
+                                    <SectionTitle title={t('invitations')} sub={t('invites_sub')} />
                                     {(myTrees.length === 0 && !isSuperAdmin) ? (
                                         <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400">
                                             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100"><Icons.Tree /></div>
@@ -623,7 +641,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
 
                         {activeTab === 'settings' && (
                             <div>
-                                <SectionTitle title="Settings" sub="Privacy, email, notifications, and your account." />
+                                <SectionTitle title={t('settings_title')} sub={t('settings_sub')} />
                                 <div className="rounded-2xl border border-slate-100 divide-y divide-slate-100">
                                     <div className="p-4 flex items-center justify-between gap-4">
                                         <div className="min-w-0">
@@ -666,7 +684,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
 
                         {activeTab === 'admin' && (
                             <div>
-                                <SectionTitle title="Admin" sub="Network stewardship and roles." />
+                                <SectionTitle title={t('admin_title')} sub={t('admin_sub')} />
                                 {!superAdminExists && (
                                     <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 flex items-center justify-between gap-4">
                                         <div>
@@ -713,7 +731,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                             <div className="space-y-8">
                                 {/* Planted — trees you own and steward */}
                                 <div>
-                                    <SectionTitle title="Planted Trees" sub="Living identities you have planted and steward." />
+                                    <SectionTitle title={t('planted_trees')} sub={t('planted_trees_sub')} />
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {allValidated && (
                                              <div onClick={onPlant} className="border-2 border-dashed border-slate-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 hover:bg-slate-50 min-h-[100px] text-slate-400 hover:text-emerald-600 transition-all group">
@@ -744,7 +762,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); onDeleteTree(tree.id); }}
                                                         className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors opacity-0 group-hover:opacity-100"
-                                                        title="Delete Tree"
+                                                        title={t('delete_tree_title')}
                                                     >
                                                         <Icons.Trash />
                                                     </button>
@@ -756,7 +774,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
 
                                 {/* Guarded — trees you protect as a guardian (you don't own these) */}
                                 <div>
-                                    <SectionTitle title="Guarded Trees" sub="Trees you help protect as a guardian." />
+                                    <SectionTitle title={t('guarded_trees')} sub={t('guarded_trees_sub')} />
                                     {guardedOnly.length === 0 ? (
                                         <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-slate-400">
                                             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-sky-50 text-sky-500"><Icons.Shield /></div>
@@ -787,7 +805,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                         )}
                         {activeTab === 'pulses' && (
                             <div>
-                            <SectionTitle title={t('my_pulses')} sub="Signals you've emitted into the network." />
+                            <SectionTitle title={t('my_pulses')} sub={t('my_pulses_sub')} />
                             {loading ? <div className="flex justify-center py-10"><Loading /></div> : (
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                     {pulses.length === 0 ? <p className="col-span-full text-slate-400 text-center py-10">No pulses emitted yet.</p> : pulses.map((pulse) => (
@@ -863,7 +881,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                                                             <button 
                                                                 onClick={(e) => handleDeleteVision(e, vision.id)}
                                                                 className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg border border-red-400 transition-all hover:scale-110 active:scale-95"
-                                                                title="Delete Vision"
+                                                                title={t('delete_vision_title')}
                                                             >
                                                                 <Icons.Trash />
                                                             </button>
@@ -901,9 +919,9 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                             <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
                                 <div className="min-w-0 space-y-6">
                                     <div>
-                                        <h3 className="text-lg font-bold text-slate-800">lightseed.online Theme</h3>
+                                        <h3 className="text-lg font-bold text-slate-800">{t('appearance_theme_title')}</h3>
                                         <p className="mt-1 text-sm text-slate-500">
-                                            This theme is personal to your login and takes precedence over community themes.
+                                            {t('appearance_theme_desc')}
                                         </p>
                                     </div>
 
@@ -912,8 +930,8 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
 
                                 <aside className="space-y-4 rounded-3xl border border-slate-100 bg-slate-50 p-5">
                                     <div>
-                                        <h4 className="text-sm font-bold uppercase tracking-widest text-slate-400">Site Logo</h4>
-                                        <p className="mt-1 text-xs text-slate-500">Optional. Used in the header on hub domains.</p>
+                                        <h4 className="text-sm font-bold uppercase tracking-widest text-slate-400">{t('site_logo')}</h4>
+                                        <p className="mt-1 text-xs text-slate-500">{t('site_logo_desc')}</p>
                                     </div>
                                     <ImagePicker
                                         onImageSelect={handleSiteLogoUpload}
@@ -931,14 +949,14 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                                         disabled={savingSiteTheme || uploadingSiteLogo}
                                         className="w-full rounded-2xl bg-teal-600 py-3 text-sm font-bold text-white shadow-lg shadow-teal-600/20 transition-colors hover:bg-teal-700 disabled:opacity-50"
                                     >
-                                        {savingSiteTheme ? 'Saving...' : 'Save Theme'}
+                                        {savingSiteTheme ? t('saving') : t('save_theme')}
                                     </button>
                                     <button
                                         onClick={handleResetSiteTheme}
                                         disabled={savingSiteTheme || uploadingSiteLogo}
                                         className="w-full rounded-2xl bg-slate-200 py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-300 disabled:opacity-50"
                                     >
-                                        Reset
+                                        {t('reset')}
                                     </button>
                                 </aside>
                             </div>
@@ -948,6 +966,8 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                                 scope="user"
                                 credentialOwnerId={lightseed.uid}
                                 intelligenceOwnerUid={lightseed.uid}
+                                viewerUid={lightseed.uid}
+                                canManageAll={isSuperAdmin}
                                 selectedIntelligenceId={preferredIntelligenceId}
                                 onSelect={(id) => {
                                     setPreferredIntelligenceId(id);
@@ -957,10 +977,22 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                         )}
                         {activeTab === 'history' && (
                             <div>
-                            <SectionTitle title={t('alignments')} sub="Resonances you've synced across the network." />
+                            <SectionTitle title={t('alignments')} sub={t('alignments_sub')} />
+
+                            {savedResonances.length > 0 && (
+                                <div className="mb-8">
+                                    <h4 className="mb-3 flex items-center gap-1.5 text-sm font-bold uppercase tracking-wider text-slate-500"><span className="text-amber-500">★</span> {t('saved_resonances')}</h4>
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                        {savedResonances.map((s, i) => (
+                                            <ResonanceCard key={i} s={s} isFavorite onToggleFavorite={() => unsaveResonance(s)} onReach={reachResonantTree} />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             {loading ? <div className="flex justify-center py-10"><Loading /></div> : (
                                 <div className="space-y-4">
-                                    {history.length === 0 ? <p className="text-slate-400 text-center py-10">No history yet.</p> : history.map((h) => (
+                                    {history.length === 0 ? <p className="text-slate-400 text-center py-10">{t('no_history')}</p> : history.map((h) => (
                                         <div key={h.id} className="border border-slate-200 p-4 rounded-lg bg-slate-50 flex justify-between items-center">
                                             <div>
                                                 <p className="font-bold text-sm text-slate-700">{h.status}</p>

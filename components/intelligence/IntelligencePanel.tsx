@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Icons } from '../ui/Icons';
 import { showAlert } from '../ui/Dialog';
+import { useLanguage } from '../../contexts/LanguageContext';
 import type { Intelligence } from '../../src/domain/intelligence';
 import {
-  getSelectableIntelligences, createIntelligence, updateIntelligence,
+  getManageableIntelligences, createIntelligence, updateIntelligence,
   saveProviderCredential, disconnectProviderCredential, type CredentialScope,
 } from '../../services/intelligence';
 import { testIntelligenceConnection } from '../../services/gemini';
@@ -31,31 +32,50 @@ export const IntelligencePanel = ({
   intelligenceOwnerUid,
   selectedIntelligenceId,
   onSelect,
-  title = 'Your intelligence',
-  subtitle = 'Choose whose whispers to listen to. It shapes your matches and answers in your messages.',
+  viewerUid,
+  canManageAll = false,
+  title,
+  subtitle,
 }: {
   scope: CredentialScope;
   credentialOwnerId: string;       // uid (user) or communityId (community) — owner of the key
   intelligenceOwnerUid: string;    // uid that owns created intelligence docs
   selectedIntelligenceId?: string;
   onSelect: (intelligenceId: string) => void;
+  viewerUid?: string;              // the signed-in user (for ownership checks)
+  canManageAll?: boolean;          // staff/superadmin — may enable/disable shared intelligences too
   title?: string;
   subtitle?: string;
 }) => {
+  const { t } = useLanguage();
   const [intelligences, setIntelligences] = useState<Intelligence[]>([]);
   const [showConnect, setShowConnect] = useState(false);
   const [name, setName] = useState(scope === 'community' ? 'Our Claude' : 'Claude');
   const [model, setModel] = useState('claude-sonnet-4-6');
   const [apiKey, setApiKey] = useState('');
   const [busy, setBusy] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
   const [testing, setTesting] = useState(false);
   const [test, setTest] = useState<{ question: string; reply: string } | null>(null);
   const [testError, setTestError] = useState<string | null>(null);
 
   const refresh = () => {
-    getSelectableIntelligences(intelligenceOwnerUid).then(setIntelligences).catch(() => {});
+    getManageableIntelligences(intelligenceOwnerUid).then(setIntelligences).catch(() => {});
   };
   useEffect(refresh, [intelligenceOwnerUid]);
+
+  const canManage = (intel: Intelligence) => !!viewerUid && (intel.ownerId === viewerUid || canManageAll);
+
+  const toggleEnabled = async (intel: Intelligence) => {
+    setTogglingId(intel.id);
+    try {
+      await updateIntelligence(intel.id, { enabled: intel.enabled === false });
+      refresh();
+    } catch (e: any) {
+      showAlert(e?.message || 'Could not change that intelligence.');
+    }
+    setTogglingId(null);
+  };
 
   // The anthropic intelligence already bound to this scope's key, if any.
   const existingClaude = intelligences.find(
@@ -127,46 +147,71 @@ export const IntelligencePanel = ({
   return (
     <div className="space-y-5">
       <div>
-        <h3 className="flex items-center gap-2 text-lg font-bold text-slate-800"><Icons.Sparkles /> {title}</h3>
-        <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
+        <h3 className="flex items-center gap-2 text-lg font-bold text-slate-800"><Icons.Sparkles /> {title ?? t('intel_your_title')}</h3>
+        <p className="mt-1 text-sm text-slate-500">{subtitle ?? t('intel_your_sub')}</p>
       </div>
 
-      {/* Choose the listening intelligence */}
+      {/* Choose the listening intelligence; enable/disable to control consumption */}
       <div className="grid gap-2 sm:grid-cols-2">
         {intelligences.map(intel => {
-          const active = selectedIntelligenceId === intel.id;
+          const isListening = selectedIntelligenceId === intel.id;
+          const isEnabled = intel.enabled !== false;
+          const manageable = canManage(intel);
           return (
-            <button key={intel.id} type="button" onClick={() => onSelect(intel.id)}
-              className={`rounded-2xl border p-3 text-left transition-all ${active ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-bold text-slate-800">{intel.name}</span>
-                {active && <span className="text-[10px] font-bold uppercase text-emerald-600">Listening</span>}
+            <div key={intel.id}
+              onClick={() => { if (isEnabled) onSelect(intel.id); }}
+              className={`rounded-2xl border p-3 transition-all ${
+                isListening ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100'
+                : !isEnabled ? 'border-slate-100 bg-slate-50/50 opacity-70'
+                : 'cursor-pointer border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-sm font-bold text-slate-800">{intel.name}</span>
+                    {isListening ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white"><span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />{t('intel_listening')}</span>
+                    ) : !isEnabled ? (
+                      <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500">{t('intel_disabled_badge')}</span>
+                    ) : (
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500">{t('intel_enabled_badge')}</span>
+                    )}
+                  </div>
+                  <div className="mt-0.5 text-[11px] text-slate-500">{PROVIDER_LABEL[intel.provider] || intel.provider}{intel.connected ? ` · key ${intel.keyHint || 'set'}` : ''}</div>
+                  {intel.description && <div className="mt-1 line-clamp-2 text-xs text-slate-400">{intel.description}</div>}
+                </div>
+                {manageable && (
+                  <button type="button" disabled={togglingId === intel.id}
+                    onClick={(e) => { e.stopPropagation(); toggleEnabled(intel); }}
+                    className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold transition-colors disabled:opacity-50 ${isEnabled ? 'bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-600' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}>
+                    {togglingId === intel.id ? '…' : isEnabled ? t('intel_disable') : t('intel_enable')}
+                  </button>
+                )}
               </div>
-              <div className="mt-0.5 text-[11px] text-slate-500">{PROVIDER_LABEL[intel.provider] || intel.provider}{intel.connected ? ` · key ${intel.keyHint || 'set'}` : ''}</div>
-              {intel.description && <div className="mt-1 line-clamp-2 text-xs text-slate-400">{intel.description}</div>}
-            </button>
+            </div>
           );
         })}
       </div>
+
+      <p className="text-[11px] leading-snug text-slate-400">{t('intel_note')}</p>
 
       {/* Test the listening intelligence with a real, genesis-grounded question */}
       <div className="space-y-2">
         <button type="button" onClick={runTest} disabled={testing || !selectedIntelligenceId}
           className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-xs font-bold text-amber-300 transition-colors hover:bg-slate-800 disabled:opacity-50">
-          {testing ? 'Asking…' : '✦ Test with a genesis question'}
+          {testing ? t('intel_asking') : '✦ ' + t('intel_test')}
         </button>
         {testError && (
           <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">
-            <p className="font-bold">The intelligence didn’t answer.</p>
+            <p className="font-bold">{t('intel_test_fail')}</p>
             <p className="mt-1 font-mono">{testError}</p>
-            <p className="mt-1 text-red-500">If this says “internal”, the Cloud Functions or the <code>ANTHROPIC_API_KEY</code> secret likely aren’t deployed yet.</p>
+            <p className="mt-1 text-red-500">{t('intel_test_internal')}</p>
           </div>
         )}
         {test && (
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs">
-            <p className="font-bold text-emerald-700">✓ It’s alive.</p>
-            <p className="mt-1 text-slate-500"><span className="font-semibold">Asked:</span> {test.question}</p>
-            <p dir="auto" className="mt-1 italic text-slate-700"><span className="font-semibold not-italic text-emerald-700">Answered:</span> {test.reply}</p>
+            <p className="font-bold text-emerald-700">✓ {t('intel_alive')}</p>
+            <p className="mt-1 text-slate-500"><span className="font-semibold">{t('intel_asked')}</span> {test.question}</p>
+            <p dir="auto" className="mt-1 italic text-slate-700"><span className="font-semibold not-italic text-emerald-700">{t('intel_answered')}</span> {test.reply}</p>
           </div>
         )}
       </div>
@@ -177,12 +222,12 @@ export const IntelligencePanel = ({
           <div className="flex items-center gap-2">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-amber-300"><Icons.Sparkles /></span>
             <div>
-              <div className="text-sm font-bold text-slate-800">Claude {existingClaude?.connected && <span className="ml-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">connected {existingClaude.keyHint}</span>}</div>
-              <div className="text-[11px] text-slate-500">Bring your own Anthropic key — {scope === 'community' ? 'the community' : 'you'} pay Anthropic directly, and the whispers are truly yours.</div>
+              <div className="text-sm font-bold text-slate-800">Claude {existingClaude?.connected && <span className="ml-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">{t('intel_connected')} {existingClaude.keyHint}</span>}</div>
+              <div className="text-[11px] text-slate-500">{scope === 'community' ? t('intel_byo_community') : t('intel_byo_user')}</div>
             </div>
           </div>
           <button type="button" onClick={() => setShowConnect(s => !s)} className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100">
-            {existingClaude?.connected ? 'Update' : 'Connect'}
+            {existingClaude?.connected ? t('intel_update') : t('intel_connect')}
           </button>
         </div>
 
@@ -196,21 +241,21 @@ export const IntelligencePanel = ({
             </ol>
 
             <div className="rounded-lg border border-slate-200 bg-white p-3 text-[11px] leading-relaxed text-slate-500">
-              <p className="font-bold text-slate-600">Cost, quota & billing</p>
-              <p className="mt-1">Claude is pay-as-you-go: you add credit and Anthropic charges per message — roughly a fraction of a cent (Haiku) up to a few cents (Opus) each, by length and model. New keys start with low rate limits that rise automatically as you spend. You can set a hard monthly spend cap so it can never surprise you.</p>
+              <p className="font-bold text-slate-600">{t('intel_billing_title')}</p>
+              <p className="mt-1">{t('intel_billing_body')}</p>
               <div className="mt-2 flex flex-wrap gap-1.5">
-                <a href="https://console.anthropic.com/settings/billing" target="_blank" rel="noreferrer" className="rounded-full border border-slate-200 px-2 py-0.5 font-bold text-emerald-600 hover:bg-slate-50">Add credit ↗</a>
-                <a href="https://console.anthropic.com/settings/usage" target="_blank" rel="noreferrer" className="rounded-full border border-slate-200 px-2 py-0.5 font-bold text-emerald-600 hover:bg-slate-50">Usage & limits ↗</a>
-                <a href="https://console.anthropic.com/settings/limits" target="_blank" rel="noreferrer" className="rounded-full border border-slate-200 px-2 py-0.5 font-bold text-emerald-600 hover:bg-slate-50">Set a spend cap ↗</a>
+                <a href="https://console.anthropic.com/settings/billing" target="_blank" rel="noreferrer" className="rounded-full border border-slate-200 px-2 py-0.5 font-bold text-emerald-600 hover:bg-slate-50">{t('intel_add_credit')} ↗</a>
+                <a href="https://console.anthropic.com/settings/usage" target="_blank" rel="noreferrer" className="rounded-full border border-slate-200 px-2 py-0.5 font-bold text-emerald-600 hover:bg-slate-50">{t('intel_usage_limits')} ↗</a>
+                <a href="https://console.anthropic.com/settings/limits" target="_blank" rel="noreferrer" className="rounded-full border border-slate-200 px-2 py-0.5 font-bold text-emerald-600 hover:bg-slate-50">{t('intel_spend_cap')} ↗</a>
               </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="space-y-1">
-                <span className="text-[10px] font-bold uppercase text-slate-400">Name</span>
+                <span className="text-[10px] font-bold uppercase text-slate-400">{t('intel_name')}</span>
                 <input value={name} onChange={e => setName(e.target.value)} className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
               </label>
               <label className="space-y-1">
-                <span className="text-[10px] font-bold uppercase text-slate-400">Model</span>
+                <span className="text-[10px] font-bold uppercase text-slate-400">{t('intel_model')}</span>
                 <select value={model} onChange={e => setModel(e.target.value)} className="h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                   {CLAUDE_MODELS.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
                 </select>
@@ -220,14 +265,25 @@ export const IntelligencePanel = ({
               className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
             <div className="flex items-center gap-2">
               <button type="button" onClick={handleConnect} disabled={busy} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
-                {busy ? 'Connecting…' : 'Connect Claude'}
+                {busy ? t('intel_connecting') : t('intel_connect_claude')}
               </button>
               {existingClaude?.connected && (
-                <button type="button" onClick={handleDisconnect} disabled={busy} className="rounded-lg px-3 py-2 text-xs font-bold text-red-500 hover:text-red-600 disabled:opacity-50">Disconnect</button>
+                <button type="button" onClick={handleDisconnect} disabled={busy} className="rounded-lg px-3 py-2 text-xs font-bold text-red-500 hover:text-red-600 disabled:opacity-50">{t('intel_disconnect')}</button>
               )}
             </div>
           </div>
         )}
+      </div>
+
+      {/* Future: a way to keep the whispers flowing when a key's quota runs high. */}
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-dashed border-rose-200 bg-rose-50/50 p-3">
+        <p className="text-[11px] leading-snug text-rose-700/80">
+          <span className="font-bold">{t('intel_costs_adding')}</span> {t('intel_support_note')}
+        </p>
+        <button type="button" disabled title="Coming soon"
+          className="inline-flex shrink-0 cursor-not-allowed items-center gap-1 rounded-full bg-rose-100 px-3 py-1.5 text-[11px] font-bold text-rose-400">
+          <Icons.Heart filled={false} /> {t('intel_support_soon')}
+        </button>
       </div>
     </div>
   );

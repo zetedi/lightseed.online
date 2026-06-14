@@ -63,5 +63,8 @@ export interface VisionSynergy {
     vision2Title: string;
     reasoning: string;
     score: number;
+    // The trees behind each side of the resonance, so a conversation can be started with them.
+    tree1Id?: string;
+    tree2Id?: string;
 }
 

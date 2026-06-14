@@ -645,9 +645,11 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                     scope="community"
                     credentialOwnerId={community.id}
                     intelligenceOwnerUid={community.ownerId}
+                    viewerUid={currentUserId}
+                    canManageAll={!!canEdit}
                     selectedIntelligenceId={editDefaultIntelligenceId}
-                    title="This community’s voice"
-                    subtitle="Name your community’s AI and choose which model breathes through it. Connect Claude with the community’s own key, or keep the shared Osiris."
+                    title={t('intel_community_title')}
+                    subtitle={t('intel_community_sub')}
                     onSelect={(id) => {
                       setEditDefaultIntelligenceId(id);
                       const nextAvailable = Array.from(new Set([...editAvailableIntelligenceIds, id]));
@@ -763,7 +765,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                   </div>
 
                   <div>
-                    <label className="mb-2 block text-[10px] font-bold uppercase text-slate-400">Theme mood</label>
+                    <label className="mb-2 block text-[10px] font-bold uppercase text-slate-400">{t('theme_mood')}</label>
                     <ThemeEditor value={editTheme} onChange={setEditTheme} />
                   </div>
                 </div>

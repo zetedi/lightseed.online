@@ -157,10 +157,10 @@ export const sendMessageToOracle = async (
     return reply || "I'm here, listening.";
   } catch (error: any) {
     console.error("Oracle Reach Error:", error);
-    if (error.message?.includes("Forbidden") || error.message?.includes("suspended")) {
-        return "The Oracle is currently in deep meditation. Please come back later.";
-    }
-    return "I'm sorry, my connection to the forest is a bit weak right now.";
+    // Surface the real cause rather than hiding it — the most common reasons are a missing
+    // node Gemini key (billing) or an unconnected/rejected Claude key.
+    const detail = error?.message || 'unknown error';
+    return `⚠️ I couldn't reach this intelligence just now: ${detail}\n\nIf this mentions a key or billing, check your AI settings (Intelligence tab). If it's Gemini, the node key may be out of credit; switch your listening intelligence to a connected Claude.`;
   }
 }
 
@@ -267,10 +267,14 @@ const parseJsonObject = <T,>(text: string): T | null => {
 // connected Claude) does the matchmaking; otherwise the default Gemini path runs.
 export const findVisionSynergies = async (visions: Vision[], intelligenceId?: string): Promise<VisionSynergy[]> => {
     if (visions.length < 2) return [];
-    const visionsList = visions.map(v => `- Title: ${v.title}, Body: ${v.body}`).join('\n');
+    const visionsList = visions.map(v => `- Title: ${v.title}, Body: ${(v.body || v.description || '').slice(0, 400)}`).join('\n');
 
-    const prompt = `Analyze the following list of Visions and identify potential collaborations or thematic synergies between them.
-Return ONLY a JSON array of pairs that match well, no prose.
+    const prompt = `You help "life recognise life". Analyze the Visions below and find the pairs that most resonate — shared purpose, complementary gifts, or collaboration potential.
+
+Return ONLY a JSON array (no prose, no markdown). Each item must be exactly:
+{ "vision1Title": "<exact title of the first vision>", "vision2Title": "<exact title of the second vision>", "score": <integer 0-100 resonance>, "reasoning": "<one warm sentence on why they resonate>" }
+
+Use the visions' exact titles. Return at most 6 of the strongest pairs, highest score first. If none truly resonate, return [].
 
 Visions:
 ${visionsList}`;

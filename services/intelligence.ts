@@ -171,6 +171,19 @@ export const getSelectableIntelligences = async (ownerUid?: string): Promise<Int
     .sort((a, b) => a.name.localeCompare(b.name));
 };
 
+// Like getSelectableIntelligences but KEEPS disabled ones — so a management UI can show
+// them and offer to re-enable. (The selectable variant hides disabled by design.)
+export const getManageableIntelligences = async (ownerUid?: string): Promise<Intelligence[]> => {
+  const byId = new Map<string, Intelligence>();
+  const pub = await getDocs(query(intelligencesCol, where('public', '==', true)));
+  pub.docs.forEach(d => byId.set(d.id, mapDoc<Intelligence>(d)));
+  if (ownerUid) {
+    const mine = await getDocs(query(intelligencesCol, where('ownerId', '==', ownerUid)));
+    mine.docs.forEach(d => byId.set(d.id, mapDoc<Intelligence>(d)));
+  }
+  return Array.from(byId.values()).sort((a, b) => a.name.localeCompare(b.name));
+};
+
 export const createIntelligence = async (data: Omit<Intelligence, 'id' | 'createdAt'>) => {
   const ref = doc(intelligencesCol);
   await setDoc(ref, { ...data, createdAt: serverTimestamp() });

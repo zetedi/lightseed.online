@@ -45,8 +45,8 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly }: { onClose: () => vo
     try { await signInWithGoogle({ inviteId, inviteOnly }); onClose(); }
     catch (e: any) {
       showAlert(e?.message === 'INVITE_ONLY'
-        ? 'Lightseed is invite-only right now — you need an invitation to create a new account. Existing members can still sign in.'
-        : (e?.message || 'Sign-in failed.'));
+        ? t('auth_invite_only_alert')
+        : (e?.message || t('auth_signin_failed')));
     }
     setBusy(false);
   };
@@ -59,12 +59,12 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly }: { onClose: () => vo
       if (mode === 'signin') {
         await signInWithEmail(email, password);
       } else {
-        if (!agreed) { showAlert('Please accept the agreement to continue.'); setBusy(false); return; }
+        if (!agreed) { showAlert(t('auth_accept_agreement')); setBusy(false); return; }
         await signUpWithEmail(email, password, name, { inviteId, inviteOnly });
       }
       onClose();
     } catch (e: any) {
-      showAlert(e?.message === 'INVITE_ONLY' ? 'Lightseed is invite-only right now.' : (e?.message || 'Authentication failed.'));
+      showAlert(e?.message === 'INVITE_ONLY' ? t('auth_invite_only_short') : (e?.message || t('auth_failed')));
     }
     setBusy(false);
   };
@@ -74,17 +74,17 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly }: { onClose: () => vo
     if (busy) return;
     setBusy(true);
     try { setRequestResult(await submitInviteRequest(email, reason) || 'created'); }
-    catch (e: any) { showAlert(e?.message || 'Could not send your request.'); }
+    catch (e: any) { showAlert(e?.message || t('auth_request_failed')); }
     setBusy(false);
   };
 
   const handleReset = async () => {
-    if (!email.trim()) { showAlert('Enter your email above first.'); return; }
-    try { await resetPassword(email); showAlert('Password reset email sent. Check your inbox.'); }
-    catch (e: any) { showAlert(e?.message || 'Could not send reset email.'); }
+    if (!email.trim()) { showAlert(t('auth_enter_email_first')); return; }
+    try { await resetPassword(email); showAlert(t('auth_reset_sent')); }
+    catch (e: any) { showAlert(e?.message || t('auth_reset_failed')); }
   };
 
-  const title = mode === 'request' ? 'Request an invitation' : (mode === 'signup' ? 'Join lightseed' : t('sign_in'));
+  const title = mode === 'request' ? t('auth_request_invitation') : (mode === 'signup' ? t('auth_join') : t('sign_in'));
 
   return (
     <Modal title={title} onClose={onClose}>
@@ -93,56 +93,56 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly }: { onClose: () => vo
           <div className={`space-y-3 rounded-xl border p-5 text-center text-sm ${requestResult === 'pending_invite_exists' ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-emerald-200 bg-emerald-50 text-emerald-800'}`}>
             {requestResult === 'pending_invite_exists' ? (
               <>
-                <p className="text-base font-bold">An invitation is already waiting</p>
-                <p>There's a pending invitation for this email. Please check your inbox (and spam). If you can't find it, reach out to the member who invited you, or a community admin.</p>
+                <p className="text-base font-bold">{t('auth_invite_waiting_title')}</p>
+                <p>{t('auth_invite_waiting_body')}</p>
               </>
             ) : requestResult === 'already_requested' ? (
               <>
-                <p className="text-base font-bold">You've already requested 🌱</p>
-                <p>Your request is in — a steward will review it. Hang tight.</p>
+                <p className="text-base font-bold">{t('auth_already_requested_title')}</p>
+                <p>{t('auth_already_requested_body')}</p>
               </>
             ) : (
               <>
-                <p className="text-base font-bold">Request received 🌱</p>
-                <p>A steward will read your words. If it resonates, you'll receive an invitation by email.</p>
+                <p className="text-base font-bold">{t('auth_request_received_title')}</p>
+                <p>{t('auth_request_received_body')}</p>
               </>
             )}
-            <button onClick={() => { setRequestResult(null); setMode('signin'); }} className="font-bold text-emerald-700">Back to sign in</button>
+            <button onClick={() => { setRequestResult(null); setMode('signin'); }} className="font-bold text-emerald-700">{t('auth_back_to_signin')}</button>
           </div>
         ) : (
           <form onSubmit={handleRequest} className="space-y-3">
-            <p className="text-sm text-slate-500">Lightseed grows by invitation. Share a little about why you'd like to join, and a steward may invite you in.</p>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="Your email" className={field} />
-            <textarea value={reason} onChange={e => setReason(e.target.value)} placeholder="Why would you like to join? Your reasoning / motivation…" className="min-h-28 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            <p className="text-sm text-slate-500">{t('auth_request_intro')}</p>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder={t('auth_your_email')} className={field} />
+            <textarea value={reason} onChange={e => setReason(e.target.value)} placeholder={t('auth_reason_placeholder')} className="min-h-28 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
             <button type="submit" disabled={busy} className="w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white shadow-md transition-colors hover:bg-emerald-700 disabled:opacity-50">
-              {busy ? '…' : 'Request an invitation'}
+              {busy ? '…' : t('auth_request_invitation')}
             </button>
-            <button type="button" onClick={() => setMode('signin')} className="w-full text-center text-xs text-slate-500 hover:text-slate-700">Back to sign in</button>
+            <button type="button" onClick={() => setMode('signin')} className="w-full text-center text-xs text-slate-500 hover:text-slate-700">{t('auth_back_to_signin')}</button>
           </form>
         )
       ) : (
         <div className="space-y-4">
           {inviteId && inviteValid === false && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">This invitation is no longer valid or has already been used. You can still sign in below.</div>
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{t('auth_invite_invalid')}</div>
           )}
           {lockedEmail && inviteValid && (
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">You've been invited as <span className="font-bold">{lockedEmail}</span>.</div>
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{t('auth_invited_as')} <span className="font-bold">{lockedEmail}</span>.</div>
           )}
 
           <button onClick={handleGoogle} disabled={busy} className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-50">
-            <Icons.Globe /> <span>Continue with Google</span>
+            <Icons.Globe /> <span>{t('auth_continue_google')}</span>
           </button>
 
           <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-            <div className="h-px flex-1 bg-slate-200" /> or <div className="h-px flex-1 bg-slate-200" />
+            <div className="h-px flex-1 bg-slate-200" /> {t('auth_or')} <div className="h-px flex-1 bg-slate-200" />
           </div>
 
           <form onSubmit={handleEmailSubmit} className="space-y-3">
             {mode === 'signup' && (
-              <input value={name} onChange={e => setName(e.target.value)} placeholder="Your name" className={field} />
+              <input value={name} onChange={e => setName(e.target.value)} placeholder={t('auth_your_name')} className={field} />
             )}
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} disabled={!!lockedEmail} required placeholder="Email" className={field} />
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} placeholder={mode === 'signup' ? 'Set a password (min 6 characters)' : 'Password'} className={field} />
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} disabled={!!lockedEmail} required placeholder={t('auth_email')} className={field} />
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} placeholder={mode === 'signup' ? t('auth_set_password') : t('auth_password')} className={field} />
 
             {mode === 'signup' && (
               <label className="flex items-start gap-2 text-xs leading-relaxed text-slate-600">
@@ -156,12 +156,12 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly }: { onClose: () => vo
 
             {mode === 'signup' && !canSignup ? (
               <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-500">
-                <p>Lightseed is invite-only right now — you need an invitation to create an account.</p>
-                <button type="button" onClick={() => { setMode('request'); }} className="font-bold text-emerald-600">Request an invitation →</button>
+                <p>{t('auth_invite_only_note')}</p>
+                <button type="button" onClick={() => { setMode('request'); }} className="font-bold text-emerald-600">{t('auth_request_arrow')}</button>
               </div>
             ) : (
               <button type="submit" disabled={busy || (mode === 'signup' && !agreed)} className="w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white shadow-md transition-colors hover:bg-emerald-700 disabled:opacity-50">
-                {busy ? '…' : (mode === 'signup' ? 'Create account' : t('sign_in'))}
+                {busy ? '…' : (mode === 'signup' ? t('auth_create_account') : t('sign_in'))}
               </button>
             )}
           </form>
@@ -169,13 +169,13 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly }: { onClose: () => vo
           <div className="flex items-center justify-between text-xs text-slate-500">
             {mode === 'signin' ? (
               <>
-                <button onClick={handleReset} className="hover:text-slate-700">Forgot password?</button>
+                <button onClick={handleReset} className="hover:text-slate-700">{t('auth_forgot_password')}</button>
                 {(!inviteOnly || inviteValid)
-                  ? <button onClick={() => setMode('signup')} className="font-bold text-emerald-600">Create an account</button>
-                  : <button onClick={() => setMode('request')} className="font-bold text-emerald-600">Request an invitation</button>}
+                  ? <button onClick={() => setMode('signup')} className="font-bold text-emerald-600">{t('auth_create_an_account')}</button>
+                  : <button onClick={() => setMode('request')} className="font-bold text-emerald-600">{t('auth_request_invitation')}</button>}
               </>
             ) : (
-              <button onClick={() => setMode('signin')} className="font-bold text-emerald-600">Already have an account? Sign in</button>
+              <button onClick={() => setMode('signin')} className="font-bold text-emerald-600">{t('auth_have_account')}</button>
             )}
           </div>
         </div>

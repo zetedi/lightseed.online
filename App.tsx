@@ -21,6 +21,7 @@ import {
   getPendingAlignments,
   acceptAlignment,
   fetchVisions,
+  getLifetreeById,
   createVision,
   deleteLifetree,
   deleteVision,
@@ -58,6 +59,8 @@ import { GrowthPlayerModal } from './components/GrowthPlayerModal';
 import { LightseedProfile } from './components/LightseedProfile';
 import { Dashboard } from './components/Dashboard';
 import { Loading } from './components/ui/Loading';
+import { ResonanceScan } from './components/ui/ResonanceScan';
+import { ResonancePanel, ResonanceCard, resonanceId } from './components/ResonancePanel';
 import { SectionHeader } from './components/ui/SectionHeader';
 import { LifeseedWidget } from './components/LifeseedWidget';
 import { NewsletterAdmin } from './components/NewsletterAdmin';
@@ -214,6 +217,18 @@ const AppContent = () => {
     // AI Synergy State
     const [synergies, setSynergies] = useState<VisionSynergy[]>([]);
     const [isAnalyzingSynergy, setIsAnalyzingSynergy] = useState(false);
+    const [lastSynergyAt, setLastSynergyAt] = useState(0); // ms of the last analysis (cost gate)
+    const [favoriteResonances, setFavoriteResonances] = useState<VisionSynergy[]>([]);
+    const favoriteResonanceIds = useMemo(() => new Set(favoriteResonances.map(resonanceId)), [favoriteResonances]);
+
+    const toggleFavoriteResonance = (s: VisionSynergy) => {
+        setFavoriteResonances(prev => {
+            const id = resonanceId(s);
+            const next = prev.some(f => resonanceId(f) === id) ? prev.filter(f => resonanceId(f) !== id) : [...prev, s];
+            try { localStorage.setItem('resonance_favorites_v1', JSON.stringify(next)); } catch {}
+            return next;
+        });
+    };
 
     const config = useConfig(impersonatedCommunity || hostCommunity);
     const [themeModePreference, setThemeModePreference] = useState<ThemeModePreference>(() => {
@@ -434,7 +449,8 @@ const AppContent = () => {
             setData([]);
             setLastDoc(null);
             setHasMore(true);
-            setSynergies([]);
+            // Note: synergies are intentionally NOT cleared here — they're tab-independent and
+            // cached, so they remain visible in the Observatory after analysing in Visions.
         }
 
         if (!reset && !hasMore) return;
@@ -520,18 +536,84 @@ const AppContent = () => {
         setLoadingMore(false);
     };
 
-    const handleAnalyzeSynergy = async () => {
-        if (data.length < 2) return;
+    // A stable fingerprint of a vision set, so a cached result is tied to its visions.
+    const synergyKey = (items: any[]) => items.map(v => v.id).sort().join(',');
+
+    // Resonance refreshes once a week for members; admins have no limit. The whole point is
+    // to protect the AI bill (each analysis spends the reader's key — or the node's).
+    const SYNERGY_COOLDOWN = 7 * 24 * 3600 * 1000;
+    const isStaff = isAdmin || isSuperAdmin;
+    const synergyCooldownLeft = lastSynergyAt ? SYNERGY_COOLDOWN - (Date.now() - lastSynergyAt) : 0;
+    const canRefreshResonance = isStaff || synergyCooldownLeft <= 0;
+
+    // The single analysis path: gate → fetch visions → analyse → cache. Callers supply how
+    // to get the visions (the current tab's list, or a fresh network fetch from Observatory).
+    const runResonance = async (getVisions: () => Promise<any[]>) => {
+        if (!canRefreshResonance) {
+            const days = Math.max(1, Math.ceil(synergyCooldownLeft / (24 * 3600 * 1000)));
+            showAlert(`Resonance refreshes once a week — about ${days} more day${days === 1 ? '' : 's'} to go.`);
+            return;
+        }
         setIsAnalyzingSynergy(true);
         try {
-            const results = await findVisionSynergies(data, preferredIntelligenceId);
+            const visions = await getVisions();
+            if (visions.length < 2) { showAlert('At least two visions are needed to find resonance.'); setIsAnalyzingSynergy(false); return; }
+            // Label each vision by its TREE name (visions are often auto-titled "Root Vision"),
+            // so resonances read tree-to-tree rather than "Root Vision + Root Vision".
+            const treeIds = Array.from(new Set(visions.map((v: any) => v.treeId || v.lifetreeId).filter(Boolean)));
+            const treeNames = new Map<string, string>();
+            await Promise.all(treeIds.map(async (tid: string) => {
+                try { const tr = await getLifetreeById(tid); if (tr?.name) treeNames.set(tid, tr.name); } catch {}
+            }));
+            const labeled = visions.map((v: any) => {
+                const tid = v.treeId || v.lifetreeId;
+                const treeName = tid ? treeNames.get(tid) : '';
+                const generic = !v.title || v.title.trim().toLowerCase() === 'root vision';
+                return { ...v, title: treeName || (generic ? 'A vision' : v.title) };
+            });
+            // Map the labels back to tree ids so a conversation can be started from a resonance.
+            const treeIdByName = new Map<string, string>();
+            labeled.forEach((v: any) => { const tid = v.treeId || v.lifetreeId; if (tid && v.title) treeIdByName.set(v.title.trim().toLowerCase(), tid); });
+            const results = (await findVisionSynergies(labeled, preferredIntelligenceId)).map(r => ({
+                ...r,
+                tree1Id: treeIdByName.get((r.vision1Title || '').trim().toLowerCase()),
+                tree2Id: treeIdByName.get((r.vision2Title || '').trim().toLowerCase()),
+            }));
             setSynergies(results);
+            const at = Date.now();
+            setLastSynergyAt(at);
+            // Cache so the resonances survive reloads (and feed the Observatory) without re-spending.
+            try { localStorage.setItem('synergy_cache_v1', JSON.stringify({ key: synergyKey(visions), at, results })); } catch {}
+            if (results.length === 0) showAlert('No clear resonances surfaced this time — try again as more visions grow.');
         } catch (e) {
             console.error(e);
-            showAlert("Synergy analysis failed. Try again later.");
+            showAlert('Synergy analysis failed. Try again later.');
         }
         setIsAnalyzingSynergy(false);
     };
+
+    const handleAnalyzeSynergy = () => runResonance(async () => data);
+    const refreshResonanceObservatory = () => runResonance(async () => (await fetchVisions()).items);
+
+    // Start a conversation with a resonant tree — resolve it, then open the reach thread.
+    const reachResonantTree = async (treeId: string) => {
+        try { const tree = await getLifetreeById(treeId); if (tree) openReach(tree); }
+        catch { showAlert('Could not open a conversation with that tree.'); }
+    };
+
+    // Hydrate cached resonances on load (any tab) so the Observatory and Visions tab both
+    // show the last result, and the weekly cooldown is known.
+    useEffect(() => {
+        try {
+            const cached = JSON.parse(localStorage.getItem('synergy_cache_v1') || 'null');
+            if (cached) {
+                if (Array.isArray(cached.results)) setSynergies(cached.results);
+                if (cached.at) setLastSynergyAt(cached.at);
+            }
+            const favs = JSON.parse(localStorage.getItem('resonance_favorites_v1') || 'null');
+            if (Array.isArray(favs)) setFavoriteResonances(favs);
+        } catch {}
+    }, []);
 
     const handleTreeUpdate = (treeId: string, updates: any) => {
         setData(prev => prev.map(item => item.id === treeId ? { ...item, ...updates } : item));
@@ -715,6 +797,7 @@ const AppContent = () => {
                     reachPartner={reachTree}
                     reachOpenSignal={reachOpenSignal}
                     onConsumeReach={() => setReachTree(null)}
+                    onReachTree={(tree: Lifetree) => openReach(tree)}
                 />
             );
         }
@@ -864,35 +947,77 @@ const AppContent = () => {
                                     </div>
                                     <div className="min-w-0">
                                         <h2 className="break-words text-2xl font-light tracking-wide text-white drop-shadow">{t('pending_alignments')}</h2>
-                                        <p className="text-sm text-white/80 drop-shadow">Resonances awaiting your acceptance to sync across the network.</p>
+                                        <p className="text-sm text-white/80 drop-shadow">{t('observatory_subtitle')}</p>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="p-6">
-                                {alignments.length === 0 ? (
-                                    <div className="flex flex-col items-center rounded-2xl border border-slate-100 bg-slate-50/60 p-12 text-center">
-                                        <div className="mb-6 rounded-full bg-white p-4 shadow-sm">
-                                            <Logo width={100} height={100} className="text-slate-800" />
+                            {/* The empty "field is calm" state only when there's truly nothing —
+                                no alignments AND no resonances. Otherwise the resonance section carries it. */}
+                            {(alignments.length > 0 || synergies.length === 0) && (
+                                <div className="p-6">
+                                    {alignments.length === 0 ? (
+                                        <div className="flex flex-col items-center rounded-2xl border border-slate-100 bg-slate-50/60 p-12 text-center">
+                                            <div className="mb-6 rounded-full bg-white p-4 shadow-sm">
+                                                <Logo width={100} height={100} className="text-slate-800" />
+                                            </div>
+                                            <h3 className="mb-2 text-xl font-light text-slate-800">{t('no_pending_resonance')}</h3>
+                                            <p className="text-slate-500">{t('ether_quiet')}</p>
                                         </div>
-                                        <h3 className="mb-2 text-xl font-light text-slate-800">{t('no_pending_resonance')}</h3>
-                                        <p className="text-slate-500">{t('ether_quiet')}</p>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4">
-                                        {alignments.map(a => (
-                                            <div key={a.id} className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 text-slate-800 shadow-sm animate-in fade-in slide-in-from-bottom-2">
-                                                <div className="flex items-center justify-between">
-                                                    <div><p className="font-bold">{t('alignment_request')}</p><p className="text-sm text-slate-500">{t('from_another_tree')}</p></div>
-                                                    <div className="flex gap-2">
-                                                        <button onClick={() => onAcceptAlignment(a.id)} className="rounded-full bg-sky-500 px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-sky-600">{t('accept_sync')}</button>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            {alignments.map(a => (
+                                                <div key={a.id} className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 text-slate-800 shadow-sm animate-in fade-in slide-in-from-bottom-2">
+                                                    <div className="flex items-center justify-between">
+                                                        <div><p className="font-bold">{t('alignment_request')}</p><p className="text-sm text-slate-500">{t('from_another_tree')}</p></div>
+                                                        <div className="flex gap-2">
+                                                            <button onClick={() => onAcceptAlignment(a.id)} className="rounded-full bg-sky-500 px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-sky-600">{t('accept_sync')}</button>
+                                                        </div>
                                                     </div>
                                                 </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                            {/* Living Intelligence Resonance — inside the same box. */}
+                            <ResonanceScan active={isAnalyzingSynergy}>
+                                <div className="border-t border-amber-100">
+                                    <div className="flex items-center justify-between gap-3 border-b border-amber-100 bg-amber-50/60 p-5">
+                                        <div className="flex min-w-0 items-center gap-3">
+                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white"><Icons.SparkleFill size={22} /></div>
+                                            <div className="min-w-0">
+                                                <h2 className="text-xl font-light text-slate-800">{t('living_resonance')}</h2>
+                                                <p className="text-sm text-slate-500">
+                                                    {lastSynergyAt ? `${t('last_read')} ${new Date(lastSynergyAt).toLocaleDateString()}` : t('resonance_field_hint')}
+                                                </p>
                                             </div>
-                                        ))}
+                                        </div>
+                                        <button
+                                            onClick={refreshResonanceObservatory}
+                                            disabled={isAnalyzingSynergy || !canRefreshResonance}
+                                            title={!canRefreshResonance ? `Refreshes weekly — about ${Math.max(1, Math.ceil(synergyCooldownLeft / 86400000))} day(s) left` : 'Re-read the field'}
+                                            className="inline-flex shrink-0 items-center gap-2 rounded-full bg-amber-500 px-4 py-2 text-xs font-bold text-white shadow transition-all hover:bg-amber-600 active:scale-95 disabled:opacity-50"
+                                        >
+                                            {isAnalyzingSynergy
+                                                ? <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+                                                : <Icons.Refresh />}
+                                            <span>{isAnalyzingSynergy ? t('reading') : canRefreshResonance ? t('refresh') : `~${Math.max(1, Math.ceil(synergyCooldownLeft / 86400000))}d`}</span>
+                                        </button>
                                     </div>
-                                )}
-                            </div>
+                                    <div className="p-5">
+                                        {synergies.length > 0 ? (
+                                            <div className="grid gap-4 md:grid-cols-2">
+                                                {[...synergies].sort((a, b) => (b.score || 0) - (a.score || 0)).map((s, i) => (
+                                                    <ResonanceCard key={i} s={s} isFavorite={favoriteResonanceIds.has(resonanceId(s))} onToggleFavorite={() => toggleFavoriteResonance(s)} onReach={reachResonantTree} />
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p className="py-8 text-center text-sm text-slate-400">{t('no_resonances_yet')}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </ResonanceScan>
                         </div>
                     </div>
                 )}
@@ -976,7 +1101,7 @@ const AppContent = () => {
                         <SectionHeader
                             icon={<Icons.Eye />}
                             title={t('visions')}
-                            subtitle="Directions of growth seeking resonance and shared momentum."
+                            subtitle={t('visions_sub')}
                             footer={searchBox}
                             action={
                                 <div className="flex items-center gap-2">
@@ -993,41 +1118,27 @@ const AppContent = () => {
                                         disabled={isAnalyzingSynergy || data.length < 2}
                                         className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-full font-bold shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 border border-amber-400/30 active:scale-95 disabled:opacity-50 whitespace-nowrap"
                                     >
-                                        {isAnalyzingSynergy ? <Loading /> : <Icons.Venn />}
-                                        <span className="hidden sm:inline">{isAnalyzingSynergy ? 'Analyzing...' : 'Analyze'}</span>
+                                        {isAnalyzingSynergy
+                                            ? <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+                                            : <Icons.Venn />}
+                                        <span className="hidden sm:inline">{isAnalyzingSynergy ? t('analyzing') : t('analyze')}</span>
                                     </button>
                                 </div>
                             }
                         >
-                            {synergies.length > 0 && (
-                                <div className="mb-6 bg-amber-50/90 backdrop-blur-md p-6 rounded-2xl border-2 border-amber-200 shadow-lg animate-in zoom-in-95 duration-500">
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <div className="bg-amber-500 text-white p-2 rounded-xl shadow-lg"><Icons.SparkleFill size={24} /></div>
-                                        <h3 className="text-2xl font-light text-amber-900 italic">Living Intelligence Resonance</h3>
-                                    </div>
-                                    <div className="grid gap-4 md:grid-cols-2">
-                                        {synergies.map((s, i) => (
-                                            <div key={i} className="bg-white/90 p-4 rounded-xl shadow-sm border border-amber-100">
-                                                <div className="flex justify-between items-start mb-2">
-                                                    <div className="text-sm font-bold text-slate-800">{s.vision1Title} + {s.vision2Title}</div>
-                                                    <div className="bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Resonance: {s.score}%</div>
-                                                </div>
-                                                <p className="text-xs text-slate-600 italic">"{s.reasoning}"</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
+                            <ResonancePanel synergies={synergies} className="mb-6" favorites={favoriteResonanceIds} onToggleFavorite={toggleFavoriteResonance} onReach={reachResonantTree} />
 
-                            <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                                {filteredData.length === 0 && !loadingMore ? <p className="col-span-full text-center text-slate-400 py-10">{t('no_visions_found')}</p> :
-                                    filteredData.map((item: any) => (
-                                        <div key={item.id} onClick={() => setSelectedVision(item)} className="cursor-pointer">
-                                            <VisionCard vision={item} />
-                                        </div>
-                                    ))
-                                }
-                            </div>
+                            <ResonanceScan active={isAnalyzingSynergy}>
+                                <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                                    {filteredData.length === 0 && !loadingMore ? <p className="col-span-full text-center text-slate-400 py-10">{t('no_visions_found')}</p> :
+                                        filteredData.map((item: any) => (
+                                            <div key={item.id} onClick={() => setSelectedVision(item)} className="cursor-pointer">
+                                                <VisionCard vision={item} />
+                                            </div>
+                                        ))
+                                    }
+                                </div>
+                            </ResonanceScan>
                         </SectionHeader>
                     </div>
                 ) : tab === 'events' ? (
@@ -1035,7 +1146,7 @@ const AppContent = () => {
                         <SectionHeader
                             icon={<Icons.Loc />}
                             title={t('events')}
-                            subtitle="Community gatherings, ceremonies, actions, and shared moments."
+                            subtitle={t('events_sub')}
                             footer={searchBox}
                         >
                             <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -1059,7 +1170,7 @@ const AppContent = () => {
                         <SectionHeader
                             icon={<Icons.HeartPulse />}
                             title={t('pulses')}
-                            subtitle="Offerings, dreams, observations, and signals rippling through the network."
+                            subtitle={t('pulses_sub')}
                             footer={searchBox}
                             action={lightseed && (
                                 <button onClick={() => setShowPulseModal(true)} className="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2.5 rounded-full font-bold shadow-lg shadow-sky-600/20 transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap">
