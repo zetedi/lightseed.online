@@ -561,15 +561,16 @@ const AppContent = () => {
             // Label each vision by its TREE name (visions are often auto-titled "Root Vision"),
             // so resonances read tree-to-tree rather than "Root Vision + Root Vision".
             const treeIds = Array.from(new Set(visions.map((v: any) => v.treeId || v.lifetreeId).filter(Boolean)));
-            const treeNames = new Map<string, string>();
+            const treeInfo = new Map<string, { name?: string; place?: string }>();
             await Promise.all(treeIds.map(async (tid: string) => {
-                try { const tr = await getLifetreeById(tid); if (tr?.name) treeNames.set(tid, tr.name); } catch {}
+                try { const tr = await getLifetreeById(tid); if (tr) treeInfo.set(tid, { name: tr.name, place: (tr as any).locationName }); } catch {}
             }));
             const labeled = visions.map((v: any) => {
                 const tid = v.treeId || v.lifetreeId;
-                const treeName = tid ? treeNames.get(tid) : '';
+                const info = tid ? treeInfo.get(tid) : undefined;
                 const generic = !v.title || v.title.trim().toLowerCase() === 'root vision';
-                return { ...v, title: treeName || (generic ? 'A vision' : v.title) };
+                // place + vision are the two bases of the resonance analysis.
+                return { ...v, title: info?.name || (generic ? 'A vision' : v.title), place: info?.place || '' };
             });
             // Map the labels back to tree ids so a conversation can be started from a resonance.
             const treeIdByName = new Map<string, string>();

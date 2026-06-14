@@ -4,7 +4,8 @@ import { showAlert, showConfirm } from "./ui/Dialog";
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
 import { Community, Lifetree, Lightseed, Pulse, Intelligence, Persona, Sanctuary } from '../types';
-import { updateCommunity, uploadImage, getTreesByDomain, deleteCommunity, createCommunityEvent, getCommunityByDomain, getCommunityEvents, toggleGuardianship, getSanctuariesByDomain } from '../services/firebase';
+import { updateCommunity, uploadImage, getTreesByDomain, deleteCommunity, createCommunityEvent, getCommunityByDomain, getCommunityEvents, toggleGuardianship, getSanctuariesByDomain, createDecision, voteOnDecision, getDecisions } from '../services/firebase';
+import { DECISION_NATURES, type Decision, type DecisionNature } from '../src/domain/decision';
 import { getSelectableIntelligences, listPersonas } from '../services/intelligence';
 import RichTextEditor from './ui/RichTextEditor';
 import { ImagePicker } from './ui/ImagePicker';
@@ -27,7 +28,7 @@ interface CommunityProfileProps {
   onEnterCommunityView?: (community: Community) => void;
 }
 
-type TabKey = 'vision' | 'firsttree' | 'sanctuary' | 'trees' | 'events' | LoreTabId | 'intelligence' | 'appearance';
+type TabKey = 'vision' | 'firsttree' | 'sanctuary' | 'trees' | 'events' | 'council' | LoreTabId | 'intelligence' | 'appearance';
 
 const PROVIDER_LABELS: Record<string, string> = {
   google: 'Google · Gemini',
@@ -74,6 +75,35 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
 
   const [linkedTrees, setLinkedTrees] = useState<Lifetree[]>([]);
   const [sanctuaries, setSanctuaries] = useState<Sanctuary[]>([]);
+
+  // Council — governance decisions
+  const [decisions, setDecisions] = useState<Decision[]>([]);
+  const [decTitle, setDecTitle] = useState('');
+  const [decNature, setDecNature] = useState<DecisionNature>('intention');
+  const [decBody, setDecBody] = useState('');
+  const [proposing, setProposing] = useState(false);
+  const [votingId, setVotingId] = useState<string | null>(null);
+  const refreshDecisions = () => { getDecisions(community.id).then(setDecisions).catch(() => {}); };
+  useEffect(() => { if (activeTab === 'council') refreshDecisions(); }, [activeTab, community.id]);
+
+  const handlePropose = async () => {
+    if (!currentUserId || !decTitle.trim()) return;
+    setProposing(true);
+    try {
+      await createDecision(community, { nature: decNature, title: decTitle.trim(), body: decBody.trim(), proposedBy: currentUserId });
+      setDecTitle(''); setDecBody(''); setDecNature('intention');
+      refreshDecisions();
+    } catch (e: any) { showAlert(e?.message || 'Could not propose the decision.'); }
+    setProposing(false);
+  };
+
+  const handleVote = async (id: string) => {
+    if (!currentUserId) { showAlert('Sign in to add your voice.'); return; }
+    setVotingId(id);
+    try { await voteOnDecision(id, currentUserId); refreshDecisions(); }
+    catch (e: any) { showAlert(e?.message || 'Could not record your voice.'); }
+    setVotingId(null);
+  };
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -323,6 +353,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     { key: 'sanctuary', label: 'The Sanctuary', icon: <Icons.Sun /> },
     { key: 'trees', label: 'Community Trees', icon: <Icons.Tree /> },
     { key: 'events', label: 'Events', icon: <Icons.Loc /> },
+    { key: 'council', label: t('council'), icon: <Icons.Venn /> },
     // The network's foundational story travels to every node's about page (the Yantra
     // stays with the central lightseed / lifeseed nodes).
     ...loreTabs.filter(tab => isNetworkHub || tab.id !== 'yantra').map(tab => ({ key: tab.id as TabKey, label: tab.label, icon: loreIcons[tab.id] })),
@@ -629,6 +660,60 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'council' && (
+              <div>
+                <SectionTitle title={t('council')} sub={t('council_sub')} />
+
+                {currentUserId && (
+                  <div className="mb-8 space-y-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+                    <h4 className="text-sm font-bold text-slate-700">{t('propose_decision')}</h4>
+                    <input value={decTitle} onChange={e => setDecTitle(e.target.value)} placeholder={t('decision_title_ph')} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                    <label className="block space-y-1">
+                      <span className="text-[10px] font-bold uppercase text-slate-400">{t('decision_nature')}</span>
+                      <select value={decNature} onChange={e => setDecNature(e.target.value as DecisionNature)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:max-w-xs">
+                        {DECISION_NATURES.map(n => <option key={n.id} value={n.id}>{t(('nature_' + n.id) as any)} · {n.votes} {t('voices')}</option>)}
+                      </select>
+                    </label>
+                    <textarea value={decBody} onChange={e => setDecBody(e.target.value)} placeholder={t('decision_body_ph')} className="min-h-20 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                    <button onClick={handlePropose} disabled={proposing || !decTitle.trim()} className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">{proposing ? '…' : t('propose')}</button>
+                  </div>
+                )}
+
+                {decisions.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-slate-400">{t('no_decisions')}</p>
+                ) : (
+                  <div className="space-y-3">
+                    {decisions.map(d => {
+                      const voted = !!currentUserId && (d.votes || []).includes(currentUserId);
+                      const passed = d.status === 'passed';
+                      return (
+                        <div key={d.id} className={`rounded-2xl border p-4 ${passed ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-white'}`}>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h4 className="text-sm font-bold text-slate-800">{d.title}</h4>
+                                <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-500">{t(('nature_' + d.nature) as any)}</span>
+                                {passed
+                                  ? <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">{t('passed')}</span>
+                                  : <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">{t('decision_open')}</span>}
+                              </div>
+                              {d.body && <p className="mt-1 text-xs italic text-slate-500">{d.body}</p>}
+                              <div className="mt-2 text-[11px] font-bold text-slate-400">{(d.votes || []).length} / {d.votesRequired} {t('voices')}</div>
+                            </div>
+                            {!passed && (
+                              <button onClick={() => handleVote(d.id)} disabled={votingId === d.id || voted} className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${voted ? 'bg-slate-100 text-slate-400' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}>
+                                {voted ? t('voted') : (votingId === d.id ? '…' : t('vote'))}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

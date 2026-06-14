@@ -8,6 +8,7 @@ export * from './src/domain/pulse';
 export * from './src/domain/reach';
 export * from './src/domain/link';
 export * from './src/domain/community';
+export * from './src/domain/decision';
 export * from './src/domain/intelligence';
 export * from './src/domain/sanctuary';
 export * from './src/domain/treeCircle';

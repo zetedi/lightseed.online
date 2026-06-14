@@ -263,20 +263,37 @@ const parseJsonObject = <T,>(text: string): T | null => {
     try { return JSON.parse(slice) as T; } catch { return null; }
 };
 
-// Analyze Vision Synergy. With an `intelligenceId` the listener's own AI (e.g. their
-// connected Claude) does the matchmaking; otherwise the default Gemini path runs.
-export const findVisionSynergies = async (visions: Vision[], intelligenceId?: string): Promise<VisionSynergy[]> => {
-    if (visions.length < 2) return [];
-    const visionsList = visions.map(v => `- Title: ${v.title}, Body: ${(v.body || v.description || '').slice(0, 400)}`).join('\n');
+// Depth of search — how many trees of the field we read at once. 12 around 1 (the 3D
+// kissing number) is the shell we analyse; we return at most 6 (the 2D circle, six around
+// one) — the strongest meetings around the centre of interest.
+export const RESONANCE_DEPTH = 12;
 
-    const prompt = `You help "life recognise life". Analyze the Visions below and find the pairs that most resonate — shared purpose, complementary gifts, or collaboration potential.
+// Analyze Vision Synergy. The matchmaking law is BALANCE: the strongest meeting of two
+// trees is not the most similar pair, but the pair that shares the most common ground AND
+// each carries the most that the other lacks — recognition × difference. Place and vision
+// are the two bases. With an `intelligenceId` the listener's own AI does the reading.
+export const findVisionSynergies = async (visions: Vision[], intelligenceId?: string, depth: number = RESONANCE_DEPTH): Promise<VisionSynergy[]> => {
+    if (visions.length < 2) return [];
+    const field = visions.slice(0, Math.max(2, depth));
+    const visionsList = field.map(v => {
+        const place = (v as any).place ? `, Place: ${(v as any).place}` : '';
+        return `- Tree: ${v.title}${place}, Vision: ${(v.body || v.description || '').slice(0, 400)}`;
+    }).join('\n');
+
+    const prompt = `You help "life recognise life". You read a field of trees — each with a place and a vision — and find the pairs whose MEETING would be most generative.
+
+The strongest meeting is NOT the most similar pair. It is the BALANCE of two forces:
+1. SHARED GROUND — resonant purpose, values, or place: enough common connection to recognise each other and have a bridge to meet on.
+2. COMPLEMENTARY DIFFERENCE — each carries a strong charge of what the other lacks: enough that is uncommon to remake each other.
+
+Score highest only where BOTH are strong — most-common AND most-uncommon at once. A near-duplicate pair (only overlap, nothing new) scores LOW: redundant. A pair with no common ground (nothing shared) scores LOW: unbridgeable. The lightning lives in between — familiar enough to recognise, strange enough to transform. Weigh place and vision as your two bases.
 
 Return ONLY a JSON array (no prose, no markdown). Each item must be exactly:
-{ "vision1Title": "<exact title of the first vision>", "vision2Title": "<exact title of the second vision>", "score": <integer 0-100 resonance>, "reasoning": "<one warm sentence on why they resonate>" }
+{ "vision1Title": "<exact tree name>", "vision2Title": "<exact tree name>", "score": <integer 0-100, the balance above>, "reasoning": "<one warm sentence naming BOTH their shared ground AND their spark of difference>" }
 
-Use the visions' exact titles. Return at most 6 of the strongest pairs, highest score first. If none truly resonate, return [].
+Use the exact tree names. Return at most 6 of the strongest pairs, highest score first. If none truly resonate, return [].
 
-Visions:
+The field:
 ${visionsList}`;
 
     try {

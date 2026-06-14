@@ -48,7 +48,7 @@ import {
   uploadString
 } from 'firebase/storage';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { type Pulse, type PulseType, type Lifetree, type Alignment, type Vision, type Community, type Sanctuary, type TreeOwnershipInvite, type InvitableRole, roleToTreeField } from '../types';
+import { type Pulse, type PulseType, type Lifetree, type Alignment, type Vision, type Community, type Sanctuary, type TreeOwnershipInvite, type InvitableRole, roleToTreeField, type Decision, type DecisionNature, votesRequired } from '../types';
 import { createBlock } from '../utils/crypto';
 import { oldEmeraldEarthThemeValues } from '../utils/theme';
 import { isExplicitlyValidatedTree } from '../utils/validation';
@@ -931,6 +931,75 @@ export const getCommunityEvents = async (communityId: string): Promise<Pulse[]> 
     return snap.docs
         .map(d => ({ id: d.id, ...(d.data() as any) } as Pulse))
         .filter(p => p.type === 'event')
+        .sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
+};
+
+// ---------------------------------------------------------------------------
+// Governance — an event that is a decision. Its NATURE sets the votes it needs.
+// Decisions are NOT a separate collection: they are pulses (type 'decision') on the one
+// immutable ledger, exactly as community events are. Pulse, event, decision — one chain.
+// ---------------------------------------------------------------------------
+
+export const createDecision = async (
+    community: Pick<Community, 'id' | 'domain'>,
+    data: { nature: DecisionNature; title: string; body?: string; subject?: string; proposedBy: string },
+): Promise<Decision> => {
+    const required = votesRequired(data.nature);
+    const votes = [data.proposedBy]; // the proposer's voice is the first vote
+    const passed = votes.length >= required;
+    const payload = {
+        type: 'decision',
+        communityId: community.id,
+        domain: normalizeDomain(community.domain),
+        nature: data.nature,
+        title: data.title,
+        body: data.body || '',
+        subject: data.subject || '',
+        authorId: data.proposedBy, // unified with pulses' author field
+        proposedBy: data.proposedBy,
+        votes,
+        votesRequired: required,
+        status: passed ? 'passed' as const : 'open' as const,
+    };
+    const hash = await createBlock('DECISION', payload, Date.now());
+    const ref = await addDoc(pulsesCollection, {
+        ...payload,
+        previousHash: 'DECISION',
+        hash,
+        ...(passed ? { passedAt: serverTimestamp() } : {}),
+        createdAt: serverTimestamp(),
+    });
+    return { id: ref.id, ...payload, previousHash: 'DECISION', hash } as unknown as Decision;
+};
+
+// Add a voice. When the circle reaches the threshold, the decision passes and an
+// enactment block is written to the chain. Transactional so two votes can't race past it.
+export const voteOnDecision = async (decisionId: string, uid: string): Promise<'passed' | 'open' | 'already'> => {
+    const ref = doc(db, 'pulses', decisionId);
+    return runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+        if (!snap.exists()) throw new Error('Decision not found.');
+        const d = snap.data() as any;
+        if (d.status === 'passed') return 'passed' as const;
+        const votes: string[] = Array.isArray(d.votes) ? d.votes : [];
+        if (votes.includes(uid)) return 'already' as const;
+        const next = [...votes, uid];
+        const required = d.votesRequired ?? votesRequired(d.nature);
+        if (next.length >= required) {
+            const enactedHash = await createBlock(d.hash || 'DECISION', { decision: decisionId, votes: next, enacted: true }, Date.now());
+            tx.update(ref, { votes: next, status: 'passed', passedAt: serverTimestamp(), enactedHash });
+            return 'passed' as const;
+        }
+        tx.update(ref, { votes: next });
+        return 'open' as const;
+    });
+};
+
+export const getDecisions = async (communityId: string): Promise<Decision[]> => {
+    const snap = await getDocs(query(pulsesCollection, where('communityId', '==', communityId)));
+    return snap.docs
+        .map(d => ({ id: d.id, ...(d.data() as any) } as Decision))
+        .filter(p => (p as any).type === 'decision')
         .sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
 };
 

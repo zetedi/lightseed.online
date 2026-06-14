@@ -182,6 +182,9 @@ service cloud.firestore {
         (isStaff() || isCommunityOwner(resource.data.communityId));
     }
 
+    // (Governance decisions are now pulses of type 'decision' — see the /pulses rules.
+    // create: any signed-in member [non-event branch]; update: signed-in, for voting.)
+
     // Provider credentials: third-party AI API keys. NEVER readable or writable by any
     // client — they are managed exclusively by Cloud Functions via the Admin SDK
     // (saveProviderCredential / generateClaudeContent), which bypass these rules.
