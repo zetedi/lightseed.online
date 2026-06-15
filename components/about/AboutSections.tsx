@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { showAlert } from "../ui/Dialog";
 import Logo from '../Logo';
 import { Icons } from '../ui/Icons';
 import { Modal } from '../ui/Modal';
-import { subscribeToNewsletter } from '../../services/firebase';
+import { subscribeToNewsletter, getGenesisHash } from '../../services/firebase';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 // Shared "lore" sections that make up the foundational story of the network.
@@ -311,6 +311,46 @@ const SymbolCard = ({ title, description, type, link }: { title: string, descrip
     </div>
 );
 
+// The founding vision of the network — block 000 of the immutable chain. This is the
+// genesis pulse that every node descends from, so it travels to every about page.
+const GENESIS_TEXT = `The purpose of lightseed is to bring joy. The joy of realizing the bliss of conscious, compassionate, grateful existence by opening a portal to the center of life. By creating a bridge between creator and creation, science and spirituality, virtual and real, nothing and everything. It is designed to intimately connect our inner Self, our culture, our trees and the tree of life, the material and the digital, online world into a sustainable and sustaining circle of unified vibration, sound and light. It aims to merge us into a common flow for all beings to be liberated, wise, strong, courageous and connected. It is rooted in nonviolence, compassion, generosity, gratitude and love. It is blockchain (truthfulness), cloud (global, distributed, resilient), ai (for connecting dreams and technology), regen (nature centric) native. It is an inspiration, an impulse towards a quantum leap in consciousness, a prompt both for human and artificial intelligence for action towards transcending humanity into a new era, a New Earth, Universe and Field with the help of our most important evolutionary sisters and brothers, the trees.`;
+
+// 01 — The Genesis Block: the first, immutable pulse the whole network grows from.
+export const GenesisSection = () => {
+    // The true on-chain hash of block 000, loaded from the shared genesis tree. Falls
+    // back to a placeholder while loading or if the chain isn't reachable.
+    const [hash, setHash] = useState<string | null>(null);
+    useEffect(() => { getGenesisHash().then(setHash).catch(() => {}); }, []);
+    const shortHash = hash ? `0x${hash.slice(0, 6)}...${hash.slice(-4)}` : '0x93...a7f2';
+
+    return (
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="bg-white p-8 md:p-12 rounded-xl shadow-xl border border-slate-100 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-400 via-purple-500 to-amber-500"></div>
+            <div className="absolute -right-10 -bottom-10 opacity-5 pointer-events-none">
+                <Logo width={300} height={300} />
+            </div>
+
+            <h2 className="text-center text-xs font-bold text-slate-400 uppercase tracking-[0.3em] mb-8">Genesis Block • 000</h2>
+
+            <div className="prose prose-lg prose-slate mx-auto">
+                <p className="font-serif text-xl md:text-2xl leading-relaxed text-slate-800 text-justify first-letter:text-5xl first-letter:font-bold first-letter:text-purple-900 first-letter:mr-3 first-letter:float-left">
+                    {GENESIS_TEXT}
+                </p>
+            </div>
+
+            <div className="mt-12 pt-8 border-t border-slate-100 flex justify-between items-end">
+                <div>
+                    <p className="text-xs text-slate-400 font-mono" title={hash ?? undefined}>HASH: {shortHash}</p>
+                    <p className="text-xs text-slate-400 font-mono">STATUS: IMMUTABLE</p>
+                </div>
+                <Logo width={32} height={32} className="text-slate-300" />
+            </div>
+        </div>
+    </div>
+    );
+};
+
 // 03 — The path to become a member.
 export const MembershipPathSection = () => {
     const { t } = useLanguage();
@@ -437,6 +477,7 @@ export const YantraSection = () => (
 
 // Tab metadata shared by both about pages, so the lore tabs read identically everywhere.
 export const loreTabs = [
+    { id: 'genesis', label: 'Genesis', meta: 'The first block' },
     { id: 'path', label: 'The Path', meta: 'Become a member' },
     { id: 'yantra', label: 'The Yantra', meta: 'Logo & brand' },
 ] as const;
@@ -446,6 +487,7 @@ export type LoreTabId = typeof loreTabs[number]['id'];
 // Renders the body for a given lore tab; used by the unified community/node about page.
 export const LoreSection = ({ id }: { id: LoreTabId }) => {
     switch (id) {
+        case 'genesis': return <GenesisSection />;
         case 'path': return <MembershipPathSection />;
         case 'yantra': return <YantraSection />;
         default: return null;

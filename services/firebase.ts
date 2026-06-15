@@ -604,6 +604,19 @@ export const ensureGenesis = async () => {
     } catch (e) { console.warn("Genesis skip", e); }
 }
 
+// The real, on-chain hash of block 000 — the genesis pulse the whole network grows from.
+// Shared by every node, so the about page can show the true founding hash. Returns null
+// if the genesis tree isn't reachable (callers fall back to a placeholder).
+export const getGenesisHash = async (): Promise<string | null> => {
+    try {
+        const snap = await getDoc(doc(db, 'lifetrees', 'GENESIS_TREE'));
+        return snap.exists() ? ((snap.data() as Lifetree).genesisHash ?? null) : null;
+    } catch (e) {
+        console.warn("Genesis hash unavailable", e);
+        return null;
+    }
+};
+
 export const getNetworkStats = async () => {
     try {
         const [trees, pulses, visions] = await Promise.all([
