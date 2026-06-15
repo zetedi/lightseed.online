@@ -60,6 +60,7 @@ const baseKeys = {
   propose_decision: "Propose a decision", decision_title_ph: "What is being decided?", decision_body_ph: "The proposal — a contract of use and care, from the heart…",
   decision_nature: "Nature", propose: "Propose", vote: "Add my voice", voted: "Voiced", passed: "Passed", decision_open: "Open", voices: "voices", no_decisions: "No decisions yet. Propose the first.",
   nature_intention: "Intention", nature_purchase: "Purchase", nature_use_grant: "Use grant", nature_admission: "Admission", nature_stewardship: "Stewardship", nature_charter: "Charter",
+  create_event: "Create Event", event_title_ph: "Event title", event_details_ph: "Event details", no_events: "No events yet.", delete_event_confirm: "Delete this event?", delete: "Delete",
   theme_custom: "Custom", theme_custom_desc: "Choose every colour yourself.", theme_mode: "Mode", theme_mood: "Theme mood",
   color_header: "Header", color_primary: "Primary", color_accent: "Accent", color_background: "Background", color_secondary: "Secondary", color_neutral: "Neutral", color_text: "Text",
   // Intelligence panel
@@ -235,6 +236,7 @@ export const translations: Record<Language, typeof baseKeys> = {
     propose_decision: "提出一项决定", decision_title_ph: "要决定什么？", decision_body_ph: "提案 — 一份关于使用与照护的契约，发自内心…",
     decision_nature: "性质", propose: "提出", vote: "加入我的声音", voted: "已发声", passed: "已通过", decision_open: "进行中", voices: "声音", no_decisions: "暂无决定。提出第一个吧。",
     nature_intention: "意向", nature_purchase: "购买", nature_use_grant: "使用授权", nature_admission: "接纳", nature_stewardship: "管理", nature_charter: "章程",
+    create_event: "创建活动", event_title_ph: "活动标题", event_details_ph: "活动详情", no_events: "暂无活动。", delete_event_confirm: "删除此活动？", delete: "删除",
     theme_custom: "自定义", theme_custom_desc: "自行选择每一种颜色。", theme_mode: "模式", theme_mood: "主题氛围",
     color_header: "页眉", color_primary: "主色", color_accent: "强调色", color_background: "背景", color_secondary: "辅助色", color_neutral: "中性色", color_text: "文字",
     intel_your_title: "你的智慧", intel_your_sub: "选择聆听谁的低语。它将塑造你的共鸣与消息中的回应。",

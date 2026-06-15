@@ -4,7 +4,7 @@ import { showAlert, showConfirm } from "./ui/Dialog";
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
 import { Community, Lifetree, Lightseed, Pulse, Intelligence, Persona, Sanctuary } from '../types';
-import { updateCommunity, uploadImage, getTreesByDomain, deleteCommunity, createCommunityEvent, getCommunityByDomain, getCommunityEvents, toggleGuardianship, getSanctuariesByDomain, createDecision, voteOnDecision, getDecisions } from '../services/firebase';
+import { updateCommunity, uploadImage, getTreesByDomain, deleteCommunity, createCommunityEvent, deleteCommunityEvent, getCommunityByDomain, getCommunityEvents, toggleGuardianship, getSanctuariesByDomain, createDecision, voteOnDecision, getDecisions } from '../services/firebase';
 import { DECISION_NATURES, type Decision, type DecisionNature } from '../src/domain/decision';
 import { getSelectableIntelligences, listPersonas } from '../services/intelligence';
 import RichTextEditor from './ui/RichTextEditor';
@@ -120,6 +120,17 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const [eventImageUrls, setEventImageUrls] = useState<string[]>([]);
   const [isEventSaving, setIsEventSaving] = useState(false);
   const [isUploadingEventImage, setIsUploadingEventImage] = useState(false);
+  const [showEventForm, setShowEventForm] = useState(false);
+
+  const handleDeleteEvent = async (eventId: string) => {
+    if (!(await showConfirm(t('delete_event_confirm'), { title: t('delete'), confirmText: t('delete'), danger: true }))) return;
+    try {
+      await deleteCommunityEvent(eventId);
+      setEvents(prev => prev.filter(e => e.id !== eventId));
+    } catch (e: any) {
+      showAlert(e?.message || 'Could not delete the event.');
+    }
+  };
 
   // Keep editable copies in sync whenever the community prop changes (e.g. after refresh).
   useEffect(() => {
@@ -330,6 +341,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       setEventLocation('');
       setEventBody('');
       setEventImageUrls([]);
+      setShowEventForm(false);
       getCommunityEvents(community.id).then(setEvents).catch(() => {});
     } catch (error: any) {
       console.error(error);
@@ -614,21 +626,28 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
 
             {activeTab === 'events' && (
               <div>
-                <SectionTitle title="Events" sub="Gatherings and ceremonies for this community." />
-                {canEdit && (
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <SectionTitle title={t('events')} sub={t('events_sub')} />
+                  {canEdit && (
+                    <button onClick={() => setShowEventForm(s => !s)} className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-sky-600 px-4 py-2 text-xs font-bold text-white shadow-md transition-colors hover:bg-sky-700">
+                      {showEventForm ? <Icons.Close /> : <Icons.Plus />}<span>{t('create_event')}</span>
+                    </button>
+                  )}
+                </div>
+
+                {canEdit && showEventForm && (
                   <form onSubmit={handleCreateEvent} className="mb-8 space-y-3 rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
-                    <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-slate-500"><Icons.Plus /> Create Event</h3>
-                    <input dir="auto" value={eventTitle} onChange={e => setEventTitle(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Event title" required />
+                    <input dir="auto" value={eventTitle} onChange={e => setEventTitle(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder={t('event_title_ph')} required />
                     <div className="grid gap-3 sm:grid-cols-2">
                       <input type="datetime-local" value={eventDate} onChange={e => setEventDate(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-                      <input dir="auto" value={eventLocation} onChange={e => setEventLocation(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Location" />
+                      <input dir="auto" value={eventLocation} onChange={e => setEventLocation(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder={t('location')} />
                     </div>
-                    <textarea dir="auto" value={eventBody} onChange={e => setEventBody(e.target.value)} className="min-h-24 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Event details" />
+                    <textarea dir="auto" value={eventBody} onChange={e => setEventBody(e.target.value)} className="min-h-24 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder={t('event_details_ph')} />
                     <div className="grid grid-cols-3 gap-2">
                       {eventImageUrls.map((url, index) => (
                         <div key={url} className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
                           <img src={url} className="h-full w-full object-cover" alt={`Event image ${index + 1}`} />
-                          <button type="button" onClick={() => setEventImageUrls(prev => prev.filter((_, i) => i !== index))} className="absolute right-1 top-1 rounded-full bg-white/90 p-1 text-red-500 shadow-sm" title="Remove image">
+                          <button type="button" onClick={() => setEventImageUrls(prev => prev.filter((_, i) => i !== index))} className="absolute right-1 top-1 rounded-full bg-white/90 p-1 text-red-500 shadow-sm" title={t('remove')}>
                             <Icons.Close />
                           </button>
                         </div>
@@ -638,26 +657,31 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                       </ImagePicker>
                     </div>
                     <button type="submit" disabled={isEventSaving || isUploadingEventImage || !eventTitle.trim()} className="w-full rounded-2xl bg-sky-600 py-3 text-sm font-bold text-white shadow-lg shadow-sky-600/20 transition-all hover:bg-sky-700 disabled:opacity-50">
-                      {isEventSaving ? 'Creating...' : 'Create Event'}
+                      {isEventSaving ? t('creating') : t('create_event')}
                     </button>
                   </form>
                 )}
 
                 {events.length === 0 ? (
-                  <p className="text-center text-slate-400 py-10 text-sm">No events yet.</p>
+                  <p className="text-center text-slate-400 py-10 text-sm">{t('no_events')}</p>
                 ) : (
                   <div className="space-y-3">
                     {events.map(ev => (
-                      <div key={ev.id} className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
+                      <div key={ev.id} className="group flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
                         <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-slate-100">
                           {ev.imageUrl ? <img src={ev.imageUrl} className="h-full w-full object-cover" alt={ev.title} /> : <DefaultCardImage />}
                         </div>
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <p className="break-words text-sm font-bold text-slate-800">{ev.title}</p>
                           <p className="truncate text-xs text-slate-500">
                             {ev.eventDate ? new Date(ev.eventDate).toLocaleString() : ''}{ev.eventLocation ? ` · ${ev.eventLocation}` : ''}
                           </p>
                         </div>
+                        {canEdit && (
+                          <button onClick={() => handleDeleteEvent(ev.id)} title={t('delete')} className="shrink-0 rounded-full p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100">
+                            <Icons.Trash />
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>

@@ -5,6 +5,7 @@ import {
   logout,
   fetchPulses,
   fetchEventPulses,
+  createEvent,
   fetchReachPulses,
   fetchMyReaches,
   listenToMyReaches,
@@ -73,6 +74,7 @@ import { isExplicitlyValidatedTree } from './utils/validation';
 import { PlantTreeModal } from './components/modals/PlantTreeModal';
 import { AuthModal } from './components/modals/AuthModal';
 import { EmitPulseModal } from './components/modals/EmitPulseModal';
+import { EventModal } from './components/modals/EventModal';
 import { CreateVisionModal } from './components/modals/CreateVisionModal';
 
 const extractGpsFromImage = async (file: File): Promise<{latitude: number, longitude: number} | null> => {
@@ -206,6 +208,7 @@ const AppContent = () => {
         setShowPlantModal(true);
     };
     const [showPulseModal, setShowPulseModal] = useState(false);
+    const [showEventModal, setShowEventModal] = useState(false);
     const [showVisionModal, setShowVisionModal] = useState(false);
     const [showGrowthPlayer, setShowGrowthPlayer] = useState<string | null>(null);
     const [matchCandidate, setMatchCandidate] = useState<Pulse | null>(null);
@@ -1149,6 +1152,11 @@ const AppContent = () => {
                             title={t('events')}
                             subtitle={t('events_sub')}
                             footer={searchBox}
+                            action={lightseed && (
+                                <button onClick={() => setShowEventModal(true)} className="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2.5 rounded-full font-bold shadow-lg shadow-sky-600/20 transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap">
+                                    <Icons.Plus /> <span>{t('create_event')}</span>
+                                </button>
+                            )}
                         >
                             <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                                 {filteredData.length === 0 && !loadingMore ? <p className="col-span-full text-center text-slate-400 py-10">{t('no_trees_found')}</p> :
@@ -1347,8 +1355,21 @@ const AppContent = () => {
                 />
             )}
 
+            {showEventModal && (
+                <EventModal
+                    lightseed={lightseed}
+                    onClose={() => setShowEventModal(false)}
+                    uploading={uploading}
+                    handleImageUpload={handleImageUpload}
+                    onCreate={async (data: any) => {
+                        await createEvent(data);
+                        if (tab === 'events') loadContent(true);
+                    }}
+                />
+            )}
+
             {showPulseModal && (
-                <EmitPulseModal 
+                <EmitPulseModal
                     lightseed={lightseed}
                     activeTree={activeTree}
                     matchCandidate={matchCandidate}

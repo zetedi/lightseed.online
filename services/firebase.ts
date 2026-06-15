@@ -1003,6 +1003,25 @@ export const getDecisions = async (communityId: string): Promise<Decision[]> => 
         .sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
 };
 
+export const deleteCommunityEvent = (eventId: string) => deleteDoc(doc(db, 'pulses', eventId));
+
+// A standalone event — anyone can plant one (no community required). A community can later
+// form around it. It's a pulse of type 'event' on the one ledger, like community events.
+export const createEvent = async (data: any) => {
+    const domain = normalizeDomain(data.domain || (typeof window !== 'undefined' ? window.location.hostname : ''));
+    const eventPayload = { ...data, type: 'event', domain };
+    const hash = await createBlock('EVENT', eventPayload, Date.now());
+    const ref = await addDoc(pulsesCollection, {
+        ...eventPayload,
+        loveCount: 0,
+        commentCount: 0,
+        previousHash: 'EVENT',
+        hash,
+        createdAt: serverTimestamp(),
+    });
+    return { id: ref.id, ...eventPayload, loveCount: 0, commentCount: 0, previousHash: 'EVENT', hash } as Pulse;
+};
+
 export const createCommunityEvent = async (community: Community, data: any) => {
     const eventPayload = {
         ...data,
@@ -1044,10 +1063,13 @@ const fetchPulsesRaw = async (lastD?: QueryDocumentSnapshot, domainFilter?: stri
 
 // The main Pulses feed shows offerings, dreams and other content pulses.
 // Reaches live in the Inspiration view, so they are excluded here.
+// Pulse types that have their own surfaces and must not bleed into the general pulse feed.
+const NON_FEED_PULSE_TYPES = new Set(['reach', 'tree_chat', 'event', 'decision']);
+
 export const fetchPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {
     const res = await fetchPulsesRaw(lastD, domainFilter);
     return {
-        items: res.items.filter(pulse => pulse.type !== 'reach' && (pulse as any).type !== 'tree_chat'),
+        items: res.items.filter(pulse => !NON_FEED_PULSE_TYPES.has((pulse as any).type)),
         lastDoc: res.lastDoc
     };
 }
@@ -1193,7 +1215,7 @@ export const getLifetreeById = async (id: string): Promise<Lifetree | null> => {
     return snap.exists() ? ({ id: snap.id, ...(snap.data() as any) } as Lifetree) : null;
 };
 
-export const getMyPulses = async (uid: string) => (await getDocs(query(pulsesCollection, where('authorId', '==', uid)))).docs.map(d => ({ id: d.id, ...(d.data() as any) } as Pulse)).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+export const getMyPulses = async (uid: string) => (await getDocs(query(pulsesCollection, where('authorId', '==', uid)))).docs.map(d => ({ id: d.id, ...(d.data() as any) } as Pulse)).filter(p => !NON_FEED_PULSE_TYPES.has((p as any).type)).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 export const fetchGrowthPulses = async (treeId: string) => (await getDocs(query(pulsesCollection, where('lifetreeId', '==', treeId), where('type', '==', 'GROWTH')))).docs.map(d => ({ id: d.id, ...(d.data() as any) } as Pulse)).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 
 export const getPulsesByTreeId = async (treeId: string) => {
