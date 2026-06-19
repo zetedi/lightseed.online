@@ -10,9 +10,11 @@ interface PulseDetailProps {
     activeTree?: Lifetree | null;
     onClose: () => void;
     backLabel?: string;
+    canEdit?: boolean;
+    onEdit?: () => void;
 }
 
-export const PulseDetail = ({ pulse, activeTree, onClose, backLabel = "Back" }: PulseDetailProps) => {
+export const PulseDetail = ({ pulse, activeTree, onClose, backLabel = "Back", canEdit, onEdit }: PulseDetailProps) => {
     const [depth, setDepth] = useState<number>(3);
     const [isTranslating, setIsTranslating] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -71,7 +73,12 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel = "Back" }: 
                     <Icons.ArrowLeft />
                     <span>{backLabel}</span>
                 </button>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
+                    {pulse.type === 'event' && canEdit && onEdit && (
+                        <button onClick={onEdit} className="flex items-center gap-1.5 rounded-full bg-sky-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-sky-700">
+                            <Icons.Pencil /> Edit
+                        </button>
+                    )}
                     <span className="bg-slate-100 text-slate-500 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
                         <Icons.Hash /> {pulse.type}
                     </span>

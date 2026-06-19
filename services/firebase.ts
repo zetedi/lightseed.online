@@ -1050,6 +1050,17 @@ export const getDecisions = async (communityId: string): Promise<Decision[]> => 
 
 export const deleteCommunityEvent = (eventId: string) => deleteDoc(doc(db, 'pulses', eventId));
 
+// Edit an event's content fields. The chain hash / lid / author stay immutable — only the
+// editable fields are written, and author is never overwritten so an admin editing someone
+// else's event doesn't steal authorship. Edit authorization is enforced app-side via
+// canEditEvent (creator / community admin / node owner), matching the trusted-cohort posture.
+export const updateEvent = async (
+    eventId: string,
+    data: Partial<Pick<Pulse, 'title' | 'body' | 'content' | 'imageUrl' | 'imageUrls' | 'eventDate' | 'eventLocation' | 'visibility'>>,
+) => {
+    await updateDoc(doc(db, 'pulses', eventId), { ...data });
+};
+
 // A standalone event — anyone can plant one (no community required). A community can later
 // form around it. It's a pulse of type 'event' on the one ledger, like community events.
 export const createEvent = async (data: any) => {

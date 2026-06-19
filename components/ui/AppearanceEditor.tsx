@@ -49,18 +49,23 @@ export const AppearanceEditor = ({
           {/* Hero banner — the background, and itself the hero picker */}
           <ImagePicker onImageSelect={onHeroUpload} previewUrl={heroUrl} loading={uploadingHero} isDark className="aspect-[3/1] min-h-[150px] w-full" />
           {heroUrl && <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-slate-900/40 via-slate-900/45 to-slate-900/80" />}
+          {/* In-place label so it's unmistakable the banner is the HERO picker, not the logo. */}
+          <span className="pointer-events-none absolute left-3 top-3 z-10 rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white/80 backdrop-blur">{t('site_hero')}</span>
           {heroUrl && onRemoveHero && (
             <button type="button" onClick={onRemoveHero} className="absolute right-2 top-2 z-20 rounded-full bg-black/40 px-2.5 py-1 text-[11px] font-bold text-white/90 backdrop-blur transition-colors hover:bg-red-500">{t('remove')}</button>
           )}
-          {/* Logo badge + name, overlaid exactly like the real header */}
-          <div className="pointer-events-none absolute inset-x-4 bottom-4 z-10 flex items-center gap-4">
-            <div className="pointer-events-auto h-16 w-16 shrink-0 overflow-hidden rounded-full border-4 border-white bg-white shadow-xl md:h-20 md:w-20">
-              <ImagePicker onImageSelect={onLogoUpload} loading={uploadingLogo} className="flex h-full w-full cursor-pointer items-center justify-center text-slate-400">
-                {logoUrl ? <img src={logoUrl} className="h-full w-full object-cover" alt="" /> : <Icons.Camera />}
-              </ImagePicker>
+          {/* Logo badge (+ its own label) and name, overlaid exactly like the real header */}
+          <div className="pointer-events-none absolute inset-x-4 bottom-4 z-10 flex items-end gap-4">
+            <div className="flex flex-col items-center gap-1">
+              <div className="pointer-events-auto h-16 w-16 shrink-0 overflow-hidden rounded-full border-4 border-white bg-white shadow-xl md:h-20 md:w-20">
+                <ImagePicker onImageSelect={onLogoUpload} loading={uploadingLogo} className="flex h-full w-full cursor-pointer items-center justify-center text-slate-400">
+                  {logoUrl ? <img src={logoUrl} className="h-full w-full object-cover" alt="" /> : <Icons.Camera />}
+                </ImagePicker>
+              </div>
+              <span className="rounded-full bg-black/40 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white/80 backdrop-blur">{logoLabel || t('logo')}</span>
             </div>
             {onNameChange && (
-              <input dir="auto" type="text" value={name || ''} onChange={e => onNameChange(e.target.value)} placeholder={nameLabel || t('community_name')} className="pointer-events-auto min-w-0 flex-1 rounded-lg border border-white/20 bg-black/30 px-3 py-1.5 text-lg font-light tracking-wide text-white placeholder-white/50 backdrop-blur focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+              <input dir="auto" type="text" value={name || ''} onChange={e => onNameChange(e.target.value)} placeholder={nameLabel || t('community_name')} className="pointer-events-auto mb-7 min-w-0 flex-1 rounded-lg border border-white/20 bg-black/30 px-3 py-1.5 text-lg font-light tracking-wide text-white placeholder-white/50 backdrop-blur focus:outline-none focus:ring-2 focus:ring-emerald-400" />
             )}
           </div>
         </div>

@@ -7,6 +7,7 @@ import {
   fetchEventPulses,
   backfillPulseVisibility,
   createEvent,
+  updateEvent,
   fetchReachPulses,
   fetchMyReaches,
   listenToMyReaches,
@@ -57,7 +58,7 @@ import { ForestMap } from './components/ForestMap';
 import { LifetreeDetail } from './components/LifetreeDetail';
 import { VisionDetail } from './components/VisionDetail';
 import { PulseDetail } from './components/PulseDetail';
-import { queryableLevels } from './src/domain/pulseVisibility';
+import { queryableLevels, canEditEvent } from './src/domain/pulseVisibility';
 import { GrowthPlayerModal } from './components/GrowthPlayerModal';
 import { LightseedProfile } from './components/LightseedProfile';
 import { Dashboard } from './components/Dashboard';
@@ -172,6 +173,8 @@ const AppContent = () => {
     const [selectedTree, setSelectedTree] = useState<Lifetree | null>(null);
     const [selectedVision, setSelectedVision] = useState<Vision | null>(null);
     const [selectedPulse, setSelectedPulse] = useState<Pulse | null>(null);
+    const [editingEvent, setEditingEvent] = useState<Pulse | null>(null);
+    const [dashboardEvents, setDashboardEvents] = useState<Pulse[]>([]);
     const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
     const [reachTree, setReachTree] = useState<Lifetree | null>(null);
     const [reachOpenSignal, setReachOpenSignal] = useState(0);
@@ -432,7 +435,16 @@ const AppContent = () => {
         };
         return () => { delete (window as any).backfillPulseVisibility; };
     }, [isSuperAdmin]);
-    
+
+    // Events for the logged-in home carousel — visibility-scoped to this viewer + node.
+    useEffect(() => {
+        if (!lightseed) { setDashboardEvents([]); return; }
+        const isDevHost = /localhost|127\.0\.0\.1|^192\.168\.|\.local$/.test(window.location.hostname);
+        const currentDomain = (isDevHost && isSuperAdmin) ? 'lightseed.online' : window.location.hostname;
+        const levels = queryableLevels({ uid: lightseed.uid, isStaff: isSuperAdmin || isAdmin });
+        fetchEventPulses(undefined, currentDomain, levels).then(r => setDashboardEvents(r.items)).catch(() => {});
+    }, [lightseed?.uid, isSuperAdmin, isAdmin]);
+
     useEffect(() => {
         const handleScroll = () => {
             if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
@@ -785,11 +797,13 @@ const AppContent = () => {
                             danger: guardedTrees.filter(t => t.status === 'DANGER').length
                         }}
                         firstTreeImage={activeTree?.latestGrowthUrl || activeTree?.imageUrl}
-                        hostCommunity={hostCommunity}
+                        hostCommunity={impersonatedCommunity || hostCommunity}
+                        events={dashboardEvents}
+                        onViewEvent={(p: Pulse) => setSelectedPulse(p)}
                         onViewCommunity={setSelectedCommunity}
-                        onSetTab={setTab} 
+                        onSetTab={setTab}
                         onPlant={() => openPlant()}
-                        onLogin={() => setShowAuthModal(true)} 
+                        onLogin={() => setShowAuthModal(true)}
                     />
                 </div>
             );
@@ -1323,8 +1337,31 @@ const AppContent = () => {
             
             {selectedPulse && (
                 <DetailWrapper>
-                    <PulseDetail pulse={selectedPulse} activeTree={activeTree} onClose={() => setSelectedPulse(null)} />
+                    <PulseDetail
+                        pulse={selectedPulse}
+                        activeTree={activeTree}
+                        onClose={() => setSelectedPulse(null)}
+                        canEdit={canEditEvent(selectedPulse, { uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin }, { hostCommunity })}
+                        onEdit={() => setEditingEvent(selectedPulse)}
+                    />
                 </DetailWrapper>
+            )}
+
+            {editingEvent && (
+                <EventModal
+                    lightseed={lightseed}
+                    event={editingEvent}
+                    scope={editingEvent.communityId ? 'community' : 'node'}
+                    onClose={() => setEditingEvent(null)}
+                    uploading={uploading}
+                    handleImageUpload={handleImageUpload}
+                    onCreate={async (data: any) => {
+                        await updateEvent(editingEvent.id, data);
+                        // Reflect the edit immediately in the open detail view.
+                        setSelectedPulse(prev => prev && prev.id === editingEvent.id ? { ...prev, ...data } : prev);
+                        setEditingEvent(null);
+                    }}
+                />
             )}
 
             {selectedCommunity && (

@@ -332,6 +332,8 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
         try {
             const url = await uploadImage(file, `users/${lightseed.uid}/site-theme/logo_${Date.now()}`);
             setSiteLogoUrl(url);
+            // Persist immediately so an upload can't be lost before the next Save.
+            await updateUserSiteTheme(lightseed.uid, { siteTheme: normalizeTheme(siteTheme), siteLogoUrl: url, siteHeroUrl });
         } catch (e: any) {
             setDialogMessage(e.message || 'Failed to upload site logo.');
         }
@@ -343,6 +345,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
         try {
             const url = await uploadImage(file, `users/${lightseed.uid}/site-theme/hero_${Date.now()}`);
             setSiteHeroUrl(url);
+            await updateUserSiteTheme(lightseed.uid, { siteTheme: normalizeTheme(siteTheme), siteLogoUrl, siteHeroUrl: url });
         } catch (e: any) {
             setDialogMessage(e.message || 'Failed to upload hero image.');
         }
@@ -972,9 +975,27 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                         )}
                         {activeTab === 'appearance' && (
                             <div className="space-y-6">
-                                <div>
-                                    <h3 className="text-lg font-bold text-slate-800">{t('appearance_theme_title')}</h3>
-                                    <p className="mt-1 text-sm text-slate-500">{t('appearance_theme_desc')}</p>
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-slate-800">{t('appearance_theme_title')}</h3>
+                                        <p className="mt-1 text-sm text-slate-500">{t('appearance_theme_desc')}</p>
+                                    </div>
+                                    <div className="flex shrink-0 gap-2">
+                                        <button
+                                            onClick={handleSaveSiteTheme}
+                                            disabled={savingSiteTheme || uploadingSiteLogo || uploadingSiteHero}
+                                            className="rounded-xl bg-teal-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-teal-600/20 transition-colors hover:bg-teal-700 disabled:opacity-50"
+                                        >
+                                            {savingSiteTheme ? t('saving') : t('save_theme')}
+                                        </button>
+                                        <button
+                                            onClick={handleResetSiteTheme}
+                                            disabled={savingSiteTheme || uploadingSiteLogo || uploadingSiteHero}
+                                            className="rounded-xl bg-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-300 disabled:opacity-50"
+                                        >
+                                            {t('reset')}
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <AppearanceEditor
@@ -990,23 +1011,6 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                                     uploadingHero={uploadingSiteHero}
                                     onRemoveHero={() => setSiteHeroUrl('')}
                                 />
-
-                                <div className="flex flex-wrap gap-3">
-                                    <button
-                                        onClick={handleSaveSiteTheme}
-                                        disabled={savingSiteTheme || uploadingSiteLogo || uploadingSiteHero}
-                                        className="rounded-2xl bg-teal-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-teal-600/20 transition-colors hover:bg-teal-700 disabled:opacity-50"
-                                    >
-                                        {savingSiteTheme ? t('saving') : t('save_theme')}
-                                    </button>
-                                    <button
-                                        onClick={handleResetSiteTheme}
-                                        disabled={savingSiteTheme || uploadingSiteLogo || uploadingSiteHero}
-                                        className="rounded-2xl bg-slate-200 px-6 py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-300 disabled:opacity-50"
-                                    >
-                                        {t('reset')}
-                                    </button>
-                                </div>
                             </div>
                         )}
                         {activeTab === 'intelligence' && lightseed?.uid && (

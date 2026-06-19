@@ -4,12 +4,13 @@ import { Icons } from '../ui/Icons';
 import { ImagePicker } from '../ui/ImagePicker';
 import { showAlert } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { visibilitiesForScope } from '../../src/domain/pulseVisibility';
-import type { PulseVisibility } from '../../src/domain/pulse';
+import { visibilitiesForScope, type PulseScope } from '../../src/domain/pulseVisibility';
+import type { Pulse, PulseVisibility } from '../../src/domain/pulse';
 
 /**
  * Plant a standalone event — anyone can, no community required. A community can later form
- * around it. On submit it becomes a pulse of type 'event' on the chain.
+ * around it. On submit it becomes a pulse of type 'event' on the chain. Pass `event` to edit
+ * an existing one (prefilled; authorship is preserved). `scope` drives the visibility options.
  */
 export const EventModal = ({
   lightseed,
@@ -17,20 +18,25 @@ export const EventModal = ({
   onCreate,
   uploading,
   handleImageUpload,
+  event = null,
+  scope = 'node',
 }: {
   lightseed: any;
   onClose: () => void;
   onCreate: (data: any) => Promise<void>;
   uploading?: boolean;
   handleImageUpload: (file: File, path: string) => Promise<string>;
+  event?: Pulse | null;
+  scope?: PulseScope;
 }) => {
   const { t } = useLanguage();
-  const [title, setTitle] = useState('');
-  const [date, setDate] = useState('');
-  const [location, setLocation] = useState('');
-  const [body, setBody] = useState('');
-  const [visibility, setVisibility] = useState<PulseVisibility>('public');
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const isEdit = !!event;
+  const [title, setTitle] = useState(event?.title || '');
+  const [date, setDate] = useState(event?.eventDate || '');
+  const [location, setLocation] = useState(event?.eventLocation || '');
+  const [body, setBody] = useState(event?.content || event?.body || '');
+  const [visibility, setVisibility] = useState<PulseVisibility>((event?.visibility as PulseVisibility) || 'public');
+  const [imageUrls, setImageUrls] = useState<string[]>(event?.imageUrls?.length ? event.imageUrls : (event?.imageUrl ? [event.imageUrl] : []));
   const [saving, setSaving] = useState(false);
 
   const addImage = async (file: File) => {
@@ -47,7 +53,7 @@ export const EventModal = ({
     if (!title.trim() || saving || !lightseed) return;
     setSaving(true);
     try {
-      await onCreate({
+      const base = {
         title: title.trim(),
         body: body.trim(),
         content: body.trim(),
@@ -56,19 +62,23 @@ export const EventModal = ({
         eventDate: date || '',
         eventLocation: location.trim(),
         visibility,
+      };
+      // On edit, never overwrite authorship (an admin editing another's event keeps the author).
+      await onCreate(isEdit ? base : {
+        ...base,
         authorId: lightseed.uid,
         authorName: lightseed.displayName || 'Soul',
         authorPhoto: lightseed.photoURL || undefined,
       });
       onClose();
     } catch (err: any) {
-      showAlert(err?.message || 'Could not create the event.');
+      showAlert(err?.message || 'Could not save the event.');
     }
     setSaving(false);
   };
 
   return (
-    <Modal title={t('create_event')} onClose={onClose}>
+    <Modal title={isEdit ? t('edit_event') : t('create_event')} onClose={onClose}>
       <form onSubmit={submit} className="space-y-3">
         <input dir="auto" value={title} onChange={e => setTitle(e.target.value)} required placeholder={t('event_title_ph')} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500" />
         <div className="grid gap-3 sm:grid-cols-2">
@@ -79,7 +89,7 @@ export const EventModal = ({
         <label className="block">
           <span className="mb-1 block text-[10px] font-bold uppercase text-slate-400">{t('visibility')}</span>
           <select value={visibility} onChange={e => setVisibility(e.target.value as PulseVisibility)} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-            {visibilitiesForScope('node').map(v => <option key={v} value={v}>{t(`vis_${v}` as any)}</option>)}
+            {visibilitiesForScope(scope).map(v => <option key={v} value={v}>{t(`vis_${v}` as any)}</option>)}
           </select>
         </label>
         <div className="grid grid-cols-3 gap-2">
@@ -96,7 +106,7 @@ export const EventModal = ({
           </ImagePicker>
         </div>
         <button type="submit" disabled={saving || uploading || !title.trim()} className="w-full rounded-2xl bg-sky-600 py-3 text-sm font-bold text-white shadow-lg shadow-sky-600/20 transition-all hover:bg-sky-700 disabled:opacity-50">
-          {saving ? t('creating') : t('create_event')}
+          {saving ? t('creating') : (isEdit ? t('save_changes') : t('create_event'))}
         </button>
       </form>
     </Modal>

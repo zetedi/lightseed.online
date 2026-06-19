@@ -4,7 +4,7 @@ import { showAlert, showConfirm } from "./ui/Dialog";
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
 import { Community, Lifetree, Lightseed, Pulse, Intelligence, Persona, Sanctuary } from '../types';
-import { updateCommunity, uploadImage, getTreesByDomain, deleteCommunity, createCommunityEvent, deleteCommunityEvent, getCommunityByDomain, getCommunityEvents, toggleGuardianship, getSanctuariesByDomain, createDecision, voteOnDecision, getDecisions } from '../services/firebase';
+import { updateCommunity, uploadImage, getTreesByDomain, deleteCommunity, createCommunityEvent, updateEvent, deleteCommunityEvent, getCommunityByDomain, getCommunityEvents, toggleGuardianship, getSanctuariesByDomain, createDecision, voteOnDecision, getDecisions } from '../services/firebase';
 import { DECISION_NATURES, type Decision, type DecisionNature } from '../src/domain/decision';
 import { getSelectableIntelligences, listPersonas } from '../services/intelligence';
 import RichTextEditor from './ui/RichTextEditor';
@@ -132,6 +132,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const [eventBody, setEventBody] = useState('');
   const [eventVisibility, setEventVisibility] = useState<PulseVisibility>('public');
   const [eventImageUrls, setEventImageUrls] = useState<string[]>([]);
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [isEventSaving, setIsEventSaving] = useState(false);
   const [isUploadingEventImage, setIsUploadingEventImage] = useState(false);
   const [showEventForm, setShowEventForm] = useState(false);
@@ -286,6 +287,10 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     try {
       const url = await uploadImage(file, `communities/${community.id}/logo_${Date.now()}`);
       setLogoUrl(url);
+      // Persist immediately so the change can't get lost before the next Save.
+      await updateCommunity(community.id, { logoUrl: url });
+      onUpdate?.({ logoUrl: url });
+      setStatus('Saved');
     } catch (e: any) {
       console.error(e);
       setStatus(e?.message || 'Failed to upload logo.');
@@ -298,6 +303,9 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     try {
       const url = await uploadImage(file, `communities/${community.id}/hero_${Date.now()}`);
       setHeroImageUrl(url);
+      await updateCommunity(community.id, { heroImageUrl: url });
+      onUpdate?.({ heroImageUrl: url });
+      setStatus('Saved');
     } catch (e: any) {
       console.error(e);
       setStatus(e?.message || 'Failed to upload hero image.');
@@ -338,7 +346,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     if (!currentUserId || !eventTitle.trim() || isEventSaving) return;
     setIsEventSaving(true);
     try {
-      await createCommunityEvent(community, {
+      const payload = {
         title: eventTitle.trim(),
         body: eventBody.trim(),
         content: eventBody.trim(),
@@ -347,23 +355,43 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
         eventDate: eventDate || '',
         eventLocation: eventLocation.trim(),
         visibility: eventVisibility,
-        authorId: currentUserId,
-        authorName: currentUser?.displayName || 'Community Admin',
-        authorPhoto: currentUser?.photoURL || undefined,
-      });
+      };
+      if (editingEventId) {
+        await updateEvent(editingEventId, payload); // author preserved
+      } else {
+        await createCommunityEvent(community, {
+          ...payload,
+          authorId: currentUserId,
+          authorName: currentUser?.displayName || 'Community Admin',
+          authorPhoto: currentUser?.photoURL || undefined,
+        });
+      }
       setEventTitle('');
       setEventDate('');
       setEventLocation('');
       setEventBody('');
       setEventVisibility('public');
       setEventImageUrls([]);
+      setEditingEventId(null);
       setShowEventForm(false);
       getCommunityEvents(community.id, eventLevels).then(setEvents).catch(() => {});
     } catch (error: any) {
       console.error(error);
-      showAlert('Failed to create event: ' + (error.message || 'Unknown error'));
+      showAlert('Failed to save event: ' + (error.message || 'Unknown error'));
     }
     setIsEventSaving(false);
+  };
+
+  // Begin editing an existing event: prefill the form and reveal it.
+  const startEditEvent = (ev: Pulse) => {
+    setEditingEventId(ev.id);
+    setEventTitle(ev.title || '');
+    setEventBody(ev.content || ev.body || '');
+    setEventDate(ev.eventDate || '');
+    setEventLocation(ev.eventLocation || '');
+    setEventVisibility((ev.visibility as PulseVisibility) || 'public');
+    setEventImageUrls(ev.imageUrls?.length ? ev.imageUrls : (ev.imageUrl ? [ev.imageUrl] : []));
+    setShowEventForm(true);
   };
 
   // Icons for the shared network-lore tabs (Path, Yantra).
@@ -431,9 +459,9 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     <div className="min-h-screen pb-20">
       {/* Hero — mirrors the personal profile */}
       <div className="relative overflow-hidden bg-gradient-to-b from-slate-800 to-slate-900 text-white pt-5 pb-12 px-4">
-        {heroImageUrl && (
+        {(heroImageUrl || community.imageUrls?.[0]) && (
           <>
-            <img src={heroImageUrl} alt={`${community.name} banner`} referrerPolicy="no-referrer" className="absolute inset-0 h-full w-full object-cover" />
+            <img src={heroImageUrl || community.imageUrls?.[0]} alt={`${community.name} banner`} referrerPolicy="no-referrer" className="absolute inset-0 h-full w-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-b from-slate-900/55 via-slate-900/65 to-slate-900/85" />
           </>
         )}
@@ -646,8 +674,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <SectionTitle title={t('events')} sub={t('events_sub')} />
                   {canEdit && (
-                    <button onClick={() => setShowEventForm(s => !s)} className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-sky-600 px-4 py-2 text-xs font-bold text-white shadow-md transition-colors hover:bg-sky-700">
-                      {showEventForm ? <Icons.Close /> : <Icons.Plus />}<span>{t('create_event')}</span>
+                    <button onClick={() => { const next = !showEventForm; setShowEventForm(next); if (!next) setEditingEventId(null); }} className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-sky-600 px-4 py-2 text-xs font-bold text-white shadow-md transition-colors hover:bg-sky-700">
+                      {showEventForm ? <Icons.Close /> : <Icons.Plus />}<span>{editingEventId ? t('edit_event') : t('create_event')}</span>
                     </button>
                   )}
                 </div>
@@ -680,7 +708,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                       </ImagePicker>
                     </div>
                     <button type="submit" disabled={isEventSaving || isUploadingEventImage || !eventTitle.trim()} className="w-full rounded-2xl bg-sky-600 py-3 text-sm font-bold text-white shadow-lg shadow-sky-600/20 transition-all hover:bg-sky-700 disabled:opacity-50">
-                      {isEventSaving ? t('creating') : t('create_event')}
+                      {isEventSaving ? t('creating') : (editingEventId ? t('save_changes') : t('create_event'))}
                     </button>
                   </form>
                 )}
@@ -704,6 +732,11 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                             {ev.eventDate ? new Date(ev.eventDate).toLocaleString() : ''}{ev.eventLocation ? ` · ${ev.eventLocation}` : ''}
                           </p>
                         </div>
+                        {(canEdit || ev.authorId === currentUserId) && (
+                          <button onClick={(e) => { e.stopPropagation(); startEditEvent(ev); }} title={t('edit')} className="shrink-0 rounded-full p-2 text-slate-400 transition-colors hover:bg-sky-50 hover:text-sky-600 sm:opacity-0 sm:group-hover:opacity-100">
+                            <Icons.Pencil />
+                          </button>
+                        )}
                         {canEdit && (
                           <button onClick={(e) => { e.stopPropagation(); handleDeleteEvent(ev.id); }} title={t('delete')} className="shrink-0 rounded-full p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100">
                             <Icons.Trash />
@@ -857,7 +890,15 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
 
             {activeTab === 'appearance' && canEdit && (
               <div>
-                <SectionTitle title={t('appearance')} sub="Brand, logo, imagery and theme." />
+                <div className="flex items-start justify-between gap-3">
+                  <SectionTitle title={t('appearance')} sub="Brand, logo, imagery and theme." />
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button onClick={handleSave} disabled={isSaving || isUploadingLogo || isUploadingImage} className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-700 disabled:opacity-50">
+                      {isSaving ? 'Saving...' : 'Save Changes'}
+                    </button>
+                    {status && <span className="text-xs text-slate-500">{status}</span>}
+                  </div>
+                </div>
 
                 <AppearanceEditor
                   theme={editTheme}
@@ -877,8 +918,6 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                   onRemoveImage={handleRemoveImage}
                   uploadingImage={isUploadingImage}
                 />
-
-                <div className="mt-6"><SaveBar /></div>
               </div>
             )}
           </main>

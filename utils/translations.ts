@@ -63,6 +63,7 @@ const baseKeys = {
   nature_intention: "Intention", nature_purchase: "Purchase", nature_use_grant: "Use grant", nature_admission: "Admission", nature_stewardship: "Stewardship", nature_charter: "Charter",
   create_event: "Create Event", event_title_ph: "Event title", event_details_ph: "Event details", no_events: "No events yet.", delete_event_confirm: "Delete this event?", delete: "Delete",
   visibility: "Visibility", vis_public: "Public — anyone", vis_node: "Node — signed-in members", vis_community: "Community — members only", vis_circle: "Circle — tree guardians", vis_private: "Private — only me",
+  edit_event: "Edit Event", save_changes: "Save Changes",
   theme_custom: "Custom", theme_custom_desc: "Choose every colour yourself.", theme_mode: "Mode", theme_mood: "Theme mood",
   color_header: "Header", color_primary: "Primary", color_accent: "Accent", color_background: "Background", color_secondary: "Secondary", color_neutral: "Neutral", color_text: "Text",
   // Intelligence panel
@@ -241,6 +242,7 @@ export const translations: Record<Language, typeof baseKeys> = {
     nature_intention: "意向", nature_purchase: "购买", nature_use_grant: "使用授权", nature_admission: "接纳", nature_stewardship: "管理", nature_charter: "章程",
     create_event: "创建活动", event_title_ph: "活动标题", event_details_ph: "活动详情", no_events: "暂无活动。", delete_event_confirm: "删除此活动？", delete: "删除",
     visibility: "可见范围", vis_public: "公开 — 所有人", vis_node: "节点 — 已登录成员", vis_community: "社区 — 仅成员", vis_circle: "圈子 — 树的守护者", vis_private: "私密 — 仅自己",
+    edit_event: "编辑活动", save_changes: "保存更改",
     theme_custom: "自定义", theme_custom_desc: "自行选择每一种颜色。", theme_mode: "模式", theme_mood: "主题氛围",
     color_header: "页眉", color_primary: "主色", color_accent: "强调色", color_background: "背景", color_secondary: "辅助色", color_neutral: "中性色", color_text: "文字",
     intel_your_title: "你的智慧", intel_your_sub: "选择聆听谁的低语。它将塑造你的共鸣与消息中的回应。",

@@ -1,4 +1,5 @@
 import type { Pulse, PulseVisibility } from './pulse';
+import type { Community } from './community';
 
 // The visibility generator — the single source of truth for "who may see a pulse".
 // The Firestore rules (firestore.rules → canReadPulse) mirror canView() exactly, and the
@@ -70,4 +71,19 @@ export function queryableLevels(viewer: Viewer, ctx?: { communityId?: string; tr
   if (ctx?.communityId && (viewer.communityIds || []).includes(ctx.communityId)) levels.push('community');
   if (ctx?.treeId && (viewer.guardedTreeIds || []).includes(ctx.treeId)) levels.push('circle');
   return levels;
+}
+
+// Who may edit (or delete) an event: its creator, the admin (owner) of its community when it
+// is a community event, or the owner of the node (host community) when it is a node event.
+// Staff always. `community` is the event's community; `hostCommunity` is the node's.
+export function canEditEvent(
+  event: Pick<Pulse, 'authorId' | 'communityId'>,
+  viewer: Viewer,
+  ctx?: { hostCommunity?: Community | null; community?: Community | null },
+): boolean {
+  if (!viewer.uid) return false;
+  if (viewer.isStaff) return true;
+  if (event.authorId === viewer.uid) return true;                  // the creator
+  if (event.communityId) return ctx?.community?.ownerId === viewer.uid; // community admin
+  return ctx?.hostCommunity?.ownerId === viewer.uid;               // node owner
 }
