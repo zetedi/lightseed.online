@@ -11,7 +11,7 @@ interface ReachThreadSummary {
     partnerPhoto?: string;
     lastMessage: string;
     lastAt: number;
-    count: number;
+    unread: number; // messages addressed to me in this thread that I haven't seen yet
 }
 
 type Selection =
@@ -123,6 +123,10 @@ export const ReachInbox = ({
             const at = p.createdAt?.toMillis?.() || 0;
             // Newest utterance in this pulse: the reply if present, otherwise the message.
             const text = p.reachResponse || p.content || p.body || '';
+            // Unread = addressed to me, authored by someone else, and not yet in seenBy.
+            // The badge counts only these; read messages still set lastMessage/lastAt.
+            const uid = lightseed?.uid;
+            const isUnread = !!uid && p.recipientUid === uid && p.authorId !== uid && !(p.seenBy || []).includes(uid);
             const existing = map.get(partnerId);
             if (!existing) {
                 map.set(partnerId, {
@@ -131,10 +135,10 @@ export const ReachInbox = ({
                     partnerPhoto,
                     lastMessage: text,
                     lastAt: at,
-                    count: 1,
+                    unread: isUnread ? 1 : 0,
                 });
             } else {
-                existing.count += 1;
+                if (isUnread) existing.unread += 1;
                 if (at >= existing.lastAt) {
                     existing.lastAt = at;
                     existing.lastMessage = text;
@@ -191,8 +195,8 @@ export const ReachInbox = ({
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-center justify-between gap-2">
                                         <span className="truncate font-semibold text-slate-800">{thread.partnerName}</span>
-                                        {thread.count > 1 && (
-                                            <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">{thread.count}</span>
+                                        {thread.unread > 0 && (
+                                            <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">{thread.unread}</span>
                                         )}
                                     </div>
                                     <span className="block truncate text-xs text-slate-500">{thread.lastMessage || 'Reached through the mycelial network.'}</span>

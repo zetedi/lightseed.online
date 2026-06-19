@@ -41,30 +41,34 @@ export const AppearanceEditor = ({
   const { t } = useLanguage();
   return (
     <div className="space-y-6">
-      {/* Logo + optional name */}
-      <div className="grid gap-6 md:grid-cols-[160px_1fr]">
-        <div className="space-y-2">
-          <label className="text-[10px] font-bold uppercase text-slate-400">{logoLabel || t('logo')}</label>
-          <ImagePicker onImageSelect={onLogoUpload} previewUrl={logoUrl} loading={uploadingLogo} className="aspect-square w-full max-w-[160px] rounded-2xl border-2 border-dashed border-slate-200" />
-          <p className="text-[11px] leading-snug text-slate-400">{logoHint || t('logo_hint')}</p>
-        </div>
-        {onNameChange && (
-          <div className="space-y-2">
-            <label className="text-[10px] font-bold uppercase text-slate-400">{nameLabel || t('community_name')}</label>
-            <input dir="auto" type="text" value={name || ''} onChange={e => onNameChange(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-          </div>
-        )}
-      </div>
-
-      {/* Hero image */}
+      {/* WYSIWYG header — mirrors the live hero: a wide banner with the logo badge (and
+          name) resting over it. Click the banner to set the hero, the circle to set the logo. */}
       <div className="space-y-2">
-        <label className="text-[10px] font-bold uppercase text-slate-400">{t('site_hero')}</label>
-        <ImagePicker onImageSelect={onHeroUpload} previewUrl={heroUrl} loading={uploadingHero} className="aspect-[3/1] w-full overflow-hidden rounded-2xl border-2 border-dashed border-slate-200" />
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-[11px] leading-snug text-slate-400">{heroHint || t('site_hero_desc')}</p>
+        <label className="text-[10px] font-bold uppercase text-slate-400">{t('appearance_header')}</label>
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-slate-800 to-slate-900 shadow-inner">
+          {/* Hero banner — the background, and itself the hero picker */}
+          <ImagePicker onImageSelect={onHeroUpload} previewUrl={heroUrl} loading={uploadingHero} isDark className="aspect-[3/1] min-h-[150px] w-full" />
+          {heroUrl && <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-slate-900/40 via-slate-900/45 to-slate-900/80" />}
           {heroUrl && onRemoveHero && (
-            <button type="button" onClick={onRemoveHero} className="shrink-0 text-[11px] font-bold text-red-500 hover:text-red-600">{t('remove')}</button>
+            <button type="button" onClick={onRemoveHero} className="absolute right-2 top-2 z-20 rounded-full bg-black/40 px-2.5 py-1 text-[11px] font-bold text-white/90 backdrop-blur transition-colors hover:bg-red-500">{t('remove')}</button>
           )}
+          {/* Logo badge + name, overlaid exactly like the real header */}
+          <div className="pointer-events-none absolute inset-x-4 bottom-4 z-10 flex items-center gap-4">
+            <div className="pointer-events-auto h-16 w-16 shrink-0 overflow-hidden rounded-full border-4 border-white bg-white shadow-xl md:h-20 md:w-20">
+              <ImagePicker onImageSelect={onLogoUpload} loading={uploadingLogo} className="flex h-full w-full cursor-pointer items-center justify-center text-slate-400">
+                {logoUrl ? <img src={logoUrl} className="h-full w-full object-cover" alt="" /> : <Icons.Camera />}
+              </ImagePicker>
+            </div>
+            {onNameChange && (
+              <input dir="auto" type="text" value={name || ''} onChange={e => onNameChange(e.target.value)} placeholder={nameLabel || t('community_name')} className="pointer-events-auto min-w-0 flex-1 rounded-lg border border-white/20 bg-black/30 px-3 py-1.5 text-lg font-light tracking-wide text-white placeholder-white/50 backdrop-blur focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+            )}
+          </div>
+        </div>
+        {/* Hints live below the preview — no overlap with the imagery */}
+        <p className="text-[11px] leading-snug text-slate-400">{t('appearance_header_hint')}</p>
+        <div className="flex flex-col gap-0.5 text-[11px] leading-snug text-slate-400 sm:flex-row sm:flex-wrap sm:gap-x-5">
+          <span><span className="font-semibold text-slate-500">{logoLabel || t('logo')}:</span> {logoHint || t('logo_hint')}</span>
+          <span><span className="font-semibold text-slate-500">{t('site_hero')}:</span> {heroHint || t('site_hero_desc')}</span>
         </div>
       </div>
 

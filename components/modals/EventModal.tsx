@@ -4,6 +4,8 @@ import { Icons } from '../ui/Icons';
 import { ImagePicker } from '../ui/ImagePicker';
 import { showAlert } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { visibilitiesForScope } from '../../src/domain/pulseVisibility';
+import type { PulseVisibility } from '../../src/domain/pulse';
 
 /**
  * Plant a standalone event — anyone can, no community required. A community can later form
@@ -27,6 +29,7 @@ export const EventModal = ({
   const [date, setDate] = useState('');
   const [location, setLocation] = useState('');
   const [body, setBody] = useState('');
+  const [visibility, setVisibility] = useState<PulseVisibility>('public');
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -52,6 +55,7 @@ export const EventModal = ({
         imageUrls,
         eventDate: date || '',
         eventLocation: location.trim(),
+        visibility,
         authorId: lightseed.uid,
         authorName: lightseed.displayName || 'Soul',
         authorPhoto: lightseed.photoURL || undefined,
@@ -72,6 +76,12 @@ export const EventModal = ({
           <input dir="auto" value={location} onChange={e => setLocation(e.target.value)} placeholder={t('location')} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
         </div>
         <textarea dir="auto" value={body} onChange={e => setBody(e.target.value)} placeholder={t('event_details_ph')} className="min-h-24 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        <label className="block">
+          <span className="mb-1 block text-[10px] font-bold uppercase text-slate-400">{t('visibility')}</span>
+          <select value={visibility} onChange={e => setVisibility(e.target.value as PulseVisibility)} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            {visibilitiesForScope('node').map(v => <option key={v} value={v}>{t(`vis_${v}` as any)}</option>)}
+          </select>
+        </label>
         <div className="grid grid-cols-3 gap-2">
           {imageUrls.map((url, index) => (
             <div key={url} className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50">

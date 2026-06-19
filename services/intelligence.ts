@@ -4,6 +4,7 @@ import {
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from './firebase';
+import { uuidv7 } from '../utils/id';
 import config from '../lifeseed.config.json';
 import type {
   Intelligence, Persona, Memory, MemoryVisibility, IntelligenceMessage, MemoryContext,
@@ -160,6 +161,7 @@ export const getMemoriesByIds = async (ids: string[]): Promise<Memory[]> => {
 export const createMemory = async (data: { name: string; text: string; visibility?: MemoryVisibility; communityId?: string }): Promise<string> => {
   const ref = doc(memoriesCol);
   await setDoc(ref, {
+    lid: uuidv7(),
     name: data.name,
     text: data.text,
     visibility: data.visibility || 'private',
@@ -222,7 +224,7 @@ export const getManageableIntelligences = async (ownerUid?: string): Promise<Int
 
 export const createIntelligence = async (data: Omit<Intelligence, 'id' | 'createdAt'>) => {
   const ref = doc(intelligencesCol);
-  await setDoc(ref, { ...data, createdAt: serverTimestamp() });
+  await setDoc(ref, { ...data, lid: uuidv7(), createdAt: serverTimestamp() });
   return ref.id;
 };
 

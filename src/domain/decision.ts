@@ -22,6 +22,7 @@ export const votesRequired = (nature: DecisionNature): number =>
 
 export interface Decision {
   id: string;
+  lid?: string; // Lightseed ID — the decision's portable, time-ordered true name (UUIDv7).
   communityId: string;
   domain?: string;
   nature: DecisionNature;

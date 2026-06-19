@@ -50,6 +50,8 @@ import {
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { type Pulse, type PulseType, type Lifetree, type Alignment, type Vision, type Community, type Sanctuary, type TreeOwnershipInvite, type InvitableRole, roleToTreeField, type Decision, type DecisionNature, votesRequired } from '../types';
 import { createBlock } from '../utils/crypto';
+import { uuidv7 } from '../utils/id';
+import type { PulseVisibility } from '../src/domain/pulse';
 import { oldEmeraldEarthThemeValues } from '../utils/theme';
 import { isExplicitlyValidatedTree } from '../utils/validation';
 import { buildThreadId } from '../utils/reachPermissions';
@@ -545,12 +547,14 @@ export const ensureGenesis = async () => {
             const genesisBody = `The purpose of lightseed is to bring joy. The joy of realizing the bliss of conscious, compassionate, grateful existence by opening a portal to the center of life. By creating a bridge between creator and creation, science and spirituality, virtual and real, nothing and everything. It is designed to intimately connect our inner Self, our culture, our trees and the tree of life, the material and the digital, online world into a sustainable and sustaining circle of unified vibration, sound and light. It aims to merge us into a common flow for all beings to be liberated, wise, strong, courageous and connected. It is rooted in nonviolence, compassion, generosity, gratitude and love. It is blockchain (truthfulness), cloud (global, distributed, resilient), ai (for connecting dreams and technology), regen (nature centric) native. It is an inspiration, an impulse towards a quantum leap in consciousness, a prompt both for human and artificial intelligence for action towards transcending humanity into a new era, a New Earth, Universe and Field with the help of our most important evolutionary sisters and brothers, the trees.`;
             const genesisHash = await createBlock("0", { message: "Genesis Pulse" }, Date.now());
             await setDoc(genesisRef, {
+                lid: uuidv7(),
                 ownerId: 'GENESIS_SYSTEM', name: 'Mahameru', shortTitle: 'Live Light', body: genesisBody,
                 imageUrl: "", latitude: 50.8354, longitude: 4.4145, locationName: 'The Source',
                 createdAt: serverTimestamp(), genesisHash, latestHash: genesisHash, blockHeight: 0,
                 validated: true, validatorId: 'SYSTEM', isNature: true, domain: 'lightseed.online'
             });
             await setDoc(doc(db, 'visions', 'GENESIS_VISION'), {
+                lid: uuidv7(),
                 lifetreeId: genesisId, authorId: 'GENESIS_SYSTEM', title: "Mahameru", body: genesisBody, createdAt: serverTimestamp(), joinedUserIds: [], domain: 'lightseed.online'
             });
         }
@@ -651,6 +655,7 @@ export const plantLifetree = async (data: any) => {
 
     const treeDoc = await addDoc(lifetreesCollection, {
         ...data,
+        lid: uuidv7(),
         domain,
         onlyValidatedCanReach,
         treeType: data.treeType || (data.isNature ? 'GUARDED' : 'LIFETREE'),
@@ -658,6 +663,7 @@ export const plantLifetree = async (data: any) => {
         validated: false, validatorId: null, guardians: [], status: 'HEALTHY'
     });
     await addDoc(visionsCollection, {
+        lid: uuidv7(),
         lifetreeId: treeDoc.id, authorId: data.ownerId, title: "Root Vision", body: data.body, createdAt: serverTimestamp(), joinedUserIds: [], domain
     });
     return treeDoc;
@@ -900,7 +906,7 @@ export const getJoinedVisions = async (uid: string) => (await getDocs(query(visi
 
 export const createVision = async (data: any) => {
     const domain = data.domain || window.location.hostname.replace(/^www\./, '');
-    return addDoc(visionsCollection, { ...data, domain, createdAt: serverTimestamp(), joinedUserIds: [] });
+    return addDoc(visionsCollection, { ...data, lid: uuidv7(), domain, createdAt: serverTimestamp(), joinedUserIds: [] });
 };
 export const deleteVision = (id: string) => deleteDoc(doc(db, 'visions', id));
 export const joinVision = (id: string, uid: string) => updateDoc(doc(db, 'visions', id), { joinedUserIds: arrayUnion(uid) });
@@ -924,12 +930,14 @@ export const getMyCommunities = async (uid: string) =>
     (await getDocs(query(communitiesCollection, where('ownerId', '==', uid)))).docs.map(d => ({ id: d.id, ...(d.data() as any) } as Community));
 
 export const createCommunity = async (data: any) => {
+    const lid = uuidv7();
     const docRef = await addDoc(communitiesCollection, {
         ...data,
+        lid,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
     });
-    return { id: docRef.id, ...data };
+    return { id: docRef.id, lid, ...data };
 };
 
 export const updateCommunity = (id: string, data: any) => 
@@ -939,12 +947,33 @@ export const deleteCommunity = (id: string) => deleteDoc(doc(db, 'communities', 
 
 // All events created under a community, newest first. Single-field query (no composite
 // index); we filter to event pulses and sort client-side.
-export const getCommunityEvents = async (communityId: string): Promise<Pulse[]> => {
-    const snap = await getDocs(query(pulsesCollection, where('communityId', '==', communityId)));
+// `levels` is the set of visibility levels the viewer may read (from queryableLevels). When
+// given, the query requests only those, so Firestore never rejects it for a non-member who
+// would otherwise have a members-only event in the result set. Omit on fully-public callers.
+export const getCommunityEvents = async (communityId: string, levels?: PulseVisibility[]): Promise<Pulse[]> => {
+    const base = where('communityId', '==', communityId);
+    const q = levels && levels.length
+        ? query(pulsesCollection, base, where('visibility', 'in', levels))
+        : query(pulsesCollection, base);
+    const snap = await getDocs(q);
     return snap.docs
         .map(d => ({ id: d.id, ...(d.data() as any) } as Pulse))
         .filter(p => p.type === 'event')
         .sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
+};
+
+// One-time migration for fully-enforced visibility: stamp every pre-existing pulse that lacks
+// a `visibility` with 'public', so the visibility-scoped `in` queries include legacy pulses
+// (an `in` filter skips docs missing the field). Staff-run, safe to re-run. Returns the count.
+export const backfillPulseVisibility = async (): Promise<number> => {
+    const snap = await getDocs(pulsesCollection);
+    const missing = snap.docs.filter(d => d.data().visibility === undefined);
+    for (let i = 0; i < missing.length; i += 400) {
+        const batch = writeBatch(db);
+        missing.slice(i, i + 400).forEach(d => batch.update(d.ref, { visibility: 'public' }));
+        await batch.commit();
+    }
+    return missing.length;
 };
 
 // ---------------------------------------------------------------------------
@@ -964,6 +993,7 @@ export const createDecision = async (
         type: 'decision',
         communityId: community.id,
         domain: normalizeDomain(community.domain),
+        visibility: 'public' as PulseVisibility, // governance is transparent — decisions stay public
         nature: data.nature,
         title: data.title,
         body: data.body || '',
@@ -975,14 +1005,16 @@ export const createDecision = async (
         status: passed ? 'passed' as const : 'open' as const,
     };
     const hash = await createBlock('DECISION', payload, Date.now());
+    const lid = uuidv7();
     const ref = await addDoc(pulsesCollection, {
         ...payload,
+        lid,
         previousHash: 'DECISION',
         hash,
         ...(passed ? { passedAt: serverTimestamp() } : {}),
         createdAt: serverTimestamp(),
     });
-    return { id: ref.id, ...payload, previousHash: 'DECISION', hash } as unknown as Decision;
+    return { id: ref.id, lid, ...payload, previousHash: 'DECISION', hash } as unknown as Decision;
 };
 
 // Add a voice. When the circle reaches the threshold, the decision passes and an
@@ -1022,17 +1054,19 @@ export const deleteCommunityEvent = (eventId: string) => deleteDoc(doc(db, 'puls
 // form around it. It's a pulse of type 'event' on the one ledger, like community events.
 export const createEvent = async (data: any) => {
     const domain = normalizeDomain(data.domain || (typeof window !== 'undefined' ? window.location.hostname : ''));
-    const eventPayload = { ...data, type: 'event', domain };
+    const eventPayload = { ...data, type: 'event', domain, visibility: data.visibility || 'public' };
     const hash = await createBlock('EVENT', eventPayload, Date.now());
+    const lid = uuidv7();
     const ref = await addDoc(pulsesCollection, {
         ...eventPayload,
+        lid,
         loveCount: 0,
         commentCount: 0,
         previousHash: 'EVENT',
         hash,
         createdAt: serverTimestamp(),
     });
-    return { id: ref.id, ...eventPayload, loveCount: 0, commentCount: 0, previousHash: 'EVENT', hash } as Pulse;
+    return { id: ref.id, lid, ...eventPayload, loveCount: 0, commentCount: 0, previousHash: 'EVENT', hash } as Pulse;
 };
 
 export const createCommunityEvent = async (community: Community, data: any) => {
@@ -1042,25 +1076,31 @@ export const createCommunityEvent = async (community: Community, data: any) => {
         domain: normalizeDomain(community.domain),
         communityId: community.id,
         communityName: community.name,
+        visibility: data.visibility || 'public',
     };
     const hash = await createBlock('COMMUNITY_EVENT', eventPayload, Date.now());
+    const lid = uuidv7();
     const eventRef = await addDoc(pulsesCollection, {
         ...eventPayload,
+        lid,
         loveCount: 0,
         commentCount: 0,
         previousHash: 'COMMUNITY_EVENT',
         hash,
         createdAt: serverTimestamp(),
     });
-    return { id: eventRef.id, ...eventPayload, loveCount: 0, commentCount: 0, previousHash: 'COMMUNITY_EVENT', hash } as Pulse;
+    return { id: eventRef.id, lid, ...eventPayload, loveCount: 0, commentCount: 0, previousHash: 'COMMUNITY_EVENT', hash } as Pulse;
 };
 
-const fetchPulsesRaw = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {
+const fetchPulsesRaw = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, levels?: PulseVisibility[]) => {
+    // Visibility-scope the broad feed so a restricted pulse in this domain can't get the
+    // whole query rejected. Broad feeds carry no scope context, so `levels` is public + node.
+    const visFilter = levels && levels.length ? [where('visibility', 'in', levels)] : [];
     let q;
     if (domainFilter && !isHubDomain(domainFilter)) {
-        q = query(pulsesCollection, where('domain', '==', domainFilter.replace(/^www\./, '')), limit(24));
+        q = query(pulsesCollection, where('domain', '==', domainFilter.replace(/^www\./, '')), ...visFilter, limit(24));
     } else {
-        q = query(pulsesCollection, orderBy('createdAt', 'desc'), limit(12));
+        q = query(pulsesCollection, ...visFilter, orderBy('createdAt', 'desc'), limit(12));
     }
 
     if (lastD) q = query(q, startAfter(lastD));
@@ -1079,16 +1119,16 @@ const fetchPulsesRaw = async (lastD?: QueryDocumentSnapshot, domainFilter?: stri
 // Pulse types that have their own surfaces and must not bleed into the general pulse feed.
 const NON_FEED_PULSE_TYPES = new Set(['reach', 'tree_chat', 'event', 'decision']);
 
-export const fetchPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {
-    const res = await fetchPulsesRaw(lastD, domainFilter);
+export const fetchPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, levels?: PulseVisibility[]) => {
+    const res = await fetchPulsesRaw(lastD, domainFilter, levels);
     return {
         items: res.items.filter(pulse => !NON_FEED_PULSE_TYPES.has((pulse as any).type)),
         lastDoc: res.lastDoc
     };
 }
 
-export const fetchEventPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {
-    const res = await fetchPulsesRaw(lastD, domainFilter);
+export const fetchEventPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, levels?: PulseVisibility[]) => {
+    const res = await fetchPulsesRaw(lastD, domainFilter, levels);
     return {
         items: res.items.filter(pulse => pulse.type === 'event'),
         lastDoc: res.lastDoc
@@ -1253,6 +1293,7 @@ export const mintPulse = async (pulseData: any) => {
             ...pulseData,
             domain,
             id: newPulseRef.id,
+            visibility: pulseData.visibility || 'public',
             loveCount: pulseData.loveCount || 0,
             commentCount: pulseData.commentCount || 0,
             createdAt: serverTimestamp(),

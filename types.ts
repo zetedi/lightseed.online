@@ -20,6 +20,7 @@ export type VisionStatus = "seed" | "growing" | "flowering" | "dormant";
 // A direction of growth
 export interface Vision {
   id: string;
+  lid?: string; // Lightseed ID — the object's portable, time-ordered true name (UUIDv7).
   lifetreeId?: string; // Legacy
   treeId?: string; // V2
   authorId: string; // Legacy

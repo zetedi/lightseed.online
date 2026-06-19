@@ -14,12 +14,17 @@ import { normalizeTheme } from '../utils/theme';
 import { AppearanceEditor } from './ui/AppearanceEditor';
 import { IntelligencePanel } from './intelligence/IntelligencePanel';
 import { LoreSection, loreTabs, type LoreTabId } from './about/AboutSections';
+import { queryableLevels, visibilitiesForScope } from '../src/domain/pulseVisibility';
+import type { PulseVisibility } from '../src/domain/pulse';
 
 interface CommunityProfileProps {
   community: Community;
   onUpdate?: (updates: Partial<Community>) => void;
   onClose: () => void;
   onViewTree?: (tree: Lifetree) => void;
+  // Open an event's page. Seeing an event implies at least viewer rights, so this is
+  // offered to everyone — not gated behind edit permissions.
+  onViewEvent?: (event: Pulse) => void;
   currentUser?: Lightseed | null;
   currentUserId?: string;
   isAdmin?: boolean;
@@ -45,6 +50,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   onUpdate,
   onClose,
   onViewTree,
+  onViewEvent,
   currentUser,
   currentUserId,
   isAdmin,
@@ -54,6 +60,13 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const { t } = useLanguage();
   const canEdit = currentUserId === community.ownerId || isSuperAdmin || isAdmin;
   const canDelete = currentUserId === community.ownerId || isSuperAdmin;
+
+  // Is the viewer inside this community? Drives which event visibility levels they may read.
+  const isMember = !!currentUserId && (community.ownerId === currentUserId || (community.memberIds || []).includes(currentUserId));
+  const eventLevels = queryableLevels(
+    { uid: currentUserId, isStaff: isSuperAdmin || isAdmin, communityIds: isMember ? [community.id] : [] },
+    { communityId: community.id },
+  );
 
   const [activeTab, setActiveTab] = useState<TabKey>('vision');
 
@@ -117,6 +130,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const [eventDate, setEventDate] = useState('');
   const [eventLocation, setEventLocation] = useState('');
   const [eventBody, setEventBody] = useState('');
+  const [eventVisibility, setEventVisibility] = useState<PulseVisibility>('public');
   const [eventImageUrls, setEventImageUrls] = useState<string[]>([]);
   const [isEventSaving, setIsEventSaving] = useState(false);
   const [isUploadingEventImage, setIsUploadingEventImage] = useState(false);
@@ -156,7 +170,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   }, [community.domain, currentUserId]);
 
   useEffect(() => {
-    getCommunityEvents(community.id).then(setEvents).catch(() => {});
+    getCommunityEvents(community.id, eventLevels).then(setEvents).catch(() => {});
   }, [community.id]);
 
   useEffect(() => {
@@ -332,6 +346,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
         imageUrls: eventImageUrls,
         eventDate: eventDate || '',
         eventLocation: eventLocation.trim(),
+        visibility: eventVisibility,
         authorId: currentUserId,
         authorName: currentUser?.displayName || 'Community Admin',
         authorPhoto: currentUser?.photoURL || undefined,
@@ -340,9 +355,10 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       setEventDate('');
       setEventLocation('');
       setEventBody('');
+      setEventVisibility('public');
       setEventImageUrls([]);
       setShowEventForm(false);
-      getCommunityEvents(community.id).then(setEvents).catch(() => {});
+      getCommunityEvents(community.id, eventLevels).then(setEvents).catch(() => {});
     } catch (error: any) {
       console.error(error);
       showAlert('Failed to create event: ' + (error.message || 'Unknown error'));
@@ -644,6 +660,12 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                       <input dir="auto" value={eventLocation} onChange={e => setEventLocation(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder={t('location')} />
                     </div>
                     <textarea dir="auto" value={eventBody} onChange={e => setEventBody(e.target.value)} className="min-h-24 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder={t('event_details_ph')} />
+                    <label className="block">
+                      <span className="mb-1 block text-[10px] font-bold uppercase text-slate-400">{t('visibility')}</span>
+                      <select value={eventVisibility} onChange={e => setEventVisibility(e.target.value as PulseVisibility)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        {visibilitiesForScope('community').map(v => <option key={v} value={v}>{t(`vis_${v}` as any)}</option>)}
+                      </select>
+                    </label>
                     <div className="grid grid-cols-3 gap-2">
                       {eventImageUrls.map((url, index) => (
                         <div key={url} className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
@@ -668,7 +690,11 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                 ) : (
                   <div className="space-y-3">
                     {events.map(ev => (
-                      <div key={ev.id} className="group flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
+                      <div
+                        key={ev.id}
+                        onClick={() => onViewEvent?.(ev)}
+                        className={`group flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm ${onViewEvent ? 'cursor-pointer transition-shadow hover:shadow-md' : ''}`}
+                      >
                         <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-slate-100">
                           {ev.imageUrl ? <img src={ev.imageUrl} className="h-full w-full object-cover" alt={ev.title} /> : <DefaultCardImage />}
                         </div>
@@ -679,7 +705,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                           </p>
                         </div>
                         {canEdit && (
-                          <button onClick={() => handleDeleteEvent(ev.id)} title={t('delete')} className="shrink-0 rounded-full p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100">
+                          <button onClick={(e) => { e.stopPropagation(); handleDeleteEvent(ev.id); }} title={t('delete')} className="shrink-0 rounded-full p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100">
                             <Icons.Trash />
                           </button>
                         )}

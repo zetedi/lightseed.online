@@ -5,6 +5,7 @@ export type LifetreeType = "human" | "ai" | "community" | "project" | "LIFETREE"
 // The Entity/Immutable chain container / Living Identity
 export interface Lifetree {
   id: string;
+  lid?: string; // Lightseed ID — the object's portable, time-ordered true name (UUIDv7).
   ownerId: string; // Legacy
   name: string;
   shortTitle?: string; // Legacy

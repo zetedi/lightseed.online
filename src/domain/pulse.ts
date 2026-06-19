@@ -3,6 +3,12 @@ import type { Timestamp } from 'firebase/firestore';
 export type LegacyPulseType = 'STANDARD' | 'GROWTH';
 export type PulseType = 'observation' | 'dream' | 'offering' | 'request' | 'translation' | 'validation' | 'event' | 'growth' | 'reach' | LegacyPulseType;
 
+// Who may see a pulse, relative to where it is rooted (its scope: tree / community / node).
+// 'public' = anyone; 'node' = any signed-in member; 'community' = members of its community;
+// 'circle' = guardians of its tree; 'private' = author (and staff) only. Absence = 'public'.
+// The audience is generated and enforced by src/domain/pulseVisibility.ts + Firestore rules.
+export type PulseVisibility = 'public' | 'node' | 'community' | 'circle' | 'private';
+
 export interface PulseInterpretation {
     depth: number;
     interpretation: string;
@@ -14,10 +20,14 @@ export interface PulseInterpretation {
 // The fundamental unit of the network
 export interface Pulse {
   id: string;
+  lid?: string; // Lightseed ID — the block's portable, time-ordered true name (UUIDv7).
   lifetreeId?: string; // Legacy
   treeId?: string; // V2
   visionId?: string; // V2
+  communityId?: string; // Set on community-scoped pulses (community events, decisions).
   type: PulseType;
+  // Audience. Absent = 'public' (every legacy pulse reads as public). See PulseVisibility.
+  visibility?: PulseVisibility;
   
   // Data Payload
   title: string; // Legacy

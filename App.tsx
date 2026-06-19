@@ -5,6 +5,7 @@ import {
   logout,
   fetchPulses,
   fetchEventPulses,
+  backfillPulseVisibility,
   createEvent,
   fetchReachPulses,
   fetchMyReaches,
@@ -56,6 +57,7 @@ import { ForestMap } from './components/ForestMap';
 import { LifetreeDetail } from './components/LifetreeDetail';
 import { VisionDetail } from './components/VisionDetail';
 import { PulseDetail } from './components/PulseDetail';
+import { queryableLevels } from './src/domain/pulseVisibility';
 import { GrowthPlayerModal } from './components/GrowthPlayerModal';
 import { LightseedProfile } from './components/LightseedProfile';
 import { Dashboard } from './components/Dashboard';
@@ -417,6 +419,19 @@ const AppContent = () => {
     useEffect(() => {
         if (isSuperAdmin && lightseed?.uid) ensureIntelligenceCommons(lightseed.uid);
     }, [isSuperAdmin, lightseed?.uid]);
+
+    // Superadmin-only console hook for the one-time visibility migration. Run it once from
+    // the deployed site's devtools: `await backfillPulseVisibility()`. Idempotent.
+    useEffect(() => {
+        if (!isSuperAdmin) return;
+        (window as any).backfillPulseVisibility = async () => {
+            console.log('[lightseed] backfilling pulse visibility…');
+            const n = await backfillPulseVisibility();
+            console.log(`[lightseed] done — stamped visibility:"public" on ${n} legacy pulse(s).`);
+            return n;
+        };
+        return () => { delete (window as any).backfillPulseVisibility; };
+    }, [isSuperAdmin]);
     
     useEffect(() => {
         const handleScroll = () => {
@@ -463,6 +478,9 @@ const AppContent = () => {
         const isDevHost = /localhost|127\.0\.0\.1|^192\.168\.|\.local$/.test(window.location.hostname);
         // On dev hosts a superadmin sees the whole network (no domain scoping).
         const currentDomain = (isDevHost && isSuperAdmin) ? 'lightseed.online' : window.location.hostname;
+        // Broad feeds carry no scope, so this resolves to public (+ node when signed in; all
+        // but private for staff) — keeping the query to docs the rules will allow.
+        const feedLevels = queryableLevels({ uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin });
 
         try {
             if (tab === 'forest') {
@@ -486,7 +504,7 @@ const AppContent = () => {
                 }
             }
             else if (tab === 'pulses') {
-                const res = await fetchPulses(currentLastDoc, currentDomain);
+                const res = await fetchPulses(currentLastDoc, currentDomain, feedLevels);
                 setData(prev => {
                     const newItems = res.items;
                     if (reset) return newItems;
@@ -497,7 +515,7 @@ const AppContent = () => {
                 setHasMore(!!res.lastDoc);
             }
             else if (tab === 'events') {
-                const res = await fetchEventPulses(currentLastDoc, currentDomain);
+                const res = await fetchEventPulses(currentLastDoc, currentDomain, feedLevels);
                 setData(prev => {
                     const newItems = res.items;
                     if (reset) return newItems;
@@ -1314,6 +1332,7 @@ const AppContent = () => {
                     <CommunityProfile
                         community={selectedCommunity}
                         onViewTree={(tree: Lifetree) => { setSelectedCommunity(null); setSelectedTree(tree); }}
+                        onViewEvent={(p: Pulse) => { setSelectedCommunity(null); setSelectedPulse(p); }}
                         onClose={() => setSelectedCommunity(null)}
                         onUpdate={(updates) => {
                             setSelectedCommunity(prev => prev ? { ...prev, ...updates } : null);

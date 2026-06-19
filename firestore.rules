@@ -20,6 +20,33 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/communities/$(communityId)) &&
         get(/databases/$(database)/documents/communities/$(communityId)).data.ownerId == request.auth.uid;
     }
+    // Visibility enforcement for pulses (events/decisions/reaches/growth). Mirrors the
+    // generator in src/domain/pulseVisibility.ts → canView(). Same-document get()s are
+    // cached within one request, so a scoped query (one community / one tree) costs one read.
+    function isCommunityMember(communityId) {
+      return communityId is string && communityId != '' &&
+        exists(/databases/$(database)/documents/communities/$(communityId)) &&
+        (request.auth.uid in get(/databases/$(database)/documents/communities/$(communityId)).data.get('memberIds', [])
+         || get(/databases/$(database)/documents/communities/$(communityId)).data.ownerId == request.auth.uid);
+    }
+    function isTreeGuardian(treeId) {
+      return treeId is string && treeId != '' &&
+        exists(/databases/$(database)/documents/lifetrees/$(treeId)) &&
+        (request.auth.uid in get(/databases/$(database)/documents/lifetrees/$(treeId)).data.get('guardians', [])
+         || get(/databases/$(database)/documents/lifetrees/$(treeId)).data.ownerId == request.auth.uid);
+    }
+    function canReadPulse() {
+      // Absent visibility = 'public', so every legacy pulse stays readable.
+      return resource.data.get('visibility', 'public') == 'public'
+        || (isSignedIn() && (
+             isStaff()
+             || resource.data.authorId == request.auth.uid
+             || resource.data.get('visibility', 'public') == 'node'
+             || (resource.data.get('visibility', 'public') == 'community' && isCommunityMember(resource.data.get('communityId', '')))
+             || (resource.data.get('visibility', 'public') == 'circle'
+                 && (isTreeGuardian(resource.data.get('treeId', '')) || isTreeGuardian(resource.data.get('lifetreeId', ''))))
+           ));
+    }
 
     // Admins collection: read staff, no direct write
     match /admins/{adminId} {
@@ -79,7 +106,7 @@ service cloud.firestore {
     // expensive get(), that rule is enforced in the service layer (sendReach) and the
     // UI (canReachTree). See services/firebase.ts -> sendReach.
     match /pulses/{pulseId} {
-      allow read: if true;
+      allow read: if canReadPulse();
       allow create: if isSignedIn() && (
         request.resource.data.type != 'event' ||
         !('communityId' in request.resource.data) ||   // standalone event — anyone may plant one

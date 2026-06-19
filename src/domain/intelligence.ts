@@ -19,6 +19,7 @@ export type IntelligenceProviderId =
 // to some set of memories, available to some set of communities.
 export interface Intelligence {
   id: string;
+  lid?: string; // Lightseed ID — the object's portable, time-ordered true name (UUIDv7).
   name: string;
   description?: string;
   provider: IntelligenceProviderId;
@@ -54,6 +55,7 @@ export type MemoryVisibility = 'private' | 'community' | 'public';
 
 export interface Memory {
   id: string;
+  lid?: string; // Lightseed ID — durable memory's portable, time-ordered true name (UUIDv7).
   name: string;
   description?: string;
   visibility: MemoryVisibility;
