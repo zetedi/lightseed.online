@@ -88,7 +88,7 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="space-y-3 sm:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* White-Label Community Hero */}
             {!lightseed && hostCommunity && (
                 <div 
@@ -135,7 +135,7 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
                 tall. A distorted node/community hero, a living leaf texture, and an oversized
                 EVENTS wordmark running behind the cards. Looks special with or without a hero. */}
             {lightseed && events && events.length > 0 && (
-                <div className="relative w-full overflow-hidden rounded-2xl shadow-xl h-28 md:h-32 bg-emerald-950">
+                <div className="relative w-full overflow-hidden rounded-2xl h-28 md:h-32 bg-emerald-950 ring-1 ring-amber-300/50 shadow-[0_0_40px_-4px_rgba(251,191,36,0.5)]">
                     {/* Background: the node/community hero, softly distorted — or an emerald wash */}
                     {communityHero ? (
                         <img src={communityHero} className="absolute inset-0 h-full w-full scale-110 object-cover blur-[2px] saturate-150" alt="" />
