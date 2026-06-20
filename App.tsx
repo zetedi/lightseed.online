@@ -445,6 +445,44 @@ const AppContent = () => {
         fetchEventPulses(undefined, currentDomain, levels).then(r => setDashboardEvents(r.items)).catch(() => {});
     }, [lightseed?.uid, isSuperAdmin, isAdmin]);
 
+    // --- Browser back button: close the open detail/modal instead of leaving the app. ---
+    // No router here, so we add one history entry whenever an overlay opens; Back pops it and
+    // closes the overlay. With nothing open, Back behaves normally (leaves the page).
+    const overlayOpen = !!(
+        selectedTree || selectedVision || selectedPulse || editingEvent || selectedCommunity ||
+        showAuthModal || showPlantModal || showPulseModal || showEventModal || showVisionModal || showGrowthPlayer
+    );
+    const overlayPushedRef = useRef(false);
+    useEffect(() => {
+        if (overlayOpen && !overlayPushedRef.current) {
+            window.history.pushState({ lsOverlay: true }, '');
+            overlayPushedRef.current = true;
+        } else if (!overlayOpen && overlayPushedRef.current) {
+            // Closed via the UI — consume the history entry we added.
+            overlayPushedRef.current = false;
+            if ((window.history.state as any)?.lsOverlay) window.history.back();
+        }
+    }, [overlayOpen]);
+    useEffect(() => {
+        const onPop = () => {
+            if (!overlayPushedRef.current) return; // nothing of ours to undo → let the browser navigate
+            overlayPushedRef.current = false;
+            setSelectedTree(null);
+            setSelectedVision(null);
+            setSelectedPulse(null);
+            setEditingEvent(null);
+            setSelectedCommunity(null);
+            setShowAuthModal(false);
+            setShowPlantModal(false);
+            setShowPulseModal(false);
+            setShowEventModal(false);
+            setShowVisionModal(false);
+            setShowGrowthPlayer(null);
+        };
+        window.addEventListener('popstate', onPop);
+        return () => window.removeEventListener('popstate', onPop);
+    }, []);
+
     useEffect(() => {
         const handleScroll = () => {
             if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
