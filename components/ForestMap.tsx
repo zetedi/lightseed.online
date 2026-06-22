@@ -4,6 +4,7 @@ import { type Lifetree } from '../types';
 import { isExplicitlyValidatedTree } from '../utils/validation';
 import { Loading } from './ui/Loading';
 import { Icons } from './ui/Icons';
+import { treeCoordinates as getTreeCoordinates, forestMarkers } from '../src/domain/views/forest';
 
 interface Cluster {
     id: string;
@@ -19,16 +20,6 @@ interface StackLevel {
     lat: number;
     lng: number;
 }
-
-const getTreeCoordinates = (tree: Lifetree) => {
-    const rawLat = tree.latitude ?? (tree as any).lat;
-    const rawLng = tree.longitude ?? (tree as any).lng;
-    const lat = Number(rawLat);
-    const lng = Number(rawLng);
-
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-    return { lat, lng };
-};
 
 export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, primaryTree = null }: { trees: Lifetree[], onView: (tree: Lifetree) => void, onReach?: (tree: Lifetree) => void, loading?: boolean, onRefresh?: () => void, primaryTree?: Lifetree | null }) => {
     const mapContainer = useRef<HTMLDivElement>(null);
@@ -49,20 +40,9 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
     // Memoized + slimmed: only fields that change a marker's appearance. Excludes
     // name/body (heavy text, irrelevant to markers) so this isn't rebuilt megabyte-sized
     // on every render — a major cost once the map holds hundreds of trees.
-    const treesSignature = useMemo(() => visibleTrees.map(tree => {
-        const coords = getTreeCoordinates(tree);
-        return [
-            tree.id,
-            coords?.lat,
-            coords?.lng,
-            tree.status,
-            tree.isNature ? 'nature' : 'tree',
-            tree.imageUrl || '',
-            tree.latestGrowthUrl || '',
-            tree.guardians?.length || 0,
-            tree.validated ? 'validated' : ''
-        ].join(':');
-    }).join('|'), [visibleTrees]);
+    const treesSignature = useMemo(() => forestMarkers(visibleTrees).map(m =>
+        [m.id, m.lat, m.lng, m.status, m.kind, m.imageUrl, m.growthUrl, m.guardianCount, m.validated ? 'validated' : ''].join(':')
+    ).join('|'), [visibleTrees]);
     const expansionSignature = expansionStack.map(level => `${level.clusterId}:${level.lat}:${level.lng}:${level.trees.map(tree => tree.id).join(',')}`).join('|');
 
     useEffect(() => {

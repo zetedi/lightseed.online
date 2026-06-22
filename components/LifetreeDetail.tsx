@@ -10,6 +10,8 @@ import { updateLifetree, toggleGuardianship, setTreeStatus, getPulsesByTreeId, c
 import { Pulse, type InvitableRole, treeRelationLabels } from '../types';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
 import { canReachTree } from '../utils/reachPermissions';
+import { treeCircle } from '../src/domain/views/circle';
+import { firestoreStore } from '../src/adapters/firestore';
 
 export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, myActiveTree, currentUserId, isAdmin, isSuperAdmin, targetUserProfile }: any) => {
    const { t } = useLanguage();
@@ -198,14 +200,16 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    // Tree Circle — shared care of this Lifetree. When someone accepts an invite a
    // community circle forms around the tree (see acceptTreeInvite Cloud Function).
    const canInviteToCircle = isOwner || isSuperAdmin;
-   const circleGroups = ([
-       ['owner', [tree.ownerId]],
-       ['co_owner', tree.coOwnerIds || []],
-       ['guardian', tree.guardians || []],
-       ['steward', tree.stewardIds || []],
-       ['observer', tree.observerIds || []],
-   ] as [keyof typeof treeRelationLabels, string[]][]).filter(([, ids]) => ids.length > 0);
-   const circleSize = new Set([tree.ownerId, ...(tree.coOwnerIds || []), ...(tree.guardians || []), ...(tree.stewardIds || []), ...(tree.observerIds || [])].filter(Boolean)).size;
+   // The Tree Circle is now a prism over the LIN: fetch the tree's incoming links through the
+   // Store port (the Firestore adapter maps the legacy role arrays → Link[]), then project.
+   const [circle, setCircle] = useState<ReturnType<typeof treeCircle>>({ groups: [], size: 0 });
+   useEffect(() => {
+       let alive = true;
+       firestoreStore.linksTo(tree.id)
+           .then(links => { if (alive) setCircle(treeCircle(tree.ownerId, links)); })
+           .catch(() => {});
+       return () => { alive = false; };
+   }, [tree.id, tree.ownerId]);
 
    const handleSendInvite = async (e: React.FormEvent) => {
        e.preventDefault();
@@ -235,16 +239,16 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
            <h3 className="mb-3 flex items-center gap-2 font-bold uppercase tracking-wider text-emerald-700">
                <Icons.Venn /> <span>Tree Circle</span>
            </h3>
-           {circleSize <= 1 ? (
+           {circle.size <= 1 ? (
                <p className="mb-4 text-sm text-emerald-800/80">This tree does not have a circle yet. Invite someone to care for it with you — when they accept, a community grows around the tree.</p>
            ) : (
                <div className="mb-4">
                    <p className="mb-3 text-sm text-emerald-800/80">This tree is cared for by:</p>
                    <div className="space-y-1.5">
-                       {circleGroups.map(([role, ids]) => (
-                           <div key={role} className="flex items-center justify-between rounded-lg bg-white/60 px-3 py-1.5 text-sm">
-                               <span className="font-medium">{treeRelationLabels[role]}{ids.length > 1 ? 's' : ''}</span>
-                               <span className="font-bold text-emerald-700">{ids.length}</span>
+                       {circle.groups.map(g => (
+                           <div key={g.role} className="flex items-center justify-between rounded-lg bg-white/60 px-3 py-1.5 text-sm">
+                               <span className="font-medium">{treeRelationLabels[g.role]}{g.members.length > 1 ? 's' : ''}</span>
+                               <span className="font-bold text-emerald-700">{g.members.length}</span>
                            </div>
                        ))}
                    </div>

@@ -15,6 +15,9 @@ import { AppearanceEditor } from './ui/AppearanceEditor';
 import { IntelligencePanel } from './intelligence/IntelligencePanel';
 import { LoreSection, loreTabs, type LoreTabId } from './about/AboutSections';
 import { queryableLevels, visibilitiesForScope } from '../src/domain/pulseVisibility';
+import { councilView } from '../src/domain/views/council';
+import { firestoreStore } from '../src/adapters/firestore';
+import { isParticipant } from '../src/domain/views/participation';
 import type { PulseVisibility } from '../src/domain/pulse';
 
 interface CommunityProfileProps {
@@ -61,8 +64,20 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const canEdit = currentUserId === community.ownerId || isSuperAdmin || isAdmin;
   const canDelete = currentUserId === community.ownerId || isSuperAdmin;
 
-  // Is the viewer inside this community? Drives which event visibility levels they may read.
-  const isMember = !!currentUserId && (community.ownerId === currentUserId || (community.memberIds || []).includes(currentUserId));
+  // Membership as a prism over the LIN, read through the Store port (the adapter maps the
+  // legacy memberIds → 'member' links). Seeded synchronously from the prop (`memberSeed`) so
+  // the events/visibility flow is correct on first render with no flicker; the port-derived
+  // value keeps it right once memberIds moves into a links collection.
+  const memberSeed = !!currentUserId && (community.ownerId === currentUserId || (community.memberIds || []).includes(currentUserId));
+  const [memberByLink, setMemberByLink] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    firestoreStore.linksTo(community.id, 'member')
+      .then(links => { if (alive) setMemberByLink(isParticipant(links, currentUserId)); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [community.id, currentUserId]);
+  const isMember = memberSeed || memberByLink;
   const eventLevels = queryableLevels(
     { uid: currentUserId, isStaff: isSuperAdmin || isAdmin, communityIds: isMember ? [community.id] : [] },
     { communityId: community.id },
@@ -772,32 +787,28 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                   <p className="py-8 text-center text-sm text-slate-400">{t('no_decisions')}</p>
                 ) : (
                   <div className="space-y-3">
-                    {decisions.map(d => {
-                      const voted = !!currentUserId && (d.votes || []).includes(currentUserId);
-                      const passed = d.status === 'passed';
-                      return (
-                        <div key={d.id} className={`rounded-2xl border p-4 ${passed ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-white'}`}>
+                    {councilView(decisions, currentUserId).map(d => (
+                        <div key={d.id} className={`rounded-2xl border p-4 ${d.passed ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-white'}`}>
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-2">
                                 <h4 className="text-sm font-bold text-slate-800">{d.title}</h4>
                                 <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-500">{t(('nature_' + d.nature) as any)}</span>
-                                {passed
+                                {d.passed
                                   ? <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">{t('passed')}</span>
                                   : <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">{t('decision_open')}</span>}
                               </div>
                               {d.body && <p className="mt-1 text-xs italic text-slate-500">{d.body}</p>}
-                              <div className="mt-2 text-[11px] font-bold text-slate-400">{(d.votes || []).length} / {d.votesRequired} {t('voices')}</div>
+                              <div className="mt-2 text-[11px] font-bold text-slate-400">{d.voiceCount} / {d.voicesRequired} {t('voices')}</div>
                             </div>
-                            {!passed && (
-                              <button onClick={() => handleVote(d.id)} disabled={votingId === d.id || voted} className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${voted ? 'bg-slate-100 text-slate-400' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}>
-                                {voted ? t('voted') : (votingId === d.id ? '…' : t('vote'))}
+                            {!d.passed && (
+                              <button onClick={() => handleVote(d.id)} disabled={votingId === d.id || d.voted} className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${d.voted ? 'bg-slate-100 text-slate-400' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}>
+                                {d.voted ? t('voted') : (votingId === d.id ? '…' : t('vote'))}
                               </button>
                             )}
                           </div>
                         </div>
-                      );
-                    })}
+                      ))}
                   </div>
                 )}
               </div>

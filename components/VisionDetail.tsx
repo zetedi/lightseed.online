@@ -5,6 +5,8 @@ import { Vision } from '../types';
 import { Icons } from './ui/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { joinVision, leaveVision } from '../services/firebase';
+import { firestoreStore } from '../src/adapters/firestore';
+import { participants, isParticipant } from '../src/domain/views/participation';
 
 interface VisionDetailProps {
     vision: Vision;
@@ -24,12 +26,17 @@ export const VisionDetail = ({ vision, onClose, currentUserId, onDelete }: Visio
     const [isUpdating, setIsUpdating] = useState(false);
     const [participantCount, setParticipantCount] = useState(0);
 
+    // Participation as a prism over the LIN: the vision's incoming 'joined' links, read
+    // through the Store port (the adapter maps the legacy joinedUserIds array → Link[]).
     useEffect(() => {
-        if (currentUserId && vision.joinedUserIds) {
-            setIsJoined(vision.joinedUserIds.includes(currentUserId));
-            setParticipantCount(vision.joinedUserIds.length);
-        }
-    }, [vision, currentUserId]);
+        let alive = true;
+        firestoreStore.linksTo(vision.id, 'joined').then(links => {
+            if (!alive) return;
+            setIsJoined(isParticipant(links, currentUserId));
+            setParticipantCount(participants(links).length);
+        }).catch(() => {});
+        return () => { alive = false; };
+    }, [vision.id, currentUserId]);
 
     const handleJoinToggle = async () => {
         if (!currentUserId || isUpdating) return;
