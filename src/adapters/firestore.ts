@@ -1,46 +1,47 @@
 import type { Store } from '../domain/store';
 import type { Link, LinkRel } from '../domain/link';
-import { getLifetreeById, db } from '../../services/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../services/firebase';
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 
-// The Firestore ADAPTER — the only place that knows both Firestore and the legacy shape.
-// It maps each entity's legacy actor-arrays → Link[] on read (an anti-corruption layer), so
-// the core + UI see the clean LIN without any data migration. When links become a real
-// collection later, ONLY this file changes — core, projections and views stay untouched.
+// The Firestore ADAPTER — the only place that knows both Firestore and the legacy shape. Each
+// rel ↔ the legacy (collection, actor-array) it lives in, used on BOTH read and write, so the
+// core + UI see the clean LIN without any data migration. When links become a real collection
+// later, ONLY this file changes — core, projections, views and write call sites stay untouched.
 
-// rel → the lifetree role-array it derives from.
-const TREE_ROLE_FIELDS: { rel: LinkRel; field: string }[] = [
-  { rel: 'co_owner', field: 'coOwnerIds' },
-  { rel: 'guardian', field: 'guardians' },
-  { rel: 'steward', field: 'stewardIds' },
-  { rel: 'observer', field: 'observerIds' },
-];
-
-// rels whose parent is NOT a lifetree: the collection + legacy array that holds the actors.
-const NON_TREE: Partial<Record<LinkRel, { coll: string; field: string }>> = {
-  joined: { coll: 'visions', field: 'joinedUserIds' },
-  member: { coll: 'communities', field: 'memberIds' },
+const REL_TARGET: Record<LinkRel, { coll: string; field: string }> = {
+  guardian: { coll: 'lifetrees', field: 'guardians' },
+  co_owner: { coll: 'lifetrees', field: 'coOwnerIds' },
+  steward:  { coll: 'lifetrees', field: 'stewardIds' },
+  observer: { coll: 'lifetrees', field: 'observerIds' },
+  member:   { coll: 'communities', field: 'memberIds' },
+  joined:   { coll: 'visions', field: 'joinedUserIds' },
 };
+const TREE_RELS: LinkRel[] = ['co_owner', 'guardian', 'steward', 'observer'];
 
 const toLinks = (rel: LinkRel, from: string[], to: string): Link[] =>
   from.filter(Boolean).map(f => ({ type: 'link', rel, from: f, to }));
 
 export const firestoreStore: Store = {
   async linksTo(toId: string, rel?: LinkRel): Promise<Link[]> {
-    // Non-tree rel (vision 'joined', community 'member'): one collection, one array.
-    if (rel && NON_TREE[rel]) {
-      const { coll, field } = NON_TREE[rel]!;
+    if (rel) {
+      const { coll, field } = REL_TARGET[rel];
       const snap = await getDoc(doc(db, coll, toId));
       return snap.exists() ? toLinks(rel, ((snap.data() as any)[field] || []) as string[], toId) : [];
     }
-    // Tree roles (or all of them when no rel is given): map the lifetree's role arrays.
-    const tree = await getLifetreeById(toId);
-    if (!tree) return [];
-    const links: Link[] = [];
-    for (const { rel: r, field } of TREE_ROLE_FIELDS) {
-      if (rel && rel !== r) continue;
-      links.push(...toLinks(r, ((tree as any)[field] || []) as string[], toId));
-    }
-    return links;
+    // No rel → a lifetree's whole circle (all role arrays).
+    const snap = await getDoc(doc(db, 'lifetrees', toId));
+    if (!snap.exists()) return [];
+    const data = snap.data() as any;
+    return TREE_RELS.flatMap(r => toLinks(r, (data[REL_TARGET[r].field] || []) as string[], toId));
+  },
+
+  async link(from: string, rel: LinkRel, to: string): Promise<void> {
+    const { coll, field } = REL_TARGET[rel];
+    await updateDoc(doc(db, coll, to), { [field]: arrayUnion(from) });
+  },
+
+  async unlink(from: string, rel: LinkRel, to: string): Promise<void> {
+    const { coll, field } = REL_TARGET[rel];
+    await updateDoc(doc(db, coll, to), { [field]: arrayRemove(from) });
   },
 };

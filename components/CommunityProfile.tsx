@@ -4,7 +4,7 @@ import { showAlert, showConfirm } from "./ui/Dialog";
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
 import { Community, Lifetree, Lightseed, Pulse, Intelligence, Persona, Sanctuary } from '../types';
-import { updateCommunity, uploadImage, getTreesByDomain, deleteCommunity, createCommunityEvent, updateEvent, deleteCommunityEvent, getCommunityByDomain, getCommunityEvents, toggleGuardianship, getSanctuariesByDomain, createDecision, voteOnDecision, getDecisions } from '../services/firebase';
+import { updateCommunity, uploadImage, getTreesByDomain, deleteCommunity, createCommunityEvent, updateEvent, deleteCommunityEvent, getCommunityByDomain, getCommunityEvents, getSanctuariesByDomain, createDecision, voteOnDecision, getDecisions } from '../services/firebase';
 import { DECISION_NATURES, type Decision, type DecisionNature } from '../src/domain/decision';
 import { getSelectableIntelligences, listPersonas } from '../services/intelligence';
 import RichTextEditor from './ui/RichTextEditor';
@@ -18,6 +18,7 @@ import { queryableLevels, visibilitiesForScope } from '../src/domain/pulseVisibi
 import { councilView } from '../src/domain/views/council';
 import { firestoreStore } from '../src/adapters/firestore';
 import { isParticipant } from '../src/domain/views/participation';
+import { canTendTree } from '../src/domain/policy';
 import type { PulseVisibility } from '../src/domain/pulse';
 
 interface CommunityProfileProps {
@@ -208,11 +209,11 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const isGuardian = (tree: Lifetree) => !!currentUserId && (tree.guardians || []).includes(currentUserId);
 
   const handleToggleGuardian = async (tree: Lifetree) => {
-    if (!currentUserId) { showAlert('Sign in to join a guardianship.'); return; }
+    if (!canTendTree(currentUserId)) { showAlert('Sign in to join a guardianship.'); return; }
     const join = !isGuardian(tree);
     setTogglingId(tree.id);
     try {
-      await toggleGuardianship(tree.id, currentUserId, join);
+      await (join ? firestoreStore.link(currentUserId, 'guardian', tree.id) : firestoreStore.unlink(currentUserId, 'guardian', tree.id));
       setLinkedTrees(prev => prev.map(t => t.id === tree.id
         ? { ...t, guardians: join ? [...(t.guardians || []), currentUserId] : (t.guardians || []).filter(g => g !== currentUserId) }
         : t));

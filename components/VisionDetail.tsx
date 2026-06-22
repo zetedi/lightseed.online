@@ -4,7 +4,7 @@ import { showAlert } from "./ui/Dialog";
 import { Vision } from '../types';
 import { Icons } from './ui/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
-import { joinVision, leaveVision } from '../services/firebase';
+import { canJoinVision } from '../src/domain/policy';
 import { firestoreStore } from '../src/adapters/firestore';
 import { participants, isParticipant } from '../src/domain/views/participation';
 
@@ -39,16 +39,16 @@ export const VisionDetail = ({ vision, onClose, currentUserId, onDelete }: Visio
     }, [vision.id, currentUserId]);
 
     const handleJoinToggle = async () => {
-        if (!currentUserId || isUpdating) return;
+        if (!canJoinVision(currentUserId) || isUpdating) return;
         setIsUpdating(true);
-        
+
         try {
             if (isJoined) {
-                await leaveVision(vision.id, currentUserId);
+                await firestoreStore.unlink(currentUserId, 'joined', vision.id);
                 setIsJoined(false);
                 setParticipantCount(prev => Math.max(0, prev - 1));
             } else {
-                await joinVision(vision.id, currentUserId);
+                await firestoreStore.link(currentUserId, 'joined', vision.id);
                 setIsJoined(true);
                 setParticipantCount(prev => prev + 1);
             }

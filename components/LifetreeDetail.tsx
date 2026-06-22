@@ -6,12 +6,13 @@ import { Icons } from './ui/Icons';
 import Logo from './Logo';
 import { ValidationBadge } from './ValidationBadge';
 import { AutocompleteInput } from './ui/AutocompleteInput';
-import { updateLifetree, toggleGuardianship, setTreeStatus, getPulsesByTreeId, createTreeInvite } from '../services/firebase';
+import { updateLifetree, setTreeStatus, getPulsesByTreeId, createTreeInvite } from '../services/firebase';
 import { Pulse, type InvitableRole, treeRelationLabels } from '../types';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
 import { canReachTree } from '../utils/reachPermissions';
 import { treeCircle } from '../src/domain/views/circle';
 import { firestoreStore } from '../src/adapters/firestore';
+import { canTendTree } from '../src/domain/policy';
 
 export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, myActiveTree, currentUserId, isAdmin, isSuperAdmin, targetUserProfile }: any) => {
    const { t } = useLanguage();
@@ -122,11 +123,11 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    }
 
    const handleToggleGuardian = async () => {
-       if (!currentUserId) return;
+       if (!canTendTree(currentUserId)) return;
        setIsSaving(true);
        try {
            const isJoining = !localIsGuardian;
-           await toggleGuardianship(tree.id, currentUserId, isJoining);
+           await (isJoining ? firestoreStore.link(currentUserId, 'guardian', tree.id) : firestoreStore.unlink(currentUserId, 'guardian', tree.id));
            setLocalIsGuardian(isJoining);
            
            if (onUpdate) {
