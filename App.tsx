@@ -631,13 +631,13 @@ const AppContent = () => {
             if (visions.length < 2) { showAlert('At least two visions are needed to find resonance.'); setIsAnalyzingSynergy(false); return; }
             // Label each vision by its TREE name (visions are often auto-titled "Root Vision"),
             // so resonances read tree-to-tree rather than "Root Vision + Root Vision".
-            const treeIds = Array.from(new Set(visions.map((v: any) => v.treeId || v.lifetreeId).filter(Boolean)));
+            const treeIds = Array.from(new Set(visions.map((v: any) => v.lifetreeId).filter(Boolean)));
             const treeInfo = new Map<string, { name?: string; place?: string }>();
             await Promise.all(treeIds.map(async (tid: string) => {
                 try { const tr = await getLifetreeById(tid); if (tr) treeInfo.set(tid, { name: tr.name, place: (tr as any).locationName }); } catch {}
             }));
             const labeled = visions.map((v: any) => {
-                const tid = v.treeId || v.lifetreeId;
+                const tid = v.lifetreeId;
                 const info = tid ? treeInfo.get(tid) : undefined;
                 const generic = !v.title || v.title.trim().toLowerCase() === 'root vision';
                 // place + vision are the two bases of the resonance analysis.
@@ -645,7 +645,7 @@ const AppContent = () => {
             });
             // Map the labels back to tree ids so a conversation can be started from a resonance.
             const treeIdByName = new Map<string, string>();
-            labeled.forEach((v: any) => { const tid = v.treeId || v.lifetreeId; if (tid && v.title) treeIdByName.set(v.title.trim().toLowerCase(), tid); });
+            labeled.forEach((v: any) => { const tid = v.lifetreeId; if (tid && v.title) treeIdByName.set(v.title.trim().toLowerCase(), tid); });
             const results = (await findVisionSynergies(labeled, preferredIntelligenceId)).map(r => ({
                 ...r,
                 tree1Id: treeIdByName.get((r.vision1Title || '').trim().toLowerCase()),

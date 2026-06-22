@@ -1,40 +1,33 @@
-import type { Timestamp, GeoPoint } from 'firebase/firestore';
+import type { Timestamp } from 'firebase/firestore';
+import type { Entity } from './entity';
 
 export type LifetreeType = "human" | "ai" | "community" | "project" | "LIFETREE" | "GUARDED" | "FAMILY";
 
-// The Entity/Immutable chain container / Living Identity
-export interface Lifetree {
+// The Entity / immutable-chain container / Living Identity
+export interface Lifetree extends Entity {
   id: string;
-  lid?: string; // Lightseed ID — the object's portable, time-ordered true name (UUIDv7).
-  ownerId: string; // Legacy
+  ownerId: string; // canonical owner — load-bearing (rules + queries)
   name: string;
-  shortTitle?: string; // Legacy
-  body: string; // The Vision (Legacy)
+  shortTitle?: string;
+  body: string; // the tree's vision text (canonical)
   imageUrl?: string;
   latestGrowthUrl?: string; // URL of the most recent growth pulse image
   
-  // V2 Fields
-  type?: LifetreeType;
   visionIds?: string[];
   pulseIds?: string[];
-  guardianIds?: string[];
-  // Tree Circle roles (shared care). `guardians` (below) remains the active guardian list.
+  // Tree Circle roles (shared care). `guardians` (below) is the active guardian list.
   coOwnerIds?: string[];
   observerIds?: string[];
   stewardIds?: string[];
   communityId?: string; // The Tree Circle community rooted in this tree, once formed.
   updatedAt?: Timestamp;
-  parentTreeIds?: string[];
-  childTreeIds?: string[];
   aiTokenBalance?: number;
   coherenceScore?: number;
 
-  // Legacy location
+  // Location
   latitude?: number;
   longitude?: number;
   locationName?: string;
-  // V2 location
-  location?: GeoPoint;
 
   domain?: string; // Associated website domain, e.g. "example.com"
   createdAt: Timestamp;
@@ -49,10 +42,10 @@ export interface Lifetree {
   validatorId?: string | null;
   lastTendedAt?: Timestamp;
 
-  // Nature & Guardian Logic (Legacy)
+  // Nature & Guardian Logic
   isNature?: boolean;
-  treeType?: LifetreeType; // Legacy
-  guardians?: string[]; // Array of User IDs (Legacy)
+  treeType?: LifetreeType;
+  guardians?: string[]; // guardianship (user ids); → links in Phase 2
   status?: 'HEALTHY' | 'DANGER';
 
   // Immutable chain Props

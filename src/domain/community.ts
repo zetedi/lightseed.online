@@ -1,8 +1,8 @@
 import type { Timestamp } from 'firebase/firestore';
+import type { Entity } from './entity';
 
-export interface Community {
+export interface Community extends Entity {
   id: string;
-  lid?: string; // Lightseed ID — the object's portable, time-ordered true name (UUIDv7).
   ownerId: string;
   name: string;
   domain: string; // The link to Lifetree

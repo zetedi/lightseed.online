@@ -1,4 +1,5 @@
 import type { Timestamp } from 'firebase/firestore';
+import type { Entity } from './entity';
 
 export type LegacyPulseType = 'STANDARD' | 'GROWTH';
 export type PulseType = 'observation' | 'dream' | 'offering' | 'request' | 'translation' | 'validation' | 'event' | 'growth' | 'reach' | LegacyPulseType;
@@ -18,21 +19,19 @@ export interface PulseInterpretation {
 }
 
 // The fundamental unit of the network
-export interface Pulse {
+export interface Pulse extends Entity {
   id: string;
-  lid?: string; // Lightseed ID — the block's portable, time-ordered true name (UUIDv7).
-  lifetreeId?: string; // Legacy
-  treeId?: string; // V2
-  visionId?: string; // V2
+  lifetreeId?: string; // canonical — the tree this pulse belongs to
+  visionId?: string;
   communityId?: string; // Set on community-scoped pulses (community events, decisions).
   type: PulseType;
   // Audience. Absent = 'public' (every legacy pulse reads as public). See PulseVisibility.
   visibility?: PulseVisibility;
   
   // Data Payload
-  title: string; // Legacy
-  body: string; // Legacy
-  content?: string; // V2
+  title: string; // canonical
+  body: string;  // canonical
+  content?: string;
   imageUrl?: string;
   imageUrls?: string[];
   eventDate?: string;

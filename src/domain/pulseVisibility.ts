@@ -11,9 +11,9 @@ export type PulseScope = 'tree' | 'community' | 'node';
 export const PULSE_VISIBILITIES: PulseVisibility[] = ['public', 'node', 'community', 'circle', 'private'];
 
 // A pulse just enough to reason about its audience — works for partial/raw docs too.
-type ScopedPulse = Pick<Pulse, 'treeId' | 'lifetreeId' | 'communityId' | 'authorId' | 'visibility'>;
+type ScopedPulse = Pick<Pulse, 'lifetreeId' | 'communityId' | 'authorId' | 'visibility'>;
 
-const treeIdOf = (p: ScopedPulse): string | undefined => p.treeId || p.lifetreeId;
+const treeIdOf = (p: ScopedPulse): string | undefined => p.lifetreeId;
 const visOf = (p: ScopedPulse): PulseVisibility => p.visibility || 'public';
 
 // Scope is DERIVED from where the pulse is rooted — never stored. (The edge hiding in the node.)

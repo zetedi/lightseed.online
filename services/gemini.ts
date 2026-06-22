@@ -203,7 +203,7 @@ export const sendMessageToTree = async (message: string, history: {role: 'user' 
     Short title: ${tree.shortTitle || "None"}
     Vision/body: ${tree.body || "No vision provided"}
     Location: ${tree.locationName || "Unknown"}
-    Type: ${tree.treeType || tree.type || "Lifetree"}
+    Type: ${tree.treeType || "Lifetree"}
 
     Speak in first person as this tree, but stay grounded and helpful.
     Use the tree's vision, location, and role as your context.

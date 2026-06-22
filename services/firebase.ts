@@ -1398,7 +1398,7 @@ export const lovePulse = async (id: string, uid: string) => {
             count++; 
             
             // Reward 1 Token to Pulse Author Tree (Living Intelligence Network economy)
-            const treeId = pulseData.lifetreeId || pulseData.treeId;
+            const treeId = pulseData.lifetreeId;
             if (treeId) {
                 const authorTreeRef = doc(db, 'lifetrees', treeId);
                 const authorTree = await t.get(authorTreeRef);

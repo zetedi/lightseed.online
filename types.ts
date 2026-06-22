@@ -2,7 +2,9 @@
 // Fix: Use proper type imports to resolve "no exported member" errors in some TS environments.
 import type { User as FirebaseUser } from 'firebase/auth';
 import type { Timestamp } from 'firebase/firestore';
+import type { Entity } from './src/domain/entity';
 
+export * from './src/domain/entity';
 export * from './src/domain/lifetree';
 export * from './src/domain/pulse';
 export * from './src/domain/reach';
@@ -18,15 +20,13 @@ export type Lightseed = Pick<FirebaseUser, 'uid' | 'email' | 'displayName' | 'ph
 export type VisionStatus = "seed" | "growing" | "flowering" | "dormant";
 
 // A direction of growth
-export interface Vision {
+export interface Vision extends Entity {
   id: string;
-  lid?: string; // Lightseed ID — the object's portable, time-ordered true name (UUIDv7).
-  lifetreeId?: string; // Legacy
-  treeId?: string; // V2
-  authorId: string; // Legacy
+  lifetreeId?: string; // canonical — the tree this vision belongs to
+  authorId: string;    // canonical author — load-bearing (rules + query)
   title: string;
-  body: string; // Legacy
-  description?: string; // V2
+  body: string;        // the vision text (canonical)
+  description?: string;
   link?: string;
   imageUrl?: string;
   createdAt: Timestamp;

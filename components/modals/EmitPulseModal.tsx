@@ -88,7 +88,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
     // Every growth pulse is sealed onto a tree's chain. A vision grows on its rooted tree.
     const lifetreeId = growthKind === 'tree'
       ? (activeTree?.id || '')
-      : ((selectedVision as any)?.treeId || selectedVision?.lifetreeId || activeTree?.id || '');
+      : (selectedVision?.lifetreeId || activeTree?.id || '');
     if (!lifetreeId) {
       showAlert(growthKind === 'vision' ? 'This vision is not rooted in a tree yet, so it cannot grow.' : 'Plant a lifetree before emitting growth.');
       return;
