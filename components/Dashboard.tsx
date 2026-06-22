@@ -4,6 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { generateOracleQuote } from '../services/gemini';
 import { getNetworkStats } from '../services/firebase';
 import { Icons } from './ui/Icons';
+import { ScrollChevrons } from './ui/ScrollChevrons';
 import Logo from './Logo';
 import { Community, Pulse } from '../types';
 
@@ -54,6 +55,7 @@ const LeafTexture = () => (
 
 export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, events, onViewEvent, onViewCommunity, onSetTab, onPlant, onLogin }: DashboardProps) => {
     const { t } = useLanguage();
+    const eventsScrollRef = useRef<HTMLDivElement>(null);
     const [quote, setQuote] = useState<string>("Loading…");
     const [quoteCopied, setQuoteCopied] = useState(false);
     const copyQuote = (e: React.MouseEvent) => {
@@ -151,7 +153,7 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
                         <text x="50" y="30" textAnchor="middle" textLength="99" lengthAdjust="spacingAndGlyphs" fontSize="42" fontWeight="900" letterSpacing="-1" fill="#ffffff" fillOpacity="0.16" style={{ textTransform: 'uppercase' }}>{t('events')}</text>
                     </svg>
                     {/* Cards float over it */}
-                    <div className="relative z-10 flex h-full items-center gap-3 overflow-x-auto px-4 py-3">
+                    <div ref={eventsScrollRef} className="scroll-hide-bar relative z-10 flex h-full items-center gap-3 overflow-x-auto px-4 py-3">
                         {events.map(ev => (
                             <button
                                 key={ev.id}
@@ -174,6 +176,7 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
                             </button>
                         ))}
                     </div>
+                    <ScrollChevrons scrollRef={eventsScrollRef} axis="x" />
                 </div>
             )}
 

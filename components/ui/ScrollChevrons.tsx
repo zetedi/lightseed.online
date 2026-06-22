@@ -1,92 +1,118 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
-// A living scroll affordance: replaces the raw scrollbar with a small double chevron that
-// bounces toward the direction more content lies, sitting in front of an emerald vignette.
-// Drop it anywhere inside a vertically-scrollable container — it finds the scroller itself,
-// shows only when there's more to see that way, and scrolls a near-page on click.
+// A living scroll affordance: replaces a raw scrollbar with a small double chevron that bobs
+// toward where more content lies, in front of an emerald vignette. Shows only when there's more
+// that way; clicking scrolls a near-page.
+//
+//   • contained (default): pass the scrollable element's ref + axis; renders `absolute` at the
+//     edges of the nearest `relative` ancestor (carousels). Give the scroller `scroll-hide-bar`.
+//   • fixed (page-level): omit scrollRef to track the document, set `fixed` — renders centered
+//     chevrons pinned to the viewport top/bottom, portaled to <body>.
 
-function getScrollParent(el: HTMLElement | null): HTMLElement {
-    let node = el?.parentElement || null;
-    while (node) {
-        const oy = getComputedStyle(node).overflowY;
-        if (oy === 'auto' || oy === 'scroll') return node;
-        node = node.parentElement;
-    }
-    return (document.scrollingElement as HTMLElement) || document.documentElement;
-}
+type Axis = 'x' | 'y';
+type Dir = 'left' | 'right' | 'up' | 'down';
 
-export const ScrollChevrons = () => {
-    const anchorRef = useRef<HTMLDivElement>(null);
-    const [scroller, setScroller] = useState<HTMLElement | null>(null);
-    const [canUp, setCanUp] = useState(false);
-    const [canDown, setCanDown] = useState(false);
+const PATHS: Record<Dir, [string, string]> = {
+    left: ['m11 17-5-5 5-5', 'm18 17-5-5 5-5'],
+    right: ['m6 17 5-5-5-5', 'm13 17 5-5-5-5'],
+    up: ['m17 11-5-5-5 5', 'm17 18-5-5-5 5'],
+    down: ['m7 6 5 5 5-5', 'm7 13 5 5 5-5'],
+};
 
-    useEffect(() => { setScroller(getScrollParent(anchorRef.current)); }, []);
+const DoubleChevron = ({ dir }: { dir: Dir }) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+         strokeLinecap="round" strokeLinejoin="round" style={{ animation: `sc-bob-${dir} 1.6s ease-in-out infinite` }}>
+        <path d={PATHS[dir][0]} /><path d={PATHS[dir][1]} />
+    </svg>
+);
+
+export const ScrollChevrons = ({ scrollRef, axis = 'y', fixed = false }: {
+    scrollRef?: React.RefObject<HTMLElement | null>;
+    axis?: Axis;
+    fixed?: boolean;
+}) => {
+    const [canPrev, setCanPrev] = useState(false);
+    const [canNext, setCanNext] = useState(false);
 
     useEffect(() => {
-        if (!scroller) return;
-        const target: HTMLElement | Window =
-            scroller === document.documentElement || scroller === document.body ? window : scroller;
+        const usingDoc = !scrollRef;
+        const get = (): HTMLElement | null => scrollRef?.current ?? (document.scrollingElement as HTMLElement | null);
+        const target: (Window & typeof globalThis) | HTMLElement | null = usingDoc ? window : (scrollRef!.current ?? null);
+        if (!target) return;
         const update = () => {
-            const top = scroller.scrollTop;
-            const max = scroller.scrollHeight - scroller.clientHeight;
-            setCanUp(top > 24);
-            setCanDown(top < max - 24);
+            const s = get();
+            if (!s) return;
+            if (axis === 'x') {
+                setCanPrev(s.scrollLeft > 8);
+                setCanNext(s.scrollLeft < s.scrollWidth - s.clientWidth - 8);
+            } else {
+                setCanPrev(s.scrollTop > 8);
+                setCanNext(s.scrollTop < s.scrollHeight - s.clientHeight - 8);
+            }
         };
         update();
         target.addEventListener('scroll', update, { passive: true });
-        // Observe the box AND its content child: the scroller's box is viewport-fixed, so only the
-        // content growing (e.g. images loading) changes scrollHeight — observe that to reveal arrows.
+        // Observe the scroller + its content (and the page body) so the arrows track content growth.
         const ro = new ResizeObserver(update);
-        ro.observe(scroller);
-        if (scroller.firstElementChild) ro.observe(scroller.firstElementChild);
+        const el = get();
+        if (el) { ro.observe(el); if (el.firstElementChild) ro.observe(el.firstElementChild); }
+        if (usingDoc) ro.observe(document.body);
         window.addEventListener('resize', update);
-        return () => {
-            target.removeEventListener('scroll', update);
-            ro.disconnect();
-            window.removeEventListener('resize', update);
-        };
-    }, [scroller]);
+        return () => { target.removeEventListener('scroll', update); ro.disconnect(); window.removeEventListener('resize', update); };
+    }, [scrollRef, axis, fixed]);
 
     const nudge = (dir: 1 | -1) => {
-        scroller?.scrollBy({ top: dir * scroller.clientHeight * 0.85, behavior: 'smooth' });
+        const s = scrollRef?.current ?? (document.scrollingElement as HTMLElement | null);
+        const by = axis === 'x'
+            ? { left: dir * (s?.clientWidth || window.innerWidth) * 0.8, behavior: 'smooth' as const }
+            : { top: dir * (s?.clientHeight || window.innerHeight) * 0.85, behavior: 'smooth' as const };
+        (scrollRef?.current ?? window).scrollBy(by);
     };
+
+    // Page-level: a centered double chevron over an emerald vignette pinned to the bottom of the
+    // viewport, shown while more content lies below. Portaled to <body> so no ancestor's overflow
+    // or transform can trap/clip it. (Down only — scrolling back up is natural, and a top chevron
+    // would collide with the sticky nav.)
+    if (fixed) {
+        const overlay = (
+            <div className={`pointer-events-none fixed inset-x-0 bottom-0 z-[90] flex justify-center transition-opacity duration-300 ${canNext ? 'opacity-100' : 'opacity-0'}`}>
+                <div className="flex h-16 w-48 items-end justify-center pb-2" style={{ background: 'radial-gradient(60% 100% at 50% 100%, rgba(2,44,34,0.55), transparent 75%)' }}>
+                    <button type="button" aria-label="Scroll down" onClick={() => nudge(1)}
+                            className="pointer-events-auto rounded-full p-1 text-emerald-50 drop-shadow-[0_1px_3px_rgba(0,0,0,0.55)] transition-transform hover:scale-110 active:scale-95">
+                        <DoubleChevron dir="down" />
+                    </button>
+                </div>
+            </div>
+        );
+        return createPortal(overlay, document.body);
+    }
+
+    // Contained: edge buttons absolutely positioned within a `relative` parent (carousels, etc.).
+    const prevDir: Dir = axis === 'x' ? 'left' : 'up';
+    const nextDir: Dir = axis === 'x' ? 'right' : 'down';
+    const base = 'pointer-events-auto absolute z-20 flex text-emerald-50 drop-shadow-[0_1px_3px_rgba(0,0,0,0.55)] transition-opacity duration-300';
+    const prevPos = axis === 'x' ? 'left-0 inset-y-0 w-12 items-center justify-start pl-1' : 'top-0 inset-x-0 h-12 items-start justify-center pt-1';
+    const nextPos = axis === 'x' ? 'right-0 inset-y-0 w-12 items-center justify-end pr-1' : 'bottom-0 inset-x-0 h-12 items-end justify-center pb-1';
+    const prevGrad = axis === 'x'
+        ? 'linear-gradient(to right, rgba(2,44,34,0.92), rgba(2,44,34,0))'
+        : 'linear-gradient(to bottom, rgba(2,44,34,0.92), rgba(2,44,34,0))';
+    const nextGrad = axis === 'x'
+        ? 'linear-gradient(to left, rgba(2,44,34,0.92), rgba(2,44,34,0))'
+        : 'linear-gradient(to top, rgba(2,44,34,0.92), rgba(2,44,34,0))';
 
     return (
         <>
-            <div ref={anchorRef} aria-hidden="true" className="pointer-events-none absolute h-0 w-0" />
-            <style>{`
-              @keyframes sc-bob-down { 0%,100%{transform:translateY(0)} 50%{transform:translateY(4px)} }
-              @keyframes sc-bob-up { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
-            `}</style>
-
-            {/* Up — more content above */}
-            <div className={`pointer-events-none fixed inset-x-0 top-0 z-[60] flex justify-center transition-opacity duration-300 ${canUp ? 'opacity-100' : 'opacity-0'}`}>
-                <div className="flex h-16 w-40 items-start justify-center pt-1.5"
-                     style={{ background: 'radial-gradient(60% 90% at 50% 0%, rgba(16,185,129,0.30), transparent 72%)' }}>
-                    <button type="button" onClick={() => nudge(-1)} aria-label="Scroll up"
-                            className="pointer-events-auto rounded-full p-1 text-emerald-100 drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)] transition-transform hover:scale-110 active:scale-95"
-                            style={{ animation: 'sc-bob-up 1.6s ease-in-out infinite' }}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="m17 11-5-5-5 5" /><path d="m17 18-5-5-5 5" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-
-            {/* Down — more content below */}
-            <div className={`pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-center transition-opacity duration-300 ${canDown ? 'opacity-100' : 'opacity-0'}`}>
-                <div className="flex h-16 w-40 items-end justify-center pb-1.5"
-                     style={{ background: 'radial-gradient(60% 90% at 50% 100%, rgba(16,185,129,0.30), transparent 72%)' }}>
-                    <button type="button" onClick={() => nudge(1)} aria-label="Scroll down"
-                            className="pointer-events-auto rounded-full p-1 text-emerald-100 drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)] transition-transform hover:scale-110 active:scale-95"
-                            style={{ animation: 'sc-bob-down 1.6s ease-in-out infinite' }}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="m7 6 5 5 5-5" /><path d="m7 13 5 5 5-5" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
+            <button type="button" aria-label="Scroll back" onClick={() => nudge(-1)}
+                    className={`${base} ${prevPos} ${canPrev ? 'opacity-100 hover:opacity-90' : 'pointer-events-none opacity-0'}`}
+                    style={{ background: prevGrad }}>
+                <DoubleChevron dir={prevDir} />
+            </button>
+            <button type="button" aria-label="Scroll forward" onClick={() => nudge(1)}
+                    className={`${base} ${nextPos} ${canNext ? 'opacity-100 hover:opacity-90' : 'pointer-events-none opacity-0'}`}
+                    style={{ background: nextGrad }}>
+                <DoubleChevron dir={nextDir} />
+            </button>
         </>
     );
 };

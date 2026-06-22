@@ -168,11 +168,10 @@ type ThemeModePreference = 'light' | 'dark' | null;
 
 // The full-screen overlay every detail view (tree / vision / event / community) scrolls inside.
 // Module-scope so it keeps a stable identity (an inline definition remounts its subtree — and
-// resets scroll — on every parent render). ScrollChevrons replaces its scrollbar with arrows.
+// resets scroll — on every parent render).
 const DetailWrapper = ({ children }: { children?: React.ReactNode }) => (
     <div className="fixed inset-0 z-40 overflow-y-auto bg-slate-900/90 backdrop-blur-sm">
         {children}
-        <ScrollChevrons />
     </div>
 );
 
@@ -1312,7 +1311,9 @@ const AppContent = () => {
     return (
         <div className={`min-h-screen relative font-sans ${effectiveIsDark ? 'text-slate-100' : 'text-slate-800'}`}>
             <div className="fixed inset-0 z-0 pointer-events-none" style={backgroundStyle}></div>
-            
+            {/* Page-level scroll affordance — only on the main page (hidden while a detail/modal is open). */}
+            {!overlayOpen && <ScrollChevrons axis="y" fixed />}
+
             <div className="relative z-10">
                 {impersonatedCommunity && (
                     <div className="sticky top-0 z-40 flex items-center justify-center gap-3 bg-amber-500 px-4 py-1.5 text-center text-xs font-bold text-white shadow-md">
