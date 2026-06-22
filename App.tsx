@@ -6,6 +6,8 @@ import {
   fetchPulses,
   fetchEventPulses,
   backfillPulseVisibility,
+  migrateArraysToLinks,
+  dropLegacyArrays,
   createEvent,
   updateEvent,
   fetchReachPulses,
@@ -166,6 +168,9 @@ type ThemeModePreference = 'light' | 'dark' | null;
 const AppContent = () => {
     const { t } = useLanguage();
     const { lightseed, myTrees, guardedTrees, activeTree, isAdmin, isSuperAdmin, superAdminExists, loading: authLoading, refreshTrees } = useLifeseed();
+    // The set of trees the signed-in user guards (the LIN, via guardian links) — passed to cards
+    // so a card can show its guardian affordance without a per-card read.
+    const guardedTreeIds = useMemo(() => new Set(guardedTrees.map(t => t.id)), [guardedTrees]);
     const [tab, setTab] = useState('dashboard');
     const [viewMode, setViewMode] = useState<'grid' | 'map'>('map');
     const [data, setData] = useState<any[]>([]);
@@ -427,13 +432,28 @@ const AppContent = () => {
     // the deployed site's devtools: `await backfillPulseVisibility()`. Idempotent.
     useEffect(() => {
         if (!isSuperAdmin) return;
-        (window as any).backfillPulseVisibility = async () => {
+        const w = window as any;
+        w.backfillPulseVisibility = async () => {
             console.log('[lightseed] backfilling pulse visibility…');
             const n = await backfillPulseVisibility();
             console.log(`[lightseed] done — stamped visibility:"public" on ${n} legacy pulse(s).`);
             return n;
         };
-        return () => { delete (window as any).backfillPulseVisibility; };
+        // LIN migration (stage 3): relationship arrays → links. Idempotent.
+        w.migrateArraysToLinks = async () => {
+            console.log('[lightseed] migrating relationship arrays → links…');
+            const r = await migrateArraysToLinks();
+            console.log('[lightseed] done — links created:', r);
+            return r;
+        };
+        // LIN migration (stage 5): drop the legacy arrays — ONLY after links are live + verified.
+        w.dropLegacyArrays = async () => {
+            console.log('[lightseed] dropping legacy relationship arrays…');
+            const n = await dropLegacyArrays();
+            console.log(`[lightseed] done — cleared arrays on ${n} doc(s).`);
+            return n;
+        };
+        return () => { delete w.backfillPulseVisibility; delete w.migrateArraysToLinks; delete w.dropLegacyArrays; };
     }, [isSuperAdmin]);
 
     // Events for the logged-in home carousel — visibility-scoped to this viewer + node.
@@ -1151,6 +1171,7 @@ const AppContent = () => {
                                                     isAdmin={isAdmin}
                                                     isSuperAdmin={isSuperAdmin}
                                                     currentUserId={lightseed?.uid}
+                                                    guardedTreeIds={guardedTreeIds}
                                                     // Owner's contact-privacy flag is mirrored onto the tree, so no per-card owner read is needed.
                                                     targetUserProfile={{ onlyValidatedCanReach: item.onlyValidatedCanReach }}
                                                     onPlayGrowth={setShowGrowthPlayer}

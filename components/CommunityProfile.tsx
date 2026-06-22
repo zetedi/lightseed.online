@@ -134,6 +134,17 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     setVotingId(null);
   };
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  // Which trees the signed-in user guards — read from their outgoing 'guardian' links (the LIN),
+  // not the legacy tree.guardians array (which writes no longer touch).
+  const [guardedTreeIds, setGuardedTreeIds] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    if (!currentUserId) { setGuardedTreeIds(new Set()); return; }
+    let alive = true;
+    firestoreStore.linksFrom(currentUserId, 'guardian')
+      .then(links => { if (alive) setGuardedTreeIds(new Set(links.map(l => l.to))); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [currentUserId]);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
@@ -206,7 +217,18 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   }, [linkedTrees, community.domain]);
   const firstTree = domainTrees[0] || null;
 
-  const isGuardian = (tree: Lifetree) => !!currentUserId && (tree.guardians || []).includes(currentUserId);
+  // Featured tree's guardian count — a prism over its incoming 'guardian' links.
+  const [firstTreeGuardians, setFirstTreeGuardians] = useState(0);
+  useEffect(() => {
+    if (!firstTree) { setFirstTreeGuardians(0); return; }
+    let alive = true;
+    firestoreStore.linksTo(firstTree.id, 'guardian')
+      .then(links => { if (alive) setFirstTreeGuardians(links.length); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [firstTree?.id, guardedTreeIds]);
+
+  const isGuardian = (tree: Lifetree) => guardedTreeIds.has(tree.id);
 
   const handleToggleGuardian = async (tree: Lifetree) => {
     if (!canTendTree(currentUserId)) { showAlert('Sign in to join a guardianship.'); return; }
@@ -214,9 +236,11 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     setTogglingId(tree.id);
     try {
       await (join ? firestoreStore.link(currentUserId, 'guardian', tree.id) : firestoreStore.unlink(currentUserId, 'guardian', tree.id));
-      setLinkedTrees(prev => prev.map(t => t.id === tree.id
-        ? { ...t, guardians: join ? [...(t.guardians || []), currentUserId] : (t.guardians || []).filter(g => g !== currentUserId) }
-        : t));
+      setGuardedTreeIds(prev => {
+        const next = new Set(prev);
+        if (join) next.add(tree.id); else next.delete(tree.id);
+        return next;
+      });
     } catch (e) {
       console.error(e);
       showAlert('Failed to update guardianship.');
@@ -596,7 +620,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                         <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-bold text-emerald-700">Validated</span>
                       )}
                       <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-slate-600">
-                        {(firstTree.guardians || []).length} {(firstTree.guardians || []).length === 1 ? 'guardian' : 'guardians'}
+                        {firstTreeGuardians} {firstTreeGuardians === 1 ? 'guardian' : 'guardians'}
                       </span>
                     </div>
 

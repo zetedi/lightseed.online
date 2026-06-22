@@ -34,8 +34,8 @@ import {
   startAfter,
   QueryDocumentSnapshot,
   arrayUnion,
-  arrayRemove,
   writeBatch,
+  deleteField,
   onSnapshot,
   getCountFromServer,
   Timestamp
@@ -801,8 +801,16 @@ export const grantAdmin = (uid: string) => setDoc(doc(db, 'admins', uid), { gran
 export const revokeAdmin = (uid: string) => deleteDoc(doc(db, 'admins', uid));
 export const getAdmins = async (): Promise<{ uid: string }[]> =>
     (await getDocs(collection(db, 'admins'))).docs.map(d => ({ uid: d.id }));
-export const getGuardedTrees = async (uid: string) => (await getDocs(query(lifetreesCollection, where('guardians', 'array-contains', uid)))).docs.map(d => ({ id: d.id, ...(d.data() as any) } as Lifetree));
-export const toggleGuardianship = (id: string, uid: string, join: boolean) => updateDoc(doc(db, 'lifetrees', id), { guardians: join ? arrayUnion(uid) : arrayRemove(uid) });
+// Trees a user guards — a prism over their outgoing 'guardian' links (the LIN), then hydrate.
+export const getGuardedTrees = async (uid: string): Promise<Lifetree[]> => {
+    const links = await getDocs(query(collection(db, 'links'), where('from', '==', uid), where('rel', '==', 'guardian')));
+    const ids = links.docs.map(d => (d.data() as any).to as string);
+    const trees = await Promise.all(ids.map(async id => {
+        const snap = await getDoc(doc(db, 'lifetrees', id));
+        return snap.exists() ? ({ id: snap.id, ...(snap.data() as any) } as Lifetree) : null;
+    }));
+    return trees.filter((t): t is Lifetree => t !== null);
+};
 
 // --- Tree Circle: shared care of a Lifetree → a rooted community ---------------
 const treeInvitesCollection = collection(db, 'treeOwnershipInvites');
@@ -866,20 +874,6 @@ export const acceptTreeInvite = async (inviteId: string): Promise<{ communityId:
     return res.data as { communityId: string; lifetreeId: string };
 };
 
-// The members of a tree's circle, grouped by role.
-export const getTreeCircle = async (lifetreeId: string) => {
-    const snap = await getDoc(doc(db, 'lifetrees', lifetreeId));
-    if (!snap.exists()) return null;
-    const t = snap.data() as any;
-    return {
-        ownerId: t.ownerId as string,
-        coOwnerIds: (t.coOwnerIds || []) as string[],
-        guardianIds: (t.guardians || []) as string[],
-        stewardIds: (t.stewardIds || []) as string[],
-        observerIds: (t.observerIds || []) as string[],
-        communityId: (t.communityId || undefined) as string | undefined,
-    };
-};
 export const setTreeStatus = (id: string, status: string) => updateDoc(doc(db, 'lifetrees', id), { status });
 
 export const fetchVisions = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {
@@ -902,15 +896,22 @@ export const fetchVisions = async (lastD?: QueryDocumentSnapshot, domainFilter?:
 }
 
 export const getMyVisions = async (uid: string) => (await getDocs(query(visionsCollection, where('authorId', '==', uid)))).docs.map(d => ({ id: d.id, ...(d.data() as any) } as Vision));
-export const getJoinedVisions = async (uid: string) => (await getDocs(query(visionsCollection, where('joinedUserIds', 'array-contains', uid)))).docs.map(d => ({ id: d.id, ...(d.data() as any) } as Vision));
+// Visions a user joined — a prism over their outgoing 'joined' links (the LIN), then hydrate.
+export const getJoinedVisions = async (uid: string): Promise<Vision[]> => {
+    const links = await getDocs(query(collection(db, 'links'), where('from', '==', uid), where('rel', '==', 'joined')));
+    const ids = links.docs.map(d => (d.data() as any).to as string);
+    const visions = await Promise.all(ids.map(async id => {
+        const snap = await getDoc(doc(db, 'visions', id));
+        return snap.exists() ? ({ id: snap.id, ...(snap.data() as any) } as Vision) : null;
+    }));
+    return visions.filter((v): v is Vision => v !== null);
+};
 
 export const createVision = async (data: any) => {
     const domain = data.domain || window.location.hostname.replace(/^www\./, '');
     return addDoc(visionsCollection, { ...data, lid: uuidv7(), domain, createdAt: serverTimestamp(), joinedUserIds: [] });
 };
 export const deleteVision = (id: string) => deleteDoc(doc(db, 'visions', id));
-export const joinVision = (id: string, uid: string) => updateDoc(doc(db, 'visions', id), { joinedUserIds: arrayUnion(uid) });
-export const leaveVision = (id: string, uid: string) => updateDoc(doc(db, 'visions', id), { joinedUserIds: arrayRemove(uid) });
 
 // Communities
 export const fetchCommunities = async () => {
@@ -974,6 +975,59 @@ export const backfillPulseVisibility = async (): Promise<number> => {
         await batch.commit();
     }
     return missing.length;
+};
+
+// --- LIN migration: legacy relationship arrays → the `links` collection ---------------------
+// Stage 3 of the crystal. Create one link doc per relationship (deterministic id → idempotent).
+// Run from the superadmin console AFTER the links rules are deployed; safe to re-run.
+const linkDocId = (from: string, rel: string, to: string) => `${from}__${rel}__${to}`;
+
+export const migrateArraysToLinks = async (): Promise<Record<string, number>> => {
+    const counts: Record<string, number> = {};
+    const queued: { id: string; data: any }[] = [];
+    const add = (from: string, rel: string, to: string) => {
+        if (!from || !to) return;
+        queued.push({ id: linkDocId(from, rel, to), data: { lid: uuidv7(), type: 'link', rel, from, to, createdAt: serverTimestamp() } });
+        counts[rel] = (counts[rel] || 0) + 1;
+    };
+    (await getDocs(lifetreesCollection)).forEach(d => {
+        const t = d.data() as any;
+        (t.coOwnerIds || []).forEach((u: string) => add(u, 'co_owner', d.id));
+        (t.guardians || []).forEach((u: string) => add(u, 'guardian', d.id));
+        (t.stewardIds || []).forEach((u: string) => add(u, 'steward', d.id));
+        (t.observerIds || []).forEach((u: string) => add(u, 'observer', d.id));
+    });
+    (await getDocs(communitiesCollection)).forEach(d => {
+        ((d.data() as any).memberIds || []).forEach((u: string) => add(u, 'member', d.id));
+    });
+    (await getDocs(visionsCollection)).forEach(d => {
+        ((d.data() as any).joinedUserIds || []).forEach((u: string) => add(u, 'joined', d.id));
+    });
+    for (let i = 0; i < queued.length; i += 400) {
+        const batch = writeBatch(db);
+        queued.slice(i, i + 400).forEach(q => batch.set(doc(db, 'links', q.id), q.data));
+        await batch.commit();
+    }
+    return { ...counts, total: queued.length };
+};
+
+// Stage 5: remove the now-redundant legacy arrays. Run ONLY after the app + rules are fully on
+// links and verified. Idempotent.
+export const dropLegacyArrays = async (): Promise<number> => {
+    let n = 0;
+    const clear = async (coll: typeof lifetreesCollection, fields: string[]) => {
+        const docs = (await getDocs(coll)).docs.filter(d => fields.some(f => (d.data() as any)[f] !== undefined));
+        for (let i = 0; i < docs.length; i += 400) {
+            const batch = writeBatch(db);
+            docs.slice(i, i + 400).forEach(d => { const upd: any = {}; fields.forEach(f => (upd[f] = deleteField())); batch.update(d.ref, upd); });
+            await batch.commit();
+            n += Math.min(400, docs.length - i);
+        }
+    };
+    await clear(lifetreesCollection, ['guardians', 'coOwnerIds', 'stewardIds', 'observerIds']);
+    await clear(communitiesCollection, ['memberIds']);
+    await clear(visionsCollection, ['joinedUserIds']);
+    return n;
 };
 
 // ---------------------------------------------------------------------------

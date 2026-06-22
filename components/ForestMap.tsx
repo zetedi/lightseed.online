@@ -5,6 +5,7 @@ import { isExplicitlyValidatedTree } from '../utils/validation';
 import { Loading } from './ui/Loading';
 import { Icons } from './ui/Icons';
 import { treeCoordinates as getTreeCoordinates, forestMarkers } from '../src/domain/views/forest';
+import { firestoreStore } from '../src/adapters/firestore';
 
 interface Cluster {
     id: string;
@@ -37,12 +38,24 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
     const [markerCount, setMarkerCount] = useState(0);
     const visibleTrees = useMemo(() => trees.filter(tree => getTreeCoordinates(tree)), [trees]);
     const visibleTreeCount = visibleTrees.length;
+    // Guardian counts come from the LIN (all 'guardian' edges), fetched once and grouped by tree.
+    const [guardianCounts, setGuardianCounts] = useState<Map<string, number>>(new Map());
+    useEffect(() => {
+        let alive = true;
+        firestoreStore.linksByRel('guardian').then(links => {
+            if (!alive) return;
+            const counts = new Map<string, number>();
+            for (const l of links) counts.set(l.to, (counts.get(l.to) || 0) + 1);
+            setGuardianCounts(counts);
+        }).catch(() => {});
+        return () => { alive = false; };
+    }, [trees]);
     // Memoized + slimmed: only fields that change a marker's appearance. Excludes
     // name/body (heavy text, irrelevant to markers) so this isn't rebuilt megabyte-sized
     // on every render — a major cost once the map holds hundreds of trees.
-    const treesSignature = useMemo(() => forestMarkers(visibleTrees).map(m =>
+    const treesSignature = useMemo(() => forestMarkers(visibleTrees, guardianCounts).map(m =>
         [m.id, m.lat, m.lng, m.status, m.kind, m.imageUrl, m.growthUrl, m.guardianCount, m.validated ? 'validated' : ''].join(':')
-    ).join('|'), [visibleTrees]);
+    ).join('|'), [visibleTrees, guardianCounts]);
     const expansionSignature = expansionStack.map(level => `${level.clusterId}:${level.lat}:${level.lng}:${level.trees.map(tree => tree.id).join(',')}`).join('|');
 
     useEffect(() => {
@@ -219,7 +232,7 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
     const getHtmlForTree = (tree: Lifetree, isSmall = false, delay = 0) => {
         const isNature = tree.isNature;
         const isDanger = tree.status === 'DANGER';
-        const guardianCount = tree.guardians ? tree.guardians.length : 0;
+        const guardianCount = guardianCounts.get(tree.id) || 0;
         const sizeClass = isSmall ? 'w-10 h-10' : 'w-12 h-12';
         const borderClass = isSmall ? 'border' : 'border-2';
         const displayImage = tree.latestGrowthUrl || tree.imageUrl || 'https://via.placeholder.com/150';

@@ -18,9 +18,21 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const { t } = useLanguage();
    const isOwner = currentUserId === tree.ownerId;
    const isNature = tree.isNature;
-   const isGuardian = tree.guardians && currentUserId && tree.guardians.includes(currentUserId);
+   // Guardianship is a prism over the LIN: read this tree's incoming 'guardian' links.
+   const [localIsGuardian, setLocalIsGuardian] = useState(false);
+   const [guardianCount, setGuardianCount] = useState(0);
+   const [guardianNonce, setGuardianNonce] = useState(0);
+   useEffect(() => {
+       let alive = true;
+       firestoreStore.linksTo(tree.id, 'guardian').then(links => {
+           if (!alive) return;
+           setLocalIsGuardian(!!currentUserId && links.some(l => l.from === currentUserId));
+           setGuardianCount(links.length);
+       }).catch(() => {});
+       return () => { alive = false; };
+   }, [tree.id, currentUserId, guardianNonce]);
    const canDelete = isOwner || isAdmin || isSuperAdmin;
-   const canEdit = isOwner || isGuardian || isSuperAdmin;
+   const canEdit = isOwner || localIsGuardian || isSuperAdmin;
    const hasValidationBadge = isExplicitlyValidatedTree(tree);
    const showValidateAction = canToggleValidation({ tree, myActiveTree, isAdmin, isSuperAdmin });
    // Owner privacy flag is mirrored onto the (world-readable) tree, so we read it here.
@@ -53,7 +65,6 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const [loadingChain, setLoadingChain] = useState(false);
    
    // Local state for immediate UI feedback on actions
-   const [localIsGuardian, setLocalIsGuardian] = useState(isGuardian);
    const [localStatus, setLocalStatus] = useState(tree.status || 'HEALTHY');
    const [isLocating, setIsLocating] = useState(false);
 
@@ -128,15 +139,10 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
        try {
            const isJoining = !localIsGuardian;
            await (isJoining ? firestoreStore.link(currentUserId, 'guardian', tree.id) : firestoreStore.unlink(currentUserId, 'guardian', tree.id));
+           // The guardian link is the source of truth — reflect it immediately, then re-read.
            setLocalIsGuardian(isJoining);
-           
-           if (onUpdate) {
-               const currentGuardians = tree.guardians || [];
-               const newGuardians = isJoining 
-                   ? [...currentGuardians, currentUserId]
-                   : currentGuardians.filter((id: string) => id !== currentUserId);
-               onUpdate({ guardians: newGuardians });
-           }
+           setGuardianCount(c => Math.max(0, c + (isJoining ? 1 : -1)));
+           setGuardianNonce(n => n + 1);
        } catch(e: any) { showAlert(e.message); }
        setIsSaving(false);
    }
@@ -193,7 +199,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                 )}
             </div>
             <div className="mt-4 pt-4 border-t border-sky-200 text-xs text-sky-600 font-mono">
-                Guardians: {tree.guardians ? tree.guardians.length + (localIsGuardian && !tree.guardians.includes(currentUserId) ? 1 : 0) - (!localIsGuardian && tree.guardians.includes(currentUserId) ? 1 : 0) : (localIsGuardian ? 1 : 0)}
+                Guardians: {guardianCount}
             </div>
         </div>
    );
@@ -202,7 +208,8 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    // community circle forms around the tree (see acceptTreeInvite Cloud Function).
    const canInviteToCircle = isOwner || isSuperAdmin;
    // The Tree Circle is now a prism over the LIN: fetch the tree's incoming links through the
-   // Store port (the Firestore adapter maps the legacy role arrays → Link[]), then project.
+   // Store port: the circle is a prism over this tree's incoming links. Re-reads when a
+   // guardian joins/leaves (guardianNonce) so the circle stays in step with the toggle.
    const [circle, setCircle] = useState<ReturnType<typeof treeCircle>>({ groups: [], size: 0 });
    useEffect(() => {
        let alive = true;
@@ -210,7 +217,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
            .then(links => { if (alive) setCircle(treeCircle(tree.ownerId, links)); })
            .catch(() => {});
        return () => { alive = false; };
-   }, [tree.id, tree.ownerId]);
+   }, [tree.id, tree.ownerId, guardianNonce]);
 
    const handleSendInvite = async (e: React.FormEvent) => {
        e.preventDefault();

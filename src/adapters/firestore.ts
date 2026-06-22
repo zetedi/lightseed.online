@@ -1,47 +1,41 @@
 import type { Store } from '../domain/store';
 import type { Link, LinkRel } from '../domain/link';
 import { db } from '../../services/firebase';
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, doc, getDocs, query, where, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { uuidv7 } from '../../utils/id';
 
-// The Firestore ADAPTER — the only place that knows both Firestore and the legacy shape. Each
-// rel ↔ the legacy (collection, actor-array) it lives in, used on BOTH read and write, so the
-// core + UI see the clean LIN without any data migration. When links become a real collection
-// later, ONLY this file changes — core, projections, views and write call sites stay untouched.
-
-const REL_TARGET: Record<LinkRel, { coll: string; field: string }> = {
-  guardian: { coll: 'lifetrees', field: 'guardians' },
-  co_owner: { coll: 'lifetrees', field: 'coOwnerIds' },
-  steward:  { coll: 'lifetrees', field: 'stewardIds' },
-  observer: { coll: 'lifetrees', field: 'observerIds' },
-  member:   { coll: 'communities', field: 'memberIds' },
-  joined:   { coll: 'visions', field: 'joinedUserIds' },
-};
-const TREE_RELS: LinkRel[] = ['co_owner', 'guardian', 'steward', 'observer'];
-
-const toLinks = (rel: LinkRel, from: string[], to: string): Link[] =>
-  from.filter(Boolean).map(f => ({ type: 'link', rel, from: f, to }));
+// The Firestore ADAPTER — now backed by the `links` collection (the LIN as data). The legacy
+// arrays are gone from here; this is the only file that knows the persistence. The deterministic
+// doc id `${from}__${rel}__${to}` makes writes idempotent and lets security rules exists()-check
+// an edge with no query. Swap this file to swap the backend.
+const linksCol = collection(db, 'links');
+const linkId = (from: string, rel: LinkRel, to: string) => `${from}__${rel}__${to}`;
 
 export const firestoreStore: Store = {
   async linksTo(toId: string, rel?: LinkRel): Promise<Link[]> {
-    if (rel) {
-      const { coll, field } = REL_TARGET[rel];
-      const snap = await getDoc(doc(db, coll, toId));
-      return snap.exists() ? toLinks(rel, ((snap.data() as any)[field] || []) as string[], toId) : [];
-    }
-    // No rel → a lifetree's whole circle (all role arrays).
-    const snap = await getDoc(doc(db, 'lifetrees', toId));
-    if (!snap.exists()) return [];
-    const data = snap.data() as any;
-    return TREE_RELS.flatMap(r => toLinks(r, (data[REL_TARGET[r].field] || []) as string[], toId));
+    const q = rel
+      ? query(linksCol, where('to', '==', toId), where('rel', '==', rel))
+      : query(linksCol, where('to', '==', toId));
+    return (await getDocs(q)).docs.map(d => d.data() as Link);
+  },
+
+  async linksFrom(from: string, rel?: LinkRel): Promise<Link[]> {
+    const q = rel
+      ? query(linksCol, where('from', '==', from), where('rel', '==', rel))
+      : query(linksCol, where('from', '==', from));
+    return (await getDocs(q)).docs.map(d => d.data() as Link);
+  },
+
+  async linksByRel(rel: LinkRel): Promise<Link[]> {
+    return (await getDocs(query(linksCol, where('rel', '==', rel)))).docs.map(d => d.data() as Link);
   },
 
   async link(from: string, rel: LinkRel, to: string): Promise<void> {
-    const { coll, field } = REL_TARGET[rel];
-    await updateDoc(doc(db, coll, to), { [field]: arrayUnion(from) });
+    await setDoc(doc(db, 'links', linkId(from, rel, to)),
+      { lid: uuidv7(), type: 'link', rel, from, to, createdAt: serverTimestamp() });
   },
 
   async unlink(from: string, rel: LinkRel, to: string): Promise<void> {
-    const { coll, field } = REL_TARGET[rel];
-    await updateDoc(doc(db, coll, to), { [field]: arrayRemove(from) });
+    await deleteDoc(doc(db, 'links', linkId(from, rel, to)));
   },
 };

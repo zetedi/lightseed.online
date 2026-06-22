@@ -17,6 +17,7 @@ interface LifetreeCardProps {
     isAdmin?: boolean;
     isSuperAdmin?: boolean;
     currentUserId?: string;
+    guardedTreeIds?: Set<string>;
     targetUserProfile?: ReachTargetProfile | null;
     onValidate: (id: string, nextValidated: boolean) => Promise<void>;
     onPlayGrowth: (id: string) => void;
@@ -25,12 +26,13 @@ interface LifetreeCardProps {
     onReach?: (tree: Lifetree) => void;
 }
 
-export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, currentUserId, targetUserProfile, onValidate, onPlayGrowth, onQuickSnap, onView, onReach }: LifetreeCardProps) => {
+export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, currentUserId, guardedTreeIds, targetUserProfile, onValidate, onPlayGrowth, onQuickSnap, onView, onReach }: LifetreeCardProps) => {
     const { t } = useLanguage();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
 
-    const isGuardian = currentUserId && tree.guardians && tree.guardians.includes(currentUserId);
+    // Guardianship comes from the LIN (guardian links), passed down as a set.
+    const isGuardian = !!currentUserId && !!guardedTreeIds?.has(tree.id);
     const hasValidationBadge = isExplicitlyValidatedTree(tree);
     const showValidateAction = canToggleValidation({ tree, myActiveTree, isAdmin, isSuperAdmin });
     // The owner's privacy flag is mirrored onto the (world-readable) tree, so we can read it here.

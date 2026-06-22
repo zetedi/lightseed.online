@@ -6,6 +6,10 @@ import type { Link, LinkRel } from './link';
 export interface Store {
   // Read: edges pointing INTO an entity — e.g. a tree's circle members → the tree.
   linksTo(toId: string, rel?: LinkRel): Promise<Link[]>;
+  // Read: edges pointing OUT of an actor — e.g. the trees a user guards.
+  linksFrom(from: string, rel?: LinkRel): Promise<Link[]>;
+  // Read: every edge of a relation across the network — e.g. all 'guardian' edges (for counts).
+  linksByRel(rel: LinkRel): Promise<Link[]>;
   // Write: create / remove an edge. The adapter persists it (today onto the legacy arrays;
   // after the data migration, into a links collection — the call sites never change).
   link(from: string, rel: LinkRel, to: string): Promise<void>;

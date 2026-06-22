@@ -23,7 +23,9 @@ export function treeCoordinates(tree: Pick<Lifetree, 'latitude' | 'longitude'>):
   return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
 }
 
-export function forestMarkers(trees: Lifetree[]): ForestMarker[] {
+// guardianCounts maps treeId → its guardian-edge count (the LIN, via guardian links). Optional so
+// the prism stays usable without it; absent → 0 (the legacy array is no longer consulted).
+export function forestMarkers(trees: Lifetree[], guardianCounts?: Map<string, number>): ForestMarker[] {
   const out: ForestMarker[] = [];
   for (const t of trees) {
     const c = treeCoordinates(t);
@@ -36,7 +38,7 @@ export function forestMarkers(trees: Lifetree[]): ForestMarker[] {
       kind: t.isNature ? 'nature' : 'tree',
       imageUrl: t.imageUrl || '',
       growthUrl: t.latestGrowthUrl || '',
-      guardianCount: t.guardians?.length || 0,
+      guardianCount: guardianCounts?.get(t.id) || 0,
       validated: !!t.validated,
     });
   }

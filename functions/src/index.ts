@@ -3,6 +3,7 @@ import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Anthropic from "@anthropic-ai/sdk";
+import { randomUUID } from "node:crypto";
 
 admin.initializeApp();
 
@@ -215,12 +216,7 @@ export const onReachCreated = onDocumentCreated("pulses/{pulseId}", async (event
 // --- Tree Circle: accept a co-ownership / guardianship invite -------------------
 // Protected multi-document mutation: writes the tree's role array AND the rooted
 // community. Runs with admin rights so the invitee never writes those docs directly.
-const treeRoleToField: Record<string, string> = {
-    co_owner: "coOwnerIds",
-    guardian: "guardians",
-    observer: "observerIds",
-    steward: "stewardIds",
-};
+const VALID_ROLES = ["co_owner", "guardian", "observer", "steward"];
 
 export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
     if (!request.auth) {
@@ -253,16 +249,24 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
         }
         const tree = treeSnap.data() as any;
 
-        const field = treeRoleToField[invite.role];
-        if (!field) {
+        if (!VALID_ROLES.includes(invite.role)) {
             throw new HttpsError("invalid-argument", "Unknown role.");
         }
 
-        const treeUpdate: any = {
-            [field]: admin.firestore.FieldValue.arrayUnion(uid),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        // Role + membership are LINKS now (the LIN). The tree/community docs no longer carry the
+        // legacy arrays. Deterministic ids keep these writes idempotent.
+        const setLink = (from: string, rel: string, to: string) => {
+            tx.set(db.collection("links").doc(`${from}__${rel}__${to}`), {
+                lid: randomUUID(),
+                type: "link",
+                rel,
+                from,
+                to,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
         };
 
+        const treeUpdate: any = { updatedAt: admin.firestore.FieldValue.serverTimestamp() };
         let communityId: string = tree.communityId;
         if (!communityId) {
             const communityRef = db.collection("communities").doc();
@@ -272,7 +276,6 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
                 rootLifetreeId: invite.lifetreeId,
                 founderUserId: tree.ownerId,
                 ownerId: tree.ownerId,
-                memberIds: [tree.ownerId, uid],
                 formation: "tree_co_ownership",
                 visibility: "invited",
                 domain: tree.domain || "",
@@ -281,14 +284,11 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             });
+            setLink(tree.ownerId, "member", communityId); // the founder is a member of the circle
             treeUpdate.communityId = communityId;
-        } else {
-            const communityRef = db.collection("communities").doc(communityId);
-            tx.update(communityRef, {
-                memberIds: admin.firestore.FieldValue.arrayUnion(uid),
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            });
         }
+        setLink(uid, "member", communityId);          // the invitee joins the circle community
+        setLink(uid, invite.role, invite.lifetreeId); // ...and takes their tree-circle role
 
         tx.update(treeRef, treeUpdate);
         tx.update(inviteRef, {
