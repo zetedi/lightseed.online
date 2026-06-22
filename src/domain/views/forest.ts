@@ -5,6 +5,7 @@ import type { Lifetree } from '../lifetree';
 // clustering/interaction still use the trees themselves.
 export interface ForestMarker {
   id: string;
+  name: string;
   lat: number;
   lng: number;
   status?: 'HEALTHY' | 'DANGER';
@@ -32,6 +33,7 @@ export function forestMarkers(trees: Lifetree[], guardianCounts?: Map<string, nu
     if (!c) continue;
     out.push({
       id: t.id,
+      name: t.name || '',
       lat: c.lat,
       lng: c.lng,
       status: t.status,

@@ -65,6 +65,7 @@ import { GrowthPlayerModal } from './components/GrowthPlayerModal';
 import { LightseedProfile } from './components/LightseedProfile';
 import { Dashboard } from './components/Dashboard';
 import { Loading } from './components/ui/Loading';
+import { ScrollChevrons } from './components/ui/ScrollChevrons';
 import { ResonanceScan } from './components/ui/ResonanceScan';
 import { ResonancePanel, ResonanceCard, resonanceId } from './components/ResonancePanel';
 import { SectionHeader } from './components/ui/SectionHeader';
@@ -165,6 +166,16 @@ const GDPRBanner = () => {
 
 type ThemeModePreference = 'light' | 'dark' | null;
 
+// The full-screen overlay every detail view (tree / vision / event / community) scrolls inside.
+// Module-scope so it keeps a stable identity (an inline definition remounts its subtree — and
+// resets scroll — on every parent render). ScrollChevrons replaces its scrollbar with arrows.
+const DetailWrapper = ({ children }: { children?: React.ReactNode }) => (
+    <div className="fixed inset-0 z-40 overflow-y-auto bg-slate-900/90 backdrop-blur-sm">
+        {children}
+        <ScrollChevrons />
+    </div>
+);
+
 const AppContent = () => {
     const { t } = useLanguage();
     const { lightseed, myTrees, guardedTrees, activeTree, isAdmin, isSuperAdmin, superAdminExists, loading: authLoading, refreshTrees } = useLifeseed();
@@ -178,6 +189,8 @@ const AppContent = () => {
     const [selectedTree, setSelectedTree] = useState<Lifetree | null>(null);
     const [selectedVision, setSelectedVision] = useState<Vision | null>(null);
     const [selectedPulse, setSelectedPulse] = useState<Pulse | null>(null);
+    // Bumped whenever we finish touching a tree (guardianship, edits) so the map re-reads it.
+    const [mapRefreshKey, setMapRefreshKey] = useState(0);
     const [editingEvent, setEditingEvent] = useState<Pulse | null>(null);
     const [dashboardEvents, setDashboardEvents] = useState<Pulse[]>([]);
     const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
@@ -835,11 +848,6 @@ const AppContent = () => {
         </div>
     );
     
-    const DetailWrapper = ({children}: {children?: React.ReactNode}) => (
-        <div className="fixed inset-0 z-40 overflow-y-auto bg-slate-900/90 backdrop-blur-sm">
-            {children}
-        </div>
-    );
 
     const renderMainContent = () => {
         if (tab === 'dashboard') {
@@ -1156,7 +1164,7 @@ const AppContent = () => {
                         </div>
 
                         {viewMode === 'map' ? (
-                            <ForestMap trees={filteredData} onView={setSelectedTree} onReach={openReach} loading={loadingMore && filteredData.length === 0} onRefresh={() => loadContent(true)} primaryTree={activeTree} />
+                            <ForestMap trees={filteredData} onView={setSelectedTree} onReach={openReach} loading={loadingMore && filteredData.length === 0} onRefresh={() => loadContent(true)} primaryTree={activeTree} refreshKey={mapRefreshKey} />
                         ) : (
                             <>
                                 <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -1355,7 +1363,7 @@ const AppContent = () => {
                 <DetailWrapper>
                     <LifetreeDetail
                         tree={selectedTree}
-                        onClose={() => setSelectedTree(null)}
+                        onClose={() => { setSelectedTree(null); setMapRefreshKey(k => k + 1); }}
                         onPlayGrowth={setShowGrowthPlayer}
                         onValidate={(id: string, nextValidated: boolean) => (nextValidated
                             ? validateLifetree(id, isSuperAdmin ? lightseed!.uid : activeTree!.id)
@@ -1429,7 +1437,7 @@ const AppContent = () => {
                         community={selectedCommunity}
                         onViewTree={(tree: Lifetree) => { setSelectedCommunity(null); setSelectedTree(tree); }}
                         onViewEvent={(p: Pulse) => { setSelectedCommunity(null); setSelectedPulse(p); }}
-                        onClose={() => setSelectedCommunity(null)}
+                        onClose={() => { setSelectedCommunity(null); setMapRefreshKey(k => k + 1); }}
                         onUpdate={(updates) => {
                             setSelectedCommunity(prev => prev ? { ...prev, ...updates } : null);
                             // If this is the host community, refresh the app shell (theme/logo) too.

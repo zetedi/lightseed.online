@@ -22,7 +22,7 @@ interface StackLevel {
     lng: number;
 }
 
-export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, primaryTree = null }: { trees: Lifetree[], onView: (tree: Lifetree) => void, onReach?: (tree: Lifetree) => void, loading?: boolean, onRefresh?: () => void, primaryTree?: Lifetree | null }) => {
+export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, primaryTree = null, refreshKey = 0 }: { trees: Lifetree[], onView: (tree: Lifetree) => void, onReach?: (tree: Lifetree) => void, loading?: boolean, onRefresh?: () => void, primaryTree?: Lifetree | null, refreshKey?: number }) => {
     const mapContainer = useRef<HTMLDivElement>(null);
     const mapInstance = useRef<any>(null);
     const markersLayer = useRef<any>(null);
@@ -38,7 +38,8 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
     const [markerCount, setMarkerCount] = useState(0);
     const visibleTrees = useMemo(() => trees.filter(tree => getTreeCoordinates(tree)), [trees]);
     const visibleTreeCount = visibleTrees.length;
-    // Guardian counts come from the LIN (all 'guardian' edges), fetched once and grouped by tree.
+    // Guardian counts come from the LIN (all 'guardian' edges), fetched and grouped by tree.
+    // refreshKey re-fetches after we touch a tree (e.g. join/leave a guardianship in a detail view).
     const [guardianCounts, setGuardianCounts] = useState<Map<string, number>>(new Map());
     useEffect(() => {
         let alive = true;
@@ -49,12 +50,12 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
             setGuardianCounts(counts);
         }).catch(() => {});
         return () => { alive = false; };
-    }, [trees]);
+    }, [trees, refreshKey]);
     // Memoized + slimmed: only fields that change a marker's appearance. Excludes
     // name/body (heavy text, irrelevant to markers) so this isn't rebuilt megabyte-sized
     // on every render — a major cost once the map holds hundreds of trees.
     const treesSignature = useMemo(() => forestMarkers(visibleTrees, guardianCounts).map(m =>
-        [m.id, m.lat, m.lng, m.status, m.kind, m.imageUrl, m.growthUrl, m.guardianCount, m.validated ? 'validated' : ''].join(':')
+        [m.id, m.name, m.lat, m.lng, m.status, m.kind, m.imageUrl, m.growthUrl, m.guardianCount, m.validated ? 'validated' : ''].join(':')
     ).join('|'), [visibleTrees, guardianCounts]);
     const expansionSignature = expansionStack.map(level => `${level.clusterId}:${level.lat}:${level.lng}:${level.trees.map(tree => tree.id).join(',')}`).join('|');
 

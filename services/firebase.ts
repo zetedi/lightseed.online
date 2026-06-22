@@ -555,7 +555,7 @@ export const ensureGenesis = async () => {
             });
             await setDoc(doc(db, 'visions', 'GENESIS_VISION'), {
                 lid: uuidv7(),
-                lifetreeId: genesisId, authorId: 'GENESIS_SYSTEM', title: "Mahameru", body: genesisBody, createdAt: serverTimestamp(), joinedUserIds: [], domain: 'lightseed.online'
+                lifetreeId: genesisId, authorId: 'GENESIS_SYSTEM', title: "Mahameru", body: genesisBody, createdAt: serverTimestamp(), domain: 'lightseed.online'
             });
         }
 
@@ -664,7 +664,7 @@ export const plantLifetree = async (data: any) => {
     });
     await addDoc(visionsCollection, {
         lid: uuidv7(),
-        lifetreeId: treeDoc.id, authorId: data.ownerId, title: "Root Vision", body: data.body, createdAt: serverTimestamp(), joinedUserIds: [], domain
+        lifetreeId: treeDoc.id, authorId: data.ownerId, title: "Root Vision", body: data.body, createdAt: serverTimestamp(), domain
     });
     return treeDoc;
 };
@@ -909,7 +909,7 @@ export const getJoinedVisions = async (uid: string): Promise<Vision[]> => {
 
 export const createVision = async (data: any) => {
     const domain = data.domain || window.location.hostname.replace(/^www\./, '');
-    return addDoc(visionsCollection, { ...data, lid: uuidv7(), domain, createdAt: serverTimestamp(), joinedUserIds: [] });
+    return addDoc(visionsCollection, { ...data, lid: uuidv7(), domain, createdAt: serverTimestamp() });
 };
 export const deleteVision = (id: string) => deleteDoc(doc(db, 'visions', id));
 
