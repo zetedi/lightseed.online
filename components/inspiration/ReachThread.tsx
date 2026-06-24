@@ -297,7 +297,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
             if (isGroup) return msg && (msg.authorPhoto || msg.authorName)
                 ? <InitialAvatar name={msg.authorName} photo={msg.authorPhoto} />
                 : <GroupAvatar />;
-            if (selectedTree) return <InitialAvatar name={selectedTree.name} photo={selectedTree.imageUrl} />;
+            if (selectedTree) return <InitialAvatar name={selectedTree.name} photo={selectedTree.latestGrowthUrl || selectedTree.imageUrl} />;
         }
         return <SunAvatar />;
     };
@@ -459,7 +459,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                         </button>
                     )}
                     {mode === 'tree' ? (
-                        isGroup ? <GroupAvatar /> : <InitialAvatar name={selectedTree?.name} photo={selectedTree?.imageUrl} />
+                        isGroup ? <GroupAvatar /> : <InitialAvatar name={selectedTree?.name} photo={selectedTree?.latestGrowthUrl || selectedTree?.imageUrl} />
                     ) : (
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-amber-200 bg-amber-50 text-amber-500">
                             <Icons.Sun />

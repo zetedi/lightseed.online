@@ -26,6 +26,11 @@ export const ImageCropModal = ({
     const [busy, setBusy] = useState(false);
     const imgRef = useRef<HTMLImageElement | null>(null);
     const drag = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null);
+    // Active touch/mouse pointers, for pinch-to-zoom on mobile (two fingers) + drag (one).
+    const pointers = useRef<Map<number, { x: number; y: number }>>(new Map());
+    const pinch = useRef<{ startDist: number; startZoom: number } | null>(null);
+    const posRef = useRef(pos);
+    useEffect(() => { posRef.current = pos; }, [pos]);
 
     // Crop-window size in CSS px — responsive to small screens, fixed once for stable math.
     const [view] = useState(() => {
@@ -65,18 +70,47 @@ export const ImageCropModal = ({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [zoom, nat]);
 
+    const dist = () => {
+        const pts = [...pointers.current.values()];
+        return pts.length < 2 ? 0 : Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    };
+
     const onPointerDown = (e: React.PointerEvent) => {
         (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-        drag.current = { startX: e.clientX, startY: e.clientY, baseX: pos.x, baseY: pos.y };
+        pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (pointers.current.size === 1) {
+            drag.current = { startX: e.clientX, startY: e.clientY, baseX: pos.x, baseY: pos.y };
+        } else if (pointers.current.size === 2) {
+            drag.current = null; // a second finger → pinch, not pan
+            pinch.current = { startDist: dist(), startZoom: zoom };
+        }
     };
     const onPointerMove = (e: React.PointerEvent) => {
-        if (!drag.current) return;
-        setPos(clamp({
-            x: drag.current.baseX + (e.clientX - drag.current.startX),
-            y: drag.current.baseY + (e.clientY - drag.current.startY),
-        }));
+        if (!pointers.current.has(e.pointerId)) return;
+        pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        // Two fingers → pinch zoom around the window centre.
+        if (pointers.current.size >= 2 && pinch.current?.startDist) {
+            applyZoom(pinch.current.startZoom * (dist() / pinch.current.startDist));
+            return;
+        }
+        if (drag.current) {
+            setPos(clamp({
+                x: drag.current.baseX + (e.clientX - drag.current.startX),
+                y: drag.current.baseY + (e.clientY - drag.current.startY),
+            }));
+        }
     };
-    const onPointerUp = () => { drag.current = null; };
+    const onPointerUp = (e: React.PointerEvent) => {
+        pointers.current.delete(e.pointerId);
+        if (pointers.current.size < 2) pinch.current = null;
+        if (pointers.current.size === 1) {
+            // One finger left after a pinch — resume panning from where it is now.
+            const [pt] = [...pointers.current.values()];
+            drag.current = { startX: pt.x, startY: pt.y, baseX: posRef.current.x, baseY: posRef.current.y };
+        } else if (pointers.current.size === 0) {
+            drag.current = null;
+        }
+    };
 
     const applyZoom = (next: number) => {
         const nz = Math.min(4, Math.max(1, next));
@@ -139,7 +173,7 @@ export const ImageCropModal = ({
                     onPointerDown={onPointerDown}
                     onPointerMove={onPointerMove}
                     onPointerUp={onPointerUp}
-                    onPointerLeave={onPointerUp}
+                    onPointerCancel={onPointerUp}
                     onWheel={e => applyZoom(zoom - Math.sign(e.deltaY) * 0.12)}
                 >
                     {url && (

@@ -106,10 +106,10 @@ export const ReachInbox = ({
     const rowBase = 'flex w-full items-center gap-3 px-4 py-3 text-left transition-colors';
 
     return (
-        <div className="mx-auto max-w-5xl overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-xl">
-            <div className="flex h-[70vh]">
-            {/* Thread list */}
-            <div className={`${hasSelection ? 'hidden md:flex' : 'flex'} w-full shrink-0 flex-col border-r border-slate-100 md:w-80`}>
+        <div className="mx-auto max-w-5xl">
+            <div className="flex h-[70vh] gap-4">
+            {/* Thread list — no card, so it sits lightly on the page and takes less room. */}
+            <div className={`${hasSelection ? 'hidden md:flex' : 'flex'} w-full shrink-0 flex-col overflow-hidden md:w-72`}>
                 {/* Title sits with the Threads label; the standalone header was removed. */}
                 <div className="border-b border-slate-100 px-4 py-3">
                     <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Threads</span>
@@ -168,8 +168,8 @@ export const ReachInbox = ({
                 </div>
             </div>
 
-            {/* Thread pane */}
-            <div className={`${hasSelection ? 'flex' : 'hidden md:flex'} min-w-0 flex-1 flex-col`}>
+            {/* Thread pane — the card that holds the messages. */}
+            <div className={`${hasSelection ? 'flex' : 'hidden md:flex'} min-w-0 flex-1 flex-col overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-xl`}>
                 {hasSelection ? (
                     <div key={isOracle ? 'oracle' : selectedKey || 'none'} className="flex min-h-0 flex-1 flex-col">
                         <ReachThread

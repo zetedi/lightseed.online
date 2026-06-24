@@ -695,7 +695,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                         onClick={() => onViewTree?.(tree)}
                       >
                         <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-slate-100">
-                          {tree.imageUrl ? <img src={tree.imageUrl} className="h-full w-full object-cover" alt={tree.name} /> : <DefaultCardImage />}
+                          {tree.latestGrowthUrl || tree.imageUrl ? <img src={tree.latestGrowthUrl || tree.imageUrl} className="h-full w-full object-cover" alt={tree.name} /> : <DefaultCardImage />}
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="break-words text-sm font-bold text-slate-800">{tree.name}</p>

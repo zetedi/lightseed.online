@@ -402,6 +402,15 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                         <span className="hidden sm:inline">{hasValidationBadge ? 'Remove Validation' : t('validate_action')}</span>
                                     </button>
                                 )}
+                                {/* Grow — mint a growth pulse on THIS tree (updates its latest image). Always
+                                    visible to the owner in the hero, not buried in the chain section below. */}
+                                {isOwner && !isEditing && (
+                                    <button onClick={onCreatePulse} title="Grow this tree with a pulse"
+                                        className="min-h-0 w-fit bg-white text-emerald-700 hover:bg-emerald-50 text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 rounded-full flex items-center space-x-1 shadow-sm transition-colors font-bold">
+                                        <Icons.HeartPulse />
+                                        <span>GROW</span>
+                                    </button>
+                                )}
                             </div>
                         </div>
                         {isEditing ? (
@@ -571,6 +580,12 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                         Cancel
                                     </button>
                                 </div>
+                            )}
+                            {isEditing && canDelete && (
+                                <button type="button" onClick={() => setShowDeleteModal(true)} className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 py-2 text-sm font-bold text-red-600 transition-colors hover:bg-red-100">
+                                    <Icons.Trash />
+                                    <span>Delete this Lifetree</span>
+                                </button>
                             )}
                         </div>
 
@@ -782,7 +797,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                             <Icons.Trash />
                         </div>
                         <div>
-                            <h3 className="font-bold text-slate-800">Delete Guarded Tree</h3>
+                            <h3 className="font-bold text-slate-800">Delete Lifetree</h3>
                             <p className="text-xs text-slate-500">This action cannot be undone.</p>
                         </div>
                     </div>

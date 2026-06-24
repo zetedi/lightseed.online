@@ -76,13 +76,12 @@ export const ScrollChevrons = ({ scrollRef, axis = 'y', fixed = false }: {
     // would collide with the sticky nav.)
     if (fixed) {
         const overlay = (
-            <div className={`pointer-events-none fixed inset-x-0 bottom-0 z-[90] flex justify-center transition-opacity duration-300 ${canNext ? 'opacity-100' : 'opacity-0'}`}>
-                <div className="flex h-16 w-48 items-end justify-center pb-2" style={{ background: 'radial-gradient(60% 100% at 50% 100%, rgba(2,44,34,0.55), transparent 75%)' }}>
-                    <button type="button" aria-label="Scroll down" onClick={() => nudge(1)}
-                            className="pointer-events-auto rounded-full p-1 text-emerald-50 drop-shadow-[0_1px_3px_rgba(0,0,0,0.55)] transition-transform hover:scale-110 active:scale-95">
-                        <DoubleChevron dir="down" />
-                    </button>
-                </div>
+            <div className={`pointer-events-none fixed inset-x-0 bottom-3 z-[90] flex justify-center transition-opacity duration-300 ${canNext ? 'opacity-100' : 'opacity-0'}`}>
+                {/* A small circular badge (not a wide vignette) that bobs down while more lies below. */}
+                <button type="button" aria-label="Scroll down" onClick={() => nudge(1)}
+                        className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-emerald-900/55 text-emerald-50 shadow-lg ring-1 ring-white/10 backdrop-blur-sm transition-transform hover:scale-110 active:scale-95">
+                    <DoubleChevron dir="down" />
+                </button>
             </div>
         );
         return createPortal(overlay, document.body);
