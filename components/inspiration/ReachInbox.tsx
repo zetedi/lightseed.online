@@ -136,8 +136,8 @@ export const ReachInbox = ({
             <div className="flex h-[70vh] gap-4">
             {/* Thread list — no card, so it sits lightly on the page and takes less room. */}
             <div className={`${hasSelection ? 'hidden md:flex' : 'flex'} w-full shrink-0 flex-col overflow-hidden md:w-72`}>
-                {/* Title sits with the Threads label; the standalone header was removed. */}
-                <div className="border-b border-slate-100 px-4 py-3">
+                {/* Sits flush to the top so it lines up with the top of the message card. */}
+                <div className="border-b border-slate-100 px-4 pt-1 pb-3">
                     <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Threads</span>
                     <h2 className="mt-1 truncate text-base font-semibold text-slate-900">{title}</h2>
                     <p className="text-xs text-slate-500">{subtitle}</p>

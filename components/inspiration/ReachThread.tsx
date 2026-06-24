@@ -151,7 +151,6 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
     };
 
     // Load the persistent thread (full back-and-forth) when a tree/group/audience is selected.
-    const myTreeIdsKey = myTrees.map((tree: Lifetree) => tree.id).join(',');
     useEffect(() => {
         let cancelled = false;
         setPartnerPersonName(undefined);
@@ -161,6 +160,11 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
             setThreadMeta(null);
             return;
         }
+
+        // This view runs its own useLifeseed, which resolves auth (then trees) a tick after mount.
+        // Wait for the uid so the thread loads ONCE — not first empty (no uid), then again when the
+        // uid lands, then again when trees settle (the old double/triple load on opening a thread).
+        if (!lightseed?.uid) { setIsTyping(true); return; }
 
         // A group thread opened from the inbox.
         if (groupThread) {
@@ -234,8 +238,8 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
         }
 
         return () => { cancelled = true; };
-        // Reload when the partner/group/audience changes, or once the viewer's own trees load.
-    }, [mode, selectedTree?.id, groupThread?.threadId, audience, lightseed?.uid, myTreeIdsKey]);
+        // Reload when the partner / group / audience changes, or once auth resolves.
+    }, [mode, selectedTree?.id, groupThread?.threadId, audience, lightseed?.uid]);
 
     useEffect(() => {
         if (mode === 'tree' && !selectedTree && !groupThread && activeTree) {
@@ -503,7 +507,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                             <Icons.Sun />
                         </div>
                     )}
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                         <div className="truncate font-semibold text-slate-800">
                             {headerName}
                             {!isGroup && partnerPersonName && partnerPersonName !== headerName && (
@@ -515,6 +519,24 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                             <span>{mode === 'tree' ? (isGroup ? `Group reach${threadMeta?.participantUids?.length ? ` · ${threadMeta.participantUids.length} in circle` : groupThread?.participantCount ? ` · ${groupThread.participantCount} in circle` : ''}` : 'Mycelial reach') : `${aiName} · ${usage}/21`}</span>
                         </div>
                     </div>
+
+                    {/* Mint — seal the messages so far onto the immutable chain (a contract). Upper-right,
+                        in line with the avatar + name; the tooltip explains what it does. */}
+                    {messages.filter(m => !m.system).length > 1 && lightseed && (mode === 'oracle' || selectedTree || groupThread) && (
+                        <button
+                            onClick={handleMint}
+                            disabled={isMinting}
+                            title={mode === 'tree'
+                                ? 'Mint the messages so far as a contract on the immutable Lightseed chain.'
+                                : 'Mint this wisdom to your tree on the immutable Lightseed chain.'}
+                            className="ml-auto flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1.5 text-[10px] font-bold text-white shadow-md transition-all hover:bg-emerald-700 active:scale-95 disabled:opacity-50"
+                        >
+                            {isMinting
+                                ? <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                : <Icons.Stamp size={14} />}
+                            <span className="hidden sm:inline">{mode === 'tree' ? 'Mint' : 'Mint Wisdom'}</span>
+                        </button>
+                    )}
                 </div>
 
                 {/* Audience picker — only when starting a fresh reach to a tree (not a fixed group thread). */}
@@ -539,28 +561,6 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                     </div>
                 )}
 
-                {messages.filter(m => !m.system).length > 1 && lightseed && (mode === 'oracle' || selectedTree || groupThread) && (
-                  <div className="mt-3 flex justify-end">
-                    <button
-                        onClick={handleMint}
-                        disabled={isMinting}
-                        title={mode === 'tree' ? 'Seal this conversation on the immutable chain' : 'Mint this wisdom to your tree'}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] px-4 py-1.5 rounded-full font-bold shadow-lg transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50"
-                    >
-                        {isMinting ? (
-                            <>
-                                <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                <span>Minting...</span>
-                            </>
-                        ) : (
-                            <>
-                                <Icons.HeartPulse />
-                                <span>{mode === 'tree' ? 'Mint to chain' : 'Mint Wisdom'}</span>
-                            </>
-                        )}
-                    </button>
-                  </div>
-                )}
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/50 scroll-smooth">
