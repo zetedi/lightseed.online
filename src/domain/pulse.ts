@@ -51,6 +51,7 @@ export interface Pulse extends Entity {
   audience?: ReachAudience; // For group reaches: which slice of the tree's circle was addressed.
   threadName?: string;      // Display name for a group thread, e.g. "Oak · Guardians".
   isGroup?: boolean;        // True for circle/group reaches (a shared, multi-person thread).
+  mintNotice?: boolean;     // A system line in a thread announcing someone minted the conversation.
   
   // V2 AI
   aiInterpretation?: PulseInterpretation;

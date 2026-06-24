@@ -2,9 +2,10 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Icons } from '../ui/Icons';
 import { Lifetree, Lightseed, Pulse, ReachAudience } from '../../types';
 import { ReachThread, type GroupThreadDescriptor } from './ReachThread';
-import { markReachPulsesSeen, listenToUserProfile } from '../../services/firebase';
+import { markReachPulsesSeen, listenToUserProfile, updateUserProfile } from '../../services/firebase';
 import { getIntelligence } from '../../services/intelligence';
-import { reachThreads } from '../../src/domain/views/threads';
+import { reachThreads, type ReachThread as ThreadSummary } from '../../src/domain/views/threads';
+import { showConfirm } from '../ui/Dialog';
 
 type Selection =
     | { kind: 'none' }
@@ -54,6 +55,9 @@ export const ReachInbox = ({
 }) => {
     const [selection, setSelection] = useState<Selection>({ kind: 'none' });
     const [aiName, setAiName] = useState('Osiris');
+    // Per-user "deleted" threads: key → hidden-at (ms). A thread is hidden from MY inbox while its
+    // newest message predates the hide — a new message (lastAt > hidden-at) brings it back.
+    const [hiddenThreads, setHiddenThreads] = useState<Record<string, number>>({});
 
     // Show the enabled, active intelligence's name for the AI thread — reactively, so it
     // tracks the user's chosen intelligence as soon as the profile loads/changes.
@@ -61,6 +65,7 @@ export const ReachInbox = ({
         if (!lightseed?.uid) { setAiName('Osiris'); return; }
         let cancelled = false;
         const unsub = listenToUserProfile(lightseed.uid, (profile) => {
+            setHiddenThreads(profile?.hiddenThreads || {});
             const id = profile?.preferredIntelligenceId;
             if (!id) { setAiName('Osiris'); return; }
             getIntelligence(id).then(i => { if (!cancelled) setAiName(i && i.enabled !== false && i.name ? i.name : 'Osiris'); }).catch(() => {});
@@ -103,6 +108,27 @@ export const ReachInbox = ({
         : selection.kind === 'group' ? selection.thread.threadId
         : null;
 
+    // Hide "deleted" threads whose newest message predates the deletion.
+    const visibleThreads = useMemo(
+        () => threads.filter(t => !(hiddenThreads[t.key] && t.lastAt <= hiddenThreads[t.key])),
+        [threads, hiddenThreads],
+    );
+
+    const deleteThread = async (thread: ThreadSummary, e: React.MouseEvent) => {
+        e.stopPropagation();
+        const ok = await showConfirm(
+            thread.isGroup
+                ? 'Delete this group conversation from your messages? It stays for the others in the circle.'
+                : 'Delete this conversation from your messages? The other person keeps their copy.',
+            { title: 'Delete conversation', confirmText: 'Delete', danger: true },
+        );
+        if (!ok) return;
+        const next = { ...hiddenThreads, [thread.key]: Date.now() };
+        setHiddenThreads(next);
+        if (lightseed?.uid) updateUserProfile(lightseed.uid, { hiddenThreads: next }).catch(() => {});
+        if (selectedKey === thread.key) setSelection({ kind: 'none' });
+    };
+
     const rowBase = 'flex w-full items-center gap-3 px-4 py-3 text-left transition-colors';
 
     return (
@@ -128,19 +154,20 @@ export const ReachInbox = ({
                         </div>
                     </button>
 
-                    {threads.length === 0 ? (
+                    {visibleThreads.length === 0 ? (
                         <div className="px-5 py-12 text-center text-slate-400">
                             <p className="text-sm">No direct messages yet.</p>
                             <p className="mt-1 text-xs">Reach a Lifetree from the map or a tree's page.</p>
                         </div>
                     ) : (
-                        threads.map(thread => (
-                            <button
+                        visibleThreads.map(thread => (
+                            <div
                                 key={thread.key}
+                                role="button"
                                 onClick={() => thread.isGroup && thread.threadId
                                     ? setSelection({ kind: 'group', thread: { threadId: thread.threadId, partnerId: thread.partnerId, partnerName: thread.partnerName, partnerPhoto: thread.partnerPhoto, audience: thread.audience, participantCount: thread.participantCount } })
                                     : setSelection({ kind: 'tree', tree: { id: thread.partnerId, name: thread.partnerName, imageUrl: thread.partnerPhoto } as Lifetree })}
-                                className={`${rowBase} border-b border-slate-50 ${selectedKey === thread.key ? 'bg-emerald-50' : 'hover:bg-slate-50'}`}
+                                className={`${rowBase} group cursor-pointer border-b border-slate-50 ${selectedKey === thread.key ? 'bg-emerald-50' : 'hover:bg-slate-50'}`}
                             >
                                 {thread.isGroup
                                     ? <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-emerald-100 bg-emerald-50 text-emerald-600"><Icons.Users /></div>
@@ -162,7 +189,16 @@ export const ReachInbox = ({
                                         {thread.lastMessage || 'Reached through the mycelial network.'}
                                     </span>
                                 </div>
-                            </button>
+                                {/* Delete (hide) — always visible on mobile, on hover on desktop. */}
+                                <button
+                                    type="button"
+                                    onClick={(e) => deleteThread(thread, e)}
+                                    title="Delete conversation"
+                                    className="shrink-0 rounded-full p-1.5 text-slate-300 transition-colors hover:bg-red-50 hover:text-red-500 opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                                >
+                                    <Icons.Trash />
+                                </button>
+                            </div>
                         ))
                     )}
                 </div>

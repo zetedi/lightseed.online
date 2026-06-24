@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { showAlert } from "../ui/Dialog";
+import { showAlert, showConfirm } from "../ui/Dialog";
 import { useLanguage } from '../../contexts/LanguageContext';
 import { sendMessageToOracle, generateImage, translatePulse, type TranslationResponse } from '../../services/gemini';
 import { getIntelligence } from '../../services/intelligence';
@@ -28,6 +28,7 @@ interface ChatMessage {
     authorName?: string;
     authorPersonName?: string;
     authorPhoto?: string;
+    system?: boolean; // a centered notice (e.g. "X minted this conversation to the chain"), not a bubble
 }
 
 // The audience options offered when starting a reach to a tree. `undefined` is the classic
@@ -123,6 +124,8 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
         const history: ChatMessage[] = [];
         pulses.forEach(p => {
             const text = p.content || p.body || '';
+            // A mint notice is a system line both sides see, not a chat bubble.
+            if (p.mintNotice) { if (text) history.push({ role: 'model', system: true, text }); return; }
             const mine = (!!myUid && p.authorId === myUid) || myIds.has(p.lifetreeId || '');
             const base = group ? { authorId: p.authorId, authorName: p.authorName, authorPersonName: p.authorPersonName, authorPhoto: p.authorPhoto } : {};
             if (mine) {
@@ -401,42 +404,77 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
             showAlert("You need a planted Lifetree to mint this conversation.");
             return;
         }
-        if (mode === 'tree' && !selectedTree) {
-            showAlert("Choose a tree before minting this conversation.");
+        if (mode === 'tree' && !selectedTree && !groupThread) {
+            showAlert("Open a conversation before minting it.");
             return;
         }
-        if (messages.length <= 1) return; // Only greeting
+        if (messages.filter(m => !m.system).length <= 1) return; // nothing but the greeting
 
+        const partnerLabel = groupThread?.partnerName || selectedTree?.name || 'this conversation';
+
+        // Tree DM: seal the conversation onto the minter's tree as a PUBLIC record on the
+        // immutable chain (a contract on the LIN), then post a notice into the thread so the
+        // other party sees who minted it and where.
+        if (mode === 'tree') {
+            const ok = await showConfirm(
+                `Mint this conversation to “${activeTree.name}”? It will be sealed on the immutable chain — a public record on your tree, like a contract — and everyone here will be told you minted it.`,
+                { title: 'Mint to the chain', confirmText: 'Mint' },
+            );
+            if (!ok) return;
+            setIsMinting(true);
+            try {
+                const meName = lightseed.displayName || activeTree.name;
+                const conversationText = messages
+                    .filter(m => !m.system)
+                    .map(m => `${m.role === 'user' ? meName : (m.authorPersonName || m.authorName || partnerLabel)}: ${m.text}`)
+                    .join('\n\n');
+                // The record on the tree — a STANDARD pulse shows in the tree's growth chain (and the LIN).
+                await mintPulse({
+                    lifetreeId: activeTree.id,
+                    type: 'STANDARD',
+                    title: `Minted conversation · ${partnerLabel}`,
+                    body: conversationText,
+                    reachTreeId: selectedTree?.id || groupThread?.partnerId,
+                    reachTreeName: selectedTree?.name || groupThread?.partnerName,
+                    authorId: lightseed.uid,
+                    authorName: meName,
+                    authorPhoto: lightseed.photoURL || activeTree.imageUrl,
+                });
+                // The notice in the thread (a system line both sides see).
+                const noticeText = `${meName} minted this conversation to “${activeTree.name}” on the immutable chain.`;
+                if (groupThread && threadMeta) {
+                    await sendThreadMessage({ thread: { ...threadMeta, isGroup: true }, fromTree: activeTree, sender: lightseed, text: noticeText, mintNotice: true });
+                } else if (selectedTree) {
+                    await sendReach({ fromTree: activeTree, toTree: selectedTree, text: noticeText, sender: lightseed, audience, mintNotice: true, isAdmin, isSuperAdmin });
+                }
+                setMessages(prev => [...prev, { role: 'model', system: true, text: noticeText }]);
+                showAlert("Conversation minted to the chain.");
+            } catch (e: any) {
+                console.error(e);
+                showAlert("Minting failed: " + (e?.message || ''));
+            }
+            setIsMinting(false);
+            return;
+        }
+
+        // Oracle: "Mint Wisdom" — an abstract image + the conversation, on your active tree.
         setIsMinting(true);
         try {
-            const modelName = mode === 'tree' && selectedTree ? selectedTree.name : aiName;
-            const conversationText = messages.map(m => `${m.role === 'user' ? 'Seeker' : modelName}: ${m.text}`).join('\n\n');
-            const summaryPrompt = conversationText.substring(0, 1000); // Limit context for generation
-
-            // Check AI limit for image
+            const conversationText = messages.map(m => `${m.role === 'user' ? 'Seeker' : aiName}: ${m.text}`).join('\n\n');
+            const summaryPrompt = conversationText.substring(0, 1000);
             await checkAndIncrementAiUsage('image');
-
-            // Generate Image
             const prompt = `Create an abstract, artistic image representing the essence of this conversation: ${summaryPrompt}. Do not contain any text, words, letters, or typography in the image.`;
-            const imageUrl = await withTimeout(
-                generateImage(prompt),
-                45000,
-                "The pulse image took too long to generate. Please try minting again."
-            );
+            const imageUrl = await withTimeout(generateImage(prompt), 45000, "The pulse image took too long to generate. Please try minting again.");
             let finalImageUrl = "";
-
             if (imageUrl && imageUrl.startsWith('data:')) {
-                 finalImageUrl = await uploadBase64Image(imageUrl, `users/${lightseed.uid}/pulses/ai/${Date.now()}`);
+                finalImageUrl = await uploadBase64Image(imageUrl, `users/${lightseed.uid}/pulses/ai/${Date.now()}`);
             }
-
             await mintPulse({
                 lifetreeId: activeTree.id,
-                type: mode === 'tree' ? 'reach' : 'STANDARD',
-                title: mode === 'tree' && selectedTree ? `Mycelial Reach: ${selectedTree.name}` : `${aiName} Wisdom`,
+                type: 'STANDARD',
+                title: `${aiName} Wisdom`,
                 body: conversationText,
                 imageUrl: finalImageUrl,
-                reachTreeId: mode === 'tree' ? selectedTree?.id : undefined,
-                reachTreeName: mode === 'tree' ? selectedTree?.name : undefined,
                 authorId: lightseed.uid,
                 authorName: lightseed.displayName || "Soul",
                 authorPhoto: lightseed.photoURL,
@@ -501,11 +539,12 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                     </div>
                 )}
 
-                {messages.length > 1 && lightseed && mode === 'oracle' && (
+                {messages.filter(m => !m.system).length > 1 && lightseed && (mode === 'oracle' || selectedTree || groupThread) && (
                   <div className="mt-3 flex justify-end">
                     <button
                         onClick={handleMint}
                         disabled={isMinting}
+                        title={mode === 'tree' ? 'Seal this conversation on the immutable chain' : 'Mint this wisdom to your tree'}
                         className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] px-4 py-1.5 rounded-full font-bold shadow-lg transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50"
                     >
                         {isMinting ? (
@@ -516,7 +555,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                         ) : (
                             <>
                                 <Icons.HeartPulse />
-                                <span>Mint Wisdom</span>
+                                <span>{mode === 'tree' ? 'Mint to chain' : 'Mint Wisdom'}</span>
                             </>
                         )}
                     </button>
@@ -524,16 +563,26 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                 )}
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-slate-50/50 scroll-smooth">
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/50 scroll-smooth">
                 {messages.map((m, i) => {
+                    // Mint notices (and any system line) render centered — not as a chat bubble.
+                    if (m.system) {
+                        return (
+                            <div key={i} className="flex justify-center px-4">
+                                <span dir="auto" className="rounded-full bg-amber-50 px-3 py-1 text-center text-[11px] font-medium leading-snug text-amber-700/90 ring-1 ring-amber-100">
+                                    ⛓️ {m.text}
+                                </span>
+                            </div>
+                        );
+                    }
                     const canInterpret = mode === 'tree' && !isGroup && m.role === 'model' && !!selectedTree && !!activeTree;
                     const interp = interpretations[i];
                     // In a group, label an incoming bubble with who spoke (consecutive same-author merged).
                     const showAuthor = isGroup && m.role === 'model' && !!m.authorName && (i === 0 || messages[i - 1]?.authorId !== m.authorId || messages[i - 1]?.role !== 'model');
                     return (
-                    <div key={i} className={`flex gap-4 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div key={i} className={`flex gap-2.5 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         {m.role === 'model' && incomingAvatar(m)}
-                        <div className={`flex max-w-[85%] flex-col gap-1.5 sm:max-w-[75%] ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
+                        <div className={`flex max-w-[90%] flex-col gap-1 sm:max-w-[80%] ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
                             {showAuthor && (
                                 <span className="px-2 text-[11px] font-bold text-emerald-700/80">
                                     {m.authorName}
@@ -542,15 +591,15 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                                     )}
                                 </span>
                             )}
-                            <div dir="auto" className={`w-fit rounded-[2rem] px-6 py-4 text-[15px] leading-relaxed tracking-wide ${
+                            <div dir="auto" className={`w-fit rounded-2xl px-4 py-2 text-[13.5px] leading-snug ${
                                 m.role === 'user'
-                                    ? 'bg-emerald-600 text-white rounded-br-none shadow-lg'
-                                    : 'bg-white border border-emerald-50 text-slate-800 rounded-bl-none shadow-sm font-medium italic'
+                                    ? 'bg-emerald-600 text-white rounded-br-sm shadow'
+                                    : 'bg-white border border-emerald-50 text-slate-800 rounded-bl-sm shadow-sm font-medium italic'
                             }`}>
                                 {m.text.split('\n').map((line, j) => (
                                     <span key={j}>
                                         {line}
-                                        {j < m.text.split('\n').length - 1 && <><br /><br /></>}
+                                        {j < m.text.split('\n').length - 1 && <br />}
                                     </span>
                                 ))}
                             </div>
@@ -591,9 +640,9 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                     );
                 })}
                 {isTyping && (
-                    <div className="flex justify-start gap-4">
+                    <div className="flex justify-start gap-2.5">
                         {incomingAvatar()}
-                        <div className="bg-white border border-emerald-50 rounded-[2rem] rounded-bl-none px-6 py-4 shadow-sm">
+                        <div className="bg-white border border-emerald-50 rounded-2xl rounded-bl-sm px-4 py-2.5 shadow-sm">
                             <div className="flex space-x-1.5 items-center h-4">
                                 <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
                                 <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
@@ -607,8 +656,8 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
             {mode === 'tree' && (
                 <p className="px-5 pt-2 text-center text-[11px] italic leading-snug text-slate-400">
                     {isGroup
-                        ? 'A group reach — everyone in the chosen circle sees and can answer here. Kept on the immutable chain.'
-                        : 'Kept on the immutable chain — remembered here. For everyday talk, meet outside; bring here only what is meant to stay. Even a dot, or a held silence, can be chosen to be remembered.'}
+                        ? 'A group reach — everyone in the chosen circle sees and can answer here. Anyone can mint this conversation to their tree, sealing it on the immutable chain.'
+                        : 'These messages stay between you. Anyone here can mint the conversation to their tree — sealing it on the immutable chain as a shared record, like a contract. A mint shows here and on that tree.'}
                 </p>
             )}
             <form onSubmit={handleSend} className="p-4 bg-white border-t border-slate-100 flex space-x-3 items-center sticky bottom-0 z-10">

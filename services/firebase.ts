@@ -1329,6 +1329,7 @@ export const sendReach = async ({
     text,
     sender,
     audience,
+    mintNotice = false,
     isAdmin = false,
     isSuperAdmin = false,
 }: {
@@ -1337,6 +1338,7 @@ export const sendReach = async ({
     text: string;
     sender: { uid: string; displayName?: string | null; photoURL?: string | null };
     audience?: ReachAudience; // omitted/undefined = classic 1:1 reach to the owner
+    mintNotice?: boolean;     // system line announcing the conversation was minted to the chain
     isAdmin?: boolean;
     isSuperAdmin?: boolean;
 }) => {
@@ -1366,6 +1368,7 @@ export const sendReach = async ({
         recipientName: target.name,
         seenBy: [],
         visibility: 'private' as const,
+        ...(mintNotice ? { mintNotice: true } : {}),
         authorId: sender.uid,
         authorName: fromTree.name,
         authorPersonName: sender.displayName || undefined,
@@ -1411,6 +1414,7 @@ export const sendThreadMessage = async ({
     fromTree,
     sender,
     text,
+    mintNotice = false,
 }: {
     thread: {
         threadId: string;
@@ -1424,6 +1428,7 @@ export const sendThreadMessage = async ({
     fromTree: Lifetree;
     sender: { uid: string; displayName?: string | null; photoURL?: string | null };
     text: string;
+    mintNotice?: boolean;
 }) => {
     const participantUids = Array.from(new Set([sender.uid, ...(thread.participantUids || [])].filter(Boolean)));
     const isGroup = thread.isGroup ?? participantUids.length > 2;
@@ -1443,6 +1448,7 @@ export const sendThreadMessage = async ({
         threadName: thread.threadName,
         audience: thread.audience,
         isGroup,
+        ...(mintNotice ? { mintNotice: true } : {}),
         seenBy: [],
         visibility: 'private',
         authorId: sender.uid,
