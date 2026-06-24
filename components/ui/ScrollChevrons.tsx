@@ -20,9 +20,11 @@ const PATHS: Record<Dir, [string, string]> = {
     down: ['m7 6 5 5 5-5', 'm7 13 5 5 5-5'],
 };
 
-const DoubleChevron = ({ dir }: { dir: Dir }) => (
+// `bob` self-animates the chevron. Set it false when the WRAPPER carries the bob, so a
+// vignette + chevron move together as one (rather than the chevron sliding inside it).
+const DoubleChevron = ({ dir, bob = true }: { dir: Dir; bob?: boolean }) => (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-         strokeLinecap="round" strokeLinejoin="round" style={{ animation: `sc-bob-${dir} 1.6s ease-in-out infinite` }}>
+         strokeLinecap="round" strokeLinejoin="round" style={bob ? { animation: `sc-bob-${dir} 1.6s ease-in-out infinite` } : undefined}>
         <path d={PATHS[dir][0]} /><path d={PATHS[dir][1]} />
     </svg>
 );
@@ -77,10 +79,15 @@ export const ScrollChevrons = ({ scrollRef, axis = 'y', fixed = false }: {
     if (fixed) {
         const overlay = (
             <div className={`pointer-events-none fixed inset-x-0 bottom-3 z-[90] flex justify-center transition-opacity duration-300 ${canNext ? 'opacity-100' : 'opacity-0'}`}>
-                {/* A small circular badge (not a wide vignette) that bobs down while more lies below. */}
+                {/* A small, subtle circular vignette (soft glow, no hard edge) with the chevron —
+                    the whole thing bobs together (the wrapper carries the animation). */}
                 <button type="button" aria-label="Scroll down" onClick={() => nudge(1)}
-                        className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-emerald-900/55 text-emerald-50 shadow-lg ring-1 ring-white/10 backdrop-blur-sm transition-transform hover:scale-110 active:scale-95">
-                    <DoubleChevron dir="down" />
+                        className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full text-emerald-50 drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]"
+                        style={{
+                            background: 'radial-gradient(circle, rgba(2,44,34,0.34) 0%, rgba(2,44,34,0.12) 48%, transparent 72%)',
+                            animation: 'sc-bob-down 1.6s ease-in-out infinite',
+                        }}>
+                    <DoubleChevron dir="down" bob={false} />
                 </button>
             </div>
         );
