@@ -1368,6 +1368,7 @@ export const sendReach = async ({
         visibility: 'private' as const,
         authorId: sender.uid,
         authorName: fromTree.name,
+        authorPersonName: sender.displayName || undefined,
         authorPhoto: fromTree.imageUrl || sender.photoURL || undefined,
     };
 
@@ -1446,6 +1447,7 @@ export const sendThreadMessage = async ({
         visibility: 'private',
         authorId: sender.uid,
         authorName: fromTree.name,
+        authorPersonName: sender.displayName || undefined,
         authorPhoto: fromTree.imageUrl || sender.photoURL || undefined,
     });
 };

@@ -25,9 +25,10 @@ interface LifetreeCardProps {
     onQuickSnap: (id: string, file: File) => Promise<void>;
     onView: (tree: Lifetree) => void;
     onReach?: (tree: Lifetree) => void;
+    onAlertGuardians?: (tree: Lifetree) => void;
 }
 
-export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, currentUserId, guardedTreeIds, targetUserProfile, onValidate, onPlayGrowth, onQuickSnap, onView, onReach }: LifetreeCardProps) => {
+export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, currentUserId, guardedTreeIds, targetUserProfile, onValidate, onPlayGrowth, onQuickSnap, onView, onReach, onAlertGuardians }: LifetreeCardProps) => {
     const { t } = useLanguage();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
@@ -129,7 +130,18 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, curren
                             {t('block')}: {tree.blockHeight || 0}
                         </span>}
                         {tree.isNature && tree.status === 'DANGER' && (
-                            <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-[9px] font-bold animate-pulse">DANGER</span>
+                            onAlertGuardians ? (
+                                <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); onAlertGuardians(tree); }}
+                                    title="Message this tree's guardians"
+                                    className="pointer-events-auto bg-red-500 text-white px-2 py-0.5 rounded-full text-[9px] font-bold animate-pulse hover:bg-red-600 active:scale-95 transition-all"
+                                >
+                                    DANGER · alert guardians
+                                </button>
+                            ) : (
+                                <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-[9px] font-bold animate-pulse">DANGER</span>
+                            )
                         )}
                     </div>
                 </div>

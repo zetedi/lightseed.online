@@ -14,7 +14,7 @@ import { treeCircle } from '../src/domain/views/circle';
 import { firestoreStore } from '../src/adapters/firestore';
 import { canTendTree } from '../src/domain/policy';
 
-export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, myActiveTree, isDefaultTree, onSetDefault, currentUserId, isAdmin, isSuperAdmin, targetUserProfile }: any) => {
+export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, onAlertGuardians, myActiveTree, isDefaultTree, onSetDefault, currentUserId, isAdmin, isSuperAdmin, targetUserProfile }: any) => {
    const { t } = useLanguage();
    const isOwner = currentUserId === tree.ownerId;
    const isNature = tree.isNature;
@@ -291,15 +291,21 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
     return (
         <>
         <div className="min-h-screen animate-in fade-in zoom-in-95 duration-300">
-            {/* Danger Banner */}
+            {/* Danger Banner — click to message this tree's guardians. */}
             {localStatus === 'DANGER' && (
-                <div className="bg-red-600 text-white text-center py-2 font-bold animate-pulse sticky top-0 z-40">
+                <button
+                    type="button"
+                    onClick={() => onAlertGuardians?.()}
+                    disabled={!onAlertGuardians}
+                    title="Message this tree's guardians"
+                    className="w-full bg-red-600 text-white text-center py-2 font-bold animate-pulse sticky top-0 z-40 transition-colors hover:bg-red-700 disabled:cursor-default"
+                >
                     <div className="flex items-center justify-center space-x-2">
                         <Icons.Siren />
-                        <span>ALERT: THIS TREE IS IN DANGER</span>
+                        <span>ALERT: THIS TREE IS IN DANGER{onAlertGuardians ? ' — message guardians' : ''}</span>
                         <Icons.Siren />
                     </div>
-                </div>
+                </button>
             )}
 
             {/* Header */}

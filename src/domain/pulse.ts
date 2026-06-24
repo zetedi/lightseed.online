@@ -63,7 +63,8 @@ export interface Pulse extends Entity {
   
   // Metadata
   authorId: string;
-  authorName: string;
+  authorName: string;        // for reaches this is the sender's TREE name (the conversation face)
+  authorPersonName?: string; // the human behind it — shown under the tree name in DMs
   authorPhoto?: string;
   createdAt: Timestamp;
   

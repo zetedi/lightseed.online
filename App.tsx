@@ -43,7 +43,7 @@ import {
 } from './services/firebase';
 import { findVisionSynergies } from './services/gemini';
 import { ensureIntelligenceCommons, setActiveIntelligenceId } from './services/intelligence';
-import { type Pulse, type Lifetree, type Alignment, type Vision, type Community, type VisionSynergy } from './types';
+import { type Pulse, type Lifetree, type Alignment, type Vision, type Community, type VisionSynergy, type ReachAudience } from './types';
 import Logo from './components/Logo';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { useLifeseed } from './hooks/useLifeseed';
@@ -194,6 +194,8 @@ const AppContent = () => {
     const [dashboardEvents, setDashboardEvents] = useState<Pulse[]>([]);
     const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
     const [reachTree, setReachTree] = useState<Lifetree | null>(null);
+    // Preselected audience for a requested reach — 'guardians' when opened from a danger alert.
+    const [reachAudience, setReachAudience] = useState<ReachAudience | undefined>(undefined);
     const [reachOpenSignal, setReachOpenSignal] = useState(0);
     const [unreadReaches, setUnreadReaches] = useState(0);
     const [pendingTreeInvites, setPendingTreeInvites] = useState(0);
@@ -731,9 +733,10 @@ const AppContent = () => {
         refreshTrees();
     };
 
-    const openReach = (tree: Lifetree | null) => {
+    const openReach = (tree: Lifetree | null, audience?: ReachAudience) => {
         setSelectedTree(null);
         setReachTree(tree);
+        setReachAudience(audience);
         setReachOpenSignal(s => s + 1);
         setTab('profile');
     };
@@ -746,6 +749,7 @@ const AppContent = () => {
         setSelectedPulse(null);
         setSelectedCommunity(null);
         setReachTree(null);
+        setReachAudience(undefined);
         setReachOpenSignal(s => s + 1);
         setTab('profile');
     };
@@ -914,8 +918,9 @@ const AppContent = () => {
                     onRevokeAdmin={async (uid: string) => { await revokeAdmin(uid); }}
                     onOpenNewsletterAdmin={() => setTab('newsletter')}
                     reachPartner={reachTree}
+                    reachAudience={reachAudience}
                     reachOpenSignal={reachOpenSignal}
-                    onConsumeReach={() => setReachTree(null)}
+                    onConsumeReach={() => { setReachTree(null); setReachAudience(undefined); }}
                     onReachTree={(tree: Lifetree) => openReach(tree)}
                 />
             );
@@ -1201,6 +1206,7 @@ const AppContent = () => {
                                                     targetUserProfile={{ onlyValidatedCanReach: item.onlyValidatedCanReach }}
                                                     onPlayGrowth={setShowGrowthPlayer}
                                                     onReach={openReach}
+                                                    onAlertGuardians={(tree: Lifetree) => openReach(tree, 'guardians')}
                                                     onQuickSnap={handleQuickSnap}
                                                     onValidate={(id: string, nextValidated: boolean) => (nextValidated
                                                         ? validateLifetree(id, isSuperAdmin ? lightseed!.uid : activeTree!.id)
@@ -1399,6 +1405,7 @@ const AppContent = () => {
                         onDelete={() => { handleDeleteTreeConfirmed(selectedTree.id); setSelectedTree(null); }}
                         onCreatePulse={() => openPulseModal(selectedTree)}
                         onReachTree={(tree: Lifetree) => openReach(tree)}
+                        onAlertGuardians={() => openReach(selectedTree, 'guardians')}
                         onViewPulse={(p: Pulse) => { setSelectedTree(null); setSelectedPulse(p); }}
                         myActiveTree={activeTree}
                         isDefaultTree={defaultTreeId === selectedTree.id}

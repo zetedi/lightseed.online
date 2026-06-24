@@ -11,6 +11,7 @@ export interface ReachThread {
   isGroup: boolean;
   partnerId: string;    // the other tree (1:1) or the subject tree the group is about
   partnerName: string;
+  partnerPersonName?: string; // the human behind the partner tree (1:1), if they've written
   partnerPhoto?: string;
   audience?: ReachAudience; // for group threads, which slice of the circle
   participantCount?: number;
@@ -47,6 +48,7 @@ export function reachThreads(pulses: Pulse[], viewer: ThreadViewer): ReachThread
     let partnerId: string | undefined;
     let partnerName: string | undefined;
     let partnerPhoto: string | undefined;
+    let partnerPersonName: string | undefined;
 
     if (isGroup) {
       // Group threads are keyed by their stable threadId; the "partner" is the subject tree.
@@ -64,6 +66,7 @@ export function reachThreads(pulses: Pulse[], viewer: ThreadViewer): ReachThread
         partnerId = p.lifetreeId;
         partnerName = p.authorName;
         partnerPhoto = p.authorPhoto;
+        partnerPersonName = p.authorPersonName; // the human behind the partner tree
       }
       key = partnerId || '';
     }
@@ -77,6 +80,7 @@ export function reachThreads(pulses: Pulse[], viewer: ThreadViewer): ReachThread
         isGroup,
         partnerId,
         partnerName: partnerName || (isGroup ? 'Circle' : 'Lifetree'),
+        partnerPersonName,
         partnerPhoto,
         audience: p.audience,
         participantCount: isGroup ? participantUids.length : undefined,
@@ -86,6 +90,7 @@ export function reachThreads(pulses: Pulse[], viewer: ThreadViewer): ReachThread
       });
     } else {
       if (isUnread) existing.unread += 1;
+      if (partnerPersonName) existing.partnerPersonName = partnerPersonName;
       if (at >= existing.lastAt) {
         existing.lastAt = at;
         existing.lastMessage = text;

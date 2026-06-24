@@ -26,6 +26,7 @@ interface ChatMessage {
     text: string;
     authorId?: string;
     authorName?: string;
+    authorPersonName?: string;
     authorPhoto?: string;
 }
 
@@ -70,7 +71,7 @@ const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, message: string
             });
     });
 
-export const ReachThread = ({ targetTree = null, groupThread = null, onBack }: { targetTree?: Lifetree | null, groupThread?: GroupThreadDescriptor | null, onBack?: () => void }) => {
+export const ReachThread = ({ targetTree = null, groupThread = null, initialAudience, onBack }: { targetTree?: Lifetree | null, groupThread?: GroupThreadDescriptor | null, initialAudience?: ReachAudience, onBack?: () => void }) => {
     const { t } = useLanguage();
     const { lightseed, activeTree, myTrees, isAdmin, isSuperAdmin } = useLifeseed();
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -88,10 +89,13 @@ export const ReachThread = ({ targetTree = null, groupThread = null, onBack }: {
     const [selectedTree, setSelectedTree] = useState<Lifetree | null>(targetTree);
     // Who the next message goes to when composing to a tree: undefined = owner (1:1), else a
     // group audience. A group thread opened from the inbox fixes the audience and can't change it.
-    const [audience, setAudience] = useState<ReachAudience | undefined>(groupThread?.audience);
+    const [audience, setAudience] = useState<ReachAudience | undefined>(groupThread?.audience ?? initialAudience);
     // Metadata for the thread currently loaded — lets a group reply reuse the same threadId
     // + participantUids so everyone stays in one conversation.
     const [threadMeta, setThreadMeta] = useState<{ threadId: string; participantUids: string[]; reachTreeId?: string; reachTreeName?: string; threadName?: string; audience?: ReachAudience } | null>(null);
+    // The human behind the partner tree in a 1:1 thread — shown under the tree name. Derived
+    // from the partner's own messages (their reaches carry authorPersonName).
+    const [partnerPersonName, setPartnerPersonName] = useState<string | undefined>(undefined);
     const bottomRef = useRef<HTMLDivElement>(null);
 
     const isGroup = !!groupThread || (mode === 'tree' && audience !== undefined);
@@ -105,11 +109,11 @@ export const ReachThread = ({ targetTree = null, groupThread = null, onBack }: {
         } else if (targetTree) {
             setSelectedTree(targetTree);
             setMode('tree');
-            setAudience(undefined);
+            setAudience(initialAudience); // e.g. 'guardians' when opened from a danger alert
         } else {
             setMode('oracle');
         }
-    }, [targetTree?.id, groupThread?.threadId]);
+    }, [targetTree?.id, groupThread?.threadId, initialAudience]);
 
     // Translate raw reach pulses into the rendered conversation. In a group thread every
     // message is attributed; in a 1:1 the partner's words are "model", mine are "user".
@@ -120,7 +124,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, onBack }: {
         pulses.forEach(p => {
             const text = p.content || p.body || '';
             const mine = (!!myUid && p.authorId === myUid) || myIds.has(p.lifetreeId || '');
-            const base = group ? { authorId: p.authorId, authorName: p.authorName, authorPhoto: p.authorPhoto } : {};
+            const base = group ? { authorId: p.authorId, authorName: p.authorName, authorPersonName: p.authorPersonName, authorPhoto: p.authorPhoto } : {};
             if (mine) {
                 if (text) history.push({ role: 'user', text, ...base });
                 if (p.reachResponse) history.push({ role: 'model', text: p.reachResponse });
@@ -147,6 +151,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, onBack }: {
     const myTreeIdsKey = myTrees.map((tree: Lifetree) => tree.id).join(',');
     useEffect(() => {
         let cancelled = false;
+        setPartnerPersonName(undefined);
 
         if (mode !== 'tree') {
             setMessages([{ role: 'model', text: t('oracle_greeting') }]);
@@ -213,6 +218,9 @@ export const ReachThread = ({ targetTree = null, groupThread = null, onBack }: {
                         });
                     } else {
                         setThreadMeta(null);
+                        // The human behind this tree, from their own messages (if any yet).
+                        const fromPartner = pulses.find(p => p.authorId !== lightseed?.uid && p.authorPersonName);
+                        if (fromPartner?.authorPersonName) setPartnerPersonName(fromPartner.authorPersonName);
                     }
                     const history = buildHistory(pulses, !!audience);
                     setMessages(history.length ? history : [{ role: 'model', text: greeting }]);
@@ -458,7 +466,12 @@ export const ReachThread = ({ targetTree = null, groupThread = null, onBack }: {
                         </div>
                     )}
                     <div className="min-w-0">
-                        <div className="truncate font-semibold text-slate-800">{headerName}</div>
+                        <div className="truncate font-semibold text-slate-800">
+                            {headerName}
+                            {!isGroup && partnerPersonName && partnerPersonName !== headerName && (
+                                <span className="ml-1.5 text-xs font-normal text-slate-400">({partnerPersonName})</span>
+                            )}
+                        </div>
                         <div className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-700">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                             <span>{mode === 'tree' ? (isGroup ? `Group reach${threadMeta?.participantUids?.length ? ` · ${threadMeta.participantUids.length} in circle` : groupThread?.participantCount ? ` · ${groupThread.participantCount} in circle` : ''}` : 'Mycelial reach') : `${aiName} · ${usage}/21`}</span>
@@ -521,7 +534,14 @@ export const ReachThread = ({ targetTree = null, groupThread = null, onBack }: {
                     <div key={i} className={`flex gap-4 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         {m.role === 'model' && incomingAvatar(m)}
                         <div className={`flex max-w-[85%] flex-col gap-1.5 sm:max-w-[75%] ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
-                            {showAuthor && <span className="px-2 text-[11px] font-bold text-emerald-700/80">{m.authorName}</span>}
+                            {showAuthor && (
+                                <span className="px-2 text-[11px] font-bold text-emerald-700/80">
+                                    {m.authorName}
+                                    {m.authorPersonName && m.authorPersonName !== m.authorName && (
+                                        <span className="font-normal text-slate-400"> ({m.authorPersonName})</span>
+                                    )}
+                                </span>
+                            )}
                             <div dir="auto" className={`w-fit rounded-[2rem] px-6 py-4 text-[15px] leading-relaxed tracking-wide ${
                                 m.role === 'user'
                                     ? 'bg-emerald-600 text-white rounded-br-none shadow-lg'

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Icons } from '../ui/Icons';
-import { Lifetree, Lightseed, Pulse } from '../../types';
+import { Lifetree, Lightseed, Pulse, ReachAudience } from '../../types';
 import { ReachThread, type GroupThreadDescriptor } from './ReachThread';
 import { markReachPulsesSeen, listenToUserProfile } from '../../services/firebase';
 import { getIntelligence } from '../../services/intelligence';
@@ -9,7 +9,7 @@ import { reachThreads } from '../../src/domain/views/threads';
 type Selection =
     | { kind: 'none' }
     | { kind: 'oracle' }
-    | { kind: 'tree'; tree: Lifetree }
+    | { kind: 'tree'; tree: Lifetree; audience?: ReachAudience }
     | { kind: 'group'; thread: GroupThreadDescriptor };
 
 const TreeAvatar = ({ name, photo, size = 'md' }: { name: string, photo?: string, size?: 'sm' | 'md' }) => {
@@ -38,6 +38,7 @@ export const ReachInbox = ({
     myTrees,
     lightseed,
     requestedPartner,
+    requestedAudience,
     onConsumeRequested,
     title = 'Direct Messages',
     subtitle = 'Private reaches between your trees and the network.',
@@ -46,6 +47,7 @@ export const ReachInbox = ({
     myTrees: Lifetree[];
     lightseed: Lightseed | null;
     requestedPartner: Lifetree | null;
+    requestedAudience?: ReachAudience;
     onConsumeRequested?: () => void;
     title?: string;
     subtitle?: string;
@@ -69,10 +71,11 @@ export const ReachInbox = ({
     // Open a thread when one is requested from outside (map marker, tree card/detail).
     useEffect(() => {
         if (requestedPartner) {
-            setSelection({ kind: 'tree', tree: requestedPartner });
+            // requestedAudience (e.g. 'guardians' from a danger alert) preselects a group reach.
+            setSelection({ kind: 'tree', tree: requestedPartner, audience: requestedAudience });
             onConsumeRequested?.();
         }
-    }, [requestedPartner?.id]);
+    }, [requestedPartner?.id, requestedAudience]);
 
     // Opening Direct Messages marks every received message as seen, clearing the
     // global unread glow. Sent messages (authored by me) are never marked/counted.
@@ -144,7 +147,12 @@ export const ReachInbox = ({
                                     : <TreeAvatar name={thread.partnerName} photo={thread.partnerPhoto} size="sm" />}
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-center justify-between gap-2">
-                                        <span className="truncate font-semibold text-slate-800">{thread.partnerName}</span>
+                                        <span className="truncate font-semibold text-slate-800">
+                                            {thread.partnerName}
+                                            {thread.partnerPersonName && thread.partnerPersonName !== thread.partnerName && (
+                                                <span className="ml-1 font-normal text-slate-400">({thread.partnerPersonName})</span>
+                                            )}
+                                        </span>
                                         {thread.unread > 0 && (
                                             <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">{thread.unread}</span>
                                         )}
@@ -167,6 +175,7 @@ export const ReachInbox = ({
                         <ReachThread
                             targetTree={selection.kind === 'tree' ? selection.tree : null}
                             groupThread={selection.kind === 'group' ? selection.thread : null}
+                            initialAudience={selection.kind === 'tree' ? selection.audience : undefined}
                             onBack={() => setSelection({ kind: 'none' })}
                         />
                     </div>
