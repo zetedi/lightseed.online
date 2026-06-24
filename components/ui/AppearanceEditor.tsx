@@ -47,7 +47,7 @@ export const AppearanceEditor = ({
         <label className="text-[10px] font-bold uppercase text-slate-400">{t('appearance_header')}</label>
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-slate-800 to-slate-900 shadow-inner">
           {/* Hero banner — the background, and itself the hero picker */}
-          <ImagePicker onImageSelect={onHeroUpload} previewUrl={heroUrl} loading={uploadingHero} isDark className="aspect-[3/1] min-h-[150px] w-full" />
+          <ImagePicker onImageSelect={onHeroUpload} previewUrl={heroUrl} loading={uploadingHero} isDark aspect={3} cropTitle="Frame the banner" className="aspect-[3/1] min-h-[150px] w-full" />
           {heroUrl && <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-slate-900/40 via-slate-900/45 to-slate-900/80" />}
           {/* In-place label so it's unmistakable the banner is the HERO picker, not the logo. */}
           <span className="pointer-events-none absolute left-3 top-3 z-10 rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white/80 backdrop-blur">{t('site_hero')}</span>

@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { onAuthChange, getMyLifetrees, getGuardedTrees, checkIsAdmin, checkIsSuperAdmin, getSuperAdminUid, claimSuperAdmin } from '../services/firebase';
+import { onAuthChange, getMyLifetrees, getGuardedTrees, checkIsAdmin, checkIsSuperAdmin, getSuperAdminUid, claimSuperAdmin, listenToUserProfile, updateUserProfile } from '../services/firebase';
 import { type Lightseed, type Lifetree } from '../types';
 
 const SUPERADMIN_EMAIL = 'zetedi@gmail.com';
@@ -13,6 +13,8 @@ export const useLifeseed = () => {
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
     const [superAdminExists, setSuperAdminExists] = useState(true);
     const [loading, setLoading] = useState(true);
+    // The user's chosen "closest" tree (users/{uid}.defaultTreeId). Drives `activeTree`.
+    const [defaultTreeId, setDefaultTreeId] = useState<string | undefined>(undefined);
 
     useEffect(() => {
         const authTimeout = window.setTimeout(() => {
@@ -81,6 +83,13 @@ export const useLifeseed = () => {
         };
     }, []);
 
+    // Track the user's chosen default tree from their profile (live).
+    useEffect(() => {
+        if (!lightseed?.uid) { setDefaultTreeId(undefined); return; }
+        const unsub = listenToUserProfile(lightseed.uid, (data) => setDefaultTreeId(data?.defaultTreeId || undefined));
+        return () => unsub();
+    }, [lightseed?.uid]);
+
     const refreshTrees = async () => {
         if (lightseed) {
             const [owned, guarded] = await Promise.all([
@@ -91,6 +100,15 @@ export const useLifeseed = () => {
             setGuardedTrees(guarded);
         }
     };
-    const activeTree = myTrees.length > 0 ? myTrees[0] : null;
-    return { lightseed, myTrees, guardedTrees, activeTree, isAdmin, isSuperAdmin, superAdminExists, loading, refreshTrees };
+
+    // Persist the default tree; the profile listener echoes it back into defaultTreeId.
+    const setDefaultTree = async (treeId: string) => {
+        if (!lightseed?.uid) return;
+        setDefaultTreeId(treeId); // optimistic
+        await updateUserProfile(lightseed.uid, { defaultTreeId: treeId }).catch(() => {});
+    };
+
+    // The "closest" tree: the chosen default if it's still one of mine, else the first.
+    const activeTree = myTrees.find(t => t.id === defaultTreeId) || (myTrees.length > 0 ? myTrees[0] : null);
+    return { lightseed, myTrees, guardedTrees, activeTree, defaultTreeId, setDefaultTree, isAdmin, isSuperAdmin, superAdminExists, loading, refreshTrees };
 };

@@ -10,6 +10,7 @@ import { colors } from '../utils/theme';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
 import { canReachTree, type ReachTargetProfile } from '../utils/reachPermissions';
 import { DefaultCardImage } from './ui/DefaultCardImage';
+import { ImageCropModal } from './ui/ImageCropModal';
 
 interface LifetreeCardProps {
     tree: Lifetree;
@@ -30,6 +31,8 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, curren
     const { t } = useLanguage();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
+    // A snapped/selected photo waiting to be cropped before it becomes a growth pulse.
+    const [pendingSnap, setPendingSnap] = useState<File | null>(null);
 
     // Guardianship comes from the LIN (guardian links), passed down as a set.
     const isGuardian = !!currentUserId && !!guardedTreeIds?.has(tree.id);
@@ -39,14 +42,19 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, curren
     const targetProfile = targetUserProfile ?? { onlyValidatedCanReach: tree.onlyValidatedCanReach };
     const canReach = canReachTree({ targetTree: tree, targetUserProfile: targetProfile, myActiveTree, currentUserId, isAdmin, isSuperAdmin });
 
-    const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
-            setUploading(true);
-            await onQuickSnap(tree.id, e.target.files[0]);
-            setUploading(false);
-            if(fileInputRef.current) fileInputRef.current.value = "";
+            setPendingSnap(e.target.files[0]); // crop first, then snap
+            if (fileInputRef.current) fileInputRef.current.value = "";
         }
-    }
+    };
+
+    const handleCropped = async (file: File) => {
+        setPendingSnap(null);
+        setUploading(true);
+        await onQuickSnap(tree.id, file);
+        setUploading(false);
+    };
 
     const triggerUpload = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -172,6 +180,20 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, curren
                     </div>
                 </div>
             </div>
+
+            {/* Crop the snapped photo before it becomes a growth pulse. The wrapper stops the
+                overlay click from bubbling up to the card's onView handler. */}
+            {pendingSnap && (
+                <div onClick={(e) => e.stopPropagation()}>
+                    <ImageCropModal
+                        file={pendingSnap}
+                        aspect={1}
+                        title="Frame the growth"
+                        onCancel={() => setPendingSnap(null)}
+                        onConfirm={handleCropped}
+                    />
+                </div>
+            )}
         </div>
     );
 };

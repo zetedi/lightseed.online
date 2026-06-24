@@ -177,7 +177,7 @@ const DetailWrapper = ({ children }: { children?: React.ReactNode }) => (
 
 const AppContent = () => {
     const { t } = useLanguage();
-    const { lightseed, myTrees, guardedTrees, activeTree, isAdmin, isSuperAdmin, superAdminExists, loading: authLoading, refreshTrees } = useLifeseed();
+    const { lightseed, myTrees, guardedTrees, activeTree, defaultTreeId, setDefaultTree, isAdmin, isSuperAdmin, superAdminExists, loading: authLoading, refreshTrees } = useLifeseed();
     // The set of trees the signed-in user guards (the LIN, via guardian links) — passed to cards
     // so a card can show its guardian affordance without a per-card read.
     const guardedTreeIds = useMemo(() => new Set(guardedTrees.map(t => t.id)), [guardedTrees]);
@@ -230,6 +230,10 @@ const AppContent = () => {
         setShowPlantModal(true);
     };
     const [showPulseModal, setShowPulseModal] = useState(false);
+    // When growing from a specific tree's page, the pulse modal targets THAT tree (not the
+    // active one). Reset to null for the generic "emit pulse" entry points.
+    const [pulseTargetTree, setPulseTargetTree] = useState<Lifetree | null>(null);
+    const openPulseModal = (target: Lifetree | null = null) => { setPulseTargetTree(target); setShowPulseModal(true); };
     const [showEventModal, setShowEventModal] = useState(false);
     const [showVisionModal, setShowVisionModal] = useState(false);
     const [showGrowthPlayer, setShowGrowthPlayer] = useState<string | null>(null);
@@ -774,6 +778,18 @@ const AppContent = () => {
         }
     }
 
+    // After a tree growth mints, reflect the new latest image immediately (the open tree
+    // page + the forest), without waiting for a full reload round-trip.
+    const handleTreeGrown = (treeId: string, imageUrl?: string) => {
+        if (imageUrl) {
+            setSelectedTree(prev => (prev && prev.id === treeId
+                ? { ...prev, latestGrowthUrl: imageUrl, blockHeight: (prev.blockHeight || 0) + 1 }
+                : prev));
+        }
+        refreshTrees();
+        loadContent(true);
+    };
+
     const handleDeleteTree = async (treeId: string) => {
         if (!(await showConfirm("Are you sure you want to delete this lifetree? This cannot be undone.", { title: 'Delete Lifetree', confirmText: 'Delete', danger: true }))) return;
         try {
@@ -885,6 +901,8 @@ const AppContent = () => {
                     superAdminExists={superAdminExists}
                     onViewTree={(tree: Lifetree) => setSelectedTree(tree)}
                     onDeleteTree={handleDeleteTree}
+                    defaultTreeId={defaultTreeId}
+                    onSetDefaultTree={setDefaultTree}
                     onViewVision={(v: Vision) => setSelectedVision(v)}
                     onPlant={() => openPlant()}
                     onClaimSuperAdmin={async () => {
@@ -1263,7 +1281,7 @@ const AppContent = () => {
                                             <PulseCard
                                                 pulse={item}
                                                 lightseed={lightseed}
-                                                onMatch={(p: Pulse) => { setSelectedPulse(p); setShowPulseModal(true); }}
+                                                onMatch={(p: Pulse) => { setSelectedPulse(p); openPulseModal(); }}
                                                 onView={(p: Pulse) => setSelectedPulse(p)}
                                             />
                                         </div>
@@ -1280,7 +1298,7 @@ const AppContent = () => {
                             subtitle={t('pulses_sub')}
                             footer={searchBox}
                             action={lightseed && (
-                                <button onClick={() => setShowPulseModal(true)} className="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2.5 rounded-full font-bold shadow-lg shadow-sky-600/20 transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap">
+                                <button onClick={() => openPulseModal()} className="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2.5 rounded-full font-bold shadow-lg shadow-sky-600/20 transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap">
                                     <Icons.Pulse /> <span>{t('emit_pulse')}</span>
                                 </button>
                             )}
@@ -1292,7 +1310,7 @@ const AppContent = () => {
                                             <PulseCard
                                                 pulse={item}
                                                 lightseed={lightseed}
-                                                onMatch={(p: Pulse) => { setMatchCandidate(p); setShowPulseModal(true); }}
+                                                onMatch={(p: Pulse) => { setMatchCandidate(p); openPulseModal(); }}
                                                 onView={(p: Pulse) => setSelectedPulse(p)}
                                             />
                                         </React.Fragment>
@@ -1334,7 +1352,7 @@ const AppContent = () => {
                         onLogin={() => setShowAuthModal(true)} 
                         onLogout={() => { logout(); setTab('dashboard'); }} 
                         onPlant={() => openPlant()} 
-                        onPulse={() => setShowPulseModal(true)}
+                        onPulse={() => openPulseModal()}
                         onCreateVision={() => setShowVisionModal(true)}
                         onProfile={() => setTab('profile')} 
                         pendingAlignmentsCount={alignments.length}
@@ -1379,10 +1397,12 @@ const AppContent = () => {
                         })}
                         onUpdate={(updates: Partial<Lifetree>) => handleTreeUpdate(selectedTree.id, updates)}
                         onDelete={() => { handleDeleteTreeConfirmed(selectedTree.id); setSelectedTree(null); }}
-                        onCreatePulse={() => { setShowPulseModal(true); }}
+                        onCreatePulse={() => openPulseModal(selectedTree)}
                         onReachTree={(tree: Lifetree) => openReach(tree)}
                         onViewPulse={(p: Pulse) => { setSelectedTree(null); setSelectedPulse(p); }}
                         myActiveTree={activeTree}
+                        isDefaultTree={defaultTreeId === selectedTree.id}
+                        onSetDefault={() => { setDefaultTree(selectedTree.id); showAlert(`${selectedTree.name} is now your default tree.`); }}
                         currentUserId={lightseed?.uid}
                         isAdmin={isAdmin}
                         isSuperAdmin={isSuperAdmin}
@@ -1497,9 +1517,11 @@ const AppContent = () => {
                     lightseed={lightseed}
                     activeTree={activeTree}
                     matchCandidate={matchCandidate}
-                    onClose={() => setShowPulseModal(false)}
+                    targetTree={pulseTargetTree}
+                    onClose={() => { setShowPulseModal(false); setPulseTargetTree(null); }}
                     onMint={mintPulse}
                     onProposeAlignment={proposeAlignment}
+                    onGrown={handleTreeGrown}
                     uploading={uploading}
                     handleImageUpload={handleImageUpload}
                     uploadBase64Image={uploadBase64Image}

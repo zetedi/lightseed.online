@@ -18,7 +18,7 @@ import { IntelligencePanel } from './intelligence/IntelligencePanel';
 import { ResonanceCard, resonanceId } from './ResonancePanel';
 import { DEFAULT_INTELLIGENCE_ID } from '../services/intelligence';
 
-export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmin, isSuperAdmin, superAdminExists, onViewTree, onDeleteTree, onViewVision, onPlant, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachOpenSignal, onConsumeReach, onReachTree }: any) => {
+export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmin, isSuperAdmin, superAdminExists, onViewTree, onDeleteTree, defaultTreeId, onSetDefaultTree, onViewVision, onPlant, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachOpenSignal, onConsumeReach, onReachTree }: any) => {
     const { t } = useLanguage();
     const [activeTab, setActiveTab] = useState<'trees' | 'pulses' | 'visions' | 'history' | 'reaches' | 'invites' | 'appearance' | 'intelligence' | 'settings' | 'admin'>('trees');
     const [preferredIntelligenceId, setPreferredIntelligenceId] = useState<string>('');
@@ -793,12 +793,15 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                                         {myTrees.length === 0 ? (
                                             !allValidated && <p className="text-slate-400 text-center py-10 col-span-full">No trees planted yet.</p>
                                         ) : (
-                                            myTrees.map((tree: Lifetree) => (
-                                                <div key={tree.id} onClick={() => onViewTree(tree)} className="border border-emerald-100 rounded-lg p-4 hover:shadow-md cursor-pointer transition-all flex items-center justify-between group bg-white">
+                                            [...myTrees].sort((a: Lifetree, b: Lifetree) => (b.id === defaultTreeId ? 1 : 0) - (a.id === defaultTreeId ? 1 : 0)).map((tree: Lifetree) => (
+                                                <div key={tree.id} onClick={() => onViewTree(tree)} className={`border rounded-lg p-4 hover:shadow-md cursor-pointer transition-all flex items-center justify-between group bg-white ${defaultTreeId === tree.id ? 'border-amber-300 ring-1 ring-amber-100' : 'border-emerald-100'}`}>
                                                     <div className="flex items-center space-x-4">
                                                         <img src={tree.imageUrl || 'https://via.placeholder.com/100'} className="w-16 h-16 rounded object-cover bg-slate-100" />
                                                         <div>
-                                                            <h3 className="font-bold text-slate-800">{tree.name}</h3>
+                                                            <h3 className="font-bold text-slate-800 flex items-center gap-1.5">
+                                                                {tree.name}
+                                                                {defaultTreeId === tree.id && <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-700"><Icons.Star filled size={10} /> Default</span>}
+                                                            </h3>
                                                             <p className="text-xs text-slate-500">Block Height: {tree.blockHeight}</p>
                                                             {isExplicitlyValidatedTree(tree) ? (
                                                                 <div className="mt-1 flex items-center gap-2">
@@ -817,13 +820,25 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                                                             )}
                                                         </div>
                                                     </div>
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); onDeleteTree(tree.id); }}
-                                                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors opacity-0 group-hover:opacity-100"
-                                                        title={t('delete_tree_title')}
-                                                    >
-                                                        <Icons.Trash />
-                                                    </button>
+                                                    <div className="flex items-center gap-1">
+                                                        {onSetDefaultTree && (
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); if (defaultTreeId !== tree.id) onSetDefaultTree(tree.id); }}
+                                                                disabled={defaultTreeId === tree.id}
+                                                                className={`p-2 rounded-full transition-colors ${defaultTreeId === tree.id ? 'text-amber-500 cursor-default' : 'text-slate-300 hover:text-amber-500 hover:bg-amber-50 opacity-0 group-hover:opacity-100'}`}
+                                                                title={defaultTreeId === tree.id ? 'Your default tree' : 'Set as my default tree'}
+                                                            >
+                                                                <Icons.Star filled={defaultTreeId === tree.id} />
+                                                            </button>
+                                                        )}
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); onDeleteTree(tree.id); }}
+                                                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                                                            title={t('delete_tree_title')}
+                                                        >
+                                                            <Icons.Trash />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             ))
                                         )}

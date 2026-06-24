@@ -1,6 +1,7 @@
 
-import React, { useRef, ChangeEvent, ReactNode } from 'react';
+import React, { useRef, useState, ChangeEvent, ReactNode } from 'react';
 import { Icons } from './Icons';
+import { ImageCropModal } from './ImageCropModal';
 
 interface ImagePickerProps {
     onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
@@ -10,23 +11,47 @@ interface ImagePickerProps {
     isDark?: boolean;
     children?: ReactNode;
     className?: string;
+    // Crop window aspect (width/height). 1 = square (default), 16/9 = wide banner, etc.
+    aspect?: number;
+    cropTitle?: string;
+    // Opt out of cropping for a given picker (rare — most uploads should crop).
+    noCrop?: boolean;
 }
 
-export const ImagePicker = ({ onChange, onImageSelect, previewUrl, loading = false, isDark = false, children, className }: ImagePickerProps) => {
+export const ImagePicker = ({ onChange, onImageSelect, previewUrl, loading = false, isDark = false, children, className, aspect = 1, cropTitle, noCrop = false }: ImagePickerProps) => {
     const fileInput = useRef<HTMLInputElement>(null);
-    
+    // The just-picked file awaiting a crop. While set, the crop modal is shown and we only
+    // emit onImageSelect once the user confirms the crop — so cropping happens everywhere
+    // an ImagePicker is used, with no change at the call sites.
+    const [pendingFile, setPendingFile] = useState<File | null>(null);
+
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         if (onChange) onChange(e);
-        if (onImageSelect && e.target.files?.[0]) {
-            onImageSelect(e.target.files[0]);
+        const file = e.target.files?.[0];
+        if (file && onImageSelect) {
+            if (noCrop) onImageSelect(file);
+            else setPendingFile(file);
         }
+        // Reset so picking the same file again still fires onChange.
+        e.target.value = '';
     };
+
+    const cropper = pendingFile && !noCrop ? (
+        <ImageCropModal
+            file={pendingFile}
+            aspect={aspect}
+            title={cropTitle}
+            onCancel={() => setPendingFile(null)}
+            onConfirm={(f) => { onImageSelect?.(f); setPendingFile(null); }}
+        />
+    ) : null;
 
     if (children) {
         return (
             <div className={className} onClick={() => fileInput.current?.click()}>
                 <input type="file" ref={fileInput} className="hidden" accept="image/*" onChange={handleFileChange} />
                 {loading ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div> : children}
+                {cropper}
             </div>
         );
     }
@@ -43,7 +68,7 @@ export const ImagePicker = ({ onChange, onImageSelect, previewUrl, loading = fal
                 className={`border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition-colors ${className || 'h-40'} relative overflow-hidden group ${previewUrl ? 'border-none p-0' : `${borderColor} ${bgColor} ${hoverBorder}`}`}
              >
                 <input type="file" ref={fileInput} className="hidden" accept="image/*" onChange={handleFileChange} />
-                
+
                 {loading ? (
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
                 ) : previewUrl ? (
@@ -57,6 +82,7 @@ export const ImagePicker = ({ onChange, onImageSelect, previewUrl, loading = fal
                     </div>
                 )}
              </div>
+             {cropper}
         </div>
     );
 };

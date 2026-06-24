@@ -14,7 +14,7 @@ import { treeCircle } from '../src/domain/views/circle';
 import { firestoreStore } from '../src/adapters/firestore';
 import { canTendTree } from '../src/domain/policy';
 
-export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, myActiveTree, currentUserId, isAdmin, isSuperAdmin, targetUserProfile }: any) => {
+export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, myActiveTree, isDefaultTree, onSetDefault, currentUserId, isAdmin, isSuperAdmin, targetUserProfile }: any) => {
    const { t } = useLanguage();
    const isOwner = currentUserId === tree.ownerId;
    const isNature = tree.isNature;
@@ -313,6 +313,17 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     {tree.shortTitle && !isEditing && <span dir="auto" className="text-xs text-emerald-600 font-bold uppercase tracking-widest">{tree.shortTitle}</span>}
                 </div>
                 <div className="min-w-[80px] flex justify-end gap-2">
+                    {/* Set as my default ("closest") tree — owner only. */}
+                    {isOwner && !isEditing && onSetDefault && (
+                        <button
+                            onClick={() => { if (!isDefaultTree) onSetDefault(); }}
+                            disabled={isDefaultTree}
+                            title={isDefaultTree ? 'This is your default tree' : 'Set as my default tree'}
+                            className={`p-2 rounded-full shadow-sm transition-colors border ${isDefaultTree ? 'bg-amber-50 text-amber-500 border-amber-200 cursor-default' : 'bg-white text-slate-400 hover:text-amber-500 hover:bg-amber-50 border-slate-200'}`}
+                        >
+                            <Icons.Star filled={isDefaultTree} />
+                        </button>
+                    )}
                     {canDelete && !isEditing && (
                         <button onClick={() => setShowDeleteModal(true)} className="bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 p-2 rounded-full shadow-sm transition-colors border border-red-200" title="Delete tree">
                             <Icons.Trash />

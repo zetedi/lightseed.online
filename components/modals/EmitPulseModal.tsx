@@ -12,9 +12,14 @@ interface EmitPulseModalProps {
   lightseed: Lightseed | null;
   activeTree: Lifetree | null;
   matchCandidate: Pulse | null;
+  // When set, grow THIS specific tree (e.g. opened from a tree's page) rather than the
+  // user's active tree, and skip the tree/vision choice — it's a focused tree growth.
+  targetTree?: Lifetree | null;
   onClose: () => void;
   onMint: (data: any) => Promise<void>;
   onProposeAlignment: (data: any) => Promise<void>;
+  // Fired after a tree growth mints, so the caller can refresh the tree's latest image.
+  onGrown?: (treeId: string, imageUrl?: string) => void;
   uploading: boolean;
   handleImageUpload: (file: File, path: string) => Promise<string>;
   uploadBase64Image: (base64: string, path: string) => Promise<string>;
@@ -50,15 +55,20 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
   lightseed,
   activeTree,
   matchCandidate,
+  targetTree = null,
   onClose,
   onMint,
   onProposeAlignment,
+  onGrown,
   uploading,
   handleImageUpload,
   uploadBase64Image
 }) => {
   const { t } = useLanguage();
-  const [growthKind, setGrowthKind] = useState<GrowthKind | null>(null);
+  // The tree being grown: the explicit target (from its page) or the active tree.
+  const growthTree = targetTree || activeTree;
+  // A focused target jumps straight to tree-growth; otherwise ask what's growing.
+  const [growthKind, setGrowthKind] = useState<GrowthKind | null>(targetTree ? 'tree' : null);
   const [myVisions, setMyVisions] = useState<Vision[]>([]);
   const [selectedVision, setSelectedVision] = useState<Vision | null>(null);
   const [growthCategory, setGrowthCategory] = useState<string>('');
@@ -71,7 +81,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
     if (lightseed?.uid) getMyVisions(lightseed.uid).then(setMyVisions).catch(() => {});
   }, [lightseed?.uid]);
 
-  const treeImage = activeTree?.latestGrowthUrl || activeTree?.imageUrl || '';
+  const treeImage = growthTree?.latestGrowthUrl || growthTree?.imageUrl || '';
 
   const chooseTree = () => { setGrowthKind('tree'); setPulseImageUrl(''); };
   const chooseVision = () => {
@@ -87,8 +97,8 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
 
     // Every growth pulse is sealed onto a tree's chain. A vision grows on its rooted tree.
     const lifetreeId = growthKind === 'tree'
-      ? (activeTree?.id || '')
-      : (selectedVision?.lifetreeId || activeTree?.id || '');
+      ? (growthTree?.id || '')
+      : (selectedVision?.lifetreeId || growthTree?.id || '');
     if (!lifetreeId) {
       showAlert(growthKind === 'vision' ? 'This vision is not rooted in a tree yet, so it cannot grow.' : 'Plant a lifetree before emitting growth.');
       return;
@@ -109,7 +119,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
           ? { visionId: selectedVision.id, visionTitle: selectedVision.title, growthCategory }
           : {}),
         title: pulseTitle.trim() || (growthKind === 'tree'
-          ? `${activeTree?.name || 'Tree'} growth`
+          ? `${growthTree?.name || 'Tree'} growth`
           : (selectedVision?.title ? `${selectedVision.title} growth` : 'Vision growth')),
         body: pulseBody,
         imageUrl: finalImageUrl,
@@ -117,6 +127,8 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
         authorName: lightseed.displayName || "Soul",
         authorPhoto: lightseed.photoURL || undefined,
       });
+      // Let the caller refresh the tree's latest image / chain after a tree growth.
+      if (growthKind === 'tree' && lifetreeId) onGrown?.(lifetreeId, finalImageUrl || undefined);
       onClose();
     } catch (e: any) {
       showAlert(e.message);
@@ -148,7 +160,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
   };
 
   return (
-    <Modal title={matchCandidate ? t('propose_alignment') : t('emit_pulse')} onClose={onClose}>
+    <Modal title={matchCandidate ? t('propose_alignment') : (targetTree ? `Grow ${targetTree.name}` : t('emit_pulse'))} onClose={onClose}>
       {matchCandidate ? (
         <form onSubmit={handleAlignment} className="flex flex-col gap-4">
           <div className="bg-sky-50 p-4 rounded text-sky-800">
@@ -189,9 +201,11 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
       ) : (
         // STEP 2 — the growth details
         <form onSubmit={handleMint} className="flex flex-col gap-4">
-          <button type="button" onClick={backToChoice} className="flex w-fit items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-800">
-            <Icons.ArrowLeft /> <span>Back</span>
-          </button>
+          {!targetTree && (
+            <button type="button" onClick={backToChoice} className="flex w-fit items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-800">
+              <Icons.ArrowLeft /> <span>Back</span>
+            </button>
+          )}
 
           {growthKind === 'tree' && (
             <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3">
