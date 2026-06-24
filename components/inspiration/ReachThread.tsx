@@ -3,15 +3,56 @@ import { showAlert } from "../ui/Dialog";
 import { useLanguage } from '../../contexts/LanguageContext';
 import { sendMessageToOracle, generateImage, translatePulse, type TranslationResponse } from '../../services/gemini';
 import { getIntelligence } from '../../services/intelligence';
-import { checkAndIncrementAiUsage, mintPulse, uploadBase64Image, listenToUserProfile, fetchReachThread, markReachesSeen, sendReach } from '../../services/firebase';
+import { checkAndIncrementAiUsage, mintPulse, uploadBase64Image, listenToUserProfile, fetchReachThread, fetchThreadById, markReachesSeen, sendReach, sendThreadMessage } from '../../services/firebase';
+import { reachAudienceLabels } from '../../utils/reachPermissions';
 import { useLifeseed } from '../../hooks/useLifeseed';
 import { Icons } from '../ui/Icons';
-import { Lifetree } from '../../types';
+import { Lifetree, Pulse, ReachAudience } from '../../types';
+
+// A group thread chosen from the inbox — carries enough to open it and reply within it.
+export interface GroupThreadDescriptor {
+    threadId: string;
+    partnerId: string;          // the subject tree the circle is about
+    partnerName: string;        // display name, e.g. "Oak · Guardians"
+    partnerPhoto?: string;
+    audience?: ReachAudience;
+    participantCount?: number;
+}
+
+// One rendered line of a conversation. `authorId`/`authorName` let group threads show who
+// spoke; 1:1 and Oracle threads leave them unset and render as a plain two-party chat.
+interface ChatMessage {
+    role: 'user' | 'model';
+    text: string;
+    authorId?: string;
+    authorName?: string;
+    authorPhoto?: string;
+}
+
+// The audience options offered when starting a reach to a tree. `undefined` is the classic
+// 1:1 message to the owner; the others fan out to a shared group thread with the circle.
+const AUDIENCE_OPTIONS: { value: ReachAudience | undefined; label: string }[] = [
+    { value: undefined, label: 'Owner' },
+    { value: 'guardians', label: 'Guardians' },
+    { value: 'everyone', label: 'Everyone' },
+];
 
 const SunAvatar = () => (
     <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-amber-200 bg-amber-50 text-amber-500 shadow-inner">
         <div className="pointer-events-none absolute -inset-1 rounded-full bg-amber-300/20 blur-sm"></div>
         <span className="relative z-10"><Icons.Sun /></span>
+    </div>
+);
+
+const InitialAvatar = ({ name, photo }: { name?: string, photo?: string }) => (
+    photo
+        ? <img src={photo} alt={name || ''} className="h-10 w-10 shrink-0 rounded-full border-2 border-emerald-100 object-cover" />
+        : <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-emerald-100 bg-emerald-50 font-bold uppercase text-emerald-600">{name?.trim()?.charAt(0) || <Icons.Tree />}</div>
+);
+
+const GroupAvatar = () => (
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-emerald-100 bg-emerald-50 text-emerald-600">
+        <Icons.Users />
     </div>
 );
 
@@ -29,10 +70,10 @@ const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, message: string
             });
     });
 
-export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetree | null, onBack?: () => void }) => {
+export const ReachThread = ({ targetTree = null, groupThread = null, onBack }: { targetTree?: Lifetree | null, groupThread?: GroupThreadDescriptor | null, onBack?: () => void }) => {
     const { t } = useLanguage();
     const { lightseed, activeTree, myTrees, isAdmin, isSuperAdmin } = useLifeseed();
-    const [messages, setMessages] = useState<{role: 'user' | 'model', text: string}[]>([]);
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [isSending, setIsSending] = useState(false);
@@ -43,75 +84,153 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
     const [aiName, setAiName] = useState('Osiris');
     // Per-message AI interpretations — the "shadow text" beneath an incoming tree's words.
     const [interpretations, setInterpretations] = useState<Record<number, TranslationResponse | 'loading' | { error: string }>>({});
-    const [mode, setMode] = useState<'oracle' | 'tree'>(targetTree ? 'tree' : 'oracle');
+    const [mode, setMode] = useState<'oracle' | 'tree'>(targetTree || groupThread ? 'tree' : 'oracle');
     const [selectedTree, setSelectedTree] = useState<Lifetree | null>(targetTree);
+    // Who the next message goes to when composing to a tree: undefined = owner (1:1), else a
+    // group audience. A group thread opened from the inbox fixes the audience and can't change it.
+    const [audience, setAudience] = useState<ReachAudience | undefined>(groupThread?.audience);
+    // Metadata for the thread currently loaded — lets a group reply reuse the same threadId
+    // + participantUids so everyone stays in one conversation.
+    const [threadMeta, setThreadMeta] = useState<{ threadId: string; participantUids: string[]; reachTreeId?: string; reachTreeName?: string; threadName?: string; audience?: ReachAudience } | null>(null);
     const bottomRef = useRef<HTMLDivElement>(null);
 
+    const isGroup = !!groupThread || (mode === 'tree' && audience !== undefined);
+    const aiMode = mode === 'oracle';
+
     useEffect(() => {
-        if (targetTree) {
+        if (groupThread) {
+            setMode('tree');
+            setSelectedTree(null);
+            setAudience(groupThread.audience);
+        } else if (targetTree) {
             setSelectedTree(targetTree);
             setMode('tree');
+            setAudience(undefined);
         } else {
             setMode('oracle');
         }
-    }, [targetTree?.id]);
+    }, [targetTree?.id, groupThread?.threadId]);
 
-    // Load the persistent reach thread (full back-and-forth) when a tree is selected.
+    // Translate raw reach pulses into the rendered conversation. In a group thread every
+    // message is attributed; in a 1:1 the partner's words are "model", mine are "user".
+    const buildHistory = (pulses: Pulse[], group: boolean): ChatMessage[] => {
+        const myUid = lightseed?.uid;
+        const myIds = new Set<string>(myTrees.map((tree: Lifetree) => tree.id));
+        const history: ChatMessage[] = [];
+        pulses.forEach(p => {
+            const text = p.content || p.body || '';
+            const mine = (!!myUid && p.authorId === myUid) || myIds.has(p.lifetreeId || '');
+            const base = group ? { authorId: p.authorId, authorName: p.authorName, authorPhoto: p.authorPhoto } : {};
+            if (mine) {
+                if (text) history.push({ role: 'user', text, ...base });
+                if (p.reachResponse) history.push({ role: 'model', text: p.reachResponse });
+            } else {
+                if (text) history.push({ role: 'model', text, ...base });
+                if (p.reachResponse) history.push({ role: 'user', text: p.reachResponse });
+            }
+        });
+        return history;
+    };
+
+    const markThreadSeen = (pulses: Pulse[]) => {
+        if (!lightseed) return;
+        const uid = lightseed.uid;
+        const unseen = pulses
+            .filter(p => p.authorId !== uid
+                && (p.recipientUid === uid || (p.participantUids || []).includes(uid))
+                && !(p.seenBy || []).includes(uid))
+            .map(p => p.id);
+        if (unseen.length) markReachesSeen(unseen, uid);
+    };
+
+    // Load the persistent thread (full back-and-forth) when a tree/group/audience is selected.
+    const myTreeIdsKey = myTrees.map((tree: Lifetree) => tree.id).join(',');
     useEffect(() => {
         let cancelled = false;
-        const greeting = (name: string) => `Mycelial communication ready. Reaches here travel between your active tree and ${name}.`;
 
-        if (mode === 'tree' && selectedTree) {
-            const partner = selectedTree;
-            const myIds = new Set<string>(myTrees.map((tree: Lifetree) => tree.id));
+        if (mode !== 'tree') {
+            setMessages([{ role: 'model', text: t('oracle_greeting') }]);
+            setThreadMeta(null);
+            return;
+        }
+
+        // A group thread opened from the inbox.
+        if (groupThread) {
+            const greeting = `This is a group reach — everyone in ${groupThread.partnerName} sees these messages.`;
             setMessages([]);
             setInterpretations({});
             setIsTyping(true);
-            fetchReachThread(partner.id)
+            fetchThreadById(groupThread.threadId)
                 .then(pulses => {
                     if (cancelled) return;
-                    const history: {role: 'user' | 'model', text: string}[] = [];
-                    pulses.forEach(p => {
-                        const text = p.content || p.body || '';
-                        // I sent it if I authored it (reliable even before myTrees loads).
-                        const outgoing = (!!lightseed && p.authorId === lightseed.uid) || myIds.has(p.lifetreeId || '');
-                        if (outgoing) {
-                            if (text) history.push({ role: 'user', text });
-                            if (p.reachResponse) history.push({ role: 'model', text: p.reachResponse });
-                        } else {
-                            if (text) history.push({ role: 'model', text });
-                            if (p.reachResponse) history.push({ role: 'user', text: p.reachResponse });
-                        }
+                    const latest = pulses[pulses.length - 1];
+                    setThreadMeta({
+                        threadId: groupThread.threadId,
+                        participantUids: latest?.participantUids || [],
+                        reachTreeId: latest?.reachTreeId || groupThread.partnerId,
+                        reachTreeName: latest?.reachTreeName,
+                        threadName: latest?.threadName || groupThread.partnerName,
+                        audience: latest?.audience || groupThread.audience,
                     });
-                    if (history.length === 0) history.push({ role: 'model', text: greeting(partner.name) });
-                    setMessages(history);
-
-                    // Mark incoming reaches addressed to me as seen (clears the red envelope).
-                    if (lightseed) {
-                        const unseen = pulses
-                            .filter(p => p.recipientUid === lightseed.uid && !(p.seenBy || []).includes(lightseed.uid))
-                            .map(p => p.id);
-                        if (unseen.length) markReachesSeen(unseen, lightseed.uid);
-                    }
+                    const history = buildHistory(pulses, true);
+                    setMessages(history.length ? history : [{ role: 'model', text: greeting }]);
+                    markThreadSeen(pulses);
                 })
-                .catch(err => {
-                    if (cancelled) return;
-                    console.error('Failed to load reach thread:', err);
-                    setMessages([{ role: 'model', text: greeting(partner.name) }]);
-                })
+                .catch(err => { if (!cancelled) { console.error('Failed to load group thread:', err); setMessages([{ role: 'model', text: greeting }]); } })
                 .finally(() => { if (!cancelled) setIsTyping(false); });
-        } else {
-            setMessages([{ role: 'model', text: t('oracle_greeting') }]);
+            return () => { cancelled = true; };
+        }
+
+        // Starting / continuing a reach to a tree — 1:1 (owner) or a group audience.
+        if (selectedTree) {
+            const partner = selectedTree;
+            const myTreeIds = myTrees.map((tree: Lifetree) => tree.id);
+            const greeting = audience
+                ? `Mycelial group reach: everyone in ${partner.name}'s ${reachAudienceLabels[audience].toLowerCase()} circle will see this.`
+                : `Mycelial communication ready. Reaches here travel between your active tree and ${partner.name}.`;
+            setMessages([]);
+            setInterpretations({});
+            setIsTyping(true);
+
+            const load = audience && lightseed
+                // Group: a deterministic per-initiator thread; sendReach lands every message here.
+                ? fetchThreadById(['grp', partner.id, audience, lightseed.uid].join('__'))
+                // 1:1: my conversation with the tree's owner.
+                : fetchReachThread(partner.id, { uid: lightseed?.uid, treeIds: myTreeIds });
+
+            load
+                .then(pulses => {
+                    if (cancelled) return;
+                    if (audience) {
+                        const latest = pulses[pulses.length - 1];
+                        setThreadMeta({
+                            threadId: ['grp', partner.id, audience, lightseed!.uid].join('__'),
+                            participantUids: latest?.participantUids || [],
+                            reachTreeId: partner.id,
+                            reachTreeName: partner.name,
+                            threadName: `${partner.name} · ${reachAudienceLabels[audience]}`,
+                            audience,
+                        });
+                    } else {
+                        setThreadMeta(null);
+                    }
+                    const history = buildHistory(pulses, !!audience);
+                    setMessages(history.length ? history : [{ role: 'model', text: greeting }]);
+                    markThreadSeen(pulses);
+                })
+                .catch(err => { if (!cancelled) { console.error('Failed to load reach thread:', err); setMessages([{ role: 'model', text: greeting }]); } })
+                .finally(() => { if (!cancelled) setIsTyping(false); });
         }
 
         return () => { cancelled = true; };
-    }, [mode, selectedTree?.id, lightseed?.uid]);
+        // Reload when the partner/group/audience changes, or once the viewer's own trees load.
+    }, [mode, selectedTree?.id, groupThread?.threadId, audience, lightseed?.uid, myTreeIdsKey]);
 
     useEffect(() => {
-        if (mode === 'tree' && !selectedTree && activeTree) {
+        if (mode === 'tree' && !selectedTree && !groupThread && activeTree) {
             setSelectedTree(activeTree);
         }
-    }, [mode, selectedTree?.id, activeTree?.id]);
+    }, [mode, selectedTree?.id, activeTree?.id, groupThread?.threadId]);
 
     useEffect(() => {
         if (lightseed) {
@@ -163,42 +282,60 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
         }
     };
 
-    // Incoming bubbles: the partner tree's face in a reach, the sun for the Oracle.
-    const incomingAvatar = () => {
-        if (mode === 'tree' && selectedTree) {
-            return selectedTree.imageUrl
-                ? <img src={selectedTree.imageUrl} alt={selectedTree.name} className="h-10 w-10 shrink-0 rounded-full border-2 border-emerald-100 object-cover" />
-                : <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-emerald-100 bg-emerald-50 font-bold uppercase text-emerald-600">{selectedTree.name?.trim()?.charAt(0) || <Icons.Tree />}</div>;
+    // Incoming bubbles: the partner tree's face in a 1:1, a group glyph in a circle, the sun
+    // for the Oracle. In a group, each message can carry its own author's face.
+    const incomingAvatar = (msg?: ChatMessage) => {
+        if (mode === 'tree') {
+            if (isGroup) return msg && (msg.authorPhoto || msg.authorName)
+                ? <InitialAvatar name={msg.authorName} photo={msg.authorPhoto} />
+                : <GroupAvatar />;
+            if (selectedTree) return <InitialAvatar name={selectedTree.name} photo={selectedTree.imageUrl} />;
         }
         return <SunAvatar />;
     };
+
+    const headerName = groupThread ? groupThread.partnerName
+        : (mode === 'tree' && selectedTree
+            ? (audience ? `${selectedTree.name} · ${reachAudienceLabels[audience]}` : selectedTree.name)
+            : aiName);
 
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!input.trim()) return;
 
         if (mode === 'tree') {
-            if (!lightseed || !activeTree || !selectedTree) {
+            if (!lightseed || !activeTree || (!selectedTree && !groupThread)) {
                 setMessages(prev => [...prev, {role: 'model', text: "Choose your active tree and a receiving tree before sending a mycelial reach."}]);
                 return;
             }
 
             const mycelialText = input.trim();
             setInput('');
-            setMessages(prev => [...prev, {role: 'user', text: mycelialText}]);
+            setMessages(prev => [...prev, { role: 'user', text: mycelialText, authorId: lightseed.uid, authorName: activeTree.name, authorPhoto: activeTree.imageUrl }]);
             setIsSending(true);
 
             try {
-                // Person-to-person delivery. sendReach resolves the recipient tree's owner,
-                // enforces the validation-gated contact rule, and stamps threadId + seenBy.
-                await sendReach({
-                    fromTree: activeTree,
-                    toTree: selectedTree,
-                    text: mycelialText,
-                    sender: lightseed,
-                    isAdmin,
-                    isSuperAdmin,
-                });
+                if (groupThread && threadMeta) {
+                    // Reply inside an existing group thread — reuse its threadId + participants.
+                    await sendThreadMessage({
+                        thread: { ...threadMeta, isGroup: true },
+                        fromTree: activeTree,
+                        sender: lightseed,
+                        text: mycelialText,
+                    });
+                } else if (selectedTree) {
+                    // Start/continue a reach to a tree. With an audience this fans out to the
+                    // circle's shared thread; without one it's a classic 1:1 to the owner.
+                    await sendReach({
+                        fromTree: activeTree,
+                        toTree: selectedTree,
+                        text: mycelialText,
+                        sender: lightseed,
+                        audience,
+                        isAdmin,
+                        isSuperAdmin,
+                    });
+                }
             } catch (error: any) {
                 console.error("Reach failed:", error);
                 setMessages(prev => [...prev, {
@@ -209,7 +346,7 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
             setIsSending(false);
             return;
         }
-        
+
         // Check daily limit before proceeding
         try {
             const allowed = await checkAndIncrementAiUsage('text');
@@ -237,7 +374,7 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
         } catch(e: any) {
             console.error("Oracle Error:", e);
             let msg = "The wind is too strong (Error connecting to AI).";
-            
+
             if (e.message?.includes("403")) {
                 msg = `Forbidden (403): ${aiName} cannot hear you. Please ensure your API Key is valid.`;
             } else if (e.message?.includes("429") || e.code === 'resource-exhausted') {
@@ -245,7 +382,7 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
             } else if (e.message) {
                 msg = `Error: ${e.message}`;
             }
-            
+
             setMessages(prev => [...prev, {role: 'model', text: msg}]);
         }
         setIsTyping(false);
@@ -313,32 +450,48 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
                             <Icons.ChevronRight className="rotate-180" size={22} />
                         </button>
                     )}
-                    {mode === 'tree' && selectedTree ? (
-                        selectedTree.imageUrl ? (
-                            <img src={selectedTree.imageUrl} alt={selectedTree.name} className="h-10 w-10 shrink-0 rounded-full border-2 border-emerald-100 object-cover" />
-                        ) : (
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-emerald-100 bg-emerald-50 font-bold uppercase text-emerald-600">
-                                {selectedTree.name?.trim()?.charAt(0) || <Icons.Tree />}
-                            </div>
-                        )
+                    {mode === 'tree' ? (
+                        isGroup ? <GroupAvatar /> : <InitialAvatar name={selectedTree?.name} photo={selectedTree?.imageUrl} />
                     ) : (
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-amber-200 bg-amber-50 text-amber-500">
                             <Icons.Sun />
                         </div>
                     )}
                     <div className="min-w-0">
-                        <div className="truncate font-semibold text-slate-800">{mode === 'tree' && selectedTree ? selectedTree.name : aiName}</div>
+                        <div className="truncate font-semibold text-slate-800">{headerName}</div>
                         <div className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-700">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <span>{mode === 'tree' ? 'Mycelial reach' : `${aiName} · ${usage}/21`}</span>
+                            <span>{mode === 'tree' ? (isGroup ? `Group reach${threadMeta?.participantUids?.length ? ` · ${threadMeta.participantUids.length} in circle` : groupThread?.participantCount ? ` · ${groupThread.participantCount} in circle` : ''}` : 'Mycelial reach') : `${aiName} · ${usage}/21`}</span>
                         </div>
                     </div>
                 </div>
 
+                {/* Audience picker — only when starting a fresh reach to a tree (not a fixed group thread). */}
+                {mode === 'tree' && selectedTree && !groupThread && (
+                    <div className="mt-3 flex items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Send to</span>
+                        <div className="flex flex-wrap gap-1.5">
+                            {AUDIENCE_OPTIONS.map(opt => {
+                                const active = audience === opt.value;
+                                return (
+                                    <button
+                                        key={opt.label}
+                                        type="button"
+                                        onClick={() => setAudience(opt.value)}
+                                        className={`rounded-full px-3 py-1 text-[11px] font-bold transition-colors ${active ? 'bg-emerald-600 text-white shadow' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                                    >
+                                        {opt.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
                 {messages.length > 1 && lightseed && mode === 'oracle' && (
                   <div className="mt-3 flex justify-end">
-                    <button 
-                        onClick={handleMint} 
+                    <button
+                        onClick={handleMint}
                         disabled={isMinting}
                         className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] px-4 py-1.5 rounded-full font-bold shadow-lg transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50"
                     >
@@ -360,12 +513,15 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
 
             <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-slate-50/50 scroll-smooth">
                 {messages.map((m, i) => {
-                    const canInterpret = mode === 'tree' && m.role === 'model' && !!selectedTree && !!activeTree;
+                    const canInterpret = mode === 'tree' && !isGroup && m.role === 'model' && !!selectedTree && !!activeTree;
                     const interp = interpretations[i];
+                    // In a group, label an incoming bubble with who spoke (consecutive same-author merged).
+                    const showAuthor = isGroup && m.role === 'model' && !!m.authorName && (i === 0 || messages[i - 1]?.authorId !== m.authorId || messages[i - 1]?.role !== 'model');
                     return (
                     <div key={i} className={`flex gap-4 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        {m.role === 'model' && incomingAvatar()}
+                        {m.role === 'model' && incomingAvatar(m)}
                         <div className={`flex max-w-[85%] flex-col gap-1.5 sm:max-w-[75%] ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
+                            {showAuthor && <span className="px-2 text-[11px] font-bold text-emerald-700/80">{m.authorName}</span>}
                             <div dir="auto" className={`w-fit rounded-[2rem] px-6 py-4 text-[15px] leading-relaxed tracking-wide ${
                                 m.role === 'user'
                                     ? 'bg-emerald-600 text-white rounded-br-none shadow-lg'
@@ -430,17 +586,19 @@ export const ReachThread = ({ targetTree = null, onBack }: { targetTree?: Lifetr
             </div>
             {mode === 'tree' && (
                 <p className="px-5 pt-2 text-center text-[11px] italic leading-snug text-slate-400">
-                    Kept on the immutable chain — remembered here. For everyday talk, meet outside; bring here only what is meant to stay. Even a dot, or a held silence, can be chosen to be remembered.
+                    {isGroup
+                        ? 'A group reach — everyone in the chosen circle sees and can answer here. Kept on the immutable chain.'
+                        : 'Kept on the immutable chain — remembered here. For everyday talk, meet outside; bring here only what is meant to stay. Even a dot, or a held silence, can be chosen to be remembered.'}
                 </p>
             )}
             <form onSubmit={handleSend} className="p-4 bg-white border-t border-slate-100 flex space-x-3 items-center sticky bottom-0 z-10">
-                <input 
+                <input
                     value={input}
                     onChange={e => setInput(e.target.value)}
-                    placeholder={mode === 'tree' && selectedTree ? `Send from ${activeTree?.name || 'your tree'} to ${selectedTree.name}...` : `Ask ${aiName}...`}
+                    placeholder={mode === 'tree' ? `Send from ${activeTree?.name || 'your tree'} to ${headerName}...` : `Ask ${aiName}...`}
                     className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-6 py-4 text-[15px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:bg-white transition-all shadow-inner placeholder:text-slate-400 placeholder:italic"
                 />
-                <button type="submit" disabled={isTyping || isSending || !input.trim() || (mode === 'tree' && (!selectedTree || !activeTree))} className="bg-emerald-600 text-white p-4 rounded-full hover:bg-emerald-700 active:scale-95 disabled:opacity-50 transition-all shadow-lg">
+                <button type="submit" disabled={isTyping || isSending || !input.trim() || (mode === 'tree' && ((!selectedTree && !groupThread) || !activeTree))} className="bg-emerald-600 text-white p-4 rounded-full hover:bg-emerald-700 active:scale-95 disabled:opacity-50 transition-all shadow-lg">
                     {isSending ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Icons.Send />}
                 </button>
             </form>

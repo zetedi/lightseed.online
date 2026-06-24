@@ -48,13 +48,13 @@ import {
   uploadString
 } from 'firebase/storage';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { type Pulse, type PulseType, type Lifetree, type Alignment, type Vision, type Community, type Sanctuary, type TreeOwnershipInvite, type InvitableRole, roleToTreeField, type Decision, type DecisionNature, votesRequired } from '../types';
+import { type Pulse, type PulseType, type Lifetree, type Alignment, type Vision, type Community, type Sanctuary, type TreeOwnershipInvite, type InvitableRole, roleToTreeField, type Decision, type DecisionNature, votesRequired, type ReachAudience } from '../types';
 import { createBlock } from '../utils/crypto';
 import { uuidv7 } from '../utils/id';
 import type { PulseVisibility } from '../src/domain/pulse';
 import { oldEmeraldEarthThemeValues } from '../utils/theme';
 import { isExplicitlyValidatedTree } from '../utils/validation';
-import { buildThreadId } from '../utils/reachPermissions';
+import { buildThreadId, buildGroupThreadId, getCircleUids, reachAudienceLabels } from '../utils/reachPermissions';
 
 // Robustly read a millisecond timestamp from a Firestore Timestamp, a JS Date, or nothing.
 const toMillis = (value: any): number =>
@@ -1203,39 +1203,76 @@ export const fetchEventPulses = async (lastD?: QueryDocumentSnapshot, domainFilt
 // Reaches (and legacy 'tree_chat' pulses) power the Inspiration threads.
 const isReachPulse = (p: Pulse) => p.type === 'reach' || (p as any).type === 'tree_chat';
 
-export const fetchReachPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {
-    const res = await fetchPulsesRaw(lastD, domainFilter);
+// The open Inspiration feed. `levels` (public + node + the viewer's qualifying scopes) keeps
+// the query to docs the rules allow — without it the visibility-filter is dropped and a single
+// private reach in range would reject the whole query. Only PUBLIC reach reflections (minted
+// "Mint Wisdom" pulses) belong here; private DMs and group threads carry participantUids /
+// recipientUid and are filtered out, so a direct message never surfaces in this public feed.
+export const fetchReachPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, levels?: PulseVisibility[]) => {
+    const res = await fetchPulsesRaw(lastD, domainFilter, levels);
     return {
-        items: res.items.filter(isReachPulse),
+        items: res.items.filter(p =>
+            isReachPulse(p)
+            && (p.visibility || 'public') === 'public'
+            && !p.participantUids
+            && !p.recipientUid),
         lastDoc: res.lastDoc
     };
 };
 
 
-// Load every reach touching a partner tree (sent to it, sent by it, or legacy chats with it),
-// oldest first. Single-field queries only (no composite index); the caller orients by author.
-export const fetchReachThread = async (partnerId: string) => {
-    const [toPartner, fromPartner, legacy] = await Promise.all([
-        getDocs(query(pulsesCollection, where('reachTreeId', '==', partnerId))),
-        getDocs(query(pulsesCollection, where('lifetreeId', '==', partnerId))),
+// Load my 1:1 conversation with a partner tree's owner, oldest first.
+//
+// PRIVACY: we query ONLY documents the viewer is allowed to read under the hardened
+// rules — reaches I authored to the partner, and reaches addressed to me from the
+// partner. A query that matched a reach I cannot read (e.g. the partner's messages with
+// someone else) would be rejected wholesale by Firestore, so the old "fetch everything
+// touching the tree, then filter" approach is both a leak AND rule-incompatible. Group
+// reaches (isGroup) are excluded here — those open by threadId via fetchThreadById.
+export const fetchReachThread = async (
+    partnerId: string,
+    viewer: { uid?: string | null; treeIds?: string[] },
+) => {
+    const myUid = viewer.uid || undefined;
+    if (!myUid) return [];
+    const [outgoing, incoming, legacy] = await Promise.all([
+        getDocs(query(pulsesCollection, where('authorId', '==', myUid), where('reachTreeId', '==', partnerId))),
+        getDocs(query(pulsesCollection, where('recipientUid', '==', myUid), where('lifetreeId', '==', partnerId))),
+        // Legacy 'tree_chat' pulses (no recipientUid) stayed world-readable; keep showing them.
         getDocs(query(pulsesCollection, where('chatTreeId', '==', partnerId))),
     ]);
     const byId = new Map<string, Pulse>();
-    [...toPartner.docs, ...fromPartner.docs, ...legacy.docs].forEach(d => {
+    [...outgoing.docs, ...incoming.docs, ...legacy.docs].forEach(d => {
         const p = { id: d.id, ...(d.data() as any) } as Pulse;
-        if (isReachPulse(p)) byId.set(p.id, p);
+        if (isReachPulse(p) && !p.isGroup) byId.set(p.id, p);
     });
     return Array.from(byId.values()).sort((a, b) => toMillis(a.createdAt) - toMillis(b.createdAt));
 };
 
-// All reaches involving me, both directions, newest first — my personal Inspiration inbox.
+// Load every message in one thread (1:1 or group) by its threadId, oldest first. Used to
+// open a thread chosen from the inbox. The rules confine reach reads to participants, so a
+// returned thread is only ever one the viewer belongs to.
+export const fetchThreadById = async (threadId: string) => {
+    if (!threadId) return [];
+    const snap = await getDocs(query(pulsesCollection, where('threadId', '==', threadId)));
+    return snap.docs
+        .map(d => ({ id: d.id, ...(d.data() as any) } as Pulse))
+        .filter(isReachPulse)
+        .sort((a, b) => toMillis(a.createdAt) - toMillis(b.createdAt));
+};
+
+// All reaches involving me, newest first — my personal Inspiration inbox. Three single-field
+// queries, merged: ones I authored, classic 1:1 ones addressed to me (recipientUid), and any
+// thread (1:1 or group) I'm a participant of. The participantUids branch is what surfaces
+// group threads where I'm a recipient but not the author.
 export const fetchMyReaches = async (uid: string) => {
-    const [authored, received] = await Promise.all([
+    const [authored, received, partOf] = await Promise.all([
         getDocs(query(pulsesCollection, where('authorId', '==', uid))),
         getDocs(query(pulsesCollection, where('recipientUid', '==', uid))),
+        getDocs(query(pulsesCollection, where('participantUids', 'array-contains', uid))),
     ]);
     const byId = new Map<string, Pulse>();
-    [...authored.docs, ...received.docs].forEach(d => {
+    [...authored.docs, ...received.docs, ...partOf.docs].forEach(d => {
         const p = { id: d.id, ...(d.data() as any) } as Pulse;
         if (isReachPulse(p)) byId.set(p.id, p);
     });
@@ -1243,10 +1280,11 @@ export const fetchMyReaches = async (uid: string) => {
     return { items, lastDoc: null };
 };
 
-// Live stream of reaches addressed to me, for the unread (green glow) indicator.
-// Single-field query (no composite index); we filter to reach pulses client-side.
+// Live stream of every thread I'm a participant of (1:1 and group), for the unread (green
+// glow) indicator. participantUids array-contains me covers reaches addressed to me in both
+// kinds of thread; single-field array index (no composite). Filtered to reaches client-side.
 export const listenToMyReaches = (uid: string, callback: (pulses: Pulse[]) => void) =>
-    onSnapshot(query(pulsesCollection, where('recipientUid', '==', uid)), (snap) => {
+    onSnapshot(query(pulsesCollection, where('participantUids', 'array-contains', uid)), (snap) => {
         callback(snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Pulse)).filter(isReachPulse));
     });
 
@@ -1270,7 +1308,12 @@ export const markReachesSeen = async (pulseIds: string[], uid: string) => {
 // Public alias — batch-mark reach pulses as seen by a user (seenBy arrayUnion).
 export const markReachPulsesSeen = markReachesSeen;
 
-// Send a direct message (reach) from one tree to another.
+// Send a reach from one tree to another — either a 1:1 message to the target's owner
+// (audience omitted) or a group message to a slice of the target's circle (audience
+// 'owners' | 'guardians' | 'everyone'), which lands in a shared, multi-person thread.
+//
+// Every reach is written with `participantUids` and `visibility: 'private'` so the
+// Firestore rules can confine reads to the people in the thread (see canReadPulse).
 //
 // The privacy gate is enforced here as well as in the UI: a "protected" target
 // (owner has onlyValidatedCanReach) only accepts reaches from the owner themselves,
@@ -1285,6 +1328,7 @@ export const sendReach = async ({
     toTree,
     text,
     sender,
+    audience,
     isAdmin = false,
     isSuperAdmin = false,
 }: {
@@ -1292,36 +1336,114 @@ export const sendReach = async ({
     toTree: Lifetree;
     text: string;
     sender: { uid: string; displayName?: string | null; photoURL?: string | null };
+    audience?: ReachAudience; // omitted/undefined = classic 1:1 reach to the owner
     isAdmin?: boolean;
     isSuperAdmin?: boolean;
 }) => {
-    // Resolve the freshest target so we have its owner + privacy flag, even when the
-    // caller only had a lightweight tree object (e.g. a map marker or thread summary).
+    // A group reach needs the target's full circle (co-owners / guardians / …), so always
+    // resolve the freshest target when an audience is set; otherwise resolve only if the
+    // lightweight tree object is missing its owner + privacy flag.
     let target = toTree;
-    if (!target.ownerId) {
+    if (audience || !target.ownerId) {
         const full = await getLifetreeById(toTree.id);
         if (full) target = full;
     }
-    const recipientUid = target.ownerId || null;
+    const ownerUid = target.ownerId || null;
 
     const protectedTarget = target.onlyValidatedCanReach === true;
-    const isSelf = !!recipientUid && recipientUid === sender.uid;
+    const isSelf = !!ownerUid && ownerUid === sender.uid;
     if (protectedTarget && !isSelf && !isAdmin && !isSuperAdmin && !isExplicitlyValidatedTree(fromTree)) {
         throw new Error('This Lifetree only accepts direct messages from validated trees.');
     }
 
-    return mintPulse({
+    const base = {
         lifetreeId: fromTree.id,
-        type: 'reach',
-        title: `Reach: ${fromTree.name} -> ${target.name}`,
+        type: 'reach' as const,
         body: text,
         content: text,
         reachTreeId: target.id,
         reachTreeName: target.name,
-        recipientUid,
         recipientName: target.name,
-        threadId: buildThreadId(fromTree.id, target.id),
         seenBy: [],
+        visibility: 'private' as const,
+        authorId: sender.uid,
+        authorName: fromTree.name,
+        authorPhoto: fromTree.imageUrl || sender.photoURL || undefined,
+    };
+
+    if (audience) {
+        // Group reach to the tree's circle — one shared thread keyed by (tree, audience, me).
+        const circle = getCircleUids(target, audience);
+        const participantUids = Array.from(new Set([sender.uid, ...circle].filter(Boolean)));
+        if (participantUids.length <= 1) {
+            throw new Error('There is no one in that circle to reach yet.');
+        }
+        return mintPulse({
+            ...base,
+            title: `Reach: ${fromTree.name} -> ${target.name} (${reachAudienceLabels[audience]})`,
+            recipientUid: null,
+            participantUids,
+            threadId: buildGroupThreadId(target.id, audience, sender.uid),
+            threadName: `${target.name} · ${reachAudienceLabels[audience]}`,
+            audience,
+            isGroup: true,
+        });
+    }
+
+    // Classic 1:1 reach to the target's owner.
+    const participantUids = Array.from(new Set([sender.uid, ownerUid].filter(Boolean) as string[]));
+    return mintPulse({
+        ...base,
+        title: `Reach: ${fromTree.name} -> ${target.name}`,
+        recipientUid: ownerUid,
+        participantUids,
+        threadId: buildThreadId(fromTree.id, target.id),
+    });
+};
+
+// Reply within an EXISTING thread (group or 1:1), reusing its threadId + participantUids so
+// everyone stays in the same shared conversation. Unlike sendReach it never re-derives the
+// thread, so a guardian replying lands in the initiator's group thread instead of spawning a
+// new per-initiator one. Used when a thread was opened from the inbox.
+export const sendThreadMessage = async ({
+    thread,
+    fromTree,
+    sender,
+    text,
+}: {
+    thread: {
+        threadId: string;
+        participantUids: string[];
+        reachTreeId?: string;
+        reachTreeName?: string;
+        threadName?: string;
+        audience?: ReachAudience;
+        isGroup?: boolean;
+    };
+    fromTree: Lifetree;
+    sender: { uid: string; displayName?: string | null; photoURL?: string | null };
+    text: string;
+}) => {
+    const participantUids = Array.from(new Set([sender.uid, ...(thread.participantUids || [])].filter(Boolean)));
+    const isGroup = thread.isGroup ?? participantUids.length > 2;
+    return mintPulse({
+        lifetreeId: fromTree.id,
+        type: 'reach',
+        title: `Reach: ${fromTree.name} -> ${thread.threadName || thread.reachTreeName || 'thread'}`,
+        body: text,
+        content: text,
+        reachTreeId: thread.reachTreeId,
+        reachTreeName: thread.reachTreeName,
+        // 1:1 keeps a single recipientUid (the other party); a group routes by participantUids.
+        recipientUid: isGroup ? null : (participantUids.find(u => u !== sender.uid) || null),
+        recipientName: thread.reachTreeName,
+        participantUids,
+        threadId: thread.threadId,
+        threadName: thread.threadName,
+        audience: thread.audience,
+        isGroup,
+        seenBy: [],
+        visibility: 'private',
         authorId: sender.uid,
         authorName: fromTree.name,
         authorPhoto: fromTree.imageUrl || sender.photoURL || undefined,
@@ -1337,8 +1459,11 @@ export const getMyPulses = async (uid: string) => (await getDocs(query(pulsesCol
 export const fetchGrowthPulses = async (treeId: string) => (await getDocs(query(pulsesCollection, where('lifetreeId', '==', treeId), where('type', '==', 'GROWTH')))).docs.map(d => ({ id: d.id, ...(d.data() as any) } as Pulse)).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 
 export const getPulsesByTreeId = async (treeId: string) => {
-    // We fetch by ID and sort client-side to be robust against missing composite indexes
-    const q = query(pulsesCollection, where('lifetreeId', '==', treeId));
+    // Exclude reaches/tree_chat: they are private DMs minted onto the sender tree's chain, so
+    // a tree's public timeline must never surface them — and (since they are now readable only
+    // by their participants) a broad lifetreeId query that returned one would be rejected by the
+    // rules for any other viewer, breaking the whole tree page. Needs the (lifetreeId, type) index.
+    const q = query(pulsesCollection, where('lifetreeId', '==', treeId), where('type', 'not-in', ['reach', 'tree_chat']));
     const snap = await getDocs(q);
     const pulses = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Pulse));
     // Sort Descending (Newest -> Oldest/Genesis) so the timeline can be rendered top-down

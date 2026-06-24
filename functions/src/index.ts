@@ -145,72 +145,83 @@ export const onReachCreated = onDocumentCreated("pulses/{pulseId}", async (event
     if (!snap) return;
     const pulse = snap.data() as any;
 
-    // Only real reaches addressed to a specific person, and never self-sent messages.
     if (pulse.type !== 'reach') return;
-    const recipientUid: string | undefined = pulse.recipientUid || undefined;
-    if (!recipientUid || recipientUid === pulse.authorId) return;
 
-    try {
-        const userSnap = await db.collection('users').doc(recipientUid).get();
-        if (!userSnap.exists) return;
-        const user = userSnap.data() as any;
+    // Recipients = everyone in the thread for a group reach (participantUids), or the single
+    // addressed recipient for a 1:1 (recipientUid). Never the author of the message.
+    const participantUids: string[] = Array.isArray(pulse.participantUids) ? pulse.participantUids : [];
+    const recipients = (participantUids.length ? participantUids : (pulse.recipientUid ? [pulse.recipientUid] : []))
+        .filter((uid: string) => uid && uid !== pulse.authorId);
+    if (recipients.length === 0) return;
 
-        // Enabled by default; only an explicit false disables direct-message emails.
-        if (user?.emailNotifications?.directMessages === false) return;
-        const email = user.email;
-        if (!email) return;
+    // Basic per-thread throttle: at most one DM email per thread per recipient within this
+    // window, so a burst of messages in one thread doesn't flood any one inbox.
+    // TODO(notifications): consider a digest (e.g. "N new messages") instead of a hard skip.
+    const THROTTLE_MS = 10 * 60 * 1000; // 10 minutes
+    const threadKey = (pulse.threadId || `${pulse.reachTreeId || ''}_${pulse.lifetreeId || ''}`).replace(/\//g, '_');
 
-        // Basic per-thread throttle: at most one DM email per thread per recipient within
-        // this window, so a burst of messages in one thread doesn't flood the inbox.
-        // TODO(notifications): consider a digest (e.g. "N new messages") instead of a hard
-        // skip, and make the window configurable per user.
-        const THROTTLE_MS = 10 * 60 * 1000; // 10 minutes
-        const threadKey = (pulse.threadId || `${pulse.reachTreeId || ''}_${pulse.lifetreeId || ''}`).replace(/\//g, '_');
-        const throttleRef = db.collection('mailThrottle').doc(`${recipientUid}__${threadKey}`);
+    const message: string = pulse.content || pulse.body || '';
+    const fromName: string = pulse.authorName || 'A Lifetree';
+    const isGroup = participantUids.length > 0 && (pulse.isGroup === true || participantUids.length > 2);
+    const audienceName: string = pulse.threadName || pulse.reachTreeName || 'a circle';
+
+    const notify = async (recipientUid: string) => {
         try {
-            const throttleSnap = await throttleRef.get();
-            const lastSentAt = throttleSnap.exists ? (throttleSnap.data()?.lastSentAt?.toMillis?.() ?? 0) : 0;
-            if (Date.now() - lastSentAt < THROTTLE_MS) return; // recently emailed for this thread
-        } catch (e) {
-            console.warn("DM email throttle check failed; sending anyway", e);
+            const userSnap = await db.collection('users').doc(recipientUid).get();
+            if (!userSnap.exists) return;
+            const user = userSnap.data() as any;
+
+            // Enabled by default; only an explicit false disables direct-message emails.
+            if (user?.emailNotifications?.directMessages === false) return;
+            const email = user.email;
+            if (!email) return;
+
+            const throttleRef = db.collection('mailThrottle').doc(`${recipientUid}__${threadKey}`);
+            try {
+                const throttleSnap = await throttleRef.get();
+                const lastSentAt = throttleSnap.exists ? (throttleSnap.data()?.lastSentAt?.toMillis?.() ?? 0) : 0;
+                if (Date.now() - lastSentAt < THROTTLE_MS) return; // recently emailed for this thread
+            } catch (e) {
+                console.warn("DM email throttle check failed; sending anyway", e);
+            }
+
+            const toName: string = isGroup ? audienceName : (pulse.recipientName || pulse.reachTreeName || 'your Lifetree');
+            const lead = isGroup
+                ? `${fromName} sent a message to ${toName} (a group you're in):`
+                : `${fromName} sent a direct message to ${toName}:`;
+            const subject = isGroup
+                ? `${fromName} messaged ${toName} on lightseed`
+                : `${fromName} sent ${toName} a direct message on lightseed`;
+            const text = `${lead}\n\n"${message}"\n\nOpen your messages: https://lightseed.online`;
+            const html = `<div style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">` +
+                `<h2 style="color: #059669; font-weight: 300; letter-spacing: 1px; margin-bottom: 6px;">.seed</h2>` +
+                `<p style="font-size: 13px; color: #9ca3af; margin: 0 0 24px;">A new ${isGroup ? 'group message' : 'direct message'} for <strong style="color:#059669;">${toName}</strong></p>` +
+                `<p style="font-size: 15px; margin: 0 0 10px; color:#6b7280;">${lead}</p>` +
+                `<blockquote style="font-size: 16px; margin: 0 0 28px; padding: 16px 20px; background:#f0fdf4; border-left: 4px solid #059669; border-radius: 8px; color:#1f2937;">${message.replace(/\n/g, '<br>')}</blockquote>` +
+                `<a href="https://lightseed.online" style="display:inline-block; background:#059669; color:#fff; text-decoration:none; font-weight:bold; padding:10px 22px; border-radius:9999px; font-size:14px;">Open your messages</a>` +
+                `<hr style="border: 0; border-top: 1px solid #eee; margin: 24px 0;" />` +
+                `<p style="font-size: 12px; color: #9ca3af;">You receive this because direct-message email notifications are on in your <a href="https://lightseed.online" style="color: #059669; text-decoration: none;">lightseed profile</a>. You can turn this off anytime.</p>` +
+                `</div>`;
+
+            await db.collection('mail').add({
+                to: [email],
+                uid: recipientUid,
+                message: { from: "lightseed <admin@lightseed.online>", subject, text, html },
+                createdAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+
+            // Record the send so the per-thread throttle can skip rapid follow-ups.
+            await throttleRef.set({
+                lastSentAt: admin.firestore.FieldValue.serverTimestamp(),
+                recipientUid,
+                threadId: threadKey,
+            });
+        } catch (error) {
+            console.error(`Direct message email to ${recipientUid} failed:`, error);
         }
+    };
 
-        const message: string = pulse.content || pulse.body || '';
-        const fromName: string = pulse.authorName || 'A Lifetree';
-        const toName: string = pulse.recipientName || pulse.reachTreeName || 'your Lifetree';
-        const subject = `${fromName} sent ${toName} a direct message on lightseed`;
-        const text = `${fromName} sent a direct message to ${toName}:\n\n"${message}"\n\nOpen your messages: https://lightseed.online`;
-        const html = `<div style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">` +
-            `<h2 style="color: #059669; font-weight: 300; letter-spacing: 1px; margin-bottom: 6px;">.seed</h2>` +
-            `<p style="font-size: 13px; color: #9ca3af; margin: 0 0 24px;">A new direct message for <strong style="color:#059669;">${toName}</strong></p>` +
-            `<p style="font-size: 15px; margin: 0 0 10px; color:#6b7280;"><strong>${fromName}</strong> sent you a direct message:</p>` +
-            `<blockquote style="font-size: 16px; margin: 0 0 28px; padding: 16px 20px; background:#f0fdf4; border-left: 4px solid #059669; border-radius: 8px; color:#1f2937;">${message.replace(/\n/g, '<br>')}</blockquote>` +
-            `<a href="https://lightseed.online" style="display:inline-block; background:#059669; color:#fff; text-decoration:none; font-weight:bold; padding:10px 22px; border-radius:9999px; font-size:14px;">Open your messages</a>` +
-            `<hr style="border: 0; border-top: 1px solid #eee; margin: 24px 0;" />` +
-            `<p style="font-size: 12px; color: #9ca3af;">You receive this because direct-message email notifications are on in your <a href="https://lightseed.online" style="color: #059669; text-decoration: none;">lightseed profile</a>. You can turn this off anytime.</p>` +
-            `</div>`;
-
-        await db.collection('mail').add({
-            to: [email],
-            uid: recipientUid,
-            message: {
-                from: "lightseed <admin@lightseed.online>",
-                subject,
-                text,
-                html
-            },
-            createdAt: admin.firestore.FieldValue.serverTimestamp()
-        });
-
-        // Record the send so the per-thread throttle can skip rapid follow-ups.
-        await throttleRef.set({
-            lastSentAt: admin.firestore.FieldValue.serverTimestamp(),
-            recipientUid,
-            threadId: threadKey,
-        });
-    } catch (error) {
-        console.error("Direct message email trigger failed:", error);
-    }
+    await Promise.all(recipients.map(notify));
 });
 
 // --- Tree Circle: accept a co-ownership / guardianship invite -------------------

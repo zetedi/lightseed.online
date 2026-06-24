@@ -42,9 +42,26 @@ service cloud.firestore {
         || (exists(/databases/$(database)/documents/lifetrees/$(treeId))
             && get(/databases/$(database)/documents/lifetrees/$(treeId)).data.ownerId == request.auth.uid));
     }
+    // A private direct message / group reach: a 'reach' pulse that names its recipients
+    // (participantUids) or a single recipient (legacy recipientUid). Minted, public "reach"
+    // reflections have neither and stay world-readable through the normal visibility path.
+    function isPrivateReach() {
+      return resource.data.get('type', '') == 'reach' && (
+             resource.data.get('participantUids', null) != null
+             || resource.data.get('recipientUid', null) != null);
+    }
     function canReadPulse() {
-      // Absent visibility = 'public', so every legacy pulse stays readable.
-      return resource.data.get('visibility', 'public') == 'public'
+      // Private reaches are NEVER public: only the author, the addressed recipient, the
+      // people in the thread, and staff may read them — regardless of any visibility field.
+      return isPrivateReach()
+        ? (isSignedIn() && (
+             isStaff()
+             || resource.data.authorId == request.auth.uid
+             || resource.data.get('recipientUid', '') == request.auth.uid
+             || request.auth.uid in resource.data.get('participantUids', [])
+           ))
+        // Absent visibility = 'public', so every legacy (non-reach) pulse stays readable.
+        : (resource.data.get('visibility', 'public') == 'public'
         || (isSignedIn() && (
              isStaff()
              || resource.data.authorId == request.auth.uid
@@ -52,7 +69,7 @@ service cloud.firestore {
              || (resource.data.get('visibility', 'public') == 'community' && isCommunityMember(resource.data.get('communityId', '')))
              || (resource.data.get('visibility', 'public') == 'circle'
                  && (isTreeGuardian(resource.data.get('treeId', '')) || isTreeGuardian(resource.data.get('lifetreeId', ''))))
-           ));
+           )));
     }
 
     // Admins collection: read staff, no direct write

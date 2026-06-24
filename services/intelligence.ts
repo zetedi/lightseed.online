@@ -314,6 +314,28 @@ const DEFAULT_INTELLIGENCES: Array<Omit<Intelligence, 'createdAt'>> = [
 // user or community hasn't chosen their own.
 export const DEFAULT_INTELLIGENCE_ID = 'osiris';
 
+// Make a connected intelligence the network's default voice: rebind the well-known default
+// ('osiris') to its model + credential and mark both public. Because every member who hasn't
+// chosen their own intelligence falls back to 'osiris' (see gemini.ts), this flips the whole
+// network to that voice/key at once. Reversible — promote a different intelligence (e.g. the
+// Gemini Oracle) to switch back. Staff-only by Firestore rules (osiris is owned by GENESIS).
+export const promoteToDefaultVoice = async (intel: Intelligence): Promise<void> => {
+  await updateIntelligence(DEFAULT_INTELLIGENCE_ID, {
+    provider: intel.provider,
+    model: intel.model,
+    credentialScope: intel.credentialScope,
+    credentialOwnerId: intel.credentialOwnerId,
+    connected: intel.connected ?? true,
+    keyHint: intel.keyHint,
+    enabled: true,
+    public: true,
+  } as Partial<Intelligence>);
+  // Keep the source intelligence readable/selectable too, so members can also pick it directly.
+  if (intel.id !== DEFAULT_INTELLIGENCE_ID) {
+    await updateIntelligence(intel.id, { public: true } as Partial<Intelligence>);
+  }
+};
+
 export const ensureIntelligenceCommons = async (ownerId?: string): Promise<void> => {
   try {
     for (const persona of DEFAULT_PERSONAS) {

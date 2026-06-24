@@ -608,7 +608,7 @@ const AppContent = () => {
                 setHasMore(!!res.lastDoc);
             }
             else if (tab === 'inspiration') {
-                const res = await fetchReachPulses(currentLastDoc, currentDomain);
+                const res = await fetchReachPulses(currentLastDoc, currentDomain, feedLevels);
                 setData(prev => {
                     const newItems = res.items;
                     if (reset) return newItems;

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Icons } from '../ui/Icons';
 import { Lifetree, Lightseed, Pulse } from '../../types';
-import { ReachThread } from './ReachThread';
+import { ReachThread, type GroupThreadDescriptor } from './ReachThread';
 import { markReachPulsesSeen, listenToUserProfile } from '../../services/firebase';
 import { getIntelligence } from '../../services/intelligence';
 import { reachThreads } from '../../src/domain/views/threads';
@@ -9,7 +9,8 @@ import { reachThreads } from '../../src/domain/views/threads';
 type Selection =
     | { kind: 'none' }
     | { kind: 'oracle' }
-    | { kind: 'tree'; tree: Lifetree };
+    | { kind: 'tree'; tree: Lifetree }
+    | { kind: 'group'; thread: GroupThreadDescriptor };
 
 const TreeAvatar = ({ name, photo, size = 'md' }: { name: string, photo?: string, size?: 'sm' | 'md' }) => {
     const dim = size === 'sm' ? 'h-10 w-10 text-sm' : 'h-12 w-12 text-base';
@@ -80,7 +81,7 @@ export const ReachInbox = ({
         if (!lightseed) return;
         const uid = lightseed.uid;
         const toMark = pulses
-            .filter(p => p.recipientUid === uid && p.authorId !== uid && !(p.seenBy || []).includes(uid) && !markedRef.current.has(p.id))
+            .filter(p => (p.recipientUid === uid || (p.participantUids || []).includes(uid)) && p.authorId !== uid && !(p.seenBy || []).includes(uid) && !markedRef.current.has(p.id))
             .map(p => p.id);
         if (toMark.length) {
             toMark.forEach(id => markedRef.current.add(id));
@@ -95,7 +96,9 @@ export const ReachInbox = ({
 
     const hasSelection = selection.kind !== 'none';
     const isOracle = selection.kind === 'oracle';
-    const selectedTreeId = selection.kind === 'tree' ? selection.tree.id : null;
+    const selectedKey = selection.kind === 'tree' ? selection.tree.id
+        : selection.kind === 'group' ? selection.thread.threadId
+        : null;
 
     const rowBase = 'flex w-full items-center gap-3 px-4 py-3 text-left transition-colors';
 
@@ -130,11 +133,15 @@ export const ReachInbox = ({
                     ) : (
                         threads.map(thread => (
                             <button
-                                key={thread.partnerId}
-                                onClick={() => setSelection({ kind: 'tree', tree: { id: thread.partnerId, name: thread.partnerName, imageUrl: thread.partnerPhoto } as Lifetree })}
-                                className={`${rowBase} border-b border-slate-50 ${selectedTreeId === thread.partnerId ? 'bg-emerald-50' : 'hover:bg-slate-50'}`}
+                                key={thread.key}
+                                onClick={() => thread.isGroup && thread.threadId
+                                    ? setSelection({ kind: 'group', thread: { threadId: thread.threadId, partnerId: thread.partnerId, partnerName: thread.partnerName, partnerPhoto: thread.partnerPhoto, audience: thread.audience, participantCount: thread.participantCount } })
+                                    : setSelection({ kind: 'tree', tree: { id: thread.partnerId, name: thread.partnerName, imageUrl: thread.partnerPhoto } as Lifetree })}
+                                className={`${rowBase} border-b border-slate-50 ${selectedKey === thread.key ? 'bg-emerald-50' : 'hover:bg-slate-50'}`}
                             >
-                                <TreeAvatar name={thread.partnerName} photo={thread.partnerPhoto} size="sm" />
+                                {thread.isGroup
+                                    ? <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-emerald-100 bg-emerald-50 text-emerald-600"><Icons.Users /></div>
+                                    : <TreeAvatar name={thread.partnerName} photo={thread.partnerPhoto} size="sm" />}
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-center justify-between gap-2">
                                         <span className="truncate font-semibold text-slate-800">{thread.partnerName}</span>
@@ -142,7 +149,10 @@ export const ReachInbox = ({
                                             <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">{thread.unread}</span>
                                         )}
                                     </div>
-                                    <span className="block truncate text-xs text-slate-500">{thread.lastMessage || 'Reached through the mycelial network.'}</span>
+                                    <span className="block truncate text-xs text-slate-500">
+                                        {thread.isGroup && <span className="text-emerald-600/70">● group · </span>}
+                                        {thread.lastMessage || 'Reached through the mycelial network.'}
+                                    </span>
                                 </div>
                             </button>
                         ))
@@ -153,9 +163,10 @@ export const ReachInbox = ({
             {/* Thread pane */}
             <div className={`${hasSelection ? 'flex' : 'hidden md:flex'} min-w-0 flex-1 flex-col`}>
                 {hasSelection ? (
-                    <div key={isOracle ? 'oracle' : selectedTreeId || 'none'} className="flex min-h-0 flex-1 flex-col">
+                    <div key={isOracle ? 'oracle' : selectedKey || 'none'} className="flex min-h-0 flex-1 flex-col">
                         <ReachThread
                             targetTree={selection.kind === 'tree' ? selection.tree : null}
+                            groupThread={selection.kind === 'group' ? selection.thread : null}
                             onBack={() => setSelection({ kind: 'none' })}
                         />
                     </div>

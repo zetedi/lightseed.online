@@ -10,7 +10,8 @@
     "build": "vite build",
     "build:clean": "vite build --mode clean",
     "preview": "vite preview",
-    "seed:lightseed": "node scripts/seed-lightseed.mjs"
+    "seed:lightseed": "node scripts/seed-lightseed.mjs",
+    "migrate:reach-privacy": "node scripts/backfill-reach-privacy.mjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

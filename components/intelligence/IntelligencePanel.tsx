@@ -5,7 +5,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import type { Intelligence } from '../../src/domain/intelligence';
 import {
   getManageableIntelligences, createIntelligence, updateIntelligence,
-  saveProviderCredential, disconnectProviderCredential, addIntelligenceMemory, type CredentialScope,
+  saveProviderCredential, disconnectProviderCredential, addIntelligenceMemory, promoteToDefaultVoice, type CredentialScope,
 } from '../../services/intelligence';
 import { testIntelligenceConnection } from '../../services/gemini';
 
@@ -60,6 +60,7 @@ export const IntelligencePanel = ({
   const [testError, setTestError] = useState<string | null>(null);
   const [memText, setMemText] = useState('');
   const [addingMem, setAddingMem] = useState(false);
+  const [promoting, setPromoting] = useState(false);
 
   const refresh = () => {
     getManageableIntelligences(intelligenceOwnerUid).then(setIntelligences).catch(() => {});
@@ -147,6 +148,21 @@ export const IntelligencePanel = ({
       showAlert(e?.message || 'Could not add to memory.');
     }
     setAddingMem(false);
+  };
+
+  // Staff only: rebind the network default ('osiris') to this connected Claude, so every
+  // member who hasn't chosen their own voice speaks through it — on this key, network-wide.
+  const handleMakeDefault = async () => {
+    if (!existingClaude) return;
+    setPromoting(true);
+    try {
+      await promoteToDefaultVoice(existingClaude);
+      showAlert(`${existingClaude.name} is now the default voice for everyone on the network. Members who haven't picked their own intelligence will speak through it — on this connected key.`);
+      refresh();
+    } catch (e: any) {
+      showAlert(e?.message || 'Could not set the default voice.');
+    }
+    setPromoting(false);
   };
 
   const handleDisconnect = async () => {
@@ -304,6 +320,20 @@ export const IntelligencePanel = ({
           </div>
         )}
       </div>
+
+      {/* Staff: make this connected Claude the voice every member hears by default. */}
+      {canManageAll && existingClaude?.connected && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
+          <div className="min-w-0">
+            <div className="text-sm font-bold text-slate-800">Make {existingClaude.name} everyone's default voice</div>
+            <div className="mt-0.5 text-[11px] leading-snug text-slate-500">Network-wide. Every member who hasn't chosen their own intelligence — including new members — will speak through it, on this connected key.</div>
+          </div>
+          <button type="button" onClick={handleMakeDefault} disabled={promoting}
+            className="shrink-0 rounded-full bg-slate-900 px-4 py-2 text-xs font-bold text-amber-300 transition-colors hover:bg-slate-800 disabled:opacity-50">
+            {promoting ? '…' : 'Set as default'}
+          </button>
+        </div>
+      )}
 
       {/* Future: a way to keep the whispers flowing when a key's quota runs high. */}
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-dashed border-rose-200 bg-rose-50/50 p-3">

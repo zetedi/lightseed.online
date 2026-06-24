@@ -1,5 +1,6 @@
 import type { Timestamp } from 'firebase/firestore';
 import type { Entity } from './entity';
+import type { ReachAudience } from './reach';
 
 export type LegacyPulseType = 'STANDARD' | 'GROWTH';
 export type PulseType = 'observation' | 'dream' | 'offering' | 'request' | 'translation' | 'validation' | 'event' | 'growth' | 'reach' | LegacyPulseType;
@@ -39,10 +40,17 @@ export interface Pulse extends Entity {
   reachTreeId?: string;
   reachTreeName?: string;
   reachResponse?: string; // The reached tree's reply, kept so reach threads persist.
-  recipientUid?: string | null; // Owner of the reached tree — drives inbox routing + email delivery.
+  recipientUid?: string | null; // Owner of the reached tree — drives 1:1 inbox routing + email delivery.
   recipientName?: string;
   seenBy?: string[];
-  threadId?: string; // Deterministic id for a reach thread: [fromTreeId, toTreeId].sort().join('__').
+  threadId?: string; // Deterministic id for a reach thread: [fromTreeId, toTreeId].sort().join('__') (1:1) or grp__<treeId>__<audience>__<initiator> (group).
+  // Everyone in this reach thread (author + recipients). The single source of truth for
+  // who may read/reply — drives both the Firestore read rule and the inbox query. Present
+  // on every private reach (1:1 and group); absent on minted, public "reach" reflections.
+  participantUids?: string[];
+  audience?: ReachAudience; // For group reaches: which slice of the tree's circle was addressed.
+  threadName?: string;      // Display name for a group thread, e.g. "Oak · Guardians".
+  isGroup?: boolean;        // True for circle/group reaches (a shared, multi-person thread).
   
   // V2 AI
   aiInterpretation?: PulseInterpretation;

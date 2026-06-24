@@ -3,7 +3,7 @@ import { httpsCallable } from "firebase/functions";
 import { auth, functions } from "./firebase";
 import { Lifetree, Vision, VisionSynergy } from "../types";
 import config from "../lifeseed.config.json";
-import { sendIntelligenceMessage, getIntelligence, getPersona, getActiveIntelligenceId, resolveIntelligenceMemoryText } from "./intelligence";
+import { sendIntelligenceMessage, getIntelligence, getPersona, getActiveIntelligenceId, resolveIntelligenceMemoryText, DEFAULT_INTELLIGENCE_ID } from "./intelligence";
 import type { IntelligenceRef, Persona } from "../src/domain/intelligence";
 
 // Default model as requested: gemini-3.5-flash
@@ -35,9 +35,11 @@ const callGemini = async (prompt: string, model: string = MODEL, config?: any): 
 // Google — and the unconfigured default — fall back to the Gemini callable. Image
 // generation deliberately does NOT use this: only Gemini makes images.
 const runText = async (prompt: string, opts?: { json?: boolean; intelligenceId?: string; persona?: Persona | null }): Promise<string> => {
-    const id = opts?.intelligenceId ?? getActiveIntelligenceId();
+    // No explicit/chosen intelligence → fall back to the network default ('osiris'), which a
+    // steward may have rebound to Claude. Keeps Gemini as the final safety net below.
+    const id = opts?.intelligenceId ?? getActiveIntelligenceId() ?? DEFAULT_INTELLIGENCE_ID;
     if (id) {
-        const intel = await getIntelligence(id);
+        const intel = await getIntelligence(id).catch(() => null);
         if (intel && intel.enabled !== false && intel.provider !== 'google') {
             const persona = opts?.persona ?? (intel.personaId ? await getPersona(intel.personaId) : null);
             const reply = await sendIntelligenceMessage(
@@ -143,8 +145,11 @@ export const sendMessageToOracle = async (
     let persona: Persona = { id: 'persona-oracle', name: 'Oracle', description: '', systemPrompt: ORACLE_PERSONA_PROMPT, createdAt: null as any };
     let memoryText = GENESIS_VISION;
 
-    if (intelligenceId) {
-      const intel = await getIntelligence(intelligenceId);
+    // With no explicit choice, fall back to the network default ('osiris') — which a steward
+    // may have rebound to Claude — so every member speaks through the configured voice.
+    const idToUse = intelligenceId || DEFAULT_INTELLIGENCE_ID;
+    {
+      const intel = await getIntelligence(idToUse).catch(() => null);
       if (intel && intel.enabled !== false) {
         ref = { provider: intel.provider, model: intel.model, credentialScope: intel.credentialScope, credentialOwnerId: intel.credentialOwnerId };
         if (intel.personaId) {
