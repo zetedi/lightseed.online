@@ -65,11 +65,10 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const canEdit = currentUserId === community.ownerId || isSuperAdmin || isAdmin;
   const canDelete = currentUserId === community.ownerId || isSuperAdmin;
 
-  // Membership as a prism over the LIN, read through the Store port (the adapter maps the
-  // legacy memberIds → 'member' links). Seeded synchronously from the prop (`memberSeed`) so
-  // the events/visibility flow is correct on first render with no flicker; the port-derived
-  // value keeps it right once memberIds moves into a links collection.
-  const memberSeed = !!currentUserId && (community.ownerId === currentUserId || (community.memberIds || []).includes(currentUserId));
+  // Membership is a prism over the LIN ('member' links), read through the Store port. The owner
+  // is implicitly a member (seeded synchronously so first render is correct); everyone else is
+  // resolved from links below. Legacy memberIds arrays are no longer read.
+  const memberSeed = !!currentUserId && community.ownerId === currentUserId;
   const [memberByLink, setMemberByLink] = useState(false);
   useEffect(() => {
     let alive = true;

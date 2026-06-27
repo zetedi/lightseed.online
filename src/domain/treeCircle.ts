@@ -26,14 +26,9 @@ export interface TreeOwnershipInvite {
   revokedAt?: Timestamp;
 }
 
-// Which Lifetree array a role maps to. 'guardian' reuses the existing `guardians`
-// field so the new flow and the legacy guardianship stay in sync.
-export const roleToTreeField: Record<InvitableRole, 'coOwnerIds' | 'guardians' | 'observerIds' | 'stewardIds'> = {
-  co_owner: 'coOwnerIds',
-  guardian: 'guardians',
-  observer: 'observerIds',
-  steward: 'stewardIds',
-};
+// Relations live in the `links` collection (the LIN) — the single source of truth. The legacy
+// per-role arrays (coOwnerIds/guardians/…) are no longer written or read, so the old
+// role→array map has been removed.
 
 export const treeRelationLabels: Record<TreeRelationRole, string> = {
   owner: 'Owner',

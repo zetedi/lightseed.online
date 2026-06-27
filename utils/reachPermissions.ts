@@ -17,21 +17,8 @@ export const reachAudienceLabels: Record<ReachAudience, string> = {
   everyone: 'Everyone',
 };
 
-// The set of user ids a group reach reaches, by audience. Audiences nest: 'guardians'
-// includes the owners; 'everyone' includes the guardians. The owner is always part of
-// every audience, so a tree's principal is never blind to messages about their own tree.
-export const getCircleUids = (tree: Lifetree, audience: ReachAudience): string[] => {
-  const owner = tree.ownerId ? [tree.ownerId] : [];
-  const coOwners = tree.coOwnerIds || [];
-  const guardians = tree.guardians || [];
-  const stewards = tree.stewardIds || [];
-  const observers = tree.observerIds || [];
-  const ids =
-    audience === 'owners' ? [...owner, ...coOwners]
-    : audience === 'guardians' ? [...owner, ...coOwners, ...guardians]
-    : [...owner, ...coOwners, ...guardians, ...stewards, ...observers];
-  return Array.from(new Set(ids.filter(Boolean)));
-};
+// (The set of user ids a group reach reaches is resolved from the LIN links collection by
+// services/firebase.ts → resolveCircleUids, not from legacy role arrays.)
 
 // Deterministic id for a group reach thread. A member messaging the same audience of the
 // same tree always lands in the same shared thread; it is per-initiator, so two different

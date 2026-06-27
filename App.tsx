@@ -66,7 +66,7 @@ import { LightseedProfile } from './components/LightseedProfile';
 import { Dashboard } from './components/Dashboard';
 import { Loading } from './components/ui/Loading';
 import { ScrollChevrons } from './components/ui/ScrollChevrons';
-import { ResonanceScan } from './components/ui/ResonanceScan';
+import { ResonanceScan, CenteredResonanceLoader } from './components/ui/ResonanceScan';
 import { ResonancePanel, ResonanceCard, resonanceId } from './components/ResonancePanel';
 import { SectionHeader } from './components/ui/SectionHeader';
 import { LifeseedWidget } from './components/LifeseedWidget';
@@ -483,39 +483,73 @@ const AppContent = () => {
         fetchEventPulses(undefined, currentDomain, levels).then(r => setDashboardEvents(r.items)).catch(() => {});
     }, [lightseed?.uid, isSuperAdmin, isAdmin]);
 
-    // --- Browser back button: close the open detail/modal instead of leaving the app. ---
-    // No router here, so we add one history entry whenever an overlay opens; Back pops it and
-    // closes the overlay. With nothing open, Back behaves normally (leaves the page).
-    const overlayOpen = !!(
-        selectedTree || selectedVision || selectedPulse || editingEvent || selectedCommunity ||
-        showAuthModal || showPlantModal || showPulseModal || showEventModal || showVisionModal || showGrowthPlayer
-    );
-    const overlayPushedRef = useRef(false);
+    // --- Browser back button: close overlays LAYER BY LAYER instead of leaving the app. ---
+    // No router here, so we push one history entry per open overlay layer. Back pops ONE entry
+    // and closes only the topmost layer (e.g. the growth player on top of a tree detail, then
+    // the detail). Closing via the UI consumes our own entries silently. With nothing of ours
+    // open, Back behaves normally and leaves the page.
+    // Ordered base-first; the LAST open key is the topmost layer (closed first on Back).
+    const openKeys = ([
+        selectedTree && 'tree',
+        selectedCommunity && 'community',
+        selectedVision && 'vision',
+        selectedPulse && 'pulse',
+        showAuthModal && 'auth',
+        showPlantModal && 'plant',
+        showPulseModal && 'pulseModal',
+        showEventModal && 'eventModal',
+        showVisionModal && 'visionModal',
+        editingEvent && 'editingEvent',     // nested on a pulse detail
+        showGrowthPlayer && 'growthPlayer', // nested on a tree detail (or standalone)
+    ].filter(Boolean) as string[]);
+    const openKeysRef = useRef<string[]>([]);
+    openKeysRef.current = openKeys;
+    // We keep at most ONE history entry while any overlay is open ("armed"). Each Back closes
+    // the topmost layer and, if layers remain, re-pushes one entry so the next Back is captured
+    // too. Using only pushState + back() (never go(-n)) sidesteps the "one popstate per go()"
+    // browser quirk.
+    const armedRef = useRef(false);
+    const skipNextPopRef = useRef(false);
+    const openKeysSig = openKeys.join('|');
     useEffect(() => {
-        if (overlayOpen && !overlayPushedRef.current) {
+        const count = openKeys.length;
+        if (count > 0 && !armedRef.current) {
             window.history.pushState({ lsOverlay: true }, '');
-            overlayPushedRef.current = true;
-        } else if (!overlayOpen && overlayPushedRef.current) {
-            // Closed via the UI — consume the history entry we added.
-            overlayPushedRef.current = false;
-            if ((window.history.state as any)?.lsOverlay) window.history.back();
+            armedRef.current = true;
+        } else if (count === 0 && armedRef.current) {
+            // All overlays closed via the UI — silently consume our history entry.
+            armedRef.current = false;
+            skipNextPopRef.current = true;
+            window.history.back();
         }
-    }, [overlayOpen]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [openKeysSig]);
     useEffect(() => {
+        const closeKey = (k: string) => {
+            switch (k) {
+                case 'tree': setSelectedTree(null); break;
+                case 'community': setSelectedCommunity(null); break;
+                case 'vision': setSelectedVision(null); break;
+                case 'pulse': setSelectedPulse(null); break;
+                case 'auth': setShowAuthModal(false); break;
+                case 'plant': setShowPlantModal(false); break;
+                case 'pulseModal': setShowPulseModal(false); break;
+                case 'eventModal': setShowEventModal(false); break;
+                case 'visionModal': setShowVisionModal(false); break;
+                case 'editingEvent': setEditingEvent(null); break;
+                case 'growthPlayer': setShowGrowthPlayer(null); break;
+            }
+        };
         const onPop = () => {
-            if (!overlayPushedRef.current) return; // nothing of ours to undo → let the browser navigate
-            overlayPushedRef.current = false;
-            setSelectedTree(null);
-            setSelectedVision(null);
-            setSelectedPulse(null);
-            setEditingEvent(null);
-            setSelectedCommunity(null);
-            setShowAuthModal(false);
-            setShowPlantModal(false);
-            setShowPulseModal(false);
-            setShowEventModal(false);
-            setShowVisionModal(false);
-            setShowGrowthPlayer(null);
+            if (skipNextPopRef.current) { skipNextPopRef.current = false; return; } // our own back()
+            const keys = openKeysRef.current;
+            if (keys.length === 0) { armedRef.current = false; return; } // nothing of ours → let the browser go
+            closeKey(keys[keys.length - 1]); // close ONLY the topmost layer
+            if (keys.length - 1 > 0) {
+                window.history.pushState({ lsOverlay: true }, ''); // layers remain → re-arm for the next Back
+            } else {
+                armedRef.current = false;
+            }
         };
         window.addEventListener('popstate', onPop);
         return () => window.removeEventListener('popstate', onPop);
@@ -1105,7 +1139,7 @@ const AppContent = () => {
                                 </div>
                             )}
                             {/* Living Intelligence Resonance — inside the same box. */}
-                            <ResonanceScan active={isAnalyzingSynergy}>
+                            <ResonanceScan active={false}>
                                 <div className="border-t border-amber-100">
                                     <div className="flex items-center justify-between gap-3 border-b border-amber-100 bg-amber-50/60 p-5">
                                         <div className="flex min-w-0 items-center gap-3">
@@ -1254,7 +1288,7 @@ const AppContent = () => {
                         >
                             <ResonancePanel synergies={synergies} className="mb-6" favorites={favoriteResonanceIds} onToggleFavorite={toggleFavoriteResonance} onReach={reachResonantTree} />
 
-                            <ResonanceScan active={isAnalyzingSynergy}>
+                            <ResonanceScan active={false}>
                                 <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                                     {filteredData.length === 0 && !loadingMore ? <p className="col-span-full text-center text-slate-400 py-10">{t('no_visions_found')}</p> :
                                         filteredData.map((item: any) => (
@@ -1336,7 +1370,7 @@ const AppContent = () => {
         <div className={`min-h-screen relative font-sans ${effectiveIsDark ? 'text-slate-100' : 'text-slate-800'}`}>
             <div className="fixed inset-0 z-0 pointer-events-none" style={backgroundStyle}></div>
             {/* Page-level scroll affordance — only on the main page (hidden while a detail/modal is open). */}
-            {!overlayOpen && <ScrollChevrons axis="y" fixed />}
+            {openKeys.length === 0 && <ScrollChevrons axis="y" fixed />}
 
             <div className="relative z-10">
                 {impersonatedCommunity && (
@@ -1379,6 +1413,9 @@ const AppContent = () => {
                 {renderMainContent()}
                 <GDPRBanner />
                 <DialogHost />
+                {/* Resonance / alignment matching: a centred lighted seed over the whole screen. */}
+                <CenteredResonanceLoader active={isAnalyzingSynergy} />
+
                 {showAuthModal && !lightseed && (
                     <AuthModal onClose={() => setShowAuthModal(false)} inviteId={inviteParam} inviteOnly={config.inviteOnly} />
                 )}

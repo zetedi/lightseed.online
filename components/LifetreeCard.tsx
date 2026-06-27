@@ -38,8 +38,8 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, curren
 
     // Guardianship comes from the LIN (guardian links), passed down as a set.
     const isGuardian = !!currentUserId && !!guardedTreeIds?.has(tree.id);
-    // Thirsty: a guarded tree past its watering due-date.
-    const needsWater = !!tree.isNature && isWateringOverdue(tree);
+    // Thirsty: any tree on a watering schedule that's past its due-date.
+    const needsWater = isWateringOverdue(tree);
     const hasValidationBadge = isExplicitlyValidatedTree(tree);
     const showValidateAction = canToggleValidation({ tree, myActiveTree, isAdmin, isSuperAdmin });
     // The owner's privacy flag is mirrored onto the (world-readable) tree, so we can read it here.

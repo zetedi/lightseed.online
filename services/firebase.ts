@@ -48,14 +48,14 @@ import {
   uploadString
 } from 'firebase/storage';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { type Pulse, type PulseType, type Lifetree, type Alignment, type Vision, type Community, type Sanctuary, type TreeOwnershipInvite, type InvitableRole, roleToTreeField, type Decision, type DecisionNature, votesRequired, type ReachAudience } from '../types';
+import { type Pulse, type PulseType, type Lifetree, type Alignment, type Vision, type Community, type Sanctuary, type TreeOwnershipInvite, type InvitableRole, type Decision, type DecisionNature, votesRequired, type ReachAudience } from '../types';
 import { createBlock } from '../utils/crypto';
 import { uuidv7 } from '../utils/id';
 import type { PulseVisibility } from '../src/domain/pulse';
 import { daysOverdue, computeNextDueMillis, wateringAlertedToday, type WateringMode, type WateringAnalysis } from '../src/domain/watering';
 import { oldEmeraldEarthThemeValues } from '../utils/theme';
 import { isExplicitlyValidatedTree } from '../utils/validation';
-import { buildThreadId, buildGroupThreadId, getCircleUids, reachAudienceLabels } from '../utils/reachPermissions';
+import { buildThreadId, buildGroupThreadId, reachAudienceLabels } from '../utils/reachPermissions';
 
 // Robustly read a millisecond timestamp from a Firestore Timestamp, a JS Date, or nothing.
 const toMillis = (value: any): number =>
@@ -675,7 +675,8 @@ export const plantLifetree = async (data: any) => {
         onlyValidatedCanReach,
         treeType: data.treeType || (data.isNature ? 'GUARDED' : 'LIFETREE'),
         createdAt: serverTimestamp(), genesisHash, latestHash: genesisHash, blockHeight: 0,
-        validated: false, validatorId: null, guardians: [], status: 'HEALTHY'
+        validated: false, validatorId: null, status: 'HEALTHY'
+        // Relations (guardian/co_owner/…) live in the `links` collection — no legacy arrays.
     });
     await addDoc(visionsCollection, {
         lid: uuidv7(),
@@ -841,7 +842,8 @@ export const createTreeInvite = async (params: {
     const { lifetree, invitedUserId, role } = params;
     if (!invitedUserId.trim()) throw new Error('Choose someone to invite.');
     if (invitedUserId === lifetree.ownerId) throw new Error('That person already owns this tree.');
-    if (((lifetree as any)[roleToTreeField[role]] || []).includes(invitedUserId)) throw new Error('That person already holds this role.');
+    // Already holds this role? Check the LIN link (the single source of truth), not a legacy array.
+    if ((await getDoc(doc(db, 'links', `${invitedUserId}__${role}__${lifetree.id}`))).exists()) throw new Error('That person already holds this role.');
     // Single-field query + client filter, to avoid requiring a composite index.
     const existing = await getDocs(query(treeInvitesCollection, where('lifetreeId', '==', lifetree.id)));
     const hasPendingDupe = existing.docs.some(d => {
@@ -1338,23 +1340,23 @@ export const markReachPulsesSeen = markReachesSeen;
 // privacy flag at write time, so this rule is enforced in the service + UI layers.
 // The target's onlyValidatedCanReach is mirrored onto its (world-readable) tree doc,
 // which we read here to evaluate the gate without weakening the rules.
-// Resolve the user ids a group reach should reach, unioning the LIN links (the rules' source
-// of truth, written by self-join AND invite) with the legacy role arrays — so no circle member
-// is ever skipped however they were added. This is the durable fix for the guardian split:
-// getCircleUids alone reads only the arrays, which the link-based flows don't populate.
+// Resolve the user ids a group reach should reach, from the LIN links collection — the single
+// source of truth (also what the Firestore rules check). The owner is always in their own
+// circle. Audiences nest: owners ⊂ guardians ⊂ everyone. We deliberately do NOT read the legacy
+// role arrays: writes are links-only now, so a stale array could otherwise re-include someone
+// who was unlinked. (One-time legacy data is covered by migrateArraysToLinks.)
 export const resolveCircleUids = async (tree: Lifetree, audience: ReachAudience): Promise<string[]> => {
-    const arrayUids = getCircleUids(tree, audience); // owner + whatever still lives on the arrays
     const owner = tree.ownerId ? [tree.ownerId] : [];
     const byRel: Record<string, string[]> = { co_owner: [], guardian: [], steward: [], observer: [] };
     try {
         const links = await getDocs(query(collection(db, 'links'), where('to', '==', tree.id)));
         links.docs.forEach(d => { const x = d.data() as any; if (byRel[x.rel]) byRel[x.rel].push(x.from); });
-    } catch (e) { console.warn('resolveCircleUids: link read failed, falling back to arrays', e); }
-    const fromLinks =
+    } catch (e) { console.warn('resolveCircleUids: link read failed', e); }
+    const ids =
         audience === 'owners' ? [...owner, ...byRel.co_owner]
         : audience === 'guardians' ? [...owner, ...byRel.co_owner, ...byRel.guardian]
         : [...owner, ...byRel.co_owner, ...byRel.guardian, ...byRel.steward, ...byRel.observer];
-    return Array.from(new Set([...arrayUids, ...fromLinks].filter(Boolean)));
+    return Array.from(new Set(ids.filter(Boolean)));
 };
 
 export const sendReach = async ({
@@ -1411,7 +1413,8 @@ export const sendReach = async ({
 
     if (audience) {
         // Group reach to the tree's circle — one shared thread keyed by (tree, audience, me).
-        // Resolve from links ∪ arrays so every circle member is reached (the guardian-split fix).
+        // resolveCircleUids reads the LIN links (single source of truth) so every circle member
+        // is reached however they were added (the guardian-split fix).
         const circle = await resolveCircleUids(target, audience);
         const participantUids = Array.from(new Set([sender.uid, ...circle].filter(Boolean)));
         if (participantUids.length <= 1) {

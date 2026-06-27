@@ -229,15 +229,6 @@ export const onReachCreated = onDocumentCreated("pulses/{pulseId}", async (event
 // Protected multi-document mutation: writes the tree's role array AND the rooted
 // community. Runs with admin rights so the invitee never writes those docs directly.
 const VALID_ROLES = ["co_owner", "guardian", "observer", "steward"];
-// The legacy Lifetree array each role maps to. We keep these arrays in sync with the LIN
-// links on accept so reach-audience resolution (getCircleUids reads tree.guardians[]) and
-// the Firestore rules (which read the links) agree on who is in a tree's circle.
-const ROLE_TO_FIELD: Record<string, string> = {
-    co_owner: "coOwnerIds",
-    guardian: "guardians",
-    observer: "observerIds",
-    steward: "stewardIds",
-};
 
 export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
     if (!request.auth) {
@@ -310,13 +301,8 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
         }
         setLink(uid, "member", communityId);          // the invitee joins the circle community
         setLink(uid, invite.role, invite.lifetreeId); // ...and takes their tree-circle role
-
-        // Keep the legacy role array in sync with the link so circle/reach resolution and the
-        // rules see the same membership (fixes invited guardians being skipped by group reaches).
-        const arrayField = ROLE_TO_FIELD[invite.role];
-        if (arrayField) {
-            treeUpdate[arrayField] = admin.firestore.FieldValue.arrayUnion(uid);
-        }
+        // Relations live ONLY in the links collection (the single source of truth the rules +
+        // resolveCircleUids read). No legacy role arrays are written.
 
         tx.update(treeRef, treeUpdate);
         tx.update(inviteRef, {
@@ -531,19 +517,15 @@ const sameUtcDay = (a: number, b: number): boolean => {
         && da.getUTCDate() === dbb.getUTCDate();
 };
 
-// Resolve a guarded tree's circle (co-guardians + guardians) from the LIN links (the rules'
-// source of truth) unioned with the legacy arrays, so no one is missed however they were added.
-const resolveGuardianUids = async (treeId: string, tree: any): Promise<string[]> => {
+// Resolve a guarded tree's circle (co-guardians + guardians) from the LIN links — the single
+// source of truth (also what the Firestore rules read). Legacy role arrays are not consulted.
+const resolveGuardianUids = async (treeId: string): Promise<string[]> => {
     const links = await db.collection("links").where("to", "==", treeId).get();
     const fromLinks = links.docs
         .map((d) => d.data())
         .filter((x: any) => x.rel === "guardian" || x.rel === "co_owner")
         .map((x: any) => x.from as string);
-    const fromArrays = [
-        ...(Array.isArray(tree.guardians) ? tree.guardians : []),
-        ...(Array.isArray(tree.coOwnerIds) ? tree.coOwnerIds : []),
-    ];
-    return Array.from(new Set([...fromLinks, ...fromArrays].filter(Boolean)));
+    return Array.from(new Set(fromLinks.filter(Boolean)));
 };
 
 const waterMeText = (treeName: string, daysOverdue: number): string => {
@@ -583,7 +565,7 @@ export const checkWateringSchedules = onSchedule({
             // At most one ping per tree per day (shared idempotency with the client check).
             if (!sameUtcDay(tsToMs(w.lastAlertAt), now)) {
                 const ownerUid = tree.ownerId as string;
-                const guardianUids = await resolveGuardianUids(docSnap.id, tree);
+                const guardianUids = await resolveGuardianUids(docSnap.id);
                 const participantUids = Array.from(new Set([ownerUid, ...guardianUids].filter(Boolean)));
 
                 // Only ping if someone other than the author (the owner) will receive it.

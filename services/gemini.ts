@@ -31,6 +31,37 @@ const callGemini = async (prompt: string, model: string = MODEL, config?: any): 
     }
 }
 
+// Last-resort node providers: try the node Claude key, then the node Gemini key. Both live on
+// the server (no BYO credential needed), so they answer for ANY signed-in user. This is what
+// makes AI work for everyone by default — not only the people who connected their own key, and
+// not only when the chosen/default intelligence's credential happens to resolve.
+const NODE_CLAUDE_MODEL = 'claude-sonnet-4-6';
+const nodeFallback = async (
+    messages: { role: 'user' | 'model'; text: string }[],
+    systemInstruction?: string,
+    json?: boolean,
+): Promise<string> => {
+    // 1) node Claude (generateClaudeContent falls back to the node ANTHROPIC_API_KEY when no BYO key).
+    // Claude has no JSON mode flag, so when JSON is required we ask for it in the system prompt.
+    try {
+        const fn = httpsCallable(functions, 'generateClaudeContent');
+        const sys = json ? `${systemInstruction || ''}\n\nRespond with ONLY valid JSON — no prose, no markdown fences.`.trim() : systemInstruction;
+        const res = await fn({ messages, systemInstruction: sys, model: NODE_CLAUDE_MODEL });
+        const text = (res.data as any)?.text;
+        if (text) return text;
+    } catch (e) { console.warn('AI fallback: node Claude failed', e); }
+    // 2) node Gemini (preserve history + system instruction; honour JSON mode for JSON callers)
+    try {
+        const gfn = httpsCallable(functions, 'generateAIContent');
+        const contents = messages.filter(m => m.text).map(m => ({ role: m.role === 'model' ? 'model' : 'user', parts: [{ text: m.text }] }));
+        const firstUser = contents.findIndex(c => c.role === 'user');
+        const convo = firstUser === -1 ? [] : contents.slice(firstUser);
+        if (convo.length === 0) return '';
+        const res = await gfn({ contents: convo, systemInstruction, model: MODEL, config: json ? { responseMimeType: 'application/json' } : undefined });
+        return (res.data as any)?.text || '';
+    } catch (e) { console.warn('AI fallback: node Gemini failed', e); return ''; }
+};
+
 // Route a text prompt through the active intelligence (an explicit id wins, else the
 // signed-in user's chosen one). Non-Google providers go through the provider abstraction;
 // Google — and the unconfigured default — fall back to the Gemini callable. Image
@@ -39,20 +70,28 @@ const runText = async (prompt: string, opts?: { json?: boolean; intelligenceId?:
     // No explicit/chosen intelligence → fall back to the network default ('osiris'), which a
     // steward may have rebound to Claude. Keeps Gemini as the final safety net below.
     const id = opts?.intelligenceId ?? getActiveIntelligenceId() ?? DEFAULT_INTELLIGENCE_ID;
-    if (id) {
-        const intel = await getIntelligence(id).catch(() => null);
-        if (intel && intel.enabled !== false && intel.provider !== 'google') {
-            const persona = opts?.persona ?? (intel.personaId ? await getPersona(intel.personaId) : null);
-            const reply = await sendIntelligenceMessage(
-                { provider: intel.provider, model: intel.model, credentialScope: intel.credentialScope, credentialOwnerId: intel.credentialOwnerId },
-                [{ role: 'user', text: prompt }],
-                { persona },
-            );
-            return reply || '';
+    try {
+        if (id) {
+            const intel = await getIntelligence(id).catch(() => null);
+            if (intel && intel.enabled !== false && intel.provider !== 'google') {
+                const persona = opts?.persona ?? (intel.personaId ? await getPersona(intel.personaId) : null);
+                const reply = await sendIntelligenceMessage(
+                    { provider: intel.provider, model: intel.model, credentialScope: intel.credentialScope, credentialOwnerId: intel.credentialOwnerId },
+                    [{ role: 'user', text: prompt }],
+                    { persona },
+                );
+                if (reply) return reply;
+            }
         }
+        const res = await callGemini(prompt, MODEL, opts?.json ? { responseMimeType: 'application/json' } : undefined);
+        if (res.text) return res.text;
+        throw new Error('empty primary reply');
+    } catch (e) {
+        // The chosen/default intelligence's key may be missing/rejected for this user — fall back
+        // to the node keys so every signed-in user still gets an answer.
+        console.warn('runText primary path failed — using node fallback', e);
+        return nodeFallback([{ role: 'user', text: prompt }], undefined, opts?.json);
     }
-    const res = await callGemini(prompt, MODEL, opts?.json ? { responseMimeType: 'application/json' } : undefined);
-    return res.text || '';
 };
 
 export const generatePostTitle = async (body: string): Promise<string> => {
@@ -164,11 +203,18 @@ export const sendMessageToOracle = async (
     }
 
     const reply = await sendIntelligenceMessage(ref, messages, { persona, memory: { text: memoryText } });
-    return reply || "I'm here, listening.";
+    if (reply) return reply;
+    // Empty reply (e.g. the chosen intelligence's key didn't resolve) → node fallback.
+    const fb = await nodeFallback(messages, `${persona.systemPrompt}\n\n${memoryText}`);
+    return fb || "I'm here, listening.";
   } catch (error: any) {
     console.error("Oracle Reach Error:", error);
-    // Surface the real cause rather than hiding it — the most common reasons are a missing
-    // node Gemini key (billing) or an unconnected/rejected Claude key.
+    // Before surfacing an error, try the node keys so a non-owner without their own key still
+    // gets an answer (this is the common "AI works only for the owner" cause).
+    try {
+      const fb = await nodeFallback([...history, { role: 'user', text: message }], `${ORACLE_PERSONA_PROMPT}\n\n${GENESIS_VISION}`);
+      if (fb) return fb;
+    } catch { /* fall through to the message below */ }
     const detail = error?.message || 'unknown error';
     return `⚠️ I couldn't reach this intelligence just now: ${detail}\n\nIf this mentions a key or billing, check your AI settings (Intelligence tab). If it's Gemini, the node key may be out of credit; switch your listening intelligence to a connected Claude.`;
   }
@@ -249,7 +295,13 @@ export const sendMessageToTree = async (message: string, history: {role: 'user' 
     return (result.data as any).text || "";
   } catch (error: any) {
     console.error("Tree Reach Error:", error);
-    if (error.message.includes("Forbidden") || error.message.includes("suspended")) {
+    // Node fallback so the tree still speaks for users without their own connected key.
+    try {
+      const sys = `You are speaking as the living voice of the Lifetree "${tree.name}" in the Lightseed network. ${tree.body || ''} Speak in first person, grounded, concise and warm.`.trim();
+      const fb = await nodeFallback([...history, { role: 'user', text: message }], sys);
+      if (fb) return fb;
+    } catch { /* fall through */ }
+    if (error.message?.includes("Forbidden") || error.message?.includes("suspended")) {
         return "My roots are quiet right now. Please come back later.";
     }
     return "The signal through my branches is weak right now.";

@@ -802,7 +802,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                 <GuardianshipPanel />
                             </>
                         )}
-                        {isNature && <WateringPanel />}
+                        {(isNature || isOwner || localIsGuardian) && <WateringPanel />}
                         <TreeCirclePanel />
                     </div>
                 </div>
@@ -937,13 +937,27 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                              <path d="M0,0 L0,40" stroke="currentColor" strokeWidth="6" />
                                          </svg>
                                          
-                                         <div className="bg-[#5D4037] border-4 border-[#3E2723] p-6 rounded-2xl shadow-xl text-center max-w-sm relative z-10 w-full md:w-auto text-amber-100">
-                                             <div className="w-12 h-12 mx-auto bg-amber-900/50 rounded-full flex items-center justify-center mb-2 text-amber-200 border border-amber-500/30">
-                                                 <Logo width={24} height={24} />
+                                         {/* The base is the PLANTING card: the genesis block carrying the vision. */}
+                                         <div className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border-4 border-[#3E2723] bg-[#5D4037] text-amber-100 shadow-xl md:w-auto">
+                                             {tree.imageUrl && (
+                                                 <div className="relative h-40 w-full">
+                                                     <img src={tree.imageUrl} alt={tree.name} className="h-full w-full object-cover opacity-90" />
+                                                     <div className="absolute inset-0 bg-gradient-to-t from-[#5D4037] via-[#5D4037]/40 to-transparent" />
+                                                     <span className="absolute left-3 top-3 rounded-full bg-amber-100/90 px-2 py-0.5 text-[10px] font-bold text-amber-900 shadow">🌱 PLANTING</span>
+                                                 </div>
+                                             )}
+                                             <div className="p-6 text-center">
+                                                 <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full border border-amber-500/30 bg-amber-900/50 text-amber-200">
+                                                     <Logo width={22} height={22} />
+                                                 </div>
+                                                 <h4 className="mb-2 text-xs font-bold uppercase tracking-widest text-amber-200">Planted · Genesis</h4>
+                                                 {tree.body && <p dir="auto" className="mx-auto mb-2 max-w-xs text-sm italic leading-relaxed text-amber-50/90">"{tree.body}"</p>}
+                                                 <p className="text-[11px] text-amber-200/70">
+                                                     {tree.createdAt?.toDate ? tree.createdAt.toDate().toLocaleDateString() : (tree.createdAt ? new Date(tree.createdAt?.toMillis?.() ?? tree.createdAt).toLocaleDateString() : '')}
+                                                     {tree.locationName ? ` · ${tree.locationName}` : ''}
+                                                 </p>
+                                                 <p className="mt-3 break-all px-2 font-mono text-[10px] text-amber-100/50">{genesisBlock.hash}</p>
                                              </div>
-                                             <h4 className="font-bold text-amber-200 uppercase tracking-widest text-xs mb-1">Genesis Block</h4>
-                                             <p className="text-[10px] text-amber-100/60 font-mono break-all px-4">{genesisBlock.hash}</p>
-                                             <p className="text-xs text-amber-300/80 mt-2 italic">"Rooted in the eternal now"</p>
                                          </div>
                                     </div>
                                 )}
