@@ -99,18 +99,12 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const loadChain = () => {
         setLoadingChain(true);
         getPulsesByTreeId(tree.id).then(pulses => {
-            if (pulses.length > 0) {
-                // The oldest one is usually the last in a descending list if created first.
-                const last = pulses[pulses.length - 1];
-                if (last.previousHash === "0" || last.title === "Genesis Pulse") {
-                    setGenesisBlock(last);
-                    setGrowthBlocks(pulses.slice(0, pulses.length - 1));
-                } else {
-                    setGrowthBlocks(pulses);
-                }
-            } else {
-                setGrowthBlocks([]);
-            }
+            // A genesis PULSE exists only for special trees (e.g. GENESIS_TREE); normal trees are
+            // planted with no pulse. The planting/root card is rendered from the tree itself, so
+            // here we only pull any genesis pulse out of the growth leaves.
+            const isGenesis = (p: Pulse) => p.previousHash === "0" || p.title === "Genesis Pulse";
+            setGenesisBlock(pulses.find(isGenesis) || null);
+            setGrowthBlocks(pulses.filter(p => !isGenesis(p)));
             setChain(pulses);
         }).finally(() => setLoadingChain(false));
    };
@@ -782,7 +776,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                 </div>
 
                 {/* Immutable chain Visualization Section */}
-                {!loadingChain && chain.length > 0 && (
+                {!loadingChain && (
                     <div className="mt-8 pt-8 border-t border-slate-200">
                         <div className="flex flex-col items-center mb-12">
                             <h3 className="text-xl font-light text-slate-800 mb-6 flex items-center gap-2">
@@ -902,8 +896,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                     );
                                 })}
 
-                                {/* Genesis Block at the Bottom */}
-                                {genesisBlock && (
+                                {/* Genesis / planting card — the ROOT of the chain. Always shown,
+                                    drawn from the tree itself (normal trees have no genesis pulse). */}
+                                {tree && (
                                     <div className="flex w-full justify-start md:justify-center pt-8 md:pt-12 relative pl-12 md:pl-0">
                                          {/* Root Connection SVG */}
                                          <svg className="md:hidden absolute top-0 left-[1.15rem] w-8 h-12 text-[#5D4037] pointer-events-none z-0" viewBox="0 0 20 40" preserveAspectRatio="none">
@@ -929,7 +924,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                                      {tree.createdAt?.toDate ? tree.createdAt.toDate().toLocaleDateString() : (tree.createdAt ? new Date(tree.createdAt?.toMillis?.() ?? tree.createdAt).toLocaleDateString() : '')}
                                                      {tree.locationName ? ` · ${tree.locationName}` : ''}
                                                  </p>
-                                                 <p className="mt-3 break-all px-2 font-mono text-[10px] text-amber-100/50">{genesisBlock.hash}</p>
+                                                 <p className="mt-3 break-all px-2 font-mono text-[10px] text-amber-100/50">{genesisBlock?.hash || tree.genesisHash}</p>
                                              </div>
                                          </div>
                                     </div>
