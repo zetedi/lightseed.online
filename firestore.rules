@@ -137,7 +137,15 @@ service cloud.firestore {
         isStaff() ||
         isCommunityOwner(request.resource.data.communityId)
       );
-      allow update: if isSignedIn(); // For loves
+      // Loves / seen / translations stay open to any signed-in user (broad by design). But a
+      // watering confirmation is a trust signal, so CHANGING wateringConfirmedBy is limited to
+      // the tree's guardians/owner (the LIN) or staff. A normal update leaves the field
+      // unchanged, so the first clause short-circuits and pays no extra read.
+      allow update: if isSignedIn() && (
+        request.resource.data.get('wateringConfirmedBy', '') == resource.data.get('wateringConfirmedBy', '')
+        || isStaff()
+        || isTreeGuardian(resource.data.get('lifetreeId', ''))
+      );
       allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff() || isCommunityOwner(resource.data.communityId));
 
       // Loves subcollection

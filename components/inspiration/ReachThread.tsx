@@ -29,6 +29,7 @@ interface ChatMessage {
     authorPersonName?: string;
     authorPhoto?: string;
     system?: boolean; // a centered notice (e.g. "X minted this conversation to the chain"), not a bubble
+    careAlert?: 'watering'; // a "water me" alert — rendered with a blue border
 }
 
 // The audience options offered when starting a reach to a tree. `undefined` is the classic
@@ -127,7 +128,8 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
             // A mint notice is a system line both sides see, not a chat bubble.
             if (p.mintNotice) { if (text) history.push({ role: 'model', system: true, text }); return; }
             const mine = (!!myUid && p.authorId === myUid) || myIds.has(p.lifetreeId || '');
-            const base = group ? { authorId: p.authorId, authorName: p.authorName, authorPersonName: p.authorPersonName, authorPhoto: p.authorPhoto } : {};
+            const careAlert = (p as any).careAlert as ChatMessage['careAlert'];
+            const base = { ...(group ? { authorId: p.authorId, authorName: p.authorName, authorPersonName: p.authorPersonName, authorPhoto: p.authorPhoto } : {}), ...(careAlert ? { careAlert } : {}) };
             if (mine) {
                 if (text) history.push({ role: 'user', text, ...base });
                 if (p.reachResponse) history.push({ role: 'model', text: p.reachResponse });
@@ -595,7 +597,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                                 m.role === 'user'
                                     ? 'bg-emerald-600 text-white rounded-br-sm shadow'
                                     : 'bg-white border border-emerald-50 text-slate-800 rounded-bl-sm shadow-sm font-medium italic'
-                            }`}>
+                            } ${m.careAlert === 'watering' ? 'ring-2 ring-sky-400' : ''}`}>
                                 {m.text.split('\n').map((line, j) => (
                                     <span key={j}>
                                         {line}

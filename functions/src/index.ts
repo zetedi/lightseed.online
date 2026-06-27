@@ -1,5 +1,6 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as admin from "firebase-admin";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Anthropic from "@anthropic-ai/sdk";
@@ -228,6 +229,15 @@ export const onReachCreated = onDocumentCreated("pulses/{pulseId}", async (event
 // Protected multi-document mutation: writes the tree's role array AND the rooted
 // community. Runs with admin rights so the invitee never writes those docs directly.
 const VALID_ROLES = ["co_owner", "guardian", "observer", "steward"];
+// The legacy Lifetree array each role maps to. We keep these arrays in sync with the LIN
+// links on accept so reach-audience resolution (getCircleUids reads tree.guardians[]) and
+// the Firestore rules (which read the links) agree on who is in a tree's circle.
+const ROLE_TO_FIELD: Record<string, string> = {
+    co_owner: "coOwnerIds",
+    guardian: "guardians",
+    observer: "observerIds",
+    steward: "stewardIds",
+};
 
 export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
     if (!request.auth) {
@@ -300,6 +310,13 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
         }
         setLink(uid, "member", communityId);          // the invitee joins the circle community
         setLink(uid, invite.role, invite.lifetreeId); // ...and takes their tree-circle role
+
+        // Keep the legacy role array in sync with the link so circle/reach resolution and the
+        // rules see the same membership (fixes invited guardians being skipped by group reaches).
+        const arrayField = ROLE_TO_FIELD[invite.role];
+        if (arrayField) {
+            treeUpdate[arrayField] = admin.firestore.FieldValue.arrayUnion(uid);
+        }
 
         tx.update(treeRef, treeUpdate);
         tx.update(inviteRef, {
@@ -437,10 +454,26 @@ export const generateClaudeContent = onCall({
         throw new HttpsError("failed-precondition", "No Claude key is connected for this intelligence yet.");
     }
 
-    // Map our transcript (user|model) to Anthropic's (user|assistant); it must open on a user turn.
+    // Map our transcript (user|model) to Anthropic's (user|assistant); it must open on a user
+    // turn. A message may carry image(s) (base64, no data: prefix) for vision — those become
+    // Anthropic image content blocks ahead of the text.
     const mapped = messages
-        .map((m: any) => ({ role: m.role === "model" ? "assistant" : "user", content: String(m.text || "") }))
-        .filter((m: any) => m.content);
+        .map((m: any) => {
+            const role = m.role === "model" ? "assistant" : "user";
+            const imgs = Array.isArray(m.images) ? m.images : (m.image ? [m.image] : []);
+            if (imgs.length) {
+                const blocks: any[] = imgs
+                    .filter((im: any) => im && im.data)
+                    .map((im: any) => ({
+                        type: "image",
+                        source: { type: "base64", media_type: im.mimeType || "image/webp", data: im.data },
+                    }));
+                if (m.text) blocks.push({ type: "text", text: String(m.text) });
+                return { role, content: blocks };
+            }
+            return { role, content: String(m.text || "") };
+        })
+        .filter((m: any) => (typeof m.content === "string" ? m.content : m.content.length));
     const firstUser = mapped.findIndex((m: any) => m.role === "user");
     const convo = firstUser === -1 ? [] : mapped.slice(firstUser);
     if (convo.length === 0) return { text: "" };
@@ -468,5 +501,134 @@ export const generateClaudeContent = onCall({
             throw new HttpsError("resource-exhausted", "Claude is rate-limited right now. Please try again in a moment.");
         }
         throw new HttpsError("internal", error?.message || "Claude generation failed.");
+    }
+});
+
+// ---------------------------------------------------------------------------
+// Watering — the daily routine over all guarded trees.
+//
+// A tree carries an optional `watering` schedule { mode, intervalDays, lastWateredAt, ... }.
+// Once a day this sweep finds the trees that are overdue and, at most once per day per tree,
+// posts a tree-voiced "water me" reach into that tree's guardians thread — which the existing
+// onReachCreated trigger then emails to the guardians. A *confirmed* watering (done client-side
+// via a growth pulse) clears `watering.overdue` and re-lights the tree's living validation.
+//
+// The alert is a reach (a message), NOT a chain block: it carries the `WATER_ALERT` sentinel
+// previousHash so it never advances the tree's immutable chain (mirrors how decisions/events
+// are rooted). Reaches are excluded from tree timelines + the pulse feed, so this stays a DM.
+// ---------------------------------------------------------------------------
+
+const WATER_DAY_MS = 24 * 60 * 60 * 1000;
+
+const tsToMs = (t: any): number =>
+    t?.toMillis ? t.toMillis() : (t instanceof Date ? t.getTime() : (typeof t === "number" ? t : 0));
+
+const sameUtcDay = (a: number, b: number): boolean => {
+    if (!a || !b) return false;
+    const da = new Date(a), dbb = new Date(b);
+    return da.getUTCFullYear() === dbb.getUTCFullYear()
+        && da.getUTCMonth() === dbb.getUTCMonth()
+        && da.getUTCDate() === dbb.getUTCDate();
+};
+
+// Resolve a guarded tree's circle (co-guardians + guardians) from the LIN links (the rules'
+// source of truth) unioned with the legacy arrays, so no one is missed however they were added.
+const resolveGuardianUids = async (treeId: string, tree: any): Promise<string[]> => {
+    const links = await db.collection("links").where("to", "==", treeId).get();
+    const fromLinks = links.docs
+        .map((d) => d.data())
+        .filter((x: any) => x.rel === "guardian" || x.rel === "co_owner")
+        .map((x: any) => x.from as string);
+    const fromArrays = [
+        ...(Array.isArray(tree.guardians) ? tree.guardians : []),
+        ...(Array.isArray(tree.coOwnerIds) ? tree.coOwnerIds : []),
+    ];
+    return Array.from(new Set([...fromLinks, ...fromArrays].filter(Boolean)));
+};
+
+const waterMeText = (treeName: string, daysOverdue: number): string => {
+    const who = treeName || "This tree";
+    if (daysOverdue <= 0) return `I'm ready for watering 💧 — could a guardian tend me today?`;
+    if (daysOverdue === 1) return `I'm getting thirsty 💧 — it's been a day past my watering. Could a guardian tend me?`;
+    return `I'm thirsty 💧 — it's been ${daysOverdue} days past my watering. Could a guardian tend me? — ${who}`;
+};
+
+export const checkWateringSchedules = onSchedule({
+    schedule: "every day 08:00",
+    timeZone: "Europe/Brussels",
+    timeoutSeconds: 300,
+    memory: "512MiB",
+}, async () => {
+    const now = Date.now();
+    // Only the trees actually on a schedule — avoids reading the whole forest each day.
+    const treesSnap = await db.collection("lifetrees").where("watering.mode", "==", "scheduled").get();
+
+    for (const docSnap of treesSnap.docs) {
+        try {
+            const tree = docSnap.data() as any;
+            const w = tree.watering;
+            if (!w || w.mode !== "scheduled" || !w.intervalDays) continue;
+
+            const lastWatered = tsToMs(w.lastWateredAt) || tsToMs(tree.createdAt) || 0;
+            const nextDue = tsToMs(w.nextDueAt) || (lastWatered + Math.max(1, w.intervalDays) * WATER_DAY_MS);
+            const overdue = now >= nextDue;
+
+            if (!overdue) {
+                if (w.overdue) await docSnap.ref.update({ "watering.overdue": false });
+                continue;
+            }
+
+            const updates: Record<string, any> = { "watering.overdue": true };
+
+            // At most one ping per tree per day (shared idempotency with the client check).
+            if (!sameUtcDay(tsToMs(w.lastAlertAt), now)) {
+                const ownerUid = tree.ownerId as string;
+                const guardianUids = await resolveGuardianUids(docSnap.id, tree);
+                const participantUids = Array.from(new Set([ownerUid, ...guardianUids].filter(Boolean)));
+
+                // Only ping if someone other than the author (the owner) will receive it.
+                if (participantUids.filter((u) => u !== ownerUid).length > 0) {
+                    const threadId = ["grp", docSnap.id, "guardians", ownerUid].join("__");
+                    const daysOver = Math.max(0, Math.floor((now - nextDue) / WATER_DAY_MS));
+                    const text = waterMeText(tree.name, daysOver);
+
+                    await db.collection("pulses").add({
+                        lifetreeId: docSnap.id,
+                        type: "reach",
+                        visibility: "private",
+                        careAlert: "watering",
+                        title: `Reach: ${tree.name} -> ${tree.name} (Guardians)`,
+                        body: text,
+                        content: text,
+                        reachTreeId: docSnap.id,
+                        reachTreeName: tree.name,
+                        recipientName: tree.name,
+                        recipientUid: null,
+                        participantUids,
+                        threadId,
+                        threadName: `${tree.name} · Guardians`,
+                        audience: "guardians",
+                        isGroup: true,
+                        seenBy: [],
+                        authorId: ownerUid,            // the tree speaks through its principal
+                        authorName: tree.name,         // the conversation face is the tree
+                        authorPhoto: tree.imageUrl || null,
+                        domain: tree.domain || "",
+                        loveCount: 0,
+                        commentCount: 0,
+                        previousHash: "WATER_ALERT",   // a notification, not a chain block
+                        hash: randomUUID(),
+                        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                    });
+
+                    updates["watering.lastAlertAt"] = admin.firestore.FieldValue.serverTimestamp();
+                    updates["watering.alertThreadId"] = threadId;
+                }
+            }
+
+            await docSnap.ref.update(updates);
+        } catch (e) {
+            console.error(`Watering check failed for tree ${docSnap.id}:`, e);
+        }
     }
 });

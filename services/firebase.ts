@@ -52,6 +52,7 @@ import { type Pulse, type PulseType, type Lifetree, type Alignment, type Vision,
 import { createBlock } from '../utils/crypto';
 import { uuidv7 } from '../utils/id';
 import type { PulseVisibility } from '../src/domain/pulse';
+import { daysOverdue, computeNextDueMillis, wateringAlertedToday, type WateringMode, type WateringAnalysis } from '../src/domain/watering';
 import { oldEmeraldEarthThemeValues } from '../utils/theme';
 import { isExplicitlyValidatedTree } from '../utils/validation';
 import { buildThreadId, buildGroupThreadId, getCircleUids, reachAudienceLabels } from '../utils/reachPermissions';
@@ -530,6 +531,20 @@ export const uploadBase64Image = async (base64String: string, path: string): Pro
     await uploadString(storageRef, base64String, 'data_url');
     return await getDownloadURL(storageRef);
 }
+
+// Re-encode a picked image as a small WebP and return its base64 payload (no data: prefix) —
+// the compact form vision models want for analysis. Reuses the same resize/encode as uploads.
+export const fileToWebpBase64 = async (file: File, maxDim = 1024): Promise<{ data: string; mimeType: string }> => {
+    const blob = await toWebP(file, 0.8, maxDim);
+    const dataUrl: string = await new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result as string);
+        r.onerror = () => reject(new Error('Could not read image.'));
+        r.readAsDataURL(blob);
+    });
+    const comma = dataUrl.indexOf(',');
+    return { data: comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl, mimeType: 'image/webp' };
+};
 
 export const ensureGenesis = async () => {
     const user = auth.currentUser;
@@ -1323,6 +1338,25 @@ export const markReachPulsesSeen = markReachesSeen;
 // privacy flag at write time, so this rule is enforced in the service + UI layers.
 // The target's onlyValidatedCanReach is mirrored onto its (world-readable) tree doc,
 // which we read here to evaluate the gate without weakening the rules.
+// Resolve the user ids a group reach should reach, unioning the LIN links (the rules' source
+// of truth, written by self-join AND invite) with the legacy role arrays — so no circle member
+// is ever skipped however they were added. This is the durable fix for the guardian split:
+// getCircleUids alone reads only the arrays, which the link-based flows don't populate.
+export const resolveCircleUids = async (tree: Lifetree, audience: ReachAudience): Promise<string[]> => {
+    const arrayUids = getCircleUids(tree, audience); // owner + whatever still lives on the arrays
+    const owner = tree.ownerId ? [tree.ownerId] : [];
+    const byRel: Record<string, string[]> = { co_owner: [], guardian: [], steward: [], observer: [] };
+    try {
+        const links = await getDocs(query(collection(db, 'links'), where('to', '==', tree.id)));
+        links.docs.forEach(d => { const x = d.data() as any; if (byRel[x.rel]) byRel[x.rel].push(x.from); });
+    } catch (e) { console.warn('resolveCircleUids: link read failed, falling back to arrays', e); }
+    const fromLinks =
+        audience === 'owners' ? [...owner, ...byRel.co_owner]
+        : audience === 'guardians' ? [...owner, ...byRel.co_owner, ...byRel.guardian]
+        : [...owner, ...byRel.co_owner, ...byRel.guardian, ...byRel.steward, ...byRel.observer];
+    return Array.from(new Set([...arrayUids, ...fromLinks].filter(Boolean)));
+};
+
 export const sendReach = async ({
     fromTree,
     toTree,
@@ -1377,7 +1411,8 @@ export const sendReach = async ({
 
     if (audience) {
         // Group reach to the tree's circle — one shared thread keyed by (tree, audience, me).
-        const circle = getCircleUids(target, audience);
+        // Resolve from links ∪ arrays so every circle member is reached (the guardian-split fix).
+        const circle = await resolveCircleUids(target, audience);
         const participantUids = Array.from(new Set([sender.uid, ...circle].filter(Boolean)));
         if (participantUids.length <= 1) {
             throw new Error('There is no one in that circle to reach yet.');
@@ -1478,7 +1513,10 @@ export const getPulsesByTreeId = async (treeId: string) => {
     return pulses.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 }
 
-export const mintPulse = async (pulseData: any) => {
+// `extraTreeUpdate` lets a caller fold additional tree-doc fields (dotted paths allowed) into
+// the SAME transaction that appends the block — so e.g. a watering's schedule reset commits
+// atomically with its growth pulse (no window where the chain advanced but the tree is stale).
+export const mintPulse = async (pulseData: any, extraTreeUpdate?: Record<string, any>) => {
     return runTransaction(db, async (t) => {
         const treeRef = doc(db, 'lifetrees', pulseData.lifetreeId);
         const treeDoc = await t.get(treeRef);
@@ -1508,6 +1546,8 @@ export const mintPulse = async (pulseData: any) => {
         if (pulseData.type === 'GROWTH') {
             updateData.lastTendedAt = serverTimestamp();
         }
+        // Caller-supplied tree fields (e.g. a watering's schedule reset) — committed atomically.
+        if (extraTreeUpdate) Object.assign(updateData, extraTreeUpdate);
 
         t.update(treeRef, updateData);
     });
@@ -1524,6 +1564,183 @@ export const tendTree = async (tree: Pick<Lifetree, 'id' | 'latestHash' | 'genes
         blockHeight: (tree.blockHeight || 0) + 1,
         updatedAt: serverTimestamp(),
     });
+};
+
+// --- Watering: scheduled tending of a (usually guarded) tree -----------------------------
+// Watering is tending made literal. The owner sets a schedule (or self-sustaining); the daily
+// Cloud Function (checkWateringSchedules) pings guardians when overdue; a guardian records a
+// watering with photo proof, which mints a growth pulse + re-lights the tree's living validation.
+
+// Set (or change) a tree's watering schedule. 'self_sustaining' clears the cadence; 'scheduled'
+// anchors the clock to now so the tree isn't instantly overdue. Owner/guardian/staff (rules).
+export const setWateringSchedule = async (treeId: string, input: { mode: WateringMode; intervalDays?: number }) => {
+    if (input.mode === 'self_sustaining') {
+        await updateDoc(doc(db, 'lifetrees', treeId), { watering: { mode: 'self_sustaining' }, updatedAt: serverTimestamp() });
+        return;
+    }
+    const intervalDays = Math.max(1, Math.round(input.intervalDays || 7));
+    const now = Date.now();
+    await updateDoc(doc(db, 'lifetrees', treeId), {
+        watering: {
+            mode: 'scheduled',
+            intervalDays,
+            lastWateredAt: Timestamp.fromMillis(now),
+            nextDueAt: Timestamp.fromMillis(now + intervalDays * 24 * 3600 * 1000),
+            overdue: false,
+        },
+        updatedAt: serverTimestamp(),
+    });
+};
+
+// Record a watering: upload proof, mint a GROWTH pulse carrying the `watering` flag + the
+// witness's verdict, reset the schedule clock, and let the guardians' thread know it's tended.
+// `analysis` is produced by the caller via gemini.analyzeWateringPhoto (AI), or stood in for by
+// a guardian. AI confidence ≥ 70 auto-confirms; otherwise the pulse waits for a guardian.
+export const recordWatering = async ({
+    tree,
+    sender,
+    imageFile,
+    analysis,
+}: {
+    tree: Lifetree;
+    sender: { uid: string; displayName?: string | null; photoURL?: string | null };
+    imageFile: File;
+    analysis: WateringAnalysis;
+}): Promise<{ imageUrl: string; confirmedBy: 'ai' | 'pending' }> => {
+    const imageUrl = await uploadImage(imageFile, `users/${sender.uid}/watering/${tree.id}/${Date.now()}.webp`);
+    const confirmedBy: 'ai' | 'pending' = analysis.watering && (analysis.confidence || 0) >= 70 ? 'ai' : 'pending';
+    const note = analysis.note || (confirmedBy === 'ai' ? 'Confirmed by AI.' : 'Awaiting a guardian to confirm.');
+
+    // Reset the cadence + clear the overdue flag IN THE SAME transaction that appends the growth
+    // block, so the tree can never be left "watered on the chain but still overdue". mintPulse
+    // already sets lastTendedAt (GROWTH), so living validation re-lights automatically.
+    const now = Date.now();
+    const interval = tree.watering?.mode === 'scheduled' ? tree.watering?.intervalDays : undefined;
+    const wateringUpdate: Record<string, any> = {
+        'watering.lastWateredAt': Timestamp.fromMillis(now),
+        'watering.overdue': false,
+    };
+    if (interval) wateringUpdate['watering.nextDueAt'] = Timestamp.fromMillis(computeNextDueMillis(now, interval));
+
+    await mintPulse({
+        lifetreeId: tree.id,
+        type: 'GROWTH',
+        care: 'watering',
+        title: 'Watering',
+        body: confirmedBy === 'ai' ? `Watered — confirmed by AI. ${note}` : `Watered — awaiting guardian confirmation. ${note}`,
+        imageUrl,
+        visibility: 'public',
+        wateringConfirmedBy: confirmedBy,
+        wateringConfirmation: {
+            note,
+            confidence: analysis.confidence || 0,
+            model: analysis.model,
+            provider: analysis.provider,
+            ...(confirmedBy === 'ai' ? { confirmedAt: Timestamp.fromMillis(Date.now()) } : {}),
+        },
+        authorId: sender.uid,
+        authorName: tree.name,
+        authorPersonName: sender.displayName || undefined,
+        authorPhoto: tree.imageUrl || sender.photoURL || undefined,
+    }, wateringUpdate);
+
+    // Let the guardians' thread know — a normal (newest) message clears the blue alert border.
+    try {
+        if (tree.ownerId) {
+            const participantUids = await resolveCircleUids(tree, 'guardians');
+            if (participantUids.length > 1) {
+                await sendThreadMessage({
+                    thread: {
+                        threadId: buildGroupThreadId(tree.id, 'guardians', tree.ownerId),
+                        participantUids,
+                        reachTreeId: tree.id,
+                        reachTreeName: tree.name,
+                        threadName: `${tree.name} · Guardians`,
+                        audience: 'guardians',
+                        isGroup: true,
+                    },
+                    fromTree: tree,
+                    sender,
+                    text: `🌱 ${sender.displayName || 'A guardian'} watered me — thank you! (${confirmedBy === 'ai' ? 'confirmed by AI' : 'awaiting confirmation'})`,
+                });
+            }
+        }
+    } catch (e) { console.warn('Watered notice could not be posted', e); }
+
+    return { imageUrl, confirmedBy };
+};
+
+// A guardian stands in for the AI: confirm a pending watering pulse.
+export const confirmWateringPulse = (pulseId: string, guardianUid: string) =>
+    updateDoc(doc(db, 'pulses', pulseId), {
+        wateringConfirmedBy: 'guardian',
+        'wateringConfirmation.confirmedByUid': guardianUid,
+        'wateringConfirmation.confirmedAt': serverTimestamp(),
+    });
+
+// Manually ping a tree's guardians that it needs watering — the client/"remind now" path that
+// complements the daily Cloud Function. Writes an off-chain "water me" reach (careAlert flag →
+// blue border) into the guardians thread and marks the tree alerted. Returns false if there are
+// no guardians to reach. Callers gate on wateringAlertedToday() so it fires at most once a day.
+export const sendWateringAlert = async (
+    tree: Lifetree,
+    sender: { uid: string; displayName?: string | null },
+): Promise<boolean> => {
+    if (!tree.ownerId) return false;
+    const participantUids = await resolveCircleUids(tree, 'guardians');
+    if (participantUids.filter(u => u !== tree.ownerId).length === 0) return false; // no one but the owner yet
+    // Authorization: only a circle member (owner / co-guardian / guardian) may ping the circle —
+    // a non-member calling this would otherwise create an orphaned alert pulse before the tree
+    // update is rejected by the rules. Enforced here in addition to the UI gate.
+    if (!participantUids.includes(sender.uid)) return false;
+    // Idempotency (server-mirrored): at most one alert per UTC day, matching checkWateringSchedules,
+    // so a client that skips the UI gate still can't spam the circle.
+    if (wateringAlertedToday(tree)) return false;
+
+    const now = Date.now();
+    const over = daysOverdue(tree, now);
+    const text = over <= 0
+        ? `I'm ready for watering 💧 — could a guardian tend me today?`
+        : `I'm thirsty 💧 — ${over} day${over > 1 ? 's' : ''} past my watering. Could a guardian tend me?`;
+    const threadId = buildGroupThreadId(tree.id, 'guardians', tree.ownerId);
+
+    // Mark the tree alerted FIRST: this write is gated by the lifetrees rule (owner/guardian/staff),
+    // so an unauthorized caller is rejected here before any alert pulse is created (no orphan).
+    await updateDoc(doc(db, 'lifetrees', tree.id), {
+        'watering.overdue': true,
+        'watering.lastAlertAt': serverTimestamp(),
+        'watering.alertThreadId': threadId,
+    });
+    await addDoc(pulsesCollection, {
+        lid: uuidv7(),
+        lifetreeId: tree.id,
+        type: 'reach',
+        visibility: 'private',
+        careAlert: 'watering',
+        title: `Reach: ${tree.name} -> ${tree.name} (Guardians)`,
+        body: text,
+        content: text,
+        reachTreeId: tree.id,
+        reachTreeName: tree.name,
+        recipientName: tree.name,
+        recipientUid: null,
+        participantUids,
+        threadId,
+        threadName: `${tree.name} · Guardians`,
+        audience: 'guardians',
+        isGroup: true,
+        seenBy: [],
+        authorId: sender.uid,
+        authorName: tree.name,
+        authorPhoto: tree.imageUrl || undefined,
+        domain: tree.domain || '',
+        loveCount: 0,
+        commentCount: 0,
+        previousHash: 'WATER_ALERT', // a nudge, not a chain block (mirrors the scheduled sweep)
+        hash: uuidv7(),              // a plain unique id — never chain-verified
+        createdAt: serverTimestamp(),
+    });
+    return true;
 };
 
 export const proposeAlignment = (data: any) => addDoc(alignmentsCollection, { ...data, status: 'PENDING', createdAt: serverTimestamp() });

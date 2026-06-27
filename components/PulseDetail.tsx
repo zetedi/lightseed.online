@@ -79,6 +79,11 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel = "Back", ca
                             <Icons.Pencil /> Edit
                         </button>
                     )}
+                    {pulse.care === 'watering' && (
+                        <span className="bg-sky-100 text-sky-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                            💧 {pulse.wateringConfirmedBy === 'ai' ? 'Confirmed by AI' : pulse.wateringConfirmedBy === 'guardian' ? 'Confirmed by guardian' : 'Awaiting confirmation'}
+                        </span>
+                    )}
                     <span className="bg-slate-100 text-slate-500 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
                         <Icons.Hash /> {pulse.type}
                     </span>
@@ -119,6 +124,18 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel = "Back", ca
                             <div className="mb-4 grid gap-2 rounded-2xl border border-sky-100 bg-sky-50 p-4 text-sm text-sky-900">
                                 {pulse.eventDate && <div><span className="font-bold">When:</span> {new Date(pulse.eventDate).toLocaleString()}</div>}
                                 {pulse.eventLocation && <div><span className="font-bold">Where:</span> {pulse.eventLocation}</div>}
+                            </div>
+                        )}
+                        {pulse.care === 'watering' && (
+                            <div className="mb-4 grid gap-1 rounded-2xl border border-sky-100 bg-sky-50 p-4 text-sm text-sky-900">
+                                <div className="flex items-center gap-2 font-bold">
+                                    <Icons.Droplet size={16} />
+                                    <span>Watering {pulse.wateringConfirmedBy === 'ai' ? '· confirmed by AI' : pulse.wateringConfirmedBy === 'guardian' ? '· confirmed by a guardian' : '· awaiting confirmation'}</span>
+                                </div>
+                                {pulse.wateringConfirmation?.note && <div className="italic text-sky-800/90">"{pulse.wateringConfirmation.note}"</div>}
+                                {pulse.wateringConfirmedBy === 'ai' && typeof pulse.wateringConfirmation?.confidence === 'number' && (
+                                    <div className="text-xs text-sky-700/70">AI confidence: {pulse.wateringConfirmation.confidence}%</div>
+                                )}
                             </div>
                         )}
                         <p dir="auto" className="text-slate-600 leading-relaxed whitespace-pre-wrap font-serif text-lg">

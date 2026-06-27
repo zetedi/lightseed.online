@@ -9,6 +9,7 @@ import { ValidationBadge } from './ValidationBadge';
 import { colors } from '../utils/theme';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
 import { canReachTree, type ReachTargetProfile } from '../utils/reachPermissions';
+import { isWateringOverdue } from '../src/domain/watering';
 import { DefaultCardImage } from './ui/DefaultCardImage';
 import { ImageCropModal } from './ui/ImageCropModal';
 
@@ -37,6 +38,8 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, curren
 
     // Guardianship comes from the LIN (guardian links), passed down as a set.
     const isGuardian = !!currentUserId && !!guardedTreeIds?.has(tree.id);
+    // Thirsty: a guarded tree past its watering due-date.
+    const needsWater = !!tree.isNature && isWateringOverdue(tree);
     const hasValidationBadge = isExplicitlyValidatedTree(tree);
     const showValidateAction = canToggleValidation({ tree, myActiveTree, isAdmin, isSuperAdmin });
     // The owner's privacy flag is mirrored onto the (world-readable) tree, so we can read it here.
@@ -142,6 +145,9 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, curren
                             ) : (
                                 <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-[9px] font-bold animate-pulse">DANGER</span>
                             )
+                        )}
+                        {needsWater && (
+                            <span className="bg-sky-500 text-white px-2 py-0.5 rounded-full text-[9px] font-bold animate-pulse inline-flex items-center gap-1">💧 NEEDS WATER</span>
                         )}
                     </div>
                 </div>

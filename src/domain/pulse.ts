@@ -57,6 +57,22 @@ export interface Pulse extends Entity {
   aiInterpretation?: PulseInterpretation;
   validationScore?: number;
 
+  // Watering / care. A confirmed watering is a growth pulse (type 'GROWTH') carrying the
+  // `care: 'watering'` flag, the proof image (imageUrl), and a witness. `careAlert` instead
+  // marks a "water me" reach (a DM, not a growth block) so the DM UI can give it a blue
+  // border. See src/domain/watering.ts.
+  care?: 'watering';
+  careAlert?: 'watering';
+  wateringConfirmedBy?: 'ai' | 'guardian' | 'pending';
+  wateringConfirmation?: {
+    note: string;          // the witness's one-line reading of the photo
+    confidence?: number;   // 0-100 for an AI reading
+    model?: string;        // the model that read it
+    provider?: string;     // 'google' | 'anthropic' | …
+    confirmedByUid?: string; // the guardian, when confirmed by a human
+    confirmedAt?: Timestamp;
+  };
+
   // Alignment Logic (On Chain) (Legacy)
   isMatch?: boolean;
   matchedLifetreeId?: string;

@@ -2,6 +2,7 @@
 import { httpsCallable } from "firebase/functions";
 import { auth, functions } from "./firebase";
 import { Lifetree, Vision, VisionSynergy } from "../types";
+import type { WateringAnalysis } from "../src/domain/watering";
 import config from "../lifeseed.config.json";
 import { sendIntelligenceMessage, getIntelligence, getPersona, getActiveIntelligenceId, resolveIntelligenceMemoryText, DEFAULT_INTELLIGENCE_ID } from "./intelligence";
 import type { IntelligenceRef, Persona } from "../src/domain/intelligence";
@@ -254,6 +255,65 @@ export const sendMessageToTree = async (message: string, history: {role: 'user' 
     return "The signal through my branches is weak right now.";
   }
 }
+
+// Analyse a watering photo through the listener's chosen intelligence (their Claude, etc.),
+// falling back to Gemini — the same routing law as runText, but multimodal. The model is asked
+// to act as a kind witness: does the image plausibly show this tree being watered / freshly
+// watered? Returns a structured verdict the caller turns into an AI/guardian confirmation.
+// `image.data` is base64 WITHOUT the data: prefix (see fileToWebpBase64 in firebase.ts).
+export const analyzeWateringPhoto = async (
+    image: { data: string; mimeType: string },
+    tree: Pick<Lifetree, 'name' | 'locationName' | 'treeType'>,
+    intelligenceId?: string,
+): Promise<WateringAnalysis> => {
+    const where = tree.locationName ? ` at ${tree.locationName}` : '';
+    const prompt = `You are a kind but honest witness verifying that a tree or plant has been watered.
+Look at the photo of "${tree.name}"${where} and decide whether it plausibly shows watering happening or having just happened — evidence such as a watering can or hose in use, water pouring or droplets, visibly wet / dark moist soil, a filled saucer, or water on the leaves.
+Return ONLY a JSON object, no prose, no markdown:
+{ "watering": <true|false>, "confidence": <integer 0-100>, "note": "<one short, warm sentence naming the evidence you see, or what is missing>" }`;
+
+    const fallback: WateringAnalysis = {
+        watering: false,
+        confidence: 0,
+        note: 'The witness could not read the photo just now — a guardian can confirm.',
+    };
+
+    try {
+        const id = intelligenceId ?? getActiveIntelligenceId() ?? DEFAULT_INTELLIGENCE_ID;
+        const intel = id ? await getIntelligence(id).catch(() => null) : null;
+
+        // Non-Google connected intelligence (e.g. a community's Claude) → Claude vision.
+        if (intel && intel.enabled !== false && intel.provider === 'anthropic') {
+            const generateClaudeContent = httpsCallable(functions, 'generateClaudeContent');
+            const res = await generateClaudeContent({
+                messages: [{ role: 'user', text: prompt, image: { mimeType: image.mimeType, data: image.data } }],
+                model: intel.model || 'claude-sonnet-4-6',
+                credential: intel.credentialScope && intel.credentialScope !== 'node'
+                    ? { scope: intel.credentialScope, ownerId: intel.credentialOwnerId }
+                    : undefined,
+            });
+            const parsed = parseJsonObject<WateringAnalysis>((res.data as any)?.text || '');
+            return parsed ? { ...parsed, model: intel.model, provider: 'anthropic' } : fallback;
+        }
+
+        // Default / Google → Gemini multimodal via the existing generateAIContent callable.
+        const model = intel?.provider === 'google' && intel.model ? intel.model : MODEL;
+        const generateAIContent = httpsCallable(functions, 'generateAIContent');
+        const result = await generateAIContent({
+            contents: [{ role: 'user', parts: [
+                { inlineData: { mimeType: image.mimeType, data: image.data } },
+                { text: prompt },
+            ] }],
+            model,
+            config: { responseMimeType: 'application/json' },
+        });
+        const parsed = parseJsonObject<WateringAnalysis>((result.data as any)?.text || '');
+        return parsed ? { ...parsed, model, provider: 'google' } : fallback;
+    } catch (e) {
+        console.error('Watering analysis error', e);
+        return fallback;
+    }
+};
 
 // Pull the first JSON array out of a model reply, tolerating prose or ```json fences.
 const parseJsonArray = <T,>(text: string): T[] => {

@@ -1,20 +1,23 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Timestamp } from 'firebase/firestore';
 import { showAlert, showConfirm } from "./ui/Dialog";
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
 import Logo from './Logo';
 import { ValidationBadge } from './ValidationBadge';
 import { AutocompleteInput } from './ui/AutocompleteInput';
-import { updateLifetree, setTreeStatus, getPulsesByTreeId, createTreeInvite } from '../services/firebase';
+import { updateLifetree, setTreeStatus, getPulsesByTreeId, createTreeInvite, setWateringSchedule, recordWatering, confirmWateringPulse, sendWateringAlert, fileToWebpBase64 } from '../services/firebase';
+import { analyzeWateringPhoto } from '../services/gemini';
 import { Pulse, type InvitableRole, treeRelationLabels } from '../types';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
 import { canReachTree } from '../utils/reachPermissions';
+import { isOnWateringSchedule, isWateringOverdue, daysUntilWatering, daysOverdue, lastWateredMillis, wateringAlertedToday } from '../src/domain/watering';
 import { treeCircle } from '../src/domain/views/circle';
 import { firestoreStore } from '../src/adapters/firestore';
 import { canTendTree } from '../src/domain/policy';
 
-export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, onAlertGuardians, myActiveTree, isDefaultTree, onSetDefault, currentUserId, isAdmin, isSuperAdmin, targetUserProfile }: any) => {
+export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, onAlertGuardians, myActiveTree, isDefaultTree, onSetDefault, currentUserId, currentUser, isAdmin, isSuperAdmin, targetUserProfile }: any) => {
    const { t } = useLanguage();
    const isOwner = currentUserId === tree.ownerId;
    const isNature = tree.isNature;
@@ -76,19 +79,33 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const [inviteBusy, setInviteBusy] = useState(false);
    const [inviteStatus, setInviteStatus] = useState<string | null>(null);
 
+   // Watering — scheduled tending of this (guarded) tree.
+   const [waterMode, setWaterMode] = useState<'scheduled' | 'self_sustaining'>(tree.watering?.mode === 'self_sustaining' ? 'self_sustaining' : 'scheduled');
+   const [waterInterval, setWaterInterval] = useState<number>(tree.watering?.intervalDays || 7);
+   const [waterBusy, setWaterBusy] = useState(false);
+   const [waterMsg, setWaterMsg] = useState<string | null>(null);
+   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+   const waterFileRef = useRef<HTMLInputElement>(null);
+   // The component instance is reused across trees, so re-seed the schedule editor when the
+   // tree changes (useState initialisers only run on mount).
    useEffect(() => {
+       setWaterMode(tree.watering?.mode === 'self_sustaining' ? 'self_sustaining' : 'scheduled');
+       setWaterInterval(tree.watering?.intervalDays || 7);
+       setWaterMsg(null);
+   }, [tree.id]);
+
+   // Note: getPulsesByTreeId returns Descending order (Newest First). Extracted so a fresh
+   // watering can refresh the chain in place.
+   const loadChain = () => {
         setLoadingChain(true);
-        // Note: getPulsesByTreeId now returns Descending order (Newest First)
         getPulsesByTreeId(tree.id).then(pulses => {
             if (pulses.length > 0) {
                 // The oldest one is usually the last in a descending list if created first.
-                // Assuming "Genesis" is clearly marked or is the oldest.
                 const last = pulses[pulses.length - 1];
                 if (last.previousHash === "0" || last.title === "Genesis Pulse") {
                     setGenesisBlock(last);
                     setGrowthBlocks(pulses.slice(0, pulses.length - 1));
                 } else {
-                    // Fallback if genesis isn't explicitly found
                     setGrowthBlocks(pulses);
                 }
             } else {
@@ -96,7 +113,8 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
             }
             setChain(pulses);
         }).finally(() => setLoadingChain(false));
-   }, [tree.id]);
+   };
+   useEffect(() => { loadChain(); }, [tree.id]);
 
    const handleSave = async () => {
        setIsSaving(true);
@@ -287,7 +305,151 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
            {inviteStatus && <p className="mt-3 text-xs text-emerald-700">{inviteStatus}</p>}
        </div>
    );
-    
+
+   // --- Watering — scheduled tending of this (guarded) tree ---------------------------
+   const sender = { uid: currentUserId as string, displayName: currentUser?.displayName, photoURL: currentUser?.photoURL };
+   const scheduled = isOnWateringSchedule(tree);
+   const selfSustaining = tree.watering?.mode === 'self_sustaining';
+   const overdue = isWateringOverdue(tree);
+   const dueInDays = daysUntilWatering(tree);
+   const overByDays = daysOverdue(tree);
+   const lastWateredMs = tree.watering?.lastWateredAt ? lastWateredMillis(tree) : 0;
+   const canWater = !!currentUserId && (localIsGuardian || isOwner || isSuperAdmin);
+   const canManageSchedule = canEdit; // owner / guardian / super-admin (rules allow the same set)
+   const pendingWaterings = growthBlocks.filter((p: any) => p.care === 'watering' && p.wateringConfirmedBy === 'pending');
+
+   const handleSaveSchedule = async () => {
+       setWaterBusy(true); setWaterMsg(null);
+       try {
+           await setWateringSchedule(tree.id, { mode: waterMode, intervalDays: waterInterval });
+           const now = Date.now();
+           const iv = Math.max(1, Math.round(waterInterval));
+           onUpdate?.({ watering: waterMode === 'scheduled'
+               ? { mode: 'scheduled', intervalDays: iv, lastWateredAt: Timestamp.fromMillis(now), nextDueAt: Timestamp.fromMillis(now + iv * 86400000), overdue: false }
+               : { mode: 'self_sustaining' } });
+           setWaterMsg(waterMode === 'self_sustaining' ? 'Marked self-sustaining.' : `Watering scheduled every ${iv} day${iv > 1 ? 's' : ''}.`);
+       } catch (e: any) { setWaterMsg(e?.message || 'Could not save the schedule.'); }
+       setWaterBusy(false);
+   };
+
+   const handleWaterPick = () => waterFileRef.current?.click();
+   const handleWaterFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+       const file = e.target.files?.[0];
+       e.target.value = '';
+       if (!file || !currentUserId) return;
+       setWaterBusy(true);
+       try {
+           setWaterMsg('Reading your photo…');
+           const img = await fileToWebpBase64(file);
+           setWaterMsg('The witness is looking…');
+           const analysis = await analyzeWateringPhoto(img, tree);
+           const auto = analysis.watering && (analysis.confidence || 0) >= 70;
+           setWaterMsg(auto ? 'Confirmed by AI — recording 💧' : 'Recording — a guardian can confirm…');
+           const { confirmedBy } = await recordWatering({ tree, sender, imageFile: file, analysis });
+           const now = Date.now();
+           const iv = tree.watering?.intervalDays;
+           onUpdate?.({ watering: {
+               ...(tree.watering || {}),
+               overdue: false,
+               lastWateredAt: Timestamp.fromMillis(now),
+               ...(iv ? { nextDueAt: Timestamp.fromMillis(now + iv * 86400000) } : {}),
+           } });
+           loadChain();
+           setWaterMsg(confirmedBy === 'ai'
+               ? `Watered 💧 — confirmed by AI. ${analysis.note}`
+               : `Watered 💧 — awaiting a guardian to confirm. ${analysis.note}`);
+       } catch (e: any) { setWaterMsg(e?.message || 'Could not record the watering.'); }
+       setWaterBusy(false);
+   };
+
+   const handleConfirmWatering = async (pulseId: string) => {
+       if (!currentUserId) return;
+       setConfirmingId(pulseId);
+       try { await confirmWateringPulse(pulseId, currentUserId); loadChain(); }
+       catch (e: any) { showAlert(e?.message || 'Could not confirm.'); }
+       setConfirmingId(null);
+   };
+
+   const handleRemindGuardians = async () => {
+       if (!currentUserId) return;
+       setWaterBusy(true); setWaterMsg(null);
+       try {
+           const ok = await sendWateringAlert(tree, sender);
+           setWaterMsg(ok ? 'The guardians have been asked to water 💧' : 'No guardians to notify yet — invite some to the circle.');
+           if (ok) onUpdate?.({ watering: { ...(tree.watering || {}), overdue: true } });
+       } catch (e: any) { setWaterMsg(e?.message || 'Could not send the reminder.'); }
+       setWaterBusy(false);
+   };
+
+   const WateringPanel = () => (
+       <div className={`rounded-2xl border p-6 text-sky-900 shadow-inner ${overdue ? 'border-sky-300 bg-sky-50 ring-2 ring-sky-300' : 'border-sky-100 bg-sky-50'}`}>
+           <h3 className="mb-3 flex items-center gap-2 font-bold uppercase tracking-wider text-sky-600">
+               <Icons.Droplet /> <span>Watering</span>
+           </h3>
+
+           <div className="mb-4 text-sm text-sky-800/90">
+               {selfSustaining ? (
+                   <p>🌳 Self-sustaining — this tree needs no scheduled watering.</p>
+               ) : scheduled ? (
+                   overdue ? (
+                       <p className="font-semibold text-sky-700">💧 Thirsty — {overByDays > 0 ? `${overByDays} day${overByDays > 1 ? 's' : ''} overdue` : 'watering due today'}.</p>
+                   ) : (
+                       <p>💧 Next watering in {dueInDays} day{dueInDays !== 1 ? 's' : ''}.</p>
+                   )
+               ) : (
+                   <p>No watering schedule yet.</p>
+               )}
+               {lastWateredMs > 0 && <p className="mt-1 text-xs text-sky-700/70">Last watered {new Date(lastWateredMs).toLocaleDateString()}.</p>}
+           </div>
+
+           {canManageSchedule && (
+               <div className="mb-4 space-y-2 rounded-xl border border-sky-200 bg-white p-4">
+                   <div className="flex gap-2">
+                       <button type="button" onClick={() => setWaterMode('scheduled')} className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wide transition-colors ${waterMode === 'scheduled' ? 'bg-sky-600 text-white' : 'bg-sky-100 text-sky-700 hover:bg-sky-200'}`}>On a schedule</button>
+                       <button type="button" onClick={() => setWaterMode('self_sustaining')} className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wide transition-colors ${waterMode === 'self_sustaining' ? 'bg-sky-600 text-white' : 'bg-sky-100 text-sky-700 hover:bg-sky-200'}`}>Self-sustaining</button>
+                   </div>
+                   {waterMode === 'scheduled' && (
+                       <label className="flex items-center gap-2 text-sm text-sky-800">
+                           <span>Water every</span>
+                           <input type="number" min={1} value={waterInterval} onChange={e => setWaterInterval(Math.max(1, Number(e.target.value) || 1))} className="h-9 w-20 rounded-lg border border-sky-200 px-2 text-center focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                           <span>days</span>
+                       </label>
+                   )}
+                   <button type="button" onClick={handleSaveSchedule} disabled={waterBusy} className="w-full rounded-lg bg-sky-600 py-2 text-sm font-bold text-white hover:bg-sky-700 disabled:opacity-50">{waterBusy ? 'Saving…' : 'Save schedule'}</button>
+               </div>
+           )}
+
+           {canWater && (
+               <div className="space-y-2">
+                   <input ref={waterFileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleWaterFile} />
+                   <button type="button" onClick={handleWaterPick} disabled={waterBusy} className="flex w-full items-center justify-center gap-2 rounded-xl bg-sky-600 py-3 font-bold uppercase tracking-widest text-white shadow-lg transition-all hover:bg-sky-700 active:scale-95 disabled:opacity-50">
+                       <Icons.Droplet /> <span>I watered this</span>
+                   </button>
+                   {isOwner && overdue && !wateringAlertedToday(tree) && (
+                       <button type="button" onClick={handleRemindGuardians} disabled={waterBusy} className="w-full rounded-xl border border-sky-300 bg-white py-2 text-sm font-bold text-sky-700 hover:bg-sky-100 disabled:opacity-50">Remind guardians 💧</button>
+                   )}
+               </div>
+           )}
+
+           {canWater && pendingWaterings.length > 0 && (
+               <div className="mt-4 border-t border-sky-200 pt-3">
+                   <p className="mb-2 text-xs font-bold uppercase tracking-wider text-sky-600">Awaiting confirmation</p>
+                   <div className="space-y-2">
+                       {pendingWaterings.map((p: any) => (
+                           <div key={p.id} className="flex items-center gap-2 rounded-lg bg-white/70 p-2">
+                               {p.imageUrl && <img src={p.imageUrl} className="h-10 w-10 rounded object-cover" alt="watering" />}
+                               <span className="flex-1 truncate text-xs text-sky-800">{new Date(p.createdAt?.toMillis?.() || Date.now()).toLocaleDateString()} · {p.wateringConfirmation?.note || 'Watering'}</span>
+                               <button type="button" onClick={() => handleConfirmWatering(p.id)} disabled={confirmingId === p.id} className="rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-sky-700 disabled:opacity-50">{confirmingId === p.id ? '…' : 'Confirm'}</button>
+                           </div>
+                       ))}
+                   </div>
+               </div>
+           )}
+
+           {waterMsg && <p className="mt-3 text-xs text-sky-700">{waterMsg}</p>}
+       </div>
+   );
+
     return (
         <>
         <div className="min-h-screen animate-in fade-in zoom-in-95 duration-300">
@@ -640,6 +802,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                 <GuardianshipPanel />
                             </>
                         )}
+                        {isNature && <WateringPanel />}
                         <TreeCirclePanel />
                     </div>
                 </div>
@@ -734,6 +897,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                                                 <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 rounded-full font-bold">EVENT</span>
                                                             ) : (
                                                                 <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 rounded-full font-bold">PULSE</span>
+                                                            )}
+                                                            {(pulse as any).care === 'watering' && (
+                                                                <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-1" title={(pulse as any).wateringConfirmation?.note || ''}>💧 {(pulse as any).wateringConfirmedBy === 'ai' ? 'AI' : (pulse as any).wateringConfirmedBy === 'guardian' ? 'Guardian' : 'Pending'}</span>
                                                             )}
                                                             <span className="text-xs text-slate-400 font-mono">{new Date(pulse.createdAt?.toMillis()).toLocaleDateString()}</span>
                                                         </div>

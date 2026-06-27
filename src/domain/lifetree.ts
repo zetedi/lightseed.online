@@ -1,5 +1,6 @@
 import type { Timestamp } from 'firebase/firestore';
 import type { Entity } from './entity';
+import type { WateringSchedule } from './watering';
 
 export type LifetreeType = "human" | "ai" | "community" | "project" | "LIFETREE" | "GUARDED" | "FAMILY";
 
@@ -47,6 +48,11 @@ export interface Lifetree extends Entity {
   treeType?: LifetreeType;
   guardians?: string[]; // guardianship (user ids); → links in Phase 2
   status?: 'HEALTHY' | 'DANGER';
+
+  // Watering — scheduled tending of a (usually guarded) tree. Absent = no schedule.
+  // The daily sweep flags `watering.overdue`; a confirmed watering clears it and re-lights
+  // the tree's living validation. See src/domain/watering.ts.
+  watering?: WateringSchedule;
 
   // Immutable chain Props
   genesisHash: string;

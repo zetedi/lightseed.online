@@ -18,6 +18,10 @@ export interface ReachThread {
   lastMessage: string;
   lastAt: number;
   unread: number;
+  // 'watering' when the thread's latest message is an unanswered "water me" alert — drives
+  // the blue border in the inbox. Cleared once a later message (e.g. a watering confirmation)
+  // becomes the newest, since that message carries no careAlert.
+  careAlert?: 'watering';
 }
 
 export interface ThreadViewer {
@@ -87,6 +91,7 @@ export function reachThreads(pulses: Pulse[], viewer: ThreadViewer): ReachThread
         lastMessage: text,
         lastAt: at,
         unread: isUnread ? 1 : 0,
+        careAlert: (p as any).careAlert,
       });
     } else {
       if (isUnread) existing.unread += 1;
@@ -94,6 +99,7 @@ export function reachThreads(pulses: Pulse[], viewer: ThreadViewer): ReachThread
       if (at >= existing.lastAt) {
         existing.lastAt = at;
         existing.lastMessage = text;
+        existing.careAlert = (p as any).careAlert; // newest message wins → alert auto-clears
         if (p.threadId) existing.threadId = p.threadId;
         if (isGroup) existing.participantCount = participantUids.length;
       }

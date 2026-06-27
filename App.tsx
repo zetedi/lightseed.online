@@ -1411,6 +1411,7 @@ const AppContent = () => {
                         isDefaultTree={defaultTreeId === selectedTree.id}
                         onSetDefault={() => { setDefaultTree(selectedTree.id); showAlert(`${selectedTree.name} is now your default tree.`); }}
                         currentUserId={lightseed?.uid}
+                        currentUser={lightseed}
                         isAdmin={isAdmin}
                         isSuperAdmin={isSuperAdmin}
                         targetUserProfile={{ onlyValidatedCanReach: selectedTree.onlyValidatedCanReach }}

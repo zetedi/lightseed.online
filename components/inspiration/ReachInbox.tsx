@@ -167,7 +167,7 @@ export const ReachInbox = ({
                                 onClick={() => thread.isGroup && thread.threadId
                                     ? setSelection({ kind: 'group', thread: { threadId: thread.threadId, partnerId: thread.partnerId, partnerName: thread.partnerName, partnerPhoto: thread.partnerPhoto, audience: thread.audience, participantCount: thread.participantCount } })
                                     : setSelection({ kind: 'tree', tree: { id: thread.partnerId, name: thread.partnerName, imageUrl: thread.partnerPhoto } as Lifetree })}
-                                className={`${rowBase} group cursor-pointer border-b border-slate-50 ${selectedKey === thread.key ? 'bg-emerald-50' : 'hover:bg-slate-50'}`}
+                                className={`${rowBase} group cursor-pointer border-b border-slate-50 ${thread.careAlert === 'watering' ? 'border-l-4 border-l-sky-500 bg-sky-50/40' : ''} ${selectedKey === thread.key ? 'bg-emerald-50' : 'hover:bg-slate-50'}`}
                             >
                                 {thread.isGroup
                                     ? <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-emerald-100 bg-emerald-50 text-emerald-600"><Icons.Users /></div>
@@ -185,6 +185,7 @@ export const ReachInbox = ({
                                         )}
                                     </div>
                                     <span className="block truncate text-xs text-slate-500">
+                                        {thread.careAlert === 'watering' && <span className="font-bold text-sky-600">💧 needs water · </span>}
                                         {thread.isGroup && <span className="text-emerald-600/70">● group · </span>}
                                         {thread.lastMessage || 'Reached through the mycelial network.'}
                                     </span>
