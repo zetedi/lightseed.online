@@ -5,15 +5,18 @@
 
 # Lifeseed
 
-A decentralized social sharing platform where every lifetree is a blockchain of presents.
+A living network where every Lifetree is an immutable chain of moments — a bridge between the inner Self, real trees, and the digital world.
 
 ## 🌟 Core Concepts
 
-- **Lifetree**: A digital-physical entity representing a user's profile and blockchain history. It must be "planted" (created) and "validated" (by another validated tree) to interact fully with the network.
-- **Pulse**: A block in the Lifetree's chain. It can be a `STANDARD` post or a `GROWTH` update (visual evolution of the tree).
-- **Vision**: A future-oriented goal or dream associated with a Lifetree.
-- **Guardian**: A user who protects and monitors a "Nature" (Wild) tree or another user's tree.
-- **Match**: A handshake between two Pulses from different Lifetrees, creating a permanent link in the blockchain ledger.
+- **Lifetree**: A digital–physical being with an immutable chain (genesis → growth). Planted by a person, community, project, or a guarded wild tree. Its standing is **validated** by another live tree.
+- **Pulse**: A block on a Lifetree's chain. Types include `growth` (visual evolution — including 💧 **watering** pulses proven by an AI- or guardian-confirmed photo), `event`, `decision` (governance), and `reach` (messages).
+- **Living validation**: Validation is care, not a permanent stamp — it stays lit only while the tree is **tended** (a growth pulse or explicit tend) within a year, and dims if neglected.
+- **Vision**: A direction of growth for a Lifetree; the network surfaces **resonances** — generative pairings between visions.
+- **Guardian / Tree Circle**: Shared care of a tree. Roles (guardian, co-guardian, steward, observer, member) are edges in the **LIN** — the `links` collection, the single source of truth. People are invited into a tree's circle, and a community grows around the tree.
+- **Watering**: Scheduled tending for guarded trees. A daily routine alerts guardians when a tree is overdue; a confirmed watering re-lights the tree's validation.
+- **Reach**: A private 1:1 or group message between trees (a `reach` pulse), gated to its participants.
+- **Intelligence Commons**: Pluggable AI — the network speaks through a chosen intelligence (Google Gemini or Anthropic Claude), with node-key fallback so AI works for everyone.
 
 ---
 
@@ -34,13 +37,11 @@ Since the application supports Arabic (`ar`) and other RTL languages, specific r
     ```
 *   **Logos & Brand**: The `.seed` logo text should be forced `dir="ltr"` to maintain the dot position.
 
-### 2. AI & Gemini Integration
-*   **Library**: Use `@google/generative-ai` for interaction with the Gemini API.
-*   **Models**:
-    *   Text/Reasoning: `gemini-3.5-flash`
-    *   Images: `gemini-3.5-flash`
-
-*   **API Key**: The key is injected via `process.env.GEMINI_API_KEY` in Cloud Functions.
+### 2. Intelligence Commons (AI)
+*   **Providers**: Google Gemini (`@google/generative-ai`) and Anthropic Claude (`@anthropic-ai/sdk`), behind one provider abstraction. A community can connect its own key (BYO) or use the node key.
+*   **Default models**: Gemini `gemini-3.5-flash`; Claude `claude-sonnet-4-6`.
+*   **Keys**: Provider keys live server-side only (in `providerCredentials`, never client-readable). Node keys are the `GEMINI_API_KEY` / `ANTHROPIC_API_KEY` Cloud Function secrets. Calls fall back to the node keys so AI answers for every signed-in user.
+*   **Vision**: Watering proof photos are analysed multimodally (Gemini or Claude vision) to confirm a watering.
 
 ### 3. Database & Genesis
 *   **Genesis Tree**: The app automatically checks for a "GENESIS_TREE" (Mahameru) on load.

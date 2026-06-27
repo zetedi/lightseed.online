@@ -1,10 +1,16 @@
 import React from 'react';
 
+// The one waiting animation across the app: a bright yellow dot with a soft halo — a little
+// sun — travelling along a path. Over a container that's updating it follows the container's
+// border (ResonanceScan); with no container it orbits a logo-sized circle in the middle of the
+// page (CenteredResonanceLoader). Both share this dot so the wait always reads the same.
+const SUN_GLOW = '0 0 12px 5px rgba(253,224,71,0.95), 0 0 30px 14px rgba(250,204,21,0.5)';
+const ORBIT_KEYFRAMES = `@keyframes lightseed-orbit { from { offset-distance: 0%; } to { offset-distance: 100%; } }`;
+
 /**
- * Wraps a box and, while `active`, sends a glowing lightseed — a yellow point with a soft
- * halo — travelling around its border, like the field being scanned for resonance.
- *
- * Uses CSS motion paths (offset-path) so the point follows the rounded rectangle exactly.
+ * Wraps a box and, while `active`, sends the little sun travelling around its border, like the
+ * field being scanned for resonance. Uses CSS motion paths (offset-path) so the point follows
+ * the rounded rectangle exactly.
  */
 export const ResonanceScan = ({
   active = false,
@@ -18,14 +24,14 @@ export const ResonanceScan = ({
   <div className="relative">
     {active && (
       <div className="pointer-events-none absolute inset-0 z-10" aria-hidden>
-        <style>{`@keyframes lightseed-orbit { from { offset-distance: 0%; } to { offset-distance: 100%; } }`}</style>
+        <style>{ORBIT_KEYFRAMES}</style>
         <div className="absolute inset-0 animate-pulse rounded-2xl ring-1 ring-amber-300/40" style={{ borderRadius: radius }} />
         <span
-          className="absolute left-0 top-0 h-2.5 w-2.5 rounded-full bg-amber-300"
+          className="absolute left-0 top-0 h-3.5 w-3.5 rounded-full bg-yellow-300"
           style={{
             offsetPath: `inset(0 round ${radius})`,
             animation: 'lightseed-orbit 4.5s linear infinite',
-            boxShadow: '0 0 10px 4px rgba(252,211,77,0.9), 0 0 22px 9px rgba(251,191,36,0.45)',
+            boxShadow: SUN_GLOW,
           }}
         />
       </div>
@@ -35,9 +41,8 @@ export const ResonanceScan = ({
 );
 
 /**
- * A full-screen waiting state for resonance / alignment matching: a single lighted seed
- * breathing at the CENTRE of the screen (over a soft dimmed backdrop), instead of a point
- * orbiting a box border.
+ * A full-screen waiting state for actions with no specific container: the little sun orbits a
+ * faint, logo-sized circle in the centre of the screen over a softly dimmed backdrop.
  */
 export const CenteredResonanceLoader = ({
   active = false,
@@ -49,14 +54,16 @@ export const CenteredResonanceLoader = ({
   if (!active) return null;
   return (
     <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-slate-900/40 backdrop-blur-sm" aria-hidden>
-      <style>{`@keyframes lightseed-breathe { 0%,100% { transform: scale(0.85); opacity: 0.7; } 50% { transform: scale(1.15); opacity: 1; } }`}</style>
-      <div className="relative flex items-center justify-center">
-        <span className="absolute h-24 w-24 rounded-full bg-amber-300/30 blur-xl" style={{ animation: 'lightseed-breathe 2.4s ease-in-out infinite' }} />
+      <style>{ORBIT_KEYFRAMES}</style>
+      {/* The orbit circle is sized like the logo (~88px). */}
+      <div className="relative" style={{ width: '88px', height: '88px' }}>
+        <div className="absolute inset-0 rounded-full ring-1 ring-amber-300/25" />
         <span
-          className="h-12 w-12 rounded-full bg-amber-300"
+          className="absolute left-0 top-0 h-3.5 w-3.5 rounded-full bg-yellow-300"
           style={{
-            animation: 'lightseed-breathe 2.4s ease-in-out infinite',
-            boxShadow: '0 0 18px 6px rgba(252,211,77,0.9), 0 0 40px 16px rgba(251,191,36,0.45)',
+            offsetPath: 'circle(44px at 50% 50%)',
+            animation: 'lightseed-orbit 3.6s linear infinite',
+            boxShadow: SUN_GLOW,
           }}
         />
       </div>

@@ -66,7 +66,7 @@ import { LightseedProfile } from './components/LightseedProfile';
 import { Dashboard } from './components/Dashboard';
 import { Loading } from './components/ui/Loading';
 import { ScrollChevrons } from './components/ui/ScrollChevrons';
-import { ResonanceScan, CenteredResonanceLoader } from './components/ui/ResonanceScan';
+import { ResonanceScan } from './components/ui/ResonanceScan';
 import { ResonancePanel, ResonanceCard, resonanceId } from './components/ResonancePanel';
 import { SectionHeader } from './components/ui/SectionHeader';
 import { LifeseedWidget } from './components/LifeseedWidget';
@@ -1139,7 +1139,7 @@ const AppContent = () => {
                                 </div>
                             )}
                             {/* Living Intelligence Resonance — inside the same box. */}
-                            <ResonanceScan active={false}>
+                            <ResonanceScan active={isAnalyzingSynergy}>
                                 <div className="border-t border-amber-100">
                                     <div className="flex items-center justify-between gap-3 border-b border-amber-100 bg-amber-50/60 p-5">
                                         <div className="flex min-w-0 items-center gap-3">
@@ -1288,7 +1288,7 @@ const AppContent = () => {
                         >
                             <ResonancePanel synergies={synergies} className="mb-6" favorites={favoriteResonanceIds} onToggleFavorite={toggleFavoriteResonance} onReach={reachResonantTree} />
 
-                            <ResonanceScan active={false}>
+                            <ResonanceScan active={isAnalyzingSynergy}>
                                 <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                                     {filteredData.length === 0 && !loadingMore ? <p className="col-span-full text-center text-slate-400 py-10">{t('no_visions_found')}</p> :
                                         filteredData.map((item: any) => (
@@ -1413,8 +1413,6 @@ const AppContent = () => {
                 {renderMainContent()}
                 <GDPRBanner />
                 <DialogHost />
-                {/* Resonance / alignment matching: a centred lighted seed over the whole screen. */}
-                <CenteredResonanceLoader active={isAnalyzingSynergy} />
 
                 {showAuthModal && !lightseed && (
                     <AuthModal onClose={() => setShowAuthModal(false)} inviteId={inviteParam} inviteOnly={config.inviteOnly} />

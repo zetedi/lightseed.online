@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { fetchGrowthPulses, getLifetreeById } from '../services/firebase';
 import { Modal } from './ui/Modal';
+import { Icons } from './ui/Icons';
 
 // One frame of the evolution: the planting/genesis image first, then each growth pulse.
 interface Frame {
@@ -15,6 +16,8 @@ interface Frame {
 export const GrowthPlayerModal = ({ treeId, onClose }: { treeId: string, onClose: () => void }) => {
     const [frames, setFrames] = useState<Frame[]>([]);
     const [index, setIndex] = useState(0);
+    const [done, setDone] = useState(false);
+    const [playNonce, setPlayNonce] = useState(0); // bump to replay from the start
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -28,7 +31,6 @@ export const GrowthPlayerModal = ({ treeId, onClose }: { treeId: string, onClose
                 // fetchGrowthPulses returns newest-first; the evolution plays OLDEST -> NEWEST.
                 const growth = pulses.filter(p => p.imageUrl).reverse();
                 const out: Frame[] = [];
-                // The planting/genesis frame: the tree's first image + its vision.
                 if (tree?.imageUrl) {
                     out.push({ imageUrl: tree.imageUrl, title: `${tree.name} · Planted`, subtitle: tree.body, createdAt: tree.createdAt, isGenesis: true });
                 }
@@ -52,12 +54,26 @@ export const GrowthPlayerModal = ({ treeId, onClose }: { treeId: string, onClose
         return () => { alive = false; clearTimeout(timeout); };
     }, [treeId]);
 
+    // Play through ONCE (oldest -> newest), then stop and offer replay. Driving the index from a
+    // single local counter keeps the frame + caption + dots perfectly in sync.
     useEffect(() => {
-        if (frames.length > 1) {
-            const timer = setInterval(() => setIndex(i => (i + 1) % frames.length), 1400);
-            return () => clearInterval(timer);
-        }
-    }, [frames]);
+        if (frames.length === 0) return;
+        setIndex(0);
+        if (frames.length === 1) { setDone(true); return; }
+        setDone(false);
+        let i = 0;
+        const timer = setInterval(() => {
+            i += 1;
+            if (i >= frames.length - 1) {
+                setIndex(frames.length - 1);
+                setDone(true);
+                clearInterval(timer);
+                return;
+            }
+            setIndex(i);
+        }, 1400);
+        return () => clearInterval(timer);
+    }, [frames, playNonce]);
 
     const f = frames[index];
     const frameDate = (x: any) => x ? new Date(x?.toMillis?.() ?? x).toLocaleDateString() : '';
@@ -72,6 +88,20 @@ export const GrowthPlayerModal = ({ treeId, onClose }: { treeId: string, onClose
                         <img src={f.imageUrl} className="w-full h-64 object-cover rounded-lg shadow-lg mb-4" />
                         {f.isGenesis && (
                             <span className="absolute left-2 top-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800 shadow">🌱 PLANTING</span>
+                        )}
+                        {/* Replay — appears once the evolution has played through. Same green-on-yellow
+                            treatment as the hero Play Growth button. */}
+                        {done && frames.length > 1 && (
+                            <button
+                                type="button"
+                                onClick={() => setPlayNonce(n => n + 1)}
+                                title="Replay growth"
+                                className="absolute inset-0 mb-4 flex items-center justify-center rounded-lg bg-black/30 transition-colors hover:bg-black/40"
+                            >
+                                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-600 text-yellow-300 shadow-lg shadow-emerald-900/40 ring-2 ring-yellow-300/60 transition-transform active:scale-95">
+                                    <Icons.Refresh />
+                                </span>
+                            </button>
                         )}
                     </div>
                     <p className="text-center font-bold">{f.title}</p>

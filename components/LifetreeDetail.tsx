@@ -509,13 +509,20 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
 
             <div className="max-w-4xl mx-auto p-6 space-y-8">
                 {/* Hero */}
-                <div className="relative h-64 md:h-96 w-full rounded-2xl overflow-hidden shadow-xl">
-                    <img 
-                        src={tree.latestGrowthUrl || tree.imageUrl || 'https://via.placeholder.com/800x400'} 
-                        className="w-full h-full object-cover" 
+                <div className="relative h-44 md:h-64 w-full rounded-2xl overflow-hidden shadow-xl">
+                    <img
+                        src={tree.latestGrowthUrl || tree.imageUrl || 'https://via.placeholder.com/800x400'}
+                        className="w-full h-full object-cover"
                         alt={tree.name}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-transparent to-black/60"></div>
+                    {/* Tree name — top left. */}
+                    {!isEditing && (
+                        <div className="absolute top-4 left-6 right-12 text-white">
+                            <h1 dir="auto" className="text-2xl md:text-4xl font-thin tracking-tight drop-shadow-lg">{tree.name}</h1>
+                            {tree.shortTitle && <p dir="auto" className="mt-0.5 text-xs font-bold uppercase tracking-widest text-emerald-200 drop-shadow">{tree.shortTitle}</p>}
+                        </div>
+                    )}
                     {hasValidationBadge && (
                         <div className="absolute bottom-4 right-4 z-20">
                             <ValidationBadge />
@@ -530,9 +537,10 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                 </span>
                             ) : null}
                             <div className="flex items-center gap-2 sm:gap-3">
-                                <button onClick={() => onPlayGrowth(tree.id)} className="min-h-0 w-fit bg-white/20 hover:bg-white/30 text-white text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 rounded-full flex items-center space-x-1 backdrop-blur-sm transition-colors">
+                                <button onClick={() => onPlayGrowth(tree.id)} title="Play growth"
+                                    className="min-h-0 w-fit flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-yellow-300 px-3.5 py-1.5 shadow-lg shadow-emerald-900/40 ring-1 ring-yellow-300/50 transition-colors">
                                     <Icons.Play />
-                                    <span>PLAY GROWTH</span>
+                                    <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-white">Play Growth</span>
                                 </button>
                                 {canReach ? (
                                     <button onClick={() => onReachTree?.(tree)} className="min-h-0 w-fit bg-amber-500/90 hover:bg-amber-600 text-white text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 rounded-full flex items-center space-x-1 backdrop-blur-sm transition-colors">
@@ -575,16 +583,16 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                 )}
                             </div>
                         </div>
-                        {isEditing ? (
+                        {isEditing && (
                             <div className="space-y-2 max-w-md">
-                                <input 
+                                <input
                                     dir="auto"
                                     className="text-3xl md:text-4xl font-thin tracking-tight bg-black/40 border-b border-white/50 text-white w-full focus:outline-none p-1"
                                     value={editName}
                                     onChange={(e) => setEditName(e.target.value)}
                                     placeholder="Tree Name"
                                 />
-                                <input 
+                                <input
                                     dir="auto"
                                     className="text-sm font-bold tracking-widest uppercase bg-black/40 border-b border-white/50 text-white w-full focus:outline-none p-1"
                                     value={editShortTitle}
@@ -592,11 +600,6 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                     placeholder="SHORT TITLE"
                                 />
                             </div>
-                        ) : (
-                            <>
-                                <h1 dir="auto" className="text-4xl md:text-5xl font-thin tracking-tight">{tree.name}</h1>
-                                {tree.shortTitle && <p dir="auto" className="text-emerald-300 font-bold tracking-widest text-sm uppercase mt-1">{tree.shortTitle}</p>}
-                            </>
                         )}
                     </div>
                 </div>
@@ -769,39 +772,10 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                         )}
                     </div>
 
-                    {/* Right: Immutable chain & Guard Panel */}
+                    {/* Right: Guard / Watering / Circle panels. The Immutable Chain stats moved to
+                        the bottom of the chain visualization, below the genesis root. */}
                     <div className="space-y-6">
-                        {isNature ? (
-                            <GuardianshipPanel />
-                        ) : (
-                            <>
-                                 <div className="bg-slate-900 text-slate-300 p-6 rounded-2xl shadow-inner font-mono text-xs overflow-hidden relative">
-                                    <div className="absolute top-0 right-0 p-4 opacity-10">
-                                        <Logo width={100} height={100} />
-                                    </div>
-                                    <h3 className="text-emerald-400 font-bold uppercase tracking-wider mb-6 flex items-center">
-                                        <Icons.Hash />
-                                        <span className="ml-2">Immutable Chain</span>
-                                    </h3>
-
-                                    <div className="space-y-4 relative z-10">
-                                        <div>
-                                            <p className="text-slate-500 mb-1 uppercase text-[10px]">Block Height</p>
-                                            <p className="text-2xl text-white">{tree.blockHeight}</p>
-                                        </div>
-                                        <div className="break-all">
-                                            <p className="text-slate-500 mb-1 uppercase text-[10px]">{t('genesis')}</p>
-                                            <p className="text-emerald-500/80" dir="ltr">{tree.genesisHash}</p>
-                                        </div>
-                                        <div className="break-all">
-                                            <p className="text-slate-500 mb-1 uppercase text-[10px]">{t('latest_hash')}</p>
-                                            <p className="text-emerald-300" dir="ltr">{tree.latestHash}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <GuardianshipPanel />
-                            </>
-                        )}
+                        <GuardianshipPanel />
                         {(isNature || isOwner || localIsGuardian) && <WateringPanel />}
                         <TreeCirclePanel />
                     </div>
@@ -812,15 +786,14 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     <div className="mt-8 pt-8 border-t border-slate-200">
                         <div className="flex flex-col items-center mb-12">
                             <h3 className="text-xl font-light text-slate-800 mb-6 flex items-center gap-2">
-                                <span className="bg-emerald-100 p-2 rounded-full text-emerald-600"><Icons.Tree /></span>
                                 <span>Immutable Growth Chain</span>
                             </h3>
 
-                            {/* Action Button at the Top */}
+                            {/* Action Button at the Top — lightseed treatment (yellow glow). */}
                             {isOwner && (
-                                <button 
+                                <button
                                     onClick={onCreatePulse}
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-full font-bold uppercase tracking-widest transition-transform active:scale-95 flex items-center gap-2 mb-8 animate-in fade-in zoom-in slide-in-from-top-4 duration-700"
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-full font-bold uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 mb-8 ring-2 ring-yellow-300/60 shadow-[0_0_22px_rgba(250,204,21,0.55)] hover:shadow-[0_0_32px_rgba(250,204,21,0.85)] animate-in fade-in zoom-in slide-in-from-top-4 duration-700"
                                 >
                                     <Icons.HeartPulse />
                                     <span>Grow your tree with a pulse</span>
@@ -829,10 +802,10 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                         </div>
                         
                         <div className="relative flex flex-col items-start md:items-center">
-                            {/* Central Tree Trunk */}
-                            <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-3 md:w-6 -ml-1.5 md:-ml-3 bg-[#5D4037] rounded-full shadow-inner overflow-hidden z-0">
-                                {/* Bark texture simulation */}
-                                <div className="absolute inset-0 opacity-20 bg-black/20" style={{backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.1) 10px, rgba(0,0,0,0.1) 20px)'}}></div>
+                            {/* Central Tree Trunk — a rounded cylinder with vertical bark grain. */}
+                            <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-4 md:w-8 -ml-2 md:-ml-4 rounded-t-full rounded-b-2xl shadow-inner overflow-hidden z-0"
+                                 style={{ background: 'linear-gradient(90deg, #3E2723 0%, #6D4C41 45%, #8D6E63 55%, #4E342E 100%)' }}>
+                                <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'repeating-linear-gradient(90deg, transparent 0, transparent 3px, rgba(0,0,0,0.18) 3px, rgba(0,0,0,0.18) 5px)' }}></div>
                             </div>
 
                             <div className="w-full space-y-12 md:space-y-24 pb-24 relative z-10">
@@ -876,7 +849,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                                 <div 
                                                     onClick={() => onViewPulse(pulse)}
                                                     className={`
-                                                        relative bg-white border-2 border-emerald-100 shadow-sm hover:shadow-xl hover:border-emerald-300 
+                                                        relative bg-white border-2 border-emerald-100 shadow-md shadow-emerald-600/20 hover:shadow-xl hover:shadow-emerald-500/30 hover:border-emerald-300
                                                         transition-all cursor-pointer group w-full md:max-w-sm rounded-xl
                                                         ${isRightSide 
                                                             ? 'md:rounded-tl-[0] md:rounded-bl-[3rem] md:rounded-tr-[2rem] md:rounded-br-[2rem] md:text-left' 
@@ -937,8 +910,8 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                              <path d="M0,0 L0,40" stroke="currentColor" strokeWidth="6" />
                                          </svg>
                                          
-                                         {/* The base is the PLANTING card: the genesis block carrying the vision. */}
-                                         <div className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border-4 border-[#3E2723] bg-[#5D4037] text-amber-100 shadow-xl md:w-auto">
+                                         {/* The base is the PLANTING card: the genesis block (root) carrying the vision. */}
+                                         <div className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border-4 border-[#3E2723] bg-[#5D4037] text-amber-100 shadow-xl ring-4 ring-emerald-600/25 md:w-auto">
                                              {tree.imageUrl && (
                                                  <div className="relative h-40 w-full">
                                                      <img src={tree.imageUrl} alt={tree.name} className="h-full w-full object-cover opacity-90" />
@@ -950,7 +923,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                                  <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full border border-amber-500/30 bg-amber-900/50 text-amber-200">
                                                      <Logo width={22} height={22} />
                                                  </div>
-                                                 <h4 className="mb-2 text-xs font-bold uppercase tracking-widest text-amber-200">Planted · Genesis</h4>
+                                                 <h4 className="mb-2 text-xs font-bold uppercase tracking-widest text-amber-200">Root · Planted · Genesis</h4>
                                                  {tree.body && <p dir="auto" className="mx-auto mb-2 max-w-xs text-sm italic leading-relaxed text-amber-50/90">"{tree.body}"</p>}
                                                  <p className="text-[11px] text-amber-200/70">
                                                      {tree.createdAt?.toDate ? tree.createdAt.toDate().toLocaleDateString() : (tree.createdAt ? new Date(tree.createdAt?.toMillis?.() ?? tree.createdAt).toLocaleDateString() : '')}
@@ -961,6 +934,28 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                          </div>
                                     </div>
                                 )}
+                            </div>
+                        </div>
+
+                        {/* Immutable chain stats — the root-to-latest ledger, at the foot of the chain. */}
+                        <div className="relative mt-4 overflow-hidden rounded-2xl bg-slate-900 p-6 font-mono text-xs text-slate-300 shadow-inner">
+                            <div className="absolute top-0 right-0 p-4 opacity-10"><Logo width={100} height={100} /></div>
+                            <h3 className="mb-6 flex items-center font-bold uppercase tracking-wider text-emerald-400">
+                                <Icons.Hash /><span className="ml-2">Immutable Chain</span>
+                            </h3>
+                            <div className="relative z-10 grid gap-4 sm:grid-cols-3">
+                                <div>
+                                    <p className="mb-1 text-[10px] uppercase text-slate-500">Block Height</p>
+                                    <p className="text-2xl text-white">{tree.blockHeight}</p>
+                                </div>
+                                <div className="break-all">
+                                    <p className="mb-1 text-[10px] uppercase text-slate-500">{t('genesis')} · root</p>
+                                    <p className="text-emerald-500/80" dir="ltr">{tree.genesisHash}</p>
+                                </div>
+                                <div className="break-all">
+                                    <p className="mb-1 text-[10px] uppercase text-slate-500">{t('latest_hash')}</p>
+                                    <p className="text-emerald-300" dir="ltr">{tree.latestHash}</p>
+                                </div>
                             </div>
                         </div>
                     </div>
