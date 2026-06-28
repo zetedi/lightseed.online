@@ -137,15 +137,28 @@ service cloud.firestore {
         isStaff() ||
         isCommunityOwner(request.resource.data.communityId)
       );
-      // Loves / seen / translations stay open to any signed-in user (broad by design). But a
-      // watering confirmation is a trust signal, so CHANGING wateringConfirmedBy is limited to
-      // the tree's guardians/owner (the LIN) or staff. A normal update leaves the field
-      // unchanged, so the first clause short-circuits and pays no extra read.
-      allow update: if isSignedIn() && (
-        request.resource.data.get('wateringConfirmedBy', '') == resource.data.get('wateringConfirmedBy', '')
-        || isStaff()
-        || isTreeGuardian(resource.data.get('lifetreeId', ''))
-      );
+      // Loves / seen / translations stay open to any signed-in user (broad by design). Two
+      // trust-sensitive changes are gated:
+      //  • wateringConfirmedBy — only the tree's guardians/owner or staff may change it;
+      //  • a decision's STATUS or RESUMING it (listening true→false) — only the proposer, the
+      //    community owner, or staff. Voting and raising a concern (listening false→true) stay
+      //    open to signed-in members. Unchanged fields short-circuit, so loves pay no extra read.
+      allow update: if isSignedIn()
+        && (
+          request.resource.data.get('wateringConfirmedBy', '') == resource.data.get('wateringConfirmedBy', '')
+          || isStaff()
+          || isTreeGuardian(resource.data.get('lifetreeId', ''))
+        )
+        && (
+          resource.data.get('type', '') != 'decision'
+          || (
+               request.resource.data.get('status', '') == resource.data.get('status', '')
+               && !(resource.data.get('listening', false) == true && request.resource.data.get('listening', false) == false)
+             )
+          || isStaff()
+          || resource.data.get('proposedBy', '') == request.auth.uid
+          || isCommunityOwner(resource.data.get('communityId', ''))
+        );
       allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff() || isCommunityOwner(resource.data.communityId));
 
       // Loves subcollection

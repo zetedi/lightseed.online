@@ -127,15 +127,24 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel = "Back", ca
                             </div>
                         )}
                         {pulse.care === 'watering' && (
-                            <div className="mb-4 grid gap-1 rounded-2xl border border-sky-100 bg-sky-50 p-4 text-sm text-sky-900">
-                                <div className="flex items-center gap-2 font-bold">
-                                    <Icons.Droplet size={16} />
-                                    <span>Watering {pulse.wateringConfirmedBy === 'ai' ? '· confirmed by AI' : pulse.wateringConfirmedBy === 'guardian' ? '· confirmed by a guardian' : '· awaiting confirmation'}</span>
-                                </div>
-                                {pulse.wateringConfirmation?.note && <div className="italic text-sky-800/90">"{pulse.wateringConfirmation.note}"</div>}
-                                {pulse.wateringConfirmedBy === 'ai' && typeof pulse.wateringConfirmation?.confidence === 'number' && (
-                                    <div className="text-xs text-sky-700/70">AI confidence: {pulse.wateringConfirmation.confidence}%</div>
+                            <div className="mb-4 grid gap-1.5 rounded-2xl border border-sky-100 bg-sky-50 p-4 text-sm text-sky-900">
+                                <div className="flex items-center gap-2 font-bold"><Icons.Droplet size={16} /> <span>Watering</span></div>
+                                {/* The AI's reading — a witness, not the authority. */}
+                                {typeof pulse.wateringConfirmation?.confidence === 'number' && (
+                                    <div className="text-xs text-sky-800/90">
+                                        <span className="font-semibold">AI reading:</span> {pulse.wateringConfirmation.confidence}% consistent with watering
+                                        {pulse.wateringConfirmation?.note && <span className="italic"> — “{pulse.wateringConfirmation.note}”</span>}
+                                    </div>
                                 )}
+                                {/* The human reading — who says "yes, this was tended". */}
+                                <div className="text-xs text-sky-800/90">
+                                    <span className="font-semibold">Tended:</span>{' '}
+                                    {pulse.wateringConfirmedBy === 'guardian'
+                                        ? 'confirmed by a guardian'
+                                        : pulse.wateringConfirmedBy === 'ai'
+                                            ? 'auto-accepted on the AI reading — a guardian can still confirm'
+                                            : 'awaiting a guardian’s confirmation'}
+                                </div>
                             </div>
                         )}
                         <p dir="auto" className="text-slate-600 leading-relaxed whitespace-pre-wrap font-serif text-lg">

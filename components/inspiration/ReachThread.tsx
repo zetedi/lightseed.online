@@ -434,10 +434,10 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                     .filter(m => !m.system)
                     .map(m => `${m.role === 'user' ? meName : (m.authorPersonName || m.authorName || partnerLabel)}: ${m.text}`)
                     .join('\n\n');
-                // The record on the tree — a STANDARD pulse shows in the tree's growth chain (and the LIN).
+                // The record on the tree — a 'standard' pulse shows in the tree's growth chain (and the LIN).
                 await mintPulse({
                     lifetreeId: activeTree.id,
-                    type: 'STANDARD',
+                    type: 'standard',
                     title: `Minted conversation · ${partnerLabel}`,
                     body: conversationText,
                     reachTreeId: selectedTree?.id || groupThread?.partnerId,
@@ -477,7 +477,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
             }
             await mintPulse({
                 lifetreeId: activeTree.id,
-                type: 'STANDARD',
+                type: 'standard',
                 title: `${aiName} Wisdom`,
                 body: conversationText,
                 imageUrl: finalImageUrl,

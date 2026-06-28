@@ -809,7 +809,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                     // index 1, 3, 5 (Odd) -> Left Side (Desktop)
                                     const isRightSide = index % 2 === 0;
                                     const pulseImages = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
-                                    const pulseBadge = pulse.type === 'event' ? 'EVENT' : pulse.type === 'GROWTH' ? 'GROWTH' : 'PULSE';
+                                    const pulseBadge = pulse.type === 'event' ? 'EVENT' : pulse.type === 'tree_growth' ? 'GROWTH' : 'PULSE';
                                     
                                     return (
                                         <div key={pulse.id} className={`flex w-full relative ${isRightSide ? 'md:justify-end' : 'md:justify-start'} justify-start`}>
@@ -866,7 +866,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                                                 <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 rounded-full font-bold">PULSE</span>
                                                             )}
                                                             {(pulse as any).care === 'watering' && (
-                                                                <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-1" title={(pulse as any).wateringConfirmation?.note || ''}>💧 {(pulse as any).wateringConfirmedBy === 'ai' ? 'AI' : (pulse as any).wateringConfirmedBy === 'guardian' ? 'Guardian' : 'Pending'}</span>
+                                                                <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-1" title={(pulse as any).wateringConfirmation?.note || ''}>💧 {typeof (pulse as any).wateringConfirmation?.confidence === 'number' ? `${(pulse as any).wateringConfirmation.confidence}%` : ''}{(pulse as any).wateringConfirmedBy === 'guardian' ? ' ✓' : ''}</span>
                                                             )}
                                                             <span className="text-xs text-slate-400 font-mono">{new Date(pulse.createdAt?.toMillis()).toLocaleDateString()}</span>
                                                         </div>

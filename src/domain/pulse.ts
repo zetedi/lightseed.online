@@ -2,8 +2,32 @@ import type { Timestamp } from 'firebase/firestore';
 import type { Entity } from './entity';
 import type { ReachAudience } from './reach';
 
+// Canonical pulse types are explicit lowercase tokens. Casing/identity previously encoded
+// meaning (a footgun): 'GROWTH' = a tree's growth, lowercase 'growth' = a VISION's growth,
+// 'STANDARD' = an alignment pulse. We give each a distinct canonical name so NOTHING is
+// ambiguous (crucially, tree growth is 'tree_growth', NOT the old lowercase 'growth'):
+//   tree growth   → 'tree_growth'   (legacy 'GROWTH')
+//   vision growth → 'vision_growth' (legacy lowercase 'growth')
+//   alignment     → 'standard'      (legacy 'STANDARD')
+// Legacy values are converted at the repository boundary (normalizePulseType) and migrated once
+// (migratePulseTypeCasing). New writes are always canonical. Because tree growth no longer uses
+// the token 'growth', the migration of old 'growth'→'vision_growth' can never touch a new write.
 export type LegacyPulseType = 'STANDARD' | 'GROWTH';
-export type PulseType = 'observation' | 'dream' | 'offering' | 'request' | 'translation' | 'validation' | 'event' | 'growth' | 'reach' | LegacyPulseType;
+export type PulseType = 'observation' | 'dream' | 'offering' | 'request' | 'translation' | 'validation' | 'event' | 'tree_growth' | 'vision_growth' | 'standard' | 'reach';
+
+// Convert a stored `type` to its canonical form. Unambiguous in every window: 'GROWTH' is always
+// tree growth, lowercase 'growth' is always (old) vision growth — tree growth never used 'growth'.
+export const normalizePulseType = (t?: string): PulseType => {
+  switch (t) {
+    case 'GROWTH': return 'tree_growth';
+    case 'growth': return 'vision_growth';
+    case 'STANDARD': return 'standard';
+    default: return (t || 'observation') as PulseType;
+  }
+};
+
+// True for a tree growth pulse (tolerates the legacy 'GROWTH').
+export const isTreeGrowth = (t?: string): boolean => normalizePulseType(t) === 'tree_growth';
 
 // Who may see a pulse, relative to where it is rooted (its scope: tree / community / node).
 // 'public' = anyone; 'node' = any signed-in member; 'community' = members of its community;
@@ -57,7 +81,7 @@ export interface Pulse extends Entity {
   aiInterpretation?: PulseInterpretation;
   validationScore?: number;
 
-  // Watering / care. A confirmed watering is a growth pulse (type 'GROWTH') carrying the
+  // Watering / care. A confirmed watering is a growth pulse (type 'growth') carrying the
   // `care: 'watering'` flag, the proof image (imageUrl), and a witness. `careAlert` instead
   // marks a "water me" reach (a DM, not a growth block) so the DM UI can give it a blue
   // border. See src/domain/watering.ts.

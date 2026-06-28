@@ -20,6 +20,24 @@ export const DECISION_NATURES: { id: DecisionNature; votes: number }[] = [
 export const votesRequired = (nature: DecisionNature): number =>
   DECISION_NATURES.find(n => n.id === nature)?.votes ?? 1;
 
+// A concern raised on an open proposal — a veto that opens reflection rather than just halting.
+export interface Concern {
+  by: string;       // uid who raised it
+  note?: string;    // what the concern is
+  at: Timestamp;
+}
+
+export type DecisionStatus = 'draft' | 'open' | 'passed' | 'rejected' | 'withdrawn' | 'expired';
+
+export const decisionStatusLabels: Record<DecisionStatus, string> = {
+  draft: 'Draft',
+  open: 'Open',
+  passed: 'Passed',
+  rejected: 'Not adopted',
+  withdrawn: 'Withdrawn',
+  expired: 'Expired',
+};
+
 export interface Decision {
   id: string;
   lid?: string; // Lightseed ID — the decision's portable, time-ordered true name (UUIDv7).
@@ -32,11 +50,18 @@ export interface Decision {
   proposedBy: string;   // uid — counts as the first voice
   votes: string[];      // uids who have voiced yes
   votesRequired: number;
-  status: 'open' | 'passed';
+  status: DecisionStatus;
+  // Reflection: a veto doesn't just stop the count — it opens listening. While `listening`,
+  // the proposal pauses (it can't pass) and the raised concerns are shown, until they're tended.
+  listening?: boolean;
+  concerns?: Concern[];
   // Immutable chain — a decision is an event on the ledger.
   previousHash: string;
   hash: string;
   enactedHash?: string; // the block written when the circle reaches the threshold
   createdAt: Timestamp;
   passedAt?: Timestamp;
+  withdrawnAt?: Timestamp;
+  rejectedAt?: Timestamp;
+  expiresAt?: Timestamp;
 }

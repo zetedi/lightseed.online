@@ -7,6 +7,9 @@
 
 A living network where every Lifetree is an immutable chain of moments — a bridge between the inner Self, real trees, and the digital world.
 
+> Lightseed is not a platform asking humans to feed an algorithm.
+> It is a network in which attention returns to living beings, relationships, and places.
+
 ## 🌟 Core Concepts
 
 - **Lifetree**: A digital–physical being with an immutable chain (genesis → growth). Planted by a person, community, project, or a guarded wild tree. Its standing is **validated** by another live tree.

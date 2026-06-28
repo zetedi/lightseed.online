@@ -7,6 +7,7 @@ import {
   fetchEventPulses,
   backfillPulseVisibility,
   migrateArraysToLinks,
+  migratePulseTypeCasing,
   dropLegacyArrays,
   createEvent,
   updateEvent,
@@ -464,6 +465,14 @@ const AppContent = () => {
             console.log('[lightseed] done — links created:', r);
             return r;
         };
+        // Pulse type casing → canonical lowercase (GROWTH→growth, growth→vision_growth,
+        // STANDARD→standard). Run once after deploy. Idempotent.
+        w.migratePulseTypeCasing = async () => {
+            console.log('[lightseed] migrating pulse type casing → lowercase…');
+            const n = await migratePulseTypeCasing();
+            console.log(`[lightseed] done — retyped ${n} pulse(s).`);
+            return n;
+        };
         // LIN migration (stage 5): drop the legacy arrays — ONLY after links are live + verified.
         w.dropLegacyArrays = async () => {
             console.log('[lightseed] dropping legacy relationship arrays…');
@@ -471,7 +480,7 @@ const AppContent = () => {
             console.log(`[lightseed] done — cleared arrays on ${n} doc(s).`);
             return n;
         };
-        return () => { delete w.backfillPulseVisibility; delete w.migrateArraysToLinks; delete w.dropLegacyArrays; };
+        return () => { delete w.backfillPulseVisibility; delete w.migrateArraysToLinks; delete w.migratePulseTypeCasing; delete w.dropLegacyArrays; };
     }, [isSuperAdmin]);
 
     // Events for the logged-in home carousel — visibility-scoped to this viewer + node.
@@ -801,7 +810,7 @@ const AppContent = () => {
             const url = await handleImageUpload(file, `users/${lightseed.uid}/growth/${treeId}/${Date.now()}`);
             await mintPulse({
                 lifetreeId: treeId,
-                type: 'GROWTH',
+                type: 'tree_growth',
                 title: 'Growth Snapshot',
                 body: `Snapped on ${new Date().toLocaleDateString()}`,
                 imageUrl: url,

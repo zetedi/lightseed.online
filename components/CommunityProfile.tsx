@@ -4,8 +4,8 @@ import { showAlert, showConfirm } from "./ui/Dialog";
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
 import { Community, Lifetree, Lightseed, Pulse, Intelligence, Persona, Sanctuary } from '../types';
-import { updateCommunity, uploadImage, getTreesByDomain, deleteCommunity, createCommunityEvent, updateEvent, deleteCommunityEvent, getCommunityByDomain, getCommunityEvents, getSanctuariesByDomain, createDecision, voteOnDecision, getDecisions } from '../services/firebase';
-import { DECISION_NATURES, type Decision, type DecisionNature } from '../src/domain/decision';
+import { updateCommunity, uploadImage, getTreesByDomain, deleteCommunity, createCommunityEvent, updateEvent, deleteCommunityEvent, getCommunityByDomain, getCommunityEvents, getSanctuariesByDomain, createDecision, voteOnDecision, getDecisions, raiseConcern, resumeDecision, withdrawDecision } from '../services/firebase';
+import { DECISION_NATURES, decisionStatusLabels, type Decision, type DecisionNature } from '../src/domain/decision';
 import { getSelectableIntelligences, listPersonas } from '../services/intelligence';
 import RichTextEditor from './ui/RichTextEditor';
 import { ImagePicker } from './ui/ImagePicker';
@@ -128,8 +128,36 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const handleVote = async (id: string) => {
     if (!currentUserId) { showAlert('Sign in to add your voice.'); return; }
     setVotingId(id);
-    try { await voteOnDecision(id, currentUserId); refreshDecisions(); }
+    try {
+      const outcome = await voteOnDecision(id, currentUserId);
+      if (outcome === 'listening') showAlert('This proposal is in listening — a concern was raised. It can continue once the concern is tended.');
+      refreshDecisions();
+    }
     catch (e: any) { showAlert(e?.message || 'Could not record your voice.'); }
+    setVotingId(null);
+  };
+
+  const handleRaiseConcern = async (id: string) => {
+    if (!currentUserId) { showAlert('Sign in to raise a concern.'); return; }
+    if (!(await showConfirm('Raise a concern? This pauses the proposal and opens a reflective listening — it does not reject it.', { title: 'Raise a concern', confirmText: 'Raise concern' }))) return;
+    setVotingId(id);
+    try { await raiseConcern(id, currentUserId); refreshDecisions(); }
+    catch (e: any) { showAlert(e?.message || 'Could not raise the concern.'); }
+    setVotingId(null);
+  };
+
+  const handleResume = async (id: string) => {
+    setVotingId(id);
+    try { await resumeDecision(id); refreshDecisions(); }
+    catch (e: any) { showAlert(e?.message || 'Could not resume.'); }
+    setVotingId(null);
+  };
+
+  const handleWithdraw = async (id: string) => {
+    if (!(await showConfirm('Withdraw this proposal?', { title: 'Withdraw', confirmText: 'Withdraw', danger: true }))) return;
+    setVotingId(id);
+    try { await withdrawDecision(id); refreshDecisions(); }
+    catch (e: any) { showAlert(e?.message || 'Could not withdraw.'); }
     setVotingId(null);
   };
   const [togglingId, setTogglingId] = useState<string | null>(null);
@@ -812,7 +840,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                 ) : (
                   <div className="space-y-3">
                     {councilView(decisions, currentUserId).map(d => (
-                        <div key={d.id} className={`rounded-2xl border p-4 ${d.passed ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-white'}`}>
+                        <div key={d.id} className={`rounded-2xl border p-4 ${d.passed ? 'border-emerald-200 bg-emerald-50/40' : d.listening ? 'border-indigo-200 bg-indigo-50/40' : d.closed ? 'border-slate-200 bg-slate-50' : 'border-slate-200 bg-white'}`}>
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-2">
@@ -820,16 +848,37 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                                 <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-500">{t(('nature_' + d.nature) as any)}</span>
                                 {d.passed
                                   ? <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">{t('passed')}</span>
-                                  : <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">{t('decision_open')}</span>}
+                                  : d.listening
+                                    ? <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold uppercase text-indigo-700">Listening</span>
+                                    : d.closed
+                                      ? <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600">{decisionStatusLabels[d.status] || 'Closed'}</span>
+                                      : <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">{t('decision_open')}</span>}
                               </div>
                               {d.body && <p className="mt-1 text-xs italic text-slate-500">{d.body}</p>}
                               <div className="mt-2 text-[11px] font-bold text-slate-400">{d.voiceCount} / {d.voicesRequired} {t('voices')}</div>
+                              {d.listening && (
+                                <div className="mt-2 rounded-xl border border-indigo-100 bg-indigo-50 p-2.5 text-[11px] text-indigo-800">
+                                  <p className="font-semibold">A concern was raised. This proposal has entered listening.</p>
+                                  {d.concerns.filter(c => c.note).slice(-3).map((c, i) => <p key={i} className="mt-1 italic">“{c.note}”</p>)}
+                                </div>
+                              )}
                             </div>
-                            {!d.passed && (
-                              <button onClick={() => handleVote(d.id)} disabled={votingId === d.id || d.voted} className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${d.voted ? 'bg-slate-100 text-slate-400' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}>
-                                {d.voted ? t('voted') : (votingId === d.id ? '…' : t('vote'))}
-                              </button>
-                            )}
+                            <div className="flex shrink-0 flex-col items-end gap-1.5">
+                              {!d.passed && !d.closed && !d.listening && (
+                                <button onClick={() => handleVote(d.id)} disabled={votingId === d.id || d.voted} className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${d.voted ? 'bg-slate-100 text-slate-400' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}>
+                                  {d.voted ? t('voted') : (votingId === d.id ? '…' : t('vote'))}
+                                </button>
+                              )}
+                              {!d.passed && !d.closed && !d.listening && currentUserId && (
+                                <button onClick={() => handleRaiseConcern(d.id)} disabled={votingId === d.id} className="rounded-full px-3 py-1 text-[11px] font-bold text-indigo-600 hover:bg-indigo-50 disabled:opacity-50">Raise a concern</button>
+                              )}
+                              {d.listening && (d.isProposer || canEdit) && (
+                                <button onClick={() => handleResume(d.id)} disabled={votingId === d.id} className="rounded-full bg-indigo-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-indigo-700 disabled:opacity-50">Tend &amp; resume</button>
+                              )}
+                              {!d.passed && !d.closed && (d.isProposer || canEdit) && (
+                                <button onClick={() => handleWithdraw(d.id)} disabled={votingId === d.id} className="rounded-full px-3 py-1 text-[11px] font-medium text-slate-400 transition-colors hover:text-red-500">Withdraw</button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       ))}

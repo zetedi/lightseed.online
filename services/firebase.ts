@@ -51,7 +51,7 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import { type Pulse, type PulseType, type Lifetree, type Alignment, type Vision, type Community, type Sanctuary, type TreeOwnershipInvite, type InvitableRole, type Decision, type DecisionNature, votesRequired, type ReachAudience } from '../types';
 import { createBlock } from '../utils/crypto';
 import { uuidv7 } from '../utils/id';
-import type { PulseVisibility } from '../src/domain/pulse';
+import { normalizePulseType, isTreeGrowth, type PulseVisibility } from '../src/domain/pulse';
 import { daysOverdue, computeNextDueMillis, wateringAlertedToday, type WateringMode, type WateringAnalysis } from '../src/domain/watering';
 import { oldEmeraldEarthThemeValues } from '../utils/theme';
 import { isExplicitlyValidatedTree } from '../utils/validation';
@@ -60,6 +60,13 @@ import { buildThreadId, buildGroupThreadId, reachAudienceLabels } from '../utils
 // Robustly read a millisecond timestamp from a Firestore Timestamp, a JS Date, or nothing.
 const toMillis = (value: any): number =>
     value?.toMillis ? value.toMillis() : (value instanceof Date ? value.getTime() : 0);
+
+// Repository boundary: map a Firestore pulse doc → Pulse, normalising the legacy UPPERCASE
+// type casing to canonical lowercase so the rest of the app only ever sees one form.
+const mapPulse = (d: any): Pulse => {
+    const data = d.data() as any;
+    return { id: d.id, ...data, type: normalizePulseType(data.type) } as Pulse;
+};
 
 const SYSTEM_EMAIL_FROM = "lightseed <admin@lightseed.online>";
 
@@ -994,6 +1001,24 @@ export const backfillPulseVisibility = async (): Promise<number> => {
     return missing.length;
 };
 
+// One-time migration to canonical pulse types. Casing/identity previously encoded meaning:
+// 'GROWTH' = tree growth, lowercase 'growth' = vision growth, 'STANDARD' = alignment. We map,
+// per doc by EXACT legacy value: GROWTH→tree_growth, growth→vision_growth, STANDARD→standard.
+// New writes already use the canonical tokens (tree_growth/vision_growth/standard), which are NOT
+// remap keys — so running this during/after deploy can never corrupt a freshly-written pulse.
+// Staff-run, idempotent. Returns the count rewritten.
+export const migratePulseTypeCasing = async (): Promise<number> => {
+    const snap = await getDocs(pulsesCollection);
+    const remap: Record<string, string> = { GROWTH: 'tree_growth', growth: 'vision_growth', STANDARD: 'standard' };
+    const toFix = snap.docs.filter(d => remap[(d.data() as any).type] !== undefined);
+    for (let i = 0; i < toFix.length; i += 400) {
+        const batch = writeBatch(db);
+        toFix.slice(i, i + 400).forEach(d => batch.update(d.ref, { type: remap[(d.data() as any).type] }));
+        await batch.commit();
+    }
+    return toFix.length;
+};
+
 // --- LIN migration: legacy relationship arrays → the `links` collection ---------------------
 // Stage 3 of the crystal. Create one link doc per relationship (deterministic id → idempotent).
 // Run from the superadmin console AFTER the links rules are deployed; safe to re-run.
@@ -1088,18 +1113,24 @@ export const createDecision = async (
     return { id: ref.id, lid, ...payload, previousHash: 'DECISION', hash } as unknown as Decision;
 };
 
-// Add a voice. When the circle reaches the threshold, the decision passes and an
-// enactment block is written to the chain. Transactional so two votes can't race past it.
-export const voteOnDecision = async (decisionId: string, uid: string): Promise<'passed' | 'open' | 'already'> => {
+// Add a voice. When the circle reaches the threshold, the decision passes and an enactment
+// block is written to the chain. Transactional so two votes can't race past it. A decision that
+// is closed (passed/withdrawn/rejected/expired) or in `listening` (a concern was raised) does
+// not accept votes until it is resumed.
+export type VoteOutcome = 'passed' | 'open' | 'already' | 'listening' | 'closed';
+export const voteOnDecision = async (decisionId: string, uid: string): Promise<VoteOutcome> => {
+    const actor = auth.currentUser?.uid || uid; // record the authenticated voice, not a client-supplied id
     const ref = doc(db, 'pulses', decisionId);
     return runTransaction(db, async (tx) => {
         const snap = await tx.get(ref);
         if (!snap.exists()) throw new Error('Decision not found.');
         const d = snap.data() as any;
         if (d.status === 'passed') return 'passed' as const;
+        if (['withdrawn', 'rejected', 'expired'].includes(d.status)) return 'closed' as const;
+        if (d.listening) return 'listening' as const; // paused for reflection until the concern is tended
         const votes: string[] = Array.isArray(d.votes) ? d.votes : [];
-        if (votes.includes(uid)) return 'already' as const;
-        const next = [...votes, uid];
+        if (votes.includes(actor)) return 'already' as const;
+        const next = [...votes, actor];
         const required = d.votesRequired ?? votesRequired(d.nature);
         if (next.length >= required) {
             const enactedHash = await createBlock(d.hash || 'DECISION', { decision: decisionId, votes: next, enacted: true }, Date.now());
@@ -1110,6 +1141,37 @@ export const voteOnDecision = async (decisionId: string, uid: string): Promise<'
         return 'open' as const;
     });
 };
+
+// Raise a concern (a veto that opens reflection, not just a halt). Records the concern and puts
+// the decision into `listening` — a visible, reflective pause ("A concern was raised. This
+// proposal has entered listening.") that stops it passing until the concern is tended.
+export const raiseConcern = async (decisionId: string, uid: string, note?: string): Promise<'listening' | 'closed'> => {
+    const actor = auth.currentUser?.uid || uid;
+    const ref = doc(db, 'pulses', decisionId);
+    return runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+        if (!snap.exists()) throw new Error('Decision not found.');
+        const d = snap.data() as any;
+        if (['passed', 'withdrawn', 'rejected', 'expired'].includes(d.status)) return 'closed' as const;
+        // One concern per voice (a re-raise replaces it) — bounds the array, no spam. And
+        // serverTimestamp() can't live inside an array element, so stamp the concern client-side.
+        const concerns = (Array.isArray(d.concerns) ? d.concerns : []).filter((c: any) => c.by !== actor);
+        tx.update(ref, { listening: true, concerns: [...concerns, { by: actor, note: note || '', at: Timestamp.fromMillis(Date.now()) }] });
+        return 'listening' as const;
+    });
+};
+
+// Tend the concern: lift the listening pause so the circle can continue. (Concerns are kept.)
+export const resumeDecision = (decisionId: string) =>
+    updateDoc(doc(db, 'pulses', decisionId), { listening: false });
+
+// The proposer (or staff) withdraws their proposal.
+export const withdrawDecision = (decisionId: string) =>
+    updateDoc(doc(db, 'pulses', decisionId), { status: 'withdrawn', listening: false, withdrawnAt: serverTimestamp() });
+
+// Close a proposal as not adopted.
+export const rejectDecision = (decisionId: string) =>
+    updateDoc(doc(db, 'pulses', decisionId), { status: 'rejected', listening: false, rejectedAt: serverTimestamp() });
 
 export const getDecisions = async (communityId: string): Promise<Decision[]> => {
     const snap = await getDocs(query(pulsesCollection, where('communityId', '==', communityId)));
@@ -1187,7 +1249,7 @@ const fetchPulsesRaw = async (lastD?: QueryDocumentSnapshot, domainFilter?: stri
 
     if (lastD) q = query(q, startAfter(lastD));
     const snap = await getDocs(q);
-    let items = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Pulse));
+    let items = snap.docs.map(mapPulse);
 
     if (domainFilter && !isHubDomain(domainFilter)) {
         items = items.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
@@ -1501,8 +1563,11 @@ export const getLifetreeById = async (id: string): Promise<Lifetree | null> => {
     return snap.exists() ? ({ id: snap.id, ...(snap.data() as any) } as Lifetree) : null;
 };
 
-export const getMyPulses = async (uid: string) => (await getDocs(query(pulsesCollection, where('authorId', '==', uid)))).docs.map(d => ({ id: d.id, ...(d.data() as any) } as Pulse)).filter(p => !NON_FEED_PULSE_TYPES.has((p as any).type)).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-export const fetchGrowthPulses = async (treeId: string) => (await getDocs(query(pulsesCollection, where('lifetreeId', '==', treeId), where('type', '==', 'GROWTH')))).docs.map(d => ({ id: d.id, ...(d.data() as any) } as Pulse)).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+export const getMyPulses = async (uid: string) => (await getDocs(query(pulsesCollection, where('authorId', '==', uid)))).docs.map(mapPulse).filter(p => !NON_FEED_PULSE_TYPES.has((p as any).type)).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+// Tree growth pulses — canonical 'tree_growth' plus legacy 'GROWTH' (until migration runs). Old
+// VISION growths ('growth'/'vision_growth') are deliberately excluded, so there is no transition
+// window where they leak into a tree's growth timeline.
+export const fetchGrowthPulses = async (treeId: string) => (await getDocs(query(pulsesCollection, where('lifetreeId', '==', treeId), where('type', 'in', ['tree_growth', 'GROWTH'])))).docs.map(mapPulse).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 
 export const getPulsesByTreeId = async (treeId: string) => {
     // Exclude reaches/tree_chat: they are private DMs minted onto the sender tree's chain, so
@@ -1511,7 +1576,7 @@ export const getPulsesByTreeId = async (treeId: string) => {
     // rules for any other viewer, breaking the whole tree page. Needs the (lifetreeId, type) index.
     const q = query(pulsesCollection, where('lifetreeId', '==', treeId), where('type', 'not-in', ['reach', 'tree_chat']));
     const snap = await getDocs(q);
-    const pulses = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Pulse));
+    const pulses = snap.docs.map(mapPulse);
     // Sort Descending (Newest -> Oldest/Genesis) so the timeline can be rendered top-down
     return pulses.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 }
@@ -1528,8 +1593,10 @@ export const mintPulse = async (pulseData: any, extraTreeUpdate?: Record<string,
         const newHash = await createBlock(tree.latestHash, pulseData, Date.now());
         const newPulseRef = doc(pulsesCollection);
         const domain = tree.domain || window.location.hostname.replace(/^www\./, '');
+        const canonicalType = normalizePulseType(pulseData.type); // write canonical lowercase
         t.set(newPulseRef, {
             ...pulseData,
+            type: canonicalType,
             domain,
             id: newPulseRef.id,
             visibility: pulseData.visibility || 'public',
@@ -1539,14 +1606,12 @@ export const mintPulse = async (pulseData: any, extraTreeUpdate?: Record<string,
             hash: newHash,
             previousHash: tree.latestHash
         });
-        
+
         const updateData: any = { latestHash: newHash, blockHeight: (tree.blockHeight || 0) + 1 };
-        // If this is a growth pulse with an image, update the tree's latest growth view
-        if (pulseData.type === 'GROWTH' && pulseData.imageUrl) {
-            updateData.latestGrowthUrl = pulseData.imageUrl;
-        }
-        // A real growth is a tend — it keeps the tree's validation alive.
-        if (pulseData.type === 'GROWTH') {
+        // A tree growth pulse with an image updates the tree's latest growth view, and counts
+        // as a tend that keeps the tree's living validation alive.
+        if (isTreeGrowth(canonicalType)) {
+            if (pulseData.imageUrl) updateData.latestGrowthUrl = pulseData.imageUrl;
             updateData.lastTendedAt = serverTimestamp();
         }
         // Caller-supplied tree fields (e.g. a watering's schedule reset) — committed atomically.
@@ -1627,7 +1692,7 @@ export const recordWatering = async ({
 
     await mintPulse({
         lifetreeId: tree.id,
-        type: 'GROWTH',
+        type: 'tree_growth',
         care: 'watering',
         title: 'Watering',
         body: confirmedBy === 'ai' ? `Watered — confirmed by AI. ${note}` : `Watered — awaiting guardian confirmation. ${note}`,
@@ -1765,7 +1830,7 @@ export const acceptAlignment = async (proposalId: string) => {
         const initTree = (await t.get(initTreeRef)).data() as Lifetree;
         const initHash = await createBlock(initTree.latestHash, { match: proposal.id }, Date.now());
         t.set(doc(pulsesCollection), { 
-            lifetreeId: proposal.initiatorTreeId, type: 'STANDARD', title: 'Alignment', body: 'Pulse Sync', 
+            lifetreeId: proposal.initiatorTreeId, type: 'standard', title: 'Alignment', body: 'Pulse Sync',
             isMatch: true, authorId: proposal.initiatorUid, authorName: 'System', 
             createdAt: serverTimestamp(), hash: initHash 
         });
@@ -1775,7 +1840,7 @@ export const acceptAlignment = async (proposalId: string) => {
         const targetTree = (await t.get(targetTreeRef)).data() as Lifetree;
         const targetHash = await createBlock(targetTree.latestHash, { match: proposal.id }, Date.now());
         t.set(doc(pulsesCollection), { 
-            lifetreeId: proposal.targetTreeId, type: 'STANDARD', title: 'Alignment', body: 'Pulse Sync', 
+            lifetreeId: proposal.targetTreeId, type: 'standard', title: 'Alignment', body: 'Pulse Sync', 
             isMatch: true, authorId: proposal.targetUid, authorName: 'System', 
             createdAt: serverTimestamp(), hash: targetHash 
         });

@@ -112,9 +112,9 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
       }
       await onMint({
         lifetreeId,
-        // Tree growth keeps the legacy 'GROWTH' (updates the tree's latest growth view);
-        // vision growth is a 'growth' pulse tied to the vision.
-        type: growthKind === 'tree' ? 'GROWTH' : 'growth',
+        // Canonical lowercase types: tree growth updates the tree's latest growth view;
+        // vision growth is a distinct type tied to the vision (not just a casing).
+        type: growthKind === 'tree' ? 'tree_growth' : 'vision_growth',
         ...(growthKind === 'vision' && selectedVision
           ? { visionId: selectedVision.id, visionTitle: selectedVision.title, growthCategory }
           : {}),
