@@ -108,6 +108,24 @@ const newsletterConfigRef = doc(db, 'config', 'newsletter');
 
 export const onAuthChange = (callback: (user: FirebaseUser | null) => void) => onAuthStateChanged(auth, callback);
 
+// Identity Stage 1: the canonical PERSON entity, one per user (doc id = uid, so it's
+// deterministic and never duplicated). uid stays the auth key; the person carries a portable
+// `lid` and a reserved `publicKeyPem` for later keypair signing. Idempotent get-or-create —
+// safe to call on every login (new and existing users). See src/domain/person.ts.
+export const ensurePersonEntity = async (uid: string, displayName?: string | null): Promise<{ lid: string; uid: string }> => {
+    const ref = doc(db, 'persons', uid);
+    const snap = await getDoc(ref);
+    if (snap.exists()) {
+        const d = snap.data() as any;
+        // Backfill a lid if an older person doc somehow lacks one.
+        if (!d.lid) { const lid = uuidv7(); await setDoc(ref, { lid }, { merge: true }); return { lid, uid }; }
+        return { lid: d.lid as string, uid };
+    }
+    const lid = uuidv7();
+    await setDoc(ref, { lid, uid, displayName: displayName || '', publicKeyPem: null, createdAt: serverTimestamp() });
+    return { lid, uid };
+};
+
 // Create the user's profile document the first time they appear. Direct-message email
 // notifications are on by default (early network — don't let people miss reaches).
 const ensureUserProfile = async (user: FirebaseUser, extra: Record<string, any> = {}): Promise<boolean> => {

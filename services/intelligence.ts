@@ -10,6 +10,7 @@ import type {
   Intelligence, Persona, Memory, MemoryVisibility, IntelligenceMessage, MemoryContext,
   IntelligenceProvider, IntelligenceProviderId, IntelligenceRef,
 } from '../src/domain/intelligence';
+import { AI_DAILY_TEXT_LIMIT, providerLabel, type AIAccessState } from '../src/domain/aiAccess';
 
 const DEFAULT_MODEL = config.model || 'gemini-3.5-flash';
 
@@ -125,6 +126,33 @@ export const getProvider = (id: IntelligenceProviderId): IntelligenceProvider =>
 let activeIntelligenceId: string | undefined;
 export const setActiveIntelligenceId = (id?: string) => { activeIntelligenceId = id || undefined; };
 export const getActiveIntelligenceId = (): string | undefined => activeIntelligenceId;
+
+// Resolve which AI allowance source powers a call right now — for DISPLAY (the AIAccessCard).
+// Precedence: user BYO key → community BYO key → sponsored → node compute (free tier with a
+// daily limit). Tree tokens are a separate path (deep translation) surfaced elsewhere. This does
+// not change the call path or enforce quotas yet (define-now, enforce-later).
+export const resolveAISource = async (opts?: { intelligenceId?: string; dailyTextUsed?: number }): Promise<AIAccessState> => {
+  const id = opts?.intelligenceId ?? getActiveIntelligenceId() ?? DEFAULT_INTELLIGENCE_ID;
+  const intel = id ? await getIntelligence(id).catch(() => null) : null;
+  const provider = intel?.provider || 'google';
+  const model = intel?.model;
+  const label = providerLabel(provider);
+  const connected = (intel as any)?.connected;
+  const keyHint = (intel as any)?.keyHint;
+  const scope = intel?.credentialScope;
+
+  if (connected && scope === 'user') {
+    return { source: 'user_key', allowed: true, provider, model, keyHint, label: `${label} · your key`, detail: keyHint };
+  }
+  if (connected && scope === 'community') {
+    return { source: 'community_key', allowed: true, provider, model, keyHint, label: `${label} · community key`, detail: keyHint };
+  }
+  if ((intel as any)?.sponsored) {
+    return { source: 'sponsored', allowed: true, provider, model, label: `${label} · sponsored`, detail: String((intel as any).sponsored) };
+  }
+  const left = Math.max(0, AI_DAILY_TEXT_LIMIT - (opts?.dailyTextUsed || 0));
+  return { source: 'node_compute', allowed: left > 0, provider, model, remainingToday: left, label: `${label} · network`, detail: `${left} reflections left today` };
+};
 
 // The one call site everything funnels through.
 export const sendIntelligenceMessage = (

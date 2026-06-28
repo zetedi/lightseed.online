@@ -20,6 +20,13 @@ export interface Community extends Entity {
     surface?: string;
     text?: string;
   };
+  // Public links shown in the site footer — set by the community admin / node owner.
+  socialLinks?: {
+    instagram?: string;
+    telegram?: string;
+    whatsapp?: string;
+    website?: string;
+  };
   createdAt: Timestamp;
   updatedAt?: Timestamp;
 

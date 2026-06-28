@@ -8,6 +8,7 @@ import {
   saveProviderCredential, disconnectProviderCredential, addIntelligenceMemory, promoteToDefaultVoice, type CredentialScope,
 } from '../../services/intelligence';
 import { testIntelligenceConnection } from '../../services/gemini';
+import { AIAccessCard } from './AIAccessCard';
 
 const CLAUDE_MODELS = [
   { id: 'claude-opus-4-8', label: 'Claude Opus 4.8 — deepest' },
@@ -183,6 +184,9 @@ export const IntelligencePanel = ({
         <h3 className="flex items-center gap-2 text-lg font-bold text-slate-800"><Icons.Sparkles /> {title ?? t('intel_your_title')}</h3>
         <p className="mt-1 text-sm text-slate-500">{subtitle ?? t('intel_your_sub')}</p>
       </div>
+
+      {/* What's powering AI right now (your key / community / sponsored / network). */}
+      <AIAccessCard intelligenceId={selectedIntelligenceId} />
 
       {/* Choose the listening intelligence; enable/disable to control consumption */}
       <div className="grid gap-2 sm:grid-cols-2">

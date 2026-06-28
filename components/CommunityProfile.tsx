@@ -88,6 +88,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   // Editable copies of the community fields (branding + vision).
   const [editName, setEditName] = useState(community.name);
   const [editVision, setEditVision] = useState(community.vision);
+  const [editSocial, setEditSocial] = useState<{ instagram?: string; telegram?: string; whatsapp?: string; website?: string }>(community.socialLinks || {});
   const [editTheme, setEditTheme] = useState(normalizeTheme(community.theme));
   const [logoUrl, setLogoUrl] = useState(community.logoUrl || '');
   const [heroImageUrl, setHeroImageUrl] = useState(community.heroImageUrl || '');
@@ -205,6 +206,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   useEffect(() => {
     setEditName(community.name);
     setEditVision(community.vision);
+    setEditSocial(community.socialLinks || {});
     setEditTheme(normalizeTheme(community.theme));
     setLogoUrl(community.logoUrl || '');
     setHeroImageUrl(community.heroImageUrl || '');
@@ -321,6 +323,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
         theme: normalizeTheme(editTheme),
         logoUrl,
         heroImageUrl,
+        socialLinks: editSocial,
       };
       await updateCommunity(community.id, updates);
       // Refresh from Firestore so the view reflects exactly what was persisted.
@@ -1002,6 +1005,30 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                   onRemoveImage={handleRemoveImage}
                   uploadingImage={isUploadingImage}
                 />
+
+                {/* Community links — shown in the site footer. */}
+                <div className="mt-8 border-t border-slate-100 pt-6">
+                  <h4 className="mb-1 text-sm font-bold uppercase tracking-wider text-slate-400">Community links</h4>
+                  <p className="mb-3 text-xs text-slate-500">Shown in the site footer. Paste a full URL or a handle/number.</p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="block">
+                      <span className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-slate-600"><Icons.Instagram size={14} /> Instagram</span>
+                      <input value={editSocial.instagram || ''} onChange={e => setEditSocial(s => ({ ...s, instagram: e.target.value }))} placeholder="@handle or URL" className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-slate-600"><Icons.Telegram size={14} /> Telegram</span>
+                      <input value={editSocial.telegram || ''} onChange={e => setEditSocial(s => ({ ...s, telegram: e.target.value }))} placeholder="t.me/group or @handle" className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-slate-600"><Icons.WhatsApp size={14} /> WhatsApp</span>
+                      <input value={editSocial.whatsapp || ''} onChange={e => setEditSocial(s => ({ ...s, whatsapp: e.target.value }))} placeholder="wa.me invite link or number" className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-slate-600"><Icons.Globe /> Website</span>
+                      <input value={editSocial.website || ''} onChange={e => setEditSocial(s => ({ ...s, website: e.target.value }))} placeholder="example.com" className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                    </label>
+                  </div>
+                </div>
               </div>
             )}
           </main>

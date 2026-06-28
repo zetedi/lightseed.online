@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { onAuthChange, getMyLifetrees, getGuardedTrees, checkIsAdmin, checkIsSuperAdmin, getSuperAdminUid, claimSuperAdmin, listenToUserProfile, updateUserProfile } from '../services/firebase';
+import { onAuthChange, getMyLifetrees, getGuardedTrees, checkIsAdmin, checkIsSuperAdmin, getSuperAdminUid, claimSuperAdmin, listenToUserProfile, updateUserProfile, ensurePersonEntity } from '../services/firebase';
 import { type Lightseed, type Lifetree } from '../types';
 
 const SUPERADMIN_EMAIL = 'zetedi@gmail.com';
@@ -43,6 +43,9 @@ export const useLifeseed = () => {
                 } catch (e) {
                     console.error("Failed to fetch user trees", e);
                 }
+
+                // Identity Stage 1: ensure this user has a canonical person entity (idempotent).
+                ensurePersonEntity(user.uid, user.displayName).catch(() => {});
 
                 // Roles — email-based superadmin takes priority, Firestore checks are best-effort
                 const emailIsSuperAdmin = user.email === SUPERADMIN_EMAIL;

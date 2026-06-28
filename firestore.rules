@@ -115,6 +115,14 @@ service cloud.firestore {
       allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
     }
 
+    // Persons: the canonical person entity (doc id = uid). World-readable (it carries a public
+    // lid and, later, a public key); each user writes only their own. Never deleted.
+    match /persons/{personId} {
+      allow read: if true;
+      allow create, update: if isSignedIn() && request.auth.uid == personId;
+      allow delete: if false;
+    }
+
     // Visions: Read public, Write author/staff
     match /visions/{visionId} {
       allow read: if true;

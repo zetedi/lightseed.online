@@ -68,6 +68,10 @@ import { Dashboard } from './components/Dashboard';
 import { Loading } from './components/ui/Loading';
 import { ScrollChevrons } from './components/ui/ScrollChevrons';
 import { ResonanceScan } from './components/ui/ResonanceScan';
+import { Footer } from './components/ui/Footer';
+import { FirstRunChecklist } from './components/FirstRunChecklist';
+import { useOnboardingState } from './hooks/useOnboardingState';
+import { ForestPage } from './pages/ForestPage';
 import { ResonancePanel, ResonanceCard, resonanceId } from './components/ResonancePanel';
 import { SectionHeader } from './components/ui/SectionHeader';
 import { LifeseedWidget } from './components/LifeseedWidget';
@@ -182,6 +186,7 @@ const AppContent = () => {
     // The set of trees the signed-in user guards (the LIN, via guardian links) — passed to cards
     // so a card can show its guardian affordance without a per-card read.
     const guardedTreeIds = useMemo(() => new Set(guardedTrees.map(t => t.id)), [guardedTrees]);
+    const onboarding = useOnboardingState(lightseed?.uid);
     const [tab, setTab] = useState('dashboard');
     const [viewMode, setViewMode] = useState<'grid' | 'map'>('map');
     const [data, setData] = useState<any[]>([]);
@@ -1191,80 +1196,30 @@ const AppContent = () => {
 
 
                 {tab === 'forest' ? (
-                    <>
-                         <div className="flex justify-center mb-6 gap-3">
-                             <label className={`flex items-center gap-2 cursor-pointer backdrop-blur-sm px-3 py-1.5 rounded-full border transition-colors shadow-sm ${effectiveIsDark ? 'bg-slate-900/70 border-white/10 hover:bg-slate-900' : 'bg-white/90 border-slate-200 hover:bg-slate-50'}`}>
-                                <input 
-                                    type="checkbox" 
-                                    checked={showNatureTrees} 
-                                    onChange={(e) => setShowNatureTrees(e.target.checked)} 
-                                    className="rounded text-sky-500 focus:ring-sky-500 bg-white/20 border-white/30"
-                                />
-                                <span className={`text-xs font-medium flex items-center ${effectiveIsDark ? 'text-white' : 'text-slate-700'}`}>
-                                    <span className="mr-1"><Icons.Nature /></span> {t('nature')}
-                                </span>
-                            </label>
-                            <label className={`flex items-center gap-2 cursor-pointer backdrop-blur-sm px-3 py-1.5 rounded-full border transition-colors shadow-sm ${effectiveIsDark ? 'bg-slate-900/70 border-white/10 hover:bg-slate-900' : 'bg-white/90 border-slate-200 hover:bg-slate-50'}`}>
-                                <input 
-                                    type="checkbox" 
-                                    checked={showUserTrees} 
-                                    onChange={(e) => setShowUserTrees(e.target.checked)} 
-                                    className="rounded text-emerald-400 focus:ring-emerald-400 bg-white/20 border-white/30"
-                                />
-                                <span className={`text-xs font-medium flex items-center ${effectiveIsDark ? 'text-white' : 'text-slate-700'}`}>
-                                    <span className="mr-1"><Icons.Tree /></span> {t('lifetrees')}
-                                </span>
-                            </label>
-                            <label className={`flex items-center gap-2 cursor-pointer backdrop-blur-sm px-3 py-1.5 rounded-full border transition-colors shadow-sm ${effectiveIsDark ? 'bg-slate-900/70 border-white/10 hover:bg-slate-900' : 'bg-white/90 border-slate-200 hover:bg-slate-50'}`}>
-                                <input 
-                                    type="checkbox" 
-                                    checked={showValidatedTrees} 
-                                    onChange={(e) => setShowValidatedTrees(e.target.checked)} 
-                                    className="rounded text-emerald-300 focus:ring-emerald-300 bg-white/20 border-white/30"
-                                />
-                                <span className={`text-xs font-medium flex items-center ${effectiveIsDark ? 'text-white' : 'text-slate-700'}`}>
-                                    <span className="mr-1"><Icons.ShieldCheck /></span> {t('validated_trees')}
-                                </span>
-                            </label>
-                        </div>
-
-                        {viewMode === 'map' ? (
-                            <ForestMap trees={filteredData} onView={setSelectedTree} onReach={openReach} loading={loadingMore && filteredData.length === 0} onRefresh={() => loadContent(true)} primaryTree={activeTree} refreshKey={mapRefreshKey} />
-                        ) : (
-                            <>
-                                <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                                    {filteredData.length === 0 && !loadingMore ? (
-                                        <p className="col-span-full text-center text-slate-400 py-10">{t('no_trees_found')}</p>
-                                    ) : (
-                                        filteredData.map((item: any) => (
-                                            <React.Fragment key={item.id}>
-                                                <LifetreeCard
-                                                    tree={item}
-                                                    myActiveTree={activeTree}
-                                                    isAdmin={isAdmin}
-                                                    isSuperAdmin={isSuperAdmin}
-                                                    currentUserId={lightseed?.uid}
-                                                    guardedTreeIds={guardedTreeIds}
-                                                    // Owner's contact-privacy flag is mirrored onto the tree, so no per-card owner read is needed.
-                                                    targetUserProfile={{ onlyValidatedCanReach: item.onlyValidatedCanReach }}
-                                                    onPlayGrowth={setShowGrowthPlayer}
-                                                    onReach={openReach}
-                                                    onAlertGuardians={(tree: Lifetree) => openReach(tree, 'guardians')}
-                                                    onQuickSnap={handleQuickSnap}
-                                                    onValidate={(id: string, nextValidated: boolean) => (nextValidated
-                                                        ? validateLifetree(id, isSuperAdmin ? lightseed!.uid : activeTree!.id)
-                                                        : unvalidateLifetree(id)
-                                                    ).then(() => { showAlert(nextValidated ? "Validated!" : "Validation removed."); loadContent(true); })}
-                                                    onView={setSelectedTree}
-                                                />
-                                            </React.Fragment>
-                                        ))
-                                    )}
-                                </div>
-                                <div ref={forestSentinelRef} className="h-1" />
-                            </>
-                        )}
-                    </>
+                    <ForestPage
+                        effectiveIsDark={effectiveIsDark}
+                        showNatureTrees={showNatureTrees} setShowNatureTrees={setShowNatureTrees}
+                        showUserTrees={showUserTrees} setShowUserTrees={setShowUserTrees}
+                        showValidatedTrees={showValidatedTrees} setShowValidatedTrees={setShowValidatedTrees}
+                        viewMode={viewMode}
+                        filteredData={filteredData}
+                        loadingMore={loadingMore}
+                        activeTree={activeTree}
+                        mapRefreshKey={mapRefreshKey}
+                        isAdmin={isAdmin} isSuperAdmin={isSuperAdmin}
+                        currentUserId={lightseed?.uid}
+                        guardedTreeIds={guardedTreeIds}
+                        sentinelRef={forestSentinelRef}
+                        onView={setSelectedTree}
+                        onReach={openReach}
+                        onPlayGrowth={setShowGrowthPlayer}
+                        onQuickSnap={handleQuickSnap}
+                        onValidate={(id: string, nextValidated: boolean) => { (nextValidated
+                            ? validateLifetree(id, isSuperAdmin ? lightseed!.uid : activeTree!.id)
+                            : unvalidateLifetree(id)
+                        ).then(() => { showAlert(nextValidated ? "Validated!" : "Validation removed."); loadContent(true); }); }}
+                        onRefresh={() => loadContent(true)}
+                    />
                 ) : tab === 'visions' ? (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
                         <SectionHeader
@@ -1419,7 +1374,20 @@ const AppContent = () => {
                     />
                 )}
                 
+                {!!lightseed && onboarding.loaded && !onboarding.dismissed && (myTrees.length === 0 || !!onboarding.path) && (tab === 'dashboard' || tab === 'forest') && (
+                    <div className="mx-auto max-w-7xl px-4 pt-6">
+                        <FirstRunChecklist
+                            state={onboarding}
+                            myTrees={myTrees}
+                            guardedTrees={guardedTrees}
+                            onPlant={openPlant}
+                            onOpenTree={(t) => setSelectedTree(t)}
+                            onGoObservatory={() => setTab('observatory')}
+                        />
+                    </div>
+                )}
                 {renderMainContent()}
+                <Footer community={impersonatedCommunity || hostCommunity || defaultCommunity} />
                 <GDPRBanner />
                 <DialogHost />
 

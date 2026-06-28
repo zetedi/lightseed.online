@@ -5,6 +5,7 @@ import type { Timestamp } from 'firebase/firestore';
 import type { Entity } from './src/domain/entity';
 
 export * from './src/domain/entity';
+export * from './src/domain/person';
 export * from './src/domain/lifetree';
 export * from './src/domain/pulse';
 export * from './src/domain/reach';
