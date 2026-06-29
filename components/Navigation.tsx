@@ -170,7 +170,7 @@ export const Navigation = ({
                 type="button"
                 onClick={() => setTab(tab)}
                 aria-describedby={tab === 'about' ? 'about-lin-tooltip' : undefined}
-                className={`px-3 xl:px-4 py-2 rounded-full text-[10px] xl:text-xs transition-all flex items-center gap-1.5 ${getTabStyle(tab)}`}
+                className={`px-3 xl:px-4 py-2 rounded-full text-[10px] xl:text-xs transition-all flex items-center gap-1.5 whitespace-nowrap ${getTabStyle(tab)}`}
                 style={activeTab === tab && getActiveTabColor(tab) ? { backgroundColor: getActiveTabColor(tab) } : undefined}
             >
                 <span>{getTabLabel(tab)}</span>
@@ -209,7 +209,7 @@ export const Navigation = ({
 
     const NavGroup = ({ label, tabs }: { label: string, tabs: string[] }) => (
         <div className="flex flex-col gap-1">
-            <span className="text-[9px] uppercase tracking-[0.2em] font-bold px-3" style={{ color: navMuted }}>{label}</span>
+            <span className="text-[9px] uppercase tracking-[0.2em] font-bold px-3 whitespace-nowrap" style={{ color: navMuted }}>{label}</span>
             <div className="flex items-center gap-1">
                 {tabs.map(tab => <div key={tab}><NavTab tab={tab} /></div>)}
             </div>
@@ -265,7 +265,7 @@ export const Navigation = ({
 
                     {/* Mobile: night-mode + sign-out as circular icons next to the logo (only while the menu is open) */}
                     {lightseed && isMenuOpen && (
-                        <div className="flex items-center gap-2 lg:hidden">
+                        <div className="flex items-center gap-2 xl:hidden">
                             {onToggleNightMode && (
                                 <button onClick={onToggleNightMode} title={isNightMode ? 'Light mode' : 'Night mode'} className={`rounded-full border p-2 transition-colors ${navIsDark ? 'bg-black/20 text-amber-300 hover:bg-black/30' : 'bg-white/70 text-slate-600 hover:bg-white'}`} style={{ borderColor: navBorder }}>
                                     {isNightMode ? <Icons.Sun /> : <Icons.Moon />}
@@ -278,7 +278,7 @@ export const Navigation = ({
                     )}
 
                     {/* Desktop Navigation Tabs */}
-                    <div className="hidden lg:flex items-center gap-6 xl:gap-8 mx-4">
+                    <div className="hidden xl:flex items-center gap-6 xl:gap-8 mx-4">
                         <NavGroup label={t('light_earth' as any)} tabs={lightEarthTabs} />
                         {intelligenceTabs.length > 0 && (
                             <>
@@ -288,7 +288,7 @@ export const Navigation = ({
                         )}
                         <div className="w-px h-8 self-end mb-1" style={{ backgroundColor: navBorder }}></div>
                         <div className="flex flex-col gap-1">
-                            <span className="text-[9px] uppercase tracking-[0.2em] font-bold px-3" style={{ color: navMuted }}>{t('network')}</span>
+                            <span className="text-[9px] uppercase tracking-[0.2em] font-bold px-3 whitespace-nowrap" style={{ color: navMuted }}>{t('network')}</span>
                             <div className="flex items-center gap-1">
                                 {otherTabs.map(tab => <div key={tab}><NavTab tab={tab} /></div>)}
                             </div>
@@ -327,7 +327,7 @@ export const Navigation = ({
                                     aria-label={t('direct_messages')}
                                     className={`relative inline-flex rounded-full border p-2 transition-all ${
                                         careAlertCount > 0
-                                            ? 'border-sky-300 bg-sky-500/15 text-sky-500 shadow-[0_0_14px_rgba(14,165,233,0.7)] ring-2 ring-sky-300/70 animate-pulse'
+                                            ? 'border-sky-300 bg-sky-500/15 text-sky-500 shadow-[0_0_14px_rgba(14,165,233,0.7)] ring-1 ring-sky-300/70 animate-pulse'
                                             : (reachNotificationsCount > 0 || treeInviteCount > 0)
                                                 ? 'border-emerald-300 bg-emerald-500/15 text-emerald-500 shadow-[0_0_14px_rgba(16,185,129,0.7)] ring-2 ring-emerald-300/70 animate-pulse'
                                                 : (navIsDark ? 'bg-black/20 text-slate-200 hover:bg-black/30' : 'bg-white/70 text-slate-600 hover:bg-white')
@@ -376,7 +376,7 @@ export const Navigation = ({
                                     <button
                                         onClick={onToggleNightMode}
                                         title={isNightMode ? 'Switch to light mode' : 'Switch to night mode'}
-                                        className={`hidden lg:inline-flex rounded-full border p-2 transition-colors ${navIsDark ? 'bg-black/20 text-amber-300 hover:bg-black/30' : 'bg-white/70 text-slate-600 hover:bg-white'}`}
+                                        className={`hidden xl:inline-flex rounded-full border p-2 transition-colors ${navIsDark ? 'bg-black/20 text-amber-300 hover:bg-black/30' : 'bg-white/70 text-slate-600 hover:bg-white'}`}
                                         style={{ borderColor: navBorder }}
                                     >
                                         {isNightMode ? <Icons.Sun /> : <Icons.Moon />}
@@ -387,7 +387,7 @@ export const Navigation = ({
                                 <button
                                     onClick={() => setShowLogoutConfirm(true)}
                                     title={t('sign_out')}
-                                    className="hidden lg:inline-flex rounded-full border border-red-400/50 bg-red-500/10 p-2 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
+                                    className="hidden xl:inline-flex rounded-full border border-red-400/50 bg-red-500/10 p-2 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
                                 >
                                     <Icons.Exit />
                                 </button>
@@ -398,7 +398,7 @@ export const Navigation = ({
                             </button>
                          )}
 
-                         <button onClick={() => setIsMenuOpen(!isMenuOpen)} className={`lg:hidden rounded-full p-2 transition-all ${isMenuOpen ? 'border-2 border-amber-300 text-amber-500 shadow-[0_0_12px_rgba(251,191,36,0.55)]' : (navIsDark ? 'text-white hover:text-emerald-200' : 'text-slate-700 hover:text-slate-950')}`}>
+                         <button onClick={() => setIsMenuOpen(!isMenuOpen)} className={`xl:hidden rounded-full p-2 transition-all ${isMenuOpen ? 'border-2 border-amber-300 text-amber-500 shadow-[0_0_12px_rgba(251,191,36,0.55)]' : (navIsDark ? 'text-white hover:text-emerald-200' : 'text-slate-700 hover:text-slate-950')}`}>
                             {isMenuOpen ? <Icons.Close /> : <Icons.Menu />}
                          </button>
                     </div>
@@ -410,7 +410,7 @@ export const Navigation = ({
                 tapping there closes the menu. */}
             {isMenuOpen && (
                 <div
-                    className="lg:hidden fixed inset-x-0 top-20 bottom-0 z-50 flex flex-col justify-between"
+                    className="xl:hidden fixed inset-x-0 top-20 bottom-0 z-50 flex flex-col justify-between"
                     onClick={() => setIsMenuOpen(false)}
                 >
                     {/* TOP PANEL */}
@@ -432,7 +432,7 @@ export const Navigation = ({
                         </div>
 
                         {/* Row 2 — secondary destinations, short (matches the bottom row's height) */}
-                        <div className="mt-1.5 grid grid-cols-4 gap-1.5">
+                        <div className="mt-1.5 grid grid-cols-5 gap-1.5">
                             {signedIn && <MobileNavTile tab="visions" short />}
                             <MobileNavTile tab="events" short />
                             {signedIn && <MobileNavTile tab="observatory" short label="Observe" />}

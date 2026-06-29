@@ -40,27 +40,37 @@ export const ForestPage = ({
   onView, onReach, onPlayGrowth, onQuickSnap, onValidate, onRefresh,
 }: ForestPageProps) => {
   const { t } = useLanguage();
+  const labelCls = `flex items-center gap-2 cursor-pointer backdrop-blur-sm px-3 py-1.5 rounded-full border transition-colors shadow-sm ${effectiveIsDark ? 'bg-slate-900/70 border-white/10 hover:bg-slate-900' : 'bg-white/90 border-slate-200 hover:bg-slate-50'}`;
+  const spanCls = `text-xs font-medium flex items-center ${effectiveIsDark ? 'text-white' : 'text-slate-700'}`;
+  const filterToggles = (
+    <>
+      <label className={labelCls}>
+        <input type="checkbox" checked={showNatureTrees} onChange={(e) => setShowNatureTrees(e.target.checked)} className="rounded text-sky-500 focus:ring-sky-500 bg-white/20 border-white/30" />
+        <span className={spanCls}><span className="mr-1"><Icons.Nature /></span> {t('nature')}</span>
+      </label>
+      <label className={labelCls}>
+        <input type="checkbox" checked={showUserTrees} onChange={(e) => setShowUserTrees(e.target.checked)} className="rounded text-emerald-400 focus:ring-emerald-400 bg-white/20 border-white/30" />
+        <span className={spanCls}><span className="mr-1"><Icons.Tree /></span> {t('lifetrees')}</span>
+      </label>
+      <label className={labelCls}>
+        <input type="checkbox" checked={showValidatedTrees} onChange={(e) => setShowValidatedTrees(e.target.checked)} className="rounded text-emerald-300 focus:ring-emerald-300 bg-white/20 border-white/30" />
+        <span className={spanCls}><span className="mr-1"><Icons.ShieldCheck /></span> {t('validated_trees')}</span>
+      </label>
+    </>
+  );
   return (
     <>
-      <div className="flex justify-center mb-6 gap-3">
-        <label className={`flex items-center gap-2 cursor-pointer backdrop-blur-sm px-3 py-1.5 rounded-full border transition-colors shadow-sm ${effectiveIsDark ? 'bg-slate-900/70 border-white/10 hover:bg-slate-900' : 'bg-white/90 border-slate-200 hover:bg-slate-50'}`}>
-          <input type="checkbox" checked={showNatureTrees} onChange={(e) => setShowNatureTrees(e.target.checked)} className="rounded text-sky-500 focus:ring-sky-500 bg-white/20 border-white/30" />
-          <span className={`text-xs font-medium flex items-center ${effectiveIsDark ? 'text-white' : 'text-slate-700'}`}><span className="mr-1"><Icons.Nature /></span> {t('nature')}</span>
-        </label>
-        <label className={`flex items-center gap-2 cursor-pointer backdrop-blur-sm px-3 py-1.5 rounded-full border transition-colors shadow-sm ${effectiveIsDark ? 'bg-slate-900/70 border-white/10 hover:bg-slate-900' : 'bg-white/90 border-slate-200 hover:bg-slate-50'}`}>
-          <input type="checkbox" checked={showUserTrees} onChange={(e) => setShowUserTrees(e.target.checked)} className="rounded text-emerald-400 focus:ring-emerald-400 bg-white/20 border-white/30" />
-          <span className={`text-xs font-medium flex items-center ${effectiveIsDark ? 'text-white' : 'text-slate-700'}`}><span className="mr-1"><Icons.Tree /></span> {t('lifetrees')}</span>
-        </label>
-        <label className={`flex items-center gap-2 cursor-pointer backdrop-blur-sm px-3 py-1.5 rounded-full border transition-colors shadow-sm ${effectiveIsDark ? 'bg-slate-900/70 border-white/10 hover:bg-slate-900' : 'bg-white/90 border-slate-200 hover:bg-slate-50'}`}>
-          <input type="checkbox" checked={showValidatedTrees} onChange={(e) => setShowValidatedTrees(e.target.checked)} className="rounded text-emerald-300 focus:ring-emerald-300 bg-white/20 border-white/30" />
-          <span className={`text-xs font-medium flex items-center ${effectiveIsDark ? 'text-white' : 'text-slate-700'}`}><span className="mr-1"><Icons.ShieldCheck /></span> {t('validated_trees')}</span>
-        </label>
-      </div>
-
       {viewMode === 'map' ? (
-        <ForestMap trees={filteredData} onView={onView} onReach={onReach} loading={loadingMore && filteredData.length === 0} onRefresh={onRefresh} primaryTree={activeTree} refreshKey={mapRefreshKey} />
+        // Filters float on the map (saves the row's height; lets the map run near the footer).
+        <div className="relative">
+          <ForestMap trees={filteredData} onView={onView} onReach={onReach} loading={loadingMore && filteredData.length === 0} onRefresh={onRefresh} primaryTree={activeTree} refreshKey={mapRefreshKey} />
+          <div className="pointer-events-none absolute right-3 top-3 z-[1000] flex flex-col items-end gap-1.5 [&_label]:pointer-events-auto">
+            {filterToggles}
+          </div>
+        </div>
       ) : (
         <>
+          <div className="flex justify-center mb-6 gap-3">{filterToggles}</div>
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {filteredData.length === 0 && !loadingMore ? (
               <p className="col-span-full text-center text-slate-400 py-10">{t('no_trees_found')}</p>

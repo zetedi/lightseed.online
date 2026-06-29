@@ -1169,6 +1169,18 @@ const AppContent = () => {
                             <div className="relative h-36 sm:h-44 overflow-hidden">
                                 <img src="/lighthouse.webp" alt="Observatory" className="absolute inset-0 h-full w-full object-cover" />
                                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/85 via-slate-900/40 to-transparent"></div>
+                                {observatoryQuote && (
+                                    <div className="absolute right-4 top-3 z-10 flex max-w-[60%] flex-col items-end gap-1 text-right">
+                                        <p dir="auto" className="line-clamp-3 text-xs italic text-white/90 drop-shadow">"{observatoryQuote}"</p>
+                                        <button
+                                            onClick={() => { navigator.clipboard?.writeText(observatoryQuote).then(() => { setObsQuoteCopied(true); setTimeout(() => setObsQuoteCopied(false), 1500); }).catch(() => {}); }}
+                                            title="Copy quote" aria-label="Copy quote"
+                                            className="inline-flex items-center rounded-full bg-white/15 p-1 text-white/80 backdrop-blur transition-colors hover:bg-white/25 hover:text-white"
+                                        >
+                                            {obsQuoteCopied ? <span className="px-0.5 text-[10px] font-bold">✓</span> : <Icons.Copy size={13} />}
+                                        </button>
+                                    </div>
+                                )}
                                 <div className="absolute bottom-0 left-0 right-0 flex items-center gap-3 p-5">
                                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur">
                                         <Icons.Exchange />
@@ -1176,18 +1188,6 @@ const AppContent = () => {
                                     <div className="min-w-0">
                                         <h2 className="break-words text-2xl font-light tracking-wide text-white drop-shadow">{t('pending_alignments')}</h2>
                                         <p className="text-sm text-white/80 drop-shadow">{t('observatory_subtitle')}</p>
-                                        {observatoryQuote && (
-                                            <div className="mt-1.5 flex items-start gap-2">
-                                                <p dir="auto" className="line-clamp-2 text-xs italic text-white/90 drop-shadow">"{observatoryQuote}"</p>
-                                                <button
-                                                    onClick={() => { navigator.clipboard?.writeText(observatoryQuote).then(() => { setObsQuoteCopied(true); setTimeout(() => setObsQuoteCopied(false), 1500); }).catch(() => {}); }}
-                                                    title="Copy quote" aria-label="Copy quote"
-                                                    className="mt-0.5 inline-flex shrink-0 items-center rounded-full bg-white/15 p-1 text-white/80 backdrop-blur transition-colors hover:bg-white/25 hover:text-white"
-                                                >
-                                                    {obsQuoteCopied ? <span className="px-0.5 text-[10px] font-bold">✓</span> : <Icons.Copy size={13} />}
-                                                </button>
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -1404,7 +1404,7 @@ const AppContent = () => {
             {/* Page-level scroll affordance — only on the main page (hidden while a detail/modal is open). */}
             {openKeys.length === 0 && <ScrollChevrons axis="y" fixed />}
 
-            <div className="relative z-10">
+            <div className="relative z-10 flex min-h-screen flex-col">
                 {impersonatedCommunity && (
                     <div className="sticky top-0 z-40 flex items-center justify-center gap-3 bg-amber-500 px-4 py-1.5 text-center text-xs font-bold text-white shadow-md">
                         <span className="truncate">Viewing as <span className="font-extrabold">{impersonatedCommunity.name}</span> — community view</span>
@@ -1495,7 +1495,7 @@ const AppContent = () => {
                         {showGrowthPlayer && <GrowthPlayerModal treeId={showGrowthPlayer} onClose={() => setShowGrowthPlayer(null)} />}
                     </div>
                 ) : renderMainContent()}
-                <Footer community={impersonatedCommunity || hostCommunity || defaultCommunity} theme={effectiveTheme} isDark={effectiveIsDark} />
+                <div className="mt-auto"><Footer community={impersonatedCommunity || hostCommunity || defaultCommunity} theme={effectiveTheme} isDark={effectiveIsDark} /></div>
                 <GDPRBanner />
                 <DialogHost />
 

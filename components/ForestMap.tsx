@@ -2,6 +2,7 @@
 import React, { useRef, useEffect, useMemo, useState } from 'react';
 import { type Lifetree } from '../types';
 import { isExplicitlyValidatedTree } from '../utils/validation';
+import { isWateringOverdue } from '../src/domain/watering';
 import { Loading } from './ui/Loading';
 import { Icons } from './ui/Icons';
 import { treeCoordinates as getTreeCoordinates, forestMarkers } from '../src/domain/views/forest';
@@ -56,7 +57,7 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
     // on every render — a major cost once the map holds hundreds of trees.
     const treesSignature = useMemo(() => forestMarkers(visibleTrees, guardianCounts).map(m =>
         [m.id, m.name, m.lat, m.lng, m.status, m.kind, m.imageUrl, m.growthUrl, m.guardianCount, m.validated ? 'validated' : ''].join(':')
-    ).join('|'), [visibleTrees, guardianCounts]);
+    ).join('|') + '#' + visibleTrees.filter(t => isWateringOverdue(t)).map(t => t.id).join(','), [visibleTrees, guardianCounts]);
     const expansionSignature = expansionStack.map(level => `${level.clusterId}:${level.lat}:${level.lng}:${level.trees.map(tree => tree.id).join(',')}`).join('|');
 
     useEffect(() => {
@@ -243,6 +244,7 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
         if (isNature) {
             return `
             <div class="marker-pop relative ${sizeClass} hover:scale-110 transition-transform duration-300 group" style="${animStyle}">
+                ${isWateringOverdue(tree) ? '<div class="absolute -inset-1 rounded-full border-2 border-sky-400 animate-pulse z-20"></div>' : ''}
                 <div class="absolute inset-0 bg-sky-500 rounded-full animate-pulse opacity-20"></div>
                 <div class="relative ${sizeClass} rounded-full ${borderClass} border-white shadow-xl overflow-hidden bg-white z-10">
                     <img src="${displayImage}" style="${imgStyle}" class="w-full h-full object-cover" />
@@ -256,6 +258,7 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
 
         return `
         <div class="marker-pop relative ${sizeClass} hover:scale-110 transition-transform duration-300" style="${animStyle}">
+            ${isWateringOverdue(tree) ? '<div class="absolute -inset-1 rounded-full border-2 border-sky-400 animate-pulse z-20"></div>' : ''}
             <div class="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-20"></div>
             <div class="relative ${sizeClass} rounded-full ${borderClass} border-white shadow-xl overflow-hidden bg-white">
                 <img src="${displayImage}" style="${imgStyle}" class="w-full h-full object-cover" />
@@ -597,7 +600,7 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
                 }
             `}</style>
             <div className="relative">
-                <div ref={mapContainer} style={{ width: '100%', height: '60vh', minHeight: '400px', zIndex: 1 }} className="w-full rounded-xl shadow-inner border border-slate-700 bg-slate-900" />
+                <div ref={mapContainer} style={{ width: '100%', height: 'calc(100vh - 230px)', minHeight: '400px', zIndex: 1 }} className="w-full rounded-xl shadow-inner border border-slate-700 bg-slate-900" />
                 {onRefresh && (
                     <button
                         onClick={() => {

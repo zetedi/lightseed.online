@@ -188,12 +188,8 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    }
 
    const GuardianshipPanel = () => (
-        <div className={`bg-sky-50 text-sky-900 p-6 rounded-2xl shadow-inner border border-sky-100 overflow-hidden relative ${!isNature ? 'mt-6' : ''}`}>
-            <h3 className="text-sky-600 font-bold uppercase tracking-wider mb-4 flex items-center">
-                <Icons.Shield />
-                <span className="ml-2">Guardians</span>
-            </h3>
-            <p className="text-sm mb-6 text-sky-800/80">
+        <SectionCard title="Guardians" icon={<Icons.Shield />}>
+            <p className="text-sm mb-6 text-slate-500">
                 This tree is protected by the community. Join the guardians to monitor its health and add memories.
             </p>
 
@@ -239,10 +235,10 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     </button>
                 )}
             </div>
-            <div className="mt-4 pt-4 border-t border-sky-200 text-xs text-sky-600 font-mono">
+            <div className="mt-4 pt-4 border-t border-slate-100 text-xs text-slate-500 font-mono">
                 Guardians: {guardianCount}
             </div>
-        </div>
+        </SectionCard>
    );
 
    // Tree Circle — shared care of this Lifetree. When someone accepts an invite a
@@ -284,10 +280,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    };
 
    const TreeCirclePanel = () => (
-       <div className="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50 p-6 text-emerald-900 shadow-inner">
-           <h3 className="mb-3 flex items-center gap-2 font-bold uppercase tracking-wider text-emerald-700">
-               <Icons.Venn /> <span>Tree Circle</span>
-           </h3>
+       <SectionCard title="Tree Circle" icon={<Icons.Venn />}>
            {circle.size <= 1 ? (
                <p className="mb-4 text-sm text-emerald-800/80">This tree does not have a circle yet. Invite someone to care for it with you — when they accept, a community grows around the tree.</p>
            ) : (
@@ -326,7 +319,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                </button>
            ))}
            {inviteStatus && <p className="mt-3 text-xs text-emerald-700">{inviteStatus}</p>}
-       </div>
+       </SectionCard>
    );
 
    // --- Watering — scheduled tending of this (guarded) tree ---------------------------
@@ -405,11 +398,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    };
 
    const WateringPanel = () => (
-       <div className={`rounded-2xl border p-6 text-sky-900 shadow-inner ${overdue ? 'border-sky-300 bg-sky-50 ring-2 ring-sky-300' : 'border-sky-100 bg-sky-50'}`}>
-           <h3 className="mb-3 flex items-center gap-2 font-bold uppercase tracking-wider text-sky-600">
-               <Icons.Droplet /> <span>Watering</span>
-           </h3>
-
+       <SectionCard title="Watering" icon={<Icons.Droplet />} className={overdue ? 'ring-2 ring-sky-300' : ''}>
            <div className="mb-4 text-sm text-sky-800/90">
                {selfSustaining ? (
                    <p>🌳 Self-sustaining — this tree needs no scheduled watering.</p>
@@ -470,7 +459,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
            )}
 
            {waterMsg && <p className="mt-3 text-xs text-sky-700">{waterMsg}</p>}
-       </div>
+       </SectionCard>
    );
 
    // Collapse the middle of a long growth chain into one clickable line.

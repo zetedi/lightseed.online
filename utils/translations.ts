@@ -12,7 +12,7 @@ const baseKeys = {
   genesis: "Genesis Hash", steward: "Steward", location: "Location", tree_details: "Tree Details",
   profile: "Profile", my_trees: "My Trees", my_pulses: "My Pulses", my_alignments: "My Alignments",
   edit: "Edit", be_mother_tree: "Plant or Stand for a tree", guard_tree: "Guard Tree", alignments: "Alignments",
-  pending_alignments: "Uncovered Alignments", no_pending_resonance: "The field is calm", search_placeholder: "Search...",
+  pending_alignments: "Search for Alignments", no_pending_resonance: "The field is calm", search_placeholder: "Search...",
   living_resonance: "Living Intelligence Resonance", analyze: "Analyze", analyzing: "Analyzing...",
   refresh: "Refresh", reading: "Reading…", last_read: "Last read", resonance_field_hint: "Vision pairs your intelligence senses resonating across the field.",
   no_resonances_yet: "No resonances yet — refresh to let your intelligence read the field of visions.",

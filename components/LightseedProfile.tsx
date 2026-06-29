@@ -8,6 +8,8 @@ import { findVisionSynergies } from '../services/gemini';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
 import { ValidationBadge } from './ValidationBadge';
+import { isWateringOverdue } from '../src/domain/watering';
+import { SectionMenu } from './ui/SectionMenu';
 import { VisionCard } from './VisionCard';
 import { Modal } from './ui/Modal';
 import { Loading } from './ui/Loading';
@@ -575,18 +577,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                 <div className="lg:grid lg:grid-cols-[230px_1fr] lg:gap-6">
                     <aside className="mb-4 lg:mb-0">
                         <div className="rounded-xl border border-slate-100 bg-white p-2.5 shadow-lg lg:sticky lg:top-24">
-                            <nav className="flex gap-1.5 overflow-x-auto lg:flex-col">
-                                {navSections.map(s => (
-                                    <button
-                                        key={s.key}
-                                        onClick={() => setActiveTab(s.key as any)}
-                                        className={`group flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all lg:w-full ${activeTab === s.key ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
-                                    >
-                                        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${activeTab === s.key ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400 group-hover:text-slate-600'}`}>{s.icon}</span>
-                                        <span className="truncate whitespace-nowrap">{s.label}</span>
-                                    </button>
-                                ))}
-                            </nav>
+                            <SectionMenu items={navSections} active={activeTab} onSelect={(k) => setActiveTab(k as any)} />
                         </div>
                     </aside>
 
@@ -823,6 +814,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                                                             <h3 className="font-bold text-slate-800 flex items-center gap-1.5">
                                                                 {tree.name}
                                                                 {defaultTreeId === tree.id && <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-700"><Icons.Star filled size={10} /> Default</span>}
+                                                                {isWateringOverdue(tree) && <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-sky-700">💧 Needs water</span>}
                                                             </h3>
                                                             <p className="text-xs text-slate-500">Block Height: {tree.blockHeight}</p>
                                                             {isExplicitlyValidatedTree(tree) ? (
@@ -883,7 +875,10 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                                                     <div className="flex items-center space-x-4">
                                                         <img src={tree.latestGrowthUrl || tree.imageUrl || 'https://via.placeholder.com/100'} className="w-16 h-16 rounded object-cover bg-slate-100" />
                                                         <div>
-                                                            <h3 className="font-bold text-slate-800">{tree.name}</h3>
+                                                            <h3 className="font-bold text-slate-800 flex items-center gap-1.5">
+                                                                {tree.name}
+                                                                {isWateringOverdue(tree) && <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-sky-700">💧 Needs water</span>}
+                                                            </h3>
                                                             <p className="text-xs text-slate-500">Block Height: {tree.blockHeight}</p>
                                                             <span className="mt-1 inline-flex items-center gap-1 text-[10px] bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-bold"><Icons.Shield /> Guardian</span>
                                                         </div>

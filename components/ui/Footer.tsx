@@ -31,7 +31,7 @@ export const Footer = ({ community, theme, isDark = false }: { community?: Commu
   const year = new Date().getFullYear();
 
   return (
-    <footer className="relative z-10 mt-16 border-t px-6 py-3"
+    <footer className="relative z-10 border-t px-6 py-3"
             style={{ backgroundColor: surface.background, color: surface.text, borderColor: surface.border }}>
       {/* "life recognising life" sits in the centre; the brand line + socials are right-aligned. */}
       <div className="relative mx-auto flex min-h-[3.5rem] max-w-5xl flex-col items-center justify-center gap-2 sm:block">

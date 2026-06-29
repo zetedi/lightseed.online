@@ -142,21 +142,21 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
                             <span className="text-xs font-bold uppercase tracking-[0.2em] text-white drop-shadow">{t('events')}</span>
                             <span className="truncate text-[11px] text-white/75">{t('events_sub')}</span>
                         </div>
-                        <div ref={eventsScrollRef} className="scroll-hide-bar flex flex-1 items-center gap-3 overflow-x-auto">
+                        <div ref={eventsScrollRef} className="scroll-hide-bar flex flex-1 items-stretch gap-3 overflow-x-auto">
                         {events.map(ev => (
                             <button
                                 key={ev.id}
                                 onClick={() => onViewEvent?.(ev)}
-                                className="group flex h-[72px] w-56 shrink-0 items-center gap-3 rounded-xl border border-white/20 bg-white/10 p-2 text-left shadow-lg backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-white/20 md:h-[80px] md:w-64"
+                                className="group flex w-36 shrink-0 flex-col overflow-hidden rounded-xl border border-white/20 bg-white/10 text-left shadow-lg backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-white/20 md:w-44"
                             >
-                                <div className="aspect-square h-full shrink-0 overflow-hidden rounded-lg bg-white/10">
+                                <div className="w-full flex-1 overflow-hidden bg-white/10">
                                     {ev.imageUrl ? (
                                         <img src={ev.imageUrl} className="h-full w-full object-cover" alt={ev.title} />
                                     ) : (
                                         <div className="flex h-full w-full items-center justify-center text-white/60"><Icons.Loc /></div>
                                     )}
                                 </div>
-                                <div className="min-w-0 flex-1">
+                                <div className="min-w-0 p-2">
                                     <p className="truncate text-sm font-bold text-white drop-shadow">{ev.title}</p>
                                     <p className="truncate text-[11px] text-white/75">
                                         {ev.eventDate ? new Date(ev.eventDate).toLocaleDateString() : ''}{ev.eventLocation ? ` · ${ev.eventLocation}` : ''}
