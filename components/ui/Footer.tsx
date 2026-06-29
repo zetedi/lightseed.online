@@ -28,7 +28,7 @@ export const Footer = ({ community, theme, isDark = false }: { community?: Commu
   ].filter(l => l.href);
 
   const name = community?.name || 'lightseed';
-  const year = new Date().getFullYear();
+  const year = `2019–${new Date().getFullYear()}`;
 
   return (
     <footer className="relative z-10 border-t px-6 py-3"

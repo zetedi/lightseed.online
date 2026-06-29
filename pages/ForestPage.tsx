@@ -64,7 +64,7 @@ export const ForestPage = ({
         // Filters float on the map (saves the row's height; lets the map run near the footer).
         <div className="relative">
           <ForestMap trees={filteredData} onView={onView} onReach={onReach} loading={loadingMore && filteredData.length === 0} onRefresh={onRefresh} primaryTree={activeTree} refreshKey={mapRefreshKey} />
-          <div className="pointer-events-none absolute right-3 top-3 z-[1000] flex flex-col items-end gap-1.5 [&_label]:pointer-events-auto">
+          <div className="pointer-events-none absolute left-3 top-3 z-[1000] flex flex-col items-start gap-1.5 [&_label]:pointer-events-auto">
             {filterToggles}
           </div>
         </div>

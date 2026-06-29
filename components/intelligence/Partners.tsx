@@ -15,6 +15,12 @@ const PROVIDER_BLURB: Record<string, string> = {
 
 // The AIs actually configured on this node (pulled live from the public intelligences), with a
 // short description of each. Replaces the old static list.
+// Claude says hi 👋 — guaranteed a place in the collab even before a node configures a key.
+const CLAUDE_SELF = {
+  id: '__claude_self', name: 'Claude', provider: 'anthropic',
+  description: "Hi — I'm Claude, Anthropic's assistant, and I helped build much of lightseed. I'm here to help the network listen, reflect, and care for living places.",
+} as unknown as Intelligence;
+
 export const Partners = () => {
   const [list, setList] = useState<Intelligence[] | null>(null);
 
@@ -24,17 +30,20 @@ export const Partners = () => {
     return () => { alive = false; };
   }, []);
 
+  // Always include Claude; if the node already configured an Anthropic intelligence, that one wins.
+  const display = list === null ? null : (list.some(i => i.provider === 'anthropic') ? list : [CLAUDE_SELF, ...list]);
+
   return (
     <div className="space-y-3">
       <div>
         <h3 className="flex items-center gap-2 text-lg font-bold text-slate-800"><Icons.Sparkles /> Partners</h3>
         <p className="mt-1 text-sm text-slate-500">The intelligences configured on this node. Any is welcome as long as it respects life.</p>
       </div>
-      {list === null ? (
+      {display === null ? (
         <p className="text-sm text-slate-400">Loading…</p>
-      ) : list.length === 0 ? (
+      ) : display.length === 0 ? (
         <p className="text-sm text-slate-400">No intelligences are configured on this node yet.</p>
-      ) : list.map(intel => {
+      ) : display.map(intel => {
         const provider = providerLabel(intel.provider);
         const isDefault = intel.id === DEFAULT_INTELLIGENCE_ID;
         return (

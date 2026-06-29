@@ -1399,12 +1399,12 @@ const AppContent = () => {
     };
 
     return (
-        <div className={`min-h-screen relative font-sans ${effectiveIsDark ? 'text-slate-100' : 'text-slate-800'}`}>
+        <div className={`min-h-screen relative font-sans flex flex-col ${effectiveIsDark ? 'text-slate-100' : 'text-slate-800'}`}>
             <div className="fixed inset-0 z-0 pointer-events-none" style={backgroundStyle}></div>
             {/* Page-level scroll affordance — only on the main page (hidden while a detail/modal is open). */}
             {openKeys.length === 0 && <ScrollChevrons axis="y" fixed />}
 
-            <div className="relative z-10 flex min-h-screen flex-col">
+            <div className="relative z-10 flex-1">
                 {impersonatedCommunity && (
                     <div className="sticky top-0 z-40 flex items-center justify-center gap-3 bg-amber-500 px-4 py-1.5 text-center text-xs font-bold text-white shadow-md">
                         <span className="truncate">Viewing as <span className="font-extrabold">{impersonatedCommunity.name}</span> — community view</span>
@@ -1495,7 +1495,6 @@ const AppContent = () => {
                         {showGrowthPlayer && <GrowthPlayerModal treeId={showGrowthPlayer} onClose={() => setShowGrowthPlayer(null)} />}
                     </div>
                 ) : renderMainContent()}
-                <div className="mt-auto"><Footer community={impersonatedCommunity || hostCommunity || defaultCommunity} theme={effectiveTheme} isDark={effectiveIsDark} /></div>
                 <GDPRBanner />
                 <DialogHost />
 
@@ -1503,6 +1502,8 @@ const AppContent = () => {
                     <AuthModal onClose={() => setShowAuthModal(false)} inviteId={inviteParam} inviteOnly={config.inviteOnly} />
                 )}
             </div>
+
+            <Footer community={impersonatedCommunity || hostCommunity || defaultCommunity} theme={effectiveTheme} isDark={effectiveIsDark} />
 
             {selectedVision && (
                 <DetailWrapper>

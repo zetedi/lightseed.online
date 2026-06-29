@@ -45,14 +45,14 @@ export const ResonanceCard = ({ s, isFavorite, onToggleFavorite, onReach }: { s:
         <div className="mb-2 flex items-center gap-2">
           {s.tree1Id && (
             <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-lg bg-slate-50 px-2 py-1">
-              <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(s.tree1Id.slice(0, 2))}&background=059669&color=fff`} className="h-6 w-6 shrink-0 rounded-full" alt="" />
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 [&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Tree /></span>
               <span className="truncate text-[11px] font-medium text-slate-700">{s.vision1Title}</span>
             </div>
           )}
           <span className="shrink-0 text-xs font-bold text-slate-300">+</span>
           {s.tree2Id && (
             <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-lg bg-slate-50 px-2 py-1">
-              <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(s.tree2Id.slice(0, 2))}&background=059669&color=fff`} className="h-6 w-6 shrink-0 rounded-full" alt="" />
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 [&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Tree /></span>
               <span className="truncate text-[11px] font-medium text-slate-700">{s.vision2Title}</span>
             </div>
           )}

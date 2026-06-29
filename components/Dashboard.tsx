@@ -142,12 +142,12 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
                             <span className="text-xs font-bold uppercase tracking-[0.2em] text-white drop-shadow">{t('events')}</span>
                             <span className="truncate text-[11px] text-white/75">{t('events_sub')}</span>
                         </div>
-                        <div ref={eventsScrollRef} className="scroll-hide-bar flex flex-1 items-stretch gap-3 overflow-x-auto">
+                        <div ref={eventsScrollRef} className="scroll-hide-bar flex flex-1 items-stretch gap-5 overflow-x-auto">
                         {events.map(ev => (
                             <button
                                 key={ev.id}
                                 onClick={() => onViewEvent?.(ev)}
-                                className="group flex w-36 shrink-0 flex-col overflow-hidden rounded-xl border border-white/20 bg-white/10 text-left shadow-lg backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-white/20 md:w-44"
+                                className="group flex w-36 shrink-0 flex-col overflow-hidden rounded-xl border border-white/25 bg-white/30 text-left shadow-lg backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-white/40 md:w-44"
                             >
                                 <div className="w-full flex-1 overflow-hidden bg-white/10">
                                     {ev.imageUrl ? (
@@ -158,7 +158,7 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
                                 </div>
                                 <div className="min-w-0 p-2">
                                     <p className="truncate text-sm font-bold text-white drop-shadow">{ev.title}</p>
-                                    <p className="truncate text-[11px] text-white/75">
+                                    <p className="truncate text-[11px] text-white/95">
                                         {ev.eventDate ? new Date(ev.eventDate).toLocaleDateString() : ''}{ev.eventLocation ? ` · ${ev.eventLocation}` : ''}
                                     </p>
                                 </div>
@@ -170,10 +170,10 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
                 </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3 sm:gap-6">
+            <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:gap-8">
             {/* Box 1: Home HUD — signed-in only (signed-out visitors see the quote carousel) */}
             {lightseed && (
-            <div onClick={() => lightseed ? onSetTab('profile') : onLogin()} className="relative h-56 md:h-64 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
+            <div onClick={() => lightseed ? onSetTab('profile') : onLogin()} className="relative h-56 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
                 <div className="absolute inset-0 bg-gradient-to-br from-amber-400 to-purple-600"></div>
                 {lightseed && firstTreeImage && <img src={firstTreeImage} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-[5s]" />}
                 <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors"></div>
@@ -184,11 +184,11 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
                             <h2 className="text-sm sm:text-lg font-bold uppercase tracking-widest text-white drop-shadow-md">Home</h2>
                             <div className="text-lg sm:text-xl font-light truncate max-w-[120px]">{lightseed ? lightseed.displayName : t('sign_in')}</div>
                             <div className="text-[10px] text-amber-200 font-mono uppercase tracking-widest mt-1">{t('light_of_value')}</div>
-                            <button onClick={(e) => { e.stopPropagation(); onPlant(); }} title={t('plant_or_stand')} className="mt-2 inline-flex items-center gap-1 rounded-full bg-emerald-600/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow ring-1 ring-white/25 transition-colors hover:bg-emerald-500 [&>svg]:h-3 [&>svg]:w-3">
-                                <Icons.Tree /> <span>{t('plant_or_stand')}</span>
-                            </button>
                         </div>
-                        <div className="p-2 bg-white/10 backdrop-blur rounded-lg"><Icons.Profile /></div>
+                        {/* Plant CTA in the top-right (replaces the profile icon); icon-only on mobile. */}
+                        <button onClick={(e) => { e.stopPropagation(); onPlant(); }} title={t('plant_or_stand')} className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-emerald-600/90 px-2.5 py-2 text-[10px] font-bold uppercase tracking-wide text-white shadow ring-1 ring-white/25 transition-colors hover:bg-emerald-500 sm:px-3 [&>svg]:h-4 [&>svg]:w-4">
+                            <Icons.Tree /> <span className="hidden sm:inline">{t('plant_or_stand')}</span>
+                        </button>
                     </div>
 
                     {lightseed && (
@@ -223,7 +223,7 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
 
             {/* Box 2: Plant — signed-out only (signed-in users get the small CTA in the Home card). */}
             {!lightseed && (
-            <div onClick={() => { if (!lightseed) onLogin(); else onPlant(); }} className="relative h-56 md:h-64 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
+            <div onClick={() => { if (!lightseed) onLogin(); else onPlant(); }} className="relative h-56 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
                 <img src={lifetreeImage} className="absolute inset-0 w-full h-full object-cover" alt="Lifetree" />
                 <video 
                     ref={videoRef}
@@ -261,7 +261,7 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
             )}
 
             {/* Box 4: Forest (Banner Style + Stats) */}
-            <div onClick={() => onSetTab('forest')} className="relative h-56 md:h-64 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
+            <div onClick={() => onSetTab('forest')} className="relative h-56 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
                 <img src="/mother.webp" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform" />
                 <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors"></div>
                 <div className="relative h-full p-4 flex flex-col justify-between text-white">
