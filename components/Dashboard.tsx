@@ -1,7 +1,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { generateOracleQuote } from '../services/gemini';
 import { getNetworkStats } from '../services/firebase';
 import { Icons } from './ui/Icons';
 import { ScrollChevrons } from './ui/ScrollChevrons';
@@ -29,16 +28,6 @@ export interface DashboardProps {
     onLogin: () => void;
 }
 
-const GenesisSymbol = () => (
-    <div className="grid grid-cols-4 gap-1 opacity-25">
-        {[...Array(16)].map((_, i) => (
-            <div 
-                key={i} 
-                className={`w-2 h-2 rounded-full ${i % 3 === 0 ? 'bg-emerald-300' : i % 2 === 0 ? 'bg-emerald-500' : 'bg-emerald-700'}`}
-            ></div>
-        ))}
-    </div>
-);
 
 const lifetreeImage = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 800'%3E%3Cdefs%3E%3CradialGradient id='g' cx='50%25' cy='50%25' r='60%25'%3E%3Cstop offset='0%25' stop-color='%23d1fae5'/%3E%3Cstop offset='100%25' stop-color='%23047857'/%3E%3C/radialGradient%3E%3Cfilter id='glow'%3E%3CfeGaussianBlur stdDeviation='8' result='coloredBlur'/%3E%3CfeMerge%3E%3CfeMergeNode in='coloredBlur'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23g)'/%3E%3Cg opacity='0.3'%3E%3Ccircle cx='400' cy='400' r='350' fill='none' stroke='%23fff' stroke-width='1'/%3E%3Ccircle cx='400' cy='400' r='250' fill='none' stroke='%23fff' stroke-width='1'/%3E%3Cpath d='M400 50 L400 750 M50 400 L750 400' stroke='%23fff' stroke-width='1' stroke-dasharray='10 10'/%3E%3C/g%3E%3Cpath d='M400 800 C 350 700 300 650 400 550 C 500 650 450 700 400 800' fill='%235d4037' opacity='0.8'/%3E%3Cg transform='translate(0,-50)'%3E%3Ccircle cx='400' cy='400' r='160' fill='%2310b981'/%3E%3Ccircle cx='300' cy='350' r='100' fill='%2334d399' opacity='0.9'/%3E%3Ccircle cx='500' cy='350' r='100' fill='%2334d399' opacity='0.9'/%3E%3Ccircle cx='400' cy='250' r='120' fill='%23059669' opacity='0.9'/%3E%3Ccircle cx='250' cy='450' r='80' fill='%236ee7b7' opacity='0.8'/%3E%3Ccircle cx='550' cy='450' r='80' fill='%236ee7b7' opacity='0.8'/%3E%3C/g%3E%3Cg filter='url(%23glow)'%3E%3Ccircle cx='400' cy='350' r='15' fill='%23fcd34d'/%3E%3Ccircle cx='320' cy='300' r='12' fill='%23fcd34d' opacity='0.8'/%3E%3Ccircle cx='480' cy='300' r='12' fill='%23fcd34d' opacity='0.8'/%3E%3Ccircle cx='280' cy='420' r='10' fill='%23fbbf24' opacity='0.8'/%3E%3Ccircle cx='520' cy='420' r='10' fill='%23fbbf24' opacity='0.8'/%3E%3Ccircle cx='400' cy='220' r='18' fill='%23fff' opacity='0.9'/%3E%3C/g%3E%3Cpath d='M400 350 L 320 300 M 400 350 L 480 300 M 400 350 L 400 220' stroke='%23fff' stroke-width='2' opacity='0.4'/%3E%3C/svg%3E`;
 
@@ -58,15 +47,6 @@ const LeafTexture = () => (
 export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, events, onViewEvent, onViewCommunity, onSetTab, onPlant, onLogin }: DashboardProps) => {
     const { t } = useLanguage();
     const eventsScrollRef = useRef<HTMLDivElement>(null);
-    const [quote, setQuote] = useState<string>("Loading…");
-    const [quoteCopied, setQuoteCopied] = useState(false);
-    const copyQuote = (e: React.MouseEvent) => {
-        e.stopPropagation(); // don't navigate into the Observatory
-        navigator.clipboard?.writeText(quote).then(() => {
-            setQuoteCopied(true);
-            setTimeout(() => setQuoteCopied(false), 1500);
-        }).catch(() => {});
-    };
     const [networkStats, setNetworkStats] = useState({ trees: 0, pulses: 0, visions: 0 });
     const videoRef = useRef<HTMLVideoElement>(null);
     const [videoEnded, setVideoEnded] = useState(false);
@@ -76,9 +56,6 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
     const communityHero = hostCommunity?.heroImageUrl || hostCommunity?.imageUrls?.[0] || '';
 
     useEffect(() => {
-        // Lazy load the Observatory quote — only when signed in (the card is hidden for guests,
-        // who see the static QuoteCarousel instead, so there's no AI call on the public home).
-        if (lightseed) generateOracleQuote().then(setQuote);
         // Fetch global stats
         getNetworkStats().then(setNetworkStats);
     }, [lightseed]);
@@ -144,23 +121,28 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
                 tall. A distorted node/community hero, a living leaf texture, and an oversized
                 EVENTS wordmark running behind the cards. Looks special with or without a hero. */}
             {lightseed && events && events.length > 0 && (
-                <div className="relative w-full overflow-hidden rounded-2xl h-28 md:h-32 bg-emerald-950 ring-1 ring-amber-300/50 shadow-[0_0_40px_-4px_rgba(251,191,36,0.5)]">
+                <div className="relative w-full overflow-hidden rounded-2xl h-40 md:h-48 bg-emerald-900 ring-1 ring-amber-300/50 shadow-[0_0_40px_-4px_rgba(251,191,36,0.5)]">
                     {/* Background: the node/community hero, softly distorted — or an emerald wash */}
                     {communityHero ? (
                         <img src={communityHero} className="absolute inset-0 h-full w-full scale-110 object-cover blur-[2px] saturate-150" alt="" />
                     ) : (
                         <div className="absolute inset-0 bg-gradient-to-br from-emerald-700 via-emerald-950 to-slate-900"></div>
                     )}
-                    {/* Leaf-toned wash for legibility + character — kept light so the hero reads airier */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/45 via-slate-900/30 to-emerald-800/40"></div>
+                    {/* Leaf-toned wash for legibility + character — light so the hero reads airier */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/30 via-slate-900/15 to-emerald-800/25"></div>
                     <LeafTexture />
                     {/* Oversized EVENTS wordmark — stretched to the banner's full width via
                         textLength; taller than the banner so the lower part is clipped. */}
                     <svg className="pointer-events-none absolute inset-0 z-0 h-full w-full select-none" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true">
                         <text x="50" y="30" textAnchor="middle" textLength="99" lengthAdjust="spacingAndGlyphs" fontSize="42" fontWeight="900" letterSpacing="-1" fill="#ffffff" fillOpacity="0.16" style={{ textTransform: 'uppercase' }}>{t('events')}</text>
                     </svg>
-                    {/* Cards float over it */}
-                    <div ref={eventsScrollRef} className="scroll-hide-bar relative z-10 flex h-full items-center gap-3 overflow-x-auto px-4 py-3">
+                    {/* Cards float over it, under an explicit Events label. */}
+                    <div className="relative z-10 flex h-full flex-col px-4 py-3">
+                        <div className="mb-2 flex items-baseline gap-2">
+                            <span className="text-xs font-bold uppercase tracking-[0.2em] text-white drop-shadow">{t('events')}</span>
+                            <span className="truncate text-[11px] text-white/75">{t('events_sub')}</span>
+                        </div>
+                        <div ref={eventsScrollRef} className="scroll-hide-bar flex flex-1 items-center gap-3 overflow-x-auto">
                         {events.map(ev => (
                             <button
                                 key={ev.id}
@@ -182,6 +164,7 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
                                 </div>
                             </button>
                         ))}
+                        </div>
                     </div>
                     <ScrollChevrons scrollRef={eventsScrollRef} axis="x" />
                 </div>
@@ -201,6 +184,9 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
                             <h2 className="text-sm sm:text-lg font-bold uppercase tracking-widest text-white drop-shadow-md">Home</h2>
                             <div className="text-lg sm:text-xl font-light truncate max-w-[120px]">{lightseed ? lightseed.displayName : t('sign_in')}</div>
                             <div className="text-[10px] text-amber-200 font-mono uppercase tracking-widest mt-1">{t('light_of_value')}</div>
+                            <button onClick={(e) => { e.stopPropagation(); onPlant(); }} title={t('plant_or_stand')} className="mt-2 inline-flex items-center gap-1 rounded-full bg-emerald-600/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow ring-1 ring-white/25 transition-colors hover:bg-emerald-500 [&>svg]:h-3 [&>svg]:w-3">
+                                <Icons.Tree /> <span>{t('plant_or_stand')}</span>
+                            </button>
                         </div>
                         <div className="p-2 bg-white/10 backdrop-blur rounded-lg"><Icons.Profile /></div>
                     </div>
@@ -235,7 +221,8 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
             </div>
             )}
 
-            {/* Box 2: Plant a Lifetree */}
+            {/* Box 2: Plant — signed-out only (signed-in users get the small CTA in the Home card). */}
+            {!lightseed && (
             <div onClick={() => { if (!lightseed) onLogin(); else onPlant(); }} className="relative h-56 md:h-64 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
                 <img src={lifetreeImage} className="absolute inset-0 w-full h-full object-cover" alt="Lifetree" />
                 <video 
@@ -269,38 +256,6 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
                         <span className="text-center text-[11px] font-bold uppercase leading-tight tracking-wide sm:text-sm sm:tracking-widest">{t('plant_or_stand')}</span>
                         <span className="text-center text-[9px] font-medium leading-tight tracking-normal text-white/85 sm:text-[10px]">{t('create_new_world')}</span>
                     </span>
-                </div>
-            </div>
-
-            {/* Box 3: Observatory (Dynamic Quote) — signed-in only */}
-            {lightseed && (
-            <div onClick={() => onSetTab('observatory')} className="relative h-56 md:h-64 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
-                <div className="absolute inset-0 bg-slate-900"></div>
-                <img src="/lighthouse.webp" className="absolute inset-0 w-full h-full object-cover opacity-30" alt="Observatory" />
-                <div className="relative h-full p-4 flex flex-col justify-between text-white">
-                    <div className="flex justify-between items-start">
-                        <h2 className="text-sm sm:text-lg font-bold uppercase tracking-widest text-white drop-shadow-md">{t('observatory')}</h2>
-                        <div className="flex flex-col items-end">
-                             <GenesisSymbol />
-                        </div>
-                    </div>
-                    <div className="space-y-1">
-                        {quote && quote !== 'Loading…' && (
-                            <div className="flex justify-end">
-                                <button
-                                    onClick={copyQuote}
-                                    title="Copy quote"
-                                    aria-label="Copy quote"
-                                    className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1 text-white/80 backdrop-blur-sm transition-colors hover:bg-white/25 hover:text-white"
-                                >
-                                    {quoteCopied ? <span className="px-0.5 text-[10px] font-bold">✓</span> : <Icons.Copy size={13} />}
-                                </button>
-                            </div>
-                        )}
-                        <p dir="auto" className="text-xs sm:text-base italic leading-relaxed line-clamp-4 opacity-90 font-serif drop-shadow-sm">
-                            {quote}
-                        </p>
-                    </div>
                 </div>
             </div>
             )}

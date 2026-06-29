@@ -8,6 +8,7 @@ import {
   backfillPulseVisibility,
   migrateArraysToLinks,
   migratePulseTypeCasing,
+  migrateTreeVisibility,
   dropLegacyArrays,
   createEvent,
   updateEvent,
@@ -42,7 +43,7 @@ import {
   listenToUserProfile,
   getPendingTreeInvites
 } from './services/firebase';
-import { findVisionSynergies } from './services/gemini';
+import { findVisionSynergies, generateOracleQuote } from './services/gemini';
 import { ensureIntelligenceCommons, setActiveIntelligenceId } from './services/intelligence';
 import { type Pulse, type Lifetree, type Alignment, type Vision, type Community, type VisionSynergy, type ReachAudience } from './types';
 import Logo from './components/Logo';
@@ -201,6 +202,9 @@ const AppContent = () => {
     const [mapRefreshKey, setMapRefreshKey] = useState(0);
     const [editingEvent, setEditingEvent] = useState<Pulse | null>(null);
     const [dashboardEvents, setDashboardEvents] = useState<Pulse[]>([]);
+    // The Observatory's oracle quote (moved out of the dashboard card into the page header).
+    const [observatoryQuote, setObservatoryQuote] = useState('');
+    const [obsQuoteCopied, setObsQuoteCopied] = useState(false);
     const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
     const [reachTree, setReachTree] = useState<Lifetree | null>(null);
     // Preselected audience for a requested reach — 'guardians' when opened from a danger alert.
@@ -239,6 +243,11 @@ const AppContent = () => {
         if (!id) return;
         getLifetreeById(id).then(tr => { if (tr) setSelectedTree(tr); }).catch(() => {});
     }, []);
+
+    // Oracle quote for the Observatory page header (lazy, once).
+    useEffect(() => {
+        if (tab === 'observatory' && !observatoryQuote) generateOracleQuote().then(setObservatoryQuote).catch(() => {});
+    }, [tab, observatoryQuote]);
     const [showPlantModal, setShowPlantModal] = useState(false);
     // How the plant modal should open: optionally straight to a type's plant step
     // (e.g. the "Guard Tree" button jumps past the type selection).
@@ -495,7 +504,15 @@ const AppContent = () => {
             console.log(`[lightseed] done — cleared arrays on ${n} doc(s).`);
             return n;
         };
-        return () => { delete w.backfillPulseVisibility; delete w.migrateArraysToLinks; delete w.migratePulseTypeCasing; delete w.dropLegacyArrays; };
+        // Backfill tree visibility → 'public' so the visibility-filtered forest queries match.
+        // Run ONCE after deploying the lifetrees indexes, BEFORE the tightened rules.
+        w.migrateTreeVisibility = async () => {
+            console.log('[lightseed] backfilling tree visibility → public…');
+            const r = await migrateTreeVisibility();
+            console.log(`[lightseed] done — stamped ${r.updated} tree(s).`);
+            return r;
+        };
+        return () => { delete w.backfillPulseVisibility; delete w.migrateArraysToLinks; delete w.migratePulseTypeCasing; delete w.dropLegacyArrays; delete w.migrateTreeVisibility; };
     }, [isSuperAdmin]);
 
     // Events for the logged-in home carousel — visibility-scoped to this viewer + node.
@@ -627,17 +644,19 @@ const AppContent = () => {
         // Broad feeds carry no scope, so this resolves to public (+ node when signed in; all
         // but private for staff) — keeping the query to docs the rules will allow.
         const feedLevels = queryableLevels({ uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin });
+        // Tree visibility levels this viewer may query (null = staff, no filter).
+        const treeLevels: string[] | null = (isSuperAdmin || isAdmin) ? null : (lightseed ? ['public', 'node'] : ['public']);
 
         try {
             if (tab === 'forest') {
                 if (viewMode === 'map') {
                     // The map shows the whole forest at once (no pagination) so every tree appears.
-                    const all = await fetchAllLifetrees(currentDomain, lightseed?.uid);
+                    const all = await fetchAllLifetrees(currentDomain, lightseed?.uid, treeLevels);
                     setData(all);
                     setLastDoc(null);
                     setHasMore(false);
                 } else {
-                    const res = await fetchLifetrees(currentLastDoc, currentDomain, lightseed?.uid);
+                    const res = await fetchLifetrees(currentLastDoc, currentDomain, lightseed?.uid, treeLevels);
                     setData(prev => {
                         const newItems = res.items;
                         if (reset) return newItems;
@@ -1157,6 +1176,18 @@ const AppContent = () => {
                                     <div className="min-w-0">
                                         <h2 className="break-words text-2xl font-light tracking-wide text-white drop-shadow">{t('pending_alignments')}</h2>
                                         <p className="text-sm text-white/80 drop-shadow">{t('observatory_subtitle')}</p>
+                                        {observatoryQuote && (
+                                            <div className="mt-1.5 flex items-start gap-2">
+                                                <p dir="auto" className="line-clamp-2 text-xs italic text-white/90 drop-shadow">"{observatoryQuote}"</p>
+                                                <button
+                                                    onClick={() => { navigator.clipboard?.writeText(observatoryQuote).then(() => { setObsQuoteCopied(true); setTimeout(() => setObsQuoteCopied(false), 1500); }).catch(() => {}); }}
+                                                    title="Copy quote" aria-label="Copy quote"
+                                                    className="mt-0.5 inline-flex shrink-0 items-center rounded-full bg-white/15 p-1 text-white/80 backdrop-blur transition-colors hover:bg-white/25 hover:text-white"
+                                                >
+                                                    {obsQuoteCopied ? <span className="px-0.5 text-[10px] font-bold">✓</span> : <Icons.Copy size={13} />}
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -1387,10 +1418,10 @@ const AppContent = () => {
                 )}
                 {tab !== 'about' && (
                     <Navigation
-                        lightseed={lightseed} 
-                        activeTab={tab} 
-                        setTab={setTab} 
-                        onLogin={() => setShowAuthModal(true)} 
+                        lightseed={lightseed}
+                        activeTab={tab}
+                        setTab={(t: string) => { setSelectedTree(null); setTab(t); }}
+                        onLogin={() => setShowAuthModal(true)}
                         onLogout={() => { logout(); setTab('dashboard'); }} 
                         onPlant={() => openPlant()} 
                         onPulse={() => openPulseModal()}
@@ -1415,7 +1446,7 @@ const AppContent = () => {
                 {/* Show once to everyone who hasn't dismissed/completed it. We wait for the
                     profile to load (onboarding.loaded) and DON'T gate on tree count, so the card
                     can't flash in while trees are still loading. */}
-                {!!lightseed && onboarding.loaded && !onboarding.dismissed && (tab === 'dashboard' || tab === 'forest') && (
+                {!selectedTree && !!lightseed && onboarding.loaded && !onboarding.dismissed && (tab === 'dashboard' || tab === 'forest') && (
                     <div className="mx-auto max-w-7xl px-4 pt-6 animate-in fade-in duration-500">
                         <FirstRunChecklist
                             state={onboarding}
@@ -1429,7 +1460,41 @@ const AppContent = () => {
                         />
                     </div>
                 )}
-                {renderMainContent()}
+                {selectedTree ? (
+                    <div className="animate-in fade-in duration-200">
+                        <LifetreeDetail
+                            tree={selectedTree}
+                            onClose={() => { setSelectedTree(null); setMapRefreshKey(k => k + 1); }}
+                            onPlayGrowth={setShowGrowthPlayer}
+                            onValidate={(id: string, nextValidated: boolean) => (nextValidated
+                                ? validateLifetree(id, isSuperAdmin ? lightseed!.uid : activeTree!.id)
+                                : unvalidateLifetree(id)
+                            ).then(() => {
+                                handleTreeUpdate(id, {
+                                    validated: nextValidated,
+                                    validatorId: nextValidated ? (isSuperAdmin ? lightseed!.uid : activeTree!.id) : null,
+                                });
+                                showAlert(nextValidated ? "Validated!" : "Validation removed.");
+                                loadContent(true);
+                            })}
+                            onUpdate={(updates: Partial<Lifetree>) => handleTreeUpdate(selectedTree.id, updates)}
+                            onDelete={() => { handleDeleteTreeConfirmed(selectedTree.id); setSelectedTree(null); }}
+                            onCreatePulse={() => openPulseModal(selectedTree)}
+                            onReachTree={(tree: Lifetree) => openReach(tree)}
+                            onAlertGuardians={() => openReach(selectedTree, 'guardians')}
+                            onViewPulse={(p: Pulse) => { setSelectedTree(null); setSelectedPulse(p); }}
+                            myActiveTree={activeTree}
+                            isDefaultTree={defaultTreeId === selectedTree.id}
+                            onSetDefault={() => { setDefaultTree(selectedTree.id); showAlert(`${selectedTree.name} is now your default tree.`); }}
+                            currentUserId={lightseed?.uid}
+                            currentUser={lightseed}
+                            isAdmin={isAdmin}
+                            isSuperAdmin={isSuperAdmin}
+                            targetUserProfile={{ onlyValidatedCanReach: selectedTree.onlyValidatedCanReach }}
+                        />
+                        {showGrowthPlayer && <GrowthPlayerModal treeId={showGrowthPlayer} onClose={() => setShowGrowthPlayer(null)} />}
+                    </div>
+                ) : renderMainContent()}
                 <Footer community={impersonatedCommunity || hostCommunity || defaultCommunity} theme={effectiveTheme} isDark={effectiveIsDark} />
                 <GDPRBanner />
                 <DialogHost />
@@ -1438,42 +1503,6 @@ const AppContent = () => {
                     <AuthModal onClose={() => setShowAuthModal(false)} inviteId={inviteParam} inviteOnly={config.inviteOnly} />
                 )}
             </div>
-
-            {selectedTree && (
-                <DetailWrapper>
-                    <LifetreeDetail
-                        tree={selectedTree}
-                        onClose={() => { setSelectedTree(null); setMapRefreshKey(k => k + 1); }}
-                        onPlayGrowth={setShowGrowthPlayer}
-                        onValidate={(id: string, nextValidated: boolean) => (nextValidated
-                            ? validateLifetree(id, isSuperAdmin ? lightseed!.uid : activeTree!.id)
-                            : unvalidateLifetree(id)
-                        ).then(() => {
-                            handleTreeUpdate(id, {
-                                validated: nextValidated,
-                                validatorId: nextValidated ? (isSuperAdmin ? lightseed!.uid : activeTree!.id) : null,
-                            });
-                            showAlert(nextValidated ? "Validated!" : "Validation removed.");
-                            loadContent(true);
-                        })}
-                        onUpdate={(updates: Partial<Lifetree>) => handleTreeUpdate(selectedTree.id, updates)}
-                        onDelete={() => { handleDeleteTreeConfirmed(selectedTree.id); setSelectedTree(null); }}
-                        onCreatePulse={() => openPulseModal(selectedTree)}
-                        onReachTree={(tree: Lifetree) => openReach(tree)}
-                        onAlertGuardians={() => openReach(selectedTree, 'guardians')}
-                        onViewPulse={(p: Pulse) => { setSelectedTree(null); setSelectedPulse(p); }}
-                        myActiveTree={activeTree}
-                        isDefaultTree={defaultTreeId === selectedTree.id}
-                        onSetDefault={() => { setDefaultTree(selectedTree.id); showAlert(`${selectedTree.name} is now your default tree.`); }}
-                        currentUserId={lightseed?.uid}
-                        currentUser={lightseed}
-                        isAdmin={isAdmin}
-                        isSuperAdmin={isSuperAdmin}
-                        targetUserProfile={{ onlyValidatedCanReach: selectedTree.onlyValidatedCanReach }}
-                    />
-                    {showGrowthPlayer && <GrowthPlayerModal treeId={showGrowthPlayer} onClose={() => setShowGrowthPlayer(null)} />}
-                </DetailWrapper>
-            )}
 
             {selectedVision && (
                 <DetailWrapper>

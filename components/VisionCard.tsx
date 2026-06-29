@@ -18,6 +18,15 @@ export const VisionCard = ({ vision }: { vision: Vision }) => {
                     <DefaultCardImage />
                 )}
 
+                {/* Author avatar — the soul this vision grows from. */}
+                {vision.authorId && (
+                    <img
+                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(vision.authorId.slice(0, 2))}&background=f59e0b&color=fff`}
+                        alt="" title={vision.authorId}
+                        className="absolute top-2 left-2 z-10 h-8 w-8 rounded-full border-2 border-white/80 shadow-md"
+                    />
+                )}
+
                 {/* Title Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent pointer-events-none"></div>
                 <div className="absolute bottom-2 left-3 right-3 text-white pointer-events-none">

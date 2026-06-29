@@ -731,19 +731,46 @@ const isHubDomain = (domain?: string) => {
     return d === 'lightseed.online' || d === 'lifeseed.online' || d === 'localhost' || d === '127.0.0.1' || d.startsWith('192.168.') || d.endsWith('.local');
 };
 
-export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, ownerUid?: string) => {
+export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, ownerUid?: string, levels?: string[] | null) => {
     const communityScoped = !!(domainFilter && !isHubDomain(domainFilter));
+    // Only return trees this viewer may read (visibility levels), matching the rules — else the
+    // list query is rejected. levels null/empty = no filter (staff / legacy callers).
+    const visCons = (levels && levels.length) ? [where('visibility', 'in', levels)] : [];
     let q;
     if (communityScoped) {
         // Community View: narrow to the community's domain (remove orderBy to avoid composite index)
-        q = query(lifetreesCollection, where('domain', '==', domainFilter!.replace(/^www\./, '')), limit(24));
+        q = query(lifetreesCollection, where('domain', '==', domainFilter!.replace(/^www\./, '')), ...visCons, limit(24));
     } else {
-        q = query(lifetreesCollection, orderBy('createdAt', 'desc'), limit(12));
+        q = query(lifetreesCollection, ...visCons, orderBy('createdAt', 'desc'), limit(12));
     }
 
     if (lastD) q = query(q, startAfter(lastD));
-    const snap = await getDocs(q);
+    let snap;
+    try {
+        snap = await getDocs(q);
+    } catch (e) {
+        // The composite (visibility + createdAt/domain) index may still be building — fall back
+        // to a filter-only query (single-field index) so the forest keeps loading; sorted below.
+        console.warn('Forest query fell back (visibility index building?)', e);
+        snap = await getDocs(visCons.length ? query(lifetreesCollection, ...visCons, limit(60)) : query(lifetreesCollection, limit(60)));
+    }
     let items = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Lifetree));
+    // Always newest-first (covers the unordered fallback).
+    items = items.sort((a, b) => ((b.createdAt as any)?.toMillis?.() || 0) - ((a.createdAt as any)?.toMillis?.() || 0));
+
+    // Pre-backfill safety: legacy trees have no `visibility` field, so a filtered query matches
+    // none. If the first page comes back empty, retry unfiltered (rules still allow this while no
+    // tree is private yet). After migrateTreeVisibility() runs, the filtered query just works.
+    if (!lastD && visCons.length && items.length === 0) {
+        try {
+            const base = communityScoped
+                ? query(lifetreesCollection, where('domain', '==', domainFilter!.replace(/^www\./, '')), limit(24))
+                : query(lifetreesCollection, orderBy('createdAt', 'desc'), limit(12));
+            const s2 = await getDocs(base);
+            items = s2.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Lifetree))
+                .sort((a, b) => ((b.createdAt as any)?.toMillis?.() || 0) - ((a.createdAt as any)?.toMillis?.() || 0));
+        } catch { /* rules now block unfiltered (private trees exist) — keep empty */ }
+    }
 
     if (communityScoped) {
         // The creator always sees their own trees on a community/custom domain,
@@ -774,15 +801,32 @@ export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter
 
 // Whole forest at once (no pagination) — used by the map so every tree appears,
 // not just the first page. Includes the creator's own trees and Genesis on the hub.
-export const fetchAllLifetrees = async (domainFilter?: string, ownerUid?: string): Promise<Lifetree[]> => {
+export const fetchAllLifetrees = async (domainFilter?: string, ownerUid?: string, levels?: string[] | null): Promise<Lifetree[]> => {
     const communityScoped = !!(domainFilter && !isHubDomain(domainFilter));
+    const visCons = (levels && levels.length) ? [where('visibility', 'in', levels)] : [];
     const byId = new Map<string, Lifetree>();
     const add = (d: any) => byId.set(d.id, { id: d.id, ...(d.data() as any) } as Lifetree);
 
-    if (communityScoped) {
-        (await getDocs(query(lifetreesCollection, where('domain', '==', domainFilter!.replace(/^www\./, ''))))).docs.forEach(add);
-    } else {
-        (await getDocs(query(lifetreesCollection, orderBy('createdAt', 'desc'), limit(1000)))).docs.forEach(add);
+    try {
+        if (communityScoped) {
+            (await getDocs(query(lifetreesCollection, where('domain', '==', domainFilter!.replace(/^www\./, '')), ...visCons))).docs.forEach(add);
+        } else {
+            (await getDocs(query(lifetreesCollection, ...visCons, orderBy('createdAt', 'desc'), limit(1000)))).docs.forEach(add);
+        }
+    } catch (e) {
+        console.warn('Forest map query fell back (visibility index building?)', e);
+        (await getDocs(visCons.length ? query(lifetreesCollection, ...visCons, limit(1000)) : query(lifetreesCollection, limit(1000)))).docs.forEach(add);
+    }
+
+    // Pre-backfill safety: legacy trees lack `visibility`, so a filtered query matches none.
+    // If nothing came back, retry unfiltered (rules allow it while no tree is private yet).
+    if (visCons.length && byId.size === 0) {
+        try {
+            const base = communityScoped
+                ? query(lifetreesCollection, where('domain', '==', domainFilter!.replace(/^www\./, '')))
+                : query(lifetreesCollection, orderBy('createdAt', 'desc'), limit(1000));
+            (await getDocs(base)).docs.forEach(add);
+        } catch { /* rules now block unfiltered (private trees exist) — keep empty */ }
     }
 
     // The creator always sees their own trees, even pointed at another domain.
@@ -857,8 +901,10 @@ export const getGuardedTrees = async (uid: string): Promise<Lifetree[]> => {
     const links = await getDocs(query(collection(db, 'links'), where('from', '==', uid), where('rel', '==', 'guardian')));
     const ids = links.docs.map(d => (d.data() as any).to as string);
     const trees = await Promise.all(ids.map(async id => {
-        const snap = await getDoc(doc(db, 'lifetrees', id));
-        return snap.exists() ? ({ id: snap.id, ...(snap.data() as any) } as Lifetree) : null;
+        try {
+            const snap = await getDoc(doc(db, 'lifetrees', id));
+            return snap.exists() ? ({ id: snap.id, ...(snap.data() as any) } as Lifetree) : null;
+        } catch { return null; } // e.g. a guarded tree the owner made private
     }));
     return trees.filter((t): t is Lifetree => t !== null);
 };
@@ -1058,6 +1104,21 @@ export const migratePulseTypeCasing = async (): Promise<number> => {
         await batch.commit();
     }
     return toFix.length;
+};
+
+// Backfill: stamp visibility:'public' on every tree that lacks it, so the visibility-filtered
+// forest queries match them. Run ONCE (superadmin) after deploying the lifetrees indexes; safe to
+// re-run (idempotent).
+export const migrateTreeVisibility = async (): Promise<{ updated: number }> => {
+    const snap = await getDocs(lifetreesCollection);
+    const toFix = snap.docs.filter(d => !(d.data() as any).visibility);
+    for (let i = 0; i < toFix.length; i += 400) {
+        const batch = writeBatch(db);
+        toFix.slice(i, i + 400).forEach(d => batch.update(d.ref, { visibility: 'public' }));
+        await batch.commit();
+    }
+    console.log('[lightseed] tree visibility backfill:', { updated: toFix.length });
+    return { updated: toFix.length };
 };
 
 // --- LIN migration: legacy relationship arrays → the `links` collection ---------------------

@@ -109,7 +109,13 @@ service cloud.firestore {
 
     // Lifetrees: Read public, Write owner/staff
     match /lifetrees/{treeId} {
-      allow read: if true;
+      // Visibility-gated reads. Missing visibility = public (legacy-safe). 'node' = any signed-in
+      // member; 'private' = owner or staff only. (List queries must filter to the same levels.)
+      allow read: if !('visibility' in resource.data)
+                     || resource.data.visibility == 'public'
+                     || (isSignedIn() && resource.data.visibility == 'node')
+                     || (isSignedIn() && resource.data.ownerId == request.auth.uid)
+                     || isStaff();
       allow create: if isSignedIn();
       allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff() || hasLink('guardian', treeId));
       allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());

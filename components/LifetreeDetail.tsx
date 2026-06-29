@@ -16,6 +16,8 @@ import { isOnWateringSchedule, isWateringOverdue, daysUntilWatering, daysOverdue
 import { treeCircle } from '../src/domain/views/circle';
 import { firestoreStore } from '../src/adapters/firestore';
 import { canTendTree } from '../src/domain/policy';
+import { SectionMenu } from './ui/SectionMenu';
+import { SectionCard } from './ui/SectionCard';
 
 export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, onAlertGuardians, myActiveTree, isDefaultTree, onSetDefault, currentUserId, currentUser, isAdmin, isSuperAdmin, targetUserProfile }: any) => {
    const { t } = useLanguage();
@@ -24,6 +26,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    // Guardianship is a prism over the LIN: read this tree's incoming 'guardian' links.
    const [localIsGuardian, setLocalIsGuardian] = useState(false);
    const [guardianCount, setGuardianCount] = useState(0);
+   const [guardianUids, setGuardianUids] = useState<string[]>([]);
    const [guardianNonce, setGuardianNonce] = useState(0);
    useEffect(() => {
        let alive = true;
@@ -31,6 +34,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
            if (!alive) return;
            setLocalIsGuardian(!!currentUserId && links.some(l => l.from === currentUserId));
            setGuardianCount(links.length);
+           setGuardianUids(links.map(l => l.from));
        }).catch(() => {});
        return () => { alive = false; };
    }, [tree.id, currentUserId, guardianNonce]);
@@ -192,7 +196,22 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
             <p className="text-sm mb-6 text-sky-800/80">
                 This tree is protected by the community. Join the guardians to monitor its health and add memories.
             </p>
-            
+
+            {/* The circle of guardians, shown as cards (like My Trees in the profile). */}
+            {guardianUids.length > 0 && (
+                <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {guardianUids.map(uid => (
+                        <div key={uid} className="flex items-center gap-3 rounded-xl border border-sky-100 bg-white/70 p-3 shadow-sm">
+                            <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(uid.slice(0, 2))}&background=0ea5e9&color=fff`} className="h-10 w-10 shrink-0 rounded-full" alt="" />
+                            <div className="min-w-0">
+                                <p dir="ltr" className="truncate font-mono text-xs text-sky-900" title={uid}>{uid === currentUserId ? 'You' : `${uid.slice(0, 8)}…`}</p>
+                                <p className="text-[10px] font-bold uppercase tracking-wide text-sky-500">Guardian</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
             <div className="space-y-3">
                 {currentUserId ? (
                     <button 
@@ -471,19 +490,6 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
        { key: 'care', label: 'Care', icon: <Icons.Droplet /> },
        { key: 'circle', label: 'Tree Circle', icon: <Icons.Venn /> },
    ];
-   // Menu: horizontal strip on mobile, vertical sidebar (on the right) on desktop.
-   const SectionMenu = () => (
-       <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scroll-hide-bar md:mx-0 md:flex-col md:overflow-visible md:px-0 md:pb-0 md:sticky md:top-20">
-           {sections.map(s => (
-               <button key={s.key} onClick={() => setSection(s.key)}
-                   className={`flex shrink-0 items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-bold transition-all md:w-full md:justify-start ${section === s.key ? 'border-emerald-300 bg-emerald-600 text-white shadow-md' : 'border-slate-200 bg-white text-slate-600 hover:border-emerald-200 hover:bg-emerald-50'}`}>
-                   <span className="[&>svg]:h-4 [&>svg]:w-4">{s.icon}</span>
-                   <span>{s.label}</span>
-               </button>
-           ))}
-       </div>
-   );
-
    // The tree's avatar/banner image — its latest growth (or its planting image).
    const heroImg = tree.latestGrowthUrl || tree.imageUrl || '';
    const [shared, setShared] = useState(false);
@@ -527,7 +533,8 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
             <div className="relative overflow-hidden bg-gradient-to-b from-slate-800 to-slate-900 text-white">
                 {heroImg && <img src={heroImg} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70" />}
                 <div className="absolute inset-0 bg-gradient-to-b from-slate-900/45 via-slate-900/55 to-slate-900/85" />
-                <div className="relative mx-auto flex max-w-5xl items-center gap-3 px-4 pt-5 pb-6 sm:gap-4">
+                <div className="relative mx-auto max-w-5xl px-4 pt-5 pb-5">
+                    <div className="flex items-center gap-3 sm:gap-4">
                     {/* Back — left of the avatar; returns to wherever you came from. */}
                     <button onClick={onClose} title={t('back_forest')} className="shrink-0 rounded-full bg-white/15 p-2.5 text-white transition-colors hover:bg-white/25">
                         <Icons.ArrowLeft />
@@ -562,28 +569,30 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                             </>
                         )}
                     </div>
+                    </div>
+                    {/* Actions — in the tree header; icon+label on desktop, icon-only on mobile; coloured. */}
+                    <div className="mt-4 flex flex-wrap gap-2">
+                        <ActionBtn onClick={() => onPlayGrowth(tree.id)} title="Play growth" color="bg-emerald-600 text-white hover:bg-emerald-700" icon={<Icons.Play />} label="Play" />
+                        {canReach
+                            ? <ActionBtn onClick={() => onReachTree?.(tree)} title="Reach" color="bg-amber-500 text-white hover:bg-amber-600" icon={<Icons.Lightning />} label="Reach" />
+                            : <ActionBtn disabled title={t('only_if_validated')} color="bg-white/20 text-white/70" icon={<Icons.Eye />} label={t('only_if_validated')} />}
+                        {showValidateAction && <ActionBtn onClick={async () => { const nv = !hasValidationBadge; if (await showConfirm(nv ? 'Validate this tree?' : 'Remove validation from this tree?', { title: 'Validation' })) onValidate(tree.id, nv); }} title={hasValidationBadge ? 'Remove validation' : t('validate_action')} color="bg-emerald-600 text-white hover:bg-emerald-700" icon={<Icons.ShieldCheck />} label={hasValidationBadge ? 'Validated' : t('validate_action')} />}
+                        {isOwner && !isEditing && <ActionBtn onClick={onCreatePulse} title="Grow this tree with a pulse" color="bg-white text-emerald-700 hover:bg-emerald-50" icon={<Icons.HeartPulse />} label="Grow" />}
+                        {isOwner && !isEditing && onSetDefault && <ActionBtn onClick={() => { if (!isDefaultTree) onSetDefault(); }} disabled={isDefaultTree} title={isDefaultTree ? 'Your default tree' : 'Set as default tree'} color={isDefaultTree ? 'bg-amber-400 text-amber-950' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'} icon={<Icons.Star filled={isDefaultTree} />} label="Favourite" />}
+                        {canEdit && !isEditing && <ActionBtn onClick={() => { setIsEditing(true); setSection('details'); }} title={t('edit')} color="bg-slate-100 text-slate-700 hover:bg-slate-200" icon={<Icons.Pencil />} label={t('edit')} />}
+                        {canDelete && !isEditing && <ActionBtn onClick={() => setShowDeleteModal(true)} title="Delete tree" color="bg-red-500 text-white hover:bg-red-600" icon={<Icons.Trash />} label="Delete" />}
+                    </div>
                 </div>
             </div>
 
-            {/* Actions — uniform: icon + label on desktop, icon-only on mobile; kept coloured. */}
-            <div className="mx-auto max-w-5xl px-4 pt-4">
-                <div className="flex flex-wrap gap-2">
-                    <ActionBtn onClick={() => onPlayGrowth(tree.id)} title="Play growth" color="bg-emerald-600 text-white hover:bg-emerald-700" icon={<Icons.Play />} label="Play" />
-                    {canReach
-                        ? <ActionBtn onClick={() => onReachTree?.(tree)} title="Reach" color="bg-amber-500 text-white hover:bg-amber-600" icon={<Icons.Lightning />} label="Reach" />
-                        : <ActionBtn disabled title={t('only_if_validated')} color="bg-slate-200 text-slate-500" icon={<Icons.Eye />} label={t('only_if_validated')} />}
-                    {showValidateAction && <ActionBtn onClick={async () => { const nv = !hasValidationBadge; if (await showConfirm(nv ? 'Validate this tree?' : 'Remove validation from this tree?', { title: 'Validation' })) onValidate(tree.id, nv); }} title={hasValidationBadge ? 'Remove validation' : t('validate_action')} color="bg-emerald-600 text-white hover:bg-emerald-700" icon={<Icons.ShieldCheck />} label={hasValidationBadge ? 'Validated' : t('validate_action')} />}
-                    {isOwner && !isEditing && <ActionBtn onClick={onCreatePulse} title="Grow this tree with a pulse" color="border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50" icon={<Icons.HeartPulse />} label="Grow" />}
-                    {isOwner && !isEditing && onSetDefault && <ActionBtn onClick={() => { if (!isDefaultTree) onSetDefault(); }} disabled={isDefaultTree} title={isDefaultTree ? 'Your default tree' : 'Set as default tree'} color={isDefaultTree ? 'bg-amber-400 text-amber-950' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'} icon={<Icons.Star filled={isDefaultTree} />} label="Favourite" />}
-                    {canEdit && !isEditing && <ActionBtn onClick={() => { setIsEditing(true); setSection('details'); }} title={t('edit')} color="bg-slate-100 text-slate-700 hover:bg-slate-200" icon={<Icons.Pencil />} label={t('edit')} />}
-                    {canDelete && !isEditing && <ActionBtn onClick={() => setShowDeleteModal(true)} title="Delete tree" color="bg-red-500 text-white hover:bg-red-600" icon={<Icons.Trash />} label="Delete" />}
-                </div>
-            </div>
-
-            {/* Body — content with the section menu on the right (desktop), a strip on mobile. */}
-            <div className="mx-auto max-w-5xl px-4 py-6 md:flex md:flex-row-reverse md:gap-6">
-                <aside className="mb-4 md:mb-0 md:w-56 md:shrink-0"><SectionMenu /></aside>
-                <main className="min-w-0 flex-1 space-y-6">
+            {/* Body — section menu on the left (desktop), a strip on mobile; profile-style. */}
+            <div className="mx-auto max-w-5xl px-4 py-6 lg:grid lg:grid-cols-[230px_1fr] lg:gap-6">
+                <aside className="mb-4 lg:mb-0">
+                    <div className="rounded-2xl border border-slate-100 bg-white p-2 shadow-sm lg:sticky lg:top-24">
+                        <SectionMenu items={sections} active={section} onSelect={(k) => setSection(k as TreeSection)} />
+                    </div>
+                </aside>
+                <main className="min-w-0 space-y-6">
 
                 {section === 'details' && (
                     <div className="space-y-6">
@@ -778,29 +787,15 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     <p className="py-10 text-center text-sm text-slate-400">Growing the digital tree…</p>
                 )}
                 {section === 'digital' && !loadingChain && (
-                    <div className="pt-2">
-                        <div className="flex flex-col items-center mb-12">
-                            <h3 className="text-xl font-light text-slate-800 mb-2 flex items-center gap-2">
-                                <span>Digital Tree</span>
-                            </h3>
-                            {chainCollapsible && (
-                                <button onClick={() => setChainExpanded(e => !e)} className="mb-4 text-xs font-bold text-emerald-600 hover:text-emerald-800">
+                    <div className="rounded-2xl bg-slate-900 p-5 text-slate-200 shadow-sm md:p-8">
+                        {chainCollapsible && (
+                            <div className="mb-4 flex justify-center">
+                                <button onClick={() => setChainExpanded(e => !e)} className="text-xs font-bold text-emerald-300 hover:text-emerald-200">
                                     {chainExpanded ? 'Collapse the middle' : `Expand all ${growthBlocks.length} pulses`}
                                 </button>
-                            )}
+                            </div>
+                        )}
 
-                            {/* Action Button at the Top — lightseed treatment (yellow glow). */}
-                            {isOwner && (
-                                <button
-                                    onClick={onCreatePulse}
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-full font-bold uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 mb-8 ring-2 ring-yellow-300/60 shadow-[0_0_22px_rgba(250,204,21,0.55)] hover:shadow-[0_0_32px_rgba(250,204,21,0.85)] animate-in fade-in zoom-in slide-in-from-top-4 duration-700"
-                                >
-                                    <Icons.HeartPulse />
-                                    <span>Grow your tree with a pulse</span>
-                                </button>
-                            )}
-                        </div>
-                        
                         <div className="relative flex flex-col items-start md:items-center">
                             {/* Central Tree Trunk — a rounded cylinder with vertical bark grain. */}
                             <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-4 md:w-8 -ml-2 md:-ml-4 rounded-t-full rounded-b-2xl shadow-inner overflow-hidden z-0"
@@ -809,6 +804,15 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                             </div>
 
                             <div className="w-full space-y-12 md:space-y-24 pb-24 relative z-10">
+                                {/* Grow CTA — the crown at the very top of the trunk; grows the tree. */}
+                                {isOwner && (
+                                    <div className="flex w-full justify-start pl-12 md:justify-center md:pl-0">
+                                        <button onClick={onCreatePulse} title="Grow this tree with a pulse"
+                                            className="relative z-10 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-7 py-3 font-bold uppercase tracking-widest text-white ring-2 ring-yellow-300/60 shadow-[0_0_22px_rgba(250,204,21,0.55)] transition-all hover:bg-emerald-700 hover:shadow-[0_0_32px_rgba(250,204,21,0.85)] active:scale-95">
+                                            <Icons.HeartPulse /> <span>Grow</span>
+                                        </button>
+                                    </div>
+                                )}
                                 {visibleChain.map((pulse, index) => {
                                     // The collapsed middle renders as one clickable horizontal line.
                                     if ((pulse as any)._collapsed) {

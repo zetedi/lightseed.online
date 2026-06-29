@@ -440,12 +440,22 @@ export const MembershipPathSection = () => {
 
 // The EU emblem (twelve gold stars on blue) — the basis of the EUIPO mark. Inline so it needs
 // no asset; drop an official logo at public/euipo.svg and swap this if preferred.
+// A clean EU emblem: twelve five-pointed gold stars in a ring on EU blue (proper star polygons).
+const euStarPoints = (cx: number, cy: number, R: number): string => {
+    const pts: string[] = [];
+    for (let i = 0; i < 10; i++) {
+        const ang = -Math.PI / 2 + (i * Math.PI) / 5;
+        const rad = i % 2 === 0 ? R : R * 0.382;
+        pts.push(`${(cx + rad * Math.cos(ang)).toFixed(2)},${(cy + rad * Math.sin(ang)).toFixed(2)}`);
+    }
+    return pts.join(' ');
+};
 export const EuipoMark = ({ size = 52 }: { size?: number }) => (
-    <svg viewBox="0 0 100 100" width={size} height={size} role="img" aria-label="EUIPO" className="shrink-0">
+    <svg viewBox="0 0 100 100" width={size} height={size} role="img" aria-label="EU intellectual property" className="shrink-0">
         <rect width="100" height="100" rx="14" fill="#003399" />
         {Array.from({ length: 12 }).map((_, i) => {
             const a = (i * 30) * Math.PI / 180;
-            return <text key={i} x={50 + 32 * Math.sin(a)} y={50 - 32 * Math.cos(a)} fill="#FFCC00" fontSize="13" textAnchor="middle" dominantBaseline="central">★</text>;
+            return <polygon key={i} points={euStarPoints(50 + 32 * Math.sin(a), 50 - 32 * Math.cos(a), 7)} fill="#FFCC00" />;
         })}
     </svg>
 );
