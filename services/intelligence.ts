@@ -343,6 +343,16 @@ const DEFAULT_INTELLIGENCES: Array<Omit<Intelligence, 'createdAt'>> = [
     public: true,
     personaId: 'persona-oracle',
   },
+  {
+    id: 'openai-oracle',
+    name: 'OpenAI Oracle',
+    description: "OpenAI's GPT wearing the Oracle persona — connect an OpenAI key to give it voice.",
+    provider: 'openai',
+    model: 'gpt-4o',
+    enabled: true,
+    public: true,
+    personaId: 'persona-oracle',
+  },
 ];
 
 // The id of the hub's default intelligence ("Osiris"). Callers fall back to this when a

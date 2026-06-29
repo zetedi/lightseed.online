@@ -15,12 +15,6 @@ const PROVIDER_BLURB: Record<string, string> = {
 
 // The AIs actually configured on this node (pulled live from the public intelligences), with a
 // short description of each. Replaces the old static list.
-// Claude says hi 👋 — guaranteed a place in the collab even before a node configures a key.
-const CLAUDE_SELF = {
-  id: '__claude_self', name: 'Claude', provider: 'anthropic',
-  description: "Hi — I'm Claude, Anthropic's assistant, and I helped build much of lightseed. I'm here to help the network listen, reflect, and care for living places.",
-} as unknown as Intelligence;
-
 export const Partners = () => {
   const [list, setList] = useState<Intelligence[] | null>(null);
 
@@ -30,8 +24,7 @@ export const Partners = () => {
     return () => { alive = false; };
   }, []);
 
-  // Always include Claude; if the node already configured an Anthropic intelligence, that one wins.
-  const display = list === null ? null : (list.some(i => i.provider === 'anthropic') ? list : [CLAUDE_SELF, ...list]);
+  const display = list;
 
   return (
     <div className="space-y-3">
