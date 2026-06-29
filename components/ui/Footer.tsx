@@ -1,6 +1,7 @@
 import React from 'react';
 import { Icons } from './Icons';
 import type { Community } from '../../types';
+import { headerSurface } from '../../src/domain/themeSurface';
 
 // Normalise a stored value (a full URL, a @handle, or a phone number) into a link.
 const toUrl = (raw: string | undefined, kind: 'instagram' | 'telegram' | 'whatsapp' | 'website'): string => {
@@ -14,8 +15,10 @@ const toUrl = (raw: string | undefined, kind: 'instagram' | 'telegram' | 'whatsa
 };
 
 // The site footer. Social links come from the active/host community's settings, so each
-// community (or the node) curates its own. Renders only the links that are set.
-export const Footer = ({ community }: { community?: Community | null }) => {
+// community (or the node) curates its own. Renders only the links that are set. Themed to match
+// the navigation header (same surface colours).
+export const Footer = ({ community, theme, isDark = false }: { community?: Community | null; theme?: any; isDark?: boolean }) => {
+  const surface = headerSurface(theme, isDark);
   const s = community?.socialLinks || {};
   const links: { href: string; label: string; icon: React.ReactNode }[] = [
     { href: toUrl(s.instagram, 'instagram'), label: 'Instagram', icon: <Icons.Instagram size={22} /> },
@@ -28,22 +31,26 @@ export const Footer = ({ community }: { community?: Community | null }) => {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="relative z-10 mt-16 border-t border-slate-200/60 bg-white/40 px-6 py-8 text-center backdrop-blur-sm">
-      <div className="mx-auto flex max-w-3xl flex-col items-center gap-4">
+    <footer className="relative z-10 mt-16 border-t px-6 py-10 text-center"
+            style={{ backgroundColor: surface.background, color: surface.text, borderColor: surface.border }}>
+      <div className="mx-auto flex max-w-3xl flex-col items-center gap-5">
         {links.length > 0 && (
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-3">
             {links.map(l => (
               <a key={l.label} href={l.href} target="_blank" rel="noreferrer" title={l.label} aria-label={l.label}
-                 className="text-slate-400 transition-colors hover:text-emerald-600">
+                 className={`flex h-11 w-11 items-center justify-center rounded-full border transition-colors hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${surface.isDark ? 'bg-white/10 hover:bg-white/20' : 'bg-black/5 hover:bg-black/10'}`}
+                 style={{ borderColor: surface.border }}>
                 {l.icon}
               </a>
             ))}
           </div>
         )}
-        <p className="text-xs text-slate-400">
-          <span dir="ltr" className="font-semibold text-emerald-700/80">.seed</span> · {name} · {year}
+        <p className="text-sm font-medium" style={{ color: surface.text }}>
+          <span dir="ltr" className="font-bold" style={{ color: surface.border }}>.seed</span>
+          <span className="mx-2 opacity-40">·</span>{name}
+          <span className="mx-2 opacity-40">·</span>{year}
         </p>
-        <p className="text-[11px] italic text-slate-400/90">life recognising life</p>
+        <p className="text-xs italic" style={{ color: surface.muted }}>life recognising life</p>
       </div>
     </footer>
   );

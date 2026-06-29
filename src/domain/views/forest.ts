@@ -24,6 +24,22 @@ export function treeCoordinates(tree: Pick<Lifetree, 'latitude' | 'longitude'>):
   return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
 }
 
+export interface ForestFilter { showNature: boolean; showUser: boolean; showValidated: boolean; }
+
+// Pure predicate for the forest filter toggles. `isValidated` is injected so this domain view
+// stays decoupled from the validation util. (The text-search filter is generic and stays in the
+// shell.) Extracted from App.tsx so the rule is testable and reusable.
+export function passesForestFilter(
+  tree: Pick<Lifetree, 'isNature'>,
+  filter: ForestFilter,
+  isValidated: (t: any) => boolean,
+): boolean {
+  if (!filter.showNature && tree.isNature) return false;
+  if (!filter.showUser && !tree.isNature) return false;
+  if (filter.showValidated && !isValidated(tree)) return false;
+  return true;
+}
+
 // guardianCounts maps treeId → its guardian-edge count (the LIN, via guardian links). Optional so
 // the prism stays usable without it; absent → 0 (the legacy array is no longer consulted).
 export function forestMarkers(trees: Lifetree[], guardianCounts?: Map<string, number>): ForestMarker[] {

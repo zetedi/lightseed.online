@@ -131,8 +131,10 @@ export const Navigation = ({
         return theme?.primary;
     };
 
-    const lightEarthTabs = ['forest', 'visions', 'events', 'pulses'];
-    const intelligenceTabs = ['observatory'];
+    // Signed-out visitors get a slimmer menu: no Visions, Pulses, or Observatory.
+    const signedIn = !!lightseed;
+    const lightEarthTabs = signedIn ? ['forest', 'visions', 'events', 'pulses'] : ['forest', 'events'];
+    const intelligenceTabs = signedIn ? ['observatory'] : [];
     const otherTabs = ['communities', 'about'];
 
     // Icon for each destination, used by the mobile menu tiles.
@@ -274,8 +276,12 @@ export const Navigation = ({
                     {/* Desktop Navigation Tabs */}
                     <div className="hidden lg:flex items-center gap-6 xl:gap-8 mx-4">
                         <NavGroup label={t('light_earth' as any)} tabs={lightEarthTabs} />
-                        <div className="w-px h-8 self-end mb-1" style={{ backgroundColor: navBorder }}></div>
-                        <NavGroup label={t('intelligence' as any)} tabs={intelligenceTabs} />
+                        {intelligenceTabs.length > 0 && (
+                            <>
+                                <div className="w-px h-8 self-end mb-1" style={{ backgroundColor: navBorder }}></div>
+                                <NavGroup label={t('intelligence' as any)} tabs={intelligenceTabs} />
+                            </>
+                        )}
                         <div className="w-px h-8 self-end mb-1" style={{ backgroundColor: navBorder }}></div>
                         <div className="flex flex-col gap-1">
                             <span className="text-[9px] uppercase tracking-[0.2em] font-bold px-3" style={{ color: navMuted }}>{t('network')}</span>
@@ -411,15 +417,15 @@ export const Navigation = ({
                                 <MobileActionTile icon={<Icons.Tree />} label={t('plant_lifetree')} onClick={onPlant} color="bg-emerald-600" />
                             )}
                             <MobileNavTile tab="forest" />
-                            <MobileActionTile icon={<Icons.Pulse />} label={t('emit_pulse')} onClick={onPulse} color="bg-sky-600" />
-                            <MobileNavTile tab="pulses" />
+                            {signedIn && <MobileActionTile icon={<Icons.Pulse />} label={t('emit_pulse')} onClick={onPulse} color="bg-sky-600" />}
+                            {signedIn && <MobileNavTile tab="pulses" />}
                         </div>
 
                         {/* Row 2 — secondary destinations, short (matches the bottom row's height) */}
                         <div className="mt-1.5 grid grid-cols-4 gap-1.5">
-                            <MobileNavTile tab="visions" short />
+                            {signedIn && <MobileNavTile tab="visions" short />}
                             <MobileNavTile tab="events" short />
-                            <MobileNavTile tab="observatory" short label="Observe" />
+                            {signedIn && <MobileNavTile tab="observatory" short label="Observe" />}
                             <MobileNavTile tab="communities" short label="Commune" />
                         </div>
                     </div>

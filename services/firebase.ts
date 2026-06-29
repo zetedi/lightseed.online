@@ -202,25 +202,31 @@ export const sendVerificationEmail = () =>
 export const resetPassword = (email: string) => sendPasswordResetEmail(auth, email.trim());
 
 // --- Network onboarding invites (distinct from Tree Circle role invites) ----------
-export const createNetworkInvite = async (email: string, invitedByUserId: string, message = ''): Promise<{ id: string; link: string }> => {
+// Invite allotments: a node manager (superadmin) is unlimited (pass opts.unlimited); a community
+// manager has 144 (granted on createCommunity); a member has the default 7. Unlimited callers
+// skip the per-user counter entirely.
+export const createNetworkInvite = async (email: string, invitedByUserId: string, message = '', opts?: { unlimited?: boolean }): Promise<{ id: string; link: string }> => {
     const cleanEmail = email.trim().toLowerCase();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) throw new Error('Please enter a valid email.');
-    // Spend one of the inviter's allotment atomically.
-    await runTransaction(db, async (t) => {
-        const ref = doc(db, 'users', invitedByUserId);
-        const snap = await t.get(ref);
-        if (!snap.exists()) throw new Error('User profile not found.');
-        const remaining = snap.data().invitesRemaining || 0;
-        if (remaining <= 0) throw new Error('No invites remaining.');
-        t.update(ref, { invitesRemaining: remaining - 1 });
-    });
+    if (!opts?.unlimited) {
+        // Spend one of the inviter's allotment atomically.
+        await runTransaction(db, async (t) => {
+            const ref = doc(db, 'users', invitedByUserId);
+            const snap = await t.get(ref);
+            if (!snap.exists()) throw new Error('User profile not found.');
+            const remaining = snap.data().invitesRemaining || 0;
+            if (remaining <= 0) throw new Error('No invites remaining.');
+            t.update(ref, { invitesRemaining: remaining - 1 });
+        });
+    }
     const ref = await addDoc(networkInvitesCollection, {
         email: cleanEmail, invitedByUserId, status: 'pending', message, createdAt: serverTimestamp(),
     });
     const link = `${window.location.origin}?invite=${ref.id}`;
     try {
         await triggerSystemEmail(cleanEmail, 'You are invited to lightseed',
-            `${message ? `"${message}"\n\n` : ''}You have been invited to join the lightseed network. Accept your invitation here: ${link}`, invitedByUserId);
+            `${message ? `"${message}"\n\n` : ''}You have been invited to join the lightseed network.`, invitedByUserId,
+            { ctaUrl: link, ctaLabel: 'Accept your invitation' });
     } catch (e) { console.warn('Invite email failed:', e); }
     return { id: ref.id, link };
 };
@@ -375,21 +381,26 @@ export const checkAndIncrementAiUsage = async (type: 'text' | 'image'): Promise<
     } catch (e) { throw e; }
 }
 
-export const triggerSystemEmail = async (to: string, subject: string, text: string, userId?: string) => {
+export const triggerSystemEmail = async (to: string, subject: string, text: string, userId?: string, opts?: { ctaUrl?: string; ctaLabel?: string }) => {
     const effectiveUid = userId || auth.currentUser?.uid;
     if (!effectiveUid) throw new Error("User ID required for email triggering.");
-    
+
+    // A real clickable button (+ a paste-able link) when a CTA url is given — so invite links
+    // are never just plain text.
+    const cta = opts?.ctaUrl
+        ? `<div style="margin:24px 0;"><a href="${opts.ctaUrl}" style="display:inline-block;background:#059669;color:#fff;text-decoration:none;font-weight:bold;padding:12px 26px;border-radius:9999px;font-size:15px;">${opts.ctaLabel || 'Open'}</a></div><p style="font-size:12px;color:#9ca3af;">Or paste this link:<br/><a href="${opts.ctaUrl}" style="color:#059669;word-break:break-all;">${opts.ctaUrl}</a></p>`
+        : '';
     try {
         const sendEmailFn = httpsCallable(functions, 'sendSystemEmail');
         return await sendEmailFn({
             to: [to],
             subject: subject,
-            text: text,
-            html: `<div style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;"><h2 style="color: #059669; font-weight: 300; letter-spacing: 1px; margin-bottom: 20px;">.seed</h2><div style="font-size: 16px; margin-bottom: 30px;">${text.replace(/\n/g, '<br>')}</div><hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" /><p style="font-size: 12px; color: #9ca3af; text-align: center;">Sent from the <a href="https://lightseed.online" style="color: #059669; text-decoration: none;">Lifetree Network</a></p></div>`
+            text: opts?.ctaUrl ? `${text}\n\n${opts.ctaUrl}` : text,
+            html: `<div style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;"><h2 style="color: #059669; font-weight: 300; letter-spacing: 1px; margin-bottom: 20px;">.seed</h2><div style="font-size: 16px; margin-bottom: 8px;">${text.replace(/\n/g, '<br>')}</div>${cta}<hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" /><p style="font-size: 12px; color: #9ca3af; text-align: center;">Sent from the <a href="https://lightseed.online" style="color: #059669; text-decoration: none;">Lifetree Network</a></p></div>`
         });
-    } catch (e) { 
+    } catch (e) {
         console.error("Email trigger failed:", e);
-        throw e; 
+        throw e;
     }
 }
 
@@ -413,9 +424,21 @@ export const monitorMailStatus = (docId: string, onChange: (status: any) => void
     });
 }
 
-export const subscribeToNewsletter = async (email: string) => addDoc(subsCollection, { email, createdAt: serverTimestamp() });
-
 const normalizeSubscriptionId = (email: string) => encodeURIComponent(email.trim().toLowerCase());
+
+// Public newsletter signup. Uses the SAME deterministic id + normalized email + active flag as
+// setNewsletterSubscription, so these subscribers are included by the newsletter send filter
+// (active === true) and can be unsubscribed by the one-click endpoint (which looks up by id).
+export const subscribeToNewsletter = async (email: string) => {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalizedEmail)) throw new Error('Please enter a valid email.');
+    return setDoc(doc(db, 'subscriptions', normalizeSubscriptionId(normalizedEmail)), {
+        email: normalizedEmail,
+        active: true,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+    }, { merge: true });
+};
 
 export const setNewsletterSubscription = async (uid: string, email: string, subscribe: boolean) => {
     const userRef = doc(db, 'users', uid);
@@ -482,33 +505,20 @@ export const getNewsletterDraftData = async () => {
     return { lastSentAt, trees, visions, pulses };
 };
 
-export const sendNewsletter = async ({ subject, html, senderUid }: { subject: string; html: string; senderUid: string }) => {
-    const activeSubs = await getDocs(subsCollection);
-    const recipients = activeSubs.docs
-        .map(d => d.data() as any)
-        .filter(sub => sub.email && sub.active === true)
-        .map(sub => sub.email as string);
+// Newsletter — sent server-side through Resend (batched, with one-click unsubscribe + footer),
+// so it scales and is compliant. The Cloud Function gates to staff and stamps config/newsletter.
+export const sendNewsletter = async ({ subject, html }: { subject: string; html: string; senderUid?: string }) => {
+    const fn = httpsCallable(functions, 'sendNewsletterEmails');
+    const res = await fn({ subject, html });
+    return (res.data as any)?.sent ?? 0;
+};
 
-    if (recipients.length === 0) throw new Error("No newsletter subscribers found.");
-
-    const sendEmailFn = httpsCallable(functions, 'sendSystemEmail');
-    
-    // We send emails in parallel using the Cloud Function
-    await Promise.all(recipients.map((email) =>
-        sendEmailFn({
-            to: [email],
-            subject,
-            text: "This newsletter contains HTML content.",
-            html,
-        })
-    ));
-
-    await setDoc(newsletterConfigRef, {
-        lastSentAt: serverTimestamp(),
-        lastSubject: subject,
-    }, { merge: true });
-
-    return recipients.length;
+// Admin: delete a user (their data + Auth record) via a staff-only Cloud Function. Handy for
+// re-testing onboarding. Returns the per-collection counts removed.
+export const deleteUserAsAdmin = async (uid: string): Promise<{ deleted: boolean }> => {
+    const fn = httpsCallable(functions, 'deleteUserAsAdmin');
+    const res = await fn({ uid });
+    return res.data as { deleted: boolean };
 };
 
 // Resize (cap the longest edge) and re-encode as WebP — keeps uploads small.
@@ -972,6 +982,8 @@ export const getCommunityByDomain = async (domain: string): Promise<Community | 
 export const getMyCommunities = async (uid: string) => 
     (await getDocs(query(communitiesCollection, where('ownerId', '==', uid)))).docs.map(d => ({ id: d.id, ...(d.data() as any) } as Community));
 
+export const COMMUNITY_INVITE_ALLOTMENT = 144;
+
 export const createCommunity = async (data: any) => {
     const lid = uuidv7();
     const docRef = await addDoc(communitiesCollection, {
@@ -980,6 +992,17 @@ export const createCommunity = async (data: any) => {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
     });
+    // A community manager gets a 144-invite allotment (raise, never lower).
+    if (data.ownerId) {
+        try {
+            await runTransaction(db, async (t) => {
+                const uref = doc(db, 'users', data.ownerId);
+                const us = await t.get(uref);
+                const cur = us.exists() ? (us.data().invitesRemaining || 0) : 0;
+                if (cur < COMMUNITY_INVITE_ALLOTMENT) t.update(uref, { invitesRemaining: COMMUNITY_INVITE_ALLOTMENT });
+            });
+        } catch (e) { console.warn('Could not grant community invite allotment', e); }
+    }
     return { id: docRef.id, lid, ...data };
 };
 

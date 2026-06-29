@@ -61,7 +61,8 @@ import { ForestMap } from './components/ForestMap';
 import { LifetreeDetail } from './components/LifetreeDetail';
 import { VisionDetail } from './components/VisionDetail';
 import { PulseDetail } from './components/PulseDetail';
-import { queryableLevels, canEditEvent } from './src/domain/pulseVisibility';
+import { queryableLevels, canEditEvent, pulseScope } from './src/domain/pulseVisibility';
+import { passesForestFilter } from './src/domain/views/forest';
 import { GrowthPlayerModal } from './components/GrowthPlayerModal';
 import { LightseedProfile } from './components/LightseedProfile';
 import { Dashboard } from './components/Dashboard';
@@ -884,25 +885,23 @@ const AppContent = () => {
     }
 
     const filteredData = useMemo(() => data.filter((item: any) => {
-        let matches = true;
         if (searchTerm) {
             const term = searchTerm.toLowerCase();
             const text = (item.title || item.name || "") + " " + (item.body || "") + " " + (item.locationName || "") + " " + (item.eventLocation || "") + " " + (item.reachTreeName || "");
-            matches = matches && text.toLowerCase().includes(term);
+            if (!text.toLowerCase().includes(term)) return false;
         }
-        if (tab === 'forest') {
-            if (!showNatureTrees && item.isNature) {
-                matches = false;
-            }
-            if (!showUserTrees && !item.isNature) {
-                matches = false;
-            }
-            if (showValidatedTrees && !isExplicitlyValidatedTree(item)) {
-                matches = false;
-            }
+        if (tab === 'forest' && !passesForestFilter(item, { showNature: showNatureTrees, showUser: showUserTrees, showValidated: showValidatedTrees }, isExplicitlyValidatedTree)) {
+            return false;
         }
-        return matches;
+        return true;
     }), [data, searchTerm, tab, showNatureTrees, showUserTrees, showValidatedTrees]);
+
+    // Signed-out visitors see only node-level events (the node's own happenings), not every
+    // community/tree event. Node-scoped = not rooted in a community or a tree.
+    const eventsForViewer = useMemo(
+        () => (lightseed ? filteredData : filteredData.filter((ev: any) => pulseScope(ev) === 'node')),
+        [filteredData, lightseed]
+    );
 
     const searchSuggestions = useMemo(() => (
         Array.from(new Set(data.map((item: any) => item.title || item.name).filter(Boolean)))
@@ -1279,8 +1278,8 @@ const AppContent = () => {
                             )}
                         >
                             <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                                {filteredData.length === 0 && !loadingMore ? <p className="col-span-full text-center text-slate-400 py-10">{t('no_trees_found')}</p> :
-                                    filteredData.map((item: any) => (
+                                {eventsForViewer.length === 0 && !loadingMore ? <p className="col-span-full text-center text-slate-400 py-10">{t('no_events_found')}</p> :
+                                    eventsForViewer.map((item: any) => (
                                         <div key={item.id}>
                                             <PulseCard
                                                 pulse={item}
@@ -1374,12 +1373,17 @@ const AppContent = () => {
                     />
                 )}
                 
-                {!!lightseed && onboarding.loaded && !onboarding.dismissed && (myTrees.length === 0 || !!onboarding.path) && (tab === 'dashboard' || tab === 'forest') && (
-                    <div className="mx-auto max-w-7xl px-4 pt-6">
+                {/* Show once to everyone who hasn't dismissed/completed it. We wait for the
+                    profile to load (onboarding.loaded) and DON'T gate on tree count, so the card
+                    can't flash in while trees are still loading. */}
+                {!!lightseed && onboarding.loaded && !onboarding.dismissed && (tab === 'dashboard' || tab === 'forest') && (
+                    <div className="mx-auto max-w-7xl px-4 pt-6 animate-in fade-in duration-500">
                         <FirstRunChecklist
                             state={onboarding}
                             myTrees={myTrees}
                             guardedTrees={guardedTrees}
+                            theme={effectiveTheme}
+                            isDark={effectiveIsDark}
                             onPlant={openPlant}
                             onOpenTree={(t) => setSelectedTree(t)}
                             onGoObservatory={() => setTab('observatory')}
@@ -1387,7 +1391,7 @@ const AppContent = () => {
                     </div>
                 )}
                 {renderMainContent()}
-                <Footer community={impersonatedCommunity || hostCommunity || defaultCommunity} />
+                <Footer community={impersonatedCommunity || hostCommunity || defaultCommunity} theme={effectiveTheme} isDark={effectiveIsDark} />
                 <GDPRBanner />
                 <DialogHost />
 

@@ -13,6 +13,10 @@
     ],
     "rewrites": [
       {
+        "source": "/u/**",
+        "function": "unsubscribe"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

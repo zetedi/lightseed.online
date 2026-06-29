@@ -1,4 +1,4 @@
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as admin from "firebase-admin";
@@ -9,6 +9,23 @@ import { randomUUID } from "node:crypto";
 admin.initializeApp();
 
 const db = admin.firestore();
+
+// --- Email via the Firestore `mail` collection (Firebase Trigger Email extension) -------------
+// All outbound email stays in-house: writing a doc to `mail` queues it through the installed
+// firestore-send-email extension (Nodemailer under the hood, so `message.headers` are forwarded —
+// that's how the newsletter's List-Unsubscribe headers reach the recipient).
+const EMAIL_FROM = "lightseed <admin@lightseed.online>";
+
+const writeMail = async (params: { to: string | string[]; subject: string; html: string; text?: string; headers?: Record<string, string>; uid?: string }) => {
+    const message: any = { from: EMAIL_FROM, subject: params.subject, text: params.text, html: params.html };
+    if (params.headers) message.headers = params.headers;
+    await db.collection("mail").add({
+        to: Array.isArray(params.to) ? params.to : [params.to],
+        uid: params.uid || null,
+        message,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+};
 
 // Secure Gemini API Proxy
 export const generateAIContent = onCall({ 
@@ -106,32 +123,18 @@ export const generateAIContent = onCall({
     }
 });
 
-// Secure Email Trigger
-export const sendSystemEmail = onCall(async (request) => {
+// Secure transactional email — queued via the `mail` collection (Trigger Email extension).
+export const sendSystemEmail = onCall({ cors: true }, async (request) => {
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be logged in.');
     }
-
     const { to, subject, text, html } = request.data;
-    const uid = request.auth.uid;
-
     try {
-        await db.collection('mail').add({
-            to: Array.isArray(to) ? to : [to],
-            uid: uid,
-            message: {
-                from: "lightseed <admin@lightseed.online>",
-                subject: subject,
-                text: text,
-                html: html
-            },
-            createdAt: admin.firestore.FieldValue.serverTimestamp()
-        });
-
+        await writeMail({ to, subject, html, text, uid: request.auth.uid });
         return { success: true };
     } catch (error: any) {
         console.error("Email Error:", error);
-        throw new HttpsError('internal', 'Failed to queue email.');
+        throw new HttpsError('internal', error?.message || 'Failed to queue email.');
     }
 });
 
@@ -204,12 +207,7 @@ export const onReachCreated = onDocumentCreated("pulses/{pulseId}", async (event
                 `<p style="font-size: 12px; color: #9ca3af;">You receive this because direct-message email notifications are on in your <a href="https://lightseed.online" style="color: #059669; text-decoration: none;">lightseed profile</a>. You can turn this off anytime.</p>` +
                 `</div>`;
 
-            await db.collection('mail').add({
-                to: [email],
-                uid: recipientUid,
-                message: { from: "lightseed <admin@lightseed.online>", subject, text, html },
-                createdAt: admin.firestore.FieldValue.serverTimestamp()
-            });
+            await writeMail({ to: [email], subject, html, text, uid: recipientUid });
 
             // Record the send so the per-thread throttle can skip rapid follow-ups.
             await throttleRef.set({
@@ -613,4 +611,148 @@ export const checkWateringSchedules = onSchedule({
             console.error(`Watering check failed for tree ${docSnap.id}:`, e);
         }
     }
+});
+
+// --- Newsletter (in-house, via the `mail` collection) ----------------------------------------
+// Staff-gated. Fans out one `mail` doc per subscriber with a per-person unsubscribe token +
+// List-Unsubscribe headers + a footer, CAN-SPAM/GDPR-safe, on our own pipeline (no third party).
+const isStaffUid = async (uid: string): Promise<boolean> => {
+    const [superadmin, adminDoc] = await Promise.all([
+        db.collection("config").doc("superadmin").get(),
+        db.collection("admins").doc(uid).get(),
+    ]);
+    return adminDoc.exists || (superadmin.exists && superadmin.data()?.uid === uid);
+};
+
+// Physical postal address for the newsletter footer (CAN-SPAM). TODO: replace with the real
+// registered address before sending at volume.
+const NEWSLETTER_POSTAL_ADDRESS = "TODO: lightseed — add postal address here";
+
+// Newsletter — in-house fan-out. Staff-only. Writes ONE `mail` doc per recipient (never a shared
+// `to:`, which would leak addresses and break per-person unsubscribe), each with that
+// subscriber's opaque unsubscribe token in the footer + List-Unsubscribe headers (RFC 8058).
+// Writes are committed in throttled batches so a large list doesn't hammer Firestore at once.
+export const sendNewsletterEmails = onCall({ timeoutSeconds: 300, memory: "512MiB", cors: true }, async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
+    if (!(await isStaffUid(request.auth.uid))) throw new HttpsError("permission-denied", "Staff only.");
+    const subject = String(request.data?.subject || "").trim();
+    const html = String(request.data?.html || "").trim();
+    if (!subject || !html) throw new HttpsError("invalid-argument", "Subject and content are required.");
+
+    // Authoritative send list: the `subscriptions` collection where active === true.
+    const subsSnap = await db.collection("subscriptions").get();
+    const subs = subsSnap.docs.filter(d => { const s = d.data() as any; return s.email && s.active === true; });
+    if (subs.length === 0) throw new HttpsError("failed-precondition", "No active subscribers.");
+
+    let sent = 0;
+    const CHUNK = 100; // commit mail writes (and any token backfills) in throttled batches
+    for (let i = 0; i < subs.length; i += CHUNK) {
+        const slice = subs.slice(i, i + CHUNK);
+        const batch = db.batch();
+        for (const doc of slice) {
+            const data = doc.data() as any;
+            const email = String(data.email);
+            // Lazy-generate + persist an opaque unsubscribe token for subscribers without one.
+            let token = data.unsubToken as string | undefined;
+            if (!token) { token = randomUUID(); batch.set(doc.ref, { unsubToken: token }, { merge: true }); }
+
+            const unsub = `https://lightseed.online/u/${token}`;
+            const footer = `<hr style="border:0;border-top:1px solid #eee;margin:28px 0;"/>`
+                + `<p style="font-size:12px;color:#9ca3af;line-height:1.6;">You're receiving this because you subscribed to the lightseed newsletter.<br/>`
+                + `<a href="${unsub}" style="color:#059669;">Unsubscribe</a> · ${NEWSLETTER_POSTAL_ADDRESS}</p>`;
+            const mailRef = db.collection("mail").doc();
+            batch.set(mailRef, {
+                to: [email],
+                uid: data.uid || null,
+                message: {
+                    from: EMAIL_FROM,
+                    subject,
+                    html: `${html}${footer}`,
+                    headers: {
+                        "List-Unsubscribe": `<${unsub}>`,
+                        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+                    },
+                },
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            sent++;
+        }
+        await batch.commit();
+    }
+    await db.collection("config").doc("newsletter").set({ lastSentAt: admin.firestore.FieldValue.serverTimestamp(), lastSubject: subject, lastSent: sent }, { merge: true });
+    return { sent, total: subs.length };
+});
+
+// One-click unsubscribe endpoint (the List-Unsubscribe target), rewritten in firebase.json as
+// /u/**. Looks up by TOKEN only (never a uid — uids are guessable). Accepts GET (browser link,
+// shows a confirmation page) and POST (RFC 8058 one-click, returns 200 with no body).
+export const unsubscribe = onRequest({ cors: true }, async (req, res) => {
+    // Path is /u/{token}; fall back to ?token= just in case.
+    const fromPath = (req.path || "").split("/").filter(Boolean).pop() || "";
+    const token = String(fromPath || (req.query.token as string) || "").trim();
+    if (!token || token === "u") { res.status(400).send("Missing unsubscribe token."); return; }
+    try {
+        const snap = await db.collection("subscriptions").where("unsubToken", "==", token).limit(1).get();
+        if (!snap.empty) {
+            const doc = snap.docs[0];
+            await doc.ref.set({ active: false, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+            // Mirror onto the user profile toggle if this subscriber has an account.
+            const uid = (doc.data() as any).uid;
+            if (uid) await db.collection("users").doc(uid).set({ newsletterSubscribed: false }, { merge: true }).catch(() => undefined);
+        }
+        if (req.method === "POST") { res.status(200).end(); return; } // one-click: no body needed
+        res.set("Content-Type", "text/html").status(200).send(
+            `<html><body style="font-family:sans-serif;text-align:center;padding:48px;color:#334155;"><h2 style="color:#059669;font-weight:300;letter-spacing:1px;">.seed</h2><p>You have been unsubscribed from the lightseed newsletter.</p><p style="color:#9ca3af;font-size:13px;">You can resubscribe anytime from your profile.</p></body></html>`,
+        );
+    } catch (e) {
+        console.error("Unsubscribe failed", e);
+        if (req.method === "POST") { res.status(200).end(); return; } // never fail a one-click POST
+        res.status(500).send("Could not unsubscribe. Please try again later.");
+    }
+});
+
+// --- Admin: delete a user (auth + their data) ------------------------------------------------
+// Staff-only. Removes the target's lifetrees/pulses/visions/links/person/user docs and their
+// Auth record. Useful for re-testing onboarding. The node owner (superadmin) can't be deleted
+// by a non-superadmin.
+export const deleteUserAsAdmin = onCall({ cors: true }, async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
+    const callerUid = request.auth.uid;
+    const targetUid = String(request.data?.uid || "").trim();
+    if (!targetUid) throw new HttpsError("invalid-argument", "A target uid is required.");
+
+    const superadmin = await db.collection("config").doc("superadmin").get();
+    const callerIsSuper = superadmin.exists && superadmin.data()?.uid === callerUid;
+    if (!(callerIsSuper || (await db.collection("admins").doc(callerUid).get()).exists)) {
+        throw new HttpsError("permission-denied", "Staff only.");
+    }
+    if (superadmin.exists && superadmin.data()?.uid === targetUid && !callerIsSuper) {
+        throw new HttpsError("permission-denied", "The node owner cannot be deleted.");
+    }
+    // Only the node owner may delete a fellow admin (protects the admin hierarchy).
+    if (!callerIsSuper && (await db.collection("admins").doc(targetUid).get()).exists) {
+        throw new HttpsError("permission-denied", "Only the node owner can delete an admin.");
+    }
+
+    const deleteWhere = async (coll: string, field: string) => {
+        const qs = await db.collection(coll).where(field, "==", targetUid).get();
+        for (let i = 0; i < qs.docs.length; i += 400) {
+            const batch = db.batch();
+            qs.docs.slice(i, i + 400).forEach(d => batch.delete(d.ref));
+            await batch.commit();
+        }
+        return qs.size;
+    };
+
+    const counts = {
+        lifetrees: await deleteWhere("lifetrees", "ownerId"),
+        pulses: await deleteWhere("pulses", "authorId"),
+        visions: await deleteWhere("visions", "authorId"),
+        links: await deleteWhere("links", "from"),
+    };
+    await db.collection("persons").doc(targetUid).delete().catch(() => undefined);
+    await db.collection("users").doc(targetUid).delete().catch(() => undefined);
+    try { await admin.auth().deleteUser(targetUid); } catch (e: any) { console.warn("Auth delete failed:", e?.message); }
+
+    return { deleted: true, ...counts };
 });

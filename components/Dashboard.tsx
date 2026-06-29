@@ -5,6 +5,8 @@ import { generateOracleQuote } from '../services/gemini';
 import { getNetworkStats } from '../services/firebase';
 import { Icons } from './ui/Icons';
 import { ScrollChevrons } from './ui/ScrollChevrons';
+import { QuoteCarousel } from './ui/QuoteCarousel';
+import { LIGHTSEED_QUOTES } from '../src/content/quotes';
 import Logo from './Logo';
 import { Community, Pulse } from '../types';
 
@@ -74,11 +76,12 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
     const communityHero = hostCommunity?.heroImageUrl || hostCommunity?.imageUrls?.[0] || '';
 
     useEffect(() => {
-        // Lazy load the quote
-        generateOracleQuote().then(setQuote);
+        // Lazy load the Observatory quote — only when signed in (the card is hidden for guests,
+        // who see the static QuoteCarousel instead, so there's no AI call on the public home).
+        if (lightseed) generateOracleQuote().then(setQuote);
         // Fetch global stats
         getNetworkStats().then(setNetworkStats);
-    }, []);
+    }, [lightseed]);
 
     const handleReplay = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -133,6 +136,10 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
                 </div>
             )}
 
+            {/* Signed-out visitors: a full-width carousel of reflections in place of the
+                Home + Observatory cards. */}
+            {!lightseed && <QuoteCarousel quotes={LIGHTSEED_QUOTES} />}
+
             {/* Events banner — logged-in only. Full width (home card → plant card), half a card
                 tall. A distorted node/community hero, a living leaf texture, and an oversized
                 EVENTS wordmark running behind the cards. Looks special with or without a hero. */}
@@ -144,8 +151,8 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
                     ) : (
                         <div className="absolute inset-0 bg-gradient-to-br from-emerald-700 via-emerald-950 to-slate-900"></div>
                     )}
-                    {/* Leaf-toned wash for legibility + character */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/70 via-slate-900/55 to-emerald-800/65"></div>
+                    {/* Leaf-toned wash for legibility + character — kept light so the hero reads airier */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/45 via-slate-900/30 to-emerald-800/40"></div>
                     <LeafTexture />
                     {/* Oversized EVENTS wordmark — stretched to the banner's full width via
                         textLength; taller than the banner so the lower part is clipped. */}
@@ -181,7 +188,8 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
             )}
 
             <div className="grid grid-cols-2 gap-3 sm:gap-6">
-            {/* Box 1: Home HUD */}
+            {/* Box 1: Home HUD — signed-in only (signed-out visitors see the quote carousel) */}
+            {lightseed && (
             <div onClick={() => lightseed ? onSetTab('profile') : onLogin()} className="relative h-56 md:h-64 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
                 <div className="absolute inset-0 bg-gradient-to-br from-amber-400 to-purple-600"></div>
                 {lightseed && firstTreeImage && <img src={firstTreeImage} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-[5s]" />}
@@ -225,6 +233,7 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
                     )}
                 </div>
             </div>
+            )}
 
             {/* Box 2: Plant a Lifetree */}
             <div onClick={() => { if (!lightseed) onLogin(); else onPlant(); }} className="relative h-56 md:h-64 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
@@ -263,7 +272,8 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
                 </div>
             </div>
 
-            {/* Box 3: Observatory (Dynamic Quote) */}
+            {/* Box 3: Observatory (Dynamic Quote) — signed-in only */}
+            {lightseed && (
             <div onClick={() => onSetTab('observatory')} className="relative h-56 md:h-64 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
                 <div className="absolute inset-0 bg-slate-900"></div>
                 <img src="/lighthouse.webp" className="absolute inset-0 w-full h-full object-cover opacity-30" alt="Observatory" />
@@ -293,6 +303,7 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
                     </div>
                 </div>
             </div>
+            )}
 
             {/* Box 4: Forest (Banner Style + Stats) */}
             <div onClick={() => onSetTab('forest')} className="relative h-56 md:h-64 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">

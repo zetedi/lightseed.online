@@ -9,6 +9,7 @@ import {
 } from '../../services/intelligence';
 import { testIntelligenceConnection } from '../../services/gemini';
 import { AIAccessCard } from './AIAccessCard';
+import { Partners } from './Partners';
 
 const CLAUDE_MODELS = [
   { id: 'claude-opus-4-8', label: 'Claude Opus 4.8 — deepest' },
@@ -349,6 +350,9 @@ export const IntelligencePanel = ({
           <Icons.Heart filled={false} /> {t('intel_support_soon')}
         </button>
       </div>
+
+      {/* The AIs that can participate in this node, with short descriptions. */}
+      <div className="border-t border-slate-100 pt-5"><Partners /></div>
     </div>
   );
 };

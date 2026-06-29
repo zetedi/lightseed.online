@@ -2,6 +2,7 @@ import React from 'react';
 import { Icons } from './ui/Icons';
 import type { Lifetree } from '../types';
 import type { useOnboardingState } from '../hooks/useOnboardingState';
+import { headerSurface } from '../src/domain/themeSurface';
 
 type OnboardingApi = ReturnType<typeof useOnboardingState>;
 
@@ -20,6 +21,8 @@ interface Props {
   state: OnboardingApi;
   myTrees: Lifetree[];
   guardedTrees: Lifetree[];
+  theme?: any;
+  isDark?: boolean;
   onPlant: (init?: { type?: 'LIFETREE' | 'GUARDED'; step?: number }) => void;
   onOpenTree: (tree: Lifetree) => void;
   onGoObservatory: () => void;
@@ -27,8 +30,11 @@ interface Props {
 
 // A live first-run guide rooted in the user's first tree. It REUSES the existing flows (plant,
 // watering, circle invite, growth, resonance) — every CTA just opens the real thing, and steps
-// tick themselves as the underlying data changes. Rendered as a card above the shell content.
-export const FirstRunChecklist = ({ state, myTrees, guardedTrees, onPlant, onOpenTree, onGoObservatory }: Props) => {
+// tick themselves as the underlying data changes. Styled to match the community header.
+export const FirstRunChecklist = ({ state, myTrees, guardedTrees, theme, isDark = false, onPlant, onOpenTree, onGoObservatory }: Props) => {
+  const surface = headerSurface(theme, isDark);
+  const primary = theme?.primary || '#059669';
+  const accent = theme?.accent || primary;
   const allTrees = [...myTrees, ...guardedTrees];
   const first = allTrees[0];
   const myFirst = myTrees[0];
@@ -52,55 +58,63 @@ export const FirstRunChecklist = ({ state, myTrees, guardedTrees, onPlant, onOpe
   const doneCount = steps.filter(s => s.done).length;
   const allDone = !choosePath && doneCount === steps.length;
 
+  const rowBg = surface.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)';
+  const trackBg = surface.isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)';
+
   return (
-    <div className="mx-auto mb-8 max-w-2xl rounded-3xl border border-emerald-100 bg-white/80 p-6 shadow-xl backdrop-blur-sm">
+    <div className="mx-auto mb-8 max-w-2xl rounded-3xl border p-6 shadow-xl"
+         style={{ backgroundColor: surface.background, color: surface.text, borderColor: surface.border }}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="flex items-center gap-2 text-lg font-bold text-slate-800">🌱 Welcome to lightseed</h2>
-          <p className="mt-0.5 text-sm text-slate-500">{choosePath ? 'How would you like to begin?' : allDone ? 'You are rooted — beautifully done.' : 'A few gentle steps to take root.'}</p>
+          <h2 className="flex items-center gap-2 text-lg font-bold" style={{ color: surface.text }}>🌱 Welcome to lightseed</h2>
+          <p className="mt-0.5 text-sm" style={{ color: surface.muted }}>{choosePath ? 'How would you like to begin?' : allDone ? 'You are rooted — beautifully done.' : 'A few gentle steps to take root.'}</p>
         </div>
-        <button onClick={state.dismiss} title="Maybe later" className="shrink-0 rounded-full px-3 py-1 text-xs font-medium text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600">Maybe later</button>
+        <button onClick={state.dismiss} title="Maybe later" className="shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-opacity hover:opacity-100" style={{ color: surface.muted, opacity: 0.8 }}>Maybe later</button>
       </div>
 
       {choosePath ? (
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          <button onClick={() => state.choosePath('care')} className="group rounded-2xl border border-sky-100 bg-sky-50/60 p-5 text-left transition-all hover:border-sky-300 hover:shadow-md">
-            <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-sky-100 text-sky-600"><Icons.Droplet /></div>
-            <h3 className="font-bold text-slate-800">Tend a tree</h3>
-            <p className="mt-1 text-xs text-slate-500">Plant or adopt a tree, set its rhythm, and care for it with a small circle.</p>
+          <button onClick={() => state.choosePath('care')} className="group rounded-2xl border p-5 text-left transition-all hover:shadow-md"
+                  style={{ borderColor: surface.border }}>
+            <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full text-white" style={{ backgroundColor: primary }}><Icons.Droplet /></div>
+            <h3 className="font-bold" style={{ color: surface.text }}>Tend a tree</h3>
+            <p className="mt-1 text-xs" style={{ color: surface.muted }}>Plant or adopt a tree, set its rhythm, and care for it with a small circle.</p>
           </button>
-          <button onClick={() => state.choosePath('vision')} className="group rounded-2xl border border-emerald-100 bg-emerald-50/60 p-5 text-left transition-all hover:border-emerald-300 hover:shadow-md">
-            <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-600"><Icons.FingerPrint /></div>
-            <h3 className="font-bold text-slate-800">Grow a vision</h3>
-            <p className="mt-1 text-xs text-slate-500">Root a vision in a tree, invite participation, and let it meet other visions.</p>
+          <button onClick={() => state.choosePath('vision')} className="group rounded-2xl border p-5 text-left transition-all hover:shadow-md"
+                  style={{ borderColor: surface.border }}>
+            <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full text-white" style={{ backgroundColor: accent }}><Icons.FingerPrint /></div>
+            <h3 className="font-bold" style={{ color: surface.text }}>Grow a vision</h3>
+            <p className="mt-1 text-xs" style={{ color: surface.muted }}>Root a vision in a tree, invite participation, and let it meet other visions.</p>
           </button>
         </div>
       ) : (
         <>
-          <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-            <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${(doneCount / steps.length) * 100}%` }} />
+          <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full" style={{ backgroundColor: trackBg }}>
+            <div className="h-full rounded-full transition-all" style={{ width: `${(doneCount / steps.length) * 100}%`, backgroundColor: primary }} />
           </div>
           <div className="mt-4 space-y-2">
             {steps.map(s => (
-              <div key={s.n} className={`flex items-center gap-3 rounded-2xl border p-3 ${s.done ? 'border-emerald-100 bg-emerald-50/40' : 'border-slate-100 bg-white'}`}>
-                <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${s.done ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+              <div key={s.n} className="flex items-center gap-3 rounded-2xl border p-3"
+                   style={{ borderColor: surface.border, backgroundColor: s.done ? 'transparent' : rowBg }}>
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                     style={{ backgroundColor: s.done ? primary : (surface.isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)') }}>
                   {s.done ? '✓' : s.n + 1}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className={`text-sm font-semibold ${s.done ? 'text-slate-500 line-through' : 'text-slate-800'}`}>{s.title}</p>
-                  {!s.done && <p className="text-xs text-slate-500">{s.desc}</p>}
+                  <p className={`text-sm font-semibold ${s.done ? 'line-through opacity-60' : ''}`} style={{ color: surface.text }}>{s.title}</p>
+                  {!s.done && <p className="text-xs" style={{ color: surface.muted }}>{s.desc}</p>}
                 </div>
                 {!s.done && (
                   <div className="flex shrink-0 items-center gap-2">
-                    {s.manual && <button onClick={() => state.markStep(s.n)} className="text-[11px] font-medium text-slate-400 hover:text-emerald-600">Mark done</button>}
-                    <button onClick={s.act} disabled={s.disabled} className="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-40">{s.cta}</button>
+                    {s.manual && <button onClick={() => state.markStep(s.n)} className="text-[11px] font-medium opacity-70 hover:opacity-100" style={{ color: surface.muted }}>Mark done</button>}
+                    <button onClick={s.act} disabled={s.disabled} className="rounded-full px-3 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-40" style={{ backgroundColor: primary }}>{s.cta}</button>
                   </div>
                 )}
               </div>
             ))}
           </div>
           {allDone && (
-            <button onClick={state.dismiss} className="mt-4 w-full rounded-full bg-emerald-600 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-colors hover:bg-emerald-700">Begin 🌱</button>
+            <button onClick={state.dismiss} className="mt-4 w-full rounded-full py-2.5 text-sm font-bold text-white shadow-lg transition-opacity hover:opacity-90" style={{ backgroundColor: primary }}>Begin 🌱</button>
           )}
         </>
       )}

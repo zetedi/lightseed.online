@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { showAlert, showConfirm } from "./ui/Dialog";
 import { type Pulse, type Lifetree, type Alignment, type Vision, type VisionSynergy, type TreeOwnershipInvite, treeRelationLabels } from '../types';
-import { getMyPulses, getMyVisions, getJoinedVisions, getMyAlignmentsHistory, deleteUserAccount, logout, triggerSystemEmail, createNetworkInvite, listenToUserProfile, deleteVision, getAdmins, setNewsletterSubscription, updateUserSiteTheme, updateUserProfile, uploadImage, fetchMyReaches, setOnlyValidatedCanReach, getPendingTreeInvites, acceptTreeInvite, declineTreeInvite, getInviteRequests, approveInviteRequest, declineInviteRequest, getSentInvites, getLifetreeById, tendTree } from '../services/firebase';
+import { getMyPulses, getMyVisions, getJoinedVisions, getMyAlignmentsHistory, deleteUserAccount, deleteUserAsAdmin, logout, triggerSystemEmail, createNetworkInvite, listenToUserProfile, deleteVision, getAdmins, setNewsletterSubscription, updateUserSiteTheme, updateUserProfile, uploadImage, fetchMyReaches, setOnlyValidatedCanReach, getPendingTreeInvites, acceptTreeInvite, declineTreeInvite, getInviteRequests, approveInviteRequest, declineInviteRequest, getSentInvites, getLifetreeById, tendTree } from '../services/firebase';
 import { ReachInbox } from './inspiration/ReachInbox';
 import { findVisionSynergies } from '../services/gemini';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -92,6 +92,17 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
     // Admin management state (superadmin only)
     const [admins, setAdmins] = useState<{ uid: string }[]>([]);
     const [newAdminUid, setNewAdminUid] = useState('');
+    const [deleteUserUid, setDeleteUserUid] = useState('');
+    const [deletingUser, setDeletingUser] = useState(false);
+    const handleDeleteUser = async () => {
+        const uid = deleteUserUid.trim();
+        if (!uid) return;
+        if (!(await showConfirm(`Permanently delete user ${uid} and all their trees, pulses, visions and account? This cannot be undone.`, { title: 'Delete user', confirmText: 'Delete user', danger: true }))) return;
+        setDeletingUser(true);
+        try { await deleteUserAsAdmin(uid); setDeleteUserUid(''); showAlert('User deleted.'); }
+        catch (e: any) { showAlert(e?.message || 'Could not delete the user.'); }
+        setDeletingUser(false);
+    };
     const [adminActionLoading, setAdminActionLoading] = useState(false);
     const [inviteRequests, setInviteRequests] = useState<any[]>([]);
     const [requestBusyId, setRequestBusyId] = useState<string | null>(null);
@@ -258,7 +269,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
         if (!inviteEmail) return;
         setSendingInvite(true);
         try {
-            await createNetworkInvite(inviteEmail, lightseed.uid, inviteMessage);
+            await createNetworkInvite(inviteEmail, lightseed.uid, inviteMessage, { unlimited: isSuperAdmin });
             refreshSentInvites();
             setDialogMessage(t('invite_sent'));
             setShowInviteModal(false);
@@ -605,9 +616,9 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                                         </div>
                                     ) : (
                                         <div className="rounded-2xl border border-slate-100 p-5 space-y-3">
-                                            <p className="text-sm text-slate-500">{t('invites_remaining')}: <span className="font-bold text-emerald-600">{invitesRemaining}</span></p>
+                                            <p className="text-sm text-slate-500">{t('invites_remaining')}: <span className="font-bold text-emerald-600">{isSuperAdmin ? 'Unlimited' : invitesRemaining}</span></p>
                                             <p className="text-xs text-slate-400">Invite someone by email — they'll receive a link that opens the join page with their email locked in.</p>
-                                            <button onClick={() => setShowInviteModal(true)} disabled={invitesRemaining <= 0} className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-emerald-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"><Icons.UserPlus /> <span>{t('send_invite')}</span></button>
+                                            <button onClick={() => setShowInviteModal(true)} disabled={!isSuperAdmin && invitesRemaining <= 0} className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-emerald-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"><Icons.UserPlus /> <span>{t('send_invite')}</span></button>
                                         </div>
                                     )}
                                 </div>
@@ -753,6 +764,16 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                                                         <button onClick={async () => { setAdminActionLoading(true); await onRevokeAdmin(a.uid); setAdmins(prev => prev.filter(x => x.uid !== a.uid)); setAdminActionLoading(false); }} className="text-red-500 hover:text-red-600 text-xs font-bold ml-3 transition-colors">Revoke</button>
                                                     </div>
                                                 ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Delete a user — for re-testing onboarding. Removes their data + Auth account. */}
+                                        <div className="mt-4 rounded-2xl border border-red-100 bg-red-50/40 p-5 space-y-3">
+                                            <h4 className="font-bold text-red-700 flex items-center gap-2 text-sm uppercase tracking-wider"><Icons.Trash /> Delete a user</h4>
+                                            <p className="text-xs text-slate-500">Permanently removes a user's trees, pulses, visions and account. Use for re-testing onboarding.</p>
+                                            <div className="flex gap-2">
+                                                <input value={deleteUserUid} onChange={e => setDeleteUserUid(e.target.value)} placeholder="User UID" className="flex-1 bg-white border border-slate-200 text-slate-800 text-xs rounded-lg px-3 py-2 font-mono focus:outline-none focus:border-red-400" />
+                                                <button disabled={!deleteUserUid.trim() || deletingUser} onClick={handleDeleteUser} className="bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors whitespace-nowrap">{deletingUser ? 'Deleting…' : 'Delete user'}</button>
                                             </div>
                                         </div>
 
