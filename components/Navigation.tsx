@@ -21,6 +21,7 @@ interface NavigationProps {
   dangerTreesCount: number;
   reachNotificationsCount?: number;
   treeInviteCount?: number;
+  careAlertCount?: number;
   activeTreeImage?: string;
   logoUrl?: string;
   appName?: string;
@@ -75,6 +76,7 @@ export const Navigation = ({
     myTreesCount = 0, 
     dangerTreesCount = 0,
     reachNotificationsCount = 0,
+    careAlertCount = 0,
     treeInviteCount = 0,
     activeTreeImage,
     logoUrl,
@@ -134,8 +136,9 @@ export const Navigation = ({
     // Signed-out visitors get a slimmer menu: no Visions, Pulses, or Observatory.
     const signedIn = !!lightseed;
     const lightEarthTabs = signedIn ? ['forest', 'visions', 'events', 'pulses'] : ['forest', 'events'];
-    const intelligenceTabs = signedIn ? ['observatory'] : [];
-    const otherTabs = ['collab', 'communities', 'about'];
+    // AI Collab (the node's intelligences) lives in the Intelligence group, visible to everyone.
+    const intelligenceTabs = signedIn ? ['observatory', 'collab'] : ['collab'];
+    const otherTabs = ['communities', 'about'];
 
     // Icon for each destination, used by the mobile menu tiles.
     const tabIcons: Record<string, React.ReactNode> = {
@@ -323,13 +326,19 @@ export const Navigation = ({
                                     title={t('direct_messages')}
                                     aria-label={t('direct_messages')}
                                     className={`relative inline-flex rounded-full border p-2 transition-all ${
-                                        (reachNotificationsCount > 0 || treeInviteCount > 0)
-                                            ? 'border-emerald-300 bg-emerald-500/15 text-emerald-500 shadow-[0_0_14px_rgba(16,185,129,0.7)] ring-2 ring-emerald-300/70 animate-pulse'
-                                            : (navIsDark ? 'bg-black/20 text-slate-200 hover:bg-black/30' : 'bg-white/70 text-slate-600 hover:bg-white')
+                                        careAlertCount > 0
+                                            ? 'border-sky-300 bg-sky-500/15 text-sky-500 shadow-[0_0_14px_rgba(14,165,233,0.7)] ring-2 ring-sky-300/70 animate-pulse'
+                                            : (reachNotificationsCount > 0 || treeInviteCount > 0)
+                                                ? 'border-emerald-300 bg-emerald-500/15 text-emerald-500 shadow-[0_0_14px_rgba(16,185,129,0.7)] ring-2 ring-emerald-300/70 animate-pulse'
+                                                : (navIsDark ? 'bg-black/20 text-slate-200 hover:bg-black/30' : 'bg-white/70 text-slate-600 hover:bg-white')
                                     }`}
-                                    style={(reachNotificationsCount > 0 || treeInviteCount > 0) ? undefined : { borderColor: navBorder }}
+                                    style={(careAlertCount > 0 || reachNotificationsCount > 0 || treeInviteCount > 0) ? undefined : { borderColor: navBorder }}
                                 >
                                     <Icons.Mail />
+                                    {/* Watering needed — blue, top-left */}
+                                    {careAlertCount > 0 && (
+                                        <span title="A tree needs watering" className={`absolute -top-1 -left-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-sky-500 px-1 text-[8px] font-black text-white ring-2 ${navIsDark ? 'ring-emerald-950' : 'ring-white'}`}>{careAlertCount > 9 ? '9+' : careAlertCount}</span>
+                                    )}
                                     {/* Reaches — red, top-right */}
                                     {reachNotificationsCount > 0 && (
                                         <span className={`absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[8px] font-black text-white ring-2 ${navIsDark ? 'ring-emerald-950' : 'ring-white'}`}>{reachNotificationsCount > 9 ? '9+' : reachNotificationsCount}</span>

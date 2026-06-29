@@ -59,6 +59,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
        return new Date(d.getTime() - offset).toISOString().slice(0, 16);
    });
    const [editDomain, setEditDomain] = useState(tree.domain || '');
+   const [editVisibility, setEditVisibility] = useState<'public' | 'node' | 'private'>(tree.visibility || 'public');
    const [isSaving, setIsSaving] = useState(false);
    
    // Immutable chain Visualization State
@@ -70,6 +71,13 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    // Local state for immediate UI feedback on actions
    const [localStatus, setLocalStatus] = useState(tree.status || 'HEALTHY');
    const [isLocating, setIsLocating] = useState(false);
+
+   // Profile-like sections: the tree is a being with a digital body, details, guardians, care
+   // and a circle. Everything can be a lifetree, so this reads like a profile.
+   type TreeSection = 'digital' | 'details' | 'guardians' | 'care' | 'circle';
+   const [section, setSection] = useState<TreeSection>('digital');
+   // The growth chain can be long, so the middle collapses into a clickable line.
+   const [chainExpanded, setChainExpanded] = useState(false);
 
    // Tree Circle invite form
    const [showInvite, setShowInvite] = useState(false);
@@ -92,6 +100,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
        setWaterMode(tree.watering?.mode === 'self_sustaining' ? 'self_sustaining' : 'scheduled');
        setWaterInterval(tree.watering?.intervalDays || 7);
        setWaterMsg(null);
+       setEditVisibility(tree.visibility || 'public');
    }, [tree.id]);
 
    // Note: getPulsesByTreeId returns Descending order (Newest First). Extracted so a fresh
@@ -121,6 +130,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                longitude: Number(editLng),
                locationName: editLocationName.trim() || null,
                domain: editDomain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '') || null,
+               visibility: editVisibility,
                ...(editCreatedAt && { createdAt: new Date(editCreatedAt) })
            };
            await updateLifetree(tree.id, updates);
@@ -444,6 +454,55 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
        </div>
    );
 
+   // Collapse the middle of a long growth chain into one clickable line.
+   const COLLAPSE_AT = 6, CHAIN_HEAD = 3, CHAIN_TAIL = 2;
+   const chainCollapsible = growthBlocks.length > COLLAPSE_AT;
+   const hiddenChainCount = chainCollapsible && !chainExpanded ? growthBlocks.length - CHAIN_HEAD - CHAIN_TAIL : 0;
+   const COLLAPSED_MARKER = { _collapsed: true } as any;
+   const visibleChain: any[] = (chainCollapsible && !chainExpanded)
+       ? [...growthBlocks.slice(0, CHAIN_HEAD), COLLAPSED_MARKER, ...growthBlocks.slice(growthBlocks.length - CHAIN_TAIL)]
+       : growthBlocks;
+
+   // The profile menu: each entry is a card that reveals a section. Digital Tree first.
+   const sections: { key: TreeSection; label: string; icon: React.ReactNode }[] = [
+       { key: 'digital', label: 'Digital Tree', icon: <Icons.Tree /> },
+       { key: 'details', label: t('tree_details'), icon: <Icons.Info /> },
+       { key: 'guardians', label: 'Guardians', icon: <Icons.Shield /> },
+       { key: 'care', label: 'Care', icon: <Icons.Droplet /> },
+       { key: 'circle', label: 'Tree Circle', icon: <Icons.Venn /> },
+   ];
+   // Menu: horizontal strip on mobile, vertical sidebar (on the right) on desktop.
+   const SectionMenu = () => (
+       <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scroll-hide-bar md:mx-0 md:flex-col md:overflow-visible md:px-0 md:pb-0 md:sticky md:top-20">
+           {sections.map(s => (
+               <button key={s.key} onClick={() => setSection(s.key)}
+                   className={`flex shrink-0 items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-bold transition-all md:w-full md:justify-start ${section === s.key ? 'border-emerald-300 bg-emerald-600 text-white shadow-md' : 'border-slate-200 bg-white text-slate-600 hover:border-emerald-200 hover:bg-emerald-50'}`}>
+                   <span className="[&>svg]:h-4 [&>svg]:w-4">{s.icon}</span>
+                   <span>{s.label}</span>
+               </button>
+           ))}
+       </div>
+   );
+
+   // The tree's avatar/banner image — its latest growth (or its planting image).
+   const heroImg = tree.latestGrowthUrl || tree.imageUrl || '';
+   const [shared, setShared] = useState(false);
+   const handleShare = async () => {
+       const url = `${window.location.origin}/?tree=${tree.id}`;
+       try {
+           if ((navigator as any).share) await (navigator as any).share({ title: tree.name, url });
+           else { await navigator.clipboard.writeText(url); setShared(true); setTimeout(() => setShared(false), 1500); }
+       } catch { /* user cancelled the share sheet */ }
+   };
+   // One uniform action button: icon + label on desktop, icon-only on mobile; coloured per action.
+   const ActionBtn = ({ onClick, disabled, title, color, icon, label }: { onClick?: () => void; disabled?: boolean; title?: string; color: string; icon: React.ReactNode; label?: string }) => (
+       <button type="button" onClick={onClick} disabled={disabled} title={title}
+           className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-bold shadow-sm transition-colors disabled:opacity-50 ${color}`}>
+           <span className="[&>svg]:h-4 [&>svg]:w-4">{icon}</span>
+           {label && <span className="hidden md:inline">{label}</span>}
+       </button>
+   );
+
     return (
         <>
         <div className="min-h-screen animate-in fade-in zoom-in-95 duration-300">
@@ -464,144 +523,69 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                 </button>
             )}
 
-            {/* Header */}
-            <div className={`sticky ${localStatus === 'DANGER' ? 'top-10' : 'top-0'} z-30 border-b border-emerald-200 bg-emerald-50/90 px-4 py-4 backdrop-blur-md flex items-center justify-between`}>
-                <button onClick={onClose} className="flex items-center space-x-2 text-emerald-700 hover:text-emerald-900 font-medium">
-                    <Icons.ArrowLeft />
-                    <span>{t('back_forest')}</span>
-                </button>
-                <div className="hidden md:flex flex-col items-center">
-                    <h2 dir="auto" className="text-xl font-light tracking-wide truncate max-w-[200px] text-emerald-950">{isEditing ? "Editing..." : tree.name}</h2>
-                    {tree.shortTitle && !isEditing && <span dir="auto" className="text-xs text-emerald-600 font-bold uppercase tracking-widest">{tree.shortTitle}</span>}
-                </div>
-                <div className="min-w-[80px] flex justify-end gap-2">
-                    {/* Set as my default ("closest") tree — owner only. */}
-                    {isOwner && !isEditing && onSetDefault && (
-                        <button
-                            onClick={() => { if (!isDefaultTree) onSetDefault(); }}
-                            disabled={isDefaultTree}
-                            title={isDefaultTree ? 'This is your default tree' : 'Set as my default tree'}
-                            className={`p-2 rounded-full shadow-sm transition-colors border ${isDefaultTree ? 'bg-amber-50 text-amber-500 border-amber-200 cursor-default' : 'bg-white text-slate-400 hover:text-amber-500 hover:bg-amber-50 border-slate-200'}`}
-                        >
-                            <Icons.Star filled={isDefaultTree} />
-                        </button>
-                    )}
-                    {canDelete && !isEditing && (
-                        <button onClick={() => setShowDeleteModal(true)} className="bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 p-2 rounded-full shadow-sm transition-colors border border-red-200" title="Delete tree">
-                            <Icons.Trash />
-                        </button>
-                    )}
-                    {/* EDIT Button: Allowed for Owner, Guardian, or SuperAdmin */}
-                    {canEdit && !isEditing && (
-                        <button onClick={() => setIsEditing(true)} className="bg-white hover:bg-emerald-100 text-emerald-700 hover:text-emerald-900 px-4 py-2 rounded-full font-bold text-sm shadow-sm transition-colors flex items-center gap-1 border border-emerald-200">
-                            <Icons.Pencil />
-                            <span>{t('edit')}</span>
-                        </button>
-                    )}
-                </div> 
-            </div>
-
-            <div className="max-w-4xl mx-auto p-6 space-y-8">
-                {/* Hero */}
-                <div className="relative h-44 md:h-64 w-full rounded-2xl overflow-hidden shadow-xl">
-                    <img
-                        src={tree.latestGrowthUrl || tree.imageUrl || 'https://via.placeholder.com/800x400'}
-                        className="w-full h-full object-cover"
-                        alt={tree.name}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-transparent to-black/60"></div>
-                    {/* Tree name — top left. */}
-                    {!isEditing && (
-                        <div className="absolute top-4 left-6 right-12 text-white">
-                            <h1 dir="auto" className="text-2xl md:text-4xl font-thin tracking-tight drop-shadow-lg">{tree.name}</h1>
-                            {tree.shortTitle && <p dir="auto" className="mt-0.5 text-xs font-bold uppercase tracking-widest text-emerald-200 drop-shadow">{tree.shortTitle}</p>}
-                        </div>
-                    )}
-                    {hasValidationBadge && (
-                        <div className="absolute bottom-4 right-4 z-20">
-                            <ValidationBadge />
-                        </div>
-                    )}
-                    <div className="absolute bottom-6 left-6 text-white w-full pr-12">
-                        <div className="mb-2 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
-                            {isNature ? (
-                                <span className="bg-sky-500 text-white text-xs px-2 py-0.5 rounded-full font-bold flex items-center">
-                                    <Icons.Shield />
-                                    <span className="ml-1">NATURE</span>
-                                </span>
-                            ) : null}
-                            <div className="flex items-center gap-2 sm:gap-3">
-                                <button onClick={() => onPlayGrowth(tree.id)} title="Play growth"
-                                    className="min-h-0 w-fit flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-yellow-300 px-3.5 py-1.5 shadow-lg shadow-emerald-900/40 ring-1 ring-yellow-300/50 transition-colors">
-                                    <Icons.Play />
-                                    <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-white">Play Growth</span>
-                                </button>
-                                {canReach ? (
-                                    <button onClick={() => onReachTree?.(tree)} className="min-h-0 w-fit bg-amber-500/90 hover:bg-amber-600 text-white text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 rounded-full flex items-center space-x-1 backdrop-blur-sm transition-colors">
-                                        <Icons.Lightning />
-                                        <span>REACH</span>
-                                    </button>
-                                ) : (
-                                    <button
-                                        type="button"
-                                        disabled
-                                        title={t('only_if_validated')}
-                                        className="min-h-0 w-fit bg-white/20 text-white/70 text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 rounded-full flex items-center space-x-1 backdrop-blur-sm cursor-not-allowed"
-                                    >
-                                        <Icons.Eye size={14} />
-                                        <span>{t('only_if_validated')}</span>
-                                    </button>
-                                )}
-                                {showValidateAction && (
-                                    <button
-                                        onClick={async () => {
-                                            const nextValidated = !hasValidationBadge;
-                                            const message = nextValidated ? 'Validate this tree?' : 'Remove validation from this tree?';
-                                            if (await showConfirm(message, { title: 'Validation' })) onValidate(tree.id, nextValidated);
-                                        }}
-                                        className="min-h-0 w-fit bg-emerald-600/90 hover:bg-emerald-600 text-white text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 rounded-full flex items-center justify-center gap-1.5 backdrop-blur-sm transition-colors"
-                                        title={hasValidationBadge ? 'Remove validation' : t('validate_action')}
-                                    >
-                                        <Icons.ShieldCheck />
-                                        <span className="hidden sm:inline">{hasValidationBadge ? 'Remove Validation' : t('validate_action')}</span>
-                                    </button>
-                                )}
-                                {/* Grow — mint a growth pulse on THIS tree (updates its latest image). Always
-                                    visible to the owner in the hero, not buried in the chain section below. */}
-                                {isOwner && !isEditing && (
-                                    <button onClick={onCreatePulse} title="Grow this tree with a pulse"
-                                        className="min-h-0 w-fit bg-white text-emerald-700 hover:bg-emerald-50 text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 rounded-full flex items-center space-x-1 shadow-sm transition-colors font-bold">
-                                        <Icons.HeartPulse />
-                                        <span>GROW</span>
-                                    </button>
-                                )}
+            {/* Profile hero — a wide banner of the latest growth image with a circular avatar. */}
+            <div className="relative overflow-hidden bg-gradient-to-b from-slate-800 to-slate-900 text-white">
+                {heroImg && <img src={heroImg} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70" />}
+                <div className="absolute inset-0 bg-gradient-to-b from-slate-900/45 via-slate-900/55 to-slate-900/85" />
+                <div className="relative mx-auto flex max-w-5xl items-center gap-3 px-4 pt-5 pb-6 sm:gap-4">
+                    {/* Back — left of the avatar; returns to wherever you came from. */}
+                    <button onClick={onClose} title={t('back_forest')} className="shrink-0 rounded-full bg-white/15 p-2.5 text-white transition-colors hover:bg-white/25">
+                        <Icons.ArrowLeft />
+                    </button>
+                    {/* Avatar — the latest growth image. */}
+                    <div className="relative shrink-0">
+                        {heroImg
+                            ? <img src={heroImg} alt={tree.name} className="h-16 w-16 rounded-full border-4 border-white bg-white object-cover shadow-xl md:h-24 md:w-24" />
+                            : <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-emerald-700 shadow-xl md:h-24 md:w-24"><Logo width={36} height={36} /></div>}
+                        {hasValidationBadge && <div className="absolute -bottom-1 -right-1"><ValidationBadge compact /></div>}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        {isEditing ? (
+                            <div className="max-w-md space-y-2">
+                                <input dir="auto" className="w-full border-b border-white/40 bg-white/10 p-1 text-2xl font-thin tracking-tight text-white focus:outline-none md:text-3xl" value={editName} onChange={e => setEditName(e.target.value)} placeholder="Tree Name" />
+                                <input dir="auto" className="w-full border-b border-white/40 bg-white/10 p-1 text-xs font-bold uppercase tracking-widest text-white focus:outline-none" value={editShortTitle} onChange={e => setEditShortTitle(e.target.value)} placeholder="SHORT TITLE" />
                             </div>
-                        </div>
-                        {isEditing && (
-                            <div className="space-y-2 max-w-md">
-                                <input
-                                    dir="auto"
-                                    className="text-3xl md:text-4xl font-thin tracking-tight bg-black/40 border-b border-white/50 text-white w-full focus:outline-none p-1"
-                                    value={editName}
-                                    onChange={(e) => setEditName(e.target.value)}
-                                    placeholder="Tree Name"
-                                />
-                                <input
-                                    dir="auto"
-                                    className="text-sm font-bold tracking-widest uppercase bg-black/40 border-b border-white/50 text-white w-full focus:outline-none p-1"
-                                    value={editShortTitle}
-                                    onChange={(e) => setEditShortTitle(e.target.value)}
-                                    placeholder="SHORT TITLE"
-                                />
-                            </div>
+                        ) : (
+                            <>
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                    <h1 dir="auto" className="break-words text-2xl font-light tracking-wide md:text-3xl">{tree.name}</h1>
+                                    {isNature && <span className="inline-flex items-center gap-1 rounded-full bg-sky-500 px-2 py-0.5 text-[10px] font-bold"><Icons.Shield /> NATURE</span>}
+                                    {tree.visibility && tree.visibility !== 'public' && <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">{tree.visibility}</span>}
+                                </div>
+                                {tree.shortTitle && <p dir="auto" className="mt-0.5 text-xs font-bold uppercase tracking-widest text-emerald-200">{tree.shortTitle}</p>}
+                                <div className="mt-1.5 flex items-center gap-2">
+                                    <span dir="ltr" className="truncate font-mono text-xs text-slate-300" title={tree.id}>{tree.id}</span>
+                                    <button onClick={handleShare} title="Share this tree" className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-bold text-white transition-colors hover:bg-white/25">
+                                        <Icons.Link /> <span>{shared ? 'Copied' : 'Share'}</span>
+                                    </button>
+                                </div>
+                            </>
                         )}
                     </div>
                 </div>
+            </div>
 
-                {/* Info Grid */}
-                <div className="grid md:grid-cols-2 gap-8">
-                    
-                    {/* Left: Bio & Meta */}
+            {/* Actions — uniform: icon + label on desktop, icon-only on mobile; kept coloured. */}
+            <div className="mx-auto max-w-5xl px-4 pt-4">
+                <div className="flex flex-wrap gap-2">
+                    <ActionBtn onClick={() => onPlayGrowth(tree.id)} title="Play growth" color="bg-emerald-600 text-white hover:bg-emerald-700" icon={<Icons.Play />} label="Play" />
+                    {canReach
+                        ? <ActionBtn onClick={() => onReachTree?.(tree)} title="Reach" color="bg-amber-500 text-white hover:bg-amber-600" icon={<Icons.Lightning />} label="Reach" />
+                        : <ActionBtn disabled title={t('only_if_validated')} color="bg-slate-200 text-slate-500" icon={<Icons.Eye />} label={t('only_if_validated')} />}
+                    {showValidateAction && <ActionBtn onClick={async () => { const nv = !hasValidationBadge; if (await showConfirm(nv ? 'Validate this tree?' : 'Remove validation from this tree?', { title: 'Validation' })) onValidate(tree.id, nv); }} title={hasValidationBadge ? 'Remove validation' : t('validate_action')} color="bg-emerald-600 text-white hover:bg-emerald-700" icon={<Icons.ShieldCheck />} label={hasValidationBadge ? 'Validated' : t('validate_action')} />}
+                    {isOwner && !isEditing && <ActionBtn onClick={onCreatePulse} title="Grow this tree with a pulse" color="border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50" icon={<Icons.HeartPulse />} label="Grow" />}
+                    {isOwner && !isEditing && onSetDefault && <ActionBtn onClick={() => { if (!isDefaultTree) onSetDefault(); }} disabled={isDefaultTree} title={isDefaultTree ? 'Your default tree' : 'Set as default tree'} color={isDefaultTree ? 'bg-amber-400 text-amber-950' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'} icon={<Icons.Star filled={isDefaultTree} />} label="Favourite" />}
+                    {canEdit && !isEditing && <ActionBtn onClick={() => { setIsEditing(true); setSection('details'); }} title={t('edit')} color="bg-slate-100 text-slate-700 hover:bg-slate-200" icon={<Icons.Pencil />} label={t('edit')} />}
+                    {canDelete && !isEditing && <ActionBtn onClick={() => setShowDeleteModal(true)} title="Delete tree" color="bg-red-500 text-white hover:bg-red-600" icon={<Icons.Trash />} label="Delete" />}
+                </div>
+            </div>
+
+            {/* Body — content with the section menu on the right (desktop), a strip on mobile. */}
+            <div className="mx-auto max-w-5xl px-4 py-6 md:flex md:flex-row-reverse md:gap-6">
+                <aside className="mb-4 md:mb-0 md:w-56 md:shrink-0"><SectionMenu /></aside>
+                <main className="min-w-0 flex-1 space-y-6">
+
+                {section === 'details' && (
                     <div className="space-y-6">
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                             <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center">
@@ -716,6 +700,18 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                         : <span className="flex-1 text-left text-slate-400 text-sm">—</span>
                                 )}
                             </div>
+                            <div className="flex items-center gap-4 py-2 border-t border-slate-50">
+                                <span className="w-24 shrink-0 text-slate-500 text-sm">{t('visibility')}</span>
+                                {isEditing && canEdit ? (
+                                    <select value={editVisibility} onChange={e => setEditVisibility(e.target.value as 'public' | 'node' | 'private')} className={fieldClassName}>
+                                        <option value="public">{t('vis_public')}</option>
+                                        <option value="node">{t('vis_node')}</option>
+                                        <option value="private">{t('vis_private')}</option>
+                                    </select>
+                                ) : (
+                                    <span className="flex-1 text-left text-slate-800 text-sm capitalize">{tree.visibility || 'public'}</span>
+                                )}
+                            </div>
 
                             {isEditing && (
                                 <div className="flex space-x-2 mt-4 pt-4 border-t border-slate-100">
@@ -765,23 +761,33 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                             </div>
                         )}
                     </div>
+                )}
 
-                    {/* Right: Guard / Watering / Circle panels. The Immutable Chain stats moved to
-                        the bottom of the chain visualization, below the genesis root. */}
-                    <div className="space-y-6">
-                        <GuardianshipPanel />
-                        {(isNature || isOwner || localIsGuardian) && <WateringPanel />}
-                        <TreeCirclePanel />
-                    </div>
-                </div>
+                {section === 'guardians' && <GuardianshipPanel />}
 
-                {/* Immutable chain Visualization Section */}
-                {!loadingChain && (
-                    <div className="mt-8 pt-8 border-t border-slate-200">
+                {section === 'care' && (
+                    (isNature || isOwner || localIsGuardian)
+                        ? <WateringPanel />
+                        : <p className="rounded-2xl border border-slate-100 bg-white p-6 text-center text-sm text-slate-400">Only the tree's circle can tend its care.</p>
+                )}
+
+                {section === 'circle' && <TreeCirclePanel />}
+
+                {/* Digital Tree — the immutable growth chain (collapsible). */}
+                {section === 'digital' && loadingChain && (
+                    <p className="py-10 text-center text-sm text-slate-400">Growing the digital tree…</p>
+                )}
+                {section === 'digital' && !loadingChain && (
+                    <div className="pt-2">
                         <div className="flex flex-col items-center mb-12">
-                            <h3 className="text-xl font-light text-slate-800 mb-6 flex items-center gap-2">
-                                <span>Immutable Growth Chain</span>
+                            <h3 className="text-xl font-light text-slate-800 mb-2 flex items-center gap-2">
+                                <span>Digital Tree</span>
                             </h3>
+                            {chainCollapsible && (
+                                <button onClick={() => setChainExpanded(e => !e)} className="mb-4 text-xs font-bold text-emerald-600 hover:text-emerald-800">
+                                    {chainExpanded ? 'Collapse the middle' : `Expand all ${growthBlocks.length} pulses`}
+                                </button>
+                            )}
 
                             {/* Action Button at the Top — lightseed treatment (yellow glow). */}
                             {isOwner && (
@@ -803,7 +809,19 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                             </div>
 
                             <div className="w-full space-y-12 md:space-y-24 pb-24 relative z-10">
-                                {growthBlocks.map((pulse, index) => {
+                                {visibleChain.map((pulse, index) => {
+                                    // The collapsed middle renders as one clickable horizontal line.
+                                    if ((pulse as any)._collapsed) {
+                                        return (
+                                            <div key="chain-collapsed" className="flex w-full justify-start pl-12 md:justify-center md:pl-0">
+                                                <button onClick={() => setChainExpanded(true)}
+                                                    className="relative z-10 flex w-full items-center justify-center gap-2 rounded-full border-2 border-dashed border-emerald-300 bg-emerald-50/80 py-2.5 text-xs font-bold text-emerald-700 backdrop-blur-sm transition-colors hover:bg-emerald-100 md:max-w-md">
+                                                    <Icons.List />
+                                                    <span>{hiddenChainCount} more pulse{hiddenChainCount !== 1 ? 's' : ''} hidden — tap to expand</span>
+                                                </button>
+                                            </div>
+                                        );
+                                    }
                                     // Visual positioning logic:
                                     // index 0, 2, 4 (Even) -> Right Side (Desktop)
                                     // index 1, 3, 5 (Odd) -> Left Side (Desktop)
@@ -955,6 +973,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                         </div>
                     </div>
                 )}
+                </main>
             </div>
         </div>
 

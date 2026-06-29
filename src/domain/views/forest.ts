@@ -24,6 +24,22 @@ export function treeCoordinates(tree: Pick<Lifetree, 'latitude' | 'longitude'>):
   return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
 }
 
+// Can this viewer see a tree, given its visibility? 'public' = everyone; 'node' = any signed-in
+// member; 'private' = owner, its guardians, or staff. (Client-side gate for the forest UI; rules
+// hardening is a separate step.)
+export function canViewTree(
+  tree: Pick<Lifetree, 'ownerId' | 'visibility'> & { id?: string },
+  viewer: { uid?: string; isStaff?: boolean; guardedIds?: Set<string> },
+): boolean {
+  const v = tree.visibility || 'public';
+  if (v === 'public') return true;
+  if (viewer.isStaff) return true;
+  if (viewer.uid && tree.ownerId === viewer.uid) return true;
+  if (tree.id && viewer.guardedIds?.has(tree.id)) return true;
+  if (v === 'node') return !!viewer.uid;
+  return false; // private, and not owner / guardian / staff
+}
+
 export interface ForestFilter { showNature: boolean; showUser: boolean; showValidated: boolean; }
 
 // Pure predicate for the forest filter toggles. `isValidated` is injected so this domain view

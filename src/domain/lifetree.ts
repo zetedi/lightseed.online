@@ -33,6 +33,10 @@ export interface Lifetree extends Entity {
   domain?: string; // Associated website domain, e.g. "example.com"
   createdAt: Timestamp;
 
+  // Who can see this tree. 'public' = the whole world (the forest); 'node' = signed-in members
+  // of this node; 'private' = only the owner and its circle. Absent = public (legacy default).
+  visibility?: 'public' | 'node' | 'private';
+
   // Contact privacy — mirrored from the owner's users/{uid}.onlyValidatedCanReach so
   // the world-readable tree carries the flag and the reach gate needs no cross-user read.
   onlyValidatedCanReach?: boolean;

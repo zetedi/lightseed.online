@@ -62,7 +62,8 @@ import { LifetreeDetail } from './components/LifetreeDetail';
 import { VisionDetail } from './components/VisionDetail';
 import { PulseDetail } from './components/PulseDetail';
 import { queryableLevels, canEditEvent, pulseScope } from './src/domain/pulseVisibility';
-import { passesForestFilter } from './src/domain/views/forest';
+import { passesForestFilter, canViewTree } from './src/domain/views/forest';
+import { isWateringOverdue } from './src/domain/watering';
 import { GrowthPlayerModal } from './components/GrowthPlayerModal';
 import { LightseedProfile } from './components/LightseedProfile';
 import { Dashboard } from './components/Dashboard';
@@ -231,6 +232,13 @@ const AppContent = () => {
     const [showAuthModal, setShowAuthModal] = useState(false);
     // An ?invite=<token> link opens the join flow with a locked email.
     const inviteParam = useMemo(() => new URLSearchParams(window.location.search).get('invite') || undefined, []);
+
+    // A ?tree=<id> share link opens that tree's page on load.
+    useEffect(() => {
+        const id = new URLSearchParams(window.location.search).get('tree');
+        if (!id) return;
+        getLifetreeById(id).then(tr => { if (tr) setSelectedTree(tr); }).catch(() => {});
+    }, []);
     const [showPlantModal, setShowPlantModal] = useState(false);
     // How the plant modal should open: optionally straight to a type's plant step
     // (e.g. the "Guard Tree" button jumps past the type selection).
@@ -891,11 +899,20 @@ const AppContent = () => {
             const text = (item.title || item.name || "") + " " + (item.body || "") + " " + (item.locationName || "") + " " + (item.eventLocation || "") + " " + (item.reachTreeName || "");
             if (!text.toLowerCase().includes(term)) return false;
         }
-        if (tab === 'forest' && !passesForestFilter(item, { showNature: showNatureTrees, showUser: showUserTrees, showValidated: showValidatedTrees }, isExplicitlyValidatedTree)) {
-            return false;
+        if (tab === 'forest') {
+            if (!canViewTree(item, { uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin, guardedIds: guardedTreeIds })) return false;
+            if (!passesForestFilter(item, { showNature: showNatureTrees, showUser: showUserTrees, showValidated: showValidatedTrees }, isExplicitlyValidatedTree)) return false;
         }
         return true;
-    }), [data, searchTerm, tab, showNatureTrees, showUserTrees, showValidatedTrees]);
+    }), [data, searchTerm, tab, showNatureTrees, showUserTrees, showValidatedTrees, lightseed?.uid, isSuperAdmin, isAdmin, guardedTreeIds]);
+
+    // Trees of mine (owned or guarded) whose watering is overdue — drives the blue care marker
+    // on the nav envelope, computed straight from the trees so it shows even before the daily
+    // sweep mints a "water me" reach.
+    const wateringNeededCount = useMemo(
+        () => [...myTrees, ...guardedTrees].filter(t => isWateringOverdue(t)).length,
+        [myTrees, guardedTrees]
+    );
 
     // Signed-out visitors see only node-level events (the node's own happenings), not every
     // community/tree event. Node-scoped = not rooted in a community or a tree.
@@ -1016,11 +1033,19 @@ const AppContent = () => {
         if (tab === 'collab') {
             return (
                 <div className="max-w-3xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="mb-6">
-                        <h1 className="flex items-center gap-2 text-3xl font-light text-slate-800"><Icons.Users /> {t('collab')}</h1>
-                        <p className="mt-1 text-sm text-slate-500">{t('collab_sub')}</p>
+                    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl">
+                        {/* Header — branch.webp, Observatory-style */}
+                        <div className="relative h-40 md:h-52">
+                            <div className="absolute inset-0 bg-slate-900" />
+                            <img src="/branch.webp" alt="" className="absolute inset-0 h-full w-full object-cover opacity-60" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
+                            <div className="absolute bottom-4 left-6 right-6 text-white">
+                                <h1 className="flex items-center gap-2 text-2xl md:text-3xl font-light drop-shadow"><Icons.Users /> {t('collab')}</h1>
+                                <p className="mt-1 text-sm text-slate-200/90 drop-shadow">{t('collab_sub')}</p>
+                            </div>
+                        </div>
+                        <div className="p-6"><Partners /></div>
                     </div>
-                    <Partners />
                 </div>
             );
         }
@@ -1376,6 +1401,7 @@ const AppContent = () => {
                         dangerTreesCount={guardedTrees.filter(t => t.status === 'DANGER').length}
                         reachNotificationsCount={unreadReaches}
                         treeInviteCount={pendingTreeInvites}
+                        careAlertCount={wateringNeededCount}
                         activeTreeImage={activeTree?.latestGrowthUrl || activeTree?.imageUrl}
                         onOpenReachInbox={openDirectMessages}
                         logoUrl={configuredLogoUrl}

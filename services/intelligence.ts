@@ -250,6 +250,13 @@ export const getManageableIntelligences = async (ownerUid?: string): Promise<Int
   return Array.from(byId.values()).sort((a, b) => a.name.localeCompare(b.name));
 };
 
+// Public list of the node's intelligences — for the Partners / AI Collab display. World-readable
+// (only public ones), no auth or manage permission needed; hides disabled.
+export const getPublicIntelligences = async (): Promise<Intelligence[]> => {
+  const snap = await getDocs(query(intelligencesCol, where('public', '==', true)));
+  return snap.docs.map(d => mapDoc<Intelligence>(d)).filter(i => i.enabled !== false).sort((a, b) => a.name.localeCompare(b.name));
+};
+
 export const createIntelligence = async (data: Omit<Intelligence, 'id' | 'createdAt'>) => {
   const ref = doc(intelligencesCol);
   await setDoc(ref, { ...data, lid: uuidv7(), createdAt: serverTimestamp() });
