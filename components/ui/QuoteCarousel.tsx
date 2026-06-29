@@ -39,7 +39,7 @@ export const QuoteCarousel = ({ quotes, intervalMs = 8000 }: { quotes: string[];
         touchX.current = null;
       }}
     >
-      <div aria-live="polite" className="mx-auto flex min-h-[4.5rem] max-w-3xl items-center justify-center sm:min-h-[5.5rem]">
+      <div aria-live="polite" className="mx-auto flex h-[clamp(3.5rem,15vh,6.5rem)] max-w-3xl items-center justify-center overflow-hidden">
         <p
           key={i}
           dir="auto"

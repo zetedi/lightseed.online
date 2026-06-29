@@ -116,7 +116,7 @@ export const Navigation = ({
         if (activeTab === key) {
             const themes: any = { 
                 dashboard: 'bg-indigo-600', visions: 'bg-amber-500', forest: 'bg-emerald-600', 
-                pulses: 'bg-sky-600', events: 'bg-teal-600', observatory: 'bg-rose-600', inspiration: 'bg-indigo-600', about: 'bg-purple-600', communities: 'bg-teal-600'
+                pulses: 'bg-sky-600', events: 'bg-teal-600', observatory: 'bg-rose-600', inspiration: 'bg-indigo-600', about: 'bg-purple-600', communities: 'bg-teal-600', collab: 'bg-violet-600'
             };
             return `${themes[key] || 'bg-slate-700'} text-white shadow-lg shadow-black/20 font-bold tracking-wide`;
         }
@@ -135,7 +135,7 @@ export const Navigation = ({
     const signedIn = !!lightseed;
     const lightEarthTabs = signedIn ? ['forest', 'visions', 'events', 'pulses'] : ['forest', 'events'];
     const intelligenceTabs = signedIn ? ['observatory'] : [];
-    const otherTabs = ['communities', 'about'];
+    const otherTabs = ['collab', 'communities', 'about'];
 
     // Icon for each destination, used by the mobile menu tiles.
     const tabIcons: Record<string, React.ReactNode> = {
@@ -145,6 +145,7 @@ export const Navigation = ({
         pulses: <Icons.PulseDuo />,
         observatory: <Icons.Exchange />,
         communities: <Icons.Globe />,
+        collab: <Icons.Users />,
         about: <Icons.Info />,
     };
 
@@ -426,6 +427,7 @@ export const Navigation = ({
                             {signedIn && <MobileNavTile tab="visions" short />}
                             <MobileNavTile tab="events" short />
                             {signedIn && <MobileNavTile tab="observatory" short label="Observe" />}
+                            <MobileNavTile tab="collab" short label="Collab" />
                             <MobileNavTile tab="communities" short label="Commune" />
                         </div>
                     </div>

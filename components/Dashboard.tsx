@@ -262,12 +262,12 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
 
                 <div className="relative h-full p-4 flex flex-col justify-between text-white">
                     <div className="flex justify-between items-start">
-                        <span className="text-xs font-bold uppercase tracking-[0.25em] text-white/80 drop-shadow-md">{t('create_new_world')}</span>
+                        <h2 className="text-sm sm:text-lg font-bold uppercase tracking-widest text-white drop-shadow-md">{t('the_tree')}</h2>
                         <div className="p-2 bg-white/10 backdrop-blur rounded-lg"><Icons.Tree /></div>
                     </div>
-                    <span className="inline-flex w-full items-center justify-center gap-1.5 self-stretch rounded-full bg-emerald-600 px-3 py-2 text-[11px] font-bold uppercase leading-tight tracking-wide shadow-lg ring-1 ring-white/25 transition-all group-hover:bg-emerald-500 sm:w-auto sm:self-start sm:px-5 sm:py-2.5 sm:text-sm sm:tracking-widest sm:group-hover:scale-[1.03]">
-                        <span className="text-center">{t('be_mother_tree')}</span>
-                        <span className="hidden sm:inline"><Icons.ChevronRight /></span>
+                    <span className="inline-flex w-full flex-col items-center justify-center self-stretch rounded-full bg-emerald-600 px-4 py-2 shadow-lg ring-1 ring-white/25 transition-all group-hover:bg-emerald-500 sm:w-auto sm:self-start sm:px-6 sm:py-2.5 sm:group-hover:scale-[1.03]">
+                        <span className="text-center text-[11px] font-bold uppercase leading-tight tracking-wide sm:text-sm sm:tracking-widest">{t('plant_or_stand')}</span>
+                        <span className="text-center text-[9px] font-medium leading-tight tracking-normal text-white/85 sm:text-[10px]">{t('create_new_world')}</span>
                     </span>
                 </div>
             </div>
@@ -311,7 +311,7 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
                 <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors"></div>
                 <div className="relative h-full p-4 flex flex-col justify-between text-white">
                     <div className="flex justify-between items-start">
-                        <h2 className="text-sm sm:text-lg font-bold uppercase tracking-widest text-white drop-shadow-md">{t('forest')}</h2>
+                        <h2 className="text-sm sm:text-lg font-bold uppercase tracking-widest text-white drop-shadow-md">{t('the_forest')}</h2>
                         <div className="p-2 bg-white/10 backdrop-blur rounded-lg"><Icons.Map /></div>
                     </div>
                     

@@ -469,13 +469,14 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     genesis: <Icons.Hash />,
     path: <Icons.ArrowRight />,
     yantra: <Icons.Venn />,
+    protection: <Icons.ShieldCheck />,
   };
 
   // The Yantra (and the network's deeper lore) only belongs to the central nodes.
   const isNetworkHub = ['lightseed.online', 'lifeseed.online'].includes(bareDomain(community.domain));
 
   const navSections: { key: TabKey; label: string; icon: React.ReactNode }[] = [
-    { key: 'vision', label: 'Vision', icon: <Icons.FingerPrint /> },
+    { key: 'vision', label: 'Vision', icon: <Icons.Eye /> },
     { key: 'firsttree', label: 'First Tree', icon: <Icons.Tree /> },
     { key: 'sanctuary', label: 'The Sanctuary', icon: <Icons.Sun /> },
     { key: 'trees', label: 'Community Trees', icon: <Icons.Tree /> },

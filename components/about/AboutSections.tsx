@@ -438,6 +438,58 @@ export const MembershipPathSection = () => {
     );
 };
 
+// The EU emblem (twelve gold stars on blue) — the basis of the EUIPO mark. Inline so it needs
+// no asset; drop an official logo at public/euipo.svg and swap this if preferred.
+export const EuipoMark = ({ size = 52 }: { size?: number }) => (
+    <svg viewBox="0 0 100 100" width={size} height={size} role="img" aria-label="EUIPO" className="shrink-0">
+        <rect width="100" height="100" rx="14" fill="#003399" />
+        {Array.from({ length: 12 }).map((_, i) => {
+            const a = (i * 30) * Math.PI / 180;
+            return <text key={i} x={50 + 32 * Math.sin(a)} y={50 - 32 * Math.cos(a)} fill="#FFCC00" fontSize="13" textAnchor="middle" dominantBaseline="central">★</text>;
+        })}
+    </svg>
+);
+
+// The registered trademarks protecting the Lifeseed identity. Linked to EUIPO eSearch (public).
+export const TRADEMARKS = [
+    { no: '018427525', url: 'https://euipo.europa.eu/eSearch/#details/trademarks/018427525' },
+    { no: '019374987', url: 'https://euipo.europa.eu/eSearch/#details/trademarks/019374987' },
+];
+
+// Reusable protection notice — used as its own About tab and inside the Yantra section.
+export const ProtectionNote = ({ compact = false }: { compact?: boolean }) => (
+    <div className="flex items-start gap-4 rounded-2xl border border-blue-100 bg-blue-50/50 p-5">
+        <EuipoMark size={compact ? 44 : 56} />
+        <div className="min-w-0">
+            <h3 className="font-bold text-blue-900">{compact ? 'Protected' : 'Protection'}</h3>
+            <p className="mt-1 text-sm text-slate-600">
+                The Lifeseed yantra and the <span dir="ltr" className="font-semibold">.seed</span> mark are registered trademarks, protected with the European Union Intellectual Property Office (EUIPO).
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+                {TRADEMARKS.map(tm => (
+                    <a key={tm.no} href={tm.url} target="_blank" rel="noopener noreferrer"
+                       className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-white px-3 py-1 text-xs font-mono font-bold text-blue-800 transition-colors hover:bg-blue-100">
+                        <Icons.ShieldCheck /> {tm.no}
+                    </a>
+                ))}
+            </div>
+        </div>
+    </div>
+);
+
+// A standalone About tab for the protection / trademark info.
+export const ProtectionSection = () => (
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="mb-10 text-center max-w-2xl mx-auto">
+            <SectionHeader>Protection</SectionHeader>
+            <Paragraph>
+                The Lifeseed identity is held in trust for the network. The yantra and the .seed wordmark are registered trademarks with the European Union Intellectual Property Office (EUIPO), so the mark stays a symbol that protects the commons rather than one that can be captured.
+            </Paragraph>
+        </div>
+        <div className="max-w-2xl mx-auto"><ProtectionNote /></div>
+    </div>
+);
+
 // 04 — The Yantra: the logo / brand and its symbol language.
 export const YantraSection = () => (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -454,11 +506,14 @@ export const YantraSection = () => (
         </div>
 
         {/* Large Main Yantra */}
-        <div className="relative flex justify-center py-12 mb-16">
+        <div className="relative flex justify-center py-12 mb-10">
              <div className="relative p-2 rounded-full border-2 border-amber-300 shadow-[0_0_80px_rgba(251,191,36,0.3)] bg-white">
                 <Logo width={300} height={300} />
             </div>
         </div>
+
+        {/* The yantra and the .seed mark are protected. */}
+        <div className="max-w-2xl mx-auto mb-16"><ProtectionNote compact /></div>
 
         <div className="space-y-4">
             {yantraSymbols.map((symbol) => (
@@ -480,6 +535,7 @@ export const loreTabs = [
     { id: 'genesis', label: 'Genesis', meta: 'The first block' },
     { id: 'path', label: 'The Path', meta: 'Become a member' },
     { id: 'yantra', label: 'The Yantra', meta: 'Logo & brand' },
+    { id: 'protection', label: 'Protection', meta: 'Trademarks' },
 ] as const;
 
 export type LoreTabId = typeof loreTabs[number]['id'];
@@ -490,6 +546,7 @@ export const LoreSection = ({ id }: { id: LoreTabId }) => {
         case 'genesis': return <GenesisSection />;
         case 'path': return <MembershipPathSection />;
         case 'yantra': return <YantraSection />;
+        case 'protection': return <ProtectionSection />;
         default: return null;
     }
 };

@@ -73,6 +73,7 @@ import { Footer } from './components/ui/Footer';
 import { FirstRunChecklist } from './components/FirstRunChecklist';
 import { useOnboardingState } from './hooks/useOnboardingState';
 import { ForestPage } from './pages/ForestPage';
+import { Partners } from './components/intelligence/Partners';
 import { ResonancePanel, ResonanceCard, resonanceId } from './components/ResonancePanel';
 import { SectionHeader } from './components/ui/SectionHeader';
 import { LifeseedWidget } from './components/LifeseedWidget';
@@ -1004,11 +1005,23 @@ const AppContent = () => {
 
         if (tab === 'communities') {
             return (
-                <CommunityList 
+                <CommunityList
                     onSelect={(community) => setSelectedCommunity(community)}
                     myTrees={myTrees}
                     currentUserId={lightseed?.uid}
                 />
+            );
+        }
+
+        if (tab === 'collab') {
+            return (
+                <div className="max-w-3xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="mb-6">
+                        <h1 className="flex items-center gap-2 text-3xl font-light text-slate-800"><Icons.Users /> {t('collab')}</h1>
+                        <p className="mt-1 text-sm text-slate-500">{t('collab_sub')}</p>
+                    </div>
+                    <Partners />
+                </div>
             );
         }
 

@@ -82,7 +82,7 @@ export const FirstRunChecklist = ({ state, myTrees, guardedTrees, theme, isDark 
           </button>
           <button onClick={() => state.choosePath('vision')} className="group rounded-2xl border p-5 text-left transition-all hover:shadow-md"
                   style={{ borderColor: surface.border }}>
-            <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full text-white" style={{ backgroundColor: accent }}><Icons.FingerPrint /></div>
+            <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full text-white" style={{ backgroundColor: accent }}><Icons.Eye /></div>
             <h3 className="font-bold" style={{ color: surface.text }}>Grow a vision</h3>
             <p className="mt-1 text-xs" style={{ color: surface.muted }}>Root a vision in a tree, invite participation, and let it meet other visions.</p>
           </button>

@@ -123,7 +123,7 @@ export const VisionDetail = ({ vision, onClose, currentUserId, onDelete }: Visio
 
                  <div className="bg-white p-8 rounded-2xl shadow-lg border border-slate-100">
                      <h2 className="text-sm font-bold text-amber-500 uppercase tracking-widest mb-4 flex items-center">
-                         <Icons.FingerPrint /> 
+                         <Icons.Eye />
                          <span className="ml-2">{t('vision')}</span>
                      </h2>
                      <p dir="auto" className="text-xl font-serif text-slate-700 leading-relaxed whitespace-pre-wrap">
