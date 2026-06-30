@@ -20,7 +20,6 @@ import {
   fetchLifetrees,
   fetchAllLifetrees,
   plantLifetree,
-  uploadImage,
   uploadBase64Image,
   validateLifetree,
   unvalidateLifetree,
@@ -71,6 +70,8 @@ import { ScrollChevrons } from './components/ui/ScrollChevrons';
 import { Footer } from './components/ui/Footer';
 import { FirstRunChecklist } from './components/FirstRunChecklist';
 import { useOnboardingState } from './hooks/useOnboardingState';
+import { useImageUpload } from './hooks/useImageUpload';
+import { useForestFilters } from './hooks/useForestFilters';
 import { ForestPage } from './pages/ForestPage';
 import { Partners } from './components/intelligence/Partners';
 import { ObservatoryPage } from './pages/ObservatoryPage';
@@ -264,10 +265,8 @@ const AppContent = () => {
     const [showVisionModal, setShowVisionModal] = useState(false);
     const [showGrowthPlayer, setShowGrowthPlayer] = useState<string | null>(null);
     const [matchCandidate, setMatchCandidate] = useState<Pulse | null>(null);
-    const [uploading, setUploading] = useState(false);
-    const [showNatureTrees, setShowNatureTrees] = useState(true);
-    const [showUserTrees, setShowUserTrees] = useState(true);
-    const [showValidatedTrees, setShowValidatedTrees] = useState(false);
+    const { uploading, handleImageUpload } = useImageUpload();
+    const { showNatureTrees, setShowNatureTrees, showUserTrees, setShowUserTrees, showValidatedTrees, setShowValidatedTrees } = useForestFilters();
 
     // AI Synergy State
     const [synergies, setSynergies] = useState<VisionSynergy[]>([]);
@@ -830,12 +829,6 @@ const AppContent = () => {
         setTab('profile');
     };
 
-    const handleImageUpload = async (file: File, path: string) => {
-        setUploading(true);
-        const url = await uploadImage(file, path);
-        setUploading(false);
-        return url;
-    };
     
     const handleQuickSnap = async (treeId: string, file: File) => {
         if (!lightseed) return;
