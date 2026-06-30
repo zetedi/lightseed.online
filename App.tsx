@@ -5,11 +5,6 @@ import {
   logout,
   fetchPulses,
   fetchEventPulses,
-  backfillPulseVisibility,
-  migrateArraysToLinks,
-  migratePulseTypeCasing,
-  migrateTreeVisibility,
-  dropLegacyArrays,
   createEvent,
   updateEvent,
   fetchReachPulses,
@@ -32,9 +27,6 @@ import {
   deleteLifetree,
   deleteVision,
   ensureGenesis,
-  getMyPulses,
-  getMyVisions,
-  getMyAlignmentsHistory,
   claimSuperAdmin,
   grantAdmin,
   revokeAdmin,
@@ -42,8 +34,8 @@ import {
   listenToUserProfile,
   getPendingTreeInvites
 } from './services/firebase';
-import { findVisionSynergies, generateOracleQuote } from './services/gemini';
-import { ensureIntelligenceCommons, setActiveIntelligenceId } from './services/intelligence';
+import { findVisionSynergies } from './services/gemini';
+import { setActiveIntelligenceId } from './services/intelligence';
 import { type Pulse, type Lifetree, type Alignment, type Vision, type Community, type VisionSynergy, type ReachAudience } from './types';
 import Logo from './components/Logo';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
@@ -72,6 +64,10 @@ import { FirstRunChecklist } from './components/FirstRunChecklist';
 import { useOnboardingState } from './hooks/useOnboardingState';
 import { useImageUpload } from './hooks/useImageUpload';
 import { useForestFilters } from './hooks/useForestFilters';
+import { useDashboardStats } from './hooks/useDashboardStats';
+import { useObservatoryQuote } from './hooks/useObservatoryQuote';
+import { useSuperAdminConsole } from './hooks/useSuperAdminConsole';
+import { setChainLocked } from './src/domain/chain';
 import { ForestPage } from './pages/ForestPage';
 import { Partners } from './components/intelligence/Partners';
 import { ObservatoryPage } from './pages/ObservatoryPage';
@@ -203,8 +199,7 @@ const AppContent = () => {
     const [editingEvent, setEditingEvent] = useState<Pulse | null>(null);
     const [dashboardEvents, setDashboardEvents] = useState<Pulse[]>([]);
     // The Observatory's oracle quote (moved out of the dashboard card into the page header).
-    const [observatoryQuote, setObservatoryQuote] = useState('');
-    const [obsQuoteCopied, setObsQuoteCopied] = useState(false);
+    const { observatoryQuote, quoteCopied: obsQuoteCopied, copyQuote: copyObservatoryQuote } = useObservatoryQuote(tab);
     const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
     const [reachTree, setReachTree] = useState<Lifetree | null>(null);
     // Preselected audience for a requested reach — 'guardians' when opened from a danger alert.
@@ -224,7 +219,7 @@ const AppContent = () => {
     const [searchTerm, setSearchTerm] = useState('');
     
     // Stats State for Dashboard
-    const [stats, setStats] = useState({ pulses: 0, visions: 0, alignments: 0 });
+    const stats = useDashboardStats(lightseed, tab);
     
     // Pagination State
     const [lastDoc, setLastDoc] = useState<any>(null);
@@ -244,10 +239,6 @@ const AppContent = () => {
         getLifetreeById(id).then(tr => { if (tr) setSelectedTree(tr); }).catch(() => {});
     }, []);
 
-    // Oracle quote for the Observatory page header (lazy, once).
-    useEffect(() => {
-        if (tab === 'observatory' && !observatoryQuote) generateOracleQuote().then(setObservatoryQuote).catch(() => {});
-    }, [tab, observatoryQuote]);
     const [showPlantModal, setShowPlantModal] = useState(false);
     // How the plant modal should open: optionally straight to a type's plant step
     // (e.g. the "Guard Tree" button jumps past the type selection).
@@ -367,24 +358,6 @@ const AppContent = () => {
         backgroundAttachment: 'fixed',
     };
 
-    // Dashboard Stats Fetcher
-    useEffect(() => {
-        if (lightseed) {
-            Promise.all([
-                getMyPulses(lightseed.uid),
-                getMyVisions(lightseed.uid),
-                getMyAlignmentsHistory(lightseed.uid)
-            ]).then(([p, v, m]) => {
-                setStats({
-                    pulses: p.length,
-                    visions: v.length,
-                    alignments: m.length
-                });
-            }).catch(console.error);
-        } else {
-            setStats({ pulses: 0, visions: 0, alignments: 0 });
-        }
-    }, [lightseed, tab]); // Re-fetch when tab changes to refresh counts
 
     useEffect(() => {
         if (!lightseed) {
@@ -465,53 +438,12 @@ const AppContent = () => {
 
     // Seed the Intelligence Commons (default personas + Gemini Oracle) once a super-admin
     // is known. Idempotent and gated by Firestore rules.
-    useEffect(() => {
-        if (isSuperAdmin && lightseed?.uid) ensureIntelligenceCommons(lightseed.uid);
-    }, [isSuperAdmin, lightseed?.uid]);
+    useSuperAdminConsole(isSuperAdmin, lightseed?.uid);
 
-    // Superadmin-only console hook for the one-time visibility migration. Run it once from
-    // the deployed site's devtools: `await backfillPulseVisibility()`. Idempotent.
+    // Sync the chain-lock flag from the node's community ("big red stamp"). Off until a node sets it.
     useEffect(() => {
-        if (!isSuperAdmin) return;
-        const w = window as any;
-        w.backfillPulseVisibility = async () => {
-            console.log('[lightseed] backfilling pulse visibility…');
-            const n = await backfillPulseVisibility();
-            console.log(`[lightseed] done — stamped visibility:"public" on ${n} legacy pulse(s).`);
-            return n;
-        };
-        // LIN migration (stage 3): relationship arrays → links. Idempotent.
-        w.migrateArraysToLinks = async () => {
-            console.log('[lightseed] migrating relationship arrays → links…');
-            const r = await migrateArraysToLinks();
-            console.log('[lightseed] done — links created:', r);
-            return r;
-        };
-        // Pulse type casing → canonical lowercase (GROWTH→growth, growth→vision_growth,
-        // STANDARD→standard). Run once after deploy. Idempotent.
-        w.migratePulseTypeCasing = async () => {
-            console.log('[lightseed] migrating pulse type casing → lowercase…');
-            const n = await migratePulseTypeCasing();
-            console.log(`[lightseed] done — retyped ${n} pulse(s).`);
-            return n;
-        };
-        // LIN migration (stage 5): drop the legacy arrays — ONLY after links are live + verified.
-        w.dropLegacyArrays = async () => {
-            console.log('[lightseed] dropping legacy relationship arrays…');
-            const n = await dropLegacyArrays();
-            console.log(`[lightseed] done — cleared arrays on ${n} doc(s).`);
-            return n;
-        };
-        // Backfill tree visibility → 'public' so the visibility-filtered forest queries match.
-        // Run ONCE after deploying the lifetrees indexes, BEFORE the tightened rules.
-        w.migrateTreeVisibility = async () => {
-            console.log('[lightseed] backfilling tree visibility → public…');
-            const r = await migrateTreeVisibility();
-            console.log(`[lightseed] done — stamped ${r.updated} tree(s).`);
-            return r;
-        };
-        return () => { delete w.backfillPulseVisibility; delete w.migrateArraysToLinks; delete w.migratePulseTypeCasing; delete w.dropLegacyArrays; delete w.migrateTreeVisibility; };
-    }, [isSuperAdmin]);
+        setChainLocked(!!(impersonatedCommunity || hostCommunity)?.chainLocked);
+    }, [impersonatedCommunity, hostCommunity]);
 
     // Events for the logged-in home carousel — visibility-scoped to this viewer + node.
     useEffect(() => {
@@ -1169,7 +1101,7 @@ const AppContent = () => {
                         onReach={reachResonantTree}
                         observatoryQuote={observatoryQuote}
                         quoteCopied={obsQuoteCopied}
-                        onCopyQuote={() => { navigator.clipboard?.writeText(observatoryQuote).then(() => { setObsQuoteCopied(true); setTimeout(() => setObsQuoteCopied(false), 1500); }).catch(() => {}); }}
+                        onCopyQuote={copyObservatoryQuote}
                     />
                 )}
 

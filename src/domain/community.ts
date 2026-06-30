@@ -29,6 +29,9 @@ export interface Community extends Entity {
   };
   // Reflections shown in the signed-out home carousel — an editable list curated by the admin.
   carouselQuotes?: string[];
+  // The "big red stamp": once a node locks, new blocks are sealed with the canonical, verifiable
+  // hash (src/domain/chain). Off by default; the shell syncs it into the chain-lock flag on load.
+  chainLocked?: boolean;
   createdAt: Timestamp;
   updatedAt?: Timestamp;
 

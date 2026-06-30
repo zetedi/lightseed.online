@@ -7,3 +7,4 @@ export {
   blockContent, blockPreimage, computeCanonicalHash, canonicalRecompute, verifyChain,
 } from './verify';
 export type { ChainBlock, ChainIssue, ChainIssueCode, ChainVerifyResult } from './verify';
+export { isChainLocked, setChainLocked } from './lock';

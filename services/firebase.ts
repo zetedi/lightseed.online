@@ -50,6 +50,7 @@ import {
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { type Pulse, type PulseType, type Lifetree, type Alignment, type Vision, type Community, type Sanctuary, type TreeOwnershipInvite, type InvitableRole, type Decision, type DecisionNature, votesRequired, type ReachAudience } from '../types';
 import { createBlock } from '../utils/crypto';
+import { computeCanonicalHash, isChainLocked } from '../src/domain/chain';
 import { uuidv7 } from '../utils/id';
 import { normalizePulseType, isTreeGrowth, type PulseVisibility } from '../src/domain/pulse';
 import { daysOverdue, computeNextDueMillis, wateringAlertedToday, type WateringMode, type WateringAnalysis } from '../src/domain/watering';
@@ -1702,11 +1703,15 @@ export const mintPulse = async (pulseData: any, extraTreeUpdate?: Record<string,
         const treeDoc = await t.get(treeRef);
         if (!treeDoc.exists()) throw new Error("Tree missing");
         const tree = treeDoc.data() as Lifetree;
-        const newHash = await createBlock(tree.latestHash, pulseData, Date.now());
         const newPulseRef = doc(pulsesCollection);
         const domain = tree.domain || window.location.hostname.replace(/^www\./, '');
         const canonicalType = normalizePulseType(pulseData.type); // write canonical lowercase
-        t.set(newPulseRef, {
+        // A stable, client-resolved mint time — stored on the block AND used as the hash timestamp,
+        // so a locked block can be re-hashed from exactly what's persisted (createdAt is a
+        // serverTimestamp and can't be reproduced). Always stored; only hashed when locked.
+        const mintedAt = Date.now();
+        // The immutable record we persist (server-set createdAt + the hash are added after).
+        const record = {
             ...pulseData,
             type: canonicalType,
             domain,
@@ -1714,10 +1719,16 @@ export const mintPulse = async (pulseData: any, extraTreeUpdate?: Record<string,
             visibility: pulseData.visibility || 'public',
             loveCount: pulseData.loveCount || 0,
             commentCount: pulseData.commentCount || 0,
-            createdAt: serverTimestamp(),
-            hash: newHash,
-            previousHash: tree.latestHash
-        });
+            mintedAt,
+            previousHash: tree.latestHash,
+        };
+        // Locked nodes seal blocks with the canonical, reproducible hash over the stored record;
+        // unlocked nodes keep the exact legacy hash so existing chains are untouched until the
+        // node flips the stamp. (See src/domain/chain + isChainLocked.)
+        const newHash = isChainLocked()
+            ? await computeCanonicalHash(tree.latestHash, mintedAt, record)
+            : await createBlock(tree.latestHash, pulseData, mintedAt);
+        t.set(newPulseRef, { ...record, createdAt: serverTimestamp(), hash: newHash });
 
         const updateData: any = { latestHash: newHash, blockHeight: (tree.blockHeight || 0) + 1 };
         // A tree growth pulse with an image updates the tree's latest growth view, and counts
