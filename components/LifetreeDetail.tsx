@@ -7,7 +7,7 @@ import { Icons } from './ui/Icons';
 import Logo from './Logo';
 import { ValidationBadge } from './ValidationBadge';
 import { AutocompleteInput } from './ui/AutocompleteInput';
-import { updateLifetree, setTreeStatus, getPulsesByTreeId, createTreeInvite, setWateringSchedule, recordWatering, confirmWateringPulse, sendWateringAlert, fileToWebpBase64 } from '../services/firebase';
+import { updateLifetree, setTreeStatus, getPulsesByTreeId, createTreeInvite, setWateringSchedule, recordWatering, markWateredOffChain, confirmWateringPulse, sendWateringAlert, fileToWebpBase64 } from '../services/firebase';
 import { analyzeWateringPhoto } from '../services/gemini';
 import { Pulse, type InvitableRole, treeRelationLabels } from '../types';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
@@ -96,6 +96,8 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const [waterInterval, setWaterInterval] = useState<number>(tree.watering?.intervalDays || 7);
    const [waterBusy, setWaterBusy] = useState(false);
    const [waterMsg, setWaterMsg] = useState<string | null>(null);
+   // Utility watering: tick the cadence without minting a growth block (no photo, off-chain).
+   const [waterBypass, setWaterBypass] = useState(false);
    const [confirmingId, setConfirmingId] = useState<string | null>(null);
    const waterFileRef = useRef<HTMLInputElement>(null);
    // The component instance is reused across trees, so re-seed the schedule editor when the
@@ -349,6 +351,25 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    };
 
    const handleWaterPick = () => waterFileRef.current?.click();
+
+   // Off-chain watering: just reset the cadence (utility), no photo / no growth block.
+   const handleWaterBypass = async () => {
+       if (!currentUserId) return;
+       setWaterBusy(true); setWaterMsg(null);
+       try {
+           const iv = tree.watering?.mode === 'scheduled' ? tree.watering?.intervalDays : undefined;
+           await markWateredOffChain(tree.id, iv);
+           const now = Date.now();
+           onUpdate?.({ watering: {
+               ...(tree.watering || {}),
+               overdue: false,
+               lastWateredAt: Timestamp.fromMillis(now),
+               ...(iv ? { nextDueAt: Timestamp.fromMillis(now + iv * 86400000) } : {}),
+           } });
+           setWaterMsg('Marked watered 💧 — kept off the chain.');
+       } catch (e: any) { setWaterMsg(e?.message || 'Could not mark watered.'); }
+       setWaterBusy(false);
+   };
    const handleWaterFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
        const file = e.target.files?.[0];
        e.target.value = '';
@@ -415,31 +436,56 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
            </div>
 
            {canManageSchedule && (
-               <div className="mb-4 space-y-2 rounded-xl border border-sky-200 bg-white p-4">
-                   <div className="flex gap-2">
-                       <button type="button" onClick={() => setWaterMode('scheduled')} className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wide transition-colors ${waterMode === 'scheduled' ? 'bg-sky-600 text-white' : 'bg-sky-100 text-sky-700 hover:bg-sky-200'}`}>On a schedule</button>
-                       <button type="button" onClick={() => setWaterMode('self_sustaining')} className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wide transition-colors ${waterMode === 'self_sustaining' ? 'bg-sky-600 text-white' : 'bg-sky-100 text-sky-700 hover:bg-sky-200'}`}>Self-sustaining</button>
-                   </div>
+               <div className="mb-4 space-y-3 rounded-xl border border-sky-200 bg-white p-4">
+                   {/* Slide from a seedling (needs tending) to a tree (self-sustaining) — the icon morphs. */}
+                   <button
+                       type="button"
+                       role="switch"
+                       aria-checked={waterMode === 'self_sustaining'}
+                       onClick={() => setWaterMode(m => m === 'self_sustaining' ? 'scheduled' : 'self_sustaining')}
+                       className="relative h-14 w-full overflow-hidden rounded-full bg-gradient-to-r from-sky-100 to-emerald-100"
+                   >
+                       <span className={`absolute left-5 top-1/2 -translate-y-1/2 text-[11px] font-bold uppercase tracking-wide transition-opacity ${waterMode === 'scheduled' ? 'text-sky-700 opacity-100' : 'text-sky-400 opacity-40'}`}>Tend on a schedule</span>
+                       <span className={`absolute right-5 top-1/2 -translate-y-1/2 text-[11px] font-bold uppercase tracking-wide transition-opacity ${waterMode === 'self_sustaining' ? 'text-emerald-700 opacity-100' : 'text-emerald-500 opacity-40'}`}>Self-sustaining</span>
+                       <span
+                           className="absolute top-1 h-12 w-12 rounded-full bg-white shadow-md transition-all duration-500 ease-out"
+                           style={{ left: waterMode === 'self_sustaining' ? 'calc(100% - 3.25rem)' : '0.25rem' }}
+                       >
+                           <span className={`absolute inset-0 flex items-center justify-center text-sky-500 transition-all duration-500 [&>svg]:h-5 [&>svg]:w-5 ${waterMode === 'self_sustaining' ? 'scale-50 opacity-0' : 'scale-100 opacity-100'}`}><Icons.Leaf /></span>
+                           <span className={`absolute inset-0 flex items-center justify-center text-emerald-600 transition-all duration-500 [&>svg]:h-6 [&>svg]:w-6 ${waterMode === 'self_sustaining' ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}`}><Icons.Tree /></span>
+                       </span>
+                   </button>
                    {waterMode === 'scheduled' && (
-                       <label className="flex items-center gap-2 text-sm text-sky-800">
+                       <div className="flex items-center justify-center gap-2 text-sm text-sky-800">
                            <span>Water every</span>
-                           <input type="number" min={1} value={waterInterval} onChange={e => setWaterInterval(Math.max(1, Number(e.target.value) || 1))} className="h-9 w-20 rounded-lg border border-sky-200 px-2 text-center focus:outline-none focus:ring-2 focus:ring-sky-500" />
-                           <span>days</span>
-                       </label>
+                           <div className="inline-flex items-center overflow-hidden rounded-lg border border-sky-200">
+                               <button type="button" aria-label="Fewer days" onClick={() => setWaterInterval(v => Math.max(1, v - 1))} className="px-3 py-1.5 font-bold text-sky-700 hover:bg-sky-50">−</button>
+                               <span className="w-10 text-center font-bold tabular-nums">{waterInterval}</span>
+                               <button type="button" aria-label="More days" onClick={() => setWaterInterval(v => Math.min(365, v + 1))} className="px-3 py-1.5 font-bold text-sky-700 hover:bg-sky-50">+</button>
+                           </div>
+                           <span>day{waterInterval !== 1 ? 's' : ''}</span>
+                       </div>
                    )}
-                   <button type="button" onClick={handleSaveSchedule} disabled={waterBusy} className="w-full rounded-lg bg-sky-600 py-2 text-sm font-bold text-white hover:bg-sky-700 disabled:opacity-50">{waterBusy ? 'Saving…' : 'Save schedule'}</button>
+                   <button type="button" onClick={handleSaveSchedule} disabled={waterBusy} className="w-full rounded-lg bg-sky-600 py-2 text-sm font-bold text-white hover:bg-sky-700 disabled:opacity-50">{waterBusy ? 'Saving…' : 'Save'}</button>
                </div>
            )}
 
            {canWater && (
                <div className="space-y-2">
                    <input ref={waterFileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleWaterFile} />
-                   <button type="button" onClick={handleWaterPick} disabled={waterBusy} className="flex w-full items-center justify-center gap-2 rounded-xl bg-sky-600 py-3 font-bold uppercase tracking-widest text-white shadow-lg transition-all hover:bg-sky-700 active:scale-95 disabled:opacity-50">
-                       <Icons.Droplet /> <span>I watered this</span>
-                   </button>
-                   {isOwner && overdue && !wateringAlertedToday(tree) && (
-                       <button type="button" onClick={handleRemindGuardians} disabled={waterBusy} className="w-full rounded-xl border border-sky-300 bg-white py-2 text-sm font-bold text-sky-700 hover:bg-sky-100 disabled:opacity-50">Remind guardians 💧</button>
-                   )}
+                   <div className="flex flex-wrap items-center gap-2">
+                       <button type="button" onClick={waterBypass ? handleWaterBypass : handleWaterPick} disabled={waterBusy} className="inline-flex items-center justify-center gap-1.5 rounded-full bg-sky-600 px-4 py-2 text-sm font-bold text-white shadow transition-all hover:bg-sky-700 active:scale-95 disabled:opacity-50">
+                           <Icons.Droplet /> <span>I watered this</span>
+                       </button>
+                       {isOwner && overdue && !wateringAlertedToday(tree) && (
+                           <button type="button" onClick={handleRemindGuardians} disabled={waterBusy} className="inline-flex items-center gap-1 rounded-full border border-sky-300 bg-white px-3 py-2 text-xs font-bold text-sky-700 hover:bg-sky-100 disabled:opacity-50">Remind guardians 💧</button>
+                       )}
+                   </div>
+                   {/* Utility option: keep routine waterings off the tree's immutable chain. */}
+                   <label className="flex cursor-pointer items-start gap-2 text-xs text-sky-700/80">
+                       <input type="checkbox" checked={waterBypass} onChange={e => setWaterBypass(e.target.checked)} className="mt-0.5 accent-sky-600" />
+                       <span>Just mark watered — keep it off the tree's chain (no photo, no growth block).</span>
+                   </label>
                </div>
            )}
 
@@ -566,7 +612,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                             ? <ActionBtn onClick={() => onReachTree?.(tree)} title="Reach" color="bg-amber-500 text-white hover:bg-amber-600" icon={<Icons.Lightning />} label="Reach" />
                             : <ActionBtn disabled title={t('only_if_validated')} color="bg-white/20 text-white/70" icon={<Icons.Eye />} label={t('only_if_validated')} />}
                         {showValidateAction && <ActionBtn onClick={async () => { const nv = !hasValidationBadge; if (await showConfirm(nv ? 'Validate this tree?' : 'Remove validation from this tree?', { title: 'Validation' })) onValidate(tree.id, nv); }} title={hasValidationBadge ? 'Remove validation' : t('validate_action')} color="bg-emerald-600 text-white hover:bg-emerald-700" icon={<Icons.ShieldCheck />} label={hasValidationBadge ? 'Validated' : t('validate_action')} />}
-                        {isOwner && !isEditing && <ActionBtn onClick={onCreatePulse} title="Grow this tree with a pulse" color="bg-white text-emerald-700 hover:bg-emerald-50" icon={<Icons.HeartPulse />} label="Grow" />}
+                        {isOwner && !isEditing && <ActionBtn onClick={onCreatePulse} title="Tend this tree — a pulse of care (we both grow)" color="bg-white text-emerald-700 hover:bg-emerald-50" icon={<Icons.Leaf />} label="Tend" />}
                         {isOwner && !isEditing && onSetDefault && <ActionBtn onClick={() => { if (!isDefaultTree) onSetDefault(); }} disabled={isDefaultTree} title={isDefaultTree ? 'Your default tree' : 'Set as default tree'} color={isDefaultTree ? 'bg-amber-400 text-amber-950' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'} icon={<Icons.Star filled={isDefaultTree} />} label="Favourite" />}
                         {canEdit && !isEditing && <ActionBtn onClick={() => { setIsEditing(true); setSection('details'); }} title={t('edit')} color="bg-slate-100 text-slate-700 hover:bg-slate-200" icon={<Icons.Pencil />} label={t('edit')} />}
                         {canDelete && !isEditing && <ActionBtn onClick={() => setShowDeleteModal(true)} title="Delete tree" color="bg-red-500 text-white hover:bg-red-600" icon={<Icons.Trash />} label="Delete" />}
@@ -793,12 +839,13 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                             </div>
 
                             <div className="w-full space-y-12 md:space-y-24 pb-24 relative z-10">
-                                {/* Grow CTA — the crown at the very top of the trunk; grows the tree. */}
+                                {/* Tend CTA — the crown at the top of the trunk. We don't grow it; it grows
+                                    naturally. Tending (our breath, our presence) is the care that lets it. */}
                                 {isOwner && (
                                     <div className="flex w-full justify-start pl-12 md:justify-center md:pl-0">
-                                        <button onClick={onCreatePulse} title="Grow this tree with a pulse"
+                                        <button onClick={onCreatePulse} title="Tend this tree — a pulse of care (we both grow)"
                                             className="relative z-10 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-7 py-3 font-bold uppercase tracking-widest text-white ring-2 ring-yellow-300/60 shadow-[0_0_22px_rgba(250,204,21,0.55)] transition-all hover:bg-emerald-700 hover:shadow-[0_0_32px_rgba(250,204,21,0.85)] active:scale-95">
-                                            <Icons.HeartPulse /> <span>Grow</span>
+                                            <Icons.Leaf /> <span>Tend</span>
                                         </button>
                                     </div>
                                 )}

@@ -1006,9 +1006,18 @@ export const getJoinedVisions = async (uid: string): Promise<Vision[]> => {
 };
 
 export const createVision = async (data: any) => {
-    const domain = data.domain || window.location.hostname.replace(/^www\./, '');
+    const domain = (data.domain || window.location.hostname).replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '').trim().toLowerCase();
+    // Ground the vision to a community when its domain matches one (the explicit link to a node).
+    let communityId = data.communityId;
+    if (!communityId && domain) {
+        try { communityId = (await getCommunityByDomain(domain))?.id; } catch { /* offline / no match */ }
+    }
     // Default to public so legacy/unspecified visions stay visible (mirrors tree visibility).
-    return addDoc(visionsCollection, { ...data, lid: uuidv7(), domain, visibility: data.visibility || 'public', createdAt: serverTimestamp() });
+    return addDoc(visionsCollection, {
+        ...data, lid: uuidv7(), domain,
+        ...(communityId ? { communityId } : {}),
+        visibility: data.visibility || 'public', createdAt: serverTimestamp(),
+    });
 };
 export const deleteVision = (id: string) => deleteDoc(doc(db, 'visions', id));
 
@@ -1767,6 +1776,19 @@ export const setWateringSchedule = async (treeId: string, input: { mode: Waterin
 // witness's verdict, reset the schedule clock, and let the guardians' thread know it's tended.
 // `analysis` is produced by the caller via gemini.analyzeWateringPhoto (AI), or stood in for by
 // a guardian. AI confidence ≥ 70 auto-confirms; otherwise the pulse waits for a guardian.
+// Off-chain "I watered" — a utility tick that resets the cadence WITHOUT minting a growth block
+// or storing a photo (no chain advance). For routine watering you don't want on the tree's ledger.
+export const markWateredOffChain = async (treeId: string, intervalDays?: number) => {
+    const now = Date.now();
+    const update: Record<string, any> = {
+        'watering.lastWateredAt': Timestamp.fromMillis(now),
+        'watering.overdue': false,
+        updatedAt: serverTimestamp(),
+    };
+    if (intervalDays) update['watering.nextDueAt'] = Timestamp.fromMillis(computeNextDueMillis(now, intervalDays));
+    await updateDoc(doc(db, 'lifetrees', treeId), update);
+};
+
 export const recordWatering = async ({
     tree,
     sender,

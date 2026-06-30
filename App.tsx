@@ -56,21 +56,18 @@ import { normalizeTheme } from './utils/theme';
 import { Icons } from './components/ui/Icons';
 import { Navigation } from './components/Navigation';
 import { LifetreeCard } from './components/LifetreeCard';
-import { VisionCard } from './components/VisionCard';
-import { PulseCard } from './components/PulseCard';
 import { ForestMap } from './components/ForestMap';
 import { LifetreeDetail } from './components/LifetreeDetail';
 import { VisionDetail } from './components/VisionDetail';
 import { PulseDetail } from './components/PulseDetail';
 import { queryableLevels, canEditEvent, pulseScope } from './src/domain/pulseVisibility';
-import { passesForestFilter, canViewTree, canViewVision } from './src/domain/views/forest';
+import { passesForestFilter, canViewTree } from './src/domain/views/forest';
 import { isWateringOverdue } from './src/domain/watering';
 import { GrowthPlayerModal } from './components/GrowthPlayerModal';
 import { LightseedProfile } from './components/LightseedProfile';
 import { Dashboard } from './components/Dashboard';
 import { Loading } from './components/ui/Loading';
 import { ScrollChevrons } from './components/ui/ScrollChevrons';
-import { ResonanceScan } from './components/ui/ResonanceScan';
 import { Footer } from './components/ui/Footer';
 import { FirstRunChecklist } from './components/FirstRunChecklist';
 import { useOnboardingState } from './hooks/useOnboardingState';
@@ -78,8 +75,8 @@ import { ForestPage } from './pages/ForestPage';
 import { Partners } from './components/intelligence/Partners';
 import { ObservatoryPage } from './pages/ObservatoryPage';
 import { PulseFeedPage } from './pages/PulseFeedPage';
-import { ResonancePanel, ResonanceCard, resonanceId } from './components/ResonancePanel';
-import { SectionHeader } from './components/ui/SectionHeader';
+import { VisionsPage } from './pages/VisionsPage';
+import { resonanceId } from './components/ResonancePanel';
 import { LifeseedWidget } from './components/LifeseedWidget';
 import { NewsletterAdmin } from './components/NewsletterAdmin';
 import { CommunityList } from './components/CommunityList';
@@ -1210,55 +1207,22 @@ const AppContent = () => {
                         onRefresh={() => loadContent(true)}
                     />
                 ) : tab === 'visions' ? (
-                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-                        <SectionHeader
-                            icon={<Icons.Eye />}
-                            title={t('visions')}
-                            subtitle={t('visions_sub')}
-                            footer={searchBox}
-                            action={
-                                <div className="flex items-center gap-2">
-                                    {lightseed && (
-                                        <button
-                                            onClick={() => setShowVisionModal(true)}
-                                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-full font-bold shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap"
-                                        >
-                                            <Icons.Wizard /> <span>{t('create_vision')}</span>
-                                        </button>
-                                    )}
-                                    <button
-                                        onClick={handleAnalyzeSynergy}
-                                        disabled={isAnalyzingSynergy || data.length < 2}
-                                        className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-full font-bold shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 border border-amber-400/30 active:scale-95 disabled:opacity-50 whitespace-nowrap"
-                                    >
-                                        {isAnalyzingSynergy
-                                            ? <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-                                            : <Icons.Venn />}
-                                        <span className="hidden sm:inline">{isAnalyzingSynergy ? t('analyzing') : t('analyze')}</span>
-                                    </button>
-                                </div>
-                            }
-                        >
-                            <ResonancePanel synergies={synergies} className="mb-6" favorites={favoriteResonanceIds} onToggleFavorite={toggleFavoriteResonance} onReach={reachResonantTree} />
-
-                            <ResonanceScan active={isAnalyzingSynergy}>
-                                <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                                    {(() => {
-                                        // Respect vision visibility (protect fragile/early visions). Rules enforce it server-side.
-                                        const viewer = { uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin };
-                                        const visibleVisions = filteredData.filter((v: any) => canViewVision(v, viewer));
-                                        return visibleVisions.length === 0 && !loadingMore
-                                            ? <p className="col-span-full text-center text-slate-400 py-10">{t('no_visions_found')}</p>
-                                            : visibleVisions.map((item: any) => (
-                                                <div key={item.id} onClick={() => setSelectedVision(item)} className="cursor-pointer">
-                                                    <VisionCard vision={item} />
-                                                </div>
-                                            ));
-                                    })()}
-                                </div>
-                            </ResonanceScan>
-                        </SectionHeader>
-                    </div>
+                    <VisionsPage
+                        visions={filteredData}
+                        synergies={synergies}
+                        favoriteResonanceIds={favoriteResonanceIds}
+                        onToggleFavorite={toggleFavoriteResonance}
+                        onReach={reachResonantTree}
+                        isAnalyzingSynergy={isAnalyzingSynergy}
+                        onAnalyze={handleAnalyzeSynergy}
+                        canAnalyze={data.length >= 2}
+                        lightseed={lightseed}
+                        onCreateVision={() => setShowVisionModal(true)}
+                        onSelectVision={setSelectedVision}
+                        loadingMore={loadingMore}
+                        viewer={{ uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin }}
+                        searchBox={searchBox}
+                    />
                 ) : tab === 'events' ? (
                     <PulseFeedPage
                         icon={<Icons.Loc />}
@@ -1279,7 +1243,7 @@ const AppContent = () => {
                     />
                 ) : tab !== 'observatory' && tab !== 'profile' && tab !== 'inspiration' && tab !== 'about' && tab !== 'dashboard' && tab !== 'newsletter' && tab !== 'communities' && (
                     <PulseFeedPage
-                        icon={<Icons.HeartPulse />}
+                        icon={<Icons.PulseDuo />}
                         title={t('pulses')}
                         subtitle={t('pulses_sub')}
                         searchBox={searchBox}
@@ -1526,9 +1490,10 @@ const AppContent = () => {
             )}
 
             {showVisionModal && (
-                <CreateVisionModal 
+                <CreateVisionModal
                     lightseed={lightseed}
                     activeTree={activeTree}
+                    trees={myTrees}
                     onClose={() => setShowVisionModal(false)}
                     onCreate={createVision}
                     uploading={uploading}

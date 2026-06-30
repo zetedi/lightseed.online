@@ -5,6 +5,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { Modal } from '../ui/Modal';
 import { ImagePicker } from '../ui/ImagePicker';
+import { AutocompleteInput } from '../ui/AutocompleteInput';
 import { Lightseed, Lifetree } from '../../types';
 import { generateVisionImage } from '../../services/gemini';
 import { checkAndIncrementAiUsage } from '../../services/firebase';
@@ -12,6 +13,7 @@ import { checkAndIncrementAiUsage } from '../../services/firebase';
 interface CreateVisionModalProps {
   lightseed: Lightseed | null;
   activeTree: Lifetree | null;
+  trees?: Lifetree[]; // the author's trees — to ground the vision in one
   onClose: () => void;
   onCreate: (data: any) => Promise<void>;
   uploading: boolean;
@@ -22,6 +24,7 @@ interface CreateVisionModalProps {
 export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
   lightseed,
   activeTree,
+  trees = [],
   onClose,
   onCreate,
   uploading,
@@ -34,6 +37,10 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
   const [visionLink, setVisionLink] = useState('');
   const [visionImageUrl, setVisionImageUrl] = useState('');
   const [visibility, setVisibility] = useState<'public' | 'node' | 'private'>('public');
+  // Grounding — the tree this vision is rooted in, and the community/site domain it links to.
+  const groundOptions = trees.length ? trees : (activeTree ? [activeTree] : []);
+  const [groundTreeId, setGroundTreeId] = useState<string>(activeTree?.id || groundOptions[0]?.id || '');
+  const [visionDomain, setVisionDomain] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localUploading, setLocalUploading] = useState(false);
 
@@ -62,7 +69,8 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!lightseed || !activeTree || isSubmitting) return;
+    if (!lightseed || isSubmitting) return;
+    if (!groundTreeId) { showAlert('Plant or choose a tree to root this vision in.'); return; }
     setIsSubmitting(true);
 
     try {
@@ -72,13 +80,14 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
         }
 
         await onCreate({
-            lifetreeId: activeTree.id,
+            lifetreeId: groundTreeId,
             authorId: lightseed.uid,
             title: visionTitle,
             body: visionBody,
             link: visionLink,
             imageUrl: finalImageUrl,
             visibility,
+            domain: visionDomain.trim() || undefined,
         });
         onClose();
     } catch(e:any) { 
@@ -138,6 +147,25 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
             value={visionLink} 
             onChange={e=>setVisionLink(e.target.value)}
         />
+
+        {/* Ground the vision — the tree it's rooted in + the community/site it links to. */}
+        <div className="space-y-2 rounded-xl border border-emerald-100 bg-emerald-50/40 p-3">
+            <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-700"><Icons.Tree /> Ground this vision</p>
+            <label className="block">
+                <span className="mb-1 block text-[11px] font-semibold text-slate-500">Rooted in tree</span>
+                <select value={groundTreeId} onChange={e => setGroundTreeId(e.target.value)} className="block w-full rounded-lg border border-slate-300 bg-white p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    {groundOptions.length === 0 && <option value="">No tree yet — plant one first</option>}
+                    {groundOptions.map(tr => <option key={tr.id} value={tr.id}>{tr.name}</option>)}
+                </select>
+            </label>
+            <AutocompleteInput
+                value={visionDomain}
+                onChange={setVisionDomain}
+                placeholder="Community or website domain (optional)"
+                hint="Link this vision to a community/site. Leave blank to use this node."
+                className="block w-full rounded-lg border border-slate-300 bg-white p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+        </div>
 
         {/* Protect fragile, early visions: choose who can see this. */}
         <label className="block">

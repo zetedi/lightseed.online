@@ -32,6 +32,10 @@ export interface Vision extends Entity {
   imageUrl?: string;
   createdAt: Timestamp;
   joinedUserIds?: string[]; // List of users who joined this vision
+  // Grounding — where this vision is rooted. lifetreeId (above) is the tree; these link it to a
+  // community/site. `domain` was already stamped at write-time; `communityId` is the resolved link.
+  domain?: string;
+  communityId?: string;
   // Visibility — protect early, fragile visions. Mirrors Lifetree.visibility.
   // Absent = 'public' (legacy default). 'node' = signed-in only; 'private' = author + staff.
   visibility?: 'public' | 'node' | 'private';

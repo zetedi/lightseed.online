@@ -422,7 +422,7 @@ export const Navigation = ({
                         {/* Row 1 — wide actions paired with their feeds (6 columns) */}
                         <div className="grid grid-cols-6 gap-1.5">
                             {activeTab === 'visions' ? (
-                                <MobileActionTile icon={<Icons.Wizard />} label={t('create_vision')} onClick={onCreateVision} color="bg-amber-500" />
+                                <MobileActionTile icon={<Icons.Plus />} label={t('create_vision')} onClick={onCreateVision} color="bg-amber-500" />
                             ) : (
                                 <MobileActionTile icon={<Icons.Tree />} label={t('plant_lifetree')} onClick={onPlant} color="bg-emerald-600" />
                             )}
