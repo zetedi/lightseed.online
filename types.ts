@@ -32,7 +32,10 @@ export interface Vision extends Entity {
   imageUrl?: string;
   createdAt: Timestamp;
   joinedUserIds?: string[]; // List of users who joined this vision
-  
+  // Visibility — protect early, fragile visions. Mirrors Lifetree.visibility.
+  // Absent = 'public' (legacy default). 'node' = signed-in only; 'private' = author + staff.
+  visibility?: 'public' | 'node' | 'private';
+
   // V2
   status?: VisionStatus;
   resonanceScore?: number;

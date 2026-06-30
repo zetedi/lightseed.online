@@ -21,9 +21,9 @@ export const ResonanceCard = ({ s, isFavorite, onToggleFavorite, onReach }: { s:
   const tier = resonanceTier(s.score || 0);
   const reachable = onReach && (s.tree1Id || s.tree2Id);
   return (
-    <div className="rounded-xl border border-amber-100 bg-white/90 p-4 shadow-sm">
+    <div className="overflow-hidden rounded-xl border border-amber-100 bg-white/90 p-4 shadow-sm">
       <div className="mb-2 flex items-start justify-between gap-2">
-        <div className="text-sm font-bold text-slate-800">{s.vision1Title} + {s.vision2Title}</div>
+        <div className="min-w-0 break-words text-sm font-bold text-slate-800">{s.vision1Title} + {s.vision2Title}</div>
         <div className="flex shrink-0 items-center gap-1.5">
           <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${tier.badge}`}>{t(tier.labelKey)} · {s.score}%</span>
           {onToggleFavorite && (
@@ -42,16 +42,16 @@ export const ResonanceCard = ({ s, isFavorite, onToggleFavorite, onReach }: { s:
 
       {/* The two trees whose visions resonate — below the resonance level, above the reasoning. */}
       {(s.tree1Id || s.tree2Id) && (
-        <div className="mb-2 flex items-center gap-2">
+        <div className="mb-2 flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
           {s.tree1Id && (
-            <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-lg bg-slate-50 px-2 py-1">
+            <div className="flex w-full min-w-0 items-center gap-1.5 rounded-lg bg-slate-50 px-2 py-1 sm:flex-1">
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 [&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Tree /></span>
               <span className="truncate text-[11px] font-medium text-slate-700">{s.vision1Title}</span>
             </div>
           )}
-          <span className="shrink-0 text-xs font-bold text-slate-300">+</span>
+          <span className="hidden shrink-0 text-xs font-bold text-slate-300 sm:inline">+</span>
           {s.tree2Id && (
-            <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-lg bg-slate-50 px-2 py-1">
+            <div className="flex w-full min-w-0 items-center gap-1.5 rounded-lg bg-slate-50 px-2 py-1 sm:flex-1">
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 [&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Tree /></span>
               <span className="truncate text-[11px] font-medium text-slate-700">{s.vision2Title}</span>
             </div>
@@ -62,16 +62,16 @@ export const ResonanceCard = ({ s, isFavorite, onToggleFavorite, onReach }: { s:
       <p className="text-xs italic text-slate-600">"{s.reasoning}"</p>
 
       {reachable && (
-        <div className="mt-2.5 flex flex-wrap items-center gap-1.5 border-t border-amber-100 pt-2.5">
+        <div className="mt-2.5 flex flex-col items-stretch gap-1.5 border-t border-amber-100 pt-2.5 sm:flex-row sm:flex-wrap sm:items-center">
           <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{t('start_conversation')}</span>
           {s.tree1Id && (
-            <button type="button" onClick={() => onReach!(s.tree1Id!, s.vision1Title)} className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 transition-colors hover:bg-emerald-100">
-              <span className="[&>svg]:h-3 [&>svg]:w-3"><Icons.Chat /></span> {s.vision1Title}
+            <button type="button" onClick={() => onReach!(s.tree1Id!, s.vision1Title)} className="inline-flex min-w-0 max-w-full items-center justify-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 transition-colors hover:bg-emerald-100 sm:justify-start">
+              <span className="shrink-0 [&>svg]:h-3 [&>svg]:w-3"><Icons.Chat /></span> <span className="truncate">{s.vision1Title}</span>
             </button>
           )}
           {s.tree2Id && (
-            <button type="button" onClick={() => onReach!(s.tree2Id!, s.vision2Title)} className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 transition-colors hover:bg-emerald-100">
-              <span className="[&>svg]:h-3 [&>svg]:w-3"><Icons.Chat /></span> {s.vision2Title}
+            <button type="button" onClick={() => onReach!(s.tree2Id!, s.vision2Title)} className="inline-flex min-w-0 max-w-full items-center justify-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 transition-colors hover:bg-emerald-100 sm:justify-start">
+              <span className="shrink-0 [&>svg]:h-3 [&>svg]:w-3"><Icons.Chat /></span> <span className="truncate">{s.vision2Title}</span>
             </button>
           )}
         </div>

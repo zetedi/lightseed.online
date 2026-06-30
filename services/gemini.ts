@@ -126,16 +126,25 @@ export const generateLifetreeBio = async (seed: string): Promise<string> => {
   }
 }
 
+// The image-capable Gemini model ("nano banana"). The default text MODEL (gemini-3.5-flash) does
+// NOT return images, so image generation must target an image model and request IMAGE output.
+const IMAGE_MODEL = (config as any).imageModel || 'gemini-2.5-flash-image';
+
 // Base Image Generator
 export const generateImage = async (prompt: string): Promise<string | null> => {
     if (!prompt.trim()) return null;
     try {
         console.log("Generating image for:", prompt);
-        const res = await callGemini(prompt, MODEL, { imageConfig: { aspectRatio: "1:1" } });
-        return res.image || res.text || null; 
+        const res = await callGemini(prompt, IMAGE_MODEL, { responseModalities: ['IMAGE'] });
+        // Only a real image counts — never fall back to res.text. (It used to: the text model
+        // returned a *description* string that was then used as an <img src>, which silently broke.)
+        return res.image || null;
     } catch (e: any) {
         console.error("Gemini Image Error:", e);
-        throw new Error("AI Generation Failed. Please try again.");
+        const msg = (e?.message || '').toLowerCase();
+        throw new Error(msg.includes('suspend') || msg.includes('forbidden') || msg.includes('unavailable')
+            ? 'The AI image service is unavailable right now.'
+            : 'Image generation failed — try again, or upload an image instead.');
     }
 }
 

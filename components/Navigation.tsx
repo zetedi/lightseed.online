@@ -410,19 +410,19 @@ export const Navigation = ({
                 tapping there closes the menu. */}
             {isMenuOpen && (
                 <div
-                    className="xl:hidden fixed inset-x-0 top-20 bottom-0 z-50 flex flex-col justify-between"
+                    className="xl:hidden fixed inset-x-0 top-20 bottom-0 z-[1100] flex flex-col justify-between gap-2 overflow-y-auto"
                     onClick={() => setIsMenuOpen(false)}
                 >
                     {/* TOP PANEL */}
                     <div
                         onClick={e => e.stopPropagation()}
-                        className="rounded-b-3xl border-t border-b border-amber-300/25 px-3 pb-3 pt-3 shadow-[0_22px_30px_-18px_rgba(251,191,36,0.5)] animate-in slide-in-from-top-4"
+                        className="shrink-0 rounded-b-3xl border-t border-b border-amber-300/25 px-3 pb-3 pt-3 shadow-[0_22px_30px_-18px_rgba(251,191,36,0.5)] animate-in slide-in-from-top-4"
                         style={{ backgroundColor: navBackground, color: navText }}
                     >
                         {/* Row 1 — wide actions paired with their feeds (6 columns) */}
                         <div className="grid grid-cols-6 gap-1.5">
                             {activeTab === 'visions' ? (
-                                <MobileActionTile icon={<Icons.Sparkles />} label={t('create_vision')} onClick={onCreateVision} color="bg-amber-500" />
+                                <MobileActionTile icon={<Icons.Wizard />} label={t('create_vision')} onClick={onCreateVision} color="bg-amber-500" />
                             ) : (
                                 <MobileActionTile icon={<Icons.Tree />} label={t('plant_lifetree')} onClick={onPlant} color="bg-emerald-600" />
                             )}
@@ -444,7 +444,7 @@ export const Navigation = ({
                     {/* BOTTOM PANEL */}
                     <div
                         onClick={e => e.stopPropagation()}
-                        className="rounded-t-3xl border-t border-amber-300/70 px-3 pb-3 pt-3 shadow-[0_-22px_30px_-18px_rgba(251,191,36,0.5)] animate-in slide-in-from-bottom-4"
+                        className="shrink-0 rounded-t-3xl border-t border-amber-300/70 px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-22px_30px_-18px_rgba(251,191,36,0.5)] animate-in slide-in-from-bottom-4"
                         style={{ backgroundColor: navBackground, color: navText }}
                     >
                         {lightseed && reachNotificationsCount > 0 && (

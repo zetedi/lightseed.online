@@ -40,6 +40,21 @@ export function canViewTree(
   return false; // private, and not owner / guardian / staff
 }
 
+// Can this viewer see a vision, given its visibility? Mirrors canViewTree, but the author is the
+// owner (visions have no ownerId/guardians). 'public' = everyone; 'node' = any signed-in member;
+// 'private' = author or staff. (Client-side gate; firestore.rules is the hardening counterpart.)
+export function canViewVision(
+  vision: { authorId?: string; visibility?: 'public' | 'node' | 'private' },
+  viewer: { uid?: string; isStaff?: boolean },
+): boolean {
+  const v = vision.visibility || 'public';
+  if (v === 'public') return true;
+  if (viewer.isStaff) return true;
+  if (viewer.uid && vision.authorId === viewer.uid) return true;
+  if (v === 'node') return !!viewer.uid;
+  return false; // private, and not author / staff
+}
+
 export interface ForestFilter { showNature: boolean; showUser: boolean; showValidated: boolean; }
 
 // Pure predicate for the forest filter toggles. `isValidated` is injected so this domain view

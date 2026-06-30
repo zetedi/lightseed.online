@@ -63,7 +63,7 @@ import { LifetreeDetail } from './components/LifetreeDetail';
 import { VisionDetail } from './components/VisionDetail';
 import { PulseDetail } from './components/PulseDetail';
 import { queryableLevels, canEditEvent, pulseScope } from './src/domain/pulseVisibility';
-import { passesForestFilter, canViewTree } from './src/domain/views/forest';
+import { passesForestFilter, canViewTree, canViewVision } from './src/domain/views/forest';
 import { isWateringOverdue } from './src/domain/watering';
 import { GrowthPlayerModal } from './components/GrowthPlayerModal';
 import { LightseedProfile } from './components/LightseedProfile';
@@ -76,6 +76,8 @@ import { FirstRunChecklist } from './components/FirstRunChecklist';
 import { useOnboardingState } from './hooks/useOnboardingState';
 import { ForestPage } from './pages/ForestPage';
 import { Partners } from './components/intelligence/Partners';
+import { ObservatoryPage } from './pages/ObservatoryPage';
+import { PulseFeedPage } from './pages/PulseFeedPage';
 import { ResonancePanel, ResonanceCard, resonanceId } from './components/ResonancePanel';
 import { SectionHeader } from './components/ui/SectionHeader';
 import { LifeseedWidget } from './components/LifeseedWidget';
@@ -1163,103 +1165,22 @@ const AppContent = () => {
                 )}
 
                 {tab === 'observatory' && (
-                    <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
-                        <div className="overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-lg">
-                            {/* Lighthouse banner header */}
-                            <div className="relative h-36 sm:h-44 overflow-hidden">
-                                <img src="/lighthouse.webp" alt="Observatory" className="absolute inset-0 h-full w-full object-cover" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/85 via-slate-900/40 to-transparent"></div>
-                                {observatoryQuote && (
-                                    <div className="absolute right-4 top-3 z-10 flex max-w-[60%] flex-col items-end gap-1 text-right">
-                                        <p dir="auto" className="line-clamp-3 text-xs italic text-white/90 drop-shadow">"{observatoryQuote}"</p>
-                                        <button
-                                            onClick={() => { navigator.clipboard?.writeText(observatoryQuote).then(() => { setObsQuoteCopied(true); setTimeout(() => setObsQuoteCopied(false), 1500); }).catch(() => {}); }}
-                                            title="Copy quote" aria-label="Copy quote"
-                                            className="inline-flex items-center rounded-full bg-white/15 p-1 text-white/80 backdrop-blur transition-colors hover:bg-white/25 hover:text-white"
-                                        >
-                                            {obsQuoteCopied ? <span className="px-0.5 text-[10px] font-bold">✓</span> : <Icons.Copy size={13} />}
-                                        </button>
-                                    </div>
-                                )}
-                                <div className="absolute bottom-0 left-0 right-0 flex items-center gap-3 p-5">
-                                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur">
-                                        <Icons.Exchange />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <h2 className="break-words text-2xl font-light tracking-wide text-white drop-shadow">{t('pending_alignments')}</h2>
-                                        <p className="text-sm text-white/80 drop-shadow">{t('observatory_subtitle')}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* The empty "field is calm" state only when there's truly nothing —
-                                no alignments AND no resonances. Otherwise the resonance section carries it. */}
-                            {(alignments.length > 0 || synergies.length === 0) && (
-                                <div className="p-6">
-                                    {alignments.length === 0 ? (
-                                        <div className="flex flex-col items-center rounded-2xl border border-slate-100 bg-slate-50/60 p-12 text-center">
-                                            <div className="mb-6 rounded-full bg-white p-4 shadow-sm">
-                                                <Logo width={100} height={100} className="text-slate-800" />
-                                            </div>
-                                            <h3 className="mb-2 text-xl font-light text-slate-800">{t('no_pending_resonance')}</h3>
-                                            <p className="text-slate-500">{t('ether_quiet')}</p>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-4">
-                                            {alignments.map(a => (
-                                                <div key={a.id} className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 text-slate-800 shadow-sm animate-in fade-in slide-in-from-bottom-2">
-                                                    <div className="flex items-center justify-between">
-                                                        <div><p className="font-bold">{t('alignment_request')}</p><p className="text-sm text-slate-500">{t('from_another_tree')}</p></div>
-                                                        <div className="flex gap-2">
-                                                            <button onClick={() => onAcceptAlignment(a.id)} className="rounded-full bg-sky-500 px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-sky-600">{t('accept_sync')}</button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                            {/* Living Intelligence Resonance — inside the same box. */}
-                            <ResonanceScan active={isAnalyzingSynergy}>
-                                <div className="border-t border-amber-100">
-                                    <div className="flex items-center justify-between gap-3 border-b border-amber-100 bg-amber-50/60 p-5">
-                                        <div className="flex min-w-0 items-center gap-3">
-                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white"><Icons.SparkleFill size={22} /></div>
-                                            <div className="min-w-0">
-                                                <h2 className="text-xl font-light text-slate-800">{t('living_resonance')}</h2>
-                                                <p className="text-sm text-slate-500">
-                                                    {lastSynergyAt ? `${t('last_read')} ${new Date(lastSynergyAt).toLocaleDateString()}` : t('resonance_field_hint')}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={refreshResonanceObservatory}
-                                            disabled={isAnalyzingSynergy || !canRefreshResonance}
-                                            title={!canRefreshResonance ? `Refreshes weekly — about ${Math.max(1, Math.ceil(synergyCooldownLeft / 86400000))} day(s) left` : 'Re-read the field'}
-                                            className="inline-flex shrink-0 items-center gap-2 rounded-full bg-amber-500 px-4 py-2 text-xs font-bold text-white shadow transition-all hover:bg-amber-600 active:scale-95 disabled:opacity-50"
-                                        >
-                                            {isAnalyzingSynergy
-                                                ? <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-                                                : <Icons.Refresh />}
-                                            <span>{isAnalyzingSynergy ? t('reading') : canRefreshResonance ? t('refresh') : `~${Math.max(1, Math.ceil(synergyCooldownLeft / 86400000))}d`}</span>
-                                        </button>
-                                    </div>
-                                    <div className="p-5">
-                                        {synergies.length > 0 ? (
-                                            <div className="grid gap-4 md:grid-cols-2">
-                                                {[...synergies].sort((a, b) => (b.score || 0) - (a.score || 0)).map((s, i) => (
-                                                    <ResonanceCard key={i} s={s} isFavorite={favoriteResonanceIds.has(resonanceId(s))} onToggleFavorite={() => toggleFavoriteResonance(s)} onReach={reachResonantTree} />
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <p className="py-8 text-center text-sm text-slate-400">{t('no_resonances_yet')}</p>
-                                        )}
-                                    </div>
-                                </div>
-                            </ResonanceScan>
-                        </div>
-                    </div>
+                    <ObservatoryPage
+                        alignments={alignments}
+                        onAcceptAlignment={onAcceptAlignment}
+                        isAnalyzingSynergy={isAnalyzingSynergy}
+                        synergies={synergies}
+                        lastSynergyAt={lastSynergyAt}
+                        canRefreshResonance={canRefreshResonance}
+                        synergyCooldownLeft={synergyCooldownLeft}
+                        onRefreshResonance={refreshResonanceObservatory}
+                        favoriteResonanceIds={favoriteResonanceIds}
+                        onToggleFavorite={toggleFavoriteResonance}
+                        onReach={reachResonantTree}
+                        observatoryQuote={observatoryQuote}
+                        quoteCopied={obsQuoteCopied}
+                        onCopyQuote={() => { navigator.clipboard?.writeText(observatoryQuote).then(() => { setObsQuoteCopied(true); setTimeout(() => setObsQuoteCopied(false), 1500); }).catch(() => {}); }}
+                    />
                 )}
 
 
@@ -1302,7 +1223,7 @@ const AppContent = () => {
                                             onClick={() => setShowVisionModal(true)}
                                             className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-full font-bold shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap"
                                         >
-                                            <Icons.Sparkles /> <span>{t('create_vision')}</span>
+                                            <Icons.Wizard /> <span>{t('create_vision')}</span>
                                         </button>
                                     )}
                                     <button
@@ -1322,75 +1243,58 @@ const AppContent = () => {
 
                             <ResonanceScan active={isAnalyzingSynergy}>
                                 <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                                    {filteredData.length === 0 && !loadingMore ? <p className="col-span-full text-center text-slate-400 py-10">{t('no_visions_found')}</p> :
-                                        filteredData.map((item: any) => (
-                                            <div key={item.id} onClick={() => setSelectedVision(item)} className="cursor-pointer">
-                                                <VisionCard vision={item} />
-                                            </div>
-                                        ))
-                                    }
+                                    {(() => {
+                                        // Respect vision visibility (protect fragile/early visions). Rules enforce it server-side.
+                                        const viewer = { uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin };
+                                        const visibleVisions = filteredData.filter((v: any) => canViewVision(v, viewer));
+                                        return visibleVisions.length === 0 && !loadingMore
+                                            ? <p className="col-span-full text-center text-slate-400 py-10">{t('no_visions_found')}</p>
+                                            : visibleVisions.map((item: any) => (
+                                                <div key={item.id} onClick={() => setSelectedVision(item)} className="cursor-pointer">
+                                                    <VisionCard vision={item} />
+                                                </div>
+                                            ));
+                                    })()}
                                 </div>
                             </ResonanceScan>
                         </SectionHeader>
                     </div>
                 ) : tab === 'events' ? (
-                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-                        <SectionHeader
-                            icon={<Icons.Loc />}
-                            title={t('events')}
-                            subtitle={t('events_sub')}
-                            footer={searchBox}
-                            action={lightseed && (
-                                <button onClick={() => setShowEventModal(true)} className="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2.5 rounded-full font-bold shadow-lg shadow-sky-600/20 transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap">
-                                    <Icons.Plus /> <span>{t('create_event')}</span>
-                                </button>
-                            )}
-                        >
-                            <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                                {eventsForViewer.length === 0 && !loadingMore ? <p className="col-span-full text-center text-slate-400 py-10">{t('no_events_found')}</p> :
-                                    eventsForViewer.map((item: any) => (
-                                        <div key={item.id}>
-                                            <PulseCard
-                                                pulse={item}
-                                                lightseed={lightseed}
-                                                onMatch={(p: Pulse) => { setSelectedPulse(p); openPulseModal(); }}
-                                                onView={(p: Pulse) => setSelectedPulse(p)}
-                                            />
-                                        </div>
-                                    ))
-                                }
-                            </div>
-                        </SectionHeader>
-                    </div>
+                    <PulseFeedPage
+                        icon={<Icons.Loc />}
+                        title={t('events')}
+                        subtitle={t('events_sub')}
+                        searchBox={searchBox}
+                        action={lightseed && (
+                            <button onClick={() => setShowEventModal(true)} className="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2.5 rounded-full font-bold shadow-lg shadow-sky-600/20 transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap">
+                                <Icons.Plus /> <span>{t('create_event')}</span>
+                            </button>
+                        )}
+                        items={eventsForViewer}
+                        emptyText={t('no_events_found')}
+                        loadingMore={loadingMore}
+                        lightseed={lightseed}
+                        onMatch={(p: Pulse) => { setSelectedPulse(p); openPulseModal(); }}
+                        onView={(p: Pulse) => setSelectedPulse(p)}
+                    />
                 ) : tab !== 'observatory' && tab !== 'profile' && tab !== 'inspiration' && tab !== 'about' && tab !== 'dashboard' && tab !== 'newsletter' && tab !== 'communities' && (
-                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-                        <SectionHeader
-                            icon={<Icons.HeartPulse />}
-                            title={t('pulses')}
-                            subtitle={t('pulses_sub')}
-                            footer={searchBox}
-                            action={lightseed && (
-                                <button onClick={() => openPulseModal()} className="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2.5 rounded-full font-bold shadow-lg shadow-sky-600/20 transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap">
-                                    <Icons.Pulse /> <span>{t('emit_pulse')}</span>
-                                </button>
-                            )}
-                        >
-                            <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                                {filteredData.length === 0 && !loadingMore ? <p className="col-span-full text-center text-slate-400 py-10">{t('no_trees_found')}</p> :
-                                    filteredData.map((item) => (
-                                        <React.Fragment key={item.id}>
-                                            <PulseCard
-                                                pulse={item}
-                                                lightseed={lightseed}
-                                                onMatch={(p: Pulse) => { setMatchCandidate(p); openPulseModal(); }}
-                                                onView={(p: Pulse) => setSelectedPulse(p)}
-                                            />
-                                        </React.Fragment>
-                                    ))
-                                }
-                            </div>
-                        </SectionHeader>
-                    </div>
+                    <PulseFeedPage
+                        icon={<Icons.HeartPulse />}
+                        title={t('pulses')}
+                        subtitle={t('pulses_sub')}
+                        searchBox={searchBox}
+                        action={lightseed && (
+                            <button onClick={() => openPulseModal()} className="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2.5 rounded-full font-bold shadow-lg shadow-sky-600/20 transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap">
+                                <Icons.Pulse /> <span>{t('emit_pulse')}</span>
+                            </button>
+                        )}
+                        items={filteredData}
+                        emptyText={t('no_trees_found')}
+                        loadingMore={loadingMore}
+                        lightseed={lightseed}
+                        onMatch={(p: Pulse) => { setMatchCandidate(p); openPulseModal(); }}
+                        onView={(p: Pulse) => setSelectedPulse(p)}
+                    />
                 )}
 
                 {loadingMore && <div className="flex justify-center py-4"><Loading /></div>}
@@ -1404,7 +1308,7 @@ const AppContent = () => {
             {/* Page-level scroll affordance — only on the main page (hidden while a detail/modal is open). */}
             {openKeys.length === 0 && <ScrollChevrons axis="y" fixed />}
 
-            <div className="relative z-10 flex-1">
+            <div className="relative z-20 flex-1">
                 {impersonatedCommunity && (
                     <div className="sticky top-0 z-40 flex items-center justify-center gap-3 bg-amber-500 px-4 py-1.5 text-center text-xs font-bold text-white shadow-md">
                         <span className="truncate">Viewing as <span className="font-extrabold">{impersonatedCommunity.name}</span> — community view</span>
@@ -1416,7 +1320,7 @@ const AppContent = () => {
                         </button>
                     </div>
                 )}
-                {tab !== 'about' && (
+                {(
                     <Navigation
                         lightseed={lightseed}
                         activeTab={tab}

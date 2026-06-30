@@ -33,6 +33,7 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
   const [visionBody, setVisionBody] = useState('');
   const [visionLink, setVisionLink] = useState('');
   const [visionImageUrl, setVisionImageUrl] = useState('');
+  const [visibility, setVisibility] = useState<'public' | 'node' | 'private'>('public');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localUploading, setLocalUploading] = useState(false);
 
@@ -76,7 +77,8 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
             title: visionTitle,
             body: visionBody,
             link: visionLink,
-            imageUrl: finalImageUrl
+            imageUrl: finalImageUrl,
+            visibility,
         });
         onClose();
     } catch(e:any) { 
@@ -100,7 +102,7 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
                 disabled={uploading || localUploading || !visionBody}
                 className="text-xs bg-amber-100 text-amber-700 px-3 py-1 rounded-full font-bold hover:bg-amber-200 disabled:opacity-50 flex items-center gap-1"
              >
-                 <Icons.Sparkles /> 
+                 <Icons.Wizard /> 
                  <span>{t('generate_image')}</span>
              </button>
         </div>
@@ -134,11 +136,25 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
             className="block w-full border border-slate-300 p-2 rounded-lg" 
             placeholder={t('webpage')} 
             value={visionLink} 
-            onChange={e=>setVisionLink(e.target.value)} 
+            onChange={e=>setVisionLink(e.target.value)}
         />
 
-        <button 
-            type="submit" 
+        {/* Protect fragile, early visions: choose who can see this. */}
+        <label className="block">
+            <span className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-400"><Icons.Eye /> {t('visibility')}</span>
+            <select
+                value={visibility}
+                onChange={e => setVisibility(e.target.value as 'public' | 'node' | 'private')}
+                className="block w-full rounded-lg border border-slate-300 bg-white p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+                <option value="public">{t('vis_public')}</option>
+                <option value="node">{t('vis_node')}</option>
+                <option value="private">{t('vis_private')}</option>
+            </select>
+        </label>
+
+        <button
+            type="submit"
             disabled={uploading || localUploading || isSubmitting} 
             className="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-bold shadow-md disabled:opacity-50"
         >

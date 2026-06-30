@@ -1007,7 +1007,8 @@ export const getJoinedVisions = async (uid: string): Promise<Vision[]> => {
 
 export const createVision = async (data: any) => {
     const domain = data.domain || window.location.hostname.replace(/^www\./, '');
-    return addDoc(visionsCollection, { ...data, lid: uuidv7(), domain, createdAt: serverTimestamp() });
+    // Default to public so legacy/unspecified visions stay visible (mirrors tree visibility).
+    return addDoc(visionsCollection, { ...data, lid: uuidv7(), domain, visibility: data.visibility || 'public', createdAt: serverTimestamp() });
 };
 export const deleteVision = (id: string) => deleteDoc(doc(db, 'visions', id));
 

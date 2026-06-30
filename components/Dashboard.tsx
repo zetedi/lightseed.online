@@ -71,11 +71,11 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
 
     return (
         <div className="space-y-3 sm:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* White-Label Community Hero */}
+            {/* White-Label Community Hero — slim banner (~1/3); the carousel below carries the rest. */}
             {!lightseed && hostCommunity && (
-                <div 
+                <div
                     onClick={() => onViewCommunity?.(hostCommunity)}
-                    className="relative h-64 md:h-80 rounded-3xl overflow-hidden shadow-2xl cursor-pointer group border-4 border-white/20"
+                    className="relative h-24 md:h-28 rounded-3xl overflow-hidden shadow-xl cursor-pointer group border-4 border-white/20"
                 >
                     <div className="absolute inset-0 bg-slate-900"></div>
                     {communityHero && (
@@ -85,43 +85,35 @@ export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, eve
                             alt={hostCommunity.name}
                         />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-emerald-950 via-emerald-950/40 to-transparent"></div>
-                    <div className="absolute inset-0 p-8 flex flex-col justify-end">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-white/30 bg-white/20 p-2 backdrop-blur-md transition-transform group-hover:scale-110">
-                                {hostCommunity.logoUrl ? (
-                                    <img src={hostCommunity.logoUrl} className="h-full w-full rounded-xl object-cover" alt={`${hostCommunity.name} logo`} />
-                                ) : (
-                                    <Icons.Globe size={32} className="text-white" />
-                                )}
-                            </div>
-                            <div>
-                                <h1 className="text-3xl md:text-4xl font-thin tracking-tight text-white">{hostCommunity.name}</h1>
-                                <p className="text-emerald-300 text-xs font-mono">{hostCommunity.domain}</p>
-                            </div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-950 via-emerald-950/55 to-transparent"></div>
+                    <div className="absolute inset-0 flex items-center gap-3 px-5">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/30 bg-white/20 p-1.5 backdrop-blur-md transition-transform group-hover:scale-110">
+                            {hostCommunity.logoUrl ? (
+                                <img src={hostCommunity.logoUrl} className="h-full w-full rounded-xl object-cover" alt={`${hostCommunity.name} logo`} />
+                            ) : (
+                                <Icons.Globe size={26} className="text-white" />
+                            )}
                         </div>
-                        <div 
-                            className="text-emerald-50/80 text-sm md:text-base line-clamp-3 max-w-2xl leading-relaxed"
-                            dangerouslySetInnerHTML={{ __html: hostCommunity.vision || "<p>Connecting this vertical forest node with the global network.</p>" }}
-                        />
-                        <div className="mt-6 flex gap-3">
-                            <button className="bg-white text-emerald-900 px-6 py-2.5 rounded-full font-bold text-sm shadow-xl hover:bg-emerald-50 transition-all flex items-center gap-2">
-                                Explore Vision <Icons.ArrowRight size={18} />
-                            </button>
+                        <div className="min-w-0">
+                            <h1 className="truncate text-xl md:text-2xl font-thin tracking-tight text-white">{hostCommunity.name}</h1>
+                            <p className="truncate font-mono text-xs text-emerald-300">{hostCommunity.domain}</p>
                         </div>
+                        <span className="ml-auto hidden shrink-0 items-center gap-1.5 rounded-full bg-white/90 px-4 py-2 text-xs font-bold text-emerald-900 shadow-lg transition-all group-hover:bg-white sm:inline-flex">
+                            Explore <Icons.ArrowRight size={16} />
+                        </span>
                     </div>
                 </div>
             )}
 
-            {/* Signed-out visitors: a full-width carousel of reflections in place of the
-                Home + Observatory cards. */}
-            {!lightseed && <QuoteCarousel quotes={LIGHTSEED_QUOTES} />}
+            {/* Signed-out visitors: a full-width carousel of reflections (admin-editable per node)
+                in place of the Home + Observatory cards. */}
+            {!lightseed && <QuoteCarousel quotes={(hostCommunity?.carouselQuotes?.length ? hostCommunity.carouselQuotes : LIGHTSEED_QUOTES)} />}
 
             {/* Events banner — logged-in only. Full width (home card → plant card), half a card
                 tall. A distorted node/community hero, a living leaf texture, and an oversized
                 EVENTS wordmark running behind the cards. Looks special with or without a hero. */}
             {lightseed && events && events.length > 0 && (
-                <div className="relative w-full overflow-hidden rounded-2xl h-40 md:h-48 bg-emerald-900 ring-1 ring-amber-300/50 shadow-[0_0_40px_-4px_rgba(251,191,36,0.5)]">
+                <div className="relative w-full overflow-hidden rounded-2xl h-80 md:h-64 bg-emerald-900 ring-1 ring-amber-300/50 shadow-[0_0_40px_-4px_rgba(251,191,36,0.5)]">
                     {/* Background: the node/community hero, softly distorted — or an emerald wash */}
                     {communityHero ? (
                         <img src={communityHero} className="absolute inset-0 h-full w-full scale-110 object-cover blur-[2px] saturate-150" alt="" />

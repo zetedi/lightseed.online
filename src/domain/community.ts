@@ -27,6 +27,8 @@ export interface Community extends Entity {
     whatsapp?: string;
     website?: string;
   };
+  // Reflections shown in the signed-out home carousel — an editable list curated by the admin.
+  carouselQuotes?: string[];
   createdAt: Timestamp;
   updatedAt?: Timestamp;
 

@@ -129,9 +129,14 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Visions: Read public, Write author/staff
+    // Visions: visibility-gated reads (protect fragile/early visions). Missing visibility =
+    // public (legacy-safe). 'node' = any signed-in member; 'private' = author or staff only.
     match /visions/{visionId} {
-      allow read: if true;
+      allow read: if !('visibility' in resource.data)
+                     || resource.data.visibility == 'public'
+                     || (isSignedIn() && resource.data.visibility == 'node')
+                     || (isSignedIn() && resource.data.authorId == request.auth.uid)
+                     || isStaff();
       allow create: if isSignedIn();
       allow update: if isSignedIn(); // For joining
       allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff());

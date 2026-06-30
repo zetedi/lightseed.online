@@ -29,7 +29,7 @@ export const Partners = () => {
   return (
     <div className="space-y-3">
       <div>
-        <h3 className="flex items-center gap-2 text-lg font-bold text-slate-800"><Icons.Sparkles /> Partners</h3>
+        <h3 className="flex items-center gap-2 text-lg font-bold text-slate-800"><Icons.Wizard /> Partners</h3>
         <p className="mt-1 text-sm text-slate-500">The intelligences configured on this node. Any is welcome as long as it respects life.</p>
       </div>
       {display === null ? (

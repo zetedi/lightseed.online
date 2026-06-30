@@ -90,6 +90,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const [editName, setEditName] = useState(community.name);
   const [editVision, setEditVision] = useState(community.vision);
   const [editSocial, setEditSocial] = useState<{ instagram?: string; telegram?: string; whatsapp?: string; website?: string }>(community.socialLinks || {});
+  const [editCarouselQuotes, setEditCarouselQuotes] = useState<string[]>(community.carouselQuotes || []);
   const [editTheme, setEditTheme] = useState(normalizeTheme(community.theme));
   const [logoUrl, setLogoUrl] = useState(community.logoUrl || '');
   const [heroImageUrl, setHeroImageUrl] = useState(community.heroImageUrl || '');
@@ -325,6 +326,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
         logoUrl,
         heroImageUrl,
         socialLinks: editSocial,
+        carouselQuotes: editCarouselQuotes.map(q => q.trim()).filter(Boolean),
       };
       await updateCommunity(community.id, updates);
       // Refresh from Firestore so the view reflects exactly what was persisted.
@@ -487,7 +489,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     // stays with the central lightseed / lifeseed nodes).
     ...loreTabs.filter(tab => isNetworkHub || tab.id !== 'yantra').map(tab => ({ key: tab.id as TabKey, label: tab.label, icon: loreIcons[tab.id] })),
     ...(canEdit ? [
-      { key: 'intelligence' as TabKey, label: 'Intelligence', icon: <Icons.Sparkles /> },
+      { key: 'intelligence' as TabKey, label: 'Intelligence', icon: <Icons.Wizard /> },
       { key: 'appearance' as TabKey, label: 'Appearance', icon: <Icons.Image /> },
     ] : []),
   ];
@@ -909,7 +911,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                 <h4 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-400">All available intelligences</h4>
                 {intelligences.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400">
-                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-500"><Icons.Sparkles /></div>
+                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-500"><Icons.Wizard /></div>
                     <p className="text-sm">No intelligences are available yet. A super-admin seeds the commons on first load.</p>
                   </div>
                 ) : (
@@ -1018,6 +1020,21 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                       <span className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-slate-600"><Icons.Globe /> Website</span>
                       <input value={editSocial.website || ''} onChange={e => setEditSocial(s => ({ ...s, website: e.target.value }))} placeholder="example.com" className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
                     </label>
+                  </div>
+                </div>
+
+                {/* Home carousel quotes — reflections shown to signed-out visitors. */}
+                <div className="mt-8 border-t border-slate-100 pt-6">
+                  <h4 className="mb-1 text-sm font-bold uppercase tracking-wider text-slate-400">Home carousel quotes</h4>
+                  <p className="mb-3 text-xs text-slate-500">Reflections shown in the signed-out home carousel. Leave empty to use the lightseed defaults.</p>
+                  <div className="space-y-2">
+                    {editCarouselQuotes.map((q, i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <textarea value={q} onChange={e => setEditCarouselQuotes(prev => prev.map((x, j) => j === i ? e.target.value : x))} rows={2} placeholder="A reflection…" className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                        <button type="button" onClick={() => setEditCarouselQuotes(prev => prev.filter((_, j) => j !== i))} className="mt-1 shrink-0 rounded-full p-1.5 text-red-500 transition-colors hover:bg-red-50" title="Remove"><Icons.Close /></button>
+                      </div>
+                    ))}
+                    <button type="button" onClick={() => setEditCarouselQuotes(prev => [...prev, ''])} className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-50"><Icons.Plus /> Add quote</button>
                   </div>
                 </div>
               </div>

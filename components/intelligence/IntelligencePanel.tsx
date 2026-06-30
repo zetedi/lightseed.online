@@ -9,7 +9,7 @@ import {
 } from '../../services/intelligence';
 import { testIntelligenceConnection } from '../../services/gemini';
 import { AIAccessCard } from './AIAccessCard';
-import { Partners } from './Partners';
+import { SectionMenu } from '../ui/SectionMenu';
 
 const CLAUDE_MODELS = [
   { id: 'claude-opus-4-8', label: 'Claude Opus 4.8 — deepest' },
@@ -179,13 +179,23 @@ export const IntelligencePanel = ({
     setBusy(false);
   };
 
+  const [panelTab, setPanelTab] = useState<'intelligence' | 'memory'>('intelligence');
+
   return (
     <div className="space-y-5">
       <div>
-        <h3 className="flex items-center gap-2 text-lg font-bold text-slate-800"><Icons.Sparkles /> {title ?? t('intel_your_title')}</h3>
+        <h3 className="flex items-center gap-2 text-lg font-bold text-slate-800"><Icons.Wizard /> {title ?? t('intel_your_title')}</h3>
         <p className="mt-1 text-sm text-slate-500">{subtitle ?? t('intel_your_sub')}</p>
       </div>
 
+      <SectionMenu
+        orientation="horizontal"
+        items={[{ key: 'intelligence', label: 'All Intelligences', icon: <Icons.Wizard /> }, { key: 'memory', label: t('intel_memory_title'), icon: <Icons.Leaf /> }]}
+        active={panelTab}
+        onSelect={(k) => setPanelTab(k as 'intelligence' | 'memory')}
+      />
+
+      {panelTab === 'intelligence' && (<div className="space-y-5">
       {/* What's powering AI right now (your key / community / sponsored / network). */}
       <AIAccessCard intelligenceId={selectedIntelligenceId} />
 
@@ -253,9 +263,10 @@ export const IntelligencePanel = ({
           </div>
         )}
       </div>
+      </div>)}
 
-      {/* Memory — pour in what this intelligence should remember (recalled, not obeyed) */}
-      {selected && (
+      {/* Memory tab — for the selected intelligence. */}
+      {panelTab === 'memory' && (selected ? (
         <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
           <div className="flex items-center justify-between gap-2">
             <h4 className="flex items-center gap-1.5 text-sm font-bold text-slate-800"><Icons.Leaf /> {t('intel_memory_title')}</h4>
@@ -265,13 +276,17 @@ export const IntelligencePanel = ({
           <textarea value={memText} onChange={e => setMemText(e.target.value)} placeholder={t('intel_memory_ph')} className="mt-2 min-h-24 w-full rounded-lg border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
           <button type="button" onClick={handleAddMemory} disabled={addingMem || !memText.trim()} className="mt-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">{addingMem ? '…' : t('intel_add_memory')}</button>
         </div>
-      )}
+      ) : (
+        <p className="text-sm text-slate-400">Choose an intelligence in the Intelligence tab to add or view its memory.</p>
+      ))}
+
+      {panelTab === 'intelligence' && (<div className="space-y-5">
 
       {/* Connect Claude with your own key */}
       <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-amber-300"><Icons.Sparkles /></span>
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-amber-300"><Icons.Wizard /></span>
             <div>
               <div className="text-sm font-bold text-slate-800">Claude {existingClaude?.connected && <span className="ml-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">{t('intel_connected')} {existingClaude.keyHint}</span>}</div>
               <div className="text-[11px] text-slate-500">{scope === 'community' ? t('intel_byo_community') : t('intel_byo_user')}</div>
@@ -350,9 +365,7 @@ export const IntelligencePanel = ({
           <Icons.Heart filled={false} /> {t('intel_support_soon')}
         </button>
       </div>
-
-      {/* The AIs that can participate in this node, with short descriptions. */}
-      <div className="border-t border-slate-100 pt-5"><Partners /></div>
+      </div>)}
     </div>
   );
 };

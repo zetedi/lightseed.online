@@ -458,7 +458,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
         { key: 'history', label: t('alignments'), icon: <Icons.Venn /> },
         { key: 'invites', label: t('invitations'), icon: <Icons.UserPlus /> },
         { key: 'appearance', label: t('appearance'), icon: <Icons.Image /> },
-        { key: 'intelligence', label: t('intelligence'), icon: <Icons.Sparkles /> },
+        { key: 'intelligence', label: t('intelligence'), icon: <Icons.Wizard /> },
         { key: 'settings', label: t('settings_title'), icon: <Icons.Cog /> },
         ...(showAdmin ? [{ key: 'admin', label: t('admin_title'), icon: <Icons.Shield /> }] : []),
     ];

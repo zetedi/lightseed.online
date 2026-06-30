@@ -353,6 +353,16 @@ const DEFAULT_INTELLIGENCES: Array<Omit<Intelligence, 'createdAt'>> = [
     public: true,
     personaId: 'persona-oracle',
   },
+  {
+    id: 'claude-oracle',
+    name: 'Claude Oracle',
+    description: "Anthropic's Claude wearing the Oracle persona — connect a Claude key to give it voice.",
+    provider: 'anthropic',
+    model: 'claude-sonnet-4-6',
+    enabled: true,
+    public: true,
+    personaId: 'persona-oracle',
+  },
 ];
 
 // The id of the hub's default intelligence ("Osiris"). Callers fall back to this when a

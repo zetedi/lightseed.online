@@ -26,7 +26,7 @@ export const QuoteCarousel = ({ quotes, intervalMs = 8000 }: { quotes: string[];
     <section
       aria-roledescription="carousel"
       aria-label="Lightseed reflections"
-      className="relative w-full overflow-hidden rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-sky-50 px-10 py-7 shadow-sm sm:py-10"
+      className="relative w-full overflow-hidden rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-sky-50 px-10 py-10 shadow-sm sm:py-16"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocusCapture={() => setPaused(true)}
@@ -39,7 +39,7 @@ export const QuoteCarousel = ({ quotes, intervalMs = 8000 }: { quotes: string[];
         touchX.current = null;
       }}
     >
-      <div aria-live="polite" className="mx-auto flex h-[clamp(3.5rem,15vh,6.5rem)] max-w-3xl items-center justify-center overflow-hidden">
+      <div aria-live="polite" className="mx-auto flex h-[clamp(5rem,24vh,11rem)] max-w-3xl items-center justify-center overflow-hidden">
         <p
           key={i}
           dir="auto"

@@ -160,7 +160,7 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel = "Back", ca
                         
                         <div className="relative z-10">
                             <h2 className="text-lg font-bold text-sky-400 uppercase tracking-wider mb-6 flex items-center">
-                                <Icons.Sparkles />
+                                <Icons.Wizard />
                                 <span className="ml-2">Translation Depth System</span>
                             </h2>
 
@@ -244,7 +244,7 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel = "Back", ca
                                         onClick={handleTranslate}
                                         className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 rounded-xl font-bold text-sm shadow-lg shadow-indigo-900/50 transition-all active:scale-95 flex justify-center items-center gap-2"
                                     >
-                                        {isTranslating ? <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" /> : <Icons.Sparkles />}
+                                        {isTranslating ? <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" /> : <Icons.Wizard />}
                                         {isTranslating ? "Translating..." : "Translate Pulse"}
                                     </button>
                                     
