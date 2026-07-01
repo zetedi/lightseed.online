@@ -4,7 +4,8 @@ import { showAlert, showConfirm } from "./ui/Dialog";
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
 import { Community, Lifetree, Lightseed, Pulse, Intelligence, Persona, Sanctuary } from '../types';
-import { updateCommunity, uploadImage, getTreesByDomain, deleteCommunity, createCommunityEvent, updateEvent, deleteCommunityEvent, getCommunityByDomain, getCommunityEvents, getSanctuariesByDomain, createDecision, voteOnDecision, getDecisions, raiseConcern, resumeDecision, withdrawDecision } from '../services/firebase';
+import { updateCommunity, uploadImage, getTreesByDomain, deleteCommunity, createCommunityEvent, updateEvent, deleteCommunityEvent, getCommunityByDomain, getCommunityEvents, getSanctuariesByDomain, createDecision, voteOnDecision, getDecisions, raiseConcern, resumeDecision, withdrawDecision, getPulsesByTreeId } from '../services/firebase';
+import { isCanonicallySealed, verifyBlockSeal } from '../src/domain/chain';
 import { DECISION_NATURES, decisionStatusLabels, type Decision, type DecisionNature } from '../src/domain/decision';
 import { getSelectableIntelligences, listPersonas } from '../services/intelligence';
 import RichTextEditor from './ui/RichTextEditor';
@@ -79,7 +80,9 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     return () => { alive = false; };
   }, [community.id, currentUserId]);
   const isMember = memberSeed || memberByLink;
-  const eventLevels = queryableLevels(
+  // The visibility levels this viewer may query at community scope — shared by the events and
+  // council (decisions) tabs, so a signed-out viewer only ever requests public docs.
+  const communityLevels = queryableLevels(
     { uid: currentUserId, isStaff: isSuperAdmin || isAdmin, communityIds: isMember ? [community.id] : [] },
     { communityId: community.id },
   );
@@ -114,7 +117,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const [decBody, setDecBody] = useState('');
   const [proposing, setProposing] = useState(false);
   const [votingId, setVotingId] = useState<string | null>(null);
-  const refreshDecisions = () => { getDecisions(community.id).then(setDecisions).catch(() => {}); };
+  const refreshDecisions = () => { getDecisions(community.id, communityLevels).then(setDecisions).catch(() => {}); };
   useEffect(() => { if (activeTab === 'council') refreshDecisions(); }, [activeTab, community.id]);
 
   const handlePropose = async () => {
@@ -181,6 +184,13 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
+  // The chain seal ("big red stamp") — mirrors community.chainLocked. Sealing is one-way for owners.
+  const [chainSealed, setChainSealed] = useState(!!community.chainLocked);
+  const [isSealing, setIsSealing] = useState(false);
+  const [sealStatus, setSealStatus] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verifyResult, setVerifyResult] = useState<{ sealed: number; intact: number; legacy: number; trees: number } | null>(null);
+
   // Events
   const [events, setEvents] = useState<Pulse[]>([]);
   const [eventTitle, setEventTitle] = useState('');
@@ -215,7 +225,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     setImageUrls(community.imageUrls || []);
     setEditDefaultIntelligenceId(community.defaultIntelligenceId || '');
     setEditAvailableIntelligenceIds(community.availableIntelligenceIds || []);
-  }, [community.id, community.name, community.vision, community.logoUrl, community.heroImageUrl, community.theme, (community.imageUrls || []).join(','), community.defaultIntelligenceId, (community.availableIntelligenceIds || []).join(',')]);
+    setChainSealed(!!community.chainLocked);
+  }, [community.id, community.name, community.vision, community.logoUrl, community.heroImageUrl, community.theme, (community.imageUrls || []).join(','), community.defaultIntelligenceId, (community.availableIntelligenceIds || []).join(','), community.chainLocked]);
 
   // Intelligences an admin can choose from (public + owned), plus persona names.
   useEffect(() => {
@@ -229,7 +240,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   }, [community.domain, currentUserId]);
 
   useEffect(() => {
-    getCommunityEvents(community.id, eventLevels).then(setEvents).catch(() => {});
+    getCommunityEvents(community.id, communityLevels).then(setEvents).catch(() => {});
   }, [community.id]);
 
   useEffect(() => {
@@ -341,6 +352,61 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     setIsSaving(false);
   };
 
+  // The chain seal ("big red stamp", About → Vision). Sealing persists community.chainLocked so new
+  // blocks are hashed with the canonical, reproducible scheme (src/domain/chain). When this is the
+  // active node, App re-syncs the in-memory lock from the flag (onUpdate → hostCommunity → the effect
+  // that calls setChainLocked). One-way for owners; only a super-admin can unseal (a testing escape).
+  const handleToggleSeal = async (next: boolean) => {
+    const confirmed = next
+      ? await showConfirm(
+          'Seal this chain? From now on, every new block this node mints is sealed with the canonical, reproducible hash — so anyone can verify the chain end to end. Blocks minted before now keep their original hashes. This is a commitment.',
+          { title: 'Seal the chain', confirmText: 'Seal it' },
+        )
+      : await showConfirm(
+          'Unseal this chain? New blocks return to the legacy hash and can no longer be verified end to end. Blocks already sealed stay sealed.',
+          { title: 'Unseal the chain', confirmText: 'Unseal', danger: true },
+        );
+    if (!confirmed) return;
+    setIsSealing(true);
+    setSealStatus(null);
+    try {
+      await updateCommunity(community.id, { chainLocked: next });
+      setChainSealed(next);
+      onUpdate?.({ chainLocked: next });
+      setSealStatus(next ? 'Chain sealed.' : 'Chain unsealed.');
+      setTimeout(() => setSealStatus(null), 3000);
+    } catch (e) {
+      console.error(e);
+      setSealStatus('Could not update the seal. Please try again.');
+    }
+    setIsSealing(false);
+  };
+
+  // Verify the node's sealed blocks: recompute each canonically-sealed block's hash and confirm it
+  // still matches. Per-block (tamper-evident) rather than chain-walking, so off-chain tends don't
+  // cause false failures; legacy blocks predate the scheme and are counted separately, not failed.
+  const handleVerify = async () => {
+    setIsVerifying(true);
+    setVerifyResult(null);
+    try {
+      const trees = linkedTrees.length ? linkedTrees : await getTreesByDomain(community.domain, currentUserId);
+      let sealed = 0, intact = 0, legacy = 0;
+      for (const tree of trees) {
+        let pulses: any[] = [];
+        try { pulses = await getPulsesByTreeId(tree.id) as any[]; } catch { continue; } // skip trees this viewer can't read
+        for (const p of pulses) {
+          if (isCanonicallySealed(p)) { sealed++; if (await verifyBlockSeal(p)) intact++; }
+          else legacy++;
+        }
+      }
+      setVerifyResult({ sealed, intact, legacy, trees: trees.length });
+    } catch (e) {
+      console.error(e);
+      setSealStatus('Could not verify right now.');
+    }
+    setIsVerifying(false);
+  };
+
   const handleDelete = async () => {
     if (!(await showConfirm('Are you sure you want to delete this community? This cannot be undone.', { title: 'Delete Community', confirmText: 'Delete', danger: true }))) return;
     setIsDeleting(true);
@@ -447,7 +513,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       setEventImageUrls([]);
       setEditingEventId(null);
       setShowEventForm(false);
-      getCommunityEvents(community.id, eventLevels).then(setEvents).catch(() => {});
+      getCommunityEvents(community.id, communityLevels).then(setEvents).catch(() => {});
     } catch (error: any) {
       console.error(error);
       showAlert('Failed to save event: ' + (error.message || 'Unknown error'));
@@ -605,6 +671,65 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                   </>
                 ) : (
                   <div className="prose prose-slate max-w-none text-slate-700 leading-relaxed break-words [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg" dangerouslySetInnerHTML={{ __html: community.vision || '<p>No vision shared yet.</p>' }} />
+                )}
+
+                {/* The chain seal — this node's commitment to a verifiable chain. Sealed is a public
+                    mark of integrity (shown to all); sealing is the owner's one-way "big red stamp". */}
+                {(chainSealed || canEdit) && (
+                  <div className="mt-8 border-t border-slate-100 pt-6">
+                    {chainSealed ? (
+                      <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
+                        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-emerald-300"><Icons.ShieldCheck /></span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-bold text-emerald-900">Chain sealed</p>
+                          <p className="mt-0.5 text-sm text-emerald-800/80">Every new block this node mints is sealed with the canonical, reproducible hash — so its content can be verified against its hash.</p>
+                          {firstTree?.latestHash && (
+                            <p className="mt-1 break-all font-mono text-xs text-emerald-700/60">head {firstTree.latestHash.slice(0, 16)}…</p>
+                          )}
+                          {canEdit && (
+                            <div className="mt-3">
+                              <button onClick={handleVerify} disabled={isVerifying} className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-white px-4 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100 disabled:opacity-50">
+                                <Icons.ShieldCheck /> {isVerifying ? 'Verifying…' : 'Verify sealed blocks'}
+                              </button>
+                              {verifyResult && (
+                                <p className="mt-2 text-xs">
+                                  {verifyResult.sealed === 0 ? (
+                                    <span className="text-emerald-800/70">No sealed blocks yet — the next pulse this node mints will be the first.{verifyResult.legacy > 0 ? ` ${verifyResult.legacy} earlier block${verifyResult.legacy === 1 ? '' : 's'} predate the seal.` : ''}</span>
+                                  ) : verifyResult.intact === verifyResult.sealed ? (
+                                    <span className="font-semibold text-emerald-700">✓ {verifyResult.sealed} sealed block{verifyResult.sealed === 1 ? '' : 's'} intact across {verifyResult.trees} tree{verifyResult.trees === 1 ? '' : 's'}.{verifyResult.legacy > 0 ? ` (${verifyResult.legacy} legacy, pre-seal.)` : ''}</span>
+                                  ) : (
+                                    <span className="font-bold text-red-600">⚠ {verifyResult.sealed - verifyResult.intact} of {verifyResult.sealed} sealed block{verifyResult.sealed === 1 ? '' : 's'} failed verification.</span>
+                                  )}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                          <div className="mt-2 flex items-center gap-3">
+                            {isSuperAdmin && (
+                              <button onClick={() => handleToggleSeal(false)} disabled={isSealing} className="text-xs font-semibold text-emerald-700/70 underline underline-offset-2 hover:text-red-600 disabled:opacity-50">
+                                {isSealing ? 'Working…' : 'Unseal (admin)'}
+                              </button>
+                            )}
+                            {sealStatus && <span className="text-xs text-slate-500">{sealStatus}</span>}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500"><Icons.Stamp /></span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-bold text-slate-800">Seal the chain</p>
+                          <p className="mt-0.5 text-sm text-slate-500">Commit this node to a verifiable chain: from now on every new block carries the canonical, reproducible hash, so anyone can check it. Blocks minted before now keep their original hashes. A one-way step.</p>
+                          <div className="mt-3 flex items-center gap-3">
+                            <button onClick={() => handleToggleSeal(true)} disabled={isSealing} className="inline-flex items-center gap-2 rounded-full bg-red-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-600/20 transition-all hover:bg-red-700 active:scale-95 disabled:opacity-50">
+                              <Icons.Stamp /> {isSealing ? 'Sealing…' : 'Seal this chain'}
+                            </button>
+                            {sealStatus && <span className="text-sm text-slate-500">{sealStatus}</span>}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             )}

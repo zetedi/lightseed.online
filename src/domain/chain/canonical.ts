@@ -10,8 +10,8 @@
 // can never collide (e.g. the number 1, the string "1", and true all encode differently). This is
 // the shared preimage builder for BOTH hashing and (later) signing of blocks.
 //
-// This module is PURE and additive — nothing in the live mint path imports it yet. It is the
-// prerequisite that the future "lock the blocks in" switch will turn on. See src/domain/chain/verify.ts.
+// canonicalize is now the shared preimage builder for the live mint path (via verify.ts →
+// computeCanonicalHash) whenever a node is sealed, and for verifyChain. See src/domain/chain/verify.ts.
 
 const isTimestampLike = (v: unknown): v is { toMillis: () => number } =>
   !!v && typeof v === 'object' && typeof (v as any).toMillis === 'function';

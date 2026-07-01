@@ -3,8 +3,9 @@
 // nodes/chains are untouched until a node deliberately locks.
 //
 // In-memory singleton (one node per page load). The shell syncs it from the host community's
-// `chainLocked` flag on load (setChainLocked), and the future stamp UI persists that flag +
-// flips this. mintPulse reads isChainLocked() to choose the hashing scheme.
+// `chainLocked` flag on load (setChainLocked); the About → Vision "Seal the chain" stamp
+// (CommunityProfile) persists that flag, and App re-syncs this from it. mintPulse reads
+// isChainLocked() to choose the hashing scheme.
 let _locked = false;
 
 export const isChainLocked = (): boolean => _locked;

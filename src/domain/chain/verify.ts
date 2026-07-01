@@ -3,12 +3,13 @@ import { sha256 } from '../../../utils/crypto';
 
 // Chain verifier + canonical block hashing — the second crystal prerequisite.
 //
-// Today nothing in the repo ever recomputes or verifies a hash; hashes are write-only. This module
-// adds (1) a canonical hash over a fixed, whitelisted set of IMMUTABLE block fields and (2) a
-// verifier that walks one tree's chain and reports linkage / height / hash issues. Both are PURE
-// and additive — not wired into live minting. The future "lock the blocks in" switch will: hash
-// the canonical content (incl. an explicit `mintedAt` that is also stored), then this verifier
-// (with `recomputeHash: canonicalRecompute`) can prove a published chain end-to-end.
+// No runtime path automatically recomputes or verifies a hash (verification is on-demand — e.g. the
+// super-admin console). This module adds (1) a canonical hash over a fixed, whitelisted set of
+// IMMUTABLE block fields and (2) a
+// verifier that walks one tree's chain and reports linkage / height / hash issues. A SEALED node
+// (community.chainLocked) now mints new blocks with computeCanonicalHash over the canonical content
+// (incl. an explicit `mintedAt` that is also stored), so this verifier (with
+// `recomputeHash: canonicalRecompute`) can prove a sealed chain end to end.
 //
 // Useful NOW even before the switch: `verifyChain` without `recomputeHash` still checks previousHash
 // LINKAGE, blockHeight CONTINUITY and duplicate hashes on the live (legacy-hashed) data.
@@ -65,6 +66,20 @@ export interface ChainBlock {
   previousHash: string;
   blockHeight?: number;
   [k: string]: unknown;
+}
+
+// A block was sealed with the canonical scheme iff it carries the version marker (stamped by
+// mintPulse when the node is locked). Legacy blocks predate the scheme and never carry it.
+export function isCanonicallySealed(block: Record<string, unknown>): boolean {
+  return (block as { hashVersion?: unknown }).hashVersion === BLOCK_HASH_VERSION;
+}
+
+// Per-block tamper check: does a sealed block's stored hash still equal the canonical hash of its
+// stored content, previousHash and mintedAt? Independent of its neighbours — so it holds even where
+// off-chain tends leave gaps in the doc-level chain, and it ignores legacy blocks. This is the
+// tamper-evidence the seal actually provides today; verifyChain is the contiguous end-to-end walk.
+export async function verifyBlockSeal(block: ChainBlock): Promise<boolean> {
+  return (await canonicalRecompute(block, block.previousHash)) === block.hash;
 }
 
 export type ChainIssueCode = 'linkage' | 'height' | 'hash' | 'duplicate-hash' | 'empty-hash';

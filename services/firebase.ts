@@ -50,7 +50,7 @@ import {
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { type Pulse, type PulseType, type Lifetree, type Alignment, type Vision, type Community, type Sanctuary, type TreeOwnershipInvite, type InvitableRole, type Decision, type DecisionNature, votesRequired, type ReachAudience } from '../types';
 import { createBlock } from '../utils/crypto';
-import { computeCanonicalHash, isChainLocked } from '../src/domain/chain';
+import { computeCanonicalHash, isChainLocked, BLOCK_HASH_VERSION } from '../src/domain/chain';
 import { uuidv7 } from '../utils/id';
 import { normalizePulseType, isTreeGrowth, type PulseVisibility } from '../src/domain/pulse';
 import { daysOverdue, computeNextDueMillis, wateringAlertedToday, type WateringMode, type WateringAnalysis } from '../src/domain/watering';
@@ -1286,8 +1286,15 @@ export const withdrawDecision = (decisionId: string) =>
 export const rejectDecision = (decisionId: string) =>
     updateDoc(doc(db, 'pulses', decisionId), { status: 'rejected', listening: false, rejectedAt: serverTimestamp() });
 
-export const getDecisions = async (communityId: string): Promise<Decision[]> => {
-    const snap = await getDocs(query(pulsesCollection, where('communityId', '==', communityId)));
+export const getDecisions = async (communityId: string, levels?: PulseVisibility[]): Promise<Decision[]> => {
+    const base = where('communityId', '==', communityId);
+    // Governance is a council concern: a viewer only queries decisions at visibility levels the
+    // rules allow them (a signed-out viewer → ['public']), so private/community-scoped decisions
+    // never reach an outsider. Mirrors getCommunityEvents; needs the (communityId, visibility) index.
+    const q = levels && levels.length
+        ? query(pulsesCollection, base, where('visibility', 'in', levels))
+        : query(pulsesCollection, base);
+    const snap = await getDocs(q);
     return snap.docs
         .map(d => ({ id: d.id, ...(d.data() as any) } as Decision))
         .filter(p => (p as any).type === 'decision')
@@ -1725,10 +1732,14 @@ export const mintPulse = async (pulseData: any, extraTreeUpdate?: Record<string,
         // Locked nodes seal blocks with the canonical, reproducible hash over the stored record;
         // unlocked nodes keep the exact legacy hash so existing chains are untouched until the
         // node flips the stamp. (See src/domain/chain + isChainLocked.)
-        const newHash = isChainLocked()
+        const locked = isChainLocked();
+        const newHash = locked
             ? await computeCanonicalHash(tree.latestHash, mintedAt, record)
             : await createBlock(tree.latestHash, pulseData, mintedAt);
-        t.set(newPulseRef, { ...record, createdAt: serverTimestamp(), hash: newHash });
+        // Mark canonically-sealed blocks so verification can recompute exactly these (legacy blocks
+        // predate the scheme). hashVersion is metadata — not in BLOCK_CONTENT_FIELDS, so it doesn't
+        // enter the hash.
+        t.set(newPulseRef, { ...record, ...(locked ? { hashVersion: BLOCK_HASH_VERSION } : {}), createdAt: serverTimestamp(), hash: newHash });
 
         const updateData: any = { latestHash: newHash, blockHeight: (tree.blockHeight || 0) + 1 };
         // A tree growth pulse with an image updates the tree's latest growth view, and counts
