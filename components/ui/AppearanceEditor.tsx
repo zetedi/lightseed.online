@@ -12,7 +12,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
  * Save controls and section titles stay with each parent (their persistence differs).
  */
 export const AppearanceEditor = ({
-  theme, onThemeChange,
+  theme, onThemeChange, defaultTheme,
   logoUrl, onLogoUpload, uploadingLogo, logoLabel, logoHint,
   heroUrl, onHeroUpload, uploadingHero, onRemoveHero, heroHint,
   name, onNameChange, nameLabel,
@@ -20,6 +20,7 @@ export const AppearanceEditor = ({
 }: {
   theme: ThemeValue;
   onThemeChange: (t: ThemeValue) => void;
+  defaultTheme?: ThemeValue;
   logoUrl: string;
   onLogoUpload: (file: File) => void;
   uploadingLogo?: boolean;
@@ -100,7 +101,7 @@ export const AppearanceEditor = ({
       {/* Theme */}
       <div>
         <label className="mb-2 block text-[10px] font-bold uppercase text-slate-400">{t('theme_mood')}</label>
-        <ThemeEditor value={theme} onChange={onThemeChange} />
+        <ThemeEditor value={theme} onChange={onThemeChange} defaultTheme={defaultTheme} />
       </div>
     </div>
   );

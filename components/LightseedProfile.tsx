@@ -20,7 +20,7 @@ import { IntelligencePanel } from './intelligence/IntelligencePanel';
 import { ResonanceCard, resonanceId } from './ResonancePanel';
 import { DEFAULT_INTELLIGENCE_ID } from '../services/intelligence';
 
-export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmin, isSuperAdmin, superAdminExists, onViewTree, onDeleteTree, defaultTreeId, onSetDefaultTree, onViewVision, onPlant, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachAudience, reachOpenSignal, onConsumeReach, onReachTree }: any) => {
+export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmin, isSuperAdmin, superAdminExists, onViewTree, onDeleteTree, defaultTreeId, onSetDefaultTree, onViewVision, onPlant, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachAudience, reachOpenSignal, onConsumeReach, onReachTree, nodeTheme }: any) => {
     const { t } = useLanguage();
     const [activeTab, setActiveTab] = useState<'trees' | 'pulses' | 'visions' | 'history' | 'reaches' | 'invites' | 'appearance' | 'intelligence' | 'settings' | 'admin'>('trees');
     const [preferredIntelligenceId, setPreferredIntelligenceId] = useState<string>('');
@@ -373,7 +373,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                 siteLogoUrl,
                 siteHeroUrl,
             });
-            setDialogMessage('Your lightseed.online theme has been saved.');
+            setDialogMessage('Your profile theme has been saved.');
         } catch (e: any) {
             setDialogMessage(e.message || 'Failed to save theme.');
         }
@@ -381,7 +381,9 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
     };
 
     const handleResetSiteTheme = async () => {
-        const resetTheme = normalizeTheme(undefined);
+        // Reset to the node's default theme (what the profile inherits when it isn't overridden),
+        // not the generic canopy fallback — so "reset" restores the look the user actually sees.
+        const resetTheme = normalizeTheme(nodeTheme);
         setSavingSiteTheme(true);
         try {
             setSiteTheme(resetTheme);
@@ -392,7 +394,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                 siteLogoUrl: '',
                 siteHeroUrl: '',
             });
-            setDialogMessage('Your lightseed.online theme has been reset.');
+            setDialogMessage('Your profile theme has been reset to the node default.');
         } catch (e: any) {
             setDialogMessage(e.message || 'Failed to reset theme.');
         }
@@ -1033,6 +1035,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                                 <AppearanceEditor
                                     theme={siteTheme}
                                     onThemeChange={setSiteTheme}
+                                    defaultTheme={normalizeTheme(nodeTheme)}
                                     logoUrl={siteLogoUrl}
                                     onLogoUpload={handleSiteLogoUpload}
                                     uploadingLogo={uploadingSiteLogo}

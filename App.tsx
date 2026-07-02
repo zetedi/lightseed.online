@@ -1,27 +1,19 @@
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   signInWithGoogle,
   logout,
-  fetchPulses,
   fetchEventPulses,
   createEvent,
   updateEvent,
-  fetchReachPulses,
   fetchMyReaches,
-  listenToMyReaches,
-  listenToReachesForTrees,
   mintPulse,
-  fetchLifetrees,
-  fetchAllLifetrees,
   plantLifetree,
   uploadBase64Image,
   validateLifetree,
   unvalidateLifetree,
   proposeAlignment,
-  getPendingAlignments,
   acceptAlignment,
-  fetchVisions,
   getLifetreeById,
   createVision,
   deleteLifetree,
@@ -34,14 +26,19 @@ import {
   listenToUserProfile,
   getPendingTreeInvites
 } from './services/firebase';
-import { findVisionSynergies } from './services/gemini';
 import { setActiveIntelligenceId } from './services/intelligence';
 import { type Pulse, type Lifetree, type Alignment, type Vision, type Community, type VisionSynergy, type ReachAudience } from './types';
 import Logo from './components/Logo';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { useLifeseed } from './hooks/useLifeseed';
 import { isHubDomain, useConfig } from './hooks/useConfig';
-import { normalizeTheme } from './utils/theme';
+import { useSiteTheme } from './hooks/useSiteTheme';
+import { useReaches } from './hooks/useReaches';
+import { useResonance } from './hooks/useResonance';
+import { useHistoryLayers } from './hooks/useHistoryLayers';
+import { useForestFeed } from './hooks/useForestFeed';
+import { GDPRBanner } from './components/GDPRBanner';
+import { extractGpsFromImage } from './utils/exif';
 
 // Components
 import { Icons } from './components/ui/Icons';
@@ -73,7 +70,6 @@ import { Partners } from './components/intelligence/Partners';
 import { ObservatoryPage } from './pages/ObservatoryPage';
 import { PulseFeedPage } from './pages/PulseFeedPage';
 import { VisionsPage } from './pages/VisionsPage';
-import { resonanceId } from './components/ResonancePanel';
 import { LifeseedWidget } from './components/LifeseedWidget';
 import { NewsletterAdmin } from './components/NewsletterAdmin';
 import { CommunityList } from './components/CommunityList';
@@ -87,89 +83,6 @@ import { AuthModal } from './components/modals/AuthModal';
 import { EmitPulseModal } from './components/modals/EmitPulseModal';
 import { EventModal } from './components/modals/EventModal';
 import { CreateVisionModal } from './components/modals/CreateVisionModal';
-
-const extractGpsFromImage = async (file: File): Promise<{latitude: number, longitude: number} | null> => {
-    const EXIF = (await import('exif-js')).default;
-    return new Promise((resolve) => {
-        try {
-            EXIF.getData(file as any, function(this: any) {
-                const lat = EXIF.getTag(this, "GPSLatitude");
-                const latRef = EXIF.getTag(this, "GPSLatitudeRef");
-                const lng = EXIF.getTag(this, "GPSLongitude");
-                const lngRef = EXIF.getTag(this, "GPSLongitudeRef");
-
-                if (lat && latRef && lng && lngRef) {
-                    const convertToDecimal = (gpsArr: any, ref: string) => {
-                        const d = gpsArr[0].numerator / gpsArr[0].denominator;
-                        const m = gpsArr[1].numerator / gpsArr[1].denominator;
-                        const s = gpsArr[2].numerator / gpsArr[2].denominator;
-                        let decimal = d + (m / 60) + (s / 3600);
-                        if (ref === "S" || ref === "W") decimal = -decimal;
-                        return decimal;
-                    };
-
-                    resolve({
-                        latitude: convertToDecimal(lat, latRef),
-                        longitude: convertToDecimal(lng, lngRef)
-                    });
-                } else {
-                    resolve(null);
-                }
-            });
-        } catch (e) {
-            console.error("EXIF Error:", e);
-            resolve(null);
-        }
-    });
-};
-
-const GDPRBanner = () => {
-    const [visible, setVisible] = useState(false);
-    const [checked, setChecked] = useState(false);
-
-    useEffect(() => {
-        const consent = localStorage.getItem('lifeseed_gdpr');
-        if (!consent) setVisible(true);
-    }, []);
-
-    const handleAccept = () => {
-        if (!checked) return;
-        localStorage.setItem('lifeseed_gdpr', 'true');
-        setVisible(false);
-    }
-
-    if (!visible) return null;
-
-    return (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 animate-in slide-in-from-bottom-full duration-500">
-            <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-                <p className="text-xs text-slate-600 text-center md:text-left max-w-2xl">
-                    We use cookies and local storage to ensure you get the best experience on lightseed. By continuing, you agree to our terms and privacy policy.
-                </p>
-                <div className="flex flex-col sm:flex-row items-center gap-4">
-                    <label className="flex items-center gap-2 text-sm text-slate-800 cursor-pointer select-none">
-                        <input 
-                            type="checkbox" 
-                            checked={checked} 
-                            onChange={e => setChecked(e.target.checked)}
-                            className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
-                        />
-                        <span className="font-medium">I accept</span>
-                    </label>
-                    <button 
-                        onClick={handleAccept} 
-                        disabled={!checked}
-                        className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2 rounded-full text-xs font-bold transition-colors shadow-sm"
-                    >
-                        Confirm
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-type ThemeModePreference = 'light' | 'dark' | null;
 
 // The full-screen overlay every detail view (tree / vision / event / community) scrolls inside.
 // Module-scope so it keeps a stable identity (an inline definition remounts its subtree — and
@@ -189,7 +102,6 @@ const AppContent = () => {
     const onboarding = useOnboardingState(lightseed?.uid);
     const [tab, setTab] = useState('dashboard');
     const [viewMode, setViewMode] = useState<'grid' | 'map'>('map');
-    const [data, setData] = useState<any[]>([]);
     const [alignments, setAlignments] = useState<Alignment[]>([]);
     const [selectedTree, setSelectedTree] = useState<Lifetree | null>(null);
     const [selectedVision, setSelectedVision] = useState<Vision | null>(null);
@@ -205,7 +117,6 @@ const AppContent = () => {
     // Preselected audience for a requested reach — 'guardians' when opened from a danger alert.
     const [reachAudience, setReachAudience] = useState<ReachAudience | undefined>(undefined);
     const [reachOpenSignal, setReachOpenSignal] = useState(0);
-    const [unreadReaches, setUnreadReaches] = useState(0);
     const [pendingTreeInvites, setPendingTreeInvites] = useState(0);
     const [hostCommunity, setHostCommunity] = useState<Community | null>(null);
     // The lightseed community is the default "About" page when this node has none of its own.
@@ -221,11 +132,6 @@ const AppContent = () => {
     // Stats State for Dashboard
     const stats = useDashboardStats(lightseed, tab);
     
-    // Pagination State
-    const [lastDoc, setLastDoc] = useState<any>(null);
-    const [loadingMore, setLoadingMore] = useState(false);
-    const [hasMore, setHasMore] = useState(true);
-    const forestSentinelRef = useRef<HTMLDivElement>(null);
 
     // UI State
     const [showAuthModal, setShowAuthModal] = useState(false);
@@ -259,104 +165,9 @@ const AppContent = () => {
     const { uploading, handleImageUpload } = useImageUpload();
     const { showNatureTrees, setShowNatureTrees, showUserTrees, setShowUserTrees, showValidatedTrees, setShowValidatedTrees } = useForestFilters();
 
-    // AI Synergy State
-    const [synergies, setSynergies] = useState<VisionSynergy[]>([]);
-    const [isAnalyzingSynergy, setIsAnalyzingSynergy] = useState(false);
-    const [lastSynergyAt, setLastSynergyAt] = useState(0); // ms of the last analysis (cost gate)
-    const [favoriteResonances, setFavoriteResonances] = useState<VisionSynergy[]>([]);
-    const favoriteResonanceIds = useMemo(() => new Set(favoriteResonances.map(resonanceId)), [favoriteResonances]);
-
-    const toggleFavoriteResonance = (s: VisionSynergy) => {
-        setFavoriteResonances(prev => {
-            const id = resonanceId(s);
-            const next = prev.some(f => resonanceId(f) === id) ? prev.filter(f => resonanceId(f) !== id) : [...prev, s];
-            try { localStorage.setItem('resonance_favorites_v1', JSON.stringify(next)); } catch {}
-            return next;
-        });
-    };
-
     const config = useConfig(impersonatedCommunity || hostCommunity);
-    const [themeModePreference, setThemeModePreference] = useState<ThemeModePreference>(() => {
-        const savedMode = localStorage.getItem('lifeseed_theme_mode');
-        if (savedMode === 'light' || savedMode === 'dark') return savedMode;
-
-        const legacyNightMode = localStorage.getItem('lifeseed_night_mode');
-        if (legacyNightMode === 'true') return 'dark';
-        if (legacyNightMode === 'false') return 'light';
-
-        return null;
-    });
-    // While viewing as a community, the community's own branding wins over the
-    // signed-in user's personal site theme/logo.
-    const configuredTheme = !impersonatedCommunity && lightseed && personalSiteTheme
-        ? normalizeTheme(personalSiteTheme, config.theme)
-        : config.theme;
-    const configuredLogoUrl = !impersonatedCommunity && lightseed && personalSiteLogoUrl && isHubDomain(window.location.hostname)
-        ? personalSiteLogoUrl
-        : config.logoUrl;
-    const effectiveThemeMode = themeModePreference || configuredTheme.mode || 'light';
-    const effectiveTheme = effectiveThemeMode === 'dark' ? {
-        ...configuredTheme,
-        background: '#020617',
-        surface: '#0f172a',
-        text: '#e2e8f0',
-        neutral: '#cbd5e1',
-        mode: 'dark' as const,
-    } : {
-        ...configuredTheme,
-        background: configuredTheme.mode === 'dark' ? '#ffffff' : configuredTheme.background,
-        surface: configuredTheme.mode === 'dark' ? '#ffffff' : (configuredTheme.surface || '#ffffff'),
-        text: configuredTheme.mode === 'dark' ? '#0f172a' : (configuredTheme.text || '#0f172a'),
-        neutral: configuredTheme.mode === 'dark' ? '#334155' : configuredTheme.neutral,
-        mode: 'light' as const,
-    };
-    const effectiveIsDark = effectiveTheme.mode === 'dark';
-
-    useEffect(() => {
-        const root = document.documentElement;
-        if (effectiveTheme) {
-            root.style.setProperty('--color-primary', effectiveTheme.primary);
-            root.style.setProperty('--color-secondary', effectiveTheme.secondary);
-            root.style.setProperty('--color-accent', effectiveTheme.accent);
-            root.style.setProperty('--color-background', effectiveTheme.background);
-            root.style.setProperty('--color-surface', effectiveTheme.surface || '#ffffff');
-            root.style.setProperty('--color-text', effectiveTheme.text || '#0f172a');
-            root.dataset.mode = effectiveIsDark ? 'dark' : 'light';
-        }
-    }, [effectiveTheme.primary, effectiveTheme.secondary, effectiveTheme.accent, effectiveTheme.background, effectiveTheme.surface, effectiveTheme.text, effectiveIsDark]);
-
-    useEffect(() => {
-        if (localStorage.getItem('lifeseed_theme_mode') === null && localStorage.getItem('lifeseed_night_mode') === null) {
-            setThemeModePreference(null);
-        }
-    }, [configuredTheme.mode]);
-
-    const toggleNightMode = () => {
-        setThemeModePreference(prev => {
-            const currentMode = prev || configuredTheme.mode || 'light';
-            const next = currentMode === 'dark' ? 'light' : 'dark';
-            localStorage.setItem('lifeseed_theme_mode', next);
-            localStorage.setItem('lifeseed_night_mode', String(next === 'dark'));
-            return next;
-        });
-    };
-
-    const bgHex = effectiveTheme.background;
-    const bgEncoded = bgHex.replace('#', '%23');
-    const patternStrokeEncoded = effectiveIsDark ? '%23fff' : '%23000';
-    const patternStrokeOpacity = effectiveIsDark ? '.3' : '.14';
-    const patternInnerOpacity = effectiveIsDark ? '.4' : '.18';
-    
-    const svgBackground = `data:image/svg+xml,%3Csvg width='332.5537705' height='320' xmlns='http://www.w3.org/2000/svg'%3E%3Cstyle%3E .outerCircle %7B fill: ${bgEncoded}; stroke: ${patternStrokeEncoded}; stroke-width: 7; stroke-opacity: ${patternStrokeOpacity}; %7D .circle %7B fill: none; stroke: ${patternStrokeEncoded}; stroke-width: .3; stroke-opacity: ${patternStrokeOpacity}; %7D .innerCircle %7B fill: ${bgEncoded}; stroke: ${patternStrokeEncoded}; stroke-width: 1.7; stroke-opacity: ${patternInnerOpacity}; %7D %3C/style%3E%3Crect width='100%25' height='100%25' fill='${bgEncoded}'/%3E%3Cdefs%3E%3CclipPath id='clean'%3E%3Crect width='332.5537705' height='320' /%3E%3C/clipPath%3E%3C/defs%3E%3Cg%3E%3Ccircle cx='-38.2768775' cy='-32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='96' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='160' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='224' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='288' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='-38.2768775' cy='352' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='0' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='64' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='128' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='192' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='256' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='17.1487483' cy='320' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='-32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='96' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='160' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='224' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='288' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='352' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='0' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='64' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='128' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='192' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='256' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='320' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='-32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='96' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='160' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='224' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='288' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='352' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512516' cy='0' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512516' cy='64' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512516' cy='128' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512516' cy='192' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512516' cy='256' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='238.8512516' cy='320' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='-32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='32' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='96' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='160' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='224' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='288' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='352' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='0' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='64' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='128' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='192' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='256' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='349.7025033' cy='320' r='64' class='circle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='96' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='72.5743741' cy='160' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='64' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='128' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='128' cy='192' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='96' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='183.4256258' cy='160' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3Ccircle cx='294.2768775' cy='288' r='16' class='innerCircle' clip-path='url(%23clean)' /%3E%3C/g%3E%3C/svg%3E`;
-
-    const backgroundStyle = {
-        backgroundColor: bgHex,
-        backgroundImage: `url("${svgBackground}")`,
-        backgroundSize: '108px', 
-        backgroundRepeat: 'repeat',
-        backgroundPosition: 'center center',
-        backgroundAttachment: 'fixed',
-    };
+    const { effectiveTheme, effectiveIsDark, configuredLogoUrl, toggleNightMode, backgroundStyle } =
+        useSiteTheme({ config, impersonatedCommunity, lightseed, personalSiteTheme, personalSiteLogoUrl });
 
 
     useEffect(() => {
@@ -376,39 +187,13 @@ const AppContent = () => {
         });
     }, [lightseed?.uid]);
 
-    // Live unread-reach count powering the red envelope indicator in the nav.
-    // Two listeners: reaches addressed to me (recipientUid) AND reaches aimed at any
-    // of my trees (reachTreeId). The latter is a safety net so I'm still notified when
-    // a send didn't capture recipientUid. Results are merged and de-duplicated by id.
-    const myTreeIdsKey = myTrees.map((tree: Lifetree) => tree.id).join(',');
-    useEffect(() => {
-        if (!lightseed) {
-            setUnreadReaches(0);
-            return;
-        }
-        const uid = lightseed.uid;
-        const byRecipient = new Map<string, Pulse>();
-        const byTree = new Map<string, Pulse>();
-        const recompute = () => {
-            const merged = new Map<string, Pulse>([...byRecipient, ...byTree]);
-            let unread = 0;
-            merged.forEach(p => {
-                if (p.authorId !== uid && !(p.seenBy || []).includes(uid)) unread++;
-            });
-            setUnreadReaches(unread);
-        };
-        const unsubRecipient = listenToMyReaches(uid, (pulses) => {
-            byRecipient.clear();
-            pulses.forEach(p => byRecipient.set(p.id, p));
-            recompute();
-        });
-        const unsubTrees = listenToReachesForTrees(myTreeIdsKey ? myTreeIdsKey.split(',') : [], (pulses) => {
-            byTree.clear();
-            pulses.forEach(p => byTree.set(p.id, p));
-            recompute();
-        });
-        return () => { unsubRecipient(); unsubTrees(); };
-    }, [lightseed?.uid, myTreeIdsKey]);
+    // Live unread-reach count powering the nav's red envelope indicator (see useReaches).
+    const unreadReaches = useReaches(lightseed, myTrees);
+
+    // The paginated forest / pulse / vision / event / reach feed + infinite scroll (see useForestFeed).
+    const { data, setData, loadContent, loadingMore, forestSentinelRef } = useForestFeed({
+        tab, viewMode, lightseed, isSuperAdmin, isAdmin, setAlignments,
+    });
 
     useEffect(() => { 
         if (tab !== 'dashboard') {
@@ -454,283 +239,21 @@ const AppContent = () => {
         fetchEventPulses(undefined, currentDomain, levels).then(r => setDashboardEvents(r.items)).catch(() => {});
     }, [lightseed?.uid, isSuperAdmin, isAdmin]);
 
-    // --- Browser back button: close overlays LAYER BY LAYER instead of leaving the app. ---
-    // No router here, so we push one history entry per open overlay layer. Back pops ONE entry
-    // and closes only the topmost layer (e.g. the growth player on top of a tree detail, then
-    // the detail). Closing via the UI consumes our own entries silently. With nothing of ours
-    // open, Back behaves normally and leaves the page.
-    // Ordered base-first; the LAST open key is the topmost layer (closed first on Back).
-    const openKeys = ([
-        selectedTree && 'tree',
-        selectedCommunity && 'community',
-        selectedVision && 'vision',
-        selectedPulse && 'pulse',
-        showAuthModal && 'auth',
-        showPlantModal && 'plant',
-        showPulseModal && 'pulseModal',
-        showEventModal && 'eventModal',
-        showVisionModal && 'visionModal',
-        editingEvent && 'editingEvent',     // nested on a pulse detail
-        showGrowthPlayer && 'growthPlayer', // nested on a tree detail (or standalone)
-    ].filter(Boolean) as string[]);
-    const openKeysRef = useRef<string[]>([]);
-    openKeysRef.current = openKeys;
-    // We keep at most ONE history entry while any overlay is open ("armed"). Each Back closes
-    // the topmost layer and, if layers remain, re-pushes one entry so the next Back is captured
-    // too. Using only pushState + back() (never go(-n)) sidesteps the "one popstate per go()"
-    // browser quirk.
-    const armedRef = useRef(false);
-    const skipNextPopRef = useRef(false);
-    const openKeysSig = openKeys.join('|');
-    useEffect(() => {
-        const count = openKeys.length;
-        if (count > 0 && !armedRef.current) {
-            window.history.pushState({ lsOverlay: true }, '');
-            armedRef.current = true;
-        } else if (count === 0 && armedRef.current) {
-            // All overlays closed via the UI — silently consume our history entry.
-            armedRef.current = false;
-            skipNextPopRef.current = true;
-            window.history.back();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [openKeysSig]);
-    useEffect(() => {
-        const closeKey = (k: string) => {
-            switch (k) {
-                case 'tree': setSelectedTree(null); break;
-                case 'community': setSelectedCommunity(null); break;
-                case 'vision': setSelectedVision(null); break;
-                case 'pulse': setSelectedPulse(null); break;
-                case 'auth': setShowAuthModal(false); break;
-                case 'plant': setShowPlantModal(false); break;
-                case 'pulseModal': setShowPulseModal(false); break;
-                case 'eventModal': setShowEventModal(false); break;
-                case 'visionModal': setShowVisionModal(false); break;
-                case 'editingEvent': setEditingEvent(null); break;
-                case 'growthPlayer': setShowGrowthPlayer(null); break;
-            }
-        };
-        const onPop = () => {
-            if (skipNextPopRef.current) { skipNextPopRef.current = false; return; } // our own back()
-            const keys = openKeysRef.current;
-            if (keys.length === 0) { armedRef.current = false; return; } // nothing of ours → let the browser go
-            closeKey(keys[keys.length - 1]); // close ONLY the topmost layer
-            if (keys.length - 1 > 0) {
-                window.history.pushState({ lsOverlay: true }, ''); // layers remain → re-arm for the next Back
-            } else {
-                armedRef.current = false;
-            }
-        };
-        window.addEventListener('popstate', onPop);
-        return () => window.removeEventListener('popstate', onPop);
-    }, []);
-
-    useEffect(() => {
-        const handleScroll = () => {
-            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
-                if (!loadingMore && hasMore && tab !== 'dashboard' && tab !== 'observatory' && tab !== 'inspiration' && tab !== 'profile' && tab !== 'about' && tab !== 'forest') {
-                    loadContent(false);
-                }
-            }
-        };
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, [loadingMore, hasMore, tab, lastDoc]);
-
-    // IntersectionObserver sentinel for forest list view
-    useEffect(() => {
-        if (tab !== 'forest' || viewMode !== 'grid') return;
-        const sentinel = forestSentinelRef.current;
-        if (!sentinel) return;
-        const observer = new IntersectionObserver(
-            (entries) => {
-                if (entries[0].isIntersecting && hasMore && !loadingMore) {
-                    loadContent(false);
-                }
-            },
-            { rootMargin: '200px' }
-        );
-        observer.observe(sentinel);
-        return () => observer.disconnect();
-    }, [tab, viewMode, hasMore, loadingMore, lastDoc]);
-
-    const loadContent = async (reset = false) => {
-        if (reset) {
-            setData([]);
-            setLastDoc(null);
-            setHasMore(true);
-            // Note: synergies are intentionally NOT cleared here — they're tab-independent and
-            // cached, so they remain visible in the Observatory after analysing in Visions.
-        }
-
-        if (!reset && !hasMore) return;
-        
-        setLoadingMore(true);
-        const currentLastDoc = reset ? undefined : lastDoc;
-        const isDevHost = /localhost|127\.0\.0\.1|^192\.168\.|\.local$/.test(window.location.hostname);
-        // On dev hosts a superadmin sees the whole network (no domain scoping).
-        const currentDomain = (isDevHost && isSuperAdmin) ? 'lightseed.online' : window.location.hostname;
-        // Broad feeds carry no scope, so this resolves to public (+ node when signed in; all
-        // but private for staff) — keeping the query to docs the rules will allow.
-        const feedLevels = queryableLevels({ uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin });
-        // Tree visibility levels this viewer may query (null = staff, no filter).
-        const treeLevels: string[] | null = (isSuperAdmin || isAdmin) ? null : (lightseed ? ['public', 'node'] : ['public']);
-
-        try {
-            if (tab === 'forest') {
-                if (viewMode === 'map') {
-                    // The map shows the whole forest at once (no pagination) so every tree appears.
-                    const all = await fetchAllLifetrees(currentDomain, lightseed?.uid, treeLevels);
-                    setData(all);
-                    setLastDoc(null);
-                    setHasMore(false);
-                } else {
-                    const res = await fetchLifetrees(currentLastDoc, currentDomain, lightseed?.uid, treeLevels);
-                    setData(prev => {
-                        const newItems = res.items;
-                        if (reset) return newItems;
-                        // Deduplicate items based on ID to prevent visual duplicates
-                        const existingIds = new Set(prev.map(p => p.id));
-                        return [...prev, ...newItems.filter(i => !existingIds.has(i.id))];
-                    });
-                    setLastDoc(res.lastDoc);
-                    setHasMore(!!res.lastDoc);
-                }
-            }
-            else if (tab === 'pulses') {
-                const res = await fetchPulses(currentLastDoc, currentDomain, feedLevels);
-                setData(prev => {
-                    const newItems = res.items;
-                    if (reset) return newItems;
-                    const existingIds = new Set(prev.map(p => p.id));
-                    return [...prev, ...newItems.filter(i => !existingIds.has(i.id))];
-                });
-                setLastDoc(res.lastDoc);
-                setHasMore(!!res.lastDoc);
-            }
-            else if (tab === 'events') {
-                const res = await fetchEventPulses(currentLastDoc, currentDomain, feedLevels);
-                setData(prev => {
-                    const newItems = res.items;
-                    if (reset) return newItems;
-                    const existingIds = new Set(prev.map(p => p.id));
-                    return [...prev, ...newItems.filter(i => !existingIds.has(i.id))];
-                });
-                setLastDoc(res.lastDoc);
-                setHasMore(!!res.lastDoc);
-            }
-            else if (tab === 'inspiration') {
-                const res = await fetchReachPulses(currentLastDoc, currentDomain, feedLevels);
-                setData(prev => {
-                    const newItems = res.items;
-                    if (reset) return newItems;
-                    const existingIds = new Set(prev.map(p => p.id));
-                    return [...prev, ...newItems.filter(i => !existingIds.has(i.id))];
-                });
-                setLastDoc(res.lastDoc);
-                setHasMore(!!res.lastDoc);
-            }
-            else if (tab === 'visions') {
-                const res = await fetchVisions(currentLastDoc, currentDomain);
-                setData(prev => {
-                    const newItems = res.items;
-                    if (reset) return newItems;
-                    const existingIds = new Set(prev.map(p => p.id));
-                    return [...prev, ...newItems.filter(i => !existingIds.has(i.id))];
-                });
-                setLastDoc(res.lastDoc);
-                setHasMore(!!res.lastDoc);
-            }
-            else if (tab === 'observatory' && lightseed) {
-                 const res = await getPendingAlignments(lightseed.uid);
-                 setAlignments(res);
-            }
-        } catch(e) {
-            console.error("Load Content Error:", e);
-        }
-        setLoadingMore(false);
-    };
-
-    // A stable fingerprint of a vision set, so a cached result is tied to its visions.
-    const synergyKey = (items: any[]) => items.map(v => v.id).sort().join(',');
-
-    // Resonance refreshes once a week for members; admins have no limit. The whole point is
-    // to protect the AI bill (each analysis spends the reader's key — or the node's).
-    const SYNERGY_COOLDOWN = 7 * 24 * 3600 * 1000;
-    const isStaff = isAdmin || isSuperAdmin;
-    const synergyCooldownLeft = lastSynergyAt ? SYNERGY_COOLDOWN - (Date.now() - lastSynergyAt) : 0;
-    const canRefreshResonance = isStaff || synergyCooldownLeft <= 0;
-
-    // The single analysis path: gate → fetch visions → analyse → cache. Callers supply how
-    // to get the visions (the current tab's list, or a fresh network fetch from Observatory).
-    const runResonance = async (getVisions: () => Promise<any[]>) => {
-        if (!canRefreshResonance) {
-            const days = Math.max(1, Math.ceil(synergyCooldownLeft / (24 * 3600 * 1000)));
-            showAlert(`Resonance refreshes once a week — about ${days} more day${days === 1 ? '' : 's'} to go.`);
-            return;
-        }
-        setIsAnalyzingSynergy(true);
-        try {
-            const visions = await getVisions();
-            if (visions.length < 2) { showAlert('At least two visions are needed to find resonance.'); setIsAnalyzingSynergy(false); return; }
-            // Label each vision by its TREE name (visions are often auto-titled "Root Vision"),
-            // so resonances read tree-to-tree rather than "Root Vision + Root Vision".
-            const treeIds = Array.from(new Set(visions.map((v: any) => v.lifetreeId).filter(Boolean)));
-            const treeInfo = new Map<string, { name?: string; place?: string }>();
-            await Promise.all(treeIds.map(async (tid: string) => {
-                try { const tr = await getLifetreeById(tid); if (tr) treeInfo.set(tid, { name: tr.name, place: (tr as any).locationName }); } catch {}
-            }));
-            const labeled = visions.map((v: any) => {
-                const tid = v.lifetreeId;
-                const info = tid ? treeInfo.get(tid) : undefined;
-                const generic = !v.title || v.title.trim().toLowerCase() === 'root vision';
-                // place + vision are the two bases of the resonance analysis.
-                return { ...v, title: info?.name || (generic ? 'A vision' : v.title), place: info?.place || '' };
-            });
-            // Map the labels back to tree ids so a conversation can be started from a resonance.
-            const treeIdByName = new Map<string, string>();
-            labeled.forEach((v: any) => { const tid = v.lifetreeId; if (tid && v.title) treeIdByName.set(v.title.trim().toLowerCase(), tid); });
-            const results = (await findVisionSynergies(labeled, preferredIntelligenceId)).map(r => ({
-                ...r,
-                tree1Id: treeIdByName.get((r.vision1Title || '').trim().toLowerCase()),
-                tree2Id: treeIdByName.get((r.vision2Title || '').trim().toLowerCase()),
-            }));
-            setSynergies(results);
-            const at = Date.now();
-            setLastSynergyAt(at);
-            // Cache so the resonances survive reloads (and feed the Observatory) without re-spending.
-            try { localStorage.setItem('synergy_cache_v1', JSON.stringify({ key: synergyKey(visions), at, results })); } catch {}
-            if (results.length === 0) showAlert('No clear resonances surfaced this time — try again as more visions grow.');
-        } catch (e) {
-            console.error(e);
-            showAlert('Synergy analysis failed. Try again later.');
-        }
-        setIsAnalyzingSynergy(false);
-    };
-
-    const handleAnalyzeSynergy = () => runResonance(async () => data);
-    const refreshResonanceObservatory = () => runResonance(async () => (await fetchVisions()).items);
-
-    // Start a conversation with a resonant tree — resolve it, then open the reach thread.
-    const reachResonantTree = async (treeId: string) => {
-        try { const tree = await getLifetreeById(treeId); if (tree) openReach(tree); }
-        catch { showAlert('Could not open a conversation with that tree.'); }
-    };
-
-    // Hydrate cached resonances on load (any tab) so the Observatory and Visions tab both
-    // show the last result, and the weekly cooldown is known.
-    useEffect(() => {
-        try {
-            const cached = JSON.parse(localStorage.getItem('synergy_cache_v1') || 'null');
-            if (cached) {
-                if (Array.isArray(cached.results)) setSynergies(cached.results);
-                if (cached.at) setLastSynergyAt(cached.at);
-            }
-            const favs = JSON.parse(localStorage.getItem('resonance_favorites_v1') || 'null');
-            if (Array.isArray(favs)) setFavoriteResonances(favs);
-        } catch {}
-    }, []);
+    // Browser back closes overlays LAYER BY LAYER instead of leaving the app. Ordered base-first;
+    // the last open layer is topmost (closed first on Back). See useHistoryLayers.
+    const openKeys = useHistoryLayers([
+        { key: 'tree', open: !!selectedTree, close: () => setSelectedTree(null) },
+        { key: 'community', open: !!selectedCommunity, close: () => setSelectedCommunity(null) },
+        { key: 'vision', open: !!selectedVision, close: () => setSelectedVision(null) },
+        { key: 'pulse', open: !!selectedPulse, close: () => setSelectedPulse(null) },
+        { key: 'auth', open: showAuthModal, close: () => setShowAuthModal(false) },
+        { key: 'plant', open: showPlantModal, close: () => setShowPlantModal(false) },
+        { key: 'pulseModal', open: showPulseModal, close: () => setShowPulseModal(false) },
+        { key: 'eventModal', open: showEventModal, close: () => setShowEventModal(false) },
+        { key: 'visionModal', open: showVisionModal, close: () => setShowVisionModal(false) },
+        { key: 'editingEvent', open: !!editingEvent, close: () => setEditingEvent(null) },      // nested on a pulse detail
+        { key: 'growthPlayer', open: !!showGrowthPlayer, close: () => setShowGrowthPlayer(null) }, // nested on a tree detail (or standalone)
+    ]);
 
     const handleTreeUpdate = (treeId: string, updates: any) => {
         setData(prev => prev.map(item => item.id === treeId ? { ...item, ...updates } : item));
@@ -747,6 +270,12 @@ const AppContent = () => {
         setReachOpenSignal(s => s + 1);
         setTab('profile');
     };
+
+    // AI vision-resonance — the weekly-gated synergy analysis + favourites (see useResonance).
+    const {
+        synergies, isAnalyzingSynergy, lastSynergyAt, canRefreshResonance, synergyCooldownLeft, favoriteResonanceIds,
+        toggleFavoriteResonance, handleAnalyzeSynergy, refreshResonanceObservatory, reachResonantTree,
+    } = useResonance({ data, preferredIntelligenceId, isStaff: isSuperAdmin || isAdmin, openReach });
 
     // Jump to the profile's Direct Messages page (renamed from "Inspiration").
     // reachOpenSignal tells LightseedProfile to switch to its reaches subtab.
@@ -930,6 +459,7 @@ const AppContent = () => {
                     reachOpenSignal={reachOpenSignal}
                     onConsumeReach={() => { setReachTree(null); setReachAudience(undefined); }}
                     onReachTree={(tree: Lifetree) => openReach(tree)}
+                    nodeTheme={config.theme}
                 />
             );
         }
