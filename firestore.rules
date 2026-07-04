@@ -27,20 +27,33 @@ service cloud.firestore {
     function hasLink(rel, toId) {
       return exists(/databases/$(database)/documents/links/$(request.auth.uid + '__' + rel + '__' + toId));
     }
-    // Membership/guardianship are the LIN: a `member`/`guardian` link, or being the entity's
-    // owner (the owner is implicitly inside their own circle). The legacy array branches are
-    // gone — the links collection is now the single source of truth.
+    // Membership is the LIN: a `member` link, or being the community's owner (implicitly inside
+    // their own circle). The legacy array branches are gone — links are the single source of truth.
     function isCommunityMember(communityId) {
       return communityId is string && communityId != '' && (
         hasLink('member', communityId)
         || (exists(/databases/$(database)/documents/communities/$(communityId))
             && get(/databases/$(database)/documents/communities/$(communityId)).data.ownerId == request.auth.uid));
     }
-    function isTreeGuardian(treeId) {
+    // Tree roles split by privilege. A `guardian` link is a LIGHTWEIGHT, self-serve public follow
+    // (any signed-in user may add one) and grants NO privileges — it is deliberately excluded from
+    // every check below. Tending and circle access vest only in the invited roles (co_owner /
+    // steward / observer), whose links are minted server-side by acceptTreeInvite (never self-serve).
+    function isTreeOwner(treeId) {
+      return treeId is string && treeId != '' &&
+        exists(/databases/$(database)/documents/lifetrees/$(treeId)) &&
+        get(/databases/$(database)/documents/lifetrees/$(treeId)).data.ownerId == request.auth.uid;
+    }
+    // TENDERS may edit a tree and confirm its watering: owner, co_owner, or steward.
+    function isTreeTender(treeId) {
       return treeId is string && treeId != '' && (
-        hasLink('guardian', treeId)
-        || (exists(/databases/$(database)/documents/lifetrees/$(treeId))
-            && get(/databases/$(database)/documents/lifetrees/$(treeId)).data.ownerId == request.auth.uid));
+        hasLink('co_owner', treeId) || hasLink('steward', treeId) || isTreeOwner(treeId));
+    }
+    // The CIRCLE may read a tree's private (circle-visibility) pulses: tenders plus observers.
+    function isTreeCircle(treeId) {
+      return treeId is string && treeId != '' && (
+        hasLink('co_owner', treeId) || hasLink('steward', treeId)
+        || hasLink('observer', treeId) || isTreeOwner(treeId));
     }
     // A private direct message / group reach: a 'reach' pulse that names its recipients
     // (participantUids) or a single recipient (legacy recipientUid). Minted, public "reach"
@@ -68,7 +81,7 @@ service cloud.firestore {
              || resource.data.get('visibility', 'public') == 'node'
              || (resource.data.get('visibility', 'public') == 'community' && isCommunityMember(resource.data.get('communityId', '')))
              || (resource.data.get('visibility', 'public') == 'circle'
-                 && (isTreeGuardian(resource.data.get('treeId', '')) || isTreeGuardian(resource.data.get('lifetreeId', ''))))
+                 && (isTreeCircle(resource.data.get('treeId', '')) || isTreeCircle(resource.data.get('lifetreeId', ''))))
            )));
     }
 
@@ -100,11 +113,20 @@ service cloud.firestore {
       allow update, delete: if isStaff();
     }
 
-    // Mail: Read/Write self/staff
+    // Mail: read your own / staff. Creation is SERVER-ONLY — every outbound email is composed and
+    // queued by Cloud Functions via the Admin SDK (sendSystemEmail / newsletter), which bypass
+    // these rules. A direct client write is an open-relay vector, so it is denied.
     match /mail/{mailId} {
       allow read: if isSignedIn() && (resource.data.uid == request.auth.uid || isStaff());
-      allow create: if isSignedIn();
+      allow create: if false;
       allow delete: if isStaff();
+    }
+
+    // Usage: per-user server-authoritative daily counters (AI free-tier + outbound email). Written
+    // ONLY by Cloud Functions via the Admin SDK; a user may read their own to display allowance.
+    match /usage/{userId} {
+      allow read: if isOwner(userId) || isStaff();
+      allow write: if false;
     }
 
     // Lifetrees: Read public, Write owner/staff
@@ -117,7 +139,8 @@ service cloud.firestore {
                      || (isSignedIn() && resource.data.ownerId == request.auth.uid)
                      || isStaff();
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff() || hasLink('guardian', treeId));
+      allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff()
+                     || hasLink('co_owner', treeId) || hasLink('steward', treeId));
       allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
     }
 
@@ -138,7 +161,9 @@ service cloud.firestore {
                      || (isSignedIn() && resource.data.authorId == request.auth.uid)
                      || isStaff();
       allow create: if isSignedIn();
-      allow update: if isSignedIn(); // For joining
+      // Joining a vision is now a self-serve 'joined' link (see the links collection), NOT a write
+      // to the vision doc — so editing the doc itself is restricted to its author or staff.
+      allow update: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff());
       allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff());
     }
 
@@ -166,7 +191,7 @@ service cloud.firestore {
         && (
           request.resource.data.get('wateringConfirmedBy', '') == resource.data.get('wateringConfirmedBy', '')
           || isStaff()
-          || isTreeGuardian(resource.data.get('lifetreeId', ''))
+          || isTreeTender(resource.data.get('lifetreeId', ''))
         )
         && (
           resource.data.get('type', '') != 'decision'
@@ -224,7 +249,14 @@ service cloud.firestore {
       allow get: if true;
       allow list: if isSignedIn() && (isStaff() || resource.data.invitedByUserId == request.auth.uid);
       allow create: if isSignedIn() && request.resource.data.invitedByUserId == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.status == 'pending';
+      // The only legitimate update is the invited user consuming a still-pending invite: they may
+      // flip it to 'accepted' and stamp THEMSELVES, but may not alter the locked email or inviter.
+      allow update: if isSignedIn()
+        && resource.data.status == 'pending'
+        && request.resource.data.status == 'accepted'
+        && request.resource.data.acceptedByUserId == request.auth.uid
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.invitedByUserId == resource.data.invitedByUserId;
       allow delete: if isStaff();
     }
 
@@ -281,12 +313,21 @@ service cloud.firestore {
     // world-readable (they lived on world-readable docs). A user self-creates/removes their own
     // 'guardian'/'joined' edges; role/member edges are server-only (the acceptTreeInvite Cloud
     // Function via the Admin SDK). Staff may create any edge (the one-time migration). Immutable.
+    //
+    // 'participant' is the exception whose `from` is a LIFETREE (a tree enlisted in an event/vision):
+    // only that tree's OWNER may add or remove it. It grants NO privileges — no rule below reads a
+    // 'participant' edge — so it is safe as a self-serve, owner-gated membership marker.
     match /links/{linkId} {
       allow read: if true;
-      allow create: if isStaff() || (isSignedIn()
-        && request.resource.data.from == request.auth.uid
-        && request.resource.data.rel in ['guardian', 'joined']);
-      allow delete: if isSignedIn() && (resource.data.from == request.auth.uid || isStaff());
+      allow create: if isStaff()
+        || (isSignedIn() && request.resource.data.from == request.auth.uid
+            && request.resource.data.rel in ['guardian', 'joined'])
+        || (isSignedIn() && request.resource.data.rel == 'participant'
+            && isTreeOwner(request.resource.data.from));
+      allow delete: if isSignedIn() && (
+        resource.data.from == request.auth.uid
+        || isStaff()
+        || (resource.data.get('rel', '') == 'participant' && isTreeOwner(resource.data.from)));
       allow update: if false;
     }
 

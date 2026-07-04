@@ -1,16 +1,18 @@
 # Project Context Snapshot
 
-Generated: Sun Jun 28 01:38:10 EEST 2026
+Generated: Sat Jul  4 15:39:07 EEST 2026
 
 ## Git
 main
-0755c14 Watering, links, AI, growth evolution.
+49343f8 Switch Chain v01.
 
 ## Directory shape
 ```
 src
+  content
   adapters
   domain
+    chain
     views
 ```
 
@@ -23,6 +25,7 @@ src
 ./components/PulseDetail.tsx
 ./components/VisionCard.tsx
 ./components/VisionDetail.tsx
+./components/intelligence/AIAccessCard.tsx
 ./components/modals/CreateVisionModal.tsx
 ./components/modals/EmitPulseModal.tsx
 ./components/modals/PlantTreeModal.tsx
@@ -36,20 +39,29 @@ src
 ./hooks/useConfig.ts
 ./lifeseed.config.json
 ./lightseed_context.md
+./pages/PulseFeedPage.tsx
+./pages/VisionsPage.tsx
 ./services/firebase.ts
 ./src/adapters/firestore.ts
+./src/domain/aiAccess.ts
+./src/domain/chain/canonical.ts
+./src/domain/chain/index.ts
+./src/domain/chain/lock.ts
+./src/domain/chain/verify.ts
 ./src/domain/community.ts
 ./src/domain/decision.ts
 ./src/domain/entity.ts
 ./src/domain/intelligence.ts
 ./src/domain/lifetree.ts
 ./src/domain/link.ts
+./src/domain/person.ts
 ./src/domain/policy.ts
 ./src/domain/pulse.ts
 ./src/domain/pulseVisibility.ts
 ./src/domain/reach.ts
 ./src/domain/sanctuary.ts
 ./src/domain/store.ts
+./src/domain/themeSurface.ts
 ./src/domain/treeCircle.ts
 ./src/domain/views/circle.ts
 ./src/domain/views/council.ts
@@ -63,18 +75,25 @@ src
 config/default.ts
 config/types.ts
 src/adapters/firestore.ts
+src/domain/aiAccess.ts
+src/domain/chain/canonical.ts
+src/domain/chain/index.ts
+src/domain/chain/lock.ts
+src/domain/chain/verify.ts
 src/domain/community.ts
 src/domain/decision.ts
 src/domain/entity.ts
 src/domain/intelligence.ts
 src/domain/lifetree.ts
 src/domain/link.ts
+src/domain/person.ts
 src/domain/policy.ts
 src/domain/pulse.ts
 src/domain/pulseVisibility.ts
 src/domain/reach.ts
 src/domain/sanctuary.ts
 src/domain/store.ts
+src/domain/themeSurface.ts
 src/domain/treeCircle.ts
 src/domain/views/circle.ts
 src/domain/views/council.ts
@@ -135,9 +154,6 @@ import {
   logout,
   fetchPulses,
   fetchEventPulses,
-  backfillPulseVisibility,
-  migrateArraysToLinks,
-  dropLegacyArrays,
   createEvent,
   updateEvent,
   fetchReachPulses,
@@ -148,7 +164,6 @@ import {
   fetchLifetrees,
   fetchAllLifetrees,
   plantLifetree,
-  uploadImage,
   uploadBase64Image,
   validateLifetree,
   unvalidateLifetree,
@@ -161,9 +176,6 @@ import {
   deleteLifetree,
   deleteVision,
   ensureGenesis,
-  getMyPulses,
-  getMyVisions,
-  getMyAlignmentsHistory,
   claimSuperAdmin,
   grantAdmin,
   revokeAdmin,
@@ -172,7 +184,7 @@ import {
   getPendingTreeInvites
 } from './services/firebase';
 import { findVisionSynergies } from './services/gemini';
-import { ensureIntelligenceCommons, setActiveIntelligenceId } from './services/intelligence';
+import { setActiveIntelligenceId } from './services/intelligence';
 import { type Pulse, type Lifetree, type Alignment, type Vision, type Community, type VisionSynergy, type ReachAudience } from './types';
 import Logo from './components/Logo';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
@@ -182,21 +194,33 @@ import { normalizeTheme } from './utils/theme';
 import { Icons } from './components/ui/Icons';
 import { Navigation } from './components/Navigation';
 import { LifetreeCard } from './components/LifetreeCard';
-import { VisionCard } from './components/VisionCard';
-import { PulseCard } from './components/PulseCard';
 import { ForestMap } from './components/ForestMap';
 import { LifetreeDetail } from './components/LifetreeDetail';
 import { VisionDetail } from './components/VisionDetail';
 import { PulseDetail } from './components/PulseDetail';
-import { queryableLevels, canEditEvent } from './src/domain/pulseVisibility';
+import { queryableLevels, canEditEvent, pulseScope } from './src/domain/pulseVisibility';
+import { passesForestFilter, canViewTree } from './src/domain/views/forest';
+import { isWateringOverdue } from './src/domain/watering';
 import { GrowthPlayerModal } from './components/GrowthPlayerModal';
 import { LightseedProfile } from './components/LightseedProfile';
 import { Dashboard } from './components/Dashboard';
 import { Loading } from './components/ui/Loading';
 import { ScrollChevrons } from './components/ui/ScrollChevrons';
-import { ResonanceScan } from './components/ui/ResonanceScan';
-import { ResonancePanel, ResonanceCard, resonanceId } from './components/ResonancePanel';
-import { SectionHeader } from './components/ui/SectionHeader';
+import { Footer } from './components/ui/Footer';
+import { FirstRunChecklist } from './components/FirstRunChecklist';
+import { useOnboardingState } from './hooks/useOnboardingState';
+import { useImageUpload } from './hooks/useImageUpload';
+import { useForestFilters } from './hooks/useForestFilters';
+import { useDashboardStats } from './hooks/useDashboardStats';
+import { useObservatoryQuote } from './hooks/useObservatoryQuote';
+import { useSuperAdminConsole } from './hooks/useSuperAdminConsole';
+import { setChainLocked } from './src/domain/chain';
+import { ForestPage } from './pages/ForestPage';
+import { Partners } from './components/intelligence/Partners';
+import { ObservatoryPage } from './pages/ObservatoryPage';
+import { PulseFeedPage } from './pages/PulseFeedPage';
+import { VisionsPage } from './pages/VisionsPage';
+import { resonanceId } from './components/ResonancePanel';
 import { LifeseedWidget } from './components/LifeseedWidget';
 import { NewsletterAdmin } from './components/NewsletterAdmin';
 import { CommunityList } from './components/CommunityList';
@@ -290,6 +314,7 @@ const AppContent = () => {
     const { t } = useLanguage();
     const { lightseed, myTrees, guardedTrees, activeTree, defaultTreeId, setDefaultTree, isAdmin, isSuperAdmin, superAdminExists, loading: authLoading, refreshTrees } = useLifeseed();
     const guardedTreeIds = useMemo(() => new Set(guardedTrees.map(t => t.id)), [guardedTrees]);
+    const onboarding = useOnboardingState(lightseed?.uid);
     const [tab, setTab] = useState('dashboard');
     const [viewMode, setViewMode] = useState<'grid' | 'map'>('map');
     const [data, setData] = useState<any[]>([]);
@@ -300,6 +325,7 @@ const AppContent = () => {
     const [mapRefreshKey, setMapRefreshKey] = useState(0);
     const [editingEvent, setEditingEvent] = useState<Pulse | null>(null);
     const [dashboardEvents, setDashboardEvents] = useState<Pulse[]>([]);
+    const { observatoryQuote, quoteCopied: obsQuoteCopied, copyQuote: copyObservatoryQuote } = useObservatoryQuote(tab);
     const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
     const [reachTree, setReachTree] = useState<Lifetree | null>(null);
     const [reachAudience, setReachAudience] = useState<ReachAudience | undefined>(undefined);
@@ -313,13 +339,18 @@ const AppContent = () => {
     const [preferredIntelligenceId, setPreferredIntelligenceId] = useState<string | undefined>(undefined);
     const [personalSiteLogoUrl, setPersonalSiteLogoUrl] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
-    const [stats, setStats] = useState({ pulses: 0, visions: 0, alignments: 0 });
+    const stats = useDashboardStats(lightseed, tab);
     const [lastDoc, setLastDoc] = useState<any>(null);
     const [loadingMore, setLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const forestSentinelRef = useRef<HTMLDivElement>(null);
     const [showAuthModal, setShowAuthModal] = useState(false);
     const inviteParam = useMemo(() => new URLSearchParams(window.location.search).get('invite') || undefined, []);
+    useEffect(() => {
+        const id = new URLSearchParams(window.location.search).get('tree');
+        if (!id) return;
+        getLifetreeById(id).then(tr => { if (tr) setSelectedTree(tr); }).catch(() => {});
+    }, []);
     const [showPlantModal, setShowPlantModal] = useState(false);
     const [plantInit, setPlantInit] = useState<{ type?: 'LIFETREE' | 'GUARDED'; step?: number }>({});
     const openPlant = (init: { type?: 'LIFETREE' | 'GUARDED'; step?: number } = {}) => {
@@ -333,22 +364,10 @@ const AppContent = () => {
     const [showVisionModal, setShowVisionModal] = useState(false);
     const [showGrowthPlayer, setShowGrowthPlayer] = useState<string | null>(null);
     const [matchCandidate, setMatchCandidate] = useState<Pulse | null>(null);
-    const [uploading, setUploading] = useState(false);
-    const [showNatureTrees, setShowNatureTrees] = useState(true);
-    const [showUserTrees, setShowUserTrees] = useState(true);
-    const [showValidatedTrees, setShowValidatedTrees] = useState(false);
+    const { uploading, handleImageUpload } = useImageUpload();
+    const { showNatureTrees, setShowNatureTrees, showUserTrees, setShowUserTrees, showValidatedTrees, setShowValidatedTrees } = useForestFilters();
     const [synergies, setSynergies] = useState<VisionSynergy[]>([]);
     const [isAnalyzingSynergy, setIsAnalyzingSynergy] = useState(false);
-    const [lastSynergyAt, setLastSynergyAt] = useState(0); // ms of the last analysis (cost gate)
-    const [favoriteResonances, setFavoriteResonances] = useState<VisionSynergy[]>([]);
-    const favoriteResonanceIds = useMemo(() => new Set(favoriteResonances.map(resonanceId)), [favoriteResonances]);
-    const toggleFavoriteResonance = (s: VisionSynergy) => {
-        setFavoriteResonances(prev => {
-            const id = resonanceId(s);
-            const next = prev.some(f => resonanceId(f) === id) ? prev.filter(f => resonanceId(f) !== id) : [...prev, s];
-            try { localStorage.setItem('resonance_favorites_v1', JSON.stringify(next)); } catch {}
-            return next;
-        });
 ```
 
 ### ./components/LifetreeCard.tsx
@@ -565,7 +584,7 @@ import { Icons } from './ui/Icons';
 import Logo from './Logo';
 import { ValidationBadge } from './ValidationBadge';
 import { AutocompleteInput } from './ui/AutocompleteInput';
-import { updateLifetree, setTreeStatus, getPulsesByTreeId, createTreeInvite, setWateringSchedule, recordWatering, confirmWateringPulse, sendWateringAlert, fileToWebpBase64 } from '../services/firebase';
+import { updateLifetree, setTreeStatus, getPulsesByTreeId, createTreeInvite, setWateringSchedule, recordWatering, markWateredOffChain, confirmWateringPulse, sendWateringAlert, fileToWebpBase64 } from '../services/firebase';
 import { analyzeWateringPhoto } from '../services/gemini';
 import { Pulse, type InvitableRole, treeRelationLabels } from '../types';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
@@ -574,12 +593,15 @@ import { isOnWateringSchedule, isWateringOverdue, daysUntilWatering, daysOverdue
 import { treeCircle } from '../src/domain/views/circle';
 import { firestoreStore } from '../src/adapters/firestore';
 import { canTendTree } from '../src/domain/policy';
+import { SectionMenu } from './ui/SectionMenu';
+import { SectionCard } from './ui/SectionCard';
 export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, onAlertGuardians, myActiveTree, isDefaultTree, onSetDefault, currentUserId, currentUser, isAdmin, isSuperAdmin, targetUserProfile }: any) => {
    const { t } = useLanguage();
    const isOwner = currentUserId === tree.ownerId;
    const isNature = tree.isNature;
    const [localIsGuardian, setLocalIsGuardian] = useState(false);
    const [guardianCount, setGuardianCount] = useState(0);
+   const [guardianUids, setGuardianUids] = useState<string[]>([]);
    const [guardianNonce, setGuardianNonce] = useState(0);
    useEffect(() => {
        let alive = true;
@@ -587,6 +609,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
            if (!alive) return;
            setLocalIsGuardian(!!currentUserId && links.some(l => l.from === currentUserId));
            setGuardianCount(links.length);
+           setGuardianUids(links.map(l => l.from));
        }).catch(() => {});
        return () => { alive = false; };
    }, [tree.id, currentUserId, guardianNonce]);
@@ -613,6 +636,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
        return new Date(d.getTime() - offset).toISOString().slice(0, 16);
    });
    const [editDomain, setEditDomain] = useState(tree.domain || '');
+   const [editVisibility, setEditVisibility] = useState<'public' | 'node' | 'private'>(tree.visibility || 'public');
    const [isSaving, setIsSaving] = useState(false);
    const [chain, setChain] = useState<Pulse[]>([]);
    const [genesisBlock, setGenesisBlock] = useState<Pulse | null>(null);
@@ -620,6 +644,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const [loadingChain, setLoadingChain] = useState(false);
    const [localStatus, setLocalStatus] = useState(tree.status || 'HEALTHY');
    const [isLocating, setIsLocating] = useState(false);
+   type TreeSection = 'digital' | 'details' | 'guardians' | 'care' | 'circle';
+   const [section, setSection] = useState<TreeSection>('digital');
+   const [chainExpanded, setChainExpanded] = useState(false);
    const [showInvite, setShowInvite] = useState(false);
    const [inviteUserId, setInviteUserId] = useState('');
    const [inviteRole, setInviteRole] = useState<InvitableRole>('co_owner');
@@ -630,27 +657,21 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const [waterInterval, setWaterInterval] = useState<number>(tree.watering?.intervalDays || 7);
    const [waterBusy, setWaterBusy] = useState(false);
    const [waterMsg, setWaterMsg] = useState<string | null>(null);
+   const [waterBypass, setWaterBypass] = useState(false);
    const [confirmingId, setConfirmingId] = useState<string | null>(null);
    const waterFileRef = useRef<HTMLInputElement>(null);
    useEffect(() => {
        setWaterMode(tree.watering?.mode === 'self_sustaining' ? 'self_sustaining' : 'scheduled');
        setWaterInterval(tree.watering?.intervalDays || 7);
        setWaterMsg(null);
+       setEditVisibility(tree.visibility || 'public');
    }, [tree.id]);
    const loadChain = () => {
         setLoadingChain(true);
         getPulsesByTreeId(tree.id).then(pulses => {
-            if (pulses.length > 0) {
-                const last = pulses[pulses.length - 1];
-                if (last.previousHash === "0" || last.title === "Genesis Pulse") {
-                    setGenesisBlock(last);
-                    setGrowthBlocks(pulses.slice(0, pulses.length - 1));
-                } else {
-                    setGrowthBlocks(pulses);
-                }
-            } else {
-                setGrowthBlocks([]);
-            }
+            const isGenesis = (p: Pulse) => p.previousHash === "0" || p.title === "Genesis Pulse";
+            setGenesisBlock(pulses.find(isGenesis) || null);
+            setGrowthBlocks(pulses.filter(p => !isGenesis(p)));
             setChain(pulses);
         }).finally(() => setLoadingChain(false));
    };
@@ -666,6 +687,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                longitude: Number(editLng),
                locationName: editLocationName.trim() || null,
                domain: editDomain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '') || null,
+               visibility: editVisibility,
                ...(editCreatedAt && { createdAt: new Date(editCreatedAt) })
            };
            await updateLifetree(tree.id, updates);
@@ -712,14 +734,24 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
        setIsSaving(false);
    }
    const GuardianshipPanel = () => (
-        <div className={`bg-sky-50 text-sky-900 p-6 rounded-2xl shadow-inner border border-sky-100 overflow-hidden relative ${!isNature ? 'mt-6' : ''}`}>
-            <h3 className="text-sky-600 font-bold uppercase tracking-wider mb-4 flex items-center">
-                <Icons.Shield />
-                <span className="ml-2">Guardians</span>
-            </h3>
-            <p className="text-sm mb-6 text-sky-800/80">
+        <SectionCard title="Guardians" icon={<Icons.Shield />}>
+            <p className="text-sm mb-6 text-slate-500">
                 This tree is protected by the community. Join the guardians to monitor its health and add memories.
             </p>
+            {/* The circle of guardians, shown as cards (like My Trees in the profile). */}
+            {guardianUids.length > 0 && (
+                <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {guardianUids.map(uid => (
+                        <div key={uid} className="flex items-center gap-3 rounded-xl border border-sky-100 bg-white/70 p-3 shadow-sm">
+                            <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(uid.slice(0, 2))}&background=0ea5e9&color=fff`} className="h-10 w-10 shrink-0 rounded-full" alt="" />
+                            <div className="min-w-0">
+                                <p dir="ltr" className="truncate font-mono text-xs text-sky-900" title={uid}>{uid === currentUserId ? 'You' : `${uid.slice(0, 8)}…`}</p>
+                                <p className="text-[10px] font-bold uppercase tracking-wide text-sky-500">Guardian</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
             <div className="space-y-3">
                 {currentUserId ? (
                     <button 
@@ -746,10 +778,10 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     </button>
                 )}
             </div>
-            <div className="mt-4 pt-4 border-t border-sky-200 text-xs text-sky-600 font-mono">
+            <div className="mt-4 pt-4 border-t border-slate-100 text-xs text-slate-500 font-mono">
                 Guardians: {guardianCount}
             </div>
-        </div>
+        </SectionCard>
    );
    const canInviteToCircle = isOwner || isSuperAdmin;
    const [circle, setCircle] = useState<ReturnType<typeof treeCircle>>({ groups: [], size: 0 });
@@ -764,19 +796,6 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
        e.preventDefault();
        if (!currentUserId || !inviteUserId.trim() || inviteBusy) return;
        setInviteBusy(true);
-       setInviteStatus(null);
-       try {
-           await createTreeInvite({
-               lifetree: tree,
-               invitedUserId: inviteUserId.trim(),
-               role: inviteRole,
-               message: inviteMessage.trim(),
-               invitedByUserId: currentUserId,
-           });
-           setInviteUserId('');
-           setInviteMessage('');
-           setShowInvite(false);
-           setInviteStatus('Invitation sent. When they accept, a circle opens around this tree.');
 ```
 
 ### ./components/PulseCard.tsx
@@ -798,7 +817,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView }: PulseCardProps)
     const [loved, setLoved] = useState(false);
     const [count, setCount] = useState(pulse.loveCount || 0);
     const images = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
-    const badge = pulse.type === 'event' ? 'EVENT' : pulse.type === 'GROWTH' ? 'GROWTH' : '';
+    const badge = pulse.type === 'event' ? 'EVENT' : pulse.type === 'tree_growth' ? 'GROWTH' : '';
     useEffect(() => {
         if (lightseed) isPulseLoved(pulse.id, lightseed.uid).then(setLoved);
     }, [pulse, lightseed]);
@@ -817,12 +836,12 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView }: PulseCardProps)
     return (
         <div 
             onClick={() => onView && onView(pulse)}
-            className={`bg-white rounded-xl overflow-hidden shadow-sm border border-slate-200 hover:shadow-lg transition-all duration-300 group cursor-pointer ${pulse.care === 'watering' ? 'ring-2 ring-sky-500 ring-opacity-30' : pulse.type === 'GROWTH' ? 'ring-2 ring-emerald-500 ring-opacity-20' : ''} ${pulse.type === 'event' ? 'ring-2 ring-sky-500 ring-opacity-20' : ''}`}
+            className={`bg-white rounded-xl overflow-hidden shadow-sm border border-slate-200 hover:shadow-lg transition-all duration-300 group cursor-pointer ${pulse.care === 'watering' ? 'ring-2 ring-sky-500 ring-opacity-30' : pulse.type === 'tree_growth' ? 'ring-2 ring-emerald-500 ring-opacity-20' : ''} ${pulse.type === 'event' ? 'ring-2 ring-sky-500 ring-opacity-20' : ''}`}
         >
              <div className="relative h-36 bg-slate-100 overflow-hidden group">
                  <div className="absolute top-2 right-2 z-20 flex gap-1">
                     {pulse.care === 'watering'
-                        ? <span title={pulse.wateringConfirmation?.note || ''} className="bg-sky-100 text-sky-700 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm">💧 {pulse.wateringConfirmedBy === 'ai' ? 'AI' : pulse.wateringConfirmedBy === 'guardian' ? 'CONFIRMED' : 'PENDING'}</span>
+                        ? <span title={pulse.wateringConfirmation?.note || ''} className="bg-sky-100 text-sky-700 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm">💧{typeof pulse.wateringConfirmation?.confidence === 'number' ? ` ${pulse.wateringConfirmation.confidence}%` : ''}{pulse.wateringConfirmedBy === 'guardian' ? ' ✓' : ''}</span>
                         : badge && <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm ${pulse.type === 'event' ? 'bg-sky-100 text-sky-700' : 'bg-emerald-100 text-emerald-600'}`}>{badge}</span>}
                     {images.length > 1 && <span className="bg-white/90 text-slate-600 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm">{images.length} IMG</span>}
                     {pulse.isMatch && <span className="bg-sky-100 text-sky-600 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm">MATCH</span>}
@@ -973,15 +992,24 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel = "Back", ca
                             </div>
                         )}
                         {pulse.care === 'watering' && (
-                            <div className="mb-4 grid gap-1 rounded-2xl border border-sky-100 bg-sky-50 p-4 text-sm text-sky-900">
-                                <div className="flex items-center gap-2 font-bold">
-                                    <Icons.Droplet size={16} />
-                                    <span>Watering {pulse.wateringConfirmedBy === 'ai' ? '· confirmed by AI' : pulse.wateringConfirmedBy === 'guardian' ? '· confirmed by a guardian' : '· awaiting confirmation'}</span>
-                                </div>
-                                {pulse.wateringConfirmation?.note && <div className="italic text-sky-800/90">"{pulse.wateringConfirmation.note}"</div>}
-                                {pulse.wateringConfirmedBy === 'ai' && typeof pulse.wateringConfirmation?.confidence === 'number' && (
-                                    <div className="text-xs text-sky-700/70">AI confidence: {pulse.wateringConfirmation.confidence}%</div>
+                            <div className="mb-4 grid gap-1.5 rounded-2xl border border-sky-100 bg-sky-50 p-4 text-sm text-sky-900">
+                                <div className="flex items-center gap-2 font-bold"><Icons.Droplet size={16} /> <span>Watering</span></div>
+                                {/* The AI's reading — a witness, not the authority. */}
+                                {typeof pulse.wateringConfirmation?.confidence === 'number' && (
+                                    <div className="text-xs text-sky-800/90">
+                                        <span className="font-semibold">AI reading:</span> {pulse.wateringConfirmation.confidence}% consistent with watering
+                                        {pulse.wateringConfirmation?.note && <span className="italic"> — “{pulse.wateringConfirmation.note}”</span>}
+                                    </div>
                                 )}
+                                {/* The human reading — who says "yes, this was tended". */}
+                                <div className="text-xs text-sky-800/90">
+                                    <span className="font-semibold">Tended:</span>{' '}
+                                    {pulse.wateringConfirmedBy === 'guardian'
+                                        ? 'confirmed by a guardian'
+                                        : pulse.wateringConfirmedBy === 'ai'
+                                            ? 'auto-accepted on the AI reading — a guardian can still confirm'
+                                            : 'awaiting a guardian’s confirmation'}
+                                </div>
                             </div>
                         )}
                         <p dir="auto" className="text-slate-600 leading-relaxed whitespace-pre-wrap font-serif text-lg">
@@ -994,7 +1022,7 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel = "Back", ca
                      <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-6 rounded-2xl shadow-xl relative overflow-hidden">
                         <div className="relative z-10">
                             <h2 className="text-lg font-bold text-sky-400 uppercase tracking-wider mb-6 flex items-center">
-                                <Icons.Sparkles />
+                                <Icons.Wizard />
                                 <span className="ml-2">Translation Depth System</span>
                             </h2>
                             {pulse.aiInterpretation ? (
@@ -1071,15 +1099,6 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel = "Back", ca
                                         onClick={handleTranslate}
                                         className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 rounded-xl font-bold text-sm shadow-lg shadow-indigo-900/50 transition-all active:scale-95 flex justify-center items-center gap-2"
                                     >
-                                        {isTranslating ? <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" /> : <Icons.Sparkles />}
-                                        {isTranslating ? "Translating..." : "Translate Pulse"}
-                                    </button>
-                                    {!activeTree && <p className="text-[10px] text-center text-rose-400">You need an active Lifetree to perform translations.</p>}
-                                    {activeTree && (activeTree.aiTokenBalance || 0) < depth && <p className="text-[10px] text-center text-amber-400">Not enough AI tokens. Validate observations to earn more.</p>}
-                                </div>
-                            )}
-                        </div>
-                     </div>
 ```
 
 ### ./components/VisionCard.tsx
@@ -1099,6 +1118,14 @@ export const VisionCard = ({ vision }: { vision: Vision }) => {
                     <img src={vision.imageUrl} alt={heading} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 ) : (
                     <DefaultCardImage />
+                )}
+                {/* Author avatar — the soul this vision grows from. */}
+                {vision.authorId && (
+                    <img
+                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(vision.authorId.slice(0, 2))}&background=f59e0b&color=fff`}
+                        alt="" title={vision.authorId}
+                        className="absolute top-2 left-2 z-10 h-8 w-8 rounded-full border-2 border-white/80 shadow-md"
+                    />
                 )}
                 {/* Title Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent pointer-events-none"></div>
@@ -1232,7 +1259,7 @@ export const VisionDetail = ({ vision, onClose, currentUserId, onDelete }: Visio
                  </div>
                  <div className="bg-white p-8 rounded-2xl shadow-lg border border-slate-100">
                      <h2 className="text-sm font-bold text-amber-500 uppercase tracking-widest mb-4 flex items-center">
-                         <Icons.FingerPrint /> 
+                         <Icons.Eye />
                          <span className="ml-2">{t('vision')}</span>
                      </h2>
                      <p dir="auto" className="text-xl font-serif text-slate-700 leading-relaxed whitespace-pre-wrap">
@@ -1258,6 +1285,38 @@ export const VisionDetail = ({ vision, onClose, currentUserId, onDelete }: Visio
 }
 ```
 
+### ./components/intelligence/AIAccessCard.tsx
+```
+import React, { useEffect, useState } from 'react';
+import { resolveAISource } from '../../services/intelligence';
+import { aiSourceLabels, type AIAccessState } from '../../src/domain/aiAccess';
+import { Icons } from '../ui/Icons';
+export const AIAccessCard = ({ intelligenceId, dailyTextUsed }: { intelligenceId?: string; dailyTextUsed?: number }) => {
+  const [state, setState] = useState<AIAccessState | null>(null);
+  useEffect(() => {
+    let alive = true;
+    resolveAISource({ intelligenceId, dailyTextUsed }).then(s => { if (alive) setState(s); }).catch(() => {});
+    return () => { alive = false; };
+  }, [intelligenceId, dailyTextUsed]);
+  if (!state) return null;
+  const ok = state.allowed;
+  return (
+    <div className={`flex items-center gap-3 rounded-2xl border p-4 ${ok ? 'border-emerald-100 bg-emerald-50/50' : 'border-amber-200 bg-amber-50'}`}>
+      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${ok ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
+        <Icons.Wizard />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-bold text-slate-800">{state.label}</p>
+        {state.detail && <p className="truncate text-xs text-slate-500">{state.detail}</p>}
+      </div>
+      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${ok ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+        {aiSourceLabels[state.source]}
+      </span>
+    </div>
+  );
+};
+```
+
 ### ./components/modals/CreateVisionModal.tsx
 ```
 import React, { useState, FormEvent } from 'react';
@@ -1266,12 +1325,14 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { Modal } from '../ui/Modal';
 import { ImagePicker } from '../ui/ImagePicker';
+import { AutocompleteInput } from '../ui/AutocompleteInput';
 import { Lightseed, Lifetree } from '../../types';
 import { generateVisionImage } from '../../services/gemini';
 import { checkAndIncrementAiUsage } from '../../services/firebase';
 interface CreateVisionModalProps {
   lightseed: Lightseed | null;
   activeTree: Lifetree | null;
+  trees?: Lifetree[]; // the author's trees — to ground the vision in one
   onClose: () => void;
   onCreate: (data: any) => Promise<void>;
   uploading: boolean;
@@ -1281,6 +1342,7 @@ interface CreateVisionModalProps {
 export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
   lightseed,
   activeTree,
+  trees = [],
   onClose,
   onCreate,
   uploading,
@@ -1292,6 +1354,10 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
   const [visionBody, setVisionBody] = useState('');
   const [visionLink, setVisionLink] = useState('');
   const [visionImageUrl, setVisionImageUrl] = useState('');
+  const [visibility, setVisibility] = useState<'public' | 'node' | 'private'>('public');
+  const groundOptions = trees.length ? trees : (activeTree ? [activeTree] : []);
+  const [groundTreeId, setGroundTreeId] = useState<string>(activeTree?.id || groundOptions[0]?.id || '');
+  const [visionDomain, setVisionDomain] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localUploading, setLocalUploading] = useState(false);
   const handleGenerateImage = async () => {
@@ -1317,7 +1383,8 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
   }
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!lightseed || !activeTree || isSubmitting) return;
+    if (!lightseed || isSubmitting) return;
+    if (!groundTreeId) { showAlert('Plant or choose a tree to root this vision in.'); return; }
     setIsSubmitting(true);
     try {
         let finalImageUrl = visionImageUrl;
@@ -1325,12 +1392,14 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
             finalImageUrl = await uploadBase64Image(visionImageUrl, `users/${lightseed.uid}/visions/ai/${Date.now()}`);
         }
         await onCreate({
-            lifetreeId: activeTree.id,
+            lifetreeId: groundTreeId,
             authorId: lightseed.uid,
             title: visionTitle,
             body: visionBody,
             link: visionLink,
-            imageUrl: finalImageUrl
+            imageUrl: finalImageUrl,
+            visibility,
+            domain: visionDomain.trim() || undefined,
         });
         onClose();
     } catch(e:any) { 
@@ -1352,7 +1421,7 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
                 disabled={uploading || localUploading || !visionBody}
                 className="text-xs bg-amber-100 text-amber-700 px-3 py-1 rounded-full font-bold hover:bg-amber-200 disabled:opacity-50 flex items-center gap-1"
              >
-                 <Icons.Sparkles /> 
+                 <Icons.Wizard /> 
                  <span>{t('generate_image')}</span>
              </button>
         </div>
@@ -1383,10 +1452,41 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
             className="block w-full border border-slate-300 p-2 rounded-lg" 
             placeholder={t('webpage')} 
             value={visionLink} 
-            onChange={e=>setVisionLink(e.target.value)} 
+            onChange={e=>setVisionLink(e.target.value)}
         />
-        <button 
-            type="submit" 
+        {/* Ground the vision — the tree it's rooted in + the community/site it links to. */}
+        <div className="space-y-2 rounded-xl border border-emerald-100 bg-emerald-50/40 p-3">
+            <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-700"><Icons.Tree /> Ground this vision</p>
+            <label className="block">
+                <span className="mb-1 block text-[11px] font-semibold text-slate-500">Rooted in tree</span>
+                <select value={groundTreeId} onChange={e => setGroundTreeId(e.target.value)} className="block w-full rounded-lg border border-slate-300 bg-white p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    {groundOptions.length === 0 && <option value="">No tree yet — plant one first</option>}
+                    {groundOptions.map(tr => <option key={tr.id} value={tr.id}>{tr.name}</option>)}
+                </select>
+            </label>
+            <AutocompleteInput
+                value={visionDomain}
+                onChange={setVisionDomain}
+                placeholder="Community or website domain (optional)"
+                hint="Link this vision to a community/site. Leave blank to use this node."
+                className="block w-full rounded-lg border border-slate-300 bg-white p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+        </div>
+        {/* Protect fragile, early visions: choose who can see this. */}
+        <label className="block">
+            <span className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-400"><Icons.Eye /> {t('visibility')}</span>
+            <select
+                value={visibility}
+                onChange={e => setVisibility(e.target.value as 'public' | 'node' | 'private')}
+                className="block w-full rounded-lg border border-slate-300 bg-white p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+                <option value="public">{t('vis_public')}</option>
+                <option value="node">{t('vis_node')}</option>
+                <option value="private">{t('vis_private')}</option>
+            </select>
+        </label>
+        <button
+            type="submit"
             disabled={uploading || localUploading || isSubmitting} 
             className="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-bold shadow-md disabled:opacity-50"
         >
@@ -1400,7 +1500,7 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
 
 ### ./components/modals/EmitPulseModal.tsx
 ```
-import React, { useState, useEffect, FormEvent } from 'react';
+import React, { useState, useEffect, useRef, FormEvent } from 'react';
 import { showAlert } from "../ui/Dialog";
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
@@ -1408,6 +1508,7 @@ import { Modal } from '../ui/Modal';
 import { ImagePicker } from '../ui/ImagePicker';
 import { Pulse, Lightseed, Lifetree, Vision } from '../../types';
 import { getMyVisions } from '../../services/firebase';
+import { generateVisionImage } from '../../services/gemini';
 interface EmitPulseModalProps {
   lightseed: Lightseed | null;
   activeTree: Lifetree | null;
@@ -1430,7 +1531,7 @@ const GrowthCard = ({ onClick, disabled, image, icon, title, desc, note, gradien
     type="button"
     onClick={disabled ? undefined : onClick}
     disabled={disabled}
-    className={`group relative min-h-[170px] overflow-hidden rounded-2xl border border-white/10 text-left shadow-lg transition-transform ${disabled ? 'cursor-not-allowed opacity-60' : 'hover:scale-[1.02]'}`}
+    className={`group relative min-h-[150px] overflow-hidden rounded-2xl border border-white/10 text-left shadow-lg transition-transform ${disabled ? 'cursor-not-allowed opacity-60' : 'hover:scale-[1.02]'}`}
   >
     {image
       ? <img src={image} alt={title} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
@@ -1443,6 +1544,9 @@ const GrowthCard = ({ onClick, disabled, image, icon, title, desc, note, gradien
       {note && <div className="mt-1.5 text-[10px] font-bold uppercase tracking-wide text-amber-300">{note}</div>}
     </div>
   </button>
+);
+const Page: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="w-full shrink-0 snap-center px-0.5">{children}</div>
 );
 export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
   lightseed,
@@ -1467,19 +1571,49 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
   const [pulseBody, setPulseBody] = useState('');
   const [pulseImageUrl, setPulseImageUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState<string | null>(null);
+  const pageKeys: Array<'choice' | 'subject' | 'details'> = targetTree
+    ? ['subject', 'details'] : ['choice', 'subject', 'details'];
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [step, setStep] = useState(0);
+  const goToStep = (n: number) => {
+    const el = trackRef.current; if (!el) return;
+    el.scrollTo({ left: Math.max(0, Math.min(n, pageKeys.length - 1)) * el.clientWidth, behavior: 'smooth' });
+  };
+  const onTrackScroll = () => {
+    const el = trackRef.current; if (!el) return;
+    setStep(Math.round(el.scrollLeft / el.clientWidth));
+  };
   useEffect(() => {
     if (lightseed?.uid) getMyVisions(lightseed.uid).then(setMyVisions).catch(() => {});
   }, [lightseed?.uid]);
   const treeImage = growthTree?.latestGrowthUrl || growthTree?.imageUrl || '';
-  const chooseTree = () => { setGrowthKind('tree'); setPulseImageUrl(''); };
+  const chooseTree = () => { setGrowthKind('tree'); setPulseImageUrl(''); goToStep(1); };
   const chooseVision = () => {
     setGrowthKind('vision');
     if (myVisions.length === 1) pickVision(myVisions[0]);
+    goToStep(1);
   };
   const pickVision = (v: Vision) => { setSelectedVision(v); setPulseImageUrl(v.imageUrl || ''); };
-  const backToChoice = () => { setGrowthKind(null); setSelectedVision(null); setGrowthCategory(''); setPulseImageUrl(''); };
-  const handleMint = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleGenerate = async () => {
+    if (!selectedVision || generating) return;
+    setGenError(null);
+    setGenerating(true);
+    try {
+      const prompt = `${selectedVision.title}. ${pulseBody}`.trim();
+      const img = await generateVisionImage(prompt);
+      if (img) setPulseImageUrl(img);
+      else setGenError('Could not generate an image right now — try again, or upload one.');
+    } catch (e: any) {
+      setGenError(e?.message || 'Image generation failed — try again, or upload one.');
+    } finally {
+      setGenerating(false);
+    }
+  };
+  const inviteTree = () => showAlert('Inviting a tree to grow this vision together is coming soon — it will become an on-chain agreement between trees.');
+  const handleMint = async (e?: FormEvent) => {
+    e?.preventDefault();
     if (!lightseed || isSubmitting) return;
     const lifetreeId = growthKind === 'tree'
       ? (growthTree?.id || '')
@@ -1496,7 +1630,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
       }
       await onMint({
         lifetreeId,
-        type: growthKind === 'tree' ? 'GROWTH' : 'growth',
+        type: growthKind === 'tree' ? 'tree_growth' : 'vision_growth',
         ...(growthKind === 'vision' && selectedVision
           ? { visionId: selectedVision.id, visionTitle: selectedVision.title, growthCategory }
           : {}),
@@ -1538,6 +1672,12 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
       setIsSubmitting(false);
     }
   };
+  const currentKey = pageKeys[step];
+  const canAdvance = currentKey === 'choice' ? growthKind !== null
+    : currentKey === 'subject' ? (growthKind === 'tree' ? !!(pulseImageUrl || treeImage) : !!selectedVision)
+    : true;
+  const isLast = step === pageKeys.length - 1;
+  const uploadImage = (file: File) => handleImageUpload(file, `users/${lightseed?.uid}/pulses/${Date.now()}`).then(setPulseImageUrl);
   return (
     <Modal title={matchCandidate ? t('propose_alignment') : (targetTree ? `Grow ${targetTree.name}` : t('emit_pulse'))} onClose={onClose}>
       {matchCandidate ? (
@@ -1550,76 +1690,36 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
             {isSubmitting ? t('minting') : t('send_request')}
           </button>
         </form>
-      ) : growthKind === null ? (
-        <div className="space-y-3">
-          <p className="text-center text-sm text-slate-500">A pulse is a moment of growth. What is growing?</p>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <GrowthCard
-              onClick={chooseTree}
-              disabled={!activeTree}
-              image={treeImage}
-              gradient="from-emerald-500 to-emerald-800"
-              icon={<Icons.Tree />}
-              title="Tree Growth"
-              desc="New leaves, photos, milestones — observe your tree growing."
-              note={!activeTree ? 'Plant a lifetree first' : undefined}
-            />
-            <GrowthCard
-              onClick={chooseVision}
-              disabled={myVisions.length === 0}
-              image={myVisions[0]?.imageUrl}
-              gradient="from-amber-500 to-purple-700"
-              icon={<Icons.Sparkles />}
-              title="Vision Growth"
-              desc="Inspiration, funding, collaboration — observe a vision growing."
-              note={myVisions.length === 0 ? 'Create a vision first' : undefined}
-            />
-          </div>
-        </div>
       ) : (
-        <form onSubmit={handleMint} className="flex flex-col gap-4">
-          {!targetTree && (
-            <button type="button" onClick={backToChoice} className="flex w-fit items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-800">
-              <Icons.ArrowLeft /> <span>Back</span>
-            </button>
-          )}
-          {growthKind === 'tree' && (
-            <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3">
-              <p className="text-xs leading-relaxed text-emerald-800/80">
-                Upload a new photo of your tree. It becomes the tree's <span className="font-bold">latest image</span> and joins its growth timeline — played from the tree's profile.
-              </p>
-              {treeImage && (
-                <div className="mt-2 flex items-center gap-2">
-                  <img src={treeImage} alt="Current tree" className="h-12 w-12 rounded-lg border border-emerald-200 object-cover" />
-                  <span className="text-[10px] font-bold uppercase tracking-wide text-emerald-600">Current latest</span>
-                </div>
-              )}
-            </div>
-          )}
-          {growthKind === 'vision' && (
-            <div className="space-y-2">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Choose the vision</p>
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                {myVisions.map(v => (
-                  <button
-                    key={v.id}
-                    type="button"
-                    onClick={() => pickVision(v)}
-                    title={v.title}
-                    className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 transition-all ${selectedVision?.id === v.id ? 'border-emerald-500 ring-2 ring-emerald-200' : 'border-transparent opacity-80 hover:opacity-100'}`}
-                  >
-                    {v.imageUrl
-                      ? <img src={v.imageUrl} alt={v.title} className="h-full w-full object-cover" />
-                      : <span className="flex h-full w-full items-center justify-center bg-slate-100 text-slate-300"><Icons.Eye /></span>}
-                  </button>
-                ))}
-              </div>
-              {selectedVision && <p className="text-xs text-slate-500">Growing: <span className="font-bold text-slate-700">{selectedVision.title}</span></p>}
-              <div className="flex flex-wrap gap-2 pt-1">
-                {['Inspiration', 'Funding', 'Collaboration', 'Other'].map(c => (
-                  <button key={c} type="button" onClick={() => setGrowthCategory(c)} className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${growthCategory === c ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{c}</button>
-                ))}
-              </div>
+        <div>
+          {/* The scrollable, page-by-page walkthrough. Swipe or use the buttons below. */}
+          <div ref={trackRef} onScroll={onTrackScroll} className="flex snap-x snap-mandatory overflow-x-auto scroll-hide-bar">
+            {pageKeys.map(key => {
+              if (key === 'choice') return (
+                <Page key="choice">
+                  <p className="mb-3 text-center text-sm text-slate-500">A pulse is a moment of growth. What is growing?</p>
+                  <div className="grid grid-cols-1 gap-3">
+                    {/* Vision growth on top. */}
+                    <GrowthCard
+                      onClick={chooseVision}
+                      disabled={myVisions.length === 0}
+                      image={myVisions[0]?.imageUrl}
+                      gradient="from-amber-500 to-purple-700"
+                      icon={<Icons.Wizard />}
+                      title="Vision Growth"
+                      desc="Inspiration, funding, collaboration — observe a vision growing."
+                      note={myVisions.length === 0 ? 'Create a vision first' : undefined}
+                    />
+                    <GrowthCard
+                      onClick={chooseTree}
+                      disabled={!activeTree}
+                      image={treeImage}
+                      gradient="from-emerald-500 to-emerald-800"
+                      icon={<Icons.Tree />}
+                      title="Tree Growth"
+                      desc="New leaves, photos, milestones — observe your tree growing."
+                      note={!activeTree ? 'Plant a lifetree first' : undefined}
+                    />
 ```
 
 ### ./config/default.ts
@@ -1694,6 +1794,10 @@ export interface AppConfig {
     ],
     "rewrites": [
       {
+        "source": "/u/**",
+        "function": "unsubscribe"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
@@ -1748,6 +1852,22 @@ export interface AppConfig {
           "fieldPath": "isNature",
           "order": "ASCENDING"
         }
+      ]
+    },
+    {
+      "collectionGroup": "lifetrees",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "visibility", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "lifetrees",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "domain", "order": "ASCENDING" },
+        { "fieldPath": "visibility", "order": "ASCENDING" }
       ]
     },
     {
@@ -1956,6 +2076,129 @@ export const useConfig = (hostCommunity: Community | null) => {
 }
 ```
 
+### ./pages/PulseFeedPage.tsx
+```
+import React from 'react';
+import { SectionHeader } from '../components/ui/SectionHeader';
+import { PulseCard } from '../components/PulseCard';
+import type { Pulse, Lightseed } from '../types';
+interface PulseFeedPageProps {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  searchBox?: React.ReactNode;
+  action?: React.ReactNode;
+  items: Pulse[];
+  emptyText: string;
+  loadingMore: boolean;
+  lightseed: Lightseed | null;
+  onMatch: (p: Pulse) => void;
+  onView: (p: Pulse) => void;
+}
+export const PulseFeedPage = ({
+  icon, title, subtitle, searchBox, action, items, emptyText, loadingMore, lightseed, onMatch, onView,
+}: PulseFeedPageProps) => (
+  <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <SectionHeader icon={icon} title={title} subtitle={subtitle} footer={searchBox} action={action}>
+      <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        {items.length === 0 && !loadingMore ? (
+          <p className="col-span-full py-10 text-center text-slate-400">{emptyText}</p>
+        ) : (
+          items.map(item => (
+            <div key={item.id}>
+              <PulseCard pulse={item} lightseed={lightseed} onMatch={onMatch} onView={onView} />
+            </div>
+          ))
+        )}
+      </div>
+    </SectionHeader>
+  </div>
+);
+```
+
+### ./pages/VisionsPage.tsx
+```
+import React from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
+import { Icons } from '../components/ui/Icons';
+import { SectionHeader } from '../components/ui/SectionHeader';
+import { VisionCard } from '../components/VisionCard';
+import { ResonancePanel } from '../components/ResonancePanel';
+import { ResonanceScan } from '../components/ui/ResonanceScan';
+import { canViewVision } from '../src/domain/views/forest';
+import type { Lightseed, Vision, VisionSynergy } from '../types';
+interface VisionsPageProps {
+  visions: Vision[];
+  synergies: VisionSynergy[];
+  favoriteResonanceIds: Set<string>;
+  onToggleFavorite: (s: VisionSynergy) => void;
+  onReach: (treeId: string, treeName: string) => void;
+  isAnalyzingSynergy: boolean;
+  onAnalyze: () => void;
+  canAnalyze: boolean;
+  lightseed: Lightseed | null;
+  onCreateVision: () => void;
+  onSelectVision: (v: Vision) => void;
+  loadingMore: boolean;
+  viewer: { uid?: string; isStaff?: boolean };
+  searchBox?: React.ReactNode;
+}
+export const VisionsPage = ({
+  visions, synergies, favoriteResonanceIds, onToggleFavorite, onReach, isAnalyzingSynergy,
+  onAnalyze, canAnalyze, lightseed, onCreateVision, onSelectVision, loadingMore, viewer, searchBox,
+}: VisionsPageProps) => {
+  const { t } = useLanguage();
+  const visibleVisions = visions.filter(v => canViewVision(v, viewer));
+  return (
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <SectionHeader
+        icon={<Icons.Eye />}
+        title={t('visions')}
+        subtitle={t('visions_sub')}
+        footer={searchBox}
+        action={
+          <div className="flex items-center gap-2">
+            {lightseed && (
+              <button
+                onClick={onCreateVision}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-full font-bold shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap"
+              >
+                <Icons.Plus className="text-yellow-300" /> <span>{t('create_vision')}</span>
+              </button>
+            )}
+            <button
+              onClick={onAnalyze}
+              disabled={isAnalyzingSynergy || !canAnalyze}
+              className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-full font-bold shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 border border-amber-400/30 active:scale-95 disabled:opacity-50 whitespace-nowrap"
+            >
+              {isAnalyzingSynergy
+                ? <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+                : <Icons.Venn />}
+              <span className="hidden sm:inline">{isAnalyzingSynergy ? t('analyzing') : t('analyze')}</span>
+            </button>
+          </div>
+        }
+      >
+        <ResonancePanel synergies={synergies} className="mb-6" favorites={favoriteResonanceIds} onToggleFavorite={onToggleFavorite} onReach={onReach} />
+        <ResonanceScan active={isAnalyzingSynergy}>
+          <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {visibleVisions.length === 0 && !loadingMore ? (
+              <p className="col-span-full text-center text-slate-400 py-10">{t('no_visions_found')}</p>
+            ) : (
+              visibleVisions.map(item => (
+                <div key={item.id} onClick={() => onSelectVision(item)} className="cursor-pointer">
+                  <VisionCard vision={item} />
+                </div>
+              ))
+            )}
+          </div>
+        </ResonanceScan>
+      </SectionHeader>
+    </div>
+  );
+};
+```
+
 ### ./services/firebase.ts
 ```
 import '../utils/polyfill';
@@ -2009,14 +2252,19 @@ import {
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { type Pulse, type PulseType, type Lifetree, type Alignment, type Vision, type Community, type Sanctuary, type TreeOwnershipInvite, type InvitableRole, type Decision, type DecisionNature, votesRequired, type ReachAudience } from '../types';
 import { createBlock } from '../utils/crypto';
+import { computeCanonicalHash, isChainLocked, BLOCK_HASH_VERSION } from '../src/domain/chain';
 import { uuidv7 } from '../utils/id';
-import type { PulseVisibility } from '../src/domain/pulse';
+import { normalizePulseType, isTreeGrowth, type PulseVisibility } from '../src/domain/pulse';
 import { daysOverdue, computeNextDueMillis, wateringAlertedToday, type WateringMode, type WateringAnalysis } from '../src/domain/watering';
 import { oldEmeraldEarthThemeValues } from '../utils/theme';
 import { isExplicitlyValidatedTree } from '../utils/validation';
 import { buildThreadId, buildGroupThreadId, reachAudienceLabels } from '../utils/reachPermissions';
 const toMillis = (value: any): number =>
     value?.toMillis ? value.toMillis() : (value instanceof Date ? value.getTime() : 0);
+const mapPulse = (d: any): Pulse => {
+    const data = d.data() as any;
+    return { id: d.id, ...data, type: normalizePulseType(data.type) } as Pulse;
+};
 const SYSTEM_EMAIL_FROM = "lightseed <admin@lightseed.online>";
 const getEnv = (key: string) => {
     return (window as any).process?.env?.[key] || (import.meta as any).env?.[key] || "";
@@ -2048,6 +2296,18 @@ const sanctuariesCollection = collection(db, 'sanctuaries');
 const networkInvitesCollection = collection(db, 'networkInvites');
 const newsletterConfigRef = doc(db, 'config', 'newsletter');
 export const onAuthChange = (callback: (user: FirebaseUser | null) => void) => onAuthStateChanged(auth, callback);
+export const ensurePersonEntity = async (uid: string, displayName?: string | null): Promise<{ lid: string; uid: string }> => {
+    const ref = doc(db, 'persons', uid);
+    const snap = await getDoc(ref);
+    if (snap.exists()) {
+        const d = snap.data() as any;
+        if (!d.lid) { const lid = uuidv7(); await setDoc(ref, { lid }, { merge: true }); return { lid, uid }; }
+        return { lid: d.lid as string, uid };
+    }
+    const lid = uuidv7();
+    await setDoc(ref, { lid, uid, displayName: displayName || '', publicKeyPem: null, createdAt: serverTimestamp() });
+    return { lid, uid };
+};
 const ensureUserProfile = async (user: FirebaseUser, extra: Record<string, any> = {}): Promise<boolean> => {
     const ref = doc(db, 'users', user.uid);
     if ((await getDoc(ref)).exists()) return false;
@@ -2113,24 +2373,27 @@ export const signInWithEmail = (email: string, password: string) =>
 export const sendVerificationEmail = () =>
     auth.currentUser ? sendEmailVerification(auth.currentUser) : Promise.reject(new Error('Not signed in'));
 export const resetPassword = (email: string) => sendPasswordResetEmail(auth, email.trim());
-export const createNetworkInvite = async (email: string, invitedByUserId: string, message = ''): Promise<{ id: string; link: string }> => {
+export const createNetworkInvite = async (email: string, invitedByUserId: string, message = '', opts?: { unlimited?: boolean }): Promise<{ id: string; link: string }> => {
     const cleanEmail = email.trim().toLowerCase();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) throw new Error('Please enter a valid email.');
-    await runTransaction(db, async (t) => {
-        const ref = doc(db, 'users', invitedByUserId);
-        const snap = await t.get(ref);
-        if (!snap.exists()) throw new Error('User profile not found.');
-        const remaining = snap.data().invitesRemaining || 0;
-        if (remaining <= 0) throw new Error('No invites remaining.');
-        t.update(ref, { invitesRemaining: remaining - 1 });
-    });
+    if (!opts?.unlimited) {
+        await runTransaction(db, async (t) => {
+            const ref = doc(db, 'users', invitedByUserId);
+            const snap = await t.get(ref);
+            if (!snap.exists()) throw new Error('User profile not found.');
+            const remaining = snap.data().invitesRemaining || 0;
+            if (remaining <= 0) throw new Error('No invites remaining.');
+            t.update(ref, { invitesRemaining: remaining - 1 });
+        });
+    }
     const ref = await addDoc(networkInvitesCollection, {
         email: cleanEmail, invitedByUserId, status: 'pending', message, createdAt: serverTimestamp(),
     });
     const link = `${window.location.origin}?invite=${ref.id}`;
     try {
         await triggerSystemEmail(cleanEmail, 'You are invited to lightseed',
-            `${message ? `"${message}"\n\n` : ''}You have been invited to join the lightseed network. Accept your invitation here: ${link}`, invitedByUserId);
+            `${message ? `"${message}"\n\n` : ''}You have been invited to join the lightseed network.`, invitedByUserId,
+            { ctaUrl: link, ctaLabel: 'Accept your invitation' });
     } catch (e) { console.warn('Invite email failed:', e); }
     return { id: ref.id, link };
 };
@@ -2158,26 +2421,6 @@ export const createInviteRequest = async (email: string, reason: string) => {
 };
 export const getInviteRequests = async (lastDoc?: QueryDocumentSnapshot): Promise<Paged> => {
     let q = query(inviteRequestsCollection, orderBy('createdAt', 'desc'), limit(INVITE_PAGE));
-    if (lastDoc) q = query(q, startAfter(lastDoc));
-    const snap = await getDocs(q);
-    return { items: snap.docs.map(d => ({ id: d.id, ...(d.data() as any) })), lastDoc: snap.docs[snap.docs.length - 1] || null, hasMore: snap.docs.length === INVITE_PAGE };
-};
-export const submitInviteRequest = async (email: string, reason: string): Promise<string> => {
-    const callable = httpsCallable(functions, 'requestInvite');
-    const res = await callable({ email, reason });
-    return (res.data as any)?.status as string;
-};
-export const approveInviteRequest = async (requestId: string, adminUid: string) => {
-    const reqRef = doc(db, 'inviteRequests', requestId);
-    const snap = await getDoc(reqRef);
-    if (!snap.exists()) throw new Error('Request not found.');
-    const invite = await createNetworkInvite((snap.data() as any).email, adminUid);
-    await updateDoc(reqRef, { status: 'approved', approvedBy: adminUid, approvedAt: serverTimestamp() });
-    return invite;
-};
-export const declineInviteRequest = (requestId: string) =>
-    updateDoc(doc(db, 'inviteRequests', requestId), { status: 'declined', declinedAt: serverTimestamp() });
-export const logout = () => firebaseSignOut(auth);
 ```
 
 ### ./src/adapters/firestore.ts
@@ -2215,6 +2458,177 @@ export const firestoreStore: Store = {
 };
 ```
 
+### ./src/domain/aiAccess.ts
+```
+export type AIAllowanceSource = 'user_key' | 'community_key' | 'sponsored' | 'tree_tokens' | 'node_compute';
+export interface AIAccessState {
+  source: AIAllowanceSource;
+  allowed: boolean;
+  provider?: string;        // 'anthropic' | 'google' | 'openai' | …
+  model?: string;
+  keyHint?: string;         // last-4 hint for a BYO key (never the key itself)
+  remainingToday?: number;  // for node_compute, the free-tier reflections left today
+  label: string;            // short human label, e.g. "Claude · your key"
+  detail?: string;          // secondary line, e.g. "…aB3z" or "18 reflections left today"
+}
+export const AI_DAILY_TEXT_LIMIT = 21;
+export const AI_DAILY_IMAGE_LIMIT = 3;
+export const aiSourceLabels: Record<AIAllowanceSource, string> = {
+  user_key: 'Your key',
+  community_key: 'Community key',
+  sponsored: 'Sponsored',
+  tree_tokens: 'Tree tokens',
+  node_compute: 'Network',
+};
+export const providerLabel = (provider?: string): string => {
+  switch (provider) {
+    case 'anthropic': return 'Claude';
+    case 'google': return 'Gemini';
+    case 'openai': return 'OpenAI';
+    case 'deepseek': return 'DeepSeek';
+    default: return 'AI';
+  }
+};
+```
+
+### ./src/domain/chain/canonical.ts
+```
+const isTimestampLike = (v: unknown): v is { toMillis: () => number } =>
+  !!v && typeof v === 'object' && typeof (v as any).toMillis === 'function';
+function encode(v: unknown): string {
+  if (v === null) return 'z';            // null
+  if (v === undefined) return 'u';       // explicit (JSON.stringify would drop it)
+  const t = typeof v;
+  if (t === 'string') return 's:' + JSON.stringify(v); // JSON-escapes quotes/newlines/unicode
+  if (t === 'number') return 'd:' + (Number.isFinite(v) ? (v as number).toString() : 'NaN');
+  if (t === 'boolean') return 'b:' + (v ? '1' : '0');
+  if (t === 'bigint') return 'i:' + (v as bigint).toString();
+  if (isTimestampLike(v)) return 't:' + v.toMillis();
+  if (v instanceof Date) return 't:' + v.getTime();
+  if (Array.isArray(v)) return '[' + v.map(encode).join(',') + ']';   // order is significant
+  if (t === 'object') {
+    const obj = v as Record<string, unknown>;
+    const keys = Object.keys(obj).filter(k => obj[k] !== undefined).sort();
+    return '{' + keys.map(k => JSON.stringify(k) + ':' + encode(obj[k])).join(',') + '}';
+  }
+  return 'x';
+}
+export function canonicalize(value: unknown): string {
+  return encode(value);
+}
+```
+
+### ./src/domain/chain/index.ts
+```
+export { canonicalize } from './canonical';
+export {
+  BLOCK_CONTENT_FIELDS, BLOCK_HASH_VERSION,
+  blockContent, blockPreimage, computeCanonicalHash, canonicalRecompute, verifyChain,
+  isCanonicallySealed, verifyBlockSeal,
+} from './verify';
+export type { ChainBlock, ChainIssue, ChainIssueCode, ChainVerifyResult } from './verify';
+export { isChainLocked, setChainLocked } from './lock';
+```
+
+### ./src/domain/chain/lock.ts
+```
+let _locked = false;
+export const isChainLocked = (): boolean => _locked;
+export const setChainLocked = (locked: boolean): void => { _locked = !!locked; };
+```
+
+### ./src/domain/chain/verify.ts
+```
+import { canonicalize } from './canonical';
+import { sha256 } from '../../../utils/crypto';
+export const BLOCK_CONTENT_FIELDS = [
+  'lid', 'lifetreeId', 'visionId', 'communityId', 'type', 'visibility',
+  'title', 'body', 'content', 'imageUrl', 'imageUrls', 'eventDate', 'eventLocation',
+  'reachTreeId', 'reachTreeName', 'recipientUid', 'recipientName',
+  'threadId', 'participantUids', 'audience', 'threadName', 'isGroup',
+  'care', 'careAlert', 'wateringConfirmedBy',
+  'isMatch', 'matchedLifetreeId', 'matchId',
+  'authorId', 'authorName', 'authorPersonName', 'authorPhoto', 'growthCategory', 'visionTitle',
+] as const;
+export function blockContent(pulse: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const k of BLOCK_CONTENT_FIELDS) {
+    if (pulse[k] !== undefined) out[k] = pulse[k];
+  }
+  return out;
+}
+export const BLOCK_HASH_VERSION = 'lifeseed.block.v1';
+export function blockPreimage(previousHash: string, mintedAtMs: number, content: Record<string, unknown>): string {
+  return [BLOCK_HASH_VERSION, previousHash, String(mintedAtMs), canonicalize(content)].join('\n');
+}
+export async function computeCanonicalHash(previousHash: string, mintedAtMs: number, pulse: Record<string, unknown>): Promise<string> {
+  return sha256(blockPreimage(previousHash, mintedAtMs, blockContent(pulse)));
+}
+export const canonicalRecompute = (block: ChainBlock, previousHash: string): Promise<string> => {
+  const ts = (block as any).mintedAt ?? (block as any).createdAt;
+  const ms = typeof ts === 'number' ? ts : (ts && typeof ts.toMillis === 'function' ? ts.toMillis() : 0);
+  return computeCanonicalHash(previousHash, ms, block as Record<string, unknown>);
+};
+export interface ChainBlock {
+  id?: string;
+  hash: string;
+  previousHash: string;
+  blockHeight?: number;
+  [k: string]: unknown;
+}
+export function isCanonicallySealed(block: Record<string, unknown>): boolean {
+  return (block as { hashVersion?: unknown }).hashVersion === BLOCK_HASH_VERSION;
+}
+export async function verifyBlockSeal(block: ChainBlock): Promise<boolean> {
+  return (await canonicalRecompute(block, block.previousHash)) === block.hash;
+}
+export type ChainIssueCode = 'linkage' | 'height' | 'hash' | 'duplicate-hash' | 'empty-hash';
+export interface ChainIssue {
+  index: number;
+  blockId?: string;
+  code: ChainIssueCode;
+  message: string;
+}
+export interface ChainVerifyResult {
+  ok: boolean;
+  blockCount: number;
+  issues: ChainIssue[];
+  headHash?: string;
+}
+export async function verifyChain(
+  blocks: ChainBlock[],
+  opts: { genesisHash?: string; recomputeHash?: (block: ChainBlock, previousHash: string) => Promise<string> } = {},
+): Promise<ChainVerifyResult> {
+  const issues: ChainIssue[] = [];
+  const seen = new Set<string>();
+  let expectedPrev = opts.genesisHash; // expected previousHash of the next block (undefined = unknown root)
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i];
+    if (!b.hash) issues.push({ index: i, blockId: b.id, code: 'empty-hash', message: 'block has no hash' });
+    if (expectedPrev !== undefined && b.previousHash !== expectedPrev) {
+      issues.push({ index: i, blockId: b.id, code: 'linkage', message: `previousHash ${short(b.previousHash)} ≠ expected ${short(expectedPrev)}` });
+    }
+    if (i > 0) {
+      const prevH = blocks[i - 1].blockHeight;
+      if (typeof prevH === 'number' && typeof b.blockHeight === 'number' && b.blockHeight !== prevH + 1) {
+        issues.push({ index: i, blockId: b.id, code: 'height', message: `blockHeight ${b.blockHeight} is not ${prevH + 1}` });
+      }
+    }
+    if (b.hash) {
+      if (seen.has(b.hash)) issues.push({ index: i, blockId: b.id, code: 'duplicate-hash', message: `duplicate hash ${short(b.hash)}` });
+      seen.add(b.hash);
+    }
+    if (opts.recomputeHash) {
+      const expected = await opts.recomputeHash(b, b.previousHash);
+      if (expected !== b.hash) issues.push({ index: i, blockId: b.id, code: 'hash', message: `hash mismatch — recomputed ${short(expected)}` });
+    }
+    expectedPrev = b.hash;
+  }
+  return { ok: issues.length === 0, blockCount: blocks.length, issues, headHash: blocks.length ? blocks[blocks.length - 1].hash : opts.genesisHash };
+}
+const short = (h?: string) => (h ? (h.length > 12 ? h.slice(0, 12) + '…' : h) : '∅');
+```
+
 ### ./src/domain/community.ts
 ```
 import type { Timestamp } from 'firebase/firestore';
@@ -2238,6 +2652,14 @@ export interface Community extends Entity {
     surface?: string;
     text?: string;
   };
+  socialLinks?: {
+    instagram?: string;
+    telegram?: string;
+    whatsapp?: string;
+    website?: string;
+  };
+  carouselQuotes?: string[];
+  chainLocked?: boolean;
   createdAt: Timestamp;
   updatedAt?: Timestamp;
   defaultIntelligenceId?: string;
@@ -2265,6 +2687,20 @@ export const DECISION_NATURES: { id: DecisionNature; votes: number }[] = [
 ];
 export const votesRequired = (nature: DecisionNature): number =>
   DECISION_NATURES.find(n => n.id === nature)?.votes ?? 1;
+export interface Concern {
+  by: string;       // uid who raised it
+  note?: string;    // what the concern is
+  at: Timestamp;
+}
+export type DecisionStatus = 'draft' | 'open' | 'passed' | 'rejected' | 'withdrawn' | 'expired';
+export const decisionStatusLabels: Record<DecisionStatus, string> = {
+  draft: 'Draft',
+  open: 'Open',
+  passed: 'Passed',
+  rejected: 'Not adopted',
+  withdrawn: 'Withdrawn',
+  expired: 'Expired',
+};
 export interface Decision {
   id: string;
   lid?: string; // Lightseed ID — the decision's portable, time-ordered true name (UUIDv7).
@@ -2277,12 +2713,17 @@ export interface Decision {
   proposedBy: string;   // uid — counts as the first voice
   votes: string[];      // uids who have voiced yes
   votesRequired: number;
-  status: 'open' | 'passed';
+  status: DecisionStatus;
+  listening?: boolean;
+  concerns?: Concern[];
   previousHash: string;
   hash: string;
   enactedHash?: string; // the block written when the circle reaches the threshold
   createdAt: Timestamp;
   passedAt?: Timestamp;
+  withdrawnAt?: Timestamp;
+  rejectedAt?: Timestamp;
+  expiresAt?: Timestamp;
 }
 ```
 
@@ -2389,6 +2830,7 @@ export interface Lifetree extends Entity {
   locationName?: string;
   domain?: string; // Associated website domain, e.g. "example.com"
   createdAt: Timestamp;
+  visibility?: 'public' | 'node' | 'private';
   onlyValidatedCanReach?: boolean;
   validated: boolean;
   validatorId?: string | null;
@@ -2418,6 +2860,19 @@ export interface Link extends Entity {
 export const linkId = (from: string, rel: LinkRel, to: string) => `${from}__${rel}__${to}`;
 ```
 
+### ./src/domain/person.ts
+```
+import type { Timestamp } from 'firebase/firestore';
+import type { Entity } from './entity';
+export interface Person extends Entity {
+  lid: string;
+  uid: string;
+  displayName?: string;
+  publicKeyPem?: string | null; // reserved for Stage 3 (keypair signing) — null until then
+  createdAt: Timestamp;
+}
+```
+
 ### ./src/domain/policy.ts
 ```
 export const canTendTree = (viewerUid?: string | null): viewerUid is string => !!viewerUid;
@@ -2430,7 +2885,16 @@ import type { Timestamp } from 'firebase/firestore';
 import type { Entity } from './entity';
 import type { ReachAudience } from './reach';
 export type LegacyPulseType = 'STANDARD' | 'GROWTH';
-export type PulseType = 'observation' | 'dream' | 'offering' | 'request' | 'translation' | 'validation' | 'event' | 'growth' | 'reach' | LegacyPulseType;
+export type PulseType = 'observation' | 'dream' | 'offering' | 'request' | 'translation' | 'validation' | 'event' | 'tree_growth' | 'vision_growth' | 'standard' | 'reach';
+export const normalizePulseType = (t?: string): PulseType => {
+  switch (t) {
+    case 'GROWTH': return 'tree_growth';
+    case 'growth': return 'vision_growth';
+    case 'STANDARD': return 'standard';
+    default: return (t || 'observation') as PulseType;
+  }
+};
+export const isTreeGrowth = (t?: string): boolean => normalizePulseType(t) === 'tree_growth';
 export type PulseVisibility = 'public' | 'node' | 'community' | 'circle' | 'private';
 export interface PulseInterpretation {
     depth: number;
@@ -2600,6 +3064,38 @@ export interface Store {
 }
 ```
 
+### ./src/domain/themeSurface.ts
+```
+export interface SurfaceColors {
+  background: string;
+  text: string;
+  border: string;
+  muted: string;
+  isDark: boolean;
+}
+const isDarkHex = (hex: string | undefined, fallback: boolean): boolean => {
+  if (!hex || !/^#[0-9A-Fa-f]{6}$/.test(hex)) return fallback;
+  const value = hex.slice(1);
+  const channels = [0, 2, 4].map((start) => {
+    const channel = parseInt(value.slice(start, start + 2), 16) / 255;
+    return channel <= 0.03928 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4);
+  });
+  const luminance = 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+  return luminance < 0.38;
+};
+export function headerSurface(theme: any, isDark: boolean): SurfaceColors {
+  const background = theme?.surface || theme?.background || (isDark ? '#020617' : '#ffffff');
+  const dark = isDarkHex(background, isDark);
+  return {
+    background,
+    text: dark ? '#f8fafc' : (theme?.text || '#0f172a'),
+    border: theme?.primary || (isDark ? '#1e293b' : '#e2e8f0'),
+    muted: dark ? '#bbf7d0' : (theme?.neutral || '#64748b'),
+    isDark: dark,
+  };
+}
+```
+
 ### ./src/domain/treeCircle.ts
 ```
 import type { Timestamp } from 'firebase/firestore';
@@ -2657,16 +3153,21 @@ export function treeCircle(ownerId: string, links: Link[]): { groups: CircleGrou
 
 ### ./src/domain/views/council.ts
 ```
-import type { Decision } from '../decision';
+import type { Decision, DecisionStatus, Concern } from '../decision';
 export interface CouncilItem {
   id: string;
   title: string;
   nature: Decision['nature'];
   body?: string;
+  status: DecisionStatus;
   passed: boolean;
+  closed: boolean;       // withdrawn / rejected / expired — no longer open
+  listening: boolean;    // a concern was raised; the proposal is paused for reflection
+  concerns: Concern[];
   voted: boolean;        // the viewer has added their voice
   voiceCount: number;    // voices cast
   voicesRequired: number;
+  isProposer: boolean;
 }
 export function councilView(decisions: Decision[], viewerUid?: string | null): CouncilItem[] {
   return decisions.map(d => ({
@@ -2674,10 +3175,15 @@ export function councilView(decisions: Decision[], viewerUid?: string | null): C
     title: d.title,
     nature: d.nature,
     body: d.body,
+    status: d.status,
     passed: d.status === 'passed',
+    closed: ['withdrawn', 'rejected', 'expired'].includes(d.status),
+    listening: !!d.listening,
+    concerns: d.concerns || [],
     voted: !!viewerUid && (d.votes || []).includes(viewerUid),
     voiceCount: (d.votes || []).length,
     voicesRequired: d.votesRequired,
+    isProposer: !!viewerUid && d.proposedBy === viewerUid,
   }));
 }
 ```
@@ -2702,6 +3208,40 @@ export function treeCoordinates(tree: Pick<Lifetree, 'latitude' | 'longitude'>):
   const lat = Number(t.latitude ?? t.lat);
   const lng = Number(t.longitude ?? t.lng);
   return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+}
+export function canViewTree(
+  tree: Pick<Lifetree, 'ownerId' | 'visibility'> & { id?: string },
+  viewer: { uid?: string; isStaff?: boolean; guardedIds?: Set<string> },
+): boolean {
+  const v = tree.visibility || 'public';
+  if (v === 'public') return true;
+  if (viewer.isStaff) return true;
+  if (viewer.uid && tree.ownerId === viewer.uid) return true;
+  if (tree.id && viewer.guardedIds?.has(tree.id)) return true;
+  if (v === 'node') return !!viewer.uid;
+  return false; // private, and not owner / guardian / staff
+}
+export function canViewVision(
+  vision: { authorId?: string; visibility?: 'public' | 'node' | 'private' },
+  viewer: { uid?: string; isStaff?: boolean },
+): boolean {
+  const v = vision.visibility || 'public';
+  if (v === 'public') return true;
+  if (viewer.isStaff) return true;
+  if (viewer.uid && vision.authorId === viewer.uid) return true;
+  if (v === 'node') return !!viewer.uid;
+  return false; // private, and not author / staff
+}
+export interface ForestFilter { showNature: boolean; showUser: boolean; showValidated: boolean; }
+export function passesForestFilter(
+  tree: Pick<Lifetree, 'isNature'>,
+  filter: ForestFilter,
+  isValidated: (t: any) => boolean,
+): boolean {
+  if (!filter.showNature && tree.isNature) return false;
+  if (!filter.showUser && !tree.isNature) return false;
+  if (filter.showValidated && !isValidated(tree)) return false;
+  return true;
 }
 export function forestMarkers(trees: Lifetree[], guardianCounts?: Map<string, number>): ForestMarker[] {
   const out: ForestMarker[] = [];
@@ -2930,6 +3470,7 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import type { Timestamp } from 'firebase/firestore';
 import type { Entity } from './src/domain/entity';
 export * from './src/domain/entity';
+export * from './src/domain/person';
 export * from './src/domain/lifetree';
 export * from './src/domain/pulse';
 export * from './src/domain/reach';
@@ -2952,6 +3493,9 @@ export interface Vision extends Entity {
   imageUrl?: string;
   createdAt: Timestamp;
   joinedUserIds?: string[]; // List of users who joined this vision
+  domain?: string;
+  communityId?: string;
+  visibility?: 'public' | 'node' | 'private';
   status?: VisionStatus;
   resonanceScore?: number;
 }
@@ -3111,6 +3655,177 @@ export const firestoreStore: Store = {
 };
 ```
 
+### src/domain/aiAccess.ts
+```
+export type AIAllowanceSource = 'user_key' | 'community_key' | 'sponsored' | 'tree_tokens' | 'node_compute';
+export interface AIAccessState {
+  source: AIAllowanceSource;
+  allowed: boolean;
+  provider?: string;        // 'anthropic' | 'google' | 'openai' | …
+  model?: string;
+  keyHint?: string;         // last-4 hint for a BYO key (never the key itself)
+  remainingToday?: number;  // for node_compute, the free-tier reflections left today
+  label: string;            // short human label, e.g. "Claude · your key"
+  detail?: string;          // secondary line, e.g. "…aB3z" or "18 reflections left today"
+}
+export const AI_DAILY_TEXT_LIMIT = 21;
+export const AI_DAILY_IMAGE_LIMIT = 3;
+export const aiSourceLabels: Record<AIAllowanceSource, string> = {
+  user_key: 'Your key',
+  community_key: 'Community key',
+  sponsored: 'Sponsored',
+  tree_tokens: 'Tree tokens',
+  node_compute: 'Network',
+};
+export const providerLabel = (provider?: string): string => {
+  switch (provider) {
+    case 'anthropic': return 'Claude';
+    case 'google': return 'Gemini';
+    case 'openai': return 'OpenAI';
+    case 'deepseek': return 'DeepSeek';
+    default: return 'AI';
+  }
+};
+```
+
+### src/domain/chain/canonical.ts
+```
+const isTimestampLike = (v: unknown): v is { toMillis: () => number } =>
+  !!v && typeof v === 'object' && typeof (v as any).toMillis === 'function';
+function encode(v: unknown): string {
+  if (v === null) return 'z';            // null
+  if (v === undefined) return 'u';       // explicit (JSON.stringify would drop it)
+  const t = typeof v;
+  if (t === 'string') return 's:' + JSON.stringify(v); // JSON-escapes quotes/newlines/unicode
+  if (t === 'number') return 'd:' + (Number.isFinite(v) ? (v as number).toString() : 'NaN');
+  if (t === 'boolean') return 'b:' + (v ? '1' : '0');
+  if (t === 'bigint') return 'i:' + (v as bigint).toString();
+  if (isTimestampLike(v)) return 't:' + v.toMillis();
+  if (v instanceof Date) return 't:' + v.getTime();
+  if (Array.isArray(v)) return '[' + v.map(encode).join(',') + ']';   // order is significant
+  if (t === 'object') {
+    const obj = v as Record<string, unknown>;
+    const keys = Object.keys(obj).filter(k => obj[k] !== undefined).sort();
+    return '{' + keys.map(k => JSON.stringify(k) + ':' + encode(obj[k])).join(',') + '}';
+  }
+  return 'x';
+}
+export function canonicalize(value: unknown): string {
+  return encode(value);
+}
+```
+
+### src/domain/chain/index.ts
+```
+export { canonicalize } from './canonical';
+export {
+  BLOCK_CONTENT_FIELDS, BLOCK_HASH_VERSION,
+  blockContent, blockPreimage, computeCanonicalHash, canonicalRecompute, verifyChain,
+  isCanonicallySealed, verifyBlockSeal,
+} from './verify';
+export type { ChainBlock, ChainIssue, ChainIssueCode, ChainVerifyResult } from './verify';
+export { isChainLocked, setChainLocked } from './lock';
+```
+
+### src/domain/chain/lock.ts
+```
+let _locked = false;
+export const isChainLocked = (): boolean => _locked;
+export const setChainLocked = (locked: boolean): void => { _locked = !!locked; };
+```
+
+### src/domain/chain/verify.ts
+```
+import { canonicalize } from './canonical';
+import { sha256 } from '../../../utils/crypto';
+export const BLOCK_CONTENT_FIELDS = [
+  'lid', 'lifetreeId', 'visionId', 'communityId', 'type', 'visibility',
+  'title', 'body', 'content', 'imageUrl', 'imageUrls', 'eventDate', 'eventLocation',
+  'reachTreeId', 'reachTreeName', 'recipientUid', 'recipientName',
+  'threadId', 'participantUids', 'audience', 'threadName', 'isGroup',
+  'care', 'careAlert', 'wateringConfirmedBy',
+  'isMatch', 'matchedLifetreeId', 'matchId',
+  'authorId', 'authorName', 'authorPersonName', 'authorPhoto', 'growthCategory', 'visionTitle',
+] as const;
+export function blockContent(pulse: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const k of BLOCK_CONTENT_FIELDS) {
+    if (pulse[k] !== undefined) out[k] = pulse[k];
+  }
+  return out;
+}
+export const BLOCK_HASH_VERSION = 'lifeseed.block.v1';
+export function blockPreimage(previousHash: string, mintedAtMs: number, content: Record<string, unknown>): string {
+  return [BLOCK_HASH_VERSION, previousHash, String(mintedAtMs), canonicalize(content)].join('\n');
+}
+export async function computeCanonicalHash(previousHash: string, mintedAtMs: number, pulse: Record<string, unknown>): Promise<string> {
+  return sha256(blockPreimage(previousHash, mintedAtMs, blockContent(pulse)));
+}
+export const canonicalRecompute = (block: ChainBlock, previousHash: string): Promise<string> => {
+  const ts = (block as any).mintedAt ?? (block as any).createdAt;
+  const ms = typeof ts === 'number' ? ts : (ts && typeof ts.toMillis === 'function' ? ts.toMillis() : 0);
+  return computeCanonicalHash(previousHash, ms, block as Record<string, unknown>);
+};
+export interface ChainBlock {
+  id?: string;
+  hash: string;
+  previousHash: string;
+  blockHeight?: number;
+  [k: string]: unknown;
+}
+export function isCanonicallySealed(block: Record<string, unknown>): boolean {
+  return (block as { hashVersion?: unknown }).hashVersion === BLOCK_HASH_VERSION;
+}
+export async function verifyBlockSeal(block: ChainBlock): Promise<boolean> {
+  return (await canonicalRecompute(block, block.previousHash)) === block.hash;
+}
+export type ChainIssueCode = 'linkage' | 'height' | 'hash' | 'duplicate-hash' | 'empty-hash';
+export interface ChainIssue {
+  index: number;
+  blockId?: string;
+  code: ChainIssueCode;
+  message: string;
+}
+export interface ChainVerifyResult {
+  ok: boolean;
+  blockCount: number;
+  issues: ChainIssue[];
+  headHash?: string;
+}
+export async function verifyChain(
+  blocks: ChainBlock[],
+  opts: { genesisHash?: string; recomputeHash?: (block: ChainBlock, previousHash: string) => Promise<string> } = {},
+): Promise<ChainVerifyResult> {
+  const issues: ChainIssue[] = [];
+  const seen = new Set<string>();
+  let expectedPrev = opts.genesisHash; // expected previousHash of the next block (undefined = unknown root)
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i];
+    if (!b.hash) issues.push({ index: i, blockId: b.id, code: 'empty-hash', message: 'block has no hash' });
+    if (expectedPrev !== undefined && b.previousHash !== expectedPrev) {
+      issues.push({ index: i, blockId: b.id, code: 'linkage', message: `previousHash ${short(b.previousHash)} ≠ expected ${short(expectedPrev)}` });
+    }
+    if (i > 0) {
+      const prevH = blocks[i - 1].blockHeight;
+      if (typeof prevH === 'number' && typeof b.blockHeight === 'number' && b.blockHeight !== prevH + 1) {
+        issues.push({ index: i, blockId: b.id, code: 'height', message: `blockHeight ${b.blockHeight} is not ${prevH + 1}` });
+      }
+    }
+    if (b.hash) {
+      if (seen.has(b.hash)) issues.push({ index: i, blockId: b.id, code: 'duplicate-hash', message: `duplicate hash ${short(b.hash)}` });
+      seen.add(b.hash);
+    }
+    if (opts.recomputeHash) {
+      const expected = await opts.recomputeHash(b, b.previousHash);
+      if (expected !== b.hash) issues.push({ index: i, blockId: b.id, code: 'hash', message: `hash mismatch — recomputed ${short(expected)}` });
+    }
+    expectedPrev = b.hash;
+  }
+  return { ok: issues.length === 0, blockCount: blocks.length, issues, headHash: blocks.length ? blocks[blocks.length - 1].hash : opts.genesisHash };
+}
+const short = (h?: string) => (h ? (h.length > 12 ? h.slice(0, 12) + '…' : h) : '∅');
+```
+
 ### src/domain/community.ts
 ```
 import type { Timestamp } from 'firebase/firestore';
@@ -3134,6 +3849,14 @@ export interface Community extends Entity {
     surface?: string;
     text?: string;
   };
+  socialLinks?: {
+    instagram?: string;
+    telegram?: string;
+    whatsapp?: string;
+    website?: string;
+  };
+  carouselQuotes?: string[];
+  chainLocked?: boolean;
   createdAt: Timestamp;
   updatedAt?: Timestamp;
   defaultIntelligenceId?: string;
@@ -3161,6 +3884,20 @@ export const DECISION_NATURES: { id: DecisionNature; votes: number }[] = [
 ];
 export const votesRequired = (nature: DecisionNature): number =>
   DECISION_NATURES.find(n => n.id === nature)?.votes ?? 1;
+export interface Concern {
+  by: string;       // uid who raised it
+  note?: string;    // what the concern is
+  at: Timestamp;
+}
+export type DecisionStatus = 'draft' | 'open' | 'passed' | 'rejected' | 'withdrawn' | 'expired';
+export const decisionStatusLabels: Record<DecisionStatus, string> = {
+  draft: 'Draft',
+  open: 'Open',
+  passed: 'Passed',
+  rejected: 'Not adopted',
+  withdrawn: 'Withdrawn',
+  expired: 'Expired',
+};
 export interface Decision {
   id: string;
   lid?: string; // Lightseed ID — the decision's portable, time-ordered true name (UUIDv7).
@@ -3173,12 +3910,17 @@ export interface Decision {
   proposedBy: string;   // uid — counts as the first voice
   votes: string[];      // uids who have voiced yes
   votesRequired: number;
-  status: 'open' | 'passed';
+  status: DecisionStatus;
+  listening?: boolean;
+  concerns?: Concern[];
   previousHash: string;
   hash: string;
   enactedHash?: string; // the block written when the circle reaches the threshold
   createdAt: Timestamp;
   passedAt?: Timestamp;
+  withdrawnAt?: Timestamp;
+  rejectedAt?: Timestamp;
+  expiresAt?: Timestamp;
 }
 ```
 
@@ -3285,6 +4027,7 @@ export interface Lifetree extends Entity {
   locationName?: string;
   domain?: string; // Associated website domain, e.g. "example.com"
   createdAt: Timestamp;
+  visibility?: 'public' | 'node' | 'private';
   onlyValidatedCanReach?: boolean;
   validated: boolean;
   validatorId?: string | null;
@@ -3314,6 +4057,19 @@ export interface Link extends Entity {
 export const linkId = (from: string, rel: LinkRel, to: string) => `${from}__${rel}__${to}`;
 ```
 
+### src/domain/person.ts
+```
+import type { Timestamp } from 'firebase/firestore';
+import type { Entity } from './entity';
+export interface Person extends Entity {
+  lid: string;
+  uid: string;
+  displayName?: string;
+  publicKeyPem?: string | null; // reserved for Stage 3 (keypair signing) — null until then
+  createdAt: Timestamp;
+}
+```
+
 ### src/domain/policy.ts
 ```
 export const canTendTree = (viewerUid?: string | null): viewerUid is string => !!viewerUid;
@@ -3326,7 +4082,16 @@ import type { Timestamp } from 'firebase/firestore';
 import type { Entity } from './entity';
 import type { ReachAudience } from './reach';
 export type LegacyPulseType = 'STANDARD' | 'GROWTH';
-export type PulseType = 'observation' | 'dream' | 'offering' | 'request' | 'translation' | 'validation' | 'event' | 'growth' | 'reach' | LegacyPulseType;
+export type PulseType = 'observation' | 'dream' | 'offering' | 'request' | 'translation' | 'validation' | 'event' | 'tree_growth' | 'vision_growth' | 'standard' | 'reach';
+export const normalizePulseType = (t?: string): PulseType => {
+  switch (t) {
+    case 'GROWTH': return 'tree_growth';
+    case 'growth': return 'vision_growth';
+    case 'STANDARD': return 'standard';
+    default: return (t || 'observation') as PulseType;
+  }
+};
+export const isTreeGrowth = (t?: string): boolean => normalizePulseType(t) === 'tree_growth';
 export type PulseVisibility = 'public' | 'node' | 'community' | 'circle' | 'private';
 export interface PulseInterpretation {
     depth: number;
@@ -3496,6 +4261,38 @@ export interface Store {
 }
 ```
 
+### src/domain/themeSurface.ts
+```
+export interface SurfaceColors {
+  background: string;
+  text: string;
+  border: string;
+  muted: string;
+  isDark: boolean;
+}
+const isDarkHex = (hex: string | undefined, fallback: boolean): boolean => {
+  if (!hex || !/^#[0-9A-Fa-f]{6}$/.test(hex)) return fallback;
+  const value = hex.slice(1);
+  const channels = [0, 2, 4].map((start) => {
+    const channel = parseInt(value.slice(start, start + 2), 16) / 255;
+    return channel <= 0.03928 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4);
+  });
+  const luminance = 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+  return luminance < 0.38;
+};
+export function headerSurface(theme: any, isDark: boolean): SurfaceColors {
+  const background = theme?.surface || theme?.background || (isDark ? '#020617' : '#ffffff');
+  const dark = isDarkHex(background, isDark);
+  return {
+    background,
+    text: dark ? '#f8fafc' : (theme?.text || '#0f172a'),
+    border: theme?.primary || (isDark ? '#1e293b' : '#e2e8f0'),
+    muted: dark ? '#bbf7d0' : (theme?.neutral || '#64748b'),
+    isDark: dark,
+  };
+}
+```
+
 ### src/domain/treeCircle.ts
 ```
 import type { Timestamp } from 'firebase/firestore';
@@ -3553,16 +4350,21 @@ export function treeCircle(ownerId: string, links: Link[]): { groups: CircleGrou
 
 ### src/domain/views/council.ts
 ```
-import type { Decision } from '../decision';
+import type { Decision, DecisionStatus, Concern } from '../decision';
 export interface CouncilItem {
   id: string;
   title: string;
   nature: Decision['nature'];
   body?: string;
+  status: DecisionStatus;
   passed: boolean;
+  closed: boolean;       // withdrawn / rejected / expired — no longer open
+  listening: boolean;    // a concern was raised; the proposal is paused for reflection
+  concerns: Concern[];
   voted: boolean;        // the viewer has added their voice
   voiceCount: number;    // voices cast
   voicesRequired: number;
+  isProposer: boolean;
 }
 export function councilView(decisions: Decision[], viewerUid?: string | null): CouncilItem[] {
   return decisions.map(d => ({
@@ -3570,10 +4372,15 @@ export function councilView(decisions: Decision[], viewerUid?: string | null): C
     title: d.title,
     nature: d.nature,
     body: d.body,
+    status: d.status,
     passed: d.status === 'passed',
+    closed: ['withdrawn', 'rejected', 'expired'].includes(d.status),
+    listening: !!d.listening,
+    concerns: d.concerns || [],
     voted: !!viewerUid && (d.votes || []).includes(viewerUid),
     voiceCount: (d.votes || []).length,
     voicesRequired: d.votesRequired,
+    isProposer: !!viewerUid && d.proposedBy === viewerUid,
   }));
 }
 ```
@@ -3598,6 +4405,40 @@ export function treeCoordinates(tree: Pick<Lifetree, 'latitude' | 'longitude'>):
   const lat = Number(t.latitude ?? t.lat);
   const lng = Number(t.longitude ?? t.lng);
   return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+}
+export function canViewTree(
+  tree: Pick<Lifetree, 'ownerId' | 'visibility'> & { id?: string },
+  viewer: { uid?: string; isStaff?: boolean; guardedIds?: Set<string> },
+): boolean {
+  const v = tree.visibility || 'public';
+  if (v === 'public') return true;
+  if (viewer.isStaff) return true;
+  if (viewer.uid && tree.ownerId === viewer.uid) return true;
+  if (tree.id && viewer.guardedIds?.has(tree.id)) return true;
+  if (v === 'node') return !!viewer.uid;
+  return false; // private, and not owner / guardian / staff
+}
+export function canViewVision(
+  vision: { authorId?: string; visibility?: 'public' | 'node' | 'private' },
+  viewer: { uid?: string; isStaff?: boolean },
+): boolean {
+  const v = vision.visibility || 'public';
+  if (v === 'public') return true;
+  if (viewer.isStaff) return true;
+  if (viewer.uid && vision.authorId === viewer.uid) return true;
+  if (v === 'node') return !!viewer.uid;
+  return false; // private, and not author / staff
+}
+export interface ForestFilter { showNature: boolean; showUser: boolean; showValidated: boolean; }
+export function passesForestFilter(
+  tree: Pick<Lifetree, 'isNature'>,
+  filter: ForestFilter,
+  isValidated: (t: any) => boolean,
+): boolean {
+  if (!filter.showNature && tree.isNature) return false;
+  if (!filter.showUser && !tree.isNature) return false;
+  if (filter.showValidated && !isValidated(tree)) return false;
+  return true;
 }
 export function forestMarkers(trees: Lifetree[], guardianCounts?: Map<string, number>): ForestMarker[] {
   const out: ForestMarker[] = [];

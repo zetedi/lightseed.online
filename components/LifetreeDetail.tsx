@@ -17,17 +17,22 @@ import { treeCircle } from '../src/domain/views/circle';
 import { firestoreStore } from '../src/adapters/firestore';
 import { canTendTree } from '../src/domain/policy';
 import { SectionMenu } from './ui/SectionMenu';
+import { ProfileHero } from './ui/ProfileHero';
+import { ProfileLayout } from './ui/ProfileLayout';
 import { SectionCard } from './ui/SectionCard';
 
 export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, onAlertGuardians, myActiveTree, isDefaultTree, onSetDefault, currentUserId, currentUser, isAdmin, isSuperAdmin, targetUserProfile }: any) => {
    const { t } = useLanguage();
    const isOwner = currentUserId === tree.ownerId;
    const isNature = tree.isNature;
-   // Guardianship is a prism over the LIN: read this tree's incoming 'guardian' links.
+   // Guardianship is a prism over the LIN: read this tree's incoming 'guardian' links. A guardian
+   // link is a LIGHTWEIGHT public follow and grants no powers — tending vests in the invited roles
+   // (co_owner/steward), tracked separately as `isTender` (see the circle effect below).
    const [localIsGuardian, setLocalIsGuardian] = useState(false);
    const [guardianCount, setGuardianCount] = useState(0);
    const [guardianUids, setGuardianUids] = useState<string[]>([]);
    const [guardianNonce, setGuardianNonce] = useState(0);
+   const [isTender, setIsTender] = useState(false);
    useEffect(() => {
        let alive = true;
        firestoreStore.linksTo(tree.id, 'guardian').then(links => {
@@ -39,7 +44,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
        return () => { alive = false; };
    }, [tree.id, currentUserId, guardianNonce]);
    const canDelete = isOwner || isAdmin || isSuperAdmin;
-   const canEdit = isOwner || localIsGuardian || isSuperAdmin;
+   // Tending powers vest in the owner, invited co_owners/stewards, or staff — not lightweight
+   // guardians (mirrors isTreeTender in firestore.rules).
+   const canEdit = isOwner || isTender || isAdmin || isSuperAdmin;
    const hasValidationBadge = isExplicitlyValidatedTree(tree);
    const showValidateAction = canToggleValidation({ tree, myActiveTree, isAdmin, isSuperAdmin });
    // Owner privacy flag is mirrored onto the (world-readable) tree, so we read it here.
@@ -176,7 +183,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    }
 
    const handleToggleDanger = async () => {
-       if (!localIsGuardian) return;
+       if (!canEdit) return; // reporting danger writes the tree's status — a tender power, not a follow
        const newStatus = localStatus === 'DANGER' ? 'HEALTHY' : 'DANGER';
        if (newStatus === "DANGER" && !(await showConfirm("Are you sure you want to report this tree is in DANGER? This will alert all guardians.", { title: "Report Danger", confirmText: "Report", danger: true }))) return;
        
@@ -223,8 +230,8 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     <p className="text-xs text-center italic">Sign in to become a guardian.</p>
                 )}
 
-                {localIsGuardian && (
-                    <button 
+                {canEdit && (
+                    <button
                         onClick={handleToggleDanger}
                         disabled={isSaving}
                         className={`w-full py-3 rounded-xl font-bold uppercase tracking-widest shadow-lg transition-all active:scale-95 flex items-center justify-center space-x-2 ${localStatus === 'DANGER' ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
@@ -253,10 +260,15 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    useEffect(() => {
        let alive = true;
        firestoreStore.linksTo(tree.id)
-           .then(links => { if (alive) setCircle(treeCircle(tree.ownerId, links)); })
+           .then(links => {
+               if (!alive) return;
+               setCircle(treeCircle(tree.ownerId, links));
+               // A tender holds an invited co_owner/steward role link (guardian/observer don't tend).
+               setIsTender(!!currentUserId && links.some(l => l.from === currentUserId && (l.rel === 'co_owner' || l.rel === 'steward')));
+           })
            .catch(() => {});
        return () => { alive = false; };
-   }, [tree.id, tree.ownerId, guardianNonce]);
+   }, [tree.id, tree.ownerId, currentUserId, guardianNonce]);
 
    const handleSendInvite = async (e: React.FormEvent) => {
        e.preventDefault();
@@ -332,8 +344,8 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const dueInDays = daysUntilWatering(tree);
    const overByDays = daysOverdue(tree);
    const lastWateredMs = tree.watering?.lastWateredAt ? lastWateredMillis(tree) : 0;
-   const canWater = !!currentUserId && (localIsGuardian || isOwner || isSuperAdmin);
-   const canManageSchedule = canEdit; // owner / guardian / super-admin (rules allow the same set)
+   const canWater = !!currentUserId && (isTender || isOwner || isAdmin || isSuperAdmin);
+   const canManageSchedule = canEdit; // owner / co-owner / steward / staff (rules allow the same set)
    const pendingWaterings = growthBlocks.filter((p: any) => p.care === 'watering' && p.wateringConfirmedBy === 'pending');
 
    const handleSaveSchedule = async () => {
@@ -565,10 +577,14 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
             )}
 
             {/* Profile hero — a wide banner of the latest growth image with a circular avatar. */}
-            <div className="relative overflow-hidden bg-gradient-to-b from-slate-800 to-slate-900 text-white">
-                {heroImg && <img src={heroImg} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70" />}
-                <div className="absolute inset-0 bg-gradient-to-b from-slate-900/45 via-slate-900/55 to-slate-900/85" />
-                <div className="relative mx-auto max-w-5xl px-4 pt-5 pb-5">
+            <ProfileHero
+                heroImageUrl={heroImg}
+                imageClassName="opacity-70"
+                alwaysOverlay
+                overlayClassName="bg-gradient-to-b from-slate-900/45 via-slate-900/55 to-slate-900/85"
+                maxWidth="max-w-5xl"
+                padding="pt-5 pb-5 px-4"
+            >
                     <div className="flex items-center gap-3 sm:gap-4">
                     {/* Back — left of the avatar; returns to wherever you came from. */}
                     <button onClick={onClose} title={t('back_forest')} className="shrink-0 rounded-full bg-white/15 p-2.5 text-white transition-colors hover:bg-white/25">
@@ -617,17 +633,16 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                         {canEdit && !isEditing && <ActionBtn onClick={() => { setIsEditing(true); setSection('details'); }} title={t('edit')} color="bg-slate-100 text-slate-700 hover:bg-slate-200" icon={<Icons.Pencil />} label={t('edit')} />}
                         {canDelete && !isEditing && <ActionBtn onClick={() => setShowDeleteModal(true)} title="Delete tree" color="bg-red-500 text-white hover:bg-red-600" icon={<Icons.Trash />} label="Delete" />}
                     </div>
-                </div>
-            </div>
+            </ProfileHero>
 
             {/* Body — section menu on the left (desktop), a strip on mobile; profile-style. */}
-            <div className="mx-auto max-w-5xl px-4 py-6 lg:grid lg:grid-cols-[230px_1fr] lg:gap-6">
-                <aside className="mb-4 lg:mb-0">
-                    <div className="rounded-2xl border border-slate-100 bg-white p-2 shadow-sm lg:sticky lg:top-24">
-                        <SectionMenu items={sections} active={section} onSelect={(k) => setSection(k as TreeSection)} />
-                    </div>
-                </aside>
-                <main className="min-w-0 space-y-6">
+            <ProfileLayout
+                maxWidth="max-w-5xl"
+                overlap={false}
+                asideClassName="rounded-2xl border border-slate-100 bg-white p-2 shadow-sm lg:sticky lg:top-24"
+                mainClassName="min-w-0 space-y-6"
+                menu={<SectionMenu items={sections} active={section} onSelect={(k) => setSection(k as TreeSection)} />}
+            >
 
                 {section === 'details' && (
                     <div className="space-y-6">
@@ -810,7 +825,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                 {section === 'guardians' && <GuardianshipPanel />}
 
                 {section === 'care' && (
-                    (isNature || isOwner || localIsGuardian)
+                    (isOwner || isTender || isAdmin || isSuperAdmin)
                         ? <WateringPanel />
                         : <p className="rounded-2xl border border-slate-100 bg-white p-6 text-center text-sm text-slate-400">Only the tree's circle can tend its care.</p>
                 )}
@@ -1013,8 +1028,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                         </div>
                     </div>
                 )}
-                </main>
-            </div>
+            </ProfileLayout>
         </div>
 
         {/* Delete confirmation modal */}

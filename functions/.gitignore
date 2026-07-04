@@ -1,0 +1,6 @@
+# Compiled output — built from src/ by `npm run build` (tsc). Never commit.
+lib/
+
+# Local env / secrets
+.env
+serviceAccount.json

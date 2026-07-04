@@ -62,6 +62,10 @@ import { buildThreadId, buildGroupThreadId, reachAudienceLabels } from '../utils
 const toMillis = (value: any): number =>
     value?.toMillis ? value.toMillis() : (value instanceof Date ? value.getTime() : 0);
 
+// Repository boundary: map a Firestore doc snapshot → a domain object ({ id, ...fields }). The one
+// place the `id`-merge + `as any` cast lives, so call sites read cleanly and stay type-consistent.
+const mapDoc = <T = any>(d: any): T => (mapDoc(d)) as T;
+
 // Repository boundary: map a Firestore pulse doc → Pulse, normalising the legacy UPPERCASE
 // type casing to canonical lowercase so the rest of the app only ever sees one form.
 const mapPulse = (d: any): Pulse => {
@@ -244,7 +248,7 @@ export const getSentInvites = async (userId: string, lastDoc?: QueryDocumentSnap
     let q = query(networkInvitesCollection, where('invitedByUserId', '==', userId), orderBy('createdAt', 'desc'), limit(INVITE_PAGE));
     if (lastDoc) q = query(q, startAfter(lastDoc));
     const snap = await getDocs(q);
-    return { items: snap.docs.map(d => ({ id: d.id, ...(d.data() as any) })), lastDoc: snap.docs[snap.docs.length - 1] || null, hasMore: snap.docs.length === INVITE_PAGE };
+    return { items: snap.docs.map(d => (mapDoc(d))), lastDoc: snap.docs[snap.docs.length - 1] || null, hasMore: snap.docs.length === INVITE_PAGE };
 };
 
 export const consumeNetworkInvite = (inviteId: string, acceptedByUserId: string) =>
@@ -266,7 +270,7 @@ export const getInviteRequests = async (lastDoc?: QueryDocumentSnapshot): Promis
     let q = query(inviteRequestsCollection, orderBy('createdAt', 'desc'), limit(INVITE_PAGE));
     if (lastDoc) q = query(q, startAfter(lastDoc));
     const snap = await getDocs(q);
-    return { items: snap.docs.map(d => ({ id: d.id, ...(d.data() as any) })), lastDoc: snap.docs[snap.docs.length - 1] || null, hasMore: snap.docs.length === INVITE_PAGE };
+    return { items: snap.docs.map(d => (mapDoc(d))), lastDoc: snap.docs[snap.docs.length - 1] || null, hasMore: snap.docs.length === INVITE_PAGE };
 };
 
 // Submitting a request goes through a Cloud Function so it can (with admin rights) check
@@ -386,19 +390,11 @@ export const triggerSystemEmail = async (to: string, subject: string, text: stri
     const effectiveUid = userId || auth.currentUser?.uid;
     if (!effectiveUid) throw new Error("User ID required for email triggering.");
 
-    // A real clickable button (+ a paste-able link) when a CTA url is given — so invite links
-    // are never just plain text.
-    const cta = opts?.ctaUrl
-        ? `<div style="margin:24px 0;"><a href="${opts.ctaUrl}" style="display:inline-block;background:#059669;color:#fff;text-decoration:none;font-weight:bold;padding:12px 26px;border-radius:9999px;font-size:15px;">${opts.ctaLabel || 'Open'}</a></div><p style="font-size:12px;color:#9ca3af;">Or paste this link:<br/><a href="${opts.ctaUrl}" style="color:#059669;word-break:break-all;">${opts.ctaUrl}</a></p>`
-        : '';
+    // The branded HTML shell + CTA button are composed server-side (sendSystemEmail) from this
+    // plain text and an optional CTA — the client no longer sends raw HTML.
     try {
         const sendEmailFn = httpsCallable(functions, 'sendSystemEmail');
-        return await sendEmailFn({
-            to: [to],
-            subject: subject,
-            text: opts?.ctaUrl ? `${text}\n\n${opts.ctaUrl}` : text,
-            html: `<div style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;"><h2 style="color: #059669; font-weight: 300; letter-spacing: 1px; margin-bottom: 20px;">.seed</h2><div style="font-size: 16px; margin-bottom: 8px;">${text.replace(/\n/g, '<br>')}</div>${cta}<hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" /><p style="font-size: 12px; color: #9ca3af; text-align: center;">Sent from the <a href="https://lightseed.online" style="color: #059669; text-decoration: none;">Lifetree Network</a></p></div>`
-        });
+        return await sendEmailFn({ to: [to], subject, text, ctaUrl: opts?.ctaUrl, ctaLabel: opts?.ctaLabel });
     } catch (e) {
         console.error("Email trigger failed:", e);
         throw e;
@@ -498,9 +494,9 @@ export const getNewsletterDraftData = async () => {
     }
 
     const [trees, visions, pulses] = await Promise.all([
-        fetchNewsletterChanges(lifetreesCollection, lastSentAt, (d) => ({ id: d.id, ...(d.data() as any) } as Lifetree)),
-        fetchNewsletterChanges(visionsCollection, lastSentAt, (d) => ({ id: d.id, ...(d.data() as any) } as Vision)),
-        fetchNewsletterChanges(pulsesCollection, lastSentAt, (d) => ({ id: d.id, ...(d.data() as any) } as Pulse)),
+        fetchNewsletterChanges(lifetreesCollection, lastSentAt, (d) => (mapDoc(d) as Lifetree)),
+        fetchNewsletterChanges(visionsCollection, lastSentAt, (d) => (mapDoc(d) as Vision)),
+        fetchNewsletterChanges(pulsesCollection, lastSentAt, (d) => (mapDoc(d) as Pulse)),
     ]);
 
     return { lastSentAt, trees, visions, pulses };
@@ -755,7 +751,7 @@ export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter
         console.warn('Forest query fell back (visibility index building?)', e);
         snap = await getDocs(visCons.length ? query(lifetreesCollection, ...visCons, limit(60)) : query(lifetreesCollection, limit(60)));
     }
-    let items = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Lifetree));
+    let items = snap.docs.map(d => (mapDoc(d) as Lifetree));
     // Always newest-first (covers the unordered fallback).
     items = items.sort((a, b) => ((b.createdAt as any)?.toMillis?.() || 0) - ((a.createdAt as any)?.toMillis?.() || 0));
 
@@ -768,7 +764,7 @@ export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter
                 ? query(lifetreesCollection, where('domain', '==', domainFilter!.replace(/^www\./, '')), limit(24))
                 : query(lifetreesCollection, orderBy('createdAt', 'desc'), limit(12));
             const s2 = await getDocs(base);
-            items = s2.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Lifetree))
+            items = s2.docs.map(d => (mapDoc(d) as Lifetree))
                 .sort((a, b) => ((b.createdAt as any)?.toMillis?.() || 0) - ((a.createdAt as any)?.toMillis?.() || 0));
         } catch { /* rules now block unfiltered (private trees exist) — keep empty */ }
     }
@@ -780,7 +776,7 @@ export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter
             const mine = await getDocs(query(lifetreesCollection, where('ownerId', '==', ownerUid)));
             const seen = new Set(items.map(t => t.id));
             mine.docs.forEach(d => {
-                if (!seen.has(d.id)) items.push({ id: d.id, ...(d.data() as any) } as Lifetree);
+                if (!seen.has(d.id)) items.push(mapDoc(d) as Lifetree);
             });
         }
         // Sort client-side since we removed server-side sorting
@@ -806,7 +802,7 @@ export const fetchAllLifetrees = async (domainFilter?: string, ownerUid?: string
     const communityScoped = !!(domainFilter && !isHubDomain(domainFilter));
     const visCons = (levels && levels.length) ? [where('visibility', 'in', levels)] : [];
     const byId = new Map<string, Lifetree>();
-    const add = (d: any) => byId.set(d.id, { id: d.id, ...(d.data() as any) } as Lifetree);
+    const add = (d: any) => byId.set(d.id, mapDoc(d) as Lifetree);
 
     try {
         if (communityScoped) {
@@ -843,7 +839,7 @@ export const fetchAllLifetrees = async (domainFilter?: string, ownerUid?: string
     return Array.from(byId.values());
 };
 
-export const getMyLifetrees = async (uid: string) => (await getDocs(query(lifetreesCollection, where('ownerId', '==', uid)))).docs.map(d => ({ id: d.id, ...(d.data() as any) } as Lifetree));
+export const getMyLifetrees = async (uid: string) => (await getDocs(query(lifetreesCollection, where('ownerId', '==', uid)))).docs.map(d => (mapDoc(d) as Lifetree));
 
 const normalizeDomain = (domain: string) =>
     domain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
@@ -854,13 +850,13 @@ export const getTreesByDomain = async (domain: string, ownerUid?: string): Promi
     const q = query(lifetreesCollection, where('domain', '==', normalized));
     const snap = await getDocs(q);
     const byId = new Map<string, Lifetree>();
-    snap.docs.forEach(d => byId.set(d.id, { id: d.id, ...(d.data() as any) } as Lifetree));
+    snap.docs.forEach(d => byId.set(d.id, mapDoc(d) as Lifetree));
 
     // The creator always sees their own trees here, even if they pointed a tree
     // at a different domain than this community.
     if (ownerUid) {
         const mine = await getDocs(query(lifetreesCollection, where('ownerId', '==', ownerUid)));
-        mine.docs.forEach(d => byId.set(d.id, { id: d.id, ...(d.data() as any) } as Lifetree));
+        mine.docs.forEach(d => byId.set(d.id, mapDoc(d) as Lifetree));
     }
 
     return Array.from(byId.values());
@@ -872,7 +868,7 @@ export const getSanctuariesByDomain = async (domain: string): Promise<Sanctuary[
     const normalized = normalizeDomain(domain);
     const snap = await getDocs(query(sanctuariesCollection, where('domain', '==', normalized)));
     return snap.docs
-        .map(d => ({ id: d.id, ...(d.data() as any) } as Sanctuary))
+        .map(d => (mapDoc(d) as Sanctuary))
         .sort((a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0));
 };
 
@@ -906,6 +902,20 @@ export const getGuardedTrees = async (uid: string): Promise<Lifetree[]> => {
             const snap = await getDoc(doc(db, 'lifetrees', id));
             return snap.exists() ? ({ id: snap.id, ...(snap.data() as any) } as Lifetree) : null;
         } catch { return null; } // e.g. a guarded tree the owner made private
+    }));
+    return trees.filter((t): t is Lifetree => t !== null);
+};
+
+// Trees participating in an event or vision — a prism over its incoming 'participant' links
+// (from = treeId), then hydrate. Mirrors getGuardedTrees but keyed on the target entity.
+export const getParticipatingTrees = async (entityId: string): Promise<Lifetree[]> => {
+    const links = await getDocs(query(collection(db, 'links'), where('to', '==', entityId), where('rel', '==', 'participant')));
+    const ids = links.docs.map(d => (d.data() as any).from as string);
+    const trees = await Promise.all(ids.map(async id => {
+        try {
+            const snap = await getDoc(doc(db, 'lifetrees', id));
+            return snap.exists() ? ({ id: snap.id, ...(snap.data() as any) } as Lifetree) : null;
+        } catch { return null; } // a participating tree that later went private
     }));
     return trees.filter((t): t is Lifetree => t !== null);
 };
@@ -951,12 +961,12 @@ export const createTreeInvite = async (params: {
 export const getPendingTreeInvites = async (userId: string): Promise<TreeOwnershipInvite[]> => {
     // Single-field query + client filter, to avoid requiring a composite index.
     const snap = await getDocs(query(treeInvitesCollection, where('invitedUserId', '==', userId)));
-    return snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as TreeOwnershipInvite)).filter(i => i.status === 'pending');
+    return snap.docs.map(d => (mapDoc(d) as TreeOwnershipInvite)).filter(i => i.status === 'pending');
 };
 
 export const getSentTreeInvites = async (lifetreeId: string): Promise<TreeOwnershipInvite[]> => {
     const snap = await getDocs(query(treeInvitesCollection, where('lifetreeId', '==', lifetreeId)));
-    return snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as TreeOwnershipInvite));
+    return snap.docs.map(d => (mapDoc(d) as TreeOwnershipInvite));
 };
 
 export const declineTreeInvite = (inviteId: string) =>
@@ -985,7 +995,7 @@ export const fetchVisions = async (lastD?: QueryDocumentSnapshot, domainFilter?:
     
     if (lastD) q = query(q, startAfter(lastD));
     const snap = await getDocs(q);
-    let items = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Vision));
+    let items = snap.docs.map(d => (mapDoc(d) as Vision));
     
     if (domainFilter && !isHubDomain(domainFilter)) {
         items = items.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
@@ -994,7 +1004,7 @@ export const fetchVisions = async (lastD?: QueryDocumentSnapshot, domainFilter?:
     return { items, lastDoc: snap.docs[snap.docs.length-1] || null };
 }
 
-export const getMyVisions = async (uid: string) => (await getDocs(query(visionsCollection, where('authorId', '==', uid)))).docs.map(d => ({ id: d.id, ...(d.data() as any) } as Vision));
+export const getMyVisions = async (uid: string) => (await getDocs(query(visionsCollection, where('authorId', '==', uid)))).docs.map(d => (mapDoc(d) as Vision));
 // Visions a user joined — a prism over their outgoing 'joined' links (the LIN), then hydrate.
 export const getJoinedVisions = async (uid: string): Promise<Vision[]> => {
     const links = await getDocs(query(collection(db, 'links'), where('from', '==', uid), where('rel', '==', 'joined')));
@@ -1025,7 +1035,7 @@ export const deleteVision = (id: string) => deleteDoc(doc(db, 'visions', id));
 // Communities
 export const fetchCommunities = async () => {
     const snap = await getDocs(query(communitiesCollection, orderBy('createdAt', 'desc')));
-    return snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Community));
+    return snap.docs.map(d => (mapDoc(d) as Community));
 }
 
 export const getCommunityByDomain = async (domain: string): Promise<Community | null> => {
@@ -1037,7 +1047,7 @@ export const getCommunityByDomain = async (domain: string): Promise<Community | 
 };
 
 export const getMyCommunities = async (uid: string) => 
-    (await getDocs(query(communitiesCollection, where('ownerId', '==', uid)))).docs.map(d => ({ id: d.id, ...(d.data() as any) } as Community));
+    (await getDocs(query(communitiesCollection, where('ownerId', '==', uid)))).docs.map(d => (mapDoc(d) as Community));
 
 export const COMMUNITY_INVITE_ALLOTMENT = 144;
 
@@ -1080,7 +1090,7 @@ export const getCommunityEvents = async (communityId: string, levels?: PulseVisi
         : query(pulsesCollection, base);
     const snap = await getDocs(q);
     return snap.docs
-        .map(d => ({ id: d.id, ...(d.data() as any) } as Pulse))
+        .map(d => (mapDoc(d) as Pulse))
         .filter(p => p.type === 'event')
         .sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
 };
@@ -1296,7 +1306,7 @@ export const getDecisions = async (communityId: string, levels?: PulseVisibility
         : query(pulsesCollection, base);
     const snap = await getDocs(q);
     return snap.docs
-        .map(d => ({ id: d.id, ...(d.data() as any) } as Decision))
+        .map(d => (mapDoc(d) as Decision))
         .filter(p => (p as any).type === 'decision')
         .sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
 };
@@ -1442,7 +1452,7 @@ export const fetchReachThread = async (
     ]);
     const byId = new Map<string, Pulse>();
     [...outgoing.docs, ...incoming.docs, ...legacy.docs].forEach(d => {
-        const p = { id: d.id, ...(d.data() as any) } as Pulse;
+        const p = mapDoc(d) as Pulse;
         if (isReachPulse(p) && !p.isGroup) byId.set(p.id, p);
     });
     return Array.from(byId.values()).sort((a, b) => toMillis(a.createdAt) - toMillis(b.createdAt));
@@ -1455,7 +1465,7 @@ export const fetchThreadById = async (threadId: string) => {
     if (!threadId) return [];
     const snap = await getDocs(query(pulsesCollection, where('threadId', '==', threadId)));
     return snap.docs
-        .map(d => ({ id: d.id, ...(d.data() as any) } as Pulse))
+        .map(d => (mapDoc(d) as Pulse))
         .filter(isReachPulse)
         .sort((a, b) => toMillis(a.createdAt) - toMillis(b.createdAt));
 };
@@ -1472,7 +1482,7 @@ export const fetchMyReaches = async (uid: string) => {
     ]);
     const byId = new Map<string, Pulse>();
     [...authored.docs, ...received.docs, ...partOf.docs].forEach(d => {
-        const p = { id: d.id, ...(d.data() as any) } as Pulse;
+        const p = mapDoc(d) as Pulse;
         if (isReachPulse(p)) byId.set(p.id, p);
     });
     const items = Array.from(byId.values()).sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
@@ -1484,7 +1494,7 @@ export const fetchMyReaches = async (uid: string) => {
 // kinds of thread; single-field array index (no composite). Filtered to reaches client-side.
 export const listenToMyReaches = (uid: string, callback: (pulses: Pulse[]) => void) =>
     onSnapshot(query(pulsesCollection, where('participantUids', 'array-contains', uid)), (snap) => {
-        callback(snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Pulse)).filter(isReachPulse));
+        callback(snap.docs.map(d => (mapDoc(d) as Pulse)).filter(isReachPulse));
     });
 
 // Live stream of reaches addressed to any of my trees. Belt-and-braces alongside
@@ -1494,7 +1504,7 @@ export const listenToReachesForTrees = (treeIds: string[], callback: (pulses: Pu
     const ids = treeIds.filter(Boolean).slice(0, 10);
     if (ids.length === 0) { callback([]); return () => {}; }
     return onSnapshot(query(pulsesCollection, where('reachTreeId', 'in', ids)), (snap) => {
-        callback(snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Pulse)).filter(isReachPulse));
+        callback(snap.docs.map(d => (mapDoc(d) as Pulse)).filter(isReachPulse));
     });
 };
 
@@ -1959,11 +1969,11 @@ export const sendWateringAlert = async (
 };
 
 export const proposeAlignment = (data: any) => addDoc(alignmentsCollection, { ...data, status: 'PENDING', createdAt: serverTimestamp() });
-export const getPendingAlignments = async (uid: string) => (await getDocs(query(alignmentsCollection, where('targetUid', '==', uid), where('status', '==', 'PENDING')))).docs.map(d => ({ id: d.id, ...(d.data() as any) } as Alignment));
+export const getPendingAlignments = async (uid: string) => (await getDocs(query(alignmentsCollection, where('targetUid', '==', uid), where('status', '==', 'PENDING')))).docs.map(d => (mapDoc(d) as Alignment));
 
 export const getMyAlignmentsHistory = async (uid: string) => {
     const [s1, s2] = await Promise.all([getDocs(query(alignmentsCollection, where('targetUid', '==', uid), where('status', '==', 'ACCEPTED'))), getDocs(query(alignmentsCollection, where('initiatorUid', '==', uid), where('status', '==', 'ACCEPTED')))]);
-    return [...s1.docs, ...s2.docs].map(d => ({ id: d.id, ...(d.data() as any) } as Alignment)).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+    return [...s1.docs, ...s2.docs].map(d => (mapDoc(d) as Alignment)).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 }
 
 export const acceptAlignment = async (proposalId: string) => {

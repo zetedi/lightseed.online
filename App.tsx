@@ -49,8 +49,9 @@ import { Navigation } from './components/Navigation';
 import { LifetreeCard } from './components/LifetreeCard';
 import { ForestMap } from './components/ForestMap';
 import { LifetreeDetail } from './components/LifetreeDetail';
-import { VisionDetail } from './components/VisionDetail';
+import { VisionProfile } from './components/VisionProfile';
 import { PulseDetail } from './components/PulseDetail';
+import { EventProfile } from './components/EventProfile';
 import { queryableLevels, canEditEvent, pulseScope } from './src/domain/pulseVisibility';
 import { passesForestFilter, canViewTree } from './src/domain/views/forest';
 import { isWateringOverdue } from './src/domain/watering';
@@ -1213,7 +1214,7 @@ const AppContent = () => {
                     <Navigation
                         lightseed={lightseed}
                         activeTab={tab}
-                        setTab={(t: string) => { setSelectedTree(null); setTab(t); }}
+                        setTab={(t: string) => { setSelectedTree(null); setSelectedVision(null); setSelectedPulse(null); setTab(t); }}
                         onLogin={() => setShowAuthModal(true)}
                         onLogout={() => { logout(); setTab('dashboard'); }} 
                         onPlant={() => openPlant()} 
@@ -1239,7 +1240,7 @@ const AppContent = () => {
                 {/* Show once to everyone who hasn't dismissed/completed it. We wait for the
                     profile to load (onboarding.loaded) and DON'T gate on tree count, so the card
                     can't flash in while trees are still loading. */}
-                {!selectedTree && !!lightseed && onboarding.loaded && !onboarding.dismissed && (tab === 'dashboard' || tab === 'forest') && (
+                {!selectedTree && !selectedVision && !selectedPulse && !!lightseed && onboarding.loaded && !onboarding.dismissed && (tab === 'dashboard' || tab === 'forest') && (
                     <div className="mx-auto max-w-7xl px-4 pt-6 animate-in fade-in duration-500">
                         <FirstRunChecklist
                             state={onboarding}
@@ -1287,6 +1288,29 @@ const AppContent = () => {
                         />
                         {showGrowthPlayer && <GrowthPlayerModal treeId={showGrowthPlayer} onClose={() => setShowGrowthPlayer(null)} />}
                     </div>
+                ) : selectedVision ? (
+                    <div className="animate-in fade-in duration-200">
+                        <VisionProfile
+                            vision={selectedVision}
+                            onClose={() => setSelectedVision(null)}
+                            currentUserId={lightseed?.uid}
+                            onDelete={handleDeleteVisionInApp}
+                            myTrees={myTrees}
+                        />
+                    </div>
+                ) : (selectedPulse && selectedPulse.type === 'event') ? (
+                    // Events render in-flow (below the sticky nav header), like the tree/vision views.
+                    <div className="animate-in fade-in duration-200">
+                        <EventProfile
+                            pulse={selectedPulse}
+                            activeTree={activeTree}
+                            onClose={() => setSelectedPulse(null)}
+                            canEdit={canEditEvent(selectedPulse, { uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin }, { hostCommunity })}
+                            onEdit={() => setEditingEvent(selectedPulse)}
+                            currentUserId={lightseed?.uid}
+                            myTrees={myTrees}
+                        />
+                    </div>
                 ) : renderMainContent()}
                 <GDPRBanner />
                 <DialogHost />
@@ -1298,18 +1322,8 @@ const AppContent = () => {
 
             <Footer community={impersonatedCommunity || hostCommunity || defaultCommunity} theme={effectiveTheme} isDark={effectiveIsDark} />
 
-            {selectedVision && (
-                <DetailWrapper>
-                    <VisionDetail 
-                        vision={selectedVision} 
-                        onClose={() => setSelectedVision(null)} 
-                        currentUserId={lightseed?.uid}
-                        onDelete={handleDeleteVisionInApp}
-                    />
-                </DetailWrapper>
-            )}
-            
-            {selectedPulse && (
+            {/* Non-event pulses keep the full-screen overlay (they carry their own sticky top bar). */}
+            {selectedPulse && selectedPulse.type !== 'event' && (
                 <DetailWrapper>
                     <PulseDetail
                         pulse={selectedPulse}

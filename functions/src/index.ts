@@ -27,6 +27,51 @@ const writeMail = async (params: { to: string | string[]; subject: string; html:
     });
 };
 
+// The branded system-email shell, composed SERVER-SIDE so a client can never inject arbitrary
+// HTML (previously the client passed a full `html` string — an open phishing relay). Text is
+// HTML-escaped; the CTA is only rendered for an already-validated http(s) URL.
+const escapeHtml = (s: string): string =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+const composeSystemEmailHtml = (text: string, ctaUrl: string, ctaLabel: string): string => {
+    const body = escapeHtml(text).replace(/\n/g, "<br>");
+    const cta = ctaUrl
+        ? `<div style="margin:24px 0;"><a href="${ctaUrl}" style="display:inline-block;background:#059669;color:#fff;text-decoration:none;font-weight:bold;padding:12px 26px;border-radius:9999px;font-size:15px;">${escapeHtml(ctaLabel)}</a></div><p style="font-size:12px;color:#9ca3af;">Or paste this link:<br/><a href="${ctaUrl}" style="color:#059669;word-break:break-all;">${escapeHtml(ctaUrl)}</a></p>`
+        : "";
+    return `<div style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;"><h2 style="color: #059669; font-weight: 300; letter-spacing: 1px; margin-bottom: 20px;">.seed</h2><div style="font-size: 16px; margin-bottom: 8px;">${body}</div>${cta}<hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" /><p style="font-size: 12px; color: #9ca3af; text-align: center;">Sent from the <a href="https://lightseed.online" style="color: #059669; text-decoration: none;">Lifetree Network</a></p></div>`;
+};
+
+// --- Staff check + server-authoritative daily quotas -----------------------------------------
+const isStaffUid = async (uid: string): Promise<boolean> => {
+    const [superadmin, adminDoc] = await Promise.all([
+        db.collection("config").doc("superadmin").get(),
+        db.collection("admins").doc(uid).get(),
+    ]);
+    return adminDoc.exists || (superadmin.exists && superadmin.data()?.uid === uid);
+};
+
+const NODE_AI_TEXT_LIMIT = 21;
+const NODE_AI_IMAGE_LIMIT = 3;
+const DAILY_EMAIL_LIMIT = 20;
+
+// Atomically check + increment a per-user daily counter in the server-only `usage/{uid}` doc, the
+// AUTHORITATIVE gate (the mirrored client counter on the user doc is user-writable, so advisory
+// only). Counters reset on the UTC day boundary. Throws resource-exhausted when the cap is hit.
+const enforceDailyQuota = async (uid: string, field: string, limit: number): Promise<void> => {
+    const ref = db.collection("usage").doc(uid);
+    const day = new Date().toISOString().slice(0, 10); // UTC yyyy-mm-dd
+    await db.runTransaction(async (t) => {
+        const data = (await t.get(ref)).data() as any || {};
+        const sameDay = data.day === day;
+        const current = sameDay ? (data[field] || 0) : 0;
+        if (current >= limit) {
+            throw new HttpsError("resource-exhausted", `Daily limit reached (${limit}). It resets at midnight UTC.`);
+        }
+        if (sameDay) t.set(ref, { [field]: current + 1 }, { merge: true });
+        else t.set(ref, { day, [field]: 1 }); // new day: overwrite, clearing yesterday's counters
+    });
+};
+
 // Secure Gemini API Proxy
 export const generateAIContent = onCall({ 
     secrets: ["GEMINI_API_KEY"],
@@ -42,8 +87,20 @@ export const generateAIContent = onCall({
     }
 
     const { prompt, contents, model = 'gemini-3.5-flash', config, systemInstruction } = request.data;
-    
-    console.log(`Model: ${model}`);
+
+    // Server-authoritative free-tier quota (Gemini always runs on the node key). Staff are exempt.
+    // Image vs text is INFERRED from the request (image model / IMAGE modality) so a client can't
+    // mislabel an image call to draw from the larger text allowance.
+    const modalities = Array.isArray(config?.responseModalities)
+        ? config.responseModalities.map((m: any) => String(m).toUpperCase()) : [];
+    const isImage = /image/i.test(String(model)) || modalities.includes('IMAGE');
+    if (!(await isStaffUid(request.auth.uid))) {
+        await enforceDailyQuota(
+            request.auth.uid,
+            isImage ? 'dailyAiImage' : 'dailyAiText',
+            isImage ? NODE_AI_IMAGE_LIMIT : NODE_AI_TEXT_LIMIT,
+        );
+    }
 
     const apiKey = process.env.GEMINI_API_KEY;
     
@@ -123,14 +180,38 @@ export const generateAIContent = onCall({
     }
 });
 
-// Secure transactional email — queued via the `mail` collection (Trigger Email extension).
+// Secure transactional email — queued via the `mail` collection (Trigger Email extension). The
+// body is composed SERVER-SIDE from plain text + an optional validated CTA link (the client can
+// no longer supply raw HTML), recipients are validated, and each sender is capped per day — so a
+// signed-in user can't turn the trusted sender into a phishing/spam relay.
 export const sendSystemEmail = onCall({ cors: true }, async (request) => {
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be logged in.');
     }
-    const { to, subject, text, html } = request.data;
+    const uid = request.auth.uid;
+    const toRaw = request.data?.to;
+    const recipients: string[] = (Array.isArray(toRaw) ? toRaw : [toRaw])
+        .filter((x: any) => typeof x === 'string' && x.trim())
+        .map((x: string) => x.trim());
+    const subject = String(request.data?.subject || '').slice(0, 200) || 'A message from lightseed';
+    const text = String(request.data?.text || '').slice(0, 4000);
+    const ctaUrl = request.data?.ctaUrl ? String(request.data.ctaUrl).slice(0, 500) : '';
+    const ctaLabel = request.data?.ctaLabel ? String(request.data.ctaLabel).slice(0, 80) : 'Open';
+
+    const emailRe = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+    if (!recipients.length) throw new HttpsError('invalid-argument', 'A recipient is required.');
+    if (recipients.length > 5) throw new HttpsError('invalid-argument', 'Too many recipients.');
+    if (!recipients.every((r) => emailRe.test(r))) throw new HttpsError('invalid-argument', 'Invalid recipient address.');
+    if (ctaUrl && !/^https?:\/\//i.test(ctaUrl)) throw new HttpsError('invalid-argument', 'Only http(s) links are allowed.');
+
+    if (!(await isStaffUid(uid))) {
+        await enforceDailyQuota(uid, 'dailyEmail', DAILY_EMAIL_LIMIT);
+    }
+
+    const html = composeSystemEmailHtml(text, ctaUrl, ctaLabel);
+    const plain = ctaUrl ? `${text}\n\n${ctaUrl}` : text;
     try {
-        await writeMail({ to, subject, html, text, uid: request.auth.uid });
+        await writeMail({ to: recipients, subject, html, text: plain, uid });
         return { success: true };
     } catch (error: any) {
         console.error("Email Error:", error);
@@ -370,6 +451,30 @@ const canManageCredential = async (uid: string, scope: string, ownerId: string):
     return false;
 };
 
+// Who may SPEND a stored credential (the use path, broader than manage):
+//  - user scope:      only the key's owner
+//  - community scope: any member of the community (member link), its owner, or staff
+// Mirrors the `isCommunityMember` gate in firestore.rules. A caller who fails this check
+// is NOT rejected — generateClaudeContent silently falls back to the node key — so
+// unauthorized callers simply can't spend someone else's BYO key.
+const canUseCredential = async (uid: string, scope: string, ownerId: string): Promise<boolean> => {
+    if (!ownerId) return false;
+    if (scope === "user") return ownerId === uid;
+    if (scope === "community") {
+        const [memberLink, community, superadmin, adminDoc] = await Promise.all([
+            db.collection("links").doc(`${uid}__member__${ownerId}`).get(),
+            db.collection("communities").doc(ownerId).get(),
+            db.collection("config").doc("superadmin").get(),
+            db.collection("admins").doc(uid).get(),
+        ]);
+        if (memberLink.exists) return true;
+        if (community.exists && community.data()?.ownerId === uid) return true;
+        if (superadmin.exists && superadmin.data()?.uid === uid) return true;
+        if (adminDoc.exists) return true;
+    }
+    return false;
+};
+
 // Store / rotate / remove a provider key. An empty key removes the credential.
 // Returns a non-secret hint the client can display ("connected" + last 4 chars).
 export const saveProviderCredential = onCall({ cors: true }, async (request) => {
@@ -426,16 +531,24 @@ export const generateClaudeContent = onCall({
     const model = String(request.data?.model || "claude-sonnet-4-6");
     const credential = request.data?.credential as { scope?: string; ownerId?: string } | undefined;
 
-    // Resolve the key: BYO (user/community) first, node secret as fallback.
+    // Resolve the key: BYO (user/community) first, node secret as fallback. The caller may
+    // only spend a BYO key they're entitled to (own user key, or a community they belong to);
+    // otherwise we ignore the named credential and fall through to the node key below.
     let apiKey: string | undefined;
-    if (credential?.scope && credential.scope !== "node" && credential.ownerId) {
+    let usedByoKey = false;
+    if (credential?.scope && credential.scope !== "node" && credential.ownerId
+        && await canUseCredential(request.auth.uid, credential.scope, credential.ownerId)) {
         const snap = await db.collection("providerCredentials")
             .doc(credentialDocId(credential.scope, credential.ownerId, "anthropic")).get();
-        if (snap.exists) apiKey = snap.data()?.key;
+        if (snap.exists) { apiKey = snap.data()?.key; usedByoKey = !!apiKey; }
     }
     if (!apiKey) apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
         throw new HttpsError("failed-precondition", "No Claude key is connected for this intelligence yet.");
+    }
+    // The node free-tier quota applies only when spending the node key; BYO keys are unmetered.
+    if (!usedByoKey && !(await isStaffUid(request.auth.uid))) {
+        await enforceDailyQuota(request.auth.uid, "dailyAiText", NODE_AI_TEXT_LIMIT);
     }
 
     // Map our transcript (user|model) to Anthropic's (user|assistant); it must open on a user
@@ -616,13 +729,7 @@ export const checkWateringSchedules = onSchedule({
 // --- Newsletter (in-house, via the `mail` collection) ----------------------------------------
 // Staff-gated. Fans out one `mail` doc per subscriber with a per-person unsubscribe token +
 // List-Unsubscribe headers + a footer, CAN-SPAM/GDPR-safe, on our own pipeline (no third party).
-const isStaffUid = async (uid: string): Promise<boolean> => {
-    const [superadmin, adminDoc] = await Promise.all([
-        db.collection("config").doc("superadmin").get(),
-        db.collection("admins").doc(uid).get(),
-    ]);
-    return adminDoc.exists || (superadmin.exists && superadmin.data()?.uid === uid);
-};
+// (isStaffUid is defined once near the top of this file, alongside the quota helpers.)
 
 // Physical postal address for the newsletter footer (CAN-SPAM). TODO: replace with the real
 // registered address before sending at volume.

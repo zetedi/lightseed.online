@@ -49,6 +49,7 @@ export interface Pulse extends Entity {
   lifetreeId?: string; // canonical — the tree this pulse belongs to
   visionId?: string;
   communityId?: string; // Set on community-scoped pulses (community events, decisions).
+  communityName?: string; // Denormalised community name, carried on community events for display.
   type: PulseType;
   // Audience. Absent = 'public' (every legacy pulse reads as public). See PulseVisibility.
   visibility?: PulseVisibility;

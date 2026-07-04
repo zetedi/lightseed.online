@@ -8,10 +8,11 @@ export default defineConfig(({ mode }) => {
     const envFileVars = loadEnv(mode, cwd, '');
     const combinedEnv = { ...process.env, ...envFileVars };
 
-    // Selectively expose variables
+    // Selectively expose variables. NOTE: only Firebase's public config belongs here — anything
+    // in clientEnv is inlined into the public JS bundle. Never add a real secret (e.g. a Gemini/
+    // Anthropic API_KEY); those live only in Cloud Functions secrets and are used server-side.
     const clientEnv = {
         MODE: mode,
-        API_KEY: combinedEnv.API_KEY,
         VITE_FIREBASE_API_KEY: combinedEnv.VITE_FIREBASE_API_KEY,
         VITE_FIREBASE_AUTH_DOMAIN: combinedEnv.VITE_FIREBASE_AUTH_DOMAIN,
         VITE_FIREBASE_PROJECT_ID: combinedEnv.VITE_FIREBASE_PROJECT_ID,

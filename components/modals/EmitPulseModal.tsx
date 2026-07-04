@@ -211,7 +211,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
   const uploadImage = (file: File) => handleImageUpload(file, `users/${lightseed?.uid}/pulses/${Date.now()}`).then(setPulseImageUrl);
 
   return (
-    <Modal title={matchCandidate ? t('propose_alignment') : (targetTree ? `Grow ${targetTree.name}` : t('emit_pulse'))} onClose={onClose}>
+    <Modal title={matchCandidate ? t('propose_alignment') : (targetTree ? `Grow ${(targetTree as Lifetree).name}` : t('emit_pulse'))} onClose={onClose}>
       {matchCandidate ? (
         <form onSubmit={handleAlignment} className="flex flex-col gap-4">
           <div className="bg-sky-50 p-4 rounded text-sky-800">

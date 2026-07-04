@@ -11,6 +11,9 @@ import { getSelectableIntelligences, listPersonas } from '../services/intelligen
 import RichTextEditor from './ui/RichTextEditor';
 import { ImagePicker } from './ui/ImagePicker';
 import { SectionMenu } from './ui/SectionMenu';
+import { ProfileHero } from './ui/ProfileHero';
+import { ProfileLayout } from './ui/ProfileLayout';
+import { SectionTitle } from './ui/SectionTitle';
 import { DefaultCardImage } from './ui/DefaultCardImage';
 import { normalizeTheme } from '../utils/theme';
 import { AppearanceEditor } from './ui/AppearanceEditor';
@@ -562,13 +565,6 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
 
   const isLoreTab = (key: TabKey): key is LoreTabId => loreTabs.some(tab => tab.id === key);
 
-  const SectionTitle = ({ title, sub }: { title: string; sub?: string }) => (
-    <div className="mb-6">
-      <h2 className="text-base sm:text-xl font-bold text-slate-900">{title}</h2>
-      {sub && <p className="mt-1 text-sm text-slate-500">{sub}</p>}
-    </div>
-  );
-
   const SaveBar = () => canEdit ? (
     <div className="mt-6 flex items-center gap-3">
       <button onClick={handleSave} disabled={isSaving || isUploadingLogo || isUploadingImage} className="rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-700 disabled:opacity-50">
@@ -598,14 +594,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   return (
     <div className="min-h-screen pb-20">
       {/* Hero — mirrors the personal profile */}
-      <div className="relative overflow-hidden bg-gradient-to-b from-slate-800 to-slate-900 text-white pt-5 pb-12 px-4">
-        {(heroImageUrl || community.imageUrls?.[0]) && (
-          <>
-            <img src={heroImageUrl || community.imageUrls?.[0]} alt={`${community.name} banner`} referrerPolicy="no-referrer" className="absolute inset-0 h-full w-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-b from-slate-900/55 via-slate-900/65 to-slate-900/85" />
-          </>
-        )}
-        <div className="relative max-w-6xl mx-auto flex items-center justify-between mb-6">
+      <ProfileHero heroImageUrl={heroImageUrl || community.imageUrls?.[0]} padding="pt-5 pb-12 px-4">
+        <div className="flex items-center justify-between mb-6">
           <button onClick={onClose} className="flex items-center gap-2 text-white/70 hover:text-white text-sm font-medium">
             <Icons.ArrowLeft />
             <span>Back</span>
@@ -624,7 +614,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
           </div>
         </div>
 
-        <div className="relative max-w-6xl mx-auto flex flex-col sm:flex-row items-center gap-4 sm:gap-5">
+        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5">
           <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-xl">
             {logoUrl ? (
               <img src={logoUrl} className="h-full w-full object-cover" alt={`${community.name} logo`} referrerPolicy="no-referrer" />
@@ -649,18 +639,10 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
             </div>
           </div>
         </div>
-      </div>
+      </ProfileHero>
 
       {/* Body: sidebar + content */}
-      <div className="relative z-10 max-w-6xl mx-auto px-4 -mt-8">
-        <div className="lg:grid lg:grid-cols-[230px_1fr] lg:gap-6">
-          <aside className="mb-4 lg:mb-0">
-            <div className="rounded-xl border border-slate-100 bg-white p-2.5 shadow-lg lg:sticky lg:top-24">
-              <SectionMenu items={navSections} active={activeTab} onSelect={(k) => setActiveTab(k as any)} />
-            </div>
-          </aside>
-
-          <main className="rounded-xl border border-slate-100 bg-white p-4 sm:p-6 shadow-lg min-h-[520px]">
+      <ProfileLayout menu={<SectionMenu items={navSections} active={activeTab} onSelect={(k) => setActiveTab(k as any)} />}>
             {activeTab === 'vision' && (
               <div>
                 <SectionTitle title="Vision" sub="What this community is growing towards." />
@@ -1164,9 +1146,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                 </div>
               </div>
             )}
-          </main>
-        </div>
-      </div>
+      </ProfileLayout>
     </div>
   );
 };

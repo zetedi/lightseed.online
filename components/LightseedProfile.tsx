@@ -10,6 +10,9 @@ import { Icons } from './ui/Icons';
 import { ValidationBadge } from './ValidationBadge';
 import { isWateringOverdue } from '../src/domain/watering';
 import { SectionMenu } from './ui/SectionMenu';
+import { ProfileHero } from './ui/ProfileHero';
+import { ProfileLayout } from './ui/ProfileLayout';
+import { SectionTitle } from './ui/SectionTitle';
 import { VisionCard } from './VisionCard';
 import { Modal } from './ui/Modal';
 import { Loading } from './ui/Loading';
@@ -476,24 +479,11 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
         </button>
     );
 
-    const SectionTitle = ({ title, sub }: { title: string; sub?: string }) => (
-        <div className="mb-6">
-            <h2 className="text-base sm:text-xl font-bold text-slate-900">{title}</h2>
-            {sub && <p className="mt-1 text-sm text-slate-500">{sub}</p>}
-        </div>
-    );
-
     return (
         <div className="min-h-screen pb-20">
             {/* Hero — compact: avatar, name and all the meta sit on one wrapping row */}
-            <div className="relative overflow-hidden bg-gradient-to-b from-slate-800 to-slate-900 text-white pt-6 pb-16 px-4">
-                {siteHeroUrl && (
-                    <>
-                        <img src={siteHeroUrl} alt="" referrerPolicy="no-referrer" className="absolute inset-0 h-full w-full object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/55 via-slate-900/65 to-slate-900/85" />
-                    </>
-                )}
-                <div className="relative max-w-6xl mx-auto flex flex-row items-center gap-3 sm:gap-5">
+            <ProfileHero heroImageUrl={siteHeroUrl}>
+                <div className="flex flex-row items-center gap-3 sm:gap-5">
                     <div className="relative shrink-0">
                         <img
                             src={lightseed.photoURL || `https://ui-avatars.com/api/?name=${lightseed.displayName}`}
@@ -538,7 +528,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                         </div>
                     </div>
                 </div>
-            </div>
+            </ProfileHero>
 
             {/* Tree Circle invitations — someone has invited you into shared care of a tree */}
             {treeInvites.length > 0 && (
@@ -571,17 +561,11 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                 </Modal>
             )}
 
-            {/* Body: the menu + content boxes sit ON the hero — the blue extends behind them.
-                The gap from the avatar down to these boxes matches the gap above the avatar. */}
-            <div className="relative z-10 max-w-6xl mx-auto px-4 -mt-10">
-                <div className="lg:grid lg:grid-cols-[230px_1fr] lg:gap-6">
-                    <aside className="mb-4 lg:mb-0">
-                        <div className="rounded-xl border border-slate-100 bg-white p-2.5 shadow-lg lg:sticky lg:top-24">
-                            <SectionMenu items={navSections} active={activeTab} onSelect={(k) => setActiveTab(k as any)} />
-                        </div>
-                    </aside>
-
-                    <main className="rounded-xl border border-slate-100 bg-white p-4 sm:p-6 shadow-lg min-h-[520px]">
+            {/* Body: the menu + content boxes sit ON the hero — the blue extends behind them. */}
+            <ProfileLayout
+                overlapClassName="-mt-10"
+                menu={<SectionMenu items={navSections} active={activeTab} onSelect={(k) => setActiveTab(k as any)} />}
+            >
                         {activeTab === 'reaches' && (
                             // Rendered unconditionally (no loading gate) so opening a reach from a tree
                             // keeps the requested thread — remounting on load would drop the selection.
@@ -1089,9 +1073,7 @@ export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmi
                              )}
                             </div>
                         )}
-                    </main>
-                </div>
-            </div>
+            </ProfileLayout>
 
             {/* Invite Modal */}
             {showInviteModal && (

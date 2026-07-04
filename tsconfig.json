@@ -25,6 +25,15 @@
       ]
     },
     "allowImportingTsExtensions": true,
-    "noEmit": true
+    "noEmit": true,
+
+    // Progressive strictness. These pass cleanly today. The remaining hop to full `strict` is
+    // `noImplicitAny` — ~4700 errors across the app's `any`-heavy surface — a deliberate,
+    // file-by-file burn-down, NOT a flag to flip in one commit. Enable it once that's done.
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true
   }
 }

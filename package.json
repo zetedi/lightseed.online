@@ -10,6 +10,9 @@
     "build": "vite build",
     "build:clean": "vite build --mode clean",
     "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "typecheck:functions": "tsc --noEmit -p functions/tsconfig.json",
+    "check": "npm run typecheck && npm run typecheck:functions",
     "seed:lightseed": "node scripts/seed-lightseed.mjs",
     "migrate:reach-privacy": "node scripts/backfill-reach-privacy.mjs"
   },

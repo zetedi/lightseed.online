@@ -127,3 +127,11 @@ dist-ssr
 *.sln
 *.sw?
 .DS_Store
+
+# Firebase deploy cache + compiled Cloud Functions (build artifacts, not source)
+.firebase/
+functions/lib/
+
+# Local service-account credentials (never commit)
+serviceAccount.json
+*-service-account.json
