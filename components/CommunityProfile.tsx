@@ -16,6 +16,7 @@ import { ProfileLayout } from './ui/ProfileLayout';
 import { SectionTitle } from './ui/SectionTitle';
 import { DefaultCardImage } from './ui/DefaultCardImage';
 import { normalizeTheme } from '../utils/theme';
+import { nodeDefaultTheme } from '../hooks/useConfig';
 import { AppearanceEditor } from './ui/AppearanceEditor';
 import { IntelligencePanel } from './intelligence/IntelligencePanel';
 import { LoreSection, loreTabs, type LoreTabId } from './about/AboutSections';
@@ -1090,6 +1091,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                 <AppearanceEditor
                   theme={editTheme}
                   onThemeChange={setEditTheme}
+                  defaultTheme={nodeDefaultTheme(community.domain)}
                   logoUrl={logoUrl}
                   onLogoUpload={handleLogoUpload}
                   uploadingLogo={isUploadingLogo}

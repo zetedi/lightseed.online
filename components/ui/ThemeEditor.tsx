@@ -20,17 +20,23 @@ const CUSTOM_FIELDS: Array<[keyof CommunityThemePreset, string]> = [
  * (CommunityProfile) and user sites (LightseedProfile) so all three share
  * the same functionality.
  */
-export const ThemeEditor = ({ value, onChange }: { value: ThemeValue; onChange: (theme: ThemeValue) => void }) => {
+export const ThemeEditor = ({ value, onChange, defaultTheme }: { value: ThemeValue; onChange: (theme: ThemeValue) => void; defaultTheme?: ThemeValue }) => {
   const { t } = useLanguage();
-  const [isCustom, setIsCustom] = useState(() => !communityThemePresets.some(p => themeEquals(value, p)));
+  // Which preset (if any) the current value IS — derived, so editing a colour that diverges from a
+  // preset automatically flips the selection to Custom, and matching one re-highlights it.
+  const activePreset = communityThemePresets.find(p => themeEquals(value, p));
+  const isCustom = !activePreset;
+  // The per-colour pickers reveal once the value is custom, or as soon as the user opens the editor
+  // by clicking a preset / Custom — so picking a preset brings up its colours, prefilled, to tweak.
+  const [expanded, setExpanded] = useState(isCustom);
 
   return (
     <div className="space-y-4">
       <div className="grid gap-2 sm:grid-cols-2">
         {communityThemePresets.map((preset) => {
-          const active = !isCustom && themeEquals(value, preset);
+          const active = activePreset?.id === preset.id;
           return (
-            <button key={preset.id} type="button" onClick={() => { onChange(normalizeTheme(preset)); setIsCustom(false); }} className={`w-full rounded-2xl border p-3 text-left transition-all ${active ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}>
+            <button key={preset.id} type="button" onClick={() => { onChange(normalizeTheme(preset)); setExpanded(true); }} className={`w-full rounded-2xl border p-3 text-left transition-all ${active ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}>
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="text-sm font-bold text-slate-800">{preset.name}</div>
@@ -47,7 +53,7 @@ export const ThemeEditor = ({ value, onChange }: { value: ThemeValue; onChange: 
         })}
 
         {/* Custom theme — pick each colour separately. */}
-        <button type="button" onClick={() => setIsCustom(true)} className={`w-full rounded-2xl border p-3 text-left transition-all ${isCustom ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}>
+        <button type="button" onClick={() => setExpanded(true)} className={`w-full rounded-2xl border p-3 text-left transition-all ${isCustom ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}>
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="text-sm font-bold text-slate-800">{t('theme_custom')}</div>
@@ -62,8 +68,16 @@ export const ThemeEditor = ({ value, onChange }: { value: ThemeValue; onChange: 
         </button>
       </div>
 
-      {/* Per-colour pickers only appear in custom mode. */}
-      {isCustom && (
+      {/* Reset to this node's default theme — the theme this profile/community inherits when it
+          isn't overridden. Only shown when a default is supplied and the value has drifted from it. */}
+      {defaultTheme && !themeEquals(value, defaultTheme) && (
+        <button type="button" onClick={() => onChange(normalizeTheme(defaultTheme))} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:border-emerald-300 hover:text-emerald-700">
+          <span aria-hidden>↺</span> {t('theme_reset_default')}
+        </button>
+      )}
+
+      {/* Per-colour pickers appear in custom mode, or once the editor is expanded via a preset. */}
+      {(isCustom || expanded) && (
         <div className="space-y-4 rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-bold uppercase text-slate-400">{t('theme_mode')}</span>

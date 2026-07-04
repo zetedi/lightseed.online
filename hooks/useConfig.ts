@@ -19,12 +19,22 @@ const isPreviousLifeseedDefaultTheme = (theme: Community['theme']) =>
   (theme?.text === undefined || theme.text === '#0f172a') &&
   (theme?.mode === undefined || theme.mode === 'light');
 
+// The node's default theme for a domain — lifeseed.online keeps its Emerald Earth look; every other
+// domain uses the app default. This is the base a community or profile theme layers over, and the
+// target a "reset to default" returns to.
+export const nodeDefaultTheme = (domain?: string) => {
+  const d = (domain || (typeof window !== 'undefined' ? window.location.hostname : defaultConfig.domain))
+    .toLowerCase()
+    .replace(/^www\./, '');
+  return normalizeTheme(d === 'lifeseed.online' ? oldEmeraldEarthTheme : defaultConfig.theme);
+};
+
 export const useConfig = (hostCommunity: Community | null) => {
   return useMemo(() => {
     const hostDomain = (hostCommunity?.domain || (typeof window !== 'undefined' ? window.location.hostname : defaultConfig.domain))
       .toLowerCase()
       .replace(/^www\./, '');
-    const domainDefaultTheme = normalizeTheme(hostDomain === 'lifeseed.online' ? oldEmeraldEarthTheme : defaultConfig.theme);
+    const domainDefaultTheme = nodeDefaultTheme(hostDomain);
 
     if (!hostCommunity) {
       return {
