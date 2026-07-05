@@ -23,6 +23,8 @@ import { nodeDefaultTheme } from '../hooks/useConfig';
 import { AppearanceEditor } from './ui/AppearanceEditor';
 import { IntelligencePanel } from './intelligence/IntelligencePanel';
 import { LoreSection, loreTabs, type LoreTabId } from './about/AboutSections';
+import { NodeGrowthTree } from './about/NodeGrowthTree';
+import { DataModelCrystal } from './about/DataModelCrystal';
 import { queryableLevels, visibilitiesForScope } from '../domain/pulseVisibility';
 import { councilView } from '../domain/views/council';
 import { firestoreStore } from '../adapters/firestore';
@@ -42,7 +44,7 @@ interface CommunityProfileProps {
   onEnterCommunityView?: (community: Community) => void;
 }
 
-type TabKey = 'vision' | 'firsttree' | 'sanctuary' | 'trees' | 'events' | 'council' | LoreTabId | 'intelligence' | 'appearance';
+type TabKey = 'vision' | 'firsttree' | 'sanctuary' | 'trees' | 'model' | 'events' | 'council' | LoreTabId | 'intelligence' | 'appearance';
 
 const PROVIDER_LABELS: Record<string, string> = {
   google: 'Google · Gemini',
@@ -197,6 +199,9 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   // The tokenisation toggle — mirrors community.tokenisationEnabled (the AI-token economy).
   const [tokenisationOn, setTokenisationOn] = useState(!!community.tokenisationEnabled);
   const [isTogglingTokens, setIsTogglingTokens] = useState(false);
+
+  // The Model tab: the data-model "crystal" (schema) by default, or this node's instance growth.
+  const [modelView, setModelView] = useState<'schema' | 'growth'>('schema');
 
   // Events
   const [events, setEvents] = useState<Pulse[]>([]);
@@ -571,6 +576,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     { key: 'firsttree', label: 'First Tree', icon: <Icons.Tree /> },
     { key: 'sanctuary', label: 'The Sanctuary', icon: <Icons.Sun /> },
     { key: 'trees', label: 'Community Trees', icon: <Icons.Tree /> },
+    { key: 'model', label: 'The Model', icon: <Icons.Sparkles /> },
     { key: 'events', label: 'Events', icon: <Icons.Loc /> },
     { key: 'council', label: t('council'), icon: <Icons.Venn /> },
     // The network's foundational story travels to every node's about page (the Yantra
@@ -879,6 +885,21 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                     ))}
                   </div>
                 )}
+              </div>
+            )}
+
+            {activeTab === 'model' && (
+              <div>
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <SectionTitle title="The Model" sub="The data model — the crystal — and how this node grows an instance of it." />
+                  <div className="flex shrink-0 rounded-full border border-slate-200 bg-slate-50 p-0.5 text-xs font-bold">
+                    <button onClick={() => setModelView('schema')} className={`rounded-full px-3 py-1.5 transition-colors ${modelView === 'schema' ? 'bg-emerald-600 text-white shadow' : 'text-slate-500 hover:text-slate-700'}`}>Crystal</button>
+                    <button onClick={() => setModelView('growth')} className={`rounded-full px-3 py-1.5 transition-colors ${modelView === 'growth' ? 'bg-emerald-600 text-white shadow' : 'text-slate-500 hover:text-slate-700'}`}>Growth</button>
+                  </div>
+                </div>
+                {modelView === 'schema'
+                  ? <DataModelCrystal />
+                  : <NodeGrowthTree community={community} trees={domainTrees} onViewTree={onViewTree} />}
               </div>
             )}
 
