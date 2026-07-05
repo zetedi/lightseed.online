@@ -1,4 +1,4 @@
-import { collection, query, orderBy, getDocs, serverTimestamp, doc, runTransaction, getDoc, where, updateDoc, limit, startAfter, QueryDocumentSnapshot, arrayUnion, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, serverTimestamp, doc, runTransaction, getDoc, where, updateDoc, limit, startAfter, QueryDocumentSnapshot, arrayUnion, onSnapshot, getCountFromServer } from 'firebase/firestore';
 import { type Pulse, type Lifetree, type ReachAudience } from '../../types';
 import { createBlock } from '../../utils/crypto';
 import { computeCanonicalHash, isChainLocked, BLOCK_HASH_VERSION } from '../../domain/chain';
@@ -34,6 +34,20 @@ const fetchPulsesRaw = async (lastD?: QueryDocumentSnapshot, domainFilter?: stri
 // Reaches live in the Inspiration view, so they are excluded here.
 // Pulse types that have their own surfaces and must not bleed into the general pulse feed.
 const NON_FEED_PULSE_TYPES = new Set(['reach', 'tree_chat', 'event', 'decision']);
+
+// The number of feed pulses a user has authored — server-side COUNTs instead of downloading every
+// doc just to measure length. Excludes the same non-feed types as getMyPulses; computed as
+// (all authored) − (each non-feed type) so it only needs the existing indexes — a `not-in` count
+// would require a composite (authorId, type) index that isn't defined.
+export const getMyPulseCount = async (uid: string): Promise<number> => {
+    const [total, ...nonFeed] = await Promise.all([
+        getCountFromServer(query(pulsesCollection, where('authorId', '==', uid))),
+        ...Array.from(NON_FEED_PULSE_TYPES).map(type =>
+            getCountFromServer(query(pulsesCollection, where('authorId', '==', uid), where('type', '==', type)))),
+    ]);
+    const excluded = nonFeed.reduce((n, s) => n + s.data().count, 0);
+    return Math.max(0, total.data().count - excluded);
+};
 
 export const fetchPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, levels?: PulseVisibility[]) => {
     const res = await fetchPulsesRaw(lastD, domainFilter, levels);
@@ -333,6 +347,12 @@ export const sendThreadMessage = async ({
 export const getLifetreeById = async (id: string): Promise<Lifetree | null> => {
     const snap = await getDoc(doc(db, 'lifetrees', id));
     return snap.exists() ? ({ id: snap.id, ...(snap.data() as any) } as Lifetree) : null;
+};
+
+// A single pulse by id (used to hydrate alignment cards with the two matched pulses' text).
+export const getPulseById = async (id: string): Promise<Pulse | null> => {
+    const snap = await getDoc(doc(db, 'pulses', id));
+    return snap.exists() ? mapPulse(snap) : null;
 };
 
 export const getMyPulses = async (uid: string) => (await getDocs(query(pulsesCollection, where('authorId', '==', uid)))).docs.map(mapPulse).filter(p => !NON_FEED_PULSE_TYPES.has((p as any).type)).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));

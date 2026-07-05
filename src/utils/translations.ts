@@ -102,6 +102,13 @@ const baseKeys = {
   daily_limit_image: "Daily Vision limit reached (3/3).", daily_limit_text: "Daily Oracle limit reached (21/21).",
   ether_quiet: "The resonances still need to be uncovered.", alignment_request: "Alignment Request",
   from_another_tree: "from another tree", accept_sync: "Accept Sync", no_visions_found: "No visions found.",
+  // Alignment request card (Observatory)
+  awaiting_you: "awaiting you", aligns_with: "aligns with", reaching_out: "is reaching out",
+  your_tree_role: "yours", tended_by: "tended by", their_pulse: "their pulse", your_pulse: "your pulse",
+  decline_alignment: "Decline", visit_tree: "Visit",
+  alignment_meaning: "Accepting weaves a shared sync-block into both chains — a lasting, mutual mark that these trees aligned. It can’t be undone.",
+  alignment_declined: "Alignment declined.",
+  grow_vision: "Grow", rooted_in: "Rooted in",
   propose_alignment: "Propose Alignment", alignment_with: "Aligning with", alignment_request_desc: "Send a resonance request.",
   internal_pulse: "Internal (Growth) Pulse", send_request: "Send Request", invite_sent: "Invite sent!",
   invite_email_placeholder: "Friend's email", invite_message_placeholder: "Message (optional)",

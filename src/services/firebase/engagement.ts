@@ -1,17 +1,35 @@
-import { query, getDocs, addDoc, serverTimestamp, doc, runTransaction, getDoc, where } from 'firebase/firestore';
+import { query, getDocs, addDoc, serverTimestamp, doc, runTransaction, getDoc, where, updateDoc, getCountFromServer } from 'firebase/firestore';
 import { type Lifetree, type Alignment } from '../../types';
 import { createBlock } from '../../utils/crypto';
 import { db, mapDoc, pulsesCollection, alignmentsCollection } from './core';
 
 export const proposeAlignment = (data: any) => addDoc(alignmentsCollection, { ...data, status: 'PENDING', createdAt: serverTimestamp() });
+
+// Decline a pending alignment — the target owner passes on the resonance. A single field write
+// (the alignments rule already lets the initiator or target update their own proposal).
+export const rejectAlignment = (id: string) => updateDoc(doc(db, 'alignments', id), { status: 'REJECTED' });
 export const getPendingAlignments = async (uid: string) => (await getDocs(query(alignmentsCollection, where('targetUid', '==', uid), where('status', '==', 'PENDING')))).docs.map(d => (mapDoc(d) as Alignment));
+
+// Count of a user's accepted alignments (both sides) — server-side COUNT for the dashboard stat.
+export const getMyAlignmentCount = async (uid: string): Promise<number> => {
+    const [asTarget, asInitiator] = await Promise.all([
+        getCountFromServer(query(alignmentsCollection, where('targetUid', '==', uid), where('status', '==', 'ACCEPTED'))),
+        getCountFromServer(query(alignmentsCollection, where('initiatorUid', '==', uid), where('status', '==', 'ACCEPTED'))),
+    ]);
+    return asTarget.data().count + asInitiator.data().count;
+};
 
 export const getMyAlignmentsHistory = async (uid: string) => {
     const [s1, s2] = await Promise.all([getDocs(query(alignmentsCollection, where('targetUid', '==', uid), where('status', '==', 'ACCEPTED'))), getDocs(query(alignmentsCollection, where('initiatorUid', '==', uid), where('status', '==', 'ACCEPTED')))]);
     return [...s1.docs, ...s2.docs].map(d => (mapDoc(d) as Alignment)).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 }
 
-export const acceptAlignment = async (proposalId: string) => {
+export interface AlignmentResult {
+    initiatorTreeId: string; targetTreeId: string;
+    initiatorPulseId: string; targetPulseId: string;
+}
+
+export const acceptAlignment = async (proposalId: string): Promise<AlignmentResult> => {
     const matchRef = doc(db, 'alignments', proposalId);
     return runTransaction(db, async (t) => {
         // Firestore transactions require ALL reads before ANY writes, so read the proposal and
@@ -28,21 +46,35 @@ export const acceptAlignment = async (proposalId: string) => {
         const initHash = await createBlock(initTree.latestHash, { match: proposal.id }, Date.now());
         const targetHash = await createBlock(targetTree.latestHash, { match: proposal.id }, Date.now());
 
-        t.set(doc(pulsesCollection), {
-            lifetreeId: proposal.initiatorTreeId, type: 'standard', title: 'Alignment', body: 'Pulse Sync',
-            isMatch: true, authorId: proposal.initiatorUid, authorName: 'System',
+        // The two sync blocks form a mutual contract: each records the OTHER tree it aligned with
+        // (matchedLifetreeId) and the alignment id (matchId), so the pulse itself carries both
+        // trees + pulses in the alignment. Their ids are returned so the UI can open the block.
+        const initPulseRef = doc(pulsesCollection);
+        const targetPulseRef = doc(pulsesCollection);
+
+        t.set(initPulseRef, {
+            lifetreeId: proposal.initiatorTreeId, type: 'standard', title: 'Alignment',
+            body: `Aligned with ${targetTree?.name || 'another tree'}.`,
+            isMatch: true, matchId: proposal.id, matchedLifetreeId: proposal.targetTreeId,
+            authorId: proposal.initiatorUid, authorName: 'System',
             createdAt: serverTimestamp(), hash: initHash
         });
         t.update(initTreeRef, { latestHash: initHash, blockHeight: initTree.blockHeight + 1 });
 
-        t.set(doc(pulsesCollection), {
-            lifetreeId: proposal.targetTreeId, type: 'standard', title: 'Alignment', body: 'Pulse Sync',
-            isMatch: true, authorId: proposal.targetUid, authorName: 'System',
+        t.set(targetPulseRef, {
+            lifetreeId: proposal.targetTreeId, type: 'standard', title: 'Alignment',
+            body: `Aligned with ${initTree?.name || 'another tree'}.`,
+            isMatch: true, matchId: proposal.id, matchedLifetreeId: proposal.initiatorTreeId,
+            authorId: proposal.targetUid, authorName: 'System',
             createdAt: serverTimestamp(), hash: targetHash
         });
         t.update(targetTreeRef, { latestHash: targetHash, blockHeight: targetTree.blockHeight + 1 });
 
         t.update(matchRef, { status: 'ACCEPTED' });
+        return {
+            initiatorTreeId: proposal.initiatorTreeId, targetTreeId: proposal.targetTreeId,
+            initiatorPulseId: initPulseRef.id, targetPulseId: targetPulseRef.id,
+        };
     });
 }
 

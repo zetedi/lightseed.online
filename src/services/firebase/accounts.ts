@@ -23,6 +23,15 @@ export const ensurePersonEntity = async (uid: string, displayName?: string | nul
     return { lid, uid };
 };
 
+// A person's public display name by uid (persons/{uid} is world-readable). Used to attribute an
+// alignment request to the human behind the initiating tree. Returns undefined if unknown/empty.
+export const getPersonName = async (uid: string): Promise<string | undefined> => {
+    try {
+        const snap = await getDoc(doc(db, 'persons', uid));
+        return snap.exists() ? ((snap.data() as any).displayName || undefined) : undefined;
+    } catch { return undefined; }
+};
+
 // Create the user's profile document the first time they appear. Direct-message email
 // notifications are on by default (early network — don't let people miss reaches).
 const ensureUserProfile = async (user: FirebaseUser, extra: Record<string, any> = {}): Promise<boolean> => {

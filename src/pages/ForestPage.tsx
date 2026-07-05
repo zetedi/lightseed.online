@@ -40,37 +40,34 @@ export const ForestPage = ({
   onView, onReach, onPlayGrowth, onQuickSnap, onValidate, onRefresh,
 }: ForestPageProps) => {
   const { t } = useLanguage();
-  const labelCls = `flex items-center gap-2 cursor-pointer backdrop-blur-sm px-3 py-1.5 rounded-full border transition-colors shadow-sm ${effectiveIsDark ? 'bg-slate-900/70 border-white/10 hover:bg-slate-900' : 'bg-white/90 border-slate-200 hover:bg-slate-50'}`;
-  const spanCls = `text-xs font-medium flex items-center ${effectiveIsDark ? 'text-white' : 'text-slate-700'}`;
-  const filterToggles = (
-    <>
-      <label className={labelCls}>
-        <input type="checkbox" checked={showNatureTrees} onChange={(e) => setShowNatureTrees(e.target.checked)} className="rounded text-sky-500 focus:ring-sky-500 bg-white/20 border-white/30" />
-        <span className={spanCls}><span className="mr-1"><Icons.Nature /></span> {t('nature')}</span>
-      </label>
-      <label className={labelCls}>
-        <input type="checkbox" checked={showUserTrees} onChange={(e) => setShowUserTrees(e.target.checked)} className="rounded text-emerald-400 focus:ring-emerald-400 bg-white/20 border-white/30" />
-        <span className={spanCls}><span className="mr-1"><Icons.Tree /></span> {t('lifetrees')}</span>
-      </label>
-      <label className={labelCls}>
-        <input type="checkbox" checked={showValidatedTrees} onChange={(e) => setShowValidatedTrees(e.target.checked)} className="rounded text-emerald-300 focus:ring-emerald-300 bg-white/20 border-white/30" />
-        <span className={spanCls}><span className="mr-1"><Icons.ShieldCheck /></span> {t('validated_trees')}</span>
-      </label>
-    </>
+  const toggleCls = "flex cursor-pointer items-center gap-2 text-sm font-medium text-emerald-900 dark:text-emerald-100";
+  // One full-width emerald card holding the three filters, in normal flow between the header and
+  // the map/grid — same on mobile and desktop (was a set of pills floating over the map top-left).
+  const filterCard = (
+    <div className="mb-4 w-full rounded-xl border border-emerald-300 bg-emerald-50/80 px-4 py-2.5 shadow-sm dark:border-emerald-800/60 dark:bg-emerald-950/30">
+      <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+        <label className={toggleCls}>
+          <input type="checkbox" checked={showNatureTrees} onChange={(e) => setShowNatureTrees(e.target.checked)} className="h-4 w-4 rounded accent-emerald-600" />
+          <span className="flex items-center gap-1"><Icons.Nature /> {t('nature')}</span>
+        </label>
+        <label className={toggleCls}>
+          <input type="checkbox" checked={showUserTrees} onChange={(e) => setShowUserTrees(e.target.checked)} className="h-4 w-4 rounded accent-emerald-600" />
+          <span className="flex items-center gap-1"><Icons.Tree /> {t('lifetrees')}</span>
+        </label>
+        <label className={toggleCls}>
+          <input type="checkbox" checked={showValidatedTrees} onChange={(e) => setShowValidatedTrees(e.target.checked)} className="h-4 w-4 rounded accent-emerald-600" />
+          <span className="flex items-center gap-1"><Icons.ShieldCheck /> {t('validated_trees')}</span>
+        </label>
+      </div>
+    </div>
   );
   return (
     <>
+      {filterCard}
       {viewMode === 'map' ? (
-        // Filters float on the map (saves the row's height; lets the map run near the footer).
-        <div className="relative">
-          <ForestMap trees={filteredData} onView={onView} onReach={onReach} loading={loadingMore && filteredData.length === 0} onRefresh={onRefresh} primaryTree={activeTree} refreshKey={mapRefreshKey} />
-          <div className="pointer-events-none absolute left-3 top-3 z-[1000] flex flex-col items-start gap-1.5 [&_label]:pointer-events-auto">
-            {filterToggles}
-          </div>
-        </div>
+        <ForestMap trees={filteredData} onView={onView} onReach={onReach} loading={loadingMore && filteredData.length === 0} onRefresh={onRefresh} primaryTree={activeTree} refreshKey={mapRefreshKey} />
       ) : (
         <>
-          <div className="flex justify-center mb-6 gap-3">{filterToggles}</div>
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {filteredData.length === 0 && !loadingMore ? (
               <p className="col-span-full text-center text-slate-400 py-10">{t('no_trees_found')}</p>

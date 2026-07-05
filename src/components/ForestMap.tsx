@@ -601,7 +601,7 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
                 }
             `}</style>
             <div className="relative">
-                <div ref={mapContainer} style={{ width: '100%', height: 'calc(100vh - 230px)', minHeight: '400px', zIndex: 1 }} className="w-full rounded-xl shadow-inner border border-slate-700 bg-slate-900" />
+                <div ref={mapContainer} style={{ width: '100%', height: 'calc(100vh - 300px)', minHeight: '400px', maxHeight: '760px', zIndex: 1 }} className="w-full rounded-xl shadow-inner border border-slate-700 bg-slate-900" />
                 {onRefresh && (
                     <button
                         onClick={() => {

@@ -14,7 +14,9 @@ import {
   unvalidateLifetree,
   proposeAlignment,
   acceptAlignment,
+  rejectAlignment,
   getLifetreeById,
+  getPulseById,
   createVision,
   deleteLifetree,
   deleteVision,
@@ -37,6 +39,7 @@ import { useReaches } from './hooks/useReaches';
 import { useResonance } from './hooks/useResonance';
 import { useHistoryLayers } from './hooks/useHistoryLayers';
 import { useForestFeed } from './hooks/useForestFeed';
+import { useAlignmentCards } from './hooks/useAlignmentCards';
 import { GDPRBanner } from './components/GDPRBanner';
 import { extractGpsFromImage } from './utils/exif';
 
@@ -158,7 +161,10 @@ const AppContent = () => {
     // When growing from a specific tree's page, the pulse modal targets THAT tree (not the
     // active one). Reset to null for the generic "emit pulse" entry points.
     const [pulseTargetTree, setPulseTargetTree] = useState<Lifetree | null>(null);
-    const openPulseModal = (target: Lifetree | null = null) => { setPulseTargetTree(target); setShowPulseModal(true); };
+    // When growing from a vision's page, the pulse modal targets THAT vision (vision growth).
+    const [pulseTargetVision, setPulseTargetVision] = useState<Vision | null>(null);
+    const openPulseModal = (target: Lifetree | null = null) => { setPulseTargetTree(target); setPulseTargetVision(null); setShowPulseModal(true); };
+    const openVisionGrowth = (vision: Vision) => { setPulseTargetVision(vision); setPulseTargetTree(null); setShowPulseModal(true); };
     const [showEventModal, setShowEventModal] = useState(false);
     const [showVisionModal, setShowVisionModal] = useState(false);
     const [showGrowthPlayer, setShowGrowthPlayer] = useState<string | null>(null);
@@ -190,6 +196,9 @@ const AppContent = () => {
 
     // Live unread-reach count powering the nav's red envelope indicator (see useReaches).
     const unreadReaches = useReaches(lightseed, myTrees);
+
+    // Pending alignments, hydrated with the two trees + matched pulses for the Observatory cards.
+    const alignmentCards = useAlignmentCards(alignments, myTrees);
 
     // The paginated forest / pulse / vision / event / reach feed + infinite scroll (see useForestFeed).
     const { data, setData, loadContent, loadingMore, forestSentinelRef } = useForestFeed({
@@ -359,12 +368,29 @@ const AppContent = () => {
     }
 
     const onAcceptAlignment = async (id: string) => {
-        try { await acceptAlignment(id); showAlert("Alignment Accepted! Blocks synced."); loadContent(true); } 
-        catch(e:any) { 
+        try {
+            const res = await acceptAlignment(id);
+            setAlignments(prev => prev.filter(a => a.id !== id)); // drop the accepted request
+            await showAlert("Aligned — a shared sync-block is now on both chains.", 'Alignment');
+            // Open the resulting block on your chain (the "link to the pulse").
+            const pulse = await getPulseById(res.targetPulseId).catch(() => null);
+            if (pulse) setSelectedPulse(pulse);
+            loadContent(true);
+        }
+        catch(e:any) {
             console.error("Accept Alignment Error:", e);
-            showAlert(e.message); 
+            showAlert(e?.message || "Could not complete the alignment.");
         }
     }
+    const onRejectAlignment = async (id: string) => {
+        // Optimistically drop the declined card, then persist.
+        setAlignments(prev => prev.filter(a => a.id !== id));
+        try { await rejectAlignment(id); } catch (e) { console.error("Reject Alignment Error:", e); loadContent(true); }
+    };
+    const onViewAlignmentTree = async (treeId: string) => {
+        const tr = await getLifetreeById(treeId).catch(() => null);
+        if (tr) setSelectedTree(tr);
+    };
 
     const filteredData = useMemo(() => data.filter((item: any) => {
         if (searchTerm) {
@@ -478,10 +504,6 @@ const AppContent = () => {
                         if (hostCommunity && aboutCommunity.id === hostCommunity.id) setHostCommunity(prev => prev ? { ...prev, ...updates } : null);
                         if (defaultCommunity && aboutCommunity.id === defaultCommunity.id) setDefaultCommunity(prev => prev ? { ...prev, ...updates } : null);
                     }}
-                    currentUser={lightseed}
-                    currentUserId={lightseed?.uid}
-                    isSuperAdmin={isSuperAdmin}
-                    isAdmin={isAdmin}
                 />
             );
         }
@@ -498,7 +520,7 @@ const AppContent = () => {
 
         if (tab === 'collab') {
             return (
-                <div className="max-w-3xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="max-w-7xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl">
                         {/* Header — branch.webp, Observatory-style */}
                         <div className="relative h-40 md:h-52">
@@ -611,8 +633,10 @@ const AppContent = () => {
 
                 {tab === 'observatory' && (
                     <ObservatoryPage
-                        alignments={alignments}
+                        alignments={alignmentCards}
                         onAcceptAlignment={onAcceptAlignment}
+                        onRejectAlignment={onRejectAlignment}
+                        onViewAlignmentTree={onViewAlignmentTree}
                         isAnalyzingSynergy={isAnalyzingSynergy}
                         synergies={synergies}
                         lastSynergyAt={lastSynergyAt}
@@ -810,6 +834,8 @@ const AppContent = () => {
                             currentUserId={lightseed?.uid}
                             onDelete={handleDeleteVisionInApp}
                             myTrees={myTrees}
+                            onGrow={(v) => openVisionGrowth(v)}
+                            onViewTree={(tree) => { setSelectedVision(null); setSelectedTree(tree); }}
                         />
                     </div>
                 ) : (selectedPulse && selectedPulse.type === 'event') ? (
@@ -882,10 +908,6 @@ const AppContent = () => {
                                 setHostCommunity(prev => prev ? { ...prev, ...updates } : null);
                             }
                         }}
-                        currentUser={lightseed}
-                        currentUserId={lightseed?.uid}
-                        isSuperAdmin={isSuperAdmin}
-                        isAdmin={isAdmin}
                         onEnterCommunityView={isSuperAdmin ? (community) => {
                             setImpersonatedCommunity(community);
                             setSelectedCommunity(null);
@@ -934,7 +956,8 @@ const AppContent = () => {
                     activeTree={activeTree}
                     matchCandidate={matchCandidate}
                     targetTree={pulseTargetTree}
-                    onClose={() => { setShowPulseModal(false); setPulseTargetTree(null); }}
+                    targetVision={pulseTargetVision}
+                    onClose={() => { setShowPulseModal(false); setPulseTargetTree(null); setPulseTargetVision(null); }}
                     onMint={mintPulse}
                     onProposeAlignment={proposeAlignment}
                     onGrown={handleTreeGrown}

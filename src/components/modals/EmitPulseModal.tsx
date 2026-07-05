@@ -16,6 +16,9 @@ interface EmitPulseModalProps {
   // When set, grow THIS specific tree (e.g. opened from a tree's page) rather than the
   // user's active tree, and skip the tree/vision choice — it's a focused tree growth.
   targetTree?: Lifetree | null;
+  // When set, grow THIS specific vision (opened from a vision's page) — skips the choice and
+  // vision picker, going straight to the vision-growth details.
+  targetVision?: Vision | null;
   onClose: () => void;
   onMint: (data: any) => Promise<void>;
   onProposeAlignment: (data: any) => Promise<void>;
@@ -62,6 +65,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
   activeTree,
   matchCandidate,
   targetTree = null,
+  targetVision,
   onClose,
   onMint,
   onProposeAlignment,
@@ -73,21 +77,21 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
   const { t } = useLanguage();
   // The tree being grown: the explicit target (from its page) or the active tree.
   const growthTree = targetTree || activeTree;
-  // A focused target jumps straight to tree-growth; otherwise ask what's growing.
-  const [growthKind, setGrowthKind] = useState<GrowthKind | null>(targetTree ? 'tree' : null);
+  // A focused target (tree OR vision) jumps straight to its growth; otherwise ask what's growing.
+  const [growthKind, setGrowthKind] = useState<GrowthKind | null>(targetTree ? 'tree' : targetVision ? 'vision' : null);
   const [myVisions, setMyVisions] = useState<Vision[]>([]);
-  const [selectedVision, setSelectedVision] = useState<Vision | null>(null);
+  const [selectedVision, setSelectedVision] = useState<Vision | null>(targetVision ?? null);
   const [growthCategory, setGrowthCategory] = useState<string>('');
   const [pulseTitle, setPulseTitle] = useState('');
   const [pulseBody, setPulseBody] = useState('');
-  const [pulseImageUrl, setPulseImageUrl] = useState('');
+  const [pulseImageUrl, setPulseImageUrl] = useState(targetVision?.imageUrl || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
 
-  // The walkthrough is a horizontal scroll-snap track. targetTree skips the "what's growing?"
-  // choice, so its pages are [subject, details]; otherwise [choice, subject, details].
-  const pageKeys: Array<'choice' | 'subject' | 'details'> = targetTree
+  // The walkthrough is a horizontal scroll-snap track. A focused target (tree or vision) skips the
+  // "what's growing?" choice, so its pages are [subject, details]; otherwise [choice, subject, details].
+  const pageKeys: Array<'choice' | 'subject' | 'details'> = (targetTree || targetVision)
     ? ['subject', 'details'] : ['choice', 'subject', 'details'];
   const trackRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState(0);
@@ -211,7 +215,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
   const uploadImage = (file: File) => handleImageUpload(file, `users/${lightseed?.uid}/pulses/${Date.now()}`).then(setPulseImageUrl);
 
   return (
-    <Modal title={matchCandidate ? t('propose_alignment') : (targetTree ? `Grow ${(targetTree as Lifetree).name}` : t('emit_pulse'))} onClose={onClose}>
+    <Modal title={matchCandidate ? t('propose_alignment') : (targetTree ? `Grow ${(targetTree as Lifetree).name}` : (targetVision ? `Grow ${targetVision.title}` : t('emit_pulse')))} onClose={onClose}>
       {matchCandidate ? (
         <form onSubmit={handleAlignment} className="flex flex-col gap-4">
           <div className="bg-sky-50 p-4 rounded text-sky-800">

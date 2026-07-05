@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { showAlert, showConfirm } from "./ui/Dialog";
 import { useLanguage } from '../contexts/LanguageContext';
+import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
 import { Community, Lifetree, Lightseed, Pulse, Intelligence, Persona, Sanctuary } from '../types';
 import { updateCommunity, uploadImage, getTreesByDomain, deleteCommunity, createCommunityEvent, updateEvent, deleteCommunityEvent, getCommunityByDomain, getCommunityEvents, getSanctuariesByDomain, createDecision, voteOnDecision, getDecisions, raiseConcern, resumeDecision, withdrawDecision, getPulsesByTreeId } from '../services/firebase';
@@ -36,10 +37,6 @@ interface CommunityProfileProps {
   // Open an event's page. Seeing an event implies at least viewer rights, so this is
   // offered to everyone — not gated behind edit permissions.
   onViewEvent?: (event: Pulse) => void;
-  currentUser?: Lightseed | null;
-  currentUserId?: string;
-  isAdmin?: boolean;
-  isSuperAdmin?: boolean;
   // Superadmin only — "switch to community view": render the whole app as this community.
   onEnterCommunityView?: (community: Community) => void;
 }
@@ -62,13 +59,13 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   onClose,
   onViewTree,
   onViewEvent,
-  currentUser,
-  currentUserId,
-  isAdmin,
-  isSuperAdmin,
   onEnterCommunityView,
 }) => {
   const { t } = useLanguage();
+  // Session-derived values from context (were prop-drilled from App).
+  const { lightseed, isAdmin, isSuperAdmin } = useSession();
+  const currentUser = lightseed;
+  const currentUserId = lightseed?.uid;
   const canEdit = currentUserId === community.ownerId || isSuperAdmin || isAdmin;
   const canDelete = currentUserId === community.ownerId || isSuperAdmin;
 

@@ -4,6 +4,7 @@ import { Vision } from '../types';
 import { Icons } from './ui/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { canJoinVision } from '../domain/policy';
+import { getLifetreeById } from '../services/firebase';
 import { firestoreStore } from '../adapters/firestore';
 import { participants, isParticipant } from '../domain/views/participation';
 import { ProfileHero } from './ui/ProfileHero';
@@ -22,11 +23,15 @@ interface VisionProfileProps {
     currentUserId?: string;
     onDelete?: (id: string) => void;
     myTrees?: Lifetree[];
+    // Grow this vision — emit a vision_growth pulse onto its rooted tree.
+    onGrow?: (vision: Vision) => void;
+    // Open the vision's root tree.
+    onViewTree?: (tree: Lifetree) => void;
 }
 
 type VisionSection = 'about' | 'participants';
 
-export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTrees }: VisionProfileProps) => {
+export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTrees, onGrow, onViewTree }: VisionProfileProps) => {
     const { t } = useLanguage();
     const isAuthor = currentUserId === vision.authorId;
     const isRoot = vision.title.toLowerCase() === 'root vision';
@@ -35,6 +40,21 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
     const [isJoined, setIsJoined] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
     const [participantCount, setParticipantCount] = useState(0);
+    // The tree this vision is rooted in (vision.lifetreeId). Prefer the local copy; otherwise fetch
+    // (the root tree may belong to someone else and not be in myTrees).
+    const [rootTree, setRootTree] = useState<Lifetree | null>(null);
+    useEffect(() => {
+        if (!vision.lifetreeId) { setRootTree(null); return; }
+        const local = myTrees?.find(tr => tr.id === vision.lifetreeId);
+        if (local) { setRootTree(local); return; }
+        let alive = true;
+        getLifetreeById(vision.lifetreeId).then(tr => { if (alive) setRootTree(tr); }).catch(() => {});
+        return () => { alive = false; };
+    }, [vision.lifetreeId, myTrees]);
+
+    // Growing a vision seals a vision_growth block onto its root tree — available to the vision's
+    // author or the root tree's owner, and only once the vision is actually rooted in a tree.
+    const canGrow = !!currentUserId && !!vision.lifetreeId && (isAuthor || rootTree?.ownerId === currentUserId);
 
     // Participation as a prism over the LIN: the vision's incoming 'joined' links.
     useEffect(() => {
@@ -81,6 +101,15 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                         <span>{t('back')}</span>
                     </button>
                     <div className="flex items-center gap-2">
+                        {canGrow && onGrow && (
+                            <button
+                                onClick={() => onGrow(vision)}
+                                className="flex items-center gap-1 rounded-full bg-emerald-500 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-emerald-600 active:scale-95"
+                            >
+                                <Icons.HandLeaf />
+                                <span>{t('grow_vision')}</span>
+                            </button>
+                        )}
                         {currentUserId && !isAuthor && (
                             <button
                                 onClick={handleJoinToggle}
@@ -127,6 +156,18 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                             )}
                             {vision.visibility && vision.visibility !== 'public' && (
                                 <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">{vision.visibility}</span>
+                            )}
+                            {rootTree && (
+                                <button
+                                    onClick={() => onViewTree?.(rootTree)}
+                                    title={`Rooted in ${rootTree.name}`}
+                                    className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/40 bg-emerald-400/15 px-2.5 py-0.5 text-xs font-medium text-emerald-100 transition-colors hover:bg-emerald-400/30"
+                                >
+                                    {rootTree.imageUrl
+                                        ? <img src={rootTree.imageUrl} alt="" referrerPolicy="no-referrer" className="h-4 w-4 rounded-full object-cover" />
+                                        : <Icons.Tree />}
+                                    <span className="max-w-[10rem] truncate">{t('rooted_in')} {rootTree.name}</span>
+                                </button>
                             )}
                         </div>
                         <p className="mt-1 text-xs text-slate-300 text-center sm:text-left">Seeded by {vision.authorId.substring(0, 6)}…</p>

@@ -9,9 +9,13 @@ export function useImageUpload() {
 
   const handleImageUpload = async (file: File, path: string): Promise<string> => {
     setUploading(true);
-    const url = await uploadImage(file, path);
-    setUploading(false);
-    return url;
+    // finally, so a failed upload (network/oversize/rules) clears the flag instead of leaving the
+    // modal's spinner/disabled-save state stuck on until it remounts.
+    try {
+      return await uploadImage(file, path);
+    } finally {
+      setUploading(false);
+    }
   };
 
   return { uploading, handleImageUpload };

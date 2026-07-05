@@ -1,4 +1,4 @@
-import { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, runTransaction, getDoc, where, updateDoc, deleteDoc, limit, startAfter, QueryDocumentSnapshot, writeBatch, deleteField } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, runTransaction, getDoc, where, updateDoc, deleteDoc, limit, startAfter, QueryDocumentSnapshot, writeBatch, deleteField, getCountFromServer } from 'firebase/firestore';
 import { type Pulse, type Vision, type Community } from '../../types';
 import { uuidv7 } from '../../utils/id';
 import { type PulseVisibility } from '../../domain/pulse';
@@ -25,6 +25,9 @@ export const fetchVisions = async (lastD?: QueryDocumentSnapshot, domainFilter?:
 }
 
 export const getMyVisions = async (uid: string) => (await getDocs(query(visionsCollection, where('authorId', '==', uid)))).docs.map(d => (mapDoc(d) as Vision));
+// Count of a user's visions — a server-side COUNT for the dashboard stat (one read, no download).
+export const getMyVisionCount = async (uid: string): Promise<number> =>
+    (await getCountFromServer(query(visionsCollection, where('authorId', '==', uid)))).data().count;
 // Visions a user joined — a prism over their outgoing 'joined' links (the LIN), then hydrate.
 export const getJoinedVisions = async (uid: string): Promise<Vision[]> => {
     const links = await getDocs(query(collection(db, 'links'), where('from', '==', uid), where('rel', '==', 'joined')));
