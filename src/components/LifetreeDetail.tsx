@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Timestamp } from 'firebase/firestore';
 import { showAlert, showConfirm } from "./ui/Dialog";
 import { useLanguage } from '../contexts/LanguageContext';
+import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
 import Logo from './Logo';
 import { ValidationBadge } from './ValidationBadge';
@@ -29,8 +30,13 @@ const STAGE_META: { key: TreeStage; label: string; hint: string; icon: React.Rea
     { key: 'self_sustaining', label: 'Self-sustaining', hint: 'Established — no scheduled watering.', icon: <Icons.Tree /> },
 ];
 
-export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, onAlertGuardians, myActiveTree, isDefaultTree, onSetDefault, currentUserId, currentUser, isAdmin, isSuperAdmin, targetUserProfile }: any) => {
+export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, onAlertGuardians, isDefaultTree, onSetDefault, targetUserProfile }: any) => {
    const { t } = useLanguage();
+   // Session-derived values from context (were prop-drilled from App).
+   const { lightseed, activeTree, isAdmin, isSuperAdmin } = useSession();
+   const currentUser = lightseed;
+   const currentUserId = lightseed?.uid;
+   const myActiveTree = activeTree;
    const isOwner = currentUserId === tree.ownerId;
    const isNature = tree.isNature;
    // Guardianship is a prism over the LIN: read this tree's incoming 'guardian' links. A guardian

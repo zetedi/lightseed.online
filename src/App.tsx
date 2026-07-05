@@ -433,12 +433,6 @@ const AppContent = () => {
         if (tab === 'profile' && lightseed) {
             return (
                 <LightseedProfile
-                    lightseed={lightseed}
-                    myTrees={myTrees}
-                    guardedTrees={guardedTrees}
-                    isAdmin={isAdmin}
-                    isSuperAdmin={isSuperAdmin}
-                    superAdminExists={superAdminExists}
                     onViewTree={(tree: Lifetree) => setSelectedTree(tree)}
                     onDeleteTree={handleDeleteTree}
                     defaultTreeId={defaultTreeId}
@@ -802,13 +796,8 @@ const AppContent = () => {
                             onReachTree={(tree: Lifetree) => openReach(tree)}
                             onAlertGuardians={() => openReach(selectedTree, 'guardians')}
                             onViewPulse={(p: Pulse) => { setSelectedTree(null); setSelectedPulse(p); }}
-                            myActiveTree={activeTree}
                             isDefaultTree={defaultTreeId === selectedTree.id}
                             onSetDefault={() => { setDefaultTree(selectedTree.id); showAlert(`${selectedTree.name} is now your default tree.`); }}
-                            currentUserId={lightseed?.uid}
-                            currentUser={lightseed}
-                            isAdmin={isAdmin}
-                            isSuperAdmin={isSuperAdmin}
                             targetUserProfile={{ onlyValidatedCanReach: selectedTree.onlyValidatedCanReach }}
                         />
                         {showGrowthPlayer && <GrowthPlayerModal treeId={showGrowthPlayer} onClose={() => setShowGrowthPlayer(null)} />}

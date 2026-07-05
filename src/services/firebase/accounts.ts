@@ -260,11 +260,13 @@ export const checkAndIncrementAiUsage = async (type: 'text' | 'image'): Promise<
             if (!docSnap.exists()) throw new Error("User profile missing");
             const data = docSnap.data();
             const now = Date.now();
-            const lastDate = new Date(data.lastAiReset || 0).getDate();
-            const currentDate = new Date(now).getDate();
+            // Reset when the calendar day (local) differs. Comparing the full date — not just
+            // getDate() (day-of-month) — so a limit hit on e.g. the 5th doesn't stay stuck until
+            // the 5th of the NEXT month; any two same-numbered days a month apart used to collide.
+            const isSameDay = new Date(data.lastAiReset || 0).toDateString() === new Date(now).toDateString();
             let textCount = data.dailyAiText || 0;
             let imageCount = data.dailyAiImage || 0;
-            if (lastDate !== currentDate) { textCount = 0; imageCount = 0; }
+            if (!isSameDay) { textCount = 0; imageCount = 0; }
             if (type === 'text') {
                 if (textCount >= 21) throw new Error("Daily Oracle limit reached (21/21).");
                 textCount++;

@@ -6,6 +6,7 @@ import { getMyPulses, getMyVisions, getJoinedVisions, getMyAlignmentsHistory, de
 import { ReachInbox } from './inspiration/ReachInbox';
 import { findVisionSynergies } from '../services/gemini';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
 import { ValidationBadge } from './ValidationBadge';
 import { isWateringOverdue } from '../domain/watering';
@@ -23,8 +24,10 @@ import { IntelligencePanel } from './intelligence/IntelligencePanel';
 import { ResonanceCard, resonanceId } from './ResonancePanel';
 import { DEFAULT_INTELLIGENCE_ID } from '../services/intelligence';
 
-export const LightseedProfile = ({ lightseed, myTrees, guardedTrees = [], isAdmin, isSuperAdmin, superAdminExists, onViewTree, onDeleteTree, defaultTreeId, onSetDefaultTree, onViewVision, onPlant, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachAudience, reachOpenSignal, onConsumeReach, onReachTree, nodeTheme }: any) => {
+export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSetDefaultTree, onViewVision, onPlant, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachAudience, reachOpenSignal, onConsumeReach, onReachTree, nodeTheme }: any) => {
     const { t } = useLanguage();
+    // Session state comes from context now (was prop-drilled from App).
+    const { lightseed, myTrees, guardedTrees, isAdmin, isSuperAdmin, superAdminExists } = useSession();
     const [activeTab, setActiveTab] = useState<'trees' | 'pulses' | 'visions' | 'history' | 'reaches' | 'invites' | 'appearance' | 'intelligence' | 'settings' | 'admin'>('trees');
     const [preferredIntelligenceId, setPreferredIntelligenceId] = useState<string>('');
     // Resonances the user starred in the Observatory (kept in localStorage).
