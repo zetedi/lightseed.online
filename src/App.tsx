@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import {
   signInWithGoogle,
   logout,
@@ -30,7 +30,7 @@ import { setActiveIntelligenceId } from './services/intelligence';
 import { type Pulse, type Lifetree, type Alignment, type Vision, type Community, type VisionSynergy, type ReachAudience } from './types';
 import Logo from './components/Logo';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
-import { useLifeseed } from './hooks/useLifeseed';
+import { SessionProvider, useSession } from './contexts/SessionContext';
 import { isHubDomain, useConfig } from './hooks/useConfig';
 import { useSiteTheme } from './hooks/useSiteTheme';
 import { useReaches } from './hooks/useReaches';
@@ -40,21 +40,12 @@ import { useForestFeed } from './hooks/useForestFeed';
 import { GDPRBanner } from './components/GDPRBanner';
 import { extractGpsFromImage } from './utils/exif';
 
-// Components
+// Components — the always-present shell (nav, footer, loaders, dialogs) stays statically imported.
 import { Icons } from './components/ui/Icons';
 import { Navigation } from './components/Navigation';
-import { LifetreeCard } from './components/LifetreeCard';
-import { ForestMap } from './components/ForestMap';
-import { LifetreeDetail } from './components/LifetreeDetail';
-import { VisionProfile } from './components/VisionProfile';
-import { PulseDetail } from './components/PulseDetail';
-import { EventProfile } from './components/EventProfile';
 import { queryableLevels, canEditEvent, pulseScope } from './domain/pulseVisibility';
 import { passesForestFilter, canViewTree } from './domain/views/forest';
 import { isWateringOverdue } from './domain/watering';
-import { GrowthPlayerModal } from './components/GrowthPlayerModal';
-import { LightseedProfile } from './components/LightseedProfile';
-import { Dashboard } from './components/Dashboard';
 import { Loading } from './components/ui/Loading';
 import { ScrollChevrons } from './components/ui/ScrollChevrons';
 import { Footer } from './components/ui/Footer';
@@ -66,24 +57,33 @@ import { useDashboardStats } from './hooks/useDashboardStats';
 import { useObservatoryQuote } from './hooks/useObservatoryQuote';
 import { useSuperAdminConsole } from './hooks/useSuperAdminConsole';
 import { setChainLocked } from './domain/chain';
-import { ForestPage } from './pages/ForestPage';
-import { Partners } from './components/intelligence/Partners';
-import { ObservatoryPage } from './pages/ObservatoryPage';
-import { PulseFeedPage } from './pages/PulseFeedPage';
-import { VisionsPage } from './pages/VisionsPage';
 import { LifeseedWidget } from './components/LifeseedWidget';
-import { NewsletterAdmin } from './components/NewsletterAdmin';
-import { CommunityList } from './components/CommunityList';
-import { CommunityProfile } from './components/CommunityProfile';
 import { DialogHost, showAlert, showConfirm } from './components/ui/Dialog';
 import { isExplicitlyValidatedTree } from './utils/validation';
 
-// Modals
-import { PlantTreeModal } from './components/modals/PlantTreeModal';
-import { AuthModal } from './components/modals/AuthModal';
-import { EmitPulseModal } from './components/modals/EmitPulseModal';
-import { EventModal } from './components/modals/EventModal';
-import { CreateVisionModal } from './components/modals/CreateVisionModal';
+// Route pages, detail overlays, and modals are code-split: each becomes its own chunk that loads
+// only when first shown, so the initial bundle (and Quill, which only the modals use) no longer
+// ships on first paint. Named exports are adapted to lazy()'s default-export contract.
+const Dashboard = lazy(() => import('./components/Dashboard').then(m => ({ default: m.Dashboard })));
+const LightseedProfile = lazy(() => import('./components/LightseedProfile').then(m => ({ default: m.LightseedProfile })));
+const NewsletterAdmin = lazy(() => import('./components/NewsletterAdmin').then(m => ({ default: m.NewsletterAdmin })));
+const CommunityList = lazy(() => import('./components/CommunityList').then(m => ({ default: m.CommunityList })));
+const CommunityProfile = lazy(() => import('./components/CommunityProfile').then(m => ({ default: m.CommunityProfile })));
+const Partners = lazy(() => import('./components/intelligence/Partners').then(m => ({ default: m.Partners })));
+const ObservatoryPage = lazy(() => import('./pages/ObservatoryPage').then(m => ({ default: m.ObservatoryPage })));
+const ForestPage = lazy(() => import('./pages/ForestPage').then(m => ({ default: m.ForestPage })));
+const VisionsPage = lazy(() => import('./pages/VisionsPage').then(m => ({ default: m.VisionsPage })));
+const PulseFeedPage = lazy(() => import('./pages/PulseFeedPage').then(m => ({ default: m.PulseFeedPage })));
+const LifetreeDetail = lazy(() => import('./components/LifetreeDetail').then(m => ({ default: m.LifetreeDetail })));
+const VisionProfile = lazy(() => import('./components/VisionProfile').then(m => ({ default: m.VisionProfile })));
+const EventProfile = lazy(() => import('./components/EventProfile').then(m => ({ default: m.EventProfile })));
+const PulseDetail = lazy(() => import('./components/PulseDetail').then(m => ({ default: m.PulseDetail })));
+const GrowthPlayerModal = lazy(() => import('./components/GrowthPlayerModal').then(m => ({ default: m.GrowthPlayerModal })));
+const PlantTreeModal = lazy(() => import('./components/modals/PlantTreeModal').then(m => ({ default: m.PlantTreeModal })));
+const AuthModal = lazy(() => import('./components/modals/AuthModal').then(m => ({ default: m.AuthModal })));
+const EmitPulseModal = lazy(() => import('./components/modals/EmitPulseModal').then(m => ({ default: m.EmitPulseModal })));
+const EventModal = lazy(() => import('./components/modals/EventModal').then(m => ({ default: m.EventModal })));
+const CreateVisionModal = lazy(() => import('./components/modals/CreateVisionModal').then(m => ({ default: m.CreateVisionModal })));
 
 // The full-screen overlay every detail view (tree / vision / event / community) scrolls inside.
 // Module-scope so it keeps a stable identity (an inline definition remounts its subtree — and
@@ -96,7 +96,7 @@ const DetailWrapper = ({ children }: { children?: React.ReactNode }) => (
 
 const AppContent = () => {
     const { t } = useLanguage();
-    const { lightseed, myTrees, guardedTrees, activeTree, defaultTreeId, setDefaultTree, isAdmin, isSuperAdmin, superAdminExists, loading: authLoading, refreshTrees } = useLifeseed();
+    const { lightseed, myTrees, guardedTrees, activeTree, defaultTreeId, setDefaultTree, isAdmin, isSuperAdmin, superAdminExists, loading: authLoading, refreshTrees } = useSession();
     // The set of trees the signed-in user guards (the LIN, via guardian links) — passed to cards
     // so a card can show its guardian affordance without a per-card read.
     const guardedTreeIds = useMemo(() => new Set(guardedTrees.map(t => t.id)), [guardedTrees]);
@@ -410,8 +410,7 @@ const AppContent = () => {
         if (tab === 'dashboard') {
             return (
                 <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
-                    <Dashboard 
-                        lightseed={lightseed} 
+                    <Dashboard
                         stats={{
                             trees: myTrees.length,
                             pulses: stats.pulses,
@@ -419,7 +418,6 @@ const AppContent = () => {
                             alignments: stats.alignments,
                             danger: guardedTrees.filter(t => t.status === 'DANGER').length
                         }}
-                        firstTreeImage={activeTree?.latestGrowthUrl || activeTree?.imageUrl}
                         hostCommunity={impersonatedCommunity || hostCommunity}
                         events={dashboardEvents}
                         onViewEvent={(p: Pulse) => setSelectedPulse(p)}
@@ -742,22 +740,18 @@ const AppContent = () => {
                 )}
                 {(
                     <Navigation
-                        lightseed={lightseed}
                         activeTab={tab}
                         setTab={(t: string) => { setSelectedTree(null); setSelectedVision(null); setSelectedPulse(null); setTab(t); }}
                         onLogin={() => setShowAuthModal(true)}
-                        onLogout={() => { logout(); setTab('dashboard'); }} 
-                        onPlant={() => openPlant()} 
+                        onLogout={() => { logout(); setTab('dashboard'); }}
+                        onPlant={() => openPlant()}
                         onPulse={() => openPulseModal()}
                         onCreateVision={() => setShowVisionModal(true)}
-                        onProfile={() => setTab('profile')} 
+                        onProfile={() => setTab('profile')}
                         pendingAlignmentsCount={alignments.length}
-                        myTreesCount={myTrees.length}
-                        dangerTreesCount={guardedTrees.filter(t => t.status === 'DANGER').length}
                         reachNotificationsCount={unreadReaches}
                         treeInviteCount={pendingTreeInvites}
                         careAlertCount={wateringNeededCount}
-                        activeTreeImage={activeTree?.latestGrowthUrl || activeTree?.imageUrl}
                         onOpenReachInbox={openDirectMessages}
                         logoUrl={configuredLogoUrl}
                         appName={isHubDomain(window.location.hostname) ? '.seed' : config.name}
@@ -784,6 +778,7 @@ const AppContent = () => {
                         />
                     </div>
                 )}
+                <Suspense fallback={<div className="min-h-[60vh] flex items-center justify-center"><Loading /></div>}>
                 {selectedTree ? (
                     <div className="animate-in fade-in duration-200">
                         <LifetreeDetail
@@ -842,6 +837,7 @@ const AppContent = () => {
                         />
                     </div>
                 ) : renderMainContent()}
+                </Suspense>
                 <GDPRBanner />
                 <DialogHost />
 
@@ -852,6 +848,7 @@ const AppContent = () => {
 
             <Footer community={impersonatedCommunity || hostCommunity || defaultCommunity} theme={effectiveTheme} isDark={effectiveIsDark} />
 
+            <Suspense fallback={null}>
             {/* Non-event pulses keep the full-screen overlay (they carry their own sticky top bar). */}
             {selectedPulse && selectedPulse.type !== 'event' && (
                 <DetailWrapper>
@@ -970,6 +967,7 @@ const AppContent = () => {
                     uploadBase64Image={uploadBase64Image}
                 />
             )}
+            </Suspense>
         </div>
     );
 }
@@ -983,7 +981,9 @@ const App = () => {
 
   return (
     <LanguageProvider>
-      <AppContent />
+      <SessionProvider>
+        <AppContent />
+      </SessionProvider>
     </LanguageProvider>
   );
 };

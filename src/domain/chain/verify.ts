@@ -17,14 +17,16 @@ import { sha256 } from '../../utils/crypto';
 // The immutable payload of a block. EXCLUDED on purpose: id, hash, previousHash (an input, not
 // content), createdAt (serverTimestamp — non-reproducible; replaced by an explicit mintedAt in the
 // preimage), and all mutable/off-chain interaction state (loveCount, commentCount, seenBy,
-// aiInterpretation, validationScore, reachResponse, mintNotice, wateringConfirmation — the last is
-// mutated when a guardian confirms, so it must be split out before it can be hashed).
+// aiInterpretation, validationScore, reachResponse, mintNotice, and the watering-confirmation pair
+// wateringConfirmation + wateringConfirmedBy — both are mutated when a guardian confirms a pending
+// watering, so they must be split out before it can be hashed, or the confirmation would break the
+// seal of an otherwise-untampered block).
 export const BLOCK_CONTENT_FIELDS = [
   'lid', 'lifetreeId', 'visionId', 'communityId', 'type', 'visibility',
   'title', 'body', 'content', 'imageUrl', 'imageUrls', 'eventDate', 'eventLocation',
   'reachTreeId', 'reachTreeName', 'recipientUid', 'recipientName',
   'threadId', 'participantUids', 'audience', 'threadName', 'isGroup',
-  'care', 'careAlert', 'wateringConfirmedBy',
+  'care', 'careAlert',
   'isMatch', 'matchedLifetreeId', 'matchId',
   'authorId', 'authorName', 'authorPersonName', 'authorPhoto', 'growthCategory', 'visionTitle',
 ] as const;

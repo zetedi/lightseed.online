@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
 import { Modal } from './ui/Modal';
 import Logo from './Logo';
 
 
 interface NavigationProps {
-  lightseed: any;
   activeTab: string;
   setTab: (tab: string) => void;
   onPlant: () => void;
@@ -17,12 +17,9 @@ interface NavigationProps {
   onProfile: () => void;
   onCreateVision: () => void;
   pendingAlignmentsCount: number;
-  myTreesCount: number;
-  dangerTreesCount: number;
   reachNotificationsCount?: number;
   treeInviteCount?: number;
   careAlertCount?: number;
-  activeTreeImage?: string;
   logoUrl?: string;
   appName?: string;
   theme?: {
@@ -62,23 +59,19 @@ const isDarkHex = (hex: string | undefined, fallback: boolean) => {
     return luminance < 0.38;
 };
 
-export const Navigation = ({ 
-    lightseed, 
-    activeTab, 
-    setTab, 
-    onPlant, 
-    onPulse, 
-    onLogin, 
-    onLogout, 
-    onProfile, 
-    onCreateVision, 
-    pendingAlignmentsCount, 
-    myTreesCount = 0, 
-    dangerTreesCount = 0,
+export const Navigation = ({
+    activeTab,
+    setTab,
+    onPlant,
+    onPulse,
+    onLogin,
+    onLogout,
+    onProfile,
+    onCreateVision,
+    pendingAlignmentsCount,
     reachNotificationsCount = 0,
     careAlertCount = 0,
     treeInviteCount = 0,
-    activeTreeImage,
     logoUrl,
     appName = '.seed',
     theme,
@@ -87,6 +80,11 @@ export const Navigation = ({
     onOpenReachInbox
 }: NavigationProps) => {
     const { t, language, setLanguage } = useLanguage();
+    // Session-derived values come straight from context now (no longer prop-drilled from App).
+    const { lightseed, myTrees, guardedTrees, activeTree } = useSession();
+    const myTreesCount = myTrees.length;
+    const dangerTreesCount = guardedTrees.filter((tr) => tr.status === 'DANGER').length;
+    const activeTreeImage = activeTree?.latestGrowthUrl || activeTree?.imageUrl;
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isLangOpen, setIsLangOpen] = useState(false);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);

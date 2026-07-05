@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useSession } from '../contexts/SessionContext';
 import { getNetworkStats } from '../services/firebase';
 import { Icons } from './ui/Icons';
 import { ScrollChevrons } from './ui/ScrollChevrons';
@@ -10,7 +11,6 @@ import Logo from './Logo';
 import { Community, Pulse } from '../types';
 
 export interface DashboardProps {
-    lightseed: any;
     stats: {
         trees: number;
         pulses: number;
@@ -18,7 +18,6 @@ export interface DashboardProps {
         alignments: number;
         danger: number;
     };
-    firstTreeImage?: string;
     hostCommunity?: Community | null;
     events?: Pulse[];
     onViewEvent?: (event: Pulse) => void;
@@ -44,8 +43,11 @@ const LeafTexture = () => (
     </svg>
 );
 
-export const Dashboard = ({ lightseed, stats, firstTreeImage, hostCommunity, events, onViewEvent, onViewCommunity, onSetTab, onPlant, onLogin }: DashboardProps) => {
+export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCommunity, onSetTab, onPlant, onLogin }: DashboardProps) => {
     const { t } = useLanguage();
+    // Session-derived values read straight from context (no longer prop-drilled from App).
+    const { lightseed, activeTree } = useSession();
+    const firstTreeImage = activeTree?.latestGrowthUrl || activeTree?.imageUrl;
     const eventsScrollRef = useRef<HTMLDivElement>(null);
     const [networkStats, setNetworkStats] = useState({ trees: 0, pulses: 0, visions: 0 });
     const videoRef = useRef<HTMLVideoElement>(null);
