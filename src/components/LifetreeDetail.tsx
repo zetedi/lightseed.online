@@ -649,7 +649,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                             ? <ActionBtn onClick={() => onReachTree?.(tree)} title="Reach" color="bg-amber-500 text-white hover:bg-amber-600" icon={<Icons.Lightning />} label="Reach" />
                             : <ActionBtn disabled title={t('only_if_validated')} color="bg-white/20 text-white/70" icon={<Icons.Eye />} label={t('only_if_validated')} />}
                         {showValidateAction && <ActionBtn onClick={async () => { const nv = !hasValidationBadge; if (await showConfirm(nv ? 'Validate this tree?' : 'Remove validation from this tree?', { title: 'Validation' })) onValidate(tree.id, nv); }} title={hasValidationBadge ? 'Remove validation' : t('validate_action')} color="bg-emerald-600 text-white hover:bg-emerald-700" icon={<Icons.ShieldCheck />} label={hasValidationBadge ? 'Validated' : t('validate_action')} />}
-                        {isOwner && !isEditing && <ActionBtn onClick={onCreatePulse} title="Tend this tree — a pulse of care (we both grow)" color="bg-white text-emerald-700 hover:bg-emerald-50" icon={<Icons.Leaf />} label="Tend" />}
+                        {isOwner && !isEditing && <ActionBtn onClick={onCreatePulse} title="Tend this tree — a pulse of care (we both grow)" color="bg-white text-emerald-700 hover:bg-emerald-50" icon={<Icons.HandLeaf />} label="Tend" />}
                         {isOwner && !isEditing && onSetDefault && <ActionBtn onClick={() => { if (!isDefaultTree) onSetDefault(); }} disabled={isDefaultTree} title={isDefaultTree ? 'Your default tree' : 'Set as default tree'} color={isDefaultTree ? 'bg-amber-400 text-amber-950' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'} icon={<Icons.Star filled={isDefaultTree} />} label="Favourite" />}
                         {canEdit && !isEditing && <ActionBtn onClick={() => { setIsEditing(true); setSection('details'); }} title={t('edit')} color="bg-slate-100 text-slate-700 hover:bg-slate-200" icon={<Icons.Pencil />} label={t('edit')} />}
                         {canDelete && !isEditing && <ActionBtn onClick={() => setShowDeleteModal(true)} title="Delete tree" color="bg-red-500 text-white hover:bg-red-600" icon={<Icons.Trash />} label="Delete" />}
@@ -884,7 +884,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                     <div className="flex w-full justify-start pl-12 md:justify-center md:pl-0">
                                         <button onClick={onCreatePulse} title="Tend this tree — a pulse of care (we both grow)"
                                             className="relative z-10 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-7 py-3 font-bold uppercase tracking-widest text-white ring-2 ring-yellow-300/60 shadow-[0_0_22px_rgba(250,204,21,0.55)] transition-all hover:bg-emerald-700 hover:shadow-[0_0_32px_rgba(250,204,21,0.85)] active:scale-95">
-                                            <Icons.Leaf /> <span>Tend</span>
+                                            <Icons.HandLeaf /> <span>Tend</span>
                                         </button>
                                     </div>
                                 )}
