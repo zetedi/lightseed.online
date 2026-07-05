@@ -639,11 +639,13 @@ const resolveGuardianUids = async (treeId: string): Promise<string[]> => {
     return Array.from(new Set(fromLinks.filter(Boolean)));
 };
 
-const waterMeText = (treeName: string, daysOverdue: number): string => {
+// Stage-aware voice: a potted seed speaks as a seed (mirrors the client's stage story).
+const waterMeText = (treeName: string, daysOverdue: number, stage?: string): string => {
     const who = treeName || "This tree";
-    if (daysOverdue <= 0) return `I'm ready for watering 💧 — could a guardian tend me today?`;
-    if (daysOverdue === 1) return `I'm getting thirsty 💧 — it's been a day past my watering. Could a guardian tend me?`;
-    return `I'm thirsty 💧 — it's been ${daysOverdue} days past my watering. Could a guardian tend me? — ${who}`;
+    const self = stage === "potted" ? "I'm a seed in my pot 🌱" : "I'm thirsty 💧";
+    if (daysOverdue <= 0) return `${stage === "potted" ? "I'm a seed in my pot 🌱 and" : "I'm"} ready for watering 💧 — could a guardian tend me today?`;
+    if (daysOverdue === 1) return `${stage === "potted" ? "I'm a seed in my pot 🌱 getting thirsty" : "I'm getting thirsty 💧"} — it's been a day past my watering. Could a guardian tend me?`;
+    return `${self} — it's been ${daysOverdue} days past my watering. Could a guardian tend me? — ${who}`;
 };
 
 export const checkWateringSchedules = onSchedule({
@@ -683,7 +685,7 @@ export const checkWateringSchedules = onSchedule({
                 if (participantUids.filter((u) => u !== ownerUid).length > 0) {
                     const threadId = ["grp", docSnap.id, "guardians", ownerUid].join("__");
                     const daysOver = Math.max(0, Math.floor((now - nextDue) / WATER_DAY_MS));
-                    const text = waterMeText(tree.name, daysOver);
+                    const text = waterMeText(tree.name, daysOver, w.stage);
 
                     await db.collection("pulses").add({
                         lifetreeId: docSnap.id,

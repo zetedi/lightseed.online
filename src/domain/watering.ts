@@ -14,17 +14,13 @@ export type WateringMode = 'scheduled' | 'self_sustaining';
 //   'potted'          — a seed growing in a pot; the most fragile, tended on a schedule.
 //   'planted'         — in the ground but still needs care; tended on a schedule.
 //   'self_sustaining' — established; no scheduled watering.
-// The stage refines the mode (potted/planted ⇒ 'scheduled', self_sustaining ⇒ 'self_sustaining')
-// so everything keyed on mode — the daily sweep's query included — keeps working unchanged.
+// The stage refines the mode (potted/planted ⇒ 'scheduled', self_sustaining ⇒ 'self_sustaining').
+// MODE stays canonical — the daily sweep queries on it and treeStage() defers to it — so an
+// inconsistent pair can never hide a tended-looking tree from the sweep.
 export type TreeStage = 'potted' | 'planted' | 'self_sustaining';
 
-export const TREE_STAGES: TreeStage[] = ['potted', 'planted', 'self_sustaining'];
-
-export const stageToMode = (stage: TreeStage): WateringMode =>
-  stage === 'self_sustaining' ? 'self_sustaining' : 'scheduled';
-
 export interface WateringSchedule {
-  mode: WateringMode;
+  mode?: WateringMode;        // absent only on partial legacy maps (an off-chain tick on a never-scheduled tree)
   stage?: TreeStage;          // growth stage; legacy docs derive it from mode (see treeStage)
   intervalDays?: number;      // for 'scheduled' — how many days between waterings
   lastWateredAt?: Timestamp;  // last confirmed watering (or when the schedule was set)
@@ -58,13 +54,14 @@ type TreeLike = Pick<Lifetree, 'watering' | 'createdAt'> | null | undefined;
 export const wateringOf = (tree: TreeLike): WateringSchedule | undefined =>
   (tree as any)?.watering as WateringSchedule | undefined;
 
-// The tree's growth stage. Legacy docs carry only a mode: self-sustaining maps to itself,
-// anything scheduled reads as 'planted' (in the ground, needs care), and a tree with no
-// watering record at all is treated as 'planted' — cared for, just not on a schedule yet.
+// The tree's growth stage. Mode is canonical (the sweep queries it), so a self-sustaining
+// mode always reads as self-sustaining regardless of a stray stage; within scheduled care,
+// stage distinguishes the pot from the ground. Legacy docs with only a mode — and trees with
+// no watering record at all — read as 'planted': cared for, just not staged yet.
 export const treeStage = (tree: TreeLike): TreeStage => {
   const w = wateringOf(tree);
-  if (w?.stage) return w.stage;
-  return w?.mode === 'self_sustaining' ? 'self_sustaining' : 'planted';
+  if (w?.mode === 'self_sustaining') return 'self_sustaining';
+  return w?.stage === 'potted' ? 'potted' : 'planted';
 };
 
 // A tree is on a watering schedule (vs. self-sustaining / no schedule) when it has a mode

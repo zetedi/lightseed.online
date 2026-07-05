@@ -12,7 +12,7 @@ import { analyzeWateringPhoto } from '../services/gemini';
 import { Pulse, type InvitableRole, treeRelationLabels } from '../types';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
 import { canReachTree } from '../utils/reachPermissions';
-import { isOnWateringSchedule, isWateringOverdue, daysUntilWatering, daysOverdue, lastWateredMillis, wateringAlertedToday, treeStage, type TreeStage } from '../domain/watering';
+import { isOnWateringSchedule, isWateringOverdue, daysUntilWatering, daysOverdue, lastWateredMillis, wateringAlertedToday, treeStage, computeNextDueMillis, type TreeStage } from '../domain/watering';
 import { treeCircle } from '../domain/views/circle';
 import { firestoreStore } from '../adapters/firestore';
 import { canTendTree } from '../domain/policy';
@@ -20,6 +20,14 @@ import { SectionMenu } from './ui/SectionMenu';
 import { ProfileHero } from './ui/ProfileHero';
 import { ProfileLayout } from './ui/ProfileLayout';
 import { SectionCard } from './ui/SectionCard';
+
+// The three growth stages, in growing order — a seed in its pot, in the ground but still
+// tended, and finally self-sustaining. The first two are watered on a schedule.
+const STAGE_META: { key: TreeStage; label: string; hint: string; icon: React.ReactNode }[] = [
+    { key: 'potted', label: 'Seed in a pot', hint: 'A seed growing in its pot — the most fragile stage.', icon: <Icons.Sprout /> },
+    { key: 'planted', label: 'In the ground', hint: 'Planted out, but still needs regular care.', icon: <Icons.Leaf /> },
+    { key: 'self_sustaining', label: 'Self-sustaining', hint: 'Established — no scheduled watering.', icon: <Icons.Tree /> },
+];
 
 export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, onAlertGuardians, myActiveTree, isDefaultTree, onSetDefault, currentUserId, currentUser, isAdmin, isSuperAdmin, targetUserProfile }: any) => {
    const { t } = useLanguage();
@@ -108,15 +116,19 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const [waterOnChain, setWaterOnChain] = useState(false);
    const [confirmingId, setConfirmingId] = useState<string | null>(null);
    const waterFileRef = useRef<HTMLInputElement>(null);
-   // The component instance is reused across trees, so re-seed the schedule editor when the
-   // tree changes (useState initialisers only run on mount).
+   // The component instance is reused across trees, so reset the panel when the tree changes
+   // (useState initialisers only run on mount).
    useEffect(() => {
-       setWaterStage(treeStage(tree));
-       setWaterInterval(tree.watering?.intervalDays || 7);
        setWaterMsg(null);
        setWaterOnChain(false);
        setEditVisibility(tree.visibility || 'public');
    }, [tree.id]);
+   // Re-seed the schedule editor whenever the watering data itself changes — including a remote
+   // edit by another tender — so Save never silently reverts someone else's schedule.
+   useEffect(() => {
+       setWaterStage(treeStage(tree));
+       setWaterInterval(tree.watering?.intervalDays || 7);
+   }, [tree.id, tree.watering]);
 
    // Note: getPulsesByTreeId returns Descending order (Newest First). Extracted so a fresh
    // watering can refresh the chain in place.
@@ -354,12 +366,10 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const handleSaveSchedule = async () => {
        setWaterBusy(true); setWaterMsg(null);
        try {
-           await setWateringSchedule(tree.id, { stage: waterStage, intervalDays: waterInterval });
-           const now = Date.now();
-           const iv = Math.max(1, Math.round(waterInterval));
-           onUpdate?.({ watering: waterStage === 'self_sustaining'
-               ? { mode: 'self_sustaining', stage: 'self_sustaining' }
-               : { mode: 'scheduled', stage: waterStage, intervalDays: iv, lastWateredAt: Timestamp.fromMillis(now), nextDueAt: Timestamp.fromMillis(now + iv * 86400000), overdue: false } });
+           // Mirror exactly what was written — the service builds (and returns) the schedule.
+           const watering = await setWateringSchedule(tree.id, { stage: waterStage, intervalDays: waterInterval, prev: tree.watering });
+           onUpdate?.({ watering });
+           const iv = watering.intervalDays || 0;
            setWaterMsg(waterStage === 'self_sustaining'
                ? 'Marked self-sustaining — it grows on its own now.'
                : `${waterStage === 'potted' ? 'Seed in its pot' : 'In the ground'} — watering every ${iv} day${iv > 1 ? 's' : ''}.`);
@@ -369,21 +379,21 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
 
    const handleWaterPick = () => waterFileRef.current?.click();
 
-   // Off-chain watering: just reset the cadence (utility), no photo / no growth block.
+   // Off-chain watering (the default): reset the cadence + tending clock, no photo / no growth block.
    const handleWaterBypass = async () => {
        if (!currentUserId) return;
        setWaterBusy(true); setWaterMsg(null);
        try {
-           const iv = tree.watering?.mode === 'scheduled' ? tree.watering?.intervalDays : undefined;
-           await markWateredOffChain(tree.id, iv);
+           await markWateredOffChain(tree, sender);
            const now = Date.now();
+           const iv = tree.watering?.mode === 'scheduled' ? tree.watering?.intervalDays : undefined;
            onUpdate?.({ watering: {
                ...(tree.watering || {}),
                overdue: false,
                lastWateredAt: Timestamp.fromMillis(now),
-               ...(iv ? { nextDueAt: Timestamp.fromMillis(now + iv * 86400000) } : {}),
+               ...(iv ? { nextDueAt: Timestamp.fromMillis(computeNextDueMillis(now, iv)) } : {}),
            } });
-           setWaterMsg('Marked watered 💧 — kept off the chain.');
+           setWaterMsg('Watered today 💧 — kept off the chain.');
        } catch (e: any) { setWaterMsg(e?.message || 'Could not mark watered.'); }
        setWaterBusy(false);
    };
@@ -406,7 +416,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                ...(tree.watering || {}),
                overdue: false,
                lastWateredAt: Timestamp.fromMillis(now),
-               ...(iv ? { nextDueAt: Timestamp.fromMillis(now + iv * 86400000) } : {}),
+               ...(iv ? { nextDueAt: Timestamp.fromMillis(computeNextDueMillis(now, iv)) } : {}),
            } });
            loadChain();
            setWaterMsg(confirmedBy === 'ai'
@@ -435,13 +445,8 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
        setWaterBusy(false);
    };
 
-   // The three growth stages, in growing order — a seed in its pot, in the ground but still
-   // tended, and finally self-sustaining. The first two are watered on a schedule.
-   const STAGE_META: { key: TreeStage; label: string; hint: string; icon: React.ReactNode }[] = [
-       { key: 'potted', label: 'Seed in a pot', hint: 'A seed growing in its pot — the most fragile stage.', icon: <Icons.Sprout /> },
-       { key: 'planted', label: 'In the ground', hint: 'Planted out, but still needs regular care.', icon: <Icons.Leaf /> },
-       { key: 'self_sustaining', label: 'Self-sustaining', hint: 'Established — no scheduled watering.', icon: <Icons.Tree /> },
-   ];
+   // The stage's droplet: a potted seed shows the sprout story, the rest the plain drop.
+   const stageEmoji = stage === 'potted' ? '🌱' : '💧';
 
    const WateringPanel = () => (
        <SectionCard title="Watering" icon={<Icons.Droplet />} className={overdue ? 'ring-2 ring-sky-300' : ''}>
@@ -450,9 +455,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                    <p>🌳 Self-sustaining — this tree needs no scheduled watering.</p>
                ) : scheduled ? (
                    overdue ? (
-                       <p className="font-semibold text-sky-700">{stage === 'potted' ? '🌱' : '💧'} Thirsty — {overByDays > 0 ? `${overByDays} day${overByDays > 1 ? 's' : ''} overdue` : 'watering due today'}.</p>
+                       <p className="font-semibold text-sky-700">{stageEmoji} Thirsty — {overByDays > 0 ? `${overByDays} day${overByDays > 1 ? 's' : ''} overdue` : 'watering due today'}.</p>
                    ) : (
-                       <p>{stage === 'potted' ? '🌱 A seed in its pot — next' : '💧 Next'} watering in {dueInDays} day{dueInDays !== 1 ? 's' : ''}.</p>
+                       <p>{stageEmoji} {stage === 'potted' ? 'A seed in its pot — next' : 'Next'} watering in {dueInDays} day{dueInDays !== 1 ? 's' : ''}.</p>
                    )
                ) : (
                    <p>No watering schedule yet.</p>
@@ -838,15 +843,18 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     </div>
                 )}
 
-                {section === 'guardians' && <GuardianshipPanel />}
+                {/* The panels are render helpers, CALLED (not mounted as <Panel />): their function
+                    identity changes every render, and as JSX component types React would unmount
+                    and remount the whole subtree on each keystroke — dropping focus mid-form. */}
+                {section === 'guardians' && GuardianshipPanel()}
 
                 {section === 'care' && (
                     (isOwner || isTender || isAdmin || isSuperAdmin)
-                        ? <WateringPanel />
+                        ? WateringPanel()
                         : <p className="rounded-2xl border border-slate-100 bg-white p-6 text-center text-sm text-slate-400">Only the tree's circle can tend its care.</p>
                 )}
 
-                {section === 'circle' && <TreeCirclePanel />}
+                {section === 'circle' && TreeCirclePanel()}
 
                 {/* Digital Tree — the immutable growth chain (collapsible). */}
                 {section === 'digital' && loadingChain && (

@@ -23,17 +23,33 @@
     ],
     "headers": [
       {
-        "comment": "Fingerprinted assets never change — cache them forever.",
+        "comment": "Fingerprinted assets never change \u2014 cache them forever.",
         "source": "/assets/**",
         "headers": [
-          { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=31536000, immutable"
+          }
         ]
       },
       {
         "comment": "Always revalidate the HTML shell so a new deploy is picked up immediately.",
         "source": "/index.html",
         "headers": [
-          { "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, max-age=0, must-revalidate"
+          }
+        ]
+      },
+      {
+        "comment": "The service worker and its loader must never be cached, or PWA updates stall.",
+        "source": "/{sw.js,registerSW.js,manifest.webmanifest}",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, max-age=0, must-revalidate"
+          }
         ]
       }
     ]

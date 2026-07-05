@@ -14,7 +14,10 @@
     "typecheck:functions": "tsc --noEmit -p functions/tsconfig.json",
     "check": "npm run typecheck && npm run typecheck:functions",
     "seed:lightseed": "node scripts/seed-lightseed.mjs",
-    "migrate:reach-privacy": "node scripts/backfill-reach-privacy.mjs"
+    "migrate:reach-privacy": "node scripts/backfill-reach-privacy.mjs",
+    "context": "bash scripts/state.sh",
+    "flatten": "bash scripts/flat.sh",
+    "test:gemini": "node scripts/test-gemini.mjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -35,6 +38,7 @@
     "postcss": "^8.5.15",
     "tailwindcss": "^4.3.0",
     "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "vite": "^6.2.0",
+    "vite-plugin-pwa": "^1.3.0"
   }
 }
