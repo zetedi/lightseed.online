@@ -16,6 +16,7 @@ import { ProfileLayout } from './ui/ProfileLayout';
 import { SectionTitle } from './ui/SectionTitle';
 import { DefaultCardImage } from './ui/DefaultCardImage';
 import { normalizeTheme } from '../utils/theme';
+import { sanitizeRichText } from '../utils/sanitize';
 import { nodeDefaultTheme } from '../hooks/useConfig';
 import { AppearanceEditor } from './ui/AppearanceEditor';
 import { IntelligencePanel } from './intelligence/IntelligencePanel';
@@ -653,7 +654,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                     <SaveBar />
                   </>
                 ) : (
-                  <div className="prose prose-slate max-w-none text-slate-700 leading-relaxed break-words [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg" dangerouslySetInnerHTML={{ __html: community.vision || '<p>No vision shared yet.</p>' }} />
+                  <div className="prose prose-slate max-w-none text-slate-700 leading-relaxed break-words [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg" dangerouslySetInnerHTML={{ __html: community.vision ? sanitizeRichText(community.vision) : '<p>No vision shared yet.</p>' }} />
                 )}
 
                 {/* The chain seal — this node's commitment to a verifiable chain. Sealed is a public

@@ -55,6 +55,16 @@ service cloud.firestore {
         hasLink('co_owner', treeId) || hasLink('steward', treeId)
         || hasLink('observer', treeId) || isTreeOwner(treeId));
     }
+    // The credential a peer needs to pass validation on: a lifetree the caller OWNS that is itself
+    // validated (the web-of-trust root is a staff/GENESIS-validated tree). Mirrors canValidateTree
+    // in src/utils/validation.ts, minus its time-based "live" freshness check (still enforced in the
+    // UI/service layer). Blocks self-validation: an unvalidated tree cannot be its own validator.
+    function isOwnedValidatedTree(treeId) {
+      return treeId is string && treeId != ''
+        && exists(/databases/$(database)/documents/lifetrees/$(treeId))
+        && get(/databases/$(database)/documents/lifetrees/$(treeId)).data.ownerId == request.auth.uid
+        && get(/databases/$(database)/documents/lifetrees/$(treeId)).data.get('validated', false) == true;
+    }
     // A private direct message / group reach: a 'reach' pulse that names its recipients
     // (participantUids) or a single recipient (legacy recipientUid). Minted, public "reach"
     // reflections have neither and stay world-readable through the normal visibility path.
@@ -103,7 +113,17 @@ service cloud.firestore {
     // without exposing the rest of the private user doc to other members.
     match /users/{userId} {
       allow read: if isOwner(userId) || isStaff();
-      allow write: if isOwner(userId);
+      allow create, delete: if isOwner(userId) || isStaff();
+      // `invitesRemaining` is a server-authoritative allowance. From the client a user may only
+      // SPEND it (lower it) or hold it within the self-serve allotment (144, granted on community
+      // creation) — it can never be inflated past that, closing the "set invitesRemaining:1e6 →
+      // unlimited invites" hole. All other profile fields (theme, prefs, privacy flags) stay
+      // self-writable. Staff may set any value.
+      allow update: if isStaff()
+        || (isOwner(userId) && (
+             request.resource.data.get('invitesRemaining', 0) <= resource.data.get('invitesRemaining', 0)
+             || request.resource.data.get('invitesRemaining', 0) <= 144
+           ));
     }
 
     // Subscriptions: Create public, Read staff
@@ -139,8 +159,26 @@ service cloud.firestore {
                      || (isSignedIn() && resource.data.ownerId == request.auth.uid)
                      || isStaff();
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff()
-                     || hasLink('co_owner', treeId) || hasLink('steward', treeId));
+      // Tenders (owner/co_owner/steward) or staff may edit a tree — but `validated`/`validatorId`
+      // and `ownerId` are FROZEN on the edit path, so a tree can neither self-validate (the flag
+      // that bypasses onlyValidatedCanReach) nor transfer its own ownership from the client.
+      allow update: if isSignedIn() && (
+        (
+          (resource.data.ownerId == request.auth.uid || isStaff()
+             || hasLink('co_owner', treeId) || hasLink('steward', treeId))
+          && !request.resource.data.diff(resource.data).affectedKeys()
+                .hasAny(['validated', 'validatorId', 'ownerId'])
+        )
+        // Peer validation (web of trust): a validator signs ANOTHER tree with a validated tree it
+        // owns. Only the validation fields may change here; self-validation is blocked because an
+        // unvalidated tree fails isOwnedValidatedTree.
+        || (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['validated', 'validatorId', 'updatedAt'])
+          && request.resource.data.get('validated', false) == true
+          && isOwnedValidatedTree(request.resource.data.get('validatorId', ''))
+        )
+        || isStaff()
+      );
       allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
     }
 
@@ -181,28 +219,55 @@ service cloud.firestore {
         isStaff() ||
         isCommunityOwner(request.resource.data.communityId)
       );
-      // Loves / seen / translations stay open to any signed-in user (broad by design). Two
-      // trust-sensitive changes are gated:
-      //  • wateringConfirmedBy — only the tree's guardians/owner or staff may change it;
-      //  • a decision's STATUS or RESUMING it (listening true→false) — only the proposer, the
-      //    community owner, or staff. Voting and raising a concern (listening false→true) stay
-      //    open to signed-in members. Unchanged fields short-circuit, so loves pay no extra read.
-      allow update: if isSignedIn()
-        && (
-          request.resource.data.get('wateringConfirmedBy', '') == resource.data.get('wateringConfirmedBy', '')
-          || isStaff()
-          || isTreeTender(resource.data.get('lifetreeId', ''))
-        )
-        && (
-          resource.data.get('type', '') != 'decision'
-          || (
-               request.resource.data.get('status', '') == resource.data.get('status', '')
-               && !(resource.data.get('listening', false) == true && request.resource.data.get('listening', false) == false)
-             )
-          || isStaff()
-          || resource.data.get('proposedBy', '') == request.auth.uid
-          || isCommunityOwner(resource.data.get('communityId', ''))
-        );
+      // The append-only ledger: a pulse's identity and chain fields (hash, previousHash, authorId,
+      // type, createdAt, lifetreeId, treeId, communityId, participantUids, …) are FROZEN after
+      // creation. Only the interaction/governance overlays below may change, and EACH is scoped to
+      // its own key set via diff().affectedKeys() — so a "voter" or "translator" can never also
+      // rewrite content or re-link the chain (the ledger stays tamper-evident and un-defaceable).
+      allow update: if isSignedIn() && (
+        // (a) Broad interaction overlays — any signed-in user, but only these keys.
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['seenBy', 'aiInterpretation', 'updatedAt'])
+
+        // (b) Watering confirmation — the tree's tenders (owner/co_owner/steward) or staff.
+        || (
+             (isStaff() || isTreeTender(resource.data.get('lifetreeId', '')))
+             && request.resource.data.diff(resource.data).affectedKeys()
+                  .hasOnly(['wateringConfirmedBy', 'wateringConfirmation', 'updatedAt'])
+           )
+
+        // (c) Governance on a decision — voting and raising a concern (listening false→true) stay
+        //     open to signed-in members; flipping STATUS or resuming (listening true→false) needs
+        //     the proposer, community owner, or staff. Content/chain keys can't ride along.
+        || (
+             resource.data.get('type', '') == 'decision'
+             && request.resource.data.diff(resource.data).affectedKeys()
+                  .hasOnly(['votes', 'concerns', 'listening', 'status', 'passedAt', 'enactedHash', 'withdrawnAt', 'rejectedAt', 'updatedAt'])
+             && (
+                  request.resource.data.get('status', '') == resource.data.get('status', '')
+                  || isStaff()
+                  || resource.data.get('proposedBy', '') == request.auth.uid
+                  || isCommunityOwner(resource.data.get('communityId', ''))
+                )
+             && (
+                  !(resource.data.get('listening', false) == true && request.resource.data.get('listening', false) == false)
+                  || isStaff()
+                  || resource.data.get('proposedBy', '') == request.auth.uid
+                  || isCommunityOwner(resource.data.get('communityId', ''))
+                )
+           )
+
+        // (d) Event content edits — author, community owner, or staff; content keys only.
+        || (
+             resource.data.get('type', '') == 'event'
+             && (isStaff() || resource.data.authorId == request.auth.uid || isCommunityOwner(resource.data.get('communityId', '')))
+             && request.resource.data.diff(resource.data).affectedKeys()
+                  .hasOnly(['title', 'body', 'content', 'imageUrl', 'imageUrls', 'eventDate', 'eventLocation', 'visibility', 'updatedAt'])
+           )
+
+        // (e) Staff may mend anything.
+        || isStaff()
+      );
       allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff() || isCommunityOwner(resource.data.communityId));
 
       // Loves subcollection

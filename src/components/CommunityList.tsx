@@ -6,6 +6,7 @@ import { Icons } from './ui/Icons';
 import { Community, Lifetree } from '../types';
 import { fetchCommunities, createCommunity, getCommunityByDomain } from '../services/firebase';
 import { communityThemePresets } from '../utils/theme';
+import { sanitizeRichText } from '../utils/sanitize';
 import { Loading } from './ui/Loading';
 import { SectionHeader } from './ui/SectionHeader';
 import { DefaultCardImage } from './ui/DefaultCardImage';
@@ -124,7 +125,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
         <div className="p-6">
             <div
                 className="text-slate-600 text-sm line-clamp-3 mb-4 h-11 leading-relaxed overflow-hidden [&_img]:hidden"
-                dangerouslySetInnerHTML={{ __html: community.vision || 'No vision shared yet.' }}
+                dangerouslySetInnerHTML={{ __html: community.vision ? sanitizeRichText(community.vision) : 'No vision shared yet.' }}
             />
             <button className="text-emerald-600 font-bold text-xs uppercase tracking-widest flex items-center gap-1 group-hover:gap-2 transition-all">
                 View Profile <Icons.ArrowRight size={16} />

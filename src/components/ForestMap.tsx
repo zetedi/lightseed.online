@@ -2,6 +2,7 @@
 import React, { useRef, useEffect, useMemo, useState } from 'react';
 import { type Lifetree } from '../types';
 import { isExplicitlyValidatedTree } from '../utils/validation';
+import { escapeHtml, safeImageUrl } from '../utils/sanitize';
 import { isWateringOverdue } from '../domain/watering';
 import { Loading } from './ui/Loading';
 import { Icons } from './ui/Icons';
@@ -237,7 +238,7 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
         const guardianCount = guardianCounts.get(tree.id) || 0;
         const sizeClass = isSmall ? 'w-10 h-10' : 'w-12 h-12';
         const borderClass = isSmall ? 'border' : 'border-2';
-        const displayImage = tree.latestGrowthUrl || tree.imageUrl || 'https://via.placeholder.com/150';
+        const displayImage = safeImageUrl(tree.latestGrowthUrl || tree.imageUrl, 'https://via.placeholder.com/150');
         const imgStyle = "width: 100%; height: 100%; object-fit: cover; display: block;";
         const animStyle = `animation-delay: ${delay}ms;`;
 
@@ -268,7 +269,7 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
         </div>`;
     }
 
-    const clusterImage = (tree: Lifetree) => tree.latestGrowthUrl || tree.imageUrl || 'https://via.placeholder.com/150';
+    const clusterImage = (tree: Lifetree) => safeImageUrl(tree.latestGrowthUrl || tree.imageUrl, 'https://via.placeholder.com/150');
 
     // A cluster of nearby trees as a pie of their images (up to 4 slices, rest in the count badge).
     const getClusterPieHtml = (trees: Lifetree[], clusterId: string) => {
@@ -299,14 +300,14 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
     };
 
     const createPopupContent = (tree: Lifetree) => {
-        const displayImage = tree.latestGrowthUrl || tree.imageUrl;
+        const displayImage = safeImageUrl(tree.latestGrowthUrl || tree.imageUrl);
         const div = document.createElement('div');
         div.innerHTML = `
             <div class="text-center min-w-[160px]">
                 ${displayImage ? `<img src="${displayImage}" style="width:100%;height:120px;object-fit:cover;display:block;" class="rounded-t-lg" />` : ''}
                 <div class="p-2">
-                    <h3 class="font-bold text-sm text-slate-800 mb-1">${tree.name}</h3>
-                    <p class="text-xs text-slate-500 line-clamp-2 italic mb-2">"${tree.body}"</p>
+                    <h3 class="font-bold text-sm text-slate-800 mb-1">${escapeHtml(tree.name)}</h3>
+                    <p class="text-xs text-slate-500 line-clamp-2 italic mb-2">"${escapeHtml(tree.body)}"</p>
                     <div class="grid grid-cols-2 gap-2">
                         <button class="view-btn bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-full w-full">View</button>
                         <button class="reach-btn bg-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-full w-full">Reach</button>
