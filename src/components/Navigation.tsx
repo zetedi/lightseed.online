@@ -276,7 +276,7 @@ export const Navigation = ({
                     )}
 
                     {/* Desktop Navigation Tabs */}
-                    <div className="hidden xl:flex items-center gap-6 xl:gap-8 mx-4">
+                    <div className="hidden xl:flex items-center gap-3 xl:gap-4 mx-2">
                         <NavGroup label={t('light_earth' as any)} tabs={lightEarthTabs} />
                         {intelligenceTabs.length > 0 && (
                             <>
@@ -417,26 +417,39 @@ export const Navigation = ({
                         className="shrink-0 rounded-b-3xl border-t border-b border-amber-300/25 px-3 pb-3 pt-3 shadow-[0_22px_30px_-18px_rgba(251,191,36,0.5)] animate-in slide-in-from-top-4"
                         style={{ backgroundColor: navBackground, color: navText }}
                     >
-                        {/* Row 1 — wide actions paired with their feeds (6 columns) */}
-                        <div className="grid grid-cols-6 gap-1.5">
-                            {activeTab === 'visions' ? (
-                                <MobileActionTile icon={<Icons.Plus />} label={t('create_vision')} onClick={onCreateVision} color="bg-amber-500" />
-                            ) : (
-                                <MobileActionTile icon={<Icons.Tree />} label={t('plant_lifetree')} onClick={onPlant} color="bg-emerald-600" />
-                            )}
-                            <MobileNavTile tab="forest" />
-                            {signedIn && <MobileActionTile icon={<Icons.Pulse />} label={t('emit_pulse')} onClick={onPulse} color="bg-sky-600" />}
-                            {signedIn && <MobileNavTile tab="pulses" />}
-                        </div>
+                        {signedIn ? (
+                          <>
+                            {/* Row 1 — wide actions paired with their feeds (6 columns) */}
+                            <div className="grid grid-cols-6 gap-1.5">
+                                {activeTab === 'visions' ? (
+                                    <MobileActionTile icon={<Icons.Plus />} label={t('create_vision')} onClick={onCreateVision} color="bg-amber-500" />
+                                ) : (
+                                    <MobileActionTile icon={<Icons.Tree />} label={t('plant_lifetree')} onClick={onPlant} color="bg-emerald-600" />
+                                )}
+                                <MobileNavTile tab="forest" />
+                                <MobileActionTile icon={<Icons.Pulse />} label={t('emit_pulse')} onClick={onPulse} color="bg-sky-600" />
+                                <MobileNavTile tab="pulses" />
+                            </div>
 
-                        {/* Row 2 — secondary destinations, short (matches the bottom row's height) */}
-                        <div className="mt-1.5 grid grid-cols-5 gap-1.5">
-                            {signedIn && <MobileNavTile tab="visions" short />}
-                            <MobileNavTile tab="events" short />
-                            {signedIn && <MobileNavTile tab="observatory" short label="Observe" />}
-                            <MobileNavTile tab="collab" short label="Collab" />
-                            <MobileNavTile tab="communities" short label="Commune" />
-                        </div>
+                            {/* Row 2 — secondary destinations, short (matches the bottom row's height) */}
+                            <div className="mt-1.5 grid grid-cols-5 gap-1.5">
+                                <MobileNavTile tab="visions" short />
+                                <MobileNavTile tab="events" short />
+                                <MobileNavTile tab="observatory" short label="Observe" />
+                                <MobileNavTile tab="collab" short label="Collab" />
+                                <MobileNavTile tab="communities" short label="Commune" />
+                            </div>
+                          </>
+                        ) : (
+                            /* Signed out: everything available fits one tight row (plant spans 2 → 6 cols). */
+                            <div className="grid grid-cols-6 gap-1.5">
+                                <MobileActionTile icon={<Icons.Tree />} label={t('plant_lifetree')} onClick={onPlant} color="bg-emerald-600" />
+                                <MobileNavTile tab="forest" />
+                                <MobileNavTile tab="events" />
+                                <MobileNavTile tab="collab" label="Collab" />
+                                <MobileNavTile tab="communities" label="Commune" />
+                            </div>
+                        )}
                     </div>
 
                     {/* BOTTOM PANEL */}

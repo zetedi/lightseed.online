@@ -129,22 +129,27 @@ export const generateAIContent = onCall({
                 });
                 
                 const response = result.response;
-                const text = response.text();
-                
-                // Handle potential inline data (like images)
+
+                // Extract an inline image FIRST. Image models return an image part (+ optional text);
+                // calling response.text() on a response containing non-text parts throws in this SDK,
+                // so pulling the image out before touching .text() is what makes image gen work.
                 const candidate = response.candidates?.[0];
                 const parts = candidate?.content?.parts || [];
-                
+
                 for (const part of parts) {
                     if (part.inlineData && part.inlineData.data) {
                         const mimeType = part.inlineData.mimeType || 'image/png';
-                        return { 
+                        let caption = "";
+                        try { caption = response.text(); } catch (_) { /* image-only response */ }
+                        return {
                             image: `data:${mimeType};base64,${part.inlineData.data}`,
-                            text: text 
+                            text: caption
                         };
                     }
                 }
 
+                let text = "";
+                try { text = response.text(); } catch (_) { text = ""; }
                 return { text: text };
             } catch (error: any) {
                 lastError = error;

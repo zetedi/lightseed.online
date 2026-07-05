@@ -7,6 +7,7 @@ import { Icons } from './ui/Icons';
 import { Community, Lifetree, Lightseed, Pulse, Intelligence, Persona, Sanctuary } from '../types';
 import { updateCommunity, uploadImage, getTreesByDomain, deleteCommunity, createCommunityEvent, updateEvent, deleteCommunityEvent, getCommunityByDomain, getCommunityEvents, getSanctuariesByDomain, createDecision, voteOnDecision, getDecisions, raiseConcern, resumeDecision, withdrawDecision, getPulsesByTreeId } from '../services/firebase';
 import { isCanonicallySealed, verifyBlockSeal } from '../domain/chain';
+import { setTokenisationEnabled } from '../domain/tokenisation';
 import { DECISION_NATURES, decisionStatusLabels, type Decision, type DecisionNature } from '../domain/decision';
 import { getSelectableIntelligences, listPersonas } from '../services/intelligence';
 import RichTextEditor from './ui/RichTextEditor';
@@ -193,6 +194,10 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const [isVerifying, setIsVerifying] = useState(false);
   const [verifyResult, setVerifyResult] = useState<{ sealed: number; intact: number; legacy: number; trees: number } | null>(null);
 
+  // The tokenisation toggle — mirrors community.tokenisationEnabled (the AI-token economy).
+  const [tokenisationOn, setTokenisationOn] = useState(!!community.tokenisationEnabled);
+  const [isTogglingTokens, setIsTogglingTokens] = useState(false);
+
   // Events
   const [events, setEvents] = useState<Pulse[]>([]);
   const [eventTitle, setEventTitle] = useState('');
@@ -228,7 +233,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     setEditDefaultIntelligenceId(community.defaultIntelligenceId || '');
     setEditAvailableIntelligenceIds(community.availableIntelligenceIds || []);
     setChainSealed(!!community.chainLocked);
-  }, [community.id, community.name, community.vision, community.logoUrl, community.heroImageUrl, community.theme, (community.imageUrls || []).join(','), community.defaultIntelligenceId, (community.availableIntelligenceIds || []).join(','), community.chainLocked]);
+    setTokenisationOn(!!community.tokenisationEnabled);
+  }, [community.id, community.name, community.vision, community.logoUrl, community.heroImageUrl, community.theme, (community.imageUrls || []).join(','), community.defaultIntelligenceId, (community.availableIntelligenceIds || []).join(','), community.chainLocked, community.tokenisationEnabled]);
 
   // Intelligences an admin can choose from (public + owned), plus persona names.
   useEffect(() => {
@@ -382,6 +388,20 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       setSealStatus('Could not update the seal. Please try again.');
     }
     setIsSealing(false);
+  };
+
+  const handleToggleTokenisation = async (next: boolean) => {
+    setIsTogglingTokens(true);
+    setTokenisationOn(next); // optimistic
+    try {
+      await updateCommunity(community.id, { tokenisationEnabled: next });
+      setTokenisationEnabled(next); // sync the in-memory flag so the UI reacts immediately
+      onUpdate?.({ tokenisationEnabled: next });
+    } catch (e) {
+      console.error(e);
+      setTokenisationOn(!next); // revert on failure
+    }
+    setIsTogglingTokens(false);
   };
 
   // Verify the node's sealed blocks: recompute each canonically-sealed block's hash and confirm it
@@ -710,6 +730,30 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                         </div>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* Tokenisation toggle — turn the AI-token ("Attention-Energy") economy on/off for
+                    this node, the same way the chain seal is flipped. Owner/admin only. */}
+                {canEdit && (
+                  <div className="mt-8 border-t border-slate-100 pt-6">
+                    <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                      <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600"><Icons.SparkleFill /></span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-slate-800">AI-token economy</p>
+                        <p className="mt-0.5 text-sm text-slate-500">Turn on “Attention-Energy” tokens for this node — trees earn tokens and spend them on deep AI. While off, AI stays free and the token balance/cost UI is hidden.</p>
+                      </div>
+                      <button
+                        onClick={() => handleToggleTokenisation(!tokenisationOn)}
+                        disabled={isTogglingTokens}
+                        role="switch"
+                        aria-checked={tokenisationOn}
+                        title={tokenisationOn ? 'Tokenisation on' : 'Tokenisation off'}
+                        className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${tokenisationOn ? 'bg-emerald-600' : 'bg-slate-300'}`}
+                      >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${tokenisationOn ? 'translate-x-6' : 'translate-x-1'}`} />
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

@@ -225,9 +225,10 @@ service cloud.firestore {
       // its own key set via diff().affectedKeys() — so a "voter" or "translator" can never also
       // rewrite content or re-link the chain (the ledger stays tamper-evident and un-defaceable).
       allow update: if isSignedIn() && (
-        // (a) Broad interaction overlays — any signed-in user, but only these keys.
+        // (a) Broad interaction overlays — any signed-in user, but only these keys. loveCount /
+        // validationScore are the like counters (updated by lovePulse alongside a loves/{uid} write).
         request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['seenBy', 'aiInterpretation', 'updatedAt'])
+          .hasOnly(['seenBy', 'aiInterpretation', 'loveCount', 'validationScore', 'updatedAt'])
 
         // (b) Watering confirmation — the tree's tenders (owner/co_owner/steward) or staff.
         || (

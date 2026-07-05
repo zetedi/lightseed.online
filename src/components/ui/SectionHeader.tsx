@@ -1,19 +1,23 @@
 import React from 'react';
+import { LeafTexture } from './LeafTexture';
 
 // Shared section header — mirrors the unified header of the Threads/Inspiration
 // panel (emerald gradient, icon chip, title + subtitle) so the Visions, Events
-// and Pulses views share one consistent look and feel.
-export const SectionHeader = ({ icon, title, subtitle, action, footer, children }: {
+// and Pulses views share one consistent look and feel. `pattern` overlays the
+// events-banner leaf texture, fading out downwards.
+export const SectionHeader = ({ icon, title, subtitle, action, footer, children, pattern = false }: {
     icon: React.ReactNode;
     title: string;
     subtitle?: string;
     action?: React.ReactNode;
     footer?: React.ReactNode;
     children?: React.ReactNode;
+    pattern?: boolean;
 }) => (
-    <div className="mb-5 sm:mb-8 rounded-xl sm:rounded-2xl border border-emerald-100 bg-gradient-to-r from-emerald-50 to-white px-3 py-3 sm:px-6 sm:py-5 shadow-lg">
+    <div className="relative overflow-hidden mb-5 sm:mb-8 rounded-xl sm:rounded-2xl border border-emerald-100 bg-gradient-to-r from-emerald-50 to-white px-3 py-3 sm:px-6 sm:py-5 shadow-lg">
+        {pattern && <LeafTexture fade opacity={0.08} />}
         {/* On desktop the title, search and action sit on one row; they stack on mobile. */}
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative z-10 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 shrink-0 items-center gap-2.5">
                 <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
                     {icon}
@@ -30,6 +34,6 @@ export const SectionHeader = ({ icon, title, subtitle, action, footer, children 
                 </div>
             )}
         </div>
-        {children && <div className="mt-5 sm:mt-6">{children}</div>}
+        {children && <div className="relative z-10 mt-5 sm:mt-6">{children}</div>}
     </div>
 );

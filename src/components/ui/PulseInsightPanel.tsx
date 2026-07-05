@@ -3,6 +3,7 @@ import { Pulse, Lifetree } from '../../types';
 import { Icons } from './Icons';
 import { translatePulse } from '../../services/gemini';
 import { spendAiTokens, db } from '../../services/firebase';
+import { isTokenisationEnabled } from '../../domain/tokenisation';
 import { doc, updateDoc } from 'firebase/firestore';
 
 // The AI "Translation Depth" + "Network Memory" column that reveals a pulse's deeper intent (spending
@@ -12,6 +13,9 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
     const [depth, setDepth] = useState<number>(3);
     const [isTranslating, setIsTranslating] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    // The AI-token economy is a per-node toggle (About → Vision). While off, translation is free
+    // and the token cost/balance UI is hidden.
+    const tokensOn = isTokenisationEnabled();
 
     const handleTranslate = async () => {
         if (!activeTree) {
@@ -23,9 +27,10 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
         setError(null);
 
         try {
-            // 1. Spend AI Tokens (1 token per depth level)
-            const tokenCost = depth;
-            await spendAiTokens(activeTree.id, tokenCost);
+            // 1. Spend AI Tokens (1 token per depth level) — only when the node runs the token economy.
+            if (tokensOn) {
+                await spendAiTokens(activeTree.id, depth);
+            }
 
             // 2. Call Translation Service
             const response = await translatePulse({
@@ -105,7 +110,9 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
                     ) : (
                         <div className="space-y-6">
                             <p className="text-sm text-indigo-200 font-light">
-                                Use AI tokens (Attention-Energy) to translate this pulse and reveal deeper underlying intent, emotion, or systemic context.
+                                {tokensOn
+                                    ? 'Use AI tokens (Attention-Energy) to translate this pulse and reveal deeper underlying intent, emotion, or systemic context.'
+                                    : 'Translate this pulse to reveal its deeper underlying intent, emotion, or systemic context.'}
                             </p>
 
                             <div className="space-y-3">
@@ -126,23 +133,25 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
                                 </div>
                             </div>
 
-                            <div className="bg-black/20 p-4 rounded-xl border border-white/10 flex items-center justify-between">
-                                <div>
-                                    <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Energy Cost</div>
-                                    <div className="text-lg font-mono font-bold text-amber-400">{depth} AI Tokens</div>
-                                </div>
-                                {activeTree && (
-                                    <div className="text-right">
-                                        <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Your Balance</div>
-                                        <div className="text-lg font-mono font-bold text-white">{activeTree.aiTokenBalance || 0}</div>
+                            {tokensOn && (
+                                <div className="bg-black/20 p-4 rounded-xl border border-white/10 flex items-center justify-between">
+                                    <div>
+                                        <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Energy Cost</div>
+                                        <div className="text-lg font-mono font-bold text-amber-400">{depth} AI Tokens</div>
                                     </div>
-                                )}
-                            </div>
+                                    {activeTree && (
+                                        <div className="text-right">
+                                            <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Your Balance</div>
+                                            <div className="text-lg font-mono font-bold text-white">{activeTree.aiTokenBalance || 0}</div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             {error && <div className="text-xs text-red-400 bg-red-900/30 border border-red-500/50 p-3 rounded-lg">{error}</div>}
 
                             <button
-                                disabled={isTranslating || !activeTree || (activeTree.aiTokenBalance || 0) < depth}
+                                disabled={isTranslating || !activeTree || (tokensOn && (activeTree.aiTokenBalance || 0) < depth)}
                                 onClick={handleTranslate}
                                 className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 rounded-xl font-bold text-sm shadow-lg shadow-indigo-900/50 transition-all active:scale-95 flex justify-center items-center gap-2"
                             >
@@ -151,7 +160,7 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
                             </button>
 
                             {!activeTree && <p className="text-[10px] text-center text-rose-400">You need an active Lifetree to perform translations.</p>}
-                            {activeTree && (activeTree.aiTokenBalance || 0) < depth && <p className="text-[10px] text-center text-amber-400">Not enough AI tokens. Validate observations to earn more.</p>}
+                            {tokensOn && activeTree && (activeTree.aiTokenBalance || 0) < depth && <p className="text-[10px] text-center text-amber-400">Not enough AI tokens. Validate observations to earn more.</p>}
                         </div>
                     )}
                 </div>
@@ -169,7 +178,9 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
                         <span className="font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">{pulse.validationScore || pulse.loveCount || 0}</span>
                     </div>
                     <p className="text-xs text-slate-500 italic">
-                        Only validated understanding becomes memory. When you validate this pulse, you contribute to community coherence and earn AI tokens.
+                        {tokensOn
+                            ? 'Only validated understanding becomes memory. When you validate this pulse, you contribute to community coherence and earn AI tokens.'
+                            : 'Only validated understanding becomes memory. When you validate this pulse, you contribute to community coherence.'}
                     </p>
                 </div>
             </div>

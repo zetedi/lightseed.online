@@ -4,6 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
 import { getNetworkStats } from '../services/firebase';
 import { Icons } from './ui/Icons';
+import { LeafTexture } from './ui/LeafTexture';
 import { ScrollChevrons } from './ui/ScrollChevrons';
 import { QuoteCarousel } from './ui/QuoteCarousel';
 import { LIGHTSEED_QUOTES } from '../content/quotes';
@@ -30,18 +31,6 @@ export interface DashboardProps {
 
 const lifetreeImage = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 800'%3E%3Cdefs%3E%3CradialGradient id='g' cx='50%25' cy='50%25' r='60%25'%3E%3Cstop offset='0%25' stop-color='%23d1fae5'/%3E%3Cstop offset='100%25' stop-color='%23047857'/%3E%3C/radialGradient%3E%3Cfilter id='glow'%3E%3CfeGaussianBlur stdDeviation='8' result='coloredBlur'/%3E%3CfeMerge%3E%3CfeMergeNode in='coloredBlur'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23g)'/%3E%3Cg opacity='0.3'%3E%3Ccircle cx='400' cy='400' r='350' fill='none' stroke='%23fff' stroke-width='1'/%3E%3Ccircle cx='400' cy='400' r='250' fill='none' stroke='%23fff' stroke-width='1'/%3E%3Cpath d='M400 50 L400 750 M50 400 L750 400' stroke='%23fff' stroke-width='1' stroke-dasharray='10 10'/%3E%3C/g%3E%3Cpath d='M400 800 C 350 700 300 650 400 550 C 500 650 450 700 400 800' fill='%235d4037' opacity='0.8'/%3E%3Cg transform='translate(0,-50)'%3E%3Ccircle cx='400' cy='400' r='160' fill='%2310b981'/%3E%3Ccircle cx='300' cy='350' r='100' fill='%2334d399' opacity='0.9'/%3E%3Ccircle cx='500' cy='350' r='100' fill='%2334d399' opacity='0.9'/%3E%3Ccircle cx='400' cy='250' r='120' fill='%23059669' opacity='0.9'/%3E%3Ccircle cx='250' cy='450' r='80' fill='%236ee7b7' opacity='0.8'/%3E%3Ccircle cx='550' cy='450' r='80' fill='%236ee7b7' opacity='0.8'/%3E%3C/g%3E%3Cg filter='url(%23glow)'%3E%3Ccircle cx='400' cy='350' r='15' fill='%23fcd34d'/%3E%3Ccircle cx='320' cy='300' r='12' fill='%23fcd34d' opacity='0.8'/%3E%3Ccircle cx='480' cy='300' r='12' fill='%23fcd34d' opacity='0.8'/%3E%3Ccircle cx='280' cy='420' r='10' fill='%23fbbf24' opacity='0.8'/%3E%3Ccircle cx='520' cy='420' r='10' fill='%23fbbf24' opacity='0.8'/%3E%3Ccircle cx='400' cy='220' r='18' fill='%23fff' opacity='0.9'/%3E%3C/g%3E%3Cpath d='M400 350 L 320 300 M 400 350 L 480 300 M 400 350 L 400 220' stroke='%23fff' stroke-width='2' opacity='0.4'/%3E%3C/svg%3E`;
 
-// A faint, tiling leaf-vein texture — gives the events banner an organic, living surface.
-const LeafTexture = () => (
-    <svg className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.08]" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <defs>
-            <pattern id="leafvein" width="66" height="66" patternUnits="userSpaceOnUse" patternTransform="rotate(14)">
-                <path d="M33 6 C 50 20, 50 46, 33 60 C 16 46, 16 20, 33 6 Z" fill="none" stroke="white" strokeWidth="1.1" />
-                <path d="M33 6 L33 60 M33 18 L45 13 M33 18 L21 13 M33 31 L47 25 M33 31 L19 25 M33 44 L43 40 M33 44 L23 40" stroke="white" strokeWidth="0.7" fill="none" />
-            </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#leafvein)" />
-    </svg>
-);
 
 export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCommunity, onSetTab, onPlant, onLogin }: DashboardProps) => {
     const { t } = useLanguage();
@@ -124,19 +113,14 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
                     )}
                     {/* Leaf-toned wash for legibility + character — light so the hero reads airier */}
                     <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/30 via-slate-900/15 to-emerald-800/25"></div>
-                    <LeafTexture />
-                    {/* Oversized EVENTS wordmark — stretched to the banner's full width via
-                        textLength; taller than the banner so the lower part is clipped. */}
-                    <svg className="pointer-events-none absolute inset-0 z-0 h-full w-full select-none" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true">
-                        <text x="50" y="30" textAnchor="middle" textLength="99" lengthAdjust="spacingAndGlyphs" fontSize="42" fontWeight="900" letterSpacing="-1" fill="#ffffff" fillOpacity="0.16" style={{ textTransform: 'uppercase' }}>{t('events')}</text>
-                    </svg>
-                    {/* Cards float over it, under an explicit Events label. */}
+                    <LeafTexture stroke="white" opacity={0.08} />
+                    {/* Cards float over the wash, under an explicit Events label. */}
                     <div className="relative z-10 flex h-full flex-col px-4 py-3">
                         <div className="mb-2 flex items-baseline gap-2">
-                            <span className="text-xs font-bold uppercase tracking-[0.2em] text-white drop-shadow">{t('events')}</span>
+                            <span className="text-sm sm:text-lg font-bold uppercase tracking-widest text-white drop-shadow-md">{t('events')}</span>
                             <span className="truncate text-[11px] text-white/75">{t('events_sub')}</span>
                         </div>
-                        <div ref={eventsScrollRef} className="scroll-hide-bar flex flex-1 items-stretch gap-5 overflow-x-auto">
+                        <div ref={eventsScrollRef} className="scroll-hide-bar flex flex-1 items-stretch gap-7 overflow-x-auto">
                         {events.map(ev => (
                             <button
                                 key={ev.id}
@@ -151,7 +135,7 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
                                     )}
                                 </div>
                                 <div className="min-w-0 p-2">
-                                    <p className="truncate text-sm font-bold text-white drop-shadow">{ev.title}</p>
+                                    <p className="truncate text-lg font-light tracking-wide text-white drop-shadow">{ev.title}</p>
                                     <p className="truncate text-[11px] text-white/95">
                                         {ev.eventDate ? new Date(ev.eventDate).toLocaleDateString() : ''}{ev.eventLocation ? ` · ${ev.eventLocation}` : ''}
                                     </p>

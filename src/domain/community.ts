@@ -32,6 +32,9 @@ export interface Community extends Entity {
   // The "big red stamp": once a node locks, new blocks are sealed with the canonical, verifiable
   // hash (src/domain/chain). Off by default; the shell syncs it into the chain-lock flag on load.
   chainLocked?: boolean;
+  // Whether this node runs the AI-token ("Attention-Energy") economy. Off by default; the shell
+  // syncs it into the tokenisation flag (src/domain/tokenisation.ts) on load.
+  tokenisationEnabled?: boolean;
   createdAt: Timestamp;
   updatedAt?: Timestamp;
 

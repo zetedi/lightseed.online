@@ -1,6 +1,7 @@
 import { query, getDocs, addDoc, serverTimestamp, doc, runTransaction, getDoc, where, updateDoc, getCountFromServer } from 'firebase/firestore';
 import { type Lifetree, type Alignment } from '../../types';
 import { createBlock } from '../../utils/crypto';
+import { isTokenisationEnabled } from '../../domain/tokenisation';
 import { db, mapDoc, pulsesCollection, alignmentsCollection } from './core';
 
 export const proposeAlignment = (data: any) => addDoc(alignmentsCollection, { ...data, status: 'PENDING', createdAt: serverTimestamp() });
@@ -90,8 +91,11 @@ export const lovePulse = async (id: string, uid: string) => {
         const pulseData = pulse.data();
         const love = await t.get(loveRef);
 
+        // The token reward writes to the author's tree, which the lifetrees rules only allow for
+        // that tree's own circle — so only reward when the node's token economy is enabled. While
+        // off, loving a pulse (or reach) is a pure loveCount/loves write anyone can do.
         const treeId = pulseData.lifetreeId;
-        const authorTreeRef = treeId ? doc(db, 'lifetrees', treeId) : null;
+        const authorTreeRef = (isTokenisationEnabled() && treeId) ? doc(db, 'lifetrees', treeId) : null;
         const authorTree = (!love.exists() && authorTreeRef) ? await t.get(authorTreeRef) : null;
 
         let count = pulseData.loveCount || pulseData.validationScore || 0;

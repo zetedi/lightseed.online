@@ -24,7 +24,7 @@ import { IntelligencePanel } from './intelligence/IntelligencePanel';
 import { ResonanceCard, resonanceId } from './ResonancePanel';
 import { DEFAULT_INTELLIGENCE_ID } from '../services/intelligence';
 
-export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSetDefaultTree, onViewVision, onPlant, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachAudience, reachOpenSignal, onConsumeReach, onReachTree, nodeTheme }: any) => {
+export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSetDefaultTree, onViewVision, onPlant, onCreateVision, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachAudience, reachOpenSignal, onConsumeReach, onReachTree, nodeTheme }: any) => {
     const { t } = useLanguage();
     // Session state comes from context now (was prop-drilled from App).
     const { lightseed, myTrees, guardedTrees, isAdmin, isSuperAdmin, superAdminExists } = useSession();
@@ -698,13 +698,6 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                                         </div>
                                         <Toggle on={dmEmailNotifications} onClick={handleDmEmailToggle} disabled={togglingDmEmail || !lightseed.email} />
                                     </div>
-                                    <div className="p-4 flex items-center justify-between gap-4">
-                                        <div className="min-w-0">
-                                            <p className="font-semibold text-slate-800 text-sm">Email delivery test</p>
-                                            <p className="text-xs text-slate-500">Send yourself a test message to verify delivery.</p>
-                                        </div>
-                                        <button onClick={handleTestEmail} className="rounded-full bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-4 py-2 whitespace-nowrap transition-colors">{mailStatus || 'Send test'}</button>
-                                    </div>
                                 </div>
                                 <div className="mt-6 rounded-2xl border border-red-100 bg-red-50/40 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                     <div>
@@ -719,6 +712,13 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                         {activeTab === 'admin' && (
                             <div>
                                 <SectionTitle title={t('admin_title')} sub={t('admin_sub')} />
+                                <div className="mb-4 flex items-center justify-between gap-4 rounded-2xl border border-slate-100 p-4">
+                                    <div className="min-w-0">
+                                        <p className="font-semibold text-slate-800 text-sm">Email delivery test</p>
+                                        <p className="text-xs text-slate-500">Send yourself a test message to verify delivery.</p>
+                                    </div>
+                                    <button onClick={handleTestEmail} className="rounded-full bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-4 py-2 whitespace-nowrap transition-colors">{mailStatus || 'Send test'}</button>
+                                </div>
                                 {!superAdminExists && (
                                     <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 flex items-center justify-between gap-4">
                                         <div>
@@ -911,16 +911,26 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                          {activeTab === 'visions' && (
                              loading ? <div className="flex justify-center py-10"><Loading /></div> : (
                                 <div>
-                                    <div className="flex justify-between items-center mb-6">
+                                    <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
                                          <h3 className="text-lg font-bold">My Visions</h3>
-                                         <button
-                                            onClick={handleAlignmentAnalysis}
-                                            disabled={analyzing}
-                                            className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2.5 rounded-full font-bold shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 border border-amber-400/30 active:scale-95 disabled:opacity-50"
-                                         >
-                                             {analyzing ? <Loading /> : <Icons.Venn />}
-                                             <span>{analyzing ? 'Analyzing...' : 'Analyze Alignments'}</span>
-                                         </button>
+                                         <div className="flex items-center gap-2">
+                                             {onCreateVision && (
+                                                 <button
+                                                    onClick={onCreateVision}
+                                                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-full font-bold shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2 active:scale-95"
+                                                 >
+                                                     <Icons.Plus /> <span>{t('create_vision')}</span>
+                                                 </button>
+                                             )}
+                                             <button
+                                                onClick={handleAlignmentAnalysis}
+                                                disabled={analyzing}
+                                                className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2.5 rounded-full font-bold shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 border border-amber-400/30 active:scale-95 disabled:opacity-50"
+                                             >
+                                                 {analyzing ? <Loading /> : <Icons.Venn />}
+                                                 <span>{analyzing ? 'Analyzing...' : 'Analyze Alignments'}</span>
+                                             </button>
+                                         </div>
                                     </div>
                                     
                                     {synergies.length > 0 && (

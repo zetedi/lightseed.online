@@ -8,15 +8,17 @@ import { buildThreadId, buildGroupThreadId, reachAudienceLabels } from '../../ut
 import { db, toMillis, mapDoc, mapPulse, pulsesCollection } from './core';
 import { isHubDomain } from './trees';
 
-const fetchPulsesRaw = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, levels?: PulseVisibility[]) => {
+const fetchPulsesRaw = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, levels?: PulseVisibility[], pageSize?: number) => {
     // Visibility-scope the broad feed so a restricted pulse in this domain can't get the
     // whole query rejected. Broad feeds carry no scope context, so `levels` is public + node.
     const visFilter = levels && levels.length ? [where('visibility', 'in', levels)] : [];
+    const nonHub = !!(domainFilter && !isHubDomain(domainFilter));
+    const lim = pageSize ?? (nonHub ? 24 : 12);
     let q;
-    if (domainFilter && !isHubDomain(domainFilter)) {
-        q = query(pulsesCollection, where('domain', '==', domainFilter.replace(/^www\./, '')), ...visFilter, limit(24));
+    if (nonHub) {
+        q = query(pulsesCollection, where('domain', '==', domainFilter!.replace(/^www\./, '')), ...visFilter, limit(lim));
     } else {
-        q = query(pulsesCollection, ...visFilter, orderBy('createdAt', 'desc'), limit(12));
+        q = query(pulsesCollection, ...visFilter, orderBy('createdAt', 'desc'), limit(lim));
     }
 
     if (lastD) q = query(q, startAfter(lastD));
@@ -58,7 +60,10 @@ export const fetchPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: 
 }
 
 export const fetchEventPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, levels?: PulseVisibility[]) => {
-    const res = await fetchPulsesRaw(lastD, domainFilter, levels);
+    // Events are sparse among recent pulses, so the shared feed's small page buries them under the
+    // newest reaches/growths and drops them. Widen the window (still one indexed read) so events
+    // actually surface. (A dedicated (type, createdAt) index would let this filter server-side.)
+    const res = await fetchPulsesRaw(lastD, domainFilter, levels, 80);
     return {
         items: res.items.filter(pulse => pulse.type === 'event'),
         lastDoc: res.lastDoc

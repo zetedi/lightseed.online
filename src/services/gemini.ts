@@ -135,16 +135,21 @@ export const generateImage = async (prompt: string): Promise<string | null> => {
     if (!prompt.trim()) return null;
     try {
         console.log("Generating image for:", prompt);
-        const res = await callGemini(prompt, IMAGE_MODEL, { responseModalities: ['IMAGE'] });
+        // Gemini image models require BOTH modalities in the response config — IMAGE-only is
+        // rejected as unsupported. TEXT is returned too (a caption) but we only keep the image.
+        const res = await callGemini(prompt, IMAGE_MODEL, { responseModalities: ['IMAGE', 'TEXT'] });
         // Only a real image counts — never fall back to res.text. (It used to: the text model
         // returned a *description* string that was then used as an <img src>, which silently broke.)
         return res.image || null;
     } catch (e: any) {
         console.error("Gemini Image Error:", e);
-        const msg = (e?.message || '').toLowerCase();
-        throw new Error(msg.includes('suspend') || msg.includes('forbidden') || msg.includes('unavailable')
-            ? 'The AI image service is unavailable right now.'
-            : 'Image generation failed — try again, or upload an image instead.');
+        const raw = (e?.message || String(e) || '').trim();
+        const msg = raw.toLowerCase();
+        if (msg.includes('suspend') || msg.includes('forbidden') || msg.includes('unavailable'))
+            throw new Error('The AI image service is unavailable right now.');
+        // Surface the underlying cause (e.g. "model not found", bad modalities, quota) so a broken
+        // image model can be diagnosed and fixed via lifeseed.config.json → imageModel.
+        throw new Error(raw ? `Image generation failed: ${raw}` : 'Image generation failed — try again, or upload an image instead.');
     }
 }
 

@@ -3,7 +3,7 @@ import { showAlert, showConfirm } from "../ui/Dialog";
 import { useLanguage } from '../../contexts/LanguageContext';
 import { sendMessageToOracle, generateImage, translatePulse, type TranslationResponse } from '../../services/gemini';
 import { getIntelligence } from '../../services/intelligence';
-import { checkAndIncrementAiUsage, mintPulse, uploadBase64Image, listenToUserProfile, fetchReachThread, fetchThreadById, markReachesSeen, sendReach, sendThreadMessage } from '../../services/firebase';
+import { checkAndIncrementAiUsage, mintPulse, uploadBase64Image, listenToUserProfile, fetchReachThread, fetchThreadById, markReachesSeen, sendReach, sendThreadMessage, lovePulse, isPulseLoved } from '../../services/firebase';
 import { reachAudienceLabels } from '../../utils/reachPermissions';
 import { useLifeseed } from '../../hooks/useLifeseed';
 import { Icons } from '../ui/Icons';
@@ -24,6 +24,8 @@ export interface GroupThreadDescriptor {
 interface ChatMessage {
     role: 'user' | 'model';
     text: string;
+    id?: string;         // the underlying reach pulse id, so a message can be liked
+    loveCount?: number;  // likes on that pulse
     authorId?: string;
     authorName?: string;
     authorPersonName?: string;
@@ -31,6 +33,28 @@ interface ChatMessage {
     system?: boolean; // a centered notice (e.g. "X minted this conversation to the chain"), not a bubble
     careAlert?: 'watering'; // a "water me" alert — rendered with a blue border
 }
+
+// A small heart to like a single reach message (its underlying reach pulse). Manages its own
+// loved/count state, mirroring PulseCard's love button.
+const MessageLike = ({ pulseId, initialCount, uid }: { pulseId: string; initialCount: number; uid?: string }) => {
+    const [loved, setLoved] = useState(false);
+    const [count, setCount] = useState(initialCount);
+    useEffect(() => { if (uid) isPulseLoved(pulseId, uid).then(setLoved).catch(() => {}); }, [pulseId, uid]);
+    const toggle = async () => {
+        if (!uid) return;
+        const next = !loved;
+        setLoved(next);
+        setCount(c => Math.max(0, next ? c + 1 : c - 1));
+        try { await lovePulse(pulseId, uid); }
+        catch { setLoved(!next); setCount(c => Math.max(0, next ? c - 1 : c + 1)); }
+    };
+    return (
+        <button onClick={toggle} disabled={!uid} title="Like" className="flex items-center gap-1 px-1 text-slate-400 transition-colors hover:text-red-500 disabled:opacity-40">
+            <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Heart filled={loved} /></span>
+            {count > 0 && <span className="text-[11px] tabular-nums">{count}</span>}
+        </button>
+    );
+};
 
 // The audience options offered when starting a reach to a tree. `undefined` is the classic
 // 1:1 message to the owner; the others fan out to a shared group thread with the circle.
@@ -129,7 +153,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
             if (p.mintNotice) { if (text) history.push({ role: 'model', system: true, text }); return; }
             const mine = (!!myUid && p.authorId === myUid) || myIds.has(p.lifetreeId || '');
             const careAlert = (p as any).careAlert as ChatMessage['careAlert'];
-            const base = { ...(group ? { authorId: p.authorId, authorName: p.authorName, authorPersonName: p.authorPersonName, authorPhoto: p.authorPhoto } : {}), ...(careAlert ? { careAlert } : {}) };
+            const base = { id: p.id, loveCount: p.loveCount || 0, ...(group ? { authorId: p.authorId, authorName: p.authorName, authorPersonName: p.authorPersonName, authorPhoto: p.authorPhoto } : {}), ...(careAlert ? { careAlert } : {}) };
             if (mine) {
                 if (text) history.push({ role: 'user', text, ...base });
                 if (p.reachResponse) history.push({ role: 'model', text: p.reachResponse });
@@ -605,6 +629,9 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                                     </span>
                                 ))}
                             </div>
+
+                            {/* Like a reach message. */}
+                            {m.id && !m.system && <MessageLike pulseId={m.id} initialCount={m.loveCount || 0} uid={lightseed?.uid} />}
 
                             {/* Shadow text — what the message means, read through your intelligence. */}
                             {canInterpret && (() => {

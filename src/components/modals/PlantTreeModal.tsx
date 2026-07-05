@@ -50,6 +50,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
   const [treeFile, setTreeFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isImagining, setIsImagining] = useState(false);
+  const [imagineError, setImagineError] = useState<string | null>(null);
   const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 640px)').matches);
 
   useEffect(() => {
@@ -64,9 +65,10 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
 
   const handleImagine = async () => {
     if (isImagining || uploading) return;
+    setImagineError(null);
     const seed = [treeName, treeShortTitle, treeBio, treeSeed].map(s => s.trim()).filter(Boolean).join('. ');
     if (!seed) {
-      showAlert('Add a name or vision first so we can imagine a face for your tree.');
+      setImagineError('Add a name or vision first so we can imagine a face for your tree.');
       return;
     }
     setIsImagining(true);
@@ -78,10 +80,11 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
         const url = await uploadBase64Image(dataUrl, `users/${lightseed?.uid}/trees/ai/${Date.now()}`);
         setTreeImageUrl(url);
       } else {
-        showAlert('The vision did not take form. Please try again.');
+        setImagineError('The vision did not take form. Please try again.');
       }
     } catch (e: any) {
-      showAlert(e.message || 'Could not imagine an image right now.');
+      // Inline (a showAlert here appears BEHIND the fullscreen modal, so the reason was invisible).
+      setImagineError(e?.message || 'Could not imagine an image right now.');
     }
     setIsImagining(false);
   };
@@ -277,6 +280,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
                 {isImagining ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div> : <Icons.Wizard />}
                 <span>{isImagining ? 'Imagining…' : 'Imagine with AI'}</span>
               </button>
+              {imagineError && <p className={`rounded-lg px-3 py-2 text-xs ${treeType !== 'GUARDED' ? 'bg-red-500/20 text-red-100' : 'bg-red-50 text-red-600'}`}>{imagineError}</p>}
             </div>
             <div className="flex gap-2 mt-auto pb-4">
               <button onClick={() => setPlantStep(3)} className={`flex-1 py-3 rounded-xl font-bold uppercase tracking-widest transition-all ${treeType !== 'GUARDED' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Back</button>

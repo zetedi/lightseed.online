@@ -60,6 +60,7 @@ import { useDashboardStats } from './hooks/useDashboardStats';
 import { useObservatoryQuote } from './hooks/useObservatoryQuote';
 import { useSuperAdminConsole } from './hooks/useSuperAdminConsole';
 import { setChainLocked } from './domain/chain';
+import { setTokenisationEnabled } from './domain/tokenisation';
 import { LifeseedWidget } from './components/LifeseedWidget';
 import { DialogHost, showAlert, showConfirm } from './components/ui/Dialog';
 import { isExplicitlyValidatedTree } from './utils/validation';
@@ -205,15 +206,17 @@ const AppContent = () => {
         tab, viewMode, lightseed, isSuperAdmin, isAdmin, setAlignments,
     });
 
-    useEffect(() => { 
-        if (tab !== 'dashboard') {
-            loadContent(true);
-        }
-        ensureGenesis();
-        // Fetch host community
-        const domain = window.location.hostname;
-        getCommunityByDomain(domain).then(setHostCommunity);
+    // Load the tab's content when the view changes.
+    useEffect(() => {
+        if (tab !== 'dashboard') loadContent(true);
     }, [tab, lightseed, viewMode]);
+
+    // Genesis + the host community depend only on the signed-in user, not the tab — so run them
+    // once per session (and on login), not on every tab/view switch as they used to.
+    useEffect(() => {
+        ensureGenesis();
+        getCommunityByDomain(window.location.hostname).then(setHostCommunity);
+    }, [lightseed?.uid]);
 
     // Load the lightseed community once as the default About page fallback.
     useEffect(() => {
@@ -238,6 +241,11 @@ const AppContent = () => {
     // Sync the chain-lock flag from the node's community ("big red stamp"). Off until a node sets it.
     useEffect(() => {
         setChainLocked(!!(impersonatedCommunity || hostCommunity)?.chainLocked);
+    }, [impersonatedCommunity, hostCommunity]);
+
+    // Sync the tokenisation flag (AI-token economy) from the node's community. Off until enabled.
+    useEffect(() => {
+        setTokenisationEnabled(!!(impersonatedCommunity || hostCommunity)?.tokenisationEnabled);
     }, [impersonatedCommunity, hostCommunity]);
 
     // Events for the logged-in home carousel — visibility-scoped to this viewer + node.
@@ -465,6 +473,7 @@ const AppContent = () => {
                     onSetDefaultTree={setDefaultTree}
                     onViewVision={(v: Vision) => setSelectedVision(v)}
                     onPlant={() => openPlant()}
+                    onCreateVision={() => setShowVisionModal(true)}
                     onClaimSuperAdmin={async () => {
                         const ok = await claimSuperAdmin(lightseed.uid);
                         if (ok) window.location.reload();
@@ -712,6 +721,7 @@ const AppContent = () => {
                         lightseed={lightseed}
                         onMatch={(p: Pulse) => { setSelectedPulse(p); openPulseModal(); }}
                         onView={(p: Pulse) => setSelectedPulse(p)}
+                        pattern
                     />
                 ) : tab !== 'observatory' && tab !== 'profile' && tab !== 'inspiration' && tab !== 'about' && tab !== 'dashboard' && tab !== 'newsletter' && tab !== 'communities' && (
                     <PulseFeedPage

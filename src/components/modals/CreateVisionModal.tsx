@@ -43,28 +43,23 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
   const [visionDomain, setVisionDomain] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localUploading, setLocalUploading] = useState(false);
+  // Inline (a showAlert here appears BEHIND the modal, so the reason was invisible).
+  const [genError, setGenError] = useState<string | null>(null);
 
   const handleGenerateImage = async () => {
-    if (!visionBody) { showAlert("Please enter a vision description first."); return; }
+    setGenError(null);
+    if (!visionBody) { setGenError("Please enter a vision description first."); return; }
     setLocalUploading(true);
     try {
         const allowed = await checkAndIncrementAiUsage('image');
-        if (!allowed) {
-            showAlert(t('ai_login_required'));
-            setLocalUploading(false);
-            return;
-        }
+        if (!allowed) { setGenError(t('ai_login_required')); return; }
 
         const url = await generateVisionImage(visionBody);
-        if (url) {
-            setVisionImageUrl(url);
-        } else {
-            throw new Error("No image data returned from AI service.");
-        }
+        if (url) setVisionImageUrl(url);
+        else setGenError("No image data returned from the AI service.");
     } catch (e: any) {
-         showAlert(`Image generation failed: ${e.message || t('daily_limit_image')}`);
-    } finally { setLocalUploading(true); }
-    setLocalUploading(false);
+         setGenError(e?.message || t('daily_limit_image'));
+    } finally { setLocalUploading(false); }
   }
 
   const handleSubmit = async (e: FormEvent) => {
@@ -111,10 +106,11 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
                 disabled={uploading || localUploading || !visionBody}
                 className="text-xs bg-amber-100 text-amber-700 px-3 py-1 rounded-full font-bold hover:bg-amber-200 disabled:opacity-50 flex items-center gap-1"
              >
-                 <Icons.Wizard /> 
+                 <Icons.Wizard />
                  <span>{t('generate_image')}</span>
              </button>
         </div>
+        {genError && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{genError}</p>}
 
         <input 
             dir="auto" 
