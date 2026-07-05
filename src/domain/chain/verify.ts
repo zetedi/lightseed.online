@@ -1,5 +1,5 @@
 import { canonicalize } from './canonical';
-import { sha256 } from '../../../utils/crypto';
+import { sha256 } from '../../utils/crypto';
 
 // Chain verifier + canonical block hashing — the second crystal prerequisite.
 //

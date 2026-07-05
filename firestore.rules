@@ -172,7 +172,7 @@ service cloud.firestore {
     // from validated trees) would require cross-document reads of the target tree's
     // mirrored privacy flag at write time. To avoid weakening these rules with an
     // expensive get(), that rule is enforced in the service layer (sendReach) and the
-    // UI (canReachTree). See services/firebase.ts -> sendReach.
+    // UI (canReachTree). See src/services/firebase.ts -> sendReach.
     match /pulses/{pulseId} {
       allow read: if canReadPulse();
       allow create: if isSignedIn() && (

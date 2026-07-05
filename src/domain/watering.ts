@@ -10,8 +10,22 @@ import type { Lifetree } from './lifetree';
 
 export type WateringMode = 'scheduled' | 'self_sustaining';
 
+// The tree's growth stage — the human story behind the watering mode:
+//   'potted'          — a seed growing in a pot; the most fragile, tended on a schedule.
+//   'planted'         — in the ground but still needs care; tended on a schedule.
+//   'self_sustaining' — established; no scheduled watering.
+// The stage refines the mode (potted/planted ⇒ 'scheduled', self_sustaining ⇒ 'self_sustaining')
+// so everything keyed on mode — the daily sweep's query included — keeps working unchanged.
+export type TreeStage = 'potted' | 'planted' | 'self_sustaining';
+
+export const TREE_STAGES: TreeStage[] = ['potted', 'planted', 'self_sustaining'];
+
+export const stageToMode = (stage: TreeStage): WateringMode =>
+  stage === 'self_sustaining' ? 'self_sustaining' : 'scheduled';
+
 export interface WateringSchedule {
   mode: WateringMode;
+  stage?: TreeStage;          // growth stage; legacy docs derive it from mode (see treeStage)
   intervalDays?: number;      // for 'scheduled' — how many days between waterings
   lastWateredAt?: Timestamp;  // last confirmed watering (or when the schedule was set)
   nextDueAt?: Timestamp;      // denormalised lastWateredAt + intervalDays (for display)
@@ -43,6 +57,15 @@ type TreeLike = Pick<Lifetree, 'watering' | 'createdAt'> | null | undefined;
 
 export const wateringOf = (tree: TreeLike): WateringSchedule | undefined =>
   (tree as any)?.watering as WateringSchedule | undefined;
+
+// The tree's growth stage. Legacy docs carry only a mode: self-sustaining maps to itself,
+// anything scheduled reads as 'planted' (in the ground, needs care), and a tree with no
+// watering record at all is treated as 'planted' — cared for, just not on a schedule yet.
+export const treeStage = (tree: TreeLike): TreeStage => {
+  const w = wateringOf(tree);
+  if (w?.stage) return w.stage;
+  return w?.mode === 'self_sustaining' ? 'self_sustaining' : 'planted';
+};
 
 // A tree is on a watering schedule (vs. self-sustaining / no schedule) when it has a mode
 // of 'scheduled' and a positive interval.

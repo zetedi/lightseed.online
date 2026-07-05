@@ -36,7 +36,7 @@ export default defineConfig(({ mode }) => {
       },
       resolve: {
         alias: {
-          '@': path.resolve(cwd, '.'),
+          '@': path.resolve(cwd, 'src'),
         }
       }
     };

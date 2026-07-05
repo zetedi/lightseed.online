@@ -1,8 +1,8 @@
 import type { Store } from '../domain/store';
 import type { Link, LinkRel } from '../domain/link';
-import { db } from '../../services/firebase';
+import { db } from '../services/firebase';
 import { collection, doc, getDocs, query, where, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import { uuidv7 } from '../../utils/id';
+import { uuidv7 } from '../utils/id';
 
 // The Firestore ADAPTER — now backed by the `links` collection (the LIN as data). The legacy
 // arrays are gone from here; this is the only file that knows the persistence. The deterministic
