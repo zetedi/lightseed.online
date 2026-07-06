@@ -130,8 +130,8 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                             </button>
                         )}
                         {isAuthor && isRoot && (
-                            <span className="flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/15 px-3 py-1.5 text-[10px] font-bold text-emerald-200">
-                                <Icons.ShieldCheck /> ROOT ANCHOR
+                            <span className="flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/15 px-3 py-1.5 text-[10px] font-bold text-emerald-200" title="This vision is the tree's own root — its foundation.">
+                                <Icons.ShieldCheck /> ROOT VISION
                             </span>
                         )}
                     </div>
@@ -157,7 +157,7 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                             {vision.visibility && vision.visibility !== 'public' && (
                                 <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">{vision.visibility}</span>
                             )}
-                            {rootTree && (
+                            {rootTree && !isRoot && (
                                 <button
                                     onClick={() => onViewTree?.(rootTree)}
                                     title={`Rooted in ${rootTree.name}`}
@@ -182,7 +182,8 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                 {section === 'about' && (
                     <div>
                         <SectionTitle title={t('vision')} sub="What this vision is calling towards." />
-                        {/* The tree this vision is anchored in — shown prominently on a root anchor. */}
+                        {/* Where this vision sits relative to a tree: the tree's OWN root vision is its
+                            anchor; any other vision merely roots INTO a tree, connecting to that root. */}
                         {rootTree && (
                             <button
                                 onClick={() => onViewTree?.(rootTree)}
@@ -194,9 +195,9 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                                         : <span className="flex h-full w-full items-center justify-center text-emerald-500"><Icons.Tree /></span>}
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">{t('rooted_in')}</p>
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">{isRoot ? 'Root vision of' : t('rooted_in')}</p>
                                     <p className="truncate text-lg font-light tracking-wide text-slate-800">{rootTree.name}</p>
-                                    {rootTree.shortTitle && <p className="truncate text-xs text-slate-500">{rootTree.shortTitle}</p>}
+                                    <p className="truncate text-xs text-slate-500">{isRoot ? "This vision is the tree's foundation." : "Connects to this tree's root vision."}</p>
                                 </div>
                                 <span className="shrink-0 text-emerald-600"><Icons.ArrowRight /></span>
                             </button>

@@ -1,5 +1,5 @@
 import { query, getDocs, addDoc, serverTimestamp, doc, runTransaction, where, updateDoc, deleteDoc, Timestamp } from 'firebase/firestore';
-import { type Pulse, type Community, type Decision, type DecisionNature, votesRequired } from '../../types';
+import { type Pulse, type Community, type Decision, type DecisionNature, type DecisionMode, type ConsensusStance, votesRequired } from '../../types';
 import { createBlock } from '../../utils/crypto';
 import { uuidv7 } from '../../utils/id';
 import { type PulseVisibility } from '../../domain/pulse';
@@ -14,11 +14,14 @@ import { normalizeDomain } from './trees';
 
 export const createDecision = async (
     community: Pick<Community, 'id' | 'domain'>,
-    data: { nature: DecisionNature; title: string; body?: string; subject?: string; proposedBy: string },
+    data: { nature: DecisionNature; title: string; body?: string; subject?: string; proposedBy: string; mode?: DecisionMode },
 ): Promise<Decision> => {
+    const mode: DecisionMode = data.mode || 'threshold';
     const required = votesRequired(data.nature);
     const votes = [data.proposedBy]; // the proposer's voice is the first vote
-    const passed = votes.length >= required;
+    // Threshold can pass on creation (e.g. a 1-voice intention); consensus never does — the clerk
+    // must discern the sense of the meeting, so it always opens.
+    const passed = mode === 'threshold' && votes.length >= required;
     const payload = {
         type: 'decision',
         communityId: community.id,
@@ -30,8 +33,10 @@ export const createDecision = async (
         subject: data.subject || '',
         authorId: data.proposedBy, // unified with pulses' author field
         proposedBy: data.proposedBy,
+        mode,
         votes,
         votesRequired: required,
+        positions: [] as any[],
         status: passed ? 'passed' as const : 'open' as const,
     };
     const hash = await createBlock('DECISION', payload, Date.now());
@@ -106,6 +111,48 @@ export const withdrawDecision = (decisionId: string) =>
 // Close a proposal as not adopted.
 export const rejectDecision = (decisionId: string) =>
     updateDoc(doc(db, 'pulses', decisionId), { status: 'rejected', listening: false, rejectedAt: serverTimestamp() });
+
+// --- Quaker consensus -----------------------------------------------------------------------
+// Record a voice's position in a consensus meeting: unite, stand aside, or block. One per person
+// (a new position replaces the old). Blocked-ness is derived from positions in the view, so this
+// never touches `status` — it stays within what any signed-in member may write. A closed decision
+// takes no more positions. Timestamps are client-stamped (serverTimestamp can't live in an array).
+export const recordPosition = async (decisionId: string, uid: string, stance: ConsensusStance, note?: string): Promise<'ok' | 'closed'> => {
+    const actor = auth.currentUser?.uid || uid;
+    const ref = doc(db, 'pulses', decisionId);
+    return runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+        if (!snap.exists()) throw new Error('Proposal not found.');
+        const d = snap.data() as any;
+        if (['passed', 'withdrawn', 'rejected', 'expired'].includes(d.status)) return 'closed' as const;
+        const positions = (Array.isArray(d.positions) ? d.positions : []).filter((p: any) => p.by !== actor);
+        positions.push({ by: actor, stance, note: note || '', at: Timestamp.fromMillis(Date.now()) });
+        tx.update(ref, { positions });
+        return 'ok' as const;
+    });
+};
+
+// The clerk discerns the sense of the meeting. Uniting (passing) requires that NO block stands;
+// a clerk may also record that the meeting did not reach unity ('rejected'). Clerk = proposer /
+// community owner / staff (enforced by the pulse-update rule's status gate).
+export const discernDecision = async (decisionId: string, outcome: 'passed' | 'rejected'): Promise<'passed' | 'rejected'> => {
+    const ref = doc(db, 'pulses', decisionId);
+    return runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+        if (!snap.exists()) throw new Error('Proposal not found.');
+        const d = snap.data() as any;
+        if (['passed', 'withdrawn', 'rejected', 'expired'].includes(d.status)) throw new Error('This proposal is already settled.');
+        if (outcome === 'passed') {
+            const blocks = (Array.isArray(d.positions) ? d.positions : []).filter((p: any) => p.stance === 'block');
+            if (blocks.length) throw new Error('A block still stands — the meeting is not in unity. Tend the block first.');
+            const enactedHash = await createBlock(d.hash || 'DECISION', { decision: decisionId, united: true }, Date.now());
+            tx.update(ref, { status: 'passed', passedAt: serverTimestamp(), enactedHash });
+            return 'passed' as const;
+        }
+        tx.update(ref, { status: 'rejected', rejectedAt: serverTimestamp() });
+        return 'rejected' as const;
+    });
+};
 
 export const getDecisions = async (communityId: string, levels?: PulseVisibility[]): Promise<Decision[]> => {
     const base = where('communityId', '==', communityId);

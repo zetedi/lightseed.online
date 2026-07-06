@@ -243,7 +243,7 @@ service cloud.firestore {
         || (
              resource.data.get('type', '') == 'decision'
              && request.resource.data.diff(resource.data).affectedKeys()
-                  .hasOnly(['votes', 'concerns', 'listening', 'status', 'passedAt', 'enactedHash', 'withdrawnAt', 'rejectedAt', 'updatedAt'])
+                  .hasOnly(['votes', 'concerns', 'positions', 'listening', 'status', 'passedAt', 'enactedHash', 'withdrawnAt', 'rejectedAt', 'updatedAt'])
              && (
                   request.resource.data.get('status', '') == resource.data.get('status', '')
                   || isStaff()
