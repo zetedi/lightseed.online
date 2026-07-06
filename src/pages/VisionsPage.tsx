@@ -5,6 +5,7 @@ import { SectionHeader } from '../components/ui/SectionHeader';
 import { VisionCard } from '../components/VisionCard';
 import { ResonancePanel } from '../components/ResonancePanel';
 import { ResonanceScan } from '../components/ui/ResonanceScan';
+import { Loading } from '../components/ui/Loading';
 import { canViewVision } from '../domain/views/forest';
 import type { Lightseed, Vision, VisionSynergy } from '../types';
 
@@ -80,6 +81,7 @@ export const VisionsPage = ({
             )}
           </div>
         </ResonanceScan>
+        {loadingMore && <div className="mt-6 flex justify-center"><Loading /></div>}
       </SectionHeader>
     </div>
   );

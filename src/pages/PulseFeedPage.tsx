@@ -1,6 +1,7 @@
 import React from 'react';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { PulseCard } from '../components/PulseCard';
+import { Loading } from '../components/ui/Loading';
 import type { Pulse, Lightseed } from '../types';
 
 // A presentational feed of PulseCards under a SectionHeader. Shared by the Events and Pulses
@@ -36,6 +37,7 @@ export const PulseFeedPage = ({
           ))
         )}
       </div>
+      {loadingMore && <div className="mt-6 flex justify-center"><Loading /></div>}
     </SectionHeader>
   </div>
 );

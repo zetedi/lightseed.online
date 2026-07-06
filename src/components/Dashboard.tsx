@@ -104,7 +104,7 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
                 tall. A distorted node/community hero, a living leaf texture, and an oversized
                 EVENTS wordmark running behind the cards. Looks special with or without a hero. */}
             {lightseed && events && events.length > 0 && (
-                <div className="relative w-full overflow-hidden rounded-2xl h-80 md:h-64 bg-emerald-900 ring-1 ring-amber-300/50 shadow-[0_0_40px_-4px_rgba(251,191,36,0.5)]">
+                <div className="relative w-full overflow-hidden rounded-2xl h-80 md:h-96 bg-emerald-900 ring-1 ring-amber-300/50 shadow-[0_0_40px_-4px_rgba(251,191,36,0.5)]">
                     {/* Background: the node/community hero, softly distorted — or an emerald wash */}
                     {communityHero ? (
                         <img src={communityHero} className="absolute inset-0 h-full w-full scale-110 object-cover blur-[2px] saturate-150" alt="" />

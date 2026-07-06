@@ -94,16 +94,16 @@ export const ResonancePanel = ({
   onToggleFavorite?: (s: VisionSynergy) => void;
   onReach?: (treeId: string, treeName: string) => void;
 }) => {
-  const { t } = useLanguage();
   if (!synergies || synergies.length === 0) return null;
   const ranked = [...synergies].sort((a, b) => (b.score || 0) - (a.score || 0));
   return (
-    <div className={`bg-amber-50/90 backdrop-blur-md p-6 rounded-2xl border-2 border-amber-200 shadow-lg animate-in zoom-in-95 duration-500 ${className}`}>
-      <div className="flex items-center gap-3 mb-6">
-        <div className="bg-amber-500 text-white p-2 rounded-xl shadow-lg"><Icons.SparkleFill size={24} /></div>
-        <h3 className="text-2xl font-light text-amber-900 italic">{t('living_resonance')}</h3>
+    <div className={`overflow-hidden bg-amber-50/90 backdrop-blur-md rounded-2xl border-2 border-amber-200 shadow-lg animate-in zoom-in-95 duration-500 ${className}`}>
+      {/* Centered header on an amber band. */}
+      <div className="flex items-center justify-center gap-2.5 bg-amber-500 px-6 py-3.5 text-white">
+        <Icons.SparkleFill size={20} />
+        <h3 className="text-xl font-light italic tracking-wide">Alignments</h3>
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 p-6 md:grid-cols-2">
         {ranked.map((s, i) => (
           <ResonanceCard
             key={i}

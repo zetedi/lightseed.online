@@ -24,7 +24,7 @@ import { IntelligencePanel } from './intelligence/IntelligencePanel';
 import { ResonanceCard, resonanceId } from './ResonancePanel';
 import { DEFAULT_INTELLIGENCE_ID } from '../services/intelligence';
 
-export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSetDefaultTree, onViewVision, onPlant, onCreateVision, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachAudience, reachOpenSignal, onConsumeReach, onReachTree, nodeTheme }: any) => {
+export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSetDefaultTree, onViewVision, onViewAlignment, onPlant, onCreateVision, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachAudience, reachOpenSignal, onConsumeReach, onReachTree, nodeTheme }: any) => {
     const { t } = useLanguage();
     // Session state comes from context now (was prop-drilled from App).
     const { lightseed, myTrees, guardedTrees, isAdmin, isSuperAdmin, superAdminExists } = useSession();
@@ -885,7 +885,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                         {activeTab === 'pulses' && (
                             <div>
                             <SectionTitle title={t('my_pulses')} sub={t('my_pulses_sub')} />
-                            {loading ? <div className="flex justify-center py-10"><Loading /></div> : (
+                            {loading ? <div className="flex justify-center rounded-2xl border border-slate-100 bg-slate-50/50 py-16"><Loading /></div> : (
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                     {pulses.length === 0 ? <p className="col-span-full text-slate-400 text-center py-10">No pulses emitted yet.</p> : pulses.map((pulse) => (
                                         <div key={pulse.id} className="border border-slate-100 rounded-lg overflow-hidden group">
@@ -909,7 +909,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                             </div>
                         )}
                          {activeTab === 'visions' && (
-                             loading ? <div className="flex justify-center py-10"><Loading /></div> : (
+                             loading ? <div className="flex justify-center rounded-2xl border border-slate-100 bg-slate-50/50 py-16"><Loading /></div> : (
                                 <div>
                                     <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
                                          <h3 className="text-lg font-bold">My Visions</h3>
@@ -1074,16 +1074,19 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                                 </div>
                             )}
 
-                            {loading ? <div className="flex justify-center py-10"><Loading /></div> : (
+                            {loading ? <div className="flex justify-center rounded-2xl border border-slate-100 bg-slate-50/50 py-16"><Loading /></div> : (
                                 <div className="space-y-4">
                                     {history.length === 0 ? <p className="text-slate-400 text-center py-10">{t('no_history')}</p> : history.map((h) => (
-                                        <div key={h.id} className="border border-slate-200 p-4 rounded-lg bg-slate-50 flex justify-between items-center">
-                                            <div>
-                                                <p className="font-bold text-sm text-slate-700">{h.status}</p>
-                                                <p className="text-xs text-slate-500">{new Date(h.createdAt?.toMillis()).toLocaleDateString()}</p>
+                                        <button key={h.id} onClick={() => onViewAlignment?.(h)} className="flex w-full items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-4 text-left transition-colors hover:bg-slate-100">
+                                            <div className="flex items-center gap-3">
+                                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sky-600"><Icons.Exchange /></span>
+                                                <div>
+                                                    <p className="font-bold text-sm text-slate-700">{h.status === 'ACCEPTED' ? 'Synced' : h.status}</p>
+                                                    <p className="text-xs text-slate-500">{h.createdAt ? new Date(h.createdAt.toMillis()).toLocaleDateString() : ''}</p>
+                                                </div>
                                             </div>
-                                            <div className="text-xs font-mono text-slate-400">{h.id.substring(0,8)}...</div>
-                                        </div>
+                                            <Icons.ChevronRight className="text-slate-400" />
+                                        </button>
                                     ))}
                                 </div>
                              )}

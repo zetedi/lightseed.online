@@ -3,6 +3,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from '../components/ui/Icons';
 import { ForestMap } from '../components/ForestMap';
 import { LifetreeCard } from '../components/LifetreeCard';
+import { Loading } from '../components/ui/Loading';
 import type { Lifetree } from '../types';
 import type { ReachAudience } from '../domain/reach';
 
@@ -96,6 +97,7 @@ export const ForestPage = ({
               ))
             )}
           </div>
+          {loadingMore && filteredData.length > 0 && <div className="mt-6 flex justify-center"><Loading /></div>}
           <div ref={sentinelRef} className="h-1" />
         </>
       )}

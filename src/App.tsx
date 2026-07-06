@@ -88,6 +88,8 @@ const AuthModal = lazy(() => import('./components/modals/AuthModal').then(m => (
 const EmitPulseModal = lazy(() => import('./components/modals/EmitPulseModal').then(m => ({ default: m.EmitPulseModal })));
 const EventModal = lazy(() => import('./components/modals/EventModal').then(m => ({ default: m.EventModal })));
 const CreateVisionModal = lazy(() => import('./components/modals/CreateVisionModal').then(m => ({ default: m.CreateVisionModal })));
+const DataModelCrystal = lazy(() => import('./components/about/DataModelCrystal').then(m => ({ default: m.DataModelCrystal })));
+const AlignmentProfile = lazy(() => import('./components/AlignmentProfile').then(m => ({ default: m.AlignmentProfile })));
 
 // The full-screen overlay every detail view (tree / vision / event / community) scrolls inside.
 // Module-scope so it keeps a stable identity (an inline definition remounts its subtree — and
@@ -110,6 +112,7 @@ const AppContent = () => {
     const [alignments, setAlignments] = useState<Alignment[]>([]);
     const [selectedTree, setSelectedTree] = useState<Lifetree | null>(null);
     const [selectedVision, setSelectedVision] = useState<Vision | null>(null);
+    const [selectedAlignment, setSelectedAlignment] = useState<Alignment | null>(null);
     const [selectedPulse, setSelectedPulse] = useState<Pulse | null>(null);
     // Bumped whenever we finish touching a tree (guardianship, edits) so the map re-reads it.
     const [mapRefreshKey, setMapRefreshKey] = useState(0);
@@ -263,6 +266,7 @@ const AppContent = () => {
         { key: 'tree', open: !!selectedTree, close: () => setSelectedTree(null) },
         { key: 'community', open: !!selectedCommunity, close: () => setSelectedCommunity(null) },
         { key: 'vision', open: !!selectedVision, close: () => setSelectedVision(null) },
+        { key: 'alignment', open: !!selectedAlignment, close: () => setSelectedAlignment(null) },
         { key: 'pulse', open: !!selectedPulse, close: () => setSelectedPulse(null) },
         { key: 'auth', open: showAuthModal, close: () => setShowAuthModal(false) },
         { key: 'plant', open: showPlantModal, close: () => setShowPlantModal(false) },
@@ -472,6 +476,7 @@ const AppContent = () => {
                     defaultTreeId={defaultTreeId}
                     onSetDefaultTree={setDefaultTree}
                     onViewVision={(v: Vision) => setSelectedVision(v)}
+                    onViewAlignment={(a: Alignment) => setSelectedAlignment(a)}
                     onPlant={() => openPlant()}
                     onCreateVision={() => setShowVisionModal(true)}
                     onClaimSuperAdmin={async () => {
@@ -742,8 +747,6 @@ const AppContent = () => {
                         onView={(p: Pulse) => setSelectedPulse(p)}
                     />
                 )}
-
-                {loadingMore && <div className="flex justify-center py-4"><Loading /></div>}
             </main>
         );
     };
@@ -846,6 +849,15 @@ const AppContent = () => {
                             myTrees={myTrees}
                             onGrow={(v) => openVisionGrowth(v)}
                             onViewTree={(tree) => { setSelectedVision(null); setSelectedTree(tree); }}
+                        />
+                    </div>
+                ) : selectedAlignment ? (
+                    <div className="animate-in fade-in duration-200">
+                        <AlignmentProfile
+                            alignment={selectedAlignment}
+                            currentUserId={lightseed?.uid}
+                            onClose={() => setSelectedAlignment(null)}
+                            onViewTree={(tree) => { setSelectedAlignment(null); setSelectedTree(tree); }}
                         />
                     </div>
                 ) : (selectedPulse && selectedPulse.type === 'event') ? (
@@ -1000,6 +1012,22 @@ const App = () => {
   const widgetDomain = params.get('domain') || '';
 
   if (isWidget) return <LifeseedWidget domain={widgetDomain} />;
+
+  // The data model — a hidden, full-screen /model route. Not linked anywhere (need-to-know);
+  // reach it by typing the URL. Logo top-right returns to the app. (Trailing slash tolerated.)
+  if (window.location.pathname.replace(/\/+$/, '') === '/model') {
+    return (
+      <div className="min-h-screen bg-[#05080a] p-3 sm:p-6">
+        <a href="/" title="Back to lifeseed" aria-label="Back to lifeseed"
+           className="fixed right-4 top-4 z-50 rounded-full bg-white/10 p-1.5 shadow-lg backdrop-blur transition-colors hover:bg-white/20">
+          <Logo width={38} height={38} />
+        </a>
+        <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><Loading /></div>}>
+          <div className="mx-auto max-w-[1440px] pt-2"><DataModelCrystal /></div>
+        </Suspense>
+      </div>
+    );
+  }
 
   return (
     <LanguageProvider>

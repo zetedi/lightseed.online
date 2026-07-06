@@ -182,6 +182,25 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                 {section === 'about' && (
                     <div>
                         <SectionTitle title={t('vision')} sub="What this vision is calling towards." />
+                        {/* The tree this vision is anchored in — shown prominently on a root anchor. */}
+                        {rootTree && (
+                            <button
+                                onClick={() => onViewTree?.(rootTree)}
+                                className="mb-6 flex w-full items-center gap-4 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4 text-left transition-colors hover:bg-emerald-50"
+                            >
+                                <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-white bg-emerald-100 shadow">
+                                    {rootTree.latestGrowthUrl || rootTree.imageUrl
+                                        ? <img src={rootTree.latestGrowthUrl || rootTree.imageUrl} alt="" referrerPolicy="no-referrer" className="h-full w-full object-cover" />
+                                        : <span className="flex h-full w-full items-center justify-center text-emerald-500"><Icons.Tree /></span>}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">{t('rooted_in')}</p>
+                                    <p className="truncate text-lg font-light tracking-wide text-slate-800">{rootTree.name}</p>
+                                    {rootTree.shortTitle && <p className="truncate text-xs text-slate-500">{rootTree.shortTitle}</p>}
+                                </div>
+                                <span className="shrink-0 text-emerald-600"><Icons.ArrowRight /></span>
+                            </button>
+                        )}
                         {vision.imageUrl && (
                             <div className="mb-6 h-64 w-full overflow-hidden rounded-2xl border border-slate-100 bg-amber-50 shadow-sm">
                                 <img src={vision.imageUrl} alt={vision.title} className="h-full w-full object-cover" />
