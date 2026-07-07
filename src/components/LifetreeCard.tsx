@@ -18,6 +18,7 @@ interface LifetreeCardProps {
     myActiveTree: Lifetree | null;
     isAdmin?: boolean;
     isSuperAdmin?: boolean;
+    isInitiate?: boolean;
     currentUserId?: string;
     guardedTreeIds?: Set<string>;
     targetUserProfile?: ReachTargetProfile | null;
@@ -29,7 +30,7 @@ interface LifetreeCardProps {
     onAlertGuardians?: (tree: Lifetree) => void;
 }
 
-export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, currentUserId, guardedTreeIds, targetUserProfile, onValidate, onPlayGrowth, onQuickSnap, onView, onReach, onAlertGuardians }: LifetreeCardProps) => {
+export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, isInitiate, currentUserId, guardedTreeIds, targetUserProfile, onValidate, onPlayGrowth, onQuickSnap, onView, onReach, onAlertGuardians }: LifetreeCardProps) => {
     const { t } = useLanguage();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
@@ -41,7 +42,7 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, curren
     // Thirsty: any tree on a watering schedule that's past its due-date.
     const needsWater = isWateringOverdue(tree);
     const hasValidationBadge = isExplicitlyValidatedTree(tree);
-    const showValidateAction = canToggleValidation({ tree, myActiveTree, isAdmin, isSuperAdmin });
+    const showValidateAction = canToggleValidation({ tree, myActiveTree, isAdmin, isSuperAdmin, isInitiate });
     // The owner's privacy flag is mirrored onto the (world-readable) tree, so we can read it here.
     const targetProfile = targetUserProfile ?? { onlyValidatedCanReach: tree.onlyValidatedCanReach };
     const canReach = canReachTree({ targetTree: tree, targetUserProfile: targetProfile, myActiveTree, currentUserId, isAdmin, isSuperAdmin });

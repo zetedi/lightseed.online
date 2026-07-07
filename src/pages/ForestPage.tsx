@@ -23,6 +23,7 @@ interface ForestPageProps {
   mapRefreshKey: number;
   isAdmin?: boolean;
   isSuperAdmin?: boolean;
+  isInitiate?: boolean;
   currentUserId?: string;
   guardedTreeIds: Set<string>;
   sentinelRef: React.RefObject<HTMLDivElement | null>;
@@ -37,7 +38,7 @@ interface ForestPageProps {
 export const ForestPage = ({
   effectiveIsDark, showNatureTrees, setShowNatureTrees, showUserTrees, setShowUserTrees,
   showValidatedTrees, setShowValidatedTrees, viewMode, filteredData, loadingMore, activeTree,
-  mapRefreshKey, isAdmin, isSuperAdmin, currentUserId, guardedTreeIds, sentinelRef,
+  mapRefreshKey, isAdmin, isSuperAdmin, isInitiate, currentUserId, guardedTreeIds, sentinelRef,
   onView, onReach, onPlayGrowth, onQuickSnap, onValidate, onRefresh,
 }: ForestPageProps) => {
   const { t } = useLanguage();
@@ -83,6 +84,7 @@ export const ForestPage = ({
                     myActiveTree={activeTree}
                     isAdmin={isAdmin}
                     isSuperAdmin={isSuperAdmin}
+                    isInitiate={isInitiate}
                     currentUserId={currentUserId}
                     guardedTreeIds={guardedTreeIds}
                     targetUserProfile={{ onlyValidatedCanReach: item.onlyValidatedCanReach }}

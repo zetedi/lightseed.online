@@ -63,7 +63,7 @@ export const ObservatoryPage = ({
 }: ObservatoryPageProps) => {
   const { t } = useLanguage();
   return (
-    <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-lg">
         {/* Lighthouse banner header */}
         <div className="relative h-36 sm:h-44 overflow-hidden">
@@ -110,23 +110,19 @@ export const ObservatoryPage = ({
                 {alignments.map(a => (
                   <div key={a.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-800 shadow-sm animate-in fade-in slide-in-from-bottom-2">
                     {/* Header — who's asking, and that it's on you */}
-                    <div className="flex items-center justify-between gap-2 border-b border-slate-100 bg-gradient-to-r from-sky-50 to-transparent px-4 py-2.5">
-                      <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-600">◇ {t('alignment_request')}</span>
-                      <span className="rounded-full bg-amber-100 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-amber-700">{t('awaiting_you')}</span>
+                    <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
+                      <span className="text-sm font-semibold text-slate-700">{t('alignment_request')}</span>
+                      <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">{t('awaiting_you')}</span>
                     </div>
 
                     {/* The two trees meeting */}
                     <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 pb-2 pt-5">
                       <TreeColumn tree={a.theirTree} role={t('reaching_out')} who={a.theirTree.ownerName ? `${t('tended_by')} ${a.theirTree.ownerName}` : undefined} tone="sky" />
-                      <div className="flex flex-col items-center gap-1.5">
-                        <svg width="66" height="46" viewBox="0 0 66 46" aria-hidden="true">
-                          <circle cx="26" cy="23" r="18" fill="none" stroke="#0ea5e9" strokeWidth="1.6" />
-                          <circle cx="40" cy="23" r="18" fill="none" stroke="#10b981" strokeWidth="1.6" />
-                          <path d="M33 8.2 A18 18 0 0 1 33 37.8 A18 18 0 0 1 33 8.2 Z" fill="#f59e0b" opacity="0.2" />
-                          <circle cx="33" cy="23" r="2.4" fill="#f59e0b" />
-                        </svg>
-                        <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-amber-600">{t('aligns_with')}</span>
-                      </div>
+                      {/* A calm connector — the two trees linked, no colour, no label. */}
+                      <svg width="44" height="24" viewBox="0 0 44 24" fill="none" stroke="#cbd5e1" strokeWidth="1.6" aria-hidden="true" className="shrink-0">
+                        <circle cx="17" cy="12" r="8" />
+                        <circle cx="27" cy="12" r="8" />
+                      </svg>
                       <TreeColumn tree={a.yourTree} role={t('your_tree_role')} tone="emerald" />
                     </div>
 

@@ -135,3 +135,7 @@ functions/lib/
 # Local service-account credentials (never commit)
 serviceAccount.json
 *-service-account.json
+
+# Initiation private keys — never commit
+initiation-private.pem
+*.initiation.pem

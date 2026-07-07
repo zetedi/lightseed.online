@@ -33,7 +33,7 @@ const STAGE_META: { key: TreeStage; label: string; hint: string; icon: React.Rea
 export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, onAlertGuardians, isDefaultTree, onSetDefault, targetUserProfile }: any) => {
    const { t } = useLanguage();
    // Session-derived values from context (were prop-drilled from App).
-   const { lightseed, activeTree, isAdmin, isSuperAdmin } = useSession();
+   const { lightseed, activeTree, isAdmin, isSuperAdmin, isInitiate } = useSession();
    const currentUser = lightseed;
    const currentUserId = lightseed?.uid;
    const myActiveTree = activeTree;
@@ -62,7 +62,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    // guardians (mirrors isTreeTender in firestore.rules).
    const canEdit = isOwner || isTender || isAdmin || isSuperAdmin;
    const hasValidationBadge = isExplicitlyValidatedTree(tree);
-   const showValidateAction = canToggleValidation({ tree, myActiveTree, isAdmin, isSuperAdmin });
+   const showValidateAction = canToggleValidation({ tree, myActiveTree, isAdmin, isSuperAdmin, isInitiate });
    // Owner privacy flag is mirrored onto the (world-readable) tree, so we read it here.
    const targetProfile = targetUserProfile ?? { onlyValidatedCanReach: tree.onlyValidatedCanReach };
    const canReach = canReachTree({ targetTree: tree, targetUserProfile: targetProfile, myActiveTree, currentUserId, isAdmin, isSuperAdmin });

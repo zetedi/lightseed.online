@@ -1,4 +1,4 @@
-import { query, getDocs, addDoc, serverTimestamp, doc, runTransaction, getDoc, where, updateDoc, getCountFromServer } from 'firebase/firestore';
+import { query, getDocs, addDoc, serverTimestamp, doc, runTransaction, getDoc, where, updateDoc, getCountFromServer, Timestamp } from 'firebase/firestore';
 import { type Lifetree, type Alignment } from '../../types';
 import { createBlock } from '../../utils/crypto';
 import { isTokenisationEnabled } from '../../domain/tokenisation';
@@ -9,7 +9,33 @@ export const proposeAlignment = (data: any) => addDoc(alignmentsCollection, { ..
 // Decline a pending alignment — the target owner passes on the resonance. A single field write
 // (the alignments rule already lets the initiator or target update their own proposal).
 export const rejectAlignment = (id: string) => updateDoc(doc(db, 'alignments', id), { status: 'REJECTED' });
+
+// Post a note in an alignment's discussion — the recursive back-and-forth that happens while it's
+// still PENDING, before the target finalises it with Accept. Transactional append (read-then-write)
+// so two people writing at once don't clobber each other's note; the time is client-stamped (the
+// array element can't hold a serverTimestamp sentinel). Only the two participants may post.
+export const postAlignmentNote = async (id: string, uid: string, text: string): Promise<void> => {
+    const body = text.trim();
+    if (!body) return;
+    const ref = doc(db, 'alignments', id);
+    await runTransaction(db, async (t) => {
+        const snap = await t.get(ref);
+        if (!snap.exists()) throw new Error('This alignment no longer exists.');
+        const data = snap.data() as Alignment;
+        if (uid !== data.initiatorUid && uid !== data.targetUid) throw new Error('Only the two aligned trees can speak here.');
+        if (data.status !== 'PENDING') throw new Error('This alignment is already settled.');
+        const note = { by: uid, text: body.slice(0, 2000), at: Timestamp.fromMillis(Date.now()) };
+        t.update(ref, { messages: [...(data.messages || []), note] });
+    });
+};
 export const getPendingAlignments = async (uid: string) => (await getDocs(query(alignmentsCollection, where('targetUid', '==', uid), where('status', '==', 'PENDING')))).docs.map(d => (mapDoc(d) as Alignment));
+
+// One alignment by id — so a sync-block leaf on a tree opens the same AlignmentProfile view as the
+// profile's alignments list (an alignment pulse carries the alignment id in `matchId`).
+export const getAlignmentById = async (id: string): Promise<Alignment | null> => {
+    const snap = await getDoc(doc(db, 'alignments', id));
+    return snap.exists() ? (mapDoc(snap) as Alignment) : null;
+};
 
 // Count of a user's accepted alignments (both sides) — server-side COUNT for the dashboard stat.
 export const getMyAlignmentCount = async (uid: string): Promise<number> => {
@@ -20,9 +46,19 @@ export const getMyAlignmentCount = async (uid: string): Promise<number> => {
     return asTarget.data().count + asInitiator.data().count;
 };
 
+// A person's alignments (both sides) — OPEN (still-discussing PENDING) and FINALISED (ACCEPTED).
+// Declined ones drop off. Open ones are included so either party can reach the discussion page and
+// speak before the target finalises. Two single-field queries (no status filter) → dedupe by id.
 export const getMyAlignmentsHistory = async (uid: string) => {
-    const [s1, s2] = await Promise.all([getDocs(query(alignmentsCollection, where('targetUid', '==', uid), where('status', '==', 'ACCEPTED'))), getDocs(query(alignmentsCollection, where('initiatorUid', '==', uid), where('status', '==', 'ACCEPTED')))]);
-    return [...s1.docs, ...s2.docs].map(d => (mapDoc(d) as Alignment)).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+    const [asTarget, asInitiator] = await Promise.all([
+        getDocs(query(alignmentsCollection, where('targetUid', '==', uid))),
+        getDocs(query(alignmentsCollection, where('initiatorUid', '==', uid))),
+    ]);
+    const byId = new Map<string, Alignment>();
+    [...asTarget.docs, ...asInitiator.docs].forEach(d => byId.set(d.id, mapDoc(d) as Alignment));
+    return Array.from(byId.values())
+        .filter(a => a.status !== 'REJECTED')
+        .sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 }
 
 export interface AlignmentResult {

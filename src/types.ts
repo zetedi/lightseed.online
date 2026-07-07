@@ -45,18 +45,29 @@ export interface Vision extends Entity {
   resonanceScore?: number;
 }
 
+// A note in an alignment's discussion — the back-and-forth before it's finalised.
+export interface AlignmentNote {
+  by: string;   // author uid (must be one of the two participants)
+  text: string;
+  at: Timestamp;
+}
+
 // Off-Chain Alignment Handshake (Former MatchProposal)
 export interface Alignment {
   id: string;
   initiatorPulseId: string;
   initiatorTreeId: string;
   initiatorUid: string;
-  
+
   targetPulseId: string; // The pulse being matched WITH
   targetTreeId: string;
   targetUid: string; // The owner who needs to accept
 
   status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  // The discussion thread: whoever the match reached first acknowledges (initiates), the other
+  // responds, and it stays open (recursive) until the target finalises with Accept. Lives while
+  // PENDING; ACCEPTED means finalised (a sync-block is on both chains).
+  messages?: AlignmentNote[];
   createdAt: Timestamp;
 }
 

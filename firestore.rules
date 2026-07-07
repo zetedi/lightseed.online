@@ -98,7 +98,15 @@ service cloud.firestore {
     // Admins collection: read staff, no direct write
     match /admins/{adminId} {
       allow read: if isSignedIn();
-      allow write: if false; 
+      allow write: if false;
+    }
+
+    // The initiated layer — a Firestore MIRROR of the git initiation ledger (initiations/ in the
+    // repo, three-sponsor rule enforced in CI). Git is the source of truth; the superadmin syncs
+    // records that declare a uid so the rules below can check initiate rights server-side.
+    match /initiates/{uid} {
+      allow read: if true;
+      allow write: if isStaff();
     }
 
     // Config collection: read staff/config-specific, no direct write
@@ -176,6 +184,15 @@ service cloud.firestore {
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['validated', 'validatorId', 'updatedAt'])
           && request.resource.data.get('validated', false) == true
           && isOwnedValidatedTree(request.resource.data.get('validatorId', ''))
+        )
+        // Initiate validation: a member of the initiated layer (git ledger, mirrored to
+        // /initiates/{uid}) signs in their own name. Same validation-fields-only constraint;
+        // validatorId must be the initiate themselves. Validate-on only — dimming stays staff.
+        || (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['validated', 'validatorId', 'updatedAt'])
+          && request.resource.data.get('validated', false) == true
+          && request.resource.data.get('validatorId', '') == request.auth.uid
+          && exists(/databases/$(database)/documents/initiates/$(request.auth.uid))
         )
         || isStaff()
       );
@@ -282,7 +299,22 @@ service cloud.firestore {
     match /alignments/{id} {
       allow read: if true;
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && (resource.data.targetUid == request.auth.uid || resource.data.initiatorUid == request.auth.uid);
+      // Field-level: (a) the discussion — either participant may write `messages` while the
+      // alignment is still open; (b) settling — only the TARGET may flip `status` (accept mints the
+      // sync-blocks in the same transaction; decline is a plain flip). The initiator can no longer
+      // self-accept, and no one can rewrite the pulses/trees an alignment points at.
+      allow update: if isSignedIn() && (
+        (
+          (resource.data.targetUid == request.auth.uid || resource.data.initiatorUid == request.auth.uid)
+          && resource.data.status == 'PENDING'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['messages'])
+        )
+        || (
+          resource.data.targetUid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        )
+        || isStaff()
+      );
       allow delete: if isStaff();
     }
 

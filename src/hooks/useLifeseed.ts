@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { onAuthChange, getMyLifetrees, getGuardedTrees, checkIsAdmin, checkIsSuperAdmin, getSuperAdminUid, claimSuperAdmin, listenToUserProfile, updateUserProfile, ensurePersonEntity } from '../services/firebase';
+import { getInitiateByUid, type Initiate } from '../domain/initiation';
 import { type Lightseed, type Lifetree } from '../types';
 
 const SUPERADMIN_EMAIL = 'zetedi@gmail.com';
@@ -12,6 +13,8 @@ export const useLifeseed = () => {
     const [isAdmin, setIsAdmin] = useState(false);
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
     const [superAdminExists, setSuperAdminExists] = useState(true);
+    // The initiated layer (git ledger, mirrored to /initiates.json) — null until resolved.
+    const [initiate, setInitiate] = useState<Initiate | null>(null);
     const [loading, setLoading] = useState(true);
     // The user's chosen "closest" tree (users/{uid}.defaultTreeId). Drives `activeTree`.
     const [defaultTreeId, setDefaultTreeId] = useState<string | undefined>(undefined);
@@ -47,6 +50,9 @@ export const useLifeseed = () => {
                 // Identity Stage 1: ensure this user has a canonical person entity (idempotent).
                 ensurePersonEntity(user.uid, user.displayName).catch(() => {});
 
+                // The initiated layer: is this account bound to a git-ledger initiate? Best-effort.
+                getInitiateByUid(user.uid).then(setInitiate).catch(() => setInitiate(null));
+
                 // Roles — email-based superadmin takes priority, Firestore checks are best-effort
                 const emailIsSuperAdmin = user.email === SUPERADMIN_EMAIL;
                 let firestoreSuperAdmin = false;
@@ -77,6 +83,7 @@ export const useLifeseed = () => {
                 setGuardedTrees([]);
                 setIsAdmin(false);
                 setIsSuperAdmin(false);
+                setInitiate(null);
             }
             setLoading(false);
         });
@@ -113,5 +120,5 @@ export const useLifeseed = () => {
 
     // The "closest" tree: the chosen default if it's still one of mine, else the first.
     const activeTree = myTrees.find(t => t.id === defaultTreeId) || (myTrees.length > 0 ? myTrees[0] : null);
-    return { lightseed, myTrees, guardedTrees, activeTree, defaultTreeId, setDefaultTree, isAdmin, isSuperAdmin, superAdminExists, loading, refreshTrees };
+    return { lightseed, myTrees, guardedTrees, activeTree, defaultTreeId, setDefaultTree, isAdmin, isSuperAdmin, superAdminExists, initiate, isInitiate: !!initiate, loading, refreshTrees };
 };

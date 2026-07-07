@@ -41,13 +41,16 @@ export const canValidateTree = ({
   tree,
   myActiveTree,
   isSuperAdmin,
+  isInitiate,
 }: {
   tree?: Lifetree | null;
   myActiveTree?: Lifetree | null;
   isSuperAdmin?: boolean;
+  isInitiate?: boolean;
 }) => {
   if (!tree || tree.isNature || isExplicitlyValidatedTree(tree)) return false;
-  if (isSuperAdmin) return true;
+  // An initiate (the git-ledger membership) is a root of the validation web of trust.
+  if (isSuperAdmin || isInitiate) return true;
   // Only a LIVE (tended) validator can pass validation on — a lapsed one must tend first.
   return Boolean(myActiveTree && isValidationLive(myActiveTree) && myActiveTree.id !== tree.id);
 };
@@ -57,14 +60,17 @@ export const canToggleValidation = ({
   myActiveTree,
   isAdmin,
   isSuperAdmin,
+  isInitiate,
 }: {
   tree?: Lifetree | null;
   myActiveTree?: Lifetree | null;
   isAdmin?: boolean;
   isSuperAdmin?: boolean;
+  isInitiate?: boolean;
 }) => {
   if (!tree || tree.isNature) return false;
+  // Un-validating stays staff-only; initiates only pass validation ON.
   if (isExplicitlyValidatedTree(tree)) return Boolean(isSuperAdmin || isAdmin);
-  if (isSuperAdmin || isAdmin) return true;
+  if (isSuperAdmin || isAdmin || isInitiate) return true;
   return Boolean(myActiveTree && isValidationLive(myActiveTree) && myActiveTree.id !== tree.id);
 };

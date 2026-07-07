@@ -15,12 +15,14 @@ import {
   proposeAlignment,
   acceptAlignment,
   rejectAlignment,
+  getAlignmentById,
   getLifetreeById,
   getPulseById,
   createVision,
   deleteLifetree,
   deleteVision,
   ensureGenesis,
+  syncInitiatesMirror,
   claimSuperAdmin,
   grantAdmin,
   revokeAdmin,
@@ -40,6 +42,7 @@ import { useResonance } from './hooks/useResonance';
 import { useHistoryLayers } from './hooks/useHistoryLayers';
 import { useForestFeed } from './hooks/useForestFeed';
 import { useAlignmentCards } from './hooks/useAlignmentCards';
+import { useAppRouting, topLevelRoute } from './hooks/useAppRouting';
 import { GDPRBanner } from './components/GDPRBanner';
 import { extractGpsFromImage } from './utils/exif';
 
@@ -102,13 +105,15 @@ const DetailWrapper = ({ children }: { children?: React.ReactNode }) => (
 
 const AppContent = () => {
     const { t } = useLanguage();
-    const { lightseed, myTrees, guardedTrees, activeTree, defaultTreeId, setDefaultTree, isAdmin, isSuperAdmin, superAdminExists, loading: authLoading, refreshTrees } = useSession();
+    const { lightseed, myTrees, guardedTrees, activeTree, defaultTreeId, setDefaultTree, isAdmin, isSuperAdmin, isInitiate, superAdminExists, loading: authLoading, refreshTrees } = useSession();
     // The set of trees the signed-in user guards (the LIN, via guardian links) — passed to cards
     // so a card can show its guardian affordance without a per-card read.
     const guardedTreeIds = useMemo(() => new Set(guardedTrees.map(t => t.id)), [guardedTrees]);
     const onboarding = useOnboardingState(lightseed?.uid);
-    const [tab, setTab] = useState('dashboard');
-    const [viewMode, setViewMode] = useState<'grid' | 'map'>('map');
+    // Routing (tab + forest view mode + ?tree/?invite deep-links) lives in useAppRouting.
+    const { tab, setTab, viewMode, setViewMode, inviteParam } = useAppRouting(
+        (id) => { getLifetreeById(id).then(tr => { if (tr) setSelectedTree(tr); }).catch(() => {}); }
+    );
     const [alignments, setAlignments] = useState<Alignment[]>([]);
     const [selectedTree, setSelectedTree] = useState<Lifetree | null>(null);
     const [selectedVision, setSelectedVision] = useState<Vision | null>(null);
@@ -143,15 +148,6 @@ const AppContent = () => {
 
     // UI State
     const [showAuthModal, setShowAuthModal] = useState(false);
-    // An ?invite=<token> link opens the join flow with a locked email.
-    const inviteParam = useMemo(() => new URLSearchParams(window.location.search).get('invite') || undefined, []);
-
-    // A ?tree=<id> share link opens that tree's page on load.
-    useEffect(() => {
-        const id = new URLSearchParams(window.location.search).get('tree');
-        if (!id) return;
-        getLifetreeById(id).then(tr => { if (tr) setSelectedTree(tr); }).catch(() => {});
-    }, []);
 
     const [showPlantModal, setShowPlantModal] = useState(false);
     // How the plant modal should open: optionally straight to a type's plant step
@@ -218,6 +214,7 @@ const AppContent = () => {
     // once per session (and on login), not on every tab/view switch as they used to.
     useEffect(() => {
         ensureGenesis();
+        syncInitiatesMirror(); // superadmin-gated inside; keeps initiates/{uid} true to the git ledger
         getCommunityByDomain(window.location.hostname).then(setHostCommunity);
     }, [lightseed?.uid]);
 
@@ -402,6 +399,19 @@ const AppContent = () => {
     const onViewAlignmentTree = async (treeId: string) => {
         const tr = await getLifetreeById(treeId).catch(() => null);
         if (tr) setSelectedTree(tr);
+    };
+
+    // A pulse on a tree's chain. An alignment sync-block (isMatch, matchId) opens the same
+    // AlignmentProfile as the profile's alignments list — one view, reached from either place —
+    // instead of the raw pulse modal. Everything else opens the pulse.
+    const onViewPulseOrAlignment = async (p: Pulse) => {
+        const matchId = (p as any).matchId;
+        if ((p as any).isMatch && matchId) {
+            const alignment = await getAlignmentById(matchId).catch(() => null);
+            if (alignment) { setSelectedTree(null); setSelectedAlignment(alignment); return; }
+        }
+        setSelectedTree(null);
+        setSelectedPulse(p);
     };
 
     const filteredData = useMemo(() => data.filter((item: any) => {
@@ -678,7 +688,7 @@ const AppContent = () => {
                         loadingMore={loadingMore}
                         activeTree={activeTree}
                         mapRefreshKey={mapRefreshKey}
-                        isAdmin={isAdmin} isSuperAdmin={isSuperAdmin}
+                        isAdmin={isAdmin} isSuperAdmin={isSuperAdmin} isInitiate={isInitiate}
                         currentUserId={lightseed?.uid}
                         guardedTreeIds={guardedTreeIds}
                         sentinelRef={forestSentinelRef}
@@ -687,7 +697,9 @@ const AppContent = () => {
                         onPlayGrowth={setShowGrowthPlayer}
                         onQuickSnap={handleQuickSnap}
                         onValidate={(id: string, nextValidated: boolean) => { (nextValidated
-                            ? validateLifetree(id, isSuperAdmin ? lightseed!.uid : activeTree!.id)
+                            // Initiates (git ledger) validate in their own name, like the superadmin;
+                            // everyone else signs with their validated tree (peer web of trust).
+                            ? validateLifetree(id, (isSuperAdmin || isInitiate) ? lightseed!.uid : activeTree!.id)
                             : unvalidateLifetree(id)
                         ).then(() => { showAlert(nextValidated ? "Validated!" : "Validation removed."); loadContent(true); }); }}
                         onRefresh={() => loadContent(true)}
@@ -817,12 +829,12 @@ const AppContent = () => {
                             onClose={() => { setSelectedTree(null); setMapRefreshKey(k => k + 1); }}
                             onPlayGrowth={setShowGrowthPlayer}
                             onValidate={(id: string, nextValidated: boolean) => (nextValidated
-                                ? validateLifetree(id, isSuperAdmin ? lightseed!.uid : activeTree!.id)
+                                ? validateLifetree(id, (isSuperAdmin || isInitiate) ? lightseed!.uid : activeTree!.id)
                                 : unvalidateLifetree(id)
                             ).then(() => {
                                 handleTreeUpdate(id, {
                                     validated: nextValidated,
-                                    validatorId: nextValidated ? (isSuperAdmin ? lightseed!.uid : activeTree!.id) : null,
+                                    validatorId: nextValidated ? ((isSuperAdmin || isInitiate) ? lightseed!.uid : activeTree!.id) : null,
                                 });
                                 showAlert(nextValidated ? "Validated!" : "Validation removed.");
                                 loadContent(true);
@@ -832,7 +844,7 @@ const AppContent = () => {
                             onCreatePulse={() => openPulseModal(selectedTree)}
                             onReachTree={(tree: Lifetree) => openReach(tree)}
                             onAlertGuardians={() => openReach(selectedTree, 'guardians')}
-                            onViewPulse={(p: Pulse) => { setSelectedTree(null); setSelectedPulse(p); }}
+                            onViewPulse={onViewPulseOrAlignment}
                             isDefaultTree={defaultTreeId === selectedTree.id}
                             onSetDefault={() => { setDefaultTree(selectedTree.id); showAlert(`${selectedTree.name} is now your default tree.`); }}
                             targetUserProfile={{ onlyValidatedCanReach: selectedTree.onlyValidatedCanReach }}
@@ -1007,15 +1019,13 @@ const AppContent = () => {
 }
 
 const App = () => {
-  const params = new URLSearchParams(window.location.search);
-  const isWidget = params.get('widget') === 'true';
-  const widgetDomain = params.get('domain') || '';
+  const route = topLevelRoute();
 
-  if (isWidget) return <LifeseedWidget domain={widgetDomain} />;
+  if (route.kind === 'widget') return <LifeseedWidget domain={route.domain} />;
 
   // The data model — a hidden, full-screen /model route. Not linked anywhere (need-to-know);
   // reach it by typing the URL. Logo top-right returns to the app. (Trailing slash tolerated.)
-  if (window.location.pathname.replace(/\/+$/, '') === '/model') {
+  if (route.kind === 'model') {
     return (
       <div className="min-h-screen bg-[#05080a] p-3 sm:p-6">
         <a href="/" title="Back to lifeseed" aria-label="Back to lifeseed"

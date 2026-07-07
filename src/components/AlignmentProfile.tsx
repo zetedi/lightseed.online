@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import type { Alignment, Lifetree } from '../types';
-import { getLifetreeById, getPulseById, getPersonName } from '../services/firebase';
+import type { Alignment, AlignmentNote, Lifetree } from '../types';
+import { getLifetreeById, getPulseById, getPersonName, postAlignmentNote, getAlignmentById } from '../services/firebase';
 import { Icons } from './ui/Icons';
+import { Loading } from './ui/Loading';
 import { useLanguage } from '../contexts/LanguageContext';
 import { ProfileHero } from './ui/ProfileHero';
 import { SectionTitle } from './ui/SectionTitle';
 
 // An alignment's own page — the same profile scaffold as visions/events. Shows the two trees it
-// binds, the two pulses that rhymed, and its status. An accepted alignment is a mutual sync-block
-// on both chains; a pending one is awaiting the target's acceptance.
+// binds, the two pulses that rhymed, and the discussion that carries it from initiation to a
+// finalised sync-block. An accepted alignment is a mutual sync-block on both chains; a pending one
+// is still an open conversation between the two trees.
 
 interface Side { tree: Lifetree | null; ownerName?: string; pulse?: { title?: string; body?: string } | null; }
 
@@ -20,8 +22,8 @@ interface AlignmentProfileProps {
 }
 
 const STATUS: Record<string, { label: string; cls: string }> = {
-  PENDING: { label: 'Pending', cls: 'bg-amber-100 text-amber-700' },
-  ACCEPTED: { label: 'Synced', cls: 'bg-emerald-100 text-emerald-700' },
+  PENDING: { label: 'Open', cls: 'bg-amber-100 text-amber-700' },
+  ACCEPTED: { label: 'Finalised', cls: 'bg-emerald-100 text-emerald-700' },
   REJECTED: { label: 'Declined', cls: 'bg-slate-100 text-slate-500' },
 };
 
@@ -50,13 +52,26 @@ const PulseChip = ({ cap, text, tone }: { cap: string; text?: string; tone: 'sky
 
 export const AlignmentProfile = ({ alignment, currentUserId, onClose, onViewTree }: AlignmentProfileProps) => {
   const { t } = useLanguage();
+  const [loading, setLoading] = useState(true);
   const [initiator, setInitiator] = useState<Side>({ tree: null });
   const [target, setTarget] = useState<Side>({ tree: null });
+  // The live alignment — the prop can be stale (e.g. loaded with the profile's history tab), so
+  // messages and status are refreshed from the source on open and after every send.
+  const [messages, setMessages] = useState<AlignmentNote[]>(alignment.messages || []);
+  const [liveStatus, setLiveStatus] = useState(alignment.status);
+  const [draft, setDraft] = useState('');
+  const [posting, setPosting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
+    setLoading(true);
+    setMessages(alignment.messages || []);
+    setLiveStatus(alignment.status);
+    setDraft(''); setError(null);
     (async () => {
-      const [iTree, tTree, iPulse, tPulse, iName, tName] = await Promise.all([
+      const [live, iTree, tTree, iPulse, tPulse, iName, tName] = await Promise.all([
+        getAlignmentById(alignment.id).catch(() => null),
         getLifetreeById(alignment.initiatorTreeId).catch(() => null),
         getLifetreeById(alignment.targetTreeId).catch(() => null),
         getPulseById(alignment.initiatorPulseId).catch(() => null),
@@ -65,14 +80,35 @@ export const AlignmentProfile = ({ alignment, currentUserId, onClose, onViewTree
         getPersonName(alignment.targetUid).catch(() => undefined),
       ]);
       if (!alive) return;
+      if (live) { setMessages(live.messages || []); setLiveStatus(live.status); }
       setInitiator({ tree: iTree, ownerName: iName, pulse: iPulse ? { title: (iPulse as any).title, body: (iPulse as any).body } : null });
       setTarget({ tree: tTree, ownerName: tName, pulse: tPulse ? { title: (tPulse as any).title, body: (tPulse as any).body } : null });
+      setLoading(false);
     })();
     return () => { alive = false; };
   }, [alignment.id]);
 
-  const status = STATUS[alignment.status] || STATUS.PENDING;
-  const youAreTarget = currentUserId && alignment.targetUid === currentUserId;
+  const status = STATUS[liveStatus] || STATUS.PENDING;
+  const isParticipant = !!currentUserId && (alignment.initiatorUid === currentUserId || alignment.targetUid === currentUserId);
+  const canSpeak = isParticipant && liveStatus === 'PENDING';
+  const nameFor = (uid: string) => (uid === alignment.initiatorUid ? initiator.ownerName : target.ownerName) || 'Someone';
+
+  const send = async () => {
+    if (!currentUserId || !draft.trim() || posting) return;
+    setPosting(true); setError(null);
+    const text = draft.trim();
+    try {
+      await postAlignmentNote(alignment.id, currentUserId, text);
+      // Re-read the source (not an optimistic echo) — picks up the counterpart's notes too.
+      const live = await getAlignmentById(alignment.id).catch(() => null);
+      if (live) { setMessages(live.messages || []); setLiveStatus(live.status); }
+      setDraft('');
+    } catch (e: any) {
+      setError(e?.message || 'Could not send.');
+    } finally {
+      setPosting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen animate-in fade-in zoom-in-95 duration-300 pb-20 bg-slate-50">
@@ -94,36 +130,95 @@ export const AlignmentProfile = ({ alignment, currentUserId, onClose, onViewTree
         </div>
       </ProfileHero>
 
-      <div className="mx-auto -mt-8 max-w-3xl px-4 sm:px-6">
-        <div className="rounded-xl border border-slate-100 bg-white p-4 sm:p-6 shadow-lg">
-          <SectionTitle title="The bond" sub={youAreTarget && alignment.status === 'PENDING' ? 'This alignment is awaiting your acceptance.' : 'What these two trees aligned on.'} />
+      <div className="mx-auto mt-6 max-w-3xl px-4 sm:px-6">
+        <div className="rounded-2xl border border-slate-100 bg-white p-4 sm:p-6 shadow-lg">
+          <SectionTitle title="The bond" sub={canSpeak ? 'This alignment is still open — speak, then finalise when you’re ready.' : 'What these two trees aligned on.'} />
 
+          {loading ? (
+            <div className="flex justify-center rounded-2xl border border-slate-100 bg-white py-16 shadow-sm">
+              <Loading />
+            </div>
+          ) : (
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
             <TreeSide side={initiator} tone="sky" onView={onViewTree} />
-            <div className="flex flex-col items-center gap-1.5">
-              <svg width="72" height="48" viewBox="0 0 72 48" aria-hidden="true">
-                <circle cx="28" cy="24" r="19" fill="none" stroke="#0ea5e9" strokeWidth="1.6" />
-                <circle cx="44" cy="24" r="19" fill="none" stroke="#10b981" strokeWidth="1.6" />
-                <path d="M36 7 A19 19 0 0 1 36 41 A19 19 0 0 1 36 7 Z" fill="#f59e0b" opacity="0.2" />
-                <circle cx="36" cy="24" r="2.6" fill="#f59e0b" />
-              </svg>
-              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-amber-600">{alignment.status === 'ACCEPTED' ? 'synced' : 'aligns'}</span>
-            </div>
+            {/* A calm connector — the two trees linked, no colour, no label. */}
+            <svg width="44" height="24" viewBox="0 0 44 24" fill="none" stroke="#cbd5e1" strokeWidth="1.6" aria-hidden="true" className="shrink-0">
+              <circle cx="17" cy="12" r="8" />
+              <circle cx="27" cy="12" r="8" />
+            </svg>
             <TreeSide side={target} tone="emerald" onView={onViewTree} />
           </div>
+          )}
 
-          {(initiator.pulse?.body || initiator.pulse?.title || target.pulse?.body || target.pulse?.title) && (
+          {!loading && (initiator.pulse?.body || initiator.pulse?.title || target.pulse?.body || target.pulse?.title) && (
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <PulseChip cap="their pulse" text={initiator.pulse?.body || initiator.pulse?.title} tone="sky" />
               <PulseChip cap="matched pulse" text={target.pulse?.body || target.pulse?.title} tone="emerald" />
             </div>
           )}
 
+          {/* The discussion — initiation → response → finalised. Recursive: it stays open until
+              the target accepts. */}
+          <div className="mt-6">
+            <SectionTitle title="The discussion" sub="How this alignment took shape." />
+            <ol className="space-y-3">
+              <li className="flex items-start gap-2.5">
+                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-sky-400" />
+                <p className="text-sm text-slate-600"><span className="font-semibold text-slate-800">{initiator.ownerName || 'A tree'}</span> reached toward <span className="font-semibold text-slate-800">{target.ownerName || 'another tree'}</span> — the match was acknowledged.</p>
+              </li>
+              {messages.map((m, i) => {
+                const mine = m.by === currentUserId;
+                return (
+                  <li key={i} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm ${mine ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                      <span className={`mb-0.5 block text-[10px] font-semibold uppercase tracking-wide ${mine ? 'text-white/70' : 'text-slate-400'}`}>{nameFor(m.by)}</span>
+                      <span className="whitespace-pre-wrap break-words">{m.text}</span>
+                    </div>
+                  </li>
+                );
+              })}
+              {liveStatus === 'ACCEPTED' && (
+                <li className="flex items-start gap-2.5">
+                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
+                  <p className="text-sm font-medium text-emerald-700">Finalised — a shared sync-block sits on both chains.</p>
+                </li>
+              )}
+              {liveStatus === 'REJECTED' && (
+                <li className="flex items-start gap-2.5">
+                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-slate-300" />
+                  <p className="text-sm text-slate-500">Declined — this alignment was not taken up.</p>
+                </li>
+              )}
+            </ol>
+
+            {canSpeak && (
+              <div className="mt-4">
+                <textarea
+                  value={draft}
+                  onChange={e => setDraft(e.target.value)}
+                  rows={2}
+                  maxLength={2000}
+                  placeholder="Say something back…"
+                  className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 text-sm text-slate-700 outline-none focus:border-emerald-300 focus:bg-white"
+                />
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  {error ? <span className="text-xs text-rose-500">{error}</span> : <span />}
+                  <button
+                    onClick={send}
+                    disabled={!draft.trim() || posting}
+                    className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-emerald-700 active:scale-95 disabled:opacity-50"
+                  >{posting ? 'Sending…' : 'Send'}</button>
+                </div>
+                <p className="mt-2 text-center text-[11px] text-slate-400">The target accepts from the Observatory to finalise — that seals the sync-block on both chains.</p>
+              </div>
+            )}
+          </div>
+
           <div className="mt-6 flex items-start gap-2 rounded-xl bg-emerald-50 px-4 py-3.5 text-sm leading-snug text-emerald-800">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 shrink-0"><path d="M12 3v18M5 10l7-7 7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            <span>{alignment.status === 'ACCEPTED'
+            <span>{liveStatus === 'ACCEPTED'
               ? 'Accepted — a shared sync-block sits on both chains, a lasting mark that these trees aligned.'
-              : alignment.status === 'REJECTED'
+              : liveStatus === 'REJECTED'
                 ? 'This alignment was declined.'
                 : 'Once accepted, a shared sync-block is woven into both chains — a permanent, mutual link.'}</span>
           </div>

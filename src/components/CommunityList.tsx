@@ -135,7 +135,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
   );
 
   return (
-    <div className="max-w-6xl mx-auto p-4 sm:p-6 animate-in fade-in duration-500 overflow-x-hidden">
+    <div className="max-w-7xl mx-auto p-4 sm:p-6 animate-in fade-in duration-500 overflow-x-hidden">
       <SectionHeader
         icon={<Icons.Globe />}
         title={t('communities')}

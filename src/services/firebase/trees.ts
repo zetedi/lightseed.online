@@ -86,6 +86,36 @@ export const ensureGenesis = async () => {
     } catch (e) { console.warn("Genesis skip", e); }
 }
 
+// Mirror the git initiation ledger into Firestore so the security rules can check initiate rights
+// server-side. Git is the source of truth (initiations/ in the repo, three-sponsor rule in CI);
+// public/initiates.json is the build-time mirror; this pushes uid-bound records into
+// initiates/{uid} and removes stale ones. Superadmin-only (the rules make initiates staff-write),
+// best-effort, and run beside ensureGenesis on sign-in — so a deploy carrying a new initiate
+// self-heals the mirror the next time the superadmin opens the app.
+export const syncInitiatesMirror = async () => {
+    const user = auth.currentUser;
+    if (!user || !(await checkIsSuperAdmin(user.uid))) return;
+    try {
+        const { loadInitiates } = await import('../../domain/initiation');
+        const ledger = (await loadInitiates()).filter(i => i.uid);
+        const current = await getDocs(collection(db, 'initiates'));
+        const wanted = new Map(ledger.map(i => [i.uid as string, i]));
+        // Remove mirror docs the ledger no longer holds; write/update the ones it does.
+        for (const d of current.docs) {
+            if (!wanted.has(d.id)) await deleteDoc(d.ref);
+        }
+        for (const i of ledger) {
+            await setDoc(doc(db, 'initiates', i.uid as string), {
+                handle: i.handle, name: i.name, lid: i.lid, pubkey: i.pubkey,
+                ...(i.domain ? { domain: i.domain } : {}),
+                ...(i.genesis ? { genesis: true } : {}),
+                initiatedAt: i.initiatedAt,
+                syncedAt: serverTimestamp(),
+            });
+        }
+    } catch (e) { console.warn('Initiates mirror sync skipped', e); }
+};
+
 // The real, on-chain hash of block 000 — the genesis pulse the whole network grows from.
 // Shared by every node, so the about page can show the true founding hash. Returns null
 // if the genesis tree isn't reachable (callers fall back to a placeholder).

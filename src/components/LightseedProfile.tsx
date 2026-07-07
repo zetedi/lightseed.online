@@ -1081,7 +1081,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                                             <div className="flex items-center gap-3">
                                                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sky-600"><Icons.Exchange /></span>
                                                 <div>
-                                                    <p className="font-bold text-sm text-slate-700">{h.status === 'ACCEPTED' ? 'Synced' : h.status}</p>
+                                                    <p className="font-bold text-sm text-slate-700">{h.status === 'ACCEPTED' ? 'Finalised' : 'Open — in discussion'}</p>
                                                     <p className="text-xs text-slate-500">{h.createdAt ? new Date(h.createdAt.toMillis()).toLocaleDateString() : ''}</p>
                                                 </div>
                                             </div>
