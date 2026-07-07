@@ -17,11 +17,12 @@
 // record cannot bypass the three-sponsor rule.
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { createPublicKey, verify as edVerify } from 'node:crypto';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const DIR = join(HERE, '..', 'initiations');
+// An explicit dir argument lets the test suite verify fixture ledgers; default is the real one.
+const DIR = process.argv[2] ? resolve(process.argv[2]) : join(HERE, '..', 'initiations');
 const SIG_VERSION = 'lightseed.initiation.v1';
 const REQUIRED_SPONSORS = 3;
 
