@@ -9,7 +9,7 @@ import { communityThemePresets } from '../utils/theme';
 import { sanitizeRichText } from '../utils/sanitize';
 import { Loading } from './ui/Loading';
 import { SectionHeader } from './ui/SectionHeader';
-import { DefaultCardImage } from './ui/DefaultCardImage';
+import { tabTone } from '../utils/tabTheme';
 
 interface CommunityListProps {
   onSelect: (community: Community) => void;
@@ -85,61 +85,58 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
     setIsCreating(false);
   };
 
-  const CommunityCard = ({ community, isGenesis = false }: { community: Community, isGenesis?: boolean }) => (
-    <div 
+  // The community's hero image IS the card's background; the content reads over it. Without an
+  // image the card wears the community's own colour (or the communities tone) — no placeholder art.
+  const CommunityCard = ({ community, isGenesis = false }: { community: Community, isGenesis?: boolean }) => {
+    const hero = (community as any).heroImageUrl || community.imageUrls?.[0];
+    return (
+    <div
         onClick={() => onSelect(community)}
-        className={`group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl border transition-all cursor-pointer hover:-translate-y-1 relative ${isGenesis ? 'border-amber-400 ring-4 ring-amber-400/20 md:col-span-2 lg:col-span-1' : 'border-slate-100'}`}
+        className={`group rounded-xl overflow-hidden shadow-sm hover:shadow-2xl active:shadow-2xl border transition-all cursor-pointer hover:-translate-y-1 active:-translate-y-1 relative min-h-[15rem] flex flex-col justify-end ${isGenesis ? 'border-amber-400 ring-4 ring-amber-400/20 md:col-span-2 lg:col-span-1' : 'border-slate-100'}`}
+        style={!hero ? { backgroundColor: (community as any).theme?.primary || tabTone('communities') } : undefined}
     >
+        {hero && (
+            <>
+                <img src={hero} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" alt={community.name} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10"></div>
+            </>
+        )}
+        {!hero && <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent"></div>}
         {isGenesis && (
             <div className="absolute top-4 left-4 z-20 bg-amber-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg flex items-center gap-1 uppercase tracking-tighter">
                 <Icons.SparkleFill size={10} /> Community 0
             </div>
         )}
-        <div className="aspect-[16/9] relative overflow-hidden bg-slate-100">
-            {community.imageUrls && community.imageUrls.length > 0 ? (
-                <img 
-                src={community.imageUrls[0]} 
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
-                alt={community.name} 
-                />
-            ) : (
-                <DefaultCardImage />
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
-            <div className="absolute bottom-4 left-4 right-4">
-                <div className="mb-3 flex items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/30 bg-white/20 backdrop-blur-md">
-                        {community.logoUrl ? (
-                            <img src={community.logoUrl} className="h-full w-full object-cover" alt={`${community.name} logo`} />
-                        ) : (
-                            <Icons.Globe />
-                        )}
-                    </div>
-                    <div className="min-w-0">
-                        <h2 className="line-clamp-2 break-words text-lg font-bold text-white drop-shadow-md">{community.name}</h2>
-                        <p className="truncate font-mono text-xs text-emerald-300 drop-shadow-md">{community.domain}</p>
-                    </div>
+        <div className="relative z-10 p-5">
+            <div className="mb-2.5 flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/30 bg-white/20 backdrop-blur-md text-white">
+                    {community.logoUrl ? (
+                        <img src={community.logoUrl} className="h-full w-full object-cover" alt={`${community.name} logo`} />
+                    ) : (
+                        <Icons.Globe />
+                    )}
+                </div>
+                <div className="min-w-0">
+                    <h2 className="line-clamp-2 break-words text-lg font-bold text-white drop-shadow-md">{community.name}</h2>
+                    <p className="truncate font-mono text-xs text-emerald-200 drop-shadow-md">{community.domain}</p>
                 </div>
             </div>
-        </div>
-        <div className="p-6">
             <div
-                className="text-slate-600 text-sm line-clamp-3 mb-4 h-11 leading-relaxed overflow-hidden [&_img]:hidden"
+                className="text-white/85 text-sm line-clamp-2 mb-3 leading-relaxed overflow-hidden drop-shadow [&_img]:hidden"
                 dangerouslySetInnerHTML={{ __html: community.vision ? sanitizeRichText(community.vision) : 'No vision shared yet.' }}
             />
-            <button className="text-emerald-600 font-bold text-xs uppercase tracking-widest flex items-center gap-1 group-hover:gap-2 transition-all">
+            <button className="text-white font-bold text-xs uppercase tracking-widest flex items-center gap-1 group-hover:gap-2 transition-all drop-shadow">
                 View Profile <Icons.ArrowRight size={16} />
             </button>
         </div>
     </div>
-  );
+  ); };
 
   return (
-    <div className="max-w-7xl mx-auto p-4 sm:p-6 animate-in fade-in duration-500 overflow-x-hidden">
+    <div className="max-w-7xl mx-auto px-4 pt-6 pb-4 sm:px-6 sm:pb-6 animate-in fade-in duration-500 overflow-x-hidden">
       <SectionHeader
-        icon={<Icons.Globe />}
         title={t('communities')}
-        subtitle="Connecting vertical forests with global visions."
+        tone={tabTone('communities')}
         footer={
           <div className="relative w-full">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Icons.Search /></div>
@@ -168,7 +165,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
             <Loading />
           </div>
         ) : (communities.length === 0 && !genesisCommunity) ? (
-          <div className="bg-white/90 backdrop-blur-sm border border-slate-200 rounded-[2rem] p-12 md:p-20 text-center flex flex-col items-center shadow-xl animate-in zoom-in-95 duration-700">
+          <div className="bg-white/90 backdrop-blur-sm border border-slate-200 rounded-2xl p-12 md:p-20 text-center flex flex-col items-center shadow-xl animate-in zoom-in-95 duration-700">
               <div className="mb-8 p-6 bg-slate-50 rounded-full border border-slate-200 text-slate-300 rotate-12 group hover:rotate-0 transition-transform duration-500">
                   <Icons.Globe size={80} />
               </div>

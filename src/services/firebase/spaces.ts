@@ -217,3 +217,38 @@ export const dropLegacyArrays = async (): Promise<number> => {
     await clear(visionsCollection, ['joinedUserIds']);
     return n;
 };
+
+// --- Organisation collabs -------------------------------------------------------------
+// The Collabs page lists this node's collaborators: the AI intelligences (live from the
+// intelligences config) AND organisations whose founder(s) agreed to stand here — or who hold a
+// place by contract (as Claude/Anthropic does). Staff-curated; world-readable.
+export interface OrgCollab {
+    id: string;
+    name: string;
+    url?: string;
+    blurb?: string;
+    agreement: 'founder' | 'contract';
+    createdAt?: any;
+}
+
+const collabsCollection = collection(db, 'collabs');
+
+export const getOrgCollabs = async (): Promise<OrgCollab[]> =>
+    (await getDocs(collabsCollection)).docs
+        .map(d => (mapDoc(d) as OrgCollab))
+        .sort((a, b) => (toMillis(a.createdAt) || 0) - (toMillis(b.createdAt) || 0)); // oldest first — the order they joined
+
+export const addOrgCollab = async (data: { name: string; url?: string; blurb?: string; agreement: 'founder' | 'contract' }): Promise<string> => {
+    if (!data.name.trim()) throw new Error('The organisation needs a name.');
+    const ref = await addDoc(collabsCollection, {
+        lid: uuidv7(),
+        name: data.name.trim(),
+        url: data.url?.trim() || '',
+        blurb: data.blurb?.trim() || '',
+        agreement: data.agreement,
+        createdAt: serverTimestamp(),
+    });
+    return ref.id;
+};
+
+export const removeOrgCollab = (id: string) => deleteDoc(doc(db, 'collabs', id));

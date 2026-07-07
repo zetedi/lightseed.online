@@ -101,6 +101,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Organisation collabs — the node's curated collaborators (founder-agreed or by contract).
+    // World-readable; staff-curated.
+    match /collabs/{id} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
     // The initiated layer — a Firestore MIRROR of the git initiation ledger (initiations/ in the
     // repo, three-sponsor rule enforced in CI). Git is the source of truth; the superadmin syncs
     // records that declare a uid so the rules below can check initiate rights server-side.

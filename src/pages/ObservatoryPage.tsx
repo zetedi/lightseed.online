@@ -4,8 +4,18 @@ import { Icons } from '../components/ui/Icons';
 import Logo from '../components/Logo';
 import { ResonanceScan } from '../components/ui/ResonanceScan';
 import { ResonanceCard, resonanceId } from '../components/ResonancePanel';
+import { SectionHeader } from '../components/ui/SectionHeader';
+import { CloudBox } from '../components/ui/CloudBox';
+import { ViewDensityToggle } from '../components/ui/ViewDensityToggle';
+import { useListDensity, type ListDensity } from '../hooks/useListDensity';
 import type { VisionSynergy } from '../types';
 import type { AlignmentCard } from '../hooks/useAlignmentCards';
+
+// The resonance grid at each density — these are wide, text-rich cards.
+const resonanceGrid = (d: ListDensity) =>
+  d === 'rows' ? 'grid gap-3 grid-cols-1'
+  : d === 'mini' ? 'grid gap-3 md:grid-cols-2 lg:grid-cols-3'
+  : 'grid gap-4 md:grid-cols-2';
 
 // A round tree avatar: its latest image, or a coloured initial when there's none yet.
 const TreeAvatar = ({ name, imageUrl, tone }: { name: string; imageUrl?: string; tone: 'sky' | 'emerald' }) => {
@@ -54,51 +64,42 @@ interface ObservatoryPageProps {
   observatoryQuote: string;
   quoteCopied: boolean;
   onCopyQuote: () => void;
+  tone: string; // the active menu item's colour — band and pill are one surface
 }
 
 export const ObservatoryPage = ({
   alignments, onAcceptAlignment, onRejectAlignment, onViewAlignmentTree, isAnalyzingSynergy, synergies, lastSynergyAt,
   canRefreshResonance, synergyCooldownLeft, onRefreshResonance, favoriteResonanceIds,
-  onToggleFavorite, onReach, observatoryQuote, quoteCopied, onCopyQuote,
+  onToggleFavorite, onReach, observatoryQuote, quoteCopied, onCopyQuote, tone,
 }: ObservatoryPageProps) => {
   const { t } = useLanguage();
+  const [density, setDensity] = useListDensity('observatory');
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-lg">
-        {/* Lighthouse banner header */}
-        <div className="relative h-36 sm:h-44 overflow-hidden">
-          <img src="/lighthouse.webp" alt="Observatory" className="absolute inset-0 h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/85 via-slate-900/40 to-transparent"></div>
-          {/* Desktop: quote top-right, larger. (Hidden on mobile to keep the header calm.) */}
-          {observatoryQuote && (
-            <div className="absolute right-4 top-3 z-10 hidden max-w-[55%] flex-col items-end gap-1 text-right md:flex">
-              <p dir="auto" className="line-clamp-3 text-base italic text-white/95 drop-shadow">"{observatoryQuote}"</p>
-              <button
-                onClick={onCopyQuote}
-                title="Copy quote" aria-label="Copy quote"
-                className="inline-flex items-center rounded-full bg-white/15 p-1 text-white/80 backdrop-blur transition-colors hover:bg-white/25 hover:text-white"
-              >
-                {quoteCopied ? <span className="px-0.5 text-[10px] font-bold">✓</span> : <Icons.Copy size={13} />}
-              </button>
-            </div>
-          )}
-          <div className="absolute bottom-0 left-0 right-0 flex items-center gap-3 p-5">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur">
-              <Icons.Exchange />
-            </div>
-            <div className="min-w-0">
-              <h2 className="break-words text-2xl font-light tracking-wide text-white drop-shadow">{t('pending_alignments')}</h2>
-              <p className="text-sm text-white/80 drop-shadow">{t('observatory_subtitle')}</p>
-            </div>
+      <SectionHeader
+        title={t('pending_alignments')}
+        tone={tone}
+        // The observatory quote lives in the band — a whisper where a search box would sit.
+        footer={observatoryQuote ? (
+          <div className="hidden min-w-0 items-center gap-1.5 md:flex">
+            <p dir="auto" className="min-w-0 truncate text-sm italic text-white/90">"{observatoryQuote}"</p>
+            <button
+              onClick={onCopyQuote}
+              title="Copy quote" aria-label="Copy quote"
+              className="inline-flex shrink-0 items-center rounded-full bg-white/15 p-1 text-white/80 backdrop-blur transition-colors hover:bg-white/25 hover:text-white"
+            >
+              {quoteCopied ? <span className="px-0.5 text-[10px] font-bold">✓</span> : <Icons.Copy size={13} />}
+            </button>
           </div>
-        </div>
-
+        ) : undefined}
+        toggle={<ViewDensityToggle value={density} onChange={setDensity} />}
+      >
         {/* The empty "field is calm" state only when there's truly nothing — no alignments AND
             no resonances. Otherwise the resonance section carries it. */}
         {(alignments.length > 0 || synergies.length === 0) && (
-          <div className="p-6">
+          <CloudBox className="mb-6">
             {alignments.length === 0 ? (
-              <div className="flex flex-col items-center rounded-2xl border border-slate-100 bg-slate-50/60 p-12 text-center">
+              <div className="flex flex-col items-center p-12 text-center">
                 <div className="mb-6 rounded-full bg-white p-4 shadow-sm">
                   <Logo width={100} height={100} className="text-slate-800" />
                 </div>
@@ -106,9 +107,9 @@ export const ObservatoryPage = ({
                 <p className="text-slate-500">{t('ether_quiet')}</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className={density === 'rows' ? 'space-y-2.5' : density === 'mini' ? 'grid gap-3 md:grid-cols-2' : 'space-y-4'}>
                 {alignments.map(a => (
-                  <div key={a.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-800 shadow-sm animate-in fade-in slide-in-from-bottom-2">
+                  <div key={a.id} className="overflow-hidden rounded-lg border border-slate-200 bg-white text-slate-800 shadow-sm animate-in fade-in slide-in-from-bottom-2 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
                     {/* Header — who's asking, and that it's on you */}
                     <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
                       <span className="text-sm font-semibold text-slate-700">{t('alignment_request')}</span>
@@ -151,22 +152,18 @@ export const ObservatoryPage = ({
                 ))}
               </div>
             )}
-          </div>
+          </CloudBox>
         )}
 
-        {/* Living Intelligence Resonance — inside the same box. */}
+        {/* Living Intelligence Resonance — its own cloud. */}
         <ResonanceScan active={isAnalyzingSynergy}>
-          <div className="border-t border-amber-100">
-            <div className="flex items-center justify-between gap-3 border-b border-amber-100 bg-amber-50/60 p-5">
+          <CloudBox>
+            <div className="mb-4 flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white"><Icons.SparkleFill size={22} /></div>
-                <div className="min-w-0">
-                  {/* Title removed — the LIN alignments already carry the meaning; we keep the
-                      last-read date + refresh. */}
-                  <p className="text-sm text-slate-500">
-                    {lastSynergyAt ? `${t('last_read')} ${new Date(lastSynergyAt).toLocaleDateString()}` : t('resonance_field_hint')}
-                  </p>
-                </div>
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white"><Icons.SparkleFill size={20} /></div>
+                <p className="min-w-0 truncate text-sm text-slate-500">
+                  {lastSynergyAt ? `${t('last_read')} ${new Date(lastSynergyAt).toLocaleDateString()}` : t('resonance_field_hint')}
+                </p>
               </div>
               <button
                 onClick={onRefreshResonance}
@@ -180,20 +177,18 @@ export const ObservatoryPage = ({
                 <span>{isAnalyzingSynergy ? t('reading') : canRefreshResonance ? t('refresh') : `~${Math.max(1, Math.ceil(synergyCooldownLeft / 86400000))}d`}</span>
               </button>
             </div>
-            <div className="p-5">
-              {synergies.length > 0 ? (
-                <div className="grid gap-4 md:grid-cols-2">
-                  {[...synergies].sort((a, b) => (b.score || 0) - (a.score || 0)).map((s, i) => (
-                    <ResonanceCard key={i} s={s} isFavorite={favoriteResonanceIds.has(resonanceId(s))} onToggleFavorite={() => onToggleFavorite(s)} onReach={onReach} />
-                  ))}
-                </div>
-              ) : (
-                <p className="py-8 text-center text-sm text-slate-400">{t('no_resonances_yet')}</p>
-              )}
-            </div>
-          </div>
+            {synergies.length > 0 ? (
+              <div className={resonanceGrid(density)}>
+                {[...synergies].sort((a, b) => (b.score || 0) - (a.score || 0)).map((s, i) => (
+                  <ResonanceCard key={i} s={s} isFavorite={favoriteResonanceIds.has(resonanceId(s))} onToggleFavorite={() => onToggleFavorite(s)} onReach={onReach} />
+                ))}
+              </div>
+            ) : (
+              <p className="py-8 text-center text-sm text-slate-400">{t('no_resonances_yet')}</p>
+            )}
+          </CloudBox>
         </ResonanceScan>
-      </div>
+      </SectionHeader>
     </div>
   );
 };

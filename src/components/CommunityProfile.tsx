@@ -16,7 +16,7 @@ import { SectionMenu } from './ui/SectionMenu';
 import { ProfileHero } from './ui/ProfileHero';
 import { ProfileLayout } from './ui/ProfileLayout';
 import { SectionTitle } from './ui/SectionTitle';
-import { DefaultCardImage } from './ui/DefaultCardImage';
+import { tabTone } from '../utils/tabTheme';
 import { normalizeTheme } from '../utils/theme';
 import { sanitizeRichText } from '../utils/sanitize';
 import { nodeDefaultTheme } from '../hooks/useConfig';
@@ -606,9 +606,9 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     { key: 'model', label: 'Growth', icon: <Icons.Sparkles /> },
     { key: 'events', label: 'Events', icon: <Icons.Loc /> },
     { key: 'council', label: t('council'), icon: <Icons.Venn /> },
-    // The network's foundational story travels to every node's about page (the Yantra
-    // stays with the central lightseed / lifeseed nodes).
-    ...loreTabs.filter(tab => isNetworkHub || tab.id !== 'yantra').map(tab => ({ key: tab.id as TabKey, label: tab.label, icon: loreIcons[tab.id] })),
+    // The network's founding lore (Genesis, the Path, the Yantra, Protection) stays with the
+    // central lightseed / lifeseed nodes — every community will have its own genesis and path.
+    ...loreTabs.filter(() => isNetworkHub).map(tab => ({ key: tab.id as TabKey, label: tab.label, icon: loreIcons[tab.id] })),
     ...(canEdit ? [
       { key: 'intelligence' as TabKey, label: 'Intelligence', icon: <Icons.Wizard /> },
       { key: 'appearance' as TabKey, label: 'Appearance', icon: <Icons.Image /> },
@@ -646,7 +646,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   return (
     <div className="min-h-screen pb-20">
       {/* Hero — mirrors the personal profile */}
-      <ProfileHero heroImageUrl={heroImageUrl || community.imageUrls?.[0]} padding="pt-5 pb-12 px-4">
+      {/* Only the chosen hero — no gallery fallback, so removing the hero actually removes it. */}
+      <ProfileHero heroImageUrl={heroImageUrl} padding="pt-5 pb-12 px-4">
         <div className="flex items-center justify-between mb-6">
           <button onClick={onClose} className="flex items-center gap-2 text-white/70 hover:text-white text-sm font-medium">
             <Icons.ArrowLeft />
@@ -809,7 +810,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                       {firstTree.latestGrowthUrl || firstTree.imageUrl ? (
                         <img src={firstTree.latestGrowthUrl || firstTree.imageUrl} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" alt={firstTree.name} />
                       ) : (
-                        <DefaultCardImage />
+                        <div className="h-full w-full" style={{ backgroundColor: community.theme?.primary || tabTone('communities') }} />
                       )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
                       <div className="absolute bottom-5 left-5 right-5 text-white">
@@ -861,7 +862,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                       {firstSanctuary.imageUrl ? (
                         <img src={firstSanctuary.imageUrl} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" alt={firstSanctuary.name} />
                       ) : (
-                        <DefaultCardImage />
+                        <div className="h-full w-full" style={{ backgroundColor: community.theme?.primary || tabTone('communities') }} />
                       )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
                       <div className="absolute bottom-5 left-5 right-5 text-white">
@@ -901,7 +902,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                         onClick={() => onViewTree?.(tree)}
                       >
                         <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-slate-100">
-                          {tree.latestGrowthUrl || tree.imageUrl ? <img src={tree.latestGrowthUrl || tree.imageUrl} className="h-full w-full object-cover" alt={tree.name} /> : <DefaultCardImage />}
+                          {tree.latestGrowthUrl || tree.imageUrl ? <img src={tree.latestGrowthUrl || tree.imageUrl} className="h-full w-full object-cover" alt={tree.name} /> : <div className="h-full w-full" style={{ backgroundColor: community.theme?.primary || tabTone('communities') }} />}
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="break-words text-sm font-bold text-slate-800">{tree.name}</p>
@@ -977,7 +978,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                         className={`group flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm ${onViewEvent ? 'cursor-pointer transition-shadow hover:shadow-md' : ''}`}
                       >
                         <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-slate-100">
-                          {ev.imageUrl ? <img src={ev.imageUrl} className="h-full w-full object-cover" alt={ev.title} /> : <DefaultCardImage />}
+                          {ev.imageUrl ? <img src={ev.imageUrl} className="h-full w-full object-cover" alt={ev.title} /> : <div className="h-full w-full" style={{ backgroundColor: community.theme?.primary || tabTone('communities') }} />}
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="break-words text-sm font-bold text-slate-800">{ev.title}</p>
@@ -1240,7 +1241,13 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                   heroUrl={heroImageUrl}
                   onHeroUpload={handleHeroUpload}
                   uploadingHero={isUploadingHero}
-                  onRemoveHero={() => setHeroImageUrl('')}
+                  onRemoveHero={() => {
+                    // Persist immediately (like upload does) — otherwise the old photo returns
+                    // unless the user also remembers to hit Save.
+                    setHeroImageUrl('');
+                    updateCommunity(community.id, { heroImageUrl: '' }).catch(() => {});
+                    onUpdate?.({ heroImageUrl: '' });
+                  }}
                   heroHint={t('hero_hint_community')}
                   name={editName}
                   onNameChange={setEditName}

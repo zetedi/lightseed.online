@@ -31,6 +31,7 @@ import {
   getPendingTreeInvites
 } from './services/firebase';
 import { setActiveIntelligenceId } from './services/intelligence';
+import { tabTone } from './utils/tabTheme';
 import { type Pulse, type Lifetree, type Alignment, type Vision, type Community, type VisionSynergy, type ReachAudience } from './types';
 import Logo from './components/Logo';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
@@ -76,7 +77,7 @@ const LightseedProfile = lazy(() => import('./components/LightseedProfile').then
 const NewsletterAdmin = lazy(() => import('./components/NewsletterAdmin').then(m => ({ default: m.NewsletterAdmin })));
 const CommunityList = lazy(() => import('./components/CommunityList').then(m => ({ default: m.CommunityList })));
 const CommunityProfile = lazy(() => import('./components/CommunityProfile').then(m => ({ default: m.CommunityProfile })));
-const Partners = lazy(() => import('./components/intelligence/Partners').then(m => ({ default: m.Partners })));
+const CollabsPage = lazy(() => import('./pages/CollabsPage').then(m => ({ default: m.CollabsPage })));
 const ObservatoryPage = lazy(() => import('./pages/ObservatoryPage').then(m => ({ default: m.ObservatoryPage })));
 const ForestPage = lazy(() => import('./pages/ForestPage').then(m => ({ default: m.ForestPage })));
 const VisionsPage = lazy(() => import('./pages/VisionsPage').then(m => ({ default: m.VisionsPage })));
@@ -544,20 +545,8 @@ const AppContent = () => {
 
         if (tab === 'collab') {
             return (
-                <div className="max-w-7xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl">
-                        {/* Header — branch.webp, Observatory-style */}
-                        <div className="relative h-40 md:h-52">
-                            <div className="absolute inset-0 bg-slate-900" />
-                            <img src="/branch.webp" alt="" className="absolute inset-0 h-full w-full object-cover opacity-60" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
-                            <div className="absolute bottom-4 left-6 right-6 text-white">
-                                <h1 className="flex items-center gap-2 text-2xl md:text-3xl font-light drop-shadow"><Icons.Users /> {t('collab')}</h1>
-                                <p className="mt-1 text-sm text-slate-200/90 drop-shadow">{t('collab_sub')}</p>
-                            </div>
-                        </div>
-                        <div className="p-6"><Partners /></div>
-                    </div>
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-8">
+                    <CollabsPage theme={effectiveTheme} />
                 </div>
             );
         }
@@ -657,6 +646,7 @@ const AppContent = () => {
 
                 {tab === 'observatory' && (
                     <ObservatoryPage
+                        tone={tabTone('observatory', effectiveTheme)}
                         alignments={alignmentCards}
                         onAcceptAlignment={onAcceptAlignment}
                         onRejectAlignment={onRejectAlignment}
@@ -720,12 +710,13 @@ const AppContent = () => {
                         loadingMore={loadingMore}
                         viewer={{ uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin }}
                         searchBox={searchBox}
+                        tone={tabTone('visions', effectiveTheme)}
                     />
                 ) : tab === 'events' ? (
                     <PulseFeedPage
-                        icon={<Icons.Loc />}
                         title={t('events')}
-                        subtitle={t('events_sub')}
+                        tone={tabTone('events', effectiveTheme)}
+                        densityKey="events"
                         searchBox={searchBox}
                         action={lightseed && (
                             <button onClick={() => setShowEventModal(true)} className="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2.5 rounded-full font-bold shadow-lg shadow-sky-600/20 transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap">
@@ -742,9 +733,9 @@ const AppContent = () => {
                     />
                 ) : tab !== 'observatory' && tab !== 'profile' && tab !== 'inspiration' && tab !== 'about' && tab !== 'dashboard' && tab !== 'newsletter' && tab !== 'communities' && (
                     <PulseFeedPage
-                        icon={<Icons.PulseDuo />}
                         title={t('pulses')}
-                        subtitle={t('pulses_sub')}
+                        tone={tabTone('pulses', effectiveTheme)}
+                        densityKey="pulses"
                         searchBox={searchBox}
                         action={lightseed && (
                             <button onClick={() => openPulseModal()} className="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2.5 rounded-full font-bold shadow-lg shadow-sky-600/20 transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap">

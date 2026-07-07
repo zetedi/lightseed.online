@@ -121,7 +121,7 @@ export const AlignmentProfile = ({ alignment, currentUserId, onClose, onViewTree
         </div>
         <div className="flex items-center gap-4 sm:gap-5">
           <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center rounded-full border-4 border-white bg-sky-50 text-sky-500 shadow-xl">
-            <Icons.Exchange />
+            <Icons.Venn />
           </div>
           <div className="min-w-0 flex-1">
             <h1 className="min-w-0 break-words text-2xl font-light tracking-wide">Alignment</h1>

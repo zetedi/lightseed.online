@@ -6,6 +6,10 @@ import { VisionCard } from '../components/VisionCard';
 import { ResonancePanel } from '../components/ResonancePanel';
 import { ResonanceScan } from '../components/ui/ResonanceScan';
 import { Loading } from '../components/ui/Loading';
+import { ViewDensityToggle } from '../components/ui/ViewDensityToggle';
+import { CloudBox } from '../components/ui/CloudBox';
+import { SubTabs } from '../components/ui/SubTabs';
+import { useListDensity, densityGridClass } from '../hooks/useListDensity';
 import { canViewVision } from '../domain/views/forest';
 import type { Lightseed, Vision, VisionSynergy } from '../types';
 
@@ -27,22 +31,27 @@ interface VisionsPageProps {
   loadingMore: boolean;
   viewer: { uid?: string; isStaff?: boolean };
   searchBox?: React.ReactNode;
+  tone: string; // the active menu item's colour — band and pill are one surface
 }
 
 export const VisionsPage = ({
   visions, synergies, favoriteResonanceIds, onToggleFavorite, onReach, isAnalyzingSynergy,
-  onAnalyze, canAnalyze, lightseed, onCreateVision, onSelectVision, loadingMore, viewer, searchBox,
+  onAnalyze, canAnalyze, lightseed, onCreateVision, onSelectVision, loadingMore, viewer, searchBox, tone,
 }: VisionsPageProps) => {
   const { t } = useLanguage();
+  const [density, setDensity] = useListDensity('visions');
+  // Two entity lists under one menu item — Visions and Alignments (the resonance field) — so a
+  // long visions list doesn't bury the alignments in scroll.
+  const [subTab, setSubTab] = React.useState<'visions' | 'alignments'>('visions');
   // Respect vision visibility (protect fragile/early visions). Rules enforce it server-side.
   const visibleVisions = visions.filter(v => canViewVision(v, viewer));
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
       <SectionHeader
-        icon={<Icons.Eye />}
         title={t('visions')}
-        subtitle={t('visions_sub')}
+        tone={tone}
         footer={searchBox}
+        toggle={<ViewDensityToggle value={density} onChange={setDensity} />}
         action={
           <div className="flex items-center gap-2">
             {lightseed && (
@@ -66,22 +75,39 @@ export const VisionsPage = ({
           </div>
         }
       >
-        <ResonancePanel synergies={synergies} className="mb-6" favorites={favoriteResonanceIds} onToggleFavorite={onToggleFavorite} onReach={onReach} />
+        <SubTabs
+          tone={tone}
+          active={subTab}
+          onChange={(k) => setSubTab(k as 'visions' | 'alignments')}
+          tabs={[
+            { key: 'visions', label: t('visions'), icon: <Icons.Eye />, count: visibleVisions.length },
+            { key: 'alignments', label: t('alignments'), icon: <Icons.Venn />, count: synergies.length },
+          ]}
+        />
 
-        <ResonanceScan active={isAnalyzingSynergy}>
-          <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {visibleVisions.length === 0 && !loadingMore ? (
-              <p className="col-span-full text-center text-slate-400 py-10">{t('no_visions_found')}</p>
-            ) : (
-              visibleVisions.map(item => (
-                <div key={item.id} onClick={() => onSelectVision(item)} className="cursor-pointer">
-                  <VisionCard vision={item} />
-                </div>
-              ))
-            )}
-          </div>
-        </ResonanceScan>
-        {loadingMore && <div className="mt-6 flex justify-center"><Loading /></div>}
+        {subTab === 'alignments' ? (
+          <CloudBox>
+            <ResonancePanel synergies={synergies} favorites={favoriteResonanceIds} onToggleFavorite={onToggleFavorite} onReach={onReach} />
+            {synergies.length === 0 && <p className="py-10 text-center text-slate-400">{t('no_resonances_yet')}</p>}
+          </CloudBox>
+        ) : (
+          <ResonanceScan active={isAnalyzingSynergy}>
+            <CloudBox>
+              <div className={densityGridClass(density)}>
+                {visibleVisions.length === 0 && !loadingMore ? (
+                  <p className="col-span-full text-center text-slate-400 py-10">{t('no_visions_found')}</p>
+                ) : (
+                  visibleVisions.map(item => (
+                    <div key={item.id} onClick={() => onSelectVision(item)} className="cursor-pointer">
+                      <VisionCard vision={item} density={density} />
+                    </div>
+                  ))
+                )}
+              </div>
+              {loadingMore && <div className="mt-6 flex justify-center"><Loading /></div>}
+            </CloudBox>
+          </ResonanceScan>
+        )}
       </SectionHeader>
     </div>
   );

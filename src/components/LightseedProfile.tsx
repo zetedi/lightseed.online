@@ -1041,7 +1041,11 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                                     heroUrl={siteHeroUrl}
                                     onHeroUpload={handleSiteHeroUpload}
                                     uploadingHero={uploadingSiteHero}
-                                    onRemoveHero={() => setSiteHeroUrl('')}
+                                    onRemoveHero={() => {
+                                        // Persist immediately (like upload does) — no silent revert on reload.
+                                        setSiteHeroUrl('');
+                                        updateUserSiteTheme(lightseed.uid, { siteTheme: normalizeTheme(siteTheme), siteLogoUrl, siteHeroUrl: '' }).catch(() => {});
+                                    }}
                                 />
                             </div>
                         )}
@@ -1079,7 +1083,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                                     {history.length === 0 ? <p className="text-slate-400 text-center py-10">{t('no_history')}</p> : history.map((h) => (
                                         <button key={h.id} onClick={() => onViewAlignment?.(h)} className="flex w-full items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-4 text-left transition-colors hover:bg-slate-100">
                                             <div className="flex items-center gap-3">
-                                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sky-600"><Icons.Exchange /></span>
+                                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sky-600"><Icons.Venn /></span>
                                                 <div>
                                                     <p className="font-bold text-sm text-slate-700">{h.status === 'ACCEPTED' ? 'Finalised' : 'Open — in discussion'}</p>
                                                     <p className="text-xs text-slate-500">{h.createdAt ? new Date(h.createdAt.toMillis()).toLocaleDateString() : ''}</p>

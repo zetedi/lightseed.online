@@ -10,7 +10,7 @@ import { colors } from '../utils/theme';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
 import { canReachTree, type ReachTargetProfile } from '../utils/reachPermissions';
 import { isWateringOverdue } from '../domain/watering';
-import { DefaultCardImage } from './ui/DefaultCardImage';
+import { tabTone } from '../utils/tabTheme';
 import { ImageCropModal } from './ui/ImageCropModal';
 
 interface LifetreeCardProps {
@@ -69,7 +69,7 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, isInit
     return (
         <div 
             onClick={() => onView(tree)}
-            className={`bg-white rounded-xl overflow-hidden shadow-sm border border-slate-200 hover:shadow-lg transition-all duration-300 group relative cursor-pointer ${tree.isNature ? 'ring-1 ring-sky-100' : (hasValidationBadge ? 'ring-1 ring-emerald-100' : '')}`}
+            className={`bg-white rounded-lg overflow-hidden shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 active:shadow-xl active:-translate-y-1 transition-all duration-300 group relative cursor-pointer ${tree.isNature ? 'ring-1 ring-sky-100' : (hasValidationBadge ? 'ring-1 ring-emerald-100' : '')}`}
         >
              <div className="absolute top-2 right-2 z-20 flex flex-col items-end gap-1">
                 {tree.isNature ? (
@@ -117,7 +117,8 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, isInit
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-[3s]"
                     />
                 ) : (
-                    <DefaultCardImage />
+                    // No image: the forest's own colour, not placeholder art.
+                    <div className="h-full w-full" style={{ backgroundColor: tabTone('forest') }} />
                 )}
 
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent pointer-events-none"></div>

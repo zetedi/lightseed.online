@@ -5,6 +5,7 @@ import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
 import { Modal } from './ui/Modal';
 import Logo from './Logo';
+import { tabTone } from '../utils/tabTheme';
 
 
 interface NavigationProps {
@@ -116,7 +117,7 @@ export const Navigation = ({
         if (activeTab === key) {
             const themes: any = { 
                 dashboard: 'bg-indigo-600', visions: 'bg-amber-500', forest: 'bg-emerald-600', 
-                pulses: 'bg-sky-600', events: 'bg-teal-600', observatory: 'bg-rose-600', inspiration: 'bg-indigo-600', about: 'bg-purple-600', communities: 'bg-teal-600', collab: 'bg-violet-600'
+                pulses: 'bg-orange-600', events: 'bg-teal-600', observatory: 'bg-rose-600', inspiration: 'bg-indigo-600', about: 'bg-purple-600', communities: 'bg-teal-600', collab: 'bg-violet-600'
             };
             return `${themes[key] || 'bg-slate-700'} text-white shadow-lg shadow-black/20 font-bold tracking-wide`;
         }
@@ -169,7 +170,9 @@ export const Navigation = ({
                 onClick={() => setTab(tab)}
                 aria-describedby={tab === 'about' ? 'about-lin-tooltip' : undefined}
                 className={`px-3 xl:px-4 py-2 rounded-full text-[10px] xl:text-xs transition-all flex items-center gap-1.5 whitespace-nowrap ${getTabStyle(tab)}`}
-                style={activeTab === tab && getActiveTabColor(tab) ? { backgroundColor: getActiveTabColor(tab) } : undefined}
+                // Always paint the active pill with the shared tabTone, so the pill and the list
+                // page's header band underneath are literally the same pigment (one surface).
+                style={activeTab === tab && tab !== 'about' ? { backgroundColor: tabTone(tab, theme) } : undefined}
             >
                 <span>{getTabLabel(tab)}</span>
                 {count > 0 && (
@@ -259,6 +262,11 @@ export const Navigation = ({
                              {logoUrl ? <img src={logoUrl} className="w-8 h-8 rounded-full object-cover" alt="Logo" /> : <Logo width={32} height={32} />}
                         </div>
                         <span dir="ltr" className="hidden max-w-[160px] truncate font-light text-2xl lowercase tracking-wide sm:inline">{appName}</span>
+                        {/* Mobile: the current list's name lives up here, next to the logo — the
+                            page headers below carry no title, so this is the "where am I". */}
+                        {activeTab !== 'dashboard' && !isMenuOpen && (
+                            <span dir="auto" className="max-w-[40vw] truncate font-light text-xl tracking-wide sm:hidden" style={{ color: tabTone(activeTab, theme) }}>{getTabLabel(activeTab)}</span>
+                        )}
                     </div>
 
                     {/* Mobile: night-mode + sign-out as circular icons next to the logo (only while the menu is open) */}
