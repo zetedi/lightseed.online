@@ -58,7 +58,7 @@ const ensureUserProfile = async (user: FirebaseUser, extra: Record<string, any> 
 };
 
 // Throws Error('INVITE_ONLY') when a brand-new account is blocked by invite-only mode.
-const resolveInviteOnSignup = async (email: string | null, opts: { inviteId?: string; inviteOnly?: boolean }): Promise<{ invitedBy?: string; consume?: string }> => {
+const resolveInviteOnSignup = async (_email: string | null, opts: { inviteId?: string; inviteOnly?: boolean }): Promise<{ invitedBy?: string; consume?: string }> => {
     if (!opts.inviteOnly) {
         if (!opts.inviteId) return {};
         const invite = await getNetworkInvite(opts.inviteId);

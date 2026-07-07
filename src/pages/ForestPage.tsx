@@ -36,7 +36,7 @@ interface ForestPageProps {
 }
 
 export const ForestPage = ({
-  effectiveIsDark, showNatureTrees, setShowNatureTrees, showUserTrees, setShowUserTrees,
+  showNatureTrees, setShowNatureTrees, showUserTrees, setShowUserTrees,
   showValidatedTrees, setShowValidatedTrees, viewMode, filteredData, loadingMore, activeTree,
   mapRefreshKey, isAdmin, isSuperAdmin, isInitiate, currentUserId, guardedTreeIds, sentinelRef,
   onView, onReach, onPlayGrowth, onQuickSnap, onValidate, onRefresh,

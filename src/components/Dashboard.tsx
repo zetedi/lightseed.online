@@ -8,7 +8,6 @@ import { LeafTexture } from './ui/LeafTexture';
 import { ScrollChevrons } from './ui/ScrollChevrons';
 import { QuoteCarousel } from './ui/QuoteCarousel';
 import { LIGHTSEED_QUOTES } from '../content/quotes';
-import Logo from './Logo';
 import { Community, Pulse } from '../types';
 
 export interface DashboardProps {

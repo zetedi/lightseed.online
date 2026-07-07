@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { type Pulse, type Lightseed } from '../types';
-import { useLanguage } from '../contexts/LanguageContext';
 import { isPulseLoved, lovePulse } from '../services/firebase';
 import { Icons } from './ui/Icons';
 import type { ListDensity } from '../hooks/useListDensity';
@@ -19,7 +18,6 @@ interface PulseCardProps {
 const POP = 'hover:shadow-xl hover:-translate-y-1 active:shadow-xl active:-translate-y-1 transition-all duration-300';
 
 export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards' }: PulseCardProps) => {
-    const { t } = useLanguage();
     const [loved, setLoved] = useState(false);
     const [count, setCount] = useState(pulse.loveCount || 0);
     const images = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);

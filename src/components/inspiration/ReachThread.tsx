@@ -125,7 +125,6 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
     const bottomRef = useRef<HTMLDivElement>(null);
 
     const isGroup = !!groupThread || (mode === 'tree' && audience !== undefined);
-    const aiMode = mode === 'oracle';
 
     useEffect(() => {
         if (groupThread) {

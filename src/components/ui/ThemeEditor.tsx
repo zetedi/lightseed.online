@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { communityThemePresets, normalizeTheme, themeEquals, type CommunityThemePreset } from '../../utils/theme';
 import { useLanguage } from '../../contexts/LanguageContext';
 

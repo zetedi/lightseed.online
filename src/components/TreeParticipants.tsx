@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Lifetree } from '../types';
 import { Icons } from './ui/Icons';
 import { showAlert } from './ui/Dialog';

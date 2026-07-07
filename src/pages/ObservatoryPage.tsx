@@ -1,4 +1,3 @@
-import React from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from '../components/ui/Icons';
 import Logo from '../components/Logo';

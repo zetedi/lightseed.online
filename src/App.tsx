@@ -1,12 +1,10 @@
 
 import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import {
-  signInWithGoogle,
   logout,
   fetchEventPulses,
   createEvent,
   updateEvent,
-  fetchMyReaches,
   mintPulse,
   plantLifetree,
   uploadBase64Image,
@@ -32,7 +30,7 @@ import {
 } from './services/firebase';
 import { setActiveIntelligenceId } from './services/intelligence';
 import { tabTone, CTA_GLOW } from './utils/tabTheme';
-import { type Pulse, type Lifetree, type Alignment, type Vision, type Community, type VisionSynergy, type ReachAudience } from './types';
+import { type Pulse, type Lifetree, type Alignment, type Vision, type Community, type ReachAudience } from './types';
 import Logo from './components/Logo';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { SessionProvider, useSession } from './contexts/SessionContext';
@@ -107,7 +105,7 @@ const DetailWrapper = ({ children }: { children?: React.ReactNode }) => (
 
 const AppContent = () => {
     const { t } = useLanguage();
-    const { lightseed, myTrees, guardedTrees, activeTree, defaultTreeId, setDefaultTree, isAdmin, isSuperAdmin, isInitiate, superAdminExists, loading: authLoading, refreshTrees } = useSession();
+    const { lightseed, myTrees, guardedTrees, activeTree, defaultTreeId, setDefaultTree, isAdmin, isSuperAdmin, isInitiate, loading: authLoading, refreshTrees } = useSession();
     // The set of trees the signed-in user guards (the LIN, via guardian links) — passed to cards
     // so a card can show its guardian affordance without a per-card read.
     const guardedTreeIds = useMemo(() => new Set(guardedTrees.map(t => t.id)), [guardedTrees]);
@@ -980,7 +978,7 @@ const AppContent = () => {
                     targetVision={pulseTargetVision}
                     onClose={() => { setShowPulseModal(false); setPulseTargetTree(null); setPulseTargetVision(null); }}
                     onMint={mintPulse}
-                    onProposeAlignment={proposeAlignment}
+                    onProposeAlignment={async (data: any) => { await proposeAlignment(data); }}
                     onGrown={handleTreeGrown}
                     uploading={uploading}
                     handleImageUpload={handleImageUpload}
@@ -994,7 +992,7 @@ const AppContent = () => {
                     activeTree={activeTree}
                     trees={myTrees}
                     onClose={() => setShowVisionModal(false)}
-                    onCreate={createVision}
+                    onCreate={async (data: any) => { await createVision(data); }}
                     uploading={uploading}
                     handleImageUpload={handleImageUpload}
                     uploadBase64Image={uploadBase64Image}

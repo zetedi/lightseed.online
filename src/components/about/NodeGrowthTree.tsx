@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import type { Community, Lifetree } from '../../types';
 
 // The Node Growth Tree — a living diagram of the node's model *instance*, generated on the fly from

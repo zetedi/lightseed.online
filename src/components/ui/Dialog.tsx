@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 // A tiny global, imperative dialog so any code can replace native alert()/confirm()
 // with a styled modal:

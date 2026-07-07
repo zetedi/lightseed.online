@@ -1,4 +1,3 @@
-import React from 'react';
 
 // The small heading + optional subtitle that opens a profile section's main panel. Extracted from
 // the identical copies that lived in CommunityProfile and LightseedProfile so every profile-style

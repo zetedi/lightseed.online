@@ -1,5 +1,4 @@
 
-import React from 'react';
 import { type Vision } from '../types';
 import { Icons } from './ui/Icons';
 import type { ListDensity } from '../hooks/useListDensity';

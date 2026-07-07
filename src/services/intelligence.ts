@@ -34,7 +34,7 @@ export const composeSystemPrompt = (persona?: Persona | null, memory?: MemoryCon
 };
 
 const toContents = (messages: IntelligenceMessage[]) => {
-  let contents = messages.map(m => ({ role: m.role, parts: [{ text: m.text }] }));
+  const contents = messages.map(m => ({ role: m.role, parts: [{ text: m.text }] }));
   // Gemini (and most chat APIs) require the transcript to open with a user turn.
   const firstUser = contents.findIndex(c => c.role === 'user');
   return firstUser !== -1 ? contents.slice(firstUser) : [];

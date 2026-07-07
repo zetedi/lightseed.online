@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ListDensity } from '../../hooks/useListDensity';
 
 // The three-way list density switch — rows / cards / mini. Designed for the coloured header band:

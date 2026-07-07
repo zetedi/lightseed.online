@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Icons } from '../components/ui/Icons';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { ListBox } from '../components/ui/ListBox';

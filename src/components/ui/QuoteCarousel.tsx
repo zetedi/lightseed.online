@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // A responsive, full-width text carousel of reflections — shown to signed-out visitors in place
 // of the home/observatory cards. Auto-advances, but pauses on hover/focus, honours

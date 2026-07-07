@@ -1,12 +1,10 @@
 
 import React, { useRef, useState, ChangeEvent } from 'react';
-import { showAlert, showConfirm } from "./ui/Dialog";
+import { showConfirm } from "./ui/Dialog";
 import { type Lifetree } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
-import Logo from './Logo';
 import { ValidationBadge } from './ValidationBadge';
-import { colors } from '../utils/theme';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
 import { canReachTree, type ReachTargetProfile } from '../utils/reachPermissions';
 import { isWateringOverdue } from '../domain/watering';

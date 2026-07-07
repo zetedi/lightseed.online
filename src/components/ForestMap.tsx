@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect, useMemo, useState } from 'react';
+import { useRef, useEffect, useMemo, useState } from 'react';
 import { type Lifetree } from '../types';
 import { isExplicitlyValidatedTree } from '../utils/validation';
 import { escapeHtml, safeImageUrl } from '../utils/sanitize';

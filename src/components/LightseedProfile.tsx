@@ -74,9 +74,9 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
         setInviteBusyId(null);
     };
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const [sendingTest, setSendingTest] = useState(false);
+    const [, setSendingTest] = useState(false);
     const [mailStatus, setMailStatus] = useState<string | null>(null);
-    const [testEmailAddress, setTestEmailAddress] = useState('');
+    const [, setTestEmailAddress] = useState('');
     
     // Invite System
     const [invitesRemaining, setInvitesRemaining] = useState(7);
@@ -176,7 +176,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
 
     const handleApproveRequest = async (id: string) => {
         setRequestBusyId(id);
-        try { await approveInviteRequest(id, lightseed.uid); setRequestStatusLocal(id, 'approved'); setDialogMessage('Invitation sent.'); }
+        try { await approveInviteRequest(id, lightseed!.uid); setRequestStatusLocal(id, 'approved'); setDialogMessage('Invitation sent.'); }
         catch (e: any) { setDialogMessage(e?.message || 'Failed to approve.'); }
         setRequestBusyId(null);
     };
@@ -186,7 +186,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
             // A kind rejection — they're welcome to ask again with more context.
             try {
                 await triggerSystemEmail(req.email, 'About your lightseed invitation request',
-                    "Thank you for your interest in lightseed. For now, the reason to join wasn't yet clear to us, or didn't feel aligned with the spirit of the network. You are warmly welcome to request again, with a little more about your intention.\n\nWith care,\nthe lightseed stewards", lightseed.uid);
+                    "Thank you for your interest in lightseed. For now, the reason to join wasn't yet clear to us, or didn't feel aligned with the spirit of the network. You are warmly welcome to request again, with a little more about your intention.\n\nWith care,\nthe lightseed stewards", lightseed!.uid);
             } catch (mailErr) { console.warn('Kind rejection email failed', mailErr); }
             await declineInviteRequest(req.id);
             setRequestStatusLocal(req.id, 'declined');
@@ -252,7 +252,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
 
     const handleAlignmentAnalysis = async () => {
         if (visions.length < 2) {
-             const data = await getMyVisions(lightseed.uid);
+             const data = await getMyVisions(lightseed!.uid);
              if (data.length < 2) {
                  setDialogMessage("You need at least 2 visions to find alignments.");
                  return;
@@ -282,7 +282,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
         if (!inviteEmail) return;
         setSendingInvite(true);
         try {
-            await createNetworkInvite(inviteEmail, lightseed.uid, inviteMessage, { unlimited: isSuperAdmin });
+            await createNetworkInvite(inviteEmail, lightseed!.uid, inviteMessage, { unlimited: isSuperAdmin });
             refreshSentInvites();
             setDialogMessage(t('invite_sent'));
             setShowInviteModal(false);
@@ -354,10 +354,10 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
     const handleSiteLogoUpload = async (file: File) => {
         setUploadingSiteLogo(true);
         try {
-            const url = await uploadImage(file, `users/${lightseed.uid}/site-theme/logo_${Date.now()}`);
+            const url = await uploadImage(file, `users/${lightseed!.uid}/site-theme/logo_${Date.now()}`);
             setSiteLogoUrl(url);
             // Persist immediately so an upload can't be lost before the next Save.
-            await updateUserSiteTheme(lightseed.uid, { siteTheme: normalizeTheme(siteTheme), siteLogoUrl: url, siteHeroUrl });
+            await updateUserSiteTheme(lightseed!.uid, { siteTheme: normalizeTheme(siteTheme), siteLogoUrl: url, siteHeroUrl });
         } catch (e: any) {
             setDialogMessage(e.message || 'Failed to upload site logo.');
         }
@@ -367,9 +367,9 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
     const handleSiteHeroUpload = async (file: File) => {
         setUploadingSiteHero(true);
         try {
-            const url = await uploadImage(file, `users/${lightseed.uid}/site-theme/hero_${Date.now()}`);
+            const url = await uploadImage(file, `users/${lightseed!.uid}/site-theme/hero_${Date.now()}`);
             setSiteHeroUrl(url);
-            await updateUserSiteTheme(lightseed.uid, { siteTheme: normalizeTheme(siteTheme), siteLogoUrl, siteHeroUrl: url });
+            await updateUserSiteTheme(lightseed!.uid, { siteTheme: normalizeTheme(siteTheme), siteLogoUrl, siteHeroUrl: url });
         } catch (e: any) {
             setDialogMessage(e.message || 'Failed to upload hero image.');
         }
@@ -379,7 +379,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
     const handleSaveSiteTheme = async () => {
         setSavingSiteTheme(true);
         try {
-            await updateUserSiteTheme(lightseed.uid, {
+            await updateUserSiteTheme(lightseed!.uid, {
                 siteTheme: normalizeTheme(siteTheme),
                 siteLogoUrl,
                 siteHeroUrl,
@@ -400,7 +400,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
             setSiteTheme(resetTheme);
             setSiteLogoUrl('');
             setSiteHeroUrl('');
-            await updateUserSiteTheme(lightseed.uid, {
+            await updateUserSiteTheme(lightseed!.uid, {
                 siteTheme: resetTheme,
                 siteLogoUrl: '',
                 siteHeroUrl: '',
@@ -413,7 +413,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
     };
 
     const handleTestEmail = async () => {
-        const targetEmail = prompt("Enter the email address to send test to:", lightseed.email);
+        const targetEmail = prompt("Enter the email address to send test to:", lightseed!.email ?? undefined);
         if (!targetEmail) return;
 
         setTestEmailAddress(targetEmail);
@@ -425,7 +425,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                 targetEmail,
                 "Debug Test: lightseed Network",
                 `This is a test email sent at ${new Date().toLocaleTimeString()} to verify the SMTP pipeline. If you see this, the system is working.`,
-                lightseed.uid 
+                lightseed!.uid 
             );
             
             setMailStatus(`SUCCESS! Sent to ${targetEmail}`);

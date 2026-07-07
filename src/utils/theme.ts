@@ -118,7 +118,7 @@ const clampHex = (value: string | undefined, fallback: string) =>
 export const THEME_FIELDS = ['primary', 'secondary', 'accent', 'neutral', 'background', 'surface', 'text', 'mode'] as const;
 export const themeEquals = (a: any, b: any) => THEME_FIELDS.every(k => a?.[k] === b?.[k]);
 
-export const normalizeTheme = (theme: Partial<CommunityThemePreset> | undefined, fallback = canopyTheme) => ({
+export const normalizeTheme = (theme: Partial<CommunityThemePreset> | undefined, fallback: Omit<CommunityThemePreset, 'id' | 'name' | 'description'> = canopyTheme) => ({
   primary: clampHex(theme?.primary, fallback.primary),
   secondary: clampHex(theme?.secondary, fallback.secondary),
   accent: clampHex(theme?.accent, fallback.accent),

@@ -88,7 +88,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const [isSaving, setIsSaving] = useState(false);
    
    // Immutable chain Visualization State
-   const [chain, setChain] = useState<Pulse[]>([]);
+   const [, setChain] = useState<Pulse[]>([]);
    const [genesisBlock, setGenesisBlock] = useState<Pulse | null>(null);
    const [growthBlocks, setGrowthBlocks] = useState<Pulse[]>([]);
    const [loadingChain, setLoadingChain] = useState(false);

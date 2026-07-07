@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { generateKeyPairSync, sign as edSign, type KeyObject } from 'node:crypto';
@@ -76,7 +76,7 @@ describe('the initiation ledger verifier', () => {
   it('rejects a re-pointed uid — the app-account binding is inside the signature', () => {
     const d = mkdtempSync(join(tmpdir(), 'initiations-'));
     buildValidLedger(d);
-    const rec = JSON.parse(JSON.stringify(require(join(d, 'newcomer.json'))));
+    const rec = JSON.parse(readFileSync(join(d, 'newcomer.json'), 'utf8'));
     writeRec(d, { ...rec, uid: 'attacker-uid' });
     expect(run(d)).toBe(false);
     rmSync(d, { recursive: true, force: true });
@@ -85,7 +85,7 @@ describe('the initiation ledger verifier', () => {
   it('rejects a re-pointed lid — the network identity is inside the signature', () => {
     const d = mkdtempSync(join(tmpdir(), 'initiations-'));
     buildValidLedger(d);
-    const rec = require(join(d, 'newcomer.json'));
+    const rec = JSON.parse(readFileSync(join(d, 'newcomer.json'), 'utf8'));
     writeRec(d, { ...rec, lid: uuidv7(1) });
     expect(run(d)).toBe(false);
     rmSync(d, { recursive: true, force: true });
@@ -94,7 +94,7 @@ describe('the initiation ledger verifier', () => {
   it('rejects a tampered sponsor signature', () => {
     const d = mkdtempSync(join(tmpdir(), 'initiations-'));
     buildValidLedger(d);
-    const rec = require(join(d, 'newcomer.json'));
+    const rec = JSON.parse(readFileSync(join(d, 'newcomer.json'), 'utf8'));
     const sig = Buffer.from(rec.sponsors[0].signature, 'base64');
     sig[0] ^= 0xff;
     writeRec(d, { ...rec, sponsors: [{ ...rec.sponsors[0], signature: sig.toString('base64') }, rec.sponsors[1], rec.sponsors[2]] });
@@ -117,7 +117,7 @@ describe('the initiation ledger verifier', () => {
   it('rejects fewer than three sponsors', () => {
     const d = mkdtempSync(join(tmpdir(), 'initiations-'));
     buildValidLedger(d);
-    const rec = require(join(d, 'newcomer.json'));
+    const rec = JSON.parse(readFileSync(join(d, 'newcomer.json'), 'utf8'));
     writeRec(d, { ...rec, sponsors: rec.sponsors.slice(0, 2) });
     expect(run(d)).toBe(false);
     rmSync(d, { recursive: true, force: true });

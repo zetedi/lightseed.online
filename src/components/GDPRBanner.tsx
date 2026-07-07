@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 // Cookie / local-storage consent banner — shown once at the bottom until accepted, then remembered
 // in localStorage. Extracted from App verbatim.

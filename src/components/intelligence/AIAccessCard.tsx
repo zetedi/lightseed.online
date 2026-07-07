@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { resolveAISource } from '../../services/intelligence';
 import { aiSourceLabels, type AIAccessState } from '../../domain/aiAccess';
 import { Icons } from '../ui/Icons';

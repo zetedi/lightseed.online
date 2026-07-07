@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Pulse, Lifetree } from '../../types';
 import { Icons } from './Icons';
 import { translatePulse } from '../../services/gemini';

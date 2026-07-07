@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Pulse, Lifetree } from '../types';
 import { Icons } from './ui/Icons';
 import { ProfileHero } from './ui/ProfileHero';

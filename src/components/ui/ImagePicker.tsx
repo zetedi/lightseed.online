@@ -1,5 +1,5 @@
 
-import React, { useRef, useState, ChangeEvent, ReactNode } from 'react';
+import { useRef, useState, ChangeEvent, ReactNode } from 'react';
 import { Icons } from './Icons';
 import { ImageCropModal } from './ImageCropModal';
 

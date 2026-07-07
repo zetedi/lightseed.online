@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 /**
  * The app's waiting animation: a bright yellow dot with a soft halo — a little sun — travelling

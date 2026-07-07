@@ -4,7 +4,7 @@ import { showAlert, showConfirm } from "./ui/Dialog";
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
-import { Community, Lifetree, Lightseed, Pulse, Intelligence, Persona, Sanctuary } from '../types';
+import { Community, Lifetree, Pulse, Intelligence, Persona, Sanctuary } from '../types';
 import { updateCommunity, uploadImage, getTreesByDomain, getParticipatingTrees, fetchAllLifetrees, inviteTreeToCommunity, deleteCommunity, createCommunityEvent, updateEvent, deleteCommunityEvent, getCommunityByDomain, getCommunityEvents, getSanctuariesByDomain, createDecision, voteOnDecision, getDecisions, raiseConcern, resumeDecision, withdrawDecision, recordPosition, discernDecision, getPulsesByTreeId } from '../services/firebase';
 import { isCanonicallySealed, verifyBlockSeal } from '../domain/chain';
 import { setTokenisationEnabled } from '../domain/tokenisation';

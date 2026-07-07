@@ -27,13 +27,13 @@
     "allowImportingTsExtensions": true,
     "noEmit": true,
 
-    // Progressive strictness. These pass cleanly today. The remaining hop to full `strict` is
-    // `noImplicitAny` — ~4700 errors across the app's `any`-heavy surface — a deliberate,
-    // file-by-file burn-down, NOT a flag to flip in one commit. Enable it once that's done.
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictBindCallApply": true,
-    "noImplicitThis": true,
-    "alwaysStrict": true
+    // FULL strict + no dead code, and it must stay that way. (The old "~4700 errors to
+    // noImplicitAny" mountain was a mirage: @types/react was never installed, so every JSX
+    // element and react import counted as an implicit any. With the types in place the real
+    // distance was ~25 errors — closed on 2026-07-08.) Explicit `: any` annotations still
+    // exist in the god components; burning those down is the next quality rung.
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
   }
 }

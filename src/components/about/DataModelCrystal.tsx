@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { DATA_MODEL, DATA_RELATIONS, type ModelEntity } from '../../domain/dataModel';
 import { buildDrawioFile, buildDrawioXml } from '../../utils/drawioExport';
 import { Icons } from '../ui/Icons';

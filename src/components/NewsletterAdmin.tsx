@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { getNewsletterDraftData, sendNewsletter } from '../services/firebase';
 import { Loading } from './ui/Loading';
 import { Icons } from './ui/Icons';

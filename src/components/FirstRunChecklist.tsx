@@ -1,4 +1,3 @@
-import React from 'react';
 import { Icons } from './ui/Icons';
 import type { Lifetree } from '../types';
 import type { useOnboardingState } from '../hooks/useOnboardingState';

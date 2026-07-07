@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Alignment, AlignmentNote, Lifetree } from '../types';
 import { getLifetreeById, getPulseById, getPersonName, postAlignmentNote, getAlignmentById } from '../services/firebase';
 import { Icons } from './ui/Icons';

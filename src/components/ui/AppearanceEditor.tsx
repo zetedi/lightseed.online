@@ -1,4 +1,3 @@
-import React from 'react';
 import { Icons } from './Icons';
 import { ImagePicker } from './ImagePicker';
 import { ThemeEditor, type ThemeValue } from './ThemeEditor';

@@ -1,4 +1,3 @@
-import React from 'react';
 
 // A faint, tiling leaf-vein texture (the events-banner motif), reusable as a section background.
 // `fade` masks it out toward the bottom; `stroke`/`opacity` tune it for light or dark grounds.

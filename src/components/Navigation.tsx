@@ -82,8 +82,7 @@ export const Navigation = ({
 }: NavigationProps) => {
     const { t, language, setLanguage } = useLanguage();
     // Session-derived values come straight from context now (no longer prop-drilled from App).
-    const { lightseed, myTrees, guardedTrees, activeTree } = useSession();
-    const myTreesCount = myTrees.length;
+    const { lightseed, guardedTrees, activeTree } = useSession();
     const dangerTreesCount = guardedTrees.filter((tr) => tr.status === 'DANGER').length;
     const activeTreeImage = activeTree?.latestGrowthUrl || activeTree?.imageUrl;
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -242,7 +241,7 @@ export const Navigation = ({
     // vertical so the label wraps to two lines, sized to match the nav tiles.
     const MobileActionTile = ({ icon, label, onClick, color }: { icon: React.ReactNode; label: string; onClick: () => void; color: string }) => (
         <button
-            onClick={() => { setIsMenuOpen(false); lightseed ? onClick() : onLogin(); }}
+            onClick={() => { setIsMenuOpen(false); if (lightseed) { onClick(); } else { onLogin(); } }}
             className={`col-span-2 flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl px-1 text-center ${color} text-white shadow-lg`}
         >
             <span className="[&>svg]:h-4 [&>svg]:w-4">{icon}</span>

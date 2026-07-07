@@ -1,4 +1,3 @@
-import React from 'react';
 import { Modal } from './ui/Modal';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getTerms } from '../utils/terms';

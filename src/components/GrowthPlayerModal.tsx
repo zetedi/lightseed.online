@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { fetchGrowthPulses, getLifetreeById } from '../services/firebase';
 import { Modal } from './ui/Modal';
 import { Icons } from './ui/Icons';
