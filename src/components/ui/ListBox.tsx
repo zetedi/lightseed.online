@@ -26,7 +26,7 @@ export const ListBox = ({ tone = '#059669', tabs, activeTab, onTab, children, cl
                                 key={tb.key}
                                 onClick={() => onTab?.(tb.key)}
                                 aria-pressed={is}
-                                className={`flex items-center gap-1.5 rounded-t-lg px-4 py-2.5 text-xs font-bold transition-all ${is ? '' : 'bg-white/60 text-slate-500 hover:bg-white hover:text-slate-800'}`}
+                                className={`flex h-10 items-center gap-1.5 rounded-t-lg px-4 text-xs font-bold transition-all ${is ? '' : 'bg-white/60 text-slate-500 hover:bg-white hover:text-slate-800'}`}
                                 style={is ? { backgroundColor: tint, color: tone } : undefined}
                             >
                                 {tb.icon}

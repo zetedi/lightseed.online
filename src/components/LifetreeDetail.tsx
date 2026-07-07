@@ -30,7 +30,7 @@ const STAGE_META: { key: TreeStage; label: string; hint: string; icon: React.Rea
     { key: 'self_sustaining', label: 'Self-sustaining', hint: 'Established — no scheduled watering.', icon: <Icons.Tree /> },
 ];
 
-export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, onAlertGuardians, isDefaultTree, onSetDefault, targetUserProfile }: any) => {
+export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, onAlertGuardians, isDefaultTree, onSetDefault, targetUserProfile, initialSection }: any) => {
    const { t } = useLanguage();
    // Session-derived values from context (were prop-drilled from App).
    const { lightseed, activeTree, isAdmin, isSuperAdmin, isInitiate } = useSession();
@@ -100,7 +100,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    // Profile-like sections: the tree is a being with a digital body, details, guardians, care
    // and a circle. Everything can be a lifetree, so this reads like a profile.
    type TreeSection = 'digital' | 'details' | 'guardians' | 'care' | 'circle';
-   const [section, setSection] = useState<TreeSection>('digital');
+   const [section, setSection] = useState<TreeSection>(initialSection || 'digital');
+   // A caller can steer the opening section (e.g. the profile droplet opens Care).
+   useEffect(() => { if (initialSection) setSection(initialSection); }, [initialSection, tree?.id]);
    // The growth chain can be long, so the middle collapses into a clickable line.
    const [chainExpanded, setChainExpanded] = useState(false);
 

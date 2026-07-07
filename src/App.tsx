@@ -118,7 +118,10 @@ const AppContent = () => {
     );
     const [alignments, setAlignments] = useState<Alignment[]>([]);
     const [selectedTree, setSelectedTree] = useState<Lifetree | null>(null);
+    // Which section the tree detail should open at (e.g. 'care' from the profile's droplet).
+    const [treeSectionHint, setTreeSectionHint] = useState<string | null>(null);
     const [selectedVision, setSelectedVision] = useState<Vision | null>(null);
+    useEffect(() => { if (!selectedTree) setTreeSectionHint(null); }, [selectedTree]);
     const [selectedAlignment, setSelectedAlignment] = useState<Alignment | null>(null);
     const [selectedPulse, setSelectedPulse] = useState<Pulse | null>(null);
     // Bumped whenever we finish touching a tree (guardianship, edits) so the map re-reads it.
@@ -483,7 +486,7 @@ const AppContent = () => {
         if (tab === 'profile' && lightseed) {
             return (
                 <LightseedProfile
-                    onViewTree={(tree: Lifetree) => setSelectedTree(tree)}
+                    onViewTree={(tree: Lifetree, section?: string) => { setTreeSectionHint(section || null); setSelectedTree(tree); }}
                     onDeleteTree={handleDeleteTree}
                     defaultTreeId={defaultTreeId}
                     onSetDefaultTree={setDefaultTree}
@@ -829,6 +832,7 @@ const AppContent = () => {
                             onReachTree={(tree: Lifetree) => openReach(tree)}
                             onAlertGuardians={() => openReach(selectedTree, 'guardians')}
                             onViewPulse={onViewPulseOrAlignment}
+                            initialSection={treeSectionHint || undefined}
                             isDefaultTree={defaultTreeId === selectedTree.id}
                             onSetDefault={() => { setDefaultTree(selectedTree.id); showAlert(`${selectedTree.name} is now your default tree.`); }}
                             targetUserProfile={{ onlyValidatedCanReach: selectedTree.onlyValidatedCanReach }}

@@ -834,7 +834,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                                                             {isExplicitlyValidatedTree(tree) ? (
                                                                 <div className="mt-1 flex items-center gap-2">
                                                                     <ValidationBadge compact lapsed={lapsedValidated(tree)} />
-                                                                    {isWateringOverdue(tree) && <span title="Needs water" className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 text-white shadow-sm"><Icons.Droplet size={11} /></span>}
+                                                                    {isWateringOverdue(tree) && <button type="button" title="Needs water — open tree care" aria-label="Needs water — open tree care" onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
                                                                     {(lapsedValidated(tree) || fadingValidated(tree)) && (
                                                                         <button onClick={(e) => { e.stopPropagation(); handleTend(tree); }} disabled={tendingId === tree.id} className="rounded-full bg-emerald-600 px-3 py-1 text-[10px] font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
                                                                             {tendingId === tree.id ? '…' : t('tend')}
@@ -845,7 +845,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                                                                     )}
                                                                 </div>
                                                             ) : (
-                                                                <span className="inline-flex items-center gap-2"><span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">{t('pending')}</span>{isWateringOverdue(tree) && <span title="Needs water" className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 text-white shadow-sm"><Icons.Droplet size={11} /></span>}</span>
+                                                                <span className="inline-flex items-center gap-2"><span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">{t('pending')}</span>{isWateringOverdue(tree) && <button type="button" title="Needs water — open tree care" aria-label="Needs water — open tree care" onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}</span>
                                                             )}
                                                         </div>
                                                     </div>
@@ -892,7 +892,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                                                         <div>
                                                             <h3 className="font-bold text-slate-800 flex items-center gap-1.5">
                                                                 {tree.name}
-                                                                {isWateringOverdue(tree) && <span title="Needs water" className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 text-white shadow-sm"><Icons.Droplet size={11} /></span>}
+                                                                {isWateringOverdue(tree) && <button type="button" title="Needs water — open tree care" aria-label="Needs water — open tree care" onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
                                                             </h3>
                                                             <p className="text-xs text-slate-500">Block Height: {tree.blockHeight}</p>
                                                             <span className="mt-1 inline-flex items-center gap-1 text-[10px] bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-bold"><Icons.Shield /> Guardian</span>
