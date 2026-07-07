@@ -5,7 +5,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
 import { Community, Lifetree, Lightseed, Pulse, Intelligence, Persona, Sanctuary } from '../types';
-import { updateCommunity, uploadImage, getTreesByDomain, deleteCommunity, createCommunityEvent, updateEvent, deleteCommunityEvent, getCommunityByDomain, getCommunityEvents, getSanctuariesByDomain, createDecision, voteOnDecision, getDecisions, raiseConcern, resumeDecision, withdrawDecision, recordPosition, discernDecision, getPulsesByTreeId } from '../services/firebase';
+import { updateCommunity, uploadImage, getTreesByDomain, getParticipatingTrees, fetchAllLifetrees, inviteTreeToCommunity, deleteCommunity, createCommunityEvent, updateEvent, deleteCommunityEvent, getCommunityByDomain, getCommunityEvents, getSanctuariesByDomain, createDecision, voteOnDecision, getDecisions, raiseConcern, resumeDecision, withdrawDecision, recordPosition, discernDecision, getPulsesByTreeId } from '../services/firebase';
 import { isCanonicallySealed, verifyBlockSeal } from '../domain/chain';
 import { setTokenisationEnabled } from '../domain/tokenisation';
 import { DECISION_NATURES, decisionStatusLabels, consensusStanceLabels, votesRequired, type Decision, type DecisionNature, type DecisionMode, type ConsensusStance } from '../domain/decision';
@@ -112,6 +112,13 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const [isSavingIntel, setIsSavingIntel] = useState(false);
 
   const [linkedTrees, setLinkedTrees] = useState<Lifetree[]>([]);
+  // Trees that joined this community via 'participant' links (invited, or self-joined).
+  const [participatingTrees, setParticipatingTrees] = useState<Lifetree[]>([]);
+  // Inviting a tree to stand with this community.
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteSearch, setInviteSearch] = useState('');
+  const [inviteCandidates, setInviteCandidates] = useState<Lifetree[] | null>(null);
+  const [inviteBusyId, setInviteBusyId] = useState<string | null>(null);
   const [sanctuaries, setSanctuaries] = useState<Sanctuary[]>([]);
 
   // Council — governance decisions
@@ -298,6 +305,49 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       .sort((a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0));
   }, [linkedTrees, community.domain]);
   const firstTree = domainTrees[0] || null;
+
+  // Load the trees standing with this community via participant links.
+  useEffect(() => {
+    let alive = true;
+    getParticipatingTrees(community.id).then(ts => { if (alive) setParticipatingTrees(ts); }).catch(() => {});
+    return () => { alive = false; };
+  }, [community.id]);
+
+  // The trees tab shows domain trees + participating trees, deduped.
+  const communityTrees = useMemo(() => {
+    const byId = new Map<string, Lifetree>();
+    domainTrees.forEach(t => byId.set(t.id, t));
+    participatingTrees.forEach(t => byId.set(t.id, t));
+    return Array.from(byId.values());
+  }, [domainTrees, participatingTrees]);
+
+  const searchInviteCandidates = async () => {
+    const term = inviteSearch.trim().toLowerCase();
+    if (!term) { setInviteCandidates([]); return; }
+    setInviteCandidates(null); // loading
+    try {
+      const all = await fetchAllLifetrees();
+      const here = new Set(communityTrees.map(t => t.id));
+      setInviteCandidates(all.filter(t => !t.isNature && !here.has(t.id) && (t.name || '').toLowerCase().includes(term)).slice(0, 8));
+    } catch { setInviteCandidates([]); }
+  };
+
+  const handleInviteTree = async (tree: Lifetree) => {
+    if (!currentUserId || inviteBusyId) return;
+    setInviteBusyId(tree.id);
+    try {
+      await inviteTreeToCommunity({
+        communityId: community.id, communityName: community.name || community.domain,
+        lifetreeId: tree.id, lifetreeName: tree.name || 'A tree', treeOwnerId: tree.ownerId,
+        invitedByUserId: currentUserId,
+      });
+      showAlert(`Invitation sent — ${tree.name}'s keeper will decide.`, 'Invite a tree');
+      setInviteCandidates(prev => (prev || []).filter(t => t.id !== tree.id));
+    } catch (e: any) {
+      showAlert(e?.message || 'Could not send the invite.');
+    }
+    setInviteBusyId(null);
+  };
 
   // Featured tree's guardian count — a prism over its incoming 'guardian' links.
   const [firstTreeGuardians, setFirstTreeGuardians] = useState(0);
@@ -887,15 +937,49 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
 
             {activeTab === 'trees' && (
               <div>
-                <SectionTitle title="Community Trees" sub="Lifetrees rooted in this community's domain. Join a guardianship to help tend one." />
-                {domainTrees.length === 0 ? (
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <SectionTitle title="Community Trees" sub="Lifetrees rooted here or standing with this community. Join a guardianship to help tend one." />
+                  {currentUserId && (
+                    <button onClick={() => { setInviteOpen(o => !o); setInviteCandidates(null); setInviteSearch(''); }} className="shrink-0 rounded-full bg-teal-600 px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-teal-700 active:scale-95">
+                      <span className="flex items-center gap-1.5"><Icons.Plus /> Invite a tree</span>
+                    </button>
+                  )}
+                </div>
+                {inviteOpen && (
+                  <div className="mb-4 rounded-lg border border-teal-100 bg-teal-50/50 p-4">
+                    <div className="flex gap-2">
+                      <input dir="auto" value={inviteSearch} onChange={e => setInviteSearch(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') searchInviteCandidates(); }}
+                        placeholder="Search trees by name…"
+                        className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-800 outline-none focus:border-teal-300" />
+                      <button onClick={searchInviteCandidates} className="shrink-0 rounded-full bg-teal-600 px-4 py-2 text-xs font-bold text-white hover:bg-teal-700">Search</button>
+                    </div>
+                    {inviteCandidates !== null && (
+                      <div className="mt-3 space-y-2">
+                        {inviteCandidates.length === 0 ? (
+                          <p className="text-xs text-slate-400">No matching trees (already-standing and nature trees are hidden).</p>
+                        ) : inviteCandidates.map(tr => (
+                          <div key={tr.id} className="flex items-center gap-3 rounded-lg border border-slate-100 bg-white p-2.5">
+                            <div className="h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                              {tr.latestGrowthUrl || tr.imageUrl ? <img src={tr.latestGrowthUrl || tr.imageUrl} className="h-full w-full object-cover" alt="" /> : <div className="h-full w-full" style={{ backgroundColor: community.theme?.primary || tabTone('communities') }} />}
+                            </div>
+                            <span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-800">{tr.name}</span>
+                            <button onClick={() => handleInviteTree(tr)} disabled={inviteBusyId === tr.id} className="shrink-0 rounded-full border border-teal-200 bg-white px-3 py-1.5 text-xs font-bold text-teal-700 hover:bg-teal-50 disabled:opacity-50">
+                              {inviteBusyId === tr.id ? '…' : 'Invite'}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {communityTrees.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400">
                     <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-500"><Icons.Tree /></div>
                     <p className="text-sm">No lifetrees linked to this domain yet.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {domainTrees.map(tree => (
+                    {communityTrees.map(tree => (
                       <div
                         key={tree.id}
                         className={`flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm ${onViewTree ? 'cursor-pointer transition-shadow hover:shadow-md' : ''}`}

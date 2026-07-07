@@ -101,6 +101,18 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // A community inviting a lifetree to stand with it. Anyone signed-in may extend an invite
+    // (naming themselves as inviter); only the invitee (the tree's owner) settles it. The
+    // resulting membership is a 'participant' link, governed by the links rules.
+    match /communityTreeInvites/{id} {
+      // Read is signed-in-wide: the dupe-check queries by lifetreeId, which per-participant
+      // read rules would reject (list rules must hold for every possible result).
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.invitedByUserId == request.auth.uid;
+      allow update: if isSignedIn() && (resource.data.invitedUserId == request.auth.uid || resource.data.invitedByUserId == request.auth.uid);
+      allow delete: if isStaff();
+    }
+
     // Organisation collabs — the node's curated collaborators (founder-agreed or by contract).
     // World-readable; staff-curated.
     match /collabs/{id} {

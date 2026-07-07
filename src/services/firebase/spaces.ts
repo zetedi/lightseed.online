@@ -1,4 +1,4 @@
-import { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, runTransaction, getDoc, where, updateDoc, deleteDoc, limit, startAfter, QueryDocumentSnapshot, writeBatch, deleteField, getCountFromServer } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, setDoc, runTransaction, getDoc, where, updateDoc, deleteDoc, limit, startAfter, QueryDocumentSnapshot, writeBatch, deleteField, getCountFromServer } from 'firebase/firestore';
 import { type Pulse, type Vision, type Community } from '../../types';
 import { uuidv7 } from '../../utils/id';
 import { type PulseVisibility } from '../../domain/pulse';
@@ -252,3 +252,61 @@ export const addOrgCollab = async (data: { name: string; url?: string; blurb?: s
 };
 
 export const removeOrgCollab = (id: string) => deleteDoc(doc(db, 'collabs', id));
+
+// --- Tree ↔ community invites ---------------------------------------------------------
+// A community invites a LIFETREE to stand with it. The tree's owner accepts, which mints the
+// same 'participant' link trees use to join events and visions (from = treeId, to = communityId),
+// so the community's trees tab and getParticipatingTrees see it with no new machinery. The links
+// rule already allows this: the invitee IS the tree's owner.
+export interface CommunityTreeInvite {
+    id: string;
+    communityId: string;
+    communityName: string;
+    lifetreeId: string;
+    lifetreeName: string;
+    invitedUserId: string;    // the tree's owner — who must accept
+    invitedByUserId: string;
+    status: 'pending' | 'accepted' | 'declined';
+    createdAt?: any;
+}
+
+const communityTreeInvitesCollection = collection(db, 'communityTreeInvites');
+
+export const inviteTreeToCommunity = async (params: {
+    communityId: string; communityName: string;
+    lifetreeId: string; lifetreeName: string; treeOwnerId: string;
+    invitedByUserId: string;
+}): Promise<string> => {
+    // One pending invite per tree+community.
+    const existing = await getDocs(query(communityTreeInvitesCollection, where('lifetreeId', '==', params.lifetreeId)));
+    if (existing.docs.some(d => { const x = d.data() as any; return x.communityId === params.communityId && x.status === 'pending'; })) {
+        throw new Error('That tree already has a pending invite to this community.');
+    }
+    // Already participating? The link is the source of truth.
+    if ((await getDoc(doc(db, 'links', `${params.lifetreeId}__participant__${params.communityId}`))).exists()) {
+        throw new Error('That tree already stands with this community.');
+    }
+    const ref = await addDoc(communityTreeInvitesCollection, {
+        communityId: params.communityId, communityName: params.communityName,
+        lifetreeId: params.lifetreeId, lifetreeName: params.lifetreeName,
+        invitedUserId: params.treeOwnerId, invitedByUserId: params.invitedByUserId,
+        status: 'pending', createdAt: serverTimestamp(),
+    });
+    return ref.id;
+};
+
+export const getMyCommunityTreeInvites = async (uid: string): Promise<CommunityTreeInvite[]> =>
+    (await getDocs(query(communityTreeInvitesCollection, where('invitedUserId', '==', uid))))
+        .docs.map(d => (mapDoc(d) as CommunityTreeInvite)).filter(i => i.status === 'pending');
+
+export const respondCommunityTreeInvite = async (invite: CommunityTreeInvite, accept: boolean): Promise<void> => {
+    if (accept) {
+        // The participant link — same shape the adapter mints for events/visions.
+        await setDoc(doc(db, 'links', `${invite.lifetreeId}__participant__${invite.communityId}`), {
+            lid: uuidv7(), type: 'link', rel: 'participant', from: invite.lifetreeId, to: invite.communityId, createdAt: serverTimestamp(),
+        });
+    }
+    await updateDoc(doc(db, 'communityTreeInvites', invite.id), {
+        status: accept ? 'accepted' : 'declined', respondedAt: serverTimestamp(),
+    });
+};

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { showAlert, showConfirm } from "./ui/Dialog";
 import { type Pulse, type Lifetree, type Alignment, type Vision, type VisionSynergy, type TreeOwnershipInvite, treeRelationLabels } from '../types';
-import { getMyPulses, getMyVisions, getJoinedVisions, getMyAlignmentsHistory, deleteUserAccount, deleteUserAsAdmin, logout, triggerSystemEmail, createNetworkInvite, listenToUserProfile, deleteVision, getAdmins, setNewsletterSubscription, updateUserSiteTheme, updateUserProfile, uploadImage, fetchMyReaches, setOnlyValidatedCanReach, getPendingTreeInvites, acceptTreeInvite, declineTreeInvite, getInviteRequests, approveInviteRequest, declineInviteRequest, getSentInvites, getLifetreeById, tendTree } from '../services/firebase';
+import { getMyPulses, getMyVisions, getJoinedVisions, getMyAlignmentsHistory, deleteUserAccount, deleteUserAsAdmin, logout, triggerSystemEmail, createNetworkInvite, listenToUserProfile, deleteVision, getAdmins, setNewsletterSubscription, updateUserSiteTheme, updateUserProfile, uploadImage, fetchMyReaches, setOnlyValidatedCanReach, getPendingTreeInvites, acceptTreeInvite, declineTreeInvite, getMyCommunityTreeInvites, respondCommunityTreeInvite, type CommunityTreeInvite, getInviteRequests, approveInviteRequest, declineInviteRequest, getSentInvites, getLifetreeById, tendTree } from '../services/firebase';
 import { ReachInbox } from './inspiration/ReachInbox';
 import { findVisionSynergies } from '../services/gemini';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -51,9 +51,14 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
     const [loading, setLoading] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [treeInvites, setTreeInvites] = useState<TreeOwnershipInvite[]>([]);
+    const [communityInvites, setCommunityInvites] = useState<CommunityTreeInvite[]>([]);
     const [inviteBusyId, setInviteBusyId] = useState<string | null>(null);
 
-    const refreshTreeInvites = () => { if (lightseed?.uid) getPendingTreeInvites(lightseed.uid).then(setTreeInvites).catch(() => {}); };
+    const refreshTreeInvites = () => {
+        if (!lightseed?.uid) return;
+        getPendingTreeInvites(lightseed.uid).then(setTreeInvites).catch(() => {});
+        getMyCommunityTreeInvites(lightseed.uid).then(setCommunityInvites).catch(() => {});
+    };
     useEffect(() => { refreshTreeInvites(); }, [lightseed?.uid]);
 
     const handleAcceptInvite = async (id: string) => {
@@ -557,6 +562,26 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                 </div>
             )}
 
+            {/* Community invitations — a community asked one of your trees to stand with it */}
+            {communityInvites.length > 0 && (
+                <div className="max-w-6xl mx-auto px-4 mt-6 space-y-3">
+                    {communityInvites.map(inv => (
+                        <div key={inv.id} className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-lg border border-teal-200 bg-teal-50 p-4 shadow-sm">
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm text-teal-900">
+                                    <span className="font-bold">{inv.communityName || 'A community'}</span> invited your tree{' '}
+                                    <span className="font-bold">{inv.lifetreeName || 'a Lifetree'}</span> to stand with it.
+                                </p>
+                            </div>
+                            <div className="flex shrink-0 gap-2">
+                                <button onClick={async () => { try { await respondCommunityTreeInvite(inv, true); setCommunityInvites(prev => prev.filter(i => i.id !== inv.id)); setDialogMessage(`${inv.lifetreeName} now stands with ${inv.communityName}.`); } catch (e: any) { setDialogMessage(e?.message || 'Could not accept.'); } }} className="rounded-full bg-teal-600 px-4 py-2 text-xs font-bold text-white shadow hover:bg-teal-700">Accept</button>
+                                <button onClick={async () => { try { await respondCommunityTreeInvite(inv, false); setCommunityInvites(prev => prev.filter(i => i.id !== inv.id)); } catch { /* keep */ } }} className="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">Decline</button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
             {dialogMessage && (
                 <Modal title={t('notice')} onClose={() => setDialogMessage(null)}>
                     <div className="space-y-4">
@@ -803,12 +828,13 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                                                             <h3 className="font-bold text-slate-800 flex items-center gap-1.5">
                                                                 {tree.name}
                                                                 {defaultTreeId === tree.id && <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-700"><Icons.Star filled size={10} /> Default</span>}
-                                                                {isWateringOverdue(tree) && <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-sky-700">💧 Needs water</span>}
+                                                                
                                                             </h3>
                                                             <p className="text-xs text-slate-500">Block Height: {tree.blockHeight}</p>
                                                             {isExplicitlyValidatedTree(tree) ? (
                                                                 <div className="mt-1 flex items-center gap-2">
                                                                     <ValidationBadge compact lapsed={lapsedValidated(tree)} />
+                                                                    {isWateringOverdue(tree) && <span title="Needs water" className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 text-white shadow-sm"><Icons.Droplet size={11} /></span>}
                                                                     {(lapsedValidated(tree) || fadingValidated(tree)) && (
                                                                         <button onClick={(e) => { e.stopPropagation(); handleTend(tree); }} disabled={tendingId === tree.id} className="rounded-full bg-emerald-600 px-3 py-1 text-[10px] font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
                                                                             {tendingId === tree.id ? '…' : t('tend')}
@@ -819,7 +845,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                                                                     )}
                                                                 </div>
                                                             ) : (
-                                                                <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">{t('pending')}</span>
+                                                                <span className="inline-flex items-center gap-2"><span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">{t('pending')}</span>{isWateringOverdue(tree) && <span title="Needs water" className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 text-white shadow-sm"><Icons.Droplet size={11} /></span>}</span>
                                                             )}
                                                         </div>
                                                     </div>
@@ -866,7 +892,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                                                         <div>
                                                             <h3 className="font-bold text-slate-800 flex items-center gap-1.5">
                                                                 {tree.name}
-                                                                {isWateringOverdue(tree) && <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-sky-700">💧 Needs water</span>}
+                                                                {isWateringOverdue(tree) && <span title="Needs water" className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 text-white shadow-sm"><Icons.Droplet size={11} /></span>}
                                                             </h3>
                                                             <p className="text-xs text-slate-500">Block Height: {tree.blockHeight}</p>
                                                             <span className="mt-1 inline-flex items-center gap-1 text-[10px] bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-bold"><Icons.Shield /> Guardian</span>

@@ -19,6 +19,21 @@ const FALLBACK: Record<string, string> = {
   collab: '#7c3aed',       // violet-600
 };
 
+// A light tint of a tab's colour — the list BOX wears this (the band keeps full saturation), so
+// the surface stays one hue without shouting. `strength` = how far toward white (0..1).
+export const tabTint = (hex: string, strength = 0.88): string => {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return hex;
+  const n = parseInt(m[1], 16);
+  const mix = (c: number) => Math.round(c + (255 - c) * strength);
+  const [r, g, b] = [mix(n >> 16 & 255), mix(n >> 8 & 255), mix(n & 255)];
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+};
+
+// The lightseed glow — the same warm ring the Tend button carries. Worn by the create CTAs in the
+// list header bands so the "grow something" action is always the lit one.
+export const CTA_GLOW = 'ring-2 ring-yellow-300/60 shadow-[0_0_18px_rgba(250,204,21,0.45)] hover:shadow-[0_0_28px_rgba(250,204,21,0.7)]';
+
 export const tabTone = (tab: string, theme?: TabTheme | null): string => {
   const themed =
     tab === 'visions' || tab === 'about' ? theme?.accent

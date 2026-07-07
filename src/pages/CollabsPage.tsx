@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Icons } from '../components/ui/Icons';
 import { SectionHeader } from '../components/ui/SectionHeader';
-import { SubTabs } from '../components/ui/SubTabs';
-import { CloudBox } from '../components/ui/CloudBox';
+import { ListBox } from '../components/ui/ListBox';
 import { ViewDensityToggle } from '../components/ui/ViewDensityToggle';
 import { useListDensity, type ListDensity } from '../hooks/useListDensity';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -11,7 +10,7 @@ import { showConfirm } from '../components/ui/Dialog';
 import { getPublicIntelligences, DEFAULT_INTELLIGENCE_ID } from '../services/intelligence';
 import { providerLabel } from '../domain/aiAccess';
 import { getOrgCollabs, addOrgCollab, removeOrgCollab, type OrgCollab } from '../services/firebase';
-import { tabTone, type TabTheme } from '../utils/tabTheme';
+import { tabTone, CTA_GLOW, type TabTheme } from '../utils/tabTheme';
 import type { Intelligence } from '../domain/intelligence';
 
 // Per-provider fallback descriptions, used when an intelligence has no description of its own.
@@ -38,7 +37,7 @@ const POP = 'transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg 
 
 // The Collabs page: this node's collaborators — the AI intelligences configured here, and the
 // organisations whose founder(s) agreed to stand here or who hold a place by contract. Two entity
-// lists under one menu item, each resting in its cloud.
+// lists under one menu item, as classic tabs on one coloured box.
 export const CollabsPage = ({ theme }: { theme?: TabTheme | null }) => {
   const { t } = useLanguage();
   const { isAdmin, isSuperAdmin } = useSession();
@@ -91,28 +90,27 @@ export const CollabsPage = ({ theme }: { theme?: TabTheme | null }) => {
         tone={tone}
         toggle={<ViewDensityToggle value={density} onChange={setDensity} />}
         action={isStaff && subTab === 'organisations' && !adding ? (
-          <button onClick={() => setAdding(true)} className="rounded-full bg-white/15 px-4 py-2 text-xs font-bold text-white backdrop-blur transition-all hover:bg-white/25 active:scale-95">
+          <button onClick={() => setAdding(true)} className={`rounded-full bg-white/15 px-4 py-2 text-xs font-bold text-white backdrop-blur transition-all hover:bg-white/25 active:scale-95 ${CTA_GLOW}`}>
             <span className="flex items-center gap-1.5"><Icons.Plus /> Add organisation</span>
           </button>
         ) : undefined}
       >
-        <SubTabs
+        <ListBox
           tone={tone}
-          active={subTab}
-          onChange={(k) => setSubTab(k as 'intelligences' | 'organisations')}
+          activeTab={subTab}
+          onTab={(k) => setSubTab(k as 'intelligences' | 'organisations')}
           tabs={[
-            { key: 'intelligences', label: 'Intelligences', icon: <Icons.Wizard />, count: list?.length },
-            { key: 'organisations', label: 'Organisations', icon: <Icons.Globe />, count: orgs?.length },
+            { key: 'intelligences', label: 'Intelligences', icon: <Icons.Wizard />, count: list?.length ?? undefined },
+            { key: 'organisations', label: 'Organisations', icon: <Icons.Globe />, count: orgs?.length ?? undefined },
           ]}
-        />
-
+        >
         {subTab === 'intelligences' ? (
-          <CloudBox>
+          <>
             <div className={gridFor(density)}>
               {list === null ? (
-                <p className="col-span-full py-10 text-center text-slate-400">Loading…</p>
+                <p className="col-span-full py-10 text-center text-slate-500">Loading…</p>
               ) : list.length === 0 ? (
-                <p className="col-span-full py-10 text-center text-slate-400">No intelligences are configured on this node yet.</p>
+                <p className="col-span-full py-10 text-center text-slate-500">No intelligences are configured on this node yet.</p>
               ) : list.map(intel => {
                 const provider = providerLabel(intel.provider);
                 const isDefault = intel.id === DEFAULT_INTELLIGENCE_ID;
@@ -131,9 +129,9 @@ export const CollabsPage = ({ theme }: { theme?: TabTheme | null }) => {
                 );
               })}
             </div>
-          </CloudBox>
+          </>
         ) : (
-          <CloudBox>
+          <>
             {isStaff && adding && (
               <div className="mb-4 space-y-2.5 rounded-lg border border-violet-100 bg-violet-50/40 p-4">
                 <input dir="auto" value={draft.name} onChange={e => setDraft(d => ({ ...d, name: e.target.value }))} placeholder="Organisation name"
@@ -161,9 +159,9 @@ export const CollabsPage = ({ theme }: { theme?: TabTheme | null }) => {
             )}
             <div className={gridFor(density)}>
               {orgs === null ? (
-                <p className="col-span-full py-10 text-center text-slate-400">Loading…</p>
+                <p className="col-span-full py-10 text-center text-slate-500">Loading…</p>
               ) : orgs.length === 0 ? (
-                <p className="col-span-full py-10 text-center text-slate-400">No organisations stand here yet.</p>
+                <p className="col-span-full py-10 text-center text-slate-500">No organisations stand here yet.</p>
               ) : orgs.map(org => (
                 <div key={org.id} className={`rounded-lg border border-slate-100 bg-white ${pad} ${POP}`}>
                   <div className="flex items-center justify-between gap-2">
@@ -181,8 +179,9 @@ export const CollabsPage = ({ theme }: { theme?: TabTheme | null }) => {
                 </div>
               ))}
             </div>
-          </CloudBox>
+          </>
         )}
+        </ListBox>
       </SectionHeader>
     </div>
   );

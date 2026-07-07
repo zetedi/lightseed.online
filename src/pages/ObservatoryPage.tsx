@@ -5,7 +5,7 @@ import Logo from '../components/Logo';
 import { ResonanceScan } from '../components/ui/ResonanceScan';
 import { ResonanceCard, resonanceId } from '../components/ResonancePanel';
 import { SectionHeader } from '../components/ui/SectionHeader';
-import { CloudBox } from '../components/ui/CloudBox';
+import { ListBox } from '../components/ui/ListBox';
 import { ViewDensityToggle } from '../components/ui/ViewDensityToggle';
 import { useListDensity, type ListDensity } from '../hooks/useListDensity';
 import type { VisionSynergy } from '../types';
@@ -93,11 +93,12 @@ export const ObservatoryPage = ({
           </div>
         ) : undefined}
         toggle={<ViewDensityToggle value={density} onChange={setDensity} />}
+        collapsibleSearch={false}
       >
         {/* The empty "field is calm" state only when there's truly nothing — no alignments AND
             no resonances. Otherwise the resonance section carries it. */}
         {(alignments.length > 0 || synergies.length === 0) && (
-          <CloudBox className="mb-6">
+          <ListBox tone={tone} className="mb-6">
             {alignments.length === 0 ? (
               <div className="flex flex-col items-center p-12 text-center">
                 <div className="mb-6 rounded-full bg-white p-4 shadow-sm">
@@ -152,12 +153,12 @@ export const ObservatoryPage = ({
                 ))}
               </div>
             )}
-          </CloudBox>
+          </ListBox>
         )}
 
         {/* Living Intelligence Resonance — its own cloud. */}
         <ResonanceScan active={isAnalyzingSynergy}>
-          <CloudBox>
+          <ListBox tone={tone}>
             <div className="mb-4 flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white"><Icons.SparkleFill size={20} /></div>
@@ -184,9 +185,9 @@ export const ObservatoryPage = ({
                 ))}
               </div>
             ) : (
-              <p className="py-8 text-center text-sm text-slate-400">{t('no_resonances_yet')}</p>
+              <p className="py-8 text-center text-sm text-slate-500">{t('no_resonances_yet')}</p>
             )}
-          </CloudBox>
+          </ListBox>
         </ResonanceScan>
       </SectionHeader>
     </div>

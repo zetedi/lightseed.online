@@ -7,10 +7,10 @@ import { ResonancePanel } from '../components/ResonancePanel';
 import { ResonanceScan } from '../components/ui/ResonanceScan';
 import { Loading } from '../components/ui/Loading';
 import { ViewDensityToggle } from '../components/ui/ViewDensityToggle';
-import { CloudBox } from '../components/ui/CloudBox';
-import { SubTabs } from '../components/ui/SubTabs';
+import { ListBox } from '../components/ui/ListBox';
 import { useListDensity, densityGridClass } from '../hooks/useListDensity';
 import { canViewVision } from '../domain/views/forest';
+import { CTA_GLOW } from '../utils/tabTheme';
 import type { Lightseed, Vision, VisionSynergy } from '../types';
 
 // The Visions feed: the resonance panel + a visibility-gated grid of vision cards. Extracted from
@@ -57,7 +57,7 @@ export const VisionsPage = ({
             {lightseed && (
               <button
                 onClick={onCreateVision}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-full font-bold shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap"
+                className={`bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-full font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}
               >
                 <Icons.Plus className="text-yellow-300" /> <span>{t('create_vision')}</span>
               </button>
@@ -75,27 +75,25 @@ export const VisionsPage = ({
           </div>
         }
       >
-        <SubTabs
+        <ListBox
           tone={tone}
-          active={subTab}
-          onChange={(k) => setSubTab(k as 'visions' | 'alignments')}
+          activeTab={subTab}
+          onTab={(k) => setSubTab(k as 'visions' | 'alignments')}
           tabs={[
             { key: 'visions', label: t('visions'), icon: <Icons.Eye />, count: visibleVisions.length },
             { key: 'alignments', label: t('alignments'), icon: <Icons.Venn />, count: synergies.length },
           ]}
-        />
-
-        {subTab === 'alignments' ? (
-          <CloudBox>
-            <ResonancePanel synergies={synergies} favorites={favoriteResonanceIds} onToggleFavorite={onToggleFavorite} onReach={onReach} />
-            {synergies.length === 0 && <p className="py-10 text-center text-slate-400">{t('no_resonances_yet')}</p>}
-          </CloudBox>
-        ) : (
-          <ResonanceScan active={isAnalyzingSynergy}>
-            <CloudBox>
+        >
+          {subTab === 'alignments' ? (
+            <>
+              <ResonancePanel synergies={synergies} favorites={favoriteResonanceIds} onToggleFavorite={onToggleFavorite} onReach={onReach} />
+              {synergies.length === 0 && <p className="py-10 text-center text-slate-500">{t('no_resonances_yet')}</p>}
+            </>
+          ) : (
+            <ResonanceScan active={isAnalyzingSynergy}>
               <div className={densityGridClass(density)}>
                 {visibleVisions.length === 0 && !loadingMore ? (
-                  <p className="col-span-full text-center text-slate-400 py-10">{t('no_visions_found')}</p>
+                  <p className="col-span-full text-center text-slate-500 py-10">{t('no_visions_found')}</p>
                 ) : (
                   visibleVisions.map(item => (
                     <div key={item.id} onClick={() => onSelectVision(item)} className="cursor-pointer">
@@ -105,9 +103,9 @@ export const VisionsPage = ({
                 )}
               </div>
               {loadingMore && <div className="mt-6 flex justify-center"><Loading /></div>}
-            </CloudBox>
-          </ResonanceScan>
-        )}
+            </ResonanceScan>
+          )}
+        </ListBox>
       </SectionHeader>
     </div>
   );

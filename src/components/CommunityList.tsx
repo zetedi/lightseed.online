@@ -9,7 +9,8 @@ import { communityThemePresets } from '../utils/theme';
 import { sanitizeRichText } from '../utils/sanitize';
 import { Loading } from './ui/Loading';
 import { SectionHeader } from './ui/SectionHeader';
-import { tabTone } from '../utils/tabTheme';
+import { ListBox } from './ui/ListBox';
+import { tabTone, CTA_GLOW } from '../utils/tabTheme';
 
 interface CommunityListProps {
   onSelect: (community: Community) => void;
@@ -153,13 +154,14 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
         action={myTrees.length > 0 ? (
           <button
             onClick={() => setShowCreate(true)}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-full text-sm font-bold shadow-md shadow-emerald-600/20 transition-all flex items-center gap-1.5 border border-emerald-500/30 active:scale-95"
+            className={`bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-1.5 active:scale-95 ${CTA_GLOW}`}
           >
             <Icons.Plus />
             <span>{t('register_community')}</span>
           </button>
         ) : undefined}
       >
+        <ListBox tone={tabTone('communities')}>
         {loading ? (
           <div className="flex justify-center py-24">
             <Loading />
@@ -189,7 +191,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
               )}
           </div>
         ) : (filteredCommunities.length === 0 && !showGenesis) ? (
-          <p className="text-center text-slate-400 py-16">No communities match your search.</p>
+          <p className="text-center text-slate-500 py-16">No communities match your search.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8">
             {showGenesis && <CommunityCard community={genesisCommunity!} isGenesis={true} />}
@@ -200,6 +202,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
             ))}
           </div>
         )}
+        </ListBox>
       </SectionHeader>
 
       {showCreate && (

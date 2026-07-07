@@ -96,14 +96,10 @@ export const ResonancePanel = ({
 }) => {
   if (!synergies || synergies.length === 0) return null;
   const ranked = [...synergies].sort((a, b) => (b.score || 0) - (a.score || 0));
+  // No header of its own — the page's tabs already say where we are.
   return (
-    <div className={`overflow-hidden bg-amber-50/90 backdrop-blur-md rounded-2xl border-2 border-amber-200 shadow-lg animate-in zoom-in-95 duration-500 ${className}`}>
-      {/* Centered header on an amber band. */}
-      <div className="flex items-center justify-center gap-2.5 bg-amber-500 px-6 py-3.5 text-white">
-        <Icons.SparkleFill size={20} />
-        <h3 className="text-xl font-light italic tracking-wide">Alignments</h3>
-      </div>
-      <div className="grid gap-4 p-6 md:grid-cols-2">
+    <div className={`animate-in zoom-in-95 duration-500 ${className}`}>
+      <div className="grid gap-4 md:grid-cols-2">
         {ranked.map((s, i) => (
           <ResonanceCard
             key={i}

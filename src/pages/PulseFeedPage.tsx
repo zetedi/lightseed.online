@@ -3,7 +3,7 @@ import { SectionHeader } from '../components/ui/SectionHeader';
 import { PulseCard } from '../components/PulseCard';
 import { Loading } from '../components/ui/Loading';
 import { ViewDensityToggle } from '../components/ui/ViewDensityToggle';
-import { CloudBox } from '../components/ui/CloudBox';
+import { ListBox } from '../components/ui/ListBox';
 import { useListDensity, densityGridClass } from '../hooks/useListDensity';
 import type { Pulse, Lightseed } from '../types';
 
@@ -39,10 +39,10 @@ export const PulseFeedPage = ({
         action={action}
         pattern={pattern}
       >
-        <CloudBox>
+        <ListBox tone={tone}>
           <div className={densityGridClass(density)}>
             {items.length === 0 && !loadingMore ? (
-              <p className="col-span-full py-10 text-center text-slate-400">{emptyText}</p>
+              <p className="col-span-full py-10 text-center text-slate-500">{emptyText}</p>
             ) : (
               items.map(item => (
                 <div key={item.id}>
@@ -52,7 +52,7 @@ export const PulseFeedPage = ({
             )}
           </div>
           {loadingMore && <div className="mt-6 flex justify-center"><Loading /></div>}
-        </CloudBox>
+        </ListBox>
       </SectionHeader>
     </div>
   );

@@ -263,9 +263,10 @@ export const Navigation = ({
                         </div>
                         <span dir="ltr" className="hidden max-w-[160px] truncate font-light text-2xl lowercase tracking-wide sm:inline">{appName}</span>
                         {/* Mobile: the current list's name lives up here, next to the logo — the
-                            page headers below carry no title, so this is the "where am I". */}
+                            page headers below carry no title, so this is the "where am I". Quiet:
+                            small, in the same colour as the hamburger lines. */}
                         {activeTab !== 'dashboard' && !isMenuOpen && (
-                            <span dir="auto" className="max-w-[40vw] truncate font-light text-xl tracking-wide sm:hidden" style={{ color: tabTone(activeTab, theme) }}>{getTabLabel(activeTab)}</span>
+                            <span dir="auto" className="max-w-[40vw] truncate text-sm font-medium tracking-wide sm:hidden" style={{ color: navText }}>{getTabLabel(activeTab)}</span>
                         )}
                     </div>
 

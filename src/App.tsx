@@ -31,7 +31,7 @@ import {
   getPendingTreeInvites
 } from './services/firebase';
 import { setActiveIntelligenceId } from './services/intelligence';
-import { tabTone } from './utils/tabTheme';
+import { tabTone, CTA_GLOW } from './utils/tabTheme';
 import { type Pulse, type Lifetree, type Alignment, type Vision, type Community, type VisionSynergy, type ReachAudience } from './types';
 import Logo from './components/Logo';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
@@ -54,6 +54,7 @@ import { queryableLevels, canEditEvent, pulseScope } from './domain/pulseVisibil
 import { passesForestFilter, canViewTree } from './domain/views/forest';
 import { isWateringOverdue } from './domain/watering';
 import { Loading } from './components/ui/Loading';
+import { SectionHeader } from './components/ui/SectionHeader';
 import { ScrollChevrons } from './components/ui/ScrollChevrons';
 import { Footer } from './components/ui/Footer';
 import { FirstRunChecklist } from './components/FirstRunChecklist';
@@ -575,73 +576,65 @@ const AppContent = () => {
         return (
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 min-h-[80vh]">
                 {tab === 'forest' && (
-                    <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-                        <div className="relative w-full md:max-w-md">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                                <Icons.Search />
+                    /* The forest's controls in the same band as every list: search left, the
+                       grid/map switch, then the CTAs (lightseed glow) at the right. */
+                    <SectionHeader
+                        title={t('forest')}
+                        tone={tabTone('forest', effectiveTheme)}
+                        footer={
+                            <div className="relative w-full">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Icons.Search /></div>
+                                <input
+                                    dir="auto"
+                                    type="text"
+                                    list="search-suggestions"
+                                    className="block w-full pl-10 pr-3 py-2 border border-white/20 rounded-xl leading-5 bg-white/90 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-white focus:border-white sm:text-sm shadow-sm"
+                                    placeholder={t('search_placeholder')}
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                                <datalist id="search-suggestions">
+                                    {searchSuggestions.map((s, i) => <option key={i} value={s} />)}
+                                </datalist>
                             </div>
-                            <input
-                                dir="auto"
-                                type="text"
-                                list="search-suggestions"
-                                className={`block w-full pl-10 pr-3 py-2 border rounded-lg leading-5 backdrop-blur focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm shadow-sm ${effectiveIsDark ? 'border-slate-700 bg-slate-900/80 text-white placeholder-slate-400' : 'border-slate-200 bg-white/90 text-slate-900 placeholder-slate-400'}`}
-                                placeholder={t('search_placeholder')}
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                style={{ borderColor: effectiveTheme.primary }}
-                            />
-                            <datalist id="search-suggestions">
-                                {searchSuggestions.map((s, i) => <option key={i} value={s} />)}
-                            </datalist>
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                            {tab === 'forest' && (
-                                <button 
+                        }
+                        toggle={
+                            <div className="flex shrink-0 items-center rounded-full bg-white/15 p-0.5 backdrop-blur-sm">
+                                <button onClick={() => setViewMode('grid')} title={t('list_view')} aria-pressed={viewMode === 'grid'}
+                                    className={`rounded-full p-2 transition-all ${viewMode === 'grid' ? 'bg-white text-slate-800 shadow-sm' : 'text-white/75 hover:text-white'}`}>
+                                    <Icons.List />
+                                </button>
+                                <button onClick={() => setViewMode('map')} title={t('map_view')} aria-pressed={viewMode === 'map'}
+                                    className={`rounded-full p-2 transition-all ${viewMode === 'map' ? 'bg-white text-slate-800 shadow-sm' : 'text-white/75 hover:text-white'}`}>
+                                    <Icons.Map />
+                                </button>
+                            </div>
+                        }
+                        action={
+                            <div className="flex items-center gap-2">
+                                <button
                                     onClick={() => openPlant({ type: 'LIFETREE', step: 2 })}
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2 transition-colors h-10"
+                                    className={`bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-all active:scale-95 ${CTA_GLOW}`}
                                     style={{ backgroundColor: effectiveTheme.primary }}
                                 >
                                     <Icons.Tree />
                                     <span className="hidden sm:inline">{t('plant_lifetree')}</span>
                                     <span className="sm:hidden">Plant</span>
                                 </button>
-                            )}
-
-                            {tab === 'forest' && myTrees.length > 0 && (
-                                <button 
-                                    onClick={() => openPlant({ type: 'GUARDED', step: 2 })}
-                                    className="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2 transition-colors h-10"
-                                    style={{ backgroundColor: effectiveTheme.secondary }}
-                                >
-                                    <Icons.Shield />
-                                    <span className="hidden sm:inline">{t('guard_tree')}</span>
-                                    <span className="sm:hidden">{t('guard')}</span>
-                                </button>
-                            )}
-
-                            {tab === 'forest' && (
-                                <div className={`backdrop-blur p-1 rounded-lg border flex shadow-sm h-10 ${effectiveIsDark ? 'bg-slate-900/80 border-slate-700' : 'bg-white/90 border-slate-200'}`} style={{ borderColor: effectiveTheme.primary }}>
-                                    <button 
-                                        onClick={() => setViewMode('grid')}
-                                        className={`px-3 py-1 text-sm font-medium rounded-md transition-all flex items-center justify-center ${viewMode === 'grid' ? 'bg-emerald-600 text-white shadow' : effectiveIsDark ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-950'}`}
-                                        style={viewMode === 'grid' ? { backgroundColor: effectiveTheme.primary } : {}}
+                                {myTrees.length > 0 && (
+                                    <button
+                                        onClick={() => openPlant({ type: 'GUARDED', step: 2 })}
+                                        className={`bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-all active:scale-95 ${CTA_GLOW}`}
+                                        style={{ backgroundColor: effectiveTheme.secondary }}
                                     >
-                                        <Icons.List />
-                                        <span className="hidden lg:inline ml-2">{t('list_view')}</span>
+                                        <Icons.Shield />
+                                        <span className="hidden sm:inline">{t('guard_tree')}</span>
+                                        <span className="sm:hidden">{t('guard')}</span>
                                     </button>
-                                    <button 
-                                        onClick={() => setViewMode('map')}
-                                        className={`px-3 py-1 text-sm font-medium rounded-md transition-all flex items-center justify-center ${viewMode === 'map' ? 'bg-emerald-600 text-white shadow' : effectiveIsDark ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-950'}`}
-                                        style={viewMode === 'map' ? { backgroundColor: effectiveTheme.primary } : {}}
-                                    >
-                                        <Icons.Map />
-                                        <span className="hidden lg:inline ml-2">{t('map_view')}</span>
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                                )}
+                            </div>
+                        }
+                    />
                 )}
 
                 {tab === 'observatory' && (
@@ -719,7 +712,7 @@ const AppContent = () => {
                         densityKey="events"
                         searchBox={searchBox}
                         action={lightseed && (
-                            <button onClick={() => setShowEventModal(true)} className="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2.5 rounded-full font-bold shadow-lg shadow-sky-600/20 transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap">
+                            <button onClick={() => setShowEventModal(true)} className={`bg-sky-600 hover:bg-sky-700 text-white px-4 py-2.5 rounded-full font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}>
                                 <Icons.Plus /> <span>{t('create_event')}</span>
                             </button>
                         )}
@@ -738,7 +731,7 @@ const AppContent = () => {
                         densityKey="pulses"
                         searchBox={searchBox}
                         action={lightseed && (
-                            <button onClick={() => openPulseModal()} className="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2.5 rounded-full font-bold shadow-lg shadow-sky-600/20 transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap">
+                            <button onClick={() => openPulseModal()} className={`bg-orange-600 hover:bg-orange-700 text-white px-4 py-2.5 rounded-full font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}>
                                 <Icons.Pulse /> <span>{t('emit_pulse')}</span>
                             </button>
                         )}
@@ -879,7 +872,6 @@ const AppContent = () => {
                 ) : renderMainContent()}
                 </Suspense>
                 <GDPRBanner />
-                <DialogHost />
 
                 {showAuthModal && !lightseed && (
                     <AuthModal onClose={() => setShowAuthModal(false)} inviteId={inviteParam} inviteOnly={config.inviteOnly} />
@@ -1005,6 +997,12 @@ const AppContent = () => {
                 />
             )}
             </Suspense>
+
+            {/* Alerts/confirms must be the TOP layer. At the root — outside the `relative z-20`
+                content wrapper — so its z-[100] competes at root level and beats every overlay
+                (DetailWrapper z-40, Modal z-50); inside the wrapper it was trapped in a z-20
+                stacking context and errors hid behind open detail views. */}
+            <DialogHost />
         </div>
     );
 }
