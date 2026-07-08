@@ -14,6 +14,7 @@ import {
   acceptAlignment,
   rejectAlignment,
   getAlignmentById,
+  findAlignmentForSyncBlock,
   getLifetreeById,
   getPulseById,
   createVision,
@@ -92,7 +93,7 @@ const EmitPulseModal = lazy(() => import('./components/modals/EmitPulseModal').t
 const EventModal = lazy(() => import('./components/modals/EventModal').then(m => ({ default: m.EventModal })));
 const CreateVisionModal = lazy(() => import('./components/modals/CreateVisionModal').then(m => ({ default: m.CreateVisionModal })));
 const DataModelCrystal = lazy(() => import('./components/about/DataModelCrystal').then(m => ({ default: m.DataModelCrystal })));
-const AlignmentProfile = lazy(() => import('./components/AlignmentProfile').then(m => ({ default: m.AlignmentProfile })));
+const AlignmentView = lazy(() => import('./components/sections/AlignmentView').then(m => ({ default: m.AlignmentView })));
 
 // The full-screen overlay every detail view (tree / vision / event / community) scrolls inside.
 // Module-scope so it keeps a stable identity (an inline definition remounts its subtree — and
@@ -384,9 +385,10 @@ const AppContent = () => {
             const res = await acceptAlignment(id);
             setAlignments(prev => prev.filter(a => a.id !== id)); // drop the accepted request
             await showAlert("Aligned — a shared sync-block is now on both chains.", 'Alignment');
-            // Open the resulting block on your chain (the "link to the pulse").
+            // Open the resulting block on your chain — through the unified router, so the
+            // freshly minted sync-block lands on the alignment view like everywhere else.
             const pulse = await getPulseById(res.targetPulseId).catch(() => null);
-            if (pulse) setSelectedPulse(pulse);
+            if (pulse) await onViewPulseOrAlignment(pulse);
             loadContent(true);
         }
         catch(e:any) {
@@ -404,13 +406,18 @@ const AppContent = () => {
         if (tr) setSelectedTree(tr);
     };
 
-    // A pulse on a tree's chain. An alignment sync-block (isMatch, matchId) opens the same
-    // AlignmentProfile as the profile's alignments list — one view, reached from either place —
-    // instead of the raw pulse modal. Everything else opens the pulse.
+    // THE single router for opening a pulse. An alignment sync-block (isMatch) opens the same
+    // AlignmentView as the profile's alignments list — one view, reached from every surface
+    // (feeds, tree leaves, dashboard, community events) — instead of the raw pulse modal.
+    // Modern sync-blocks carry the alignment id in `matchId`; LEGACY ones were minted with only
+    // `isMatch`, so their alignment is resolved through the tree the block sits on (this was the
+    // gap that let alignment leaves on a tree's chain fall through to the generic pulse modal).
+    // Everything else opens the pulse. All pulse-opening props below go through here.
     const onViewPulseOrAlignment = async (p: Pulse) => {
-        const matchId = (p as any).matchId;
-        if ((p as any).isMatch && matchId) {
-            const alignment = await getAlignmentById(matchId).catch(() => null);
+        if (p.isMatch) {
+            const alignment = p.matchId
+                ? await getAlignmentById(p.matchId).catch(() => null)
+                : (p.lifetreeId ? await findAlignmentForSyncBlock(p.lifetreeId, p.createdAt?.toMillis()).catch(() => null) : null);
             if (alignment) { setSelectedTree(null); setSelectedAlignment(alignment); return; }
         }
         setSelectedTree(null);
@@ -471,7 +478,7 @@ const AppContent = () => {
                         }}
                         hostCommunity={impersonatedCommunity || hostCommunity}
                         events={dashboardEvents}
-                        onViewEvent={(p: Pulse) => setSelectedPulse(p)}
+                        onViewEvent={(p: Pulse) => { void onViewPulseOrAlignment(p); }}
                         onViewCommunity={setSelectedCommunity}
                         onSetTab={setTab}
                         onPlant={() => openPlant()}
@@ -722,7 +729,7 @@ const AppContent = () => {
                         loadingMore={loadingMore}
                         lightseed={lightseed}
                         onMatch={(p: Pulse) => { setSelectedPulse(p); openPulseModal(); }}
-                        onView={(p: Pulse) => setSelectedPulse(p)}
+                        onView={(p: Pulse) => { void onViewPulseOrAlignment(p); }}
                         pattern
                     />
                 ) : tab !== 'observatory' && tab !== 'profile' && tab !== 'inspiration' && tab !== 'about' && tab !== 'dashboard' && tab !== 'newsletter' && tab !== 'communities' && (
@@ -741,7 +748,7 @@ const AppContent = () => {
                         loadingMore={loadingMore}
                         lightseed={lightseed}
                         onMatch={(p: Pulse) => { setMatchCandidate(p); openPulseModal(); }}
-                        onView={(p: Pulse) => setSelectedPulse(p)}
+                        onView={(p: Pulse) => { void onViewPulseOrAlignment(p); }}
                     />
                 )}
             </main>
@@ -851,7 +858,7 @@ const AppContent = () => {
                     </div>
                 ) : selectedAlignment ? (
                     <div className="animate-in fade-in duration-200">
-                        <AlignmentProfile
+                        <AlignmentView
                             alignment={selectedAlignment}
                             currentUserId={lightseed?.uid}
                             onClose={() => setSelectedAlignment(null)}
@@ -918,7 +925,7 @@ const AppContent = () => {
                     <CommunityProfile
                         community={selectedCommunity}
                         onViewTree={(tree: Lifetree) => { setSelectedCommunity(null); setSelectedTree(tree); }}
-                        onViewEvent={(p: Pulse) => { setSelectedCommunity(null); setSelectedPulse(p); }}
+                        onViewEvent={(p: Pulse) => { setSelectedCommunity(null); void onViewPulseOrAlignment(p); }}
                         onClose={() => { setSelectedCommunity(null); setMapRefreshKey(k => k + 1); }}
                         onUpdate={(updates) => {
                             setSelectedCommunity(prev => prev ? { ...prev, ...updates } : null);

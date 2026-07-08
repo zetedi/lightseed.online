@@ -1,8 +1,8 @@
 import type { Entity } from './entity';
 
 // A relationship is itself an Entity: a directed edge between two LIDs. The network (LIN) is
-// the living graph these links form. Scaffolding only — the `links` collection + service is
-// the deferred Phase 2 (see memory/lid-lin-entity); nothing reads/writes links yet.
+// the living graph these links form, persisted in the `links` collection — the single source
+// of truth for relations (see src/adapters/firestore.ts and memory/lid-lin-entity).
 // 'participant' is the one edge whose `from` is a LIFETREE (not a uid): a tree the owner has
 // enlisted in an event or vision. Every other rel points a person at a target.
 export type LinkRel = 'guardian' | 'co_owner' | 'steward' | 'observer' | 'member' | 'joined' | 'participant';

@@ -5,9 +5,7 @@ import { Community, Lifetree } from '../../types';
 import { getTreesByDomain, getPulsesByTreeId, updateCommunity } from '../../services/firebase';
 import { isCanonicallySealed, verifyBlockSeal, type ChainBlock } from '../../domain/chain';
 import { setTokenisationEnabled } from '../../domain/tokenisation';
-import RichTextEditor from '../ui/RichTextEditor';
-import { SectionTitle } from '../ui/SectionTitle';
-import { sanitizeRichText } from '../../utils/sanitize';
+import { VisionSection } from '../sections/VisionSection';
 
 interface CommunityVisionProps {
   community: Community;
@@ -29,7 +27,10 @@ interface CommunityVisionProps {
   onUpdate?: (updates: Partial<Community>) => void;
 }
 
-// Vision tab — the community's vision text, the chain seal and the tokenisation toggle.
+// Vision tab — a community binding over the entity-generic VisionSection: the vision editor
+// itself is shared; the chain seal and tokenisation toggle are node-level commitments
+// (community.chainLocked / community.tokenisationEnabled), so they stay here and ride in
+// through the section's `extras` slot.
 export const CommunityVision: React.FC<CommunityVisionProps> = ({
   community,
   canEdit,
@@ -131,23 +132,10 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
     setIsVerifying(false);
   };
 
-  return (
-    <div>
-      <SectionTitle title="Vision" sub="What this community is growing towards." />
-      {canEdit ? (
-        <>
-          <RichTextEditor value={editVision} onChange={onVisionChange} placeholder="Share your community's vision..." />
-          <div className="mt-6 flex items-center gap-3">
-            <button onClick={onSave} disabled={saveDisabled} className="rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-700 disabled:opacity-50">
-              {isSaving ? 'Saving...' : 'Save Changes'}
-            </button>
-            {status && <span className="text-sm text-slate-500">{status}</span>}
-          </div>
-        </>
-      ) : (
-        <div className="prose prose-slate max-w-none text-slate-700 leading-relaxed break-words [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg" dangerouslySetInnerHTML={{ __html: community.vision ? sanitizeRichText(community.vision) : '<p>No vision shared yet.</p>' }} />
-      )}
-
+  // Node-level commitments injected under the shared vision — the chain seal and the
+  // tokenisation toggle are community/node-only, so they live here, not in the section.
+  const extras = (
+    <>
       {/* The chain seal — this node's commitment to a verifiable chain. Sealed is a public
           mark of integrity (shown to all); sealing is the owner's one-way "big red stamp". */}
       {(chainSealed || canEdit) && (
@@ -230,6 +218,23 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
           </div>
         </div>
       )}
-    </div>
+    </>
+  );
+
+  return (
+    <VisionSection
+      canEdit={canEdit}
+      vision={community.vision}
+      editValue={editVision}
+      onChange={onVisionChange}
+      onSave={onSave}
+      isSaving={isSaving}
+      saveDisabled={saveDisabled}
+      status={status}
+      title="Vision"
+      sub="What this community is growing towards."
+      placeholder="Share your community's vision..."
+      extras={extras}
+    />
   );
 };

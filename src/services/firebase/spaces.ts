@@ -1,8 +1,8 @@
-import { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, setDoc, runTransaction, getDoc, where, updateDoc, deleteDoc, limit, startAfter, QueryDocumentSnapshot, writeBatch, deleteField, getCountFromServer } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, setDoc, runTransaction, getDoc, where, updateDoc, deleteDoc, limit, startAfter, QueryDocumentSnapshot, writeBatch, deleteField, getCountFromServer, type CollectionReference, type DocumentData } from 'firebase/firestore';
 import { type Pulse, type Vision, type Community } from '../../types';
 import { uuidv7 } from '../../utils/id';
 import { type PulseVisibility } from '../../domain/pulse';
-import { db, toMillis, mapDoc, lifetreesCollection, visionsCollection, pulsesCollection, communitiesCollection } from './core';
+import { db, toMillis, mapDoc, lifetreesCollection, visionsCollection, pulsesCollection, communitiesCollection, sanctuariesCollection } from './core';
 import { isHubDomain } from './trees';
 
 export const fetchVisions = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {
@@ -216,6 +216,46 @@ export const dropLegacyArrays = async (): Promise<number> => {
     await clear(communitiesCollection, ['memberIds']);
     await clear(visionsCollection, ['joinedUserIds']);
     return n;
+};
+
+// One-time migration to a fully lid-carrying data model: mint a `lid` (Lightseed ID, UUIDv7)
+// on every doc that lacks one, across the core entity collections. The lid is seeded from the
+// doc's createdAt millis — uuidv7(createdAt.toMillis()) — so the birth-time embedded in the id
+// is the entity's TRUE birth time (docs with no createdAt fall back to now).
+// Sealed pulses (hashVersion set) are SKIPPED: `lid` is canonical block content
+// (BLOCK_CONTENT_FIELDS), so adding it post-seal would break hash verification — and every
+// sealed block was minted with its lid already. Staff-run, idempotent. Returns per-collection
+// counts (+ how many sealed pulses were left untouched, expected 0).
+export const migrateBackfillLids = async (): Promise<Record<string, number>> => {
+    const targets: [string, CollectionReference<DocumentData>][] = [
+        ['communities', communitiesCollection],
+        ['lifetrees', lifetreesCollection],
+        ['visions', visionsCollection],
+        ['pulses', pulsesCollection],
+        ['sanctuaries', sanctuariesCollection],
+        ['persons', collection(db, 'persons')],
+    ];
+    const counts: Record<string, number> = {};
+    let total = 0, skippedSealed = 0;
+    for (const [name, ref] of targets) {
+        const snap = await getDocs(ref);
+        const missing = snap.docs.filter(d => {
+            const data = d.data();
+            if (data.lid !== undefined) return false;
+            if (name === 'pulses' && data.hashVersion !== undefined) { skippedSealed++; return false; }
+            return true;
+        });
+        for (let i = 0; i < missing.length; i += 400) {
+            const batch = writeBatch(db);
+            missing.slice(i, i + 400).forEach(d => batch.update(d.ref, { lid: uuidv7(toMillis(d.data().createdAt) || Date.now()) }));
+            await batch.commit();
+        }
+        counts[name] = missing.length;
+        total += missing.length;
+        console.log(`[lightseed] lid backfill — ${name}: ${missing.length} doc(s) stamped`);
+    }
+    if (skippedSealed > 0) console.warn(`[lightseed] lid backfill — ${skippedSealed} sealed pulse(s) missing a lid were left untouched (lid is sealed block content).`);
+    return { ...counts, skippedSealed, total };
 };
 
 // --- Organisation collabs -------------------------------------------------------------

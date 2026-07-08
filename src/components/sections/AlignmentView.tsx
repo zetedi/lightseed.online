@@ -1,23 +1,29 @@
 import { useEffect, useState } from 'react';
-import type { Alignment, AlignmentNote, Lifetree } from '../types';
-import { getLifetreeById, getPulseById, getPersonName, postAlignmentNote, getAlignmentById } from '../services/firebase';
-import { Icons } from './ui/Icons';
-import { Loading } from './ui/Loading';
-import { useLanguage } from '../contexts/LanguageContext';
-import { ProfileHero } from './ui/ProfileHero';
-import { SectionTitle } from './ui/SectionTitle';
+import type { Alignment, AlignmentNote, Lifetree } from '../../types';
+import { getLifetreeById, getPulseById, getPersonName, postAlignmentNote, getAlignmentById } from '../../services/firebase';
+import { Icons } from '../ui/Icons';
+import { Loading } from '../ui/Loading';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { ProfileHero } from '../ui/ProfileHero';
+import { SectionTitle } from '../ui/SectionTitle';
 
-// An alignment's own page — the same profile scaffold as visions/events. Shows the two trees it
-// binds, the two pulses that rhymed, and the discussion that carries it from initiation to a
-// finalised sync-block. An accepted alignment is a mutual sync-block on both chains; a pending one
-// is still an open conversation between the two trees.
+// THE alignment view — the one page every alignment opens into, whether reached from a feed's
+// sync-block, a tree's chain leaf, the profile's alignments list, or the Observatory. Same
+// profile scaffold as visions/events: the two sides it binds, the two pulses that rhymed, and
+// the discussion that carries it from initiation to a finalised sync-block. An accepted
+// alignment is a mutual sync-block on both chains; a pending one is still an open conversation.
+//
+// Today each side/party of an alignment is a lifetree. The direction (Indra's net) is that
+// alignments will also bind decisions, community events, and node pulses — so the framing here
+// stays entity-generic ("side"/"party") where cheap, and only the leaf rendering assumes trees.
 
 interface Side { tree: Lifetree | null; ownerName?: string; pulse?: { title?: string; body?: string } | null; }
 
-interface AlignmentProfileProps {
+interface AlignmentViewProps {
   alignment: Alignment;
   currentUserId?: string;
   onClose: () => void;
+  // Navigate to a side's entity — a lifetree today; other party kinds later.
   onViewTree?: (tree: Lifetree) => void;
 }
 
@@ -27,7 +33,9 @@ const STATUS: Record<string, { label: string; cls: string }> = {
   REJECTED: { label: 'Declined', cls: 'bg-slate-100 text-slate-500' },
 };
 
-const TreeSide = ({ side, tone, onView }: { side: Side; tone: 'sky' | 'emerald'; onView?: (t: Lifetree) => void }) => {
+// One party of the alignment — rendered as its tree today; the card stays side-shaped so other
+// party kinds (decision, event, node) can slot in later.
+const PartySide = ({ side, tone, onView }: { side: Side; tone: 'sky' | 'emerald'; onView?: (t: Lifetree) => void }) => {
   const ring = tone === 'sky' ? 'ring-sky-300' : 'ring-emerald-300';
   const bg = tone === 'sky' ? 'from-sky-300 to-sky-500' : 'from-emerald-300 to-emerald-500';
   const t = side.tree;
@@ -50,7 +58,7 @@ const PulseChip = ({ cap, text, tone }: { cap: string; text?: string; tone: 'sky
   </div>
 );
 
-export const AlignmentProfile = ({ alignment, currentUserId, onClose, onViewTree }: AlignmentProfileProps) => {
+export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree }: AlignmentViewProps) => {
   const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [initiator, setInitiator] = useState<Side>({ tree: null });
@@ -140,13 +148,13 @@ export const AlignmentProfile = ({ alignment, currentUserId, onClose, onViewTree
             </div>
           ) : (
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-            <TreeSide side={initiator} tone="sky" onView={onViewTree} />
-            {/* A calm connector — the two trees linked, no colour, no label. */}
+            <PartySide side={initiator} tone="sky" onView={onViewTree} />
+            {/* A calm connector — the two sides linked, no colour, no label. */}
             <svg width="44" height="24" viewBox="0 0 44 24" fill="none" stroke="#cbd5e1" strokeWidth="1.6" aria-hidden="true" className="shrink-0">
               <circle cx="17" cy="12" r="8" />
               <circle cx="27" cy="12" r="8" />
             </svg>
-            <TreeSide side={target} tone="emerald" onView={onViewTree} />
+            <PartySide side={target} tone="emerald" onView={onViewTree} />
           </div>
           )}
 

@@ -139,3 +139,6 @@ serviceAccount.json
 # Initiation private keys — never commit
 initiation-private.pem
 *.initiation.pem
+
+# Build-time mirror of git log (scripts/build-commits.mjs) — regenerated every build, never source
+public/commits.json

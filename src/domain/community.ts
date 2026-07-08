@@ -47,7 +47,8 @@ export interface Community extends Entity {
   // Tree Circle — communities that emerged from shared care of a Lifetree.
   rootLifetreeId?: string;       // the living anchor this community grew from
   founderUserId?: string;
-  memberIds?: string[];
+  // Membership lives in the `links` collection ('member' rel) — the legacy memberIds array
+  // is gone from both the type and the data (dropLegacyArrays cleared the docs).
   formation?: 'tree_co_ownership' | 'project' | 'organization' | 'manual';
   visibility?: 'private' | 'invited' | 'public';
 }

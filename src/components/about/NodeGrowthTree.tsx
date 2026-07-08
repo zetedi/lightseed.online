@@ -1,17 +1,19 @@
-import { useMemo } from 'react';
-import type { Community, Lifetree } from '../../types';
+import { useEffect, useMemo, useState } from 'react';
+import type { Community, Lifetree, LinkRel } from '../../types';
+import { firestoreStore } from '../../adapters/firestore';
 
 // The Node Growth Tree — a living diagram of the node's model *instance*, generated on the fly from
 // the data: each lifetree is a branch radiating from the community seed, sized by its weight. The
 // weight distribution is the point — heavy nodes (long chains), heavy links (role edges) and pulses
 // (chain height) read at a glance. A community running on the node's domain drives this growth.
 
-const linkCount = (t: Lifetree) =>
-  (t.guardians?.length || 0) + (t.coOwnerIds?.length || 0) + (t.stewardIds?.length || 0) + (t.observerIds?.length || 0);
+// Role edges live in the `links` collection (the LIN) — the legacy per-role arrays are gone.
+const CIRCLE_RELS: LinkRel[] = ['guardian', 'co_owner', 'steward', 'observer'];
+interface TreeEdges { links: number; guardians: number }
 
 // A tree's weight: its chain growth (blockHeight = pulses) + its links (weighted) + a validated
 // bonus. This is what sizes the node and the branch that carries it.
-const treeWeight = (t: Lifetree) => (t.blockHeight || 0) + linkCount(t) * 2 + (t.validated ? 3 : 0) + 1;
+const treeWeight = (t: Lifetree, links: number) => (t.blockHeight || 0) + links * 2 + (t.validated ? 3 : 0) + 1;
 
 const kindColor = (t: Lifetree) => (t.validated ? '#fcd34d' : t.isNature ? '#38bdf8' : '#94a3b8');
 
@@ -25,17 +27,38 @@ export const NodeGrowthTree = ({ community, trees, onViewTree }: NodeGrowthTreeP
   const accent = community.theme?.primary || '#10b981';
   const CX = 400, CY = 400;
 
+  // Role-edge counts per tree, read from the LIN ('guardian'/'co_owner'/'steward'/'observer'
+  // links pointing INTO each tree) — the single source of truth for the circle.
+  const [edges, setEdges] = useState<Map<string, TreeEdges>>(new Map());
+  useEffect(() => {
+    let alive = true;
+    Promise.all(CIRCLE_RELS.map(rel => firestoreStore.linksByRel(rel))).then(perRel => {
+      if (!alive) return;
+      const counts = new Map<string, TreeEdges>();
+      perRel.forEach((links, i) => {
+        for (const l of links) {
+          const e = counts.get(l.to) || { links: 0, guardians: 0 };
+          e.links++;
+          if (CIRCLE_RELS[i] === 'guardian') e.guardians++;
+          counts.set(l.to, e);
+        }
+      });
+      setEdges(counts);
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, [trees]);
+
   const model = useMemo(() => {
     const list = trees.filter(Boolean);
     const n = list.length;
-    const weights = list.map(treeWeight);
+    const weights = list.map(t => treeWeight(t, edges.get(t.id)?.links || 0));
     const maxW = Math.max(1, ...weights);
     const maxP = Math.max(1, ...list.map(t => t.blockHeight || 0));
 
     const nodes = list.map((t, i) => {
       const pulses = t.blockHeight || 0;
       const w = weights[i];
-      const links = linkCount(t);
+      const links = edges.get(t.id)?.links || 0;
       // Even radial fan from the top, so the community sits at the seed and trees crystallise outward.
       const angle = (i / Math.max(1, n)) * Math.PI * 2 - Math.PI / 2;
       const len = 130 + 210 * (pulses / maxP);
@@ -56,12 +79,12 @@ export const NodeGrowthTree = ({ community, trees, onViewTree }: NodeGrowthTreeP
     });
 
     const totalPulses = list.reduce((a, t) => a + (t.blockHeight || 0), 0);
-    const totalLinks = list.reduce((a, t) => a + linkCount(t), 0);
-    const totalGuardians = list.reduce((a, t) => a + (t.guardians?.length || 0), 0);
+    const totalLinks = list.reduce((a, t) => a + (edges.get(t.id)?.links || 0), 0);
+    const totalGuardians = list.reduce((a, t) => a + (edges.get(t.id)?.guardians || 0), 0);
     const validated = list.filter(t => t.validated).length;
     const seedR = 28 + Math.min(46, Math.sqrt(weights.reduce((a, b) => a + b, 0)));
     return { nodes, n, totalPulses, totalLinks, totalGuardians, validated, seedR };
-  }, [trees]);
+  }, [trees, edges]);
 
   const stats: { label: string; value: number; tint: string }[] = [
     { label: 'Trees', value: model.n, tint: 'text-emerald-300' },

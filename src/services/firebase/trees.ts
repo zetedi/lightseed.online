@@ -76,6 +76,7 @@ export const ensureGenesis = async () => {
                     const communityRef = doc(db, 'communities', community.id);
                     await setDoc(communityRef, {
                         ...community,
+                        lid: uuidv7(), // every being is born with its Lightseed ID
                         createdAt: serverTimestamp(),
                         updatedAt: serverTimestamp()
                     });

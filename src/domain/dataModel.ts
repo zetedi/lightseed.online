@@ -56,7 +56,6 @@ export const DATA_MODEL: ModelEntity[] = [
       { name: 'genesisHash', type: 'string' },
       { name: 'latestHash', type: 'string' },
       { name: 'blockHeight', type: 'number' },
-      { name: 'guardians[]', type: 'uid[]', ref: 'Person', many: true },
     ],
   },
   {

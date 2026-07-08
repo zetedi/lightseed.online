@@ -13,6 +13,7 @@ import { CommunityFirstTree } from './community/CommunityFirstTree';
 import { CommunitySanctuary } from './community/CommunitySanctuary';
 import { CommunityTreesTab } from './community/CommunityTreesTab';
 import { CommunityIntelligence } from './community/CommunityIntelligence';
+import { CommunityCodeChain } from './community/CommunityCodeChain';
 import { CommunityAppearance } from './community/CommunityAppearance';
 import { SectionMenu } from './ui/SectionMenu';
 import { ProfileHero } from './ui/ProfileHero';
@@ -38,7 +39,7 @@ interface CommunityProfileProps {
   onEnterCommunityView?: (community: Community) => void;
 }
 
-type TabKey = 'vision' | 'firsttree' | 'sanctuary' | 'trees' | 'model' | 'events' | 'council' | LoreTabId | 'intelligence' | 'appearance';
+type TabKey = 'vision' | 'firsttree' | 'sanctuary' | 'trees' | 'model' | 'events' | 'council' | LoreTabId | 'codechain' | 'intelligence' | 'appearance';
 
 const bareDomain = (d?: string) => (d || '').toLowerCase().replace(/^www\./, '');
 
@@ -297,6 +298,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     // The network's founding lore (Genesis, the Path, the Yantra, Protection) stays with the
     // central lightseed / lifeseed nodes — every community will have its own genesis and path.
     ...loreTabs.filter(() => isNetworkHub).map(tab => ({ key: tab.id as TabKey, label: tab.label, icon: loreIcons[tab.id] })),
+    // The node's own body — the repo's git history drawn as a growth chain. Hub-only, like the lore.
+    ...(isNetworkHub ? [{ key: 'codechain' as TabKey, label: 'Code chain', icon: <Icons.Hash /> }] : []),
     ...(canEdit ? [
       { key: 'intelligence' as TabKey, label: 'Intelligence', icon: <Icons.Wizard /> },
       { key: 'appearance' as TabKey, label: 'Appearance', icon: <Icons.Image /> },
@@ -427,6 +430,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
             )}
 
             {isLoreTab(activeTab) && <LoreSection id={activeTab} />}
+
+            {activeTab === 'codechain' && isNetworkHub && <CommunityCodeChain />}
 
             {activeTab === 'intelligence' && canEdit && (
               <CommunityIntelligence community={community} canEdit={canEdit} currentUserId={currentUserId} onUpdate={onUpdate} />

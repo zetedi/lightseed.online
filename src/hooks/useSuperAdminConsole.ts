@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { ensureIntelligenceCommons } from '../services/intelligence';
 import {
   backfillPulseVisibility, migrateArraysToLinks, migratePulseTypeCasing, dropLegacyArrays, migrateTreeVisibility,
+  migrateBackfillLids, migrateBackfillMatchIds,
 } from '../services/firebase';
 import { setChainLocked, canonicalize, computeCanonicalHash, blockContent, verifyChain } from '../domain/chain';
 
@@ -51,6 +52,22 @@ export function useSuperAdminConsole(isSuperAdmin: boolean, uid?: string) {
       console.log(`[lightseed] done — stamped ${r.updated} tree(s).`);
       return r;
     };
+    // Backfill lids (UUIDv7 true-names, seeded from createdAt) on every doc missing one across
+    // communities/lifetrees/visions/pulses/sanctuaries/persons. Idempotent.
+    w.migrateBackfillLids = async () => {
+      console.log('[lightseed] backfilling lids (UUIDv7, seeded from createdAt)…');
+      const r = await migrateBackfillLids();
+      console.log('[lightseed] done — lids minted:', r);
+      return r;
+    };
+    // Backfill matchId on legacy alignment sync-blocks (isMatch without matchId). After a verified
+    // run, the runtime fallback (findAlignmentForSyncBlock) is only a safety net. Idempotent.
+    w.migrateBackfillMatchIds = async () => {
+      console.log('[lightseed] backfilling matchId on legacy alignment sync-blocks…');
+      const r = await migrateBackfillMatchIds();
+      console.log(`[lightseed] done — stamped ${r.stamped}, unresolved ${r.unresolved}, sealed skipped ${r.skippedSealed}.`);
+      return r;
+    };
     // Crystal: flip the in-memory chain lock to TEST canonical (verifiable) minting this session,
     // and expose the chain toolkit for manual console verification. (The real switch is the
     // node's About → Vision stamp, persisted on community.chainLocked.)
@@ -62,6 +79,7 @@ export function useSuperAdminConsole(isSuperAdmin: boolean, uid?: string) {
     return () => {
       delete w.backfillPulseVisibility; delete w.migrateArraysToLinks; delete w.migratePulseTypeCasing;
       delete w.dropLegacyArrays; delete w.migrateTreeVisibility; delete w.setChainLocked; delete w.lightseedChain;
+      delete w.migrateBackfillLids; delete w.migrateBackfillMatchIds;
     };
   }, [isSuperAdmin]);
 }

@@ -219,10 +219,12 @@ service cloud.firestore {
     }
 
     // Persons: the canonical person entity (doc id = uid). World-readable (it carries a public
-    // lid and, later, a public key); each user writes only their own. Never deleted.
+    // lid and, later, a public key); each user writes only their own. Staff may update (e.g. the
+    // superadmin lid backfill — migrateBackfillLids) but never create-for or delete.
     match /persons/{personId} {
       allow read: if true;
-      allow create, update: if isSignedIn() && request.auth.uid == personId;
+      allow create: if isSignedIn() && request.auth.uid == personId;
+      allow update: if isSignedIn() && (request.auth.uid == personId || isStaff());
       allow delete: if false;
     }
 

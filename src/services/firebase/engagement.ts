@@ -1,8 +1,9 @@
-import { query, getDocs, addDoc, serverTimestamp, doc, runTransaction, getDoc, where, updateDoc, getCountFromServer, Timestamp } from 'firebase/firestore';
+import { query, getDocs, addDoc, serverTimestamp, doc, runTransaction, getDoc, where, updateDoc, getCountFromServer, writeBatch, Timestamp, type DocumentReference } from 'firebase/firestore';
 import { type Lifetree, type Alignment } from '../../types';
 import { createBlock } from '../../utils/crypto';
+import { uuidv7 } from '../../utils/id';
 import { isTokenisationEnabled } from '../../domain/tokenisation';
-import { db, mapDoc, pulsesCollection, alignmentsCollection } from './core';
+import { db, toMillis, mapDoc, pulsesCollection, alignmentsCollection } from './core';
 
 // What the initiator supplies; status/createdAt are stamped here, messages grow later.
 export type AlignmentProposal = Omit<Alignment, 'id' | 'status' | 'createdAt' | 'messages'>;
@@ -32,11 +33,63 @@ export const postAlignmentNote = async (id: string, uid: string, text: string): 
 };
 export const getPendingAlignments = async (uid: string) => (await getDocs(query(alignmentsCollection, where('targetUid', '==', uid), where('status', '==', 'PENDING')))).docs.map(d => (mapDoc(d) as Alignment));
 
-// One alignment by id — so a sync-block leaf on a tree opens the same AlignmentProfile view as the
-// profile's alignments list (an alignment pulse carries the alignment id in `matchId`).
+// One alignment by id — so a sync-block opened anywhere (feed, tree leaf, profile history) lands
+// on the same AlignmentView (an alignment pulse carries the alignment id in `matchId`).
 export const getAlignmentById = async (id: string): Promise<Alignment | null> => {
     const snap = await getDoc(doc(db, 'alignments', id));
     return snap.exists() ? (mapDoc(snap) as Alignment) : null;
+};
+
+// LEGACY sync-blocks (minted before `matchId` was stamped on them) carry only `isMatch`, so the
+// alignment must be resolved through the tree the block sits on: an ACCEPTED alignment this tree
+// took part in. When several exist, the one proposed latest before the block was minted wins
+// (a proposal always precedes its acceptance sync-block). Two single-field queries → dedupe.
+// NOTE: migrateBackfillMatchIds (below) stamps matchId onto those legacy blocks with this same
+// logic — after a verified run this fallback is a harmless safety net and can be removed.
+export const findAlignmentForSyncBlock = async (treeId: string, blockAtMillis?: number): Promise<Alignment | null> => {
+    const [asInitiator, asTarget] = await Promise.all([
+        getDocs(query(alignmentsCollection, where('initiatorTreeId', '==', treeId))),
+        getDocs(query(alignmentsCollection, where('targetTreeId', '==', treeId))),
+    ]);
+    const byId = new Map<string, Alignment>();
+    [...asInitiator.docs, ...asTarget.docs].forEach(d => byId.set(d.id, mapDoc(d) as Alignment));
+    const accepted = Array.from(byId.values()).filter(a => a.status === 'ACCEPTED');
+    if (accepted.length === 0) return null;
+    const at = blockAtMillis ?? Number.POSITIVE_INFINITY;
+    const proposedBefore = accepted.filter(a => (a.createdAt?.toMillis() ?? 0) <= at);
+    const pool = proposedBefore.length > 0 ? proposedBefore : accepted;
+    return pool.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0))[0] ?? null;
+};
+
+// One-time migration for legacy alignment sync-blocks: every pulse minted with `isMatch: true`
+// before `matchId` was stamped on new blocks gets its alignment resolved with the SAME tree+time
+// logic the runtime fallback uses (findAlignmentForSyncBlock), and the id written back. After a
+// verified run, that runtime fallback is only a harmless safety net and can be removed.
+// Sealed blocks (hashVersion set) are skipped — `matchId` is canonical block content
+// (BLOCK_CONTENT_FIELDS), so adding it post-seal would break hash verification; sealed sync-blocks
+// already carry their matchId anyway. Staff-run, idempotent (a stamped block is never revisited).
+export const migrateBackfillMatchIds = async (): Promise<{ stamped: number; unresolved: number; skippedSealed: number }> => {
+    const snap = await getDocs(query(pulsesCollection, where('isMatch', '==', true)));
+    const updates: { ref: DocumentReference; matchId: string }[] = [];
+    let unresolved = 0, skippedSealed = 0;
+    for (const d of snap.docs) {
+        const data = d.data();
+        if (data.matchId !== undefined) continue; // already canonical
+        if (data.hashVersion !== undefined) { skippedSealed++; continue; } // sealed — immutable content
+        const treeId = typeof data.lifetreeId === 'string' ? data.lifetreeId : '';
+        if (!treeId) { unresolved++; continue; }
+        const atMillis = toMillis(data.createdAt);
+        const alignment = await findAlignmentForSyncBlock(treeId, atMillis || undefined);
+        if (alignment) updates.push({ ref: d.ref, matchId: alignment.id });
+        else unresolved++;
+    }
+    for (let i = 0; i < updates.length; i += 400) {
+        const batch = writeBatch(db);
+        updates.slice(i, i + 400).forEach(u => batch.update(u.ref, { matchId: u.matchId }));
+        await batch.commit();
+        console.log(`[lightseed] matchId backfill — committed ${Math.min(i + 400, updates.length)}/${updates.length}`);
+    }
+    return { stamped: updates.length, unresolved, skippedSealed };
 };
 
 // Count of a user's accepted alignments (both sides) — server-side COUNT for the dashboard stat.
@@ -92,6 +145,7 @@ export const acceptAlignment = async (proposalId: string): Promise<AlignmentResu
         const targetPulseRef = doc(pulsesCollection);
 
         t.set(initPulseRef, {
+            lid: uuidv7(),
             lifetreeId: proposal.initiatorTreeId, type: 'standard', title: 'Alignment',
             body: `Aligned with ${targetTree?.name || 'another tree'}.`,
             isMatch: true, matchId: proposal.id, matchedLifetreeId: proposal.targetTreeId,
@@ -101,6 +155,7 @@ export const acceptAlignment = async (proposalId: string): Promise<AlignmentResu
         t.update(initTreeRef, { latestHash: initHash, blockHeight: initTree.blockHeight + 1 });
 
         t.set(targetPulseRef, {
+            lid: uuidv7(),
             lifetreeId: proposal.targetTreeId, type: 'standard', title: 'Alignment',
             body: `Aligned with ${initTree?.name || 'another tree'}.`,
             isMatch: true, matchId: proposal.id, matchedLifetreeId: proposal.initiatorTreeId,

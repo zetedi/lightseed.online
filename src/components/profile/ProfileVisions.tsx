@@ -84,7 +84,8 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
   return (
     <div>
       <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
-        <h3 className="text-lg font-bold">My Visions</h3>
+        {/* Non-possessive on purpose: profiles are entity-generic (Indra's net) — the menu is the entity's anatomy, not the viewer's possessions. */}
+        <h3 className="text-lg font-bold">Visions</h3>
         <div className="flex items-center gap-2">
           {onCreateVision && (
             <button

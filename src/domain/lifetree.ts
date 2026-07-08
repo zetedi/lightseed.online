@@ -14,12 +14,9 @@ export interface Lifetree extends Entity {
   imageUrl?: string;
   latestGrowthUrl?: string; // URL of the most recent growth pulse image
   
-  visionIds?: string[];
-  pulseIds?: string[];
-  // Tree Circle roles (shared care). `guardians` (below) is the active guardian list.
-  coOwnerIds?: string[];
-  observerIds?: string[];
-  stewardIds?: string[];
+  // Tree Circle roles (guardian / co_owner / steward / observer) live in the `links`
+  // collection (the LIN) — see src/domain/link.ts. The legacy per-role arrays are gone
+  // from both the type and the data (dropLegacyArrays cleared the docs).
   communityId?: string; // The Tree Circle community rooted in this tree, once formed.
   updatedAt?: Timestamp;
   aiTokenBalance?: number;
@@ -47,10 +44,9 @@ export interface Lifetree extends Entity {
   validatorId?: string | null;
   lastTendedAt?: Timestamp;
 
-  // Nature & Guardian Logic
+  // Nature & Guardian Logic — guardianship is a 'guardian' link in the LIN (no array here).
   isNature?: boolean;
   treeType?: LifetreeType;
-  guardians?: string[]; // guardianship (user ids); → links in Phase 2
   status?: 'HEALTHY' | 'DANGER';
 
   // Watering — scheduled tending of a (usually guarded) tree. Absent = no schedule.

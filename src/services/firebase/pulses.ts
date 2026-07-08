@@ -1,6 +1,7 @@
 import { collection, query, orderBy, getDocs, serverTimestamp, doc, runTransaction, getDoc, where, updateDoc, limit, startAfter, QueryDocumentSnapshot, arrayUnion, onSnapshot, getCountFromServer } from 'firebase/firestore';
 import { type Pulse, type Lifetree, type ReachAudience } from '../../types';
 import { createBlock } from '../../utils/crypto';
+import { uuidv7 } from '../../utils/id';
 import { computeCanonicalHash, isChainLocked, BLOCK_HASH_VERSION } from '../../domain/chain';
 import { normalizePulseType, isTreeGrowth, type PulseVisibility } from '../../domain/pulse';
 import { isExplicitlyValidatedTree } from '../../utils/validation';
@@ -395,7 +396,10 @@ export const mintPulse = async (pulseData: Partial<Pulse> & { lifetreeId: string
         // serverTimestamp and can't be reproduced). Always stored; only hashed when locked.
         const mintedAt = Date.now();
         // The immutable record we persist (server-set createdAt + the hash are added after).
+        // Its lid is seeded from mintedAt so the id's embedded birth-time is the mint time; lid
+        // is canonical block content (BLOCK_CONTENT_FIELDS), so locked nodes seal it into the hash.
         const record = {
+            lid: uuidv7(mintedAt),
             ...pulseData,
             type: canonicalType,
             domain,

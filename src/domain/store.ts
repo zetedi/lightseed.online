@@ -10,8 +10,8 @@ export interface Store {
   linksFrom(from: string, rel?: LinkRel): Promise<Link[]>;
   // Read: every edge of a relation across the network — e.g. all 'guardian' edges (for counts).
   linksByRel(rel: LinkRel): Promise<Link[]>;
-  // Write: create / remove an edge. The adapter persists it (today onto the legacy arrays;
-  // after the data migration, into a links collection — the call sites never change).
+  // Write: create / remove an edge. The adapter persists it into the `links` collection
+  // (the LIN as data) — swap the adapter and the call sites never change.
   link(from: string, rel: LinkRel, to: string): Promise<void>;
   unlink(from: string, rel: LinkRel, to: string): Promise<void>;
 }

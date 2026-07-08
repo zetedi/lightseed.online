@@ -10,7 +10,8 @@ const baseKeys = {
   map_view: "Map View", list_view: "List View", upload_photo: "Upload Photo", validated: "VALIDATED",
   unvalidated: "Unvalidated", validate_action: "Validate Tree", quick_snap: "Capture Change", back_forest: "Back",
   genesis: "Genesis Hash", steward: "Steward", location: "Location", tree_details: "Tree Details",
-  profile: "Profile", my_trees: "My Trees", my_pulses: "My Pulses", my_alignments: "My Alignments",
+  // Entity section labels are non-possessive: profiles are entity-generic (Indra's net) — the menu is the entity's anatomy, not the viewer's possessions.
+  profile: "Profile", my_trees: "Trees", my_pulses: "Pulses", my_alignments: "Alignments",
   edit: "Edit", be_mother_tree: "Plant or Stand for a tree", guard_tree: "Guard Tree", alignments: "Alignments",
   pending_alignments: "Search for Alignments", no_pending_resonance: "The field is calm", search_placeholder: "Search...",
   living_resonance: "Living Intelligence Resonance", analyze: "Analyze", analyzing: "Analyzing...",
@@ -199,7 +200,8 @@ export const translations: Record<Language, typeof baseKeys> = {
     map_view: "地图视图", list_view: "列表视图", upload_photo: "上传照片", validated: "已验证",
     unvalidated: "未验证", validate_action: "验证树", quick_snap: "记录变化", back_forest: "返回",
     genesis: "创世哈希", steward: "守护者", location: "位置", tree_details: "树的详情",
-    profile: "个人主页", my_trees: "我的树", my_pulses: "我的脉动", my_alignments: "我的共鸣",
+    // 非物主式的栏目标签（同英文）：菜单是实体自身的构造，而非浏览者的所有物。
+    profile: "个人主页", my_trees: "树", my_pulses: "脉动", my_alignments: "共鸣",
     edit: "编辑", be_mother_tree: "种植或守护一棵树", guard_tree: "守护树", alignments: "共鸣",
     pending_alignments: "待发现的共鸣", no_pending_resonance: "场域宁静", search_placeholder: "搜索...",
     living_resonance: "生命智慧共鸣", analyze: "分析", analyzing: "分析中…",

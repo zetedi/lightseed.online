@@ -31,7 +31,8 @@ export interface Vision extends Entity {
   link?: string;
   imageUrl?: string;
   createdAt: Timestamp;
-  joinedUserIds?: string[]; // List of users who joined this vision
+  // Joins live in the `links` collection ('joined' rel) — the legacy joinedUserIds array
+  // is gone from both the type and the data (dropLegacyArrays cleared the docs).
   // Grounding — where this vision is rooted. lifetreeId (above) is the tree; these link it to a
   // community/site. `domain` was already stamped at write-time; `communityId` is the resolved link.
   domain?: string;

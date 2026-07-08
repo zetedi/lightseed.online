@@ -180,7 +180,11 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                                                 {pulse.care === 'watering' && (
                                                     <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-1" title={pulse.wateringConfirmation?.note || ''}>💧 {typeof pulse.wateringConfirmation?.confidence === 'number' ? `${pulse.wateringConfirmation.confidence}%` : ''}{pulse.wateringConfirmedBy === 'guardian' ? ' ✓' : ''}</span>
                                                 )}
-                                                <span className="text-xs text-slate-400 font-mono">{new Date(pulse.createdAt?.toMillis()).toLocaleDateString()}</span>
+                                                {/* Spacetime — the WHEN every block carries, and the WHERE when the pulse has one. */}
+                                                <span className="text-xs text-slate-400 font-mono">
+                                                    {new Date(pulse.createdAt?.toMillis()).toLocaleDateString()}
+                                                    {pulse.eventLocation ? <span className="text-slate-400/80"> · {pulse.eventLocation}</span> : null}
+                                                </span>
                                             </div>
 
                                             <div className={`flex gap-4 ${isRightSide ? '' : 'md:flex-row-reverse'} flex-row items-start`}>
