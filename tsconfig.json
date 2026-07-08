@@ -35,5 +35,9 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true
-  }
+  },
+  // Functions are their own compilation unit (functions/tsconfig.json, `npm run typecheck:functions`)
+  // with their own node_modules — CI doesn't install those for the app gate, so the root sweep
+  // must not reach into them.
+  "exclude": ["functions", "dist", "dev-dist", "node_modules"]
 }
