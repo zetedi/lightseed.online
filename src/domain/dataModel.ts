@@ -21,6 +21,10 @@ export interface ModelEntity {
   fields: ModelField[];
 }
 
+// The concept the whole model rests on — shown in the diagram legend and the draw.io export.
+export const BEING_NOTE =
+  'Every entity is a Being: lid (true name) + chain (story) + links (circle) + profile (face) — Indra’s net.';
+
 export const DATA_MODEL: ModelEntity[] = [
   {
     key: 'Person', label: 'Person', collection: 'persons', x: 40, y: 300,
@@ -37,9 +41,12 @@ export const DATA_MODEL: ModelEntity[] = [
     note: 'a node — drives its domain',
     fields: [
       { name: 'id', type: 'string', pk: true },
+      { name: 'lid', type: 'uuidv7' },
       { name: 'ownerId', type: 'uid', ref: 'Person' },
       { name: 'name', type: 'string' },
       { name: 'domain', type: 'string' },
+      { name: 'heroImageUrl', type: 'string?' },
+      { name: 'theme', type: 'map?' },
       { name: 'chainLocked', type: 'bool?' },
       { name: 'tokenisationEnabled', type: 'bool?' },
     ],
@@ -74,9 +81,11 @@ export const DATA_MODEL: ModelEntity[] = [
     note: 'block on a tree chain · subtypes: growth · event · reach · decision',
     fields: [
       { name: 'id', type: 'string', pk: true },
+      { name: 'lid', type: 'uuidv7' },
       { name: 'lifetreeId', type: 'string', ref: 'Lifetree' },
       { name: 'authorId', type: 'uid', ref: 'Person' },
       { name: 'communityId', type: 'string?', ref: 'Community' },
+      { name: 'domain', type: 'string?' },
       { name: 'type', type: 'PulseType' },
       { name: 'hash', type: 'string' },
       { name: 'previousHash', type: 'string' },
@@ -92,7 +101,8 @@ export const DATA_MODEL: ModelEntity[] = [
       { name: 'targetTreeId', type: 'id', ref: 'Lifetree' },
       { name: 'initiatorUid', type: 'uid', ref: 'Person' },
       { name: 'targetUid', type: 'uid', ref: 'Person' },
-      { name: 'status', type: 'enum' },
+      { name: 'status', type: 'PENDING|ACCEPTED|REJECTED' },
+      { name: 'messages', type: 'AlignmentNote[]' },
     ],
   },
 
@@ -140,11 +150,27 @@ export const DATA_MODEL: ModelEntity[] = [
     ],
   },
   {
-    key: 'Love', label: 'Love', collection: 'pulses/{id}/loves', x: 700, y: 940,
+    key: 'Love', label: 'Love', collection: 'pulses/{id}/loves', x: 700, y: 960,
     note: 'like on a pulse (doc id = uid)',
     fields: [
       { name: 'uid', type: 'string', ref: 'Person', pk: true },
       { name: 'createdAt', type: 'timestamp' },
+    ],
+  },
+
+  // --- Initiation (git ledger mirror) ----------------------------------------
+  {
+    key: 'Initiate', label: 'Initiate', collection: 'initiates', x: 360, y: 40,
+    note: 'mirror of the git initiation ledger (doc id = uid)',
+    fields: [
+      { name: 'uid', type: 'string', ref: 'Person', pk: true },
+      { name: 'handle', type: 'string' },
+      { name: 'name', type: 'string' },
+      { name: 'lid', type: 'uuidv7' },
+      { name: 'pubkey', type: 'string' },
+      { name: 'domain', type: 'string?' },
+      { name: 'genesis', type: 'bool?' },
+      { name: 'initiatedAt', type: 'string' },
     ],
   },
 
@@ -182,6 +208,30 @@ export const DATA_MODEL: ModelEntity[] = [
       { name: 'reason', type: 'string' },
       { name: 'status', type: 'enum' },
       { name: 'approvedBy', type: 'uid?', ref: 'Person' },
+    ],
+  },
+  {
+    key: 'CommunityTreeInvite', label: 'Community Tree Invite', collection: 'communityTreeInvites', x: 1400, y: 780,
+    note: 'acceptance mints a participant link',
+    fields: [
+      { name: 'id', type: 'string', pk: true },
+      { name: 'communityId', type: 'id', ref: 'Community' },
+      { name: 'lifetreeId', type: 'id', ref: 'Lifetree' },
+      { name: 'invitedUserId', type: 'uid', ref: 'Person' },
+      { name: 'invitedByUserId', type: 'uid', ref: 'Person' },
+      { name: 'status', type: 'pending|accepted|declined' },
+    ],
+  },
+  {
+    key: 'OrgCollab', label: 'Org Collab', collection: 'collabs', x: 1400, y: 1040,
+    note: 'this node’s organisation collaborators',
+    fields: [
+      { name: 'id', type: 'string', pk: true },
+      { name: 'lid', type: 'uuidv7' },
+      { name: 'name', type: 'string' },
+      { name: 'url', type: 'string?' },
+      { name: 'blurb', type: 'string?' },
+      { name: 'agreement', type: 'founder|contract' },
     ],
   },
 
@@ -304,5 +354,7 @@ export const DATA_RELATIONS: ModelRelation[] = (() => {
   rels.push({ from: 'Link', to: 'Vision', label: 'to', lin: true });
   // Love is a subcollection of Pulse (pulses/{id}/loves/{uid}).
   rels.push({ from: 'Love', to: 'Pulse', label: 'of' });
+  // Initiation is what grants the right to validate trees (checked by the security rules).
+  rels.push({ from: 'Initiate', to: 'Lifetree', label: 'grants validation', lin: true });
   return rels;
 })();

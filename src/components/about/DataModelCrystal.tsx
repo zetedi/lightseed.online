@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { DATA_MODEL, DATA_RELATIONS, type ModelEntity } from '../../domain/dataModel';
+import { BEING_NOTE, DATA_MODEL, DATA_RELATIONS, type ModelEntity } from '../../domain/dataModel';
 import { buildDrawioFile, buildDrawioXml } from '../../utils/drawioExport';
 import { Icons } from '../ui/Icons';
 
@@ -138,6 +138,7 @@ export const DataModelCrystal = () => {
         <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-4 rounded bg-[#38bdf8]" /> reference</span>
         <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-4 rounded" style={{ background: 'repeating-linear-gradient(90deg,#f59e0b 0 4px,transparent 4px 7px)' }} /> LIN edge</span>
         <span className="flex items-center gap-1.5"><span className="font-mono font-bold text-[#fcd34d]">bold</span> = document id</span>
+        <span className="basis-full text-center italic text-emerald-200/60">{BEING_NOTE}</span>
       </div>
     </div>
   );

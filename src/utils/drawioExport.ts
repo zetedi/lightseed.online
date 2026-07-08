@@ -1,4 +1,4 @@
-import { DATA_MODEL, DATA_RELATIONS, type ModelEntity } from '../domain/dataModel';
+import { BEING_NOTE, DATA_MODEL, DATA_RELATIONS, type ModelEntity } from '../domain/dataModel';
 
 // Emit the data model as draw.io (mxGraph) XML — importable/editable at diagrams.net. Each entity
 // is an HTML-labelled box; each relationship is an edge labelled with the field that forms it.
@@ -36,6 +36,13 @@ export const buildDrawioXml = (): string => {
       `<mxGeometry x="${e.x}" y="${e.y}" width="${WIDTH}" height="${boxHeight(e)}" as="geometry" /></mxCell>`
     );
   }
+
+  // The concept note — a free-standing text cell above the leftmost column.
+  cells.push(
+    `<mxCell id="beingNote" value="${xmlEscape(BEING_NOTE)}" ` +
+    'style="text;html=1;align=left;verticalAlign=middle;fontStyle=2;fontSize=11;fontColor=#6ee7b7;" ' +
+    'vertex="1" parent="1"><mxGeometry x="40" y="0" width="640" height="30" as="geometry" /></mxCell>'
+  );
 
   DATA_RELATIONS.forEach((r, i) => {
     const style = r.lin
