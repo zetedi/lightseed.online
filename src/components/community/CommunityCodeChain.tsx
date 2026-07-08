@@ -89,6 +89,9 @@ export const CommunityCodeChain: React.FC = () => {
                     root={root}
                     stats={stats}
                     emptyText="No commits mirrored yet."
+                    // Tending the node's body = contributing code — the crown CTA opens the repo.
+                    canTend
+                    onTend={() => window.open('https://github.com/zetedi/lifeseed.online', '_blank', 'noopener')}
                 />
             )}
         </div>
