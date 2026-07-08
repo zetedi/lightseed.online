@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { showAlert, showConfirm } from "./ui/Dialog";
-import { type Pulse, type Lifetree, type Alignment, type Vision, type VisionSynergy, type TreeOwnershipInvite, treeRelationLabels } from '../types';
+import { type Pulse, type Lifetree, type Alignment, type Vision, type VisionSynergy, type TreeOwnershipInvite, type ReachAudience, treeRelationLabels } from '../types';
+import type { QueryDocumentSnapshot } from 'firebase/firestore';
 import { getMyPulses, getMyVisions, getJoinedVisions, getMyAlignmentsHistory, deleteUserAccount, deleteUserAsAdmin, logout, triggerSystemEmail, createNetworkInvite, listenToUserProfile, deleteVision, getAdmins, setNewsletterSubscription, updateUserSiteTheme, updateUserProfile, uploadImage, fetchMyReaches, setOnlyValidatedCanReach, getPendingTreeInvites, acceptTreeInvite, declineTreeInvite, getMyCommunityTreeInvites, respondCommunityTreeInvite, type CommunityTreeInvite, getInviteRequests, approveInviteRequest, declineInviteRequest, getSentInvites, getLifetreeById, tendTree } from '../services/firebase';
 import { ReachInbox } from './inspiration/ReachInbox';
 import { findVisionSynergies } from '../services/gemini';
@@ -18,13 +19,34 @@ import { VisionCard } from './VisionCard';
 import { Modal } from './ui/Modal';
 import { Loading } from './ui/Loading';
 import { isExplicitlyValidatedTree, isValidationLive, isValidationFading, daysUntilLapse } from '../utils/validation';
-import { normalizeTheme } from '../utils/theme';
+import { normalizeTheme, type CommunityThemePreset } from '../utils/theme';
 import { AppearanceEditor } from './ui/AppearanceEditor';
 import { IntelligencePanel } from './intelligence/IntelligencePanel';
 import { ResonanceCard, resonanceId } from './ResonancePanel';
 import { DEFAULT_INTELLIGENCE_ID } from '../services/intelligence';
 
-export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSetDefaultTree, onViewVision, onViewAlignment, onPlant, onCreateVision, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachAudience, reachOpenSignal, onConsumeReach, onReachTree, nodeTheme }: any) => {
+interface LightseedProfileProps {
+    onViewTree: (tree: Lifetree, section?: string) => void;
+    onDeleteTree: (treeId: string) => void;
+    defaultTreeId?: string;
+    onSetDefaultTree?: (treeId: string) => void;
+    onViewVision: (vision: Vision) => void;
+    onViewAlignment?: (alignment: Alignment) => void;
+    onPlant: () => void;
+    onCreateVision?: () => void;
+    onClaimSuperAdmin: () => void;
+    onGrantAdmin: (uid: string) => Promise<void>;
+    onRevokeAdmin: (uid: string) => Promise<void>;
+    onOpenNewsletterAdmin: () => void;
+    reachPartner?: Lifetree | null;
+    reachAudience?: ReachAudience;
+    reachOpenSignal?: number;
+    onConsumeReach?: () => void;
+    onReachTree?: (tree: Lifetree) => void;
+    nodeTheme?: Partial<CommunityThemePreset>;
+}
+
+export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSetDefaultTree, onViewVision, onViewAlignment, onPlant, onCreateVision, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachAudience, reachOpenSignal, onConsumeReach, onReachTree, nodeTheme }: LightseedProfileProps) => {
     const { t } = useLanguage();
     // Session state comes from context now (was prop-drilled from App).
     const { lightseed, myTrees, guardedTrees, isAdmin, isSuperAdmin, superAdminExists } = useSession();
@@ -120,9 +142,9 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
     const [inviteRequests, setInviteRequests] = useState<any[]>([]);
     const [requestBusyId, setRequestBusyId] = useState<string | null>(null);
     const [sentInvites, setSentInvites] = useState<any[]>([]);
-    const [sentCursor, setSentCursor] = useState<any>(null);
+    const [sentCursor, setSentCursor] = useState<QueryDocumentSnapshot | null>(null);
     const [sentHasMore, setSentHasMore] = useState(false);
-    const [reqCursor, setReqCursor] = useState<any>(null);
+    const [reqCursor, setReqCursor] = useState<QueryDocumentSnapshot | null>(null);
     const [reqHasMore, setReqHasMore] = useState(false);
     const [showDeclinedRequests, setShowDeclinedRequests] = useState(false);
 
@@ -594,7 +616,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
             {/* Body: the menu + content boxes sit ON the hero — the blue extends behind them. */}
             <ProfileLayout
                 overlapClassName="-mt-10"
-                menu={<SectionMenu items={navSections} active={activeTab} onSelect={(k) => setActiveTab(k as any)} />}
+                menu={<SectionMenu items={navSections} active={activeTab} onSelect={(k) => setActiveTab(k as typeof activeTab)} />}
             >
                         {activeTab === 'reaches' && (
                             // Rendered unconditionally (no loading gate) so opening a reach from a tree

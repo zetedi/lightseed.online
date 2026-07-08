@@ -50,6 +50,7 @@ export interface Pulse extends Entity {
   visionId?: string;
   communityId?: string; // Set on community-scoped pulses (community events, decisions).
   communityName?: string; // Denormalised community name, carried on community events for display.
+  domain?: string; // The node this pulse belongs to (multi-node scoping) — written by the event/vision creators.
   type: PulseType;
   // Audience. Absent = 'public' (every legacy pulse reads as public). See PulseVisibility.
   visibility?: PulseVisibility;

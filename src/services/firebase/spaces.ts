@@ -39,7 +39,7 @@ export const getJoinedVisions = async (uid: string): Promise<Vision[]> => {
     return visions.filter((v): v is Vision => v !== null);
 };
 
-export const createVision = async (data: any) => {
+export const createVision = async (data: Partial<Vision> & { authorId: string; title: string }) => {
     const domain = (data.domain || window.location.hostname).replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '').trim().toLowerCase();
     // Ground the vision to a community when its domain matches one (the explicit link to a node).
     let communityId = data.communityId;
@@ -74,7 +74,7 @@ export const getMyCommunities = async (uid: string) =>
 
 export const COMMUNITY_INVITE_ALLOTMENT = 144;
 
-export const createCommunity = async (data: any) => {
+export const createCommunity = async (data: Partial<Community> & { ownerId: string; name: string; domain: string }) => {
     const lid = uuidv7();
     const docRef = await addDoc(communitiesCollection, {
         ...data,
@@ -93,10 +93,10 @@ export const createCommunity = async (data: any) => {
             });
         } catch (e) { console.warn('Could not grant community invite allotment', e); }
     }
-    return { id: docRef.id, lid, ...data };
+    return { id: docRef.id, lid, ...data } as Community;
 };
 
-export const updateCommunity = (id: string, data: any) => 
+export const updateCommunity = (id: string, data: Partial<Community>) => 
     updateDoc(doc(db, 'communities', id), { ...data, updatedAt: serverTimestamp() });
 
 export const deleteCommunity = (id: string) => deleteDoc(doc(db, 'communities', id));

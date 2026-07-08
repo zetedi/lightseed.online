@@ -53,8 +53,8 @@ export const useAlignmentCards = (alignments: Alignment[], myTrees: Lifetree[]):
           createdAt: a.createdAt,
           theirTree: { id: a.initiatorTreeId, name: theirTree?.name || 'A tree', imageUrl: treeImage(theirTree), ownerName },
           yourTree: { id: a.targetTreeId, name: yourTree?.name || 'Your tree', imageUrl: treeImage(yourTree) },
-          theirPulse: theirPulse ? { title: (theirPulse as any).title, body: (theirPulse as any).body } : undefined,
-          yourPulse: yourPulse ? { title: (yourPulse as any).title, body: (yourPulse as any).body } : undefined,
+          theirPulse: theirPulse ? { title: theirPulse.title, body: theirPulse.body } : undefined,
+          yourPulse: yourPulse ? { title: yourPulse.title, body: yourPulse.body } : undefined,
         }];
       }));
       if (alive) setEnriched(Object.fromEntries(entries));

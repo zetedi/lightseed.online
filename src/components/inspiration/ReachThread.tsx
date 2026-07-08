@@ -506,7 +506,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                 imageUrl: finalImageUrl,
                 authorId: lightseed.uid,
                 authorName: lightseed.displayName || "Soul",
-                authorPhoto: lightseed.photoURL,
+                authorPhoto: lightseed.photoURL ?? undefined,
             });
             showAlert("Conversation minted as a Pulse!");
         } catch (e: any) {

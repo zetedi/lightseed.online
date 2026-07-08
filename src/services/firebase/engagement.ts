@@ -4,7 +4,9 @@ import { createBlock } from '../../utils/crypto';
 import { isTokenisationEnabled } from '../../domain/tokenisation';
 import { db, mapDoc, pulsesCollection, alignmentsCollection } from './core';
 
-export const proposeAlignment = (data: any) => addDoc(alignmentsCollection, { ...data, status: 'PENDING', createdAt: serverTimestamp() });
+// What the initiator supplies; status/createdAt are stamped here, messages grow later.
+export type AlignmentProposal = Omit<Alignment, 'id' | 'status' | 'createdAt' | 'messages'>;
+export const proposeAlignment = (data: AlignmentProposal) => addDoc(alignmentsCollection, { ...data, status: 'PENDING', createdAt: serverTimestamp() });
 
 // Decline a pending alignment — the target owner passes on the resonance. A single field write
 // (the alignments rule already lets the initiator or target update their own proposal).

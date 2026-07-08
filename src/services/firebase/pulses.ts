@@ -381,7 +381,7 @@ export const getPulsesByTreeId = async (treeId: string) => {
 // `extraTreeUpdate` lets a caller fold additional tree-doc fields (dotted paths allowed) into
 // the SAME transaction that appends the block — so e.g. a watering's schedule reset commits
 // atomically with its growth pulse (no window where the chain advanced but the tree is stale).
-export const mintPulse = async (pulseData: any, extraTreeUpdate?: Record<string, any>) => {
+export const mintPulse = async (pulseData: Partial<Pulse> & { lifetreeId: string }, extraTreeUpdate?: Record<string, unknown>) => {
     return runTransaction(db, async (t) => {
         const treeRef = doc(db, 'lifetrees', pulseData.lifetreeId);
         const treeDoc = await t.get(treeRef);

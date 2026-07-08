@@ -147,7 +147,7 @@ export const getNetworkStats = async () => {
     }
 }
 
-export const plantLifetree = async (data: any) => {
+export const plantLifetree = async (data: Partial<Lifetree> & { ownerId: string; name: string; body?: string }) => {
     const genesisHash = await createBlock("0", { msg: "Birth" }, Date.now());
     const currentHost = window.location.hostname.replace(/^www\./, '');
     const domain = data.domain || (isHubDomain(currentHost) ? 'lightseed.online' : currentHost);
@@ -178,7 +178,7 @@ export const plantLifetree = async (data: any) => {
     return treeDoc;
 };
 
-export const updateLifetree = (id: string, data: any) => updateDoc(doc(db, 'lifetrees', id), data);
+export const updateLifetree = (id: string, data: Partial<Lifetree>) => updateDoc(doc(db, 'lifetrees', id), { ...data });
 export const deleteLifetree = (id: string) => deleteDoc(doc(db, 'lifetrees', id));
 export const validateLifetree = (targetId: string, validatorId: string) => updateDoc(doc(db, 'lifetrees', targetId), { validated: true, validatorId });
 export const unvalidateLifetree = (targetId: string) => updateDoc(doc(db, 'lifetrees', targetId), { validated: false, validatorId: null });

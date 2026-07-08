@@ -10,9 +10,9 @@ import { ValidationBadge } from './ValidationBadge';
 import { AutocompleteInput } from './ui/AutocompleteInput';
 import { updateLifetree, setTreeStatus, getPulsesByTreeId, createTreeInvite, setWateringSchedule, recordWatering, markWateredOffChain, confirmWateringPulse, sendWateringAlert, fileToWebpBase64 } from '../services/firebase';
 import { analyzeWateringPhoto } from '../services/gemini';
-import { Pulse, type InvitableRole, treeRelationLabels } from '../types';
+import { Pulse, type Lifetree, type InvitableRole, treeRelationLabels } from '../types';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
-import { canReachTree } from '../utils/reachPermissions';
+import { canReachTree, type ReachTargetProfile } from '../utils/reachPermissions';
 import { isOnWateringSchedule, isWateringOverdue, daysUntilWatering, daysOverdue, lastWateredMillis, wateringAlertedToday, treeStage, computeNextDueMillis, type TreeStage } from '../domain/watering';
 import { treeCircle } from '../domain/views/circle';
 import { firestoreStore } from '../adapters/firestore';
@@ -30,7 +30,24 @@ const STAGE_META: { key: TreeStage; label: string; hint: string; icon: React.Rea
     { key: 'self_sustaining', label: 'Self-sustaining', hint: 'Established — no scheduled watering.', icon: <Icons.Tree /> },
 ];
 
-export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, onAlertGuardians, isDefaultTree, onSetDefault, targetUserProfile, initialSection }: any) => {
+interface LifetreeDetailProps {
+    tree: Lifetree;
+    onClose: () => void;
+    onPlayGrowth: (treeId: string) => void;
+    onValidate: (treeId: string, nextValidated: boolean) => void;
+    onUpdate?: (updates: Partial<Lifetree>) => void;
+    onDelete?: () => void;
+    onCreatePulse: () => void;
+    onReachTree?: (tree: Lifetree) => void;
+    onViewPulse: (pulse: Pulse) => void;
+    onAlertGuardians?: () => void;
+    isDefaultTree?: boolean;
+    onSetDefault?: () => void;
+    targetUserProfile?: ReachTargetProfile | null;
+    initialSection?: string;
+}
+
+export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, onAlertGuardians, isDefaultTree, onSetDefault, targetUserProfile, initialSection }: LifetreeDetailProps) => {
    const { t } = useLanguage();
    // Session-derived values from context (were prop-drilled from App).
    const { lightseed, activeTree, isAdmin, isSuperAdmin, isInitiate } = useSession();
@@ -79,7 +96,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const [editLocationName, setEditLocationName] = useState(tree.locationName || '');
    const [editCreatedAt, setEditCreatedAt] = useState(() => {
        if (!tree.createdAt) return '';
-       const d = tree.createdAt.toDate ? tree.createdAt.toDate() : new Date(tree.createdAt);
+       const d = tree.createdAt.toDate ? tree.createdAt.toDate() : new Date(tree.createdAt as unknown as string | number);
        const offset = d.getTimezoneOffset() * 60000;
        return new Date(d.getTime() - offset).toISOString().slice(0, 16);
    });
@@ -100,9 +117,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    // Profile-like sections: the tree is a being with a digital body, details, guardians, care
    // and a circle. Everything can be a lifetree, so this reads like a profile.
    type TreeSection = 'digital' | 'details' | 'guardians' | 'care' | 'circle';
-   const [section, setSection] = useState<TreeSection>(initialSection || 'digital');
+   const [section, setSection] = useState<TreeSection>((initialSection as TreeSection) || 'digital');
    // A caller can steer the opening section (e.g. the profile droplet opens Care).
-   useEffect(() => { if (initialSection) setSection(initialSection); }, [initialSection, tree?.id]);
+   useEffect(() => { if (initialSection) setSection(initialSection as TreeSection); }, [initialSection, tree?.id]);
    // The growth chain can be long, so the middle collapses into a clickable line.
    const [chainExpanded, setChainExpanded] = useState(false);
 
@@ -292,7 +309,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
        return () => { alive = false; };
    }, [tree.id, tree.ownerId, currentUserId, guardianNonce]);
 
-   const handleSendInvite = async (e: React.FormEvent) => {
+   const handleSendInvite = async (e: React.FormEvent<HTMLFormElement>) => {
        e.preventDefault();
        if (!currentUserId || !inviteUserId.trim() || inviteBusy) return;
        setInviteBusy(true);
@@ -369,7 +386,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const lastWateredMs = tree.watering?.lastWateredAt ? lastWateredMillis(tree) : 0;
    const canWater = !!currentUserId && (isTender || isOwner || isAdmin || isSuperAdmin);
    const canManageSchedule = canEdit; // owner / co-owner / steward / staff (rules allow the same set)
-   const pendingWaterings = growthBlocks.filter((p: any) => p.care === 'watering' && p.wateringConfirmedBy === 'pending');
+   const pendingWaterings = growthBlocks.filter((p: Pulse) => p.care === 'watering' && p.wateringConfirmedBy === 'pending');
 
    const handleSaveSchedule = async () => {
        setWaterBusy(true); setWaterMsg(null);
@@ -534,7 +551,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                <div className="mt-4 border-t border-sky-200 pt-3">
                    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-sky-600">Awaiting confirmation</p>
                    <div className="space-y-2">
-                       {pendingWaterings.map((p: any) => (
+                       {pendingWaterings.map((p: Pulse) => (
                            <div key={p.id} className="flex items-center gap-2 rounded-lg bg-white/70 p-2">
                                {p.imageUrl && <img src={p.imageUrl} className="h-10 w-10 rounded object-cover" alt="watering" />}
                                <span className="flex-1 truncate text-xs text-sky-800">{new Date(p.createdAt?.toMillis?.() || Date.now()).toLocaleDateString()} · {p.wateringConfirmation?.note || 'Watering'}</span>
@@ -553,8 +570,8 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const COLLAPSE_AT = 6, CHAIN_HEAD = 3, CHAIN_TAIL = 2;
    const chainCollapsible = growthBlocks.length > COLLAPSE_AT;
    const hiddenChainCount = chainCollapsible && !chainExpanded ? growthBlocks.length - CHAIN_HEAD - CHAIN_TAIL : 0;
-   const COLLAPSED_MARKER = { _collapsed: true } as any;
-   const visibleChain: any[] = (chainCollapsible && !chainExpanded)
+   const COLLAPSED_MARKER = { _collapsed: true } as unknown as Pulse & { _collapsed?: boolean };
+   const visibleChain: (Pulse & { _collapsed?: boolean })[] = (chainCollapsible && !chainExpanded)
        ? [...growthBlocks.slice(0, CHAIN_HEAD), COLLAPSED_MARKER, ...growthBlocks.slice(growthBlocks.length - CHAIN_TAIL)]
        : growthBlocks;
 
@@ -572,7 +589,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const handleShare = async () => {
        const url = `${window.location.origin}/?tree=${tree.id}`;
        try {
-           if ((navigator as any).share) await (navigator as any).share({ title: tree.name, url });
+           if (navigator.share) await navigator.share({ title: tree.name, url });
            else { await navigator.clipboard.writeText(url); setShared(true); setTimeout(() => setShared(false), 1500); }
        } catch { /* user cancelled the share sheet */ }
    };
@@ -816,7 +833,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                         setEditLocationName(tree.locationName || '');
                                         setEditDomain(tree.domain || '');
                                         if (tree.createdAt) {
-                                            const d = tree.createdAt.toDate ? tree.createdAt.toDate() : new Date(tree.createdAt);
+                                            const d = tree.createdAt.toDate ? tree.createdAt.toDate() : new Date(tree.createdAt as unknown as string | number);
                                             setEditCreatedAt(new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16));
                                         }
                                     }} disabled={isSaving} className="flex-1 bg-slate-200 text-slate-700 py-2 rounded-lg text-sm font-bold hover:bg-slate-300">
@@ -898,7 +915,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                 )}
                                 {visibleChain.map((pulse, index) => {
                                     // The collapsed middle renders as one clickable horizontal line.
-                                    if ((pulse as any)._collapsed) {
+                                    if (pulse._collapsed) {
                                         return (
                                             <div key="chain-collapsed" className="flex w-full justify-start pl-12 md:justify-center md:pl-0">
                                                 <button onClick={() => setChainExpanded(true)}
@@ -970,8 +987,8 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                                             ) : (
                                                                 <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 rounded-full font-bold">PULSE</span>
                                                             )}
-                                                            {(pulse as any).care === 'watering' && (
-                                                                <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-1" title={(pulse as any).wateringConfirmation?.note || ''}>💧 {typeof (pulse as any).wateringConfirmation?.confidence === 'number' ? `${(pulse as any).wateringConfirmation.confidence}%` : ''}{(pulse as any).wateringConfirmedBy === 'guardian' ? ' ✓' : ''}</span>
+                                                            {pulse.care === 'watering' && (
+                                                                <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-1" title={pulse.wateringConfirmation?.note || ''}>💧 {typeof pulse.wateringConfirmation?.confidence === 'number' ? `${pulse.wateringConfirmation.confidence}%` : ''}{pulse.wateringConfirmedBy === 'guardian' ? ' ✓' : ''}</span>
                                                             )}
                                                             <span className="text-xs text-slate-400 font-mono">{new Date(pulse.createdAt?.toMillis()).toLocaleDateString()}</span>
                                                         </div>
@@ -1026,7 +1043,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                                  <h4 className="mb-2 text-xs font-bold uppercase tracking-widest text-amber-200">Root · Planted · Genesis</h4>
                                                  {tree.body && <p dir="auto" className="mx-auto mb-2 max-w-xs text-sm italic leading-relaxed text-amber-50/90">"{tree.body}"</p>}
                                                  <p className="text-[11px] text-amber-200/70">
-                                                     {tree.createdAt?.toDate ? tree.createdAt.toDate().toLocaleDateString() : (tree.createdAt ? new Date(tree.createdAt?.toMillis?.() ?? tree.createdAt).toLocaleDateString() : '')}
+                                                     {tree.createdAt?.toDate ? tree.createdAt.toDate().toLocaleDateString() : (tree.createdAt ? new Date((tree.createdAt?.toMillis?.() ?? tree.createdAt) as unknown as string | number).toLocaleDateString() : '')}
                                                      {tree.locationName ? ` · ${tree.locationName}` : ''}
                                                  </p>
                                                  <p className="mt-3 break-all px-2 font-mono text-[10px] text-amber-100/50">{genesisBlock?.hash || tree.genesisHash}</p>

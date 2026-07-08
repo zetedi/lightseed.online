@@ -204,10 +204,10 @@ export const listenToUserProfile = (userId: string, callback: (data: any) => voi
     });
 }
 
-export const updateUserSiteTheme = (userId: string, data: any) =>
+export const updateUserSiteTheme = (userId: string, data: { siteTheme?: Record<string, string>; siteLogoUrl?: string; siteHeroUrl?: string }) =>
     setDoc(doc(db, 'users', userId), { ...data, updatedAt: serverTimestamp() }, { merge: true });
 
-export const updateUserProfile = (userId: string, data: any) =>
+export const updateUserProfile = (userId: string, data: Record<string, unknown>) =>
     setDoc(doc(db, 'users', userId), { ...data, updatedAt: serverTimestamp() }, { merge: true });
 
 // Contact privacy. The canonical flag lives on users/{uid}, but we mirror it onto every

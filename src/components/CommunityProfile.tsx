@@ -6,7 +6,7 @@ import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
 import { Community, Lifetree, Pulse, Intelligence, Persona, Sanctuary } from '../types';
 import { updateCommunity, uploadImage, getTreesByDomain, getParticipatingTrees, fetchAllLifetrees, inviteTreeToCommunity, deleteCommunity, createCommunityEvent, updateEvent, deleteCommunityEvent, getCommunityByDomain, getCommunityEvents, getSanctuariesByDomain, createDecision, voteOnDecision, getDecisions, raiseConcern, resumeDecision, withdrawDecision, recordPosition, discernDecision, getPulsesByTreeId } from '../services/firebase';
-import { isCanonicallySealed, verifyBlockSeal } from '../domain/chain';
+import { isCanonicallySealed, verifyBlockSeal, type ChainBlock } from '../domain/chain';
 import { setTokenisationEnabled } from '../domain/tokenisation';
 import { DECISION_NATURES, decisionStatusLabels, consensusStanceLabels, votesRequired, type Decision, type DecisionNature, type DecisionMode, type ConsensusStance } from '../domain/decision';
 import { getSelectableIntelligences, listPersonas } from '../services/intelligence';
@@ -496,8 +496,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       const trees = linkedTrees.length ? linkedTrees : await getTreesByDomain(community.domain, currentUserId);
       let sealed = 0, intact = 0, legacy = 0;
       for (const tree of trees) {
-        let pulses: any[] = [];
-        try { pulses = await getPulsesByTreeId(tree.id) as any[]; } catch { continue; } // skip trees this viewer can't read
+        let pulses: ChainBlock[] = [];
+        try { pulses = await getPulsesByTreeId(tree.id) as unknown as ChainBlock[]; } catch { continue; } // skip trees this viewer can't read
         for (const p of pulses) {
           if (isCanonicallySealed(p)) { sealed++; if (await verifyBlockSeal(p)) intact++; }
           else legacy++;
@@ -745,7 +745,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       </ProfileHero>
 
       {/* Body: sidebar + content */}
-      <ProfileLayout menu={<SectionMenu items={navSections} active={activeTab} onSelect={(k) => setActiveTab(k as any)} />}>
+      <ProfileLayout menu={<SectionMenu items={navSections} active={activeTab} onSelect={(k) => setActiveTab(k as TabKey)} />}>
             {activeTab === 'vision' && (
               <div>
                 <SectionTitle title="Vision" sub="What this community is growing towards." />

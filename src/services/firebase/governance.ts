@@ -94,7 +94,7 @@ export const raiseConcern = async (decisionId: string, uid: string, note?: strin
         if (['passed', 'withdrawn', 'rejected', 'expired'].includes(d.status)) return 'closed' as const;
         // One concern per voice (a re-raise replaces it) — bounds the array, no spam. And
         // serverTimestamp() can't live inside an array element, so stamp the concern client-side.
-        const concerns = (Array.isArray(d.concerns) ? d.concerns : []).filter((c: any) => c.by !== actor);
+        const concerns = (Array.isArray(d.concerns) ? d.concerns : []).filter((c: { by: string }) => c.by !== actor);
         tx.update(ref, { listening: true, concerns: [...concerns, { by: actor, note: note || '', at: Timestamp.fromMillis(Date.now()) }] });
         return 'listening' as const;
     });
@@ -125,7 +125,7 @@ export const recordPosition = async (decisionId: string, uid: string, stance: Co
         if (!snap.exists()) throw new Error('Proposal not found.');
         const d = snap.data() as any;
         if (['passed', 'withdrawn', 'rejected', 'expired'].includes(d.status)) return 'closed' as const;
-        const positions = (Array.isArray(d.positions) ? d.positions : []).filter((p: any) => p.by !== actor);
+        const positions = (Array.isArray(d.positions) ? d.positions : []).filter((p: { by: string }) => p.by !== actor);
         positions.push({ by: actor, stance, note: note || '', at: Timestamp.fromMillis(Date.now()) });
         tx.update(ref, { positions });
         return 'ok' as const;
@@ -143,7 +143,7 @@ export const discernDecision = async (decisionId: string, outcome: 'passed' | 'r
         const d = snap.data() as any;
         if (['passed', 'withdrawn', 'rejected', 'expired'].includes(d.status)) throw new Error('This proposal is already settled.');
         if (outcome === 'passed') {
-            const blocks = (Array.isArray(d.positions) ? d.positions : []).filter((p: any) => p.stance === 'block');
+            const blocks = (Array.isArray(d.positions) ? d.positions : []).filter((p: { stance: string }) => p.stance === 'block');
             if (blocks.length) throw new Error('A block still stands — the meeting is not in unity. Tend the block first.');
             const enactedHash = await createBlock(d.hash || 'DECISION', { decision: decisionId, united: true }, Date.now());
             tx.update(ref, { status: 'passed', passedAt: serverTimestamp(), enactedHash });
@@ -184,7 +184,7 @@ export const updateEvent = async (
 
 // A standalone event — anyone can plant one (no community required). A community can later
 // form around it. It's a pulse of type 'event' on the one ledger, like community events.
-export const createEvent = async (data: any) => {
+export const createEvent = async (data: Partial<Pulse> & { title: string }) => {
     const domain = normalizeDomain(data.domain || (typeof window !== 'undefined' ? window.location.hostname : ''));
     const eventPayload = { ...data, type: 'event', domain, visibility: data.visibility || 'public' };
     const hash = await createBlock('EVENT', eventPayload, Date.now());
@@ -201,7 +201,7 @@ export const createEvent = async (data: any) => {
     return { id: ref.id, lid, ...eventPayload, loveCount: 0, commentCount: 0, previousHash: 'EVENT', hash } as Pulse;
 };
 
-export const createCommunityEvent = async (community: Community, data: any) => {
+export const createCommunityEvent = async (community: Community, data: Partial<Pulse> & { title: string }) => {
     const eventPayload = {
         ...data,
         type: 'event',
