@@ -1,0 +1,242 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { showAlert, showConfirm } from '../ui/Dialog';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { SectionTitle } from '../ui/SectionTitle';
+import { Community } from '../../types';
+import { createDecision, voteOnDecision, getDecisions, raiseConcern, resumeDecision, withdrawDecision, recordPosition, discernDecision } from '../../services/firebase';
+import { DECISION_NATURES, decisionStatusLabels, consensusStanceLabels, votesRequired, type Decision, type DecisionNature, type DecisionMode, type ConsensusStance } from '../../domain/decision';
+import { councilView } from '../../domain/views/council';
+import type { PulseVisibility } from '../../domain/pulse';
+
+interface CommunityCouncilProps {
+  community: Community;
+  canEdit: boolean;
+  currentUserId?: string;
+  // The visibility levels this viewer may query at community scope.
+  communityLevels: PulseVisibility[];
+}
+
+// Council — governance decisions: proposing, voting (threshold) and Quaker consensus.
+export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, canEdit, currentUserId, communityLevels }) => {
+  const { t } = useLanguage();
+
+  const [decisions, setDecisions] = useState<Decision[]>([]);
+  const [decTitle, setDecTitle] = useState('');
+  const [decNature, setDecNature] = useState<DecisionNature>('intention');
+  const [decBody, setDecBody] = useState('');
+  const [decMode, setDecMode] = useState<DecisionMode>('threshold');
+  const [proposing, setProposing] = useState(false);
+  const [votingId, setVotingId] = useState<string | null>(null);
+
+  const refreshDecisions = useCallback(() => {
+    getDecisions(community.id, communityLevels).then(setDecisions).catch(() => {});
+  }, [community.id, communityLevels]);
+  useEffect(() => { refreshDecisions(); }, [refreshDecisions]);
+
+  const handlePropose = async () => {
+    if (!currentUserId || !decTitle.trim()) return;
+    setProposing(true);
+    try {
+      await createDecision(community, { nature: decNature, title: decTitle.trim(), body: decBody.trim(), proposedBy: currentUserId, mode: decMode });
+      setDecTitle(''); setDecBody(''); setDecNature('intention');
+      refreshDecisions();
+    } catch (e: any) { showAlert(e?.message || 'Could not propose the decision.'); }
+    setProposing(false);
+  };
+
+  const handleVote = async (id: string) => {
+    if (!currentUserId) { showAlert('Sign in to add your voice.'); return; }
+    setVotingId(id);
+    try {
+      const outcome = await voteOnDecision(id, currentUserId);
+      if (outcome === 'listening') showAlert('This proposal is in listening — a concern was raised. It can continue once the concern is tended.');
+      refreshDecisions();
+    }
+    catch (e: any) { showAlert(e?.message || 'Could not record your voice.'); }
+    setVotingId(null);
+  };
+
+  const handleRaiseConcern = async (id: string) => {
+    if (!currentUserId) { showAlert('Sign in to raise a concern.'); return; }
+    if (!(await showConfirm('Raise a concern? This pauses the proposal and opens a reflective listening — it does not reject it.', { title: 'Raise a concern', confirmText: 'Raise concern' }))) return;
+    setVotingId(id);
+    try { await raiseConcern(id, currentUserId); refreshDecisions(); }
+    catch (e: any) { showAlert(e?.message || 'Could not raise the concern.'); }
+    setVotingId(null);
+  };
+
+  const handleResume = async (id: string) => {
+    setVotingId(id);
+    try { await resumeDecision(id); refreshDecisions(); }
+    catch (e: any) { showAlert(e?.message || 'Could not resume.'); }
+    setVotingId(null);
+  };
+
+  const handleWithdraw = async (id: string) => {
+    if (!(await showConfirm('Withdraw this proposal?', { title: 'Withdraw', confirmText: 'Withdraw', danger: true }))) return;
+    setVotingId(id);
+    try { await withdrawDecision(id); refreshDecisions(); }
+    catch (e: any) { showAlert(e?.message || 'Could not withdraw.'); }
+    setVotingId(null);
+  };
+
+  // --- Quaker consensus handlers ---
+  const handlePosition = async (id: string, stance: ConsensusStance) => {
+    if (!currentUserId) { showAlert('Sign in to take a position.'); return; }
+    let note: string | undefined;
+    if (stance === 'block') {
+      const reason = window.prompt('A block is a principled objection that halts unity. What is your concern?');
+      if (reason === null) return; // cancelled
+      note = reason.trim();
+    }
+    setVotingId(id);
+    try {
+      const outcome = await recordPosition(id, currentUserId, stance, note);
+      if (outcome === 'closed') showAlert('This proposal is already settled.');
+      refreshDecisions();
+    } catch (e: any) { showAlert(e?.message || 'Could not record your position.'); }
+    setVotingId(null);
+  };
+
+  const handleDiscern = async (id: string, outcome: 'passed' | 'rejected') => {
+    const msg = outcome === 'passed'
+      ? 'Discern that the meeting is in unity and adopt this proposal? A block would prevent this.'
+      : 'Record that the meeting did not reach unity (not adopted)?';
+    if (!(await showConfirm(msg, { title: outcome === 'passed' ? 'Sense of the meeting: unity' : 'Not in unity', confirmText: outcome === 'passed' ? 'Adopt' : 'Set aside', danger: outcome === 'rejected' }))) return;
+    setVotingId(id);
+    try { await discernDecision(id, outcome); refreshDecisions(); }
+    catch (e: any) { showAlert(e?.message || 'Could not discern the sense of the meeting.'); }
+    setVotingId(null);
+  };
+
+  return (
+    <div>
+      <SectionTitle title={t('council')} sub={t('council_sub')} />
+
+      {currentUserId && (
+        <div className="mb-8 space-y-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+          <h4 className="text-sm font-bold text-slate-700">{t('propose_decision')}</h4>
+          <input value={decTitle} onChange={e => setDecTitle(e.target.value)} placeholder={t('decision_title_ph')} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          <label className="block space-y-1">
+            <span className="text-[10px] font-bold uppercase text-slate-400">{t('decision_nature')}</span>
+            <select value={decNature} onChange={e => setDecNature(e.target.value as DecisionNature)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:max-w-xs">
+              {DECISION_NATURES.map(n => <option key={n.id} value={n.id}>{t(('nature_' + n.id) as any)} · {n.votes} {t('voices')}</option>)}
+            </select>
+          </label>
+          <textarea value={decBody} onChange={e => setDecBody(e.target.value)} placeholder={t('decision_body_ph')} className="min-h-20 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-bold uppercase text-slate-400">How the circle decides</span>
+            <div className="flex rounded-full border border-slate-200 bg-white p-0.5 text-xs font-bold w-full sm:max-w-md">
+              <button type="button" onClick={() => setDecMode('threshold')} className={`flex-1 rounded-full px-3 py-1.5 transition-colors ${decMode === 'threshold' ? 'bg-emerald-600 text-white shadow' : 'text-slate-500 hover:text-slate-700'}`}>Voices ({votesRequired(decNature)})</button>
+              <button type="button" onClick={() => setDecMode('consensus')} className={`flex-1 rounded-full px-3 py-1.5 transition-colors ${decMode === 'consensus' ? 'bg-emerald-600 text-white shadow' : 'text-slate-500 hover:text-slate-700'}`}>Consensus (Quaker)</button>
+            </div>
+            <p className="text-[11px] text-slate-500">{decMode === 'consensus' ? 'No counting — the meeting seeks unity. Each voice may unite, stand aside, or block; the clerk discerns the sense of the meeting.' : `Passes when ${votesRequired(decNature)} voice(s) unite. A concern opens a reflective pause.`}</p>
+          </div>
+          <button onClick={handlePropose} disabled={proposing || !decTitle.trim()} className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">{proposing ? '…' : t('propose')}</button>
+        </div>
+      )}
+
+      {decisions.length === 0 ? (
+        <p className="py-8 text-center text-sm text-slate-400">{t('no_decisions')}</p>
+      ) : (
+        <div className="space-y-3">
+          {councilView(decisions, currentUserId).map(d => {
+            const consensus = d.mode === 'consensus';
+            const open = !d.passed && !d.closed;
+            const clerk = d.isProposer || !!canEdit;
+            return (
+              <div key={d.id} className={`rounded-2xl border p-4 ${d.passed ? 'border-emerald-200 bg-emerald-50/40' : (consensus && d.blocked) ? 'border-rose-200 bg-rose-50/40' : d.listening ? 'border-indigo-200 bg-indigo-50/40' : d.closed ? 'border-slate-200 bg-slate-50' : 'border-slate-200 bg-white'}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h4 className="text-sm font-bold text-slate-800">{d.title}</h4>
+                      <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-500">{t(('nature_' + d.nature) as any)}</span>
+                      {consensus && <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase text-sky-700">Consensus</span>}
+                      {d.passed
+                        ? <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">{t('passed')}</span>
+                        : d.closed
+                          ? <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600">{decisionStatusLabels[d.status] || 'Closed'}</span>
+                          : consensus
+                            ? (d.blocked
+                                ? <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase text-rose-700">Blocked</span>
+                                : <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">In discernment</span>)
+                            : d.listening
+                              ? <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold uppercase text-indigo-700">Listening</span>
+                              : <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">{t('decision_open')}</span>}
+                    </div>
+                    {d.body && <p className="mt-1 text-xs italic text-slate-500">{d.body}</p>}
+
+                    {consensus ? (
+                      <>
+                        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-bold">
+                          <span className="text-emerald-600">{d.unites} unite</span>
+                          <span className="text-slate-300">·</span>
+                          <span className="text-slate-500">{d.standAsides} stand aside</span>
+                          <span className="text-slate-300">·</span>
+                          <span className={d.blocks ? 'text-rose-600' : 'text-slate-400'}>{d.blocks} block</span>
+                          {d.myStance && <span className="ml-1 rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-500">you: {consensusStanceLabels[d.myStance].toLowerCase()}</span>}
+                        </div>
+                        {d.blocked && (
+                          <div className="mt-2 rounded-xl border border-rose-100 bg-rose-50 p-2.5 text-[11px] text-rose-800">
+                            <p className="font-semibold">A block stands — the meeting is not in unity. Tend it before adopting.</p>
+                            {d.positions.filter(p => p.stance === 'block' && p.note).slice(-3).map((p, i) => <p key={i} className="mt-1 italic">“{p.note}”</p>)}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <div className="mt-2 text-[11px] font-bold text-slate-400">{d.voiceCount} / {d.voicesRequired} {t('voices')}</div>
+                        {d.listening && (
+                          <div className="mt-2 rounded-xl border border-indigo-100 bg-indigo-50 p-2.5 text-[11px] text-indigo-800">
+                            <p className="font-semibold">A concern was raised. This proposal has entered listening.</p>
+                            {d.concerns.filter(c => c.note).slice(-3).map((c, i) => <p key={i} className="mt-1 italic">“{c.note}”</p>)}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-1.5">
+                    {consensus ? (
+                      <>
+                        {open && currentUserId && (
+                          <div className="flex flex-wrap justify-end gap-1.5">
+                            <button onClick={() => handlePosition(d.id, 'unite')} disabled={votingId === d.id} className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${d.myStance === 'unite' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}>Unite</button>
+                            <button onClick={() => handlePosition(d.id, 'stand_aside')} disabled={votingId === d.id} className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${d.myStance === 'stand_aside' ? 'bg-slate-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Stand aside</button>
+                            <button onClick={() => handlePosition(d.id, 'block')} disabled={votingId === d.id} className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${d.myStance === 'block' ? 'bg-rose-600 text-white' : 'bg-rose-50 text-rose-600 hover:bg-rose-100'}`}>Block</button>
+                          </div>
+                        )}
+                        {open && clerk && (
+                          <div className="mt-0.5 flex items-center gap-2">
+                            <button onClick={() => handleDiscern(d.id, 'passed')} disabled={votingId === d.id || d.blocked} title={d.blocked ? 'A block must be tended before the meeting can find unity' : 'Discern the sense of the meeting and adopt'} className="rounded-full bg-emerald-600 px-3 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50">Adopt (unity)</button>
+                            <button onClick={() => handleDiscern(d.id, 'rejected')} disabled={votingId === d.id} className="rounded-full px-3 py-1 text-[11px] font-medium text-slate-400 transition-colors hover:text-red-500 disabled:opacity-50">Not adopted</button>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {open && !d.listening && (
+                          <button onClick={() => handleVote(d.id)} disabled={votingId === d.id || d.voted} className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${d.voted ? 'bg-slate-100 text-slate-400' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}>
+                            {d.voted ? t('voted') : (votingId === d.id ? '…' : t('vote'))}
+                          </button>
+                        )}
+                        {open && !d.listening && currentUserId && (
+                          <button onClick={() => handleRaiseConcern(d.id)} disabled={votingId === d.id} className="rounded-full px-3 py-1 text-[11px] font-bold text-indigo-600 hover:bg-indigo-50 disabled:opacity-50">Raise a concern</button>
+                        )}
+                        {d.listening && clerk && (
+                          <button onClick={() => handleResume(d.id)} disabled={votingId === d.id} className="rounded-full bg-indigo-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-indigo-700 disabled:opacity-50">Tend &amp; resume</button>
+                        )}
+                      </>
+                    )}
+                    {open && clerk && (
+                      <button onClick={() => handleWithdraw(d.id)} disabled={votingId === d.id} className="rounded-full px-3 py-1 text-[11px] font-medium text-slate-400 transition-colors hover:text-red-500">Withdraw</button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
