@@ -15,9 +15,7 @@ import type { PulseVisibility } from '../../domain/pulse';
 // personal profiles — only where they're rooted (and therefore how they're fetched/created)
 // differs, so the owner binds those via `loadEvents` / `onCreate`. CommunityEvents is a thin
 // wrapper over this; node- and personal-profile events tabs can bind their own scoping.
-//
-// NOTE: IntelligenceSection is the next candidate for the same treatment —
-// CommunityIntelligence is near-identical for all profile/node types.
+// IntelligenceSection follows the same pattern (CommunityIntelligence is its thin wrapper).
 
 export type EventsScope = 'community' | 'node' | 'personal';
 
