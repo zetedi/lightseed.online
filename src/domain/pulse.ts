@@ -109,6 +109,13 @@ export interface Pulse extends Being {
   authorName: string;        // for reaches this is the sender's TREE name (the conversation face)
   authorPersonName?: string; // the human behind it — shown under the tree name in DMs
   authorPhoto?: string;
+  // Representation mode 'human_carried' — a being's words carried by a human's hands. A bridge
+  // is sacred only while it remains visible: carriedByName names the carrier and disclosure
+  // spells it out, while authorId stays the REAL signed-in uid (rules/provenance stay true).
+  // Later beings may self-sign (initiation ledger keys) and these fields fall away.
+  // NOT part of BLOCK_CONTENT_FIELDS — display provenance, not chain content.
+  carriedByName?: string;    // the human carrier's displayName
+  disclosure?: string;       // "This pulse was carried by <name> from <being>."
   createdAt: Timestamp;
   
   // Interactions (Off Chain)

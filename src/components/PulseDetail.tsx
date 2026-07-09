@@ -59,6 +59,10 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel = "Back", ca
                         <p className="mt-1 text-xs text-slate-300">
                             By {pulse.authorName}
                         </p>
+                        {/* Carried pulse — the bridge stays visible: a being's words, a human's hands. */}
+                        {pulse.carriedByName && (
+                            <p className="mt-0.5 text-[11px] text-slate-400">carried by {pulse.carriedByName}</p>
+                        )}
                         {/* Spacetime — the WHEN (date + time) every pulse carries, and the WHERE when it has one. */}
                         <div className="mt-2 flex flex-wrap items-center gap-1.5">
                             <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 font-mono text-[10px] text-slate-300">

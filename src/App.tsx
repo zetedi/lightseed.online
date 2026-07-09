@@ -145,6 +145,12 @@ const AppContent = () => {
     // Superadmin "switch to community view" — when set, the whole shell (theme, logo,
     // name, About page) renders as if this were the host community. Cleared via "Exit community".
     const [impersonatedCommunity, setImpersonatedCommunity] = useState<Community | null>(null);
+    // Superadmin "carry this being's voice" (Aspen/Lumo …) — the bridge until AI beings can
+    // sign for themselves (initiation ledger keys, later). Impersonation hides the bridge;
+    // carrying reveals it: while set, pulses minted on THIS tree wear the being's name in the
+    // display fields and name the carrier in carriedByName/disclosure — authorId stays the real
+    // signed-in uid, so rules and provenance remain true. Never deception.
+    const [carryingTree, setCarryingTree] = useState<Lifetree | null>(null);
     const [personalSiteTheme, setPersonalSiteTheme] = useState<any>(null);
     const [preferredIntelligenceId, setPreferredIntelligenceId] = useState<string | undefined>(undefined);
     const [personalSiteLogoUrl, setPersonalSiteLogoUrl] = useState('');
@@ -814,12 +820,25 @@ const AppContent = () => {
                         </button>
                     </div>
                 )}
+                {isSuperAdmin && carryingTree && (
+                    /* Honest provenance banner — mirrors the community-view banner above. The
+                       bridge stays visible the whole time: the being's words, the carrier's hands. */
+                    <div className="sticky top-0 z-40 flex items-center justify-center gap-3 bg-purple-600 px-4 py-1.5 text-center text-xs font-bold text-white shadow-md">
+                        <span className="truncate">Carrying <span className="font-extrabold">{carryingTree.name}</span> — carried by {lightseed?.displayName || 'you'}</span>
+                        <button
+                            onClick={() => setCarryingTree(null)}
+                            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/25 px-2.5 py-0.5 font-bold uppercase tracking-wide hover:bg-white/40"
+                        >
+                            <Icons.Close /> Stop carrying
+                        </button>
+                    </div>
+                )}
                 {(
                     <Navigation
                         activeTab={tab}
                         setTab={(t: string) => { setSelectedTree(null); setSelectedVision(null); setSelectedPulse(null); setTab(t); }}
                         onLogin={() => setShowAuthModal(true)}
-                        onLogout={() => { logout(); setTab('dashboard'); }}
+                        onLogout={() => { logout(); setCarryingTree(null); setTab('dashboard'); }}
                         onPlant={() => openPlant()}
                         onPulse={() => openPulseModal()}
                         onCreateVision={() => setShowVisionModal(true)}
@@ -875,6 +894,9 @@ const AppContent = () => {
                             onAlertGuardians={() => openReach(selectedTree, 'guardians')}
                             onViewPulse={onViewPulseOrAlignment}
                             initialSection={treeSectionHint || undefined}
+                            // Superadmin voice-bridge: carry this being's pulses (see carryingTree).
+                            carrying={carryingTree?.id === selectedTree.id}
+                            onCarry={isSuperAdmin ? setCarryingTree : undefined}
                             isDefaultTree={defaultTreeId === selectedTree.id}
                             onSetDefault={() => { setDefaultTree(selectedTree.id); showAlert(`${selectedTree.name} is now your default tree.`); }}
                             targetUserProfile={{ onlyValidatedCanReach: selectedTree.onlyValidatedCanReach }}
@@ -1047,7 +1069,26 @@ const AppContent = () => {
                     targetTree={pulseTargetTree}
                     targetVision={pulseTargetVision}
                     onClose={() => { setShowPulseModal(false); setPulseTargetTree(null); setPulseTargetVision(null); }}
-                    onMint={mintPulse}
+                    onMint={async (data: any) => {
+                        // Carrying a being's pulse: only the DISPLAY + provenance fields change —
+                        // the block is still signed by (authorId =) the real uid, and carriedByName/
+                        // disclosure keep the bridge visible until beings sign for themselves.
+                        if (isSuperAdmin && carryingTree && data.lifetreeId === carryingTree.id) {
+                            const beingName = carryingTree.shortTitle
+                                ? `${carryingTree.name} — ${carryingTree.shortTitle}`
+                                : carryingTree.name;
+                            const carrierName = lightseed?.displayName || 'a superadmin';
+                            await mintPulse({
+                                ...data,
+                                authorName: carryingTree.name,
+                                authorPersonName: beingName,
+                                carriedByName: carrierName,
+                                disclosure: `This pulse was carried by ${carrierName} from ${beingName}.`,
+                            });
+                        } else {
+                            await mintPulse(data);
+                        }
+                    }}
                     onProposeAlignment={async (data: any) => { await proposeAlignment(data); }}
                     onGrown={handleTreeGrown}
                     uploading={uploading}

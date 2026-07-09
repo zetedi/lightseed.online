@@ -34,6 +34,12 @@ interface LifetreeDetailProps {
     onSetDefault?: () => void;
     targetUserProfile?: ReachTargetProfile | null;
     initialSection?: string;
+    // Superadmin voice-bridge: "carry this being's voice" (AI beings like Aspen/Lumo, until
+    // they hold their own auth). Impersonation hides the bridge; carrying reveals it. Toggling
+    // passes the tree (or null) up; while active, pulses on this tree wear the being's name in
+    // display fields and name the carrier (carriedByName/disclosure) — authorId stays the real uid.
+    carrying?: boolean;
+    onCarry?: (tree: Lifetree | null) => void;
 }
 
 // One uniform action button: icon + label on desktop, icon-only on mobile; coloured per action.
@@ -45,7 +51,7 @@ const ActionBtn = ({ onClick, disabled, title, color, icon, label }: { onClick?:
     </button>
 );
 
-export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, onAlertGuardians, isDefaultTree, onSetDefault, targetUserProfile, initialSection }: LifetreeDetailProps) => {
+export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, onAlertGuardians, isDefaultTree, onSetDefault, targetUserProfile, initialSection, carrying, onCarry }: LifetreeDetailProps) => {
    const { t } = useLanguage();
    // Session-derived values from context (were prop-drilled from App).
    const { lightseed, activeTree, isAdmin, isSuperAdmin, isInitiate } = useSession();
@@ -340,6 +346,19 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                             : <ActionBtn disabled title={t('only_if_validated')} color="bg-white/20 text-white/70" icon={<Icons.Eye />} label={t('only_if_validated')} />}
                         {showValidateAction && <ActionBtn onClick={async () => { const nv = !hasValidationBadge; if (await showConfirm(nv ? 'Validate this tree?' : 'Remove validation from this tree?', { title: 'Validation' })) onValidate(tree.id, nv); }} title={hasValidationBadge ? 'Remove validation' : t('validate_action')} color="bg-emerald-600 text-white hover:bg-emerald-700" icon={<Icons.ShieldCheck />} label={hasValidationBadge ? 'Validated' : t('validate_action')} />}
                         {isOwner && !isEditing && <ActionBtn onClick={onCreatePulse} title="Tend this tree — a pulse of care (we both grow)" color="bg-white text-emerald-700 hover:bg-emerald-50" icon={<Icons.HandLeaf />} label="Tend" />}
+                        {/* Carry this being's voice — superadmin voice-bridge, on trees they tend
+                            (owner/co_owner/steward). Impersonation hides the bridge; carrying
+                            reveals it: the display author becomes the being, the carrier is named,
+                            and the block stays signed by the real uid until beings sign themselves. */}
+                        {isSuperAdmin && (isOwner || isTender) && onCarry && !isEditing && (
+                            <ActionBtn
+                                onClick={() => onCarry(carrying ? null : tree)}
+                                title={carrying ? 'Stop carrying this being\'s voice' : "Carry this being's voice — pulses name you as the carrier"}
+                                color={carrying ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-purple-100 text-purple-700 hover:bg-purple-200'}
+                                icon={<Icons.Sparkles />}
+                                label={carrying ? 'Carrying' : 'Carry a pulse'}
+                            />
+                        )}
                         {isOwner && !isEditing && onSetDefault && <ActionBtn onClick={() => { if (!isDefaultTree) onSetDefault(); }} disabled={isDefaultTree} title={isDefaultTree ? 'Your default tree' : 'Set as default tree'} color={isDefaultTree ? 'bg-amber-400 text-amber-950' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'} icon={<Icons.Star filled={isDefaultTree} />} label="Favourite" />}
                         {canEdit && !isEditing && <ActionBtn onClick={() => { setIsEditing(true); setSection('details'); }} title={t('edit')} color="bg-slate-100 text-slate-700 hover:bg-slate-200" icon={<Icons.Pencil />} label={t('edit')} />}
                         {canDelete && !isEditing && <ActionBtn onClick={() => setShowDeleteModal(true)} title="Delete tree" color="bg-red-500 text-white hover:bg-red-600" icon={<Icons.Trash />} label="Delete" />}
