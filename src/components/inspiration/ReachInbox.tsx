@@ -62,6 +62,7 @@ export const ReachInbox = ({
     // Show the enabled, active intelligence's name for the AI thread — reactively, so it
     // tracks the user's chosen intelligence as soon as the profile loads/changes.
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- reset to the default name when the user signs out / before auth resolves
         if (!lightseed?.uid) { setAiName('Osiris'); return; }
         let cancelled = false;
         const unsub = listenToUserProfile(lightseed.uid, (profile) => {
@@ -77,9 +78,11 @@ export const ReachInbox = ({
     useEffect(() => {
         if (requestedPartner) {
             // requestedAudience (e.g. 'guardians' from a danger alert) preselects a group reach.
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- prop→state sync: an externally requested partner opens that thread once, then is consumed
             setSelection({ kind: 'tree', tree: requestedPartner, audience: requestedAudience });
             onConsumeRequested?.();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the primitive partner id; the partner object and onConsumeRequested change identity per render and would re-open the thread after the user navigates away
     }, [requestedPartner?.id, requestedAudience]);
 
     // Opening Direct Messages marks every received message as seen, clearing the
@@ -95,6 +98,7 @@ export const ReachInbox = ({
             toMark.forEach(id => markedRef.current.add(id));
             markReachPulsesSeen(toMark, uid);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the primitive uid; the lightseed object changes identity on every profile update and would re-run the mark-seen write needlessly
     }, [pulses, lightseed?.uid]);
 
     const threads = useMemo(
@@ -123,6 +127,7 @@ export const ReachInbox = ({
             { title: 'Delete conversation', confirmText: 'Delete', danger: true },
         );
         if (!ok) return;
+        // eslint-disable-next-line react-hooks/purity -- Date.now runs inside a click handler (after an async confirm), not during render
         const next = { ...hiddenThreads, [thread.key]: Date.now() };
         setHiddenThreads(next);
         if (lightseed?.uid) updateUserProfile(lightseed.uid, { hiddenThreads: next }).catch(() => {});

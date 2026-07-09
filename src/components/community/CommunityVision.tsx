@@ -59,6 +59,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
 
   // Keep the mirrors in sync whenever the community prop changes (e.g. after refresh).
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- prop→state sync of optimistic toggles; deriving would lose the optimistic flips made while a save is in flight
     setChainSealed(!!community.chainLocked);
     setTokenisationOn(!!community.tokenisationEnabled);
   }, [community.chainLocked, community.tokenisationEnabled]);

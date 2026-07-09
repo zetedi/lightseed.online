@@ -58,6 +58,7 @@ export const GrowthPlayerModal = ({ treeId, onClose }: { treeId: string, onClose
     // single local counter keeps the frame + caption + dots perfectly in sync.
     useEffect(() => {
         if (frames.length === 0) return;
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- rewinds playback when frames/playNonce change before starting the interval timer below; the reset and the timer must stay atomic
         setIndex(0);
         if (frames.length === 1) { setDone(true); return; }
         setDone(false);

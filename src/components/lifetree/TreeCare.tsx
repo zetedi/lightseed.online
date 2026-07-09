@@ -60,12 +60,14 @@ export const TreeCare: React.FC<TreeCareProps> = ({
     // The component instance is reused across trees, so reset the panel when the tree changes
     // (useState initialisers only run on mount).
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- resets the reused panel instance when the tree changes (useState initialisers only run on mount)
         setWaterMsg(null);
         setWaterOnChain(false);
     }, [tree.id]);
     // Re-seed the schedule editor whenever the watering data itself changes — including a remote
     // edit by another tender — so Save never silently reverts someone else's schedule.
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- prop→state re-seed of the schedule editor when watering data changes remotely; deriving would clobber in-flight edits
         setWaterStage(treeStage(tree));
         setWaterInterval(tree.watering?.intervalDays || 7);
         // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed to identity + watering data on purpose; `tree` itself is a fresh object every parent render and would re-seed (and clobber) the editor mid-edit.
@@ -247,6 +249,7 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                         {pendingWaterings.map((p: Pulse) => (
                             <div key={p.id} className="flex items-center gap-2 rounded-lg bg-white/70 p-2">
                                 {p.imageUrl && <img src={p.imageUrl} className="h-10 w-10 rounded object-cover" alt="watering" />}
+                                {/* eslint-disable-next-line react-hooks/purity -- Date.now() is only the display fallback for a block still missing its server timestamp; it intentionally reads as "today" */}
                                 <span className="flex-1 truncate text-xs text-sky-800">{new Date(p.createdAt?.toMillis?.() || Date.now()).toLocaleDateString()} · {p.wateringConfirmation?.note || 'Watering'}</span>
                                 <button type="button" onClick={() => handleConfirmWatering(p.id)} disabled={confirmingId === p.id} className="rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-sky-700 disabled:opacity-50">{confirmingId === p.id ? '…' : 'Confirm'}</button>
                             </div>

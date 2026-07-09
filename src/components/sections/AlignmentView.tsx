@@ -73,6 +73,7 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree }:
 
   useEffect(() => {
     let alive = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- flips the loading flag and re-seeds from the (possibly stale) prop synchronously before the async live refresh below
     setLoading(true);
     setMessages(alignment.messages || []);
     setLiveStatus(alignment.status);
@@ -94,6 +95,7 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree }:
       setLoading(false);
     })();
     return () => { alive = false; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on alignment.id on purpose: the other alignment fields are fetched fresh inside; depending on them would refetch on every parent render (the prop object churns)
   }, [alignment.id]);
 
   const status = STATUS[liveStatus] || STATUS.PENDING;

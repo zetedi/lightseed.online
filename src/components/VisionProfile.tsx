@@ -44,6 +44,7 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
     // (the root tree may belong to someone else and not be in myTrees).
     const [rootTree, setRootTree] = useState<Lifetree | null>(null);
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- clears/short-circuits from the local cache before the async tree fetch below
         if (!vision.lifetreeId) { setRootTree(null); return; }
         const local = myTrees?.find(tr => tr.id === vision.lifetreeId);
         if (local) { setRootTree(local); return; }

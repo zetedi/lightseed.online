@@ -18,10 +18,13 @@ export function useHistoryLayers(layers: OverlayLayer[]): string[] {
   const openKeys = layers.filter(l => l.open).map(l => l.key);
 
   const openKeysRef = useRef<string[]>([]);
-  openKeysRef.current = openKeys;
-  // The closers, keyed — refreshed each render so popstate always invokes the latest closer.
+  // The closers, keyed — refreshed after every render (in an effect, not during render) so
+  // popstate always invokes the latest closer for the current open set.
   const closersRef = useRef<Record<string, () => void>>({});
-  closersRef.current = Object.fromEntries(layers.map(l => [l.key, l.close]));
+  useEffect(() => {
+    openKeysRef.current = openKeys;
+    closersRef.current = Object.fromEntries(layers.map(l => [l.key, l.close]));
+  });
 
   // We keep at most ONE history entry while any overlay is open ("armed").
   const armedRef = useRef(false);

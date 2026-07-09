@@ -22,6 +22,10 @@ export interface Intelligence extends Being {
   id: string;
   name: string;
   description?: string;
+  // The BEING's own glyph (e.g. /logos/lumo.svg) — the face of the intelligence itself.
+  // Providers are rails, not beings: the provider mark is derivable from `provider` and is
+  // never stored here. Beings without an icon wear the shared /logos/being.svg face.
+  icon?: string;
   provider: IntelligenceProviderId;
   model: string;
   enabled: boolean;

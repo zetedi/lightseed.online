@@ -30,6 +30,7 @@ export const CommunityFirstTree: React.FC<CommunityFirstTreeProps> = ({
   const [firstTreeGuardians, setFirstTreeGuardians] = useState(0);
   const firstTreeId = firstTree?.id;
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset when there is no featured tree, before the async links fetch below
     if (!firstTreeId) { setFirstTreeGuardians(0); return; }
     let alive = true;
     firestoreStore.linksTo(firstTreeId, 'guardian')

@@ -57,20 +57,21 @@ export function useSiteTheme(params: {
   const effectiveIsDark = effectiveTheme.mode === 'dark';
 
   useEffect(() => {
+    // effectiveTheme is a fresh object literal every render (always truthy), so the effect keys
+    // on its primitive fields; only the fields read here are used.
     const root = document.documentElement;
-    if (effectiveTheme) {
-      root.style.setProperty('--color-primary', effectiveTheme.primary);
-      root.style.setProperty('--color-secondary', effectiveTheme.secondary);
-      root.style.setProperty('--color-accent', effectiveTheme.accent);
-      root.style.setProperty('--color-background', effectiveTheme.background);
-      root.style.setProperty('--color-surface', effectiveTheme.surface || '#ffffff');
-      root.style.setProperty('--color-text', effectiveTheme.text || '#0f172a');
-      root.dataset.mode = effectiveIsDark ? 'dark' : 'light';
-    }
+    root.style.setProperty('--color-primary', effectiveTheme.primary);
+    root.style.setProperty('--color-secondary', effectiveTheme.secondary);
+    root.style.setProperty('--color-accent', effectiveTheme.accent);
+    root.style.setProperty('--color-background', effectiveTheme.background);
+    root.style.setProperty('--color-surface', effectiveTheme.surface || '#ffffff');
+    root.style.setProperty('--color-text', effectiveTheme.text || '#0f172a');
+    root.dataset.mode = effectiveIsDark ? 'dark' : 'light';
   }, [effectiveTheme.primary, effectiveTheme.secondary, effectiveTheme.accent, effectiveTheme.background, effectiveTheme.surface, effectiveTheme.text, effectiveIsDark]);
 
   useEffect(() => {
     if (localStorage.getItem('lifeseed_theme_mode') === null && localStorage.getItem('lifeseed_night_mode') === null) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- re-syncs to the node's theme mode when it changes and the user has no saved preference
       setThemeModePreference(null);
     }
   }, [configuredTheme.mode]);

@@ -88,9 +88,11 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
 
     // Opening the inbox (red envelope) or a specific reach jumps to the Reaches tab.
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- reacts to the parent's open-inbox signal; the tab is otherwise user-driven, so it can't be derived
         if (reachOpenSignal) setActiveTab('reaches');
     }, [reachOpenSignal]);
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- reacts to the parent's open-thread signal; the tab is otherwise user-driven, so it can't be derived
         if (reachPartner) setActiveTab('reaches');
     }, [reachPartner]);
 

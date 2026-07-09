@@ -14,7 +14,8 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({ value, onChange,
   const mapRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
   const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
+  // Keep the latest onChange for the map click handler without re-binding Leaflet listeners.
+  useEffect(() => { onChangeRef.current = onChange; });
 
   useEffect(() => {
     let cancelled = false;
@@ -53,6 +54,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({ value, onChange,
       cancelled = true;
       if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; markerRef.current = null; }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only Leaflet init; `value` only seeds the start view, and depending on it would tear down/recreate the map on every pick
   }, []);
 
   // Follow external coordinate changes (Locate button, GPS, image EXIF).
@@ -63,6 +65,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({ value, onChange,
     if (markerRef.current) markerRef.current.setLatLng([value.latitude, value.longitude]);
     else markerRef.current = L.marker([value.latitude, value.longitude]).addTo(map);
     map.setView([value.latitude, value.longitude], Math.max(map.getZoom() || 0, 13));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on primitive coords; the `value` object gets a new identity each parent render and would re-run setView needlessly
   }, [value?.latitude, value?.longitude]);
 
   return (

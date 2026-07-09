@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Lifetree, ReachAudience, VisionSynergy } from '../types';
 import { fetchVisions, getLifetreeById } from '../services/firebase';
 import { findVisionSynergies } from '../services/gemini';
@@ -8,6 +8,12 @@ import { resonanceId } from '../components/ResonancePanel';
 // Resonance refreshes once a week for members; admins have no limit. The whole point is
 // to protect the AI bill (each analysis spends the reader's key — or the node's).
 const SYNERGY_COOLDOWN = 7 * 24 * 3600 * 1000;
+
+// The cached last analysis, read synchronously on mount so the Observatory and Visions tab both
+// show the last result (and know the weekly cooldown) from the first render.
+const readSynergyCache = (): { results?: unknown; at?: number } | null => {
+  try { return JSON.parse(localStorage.getItem('synergy_cache_v1') || 'null'); } catch { return null; }
+};
 
 // AI vision-resonance, extracted from App verbatim: the weekly-gated synergy analysis plus the
 // favourites list, both cached in localStorage so they survive reloads (and feed the Observatory)
@@ -21,10 +27,19 @@ export function useResonance(params: {
 }) {
   const { data, preferredIntelligenceId, isStaff, openReach } = params;
 
-  const [synergies, setSynergies] = useState<VisionSynergy[]>([]);
+  const [synergies, setSynergies] = useState<VisionSynergy[]>(() => {
+    const results = readSynergyCache()?.results;
+    return Array.isArray(results) ? results : [];
+  });
   const [isAnalyzingSynergy, setIsAnalyzingSynergy] = useState(false);
-  const [lastSynergyAt, setLastSynergyAt] = useState(0); // ms of the last analysis (cost gate)
-  const [favoriteResonances, setFavoriteResonances] = useState<VisionSynergy[]>([]);
+  // ms of the last analysis (cost gate)
+  const [lastSynergyAt, setLastSynergyAt] = useState(() => readSynergyCache()?.at || 0);
+  const [favoriteResonances, setFavoriteResonances] = useState<VisionSynergy[]>(() => {
+    try {
+      const favs = JSON.parse(localStorage.getItem('resonance_favorites_v1') || 'null');
+      return Array.isArray(favs) ? favs : [];
+    } catch { return []; }
+  });
   const favoriteResonanceIds = useMemo(() => new Set(favoriteResonances.map(resonanceId)), [favoriteResonances]);
 
   const toggleFavoriteResonance = (s: VisionSynergy) => {
@@ -39,6 +54,7 @@ export function useResonance(params: {
   // A stable fingerprint of a vision set, so a cached result is tied to its visions.
   const synergyKey = (items: any[]) => items.map(v => v.id).sort().join(',');
 
+  // eslint-disable-next-line react-hooks/purity -- the cooldown countdown is intentionally recomputed against the clock on every render
   const synergyCooldownLeft = lastSynergyAt ? SYNERGY_COOLDOWN - (Date.now() - lastSynergyAt) : 0;
   const canRefreshResonance = isStaff || synergyCooldownLeft <= 0;
 
@@ -97,20 +113,6 @@ export function useResonance(params: {
     try { const tree = await getLifetreeById(treeId); if (tree) openReach(tree); }
     catch { showAlert('Could not open a conversation with that tree.'); }
   };
-
-  // Hydrate cached resonances on load (any tab) so the Observatory and Visions tab both
-  // show the last result, and the weekly cooldown is known.
-  useEffect(() => {
-    try {
-      const cached = JSON.parse(localStorage.getItem('synergy_cache_v1') || 'null');
-      if (cached) {
-        if (Array.isArray(cached.results)) setSynergies(cached.results);
-        if (cached.at) setLastSynergyAt(cached.at);
-      }
-      const favs = JSON.parse(localStorage.getItem('resonance_favorites_v1') || 'null');
-      if (Array.isArray(favs)) setFavoriteResonances(favs);
-    } catch {}
-  }, []);
 
   return {
     synergies,

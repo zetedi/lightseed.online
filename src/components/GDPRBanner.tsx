@@ -1,15 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 // Cookie / local-storage consent banner — shown once at the bottom until accepted, then remembered
 // in localStorage. Extracted from App verbatim.
 export const GDPRBanner = () => {
-    const [visible, setVisible] = useState(false);
+    // Lazy initializer: consent is readable synchronously, no effect needed.
+    const [visible, setVisible] = useState(() => !localStorage.getItem('lifeseed_gdpr'));
     const [checked, setChecked] = useState(false);
-
-    useEffect(() => {
-        const consent = localStorage.getItem('lifeseed_gdpr');
-        if (!consent) setVisible(true);
-    }, []);
 
     const handleAccept = () => {
         if (!checked) return;

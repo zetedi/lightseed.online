@@ -9,13 +9,14 @@ import { listenToMyReaches, listenToReachesForTrees } from '../services/firebase
 export function useReaches(lightseed: Lightseed | null, myTrees: Lifetree[]): number {
   const [unreadReaches, setUnreadReaches] = useState(0);
   const myTreeIdsKey = myTrees.map(tree => tree.id).join(',');
+  const uid = lightseed?.uid;
 
   useEffect(() => {
-    if (!lightseed) {
+    if (!uid) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- resets the unread count when the user signs out
       setUnreadReaches(0);
       return;
     }
-    const uid = lightseed.uid;
     const byRecipient = new Map<string, Pulse>();
     const byTree = new Map<string, Pulse>();
     const recompute = () => {
@@ -37,7 +38,7 @@ export function useReaches(lightseed: Lightseed | null, myTrees: Lifetree[]): nu
       recompute();
     });
     return () => { unsubRecipient(); unsubTrees(); };
-  }, [lightseed?.uid, myTreeIdsKey]);
+  }, [uid, myTreeIdsKey]);
 
   return unreadReaches;
 }

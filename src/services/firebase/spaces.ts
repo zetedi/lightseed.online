@@ -69,6 +69,11 @@ export const getCommunityByDomain = async (domain: string): Promise<Community | 
     return { id: snap.docs[0].id, ...snap.docs[0].data() } as Community;
 };
 
+export const getCommunityById = async (id: string): Promise<Community | null> => {
+    const snap = await getDoc(doc(db, 'communities', id));
+    return snap.exists() ? ({ id: snap.id, ...snap.data() } as Community) : null;
+};
+
 export const getMyCommunities = async (uid: string) => 
     (await getDocs(query(communitiesCollection, where('ownerId', '==', uid)))).docs.map(d => (mapDoc(d) as Community));
 
@@ -261,13 +266,19 @@ export const migrateBackfillLids = async (): Promise<Record<string, number>> => 
 // --- Organisation collabs -------------------------------------------------------------
 // The Collabs page lists this node's collaborators: the AI intelligences (live from the
 // intelligences config) AND organisations whose founder(s) agreed to stand here — or who hold a
-// place by contract (as Claude/Anthropic does). Staff-curated; world-readable.
+// place by contract (as Claude/Anthropic does). World-readable; added by validated/initiated
+// members (their being stands behind the entry), tended by their creator or staff.
+// An org entry is the bridge to another regen org's world: once it grows a community here
+// (`communityId`), information flows through that link and the org's members find the forest.
 export interface OrgCollab extends Being {
     id: string;
     name: string;
     url?: string;
     blurb?: string;
     agreement: 'founder' | 'contract';
+    logoUrl?: string;      // square brand mark shown on the org card
+    communityId?: string;  // the community this org grew here, once it exists
+    createdBy?: string;    // uid of the member who added the org — may tend/delete it
 }
 
 const collabsCollection = collection(db, 'collabs');
@@ -277,7 +288,7 @@ export const getOrgCollabs = async (): Promise<OrgCollab[]> =>
         .map(d => (mapDoc(d) as OrgCollab))
         .sort((a, b) => (toMillis(a.createdAt) || 0) - (toMillis(b.createdAt) || 0)); // oldest first — the order they joined
 
-export const addOrgCollab = async (data: { name: string; url?: string; blurb?: string; agreement: 'founder' | 'contract' }): Promise<string> => {
+export const addOrgCollab = async (data: { name: string; url?: string; blurb?: string; agreement: 'founder' | 'contract'; logoUrl?: string; createdBy: string }): Promise<string> => {
     if (!data.name.trim()) throw new Error('The organisation needs a name.');
     const ref = await addDoc(collabsCollection, {
         lid: uuidv7(),
@@ -285,10 +296,17 @@ export const addOrgCollab = async (data: { name: string; url?: string; blurb?: s
         url: data.url?.trim() || '',
         blurb: data.blurb?.trim() || '',
         agreement: data.agreement,
+        ...(data.logoUrl ? { logoUrl: data.logoUrl } : {}),
+        createdBy: data.createdBy,
         createdAt: serverTimestamp(),
     });
     return ref.id;
 };
+
+// Tend an org entry. Rules allow staff any change; the org's creator only the
+// communityId/logoUrl/blurb fields (field-level diff, like alignments).
+export const updateOrgCollab = (id: string, data: Partial<Pick<OrgCollab, 'communityId' | 'logoUrl' | 'blurb'>>) =>
+    updateDoc(doc(db, 'collabs', id), data);
 
 export const removeOrgCollab = (id: string) => deleteDoc(doc(db, 'collabs', id));
 

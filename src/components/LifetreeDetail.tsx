@@ -36,6 +36,15 @@ interface LifetreeDetailProps {
     initialSection?: string;
 }
 
+// One uniform action button: icon + label on desktop, icon-only on mobile; coloured per action.
+const ActionBtn = ({ onClick, disabled, title, color, icon, label }: { onClick?: () => void; disabled?: boolean; title?: string; color: string; icon: React.ReactNode; label?: string }) => (
+    <button type="button" onClick={onClick} disabled={disabled} title={title}
+        className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-bold shadow-sm transition-colors disabled:opacity-50 ${color}`}>
+        <span className="[&>svg]:h-4 [&>svg]:w-4">{icon}</span>
+        {label && <span className="hidden md:inline">{label}</span>}
+    </button>
+);
+
 export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, onAlertGuardians, isDefaultTree, onSetDefault, targetUserProfile, initialSection }: LifetreeDetailProps) => {
    const { t } = useLanguage();
    // Session-derived values from context (were prop-drilled from App).
@@ -79,6 +88,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    type TreeSection = 'digital' | 'details' | 'guardians' | 'care' | 'circle';
    const [section, setSection] = useState<TreeSection>((initialSection as TreeSection) || 'digital');
    // A caller can steer the opening section (e.g. the profile droplet opens Care).
+   // eslint-disable-next-line react-hooks/set-state-in-effect -- prop→state sync: re-steers the section when the caller changes initialSection/tree; a lazy initializer only covers first mount
    useEffect(() => { if (initialSection) setSection(initialSection as TreeSection); }, [initialSection, tree?.id]);
 
    // Note: getPulsesByTreeId returns Descending order (Newest First). Extracted (and kept
@@ -94,6 +104,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
             setGrowthBlocks(pulses.filter(p => !isGenesis(p)));
         }).finally(() => setLoadingChain(false));
    }, [tree.id]);
+   // eslint-disable-next-line react-hooks/set-state-in-effect -- async chain fetch kickoff; the sync setLoadingChain(true) marks the fetch in flight and must re-run per tree.id
    useEffect(() => { loadChain(); }, [loadChain]);
 
    const handleSave = async (details: TreeDetailsUpdates) => {
@@ -178,15 +189,6 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
            else { await navigator.clipboard.writeText(url); setShared(true); setTimeout(() => setShared(false), 1500); }
        } catch { /* user cancelled the share sheet */ }
    };
-   // One uniform action button: icon + label on desktop, icon-only on mobile; coloured per action.
-   const ActionBtn = ({ onClick, disabled, title, color, icon, label }: { onClick?: () => void; disabled?: boolean; title?: string; color: string; icon: React.ReactNode; label?: string }) => (
-       <button type="button" onClick={onClick} disabled={disabled} title={title}
-           className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-bold shadow-sm transition-colors disabled:opacity-50 ${color}`}>
-           <span className="[&>svg]:h-4 [&>svg]:w-4">{icon}</span>
-           {label && <span className="hidden md:inline">{label}</span>}
-       </button>
-   );
-
    // The tree's sections — each `render` closes over this shell's state and handlers.
    const sections: BeingSection[] = [
        {

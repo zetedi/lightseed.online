@@ -92,6 +92,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
   useEffect(() => {
     if (treeType === 'GUARDED') {
       // Leave the name empty so the grey "A tree to stand for" suggestion shows.
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- clears the form when the user switches tree type mid-flow; the fields are user-editable so they can't be derived
       setTreeName("");
       setTreeBio("");
     }

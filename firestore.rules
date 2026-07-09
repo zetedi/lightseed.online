@@ -113,11 +113,19 @@ service cloud.firestore {
       allow delete: if isStaff();
     }
 
-    // Organisation collabs — the node's curated collaborators (founder-agreed or by contract).
-    // World-readable; staff-curated.
+    // Organisation collabs — the node's collaborators (founder-agreed or by contract).
+    // World-readable. Any signed-in member may add an org, naming themselves as creator
+    // (the app additionally gates the UI to validated/initiated members). The creator may
+    // tend their own entry's communityId/logoUrl/blurb (field-level diff, like alignments)
+    // and remove it; everything else stays staff.
     match /collabs/{id} {
       allow read: if true;
-      allow write: if isStaff();
+      allow create: if isStaff() || (isSignedIn() && request.resource.data.createdBy == request.auth.uid);
+      allow update: if isStaff()
+        || (isSignedIn()
+            && resource.data.get('createdBy', '') == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['communityId', 'logoUrl', 'blurb']));
+      allow delete: if isStaff() || (isSignedIn() && resource.data.get('createdBy', '') == request.auth.uid);
     }
 
     // The initiated layer — a Firestore MIRROR of the git initiation ledger (initiations/ in the

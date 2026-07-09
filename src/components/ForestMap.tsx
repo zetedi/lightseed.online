@@ -132,17 +132,7 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
         };
     };
 
-    useEffect(() => {
-        const checkLeaflet = setInterval(() => {
-            const L = (window as any).L;
-            if (L && mapContainer.current) {
-                clearInterval(checkLeaflet);
-                initMap(L);
-            }
-        }, 100);
-        return () => clearInterval(checkLeaflet);
-    }, []);
-
+    // Declared before the polling effect below so the effect closes over the declared function.
     const initMap = (L: any) => {
         if (!mapContainer.current || mapInstance.current) return;
 
@@ -178,6 +168,17 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
             updateMarkersRef.current(L, true);
         }, 250);
     }
+
+    useEffect(() => {
+        const checkLeaflet = setInterval(() => {
+            const L = (window as any).L;
+            if (L && mapContainer.current) {
+                clearInterval(checkLeaflet);
+                initMap(L);
+            }
+        }, 100);
+        return () => clearInterval(checkLeaflet);
+    }, []);
 
     useEffect(() => {
         const L = (window as any).L;
@@ -230,6 +231,7 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
             // Only one tree to show — fall back to a ~100 km radius around it.
             mapInstance.current.fitBounds(L.latLng(center.lat, center.lng).toBounds(200000), { animate: false });
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on treesSignature on purpose: visibleTrees changes identity every render; the one-shot initial focus only needs to re-run when the tree set actually changes
     }, [isMapReady, primaryTree, treesSignature]);
 
     const getHtmlForTree = (tree: Lifetree, isSmall = false, delay = 0) => {
@@ -565,7 +567,11 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
         }
     }
 
-    updateMarkersRef.current = updateMarkers;
+    // Keep the ref pointing at the latest closure. Assigned post-commit (every render);
+    // all readers are effects / timeouts / leaflet handlers, which also run post-commit.
+    useEffect(() => {
+        updateMarkersRef.current = updateMarkers;
+    });
 
     useEffect(() => {
         return () => {

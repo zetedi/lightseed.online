@@ -92,6 +92,7 @@ export const IntelligencePanel = ({
   useEffect(() => {
     if (inited.current || intelligences.length === 0) return;
     inited.current = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot (ref-guarded) discoverability default once intelligences load; not derivable at mount
     if (!existingClaude?.connected) setShowConnect(true);
   }, [intelligences, existingClaude]);
 

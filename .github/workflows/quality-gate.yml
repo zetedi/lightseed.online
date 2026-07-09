@@ -29,3 +29,20 @@ jobs:
         run: npm test
       - name: Firestore rules tests (emulator)
         run: npx firebase-tools emulators:exec --only firestore "npx vitest run --config vitest.rules.config.ts" --project demo-lifeseed
+
+  # The functions are their own compilation unit with their own node_modules — the app gate's
+  # root tsconfig excludes them, so they get their own job.
+  functions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+      - run: npm ci
+        working-directory: functions
+      - name: Typecheck functions
+        run: npx tsc --noEmit -p tsconfig.json
+        working-directory: functions

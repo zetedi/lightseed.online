@@ -9,6 +9,7 @@ import type { Lightseed } from '../types';
 export function useDashboardStats(lightseed: Lightseed | null, tab: string) {
   const [stats, setStats] = useState({ pulses: 0, visions: 0, alignments: 0 });
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resets counts to zero when the user signs out
     if (!lightseed) { setStats({ pulses: 0, visions: 0, alignments: 0 }); return; }
     let alive = true;
     Promise.all([

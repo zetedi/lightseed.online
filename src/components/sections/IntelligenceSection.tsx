@@ -93,6 +93,7 @@ export const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
 
   // Keep editable copies in sync whenever the entity's saved selection changes (e.g. after refresh).
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- prop→state sync of the editable selection; deriving would clobber unsaved toggles
     setEditDefaultIntelligenceId(defaultIntelligenceId || '');
     setEditAvailableIntelligenceIds(availableIntelligenceIds || []);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the joined ids (value, not array identity) so equal-array refreshes don't clobber unsaved toggles

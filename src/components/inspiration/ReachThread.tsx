@@ -105,6 +105,8 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
     const [isTyping, setIsTyping] = useState(false);
     const [isSending, setIsSending] = useState(false);
     const [isMinting, setIsMinting] = useState(false);
+    // The minting explainer, folded behind a small (i) toggle under the messages.
+    const [showMintInfo, setShowMintInfo] = useState(false);
     const [usage, setUsage] = useState(0);
     const [preferredIntelligenceId, setPreferredIntelligenceId] = useState<string | undefined>(undefined);
     // The name of the enabled, active intelligence — shown throughout the DM in place of "Osiris".
@@ -138,6 +140,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
         } else {
             setMode('oracle');
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on primitive ids; the targetTree/groupThread objects change identity on parent renders and would reset the selected tree/audience mid-conversation
     }, [targetTree?.id, groupThread?.threadId, initialAudience]);
 
     // Translate raw reach pulses into the rendered conversation. In a group thread every
@@ -264,12 +267,14 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
 
         return () => { cancelled = true; };
         // Reload when the partner / group / audience changes, or once auth resolves.
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on primitive ids only; the listed objects (lightseed, myTrees, selectedTree, groupThread) and render-scoped fns (buildHistory, markThreadSeen, t) change identity per render and would refetch the thread in a loop
     }, [mode, selectedTree?.id, groupThread?.threadId, audience, lightseed?.uid]);
 
     useEffect(() => {
         if (mode === 'tree' && !selectedTree && !groupThread && activeTree) {
             setSelectedTree(activeTree);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on primitive ids; depending on the tree/thread objects would re-run on identity churn and could override the user's selected tree
     }, [mode, selectedTree?.id, activeTree?.id, groupThread?.threadId]);
 
     useEffect(() => {
@@ -682,11 +687,25 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                 <div ref={bottomRef}></div>
             </div>
             {mode === 'tree' && (
-                <p className="px-5 pt-2 text-center text-[11px] italic leading-snug text-slate-400">
-                    {isGroup
-                        ? 'A group reach — everyone in the chosen circle sees and can answer here. Anyone can mint this conversation to their tree, sealing it on the immutable chain.'
-                        : 'These messages stay between you. Anyone here can mint the conversation to their tree — sealing it on the immutable chain as a shared record, like a contract. A mint shows here and on that tree.'}
-                </p>
+                <div className="px-5 pt-2 text-center">
+                    {showMintInfo && (
+                        <p className="mx-auto mb-1.5 max-w-md rounded-lg border border-slate-100 bg-slate-50/90 px-3 py-2 text-[11px] italic leading-snug text-slate-400 shadow-sm">
+                            {isGroup
+                                ? 'A group reach — everyone in the chosen circle sees and can answer here. Anyone can mint this conversation to their tree, sealing it on the immutable chain.'
+                                : 'Anyone here can mint the conversation to their tree — sealing it on the immutable chain as a shared record, like a contract. A mint shows here and on that tree.'}
+                        </p>
+                    )}
+                    <button
+                        type="button"
+                        onClick={() => setShowMintInfo(v => !v)}
+                        title="About minting this conversation"
+                        aria-label="About minting this conversation"
+                        aria-expanded={showMintInfo}
+                        className={`inline-flex items-center justify-center rounded-full p-1 transition-colors ${showMintInfo ? 'text-slate-500' : 'text-slate-300 hover:text-slate-500'}`}
+                    >
+                        <Icons.Info size={14} />
+                    </button>
+                </div>
             )}
             <form onSubmit={handleSend} className="p-4 bg-white border-t border-slate-100 flex space-x-3 items-center sticky bottom-0 z-10">
                 <input

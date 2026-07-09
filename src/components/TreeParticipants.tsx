@@ -20,6 +20,7 @@ export const TreeParticipants = ({ entityId, currentUserId, myTrees = [] }: {
 
     useEffect(() => {
         let alive = true;
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- flips the loading flag synchronously before the async participants fetch below
         setLoading(true);
         getParticipatingTrees(entityId)
             .then(ts => { if (alive) { setTrees(ts); setLoading(false); } })

@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
-import { BEING_NOTE, DATA_MODEL, DATA_RELATIONS, type ModelEntity } from '../../domain/dataModel';
+import { BEING_NOTE, BOX_ROW, BOX_WIDTH, DATA_MODEL, DATA_RELATIONS, boxHeaderHeight, boxHeight, type ModelEntity } from '../../domain/dataModel';
 import { buildDrawioFile, buildDrawioXml } from '../../utils/drawioExport';
 import { Icons } from '../ui/Icons';
 
 // The data model as a crystal — the entities and how they link, drawn from the same definition
 // that generates the draw.io XML. It's the schema (the shape of the seed), not any instance.
+// Box geometry (width/header/row) is shared with the draw.io export via domain/dataModel.
 
-const WIDTH = 250, HEADER = 46, ROW = 22, PAD = 8;
-const boxH = (e: ModelEntity) => HEADER + e.fields.length * ROW + PAD;
+const WIDTH = BOX_WIDTH, ROW = BOX_ROW;
+const boxH = (e: ModelEntity) => boxHeight(e);
 
 type Box = { e: ModelEntity; x: number; y: number; w: number; h: number; cx: number; cy: number };
 
@@ -31,13 +32,13 @@ export const DataModelCrystal = () => {
     return map;
   }, []);
 
-  const boxList = Object.values(boxes) as Box[];
+  const boxList = useMemo(() => Object.values(boxes) as Box[], [boxes]);
 
   const bounds = useMemo(() => {
     let maxX = 0, maxY = 0;
     boxList.forEach(b => { maxX = Math.max(maxX, b.x + b.w); maxY = Math.max(maxY, b.y + b.h); });
     return { w: maxX + 40, h: maxY + 40 };
-  }, [boxes]);
+  }, [boxList]);
 
   const download = () => {
     const blob = new Blob([buildDrawioFile()], { type: 'application/xml' });
@@ -113,16 +114,16 @@ export const DataModelCrystal = () => {
               <clipPath id={`dm-clip-${e.key}`}><rect x={x} y={y} width={w} height={h} rx={9} /></clipPath>
               <g clipPath={`url(#dm-clip-${e.key})`}>
                 <rect x={x} y={y} width={w} height={h} fill="#0f172a" />
-                <rect x={x} y={y} width={w} height={HEADER} fill="#064e3b" />
+                <rect x={x} y={y} width={w} height={boxHeaderHeight(e)} fill="#064e3b" />
               </g>
               <rect x={x} y={y} width={w} height={h} rx={9} fill="none" stroke="#10b981" strokeOpacity={0.7} strokeWidth={1.2} />
-              <text x={x + 12} y={y + 20} fontSize="14" fontWeight={700} fill="#ecfdf5">{e.label}</text>
-              <text x={x + 12} y={y + 35} fontSize="10" fill="#6ee7b7">{e.collection}</text>
-              {e.note && <text x={x + w - 10} y={y + 20} fontSize="9" fill="#94a3b8" textAnchor="end" style={{ pointerEvents: 'none' }}>{e.note.length > 34 ? e.note.slice(0, 33) + '…' : e.note}</text>}
+              <text x={x + 10} y={y + 17} fontSize="13" fontWeight={700} fill="#ecfdf5">{e.label}</text>
+              <text x={x + 10} y={y + 30} fontSize="9" fill="#6ee7b7">{e.collection}</text>
+              {e.note && <text x={x + 10} y={y + 44} fontSize="8" fill="#94a3b8" style={{ pointerEvents: 'none' }}>{e.note.length > 44 ? e.note.slice(0, 43) + '…' : e.note}</text>}
               {e.fields.map((f, fi) => {
-                const fy = y + HEADER + fi * ROW + 15;
+                const fy = y + boxHeaderHeight(e) + fi * ROW + 13;
                 return (
-                  <text key={f.name} x={x + 12} y={fy} fontSize="12" fill="#e2e8f0" style={{ pointerEvents: 'none' }}>
+                  <text key={f.name} x={x + 10} y={fy} fontSize="11" fill="#e2e8f0" style={{ pointerEvents: 'none' }}>
                     <tspan fontWeight={f.pk ? 700 : 400} fill={f.pk ? '#fcd34d' : '#e2e8f0'}>{f.name}</tspan>
                     <tspan fill="#64748b"> : {f.ref ? f.type : f.type}</tspan>
                     {f.ref && <tspan fill="#7dd3fc"> → {f.ref}</tspan>}

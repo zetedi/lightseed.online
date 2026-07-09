@@ -1,16 +1,13 @@
-import { BEING_NOTE, DATA_MODEL, DATA_RELATIONS, type ModelEntity } from '../domain/dataModel';
+import { BEING_NOTE, BOX_WIDTH, DATA_MODEL, DATA_RELATIONS, boxHeight, type ModelEntity } from '../domain/dataModel';
 
 // Emit the data model as draw.io (mxGraph) XML — importable/editable at diagrams.net. Each entity
 // is an HTML-labelled box; each relationship is an edge labelled with the field that forms it.
+// Box geometry is shared with the SVG crystal via domain/dataModel.
 
 const xmlEscape = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-const ROW = 22;
-const HEADER = 46;
-const WIDTH = 250;
-
-const boxHeight = (e: ModelEntity) => HEADER + e.fields.length * ROW + 8;
+const WIDTH = BOX_WIDTH;
 
 // The HTML label for an entity box (rendered by draw.io with html=1).
 const entityLabelHtml = (e: ModelEntity) => {

@@ -95,6 +95,7 @@ export const useLifeseed = () => {
 
     // Track the user's chosen default tree from their profile (live).
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- clears the default tree when the user signs out
         if (!lightseed?.uid) { setDefaultTreeId(undefined); return; }
         const unsub = listenToUserProfile(lightseed.uid, (data) => setDefaultTreeId(data?.defaultTreeId || undefined));
         return () => unsub();

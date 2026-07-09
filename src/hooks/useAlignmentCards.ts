@@ -37,6 +37,7 @@ export const useAlignmentCards = (alignments: Alignment[], myTrees: Lifetree[]):
   const [enriched, setEnriched] = useState<Record<string, AlignmentCard>>({});
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- clears stale enriched cards when the alignment list empties
     if (!alignments.length) { setEnriched({}); return; }
     let alive = true;
     (async () => {

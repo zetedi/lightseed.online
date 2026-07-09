@@ -86,10 +86,22 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
             )}
 
             <div className="relative flex flex-col items-start md:items-center">
-                {/* Central Tree Trunk — a rounded cylinder with vertical bark grain. */}
+                {/* Central Tree Trunk — real bark: the phoenix texture tiled vertically along the
+                    column (a centred strip of the image repeats down the trunk), with a cylinder
+                    shading overlay (dark edges, faint centre highlight) so it keeps its depth.
+                    Shape (rounded top/bottom), widths (w-4 / md:w-8) and z-layering unchanged. */}
                 <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-4 md:w-8 -ml-2 md:-ml-4 rounded-t-full rounded-b-2xl shadow-inner overflow-hidden z-0"
-                     style={{ background: 'linear-gradient(90deg, #3E2723 0%, #6D4C41 45%, #8D6E63 55%, #4E342E 100%)' }}>
-                    <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'repeating-linear-gradient(90deg, transparent 0, transparent 3px, rgba(0,0,0,0.18) 3px, rgba(0,0,0,0.18) 5px)' }}></div>
+                     style={{
+                         backgroundColor: '#4E342E',
+                         backgroundImage: 'url(/phoenix.webp)',
+                         backgroundSize: '120px auto',
+                         backgroundRepeat: 'repeat-y',
+                         backgroundPosition: 'center top',
+                     }}>
+                    <div className="absolute inset-0" style={{
+                        background: 'linear-gradient(90deg, rgba(20,10,5,0.65) 0%, rgba(20,10,5,0.15) 30%, rgba(255,240,220,0.12) 50%, rgba(20,10,5,0.15) 70%, rgba(20,10,5,0.65) 100%)',
+                        boxShadow: 'inset 0 0 8px rgba(0,0,0,0.55)',
+                    }}></div>
                 </div>
 
                 <div className="w-full space-y-12 md:space-y-24 pb-24 relative z-10">

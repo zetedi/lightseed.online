@@ -69,6 +69,7 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
     // The component instance can be reused across trees, so reset the editor when the tree
     // changes (useState initialisers only run on mount).
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- resets the reused editor instance when the tree changes (useState initialisers only run on mount)
         setEditVisibility(tree.visibility || 'public');
         // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed to the tree's identity on purpose: re-seeding on every `tree.visibility` change would clobber an in-progress edit.
     }, [tree.id]);

@@ -1,5 +1,5 @@
 
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useState, ReactNode } from 'react';
 import { translations, Language } from '../utils/translations';
 
 interface LanguageContextType {
@@ -14,14 +14,11 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 // Fix: Marking children as optional to avoid TypeScript errors in some environments 
 // where children nested in JSX are not immediately recognized as the 'children' prop.
 export const LanguageProvider = ({ children }: { children?: ReactNode }) => {
-  const [language, setLanguageState] = useState<Language>('en');
-
-  useEffect(() => {
+  // Lazy initializer: the stored language is readable synchronously, no effect needed.
+  const [language, setLanguageState] = useState<Language>(() => {
       const stored = localStorage.getItem('lifeseed_lang');
-      if (stored && translations[stored as Language]) {
-          setLanguageState(stored as Language);
-      }
-  }, []);
+      return stored && translations[stored as Language] ? (stored as Language) : 'en';
+  });
 
   const setLanguage = (lang: Language) => {
       setLanguageState(lang);

@@ -63,7 +63,8 @@ export const findAlignmentForSyncBlock = async (treeId: string, blockAtMillis?: 
 
 // One-time migration for legacy alignment sync-blocks: every pulse minted with `isMatch: true`
 // before `matchId` was stamped on new blocks gets its alignment resolved with the SAME tree+time
-// logic the runtime fallback uses (findAlignmentForSyncBlock), and the id written back. After a
+// resolver logic (findAlignmentForSyncBlock — now used ONLY by this migration; the App runtime
+// fallback was removed after the 2026-07-09 prod run), and the id written back. After a
 // verified run, that runtime fallback is only a harmless safety net and can be removed.
 // Sealed blocks (hashVersion set) are skipped — `matchId` is canonical block content
 // (BLOCK_CONTENT_FIELDS), so adding it post-seal would break hash verification; sealed sync-blocks

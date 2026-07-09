@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { getTreesByDomain } from '../services/firebase';
 import { type Lifetree } from '../types';
 import Logo from './Logo';
@@ -14,7 +14,7 @@ export const LifeseedWidget: React.FC<Props> = ({ domain, onClose }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchTrees = async () => {
+    const fetchTrees = useCallback(async () => {
         if (!domain) { setLoading(false); return; }
         setLoading(true);
         setError(null);
@@ -26,10 +26,11 @@ export const LifeseedWidget: React.FC<Props> = ({ domain, onClose }) => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [domain]);
 
     // Initial load
-    useEffect(() => { fetchTrees(); }, [domain]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetchTrees flips the loading flag synchronously before awaiting the fetch; that's the loading-state pattern, not derived state
+    useEffect(() => { fetchTrees(); }, [fetchTrees]);
 
     // Re-fetch whenever the parent page signals the widget was opened
     useEffect(() => {
@@ -38,7 +39,7 @@ export const LifeseedWidget: React.FC<Props> = ({ domain, onClose }) => {
         };
         window.addEventListener('message', handler);
         return () => window.removeEventListener('message', handler);
-    }, [domain]);
+    }, [fetchTrees]);
 
     const handleClose = () => {
         if (onClose) { onClose(); return; }

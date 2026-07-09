@@ -97,6 +97,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   // not the legacy tree.guardians array (which writes no longer touch).
   const [guardedTreeIds, setGuardedTreeIds] = useState<Set<string>>(new Set());
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset-on-signout before the async links fetch below
     if (!currentUserId) { setGuardedTreeIds(new Set()); return; }
     let alive = true;
     firestoreStore.linksFrom(currentUserId, 'guardian')
@@ -111,7 +112,9 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const [status, setStatus] = useState<string | null>(null);
 
   // Keep editable copies in sync whenever the community prop changes (e.g. after refresh).
+  const imageUrlsKey = (community.imageUrls || []).join(',');
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- prop→state sync of the editable copies; deriving instead would clobber in-flight edits
     setEditName(community.name);
     setEditVision(community.vision);
     setEditSocial(community.socialLinks || {});
@@ -119,7 +122,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     setLogoUrl(community.logoUrl || '');
     setHeroImageUrl(community.heroImageUrl || '');
     setImageUrls(community.imageUrls || []);
-  }, [community.id, community.name, community.vision, community.logoUrl, community.heroImageUrl, community.theme, (community.imageUrls || []).join(',')]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on primitive fields (arrays via imageUrlsKey); socialLinks/imageUrls object identities change per fetch and would re-run this, clobbering in-flight edits
+  }, [community.id, community.name, community.vision, community.logoUrl, community.heroImageUrl, community.theme, imageUrlsKey]);
 
   useEffect(() => {
     getTreesByDomain(community.domain, currentUserId).then(setLinkedTrees).catch(() => {});

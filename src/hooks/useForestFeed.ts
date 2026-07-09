@@ -133,6 +133,7 @@ export function useForestFeed(params: {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadContent is recreated each render; its inputs (tab, lastDoc, hasMore, loadingMore) are already deps, adding it would re-attach every render
   }, [loadingMore, hasMore, tab, lastDoc]);
 
   // IntersectionObserver sentinel for forest list view
@@ -150,6 +151,7 @@ export function useForestFeed(params: {
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadContent is recreated each render; its inputs (tab, lastDoc, hasMore, loadingMore) are already deps, adding it would rebuild the observer every render
   }, [tab, viewMode, hasMore, loadingMore, lastDoc]);
 
   return { data, setData, loadContent, loadingMore, forestSentinelRef };

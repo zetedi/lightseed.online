@@ -53,6 +53,7 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
                 aiInterpretation: interpretationData
             });
 
+            // eslint-disable-next-line react-hooks/immutability -- intentional optimistic mutation of the parent-owned pulse object so all views of it show the saved interpretation without a refetch
             pulse.aiInterpretation = interpretationData; // optimistic update
         } catch (e: any) {
             console.error(e);

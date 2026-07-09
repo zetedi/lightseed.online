@@ -1,7 +1,14 @@
 // The data model — the "crystal". A structured, single-source description of the lifeseed
 // entities and how they link, used both to render the in-app diagram and to emit a draw.io
 // (mxGraph) XML you can open/edit in diagrams.net. Positions are the diagram layout (top-left of
-// each box, on a ~1440×760 canvas).
+// each box, on a column grid: 6 columns at x = 40 + n·310, boxes BOX_WIDTH wide).
+
+// Shared box geometry — one source for the SVG crystal, the draw.io export, and any overlap math.
+export const BOX_WIDTH = 210;
+export const BOX_HEADER = 38;
+export const BOX_NOTE_ROW = 12; // extra header line when an entity carries a note
+export const BOX_ROW = 18;
+export const BOX_PAD = 8;
 
 export interface ModelField {
   name: string;
@@ -21,6 +28,9 @@ export interface ModelEntity {
   fields: ModelField[];
 }
 
+export const boxHeaderHeight = (e: ModelEntity) => BOX_HEADER + (e.note ? BOX_NOTE_ROW : 0);
+export const boxHeight = (e: ModelEntity) => boxHeaderHeight(e) + e.fields.length * BOX_ROW + BOX_PAD;
+
 // The concept the whole model rests on — shown in the diagram legend and the draw.io export.
 export const BEING_NOTE =
   'Every entity is a Being: lid (true name) + chain (story) + links (circle) + profile (face) — Indra’s net.';
@@ -37,7 +47,7 @@ export const DATA_MODEL: ModelEntity[] = [
     ],
   },
   {
-    key: 'Community', label: 'Community', collection: 'communities', x: 700, y: 40,
+    key: 'Community', label: 'Community', collection: 'communities', x: 660, y: 40,
     note: 'a node — drives its domain',
     fields: [
       { name: 'id', type: 'string', pk: true },
@@ -52,7 +62,7 @@ export const DATA_MODEL: ModelEntity[] = [
     ],
   },
   {
-    key: 'Lifetree', label: 'Lifetree', collection: 'lifetrees', x: 700, y: 320,
+    key: 'Lifetree', label: 'Lifetree', collection: 'lifetrees', x: 660, y: 300,
     note: 'the seed — carries its own chain',
     fields: [
       { name: 'id', type: 'string', pk: true },
@@ -66,7 +76,7 @@ export const DATA_MODEL: ModelEntity[] = [
     ],
   },
   {
-    key: 'Vision', label: 'Vision', collection: 'visions', x: 1050, y: 40,
+    key: 'Vision', label: 'Vision', collection: 'visions', x: 970, y: 40,
     fields: [
       { name: 'id', type: 'string', pk: true },
       { name: 'lifetreeId', type: 'string?', ref: 'Lifetree' },
@@ -77,7 +87,7 @@ export const DATA_MODEL: ModelEntity[] = [
     ],
   },
   {
-    key: 'Pulse', label: 'Pulse', collection: 'pulses', x: 700, y: 660,
+    key: 'Pulse', label: 'Pulse', collection: 'pulses', x: 660, y: 545,
     note: 'block on a tree chain · subtypes: growth · event · reach · decision',
     fields: [
       { name: 'id', type: 'string', pk: true },
@@ -93,7 +103,7 @@ export const DATA_MODEL: ModelEntity[] = [
     ],
   },
   {
-    key: 'Alignment', label: 'Alignment', collection: 'alignments', x: 1050, y: 540,
+    key: 'Alignment', label: 'Alignment', collection: 'alignments', x: 970, y: 460,
     note: 'a mutual sync between two trees',
     fields: [
       { name: 'id', type: 'string', pk: true },
@@ -108,7 +118,7 @@ export const DATA_MODEL: ModelEntity[] = [
 
   // --- Identity & account ---------------------------------------------------
   {
-    key: 'User', label: 'User', collection: 'users', x: 40, y: 540,
+    key: 'User', label: 'User', collection: 'users', x: 40, y: 470,
     note: 'account profile (doc id = uid)',
     fields: [
       { name: 'uid', type: 'string', ref: 'Person', pk: true },
@@ -123,12 +133,12 @@ export const DATA_MODEL: ModelEntity[] = [
     ],
   },
   {
-    key: 'Admin', label: 'Admin', collection: 'admins', x: 40, y: 900,
+    key: 'Admin', label: 'Admin', collection: 'admins', x: 40, y: 730,
     note: 'staff roster — existence = staff',
     fields: [{ name: 'uid', type: 'string', ref: 'Person', pk: true }],
   },
   {
-    key: 'Config', label: 'Config', collection: 'config', x: 40, y: 1040,
+    key: 'Config', label: 'Config', collection: 'config', x: 40, y: 845,
     note: 'config/superadmin singleton',
     fields: [
       { name: 'id', type: '"superadmin"', pk: true },
@@ -138,7 +148,7 @@ export const DATA_MODEL: ModelEntity[] = [
 
   // --- Sanctuary & engagement ----------------------------------------------
   {
-    key: 'Sanctuary', label: 'Sanctuary', collection: 'sanctuaries', x: 1050, y: 300,
+    key: 'Sanctuary', label: 'Sanctuary', collection: 'sanctuaries', x: 970, y: 250,
     note: 'a sacred place on a domain',
     fields: [
       { name: 'id', type: 'string', pk: true },
@@ -150,7 +160,7 @@ export const DATA_MODEL: ModelEntity[] = [
     ],
   },
   {
-    key: 'Love', label: 'Love', collection: 'pulses/{id}/loves', x: 700, y: 960,
+    key: 'Love', label: 'Love', collection: 'pulses/{id}/loves', x: 660, y: 825,
     note: 'like on a pulse (doc id = uid)',
     fields: [
       { name: 'uid', type: 'string', ref: 'Person', pk: true },
@@ -160,7 +170,7 @@ export const DATA_MODEL: ModelEntity[] = [
 
   // --- Initiation (git ledger mirror) ----------------------------------------
   {
-    key: 'Initiate', label: 'Initiate', collection: 'initiates', x: 360, y: 40,
+    key: 'Initiate', label: 'Initiate', collection: 'initiates', x: 350, y: 40,
     note: 'mirror of the git initiation ledger (doc id = uid)',
     fields: [
       { name: 'uid', type: 'string', ref: 'Person', pk: true },
@@ -176,7 +186,7 @@ export const DATA_MODEL: ModelEntity[] = [
 
   // --- Invitations ----------------------------------------------------------
   {
-    key: 'TreeInvite', label: 'Tree Invite', collection: 'treeOwnershipInvites', x: 1400, y: 40,
+    key: 'TreeInvite', label: 'Tree Invite', collection: 'treeOwnershipInvites', x: 1280, y: 40,
     note: 'invite to a tree circle role',
     fields: [
       { name: 'id', type: 'string', pk: true },
@@ -188,7 +198,7 @@ export const DATA_MODEL: ModelEntity[] = [
     ],
   },
   {
-    key: 'NetworkInvite', label: 'Network Invite', collection: 'networkInvites', x: 1400, y: 300,
+    key: 'NetworkInvite', label: 'Network Invite', collection: 'networkInvites', x: 1280, y: 250,
     note: 'onboarding token',
     fields: [
       { name: 'id', type: 'token', pk: true },
@@ -200,7 +210,7 @@ export const DATA_MODEL: ModelEntity[] = [
     ],
   },
   {
-    key: 'InviteRequest', label: 'Invite Request', collection: 'inviteRequests', x: 1400, y: 540,
+    key: 'InviteRequest', label: 'Invite Request', collection: 'inviteRequests', x: 1280, y: 460,
     note: 'a request to join',
     fields: [
       { name: 'id', type: 'string', pk: true },
@@ -211,7 +221,7 @@ export const DATA_MODEL: ModelEntity[] = [
     ],
   },
   {
-    key: 'CommunityTreeInvite', label: 'Community Tree Invite', collection: 'communityTreeInvites', x: 1400, y: 780,
+    key: 'CommunityTreeInvite', label: 'Community Tree Invite', collection: 'communityTreeInvites', x: 1280, y: 650,
     note: 'acceptance mints a participant link',
     fields: [
       { name: 'id', type: 'string', pk: true },
@@ -223,7 +233,7 @@ export const DATA_MODEL: ModelEntity[] = [
     ],
   },
   {
-    key: 'OrgCollab', label: 'Org Collab', collection: 'collabs', x: 1400, y: 1040,
+    key: 'OrgCollab', label: 'Org Collab', collection: 'collabs', x: 1280, y: 860,
     note: 'this node’s organisation collaborators',
     fields: [
       { name: 'id', type: 'string', pk: true },
@@ -237,7 +247,7 @@ export const DATA_MODEL: ModelEntity[] = [
 
   // --- Intelligence commons -------------------------------------------------
   {
-    key: 'Intelligence', label: 'Intelligence', collection: 'intelligences', x: 1750, y: 40,
+    key: 'Intelligence', label: 'Intelligence', collection: 'intelligences', x: 1590, y: 40,
     note: 'a configured AI',
     fields: [
       { name: 'id', type: 'string', pk: true },
@@ -252,7 +262,7 @@ export const DATA_MODEL: ModelEntity[] = [
     ],
   },
   {
-    key: 'Persona', label: 'Persona', collection: 'personas', x: 1750, y: 400,
+    key: 'Persona', label: 'Persona', collection: 'personas', x: 1590, y: 300,
     note: 'behaviour template (staff)',
     fields: [
       { name: 'id', type: 'string', pk: true },
@@ -262,7 +272,7 @@ export const DATA_MODEL: ModelEntity[] = [
     ],
   },
   {
-    key: 'Memory', label: 'Memory', collection: 'memories', x: 1750, y: 600,
+    key: 'Memory', label: 'Memory', collection: 'memories', x: 1590, y: 470,
     note: 'what an intelligence recalls',
     fields: [
       { name: 'id', type: 'string', pk: true },
@@ -274,7 +284,7 @@ export const DATA_MODEL: ModelEntity[] = [
     ],
   },
   {
-    key: 'ProviderCredential', label: 'Provider Credential', collection: 'providerCredentials', x: 1750, y: 850,
+    key: 'ProviderCredential', label: 'Provider Credential', collection: 'providerCredentials', x: 1590, y: 680,
     note: 'server-only · API keys',
     fields: [
       { name: 'id', type: 'scope_owner_provider', pk: true },
@@ -288,7 +298,7 @@ export const DATA_MODEL: ModelEntity[] = [
 
   // --- System (server-written) ----------------------------------------------
   {
-    key: 'Link', label: 'Link (LIN)', collection: 'links', x: 360, y: 560,
+    key: 'Link', label: 'Link (LIN)', collection: 'links', x: 350, y: 290,
     note: 'a relationship is itself an entity',
     fields: [
       { name: 'id', type: 'from__rel__to', pk: true },
@@ -299,7 +309,7 @@ export const DATA_MODEL: ModelEntity[] = [
     ],
   },
   {
-    key: 'Mail', label: 'Mail', collection: 'mail', x: 360, y: 860,
+    key: 'Mail', label: 'Mail', collection: 'mail', x: 350, y: 480,
     note: 'server-only · outbound queue',
     fields: [
       { name: 'id', type: 'string', pk: true },
@@ -310,7 +320,7 @@ export const DATA_MODEL: ModelEntity[] = [
     ],
   },
   {
-    key: 'Usage', label: 'Usage', collection: 'usage', x: 360, y: 1090,
+    key: 'Usage', label: 'Usage', collection: 'usage', x: 350, y: 670,
     note: 'server-only · daily quota (id = uid)',
     fields: [
       { name: 'uid', type: 'string', ref: 'Person', pk: true },
@@ -321,7 +331,7 @@ export const DATA_MODEL: ModelEntity[] = [
     ],
   },
   {
-    key: 'Subscription', label: 'Subscription', collection: 'subscriptions', x: 700, y: 1090,
+    key: 'Subscription', label: 'Subscription', collection: 'subscriptions', x: 660, y: 960,
     note: 'newsletter (id = enc email)',
     fields: [
       { name: 'id', type: 'enc(email)', pk: true },

@@ -40,6 +40,7 @@ export const ImageCropModal = ({
 
     useEffect(() => {
         const objectUrl = URL.createObjectURL(file);
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- object URL is an external resource needing revoke-on-cleanup; can't be derived in render
         setUrl(objectUrl);
         const img = new Image();
         img.onload = () => setNat({ w: img.naturalWidth, h: img.naturalHeight });
@@ -60,12 +61,14 @@ export const ImageCropModal = ({
 
     // Centre the image once we know its size.
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot recentre once the image size loads (async img.onload), not derivable at render
         if (nat) setPos({ x: (view.w - dispW) / 2, y: (view.h - dispH) / 2 });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [nat]);
 
     // Re-clamp whenever the displayed size changes (zoom), keeping the window covered.
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- state-sync: re-clamp pan when zoom changes display size, keeping the window covered
         if (nat) setPos(p => clamp(p));
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [zoom, nat]);
@@ -169,6 +172,7 @@ export const ImageCropModal = ({
 
                 <div
                     className="relative mx-auto touch-none overflow-hidden rounded-xl bg-slate-900 select-none"
+                    // eslint-disable-next-line react-hooks/refs -- cursor only matters mid-drag, when setPos already re-renders every pointermove; promoting drag to state would add renders
                     style={{ width: view.w, height: view.h, cursor: drag.current ? 'grabbing' : 'grab' }}
                     onPointerDown={onPointerDown}
                     onPointerMove={onPointerMove}

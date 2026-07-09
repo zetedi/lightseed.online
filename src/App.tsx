@@ -14,7 +14,6 @@ import {
   acceptAlignment,
   rejectAlignment,
   getAlignmentById,
-  findAlignmentForSyncBlock,
   getLifetreeById,
   getPulseById,
   createVision,
@@ -56,8 +55,9 @@ import { Loading } from './components/ui/Loading';
 import { SectionHeader } from './components/ui/SectionHeader';
 import { ScrollChevrons } from './components/ui/ScrollChevrons';
 import { Footer } from './components/ui/Footer';
-import { FirstRunChecklist } from './components/FirstRunChecklist';
-import { useOnboardingState } from './hooks/useOnboardingState';
+import { PathwayCTA } from './components/PathwayCTA';
+import { usePathwayFacts } from './hooks/usePathwayFacts';
+import type { PathwayInput, PathwayStepKey } from './domain/pathway';
 import { useImageUpload } from './hooks/useImageUpload';
 import { useForestFilters } from './hooks/useForestFilters';
 import { useDashboardStats } from './hooks/useDashboardStats';
@@ -94,6 +94,7 @@ const EventModal = lazy(() => import('./components/modals/EventModal').then(m =>
 const CreateVisionModal = lazy(() => import('./components/modals/CreateVisionModal').then(m => ({ default: m.CreateVisionModal })));
 const DataModelCrystal = lazy(() => import('./components/about/DataModelCrystal').then(m => ({ default: m.DataModelCrystal })));
 const AlignmentView = lazy(() => import('./components/sections/AlignmentView').then(m => ({ default: m.AlignmentView })));
+const ProfileReaches = lazy(() => import('./components/profile/ProfileReaches').then(m => ({ default: m.ProfileReaches })));
 
 // The full-screen overlay every detail view (tree / vision / event / community) scrolls inside.
 // Module-scope so it keeps a stable identity (an inline definition remounts its subtree — and
@@ -110,16 +111,17 @@ const AppContent = () => {
     // The set of trees the signed-in user guards (the LIN, via guardian links) — passed to cards
     // so a card can show its guardian affordance without a per-card read.
     const guardedTreeIds = useMemo(() => new Set(guardedTrees.map(t => t.id)), [guardedTrees]);
-    const onboarding = useOnboardingState(lightseed?.uid);
+    // Declared before useAppRouting so its deep-link callback closes over the declared setter.
+    const [selectedTree, setSelectedTree] = useState<Lifetree | null>(null);
     // Routing (tab + forest view mode + ?tree/?invite deep-links) lives in useAppRouting.
     const { tab, setTab, viewMode, setViewMode, inviteParam } = useAppRouting(
         (id) => { getLifetreeById(id).then(tr => { if (tr) setSelectedTree(tr); }).catch(() => {}); }
     );
     const [alignments, setAlignments] = useState<Alignment[]>([]);
-    const [selectedTree, setSelectedTree] = useState<Lifetree | null>(null);
     // Which section the tree detail should open at (e.g. 'care' from the profile's droplet).
     const [treeSectionHint, setTreeSectionHint] = useState<string | null>(null);
     const [selectedVision, setSelectedVision] = useState<Vision | null>(null);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- clears the section hint when the tree detail closes; the hint is set from many call sites, so deriving it there is riskier than this reset
     useEffect(() => { if (!selectedTree) setTreeSectionHint(null); }, [selectedTree]);
     const [selectedAlignment, setSelectedAlignment] = useState<Alignment | null>(null);
     const [selectedPulse, setSelectedPulse] = useState<Pulse | null>(null);
@@ -133,7 +135,9 @@ const AppContent = () => {
     const [reachTree, setReachTree] = useState<Lifetree | null>(null);
     // Preselected audience for a requested reach — 'guardians' when opened from a danger alert.
     const [reachAudience, setReachAudience] = useState<ReachAudience | undefined>(undefined);
-    const [reachOpenSignal, setReachOpenSignal] = useState(0);
+    // The Reach inbox as a large overlay — the envelope (and reach deep-links) open messages
+    // in place instead of steering to the profile tab, which keeps its own Reaches tab.
+    const [showReachModal, setShowReachModal] = useState(false);
     const [pendingTreeInvites, setPendingTreeInvites] = useState(0);
     const [hostCommunity, setHostCommunity] = useState<Community | null>(null);
     // The lightseed community is the default "About" page when this node has none of its own.
@@ -183,6 +187,7 @@ const AppContent = () => {
 
     useEffect(() => {
         if (!lightseed) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- reset-on-signout before (not instead of) subscribing to the profile listener
             setPersonalSiteTheme(null);
             setPersonalSiteLogoUrl('');
             setActiveIntelligenceId(undefined);
@@ -196,6 +201,7 @@ const AppContent = () => {
             // Mirror the choice so stateless AI helpers route through it everywhere.
             setActiveIntelligenceId(profile?.preferredIntelligenceId || undefined);
         });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on uid on purpose: the lightseed object changes identity without the uid changing, and re-subscribing per object would churn the listener
     }, [lightseed?.uid]);
 
     // Live unread-reach count powering the nav's red envelope indicator (see useReaches).
@@ -212,6 +218,7 @@ const AppContent = () => {
     // Load the tab's content when the view changes.
     useEffect(() => {
         if (tab !== 'dashboard') loadContent(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadContent is recreated per render; adding it would refetch the feed on every render (loop). It already closes over tab/viewMode/lightseed.
     }, [tab, lightseed, viewMode]);
 
     // Genesis + the host community depend only on the signed-in user, not the tab — so run them
@@ -230,11 +237,13 @@ const AppContent = () => {
     // Pending Tree Circle invites — surfaced (separately) on the DM button.
     useEffect(() => {
         if (lightseed?.uid) getPendingTreeInvites(lightseed.uid).then(invs => setPendingTreeInvites(invs.length)).catch(() => {});
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- reset-on-signout counterpart of the async fetch above
         else setPendingTreeInvites(0);
     }, [lightseed?.uid, tab]);
 
     // Arriving on an invite link, signed out, opens the join flow.
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- reacts to external URL state (?invite) once auth resolves; there is no render-time equivalent
         if (inviteParam && !lightseed && !authLoading) setShowAuthModal(true);
     }, [inviteParam, lightseed, authLoading]);
 
@@ -254,11 +263,13 @@ const AppContent = () => {
 
     // Events for the logged-in home carousel — visibility-scoped to this viewer + node.
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- reset-on-signout before the async fetch below
         if (!lightseed) { setDashboardEvents([]); return; }
         const isDevHost = /localhost|127\.0\.0\.1|^192\.168\.|\.local$/.test(window.location.hostname);
         const currentDomain = (isDevHost && isSuperAdmin) ? 'lightseed.online' : window.location.hostname;
         const levels = queryableLevels({ uid: lightseed.uid, isStaff: isSuperAdmin || isAdmin });
         fetchEventPulses(undefined, currentDomain, levels).then(r => setDashboardEvents(r.items)).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on uid on purpose: the lightseed object changes identity without the uid changing; refetching per object would loop
     }, [lightseed?.uid, isSuperAdmin, isAdmin]);
 
     // Browser back closes overlays LAYER BY LAYER instead of leaving the app. Ordered base-first;
@@ -274,6 +285,7 @@ const AppContent = () => {
         { key: 'pulseModal', open: showPulseModal, close: () => setShowPulseModal(false) },
         { key: 'eventModal', open: showEventModal, close: () => setShowEventModal(false) },
         { key: 'visionModal', open: showVisionModal, close: () => setShowVisionModal(false) },
+        { key: 'reachModal', open: showReachModal, close: () => setShowReachModal(false) },
         { key: 'editingEvent', open: !!editingEvent, close: () => setEditingEvent(null) },      // nested on a pulse detail
         { key: 'growthPlayer', open: !!showGrowthPlayer, close: () => setShowGrowthPlayer(null) }, // nested on a tree detail (or standalone)
     ]);
@@ -290,8 +302,7 @@ const AppContent = () => {
         setSelectedTree(null);
         setReachTree(tree);
         setReachAudience(audience);
-        setReachOpenSignal(s => s + 1);
-        setTab('profile');
+        setShowReachModal(true);
     };
 
     // AI vision-resonance — the weekly-gated synergy analysis + favourites (see useResonance).
@@ -300,17 +311,12 @@ const AppContent = () => {
         toggleFavoriteResonance, handleAnalyzeSynergy, refreshResonanceObservatory, reachResonantTree,
     } = useResonance({ data, preferredIntelligenceId, isStaff: isSuperAdmin || isAdmin, openReach });
 
-    // Jump to the profile's Direct Messages page (renamed from "Inspiration").
-    // reachOpenSignal tells LightseedProfile to switch to its reaches subtab.
+    // Open the Direct Messages inbox as a large overlay (the envelope in the nav). The
+    // profile keeps its own Reaches tab for direct visits; this no longer steers there.
     const openDirectMessages = () => {
-        setSelectedTree(null);
-        setSelectedVision(null);
-        setSelectedPulse(null);
-        setSelectedCommunity(null);
         setReachTree(null);
         setReachAudience(undefined);
-        setReachOpenSignal(s => s + 1);
-        setTab('profile');
+        setShowReachModal(true);
     };
 
     
@@ -409,15 +415,11 @@ const AppContent = () => {
     // THE single router for opening a pulse. An alignment sync-block (isMatch) opens the same
     // AlignmentView as the profile's alignments list — one view, reached from every surface
     // (feeds, tree leaves, dashboard, community events) — instead of the raw pulse modal.
-    // Modern sync-blocks carry the alignment id in `matchId`; LEGACY ones were minted with only
-    // `isMatch`, so their alignment is resolved through the tree the block sits on (this was the
-    // gap that let alignment leaves on a tree's chain fall through to the generic pulse modal).
-    // Everything else opens the pulse. All pulse-opening props below go through here.
+    // Every sync-block carries the alignment id in `matchId` (legacy blocks were backfilled by
+    // migrateBackfillMatchIds, run 2026-07-09). Everything else opens the pulse.
     const onViewPulseOrAlignment = async (p: Pulse) => {
-        if (p.isMatch) {
-            const alignment = p.matchId
-                ? await getAlignmentById(p.matchId).catch(() => null)
-                : (p.lifetreeId ? await findAlignmentForSyncBlock(p.lifetreeId, p.createdAt?.toMillis()).catch(() => null) : null);
+        if (p.isMatch && p.matchId) {
+            const alignment = await getAlignmentById(p.matchId).catch(() => null);
             if (alignment) { setSelectedTree(null); setSelectedAlignment(alignment); return; }
         }
         setSelectedTree(null);
@@ -444,6 +446,49 @@ const AppContent = () => {
         () => [...myTrees, ...guardedTrees].filter(t => isWateringOverdue(t)).length,
         [myTrees, guardedTrees]
     );
+
+    // --- The Pathway — the plain facts derivePathway reads (domain/pathway) ----------------
+    // Session facts come straight from the trees/stats already in hand; the link-borne ones
+    // (membership, followed visions, my circle, my community) from usePathwayFacts.
+    const pathwayFacts = usePathwayFacts(lightseed, myTrees);
+    const pathwayInput = useMemo<PathwayInput>(() => {
+        // Most recent EXPLICIT tend (lastTendedAt) across own + guarded trees. Planting alone
+        // is not tending — no fallback to createdAt here (that's validation's window, not ours).
+        const tendedMillis = [...myTrees, ...guardedTrees]
+            .map(t => (t.lastTendedAt && typeof t.lastTendedAt.toMillis === 'function' ? t.lastTendedAt.toMillis() : 0))
+            .filter(ms => ms > 0);
+        return {
+            signedIn: !!lightseed,
+            myTreesCount: myTrees.length,
+            guardedCount: guardedTrees.length,
+            lastTendedAtMs: tendedMillis.length ? Math.max(...tendedMillis) : null,
+            wateringOverdue: wateringNeededCount > 0,
+            connectionsCount: stats.alignments + alignments.length,
+            isMember: pathwayFacts.isMember,
+            followedVisionsCount: pathwayFacts.followedVisionsCount,
+            circleSize: pathwayFacts.circleSize,
+            ownsCommunity: pathwayFacts.ownsCommunity,
+            communityHasCustomDomain: pathwayFacts.communityHasCustomDomain,
+            communityHasTheme: pathwayFacts.communityHasTheme,
+        };
+    }, [lightseed, myTrees, guardedTrees, wateringNeededCount, stats.alignments, alignments.length, pathwayFacts]);
+    // Every step's click routes into a flow that already exists — the CTA never invents one.
+    const openTreeSection = (tree: Lifetree | undefined, section: string) => {
+        if (tree) { setTreeSectionHint(section); setSelectedTree(tree); }
+        else openPlant();
+    };
+    const pathwayActions: Record<PathwayStepKey, () => void> = {
+        signUp: () => setShowAuthModal(true),
+        plant: () => openPlant(),
+        tend: () => openTreeSection(myTrees[0] || guardedTrees[0], 'care'),
+        connect: () => setTab('forest'),
+        join: () => setTab('communities'),
+        followVision: () => setTab('visions'),
+        formCircle: () => openTreeSection(myTrees[0], 'circle'),
+        nameCommunity: () => setTab('communities'),
+        rootDomain: () => setTab('communities'),
+        tailorTheme: () => setTab('communities'),
+    };
 
     // Signed-out visitors see only node-level events (the node's own happenings), not every
     // community/tree event. Node-scoped = not rooted in a community or a tree.
@@ -507,10 +552,6 @@ const AppContent = () => {
                     onGrantAdmin={async (uid: string) => { await grantAdmin(uid); }}
                     onRevokeAdmin={async (uid: string) => { await revokeAdmin(uid); }}
                     onOpenNewsletterAdmin={() => setTab('newsletter')}
-                    reachPartner={reachTree}
-                    reachAudience={reachAudience}
-                    reachOpenSignal={reachOpenSignal}
-                    onConsumeReach={() => { setReachTree(null); setReachAudience(undefined); }}
                     onReachTree={(tree: Lifetree) => openReach(tree)}
                     nodeTheme={config.theme}
                 />
@@ -555,7 +596,7 @@ const AppContent = () => {
         if (tab === 'collab') {
             return (
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-8">
-                    <CollabsPage theme={effectiveTheme} />
+                    <CollabsPage theme={effectiveTheme} onSelectCommunity={setSelectedCommunity} />
                 </div>
             );
         }
@@ -796,20 +837,16 @@ const AppContent = () => {
                     />
                 )}
                 
-                {/* Show once to everyone who hasn't dismissed/completed it. We wait for the
-                    profile to load (onboarding.loaded) and DON'T gate on tree count, so the card
-                    can't flash in while trees are still loading. */}
-                {!selectedTree && !selectedVision && !selectedPulse && !!lightseed && onboarding.loaded && !onboarding.dismissed && (tab === 'dashboard' || tab === 'forest') && (
+                {/* The Pathway — THE ONE next step on the trail, for visitors and members alike.
+                    Gated on pathwayFacts.loaded so the wrong stage never flashes while the
+                    link-borne facts are still in flight. Dismissable per step (localStorage). */}
+                {!selectedTree && !selectedVision && !selectedPulse && pathwayFacts.loaded && (tab === 'dashboard' || tab === 'forest') && (
                     <div className="mx-auto max-w-7xl px-4 pt-6 animate-in fade-in duration-500">
-                        <FirstRunChecklist
-                            state={onboarding}
-                            myTrees={myTrees}
-                            guardedTrees={guardedTrees}
+                        <PathwayCTA
+                            input={pathwayInput}
+                            actions={pathwayActions}
                             theme={effectiveTheme}
                             isDark={effectiveIsDark}
-                            onPlant={openPlant}
-                            onOpenTree={(t) => setSelectedTree(t)}
-                            onGoObservatory={() => setTab('observatory')}
                         />
                     </div>
                 )}
@@ -944,6 +981,32 @@ const AppContent = () => {
                 </DetailWrapper>
             )}
 
+            {/* Direct Messages as a large overlay: the nav envelope and reach deep-links open the
+                inbox here, in place, instead of steering to the profile's Reaches tab. */}
+            {showReachModal && lightseed && (
+                <DetailWrapper>
+                    <div className="mx-auto w-full max-w-6xl px-3 py-6 sm:px-6 lg:py-10">
+                        <div className="relative rounded-2xl bg-white p-4 pt-12 shadow-2xl sm:p-6 sm:pt-12">
+                            <button
+                                onClick={() => setShowReachModal(false)}
+                                title="Close"
+                                aria-label="Close messages"
+                                className="absolute right-3 top-3 z-10 rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                            >
+                                <Icons.Close />
+                            </button>
+                            <ProfileReaches
+                                lightseed={lightseed}
+                                myTrees={myTrees}
+                                reachPartner={reachTree}
+                                reachAudience={reachAudience}
+                                onConsumeReach={() => { setReachTree(null); setReachAudience(undefined); }}
+                            />
+                        </div>
+                    </div>
+                </DetailWrapper>
+            )}
+
             {showGrowthPlayer && !selectedTree && <GrowthPlayerModal treeId={showGrowthPlayer} onClose={() => setShowGrowthPlayer(null)} />}
 
             {showPlantModal && (
@@ -1022,16 +1085,18 @@ const App = () => {
   if (route.kind === 'widget') return <LifeseedWidget domain={route.domain} />;
 
   // The data model — a hidden, full-screen /model route. Not linked anywhere (need-to-know);
-  // reach it by typing the URL. Logo top-right returns to the app. (Trailing slash tolerated.)
+  // reach it by typing the URL. Logo top-left (the usual place) returns to the app.
+  // (Trailing slash tolerated.)
   if (route.kind === 'model') {
     return (
       <div className="min-h-screen bg-[#05080a] p-3 sm:p-6">
         <a href="/" title="Back to lifeseed" aria-label="Back to lifeseed"
-           className="fixed right-4 top-4 z-50 rounded-full bg-white/10 p-1.5 shadow-lg backdrop-blur transition-colors hover:bg-white/20">
+           className="fixed left-4 top-4 z-50 rounded-full bg-white/10 p-1.5 shadow-lg backdrop-blur transition-colors hover:bg-white/20">
           <Logo width={38} height={38} />
         </a>
         <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><Loading /></div>}>
-          <div className="mx-auto max-w-[1440px] pt-2"><DataModelCrystal /></div>
+          {/* pt-14 keeps the card header clear of the fixed logo. */}
+          <div className="mx-auto max-w-[1440px] pt-14"><DataModelCrystal /></div>
         </Suspense>
       </div>
     );

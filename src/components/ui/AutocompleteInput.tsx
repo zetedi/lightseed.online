@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Community } from '../../types';
 import { fetchCommunities } from '../../services/firebase';
 
@@ -14,19 +14,17 @@ interface AutocompleteInputProps {
 
 export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({ label, value, onChange, placeholder, className, hint }) => {
   const [communities, setCommunities] = useState<Community[]>([]);
-  const [filtered, setFiltered] = useState<Community[]>([]);
   const [show, setShow] = useState(false);
 
   useEffect(() => {
     fetchCommunities().then(setCommunities);
   }, []);
 
-  useEffect(() => {
-    if (value) {
-      setFiltered(communities.filter(c => c.name.toLowerCase().includes(value.toLowerCase()) || c.domain.toLowerCase().includes(value.toLowerCase())));
-    } else {
-      setFiltered([]);
-    }
+  // Purely derived from the current input + fetched communities — no state/effect needed.
+  const filtered = useMemo(() => {
+    if (!value) return [];
+    const q = value.toLowerCase();
+    return communities.filter(c => c.name.toLowerCase().includes(q) || c.domain.toLowerCase().includes(q));
   }, [value, communities]);
 
   return (
