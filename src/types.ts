@@ -2,9 +2,9 @@
 // Fix: Use proper type imports to resolve "no exported member" errors in some TS environments.
 import type { User as FirebaseUser } from 'firebase/auth';
 import type { Timestamp } from 'firebase/firestore';
-import type { Entity } from './domain/entity';
+import type { Being } from './domain/being';
 
-export * from './domain/entity';
+export * from './domain/being';
 export * from './domain/person';
 export * from './domain/lifetree';
 export * from './domain/pulse';
@@ -21,7 +21,7 @@ export type Lightseed = Pick<FirebaseUser, 'uid' | 'email' | 'displayName' | 'ph
 export type VisionStatus = "seed" | "growing" | "flowering" | "dormant";
 
 // A direction of growth
-export interface Vision extends Entity {
+export interface Vision extends Being {
   id: string;
   lifetreeId?: string; // canonical — the tree this vision belongs to
   authorId: string;    // canonical author — load-bearing (rules + query)
@@ -53,8 +53,8 @@ export interface AlignmentNote {
   at: Timestamp;
 }
 
-// Off-Chain Alignment Handshake (Former MatchProposal)
-export interface Alignment {
+// Off-Chain Alignment Handshake (Former MatchProposal) — a Being like every other.
+export interface Alignment extends Being {
   id: string;
   initiatorPulseId: string;
   initiatorTreeId: string;

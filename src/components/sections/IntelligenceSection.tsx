@@ -5,7 +5,7 @@ import { getSelectableIntelligences, listPersonas, type CredentialScope } from '
 import { SectionTitle } from '../ui/SectionTitle';
 import { IntelligencePanel } from '../intelligence/IntelligencePanel';
 
-// Entity-generic intelligence section — any being's intelligences (Indra's net). "Which
+// Being-generic intelligence section — any being's intelligences (Indra's net). "Which
 // intelligences stand here, and which speaks by default" is the same question for a community,
 // a node or a person; only where the selection is rooted (and therefore how it's persisted)
 // differs, so the owner binds that via `onSave`. CommunityIntelligence is a thin wrapper over
@@ -38,7 +38,7 @@ interface IntelligenceSectionProps {
   currentUserId?: string;
   // The owning entity: id keys the edit-state reset when the entity (or its saved data) changes.
   entityId: string;
-  // Entity id the panel's provider credentials are stored under (usually === entityId).
+  // Being id the panel's provider credentials are stored under (usually === entityId).
   credentialOwnerId: string;
   // Uid that owns intelligence docs created from the panel (the entity's owner).
   intelligenceOwnerUid: string;

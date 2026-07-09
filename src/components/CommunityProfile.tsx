@@ -15,9 +15,7 @@ import { CommunityTreesTab } from './community/CommunityTreesTab';
 import { CommunityIntelligence } from './community/CommunityIntelligence';
 import { CommunityCodeChain } from './community/CommunityCodeChain';
 import { CommunityAppearance } from './community/CommunityAppearance';
-import { SectionMenu } from './ui/SectionMenu';
-import { ProfileHero } from './ui/ProfileHero';
-import { ProfileLayout } from './ui/ProfileLayout';
+import { BeingProfile, type BeingSection } from './BeingProfile';
 import { SectionTitle } from './ui/SectionTitle';
 import { normalizeTheme } from '../utils/theme';
 import { LoreSection, loreTabs, type LoreTabId } from './about/AboutSections';
@@ -38,8 +36,6 @@ interface CommunityProfileProps {
   // Superadmin only — "switch to community view": render the whole app as this community.
   onEnterCommunityView?: (community: Community) => void;
 }
-
-type TabKey = 'vision' | 'firsttree' | 'sanctuary' | 'trees' | 'model' | 'events' | 'council' | LoreTabId | 'codechain' | 'intelligence' | 'appearance';
 
 const bareDomain = (d?: string) => (d || '').toLowerCase().replace(/^www\./, '');
 
@@ -79,8 +75,6 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     { uid: currentUserId, isStaff: isSuperAdmin || isAdmin, communityIds: isMember ? [community.id] : [] },
     { communityId: community.id },
   ), [currentUserId, isSuperAdmin, isAdmin, isMember, community.id]);
-
-  const [activeTab, setActiveTab] = useState<TabKey>('vision');
 
   // Editable copies of the community fields (branding + vision).
   const [editName, setEditName] = useState(community.name);
@@ -287,38 +281,139 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   // The Yantra (and the network's deeper lore) only belongs to the central nodes.
   const isNetworkHub = ['lightseed.online', 'lifeseed.online'].includes(bareDomain(community.domain));
 
-  const navSections: { key: TabKey; label: string; icon: React.ReactNode }[] = [
-    { key: 'vision', label: 'Vision', icon: <Icons.Eye /> },
-    { key: 'firsttree', label: 'First Tree', icon: <Icons.Tree /> },
-    { key: 'sanctuary', label: 'The Sanctuary', icon: <Icons.Sun /> },
-    { key: 'trees', label: 'Community Trees', icon: <Icons.Tree /> },
-    { key: 'model', label: 'Growth', icon: <Icons.Sparkles /> },
-    { key: 'events', label: 'Events', icon: <Icons.Loc /> },
-    { key: 'council', label: t('council'), icon: <Icons.Venn /> },
+  // The community's sections — each `render` closes over this shell's state and handlers.
+  const sections: BeingSection[] = [
+    {
+      key: 'vision', label: 'Vision', icon: <Icons.Eye />, render: () => (
+        <CommunityVision
+          community={community}
+          canEdit={canEdit}
+          isSuperAdmin={isSuperAdmin}
+          currentUserId={currentUserId}
+          firstTree={firstTree}
+          linkedTrees={linkedTrees}
+          editVision={editVision}
+          onVisionChange={setEditVision}
+          onSave={handleSave}
+          isSaving={isSaving}
+          saveDisabled={isSaving || isUploadingLogo || isUploadingImage}
+          status={status}
+          onUpdate={onUpdate}
+        />
+      ),
+    },
+    {
+      key: 'firsttree', label: 'First Tree', icon: <Icons.Tree />, render: () => (
+        <CommunityFirstTree
+          community={community}
+          firstTree={firstTree}
+          onViewTree={onViewTree}
+          guardedTreeIds={guardedTreeIds}
+          togglingId={togglingId}
+          onToggleGuardian={handleToggleGuardian}
+        />
+      ),
+    },
+    {
+      key: 'sanctuary', label: 'The Sanctuary', icon: <Icons.Sun />, render: () => (
+        <CommunitySanctuary community={community} sanctuary={firstSanctuary} />
+      ),
+    },
+    {
+      key: 'trees', label: 'Community Trees', icon: <Icons.Tree />, render: () => (
+        <CommunityTreesTab
+          community={community}
+          currentUserId={currentUserId}
+          communityTrees={communityTrees}
+          onViewTree={onViewTree}
+          guardedTreeIds={guardedTreeIds}
+          togglingId={togglingId}
+          onToggleGuardian={handleToggleGuardian}
+        />
+      ),
+    },
+    {
+      key: 'model', label: 'Growth', icon: <Icons.Sparkles />, render: () => (
+        <div>
+          <SectionTitle title="Growth" sub="How this node is crystallising — its trees weighted by their chain growth, links and pulses." />
+          <NodeGrowthTree community={community} trees={domainTrees} onViewTree={onViewTree} />
+        </div>
+      ),
+    },
+    {
+      key: 'events', label: 'Events', icon: <Icons.Loc />, render: () => (
+        <CommunityEvents
+          community={community}
+          canEdit={canEdit}
+          currentUserId={currentUserId}
+          currentUserName={currentUser?.displayName}
+          currentUserPhoto={currentUser?.photoURL}
+          communityLevels={communityLevels}
+          onViewEvent={onViewEvent}
+        />
+      ),
+    },
+    {
+      key: 'council', label: t('council'), icon: <Icons.Venn />, render: () => (
+        <CommunityCouncil community={community} canEdit={canEdit} currentUserId={currentUserId} communityLevels={communityLevels} />
+      ),
+    },
     // The network's founding lore (Genesis, the Path, the Yantra, Protection) stays with the
     // central lightseed / lifeseed nodes — every community will have its own genesis and path.
-    ...loreTabs.filter(() => isNetworkHub).map(tab => ({ key: tab.id as TabKey, label: tab.label, icon: loreIcons[tab.id] })),
+    ...loreTabs.filter(() => isNetworkHub).map((tab): BeingSection => ({
+      key: tab.id, label: tab.label, icon: loreIcons[tab.id], render: () => <LoreSection id={tab.id} />,
+    })),
     // The node's own body — the repo's git history drawn as a growth chain. Hub-only, like the lore.
-    ...(isNetworkHub ? [{ key: 'codechain' as TabKey, label: 'Code chain', icon: <Icons.Hash /> }] : []),
+    ...(isNetworkHub ? [{ key: 'codechain', label: 'Code chain', icon: <Icons.Hash />, render: () => <CommunityCodeChain /> } satisfies BeingSection] : []),
     ...(canEdit ? [
-      { key: 'intelligence' as TabKey, label: 'Intelligence', icon: <Icons.Wizard /> },
-      { key: 'appearance' as TabKey, label: 'Appearance', icon: <Icons.Image /> },
+      {
+        key: 'intelligence', label: 'Intelligence', icon: <Icons.Wizard />, render: () => (
+          <CommunityIntelligence community={community} canEdit={canEdit} currentUserId={currentUserId} onUpdate={onUpdate} />
+        ),
+      },
+      {
+        key: 'appearance', label: 'Appearance', icon: <Icons.Image />, render: () => (
+          <CommunityAppearance
+            community={community}
+            editName={editName}
+            onNameChange={setEditName}
+            editTheme={editTheme}
+            onThemeChange={setEditTheme}
+            logoUrl={logoUrl}
+            onLogoUpload={handleLogoUpload}
+            uploadingLogo={isUploadingLogo}
+            heroImageUrl={heroImageUrl}
+            onHeroUpload={handleHeroUpload}
+            uploadingHero={isUploadingHero}
+            onRemoveHero={handleRemoveHero}
+            imageUrls={imageUrls}
+            onAddImage={handleAddImage}
+            onRemoveImage={handleRemoveImage}
+            uploadingImage={isUploadingImage}
+            editSocial={editSocial}
+            onSocialChange={setEditSocial}
+            editCarouselQuotes={editCarouselQuotes}
+            onCarouselQuotesChange={setEditCarouselQuotes}
+            onSave={handleSave}
+            isSaving={isSaving}
+            saveDisabled={isSaving || isUploadingLogo || isUploadingImage}
+            status={status}
+          />
+        ),
+      },
     ] : []),
   ];
 
-  const isLoreTab = (key: TabKey): key is LoreTabId => loreTabs.some(tab => tab.id === key);
-
   return (
-    <div className="min-h-screen pb-20">
-      {/* Hero — mirrors the personal profile */}
-      {/* Only the chosen hero — no gallery fallback, so removing the hero actually removes it. */}
-      <ProfileHero heroImageUrl={heroImageUrl} padding="pt-5 pb-12 px-4">
-        <div className="flex items-center justify-between mb-6">
-          <button onClick={onClose} className="flex items-center gap-2 text-white/70 hover:text-white text-sm font-medium">
-            <Icons.ArrowLeft />
-            <span>Back</span>
-          </button>
-          <div className="flex items-center gap-2">
+    <BeingProfile
+      onClose={onClose}
+      sections={sections}
+      hero={{
+        // Only the chosen hero — no gallery fallback, so removing the hero actually removes it.
+        imageUrl: heroImageUrl,
+        heroProps: { padding: 'pt-5 pb-12 px-4' },
+        actions: (
+          <>
             {onEnterCommunityView && (
               <button onClick={() => onEnterCommunityView(community)} className="flex items-center gap-1 rounded-full border border-amber-300/40 bg-amber-400/15 px-4 py-2 text-xs font-bold text-amber-200 transition-colors hover:bg-amber-400 hover:text-white" title="See the whole site as this community">
                 <Icons.Eye /><span className="hidden sm:inline">Switch to community view</span><span className="sm:hidden">Community view</span>
@@ -329,10 +424,9 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                 <Icons.Trash /><span>Delete</span>
               </button>
             )}
-          </div>
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5">
+          </>
+        ),
+        avatar: (
           <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-xl">
             {logoUrl ? (
               <img src={logoUrl} className="h-full w-full object-cover" alt={`${community.name} logo`} referrerPolicy="no-referrer" />
@@ -340,132 +434,23 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
               <span className="text-slate-300"><Icons.Globe /></span>
             )}
           </div>
-          <div className="min-w-0 flex-1">
-            {/* Name + all meta on one wrapping row */}
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 justify-center sm:justify-start">
-              <h1 className="min-w-0 break-words text-2xl font-light tracking-wide">{community.name}</h1>
-              <span className="inline-flex items-baseline gap-1 text-slate-300">
-                <span className="text-base font-bold text-white">{domainTrees.length}</span>
-                <span className="text-xs text-slate-400">{domainTrees.length === 1 ? t('tree') : t('trees')}</span>
-              </span>
-              <a href={`https://${community.domain}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-0.5 text-xs font-mono text-emerald-300 hover:bg-emerald-400/20">
-                <Icons.Globe size={12} /> {community.domain}
-              </a>
-              <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-xs text-slate-300">
-                Since {community.createdAt?.toDate ? community.createdAt.toDate().toLocaleDateString() : '—'}
-              </span>
-            </div>
-          </div>
-        </div>
-      </ProfileHero>
-
-      {/* Body: sidebar + content */}
-      <ProfileLayout menu={<SectionMenu items={navSections} active={activeTab} onSelect={(k) => setActiveTab(k as TabKey)} />}>
-            {activeTab === 'vision' && (
-              <CommunityVision
-                community={community}
-                canEdit={canEdit}
-                isSuperAdmin={isSuperAdmin}
-                currentUserId={currentUserId}
-                firstTree={firstTree}
-                linkedTrees={linkedTrees}
-                editVision={editVision}
-                onVisionChange={setEditVision}
-                onSave={handleSave}
-                isSaving={isSaving}
-                saveDisabled={isSaving || isUploadingLogo || isUploadingImage}
-                status={status}
-                onUpdate={onUpdate}
-              />
-            )}
-
-            {activeTab === 'firsttree' && (
-              <CommunityFirstTree
-                community={community}
-                firstTree={firstTree}
-                onViewTree={onViewTree}
-                guardedTreeIds={guardedTreeIds}
-                togglingId={togglingId}
-                onToggleGuardian={handleToggleGuardian}
-              />
-            )}
-
-            {activeTab === 'sanctuary' && (
-              <CommunitySanctuary community={community} sanctuary={firstSanctuary} />
-            )}
-
-            {activeTab === 'trees' && (
-              <CommunityTreesTab
-                community={community}
-                currentUserId={currentUserId}
-                communityTrees={communityTrees}
-                onViewTree={onViewTree}
-                guardedTreeIds={guardedTreeIds}
-                togglingId={togglingId}
-                onToggleGuardian={handleToggleGuardian}
-              />
-            )}
-
-            {activeTab === 'model' && (
-              <div>
-                <SectionTitle title="Growth" sub="How this node is crystallising — its trees weighted by their chain growth, links and pulses." />
-                <NodeGrowthTree community={community} trees={domainTrees} onViewTree={onViewTree} />
-              </div>
-            )}
-
-            {activeTab === 'events' && (
-              <CommunityEvents
-                community={community}
-                canEdit={canEdit}
-                currentUserId={currentUserId}
-                currentUserName={currentUser?.displayName}
-                currentUserPhoto={currentUser?.photoURL}
-                communityLevels={communityLevels}
-                onViewEvent={onViewEvent}
-              />
-            )}
-
-            {activeTab === 'council' && (
-              <CommunityCouncil community={community} canEdit={canEdit} currentUserId={currentUserId} communityLevels={communityLevels} />
-            )}
-
-            {isLoreTab(activeTab) && <LoreSection id={activeTab} />}
-
-            {activeTab === 'codechain' && isNetworkHub && <CommunityCodeChain />}
-
-            {activeTab === 'intelligence' && canEdit && (
-              <CommunityIntelligence community={community} canEdit={canEdit} currentUserId={currentUserId} onUpdate={onUpdate} />
-            )}
-
-            {activeTab === 'appearance' && canEdit && (
-              <CommunityAppearance
-                community={community}
-                editName={editName}
-                onNameChange={setEditName}
-                editTheme={editTheme}
-                onThemeChange={setEditTheme}
-                logoUrl={logoUrl}
-                onLogoUpload={handleLogoUpload}
-                uploadingLogo={isUploadingLogo}
-                heroImageUrl={heroImageUrl}
-                onHeroUpload={handleHeroUpload}
-                uploadingHero={isUploadingHero}
-                onRemoveHero={handleRemoveHero}
-                imageUrls={imageUrls}
-                onAddImage={handleAddImage}
-                onRemoveImage={handleRemoveImage}
-                uploadingImage={isUploadingImage}
-                editSocial={editSocial}
-                onSocialChange={setEditSocial}
-                editCarouselQuotes={editCarouselQuotes}
-                onCarouselQuotesChange={setEditCarouselQuotes}
-                onSave={handleSave}
-                isSaving={isSaving}
-                saveDisabled={isSaving || isUploadingLogo || isUploadingImage}
-                status={status}
-              />
-            )}
-      </ProfileLayout>
-    </div>
+        ),
+        title: community.name,
+        chips: (
+          <>
+            <span className="inline-flex items-baseline gap-1 text-slate-300">
+              <span className="text-base font-bold text-white">{domainTrees.length}</span>
+              <span className="text-xs text-slate-400">{domainTrees.length === 1 ? t('tree') : t('trees')}</span>
+            </span>
+            <a href={`https://${community.domain}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-0.5 text-xs font-mono text-emerald-300 hover:bg-emerald-400/20">
+              <Icons.Globe size={12} /> {community.domain}
+            </a>
+            <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-xs text-slate-300">
+              Since {community.createdAt?.toDate ? community.createdAt.toDate().toLocaleDateString() : '—'}
+            </span>
+          </>
+        ),
+      }}
+    />
   );
 };

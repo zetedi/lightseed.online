@@ -1,4 +1,5 @@
 import type { Timestamp } from 'firebase/firestore';
+import type { Being } from './being';
 
 // Governance as an event: an event IS a decision, and its NATURE sets how many voices it
 // needs. Light intentions need one voice; weightier acts need a circle. The numbers nod to
@@ -60,9 +61,8 @@ export const decisionStatusLabels: Record<DecisionStatus, string> = {
   expired: 'Expired',
 };
 
-export interface Decision {
+export interface Decision extends Being {
   id: string;
-  lid?: string; // Lightseed ID — the decision's portable, time-ordered true name (UUIDv7).
   communityId: string;
   domain?: string;
   nature: DecisionNature;

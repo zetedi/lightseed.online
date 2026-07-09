@@ -1,5 +1,5 @@
 import { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, setDoc, runTransaction, getDoc, where, updateDoc, deleteDoc, limit, startAfter, QueryDocumentSnapshot, writeBatch, deleteField, getCountFromServer, type CollectionReference, type DocumentData } from 'firebase/firestore';
-import { type Pulse, type Vision, type Community } from '../../types';
+import { type Pulse, type Vision, type Community, type Being } from '../../types';
 import { uuidv7 } from '../../utils/id';
 import { type PulseVisibility } from '../../domain/pulse';
 import { db, toMillis, mapDoc, lifetreesCollection, visionsCollection, pulsesCollection, communitiesCollection, sanctuariesCollection } from './core';
@@ -262,13 +262,12 @@ export const migrateBackfillLids = async (): Promise<Record<string, number>> => 
 // The Collabs page lists this node's collaborators: the AI intelligences (live from the
 // intelligences config) AND organisations whose founder(s) agreed to stand here — or who hold a
 // place by contract (as Claude/Anthropic does). Staff-curated; world-readable.
-export interface OrgCollab {
+export interface OrgCollab extends Being {
     id: string;
     name: string;
     url?: string;
     blurb?: string;
     agreement: 'founder' | 'contract';
-    createdAt?: any;
 }
 
 const collabsCollection = collection(db, 'collabs');

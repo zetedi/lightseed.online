@@ -10,7 +10,7 @@ const baseKeys = {
   map_view: "Map View", list_view: "List View", upload_photo: "Upload Photo", validated: "VALIDATED",
   unvalidated: "Unvalidated", validate_action: "Validate Tree", quick_snap: "Capture Change", back_forest: "Back",
   genesis: "Genesis Hash", steward: "Steward", location: "Location", tree_details: "Tree Details",
-  // Entity section labels are non-possessive: profiles are entity-generic (Indra's net) — the menu is the entity's anatomy, not the viewer's possessions.
+  // Being section labels are non-possessive: profiles are entity-generic (Indra's net) — the menu is the entity's anatomy, not the viewer's possessions.
   profile: "Profile", my_trees: "Trees", my_pulses: "Pulses", my_alignments: "Alignments",
   edit: "Edit", be_mother_tree: "Plant or Stand for a tree", guard_tree: "Guard Tree", alignments: "Alignments",
   pending_alignments: "Search for Alignments", no_pending_resonance: "The field is calm", search_placeholder: "Search...",

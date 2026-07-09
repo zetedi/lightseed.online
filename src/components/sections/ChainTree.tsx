@@ -7,7 +7,7 @@ import { Pulse } from '../../types';
 // ChainTree — renders ANY being's chain (Indra's net). The "digital tree" is the universal
 // chain renderer: every being (human, AI, community, node, tree) shares one profile anatomy,
 // and its immutable pulse chain always draws as a living tree — trunk, branch, leaf, root.
-// Entity-generic on purpose: this component knows Pulses, never Lifetrees — community/node/
+// Being-generic on purpose: this component knows Pulses, never Lifetrees — community/node/
 // person profiles bind their own root card and stats later.
 
 // The being's root/genesis card — the ROOT of the chain, drawn from the being itself

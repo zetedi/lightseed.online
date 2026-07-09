@@ -1,5 +1,5 @@
 import type { Timestamp } from 'firebase/firestore';
-import type { Entity } from './entity';
+import type { Being } from './being';
 import type { ReachAudience } from './reach';
 
 // Canonical pulse types are explicit lowercase tokens. Casing/identity previously encoded
@@ -44,7 +44,7 @@ export interface PulseInterpretation {
 }
 
 // The fundamental unit of the network
-export interface Pulse extends Entity {
+export interface Pulse extends Being {
   id: string;
   lifetreeId?: string; // canonical — the tree this pulse belongs to
   visionId?: string;

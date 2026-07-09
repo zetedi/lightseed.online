@@ -1,11 +1,11 @@
 import type { Timestamp } from 'firebase/firestore';
-import type { Entity } from './entity';
+import type { Being } from './being';
 import type { WateringSchedule } from './watering';
 
 export type LifetreeType = "human" | "ai" | "community" | "project" | "LIFETREE" | "GUARDED" | "FAMILY";
 
-// The Entity / immutable-chain container / Living Identity
-export interface Lifetree extends Entity {
+// The Being / immutable-chain container / Living Identity
+export interface Lifetree extends Being {
   id: string;
   ownerId: string; // canonical owner — load-bearing (rules + queries)
   name: string;

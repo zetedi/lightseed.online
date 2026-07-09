@@ -3,7 +3,7 @@ import { Icons } from '../ui/Icons';
 import { Sanctuary } from '../../types';
 import { SectionTitle } from '../ui/SectionTitle';
 
-// Entity-generic sanctuary section — the sacred place that holds any being's lifetrees
+// Being-generic sanctuary section — the sacred place that holds any being's lifetrees
 // (Indra's net). A community shows its domain's first sanctuary; a personal profile can
 // present the same solo-value experience. The section stays pure-presentational: the owner
 // loads the sanctuary in its shell (communities share it across tabs) and passes the value

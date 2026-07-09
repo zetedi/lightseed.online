@@ -7,7 +7,7 @@ import { SectionTitle } from '../ui/SectionTitle';
 // follow on a tree — the same act wherever the tree is met.
 import { GuardianButton } from '../community/GuardianButton';
 
-// Entity-generic trees section — the lifetrees standing with any being (Indra's net).
+// Being-generic trees section — the lifetrees standing with any being (Indra's net).
 // A community, a node or a person gathers trees the same way; only where the gathering is
 // rooted (and therefore how trees are listed, searched and invited) differs, so the owner
 // binds those via `trees` / `searchInvitable` / `onInvite` — scope-bound loaders as props,

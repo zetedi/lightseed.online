@@ -1,4 +1,5 @@
 import type { Timestamp } from 'firebase/firestore';
+import type { Being } from './being';
 
 // The Intelligence Commons.
 //
@@ -17,9 +18,8 @@ export type IntelligenceProviderId =
 
 // A configured intelligence: a provider + model, dressed in a persona, with access
 // to some set of memories, available to some set of communities.
-export interface Intelligence {
+export interface Intelligence extends Being {
   id: string;
-  lid?: string; // Lightseed ID — the object's portable, time-ordered true name (UUIDv7).
   name: string;
   description?: string;
   provider: IntelligenceProviderId;
@@ -53,9 +53,8 @@ export interface Persona {
 // single intelligence; intelligences remain replaceable.
 export type MemoryVisibility = 'private' | 'community' | 'public';
 
-export interface Memory {
+export interface Memory extends Being {
   id: string;
-  lid?: string; // Lightseed ID — durable memory's portable, time-ordered true name (UUIDv7).
   name: string;
   description?: string;
   visibility: MemoryVisibility;

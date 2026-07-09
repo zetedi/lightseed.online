@@ -6,7 +6,7 @@ import { SectionTitle } from '../ui/SectionTitle';
 import { normalizeTheme } from '../../utils/theme';
 import { AppearanceEditor } from '../ui/AppearanceEditor';
 
-// Entity-generic appearance section — how any being presents itself (Indra's net): name,
+// Being-generic appearance section — how any being presents itself (Indra's net): name,
 // logo, hero, gallery, theme, footer links and carousel quotes. The section is purely
 // presentational: every edited field is part of the owner's shared Save, so all draft state
 // stays in the owner's shell and arrives via props. CommunityAppearance is a thin wrapper

@@ -1,7 +1,7 @@
 import type { Timestamp } from 'firebase/firestore';
-import type { Entity } from './entity';
+import type { Being } from './being';
 
-export interface Community extends Entity {
+export interface Community extends Being {
   id: string;
   ownerId: string;
   name: string;

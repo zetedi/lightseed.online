@@ -12,9 +12,7 @@ import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validat
 import { canReachTree, type ReachTargetProfile } from '../utils/reachPermissions';
 import { treeCircle } from '../domain/views/circle';
 import { firestoreStore } from '../adapters/firestore';
-import { SectionMenu } from './ui/SectionMenu';
-import { ProfileHero } from './ui/ProfileHero';
-import { ProfileLayout } from './ui/ProfileLayout';
+import { BeingProfile, type BeingSection } from './BeingProfile';
 import { ChainTree } from './sections/ChainTree';
 import { TreeCare } from './lifetree/TreeCare';
 import { TreeCircle } from './lifetree/TreeCircle';
@@ -67,12 +65,12 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const [editName, setEditName] = useState(tree.name);
    const [editShortTitle, setEditShortTitle] = useState(tree.shortTitle || '');
    const [isSaving, setIsSaving] = useState(false);
-   
+
    // Immutable chain Visualization State
    const [genesisBlock, setGenesisBlock] = useState<Pulse | null>(null);
    const [growthBlocks, setGrowthBlocks] = useState<Pulse[]>([]);
    const [loadingChain, setLoadingChain] = useState(false);
-   
+
    // Local state for immediate UI feedback on actions
    const [localStatus, setLocalStatus] = useState(tree.status || 'HEALTHY');
 
@@ -125,7 +123,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
        if (!canEdit) return; // reporting danger writes the tree's status — a tender power, not a follow
        const newStatus = localStatus === 'DANGER' ? 'HEALTHY' : 'DANGER';
        if (newStatus === "DANGER" && !(await showConfirm("Are you sure you want to report this tree is in DANGER? This will alert all guardians.", { title: "Report Danger", confirmText: "Report", danger: true }))) return;
-       
+
        setIsSaving(true);
        try {
            await setTreeStatus(tree.id, newStatus);
@@ -170,14 +168,6 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
        hash: tree.genesisHash,
    };
 
-   // The profile menu: each entry is a card that reveals a section. Digital Tree first.
-   const sections: { key: TreeSection; label: string; icon: React.ReactNode }[] = [
-       { key: 'digital', label: 'Digital Tree', icon: <Icons.Tree /> },
-       { key: 'details', label: t('tree_details'), icon: <Icons.Info /> },
-       { key: 'guardians', label: 'Guardians', icon: <Icons.Shield /> },
-       { key: 'care', label: 'Care', icon: <Icons.Droplet /> },
-       { key: 'circle', label: 'Tree Circle', icon: <Icons.Venn /> },
-   ];
    // The tree's avatar/banner image — its latest growth (or its planting image).
    const heroImg = tree.latestGrowthUrl || tree.imageUrl || '';
    const [shared, setShared] = useState(false);
@@ -197,35 +187,111 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
        </button>
    );
 
+   // The tree's sections — each `render` closes over this shell's state and handlers.
+   const sections: BeingSection[] = [
+       {
+           // Digital Tree — the immutable growth chain, rendered by the universal
+           // chain renderer (ChainTree). Chain loading stays here so Care can see the
+           // growth blocks (pending waterings) and refresh them in place.
+           key: 'digital', label: 'Digital Tree', icon: <Icons.Tree />, render: () => (
+               <ChainTree
+                   genesisBlock={genesisBlock}
+                   blocks={growthBlocks}
+                   loading={loadingChain}
+                   onViewPulse={onViewPulse}
+                   canTend={isOwner}
+                   onTend={onCreatePulse}
+                   root={chainRoot}
+                   stats={{ blockHeight: tree.blockHeight, genesisHash: tree.genesisHash, latestHash: tree.latestHash }}
+               />
+           ),
+       },
+       {
+           key: 'details', label: t('tree_details'), icon: <Icons.Info />, render: () => (
+               <TreeDetails
+                   tree={tree}
+                   isEditing={isEditing}
+                   canEdit={canEdit}
+                   canDelete={canDelete}
+                   isSaving={isSaving}
+                   onSave={handleSave}
+                   onCancelEdit={handleCancelEdit}
+                   onRequestDelete={() => setShowDeleteModal(true)}
+               />
+           ),
+       },
+       {
+           key: 'guardians', label: 'Guardians', icon: <Icons.Shield />, render: () => (
+               <TreeGuardians
+                   treeId={tree.id}
+                   currentUserId={currentUserId}
+                   canEdit={canEdit}
+                   status={localStatus}
+                   busy={isSaving}
+                   onToggleDanger={handleToggleDanger}
+                   onGuardianChange={() => setGuardianNonce(n => n + 1)}
+               />
+           ),
+       },
+       {
+           key: 'care', label: 'Care', icon: <Icons.Droplet />, render: () => (
+               (isOwner || isTender || isAdmin || isSuperAdmin)
+                   ? <TreeCare
+                       tree={tree}
+                       growthBlocks={growthBlocks}
+                       currentUserId={currentUserId}
+                       currentUserName={currentUser?.displayName}
+                       currentUserPhoto={currentUser?.photoURL}
+                       isOwner={isOwner}
+                       canWater={canWater}
+                       canManageSchedule={canManageSchedule}
+                       onUpdate={onUpdate}
+                       onChainRefresh={loadChain}
+                   />
+                   : <p className="rounded-2xl border border-slate-100 bg-white p-6 text-center text-sm text-slate-400">Only the tree's circle can tend its care.</p>
+           ),
+       },
+       {
+           key: 'circle', label: 'Tree Circle', icon: <Icons.Venn />, render: () => (
+               <TreeCircle tree={tree} currentUserId={currentUserId} canInvite={canInviteToCircle} circle={circle} />
+           ),
+       },
+   ];
+
     return (
         <>
-        <div className="min-h-screen animate-in fade-in zoom-in-95 duration-300">
-            {/* Danger Banner — click to message this tree's guardians. */}
-            {localStatus === 'DANGER' && (
-                <button
-                    type="button"
-                    onClick={() => onAlertGuardians?.()}
-                    disabled={!onAlertGuardians}
-                    title="Message this tree's guardians"
-                    className="w-full bg-red-600 text-white text-center py-2 font-bold animate-pulse sticky top-0 z-40 transition-colors hover:bg-red-700 disabled:cursor-default"
-                >
-                    <div className="flex items-center justify-center space-x-2">
-                        <Icons.Siren />
-                        <span>ALERT: THIS TREE IS IN DANGER{onAlertGuardians ? ' — message guardians' : ''}</span>
-                        <Icons.Siren />
-                    </div>
-                </button>
-            )}
-
-            {/* Profile hero — a wide banner of the latest growth image with a circular avatar. */}
-            <ProfileHero
-                heroImageUrl={heroImg}
-                imageClassName="opacity-70"
-                alwaysOverlay
-                overlayClassName="bg-gradient-to-b from-slate-900/45 via-slate-900/55 to-slate-900/85"
-                maxWidth="max-w-5xl"
-                padding="pt-5 pb-5 px-4"
-            >
+        <BeingProfile
+            className="min-h-screen animate-in fade-in zoom-in-95 duration-300"
+            sections={sections}
+            activeSection={section}
+            onSectionChange={(k) => setSection(k as TreeSection)}
+            hero={{
+                // Profile hero — a wide banner of the latest growth image with a circular avatar.
+                imageUrl: heroImg,
+                heroProps: {
+                    imageClassName: 'opacity-70',
+                    alwaysOverlay: true,
+                    overlayClassName: 'bg-gradient-to-b from-slate-900/45 via-slate-900/55 to-slate-900/85',
+                    maxWidth: 'max-w-5xl',
+                    padding: 'pt-5 pb-5 px-4',
+                    // Danger Banner — click to message this tree's guardians.
+                    banner: localStatus === 'DANGER' && (
+                        <button
+                            type="button"
+                            onClick={() => onAlertGuardians?.()}
+                            disabled={!onAlertGuardians}
+                            title="Message this tree's guardians"
+                            className="w-full bg-red-600 text-white text-center py-2 font-bold animate-pulse sticky top-0 z-40 transition-colors hover:bg-red-700 disabled:cursor-default"
+                        >
+                            <div className="flex items-center justify-center space-x-2">
+                                <Icons.Siren />
+                                <span>ALERT: THIS TREE IS IN DANGER{onAlertGuardians ? ' — message guardians' : ''}</span>
+                                <Icons.Siren />
+                            </div>
+                        </button>
+                    ),
+                },
+                body: (
                     <div className="flex items-center gap-3 sm:gap-4">
                     {/* Back — left of the avatar; returns to wherever you came from. */}
                     <button onClick={onClose} title={t('back_forest')} className="shrink-0 rounded-full bg-white/15 p-2.5 text-white transition-colors hover:bg-white/25">
@@ -262,7 +328,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                         )}
                     </div>
                     </div>
-                    {/* Actions — in the tree header; icon+label on desktop, icon-only on mobile; coloured. */}
+                ),
+                // Actions — in the tree header; icon+label on desktop, icon-only on mobile; coloured.
+                footer: (
                     <div className="mt-4 flex flex-wrap gap-2">
                         <ActionBtn onClick={() => onPlayGrowth(tree.id)} title="Play growth" color="bg-emerald-600 text-white hover:bg-emerald-700" icon={<Icons.Play />} label="Play" />
                         {canReach
@@ -274,80 +342,16 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                         {canEdit && !isEditing && <ActionBtn onClick={() => { setIsEditing(true); setSection('details'); }} title={t('edit')} color="bg-slate-100 text-slate-700 hover:bg-slate-200" icon={<Icons.Pencil />} label={t('edit')} />}
                         {canDelete && !isEditing && <ActionBtn onClick={() => setShowDeleteModal(true)} title="Delete tree" color="bg-red-500 text-white hover:bg-red-600" icon={<Icons.Trash />} label="Delete" />}
                     </div>
-            </ProfileHero>
-
-            {/* Body — section menu on the left (desktop), a strip on mobile; profile-style. */}
-            <ProfileLayout
-                maxWidth="max-w-5xl"
-                overlap={false}
-                asideClassName="rounded-2xl border border-slate-100 bg-white p-2 shadow-sm lg:sticky lg:top-24"
-                mainClassName="min-w-0 space-y-6"
-                menu={<SectionMenu items={sections} active={section} onSelect={(k) => setSection(k as TreeSection)} />}
-            >
-
-                {section === 'details' && (
-                    <TreeDetails
-                        tree={tree}
-                        isEditing={isEditing}
-                        canEdit={canEdit}
-                        canDelete={canDelete}
-                        isSaving={isSaving}
-                        onSave={handleSave}
-                        onCancelEdit={handleCancelEdit}
-                        onRequestDelete={() => setShowDeleteModal(true)}
-                    />
-                )}
-
-                {section === 'guardians' && (
-                    <TreeGuardians
-                        treeId={tree.id}
-                        currentUserId={currentUserId}
-                        canEdit={canEdit}
-                        status={localStatus}
-                        busy={isSaving}
-                        onToggleDanger={handleToggleDanger}
-                        onGuardianChange={() => setGuardianNonce(n => n + 1)}
-                    />
-                )}
-
-                {section === 'care' && (
-                    (isOwner || isTender || isAdmin || isSuperAdmin)
-                        ? <TreeCare
-                            tree={tree}
-                            growthBlocks={growthBlocks}
-                            currentUserId={currentUserId}
-                            currentUserName={currentUser?.displayName}
-                            currentUserPhoto={currentUser?.photoURL}
-                            isOwner={isOwner}
-                            canWater={canWater}
-                            canManageSchedule={canManageSchedule}
-                            onUpdate={onUpdate}
-                            onChainRefresh={loadChain}
-                        />
-                        : <p className="rounded-2xl border border-slate-100 bg-white p-6 text-center text-sm text-slate-400">Only the tree's circle can tend its care.</p>
-                )}
-
-                {section === 'circle' && (
-                    <TreeCircle tree={tree} currentUserId={currentUserId} canInvite={canInviteToCircle} circle={circle} />
-                )}
-
-                {/* Digital Tree — the immutable growth chain, rendered by the universal
-                    chain renderer (ChainTree). Chain loading stays here so Care can see the
-                    growth blocks (pending waterings) and refresh them in place. */}
-                {section === 'digital' && (
-                    <ChainTree
-                        genesisBlock={genesisBlock}
-                        blocks={growthBlocks}
-                        loading={loadingChain}
-                        onViewPulse={onViewPulse}
-                        canTend={isOwner}
-                        onTend={onCreatePulse}
-                        root={chainRoot}
-                        stats={{ blockHeight: tree.blockHeight, genesisHash: tree.genesisHash, latestHash: tree.latestHash }}
-                    />
-                )}
-            </ProfileLayout>
-        </div>
+                ),
+            }}
+            // Body — section menu on the left (desktop), a strip on mobile; profile-style.
+            layoutProps={{
+                maxWidth: 'max-w-5xl',
+                overlap: false,
+                asideClassName: 'rounded-2xl border border-slate-100 bg-white p-2 shadow-sm lg:sticky lg:top-24',
+                mainClassName: 'min-w-0 space-y-6',
+            }}
+        />
 
         {/* Delete confirmation modal */}
         {showDeleteModal && (

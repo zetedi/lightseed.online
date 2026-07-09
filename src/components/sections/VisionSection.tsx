@@ -3,7 +3,7 @@ import RichTextEditor from '../ui/RichTextEditor';
 import { SectionTitle } from '../ui/SectionTitle';
 import { sanitizeRichText } from '../../utils/sanitize';
 
-// Entity-generic vision section — any being's "what am I growing towards" (Indra's net).
+// Being-generic vision section — any being's "what am I growing towards" (Indra's net).
 // A community, a node or a person states a vision the same way; only where the draft lives
 // (and therefore how it's persisted) differs, so the owner keeps the draft + Save binding
 // (a community shares its Save with the Appearance tab) and passes them in. Genuinely
@@ -28,7 +28,7 @@ interface VisionSectionProps {
   placeholder?: string;
   // Shown (as a paragraph) when no vision has been shared yet.
   emptyMessage?: string;
-  // Entity-specific blocks rendered after the vision (e.g. the community chain seal).
+  // Being-specific blocks rendered after the vision (e.g. the community chain seal).
   extras?: React.ReactNode;
 }
 

@@ -11,7 +11,7 @@ import { SectionTitle } from '../ui/SectionTitle';
 import { visibilitiesForScope } from '../../domain/pulseVisibility';
 import type { PulseVisibility } from '../../domain/pulse';
 
-// Entity-generic events section. Events are conceptually the same for communities, nodes and
+// Being-generic events section. Events are conceptually the same for communities, nodes and
 // personal profiles — only where they're rooted (and therefore how they're fetched/created)
 // differs, so the owner binds those via `loadEvents` / `onCreate`. CommunityEvents is a thin
 // wrapper over this; node- and personal-profile events tabs can bind their own scoping.

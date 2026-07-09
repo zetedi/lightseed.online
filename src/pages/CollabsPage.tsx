@@ -27,7 +27,7 @@ const AGREEMENT_LABEL: Record<OrgCollab['agreement'], string> = {
   contract: 'By contract',
 };
 
-// Entity lists use their own grid map — these are text cards, not image cards.
+// Being lists use their own grid map — these are text cards, not image cards.
 const gridFor = (d: ListDensity) =>
   d === 'rows' ? 'flex flex-col gap-2.5'
   : d === 'mini' ? 'grid gap-3 grid-cols-2 lg:grid-cols-3'

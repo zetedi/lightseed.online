@@ -1,11 +1,11 @@
 import type { Timestamp } from 'firebase/firestore';
-import type { Entity } from './entity';
+import type { Being } from './being';
 
 // A sanctuary is a sacred place / platform that holds a community's lifetrees —
 // e.g. "The Secret Sun" for lightseed. Like the first tree, it is data-driven per
 // domain: each node shows its own first sanctuary, generically "The Sanctuary".
-// An Entity like every other being — it carries a lid (backfilled by migrateBackfillLids).
-export interface Sanctuary extends Entity {
+// An Being like every other being — it carries a lid (backfilled by migrateBackfillLids).
+export interface Sanctuary extends Being {
   id: string;
   name: string;
   shortTitle?: string;
