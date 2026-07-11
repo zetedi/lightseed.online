@@ -3,7 +3,7 @@ import { showAlert, showConfirm } from "../ui/Dialog";
 import { useLanguage } from '../../contexts/LanguageContext';
 import { sendMessageToOracle, generateImage, translatePulse, type TranslationResponse } from '../../services/gemini';
 import { getIntelligence } from '../../services/intelligence';
-import { checkAndIncrementAiUsage, mintPulse, uploadBase64Image, listenToUserProfile, fetchReachThread, fetchThreadById, markReachesSeen, sendReach, sendThreadMessage, lovePulse, isPulseLoved } from '../../services/firebase';
+import { checkAndIncrementAiUsage, mintPulse, uploadBase64Image, listenToUserProfile, fetchReachThread, fetchThreadById, markReachesSeen, sendReach, sendThreadMessage, lovePulse, isPulseLoved, fetchGrowthPulses } from '../../services/firebase';
 import { reachAudienceLabels } from '../../utils/reachPermissions';
 import { useLifeseed } from '../../hooks/useLifeseed';
 import { Icons } from '../ui/Icons';
@@ -312,13 +312,20 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
         if (current === 'loading' || (current && !('error' in current))) return; // already loading or done
         setInterpretations(prev => ({ ...prev, [index]: 'loading' }));
         try {
-            const context = [selectedTree.shortTitle, selectedTree.body, activeTree.body]
+            // Depth = context depth (domain/translation): the visions, plus the sender tree's
+            // public growth (its mints). The subgraph (depth 4) can widen this later.
+            let context = [selectedTree.shortTitle, selectedTree.body, activeTree.body]
                 .filter(Boolean).join(' — ');
+            try {
+                const mints = (await fetchGrowthPulses(selectedTree.id))
+                    .slice(0, 5).map(p => p.title).filter(Boolean).join(' · ');
+                if (mints) context += ` — Recent public growth of ${selectedTree.name}: ${mints}`;
+            } catch { /* optional context — the reading works without it */ }
             const result = await translatePulse({
                 senderTreeName: selectedTree.name,
                 receiverTreeName: activeTree.name,
                 message: text,
-                depth: 4, // contextualize within their vision / direction of growth
+                depth: 3, // message + visions + public mints (what we actually gathered)
                 context,
             }, preferredIntelligenceId);
             setInterpretations(prev => ({ ...prev, [index]: result }));
@@ -652,13 +659,31 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                                     </div>
                                 );
                                 if (interp) {
+                                    // The five distinctions (NVC) — rendered as subordinate shadow
+                                    // lines; only the layers the reading actually filled show.
                                     const r = interp as TranslationResponse;
+                                    const layers: [string, string | undefined][] = [
+                                        ['', r.happened],
+                                        ['feels', r.feeling],
+                                        ['may assume · unconfirmed', r.inference],
+                                        ['needs', r.need],
+                                        ['asks', r.asks],
+                                    ];
+                                    const filled = layers.filter(([, v]) => v && v.trim());
                                     return (
-                                        <div dir="auto" className="px-3 text-[12.5px] italic leading-relaxed text-slate-400">
-                                            <span className="font-semibold text-slate-400/90">✦ </span>{r.interpretation}
-                                            {r.growthSuggestion && (
-                                                <span className="mt-1 block text-slate-400/80">↳ {r.growthSuggestion}</span>
+                                        <div dir="auto" className="space-y-0.5 px-3 text-[12.5px] italic leading-relaxed text-slate-400">
+                                            {filled.map(([label, v], k) => (
+                                                <p key={k}>
+                                                    {k === 0 && <span className="font-semibold text-slate-400/90">✦ </span>}
+                                                    {label && <span className="font-semibold text-slate-400/90">{label} · </span>}
+                                                    {v}
+                                                </p>
+                                            ))}
+                                            {r.alternatives?.[0] && (
+                                                <p className="text-slate-400/80">↳ also possible · {r.alternatives[0]}</p>
                                             )}
+                                            {/* The reading names its lens — same honesty law as Carry. */}
+                                            <p className="text-[11px] not-italic text-slate-400/60">read through {aiName}</p>
                                         </div>
                                     );
                                 }

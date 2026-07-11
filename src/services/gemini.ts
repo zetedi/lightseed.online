@@ -3,6 +3,7 @@ import { httpsCallable } from "firebase/functions";
 import { auth, functions } from "./firebase";
 import { Lifetree, Vision, VisionSynergy } from "../types";
 import type { WateringAnalysis } from "../domain/watering";
+import { buildTranslationPrompt, type TranslationRequest, type TranslationResponse } from "../domain/translation";
 import config from "../../lifeseed.config.json";
 import { sendIntelligenceMessage, getIntelligence, getPersona, getActiveIntelligenceId, resolveIntelligenceMemoryText, DEFAULT_INTELLIGENCE_ID } from "./intelligence";
 import type { IntelligenceRef, Persona } from "../domain/intelligence";
@@ -443,56 +444,13 @@ ${visionsList}`;
     }
 }
 
-// Living Intelligence Network - Translation Depth System
-export interface TranslationRequest {
-    senderTreeName: string;
-    receiverTreeName: string;
-    message: string;
-    depth: number;
-    context?: string; // Community history, shared values, prior pulses
-}
-
-export interface TranslationResponse {
-    interpretation: string;
-    confidence: number;
-    alternatives: string[];
-    growthSuggestion?: string;
-}
+// Living Intelligence Network — Human-to-Human Translation (NVC-grounded).
+// The reading itself (five distinctions, fidelity commitments, depth-as-context) lives in
+// src/domain/translation.ts — a pure, tested module. This is only the engine call.
+export type { TranslationRequest, TranslationResponse } from '../domain/translation';
 
 export const translatePulse = async (req: TranslationRequest, intelligenceId?: string): Promise<TranslationResponse> => {
-    const { senderTreeName, receiverTreeName, message, depth, context } = req;
-    
-    let depthInstructions = "";
-    switch(depth) {
-        case 1: depthInstructions = "Provide a raw summary of the message."; break;
-        case 2: depthInstructions = "Focus on the underlying intent of the message."; break;
-        case 3: depthInstructions = "Reveal the underlying pulse or emotion driving this message."; break;
-        case 4: depthInstructions = "Contextualize this message within their broader vision or direction of growth."; break;
-        case 5: depthInstructions = "Contextualize this message regarding the relationship between the sender and receiver."; break;
-        case 6: depthInstructions = "Evaluate this message based on community context and shared values."; break;
-        case 7: depthInstructions = "Provide an initiation-level reflection, offering profound insight into what this message means for the spiritual or holistic growth of the network."; break;
-        default: depthInstructions = "Provide a basic interpretation.";
-    }
-
-    const prompt = `
-        You are the Translation engine of the Living Intelligence Network.
-        Your goal is to help life recognize life, reduce misunderstanding, and amplify coherence.
-        
-        Sender: ${senderTreeName}
-        Receiver: ${receiverTreeName}
-        Message: "${message}"
-        Depth Level: ${depth}
-        Instruction for this Depth: ${depthInstructions}
-        Additional Context (Integrator Trees): ${context || "None"}
-        
-        Respond with a JSON object in this exact structure:
-        {
-            "interpretation": "Your primary translated understanding of the message.",
-            "confidence": 95, // a number 1-100
-            "alternatives": ["alternative meaning 1", "alternative meaning 2"],
-            "growthSuggestion": "Optional suggestion on how the receiver might constructively respond."
-        }
-    `;
+    const prompt = buildTranslationPrompt(req);
 
     try {
         // Route the interpretation through the reader's chosen intelligence (their Claude),

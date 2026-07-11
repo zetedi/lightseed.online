@@ -36,10 +36,25 @@ export const isTreeGrowth = (t?: string): boolean => normalizePulseType(t) === '
 export type PulseVisibility = 'public' | 'node' | 'community' | 'circle' | 'private';
 
 export interface PulseInterpretation {
+    // Context depth the reading drew on (1 message · 2 visions · 3 mints · 4 subgraph).
     depth: number;
-    interpretation: string;
-    confidence: number;
+    // Provenance — a persisted reading names who read and through which intelligence
+    // (the same honesty law as Carry: the words carry their lens).
+    readByTreeId?: string;
+    readByTreeName?: string;
+    intelligenceId?: string;
+    intelligenceName?: string;
+    readAt?: number; // epoch ms
+    // The five distinctions (NVC) — see domain/translation.
+    happened?: string;
+    feeling?: string;
+    inference?: string;
+    need?: string;
+    asks?: string;
     alternatives?: string[];
+    // Legacy single-blob reading (pre-NVC schema) — still rendered on old pulses.
+    interpretation?: string;
+    confidence?: number;
     growthSuggestion?: string;
 }
 

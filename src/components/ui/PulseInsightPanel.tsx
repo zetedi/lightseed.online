@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pulse, Lifetree } from '../../types';
 import { Icons } from './Icons';
 import { translatePulse } from '../../services/gemini';
+import { getActiveIntelligenceId, getIntelligence, DEFAULT_INTELLIGENCE_ID } from '../../services/intelligence';
 import { spendAiTokens, db } from '../../services/firebase';
 import { isTokenisationEnabled } from '../../domain/tokenisation';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -32,22 +33,34 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
                 await spendAiTokens(activeTree.id, depth);
             }
 
-            // 2. Call Translation Service
+            // 2. Call the Translation engine through the reader's chosen intelligence — resolved
+            // HERE so the provenance we persist below names the lens that actually read.
+            const intelligenceId = getActiveIntelligenceId() ?? DEFAULT_INTELLIGENCE_ID;
+            const intelligence = await getIntelligence(intelligenceId).catch(() => null);
             const response = await translatePulse({
                 senderTreeName: pulse.authorName,
                 receiverTreeName: activeTree.name,
                 message: pulse.content || pulse.body,
                 depth,
-            });
+            }, intelligenceId);
 
-            // 3. Update the Pulse doc with the interpretation
-            const interpretationData = {
+            // 3. Update the Pulse doc with the reading — the five distinctions (NVC) plus
+            // provenance (who read, through which intelligence — the Carry honesty law).
+            // Firestore rejects undefined values, so only the layers the model filled are saved.
+            const interpretationData = Object.fromEntries(Object.entries({
                 depth,
-                interpretation: response.interpretation,
-                confidence: response.confidence,
+                happened: response.happened,
+                feeling: response.feeling,
+                inference: response.inference,
+                need: response.need,
+                asks: response.asks,
                 alternatives: response.alternatives,
-                growthSuggestion: response.growthSuggestion
-            };
+                readByTreeId: activeTree.id,
+                readByTreeName: activeTree.name,
+                intelligenceId,
+                intelligenceName: intelligence?.name || 'Osiris',
+                readAt: Date.now(),
+            }).filter(([, v]) => v !== undefined)) as unknown as NonNullable<Pulse['aiInterpretation']>;
 
             await updateDoc(doc(db, 'pulses', pulse.id), {
                 aiInterpretation: interpretationData
@@ -74,37 +87,38 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
 
                     {pulse.aiInterpretation ? (
                         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
-                            <div className="bg-white/10 p-4 rounded-xl border border-white/20">
-                                <div className="flex justify-between items-center mb-2">
-                                    <span className="text-xs uppercase tracking-widest text-indigo-300 font-bold">Interpretation (Depth {pulse.aiInterpretation.depth})</span>
-                                    <span className="text-[10px] bg-indigo-500/30 text-indigo-200 px-2 py-1 rounded font-mono">
-                                        {pulse.aiInterpretation.confidence}% Match
-                                    </span>
-                                </div>
-                                <p className="text-sm font-medium leading-relaxed">
-                                    {pulse.aiInterpretation.interpretation}
-                                </p>
+                            {/* The five distinctions (NVC) — legacy single-blob readings fall into
+                                the first layer so old pulses keep rendering. */}
+                            <div className="bg-white/10 p-4 rounded-xl border border-white/20 space-y-2">
+                                <span className="text-xs uppercase tracking-widest text-indigo-300 font-bold">Reading (Depth {pulse.aiInterpretation.depth})</span>
+                                {/* Provenance — a persisted reading names its lens (the Carry honesty law). */}
+                                {(pulse.aiInterpretation.readByTreeName || pulse.aiInterpretation.intelligenceName) && (
+                                    <p className="text-[10px] text-indigo-200/70">
+                                        read by {pulse.aiInterpretation.readByTreeName || 'a tree'} · through {pulse.aiInterpretation.intelligenceName || 'an intelligence'}
+                                        {pulse.aiInterpretation.readAt ? ` · ${new Date(pulse.aiInterpretation.readAt).toLocaleDateString()}` : ''}
+                                    </p>
+                                )}
+                                {([
+                                    ['happened', pulse.aiInterpretation.happened ?? pulse.aiInterpretation.interpretation],
+                                    ['feels', pulse.aiInterpretation.feeling],
+                                    ['may assume · unconfirmed', pulse.aiInterpretation.inference],
+                                    ['needs', pulse.aiInterpretation.need],
+                                    ['asks', pulse.aiInterpretation.asks ?? pulse.aiInterpretation.growthSuggestion],
+                                ] as [string, string | undefined][]).filter(([, v]) => v && v.trim()).map(([label, v]) => (
+                                    <p key={label} className="text-sm font-medium leading-relaxed">
+                                        <span className="mr-1 text-[10px] font-bold uppercase tracking-widest text-indigo-300/80">{label}</span> {v}
+                                    </p>
+                                ))}
                             </div>
 
                             {pulse.aiInterpretation.alternatives && pulse.aiInterpretation.alternatives.length > 0 && (
                                 <div className="bg-white/5 p-4 rounded-xl border border-white/10">
-                                    <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold block mb-2">Alternative Angles</span>
+                                    <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold block mb-2">Also possible</span>
                                     <ul className="text-xs text-slate-300 space-y-1 list-disc list-inside pl-4">
                                         {pulse.aiInterpretation.alternatives.map((alt, i) => (
                                             <li key={i}>{alt}</li>
                                         ))}
                                     </ul>
-                                </div>
-                            )}
-
-                            {pulse.aiInterpretation.growthSuggestion && (
-                                <div className="bg-emerald-900/40 p-4 rounded-xl border border-emerald-500/30">
-                                    <span className="text-[10px] uppercase tracking-widest text-emerald-400 font-bold block mb-2 flex items-center gap-1">
-                                        <Icons.Leaf /> Growth Suggestion
-                                    </span>
-                                    <p className="text-xs text-emerald-100">
-                                        {pulse.aiInterpretation.growthSuggestion}
-                                    </p>
                                 </div>
                             )}
                         </div>
@@ -116,21 +130,23 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
                                     : 'Translate this pulse to reveal its deeper underlying intent, emotion, or systemic context.'}
                             </p>
 
+                            {/* Depth = how much of the being's living context the reading draws on
+                                (never how speculative it may get) — see domain/translation. */}
                             <div className="space-y-3">
                                 <div className="flex justify-between text-xs font-bold text-slate-400 uppercase">
-                                    <span>Depth Level</span>
-                                    <span>{depth} / 7</span>
+                                    <span>Context Depth</span>
+                                    <span>{depth} / 4</span>
                                 </div>
                                 <input
                                     type="range"
-                                    min="1" max="7"
+                                    min="1" max="4"
                                     value={depth}
                                     onChange={(e) => setDepth(Number(e.target.value))}
                                     className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
                                 />
                                 <div className="text-[10px] text-slate-400 flex justify-between">
-                                    <span>1: Summary</span>
-                                    <span>7: Initiation</span>
+                                    <span>1: Message alone</span>
+                                    <span>4: The subgraph</span>
                                 </div>
                             </div>
 
