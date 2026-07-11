@@ -17,7 +17,10 @@ const db = admin.firestore();
 const EMAIL_FROM = "lightseed <admin@lightseed.online>";
 
 const writeMail = async (params: { to: string | string[]; subject: string; html: string; text?: string; headers?: Record<string, string>; uid?: string }) => {
-    const message: any = { from: EMAIL_FROM, subject: params.subject, text: params.text, html: params.html };
+    // Firestore rejects any document containing `undefined` (the extension doc write would fail
+    // with "Cannot use undefined as a Firestore value"), so optional fields are only set when present.
+    const message: any = { from: EMAIL_FROM, subject: params.subject, html: params.html || "" };
+    if (params.text) message.text = params.text;
     if (params.headers) message.headers = params.headers;
     await db.collection("mail").add({
         to: Array.isArray(params.to) ? params.to : [params.to],
@@ -307,6 +310,46 @@ export const onReachCreated = onDocumentCreated("pulses/{pulseId}", async (event
     };
 
     await Promise.all(recipients.map(notify));
+});
+
+// Community join requests: when a join_request link lands (someone pressed Join on a
+// community), email that community's keeper. Server-side because the keeper's email lives on
+// their private user doc, which the requester can never read. The Members tab is where the
+// keeper accepts or declines; this email just carries the knock to their door.
+export const onJoinRequestCreated = onDocumentCreated("links/{linkId}", async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+    const link = snap.data() as any;
+    if (link.rel !== "join_request") return;
+
+    try {
+        const [communitySnap, personSnap] = await Promise.all([
+            db.collection("communities").doc(String(link.to)).get(),
+            db.collection("persons").doc(String(link.from)).get(),
+        ]);
+        if (!communitySnap.exists) return;
+        const community = communitySnap.data() as any;
+        const ownerId = community.ownerId as string;
+        if (!ownerId || ownerId === link.from) return;
+
+        const owner = await db.collection("users").doc(ownerId).get();
+        const email = owner.exists ? (owner.data() as any)?.email : null;
+        if (!email) return;
+
+        const requester = (personSnap.exists && (personSnap.data() as any)?.displayName) || "Someone";
+        const communityName = community.name || "your community";
+        const text = `${requester} asked to join ${communityName}.\n\nYou can accept or decline on the community's Members tab.`;
+        const html = composeSystemEmailHtml(text, "https://lightseed.online", "Open lightseed");
+        await writeMail({
+            to: [email],
+            subject: `${requester} asked to join ${communityName}`,
+            html,
+            text: `${text}\n\nhttps://lightseed.online`,
+            uid: ownerId,
+        });
+    } catch (e) {
+        console.error("Join-request email failed:", e);
+    }
 });
 
 // --- Tree Circle: accept a co-ownership / guardianship invite -------------------
@@ -823,6 +866,30 @@ export const unsubscribe = onRequest({ cors: true }, async (req, res) => {
         if (req.method === "POST") { res.status(200).end(); return; } // never fail a one-click POST
         res.status(500).send("Could not unsubscribe. Please try again later.");
     }
+});
+
+// --- Admin: browse users (for the deletion tool) ----------------------------------------------
+// Staff-only. Returns a lightweight roster of user profiles (uid, email, name, createdAt) so an
+// admin can pick who to delete without hunting for uids. Reads the `users` collection with admin
+// rights (clients can't read other users' docs), newest first.
+export const listUsersAsAdmin = onCall({ cors: true }, async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
+    if (!(await isStaffUid(request.auth.uid))) throw new HttpsError("permission-denied", "Staff only.");
+
+    const snap = await db.collection("users").orderBy("createdAt", "desc").limit(200).get();
+    const superadmin = await db.collection("config").doc("superadmin").get();
+    const superUid = superadmin.exists ? superadmin.data()?.uid : null;
+    const users = snap.docs.map((d) => {
+        const u = d.data() as any;
+        return {
+            uid: d.id,
+            email: u.email || null,
+            displayName: u.displayName || "",
+            createdAt: u.createdAt?.toMillis?.() ?? null,
+            isSuperAdmin: d.id === superUid,
+        };
+    });
+    return { users };
 });
 
 // --- Admin: delete a user (auth + their data) ------------------------------------------------

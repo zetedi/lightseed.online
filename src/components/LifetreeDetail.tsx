@@ -225,6 +225,15 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                    onSave={handleSave}
                    onCancelEdit={handleCancelEdit}
                    onRequestDelete={() => setShowDeleteModal(true)}
+                   onVisibilityChange={async (visibility) => {
+                       try {
+                           await updateLifetree(tree.id, { visibility });
+                           onUpdate?.({ visibility });
+                       } catch (e) {
+                           console.error(e);
+                           showAlert('Could not change the visibility.');
+                       }
+                   }}
                />
            ),
        },
@@ -276,6 +285,13 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
             hero={{
                 // Profile hero — a wide banner of the latest growth image with a circular avatar.
                 imageUrl: heroImg,
+                // Delete lives in the top-right corner (not the action row), so the mobile action
+                // row stays one line — and a destructive control sits away from the daily ones.
+                actions: canDelete && !isEditing ? (
+                    <button onClick={() => setShowDeleteModal(true)} title="Delete tree" className="flex items-center gap-1 rounded-full border border-red-400/30 bg-red-500/15 px-4 py-2 text-xs font-bold text-red-300 transition-colors hover:bg-red-500 hover:text-white">
+                        <Icons.Trash /><span className="hidden sm:inline">Delete</span>
+                    </button>
+                ) : undefined,
                 heroProps: {
                     imageClassName: 'opacity-70',
                     alwaysOverlay: true,
@@ -355,13 +371,12 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                 onClick={() => onCarry(carrying ? null : tree)}
                                 title={carrying ? 'Stop carrying this being\'s voice' : "Carry this being's voice — pulses name you as the carrier"}
                                 color={carrying ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-purple-100 text-purple-700 hover:bg-purple-200'}
-                                icon={<Icons.Sparkles />}
+                                icon={<Icons.Wizard />}
                                 label={carrying ? 'Carrying' : 'Carry a pulse'}
                             />
                         )}
                         {isOwner && !isEditing && onSetDefault && <ActionBtn onClick={() => { if (!isDefaultTree) onSetDefault(); }} disabled={isDefaultTree} title={isDefaultTree ? 'Your default tree' : 'Set as default tree'} color={isDefaultTree ? 'bg-amber-400 text-amber-950' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'} icon={<Icons.Star filled={isDefaultTree} />} label="Favourite" />}
                         {canEdit && !isEditing && <ActionBtn onClick={() => { setIsEditing(true); setSection('details'); }} title={t('edit')} color="bg-slate-100 text-slate-700 hover:bg-slate-200" icon={<Icons.Pencil />} label={t('edit')} />}
-                        {canDelete && !isEditing && <ActionBtn onClick={() => setShowDeleteModal(true)} title="Delete tree" color="bg-red-500 text-white hover:bg-red-600" icon={<Icons.Trash />} label="Delete" />}
                     </div>
                 ),
             }}

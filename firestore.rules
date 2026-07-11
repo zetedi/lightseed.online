@@ -136,10 +136,12 @@ service cloud.firestore {
       allow write: if isStaff();
     }
 
-    // Config collection: read staff/config-specific, no direct write
+    // Config collection: read staff/config-specific, no direct write.
+    // config/limits (the node's planting caps) is world-readable — the client planting gate
+    // reads it — and staff-writable from the node admin page.
     match /config/{configId} {
-      allow read: if configId == 'superadmin' || isStaff();
-      allow write: if false; 
+      allow read: if configId in ['superadmin', 'limits'] || isStaff();
+      allow write: if configId == 'limits' && isStaff();
     }
 
     // Users collection: Read self/staff, Write self
@@ -448,13 +450,19 @@ service cloud.firestore {
       allow read: if true;
       allow create: if isStaff()
         || (isSignedIn() && request.resource.data.from == request.auth.uid
-            && request.resource.data.rel in ['guardian', 'joined'])
+            && request.resource.data.rel in ['guardian', 'joined', 'join_request'])
         || (isSignedIn() && request.resource.data.rel == 'participant'
-            && isTreeOwner(request.resource.data.from));
+            && isTreeOwner(request.resource.data.from))
+        // The community owner accepts a join request by minting the member link themself.
+        || (isSignedIn() && request.resource.data.rel == 'member'
+            && isCommunityOwner(request.resource.data.to));
       allow delete: if isSignedIn() && (
         resource.data.from == request.auth.uid
         || isStaff()
-        || (resource.data.get('rel', '') == 'participant' && isTreeOwner(resource.data.from)));
+        || (resource.data.get('rel', '') == 'participant' && isTreeOwner(resource.data.from))
+        // The community owner can decline requests and remove members of their community.
+        || (resource.data.get('rel', '') in ['member', 'join_request']
+            && isCommunityOwner(resource.data.to)));
       allow update: if false;
     }
 

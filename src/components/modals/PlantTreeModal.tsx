@@ -51,6 +51,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isImagining, setIsImagining] = useState(false);
   const [imagineError, setImagineError] = useState<string | null>(null);
+  const [isSeedingBio, setIsSeedingBio] = useState(false);
   const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 640px)').matches);
 
   useEffect(() => {
@@ -62,6 +63,18 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
 
   // Desktop advances like a wizard (slides in from the side); mobile reads top-to-bottom (slides up).
   const stepAnim = isDesktop ? 'animate-in fade-in slide-in-from-right-6' : 'animate-in fade-in slide-in-from-bottom-6';
+
+  // The "AI" button next to the seed keywords — grows a vision text from the keywords.
+  const handleSeedBio = async () => {
+    if (isSeedingBio) return;
+    setIsSeedingBio(true);
+    try {
+      setTreeBio(await generateLifetreeBio(treeSeed));
+    } catch (e: any) {
+      showAlert(e?.message || 'The AI could not grow a vision right now. Please try again.');
+    }
+    setIsSeedingBio(false);
+  };
 
   const handleImagine = async () => {
     if (isImagining || uploading) return;
@@ -234,7 +247,9 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
                     value={treeSeed} 
                     onChange={e=>setTreeSeed(e.target.value)} 
                   />
-                  <button type="button" onClick={() => generateLifetreeBio(treeSeed).then(setTreeBio)} disabled={uploading} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 rounded-xl disabled:opacity-50 font-bold text-xs shadow-md transition-colors">AI</button>
+                  <button type="button" onClick={handleSeedBio} disabled={uploading || isSeedingBio} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 rounded-xl disabled:opacity-50 font-bold text-xs shadow-md transition-colors flex items-center justify-center min-w-[52px]">
+                    {isSeedingBio ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'AI'}
+                  </button>
                 </div>
               )}
               <textarea 

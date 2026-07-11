@@ -35,6 +35,9 @@ interface ChainTreeProps {
     blocks: Pulse[];
     loading: boolean;
     onViewPulse: (pulse: Pulse) => void;
+    // When a block lives elsewhere (e.g. a commit on GitHub), its leaf renders as a real link
+    // (new tab) instead of an onViewPulse card. Return undefined to keep the in-app behaviour.
+    hrefForBlock?: (pulse: Pulse) => string | undefined;
     // The Tend CTA at the crown — shown only when the viewer may tend this being.
     canTend?: boolean;
     onTend?: () => void;
@@ -51,6 +54,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
     blocks,
     loading,
     onViewPulse,
+    hrefForBlock,
     canTend,
     onTend,
     emptyText,
@@ -86,15 +90,15 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
             )}
 
             <div className="relative flex flex-col items-start md:items-center">
-                {/* Central Tree Trunk — real bark: the phoenix texture tiled vertically along the
+                {/* Central Tree Trunk — real bark: the trunk texture tiled vertically along the
                     column (a centred strip of the image repeats down the trunk), with a cylinder
                     shading overlay (dark edges, faint centre highlight) so it keeps its depth.
                     Shape (rounded top/bottom), widths (w-4 / md:w-8) and z-layering unchanged. */}
                 <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-4 md:w-8 -ml-2 md:-ml-4 rounded-t-full rounded-b-2xl shadow-inner overflow-hidden z-0"
                      style={{
                          backgroundColor: '#4E342E',
-                         backgroundImage: 'url(/phoenix.webp)',
-                         backgroundSize: '120px auto',
+                         backgroundImage: 'url(/trunk.webp)',
+                         backgroundSize: '56px auto',
                          backgroundRepeat: 'repeat-y',
                          backgroundPosition: 'center top',
                      }}>
@@ -134,6 +138,11 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                         const isRightSide = index % 2 === 0;
                         const pulseImages = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
                         const pulseBadge = pulse.type === 'event' ? 'EVENT' : pulse.type === 'tree_growth' ? 'GROWTH' : 'PULSE';
+                        const blockHref = hrefForBlock?.(pulse);
+                        const CardTag: React.ElementType = blockHref ? 'a' : 'div';
+                        const cardProps = blockHref
+                            ? { href: blockHref, target: '_blank', rel: 'noopener noreferrer' }
+                            : { onClick: () => onViewPulse(pulse) };
 
                         return (
                             <div key={pulse.id} className={`flex w-full relative ${isRightSide ? 'md:justify-end' : 'md:justify-start'} justify-start`}>
@@ -146,28 +155,35 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                                     ${isRightSide ? 'md:pl-16' : 'md:pr-16 md:flex-row-reverse'}
                                 `}>
 
-                                    {/* Mobile Branch (Always Left Trunk to Card) */}
-                                    <svg className="md:hidden absolute top-1/2 -mt-6 left-[1.15rem] w-12 h-12 text-[#5D4037] pointer-events-none z-0" viewBox="0 0 50 50" preserveAspectRatio="none">
-                                        {/* Curve from left (trunk) to right (card) */}
-                                        <path d="M0,25 Q25,25 50,25" stroke="currentColor" strokeWidth="6" fill="none" strokeLinecap="round" />
-                                    </svg>
+                                    {/* Mobile Branch (Always Left Trunk to Card) — the trunk bark
+                                        turned 90° (trunk-branch.webp), so branches are wood too. */}
+                                    <div className="md:hidden absolute top-1/2 -mt-[3px] left-[1.15rem] w-12 h-[6px] rounded-full pointer-events-none z-0"
+                                         style={{
+                                             backgroundColor: '#5D4037',
+                                             backgroundImage: 'url(/trunk-branch.webp)',
+                                             backgroundSize: 'auto 300%',
+                                             backgroundRepeat: 'repeat-x',
+                                             backgroundPosition: 'center',
+                                             boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.45)',
+                                         }} />
 
-                                    {/* Desktop Branch */}
-                                    <svg className={`hidden md:block absolute top-1/2 -mt-4 w-20 h-12 text-[#5D4037] pointer-events-none z-0 ${isRightSide ? 'left-0 -ml-2' : 'right-0 -mr-2'}`} viewBox="0 0 80 40" preserveAspectRatio="none">
-                                        {isRightSide ? (
-                                            // From Left (Trunk) to Right (Card)
-                                            <path d="M0,20 C40,20 40,20 80,20" stroke="currentColor" strokeWidth="8" fill="none" strokeLinecap="round" />
-                                        ) : (
-                                            // From Right (Trunk) to Left (Card)
-                                            <path d="M80,20 C40,20 40,20 0,20" stroke="currentColor" strokeWidth="8" fill="none" strokeLinecap="round" />
-                                        )}
-                                    </svg>
+                                    {/* Desktop Branch — same bark bar, kept at the exact height the
+                                        old SVG line drew at (8px below the card's vertical centre). */}
+                                    <div className={`hidden md:block absolute top-1/2 mt-[3px] w-20 h-[9px] rounded-full pointer-events-none z-0 ${isRightSide ? 'left-0 -ml-2' : 'right-0 -mr-2'}`}
+                                         style={{
+                                             backgroundColor: '#5D4037',
+                                             backgroundImage: 'url(/trunk-branch.webp)',
+                                             backgroundSize: 'auto 300%',
+                                             backgroundRepeat: 'repeat-x',
+                                             backgroundPosition: 'center',
+                                             boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.45)',
+                                         }} />
 
                                     {/* Leaf Card */}
-                                    <div
-                                        onClick={() => onViewPulse(pulse)}
+                                    <CardTag
+                                        {...cardProps}
                                         className={`
-                                            relative bg-white border-2 border-emerald-100 shadow-md shadow-emerald-600/20 hover:shadow-xl hover:shadow-emerald-500/30 hover:border-emerald-300
+                                            block relative bg-white border-2 border-emerald-100 shadow-md shadow-emerald-600/20 hover:shadow-xl hover:shadow-emerald-500/30 hover:border-emerald-300
                                             transition-all cursor-pointer group w-full md:max-w-sm rounded-xl
                                             ${isRightSide
                                                 ? 'md:rounded-tl-[0] md:rounded-bl-[3rem] md:rounded-tr-[2rem] md:rounded-br-[2rem] md:text-left'
@@ -218,7 +234,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                                                 Hash: {pulse.hash.substring(0, 16)}...
                                             </div>
                                         </div>
-                                    </div>
+                                    </CardTag>
                                 </div>
                             </div>
                         );

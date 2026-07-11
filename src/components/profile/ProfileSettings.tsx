@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { setNewsletterSubscription, updateUserProfile, setOnlyValidatedCanReach, deleteUserAccount, logout } from '../../services/firebase';
+import { isLightPathOn, setLightPathOn } from '../PathwayCTA';
 import { SectionTitle } from '../ui/SectionTitle';
 import { Modal } from '../ui/Modal';
 
@@ -52,6 +53,14 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   const [togglingValidatedReach, setTogglingValidatedReach] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [lightPathOn, setLightPathOnState] = useState(isLightPathOn);
+
+  const handleLightPathToggle = () => {
+    const next = !lightPathOn;
+    setLightPathOn(next); // persists + clears dismissals when turning on
+    setLightPathOnState(next);
+    notify(next ? 'The Light Path is lit — you will find it on your home page.' : 'The Light Path is off.');
+  };
 
   const handleNewsletterToggle = async () => {
     if (!email || togglingNewsletter) return;
@@ -144,6 +153,13 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
             <p className="text-xs text-slate-500">You can turn this off anytime.</p>
           </div>
           <Toggle on={dmEmailNotifications} onClick={handleDmEmailToggle} disabled={togglingDmEmail || !email} />
+        </div>
+        <div className="p-4 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="font-semibold text-slate-800 text-sm">Light Path {lightPathOn ? <span className="ml-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-700">on</span> : <span className="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500">off</span>}</p>
+            <p className="text-xs text-slate-500">The glowing next-step card on your home. Turning it on also relights any dismissed steps.</p>
+          </div>
+          <Toggle on={lightPathOn} onClick={handleLightPathToggle} />
         </div>
       </div>
       <div className="mt-6 rounded-2xl border border-red-100 bg-red-50/40 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">

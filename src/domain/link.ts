@@ -5,7 +5,9 @@ import type { Being } from './being';
 // of truth for relations (see src/adapters/firestore.ts and memory/lid-lin-entity).
 // 'participant' is the one edge whose `from` is a LIFETREE (not a uid): a tree the owner has
 // enlisted in an event or vision. Every other rel points a person at a target.
-export type LinkRel = 'guardian' | 'co_owner' | 'steward' | 'observer' | 'member' | 'joined' | 'participant';
+// 'join_request' is a person asking to become a community member — the owner accepting it
+// replaces the edge with a 'member' link.
+export type LinkRel = 'guardian' | 'co_owner' | 'steward' | 'observer' | 'member' | 'joined' | 'participant' | 'join_request';
 
 export interface Link extends Being {
   type: 'link';

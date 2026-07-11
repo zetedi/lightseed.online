@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { showAlert, showConfirm } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
-import { getAdmins, deleteUserAsAdmin, triggerSystemEmail } from '../../services/firebase';
+import { getAdmins, deleteUserAsAdmin, listUsersAsAdmin, triggerSystemEmail, getNodeLimits, setNodeLimits } from '../../services/firebase';
+import type { AdminUserRow } from '../../services/firebase';
+import { DEFAULT_NODE_LIMITS } from '../../domain/limits';
 import { SectionTitle } from '../ui/SectionTitle';
 
 interface ProfileAdminProps {
@@ -42,17 +44,51 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
   const [adminActionLoading, setAdminActionLoading] = useState(false);
   const [deleteUserUid, setDeleteUserUid] = useState('');
   const [deletingUser, setDeletingUser] = useState(false);
+  const [userList, setUserList] = useState<AdminUserRow[] | null>(null);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
+  // Node planting caps (config/limits) — quality, not quantity.
+  const [maxLifetrees, setMaxLifetrees] = useState(DEFAULT_NODE_LIMITS.maxLifetrees);
+  const [maxGuardedTrees, setMaxGuardedTrees] = useState(DEFAULT_NODE_LIMITS.maxGuardedTrees);
+  const [savingLimits, setSavingLimits] = useState(false);
 
   useEffect(() => {
     if (isSuperAdmin) { getAdmins().then(setAdmins); }
   }, [isSuperAdmin]);
 
-  const handleDeleteUser = async () => {
-    const targetUid = deleteUserUid.trim();
+  useEffect(() => {
+    if (!isAdmin && !isSuperAdmin) return;
+    getNodeLimits().then(l => { setMaxLifetrees(l.maxLifetrees); setMaxGuardedTrees(l.maxGuardedTrees); }).catch(() => undefined);
+  }, [isAdmin, isSuperAdmin]);
+
+  const handleSaveLimits = async () => {
+    setSavingLimits(true);
+    try {
+      await setNodeLimits({ maxLifetrees, maxGuardedTrees });
+      notify(`Planting limits saved: ${maxLifetrees} lifetrees + ${maxGuardedTrees} guarded = ${maxLifetrees + maxGuardedTrees} trees per being.`);
+    } catch (e: any) { notify(e?.message || 'Could not save the limits.'); }
+    setSavingLimits(false);
+  };
+
+  const loadUsers = async () => {
+    setLoadingUsers(true);
+    try { setUserList(await listUsersAsAdmin()); }
+    catch (e: any) { showAlert(e?.message || 'Could not load the users.'); }
+    setLoadingUsers(false);
+  };
+
+  const handleDeleteUser = async (target?: AdminUserRow) => {
+    const targetUid = (target?.uid || deleteUserUid).trim();
     if (!targetUid) return;
-    if (!(await showConfirm(`Permanently delete user ${targetUid} and all their trees, pulses, visions and account? This cannot be undone.`, { title: 'Delete user', confirmText: 'Delete user', danger: true }))) return;
+    const who = target ? `${target.displayName || target.email || targetUid}${target.email ? ` (${target.email})` : ''}` : targetUid;
+    if (!(await showConfirm(`Permanently delete ${who} and all their trees, pulses, visions and account? This cannot be undone.`, { title: 'Delete user', confirmText: 'Delete user', danger: true }))) return;
     setDeletingUser(true);
-    try { await deleteUserAsAdmin(targetUid); setDeleteUserUid(''); showAlert('User deleted.'); }
+    try {
+      await deleteUserAsAdmin(targetUid);
+      setDeleteUserUid('');
+      setUserList(prev => prev ? prev.filter(u => u.uid !== targetUid) : prev);
+      showAlert('User deleted.');
+    }
     catch (e: any) { showAlert(e?.message || 'Could not delete the user.'); }
     setDeletingUser(false);
   };
@@ -89,6 +125,31 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
         </div>
         <button onClick={handleTestEmail} className="rounded-full bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-4 py-2 whitespace-nowrap transition-colors">{mailStatus || 'Send test'}</button>
       </div>
+
+      {/* Node planting limits — per-being caps, editable by node admins (config/limits). */}
+      {(isAdmin || isSuperAdmin) && (
+        <div className="mb-4 rounded-2xl border border-slate-100 p-5 space-y-3">
+          <h4 className="font-bold text-slate-800 flex items-center gap-2 text-sm uppercase tracking-wider"><Icons.Tree /> Planting limits</h4>
+          <p className="text-xs text-slate-500">How many trees one being may tend on this node. We would like quality, not quantity.</p>
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="flex flex-col gap-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Lifetrees
+              <input type="number" min={1} value={maxLifetrees} onChange={e => setMaxLifetrees(Number(e.target.value))}
+                className="w-24 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-mono text-slate-800 focus:outline-none focus:border-emerald-400" />
+            </label>
+            <label className="flex flex-col gap-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Guarded trees
+              <input type="number" min={1} value={maxGuardedTrees} onChange={e => setMaxGuardedTrees(Number(e.target.value))}
+                className="w-24 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-mono text-slate-800 focus:outline-none focus:border-emerald-400" />
+            </label>
+            <div className="flex-1 text-xs text-slate-400 pb-2 whitespace-nowrap">= {(maxLifetrees || 0) + (maxGuardedTrees || 0)} together</div>
+            <button onClick={handleSaveLimits} disabled={savingLimits || maxLifetrees < 1 || maxGuardedTrees < 1}
+              className="rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold px-4 py-2 transition-colors">
+              {savingLimits ? 'Saving…' : 'Save limits'}
+            </button>
+          </div>
+        </div>
+      )}
       {!superAdminExists && (
         <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 flex items-center justify-between gap-4">
           <div>
@@ -123,8 +184,44 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
             <p className="text-xs text-slate-500">Permanently removes a user's trees, pulses, visions and account. Use for re-testing onboarding.</p>
             <div className="flex gap-2">
               <input value={deleteUserUid} onChange={e => setDeleteUserUid(e.target.value)} placeholder="User UID" className="flex-1 bg-white border border-slate-200 text-slate-800 text-xs rounded-lg px-3 py-2 font-mono focus:outline-none focus:border-red-400" />
-              <button disabled={!deleteUserUid.trim() || deletingUser} onClick={handleDeleteUser} className="bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors whitespace-nowrap">{deletingUser ? 'Deleting…' : 'Delete user'}</button>
+              <button disabled={!deleteUserUid.trim() || deletingUser} onClick={() => handleDeleteUser()} className="bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors whitespace-nowrap">{deletingUser ? 'Deleting…' : 'Delete user'}</button>
             </div>
+
+            {/* Browse the network's users instead of pasting uids by hand. */}
+            {userList === null ? (
+              <button onClick={loadUsers} disabled={loadingUsers} className="w-full rounded-lg border border-red-200 bg-white py-2 text-xs font-bold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50">
+                {loadingUsers ? 'Loading users…' : 'Browse users'}
+              </button>
+            ) : (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{userList.length} users</p>
+                  <button onClick={loadUsers} disabled={loadingUsers} className="text-[11px] font-bold text-slate-400 hover:text-slate-600 disabled:opacity-50">{loadingUsers ? 'Refreshing…' : 'Refresh'}</button>
+                </div>
+                <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
+                  {userList.length === 0 && <p className="text-xs text-slate-400">No users found.</p>}
+                  {userList.map(u => (
+                    <div key={u.uid} className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 border border-slate-100">
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-semibold text-slate-700">
+                          {u.displayName || u.email || u.uid}
+                          {u.isSuperAdmin && <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-amber-700">node owner</span>}
+                        </p>
+                        <p className="truncate text-[10px] text-slate-400">{u.email || 'no email'} · <span className="font-mono">{u.uid}</span>{u.createdAt ? ` · ${new Date(u.createdAt).toLocaleDateString()}` : ''}</p>
+                      </div>
+                      <button
+                        disabled={deletingUser || u.uid === uid || u.isSuperAdmin}
+                        title={u.uid === uid ? 'You cannot delete yourself here.' : (u.isSuperAdmin ? 'The node owner cannot be deleted.' : 'Delete this user')}
+                        onClick={() => handleDeleteUser(u)}
+                        className="shrink-0 rounded-lg bg-red-600 px-2.5 py-1.5 text-[10px] font-bold text-white transition-colors hover:bg-red-500 disabled:opacity-40"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Newsletter — unrelated to admin management, so it lives in its own section */}

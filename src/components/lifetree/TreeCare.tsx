@@ -11,8 +11,8 @@ import { SectionCard } from '../ui/SectionCard';
 // The three growth stages, in growing order — a seed in its pot, in the ground but still
 // tended, and finally self-sustaining. The first two are watered on a schedule.
 const STAGE_META: { key: TreeStage; label: string; hint: string; icon: React.ReactNode }[] = [
-    { key: 'potted', label: 'Seed in a pot', hint: 'A seed growing in its pot — the most fragile stage.', icon: <Icons.Sprout /> },
-    { key: 'planted', label: 'In the ground', hint: 'Planted out, but still needs regular care.', icon: <Icons.Leaf /> },
+    { key: 'potted', label: 'Seed in a pot', hint: 'A seed growing in its pot — the most fragile stage.', icon: <Icons.Pot /> },
+    { key: 'planted', label: 'In the ground', hint: 'Planted out, but still needs regular care.', icon: <Icons.Sprout /> },
     { key: 'self_sustaining', label: 'Self-sustaining', hint: 'Established — no scheduled watering.', icon: <Icons.Tree /> },
 ];
 
@@ -225,20 +225,23 @@ export const TreeCare: React.FC<TreeCareProps> = ({
             {canWater && (
                 <div className="space-y-2">
                     <input ref={waterFileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleWaterFile} />
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-3">
                         <button type="button" onClick={waterOnChain ? handleWaterPick : handleWaterBypass} disabled={waterBusy} className="inline-flex items-center justify-center gap-1.5 rounded-full bg-sky-600 px-4 py-2 text-sm font-bold text-white shadow transition-all hover:bg-sky-700 active:scale-95 disabled:opacity-50">
                             <Icons.Droplet /> <span>I Watered Today</span>
                         </button>
+                        {/* Off-chain by default: routine waterings just tick the cadence. Opting in takes
+                            a photo and mints a growth block on the tree's immutable chain. */}
+                        <label className="flex cursor-pointer items-center gap-2 text-xs leading-tight text-sky-700/80" title="For waterings worth remembering.">
+                            <input type="checkbox" checked={waterOnChain} onChange={e => setWaterOnChain(e.target.checked)} className="accent-sky-600" />
+                            <span>
+                                <span className="block">Add photo proof —</span>
+                                <span className="block">mint a growth block on the tree's chain.</span>
+                            </span>
+                        </label>
                         {isOwner && overdue && !wateringAlertedToday(tree) && (
                             <button type="button" onClick={handleRemindGuardians} disabled={waterBusy} className="inline-flex items-center gap-1 rounded-full border border-sky-300 bg-white px-3 py-2 text-xs font-bold text-sky-700 hover:bg-sky-100 disabled:opacity-50">Remind guardians 💧</button>
                         )}
                     </div>
-                    {/* Off-chain by default: routine waterings just tick the cadence. Opting in takes a
-                        photo and mints a growth block on the tree's immutable chain. */}
-                    <label className="flex cursor-pointer items-start gap-2 text-xs text-sky-700/80">
-                        <input type="checkbox" checked={waterOnChain} onChange={e => setWaterOnChain(e.target.checked)} className="mt-0.5 accent-sky-600" />
-                        <span>Add photo proof — mint a growth block on the tree's chain (for waterings worth remembering).</span>
-                    </label>
                 </div>
             )}
 

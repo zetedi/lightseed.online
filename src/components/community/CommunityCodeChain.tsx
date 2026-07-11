@@ -39,6 +39,9 @@ const commitToPulse = (c: CommitEntry, previousSha: string): Pulse => ({
 
 const noop = (): void => {};
 
+// The repo the code chain mirrors — each growth leaf links straight to its commit.
+const REPO_URL = 'https://github.com/zetedi/lifeseed.online';
+
 export const CommunityCodeChain: React.FC = () => {
     const [commits, setCommits] = useState<CommitEntry[] | null>(null);
     const [failed, setFailed] = useState(false);
@@ -86,12 +89,13 @@ export const CommunityCodeChain: React.FC = () => {
                     blocks={blocks}
                     loading={commits === null}
                     onViewPulse={noop}
+                    hrefForBlock={(p) => `${REPO_URL}/commit/${p.hash}`}
                     root={root}
                     stats={stats}
                     emptyText="No commits mirrored yet."
                     // Tending the node's body = contributing code — the crown CTA opens the repo.
                     canTend
-                    onTend={() => window.open('https://github.com/zetedi/lifeseed.online', '_blank', 'noopener')}
+                    onTend={() => window.open(REPO_URL, '_blank', 'noopener')}
                 />
             )}
         </div>

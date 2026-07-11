@@ -6,6 +6,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { TermsModal } from '../TermsModal';
 import { getTerms } from '../../utils/terms';
 import { signInWithGoogle, signUpWithEmail, signInWithEmail, resetPassword, getNetworkInvite, submitInviteRequest } from '../../services/firebase';
+import { friendlyAuthError } from '../../utils/authErrors';
 
 const field = "h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-slate-100 disabled:text-slate-500";
 
@@ -46,7 +47,7 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly }: { onClose: () => vo
     catch (e: any) {
       showAlert(e?.message === 'INVITE_ONLY'
         ? t('auth_invite_only_alert')
-        : (e?.message || t('auth_signin_failed')));
+        : friendlyAuthError(e, t('auth_signin_failed')));
     }
     setBusy(false);
   };
@@ -64,7 +65,7 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly }: { onClose: () => vo
       }
       onClose();
     } catch (e: any) {
-      showAlert(e?.message === 'INVITE_ONLY' ? t('auth_invite_only_short') : (e?.message || t('auth_failed')));
+      showAlert(e?.message === 'INVITE_ONLY' ? t('auth_invite_only_short') : friendlyAuthError(e, t('auth_failed')));
     }
     setBusy(false);
   };
@@ -81,7 +82,7 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly }: { onClose: () => vo
   const handleReset = async () => {
     if (!email.trim()) { showAlert(t('auth_enter_email_first')); return; }
     try { await resetPassword(email); showAlert(t('auth_reset_sent')); }
-    catch (e: any) { showAlert(e?.message || t('auth_reset_failed')); }
+    catch (e: any) { showAlert(friendlyAuthError(e, t('auth_reset_failed'))); }
   };
 
   const title = mode === 'request' ? t('auth_request_invitation') : (mode === 'signup' ? t('auth_join') : t('sign_in'));
@@ -130,7 +131,7 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly }: { onClose: () => vo
           )}
 
           <button onClick={handleGoogle} disabled={busy} className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-50">
-            <Icons.Globe /> <span>{t('auth_continue_google')}</span>
+            <Icons.GoogleG /> <span>{t('auth_continue_google')}</span>
           </button>
 
           <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-widest text-slate-400">

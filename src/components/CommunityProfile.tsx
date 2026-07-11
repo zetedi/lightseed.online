@@ -12,6 +12,7 @@ import { CommunityEvents } from './community/CommunityEvents';
 import { CommunityFirstTree } from './community/CommunityFirstTree';
 import { CommunitySanctuary } from './community/CommunitySanctuary';
 import { CommunityTreesTab } from './community/CommunityTreesTab';
+import { CommunityMembers } from './community/CommunityMembers';
 import { CommunityIntelligence } from './community/CommunityIntelligence';
 import { CommunityCodeChain } from './community/CommunityCodeChain';
 import { CommunityAppearance } from './community/CommunityAppearance';
@@ -60,14 +61,33 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   // resolved from links below. Legacy memberIds arrays are no longer read.
   const memberSeed = !!currentUserId && community.ownerId === currentUserId;
   const [memberByLink, setMemberByLink] = useState(false);
+  // Has this viewer already asked to join? (join_request link — see the Members tab.)
+  const [joinRequested, setJoinRequested] = useState(false);
+  const [joining, setJoining] = useState(false);
   useEffect(() => {
     let alive = true;
-    firestoreStore.linksTo(community.id, 'member')
-      .then(links => { if (alive) setMemberByLink(isParticipant(links, currentUserId)); })
+    firestoreStore.linksTo(community.id)
+      .then(links => {
+        if (!alive) return;
+        setMemberByLink(isParticipant(links.filter(l => l.rel === 'member'), currentUserId));
+        setJoinRequested(!!currentUserId && links.some(l => l.rel === 'join_request' && l.from === currentUserId));
+      })
       .catch(() => {});
     return () => { alive = false; };
   }, [community.id, currentUserId]);
   const isMember = memberSeed || memberByLink;
+
+  // Join — a request for the community's keeper(s), surfaced on their Members tab.
+  const handleJoin = async () => {
+    if (!currentUserId) { showAlert('Sign in to join this community.'); return; }
+    setJoining(true);
+    try {
+      await firestoreStore.link(currentUserId, 'join_request', community.id);
+      setJoinRequested(true);
+      showAlert(`Your request to join ${community.name} is on its way to its keepers.`);
+    } catch (e: any) { showAlert(e?.message || 'Could not send the join request.'); }
+    setJoining(false);
+  };
   // The visibility levels this viewer may query at community scope — shared by the events and
   // council (decisions) tabs, so a signed-out viewer only ever requests public docs. Memoized so
   // the tab components can safely depend on it without refetching every render.
@@ -362,6 +382,11 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
         <CommunityCouncil community={community} canEdit={canEdit} currentUserId={currentUserId} communityLevels={communityLevels} />
       ),
     },
+    {
+      key: 'members', label: 'Members', icon: <Icons.Users />, render: () => (
+        <CommunityMembers community={community} currentUserId={currentUserId} canManage={canEdit} />
+      ),
+    },
     // The network's founding lore (Genesis, the Path, the Yantra, Protection) stays with the
     // central lightseed / lifeseed nodes — every community will have its own genesis and path.
     ...loreTabs.filter(() => isNetworkHub).map((tab): BeingSection => ({
@@ -418,6 +443,23 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
         heroProps: { padding: 'pt-5 pb-12 px-4' },
         actions: (
           <>
+            {/* Join — visitors ask, keepers accept on the Members tab. Members see their standing. */}
+            {currentUserId && !isMember && (
+              joinRequested ? (
+                <span className="flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-4 py-2 text-xs font-bold text-emerald-300">
+                  <Icons.Users size={14} /> Requested
+                </span>
+              ) : (
+                <button onClick={handleJoin} disabled={joining} className="flex items-center gap-1 rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50">
+                  <Icons.Users size={14} /><span>{joining ? 'Asking…' : 'Join'}</span>
+                </button>
+              )
+            )}
+            {isMember && currentUserId !== community.ownerId && (
+              <span className="flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-4 py-2 text-xs font-bold text-emerald-300">
+                <Icons.Users size={14} /> Member
+              </span>
+            )}
             {onEnterCommunityView && (
               <button onClick={() => onEnterCommunityView(community)} className="flex items-center gap-1 rounded-full border border-amber-300/40 bg-amber-400/15 px-4 py-2 text-xs font-bold text-amber-200 transition-colors hover:bg-amber-400 hover:text-white" title="See the whole site as this community">
                 <Icons.Eye /><span className="hidden sm:inline">Switch to community view</span><span className="sm:hidden">Community view</span>

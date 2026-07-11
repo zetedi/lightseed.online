@@ -3,14 +3,33 @@ import { derivePathway, type PathwayInput, type PathwayStepKey } from '../domain
 import { CTA_GLOW } from '../utils/tabTheme';
 import { headerSurface } from '../domain/themeSurface';
 
-// The Pathway CTA — the trail's ONE next step, rendered as a single glowing call with a subtle
+// The Light Path — the trail's ONE next step, rendered as a single glowing call with a subtle
 // progress hint. It replaces the FirstRunChecklist: instead of a card of steps it derives the
 // being's stage from live facts (domain/pathway) and offers only what comes next. All actions
 // arrive as callbacks from the shell — this component never touches services. Each step is
 // dismissable ("Not now", localStorage), so the trail invites without nagging: a dismissed step
-// stays quiet, and the next stage brings a fresh, undismissed call.
+// stays quiet, and the next stage brings a fresh, undismissed call. A dismissed path can be
+// relit from Profile → Settings (relightPath below).
 
 const STORAGE_KEY = 'lifeseed.pathway.dismissed';
+const OFF_KEY = 'lifeseed.pathway.off';
+
+// Is the Light Path lit? (The settings toggle reads this; default is on.)
+export const isLightPathOn = (): boolean => {
+  try { return window.localStorage.getItem(OFF_KEY) !== 'true'; } catch { return true; }
+};
+
+// Turn the Light Path on (also clearing any per-step dismissals, so it truly reappears) or off.
+export const setLightPathOn = (on: boolean): void => {
+  try {
+    if (on) {
+      window.localStorage.removeItem(OFF_KEY);
+      window.localStorage.removeItem(STORAGE_KEY);
+    } else {
+      window.localStorage.setItem(OFF_KEY, 'true');
+    }
+  } catch { /* private mode */ }
+};
 
 const readDismissed = (): PathwayStepKey[] => {
   try {
@@ -56,7 +75,7 @@ interface Props {
 export const PathwayCTA = ({ input, actions, theme, isDark = false }: Props) => {
   const [dismissed, setDismissed] = useState<PathwayStepKey[]>(readDismissed);
   const { stageIndex, stageCount, next, stage } = derivePathway(input);
-  if (!next || dismissed.includes(next.key)) return null;
+  if (!isLightPathOn() || !next || dismissed.includes(next.key)) return null;
 
   const surface = headerSurface(theme, isDark);
   const primary = theme?.primary || '#059669';
@@ -69,9 +88,10 @@ export const PathwayCTA = ({ input, actions, theme, isDark = false }: Props) => 
   };
 
   return (
-    <div className="mx-auto mb-6 flex max-w-2xl flex-wrap items-center gap-4 rounded-3xl border p-5 shadow-xl"
+    <div className="mx-auto flex max-w-2xl flex-wrap items-center gap-4 rounded-3xl border p-5 shadow-xl"
          style={{ backgroundColor: surface.background, color: surface.text, borderColor: surface.border }}>
       <div className="min-w-0 flex-1">
+        <p className="mb-0.5 text-[9px] font-bold uppercase tracking-[0.22em]" style={{ color: primary }}>Light Path</p>
         <p className="text-sm font-bold" style={{ color: surface.text }}>{next.label}</p>
         <p className="mt-0.5 text-xs" style={{ color: surface.muted }}>{next.description}</p>
         <div className="mt-2 flex items-center gap-1" title={`Stage ${stageIndex + 1} of ${stageCount}: ${stage}`}>

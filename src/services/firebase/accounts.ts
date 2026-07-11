@@ -114,7 +114,18 @@ export const resetPassword = (email: string) => sendPasswordResetEmail(auth, ema
 export const createNetworkInvite = async (email: string, invitedByUserId: string, message = '', opts?: { unlimited?: boolean }): Promise<{ id: string; link: string }> => {
     const cleanEmail = email.trim().toLowerCase();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) throw new Error('Please enter a valid email.');
-    if (!opts?.unlimited) {
+    // Staff are ALWAYS unlimited, checked here rather than trusted to every caller — the
+    // approve-request flow used to forget opts.unlimited and told the node owner
+    // "No invites remaining".
+    let unlimited = opts?.unlimited === true;
+    if (!unlimited) {
+        const [superadmin, adminDoc] = await Promise.all([
+            getDoc(doc(db, 'config', 'superadmin')).catch(() => null),
+            getDoc(doc(db, 'admins', invitedByUserId)).catch(() => null),
+        ]);
+        unlimited = (superadmin?.exists() && (superadmin.data() as any)?.uid === invitedByUserId) || !!adminDoc?.exists();
+    }
+    if (!unlimited) {
         // Spend one of the inviter's allotment atomically.
         await runTransaction(db, async (t) => {
             const ref = doc(db, 'users', invitedByUserId);
@@ -419,5 +430,14 @@ export const deleteUserAsAdmin = async (uid: string): Promise<{ deleted: boolean
     const fn = httpsCallable(functions, 'deleteUserAsAdmin');
     const res = await fn({ uid });
     return res.data as { deleted: boolean };
+};
+
+export type AdminUserRow = { uid: string; email: string | null; displayName: string; createdAt: number | null; isSuperAdmin: boolean };
+
+// Admin: browse users (staff-only Cloud Function) — the roster behind the deletion tool.
+export const listUsersAsAdmin = async (): Promise<AdminUserRow[]> => {
+    const fn = httpsCallable(functions, 'listUsersAsAdmin');
+    const res = await fn({});
+    return ((res.data as any)?.users || []) as AdminUserRow[];
 };
 

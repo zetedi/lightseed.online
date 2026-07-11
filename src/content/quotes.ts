@@ -14,6 +14,6 @@ export const LIGHTSEED_QUOTES: string[] = [
   "How do we build a network where intelligence naturally flows toward the places where it can do the most good for living systems?",
   "Where are your roots? What principles do you stand on? What memories nourish you? What community invited you? What living place reminds you of reality?",
   "Every intelligence shall know a living place, and every living place shall have a voice.",
-  "I hope for a day when an intelligence isn’t judged by benchmark scores, token speed, or parameter count — but by whether it helps us listen, helps us understand one another, helps us care for the place we’re rooted in, and leaves the world healthier than it found it.",
+  "We imagine a day when an intelligence isn’t judged by benchmark scores, token speed, or parameter count — but by whether it helps us listen, helps us understand one another, helps us care for the place we’re rooted in, and leaves the world healthier than it found it.",
   "Who tends your tree?",
 ];

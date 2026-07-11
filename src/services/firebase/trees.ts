@@ -2,6 +2,7 @@ import { collection, query, orderBy, getDocs, addDoc, setDoc, serverTimestamp, d
 import { httpsCallable } from 'firebase/functions';
 import { type Lifetree, type Sanctuary, type TreeOwnershipInvite, type InvitableRole } from '../../types';
 import { createBlock } from '../../utils/crypto';
+import { treePlantingGate, normalizeNodeLimits, DEFAULT_NODE_LIMITS, type NodeLimits } from '../../domain/limits';
 import { uuidv7 } from '../../utils/id';
 import { oldEmeraldEarthThemeValues } from '../../utils/theme';
 import { auth, db, functions, mapDoc, lifetreesCollection, visionsCollection, sanctuariesCollection } from './core';
@@ -148,7 +149,28 @@ export const getNetworkStats = async () => {
     }
 }
 
+// The node's planting caps, set by node admins on the admin page (config/limits, world-readable);
+// nodes that never touched them get the defaults (12 lifetrees + 132 guarded = 144).
+export const getNodeLimits = async (): Promise<NodeLimits> => {
+    try {
+        const snap = await getDoc(doc(db, 'config', 'limits'));
+        return snap.exists() ? normalizeNodeLimits(snap.data()) : DEFAULT_NODE_LIMITS;
+    } catch {
+        return DEFAULT_NODE_LIMITS;
+    }
+};
+
+// Staff-only by Firestore rules — the node admin page saves the caps here.
+export const setNodeLimits = (limits: NodeLimits) =>
+    setDoc(doc(db, 'config', 'limits'), normalizeNodeLimits(limits) as any, { merge: true });
+
 export const plantLifetree = async (data: Partial<Lifetree> & { ownerId: string; name: string; body?: string }) => {
+    // Quality, not quantity: the node's caps (or the 12 + 132 = 144 defaults) per being.
+    const plantingType: 'LIFETREE' | 'GUARDED' = (data.treeType as any) || (data.isNature ? 'GUARDED' : 'LIFETREE');
+    const [mine, limits] = await Promise.all([getMyLifetrees(data.ownerId), getNodeLimits()]);
+    const refusal = treePlantingGate(mine, plantingType, limits);
+    if (refusal) throw new Error(refusal);
+
     const genesisHash = await createBlock("0", { msg: "Birth" }, Date.now());
     const currentHost = window.location.hostname.replace(/^www\./, '');
     const domain = data.domain || (isHubDomain(currentHost) ? 'lightseed.online' : currentHost);

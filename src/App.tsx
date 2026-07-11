@@ -860,7 +860,9 @@ const AppContent = () => {
                     Gated on pathwayFacts.loaded so the wrong stage never flashes while the
                     link-borne facts are still in flight. Dismissable per step (localStorage). */}
                 {!selectedTree && !selectedVision && !selectedPulse && pathwayFacts.loaded && (tab === 'dashboard' || tab === 'forest') && (
-                    <div className="mx-auto max-w-7xl px-4 pt-6 animate-in fade-in duration-500">
+                    // Mobile: pt-4 matches the dashboard container's own top padding (py-4), so the
+                    // glowing Pathway card sits at the same distance from the header as the cards do.
+                    <div className="mx-auto max-w-7xl px-4 pt-4 sm:pt-6 animate-in fade-in duration-500">
                         <PathwayCTA
                             input={pathwayInput}
                             actions={pathwayActions}
