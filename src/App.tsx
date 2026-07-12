@@ -60,6 +60,9 @@ import { Footer } from './components/ui/Footer';
 import { PathwayCTA } from './components/PathwayCTA';
 import { usePathwayFacts } from './hooks/usePathwayFacts';
 import type { PathwayInput, PathwayStepKey } from './domain/pathway';
+import { derivePathway } from './domain/pathway';
+import { PathOverview } from './components/PathOverview';
+import { Modal } from './components/ui/Modal';
 import { useImageUpload } from './hooks/useImageUpload';
 import { useForestFilters } from './hooks/useForestFilters';
 import { useDashboardStats } from './hooks/useDashboardStats';
@@ -145,6 +148,8 @@ const AppContent = () => {
     // Custom-landing domains: false = the organisation's own page fills the screen;
     // true = the visitor stepped through the corner seed-logo into the full app.
     const [seedView, setSeedView] = useState(false);
+    // The Path overview — the Light Path's full ruleset, opened from the card's label.
+    const [showPathOverview, setShowPathOverview] = useState(false);
     // On non-hub domains, hold the shell until we know whether this domain has a custom
     // landing — otherwise the seed flashes first and then jumps to the organisation's page.
     const [hostResolved, setHostResolved] = useState(() => isHubDomain(window.location.hostname));
@@ -950,6 +955,7 @@ const AppContent = () => {
                         actions={pathwayActions}
                         theme={effectiveTheme}
                         isDark={effectiveIsDark}
+                        onOpenOverview={() => setShowPathOverview(true)}
                     />
                 )}
                 <Suspense fallback={<div className="min-h-[60vh] flex items-center justify-center"><Loading /></div>}>
@@ -1026,6 +1032,15 @@ const AppContent = () => {
 
                 {showAuthModal && !lightseed && (
                     <AuthModal onClose={() => setShowAuthModal(false)} inviteId={inviteParam} inviteOnly={config.inviteOnly} theme={effectiveTheme} />
+                )}
+
+                {/* The Path, whole — the Light Path's ruleset with the walker's position lit. */}
+                {showPathOverview && (
+                    <Modal title="The Path" onClose={() => setShowPathOverview(false)}>
+                        <div className="max-h-[70vh] overflow-y-auto p-1 pr-2">
+                            <PathOverview current={derivePathway(pathwayInput).stage} />
+                        </div>
+                    </Modal>
                 )}
             </div>
 

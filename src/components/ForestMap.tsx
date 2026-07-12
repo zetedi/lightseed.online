@@ -24,6 +24,10 @@ interface StackLevel {
     lng: number;
 }
 
+// Imageless trees on the map wear a deep night-blue disc — local data URI, no external
+// placeholder service (via.placeholder.com went dark and left white circles).
+const DARK_MARKER_FALLBACK = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%230b1b3a'/%3E%3C/svg%3E";
+
 export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, primaryTree = null, refreshKey = 0 }: { trees: Lifetree[], onView: (tree: Lifetree) => void, onReach?: (tree: Lifetree) => void, loading?: boolean, onRefresh?: () => void, primaryTree?: Lifetree | null, refreshKey?: number }) => {
     const mapContainer = useRef<HTMLDivElement>(null);
     const mapInstance = useRef<any>(null);
@@ -121,15 +125,40 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
     </svg>`;
 
     const getPopupOptions = (lat: number, lng: number) => {
-        const point = mapInstance.current?.latLngToContainerPoint([lat, lng]);
+        const map = mapInstance.current;
+        const point = map?.latLngToContainerPoint([lat, lng]);
+        const size = map?.getSize();
+        // Vertical: flip below when the marker sits near the top edge.
         const openBelow = point ? point.y < 170 : false;
+        // Horizontal: the popup is centred (~300px wide) — near a side edge, nudge it inward
+        // by exactly the overhang so it never opens off the map.
+        const HALF = 160;
+        let dx = 0;
+        if (point && size) {
+            if (point.x < HALF) dx = HALF - point.x;
+            else if (size.x - point.x < HALF) dx = -(HALF - (size.x - point.x));
+        }
 
         return {
             autoPan: false,
             closeButton: false,
-            offset: openBelow ? ([0, 18] as [number, number]) : ([0, -18] as [number, number]),
+            offset: [dx, openBelow ? 18 : -18] as [number, number],
             className: openBelow ? 'forest-popup-below' : 'forest-popup-above',
         };
+    };
+
+    // Recompute the popup's placement at OPEN time — bind-time coordinates go stale the
+    // moment the map pans or zooms, which kept opening popups off the edge.
+    const repositionPopup = (lat: number, lng: number) => (e: any) => {
+        const fresh = getPopupOptions(lat, lng);
+        const popup = e.popup;
+        popup.options.offset = fresh.offset;
+        const el = popup.getElement && popup.getElement();
+        if (el) {
+            el.classList.remove('forest-popup-above', 'forest-popup-below');
+            el.classList.add(fresh.className);
+        }
+        popup.update();
     };
 
     // Declared before the polling effect below so the effect closes over the declared function.
@@ -240,7 +269,7 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
         const guardianCount = guardianCounts.get(tree.id) || 0;
         const sizeClass = isSmall ? 'w-10 h-10' : 'w-12 h-12';
         const borderClass = isSmall ? 'border' : 'border-2';
-        const displayImage = safeImageUrl(tree.latestGrowthUrl || tree.imageUrl, 'https://via.placeholder.com/150');
+        const displayImage = safeImageUrl(tree.latestGrowthUrl || tree.imageUrl || (tree.id === 'GENESIS_TREE' ? '/mahameru.svg' : ''), DARK_MARKER_FALLBACK);
         const imgStyle = "width: 100%; height: 100%; object-fit: cover; display: block;";
         const animStyle = `animation-delay: ${delay}ms;`;
 
@@ -271,7 +300,7 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
         </div>`;
     }
 
-    const clusterImage = (tree: Lifetree) => safeImageUrl(tree.latestGrowthUrl || tree.imageUrl, 'https://via.placeholder.com/150');
+    const clusterImage = (tree: Lifetree) => safeImageUrl(tree.latestGrowthUrl || tree.imageUrl || (tree.id === 'GENESIS_TREE' ? '/mahameru.svg' : ''), DARK_MARKER_FALLBACK);
 
     // A cluster of nearby trees as a pie of their images (up to 4 slices, rest in the count badge).
     const getClusterPieHtml = (trees: Lifetree[], clusterId: string) => {
@@ -394,7 +423,8 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
                 });
                 L.marker([cluster.lat, cluster.lng], { icon })
                  .addTo(nextLayer)
-                 .bindPopup(createPopupContent(cluster.center), getPopupOptions(cluster.lat, cluster.lng));
+                 .bindPopup(createPopupContent(cluster.center), getPopupOptions(cluster.lat, cluster.lng))
+                 .on('popupopen', repositionPopup(cluster.lat, cluster.lng));
                 nextMarkerCount += 1;
 
             } else if (cluster.id === activeClusterId && topLevel) {
@@ -453,7 +483,8 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
                 });
                 L.marker([topLevel.lat, topLevel.lng], { icon: centerIcon, zIndexOffset: depthZOffset })
                  .addTo(nextLayer)
-                 .bindPopup(createPopupContent(centerTree), getPopupOptions(topLevel.lat, topLevel.lng));
+                 .bindPopup(createPopupContent(centerTree), getPopupOptions(topLevel.lat, topLevel.lng))
+                 .on('popupopen', repositionPopup(topLevel.lat, topLevel.lng));
                 nextMarkerCount += 1;
 
                 // Petals
@@ -479,7 +510,8 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
                     });
                     L.marker(childLatLng, { icon: childIcon, zIndexOffset: depthZOffset })
                      .addTo(nextLayer)
-                     .bindPopup(createPopupContent(child), getPopupOptions(childLatLng.lat, childLatLng.lng));
+                     .bindPopup(createPopupContent(child), getPopupOptions(childLatLng.lat, childLatLng.lng))
+                     .on('popupopen', repositionPopup(childLatLng.lat, childLatLng.lng));
                     nextMarkerCount += 1;
                 });
 

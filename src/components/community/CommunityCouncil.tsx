@@ -3,7 +3,7 @@ import { showAlert, showConfirm } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { SectionTitle } from '../ui/SectionTitle';
 import { Community } from '../../types';
-import { createDecision, voteOnDecision, getDecisions, raiseConcern, resumeDecision, withdrawDecision, recordPosition, discernDecision } from '../../services/firebase';
+import { createDecision, voteOnDecision, getDecisions, raiseConcern, resumeDecision, withdrawDecision, recordPosition, discernDecision, setDecisionVisibility, deleteDecision } from '../../services/firebase';
 import { DECISION_NATURES, decisionStatusLabels, consensusStanceLabels, votesRequired, type Decision, type DecisionNature, type DecisionMode, type ConsensusStance } from '../../domain/decision';
 import { councilView } from '../../domain/views/council';
 import type { PulseVisibility } from '../../domain/pulse';
@@ -32,6 +32,19 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
     getDecisions(community.id, communityLevels).then(setDecisions).catch(() => {});
   }, [community.id, communityLevels]);
   useEffect(() => { refreshDecisions(); }, [refreshDecisions]);
+
+  // Circle ↔ public square: decisions are community-visible by default; showing one to the
+  // public is a deliberate act (proposer / keeper / staff — mirrored in the rules).
+  const handleFlipVisibility = async (id: string, currentlyPublic: boolean) => {
+    try { await setDecisionVisibility(id, currentlyPublic ? 'community' : 'public'); refreshDecisions(); }
+    catch (e: any) { showAlert(e?.message || 'Could not change the visibility.'); }
+  };
+
+  const handleDeleteDecision = async (id: string, title: string) => {
+    if (!(await showConfirm(`Remove the decision "${title}" from the record entirely? This cannot be undone.`, { title: 'Delete decision', confirmText: 'Delete', danger: true }))) return;
+    try { await deleteDecision(id); refreshDecisions(); }
+    catch (e: any) { showAlert(e?.message || 'Could not delete the decision.'); }
+  };
 
   const handlePropose = async () => {
     if (!currentUserId || !decTitle.trim()) return;
@@ -150,6 +163,36 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <h4 className="text-sm font-bold text-slate-800">{d.title}</h4>
+                      {/* Circle/public standing + the clerk's controls. */}
+                      {(() => {
+                        const raw = decisions.find(x => x.id === d.id) as (Decision & { visibility?: string }) | undefined;
+                        const isPublic = raw?.visibility === 'public';
+                        return (
+                          <>
+                            {clerk ? (
+                              <button
+                                onClick={() => handleFlipVisibility(d.id, isPublic)}
+                                title={isPublic ? 'Public — click to keep it in the circle' : 'Circle only — click to make it public'}
+                                className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase transition-colors ${isPublic ? 'bg-sky-600 text-white hover:bg-sky-500' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'}`}
+                              >
+                                {isPublic ? 'Public' : 'Circle'}
+                              </button>
+                            ) : isPublic && (
+                              <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase text-sky-700">Public</span>
+                            )}
+                            {canEdit && (
+                              <button
+                                onClick={() => handleDeleteDecision(d.id, d.title)}
+                                title="Delete this decision"
+                                aria-label="Delete this decision"
+                                className="rounded-full px-1.5 py-0.5 text-[10px] font-bold text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </>
+                        );
+                      })()}
                       <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-500">{t(('nature_' + d.nature) as any)}</span>
                       {consensus && <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase text-sky-700">Consensus</span>}
                       {d.passed

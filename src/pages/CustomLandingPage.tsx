@@ -39,6 +39,13 @@ export const CustomLandingPage: React.FC<CustomLandingPageProps> = ({
   const [panel, setPanel] = useState<Panel>('home');
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Whatever the timing of sign-in/out, the menu never outlives an auth change.
+  React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset on auth transitions; the menu belongs to the signed-in state
+    setMenuOpen(false);
+    setPanel('home');
+  }, [lightseed?.uid]);
+
   // Events of this PLACE = everything stamped with its domain (community-scoped events and
   // node-scope ones created while standing on the domain alike). Visibility-scoped.
   const levels = queryableLevels(
@@ -112,6 +119,10 @@ export const CustomLandingPage: React.FC<CustomLandingPageProps> = ({
           )}
 
           {menuOpen && lightseed && (
+            <>
+            {/* Click-away backdrop: any tap outside folds the menu (sign-out included, so no
+                stray dropdown lingers over the auth modal on mobile). */}
+            <div className="fixed inset-0 z-20" onClick={() => setMenuOpen(false)} aria-hidden />
             <nav className="absolute right-5 top-16 z-30 w-44 overflow-hidden rounded-2xl bg-white/95 shadow-2xl backdrop-blur-sm sm:right-8">
               {menu.map(m => (
                 <button
@@ -124,12 +135,13 @@ export const CustomLandingPage: React.FC<CustomLandingPageProps> = ({
                 </button>
               ))}
               <button
-                onClick={() => { setMenuOpen(false); onSignOut(); }}
+                onClick={() => { setMenuOpen(false); setPanel('home'); onSignOut(); }}
                 className="flex w-full items-center border-t border-slate-100 px-4 py-3 text-left text-sm font-semibold text-slate-400 transition-colors hover:bg-black/5 hover:text-slate-600"
               >
                 Sign out
               </button>
             </nav>
+            </>
           )}
         </header>
 
@@ -162,8 +174,10 @@ export const CustomLandingPage: React.FC<CustomLandingPageProps> = ({
             </div>
           ) : (
             visionHtml && (
+              /* No break-words here: with the &nbsp; flattened above, text wraps at real spaces —
+                 break-word was slicing words mid-syllable on narrow screens. */
               <div
-                className="w-full max-w-md break-words rounded-2xl bg-black/30 px-5 py-3 text-center leading-relaxed text-white backdrop-blur-sm [&_p]:my-1"
+                className="w-full max-w-md rounded-2xl bg-black/30 px-5 py-3 text-center leading-relaxed text-white backdrop-blur-sm [&_p]:my-1"
                 dangerouslySetInnerHTML={{ __html: visionHtml }}
               />
             )

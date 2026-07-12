@@ -4,7 +4,6 @@ import { showAlert, showConfirm } from "./ui/Dialog";
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
-import Logo from './Logo';
 import { ValidationBadge } from './ValidationBadge';
 import { updateLifetree, setTreeStatus, getPulsesByTreeId } from '../services/firebase';
 import { Pulse, type Lifetree } from '../types';
@@ -339,11 +338,11 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     <div className="relative shrink-0">
                         {heroImg
                             ? <img src={heroImg} alt={tree.name} className="h-16 w-16 rounded-full border-4 border-white bg-white object-cover shadow-xl md:h-24 md:w-24" />
-                            /* The yantra avatar belongs to Mahameru (the genesis tree) alone;
-                               every other imageless tree wears a plain tree glyph. */
-                            : <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-emerald-700 text-white shadow-xl md:h-24 md:w-24">
-                                {tree.id === 'GENESIS_TREE' ? <Logo width={36} height={36} /> : <Icons.Tree />}
-                              </div>}
+                            /* Mahameru wears the starry sky (Orion); every other imageless tree
+                               a plain tree glyph. */
+                            : tree.id === 'GENESIS_TREE'
+                                ? <img src="/mahameru.svg" alt="Mahameru" className="h-16 w-16 rounded-full border-4 border-white object-cover shadow-xl md:h-24 md:w-24" />
+                                : <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-emerald-700 text-white shadow-xl md:h-24 md:w-24"><Icons.Tree /></div>}
                         {hasValidationBadge && <div className="absolute -bottom-1 -right-1"><ValidationBadge compact /></div>}
                     </div>
                     <div className="min-w-0 flex-1">

@@ -13,6 +13,7 @@ import { CommunityFirstTree } from './community/CommunityFirstTree';
 import { CommunitySanctuary } from './community/CommunitySanctuary';
 import { CommunityTreesTab } from './community/CommunityTreesTab';
 import { CommunityMembers } from './community/CommunityMembers';
+import { PathOverview } from './PathOverview';
 import { CommunityIntelligence } from './community/CommunityIntelligence';
 import { CommunityCodeChain } from './community/CommunityCodeChain';
 import { CommunityAppearance } from './community/CommunityAppearance';
@@ -303,7 +304,6 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   // Icons for the shared network-lore tabs (Path, Yantra).
   const loreIcons: Record<LoreTabId, React.ReactNode> = {
     genesis: <Icons.Hash />,
-    path: <Icons.ArrowRight />,
     yantra: <Icons.Venn />,
     protection: <Icons.ShieldCheck />,
   };
@@ -391,6 +391,16 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     {
       key: 'members', label: 'Members', icon: <Icons.Users />, render: () => (
         <CommunityMembers community={community} currentUserId={currentUserId} canManage={canEdit} />
+      ),
+    },
+    {
+      key: 'path', label: 'The Path', icon: <Icons.ArrowRight />, render: () => (
+        <div>
+          <SectionTitle title="The Path" sub="From first seed to sovereign node — the onboarding trail, as a ruleset. In time each community will shape its own." />
+          <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
+            <PathOverview />
+          </div>
+        </div>
       ),
     },
     // The network's founding lore (Genesis, the Path, the Yantra, Protection) stays with the

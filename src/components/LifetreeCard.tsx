@@ -108,9 +108,9 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, isInit
             ) : null}
 
             <div className="relative h-36 bg-slate-200 overflow-hidden group">
-                {tree.latestGrowthUrl || tree.imageUrl ? (
+                {tree.latestGrowthUrl || tree.imageUrl || tree.id === 'GENESIS_TREE' ? (
                     <img
-                        src={tree.latestGrowthUrl || tree.imageUrl}
+                        src={tree.latestGrowthUrl || tree.imageUrl || '/mahameru.svg'}
                         alt={tree.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-[3s]"
                     />

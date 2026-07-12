@@ -119,7 +119,7 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab,
             <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:gap-8">
             {/* Box 1: Home HUD — signed-in only (signed-out visitors see the quote carousel) */}
             {lightseed && (
-            <div onClick={() => lightseed ? onSetTab('profile') : onLogin()} className="relative h-44 sm:h-56 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
+            <div onClick={() => lightseed ? onSetTab('profile') : onLogin()} className="relative h-56 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
                 <div className="absolute inset-0 bg-gradient-to-br from-amber-400 to-purple-600"></div>
                 {lightseed && firstTreeImage && <img src={firstTreeImage} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-[5s]" />}
                 <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors"></div>
@@ -169,7 +169,7 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab,
 
             {/* Box 2: Plant — signed-out only (signed-in users get the small CTA in the Home card). */}
             {!lightseed && (
-            <div onClick={() => { if (!lightseed) onLogin(); else onPlant(); }} className="relative h-44 sm:h-56 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
+            <div onClick={() => { if (!lightseed) onLogin(); else onPlant(); }} className="relative h-56 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
                 <img src={lifetreeImage} className="absolute inset-0 w-full h-full object-cover" alt="Lifetree" />
                 <video 
                     ref={videoRef}
@@ -207,7 +207,7 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab,
             )}
 
             {/* Box 4: Forest (Banner Style + Stats) */}
-            <div onClick={() => onSetTab('forest')} className="relative h-44 sm:h-56 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
+            <div onClick={() => onSetTab('forest')} className="relative h-56 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
                 <img src="/mother.webp" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform" />
                 <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors"></div>
                 <div className="relative h-full p-4 flex flex-col justify-between text-white">

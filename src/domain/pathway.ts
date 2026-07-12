@@ -135,6 +135,22 @@ const STEPS: Record<PathwayStepKey, PathwayStep> = {
   },
 };
 
+// The full trail as a RULESET — every stage with its step, in walking order. The Path
+// overview renders this; ultimately each community will shape its own version (the Light
+// Path as the community's onboarding ruleset). 'sovereign' is the summit and carries no step.
+export const PATHWAY_RULESET: readonly { stage: PathwayStage; step: PathwayStep }[] = [
+  { stage: 'visitor', step: STEPS.signUp },
+  { stage: 'invited', step: STEPS.plant },
+  { stage: 'rooted', step: STEPS.tend },
+  { stage: 'tending', step: STEPS.connect },
+  { stage: 'connected', step: STEPS.join },
+  { stage: 'member', step: STEPS.followVision },
+  { stage: 'visionary', step: STEPS.formCircle },
+  { stage: 'circling', step: STEPS.nameCommunity },
+  { stage: 'founding', step: STEPS.rootDomain },
+  { stage: 'founding', step: STEPS.tailorTheme },
+];
+
 const state = (stage: PathwayStage, next: PathwayStepKey | null): PathwayState => ({
   stage,
   stageIndex: PATHWAY_STAGES.indexOf(stage),

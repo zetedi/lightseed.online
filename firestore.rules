@@ -306,6 +306,21 @@ service cloud.firestore {
                 )
            )
 
+        // (d) Decision visibility flip — circle ↔ public square. Proposer, keeper or staff only;
+        //     nothing else may ride along. Decisions are community-visible by default; showing
+        //     one to the public is a deliberate act.
+        || (
+             resource.data.get('type', '') == 'decision'
+             && request.resource.data.diff(resource.data).affectedKeys()
+                  .hasOnly(['visibility', 'updatedAt'])
+             && request.resource.data.get('visibility', '') in ['public', 'community']
+             && (
+                  isStaff()
+                  || resource.data.get('proposedBy', '') == request.auth.uid
+                  || isCommunityOwner(resource.data.get('communityId', ''))
+                )
+           )
+
         // (d) Event content edits — author, community owner, or staff; content keys only.
         || (
              resource.data.get('type', '') == 'event'

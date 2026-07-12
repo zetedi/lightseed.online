@@ -70,9 +70,11 @@ interface Props {
   actions: Record<PathwayStepKey, () => void>;
   theme?: ThemeLike;
   isDark?: boolean;
+  // Opens the full Path overview (the ruleset) — the label is the door.
+  onOpenOverview?: () => void;
 }
 
-export const PathwayCTA = ({ input, actions, theme, isDark = false }: Props) => {
+export const PathwayCTA = ({ input, actions, theme, isDark = false, onOpenOverview }: Props) => {
   const [dismissed, setDismissed] = useState<PathwayStepKey[]>(readDismissed);
   // "Not now" farewell — a brief, self-fading note telling the user where to relight the path.
   // (Dismissal is PER STEP, not the global off toggle, so Settings keeps showing "on"; this
@@ -111,7 +113,17 @@ export const PathwayCTA = ({ input, actions, theme, isDark = false }: Props) => 
     <div className="mx-auto flex max-w-2xl flex-wrap items-center gap-4 rounded-3xl border p-5 shadow-xl"
          style={{ backgroundColor: surface.background, color: surface.text, borderColor: surface.border }}>
       <div className="min-w-0 flex-1">
-        <p className="mb-0.5 text-[9px] font-bold uppercase tracking-[0.22em]" style={{ color: primary }}>Light Path</p>
+        {/* The membership path (formerly its own About tab) rides here as the label's tooltip —
+            the Light Path IS the path, and will ultimately be each community's onboarding ruleset. */}
+        <button
+          type="button"
+          onClick={onOpenOverview}
+          className="mb-0.5 block text-[9px] font-bold uppercase tracking-[0.22em] hover:underline"
+          style={{ color: primary }}
+          title="See the whole path"
+        >
+          Light Path
+        </button>
         <p className="text-sm font-bold" style={{ color: surface.text }}>{next.label}</p>
         <p className="mt-0.5 text-xs" style={{ color: surface.muted }}>{next.description}</p>
         <div className="mt-2 flex items-center gap-1" title={`Stage ${stageIndex + 1} of ${stageCount}: ${stage}`}>

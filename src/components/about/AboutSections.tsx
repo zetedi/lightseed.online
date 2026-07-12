@@ -334,7 +334,7 @@ export const GenesisSection = () => {
             <h2 className="text-center text-xs font-bold text-slate-400 uppercase tracking-[0.3em] mb-8">Genesis Block • 000</h2>
 
             <div className="prose prose-lg prose-slate mx-auto">
-                <p className="font-serif text-xl md:text-2xl leading-relaxed text-slate-800 text-justify first-letter:text-5xl first-letter:font-bold first-letter:text-purple-900 first-letter:mr-3 first-letter:float-left">
+                <p className="font-serif text-base md:text-lg leading-relaxed text-slate-800 text-justify first-letter:text-4xl first-letter:font-bold first-letter:text-purple-900 first-letter:mr-2 first-letter:float-left">
                     {GENESIS_TEXT}
                 </p>
             </div>
@@ -541,9 +541,10 @@ export const YantraSection = () => (
 );
 
 // Tab metadata shared by both about pages, so the lore tabs read identically everywhere.
+// 'path' retired from the tabs: the membership path now lives in the Light Path itself
+// (its four phases ride as the tooltip on the card's label) — one trail, not two.
 export const loreTabs = [
     { id: 'genesis', label: 'Genesis', meta: 'The first block' },
-    { id: 'path', label: 'The Path', meta: 'Become a member' },
     { id: 'yantra', label: 'The Yantra', meta: 'Logo & brand' },
     { id: 'protection', label: 'Protection', meta: 'Trademarks' },
 ] as const;
@@ -554,7 +555,6 @@ export type LoreTabId = typeof loreTabs[number]['id'];
 export const LoreSection = ({ id }: { id: LoreTabId }) => {
     switch (id) {
         case 'genesis': return <GenesisSection />;
-        case 'path': return <MembershipPathSection />;
         case 'yantra': return <YantraSection />;
         case 'protection': return <ProtectionSection />;
         default: return null;

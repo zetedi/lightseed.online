@@ -80,7 +80,14 @@ export const ForestPage = ({
           <div className="mb-4 flex justify-center">{filters(true)}</div>
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {filteredData.length === 0 && !loadingMore ? (
-              <p className="col-span-full text-center text-slate-400 py-10">{t('no_trees_found')}</p>
+              /* No trees yet: Mahameru remains — the sea of creation, Orion over still water. */
+              <div className="col-span-full relative overflow-hidden rounded-3xl border border-slate-800/40 shadow-xl">
+                <img src="/mahameru.svg" alt="Mahameru — the sea of creation" className="h-80 w-full object-cover sm:h-96" />
+                <div className="absolute inset-x-0 bottom-0 p-6 text-center">
+                  <p className="text-sm font-bold uppercase tracking-[0.3em] text-white/90">Mahameru</p>
+                  <p className="mt-1 text-xs text-slate-300">The sea of creation — no trees planted here yet. The field awaits the first seed.</p>
+                </div>
+              </div>
             ) : (
               filteredData.map((item: Lifetree) => (
                 <React.Fragment key={item.id}>

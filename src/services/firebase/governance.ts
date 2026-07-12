@@ -26,7 +26,10 @@ export const createDecision = async (
         type: 'decision',
         communityId: community.id,
         domain: normalizeDomain(community.domain),
-        visibility: 'public' as PulseVisibility, // governance is transparent — decisions stay public
+        // Decisions are the circle's business first: community-visible by default, shown to
+        // the public only when deliberately made public (the flip below). Some deliberations
+        // are private, or simply too much weight for the node's front pages.
+        visibility: 'community' as PulseVisibility,
         nature: data.nature,
         title: data.title,
         body: data.body || '',
@@ -111,6 +114,16 @@ export const withdrawDecision = (decisionId: string) =>
 // Close a proposal as not adopted.
 export const rejectDecision = (decisionId: string) =>
     updateDoc(doc(db, 'pulses', decisionId), { status: 'rejected', listening: false, rejectedAt: serverTimestamp() });
+
+// Flip a decision between the circle and the public square — proposer, keeper or staff only
+// (enforced by the rules' visibility clause). Community-visible is the default at creation.
+export const setDecisionVisibility = (decisionId: string, visibility: 'public' | 'community') =>
+    updateDoc(doc(db, 'pulses', decisionId), { visibility, updatedAt: serverTimestamp() });
+
+// Remove a decision entirely — staff / keeper / author, per the pulses delete rule. Some
+// deliberations don't belong in the record; the circle decides what the ledger keeps.
+export const deleteDecision = (decisionId: string) =>
+    deleteDoc(doc(db, 'pulses', decisionId));
 
 // --- Quaker consensus -----------------------------------------------------------------------
 // Record a voice's position in a consensus meeting: unite, stand aside, or block. One per person

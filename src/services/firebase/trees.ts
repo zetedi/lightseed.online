@@ -10,6 +10,10 @@ import { auth, db, functions, mapDoc, lifetreesCollection, visionsCollection, sa
 // import only inside function bodies, so ESM resolves the binding lazily on call).
 import { getCommunityByDomain } from './spaces';
 
+// Mahameru's face — a starry sky bearing Orion, in the code so it travels with every node.
+// When no trees are planted, this is what remains: the sea of creation.
+export const MAHAMERU_IMAGE = '/mahameru.svg';
+
 export const ensureGenesis = async () => {
     const user = auth.currentUser;
     if (!user) return; // Skip if not logged in to avoid permission errors on config/superadmin
@@ -18,6 +22,16 @@ export const ensureGenesis = async () => {
     const genesisRef = doc(db, 'lifetrees', genesisId);
     try {
         const genesisSnap = await getDoc(genesisRef);
+        // Mahameru wears the starry sky, whatever it wore before (the doc once carried a
+        // flower-of-life image, which outranked every fallback). latestGrowthUrl is the
+        // display cache that wins over imageUrl in the renderers — align both. Staff-run.
+        if (genesisSnap.exists()) {
+            const g = genesisSnap.data() as any;
+            if ((g.imageUrl !== MAHAMERU_IMAGE || (g.latestGrowthUrl && g.latestGrowthUrl !== MAHAMERU_IMAGE))
+                && await checkIsSuperAdmin(user.uid)) {
+                await updateDoc(genesisRef, { imageUrl: MAHAMERU_IMAGE, latestGrowthUrl: MAHAMERU_IMAGE }).catch(() => {});
+            }
+        }
         if (!genesisSnap.exists()) {
             // Only Super Admins can initialize genesis on a new node
             const isSuper = await checkIsSuperAdmin(user.uid);
@@ -28,7 +42,7 @@ export const ensureGenesis = async () => {
             await setDoc(genesisRef, {
                 lid: uuidv7(),
                 ownerId: 'GENESIS_SYSTEM', name: 'Mahameru', shortTitle: 'Live Light', body: genesisBody,
-                imageUrl: "", latitude: 50.8354, longitude: 4.4145, locationName: 'The Source',
+                imageUrl: MAHAMERU_IMAGE, latitude: 50.8354, longitude: 4.4145, locationName: 'The Source',
                 createdAt: serverTimestamp(), genesisHash, latestHash: genesisHash, blockHeight: 0,
                 validated: true, validatorId: 'SYSTEM', isNature: true, domain: 'lightseed.online'
             });
