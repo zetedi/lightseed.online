@@ -1,12 +1,18 @@
 /**
  * lifeseed widget embed script
- * Usage: <script src="https://lifeseed.online/embed.js" async></script>
+ * Usage (layer 1 — overlay widget of this domain's trees):
+ *   <script src="https://lifeseed.online/embed.js" async></script>
+ * Usage (layer 2 — the org runs a deployed seed, e.g. on a subdomain; the button becomes
+ * the door to it instead of the overlay):
+ *   <script src="https://lifeseed.online/embed.js" data-seed-url="https://seed.example.org" async></script>
  */
 (function () {
   'use strict';
 
   var ORIGIN = 'https://lifeseed.online';
   var domain = window.location.hostname;
+  var scriptEl = document.currentScript;
+  var seedUrl = scriptEl && scriptEl.getAttribute('data-seed-url');
 
   /* ── Floating button ── */
   var btn = document.createElement('button');
@@ -75,7 +81,7 @@
     document.body.style.overflow = '';
   }
 
-  btn.addEventListener('click', openWidget);
+  btn.addEventListener('click', seedUrl ? function () { window.location.href = seedUrl; } : openWidget);
   overlay.addEventListener('click', function (e) {
     if (e.target === overlay) closeWidget();
   });

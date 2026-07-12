@@ -131,12 +131,19 @@ export const getGenesisHash = async (): Promise<string | null> => {
     }
 };
 
-export const getNetworkStats = async () => {
+// Forest-card counters. On the hub the whole node counts; on a custom domain only that
+// place's life counts (privacy of the place — its numbers are its own).
+export const getNetworkStats = async (domain?: string) => {
     try {
+        const scoped = !!(domain && !isHubDomain(domain));
+        const d = domain?.replace(/^www\./, '');
+        const scope = (coll: string) => scoped
+            ? query(collection(db, coll), where('domain', '==', d))
+            : collection(db, coll);
         const [trees, pulses, visions] = await Promise.all([
-            getCountFromServer(collection(db, 'lifetrees')),
-            getCountFromServer(collection(db, 'pulses')),
-            getCountFromServer(collection(db, 'visions'))
+            getCountFromServer(scope('lifetrees')),
+            getCountFromServer(scope('pulses')),
+            getCountFromServer(scope('visions'))
         ]);
         return {
             trees: trees.data().count,

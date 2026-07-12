@@ -1,6 +1,5 @@
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from '../components/ui/Icons';
-import Logo from '../components/Logo';
 import { ResonanceScan } from '../components/ui/ResonanceScan';
 import { ResonanceCard, resonanceId } from '../components/ResonancePanel';
 import { SectionHeader } from '../components/ui/SectionHeader';
@@ -94,20 +93,11 @@ export const ObservatoryPage = ({
         toggle={<ViewDensityToggle value={density} onChange={setDensity} />}
         collapsibleSearch={false}
       >
-        {/* The empty "field is calm" state only when there's truly nothing — no alignments AND
-            no resonances. Otherwise the resonance section carries it. */}
-        {(alignments.length > 0 || synergies.length === 0) && (
+        {/* Pending alignments — when there are none, the section simply isn't there (the old
+            "field is calm" box + logo added weight to an empty page). */}
+        {alignments.length > 0 && (
           <ListBox tone={tone} className="mb-6">
-            {alignments.length === 0 ? (
-              <div className="flex flex-col items-center p-12 text-center">
-                <div className="mb-6 rounded-full bg-white p-4 shadow-sm">
-                  <Logo width={100} height={100} className="text-slate-800" />
-                </div>
-                <h3 className="mb-2 text-xl font-light text-slate-800">{t('no_pending_resonance')}</h3>
-                <p className="text-slate-500">{t('ether_quiet')}</p>
-              </div>
-            ) : (
-              <div className={density === 'rows' ? 'space-y-2.5' : density === 'mini' ? 'grid gap-3 md:grid-cols-2' : 'space-y-4'}>
+            <div className={density === 'rows' ? 'space-y-2.5' : density === 'mini' ? 'grid gap-3 md:grid-cols-2' : 'space-y-4'}>
                 {alignments.map(a => (
                   <div key={a.id} className="overflow-hidden rounded-lg border border-slate-200 bg-white text-slate-800 shadow-sm animate-in fade-in slide-in-from-bottom-2 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
                     {/* Header — who's asking, and that it's on you */}
@@ -150,8 +140,7 @@ export const ObservatoryPage = ({
                     </div>
                   </div>
                 ))}
-              </div>
-            )}
+            </div>
           </ListBox>
         )}
 

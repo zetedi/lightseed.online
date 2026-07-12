@@ -4,14 +4,14 @@
  *
  *   - Community doc `communities/per-auset` with the yellow-turquoise ibis palette,
  *     the ibis hero (/custom/per-auset/hero.webp) and customLanding: true.
- *   - Domain starts at per-auset.web.app; pass the real domain later to move it
+ *   - Domain starts at perauset.web.app; pass the real domain later to move it
  *     (trees planted on the domain follow community.domain automatically).
  *
  * Idempotent (stable id + merge). Auth like seed-lightseed.mjs (Admin SDK):
  *   gcloud auth application-default login   (or GOOGLE_APPLICATION_CREDENTIALS / serviceAccount.json)
  *
  * Run:
- *   node scripts/seed-perauset.mjs                    # domain per-auset.web.app
+ *   node scripts/seed-perauset.mjs                    # domain perauset.web.app
  *   node scripts/seed-perauset.mjs perauset.com       # move to the real domain later
  */
 
@@ -27,7 +27,7 @@ try {
 }
 
 const PROJECT_ID = 'lifeseed-75dfe';
-const DOMAIN = process.argv[2] || 'per-auset.web.app';
+const DOMAIN = process.argv[2] || 'perauset.web.app';
 
 // The ibis palette — golden sun-disc, teal lotus, parchment sky.
 const THEME = {
@@ -62,7 +62,7 @@ async function run() {
   await db.collection('communities').doc('per-auset').set({
     name: 'Per Auset',
     domain: DOMAIN,
-    vision: 'The house of Auset — a sanctuary rising by the water, where the ibis writes and the lotus listens.',
+    vision: 'The house of Auset — a vision, a community, a garden of souls.',
     imageUrls: [],
     ownerId,
     theme: THEME,
@@ -75,7 +75,7 @@ async function run() {
 
   console.log(`Project: ${projectId}`);
   console.log(`✓ communities/per-auset  →  domain ${DOMAIN}, customLanding on, ibis palette (owner: ${ownerId})`);
-  console.log('\nNext: firebase hosting:sites:create per-auset && firebase target:apply hosting perauset per-auset && firebase deploy --only hosting');
+  console.log('\nNext: firebase hosting:sites:create perauset && firebase target:apply hosting perauset perauset && firebase deploy --only hosting');
   process.exit(0);
 }
 

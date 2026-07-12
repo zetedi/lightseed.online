@@ -33,6 +33,9 @@ export interface Community extends Being {
   // (sign-in + events only) instead of the seed shell; a corner seed-logo toggles into the app.
   // The doorway for organisations bringing their own webpage onto the seed.
   customLanding?: boolean;
+  // The landing's own pages (menu panels): authored rich text — a food menu, an About, an
+  // offering list. Data, not code: every organisation shapes its own site from these blocks.
+  landingPages?: { id: string; label: string; html: string }[];
   // The "big red stamp": once a node locks, new blocks are sealed with the canonical, verifiable
   // hash (src/domain/chain). Off by default; the shell syncs it into the chain-lock flag on load.
   chainLocked?: boolean;

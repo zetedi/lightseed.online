@@ -25,13 +25,17 @@ export interface DashboardProps {
     onSetTab: (tab: string) => void;
     onPlant: () => void;
     onLogin: () => void;
+    // Themed domains colour the planting CTAs from Appearance settings.
+    theme?: { primary?: string };
 }
 
 
 const lifetreeImage = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 800'%3E%3Cdefs%3E%3CradialGradient id='g' cx='50%25' cy='50%25' r='60%25'%3E%3Cstop offset='0%25' stop-color='%23d1fae5'/%3E%3Cstop offset='100%25' stop-color='%23047857'/%3E%3C/radialGradient%3E%3Cfilter id='glow'%3E%3CfeGaussianBlur stdDeviation='8' result='coloredBlur'/%3E%3CfeMerge%3E%3CfeMergeNode in='coloredBlur'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23g)'/%3E%3Cg opacity='0.3'%3E%3Ccircle cx='400' cy='400' r='350' fill='none' stroke='%23fff' stroke-width='1'/%3E%3Ccircle cx='400' cy='400' r='250' fill='none' stroke='%23fff' stroke-width='1'/%3E%3Cpath d='M400 50 L400 750 M50 400 L750 400' stroke='%23fff' stroke-width='1' stroke-dasharray='10 10'/%3E%3C/g%3E%3Cpath d='M400 800 C 350 700 300 650 400 550 C 500 650 450 700 400 800' fill='%235d4037' opacity='0.8'/%3E%3Cg transform='translate(0,-50)'%3E%3Ccircle cx='400' cy='400' r='160' fill='%2310b981'/%3E%3Ccircle cx='300' cy='350' r='100' fill='%2334d399' opacity='0.9'/%3E%3Ccircle cx='500' cy='350' r='100' fill='%2334d399' opacity='0.9'/%3E%3Ccircle cx='400' cy='250' r='120' fill='%23059669' opacity='0.9'/%3E%3Ccircle cx='250' cy='450' r='80' fill='%236ee7b7' opacity='0.8'/%3E%3Ccircle cx='550' cy='450' r='80' fill='%236ee7b7' opacity='0.8'/%3E%3C/g%3E%3Cg filter='url(%23glow)'%3E%3Ccircle cx='400' cy='350' r='15' fill='%23fcd34d'/%3E%3Ccircle cx='320' cy='300' r='12' fill='%23fcd34d' opacity='0.8'/%3E%3Ccircle cx='480' cy='300' r='12' fill='%23fcd34d' opacity='0.8'/%3E%3Ccircle cx='280' cy='420' r='10' fill='%23fbbf24' opacity='0.8'/%3E%3Ccircle cx='520' cy='420' r='10' fill='%23fbbf24' opacity='0.8'/%3E%3Ccircle cx='400' cy='220' r='18' fill='%23fff' opacity='0.9'/%3E%3C/g%3E%3Cpath d='M400 350 L 320 300 M 400 350 L 480 300 M 400 350 L 400 220' stroke='%23fff' stroke-width='2' opacity='0.4'/%3E%3C/svg%3E`;
 
 
-export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab, onPlant, onLogin }: DashboardProps) => {
+export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab, onPlant, onLogin, theme }: DashboardProps) => {
+    // Themed domains colour the planting CTAs from Appearance (hub default stays emerald).
+    const ctaPrimary = theme?.primary || '#059669';
     const { t } = useLanguage();
     // Session-derived values read straight from context (no longer prop-drilled from App).
     const { lightseed, activeTree } = useSession();
@@ -43,9 +47,11 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab,
 
 
     useEffect(() => {
-        // Fetch global stats
-        getNetworkStats().then(setNetworkStats);
-    }, [lightseed]);
+        // The Forest card counts THIS place: the community's domain on custom domains, the
+        // whole node on the hub (getNetworkStats decides by hub-ness).
+        getNetworkStats(hostCommunity?.domain || window.location.hostname).then(setNetworkStats);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the primitive domain; the community object changes identity per fetch
+    }, [lightseed, hostCommunity?.domain]);
 
     const handleReplay = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -113,7 +119,7 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab,
             <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:gap-8">
             {/* Box 1: Home HUD — signed-in only (signed-out visitors see the quote carousel) */}
             {lightseed && (
-            <div onClick={() => lightseed ? onSetTab('profile') : onLogin()} className="relative h-56 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
+            <div onClick={() => lightseed ? onSetTab('profile') : onLogin()} className="relative h-44 sm:h-56 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
                 <div className="absolute inset-0 bg-gradient-to-br from-amber-400 to-purple-600"></div>
                 {lightseed && firstTreeImage && <img src={firstTreeImage} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-[5s]" />}
                 <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors"></div>
@@ -126,7 +132,7 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab,
                             <div className="text-[10px] text-amber-200 font-mono uppercase tracking-widest mt-1">{t('light_of_value')}</div>
                         </div>
                         {/* Plant CTA in the top-right (replaces the profile icon); icon-only on mobile. */}
-                        <button onClick={(e) => { e.stopPropagation(); onPlant(); }} title={t('plant_or_stand')} className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-emerald-600/90 px-2.5 py-2 text-[10px] font-bold uppercase tracking-wide text-white shadow ring-1 ring-white/25 transition-colors hover:bg-emerald-500 sm:px-3 [&>svg]:h-4 [&>svg]:w-4">
+                        <button onClick={(e) => { e.stopPropagation(); onPlant(); }} title={t('plant_or_stand')} style={{ backgroundColor: ctaPrimary }} className="shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-2 text-[10px] font-bold uppercase tracking-wide text-white shadow ring-1 ring-white/25 transition-opacity hover:opacity-90 sm:px-3 [&>svg]:h-4 [&>svg]:w-4">
                             <Icons.Tree /> <span className="hidden sm:inline">{t('plant_or_stand')}</span>
                         </button>
                     </div>
@@ -163,7 +169,7 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab,
 
             {/* Box 2: Plant — signed-out only (signed-in users get the small CTA in the Home card). */}
             {!lightseed && (
-            <div onClick={() => { if (!lightseed) onLogin(); else onPlant(); }} className="relative h-56 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
+            <div onClick={() => { if (!lightseed) onLogin(); else onPlant(); }} className="relative h-44 sm:h-56 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
                 <img src={lifetreeImage} className="absolute inset-0 w-full h-full object-cover" alt="Lifetree" />
                 <video 
                     ref={videoRef}
@@ -192,7 +198,7 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab,
                         <h2 className="text-sm sm:text-lg font-bold uppercase tracking-widest text-white drop-shadow-md">{t('the_tree')}</h2>
                         <div className="p-2 bg-white/10 backdrop-blur rounded-lg"><Icons.Tree /></div>
                     </div>
-                    <span className="inline-flex w-full flex-col items-center justify-center self-stretch rounded-full bg-emerald-600 px-4 py-2 shadow-lg ring-1 ring-white/25 transition-all group-hover:bg-emerald-500 sm:w-auto sm:self-start sm:px-6 sm:py-2.5 sm:group-hover:scale-[1.03]">
+                    <span style={{ backgroundColor: ctaPrimary }} className="inline-flex w-full flex-col items-center justify-center self-stretch rounded-full px-4 py-2 shadow-lg ring-1 ring-white/25 transition-all sm:w-auto sm:self-start sm:group-hover:scale-[1.03]">
                         <span className="text-center text-[11px] font-bold uppercase leading-tight tracking-wide sm:text-sm sm:tracking-widest">{t('plant_or_stand')}</span>
                         <span className="text-center text-[9px] font-medium leading-tight tracking-normal text-white/85 sm:text-[10px]">{t('create_new_world')}</span>
                     </span>
@@ -201,7 +207,7 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab,
             )}
 
             {/* Box 4: Forest (Banner Style + Stats) */}
-            <div onClick={() => onSetTab('forest')} className="relative h-56 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
+            <div onClick={() => onSetTab('forest')} className="relative h-44 sm:h-56 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
                 <img src="/mother.webp" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform" />
                 <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors"></div>
                 <div className="relative h-full p-4 flex flex-col justify-between text-white">

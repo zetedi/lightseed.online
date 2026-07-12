@@ -26,7 +26,7 @@ export const QuoteCarousel = ({ quotes, intervalMs = 8000 }: { quotes: string[];
     <section
       aria-roledescription="carousel"
       aria-label="Lightseed reflections"
-      className="relative w-full overflow-hidden rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-sky-50 px-10 py-10 shadow-sm sm:py-16"
+      className="relative w-full overflow-hidden rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-sky-50 px-8 py-5 shadow-sm sm:px-10 sm:py-16"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocusCapture={() => setPaused(true)}
@@ -39,11 +39,14 @@ export const QuoteCarousel = ({ quotes, intervalMs = 8000 }: { quotes: string[];
         touchX.current = null;
       }}
     >
-      <div aria-live="polite" className="mx-auto flex h-[clamp(5rem,24vh,11rem)] max-w-3xl items-center justify-center overflow-hidden">
+      {/* Compact on mobile so the whole hero (light path + carousel + cards + footer) fits one
+          screen; the text size is FLUID — it scales with the viewport via clamp(). */}
+      <div aria-live="polite" className="mx-auto flex h-[clamp(3.5rem,14vh,7rem)] max-w-3xl items-center justify-center overflow-hidden sm:h-[clamp(5rem,24vh,11rem)]">
         <p
           key={i}
           dir="auto"
-          className={`animate-in fade-in duration-700 text-center font-serif italic leading-relaxed text-slate-700 ${long ? 'text-base sm:text-xl' : 'text-xl sm:text-2xl'}`}
+          className="animate-in fade-in duration-700 text-center font-serif italic leading-relaxed text-slate-700"
+          style={{ fontSize: long ? 'clamp(0.8rem, 1.6vw + 0.55rem, 1.25rem)' : 'clamp(1rem, 2vw + 0.6rem, 1.5rem)' }}
         >
           {q}
         </p>
@@ -61,7 +64,7 @@ export const QuoteCarousel = ({ quotes, intervalMs = 8000 }: { quotes: string[];
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
           </button>
 
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:mt-5">
             {quotes.map((_, n) => (
               <button key={n} onClick={() => go(n)} aria-label={`Reflection ${n + 1}`} aria-current={n === i}
                 className={`h-2 rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${n === i ? 'w-6 bg-emerald-600' : 'w-2 bg-emerald-200 hover:bg-emerald-300'}`} />

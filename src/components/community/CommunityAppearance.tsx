@@ -1,6 +1,10 @@
 import React from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Community } from '../../types';
+import RichTextEditor from '../ui/RichTextEditor';
+import { uuidv7 } from '../../utils/id';
+import { uploadImage } from '../../services/firebase';
+import { useCallback } from 'react';
 import { normalizeTheme } from '../../utils/theme';
 import { nodeDefaultTheme } from '../../hooks/useConfig';
 import { AppearanceSection } from '../sections/AppearanceSection';
@@ -34,6 +38,9 @@ interface CommunityAppearanceProps {
   // Custom landing — the org's own full-screen page on its domain (see CustomLandingPage).
   editCustomLanding: boolean;
   onCustomLandingChange: (value: boolean) => void;
+  // The landing's authored pages (menu panels) — rich text blocks, data not code.
+  editLandingPages: { id: string; label: string; html: string }[];
+  onLandingPagesChange: React.Dispatch<React.SetStateAction<{ id: string; label: string; html: string }[]>>;
   onSave: () => void;
   isSaving: boolean;
   saveDisabled: boolean;
@@ -65,12 +72,20 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
   onCarouselQuotesChange,
   editCustomLanding,
   onCustomLandingChange,
+  editLandingPages,
+  onLandingPagesChange,
   onSave,
   isSaving,
   saveDisabled,
   status,
 }) => {
   const { t } = useLanguage();
+  // Page images go to Storage and embed by URL (stable per community, so the memoized
+  // editor toolbar isn't rebuilt each render).
+  const handlePageImageUpload = useCallback(
+    (file: File) => uploadImage(file, `communities/${community.id}/pages/${Date.now()}`),
+    [community.id],
+  );
 
   return (
     <div className="space-y-6">
@@ -92,6 +107,54 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
         <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${editCustomLanding ? 'translate-x-5' : 'translate-x-0'}`} />
       </button>
     </div>
+
+    {/* Landing pages — the organisation authors its own menu panels (a food menu, an About…)
+        as rich text. One generic renderer serves them all; adding a page is data, not code. */}
+    {editCustomLanding && (
+      <div className="space-y-4 rounded-2xl border border-slate-100 bg-white p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-slate-800">Landing pages</p>
+            <p className="text-xs text-slate-500">Panels in the landing's menu — write anything: a menu of offerings, an About, directions. Saved with the Save button.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onLandingPagesChange(prev => [...prev, { id: uuidv7(), label: 'New page', html: '' }])}
+            className="shrink-0 rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-500"
+          >
+            + Add page
+          </button>
+        </div>
+        {editLandingPages.length === 0 && (
+          <p className="text-xs text-slate-400">No pages yet — the landing shows Home and Events.</p>
+        )}
+        {editLandingPages.map((page, i) => (
+          <div key={page.id} className="space-y-2 rounded-xl border border-slate-100 p-3">
+            <div className="flex items-center gap-2">
+              <input
+                value={page.label}
+                onChange={e => onLandingPagesChange(prev => prev.map((p, j) => j === i ? { ...p, label: e.target.value } : p))}
+                placeholder="Menu label (e.g. Kitchen)"
+                className="h-9 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+              <button
+                type="button"
+                onClick={() => onLandingPagesChange(prev => prev.filter((_, j) => j !== i))}
+                className="shrink-0 rounded-lg border border-red-100 bg-white px-2.5 py-1.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50"
+              >
+                Remove
+              </button>
+            </div>
+            <RichTextEditor
+              value={page.html}
+              onChange={html => onLandingPagesChange(prev => prev.map((p, j) => j === i ? { ...p, html } : p))}
+              placeholder="The page's content — text, lists, images…"
+              onImageUpload={handlePageImageUpload}
+            />
+          </div>
+        ))}
+      </div>
+    )}
     <AppearanceSection
       name={editName}
       onNameChange={onNameChange}

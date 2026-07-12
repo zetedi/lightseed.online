@@ -12,7 +12,7 @@ const field = "h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 t
 
 type Mode = 'signin' | 'signup' | 'request';
 
-export const AuthModal = ({ onClose, inviteId, inviteOnly }: { onClose: () => void; inviteId?: string; inviteOnly: boolean }) => {
+export const AuthModal = ({ onClose, inviteId, inviteOnly, theme }: { onClose: () => void; inviteId?: string; inviteOnly: boolean; theme?: { primary?: string } }) => {
   const { t, language } = useLanguage();
   const terms = getTerms(language);
   const [mode, setMode] = useState<Mode>(inviteId ? 'signup' : 'signin');
@@ -26,6 +26,8 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly }: { onClose: () => vo
   const [busy, setBusy] = useState(false);
   const [requestResult, setRequestResult] = useState<string | null>(null);
   const [showTerms, setShowTerms] = useState(false);
+  // Themed domains (e.g. Per Auset) colour the sign-in the same as the rest of their page.
+  const primary = theme?.primary || '#059669';
 
   // Resolve an invitation → lock the email on the sign-up form.
   useEffect(() => {
@@ -115,7 +117,7 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly }: { onClose: () => vo
             <p className="text-sm text-slate-500">{t('auth_request_intro')}</p>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder={t('auth_your_email')} className={field} />
             <textarea value={reason} onChange={e => setReason(e.target.value)} placeholder={t('auth_reason_placeholder')} className="min-h-28 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-            <button type="submit" disabled={busy} className="w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white shadow-md transition-colors hover:bg-emerald-700 disabled:opacity-50">
+            <button type="submit" disabled={busy} style={{ backgroundColor: primary }} className="w-full rounded-xl py-2.5 text-sm font-bold text-white shadow-md transition-opacity hover:opacity-90 disabled:opacity-50">
               {busy ? '…' : t('auth_request_invitation')}
             </button>
             <button type="button" onClick={() => setMode('signin')} className="w-full text-center text-xs text-slate-500 hover:text-slate-700">{t('auth_back_to_signin')}</button>
@@ -158,10 +160,10 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly }: { onClose: () => vo
             {mode === 'signup' && !canSignup ? (
               <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-500">
                 <p>{t('auth_invite_only_note')}</p>
-                <button type="button" onClick={() => { setMode('request'); }} className="font-bold text-emerald-600">{t('auth_request_arrow')}</button>
+                <button type="button" onClick={() => { setMode('request'); }} className="font-bold" style={{ color: primary }}>{t('auth_request_arrow')}</button>
               </div>
             ) : (
-              <button type="submit" disabled={busy || (mode === 'signup' && !agreed)} className="w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white shadow-md transition-colors hover:bg-emerald-700 disabled:opacity-50">
+              <button type="submit" disabled={busy || (mode === 'signup' && !agreed)} style={{ backgroundColor: primary }} className="w-full rounded-xl py-2.5 text-sm font-bold text-white shadow-md transition-opacity hover:opacity-90 disabled:opacity-50">
                 {busy ? '…' : (mode === 'signup' ? t('auth_create_account') : t('sign_in'))}
               </button>
             )}
@@ -172,11 +174,11 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly }: { onClose: () => vo
               <>
                 <button onClick={handleReset} className="hover:text-slate-700">{t('auth_forgot_password')}</button>
                 {(!inviteOnly || inviteValid)
-                  ? <button onClick={() => setMode('signup')} className="font-bold text-emerald-600">{t('auth_create_an_account')}</button>
-                  : <button onClick={() => setMode('request')} className="font-bold text-emerald-600">{t('auth_request_invitation')}</button>}
+                  ? <button onClick={() => setMode('signup')} className="font-bold" style={{ color: primary }}>{t('auth_create_an_account')}</button>
+                  : <button onClick={() => setMode('request')} className="font-bold" style={{ color: primary }}>{t('auth_request_invitation')}</button>}
               </>
             ) : (
-              <button onClick={() => setMode('signin')} className="font-bold text-emerald-600">{t('auth_have_account')}</button>
+              <button onClick={() => setMode('signin')} className="font-bold" style={{ color: primary }}>{t('auth_have_account')}</button>
             )}
           </div>
         </div>

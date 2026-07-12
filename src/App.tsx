@@ -145,6 +145,9 @@ const AppContent = () => {
     // Custom-landing domains: false = the organisation's own page fills the screen;
     // true = the visitor stepped through the corner seed-logo into the full app.
     const [seedView, setSeedView] = useState(false);
+    // On non-hub domains, hold the shell until we know whether this domain has a custom
+    // landing — otherwise the seed flashes first and then jumps to the organisation's page.
+    const [hostResolved, setHostResolved] = useState(() => isHubDomain(window.location.hostname));
     // The lightseed community is the default "About" page when this node has none of its own.
     const [defaultCommunity, setDefaultCommunity] = useState<Community | null>(null);
     // Superadmin "switch to community view" — when set, the whole shell (theme, logo,
@@ -237,7 +240,10 @@ const AppContent = () => {
     useEffect(() => {
         ensureGenesis();
         syncInitiatesMirror(); // superadmin-gated inside; keeps initiates/{uid} true to the git ledger
-        getCommunityByDomain(window.location.hostname).then(setHostCommunity);
+        getCommunityByDomain(window.location.hostname)
+            .then(setHostCommunity)
+            .catch(() => {})
+            .finally(() => setHostResolved(true));
     }, [lightseed?.uid]);
 
     // Load the lightseed community once as the default About page fallback.
@@ -519,15 +525,28 @@ const AppContent = () => {
         </div>
     );
 
+    // Custom-domain visitors wait a breath on neutral ground instead of seeing the seed flash
+    // before the organisation's page takes over.
+    if (!hostResolved) return (
+        <div className="flex h-screen w-full items-center justify-center bg-[#faf6ec]">
+            <Loading />
+        </div>
+    );
+
     // A custom-landing domain (e.g. Per Auset) greets with the organisation's own page — the
-    // seed shell waits behind the corner logo. Detail overlays (an opened event) still render.
-    if (hostCommunity?.customLanding && !seedView && !impersonatedCommunity) {
+    // seed shell waits behind the corner logo. Staff previewing a community (community view on
+    // the hub) reach the same landing through the same corner switcher. Overlays still render.
+    const landingCommunity = impersonatedCommunity?.customLanding
+        ? impersonatedCommunity
+        : (hostCommunity?.customLanding && !impersonatedCommunity ? hostCommunity : null);
+    if (landingCommunity && !seedView) {
         return (
             <>
                 <CustomLandingPage
-                    community={hostCommunity}
+                    community={landingCommunity}
                     lightseed={lightseed}
                     onSignIn={() => setShowAuthModal(true)}
+                    onSignOut={() => { logout(); setCarryingTree(null); setTab('dashboard'); }}
                     onEnterSeed={() => setSeedView(true)}
                     onViewEvent={(p: Pulse) => { void onViewPulseOrAlignment(p); }}
                 />
@@ -551,7 +570,7 @@ const AppContent = () => {
                     )}
                 </Suspense>
                 {showAuthModal && !lightseed && (
-                    <AuthModal onClose={() => setShowAuthModal(false)} inviteId={inviteParam} inviteOnly={config.inviteOnly} />
+                    <AuthModal onClose={() => setShowAuthModal(false)} inviteId={inviteParam} inviteOnly={config.inviteOnly} theme={effectiveTheme} />
                 )}
             </>
         );
@@ -571,6 +590,7 @@ const AppContent = () => {
                             danger: guardedTrees.filter(t => t.status === 'DANGER').length
                         }}
                         hostCommunity={impersonatedCommunity || hostCommunity}
+                        theme={effectiveTheme}
                         events={dashboardEvents}
                         onViewEvent={(p: Pulse) => { void onViewPulseOrAlignment(p); }}
                         onViewCommunity={setSelectedCommunity}
@@ -854,18 +874,19 @@ const AppContent = () => {
             {/* Page-level scroll affordance — only on the main page (hidden while a detail/modal is open). */}
             {openKeys.length === 0 && <ScrollChevrons axis="y" fixed />}
 
-            {/* On a custom-landing domain, the way back out of the seed to the organisation's page. */}
-            {hostCommunity?.customLanding && seedView && (
+            {/* The corner switcher back to the organisation's page — on its own domain, and for
+                staff standing in community view on the hub. */}
+            {landingCommunity && seedView && (
                 <button
                     onClick={() => setSeedView(false)}
-                    title={`Back to ${hostCommunity.name}`}
-                    aria-label={`Back to ${hostCommunity.name}`}
+                    title={`Back to ${landingCommunity.name}`}
+                    aria-label={`Back to ${landingCommunity.name}`}
                     className="fixed bottom-5 right-5 z-40 flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white shadow-xl ring-2 ring-amber-300/70 transition-transform hover:scale-110 active:scale-95"
                 >
-                    {hostCommunity.logoUrl
-                        ? <img src={hostCommunity.logoUrl} alt="" className="h-full w-full object-cover" />
-                        : hostCommunity.heroImageUrl
-                            ? <img src={hostCommunity.heroImageUrl} alt="" className="h-full w-full object-cover" />
+                    {landingCommunity.logoUrl
+                        ? <img src={landingCommunity.logoUrl} alt="" className="h-full w-full object-cover" />
+                        : landingCommunity.heroImageUrl
+                            ? <img src={landingCommunity.heroImageUrl} alt="" className="h-full w-full object-cover" />
                             : <Icons.ArrowLeft />}
                 </button>
             )}
@@ -1004,7 +1025,7 @@ const AppContent = () => {
                 <GDPRBanner />
 
                 {showAuthModal && !lightseed && (
-                    <AuthModal onClose={() => setShowAuthModal(false)} inviteId={inviteParam} inviteOnly={config.inviteOnly} />
+                    <AuthModal onClose={() => setShowAuthModal(false)} inviteId={inviteParam} inviteOnly={config.inviteOnly} theme={effectiveTheme} />
                 )}
             </div>
 
@@ -1059,6 +1080,9 @@ const AppContent = () => {
                             setImpersonatedCommunity(community);
                             setSelectedCommunity(null);
                             setTab('about');
+                            // Community view opens in the seed; the corner switcher lets staff
+                            // flip to the community's custom landing and back.
+                            setSeedView(true);
                             window.scrollTo(0, 0);
                         } : undefined}
                     />
