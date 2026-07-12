@@ -234,6 +234,27 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                            showAlert('Could not change the visibility.');
                        }
                    }}
+                   // Staff-only kind conversion — rescues trees planted with the wrong kind
+                   // while testing. treeType + isNature flip together (the pair every view
+                   // and the planting-limit gate read).
+                   onConvertType={(isAdmin || isSuperAdmin) ? async () => {
+                       const toGuarded = !(tree.treeType === 'GUARDED' || tree.isNature);
+                       if (!(await showConfirm(
+                           toGuarded
+                               ? `Convert ${tree.name} into a GUARDED (nature) tree?`
+                               : `Convert ${tree.name} into a personal LIFETREE?`,
+                           { title: 'Convert tree kind', confirmText: 'Convert' },
+                       ))) return;
+                       try {
+                           const updates = { treeType: toGuarded ? 'GUARDED' : 'LIFETREE', isNature: toGuarded } as Partial<Lifetree>;
+                           await updateLifetree(tree.id, updates);
+                           onUpdate?.(updates);
+                           showAlert(toGuarded ? `${tree.name} now stands as a guarded tree.` : `${tree.name} is a lifetree again.`);
+                       } catch (e: any) {
+                           console.error(e);
+                           showAlert(e?.message || 'Could not convert the tree.');
+                       }
+                   } : undefined}
                />
            ),
        },

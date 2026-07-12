@@ -32,6 +32,9 @@ interface TreeDetailsProps {
     onRequestDelete: () => void;
     // One-tap visibility change outside edit mode (persisted immediately by the shell).
     onVisibilityChange?: (v: 'public' | 'node' | 'private') => void;
+    // Staff-only: convert a planted lifetree to a guarded (nature) tree, or back —
+    // for trees planted with the wrong kind while testing.
+    onConvertType?: () => void;
 }
 
 // Details section — the tree's vision, facts (steward/location/GPS/planted/validator/website/
@@ -46,6 +49,7 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
     onCancelEdit,
     onRequestDelete,
     onVisibilityChange,
+    onConvertType,
 }) => {
     const { t } = useLanguage();
     const isNature = tree.isNature;
@@ -256,6 +260,23 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                         <span className="flex-1 text-left text-slate-800 text-sm capitalize">{tree.visibility || 'public'}</span>
                     )}
                 </div>
+
+                {/* Kind — staff can convert a mis-planted tree (lifetree ↔ guarded). */}
+                {onConvertType && (
+                    <div className="flex items-center gap-4 py-2 border-t border-slate-50">
+                        <span className="w-24 shrink-0 text-slate-500 text-sm">Kind</span>
+                        <span className="flex-1 text-left text-slate-800 text-sm">
+                            {(tree.treeType === 'GUARDED' || isNature) ? 'Guarded (nature)' : 'Lifetree'}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={onConvertType}
+                            className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-bold text-sky-700 transition-colors hover:bg-sky-100"
+                        >
+                            {(tree.treeType === 'GUARDED' || isNature) ? 'Convert to lifetree' : 'Convert to guarded'}
+                        </button>
+                    </div>
+                )}
 
                 {isEditing && (
                     <div className="flex space-x-2 mt-4 pt-4 border-t border-slate-100">
