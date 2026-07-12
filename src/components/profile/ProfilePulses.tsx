@@ -8,10 +8,12 @@ import { Loading } from '../ui/Loading';
 
 interface ProfilePulsesProps {
   uid: string;
+  // Opens the pulse's profile view (the same one the pulses page uses).
+  onViewPulse?: (pulse: Pulse) => void;
 }
 
 // My Pulses tab — everything the user has emitted, minus mycelial reach/chat messages.
-export const ProfilePulses: React.FC<ProfilePulsesProps> = ({ uid }) => {
+export const ProfilePulses: React.FC<ProfilePulsesProps> = ({ uid, onViewPulse }) => {
   const { t } = useLanguage();
   const [pulses, setPulses] = useState<Pulse[]>([]);
   // Starts true: the component mounts fresh on every tab activation and fetches immediately.
@@ -37,7 +39,12 @@ export const ProfilePulses: React.FC<ProfilePulsesProps> = ({ uid }) => {
       {loading ? <div className="flex justify-center rounded-2xl border border-slate-100 bg-slate-50/50 py-16"><Loading /></div> : (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {pulses.length === 0 ? <p className="col-span-full text-slate-400 text-center py-10">No pulses emitted yet.</p> : pulses.map((pulse) => (
-            <div key={pulse.id} className="border border-slate-100 rounded-lg overflow-hidden group">
+            <div
+              key={pulse.id}
+              role={onViewPulse ? 'button' : undefined}
+              onClick={() => onViewPulse?.(pulse)}
+              className={`border border-slate-100 rounded-lg overflow-hidden group ${onViewPulse ? 'cursor-pointer transition-shadow hover:shadow-md hover:border-emerald-200' : ''}`}
+            >
               <div className="h-24 bg-slate-100 relative">
                 {pulse.imageUrl ? (
                   <img src={pulse.imageUrl} className="w-full h-full object-cover" />

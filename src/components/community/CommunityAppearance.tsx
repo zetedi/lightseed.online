@@ -31,6 +31,9 @@ interface CommunityAppearanceProps {
   onSocialChange: React.Dispatch<React.SetStateAction<SocialLinks>>;
   editCarouselQuotes: string[];
   onCarouselQuotesChange: React.Dispatch<React.SetStateAction<string[]>>;
+  // Custom landing — the org's own full-screen page on its domain (see CustomLandingPage).
+  editCustomLanding: boolean;
+  onCustomLandingChange: (value: boolean) => void;
   onSave: () => void;
   isSaving: boolean;
   saveDisabled: boolean;
@@ -60,6 +63,8 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
   onSocialChange,
   editCarouselQuotes,
   onCarouselQuotesChange,
+  editCustomLanding,
+  onCustomLandingChange,
   onSave,
   isSaving,
   saveDisabled,
@@ -68,6 +73,25 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
   const { t } = useLanguage();
 
   return (
+    <div className="space-y-6">
+    {/* Custom landing — data, not code: flipping this makes the community's hero image the
+        domain's front page (sign-in + events), with the seed behind the corner logo. Saved
+        with the Save button below, like every other appearance field. */}
+    <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-white p-4">
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-slate-800">Custom landing page</p>
+        <p className="text-xs text-slate-500">Greet visitors on this community's domain with your hero image and a single sign-in — the full seed waits behind the corner logo.</p>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={editCustomLanding}
+        onClick={() => onCustomLandingChange(!editCustomLanding)}
+        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors ${editCustomLanding ? 'bg-emerald-500' : 'bg-slate-300'}`}
+      >
+        <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${editCustomLanding ? 'translate-x-5' : 'translate-x-0'}`} />
+      </button>
+    </div>
     <AppearanceSection
       name={editName}
       onNameChange={onNameChange}
@@ -96,5 +120,6 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
       saveDisabled={saveDisabled}
       status={status}
     />
+    </div>
   );
 };

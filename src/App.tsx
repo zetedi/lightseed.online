@@ -55,6 +55,7 @@ import { Loading } from './components/ui/Loading';
 import { SectionHeader } from './components/ui/SectionHeader';
 import { ScrollChevrons } from './components/ui/ScrollChevrons';
 import { UpdateToast } from './components/ui/UpdateToast';
+import { CustomLandingPage } from './pages/CustomLandingPage';
 import { Footer } from './components/ui/Footer';
 import { PathwayCTA } from './components/PathwayCTA';
 import { usePathwayFacts } from './hooks/usePathwayFacts';
@@ -141,6 +142,9 @@ const AppContent = () => {
     const [showReachModal, setShowReachModal] = useState(false);
     const [pendingTreeInvites, setPendingTreeInvites] = useState(0);
     const [hostCommunity, setHostCommunity] = useState<Community | null>(null);
+    // Custom-landing domains: false = the organisation's own page fills the screen;
+    // true = the visitor stepped through the corner seed-logo into the full app.
+    const [seedView, setSeedView] = useState(false);
     // The lightseed community is the default "About" page when this node has none of its own.
     const [defaultCommunity, setDefaultCommunity] = useState<Community | null>(null);
     // Superadmin "switch to community view" — when set, the whole shell (theme, logo,
@@ -514,7 +518,45 @@ const AppContent = () => {
             <div className="relative z-10"><Loading /></div>
         </div>
     );
-    
+
+    // A custom-landing domain (e.g. Per Auset) greets with the organisation's own page — the
+    // seed shell waits behind the corner logo. Detail overlays (an opened event) still render.
+    if (hostCommunity?.customLanding && !seedView && !impersonatedCommunity) {
+        return (
+            <>
+                <CustomLandingPage
+                    community={hostCommunity}
+                    lightseed={lightseed}
+                    onSignIn={() => setShowAuthModal(true)}
+                    onEnterSeed={() => setSeedView(true)}
+                    onViewEvent={(p: Pulse) => { void onViewPulseOrAlignment(p); }}
+                />
+                <Suspense fallback={null}>
+                    {selectedPulse && (
+                        <DetailWrapper>
+                            {selectedPulse.type === 'event' ? (
+                                <div className="min-h-screen bg-slate-50">
+                                    <EventProfile
+                                        pulse={selectedPulse}
+                                        activeTree={activeTree}
+                                        onClose={() => setSelectedPulse(null)}
+                                        currentUserId={lightseed?.uid}
+                                        myTrees={myTrees}
+                                    />
+                                </div>
+                            ) : (
+                                <PulseDetail pulse={selectedPulse} activeTree={activeTree} onClose={() => setSelectedPulse(null)} />
+                            )}
+                        </DetailWrapper>
+                    )}
+                </Suspense>
+                {showAuthModal && !lightseed && (
+                    <AuthModal onClose={() => setShowAuthModal(false)} inviteId={inviteParam} inviteOnly={config.inviteOnly} />
+                )}
+            </>
+        );
+    }
+
 
     const renderMainContent = () => {
         if (tab === 'dashboard') {
@@ -548,6 +590,7 @@ const AppContent = () => {
                     defaultTreeId={defaultTreeId}
                     onSetDefaultTree={setDefaultTree}
                     onViewVision={(v: Vision) => setSelectedVision(v)}
+                    onViewPulse={(p: Pulse) => { void onViewPulseOrAlignment(p); }}
                     onViewAlignment={(a: Alignment) => setSelectedAlignment(a)}
                     onPlant={() => openPlant()}
                     onCreateVision={() => setShowVisionModal(true)}
@@ -811,6 +854,22 @@ const AppContent = () => {
             {/* Page-level scroll affordance — only on the main page (hidden while a detail/modal is open). */}
             {openKeys.length === 0 && <ScrollChevrons axis="y" fixed />}
 
+            {/* On a custom-landing domain, the way back out of the seed to the organisation's page. */}
+            {hostCommunity?.customLanding && seedView && (
+                <button
+                    onClick={() => setSeedView(false)}
+                    title={`Back to ${hostCommunity.name}`}
+                    aria-label={`Back to ${hostCommunity.name}`}
+                    className="fixed bottom-5 right-5 z-40 flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white shadow-xl ring-2 ring-amber-300/70 transition-transform hover:scale-110 active:scale-95"
+                >
+                    {hostCommunity.logoUrl
+                        ? <img src={hostCommunity.logoUrl} alt="" className="h-full w-full object-cover" />
+                        : hostCommunity.heroImageUrl
+                            ? <img src={hostCommunity.heroImageUrl} alt="" className="h-full w-full object-cover" />
+                            : <Icons.ArrowLeft />}
+                </button>
+            )}
+
             <div className="relative z-20 flex-1">
                 {impersonatedCommunity && (
                     <div className="sticky top-0 z-40 flex items-center justify-center gap-3 bg-amber-500 px-4 py-1.5 text-center text-xs font-bold text-white shadow-md">
@@ -1010,9 +1069,10 @@ const AppContent = () => {
                 inbox here, in place, instead of steering to the profile's Reaches tab. */}
             {showReachModal && lightseed && (
                 <DetailWrapper>
-                    {/* Mobile: full-bleed, floor-to-ceiling messages; the card look returns at sm. */}
-                    <div className="mx-auto w-full max-w-6xl px-0 py-0 sm:px-6 sm:py-6 lg:py-10">
-                        <div className="relative min-h-dvh rounded-none bg-white p-3 pt-12 shadow-2xl sm:min-h-0 sm:rounded-2xl sm:p-6 sm:pt-12">
+                    {/* Mobile: near-full-screen with a whisper of margin + radius, so the messages
+                        card visibly floats OVER the app; the centered card returns at sm. */}
+                    <div className="mx-auto w-full max-w-6xl px-2 py-2 sm:px-6 sm:py-6 lg:py-10">
+                        <div className="relative min-h-[calc(100dvh-1rem)] rounded-2xl bg-white p-3 pt-12 shadow-2xl sm:min-h-0 sm:p-6 sm:pt-12">
                             <button
                                 onClick={() => setShowReachModal(false)}
                                 title="Close"

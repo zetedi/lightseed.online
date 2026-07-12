@@ -306,13 +306,6 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
             hero={{
                 // Profile hero — a wide banner of the latest growth image with a circular avatar.
                 imageUrl: heroImg,
-                // Delete lives in the top-right corner (not the action row), so the mobile action
-                // row stays one line — and a destructive control sits away from the daily ones.
-                actions: canDelete && !isEditing ? (
-                    <button onClick={() => setShowDeleteModal(true)} title="Delete tree" className="flex items-center gap-1 rounded-full border border-red-400/30 bg-red-500/15 px-4 py-2 text-xs font-bold text-red-300 transition-colors hover:bg-red-500 hover:text-white">
-                        <Icons.Trash /><span className="hidden sm:inline">Delete</span>
-                    </button>
-                ) : undefined,
                 heroProps: {
                     imageClassName: 'opacity-70',
                     alwaysOverlay: true,
@@ -361,21 +354,33 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                             </div>
                         ) : (
                             <>
+                                {/* Share rides beside the name; Delete waits at the section's far
+                                    right — the header stays one compact block, no extra rows. */}
                                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                                     <h1 dir="auto" className="break-words text-2xl font-light tracking-wide md:text-3xl">{tree.name}</h1>
+                                    <button onClick={handleShare} title="Share this tree" className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-bold text-white transition-colors hover:bg-white/25">
+                                        <Icons.Link /> <span>{shared ? 'Copied' : 'Share'}</span>
+                                    </button>
                                     {isNature && <span className="inline-flex items-center gap-1 rounded-full bg-sky-500 px-2 py-0.5 text-[10px] font-bold"><Icons.Shield /> NATURE</span>}
                                     {tree.visibility && tree.visibility !== 'public' && <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">{tree.visibility}</span>}
                                 </div>
                                 {tree.shortTitle && <p dir="auto" className="mt-0.5 text-xs font-bold uppercase tracking-widest text-emerald-200">{tree.shortTitle}</p>}
                                 <div className="mt-1.5 flex items-center gap-2">
                                     <span dir="ltr" className="truncate font-mono text-xs text-slate-300" title={tree.id}>{tree.id}</span>
-                                    <button onClick={handleShare} title="Share this tree" className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-bold text-white transition-colors hover:bg-white/25">
-                                        <Icons.Link /> <span>{shared ? 'Copied' : 'Share'}</span>
-                                    </button>
                                 </div>
                             </>
                         )}
                     </div>
+                    {canDelete && !isEditing && (
+                        <button
+                            onClick={() => setShowDeleteModal(true)}
+                            title="Delete tree"
+                            aria-label="Delete tree"
+                            className="ml-auto shrink-0 self-start rounded-full border border-red-400/30 bg-red-500/15 p-2 text-red-300 transition-colors hover:bg-red-500 hover:text-white"
+                        >
+                            <Icons.Trash />
+                        </button>
+                    )}
                     </div>
                 ),
                 // Actions — in the tree header; icon+label on desktop, icon-only on mobile; coloured.

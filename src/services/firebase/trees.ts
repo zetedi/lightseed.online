@@ -173,7 +173,14 @@ export const plantLifetree = async (data: Partial<Lifetree> & { ownerId: string;
 
     const genesisHash = await createBlock("0", { msg: "Birth" }, Date.now());
     const currentHost = window.location.hostname.replace(/^www\./, '');
-    const domain = data.domain || (isHubDomain(currentHost) ? 'lightseed.online' : currentHost);
+    // On a custom domain the tree belongs to that community — its canonical domain wins over
+    // the raw hostname (so per-auset.web.app trees carry the community's domain, and follow it
+    // when the community later moves to its real domain).
+    let domain = data.domain;
+    if (!domain) {
+        if (isHubDomain(currentHost)) domain = 'lightseed.online';
+        else domain = (await getCommunityByDomain(currentHost))?.domain || currentHost;
+    }
 
     // New trees inherit the owner's contact-privacy preference so the mirror stays consistent.
     let onlyValidatedCanReach = false;

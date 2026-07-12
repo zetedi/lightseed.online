@@ -312,6 +312,47 @@ export const onReachCreated = onDocumentCreated("pulses/{pulseId}", async (event
     await Promise.all(recipients.map(notify));
 });
 
+// --- Planting caps, enforced server-side -------------------------------------------------
+// The client gate (domain/limits + plantLifetree) is advisory — a direct Firestore write
+// bypasses it. This trigger is the backstop: when a tree lands over the node's caps
+// (config/limits, defaults 12 lifetrees + 132 guarded per being), the newest over-cap tree
+// is uprooted. Quality, not quantity — enforced where it can't be dodged. Staff and the
+// system are exempt, mirroring every other quota.
+export const onLifetreeCreated = onDocumentCreated("lifetrees/{treeId}", async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+    const tree = snap.data() as any;
+    const ownerId = tree.ownerId as string;
+    if (!ownerId || ownerId === "GENESIS_SYSTEM") return;
+    try {
+        if (await isStaffUid(ownerId)) return;
+
+        const [limitsSnap, mine] = await Promise.all([
+            db.collection("config").doc("limits").get(),
+            db.collection("lifetrees").where("ownerId", "==", ownerId).get(),
+        ]);
+        const num = (v: any, fallback: number) => {
+            const n = Number(v);
+            return Number.isFinite(n) && n >= 1 ? Math.floor(n) : fallback;
+        };
+        const raw = limitsSnap.exists ? limitsSnap.data() : {};
+        const maxLifetrees = num(raw?.maxLifetrees, 12);
+        const maxGuardedTrees = num(raw?.maxGuardedTrees, 132);
+
+        const isGuardedTree = (t: any) => t.treeType === "GUARDED" || (!t.treeType && t.isNature === true);
+        const trees = mine.docs.map((d) => d.data());
+        const guarded = trees.filter(isGuardedTree).length;
+        const lifetrees = trees.length - guarded;
+        const over = isGuardedTree(tree) ? guarded > maxGuardedTrees : lifetrees > maxLifetrees;
+        if (!over) return;
+
+        await snap.ref.delete();
+        console.warn(`Planting cap enforced: uprooted ${snap.id} (owner ${ownerId}, ${lifetrees} lifetrees / ${guarded} guarded vs ${maxLifetrees}/${maxGuardedTrees}).`);
+    } catch (e) {
+        console.error(`Planting cap check failed for ${snap.id}:`, e);
+    }
+});
+
 // Community join requests: when a join_request link lands (someone pressed Join on a
 // community), email that community's keeper. Server-side because the keeper's email lives on
 // their private user doc, which the requester can never read. The Members tab is where the

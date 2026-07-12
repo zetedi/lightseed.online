@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Pulse, Lifetree } from '../types';
 import { Icons } from './ui/Icons';
 import { ProfileHero } from './ui/ProfileHero';
-import { PulseInsightPanel } from './ui/PulseInsightPanel';
 
 // The generic pulse view — a PROFILE, not a modal: the same ProfileHero + full-page scaffold as
 // VisionProfile / EventProfile / AlignmentView, so every entity (tree, vision, event, alignment,
@@ -18,7 +17,7 @@ interface PulseDetailProps {
     onEdit?: () => void;
 }
 
-export const PulseDetail = ({ pulse, activeTree, onClose, backLabel = "Back", canEdit, onEdit }: PulseDetailProps) => {
+export const PulseDetail = ({ pulse, onClose, backLabel = "Back", canEdit, onEdit }: PulseDetailProps) => {
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const images = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
 
@@ -132,9 +131,17 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel = "Back", ca
                     </p>
                 </div>
 
-                {/* AI Translation & Network Coherence — kept whole, in its own card below the body. */}
-                <div className="mt-6">
-                    <PulseInsightPanel pulse={pulse} activeTree={activeTree} />
+                {/* Network Memory — the pulse's standing on the chain, kept slim. The Translation
+                    Depth System moved out of the pulse profile (readings live in the reach shadow
+                    text and the event view). */}
+                <div className="mt-6 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                    <h3 className="mb-3 flex items-center text-xs font-bold uppercase tracking-wider text-slate-400">
+                        <Icons.ShieldCheck /><span className="ml-2">Network Memory</span>
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-600">
+                        <span>Validation <span className="ml-1 rounded bg-emerald-50 px-2 py-0.5 font-bold text-emerald-600">{pulse.validationScore || pulse.loveCount || 0}</span></span>
+                        {pulse.hash && <span className="font-mono text-xs text-slate-400" title={pulse.hash}>Hash {pulse.hash.substring(0, 16)}…</span>}
+                    </div>
                 </div>
             </div>
         </div>

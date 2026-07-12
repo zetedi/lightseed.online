@@ -230,7 +230,7 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                             : <span className="flex-1 text-left text-slate-400 text-sm">—</span>
                     )}
                 </div>
-                <div className="flex items-center gap-4 py-2 border-t border-slate-50">
+                <div className="flex flex-col gap-2 py-2 border-t border-slate-50 sm:flex-row sm:items-center sm:gap-4">
                     <span className="w-24 shrink-0 text-slate-500 text-sm">{t('visibility')}</span>
                     {isEditing && canEdit ? (
                         <select value={editVisibility} onChange={e => setEditVisibility(e.target.value as 'public' | 'node' | 'private')} className={fieldClassName}>
@@ -239,22 +239,28 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                             <option value="private">{t('vis_private')}</option>
                         </select>
                     ) : canEdit && onVisibilityChange ? (
-                        // One tap to make the tree private (or node-only / public) — no edit mode needed.
-                        <div className="flex items-center gap-1" role="radiogroup" aria-label={t('visibility')}>
-                            {([['public', t('vis_public')], ['node', t('vis_node')], ['private', t('vis_private')]] as const).map(([v, label]) => (
-                                <button
-                                    key={v}
-                                    type="button"
-                                    role="radio"
-                                    aria-checked={(tree.visibility || 'public') === v}
-                                    onClick={() => onVisibilityChange(v)}
-                                    className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${(tree.visibility || 'public') === v
-                                        ? (v === 'private' ? 'bg-slate-700 text-white' : 'bg-emerald-600 text-white')
-                                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
-                                >
-                                    {label}
-                                </button>
-                            ))}
+                        // One tap to make the tree private (or node-only / public) — no edit mode
+                        // needed. Mobile: a full-width radio list (the row of pills was cramped);
+                        // sm+: the compact pill row.
+                        <div className="flex w-full flex-col gap-1.5 sm:w-auto sm:flex-row sm:items-center sm:gap-1" role="radiogroup" aria-label={t('visibility')}>
+                            {([['public', t('vis_public')], ['node', t('vis_node')], ['private', t('vis_private')]] as const).map(([v, label]) => {
+                                const on = (tree.visibility || 'public') === v;
+                                return (
+                                    <button
+                                        key={v}
+                                        type="button"
+                                        role="radio"
+                                        aria-checked={on}
+                                        onClick={() => onVisibilityChange(v)}
+                                        className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-sm font-bold transition-colors sm:w-auto sm:justify-center sm:rounded-full sm:border-transparent sm:px-3 sm:py-1 sm:text-xs ${on
+                                            ? (v === 'private' ? 'border-slate-700 bg-slate-700 text-white' : 'border-emerald-600 bg-emerald-600 text-white')
+                                            : 'border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 sm:bg-slate-100'}`}
+                                    >
+                                        <span>{label}</span>
+                                        <span className={`sm:hidden ${on ? 'opacity-100' : 'opacity-0'}`} aria-hidden>✓</span>
+                                    </button>
+                                );
+                            })}
                         </div>
                     ) : (
                         <span className="flex-1 text-left text-slate-800 text-sm capitalize">{tree.visibility || 'public'}</span>

@@ -115,6 +115,53 @@ describe('communityTreeInvites — anyone invites as themselves; the tree owner 
   });
 });
 
+describe('config/limits — the node planting caps: world-readable, staff-set', () => {
+  it('anyone may read the caps; only staff may set them', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) =>
+      setDoc(doc(ctx.firestore(), 'config', 'limits'), { maxLifetrees: 12, maxGuardedTrees: 132 }));
+    await assertSucceeds(getDoc(doc(db(), 'config', 'limits')));
+    await assertFails(setDoc(doc(db(MALLORY), 'config', 'limits'), { maxLifetrees: 9999, maxGuardedTrees: 9999 }));
+    await assertSucceeds(setDoc(doc(db(STAFF), 'config', 'limits'), { maxLifetrees: 21, maxGuardedTrees: 123 }));
+  });
+
+  it('other config docs stay staff-only (superadmin doc readable, not writable)', async () => {
+    await assertFails(setDoc(doc(db(MALLORY), 'config', 'superadmin'), { uid: MALLORY }));
+  });
+});
+
+describe('community joining — anyone knocks as themselves; only the keeper opens', () => {
+  const joinReq = (from: string) => ({ lid: 'x', type: 'link', rel: 'join_request', from, to: 'com1', createdAt: 1 });
+  const memberLink = { lid: 'x', type: 'link', rel: 'member', from: BOB, to: 'com1', createdAt: 1 };
+
+  it('a signed-in user may ask to join — as themselves only', async () => {
+    await assertSucceeds(setDoc(doc(db(BOB), 'links', `${BOB}__join_request__com1`), joinReq(BOB)));
+    await assertFails(setDoc(doc(db(MALLORY), 'links', `${BOB}__join_request__com1`), joinReq(BOB))); // forged knocker
+  });
+
+  it('the member link is minted by the community owner — never by the requester or a stranger', async () => {
+    await assertFails(setDoc(doc(db(BOB), 'links', `${BOB}__member__com1`), memberLink));     // self-admit
+    await assertFails(setDoc(doc(db(MALLORY), 'links', `${BOB}__member__com1`), memberLink)); // stranger
+    await assertSucceeds(setDoc(doc(db(ALICE), 'links', `${BOB}__member__com1`), memberLink)); // keeper of com1
+  });
+
+  it('the keeper may decline a request and remove a member; a stranger may neither', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'links', `${BOB}__join_request__com1`), joinReq(BOB));
+      await setDoc(doc(ctx.firestore(), 'links', `${BOB}__member__com1`), memberLink);
+    });
+    await assertFails(deleteDoc(doc(db(MALLORY), 'links', `${BOB}__join_request__com1`)));
+    await assertSucceeds(deleteDoc(doc(db(ALICE), 'links', `${BOB}__join_request__com1`)));
+    await assertFails(deleteDoc(doc(db(MALLORY), 'links', `${BOB}__member__com1`)));
+    await assertSucceeds(deleteDoc(doc(db(ALICE), 'links', `${BOB}__member__com1`)));
+  });
+
+  it('the requester may withdraw their own knock', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) =>
+      setDoc(doc(ctx.firestore(), 'links', `${BOB}__join_request__com1`), joinReq(BOB)));
+    await assertSucceeds(deleteDoc(doc(db(BOB), 'links', `${BOB}__join_request__com1`)));
+  });
+});
+
 describe('collabs — staff-curated, world-readable', () => {
   it('anyone reads, only staff write', async () => {
     await env.withSecurityRulesDisabled(async (ctx) => setDoc(doc(ctx.firestore(), 'collabs', 'c1'), { name: 'Anthropic', agreement: 'contract' }));

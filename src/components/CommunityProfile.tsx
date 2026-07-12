@@ -101,6 +101,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const [editVision, setEditVision] = useState(community.vision);
   const [editSocial, setEditSocial] = useState<{ instagram?: string; telegram?: string; whatsapp?: string; website?: string }>(community.socialLinks || {});
   const [editCarouselQuotes, setEditCarouselQuotes] = useState<string[]>(community.carouselQuotes || []);
+  const [editCustomLanding, setEditCustomLanding] = useState(community.customLanding === true);
   const [editTheme, setEditTheme] = useState(normalizeTheme(community.theme));
   const [logoUrl, setLogoUrl] = useState(community.logoUrl || '');
   const [heroImageUrl, setHeroImageUrl] = useState(community.heroImageUrl || '');
@@ -142,8 +143,9 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     setLogoUrl(community.logoUrl || '');
     setHeroImageUrl(community.heroImageUrl || '');
     setImageUrls(community.imageUrls || []);
+    setEditCustomLanding(community.customLanding === true);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on primitive fields (arrays via imageUrlsKey); socialLinks/imageUrls object identities change per fetch and would re-run this, clobbering in-flight edits
-  }, [community.id, community.name, community.vision, community.logoUrl, community.heroImageUrl, community.theme, imageUrlsKey]);
+  }, [community.id, community.name, community.vision, community.logoUrl, community.heroImageUrl, community.theme, community.customLanding, imageUrlsKey]);
 
   useEffect(() => {
     getTreesByDomain(community.domain, currentUserId).then(setLinkedTrees).catch(() => {});
@@ -211,6 +213,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
         heroImageUrl,
         socialLinks: editSocial,
         carouselQuotes: editCarouselQuotes.map(q => q.trim()).filter(Boolean),
+        customLanding: editCustomLanding,
       };
       await updateCommunity(community.id, updates);
       // Refresh from Firestore so the view reflects exactly what was persisted.
@@ -423,6 +426,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
             onSocialChange={setEditSocial}
             editCarouselQuotes={editCarouselQuotes}
             onCarouselQuotesChange={setEditCarouselQuotes}
+            editCustomLanding={editCustomLanding}
+            onCustomLandingChange={setEditCustomLanding}
             onSave={handleSave}
             isSaving={isSaving}
             saveDisabled={isSaving || isUploadingLogo || isUploadingImage}
@@ -443,31 +448,32 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
         heroProps: { padding: 'pt-5 pb-12 px-4' },
         actions: (
           <>
-            {/* Join — visitors ask, keepers accept on the Members tab. Members see their standing. */}
+            {/* Join — visitors ask, keepers accept on the Members tab. Members see their standing.
+                Mobile keeps every action compact (icons, tight padding) so nothing overflows. */}
             {currentUserId && !isMember && (
               joinRequested ? (
-                <span className="flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-4 py-2 text-xs font-bold text-emerald-300">
+                <span className="flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-1.5 text-[11px] font-bold text-emerald-300 sm:px-4 sm:py-2 sm:text-xs">
                   <Icons.Users size={14} /> Requested
                 </span>
               ) : (
-                <button onClick={handleJoin} disabled={joining} className="flex items-center gap-1 rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50">
+                <button onClick={handleJoin} disabled={joining} className="flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50 sm:px-4 sm:py-2 sm:text-xs">
                   <Icons.Users size={14} /><span>{joining ? 'Asking…' : 'Join'}</span>
                 </button>
               )
             )}
             {isMember && currentUserId !== community.ownerId && (
-              <span className="flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-4 py-2 text-xs font-bold text-emerald-300">
+              <span className="flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-1.5 text-[11px] font-bold text-emerald-300 sm:px-4 sm:py-2 sm:text-xs">
                 <Icons.Users size={14} /> Member
               </span>
             )}
             {onEnterCommunityView && (
-              <button onClick={() => onEnterCommunityView(community)} className="flex items-center gap-1 rounded-full border border-amber-300/40 bg-amber-400/15 px-4 py-2 text-xs font-bold text-amber-200 transition-colors hover:bg-amber-400 hover:text-white" title="See the whole site as this community">
-                <Icons.Eye /><span className="hidden sm:inline">Switch to community view</span><span className="sm:hidden">Community view</span>
+              <button onClick={() => onEnterCommunityView(community)} className="flex items-center gap-1 rounded-full border border-amber-300/40 bg-amber-400/15 p-2 text-xs font-bold text-amber-200 transition-colors hover:bg-amber-400 hover:text-white sm:px-4 sm:py-2" title="See the whole site as this community">
+                <Icons.Eye /><span className="hidden sm:inline">Switch to community view</span>
               </button>
             )}
             {canDelete && (
-              <button onClick={handleDelete} disabled={isDeleting} className="bg-red-500/15 hover:bg-red-500 text-red-300 hover:text-white px-4 py-2 rounded-full font-bold text-xs transition-colors flex items-center gap-1 border border-red-400/30">
-                <Icons.Trash /><span>Delete</span>
+              <button onClick={handleDelete} disabled={isDeleting} title="Delete community" aria-label="Delete community" className="flex items-center gap-1 rounded-full border border-red-400/30 bg-red-500/15 p-2 text-xs font-bold text-red-300 transition-colors hover:bg-red-500 hover:text-white sm:px-4 sm:py-2">
+                <Icons.Trash /><span className="hidden sm:inline">Delete</span>
               </button>
             )}
           </>

@@ -154,8 +154,8 @@ export const ReachInbox = ({
 
     return (
         <div className="mx-auto max-w-5xl">
-            {/* Mobile: fill the viewport under the overlay card's top chrome; desktop keeps 70vh. */}
-            <div className="flex h-[calc(100dvh-4.5rem)] gap-4 md:h-[70vh]">
+            {/* Mobile: fill the floating card under its top chrome; desktop keeps 70vh. */}
+            <div className="flex h-[calc(100dvh-5.5rem)] gap-4 md:h-[70vh]">
             {/* Thread list — no card, so it sits lightly on the page and takes less room. */}
             <div className={`${hasSelection ? 'hidden md:flex' : 'flex'} w-full shrink-0 flex-col overflow-hidden md:w-72`}>
                 {/* Sits flush to the top so it lines up with the top of the message card. */}

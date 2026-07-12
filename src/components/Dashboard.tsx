@@ -41,9 +41,6 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab,
     const videoRef = useRef<HTMLVideoElement>(null);
     const [videoEnded, setVideoEnded] = useState(false);
 
-    // The community banner: the appearance-editor hero first, then the gallery's first image.
-    // One source so the white-label hero and the events carousel agree.
-    const communityHero = hostCommunity?.heroImageUrl || hostCommunity?.imageUrls?.[0] || '';
 
     useEffect(() => {
         // Fetch global stats
@@ -73,12 +70,9 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab,
                 EVENTS wordmark running behind the cards. Looks special with or without a hero. */}
             {lightseed && events && events.length > 0 && (
                 <div className="relative w-full overflow-hidden rounded-2xl h-80 md:h-96 bg-emerald-900 ring-1 ring-amber-300/50 shadow-[0_0_40px_-4px_rgba(251,191,36,0.5)]">
-                    {/* Background: the node/community hero, softly distorted — or an emerald wash */}
-                    {communityHero ? (
-                        <img src={communityHero} className="absolute inset-0 h-full w-full scale-110 object-cover blur-[2px] saturate-150" alt="" />
-                    ) : (
-                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-700 via-emerald-950 to-slate-900"></div>
-                    )}
+                    {/* Background: always the emerald wash — the blurred community hero fought
+                        with the event cards on the default dashboard. */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-700 via-emerald-950 to-slate-900"></div>
                     {/* Leaf-toned wash for legibility + character — light so the hero reads airier */}
                     <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/30 via-slate-900/15 to-emerald-800/25"></div>
                     <LeafTexture stroke="white" opacity={0.08} />

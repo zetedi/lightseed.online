@@ -1,5 +1,18 @@
 {
   "projects": {
     "default": "lifeseed-75dfe"
-  }
+  },
+  "targets": {
+    "lifeseed-75dfe": {
+      "hosting": {
+        "app": [
+          "lifeseed-75dfe"
+        ],
+        "perauset": [
+          "per-auset"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

@@ -29,6 +29,10 @@ export interface Community extends Being {
   };
   // Reflections shown in the signed-out home carousel — an editable list curated by the admin.
   carouselQuotes?: string[];
+  // Custom landing: the domain greets visitors with the community's own full-screen hero page
+  // (sign-in + events only) instead of the seed shell; a corner seed-logo toggles into the app.
+  // The doorway for organisations bringing their own webpage onto the seed.
+  customLanding?: boolean;
   // The "big red stamp": once a node locks, new blocks are sealed with the canonical, verifiable
   // hash (src/domain/chain). Off by default; the shell syncs it into the chain-lock flag on load.
   chainLocked?: boolean;
