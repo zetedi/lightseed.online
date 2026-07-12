@@ -36,7 +36,7 @@ const callGemini = async (prompt: string, model: string = MODEL, config?: any): 
 // the server (no BYO credential needed), so they answer for ANY signed-in user. This is what
 // makes AI work for everyone by default — not only the people who connected their own key, and
 // not only when the chosen/default intelligence's credential happens to resolve.
-const NODE_CLAUDE_MODEL = 'claude-sonnet-4-6';
+const NODE_CLAUDE_MODEL = 'claude-sonnet-5';
 const nodeFallback = async (
     messages: { role: 'user' | 'model'; text: string }[],
     systemInstruction?: string,
@@ -354,7 +354,7 @@ Return ONLY a JSON object, no prose, no markdown:
             const generateClaudeContent = httpsCallable(functions, 'generateClaudeContent');
             const res = await generateClaudeContent({
                 messages: [{ role: 'user', text: prompt, image: { mimeType: image.mimeType, data: image.data } }],
-                model: intel.model || 'claude-sonnet-4-6',
+                model: intel.model || 'claude-sonnet-5',
                 credential: intel.credentialScope && intel.credentialScope !== 'node'
                     ? { scope: intel.credentialScope, ownerId: intel.credentialOwnerId }
                     : undefined,

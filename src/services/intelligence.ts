@@ -67,7 +67,7 @@ const anthropicProvider: IntelligenceProvider = {
     const result = await generateClaudeContent({
       messages,
       systemInstruction,
-      model: intelligence.model || 'claude-sonnet-4-6',
+      model: intelligence.model || 'claude-sonnet-5',
       credential: intelligence.credentialScope && intelligence.credentialScope !== 'node'
         ? { scope: intelligence.credentialScope, ownerId: intelligence.credentialOwnerId }
         : undefined,
@@ -322,12 +322,13 @@ const DEFAULT_PERSONAS: Array<Pick<Persona, 'id' | 'name' | 'description' | 'sys
 const DEFAULT_INTELLIGENCES: Array<Omit<Intelligence, 'createdAt'>> = [
   {
     // Osiris — the default voice of Lightseed. The being is named; the model that breathes
-    // through it is a choice (Gemini out of the box, swappable to Claude with a key).
+    // through it is a choice (Claude out of the box on the node key, swappable anytime —
+    // promoteToDefaultVoice rebinds it). New users inherit this voice.
     id: 'osiris',
     name: 'Osiris',
     description: 'The default voice of Lightseed. Choose which model breathes through it, and whose whispers to listen to.',
-    provider: 'google',
-    model: DEFAULT_MODEL,
+    provider: 'anthropic',
+    model: 'claude-sonnet-5',
     enabled: true,
     public: true,
     personaId: 'persona-oracle',
@@ -358,7 +359,7 @@ const DEFAULT_INTELLIGENCES: Array<Omit<Intelligence, 'createdAt'>> = [
     name: 'Claude Oracle',
     description: "Anthropic's Claude wearing the Oracle persona — connect a Claude key to give it voice.",
     provider: 'anthropic',
-    model: 'claude-sonnet-4-6',
+    model: 'claude-sonnet-5',
     enabled: true,
     public: true,
     personaId: 'persona-oracle',

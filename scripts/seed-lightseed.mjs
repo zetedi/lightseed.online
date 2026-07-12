@@ -4,8 +4,14 @@
  *   - Phoenix         → the first lifetree   (collection: lifetrees,   "First Tree" tab)
  *   - The Secret Sun  → the first sanctuary  (collection: sanctuaries, "The Sanctuary" tab)
  *
- * Both are planted with an early date so they sort ahead of any later entries and show as
- * the first tree / first sanctuary for their domain. Idempotent (stable ids + merge).
+ * Phoenix is ONE being: it lives once, on the hub domain (the first passed domain). The old
+ * per-domain seeding minted a Phoenix per node — and since the hub forest shows every domain,
+ * the tree appeared twice. This version seeds a single Phoenix and DELETES the per-domain
+ * duplicates it used to create. Sanctuaries stay per-domain (they only surface on their own
+ * community tab, so they never duplicate in a shared view).
+ *
+ * Planted with an early date so it sorts ahead of any later entries. Idempotent
+ * (stable ids + merge).
  *
  * Auth (Admin SDK — bypasses Firestore rules):
  *   Option A: export GOOGLE_APPLICATION_CREDENTIALS=/path/to/serviceAccount.json
@@ -79,26 +85,39 @@ async function run() {
   console.log(`Project: ${projectId}`);
   console.log(`Seeding Phoenix + The Secret Sun into: ${DOMAINS.join(', ')}\n`);
 
+  // Phoenix — the first lifetree. ONE being, rooted on the hub (the first domain).
+  const hubDomain = DOMAINS[0];
+  const hubSlug = hubDomain.replace(/[^a-z0-9]/gi, '-');
+  const hubOwnerId = (await findCommunityOwner(db, hubDomain)) || 'GENESIS_SYSTEM';
+  await db.collection('lifetrees').doc(`phoenix-${hubSlug}`).set({
+    name: 'Phoenix',
+    shortTitle: 'The First Living Lifetree',
+    body: PHOENIX_BODY,
+    imageUrl: '/phoenix.webp',
+    domain: hubDomain, ownerId: hubOwnerId,
+    isNature: true,
+    validated: true,
+    validatorId: 'SYSTEM',
+    latitude: 44.0606, longitude: 1.9536, locationName: 'Hridaya, France',
+    genesisHash: 'PHOENIX', latestHash: 'PHOENIX', blockHeight: 0,
+    createdAt: plantedAt,
+  }, { merge: true });
+  console.log(`✓ ${hubDomain}  →  lifetrees/phoenix-${hubSlug}  (owner: ${hubOwnerId})`);
+
   for (const domain of DOMAINS) {
     const slug = domain.replace(/[^a-z0-9]/gi, '-');
     const ownerId = (await findCommunityOwner(db, domain)) || 'GENESIS_SYSTEM';
 
-    // Phoenix — the first lifetree.
-    await db.collection('lifetrees').doc(`phoenix-${slug}`).set({
-      name: 'Phoenix',
-      shortTitle: 'The First Living Lifetree',
-      body: PHOENIX_BODY,
-      imageUrl: '/phoenix.webp',
-      domain, ownerId,
-      isNature: true,
-      validated: true,
-      validatorId: 'SYSTEM',
-      latitude: 44.0606, longitude: 1.9536, locationName: 'Hridaya, France',
-      genesisHash: 'PHOENIX', latestHash: 'PHOENIX', blockHeight: 0,
-      createdAt: plantedAt,
-    }, { merge: true });
+    // Remove the per-domain Phoenix duplicates the old seeding minted (all but the hub's).
+    if (slug !== hubSlug) {
+      const dupRef = db.collection('lifetrees').doc(`phoenix-${slug}`);
+      if ((await dupRef.get()).exists) {
+        await dupRef.delete();
+        console.log(`✂ removed duplicate lifetrees/phoenix-${slug}`);
+      }
+    }
 
-    // The Secret Sun — the first sanctuary.
+    // The Secret Sun — the first sanctuary (per-domain: shown only on its own community tab).
     await db.collection('sanctuaries').doc(`secret-sun-${slug}`).set({
       name: 'The Secret Sun',
       shortTitle: 'Sacred Platform',
@@ -109,10 +128,10 @@ async function run() {
       createdAt: plantedAt,
     }, { merge: true });
 
-    console.log(`✓ ${domain}  →  lifetrees/phoenix-${slug}  +  sanctuaries/secret-sun-${slug}  (owner: ${ownerId})`);
+    console.log(`✓ ${domain}  →  sanctuaries/secret-sun-${slug}  (owner: ${ownerId})`);
   }
 
-  console.log('\nDone. Phoenix shows under "First Tree" and The Secret Sun under "The Sanctuary".');
+  console.log('\nDone. One Phoenix under "First Tree"; The Secret Sun under "The Sanctuary".');
   process.exit(0);
 }
 

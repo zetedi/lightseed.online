@@ -1,4 +1,4 @@
-import { collection, query, orderBy, getDocs, serverTimestamp, doc, runTransaction, getDoc, where, updateDoc, limit, startAfter, QueryDocumentSnapshot, arrayUnion, onSnapshot, getCountFromServer } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, runTransaction, getDoc, where, updateDoc, limit, startAfter, QueryDocumentSnapshot, arrayUnion, onSnapshot, getCountFromServer } from 'firebase/firestore';
 import { type Pulse, type Lifetree, type ReachAudience } from '../../types';
 import { createBlock } from '../../utils/crypto';
 import { uuidv7 } from '../../utils/id';
@@ -213,6 +213,28 @@ export const resolveCircleUids = async (tree: Lifetree, audience: ReachAudience)
     return Array.from(new Set(ids.filter(Boolean)));
 };
 
+// A reach spoken by a PERSON who has not planted a lifetree yet. Logged-in beings can always
+// talk with trees: this writes the same reach shape, but never touches any chain — like the
+// server's watering alerts it carries a sentinel previousHash (mintPulse would need an existing
+// tree to chain onto). The person's uid stands in as the "from" node id.
+const PERSON_REACH_SENTINEL = 'PERSON_REACH';
+const addPersonReach = async (data: Partial<Pulse> & { lifetreeId: string }) => {
+    const mintedAt = Date.now();
+    return addDoc(pulsesCollection, {
+        lid: uuidv7(mintedAt),
+        type: 'reach',
+        visibility: 'private',
+        loveCount: 0,
+        commentCount: 0,
+        mintedAt,
+        previousHash: PERSON_REACH_SENTINEL,
+        hash: uuidv7(),
+        domain: window.location.hostname.replace(/^www\./, ''),
+        ...data,
+        createdAt: serverTimestamp(),
+    });
+};
+
 export const sendReach = async ({
     fromTree,
     toTree,
@@ -223,7 +245,7 @@ export const sendReach = async ({
     isAdmin = false,
     isSuperAdmin = false,
 }: {
-    fromTree: Lifetree;
+    fromTree: Lifetree | null; // null = the sender speaks as a person (no lifetree yet)
     toTree: Lifetree;
     text: string;
     sender: { uid: string; displayName?: string | null; photoURL?: string | null };
@@ -236,20 +258,28 @@ export const sendReach = async ({
     // resolve the freshest target when an audience is set; otherwise resolve only if the
     // lightweight tree object is missing its owner + privacy flag.
     let target = toTree;
+    let personPartner = false;
     if (audience || !target.ownerId) {
         const full = await getLifetreeById(toTree.id);
         if (full) target = full;
+        // No such tree → the "tree" id is a person's uid (replying to a tree-less sender).
+        else if (!target.ownerId) personPartner = true;
     }
-    const ownerUid = target.ownerId || null;
+    const ownerUid = target.ownerId || (personPartner ? target.id : null);
 
     const protectedTarget = target.onlyValidatedCanReach === true;
     const isSelf = !!ownerUid && ownerUid === sender.uid;
-    if (protectedTarget && !isSelf && !isAdmin && !isSuperAdmin && !isExplicitlyValidatedTree(fromTree)) {
+    if (protectedTarget && !isSelf && !isAdmin && !isSuperAdmin && !(fromTree && isExplicitlyValidatedTree(fromTree))) {
         throw new Error('This Lifetree only accepts direct messages from validated trees.');
     }
 
+    // The sender's face: their tree if planted, else themself (the person is the node).
+    const fromId = fromTree?.id || sender.uid;
+    const fromName = fromTree?.name || sender.displayName || 'A lightseed';
+    const write = fromTree ? mintPulse : addPersonReach;
+
     const base = {
-        lifetreeId: fromTree.id,
+        lifetreeId: fromId,
         type: 'reach' as const,
         body: text,
         content: text,
@@ -260,9 +290,9 @@ export const sendReach = async ({
         visibility: 'private' as const,
         ...(mintNotice ? { mintNotice: true } : {}),
         authorId: sender.uid,
-        authorName: fromTree.name,
+        authorName: fromName,
         authorPersonName: sender.displayName || undefined,
-        authorPhoto: fromTree.imageUrl || sender.photoURL || undefined,
+        authorPhoto: fromTree?.imageUrl || sender.photoURL || undefined,
     };
 
     if (audience) {
@@ -274,9 +304,9 @@ export const sendReach = async ({
         if (participantUids.length <= 1) {
             throw new Error('There is no one in that circle to reach yet.');
         }
-        return mintPulse({
+        return write({
             ...base,
-            title: `Reach: ${fromTree.name} -> ${target.name} (${reachAudienceLabels[audience]})`,
+            title: `Reach: ${fromName} -> ${target.name} (${reachAudienceLabels[audience]})`,
             recipientUid: null,
             participantUids,
             threadId: buildGroupThreadId(target.id, audience, sender.uid),
@@ -288,12 +318,12 @@ export const sendReach = async ({
 
     // Classic 1:1 reach to the target's owner.
     const participantUids = Array.from(new Set([sender.uid, ownerUid].filter(Boolean) as string[]));
-    return mintPulse({
+    return write({
         ...base,
-        title: `Reach: ${fromTree.name} -> ${target.name}`,
+        title: `Reach: ${fromName} -> ${target.name}`,
         recipientUid: ownerUid,
         participantUids,
-        threadId: buildThreadId(fromTree.id, target.id),
+        threadId: buildThreadId(fromId, target.id),
     });
 };
 
@@ -317,17 +347,19 @@ export const sendThreadMessage = async ({
         audience?: ReachAudience;
         isGroup?: boolean;
     };
-    fromTree: Lifetree;
+    fromTree: Lifetree | null; // null = the sender speaks as a person (no lifetree yet)
     sender: { uid: string; displayName?: string | null; photoURL?: string | null };
     text: string;
     mintNotice?: boolean;
 }) => {
     const participantUids = Array.from(new Set([sender.uid, ...(thread.participantUids || [])].filter(Boolean)));
     const isGroup = thread.isGroup ?? participantUids.length > 2;
-    return mintPulse({
-        lifetreeId: fromTree.id,
+    const fromName = fromTree?.name || sender.displayName || 'A lightseed';
+    const write = fromTree ? mintPulse : addPersonReach;
+    return write({
+        lifetreeId: fromTree?.id || sender.uid,
         type: 'reach',
-        title: `Reach: ${fromTree.name} -> ${thread.threadName || thread.reachTreeName || 'thread'}`,
+        title: `Reach: ${fromName} -> ${thread.threadName || thread.reachTreeName || 'thread'}`,
         body: text,
         content: text,
         reachTreeId: thread.reachTreeId,
@@ -344,9 +376,9 @@ export const sendThreadMessage = async ({
         seenBy: [],
         visibility: 'private',
         authorId: sender.uid,
-        authorName: fromTree.name,
+        authorName: fromName,
         authorPersonName: sender.displayName || undefined,
-        authorPhoto: fromTree.imageUrl || sender.photoURL || undefined,
+        authorPhoto: fromTree?.imageUrl || sender.photoURL || undefined,
     });
 };
 

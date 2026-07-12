@@ -31,11 +31,11 @@ export default defineConfig(({ mode }) => {
       plugins: [
         react(),
         // PWA: installable app + offline shell. The service worker precaches the built shell
-        // (fingerprinted js/css/html + small images) and auto-updates on each deploy. Live data
-        // stays live — Firestore/Storage requests are not cached.
+        // (fingerprinted js/css/html + small images). Live data stays live — Firestore/Storage
+        // requests are not cached. 'prompt': a fresh deploy surfaces the UpdateToast ("a new
+        // version is ready — refresh") instead of silently swapping shells one visit later.
         VitePWA({
-          registerType: 'autoUpdate',
-          injectRegister: 'script-defer',
+          registerType: 'prompt',
           includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
           manifest: {
             name: 'Lightseed — life recognising life',

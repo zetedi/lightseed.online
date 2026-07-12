@@ -54,6 +54,7 @@ import { isWateringOverdue } from './domain/watering';
 import { Loading } from './components/ui/Loading';
 import { SectionHeader } from './components/ui/SectionHeader';
 import { ScrollChevrons } from './components/ui/ScrollChevrons';
+import { UpdateToast } from './components/ui/UpdateToast';
 import { Footer } from './components/ui/Footer';
 import { PathwayCTA } from './components/PathwayCTA';
 import { usePathwayFacts } from './hooks/usePathwayFacts';
@@ -805,6 +806,8 @@ const AppContent = () => {
     return (
         <div className={`min-h-screen relative font-sans flex flex-col ${effectiveIsDark ? 'text-slate-100' : 'text-slate-800'}`}>
             <div className="fixed inset-0 z-0 pointer-events-none" style={backgroundStyle}></div>
+            {/* New-deploy prompt — the service worker waits for consent instead of silent swap. */}
+            <UpdateToast />
             {/* Page-level scroll affordance — only on the main page (hidden while a detail/modal is open). */}
             {openKeys.length === 0 && <ScrollChevrons axis="y" fixed />}
 
@@ -859,17 +862,15 @@ const AppContent = () => {
                 {/* The Pathway — THE ONE next step on the trail, for visitors and members alike.
                     Gated on pathwayFacts.loaded so the wrong stage never flashes while the
                     link-borne facts are still in flight. Dismissable per step (localStorage). */}
-                {!selectedTree && !selectedVision && !selectedPulse && pathwayFacts.loaded && (tab === 'dashboard' || tab === 'forest') && (
-                    // Mobile: pt-4 matches the dashboard container's own top padding (py-4), so the
-                    // glowing Pathway card sits at the same distance from the header as the cards do.
-                    <div className="mx-auto max-w-7xl px-4 pt-4 sm:pt-6 animate-in fade-in duration-500">
-                        <PathwayCTA
-                            input={pathwayInput}
-                            actions={pathwayActions}
-                            theme={effectiveTheme}
-                            isDark={effectiveIsDark}
-                        />
-                    </div>
+                {/* PathwayCTA owns its own wrapper spacing: when the Light Path is off or the
+                    step is dismissed it renders null — no phantom padding left behind. */}
+                {!selectedTree && !selectedVision && !selectedPulse && pathwayFacts.loaded && tab === 'dashboard' && (
+                    <PathwayCTA
+                        input={pathwayInput}
+                        actions={pathwayActions}
+                        theme={effectiveTheme}
+                        isDark={effectiveIsDark}
+                    />
                 )}
                 <Suspense fallback={<div className="min-h-[60vh] flex items-center justify-center"><Loading /></div>}>
                 {selectedTree ? (
@@ -1009,8 +1010,9 @@ const AppContent = () => {
                 inbox here, in place, instead of steering to the profile's Reaches tab. */}
             {showReachModal && lightseed && (
                 <DetailWrapper>
-                    <div className="mx-auto w-full max-w-6xl px-3 py-6 sm:px-6 lg:py-10">
-                        <div className="relative rounded-2xl bg-white p-4 pt-12 shadow-2xl sm:p-6 sm:pt-12">
+                    {/* Mobile: full-bleed, floor-to-ceiling messages; the card look returns at sm. */}
+                    <div className="mx-auto w-full max-w-6xl px-0 py-0 sm:px-6 sm:py-6 lg:py-10">
+                        <div className="relative min-h-dvh rounded-none bg-white p-3 pt-12 shadow-2xl sm:min-h-0 sm:rounded-2xl sm:p-6 sm:pt-12">
                             <button
                                 onClick={() => setShowReachModal(false)}
                                 title="Close"

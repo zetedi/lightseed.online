@@ -118,6 +118,22 @@ export const ReachInbox = ({
         [threads, hiddenThreads],
     );
 
+    // A thirsty tree jumps the queue: when the inbox opens with no selection and a thread
+    // carries a watering alert, open the first one — the care ping is one tap closer. Runs
+    // once per mount so it never fights the user's own navigation.
+    const autoOpenedRef = useRef(false);
+    useEffect(() => {
+        // An externally requested thread (map marker, tree page) always outranks the auto-open.
+        if (autoOpenedRef.current || selection.kind !== 'none' || requestedPartner) return;
+        const thirsty = visibleThreads.find(t => t.careAlert === 'watering');
+        if (!thirsty) return;
+        autoOpenedRef.current = true;
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot auto-selection once the loaded threads reveal a watering alert; guarded by autoOpenedRef so it can never loop or override the user
+        setSelection(thirsty.isGroup && thirsty.threadId
+            ? { kind: 'group', thread: { threadId: thirsty.threadId, partnerId: thirsty.partnerId, partnerName: thirsty.partnerName, partnerPhoto: thirsty.partnerPhoto, audience: thirsty.audience, participantCount: thirsty.participantCount } }
+            : { kind: 'tree', tree: { id: thirsty.partnerId, name: thirsty.partnerName, imageUrl: thirsty.partnerPhoto } as Lifetree });
+    }, [visibleThreads, selection.kind, requestedPartner]);
+
     const deleteThread = async (thread: ThreadSummary, e: React.MouseEvent) => {
         e.stopPropagation();
         const ok = await showConfirm(
@@ -138,7 +154,8 @@ export const ReachInbox = ({
 
     return (
         <div className="mx-auto max-w-5xl">
-            <div className="flex h-[70vh] gap-4">
+            {/* Mobile: fill the viewport under the overlay card's top chrome; desktop keeps 70vh. */}
+            <div className="flex h-[calc(100dvh-4.5rem)] gap-4 md:h-[70vh]">
             {/* Thread list — no card, so it sits lightly on the page and takes less room. */}
             <div className={`${hasSelection ? 'hidden md:flex' : 'flex'} w-full shrink-0 flex-col overflow-hidden md:w-72`}>
                 {/* Sits flush to the top so it lines up with the top of the message card. */}

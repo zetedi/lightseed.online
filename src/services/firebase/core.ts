@@ -31,9 +31,20 @@ export const getEnv = (key: string) => {
     return (window as any).process?.env?.[key] || (import.meta as any).env?.[key] || "";
 };
 
+// OAuth popups display — and load their helper pages (/__/auth/*) from — authDomain. Using the
+// domain the user is ALREADY on makes the Google screen say "lightseed.online" instead of the
+// firebaseapp.com project name, and keeps the helpers same-origin (which also sidesteps
+// third-party-storage popup issues). Only domains served by THIS Firebase Hosting site can do
+// that (Hosting auto-serves /__/auth/* there), and each one must first be wired up in the
+// consoles: Firebase Auth → Authorized domains, AND the Google OAuth client's JS origins +
+// redirect URI (https://<domain>/__/auth/handler). Everywhere else (localhost, previews) we
+// fall back to the env authDomain.
+const HOSTED_AUTH_DOMAINS = ['lightseed.online', 'lifeseed.online'];
+const currentHost = window.location.hostname.replace(/^www\./, '');
+
 const firebaseConfig = {
   apiKey: getEnv('VITE_FIREBASE_API_KEY'),
-  authDomain: getEnv('VITE_FIREBASE_AUTH_DOMAIN'),
+  authDomain: HOSTED_AUTH_DOMAINS.includes(currentHost) ? currentHost : getEnv('VITE_FIREBASE_AUTH_DOMAIN'),
   projectId: getEnv('VITE_FIREBASE_PROJECT_ID'),
   storageBucket: getEnv('VITE_FIREBASE_STORAGE_BUCKET'),
   messagingSenderId: getEnv('VITE_FIREBASE_MESSAGING_SENDER_ID'),

@@ -44,21 +44,26 @@ export const ForestPage = ({
   const { t } = useLanguage();
   const toggleCls = "flex cursor-pointer items-center gap-2 text-sm font-medium text-emerald-900 dark:text-emerald-100";
   // One emerald card holding the three filters. On the map it's a top-left overlay (z-20, BELOW the
-  // sticky nav's z-30) so it scrolls up under the header with the map; on the grid it sits in flow.
-  const filters = (
+  // sticky nav's z-30) stacked vertically on mobile; on the grid it sits in flow as ONE horizontal
+  // line, so the cards below stay visible.
+  const filters = (horizontal: boolean) => (
     <div className="rounded-xl border border-emerald-300 bg-emerald-50/90 px-3.5 py-2.5 shadow-sm backdrop-blur-sm dark:border-emerald-800/60 dark:bg-emerald-950/60">
-      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-x-5 sm:gap-y-2">
+      <div className={horizontal
+        ? 'flex flex-row flex-wrap items-center gap-x-3 gap-y-2 sm:gap-x-5'
+        : 'flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-x-5 sm:gap-y-2'}>
+        {/* The horizontal (list-view) line hides the icons on MOBILE only, so all three fit one
+            row there; from sm up the icons return, matching the map overlay. */}
         <label className={toggleCls}>
           <input type="checkbox" checked={showNatureTrees} onChange={(e) => setShowNatureTrees(e.target.checked)} className="h-4 w-4 rounded accent-emerald-600" />
-          <span className="flex items-center gap-1"><Icons.Nature /> {t('nature')}</span>
+          <span className="flex items-center gap-1"><span className={horizontal ? 'hidden sm:inline-flex' : 'inline-flex'}><Icons.Nature /></span> {t('nature')}</span>
         </label>
         <label className={toggleCls}>
           <input type="checkbox" checked={showUserTrees} onChange={(e) => setShowUserTrees(e.target.checked)} className="h-4 w-4 rounded accent-emerald-600" />
-          <span className="flex items-center gap-1"><Icons.Tree /> {t('lifetrees')}</span>
+          <span className="flex items-center gap-1"><span className={horizontal ? 'hidden sm:inline-flex' : 'inline-flex'}><Icons.Tree /></span> {t('lifetrees')}</span>
         </label>
         <label className={toggleCls}>
           <input type="checkbox" checked={showValidatedTrees} onChange={(e) => setShowValidatedTrees(e.target.checked)} className="h-4 w-4 rounded accent-emerald-600" />
-          <span className="flex items-center gap-1"><Icons.ShieldCheck /> {t('validated_trees')}</span>
+          <span className="flex items-center gap-1"><span className={horizontal ? 'hidden sm:inline-flex' : 'inline-flex'}><Icons.ShieldCheck /></span> {t('validated_trees')}</span>
         </label>
       </div>
     </div>
@@ -68,11 +73,11 @@ export const ForestPage = ({
       {viewMode === 'map' ? (
         <div className="relative">
           <ForestMap trees={filteredData} onView={onView} onReach={onReach} loading={loadingMore && filteredData.length === 0} onRefresh={onRefresh} primaryTree={activeTree} refreshKey={mapRefreshKey} />
-          <div className="absolute left-3 top-3 z-20 max-w-[calc(100%-1.5rem)]">{filters}</div>
+          <div className="absolute left-3 top-3 z-20 max-w-[calc(100%-1.5rem)]">{filters(false)}</div>
         </div>
       ) : (
         <>
-          <div className="mb-4 flex justify-center">{filters}</div>
+          <div className="mb-4 flex justify-center">{filters(true)}</div>
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {filteredData.length === 0 && !loadingMore ? (
               <p className="col-span-full text-center text-slate-400 py-10">{t('no_trees_found')}</p>

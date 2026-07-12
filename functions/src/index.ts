@@ -576,7 +576,7 @@ export const generateClaudeContent = onCall({
 
     const messages = Array.isArray(request.data?.messages) ? request.data.messages : [];
     const systemInstruction = String(request.data?.systemInstruction || "");
-    const model = String(request.data?.model || "claude-sonnet-4-6");
+    const model = String(request.data?.model || "claude-sonnet-5");
     const credential = request.data?.credential as { scope?: string; ownerId?: string } | undefined;
 
     // Resolve the key: BYO (user/community) first, node secret as fallback. The caller may

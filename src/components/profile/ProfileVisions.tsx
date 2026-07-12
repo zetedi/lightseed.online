@@ -87,10 +87,11 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
         {/* Non-possessive on purpose: profiles are entity-generic (Indra's net) — the menu is the entity's anatomy, not the viewer's possessions. */}
         <h3 className="text-lg font-bold">Visions</h3>
         <div className="flex items-center gap-2">
+          {/* Compact on mobile (smaller text + padding, short label) so both CTAs share one line. */}
           {onCreateVision && (
             <button
               onClick={onCreateVision}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-full font-bold shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2 active:scale-95"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 text-sm sm:px-5 sm:py-2.5 sm:text-base rounded-full font-bold shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-1.5 sm:gap-2 active:scale-95 whitespace-nowrap"
             >
               <Icons.Plus /> <span>{t('create_vision')}</span>
             </button>
@@ -98,10 +99,14 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
           <button
             onClick={handleAlignmentAnalysis}
             disabled={analyzing}
-            className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2.5 rounded-full font-bold shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 border border-amber-400/30 active:scale-95 disabled:opacity-50"
+            className="bg-amber-500 hover:bg-amber-600 text-white px-3.5 py-2 text-sm sm:px-6 sm:py-2.5 sm:text-base rounded-full font-bold shadow-lg shadow-amber-500/20 transition-all flex items-center gap-1.5 sm:gap-2 border border-amber-400/30 active:scale-95 disabled:opacity-50 whitespace-nowrap"
           >
             {analyzing ? <Loading /> : <Icons.Venn />}
-            <span>{analyzing ? 'Analyzing...' : 'Analyze Alignments'}</span>
+            <span>
+              {analyzing
+                ? 'Analyzing...'
+                : <>Analyze<span className="hidden sm:inline"> Alignments</span></>}
+            </span>
           </button>
         </div>
       </div>

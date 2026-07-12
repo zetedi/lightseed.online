@@ -59,17 +59,19 @@ export const VisionsPage = ({
                 onClick={onCreateVision}
                 className={`bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-full font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}
               >
-                <Icons.Plus className="text-yellow-300" /> <span>{t('create_vision')}</span>
+                <Icons.Plus className="text-yellow-300" /> <span className="hidden sm:inline">{t('create_vision')}</span>
               </button>
             )}
+            {/* Emerald like the New Vision button (the old amber melted into the visions-tone
+                header), with the same yellow accent on the icon. */}
             <button
               onClick={onAnalyze}
               disabled={isAnalyzingSynergy || !canAnalyze}
-              className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-full font-bold shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 border border-amber-400/30 active:scale-95 disabled:opacity-50 whitespace-nowrap"
+              className={`bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-full font-bold transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50 whitespace-nowrap ${CTA_GLOW}`}
             >
               {isAnalyzingSynergy
                 ? <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-                : <Icons.Venn />}
+                : <span className="text-yellow-300"><Icons.Venn /></span>}
               <span className="hidden sm:inline">{isAnalyzingSynergy ? t('analyzing') : t('analyze')}</span>
             </button>
           </div>

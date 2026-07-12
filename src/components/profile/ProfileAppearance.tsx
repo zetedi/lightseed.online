@@ -101,27 +101,29 @@ export const ProfileAppearance: React.FC<ProfileAppearanceProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-3">
-        <div>
+      {/* Title + buttons share the row; the explainer sits UNDER them, small — on mobile the
+          old side-by-side layout squeezed it into a nine-line sliver. */}
+      <div>
+        <div className="flex items-center justify-between gap-3">
           <h3 className="text-lg font-bold text-slate-800">{t('appearance_theme_title')}</h3>
-          <p className="mt-1 text-sm text-slate-500">{t('appearance_theme_desc')}</p>
+          <div className="flex shrink-0 gap-2">
+            <button
+              onClick={handleSaveSiteTheme}
+              disabled={savingSiteTheme || uploadingSiteLogo || uploadingSiteHero}
+              className="rounded-xl bg-teal-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-teal-600/20 transition-colors hover:bg-teal-700 disabled:opacity-50"
+            >
+              {savingSiteTheme ? t('saving') : t('save_theme')}
+            </button>
+            <button
+              onClick={handleResetSiteTheme}
+              disabled={savingSiteTheme || uploadingSiteLogo || uploadingSiteHero}
+              className="rounded-xl bg-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-300 disabled:opacity-50"
+            >
+              {t('reset')}
+            </button>
+          </div>
         </div>
-        <div className="flex shrink-0 gap-2">
-          <button
-            onClick={handleSaveSiteTheme}
-            disabled={savingSiteTheme || uploadingSiteLogo || uploadingSiteHero}
-            className="rounded-xl bg-teal-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-teal-600/20 transition-colors hover:bg-teal-700 disabled:opacity-50"
-          >
-            {savingSiteTheme ? t('saving') : t('save_theme')}
-          </button>
-          <button
-            onClick={handleResetSiteTheme}
-            disabled={savingSiteTheme || uploadingSiteLogo || uploadingSiteHero}
-            className="rounded-xl bg-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-300 disabled:opacity-50"
-          >
-            {t('reset')}
-          </button>
-        </div>
+        <p className="mt-1.5 text-xs text-slate-500">{t('appearance_theme_desc')}</p>
       </div>
 
       <AppearanceEditor

@@ -13,7 +13,7 @@ import { SectionMenu } from '../ui/SectionMenu';
 
 const CLAUDE_MODELS = [
   { id: 'claude-opus-4-8', label: 'Claude Opus 4.8 — deepest' },
-  { id: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6 — balanced' },
+  { id: 'claude-sonnet-5', label: 'Claude Sonnet 5 — balanced' },
   { id: 'claude-haiku-4-5', label: 'Claude Haiku 4.5 — fast & light' },
 ];
 
@@ -53,7 +53,7 @@ export const IntelligencePanel = ({
   const [intelligences, setIntelligences] = useState<Intelligence[]>([]);
   const [showConnect, setShowConnect] = useState(false);
   const [name, setName] = useState(scope === 'community' ? 'Our Claude' : 'Claude');
-  const [model, setModel] = useState('claude-sonnet-4-6');
+  const [model, setModel] = useState('claude-sonnet-5');
   const [apiKey, setApiKey] = useState('');
   const [busy, setBusy] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);

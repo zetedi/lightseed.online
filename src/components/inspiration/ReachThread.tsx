@@ -356,14 +356,15 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
         if (!input.trim()) return;
 
         if (mode === 'tree') {
-            if (!lightseed || !activeTree || (!selectedTree && !groupThread)) {
-                setMessages(prev => [...prev, {role: 'model', text: "Choose your active tree and a receiving tree before sending a mycelial reach."}]);
+            // A sender without a tree still speaks — as themself (the person is the node).
+            if (!lightseed || (!selectedTree && !groupThread)) {
+                setMessages(prev => [...prev, {role: 'model', text: "Choose a receiving tree before sending a mycelial reach."}]);
                 return;
             }
 
             const mycelialText = input.trim();
             setInput('');
-            setMessages(prev => [...prev, { role: 'user', text: mycelialText, authorId: lightseed.uid, authorName: activeTree.name, authorPhoto: activeTree.imageUrl }]);
+            setMessages(prev => [...prev, { role: 'user', text: mycelialText, authorId: lightseed.uid, authorName: activeTree?.name || lightseed.displayName || 'You', authorPhoto: activeTree?.imageUrl || lightseed.photoURL || undefined }]);
             setIsSending(true);
 
             try {
@@ -732,14 +733,21 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                     </button>
                 </div>
             )}
+            {/* A sender without a tree still speaks — as themself. The line keeps provenance
+                honest and quietly invites the planting. */}
+            {mode === 'tree' && lightseed && !activeTree && (
+                <div className="border-t border-emerald-100 bg-emerald-50/70 px-4 py-2 text-center text-xs text-emerald-800">
+                    🌱 You speak as yourself — plant a lifetree to speak as a tree.
+                </div>
+            )}
             <form onSubmit={handleSend} className="p-4 bg-white border-t border-slate-100 flex space-x-3 items-center sticky bottom-0 z-10">
                 <input
                     value={input}
                     onChange={e => setInput(e.target.value)}
-                    placeholder={mode === 'tree' ? `Send from ${activeTree?.name || 'your tree'} to ${headerName}...` : `Ask ${aiName}...`}
+                    placeholder={mode === 'tree' ? `Send from ${activeTree?.name || lightseed?.displayName || 'you'} to ${headerName}...` : `Ask ${aiName}...`}
                     className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-6 py-4 text-[15px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:bg-white transition-all shadow-inner placeholder:text-slate-400 placeholder:italic"
                 />
-                <button type="submit" disabled={isTyping || isSending || !input.trim() || (mode === 'tree' && ((!selectedTree && !groupThread) || !activeTree))} className="bg-emerald-600 text-white p-4 rounded-full hover:bg-emerald-700 active:scale-95 disabled:opacity-50 transition-all shadow-lg">
+                <button type="submit" disabled={isTyping || isSending || !input.trim() || (mode === 'tree' && !selectedTree && !groupThread)} title="Send" className="bg-emerald-600 text-white p-4 rounded-full hover:bg-emerald-700 active:scale-95 disabled:opacity-50 transition-all shadow-lg">
                     {isSending ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Icons.Send />}
                 </button>
             </form>

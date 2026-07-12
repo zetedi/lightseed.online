@@ -74,7 +74,21 @@ interface Props {
 
 export const PathwayCTA = ({ input, actions, theme, isDark = false }: Props) => {
   const [dismissed, setDismissed] = useState<PathwayStepKey[]>(readDismissed);
+  // "Not now" farewell — a brief, self-fading note telling the user where to relight the path.
+  // (Dismissal is PER STEP, not the global off toggle, so Settings keeps showing "on"; this
+  // message is the bridge between the two.)
+  const [farewell, setFarewell] = useState(false);
   const { stageIndex, stageCount, next, stage } = derivePathway(input);
+
+  if (farewell) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 pt-4 sm:pt-6 animate-in fade-in duration-300">
+        <p className="mx-auto max-w-2xl rounded-full border border-emerald-100 bg-emerald-50/80 px-4 py-2 text-center text-xs text-emerald-700">
+          🌙 The Light Path rests for this step — relight it anytime in Profile → Settings.
+        </p>
+      </div>
+    );
+  }
   if (!isLightPathOn() || !next || dismissed.includes(next.key)) return null;
 
   const surface = headerSurface(theme, isDark);
@@ -85,9 +99,15 @@ export const PathwayCTA = ({ input, actions, theme, isDark = false }: Props) => 
     const nextDismissed = [...dismissed, next.key];
     setDismissed(nextDismissed);
     try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextDismissed)); } catch { /* private mode */ }
+    setFarewell(true);
+    window.setTimeout(() => setFarewell(false), 6000);
   };
 
   return (
+    // The component carries its own page wrapper (padding included), so when the path is off
+    // or dismissed the null render leaves NO space behind. Mobile pt-4 matches the dashboard
+    // container's own top padding, keeping the card the same distance from the header as the cards.
+    <div className="mx-auto max-w-7xl px-4 pt-4 sm:pt-6 animate-in fade-in duration-500">
     <div className="mx-auto flex max-w-2xl flex-wrap items-center gap-4 rounded-3xl border p-5 shadow-xl"
          style={{ backgroundColor: surface.background, color: surface.text, borderColor: surface.border }}>
       <div className="min-w-0 flex-1">
@@ -115,6 +135,7 @@ export const PathwayCTA = ({ input, actions, theme, isDark = false }: Props) => 
           {CAPTIONS[next.key]}
         </button>
       </div>
+    </div>
     </div>
   );
 };
