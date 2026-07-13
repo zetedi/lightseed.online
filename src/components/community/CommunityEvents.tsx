@@ -42,6 +42,7 @@ export const CommunityEvents: React.FC<CommunityEventsProps> = ({
     <EventsSection
       scope="community"
       canEdit={canEdit}
+      scopeOwnerId={community.ownerId}
       currentUserId={currentUserId}
       currentUserName={currentUserName}
       currentUserPhoto={currentUserPhoto}

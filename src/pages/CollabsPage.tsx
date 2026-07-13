@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Icons } from '../components/ui/Icons';
+import { SuperDot } from '../components/ui/SuperDot';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { ListBox } from '../components/ui/ListBox';
 import { ViewDensityToggle } from '../components/ui/ViewDensityToggle';
@@ -280,7 +281,7 @@ export const CollabsPage = ({ theme, onSelectCommunity }: { theme?: TabTheme | n
                       <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${org.agreement === 'contract' ? 'bg-violet-100 text-violet-700' : 'bg-emerald-100 text-emerald-700'}`}>{AGREEMENT_LABEL[org.agreement]}</span>
                     </h4>
                     {isTender && (
-                      <button onClick={() => handleRemove(org)} title="Remove" className="shrink-0 rounded-full p-1.5 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"><Icons.Trash /></button>
+                      <button onClick={() => handleRemove(org)} title="Remove" className="relative shrink-0 rounded-full p-1.5 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"><Icons.Trash />{isStaff && org.createdBy !== lightseed?.uid && <SuperDot />}</button>
                     )}
                   </div>
                   {org.blurb && <p className={`mt-1 leading-relaxed text-slate-600 ${blurbClamp}`}>{org.blurb}</p>}

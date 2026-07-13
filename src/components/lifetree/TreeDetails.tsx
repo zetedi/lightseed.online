@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { showAlert } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
+import { SuperDot } from '../ui/SuperDot';
 import { AutocompleteInput } from '../ui/AutocompleteInput';
 import { type Lifetree } from '../../types';
 import { isExplicitlyValidatedTree } from '../../utils/validation';
@@ -26,6 +27,8 @@ interface TreeDetailsProps {
     isEditing: boolean;
     canEdit: boolean;
     canDelete: boolean;
+    // True when canDelete comes from staff privilege rather than ownership (amber dot).
+    deleteIsStaffOnly?: boolean;
     isSaving: boolean;
     onSave: (updates: TreeDetailsUpdates) => void;
     onCancelEdit: () => void;
@@ -44,6 +47,7 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
     isEditing,
     canEdit,
     canDelete,
+    deleteIsStaffOnly = false,
     isSaving,
     onSave,
     onCancelEdit,
@@ -295,9 +299,10 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                     </div>
                 )}
                 {isEditing && canDelete && (
-                    <button type="button" onClick={onRequestDelete} className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 py-2 text-sm font-bold text-red-600 transition-colors hover:bg-red-100">
+                    <button type="button" onClick={onRequestDelete} className="relative mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 py-2 text-sm font-bold text-red-600 transition-colors hover:bg-red-100">
                         <Icons.Trash />
                         <span>Delete this Lifetree</span>
+                        {deleteIsStaffOnly && <SuperDot />}
                     </button>
                 )}
             </div>

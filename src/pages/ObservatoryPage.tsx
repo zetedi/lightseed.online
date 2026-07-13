@@ -1,5 +1,6 @@
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from '../components/ui/Icons';
+import { MahameruAvatar } from '../components/ui/MahameruAvatar';
 import { ResonanceScan } from '../components/ui/ResonanceScan';
 import { ResonanceCard, resonanceId } from '../components/ResonancePanel';
 import { SectionHeader } from '../components/ui/SectionHeader';
@@ -149,7 +150,7 @@ export const ObservatoryPage = ({
           <ListBox tone={tone}>
             <div className="mb-4 flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white"><Icons.SparkleFill size={20} /></div>
+                <MahameruAvatar size={40} />
                 <p className="min-w-0 truncate text-sm text-slate-500">
                   {lastSynergyAt ? `${t('last_read')} ${new Date(lastSynergyAt).toLocaleDateString()}` : t('resonance_field_hint')}
                 </p>

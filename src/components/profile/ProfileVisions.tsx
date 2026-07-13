@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { showAlert, showConfirm } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
+import { MahameruAvatar } from '../ui/MahameruAvatar';
 import { Vision, VisionSynergy } from '../../types';
 import { getMyVisions, getJoinedVisions, deleteVision } from '../../services/firebase';
 import { findVisionSynergies } from '../../services/gemini';
@@ -113,7 +114,7 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
 
       {synergies.length > 0 && (
         <div className="mb-8 bg-indigo-50 border border-indigo-100 rounded-xl p-4">
-          <h4 className="font-bold text-indigo-900 mb-3 flex items-center"><Icons.SparkleFill /> <span className="ml-2">Alignment Report</span></h4>
+          <h4 className="font-bold text-indigo-900 mb-3 flex items-center"><MahameruAvatar size={20} /> <span className="ml-2">Alignment Report</span></h4>
           <div className="space-y-3">
             {synergies.map((s, i) => (
               <div key={i} className="bg-white p-3 rounded-lg shadow-sm border border-indigo-100/50">

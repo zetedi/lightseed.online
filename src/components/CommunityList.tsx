@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { showAlert } from "./ui/Dialog";
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
+import { MahameruAvatar } from './ui/MahameruAvatar';
 import { Community, Lifetree } from '../types';
 import { fetchCommunities, createCommunity, getCommunityByDomain } from '../services/firebase';
 import { communityThemePresets } from '../utils/theme';
@@ -37,7 +38,7 @@ const CommunityCard = ({ community, isGenesis = false, onSelect }: { community: 
       {!hero && <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent"></div>}
       {isGenesis && (
           <div className="absolute top-4 left-4 z-20 bg-amber-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg flex items-center gap-1 uppercase tracking-tighter">
-              <Icons.SparkleFill size={10} /> Community 0
+              <MahameruAvatar size={14} /> Community 0
           </div>
       )}
       <div className="relative z-10 p-5">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { showConfirm } from '../ui/Dialog';
 import { Icons } from '../ui/Icons';
+import { MahameruAvatar } from '../ui/MahameruAvatar';
 import { Community, Lifetree } from '../../types';
 import { getTreesByDomain, getPulsesByTreeId, updateCommunity } from '../../services/firebase';
 import { isCanonicallySealed, verifyBlockSeal, type ChainBlock } from '../../domain/chain';
@@ -201,7 +202,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
       {canEdit && (
         <div className="mt-8 border-t border-slate-100 pt-6">
           <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-            <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600"><Icons.SparkleFill /></span>
+            <MahameruAvatar size={36} className="mt-0.5" />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold text-slate-800">AI-token economy</p>
               <p className="mt-0.5 text-sm text-slate-500">Turn on “Attention-Energy” tokens for this node — trees earn tokens and spend them on deep AI. While off, AI stays free and the token balance/cost UI is hidden.</p>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { SuperDot } from '../ui/SuperDot';
 import { showAlert, showConfirm } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { SectionTitle } from '../ui/SectionTitle';
@@ -185,8 +186,9 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                                 onClick={() => handleDeleteDecision(d.id, d.title)}
                                 title="Delete this decision"
                                 aria-label="Delete this decision"
-                                className="rounded-full px-1.5 py-0.5 text-[10px] font-bold text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                                className="relative rounded-full px-1.5 py-0.5 text-[10px] font-bold text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
                               >
+                                {currentUserId !== community.ownerId && !d.isProposer && <SuperDot />}
                                 ✕
                               </button>
                             )}

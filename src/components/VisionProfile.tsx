@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { showAlert } from './ui/Dialog';
 import { Vision } from '../types';
 import { Icons } from './ui/Icons';
+import { MahameruAvatar } from './ui/MahameruAvatar';
 import { useLanguage } from '../contexts/LanguageContext';
 import { canJoinVision } from '../domain/policy';
 import { getLifetreeById } from '../services/firebase';
@@ -117,7 +118,7 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                                 disabled={isUpdating}
                                 className={`flex items-center gap-1 rounded-full px-4 py-2 text-xs font-bold shadow-sm transition-all active:scale-95 ${isJoined ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-amber-500 text-white hover:bg-amber-600'}`}
                             >
-                                <Icons.SparkleFill />
+                                <MahameruAvatar size={16} />
                                 <span>{isJoined ? 'Joined' : 'Join Vision'}</span>
                             </button>
                         )}

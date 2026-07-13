@@ -4,6 +4,7 @@ import { showAlert, showConfirm } from "./ui/Dialog";
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
+import { MahameruAvatar } from './ui/MahameruAvatar';
 import { Community, Lifetree, Pulse, Sanctuary } from '../types';
 import { updateCommunity, uploadImage, getTreesByDomain, getParticipatingTrees, deleteCommunity, getCommunityByDomain, getSanctuariesByDomain } from '../services/firebase';
 import { CommunityVision } from './community/CommunityVision';
@@ -19,6 +20,7 @@ import { CommunityCodeChain } from './community/CommunityCodeChain';
 import { CommunityAppearance } from './community/CommunityAppearance';
 import { BeingProfile, type BeingSection } from './BeingProfile';
 import { SectionTitle } from './ui/SectionTitle';
+import { SuperDot } from './ui/SuperDot';
 import { normalizeTheme } from '../utils/theme';
 import { LoreSection, loreTabs, type LoreTabId } from './about/AboutSections';
 import { NodeGrowthTree } from './about/NodeGrowthTree';
@@ -363,7 +365,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       ),
     },
     {
-      key: 'model', label: 'Growth', icon: <Icons.Sparkles />, render: () => (
+      key: 'model', label: 'Growth', icon: <MahameruAvatar size={20} />, render: () => (
         <div>
           <SectionTitle title="Growth" sub="How this node is crystallising — its trees weighted by their chain growth, links and pulses." />
           <NodeGrowthTree community={community} trees={domainTrees} onViewTree={onViewTree} />
@@ -487,8 +489,9 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
               </button>
             )}
             {canDelete && (
-              <button onClick={handleDelete} disabled={isDeleting} title="Delete community" aria-label="Delete community" className="flex items-center gap-1 rounded-full border border-red-400/30 bg-red-500/15 p-2 text-xs font-bold text-red-300 transition-colors hover:bg-red-500 hover:text-white sm:px-4 sm:py-2">
+              <button onClick={handleDelete} disabled={isDeleting} title="Delete community" aria-label="Delete community" className="relative flex items-center gap-1 rounded-full border border-red-400/30 bg-red-500/15 p-2 text-xs font-bold text-red-300 transition-colors hover:bg-red-500 hover:text-white sm:px-4 sm:py-2">
                 <Icons.Trash /><span className="hidden sm:inline">Delete</span>
+                {currentUserId !== community.ownerId && <SuperDot />}
               </button>
             )}
           </>

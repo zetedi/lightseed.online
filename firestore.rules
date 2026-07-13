@@ -329,7 +329,20 @@ service cloud.firestore {
                   .hasOnly(['title', 'body', 'content', 'imageUrl', 'imageUrls', 'eventDate', 'eventLocation', 'visibility', 'updatedAt'])
            )
 
-        // (e) Staff may mend anything.
+        // (e) The guardians' veto — a guardian of the pulse's tree may append exactly their
+        //     own uid to `vetoes` on a growth mint (consensus semantics live in
+        //     domain/guardianVeto.ts; deterministic link ids make the guardian check O(1)).
+        || (
+             resource.data.get('type', '') == 'tree_growth'
+             && exists(/databases/$(database)/documents/links/$(request.auth.uid + '__guardian__' + resource.data.get('lifetreeId', '')))
+             && request.resource.data.diff(resource.data).affectedKeys()
+                  .hasOnly(['vetoes', 'updatedAt'])
+             && request.resource.data.get('vetoes', []).hasAll(resource.data.get('vetoes', []))
+             && resource.data.get('vetoes', []).concat([request.auth.uid]).hasAll(request.resource.data.get('vetoes', []))
+             && request.auth.uid in request.resource.data.get('vetoes', [])
+           )
+
+        // (f) Staff may mend anything.
         || isStaff()
       );
       allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff() || isCommunityOwner(resource.data.communityId));
@@ -342,6 +355,13 @@ service cloud.firestore {
     }
 
     // Alignments: Read public, Write signed in
+    // The care economy (domain/support.ts): a year of support for one tree. Written ONLY by
+    // the payment rail (Cloud Functions bypass rules); the app just reads its own flows.
+    match /supports/{supportId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
     match /alignments/{id} {
       allow read: if true;
       allow create: if isSignedIn();

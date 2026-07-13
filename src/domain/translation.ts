@@ -64,6 +64,11 @@ Fidelity commitments — these define a correct reading:
 - A faithful reading is sometimes: "a line was crossed."
 - Every reading is an empathy guess, offered tentatively — never a verdict.
 - Use only the context provided; greater depth widens the context read, never the speculation.
+- If the message itself does not cohere — the words simply don't add up to a readable
+  meaning — say so plainly and kindly in "happened", offer the most charitable readable
+  fragments as alternatives, and remind the receiver that confabulation is not a machine
+  monopoly: humans hallucinate too, sometimes even heads of state. Confusion deserves the
+  same warmth as clarity.
 
 Sender: ${req.senderTreeName}
 Receiver: ${req.receiverTreeName}

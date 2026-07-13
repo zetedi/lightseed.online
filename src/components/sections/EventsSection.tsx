@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { showAlert, showConfirm } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useSession } from '../../contexts/SessionContext';
+import { SuperDot } from '../ui/SuperDot';
 import { Icons } from '../ui/Icons';
 import { Pulse } from '../../types';
 // updateEvent and deleteCommunityEvent are scope-agnostic despite the latter's name: both
@@ -53,12 +55,16 @@ interface EventsSectionProps {
   fallbackAuthorName?: string;
   // Background for list thumbnails without an image (the owner's theme accent).
   placeholderColor?: string;
+  // Who owns the scope these events live in (community keeper / profile owner). Used only
+  // to decide whether a staff viewer's delete right is privilege (amber dot) or their own.
+  scopeOwnerId?: string;
 }
 
 // Events section — list, create and edit events for any entity (community, node, personal).
 export const EventsSection: React.FC<EventsSectionProps> = ({
   scope,
   canEdit,
+  scopeOwnerId,
   currentUserId,
   currentUserName,
   currentUserPhoto,
@@ -70,6 +76,8 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
   placeholderColor,
 }) => {
   const { t } = useLanguage();
+  const { isAdmin, isSuperAdmin } = useSession();
+  const isStaff = isAdmin || isSuperAdmin;
 
   const [events, setEvents] = useState<Pulse[]>([]);
   const [eventTitle, setEventTitle] = useState('');
@@ -236,8 +244,9 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                 </button>
               )}
               {canEdit && (
-                <button onClick={(e) => { e.stopPropagation(); handleDeleteEvent(ev.id); }} title={t('delete')} className="shrink-0 rounded-full p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100">
+                <button onClick={(e) => { e.stopPropagation(); handleDeleteEvent(ev.id); }} title={t('delete')} className="relative shrink-0 rounded-full p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100">
                   <Icons.Trash />
+                  {isStaff && ev.authorId !== currentUserId && scopeOwnerId !== currentUserId && <SuperDot />}
                 </button>
               )}
             </div>

@@ -36,6 +36,18 @@ export const BEING_NOTE =
   'Every entity is a Being: lid (true name) + chain (story) + links (circle) + profile (face) — Indra’s net.';
 
 export const DATA_MODEL: ModelEntity[] = [
+  // The Being — not a collection but the concept every collection instantiates (Indra's net).
+  // Its four aspects are the four fields below; the crystal draws it in gold, apart.
+  {
+    key: 'Being', label: 'Being', collection: '∀ every collection', x: 40, y: 40,
+    note: 'the concept every entity instantiates',
+    fields: [
+      { name: 'lid', type: 'uuidv7 · the true name', pk: true },
+      { name: 'chain', type: 'pulses · the story' },
+      { name: 'links', type: 'LIN · the circle' },
+      { name: 'profile', type: 'sections · the face' },
+    ],
+  },
   {
     key: 'Person', label: 'Person', collection: 'persons', x: 40, y: 300,
     note: 'canonical identity (doc id = uid)',
@@ -245,6 +257,21 @@ export const DATA_MODEL: ModelEntity[] = [
     ],
   },
 
+  // --- The care economy -------------------------------------------------------
+  {
+    key: 'Support', label: 'Support', collection: 'supports', x: 970, y: 690,
+    note: '€21/yr → 15 carer · 3 community · 3 node',
+    fields: [
+      { name: 'id', type: 'string', pk: true },
+      { name: 'supporterUid', type: 'uid', ref: 'Person' },
+      { name: 'lifetreeId', type: 'id', ref: 'Lifetree' },
+      { name: 'eur', type: 'number' },
+      { name: 'choice', type: 'supporter|ai_need' },
+      { name: 'periodStartMs', type: 'number' },
+      { name: 'periodEndMs', type: 'number' },
+    ],
+  },
+
   // --- Intelligence commons -------------------------------------------------
   {
     key: 'Intelligence', label: 'Intelligence', collection: 'intelligences', x: 1590, y: 40,
@@ -256,6 +283,7 @@ export const DATA_MODEL: ModelEntity[] = [
       { name: 'provider', type: 'enum' },
       { name: 'model', type: 'string' },
       { name: 'public', type: 'bool' },
+      { name: 'hosted', type: 'bool?' },
       { name: 'personaId', type: 'string?', ref: 'Persona' },
       { name: 'communityIds[]', type: 'id[]', ref: 'Community', many: true },
       { name: 'memoryIds[]', type: 'id[]', ref: 'Memory', many: true },

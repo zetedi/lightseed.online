@@ -1,6 +1,11 @@
 import { useState } from 'react';
+import { useSession } from '../contexts/SessionContext';
+import { showAlert, showConfirm } from './ui/Dialog';
+import { deleteCommunityEvent } from '../services/firebase';
+import { SuperDot } from './ui/SuperDot';
 import { Pulse, Lifetree } from '../types';
 import { Icons } from './ui/Icons';
+import { MahameruAvatar } from './ui/MahameruAvatar';
 import { ProfileHero } from './ui/ProfileHero';
 import { ProfileLayout } from './ui/ProfileLayout';
 import { SectionTitle } from './ui/SectionTitle';
@@ -25,6 +30,23 @@ interface EventProfileProps {
 type EventSection = 'about' | 'participants' | 'reflect';
 
 export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, currentUserId, myTrees }: EventProfileProps) => {
+    const { isAdmin, isSuperAdmin } = useSession();
+    // Deletion mirrors the rules: the author may, and staff may. The amber dot marks the
+    // latter — power by role, not authorship.
+    const isAuthor = !!currentUserId && pulse.authorId === currentUserId;
+    const canDelete = isAuthor || isAdmin || isSuperAdmin;
+    const [isDeleting, setIsDeleting] = useState(false);
+    const handleDelete = async () => {
+        if (!(await showConfirm(`Delete the event "${pulse.title}"? This cannot be undone.`, { title: 'Delete event', confirmText: 'Delete', danger: true }))) return;
+        setIsDeleting(true);
+        try {
+            await deleteCommunityEvent(pulse.id);
+            onClose();
+        } catch (e: any) {
+            showAlert(e?.message || 'Could not delete the event.');
+            setIsDeleting(false);
+        }
+    };
     const [section, setSection] = useState<EventSection>('about');
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const images = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
@@ -52,6 +74,12 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
                                 <Icons.Pencil /> Edit
                             </button>
                         )}
+                        {canDelete && (
+                            <button onClick={handleDelete} disabled={isDeleting} className="relative flex items-center gap-1.5 rounded-full border border-red-400/40 bg-red-500/20 px-4 py-2 text-xs font-bold text-red-200 shadow-sm transition-colors hover:bg-red-500 hover:text-white disabled:opacity-50">
+                                <Icons.Trash /> Delete
+                                {!isAuthor && <SuperDot />}
+                            </button>
+                        )}
                         <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-slate-200">Event</span>
                     </div>
                 </div>
@@ -62,7 +90,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
                         {images[0] ? (
                             <img src={images[0]} className="h-full w-full object-cover" alt={pulse.title} referrerPolicy="no-referrer" />
                         ) : (
-                            <span className="text-sky-500"><Icons.Sparkles /></span>
+                            <MahameruAvatar className="h-full w-full" />
                         )}
                     </div>
                     <div className="min-w-0 flex-1">

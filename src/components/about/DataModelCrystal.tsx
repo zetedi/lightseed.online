@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { BEING_NOTE, BOX_ROW, BOX_WIDTH, DATA_MODEL, DATA_RELATIONS, boxHeaderHeight, boxHeight, type ModelEntity } from '../../domain/dataModel';
 import { buildDrawioFile, buildDrawioXml } from '../../utils/drawioExport';
 import { Icons } from '../ui/Icons';
@@ -22,6 +22,24 @@ const border = (b: Box, fx: number, fy: number) => {
 
 export const DataModelCrystal = () => {
   const [copied, setCopied] = useState(false);
+  // Drag-to-pan: the diagram is larger than the card, and a mouse deserves better than
+  // scrollbars — grab anywhere and pull. Pointer capture keeps the drag when the cursor
+  // briefly leaves the container.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
+  const dragStart = (e: React.PointerEvent) => {
+    const el = scrollRef.current;
+    if (!el || e.button !== 0) return;
+    dragRef.current = { x: e.clientX, y: e.clientY, left: el.scrollLeft, top: el.scrollTop };
+    el.setPointerCapture?.(e.pointerId);
+  };
+  const dragMove = (e: React.PointerEvent) => {
+    const d = dragRef.current, el = scrollRef.current;
+    if (!d || !el) return;
+    el.scrollLeft = d.left - (e.clientX - d.x);
+    el.scrollTop = d.top - (e.clientY - d.y);
+  };
+  const dragEnd = () => { dragRef.current = null; };
 
   const boxes = useMemo<Record<string, Box>>(() => {
     const map: Record<string, Box> = {};
@@ -68,7 +86,14 @@ export const DataModelCrystal = () => {
         </div>
       </div>
 
-      <div className="overflow-auto max-h-[78vh]">
+      <div
+        ref={scrollRef}
+        className="overflow-auto max-h-[78vh] cursor-grab select-none active:cursor-grabbing"
+        onPointerDown={dragStart}
+        onPointerMove={dragMove}
+        onPointerUp={dragEnd}
+        onPointerCancel={dragEnd}
+      >
         <svg viewBox={`0 0 ${bounds.w} ${bounds.h}`} width={bounds.w} className="h-auto max-w-none" style={{ minWidth: '760px' }} role="img" aria-label="lifeseed data model diagram">
           <defs>
             <marker id="dm-arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
@@ -109,16 +134,20 @@ export const DataModelCrystal = () => {
           })}
 
           {/* Entities. */}
-          {boxList.map(({ e, x, y, w, h }) => (
+          {boxList.map(({ e, x, y, w, h }) => {
+            // The Being wears gold: it is not one entity among the others but the concept
+            // they all instantiate.
+            const gold = e.key === 'Being';
+            return (
             <g key={e.key}>
               <clipPath id={`dm-clip-${e.key}`}><rect x={x} y={y} width={w} height={h} rx={9} /></clipPath>
               <g clipPath={`url(#dm-clip-${e.key})`}>
                 <rect x={x} y={y} width={w} height={h} fill="#0f172a" />
-                <rect x={x} y={y} width={w} height={boxHeaderHeight(e)} fill="#064e3b" />
+                <rect x={x} y={y} width={w} height={boxHeaderHeight(e)} fill={gold ? '#78350f' : '#064e3b'} />
               </g>
-              <rect x={x} y={y} width={w} height={h} rx={9} fill="none" stroke="#10b981" strokeOpacity={0.7} strokeWidth={1.2} />
-              <text x={x + 10} y={y + 17} fontSize="13" fontWeight={700} fill="#ecfdf5">{e.label}</text>
-              <text x={x + 10} y={y + 30} fontSize="9" fill="#6ee7b7">{e.collection}</text>
+              <rect x={x} y={y} width={w} height={h} rx={9} fill="none" stroke={gold ? '#f59e0b' : '#10b981'} strokeOpacity={gold ? 0.9 : 0.7} strokeWidth={gold ? 1.6 : 1.2} />
+              <text x={x + 10} y={y + 17} fontSize="13" fontWeight={700} fill={gold ? '#fef3c7' : '#ecfdf5'}>{e.label}</text>
+              <text x={x + 10} y={y + 30} fontSize="9" fill={gold ? '#fcd34d' : '#6ee7b7'}>{e.collection}</text>
               {e.note && <text x={x + 10} y={y + 44} fontSize="8" fill="#94a3b8" style={{ pointerEvents: 'none' }}>{e.note.length > 44 ? e.note.slice(0, 43) + '…' : e.note}</text>}
               {e.fields.map((f, fi) => {
                 const fy = y + boxHeaderHeight(e) + fi * ROW + 13;
@@ -131,7 +160,8 @@ export const DataModelCrystal = () => {
                 );
               })}
             </g>
-          ))}
+            );
+          })}
         </svg>
       </div>
 

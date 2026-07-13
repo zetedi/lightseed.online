@@ -4,6 +4,7 @@ import { showAlert, showConfirm } from "./ui/Dialog";
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
+import { SuperDot } from './ui/SuperDot';
 import { ValidationBadge } from './ValidationBadge';
 import { updateLifetree, setTreeStatus, getPulsesByTreeId } from '../services/firebase';
 import { Pulse, type Lifetree } from '../types';
@@ -65,6 +66,8 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const [guardianNonce, setGuardianNonce] = useState(0);
    const [isTender, setIsTender] = useState(false);
    const canDelete = isOwner || isAdmin || isSuperAdmin;
+   // The amber dot: this viewer may delete ONLY through staff privilege, not ownership.
+   const deleteIsStaffOnly = !isOwner && (isAdmin || isSuperAdmin);
    // Tending powers vest in the owner, invited co_owners/stewards, or staff — not lightweight
    // guardians (mirrors isTreeTender in firestore.rules).
    const canEdit = isOwner || isTender || isAdmin || isSuperAdmin;
@@ -220,6 +223,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                    isEditing={isEditing}
                    canEdit={canEdit}
                    canDelete={canDelete}
+                   deleteIsStaffOnly={deleteIsStaffOnly}
                    isSaving={isSaving}
                    onSave={handleSave}
                    onCancelEdit={handleCancelEdit}
@@ -375,9 +379,10 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                             onClick={() => setShowDeleteModal(true)}
                             title="Delete tree"
                             aria-label="Delete tree"
-                            className="ml-auto shrink-0 self-start rounded-full border border-red-400/30 bg-red-500/15 p-2 text-red-300 transition-colors hover:bg-red-500 hover:text-white"
+                            className="relative ml-auto shrink-0 self-start rounded-full border border-red-400/30 bg-red-500/15 p-2 text-red-300 transition-colors hover:bg-red-500 hover:text-white"
                         >
                             <Icons.Trash />
+                            {deleteIsStaffOnly && <SuperDot />}
                         </button>
                     )}
                     </div>

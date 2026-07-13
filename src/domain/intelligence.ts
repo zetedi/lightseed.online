@@ -30,6 +30,9 @@ export interface Intelligence extends Being {
   model: string;
   enabled: boolean;
   public: boolean;
+  // Node-funded: runs on the node's own credential (credentialScope 'node'), paid from the
+  // care economy's node share (domain/support.ts) — members need no key of their own.
+  hosted?: boolean;
   ownerId?: string;
   communityIds?: string[];
   memoryIds?: string[];
