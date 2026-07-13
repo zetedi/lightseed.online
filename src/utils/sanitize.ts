@@ -32,6 +32,10 @@ export const escapeHtml = (value: unknown): string =>
 // A user-supplied image URL about to be placed in a src="" attribute. Returns the escaped URL only
 // when it is an http(s) or root-relative reference; otherwise a safe placeholder — so a value like
 // `x" onerror=...` or `javascript:...` can neither break the attribute nor smuggle a scheme.
+// A quiet deep-night disc for imageless beings — a local data URI, because the old
+// via.placeholder.com service went dark and left broken white squares behind.
+export const DARK_IMAGE_FALLBACK = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%230b1b3a'/%3E%3C/svg%3E";
+
 export const safeImageUrl = (url?: string | null, fallback = ''): string => {
   const raw = String(url ?? '').trim();
   if (!raw) return fallback;

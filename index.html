@@ -39,8 +39,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet is bundled (services/leaflet.ts) — loaded lazily the first time a map renders.
+         The tile server gets a head start on its TLS handshake instead. -->
+    <link rel="preconnect" href="https://server.arcgisonline.com" crossorigin />
     <style>
       body {
         font-family: 'Inter', sans-serif;

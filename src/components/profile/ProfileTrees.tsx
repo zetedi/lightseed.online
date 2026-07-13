@@ -1,4 +1,5 @@
 import React from 'react';
+import { DARK_IMAGE_FALLBACK } from '../../utils/sanitize';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { Lifetree } from '../../types';
@@ -70,7 +71,7 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
             [...myTrees].sort((a: Lifetree, b: Lifetree) => (b.id === defaultTreeId ? 1 : 0) - (a.id === defaultTreeId ? 1 : 0)).map((tree: Lifetree) => (
               <div key={tree.id} onClick={() => onViewTree(tree)} className={`border rounded-lg p-4 hover:shadow-md cursor-pointer transition-all flex items-center justify-between group bg-white ${defaultTreeId === tree.id ? 'border-amber-300 ring-1 ring-amber-100' : 'border-emerald-100'}`}>
                 <div className="flex items-center space-x-4">
-                  <img src={tree.latestGrowthUrl || tree.imageUrl || 'https://via.placeholder.com/100'} className="w-16 h-16 rounded object-cover bg-slate-100" />
+                  <img src={tree.latestGrowthUrl || tree.imageUrl || DARK_IMAGE_FALLBACK} className="w-16 h-16 rounded object-cover bg-slate-100" />
                   <div>
                     <h3 className="font-bold text-slate-800 flex items-center gap-1.5">
                       {tree.name}
@@ -134,7 +135,7 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
             {guardedOnly.map((tree: Lifetree) => (
               <div key={tree.id} onClick={() => onViewTree(tree)} className="border border-sky-100 rounded-lg p-4 hover:shadow-md cursor-pointer transition-all flex items-center justify-between group bg-sky-50/40">
                 <div className="flex items-center space-x-4">
-                  <img src={tree.latestGrowthUrl || tree.imageUrl || 'https://via.placeholder.com/100'} className="w-16 h-16 rounded object-cover bg-slate-100" />
+                  <img src={tree.latestGrowthUrl || tree.imageUrl || DARK_IMAGE_FALLBACK} className="w-16 h-16 rounded object-cover bg-slate-100" />
                   <div>
                     <h3 className="font-bold text-slate-800 flex items-center gap-1.5">
                       {tree.name}

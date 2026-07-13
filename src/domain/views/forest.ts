@@ -16,7 +16,8 @@ export interface ForestMarker {
   validated: boolean;
 }
 
-// A tree's coordinates (handling the legacy lat/lng + lat/lng spellings), or null if unplaceable.
+// A tree's coordinates — reads latitude/longitude plus the legacy lat/lng spelling (no code
+// writes lat/lng anymore, but old documents may still carry it) — or null if unplaceable.
 export function treeCoordinates(tree: Pick<Lifetree, 'latitude' | 'longitude'>): { lat: number; lng: number } | null {
   const t = tree as any;
   const lat = Number(t.latitude ?? t.lat);

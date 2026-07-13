@@ -2,12 +2,13 @@
 import { useRef, useEffect, useMemo, useState } from 'react';
 import { type Lifetree } from '../types';
 import { isExplicitlyValidatedTree } from '../utils/validation';
-import { escapeHtml, safeImageUrl } from '../utils/sanitize';
+import { escapeHtml, safeImageUrl, DARK_IMAGE_FALLBACK } from '../utils/sanitize';
 import { isWateringOverdue } from '../domain/watering';
 import { Loading } from './ui/Loading';
 import { Icons } from './ui/Icons';
 import { treeCoordinates as getTreeCoordinates, forestMarkers } from '../domain/views/forest';
 import { firestoreStore } from '../adapters/firestore';
+import { loadLeaflet } from '../services/leaflet';
 
 interface Cluster {
     id: string;
@@ -24,13 +25,11 @@ interface StackLevel {
     lng: number;
 }
 
-// Imageless trees on the map wear a deep night-blue disc — local data URI, no external
-// placeholder service (via.placeholder.com went dark and left white circles).
-const DARK_MARKER_FALLBACK = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%230b1b3a'/%3E%3C/svg%3E";
-
 export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, primaryTree = null, refreshKey = 0 }: { trees: Lifetree[], onView: (tree: Lifetree) => void, onReach?: (tree: Lifetree) => void, loading?: boolean, onRefresh?: () => void, primaryTree?: Lifetree | null, refreshKey?: number }) => {
     const mapContainer = useRef<HTMLDivElement>(null);
     const mapInstance = useRef<any>(null);
+    const leafletRef = useRef<any>(null);
+    const containerObserverRef = useRef<ResizeObserver | null>(null);
     const markersLayer = useRef<any>(null);
     const updateMarkersRef = useRef<(L: any, force?: boolean) => void>(() => {});
     const expansionStackRef = useRef<StackLevel[]>([]);
@@ -40,6 +39,35 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
     const didInitialFocusRef = useRef(false);
 
     const [expansionStack, setExpansionStack] = useState<StackLevel[]>([]);
+    // The map fills the vertical space it's given: from wherever it starts (just under the
+    // header/filters) down to where the FOOTER still fits on screen. Everything below the map —
+    // page paddings plus the footer itself — is measured as one constant gap (it doesn't change
+    // with the map's height), so the footer's bottom lands exactly at the viewport's bottom.
+    const [mapHeight, setMapHeight] = useState<number | string>('calc(100vh - 300px)');
+    useEffect(() => {
+        const measure = () => {
+            const el = mapContainer.current;
+            if (!el) return;
+            const rect = el.getBoundingClientRect();
+            const absTop = rect.top + window.scrollY;
+            const footer = document.querySelector('footer');
+            const below = footer
+                ? footer.getBoundingClientRect().bottom - rect.bottom
+                : 16;
+            setMapHeight(Math.max(400, window.innerHeight - absTop - below));
+        };
+        // Layout above and below the map shifts without any window resize (the Light Path
+        // card dismisses, the footer's content arrives async, filters wrap) — so watch the
+        // document body itself, coalesced through rAF. The formula is a fixed point: once the
+        // height is right, re-measuring computes the same number and React bails out.
+        let raf = 0;
+        const onShift = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(measure); };
+        measure();
+        window.addEventListener('resize', onShift);
+        const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(onShift) : null;
+        ro?.observe(document.body);
+        return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', onShift); ro?.disconnect(); };
+    }, []);
     const [isMapReady, setIsMapReady] = useState(false);
     const [markerCount, setMarkerCount] = useState(0);
     const visibleTrees = useMemo(() => trees.filter(tree => getTreeCoordinates(tree)), [trees]);
@@ -47,6 +75,9 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
     // Guardian counts come from the LIN (all 'guardian' edges), fetched and grouped by tree.
     // refreshKey re-fetches after we touch a tree (e.g. join/leave a guardianship in a detail view).
     const [guardianCounts, setGuardianCounts] = useState<Map<string, number>>(new Map());
+    // Keyed on the tree ID SET, not the array identity — the parent hands us a fresh array
+    // on unrelated re-renders, and each re-fetch here is a whole-collection Firestore read.
+    const treeIdsKey = useMemo(() => visibleTrees.map(t => t.id).sort().join(','), [visibleTrees]);
     useEffect(() => {
         let alive = true;
         firestoreStore.linksByRel('guardian').then(links => {
@@ -56,10 +87,10 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
             setGuardianCounts(counts);
         }).catch(() => {});
         return () => { alive = false; };
-    }, [trees, refreshKey]);
-    // Memoized + slimmed: only fields that change a marker's appearance. Excludes
-    // name/body (heavy text, irrelevant to markers) so this isn't rebuilt megabyte-sized
-    // on every render — a major cost once the map holds hundreds of trees.
+    }, [treeIdsKey, refreshKey]);
+    // Memoized + slimmed: only fields that change a marker's appearance (name included —
+    // it labels the marker for screen readers). Excludes body/heavy text so this isn't
+    // rebuilt megabyte-sized on every render once the map holds hundreds of trees.
     const treesSignature = useMemo(() => forestMarkers(visibleTrees, guardianCounts).map(m =>
         [m.id, m.name, m.lat, m.lng, m.status, m.kind, m.imageUrl, m.growthUrl, m.guardianCount, m.validated ? 'validated' : ''].join(':')
     ).join('|') + '#' + visibleTrees.filter(t => isWateringOverdue(t)).map(t => t.id).join(','), [visibleTrees, guardianCounts]);
@@ -69,99 +100,19 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
         expansionStackRef.current = expansionStack;
     }, [expansionStack]);
 
-    // Lightseed Logo SVG String for Cluster Icon
-    const logoSvg = `
-    <svg width="100%" height="100%" viewBox="0 0 262 262" xmlns="http://www.w3.org/2000/svg">
-        <defs><clipPath id="c"><circle cx="131" cy="131" r="131" /></clipPath></defs>
-        <g>
-            <circle cx="131" cy="131" r="131" fill="white" stroke="#334155" stroke-width="7" clip-path="url(#c)" />
-            <circle cx="-35.28" cy="-29" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="-35.28" cy="35" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="-35.28" cy="99" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="-35.28" cy="163" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="-35.28" cy="227" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="-35.28" cy="291" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="20.15" cy="3" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="20.15" cy="67" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="20.15" cy="131" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="20.15" cy="195" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="20.15" cy="259" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="75.57" cy="-29" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="75.57" cy="35" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="75.57" cy="99" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="75.57" cy="163" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="75.57" cy="227" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="75.57" cy="291" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="131" cy="3" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="131" cy="67" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="131" cy="131" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="131" cy="195" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="131" cy="259" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="186.43" cy="-29" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="186.43" cy="35" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="186.43" cy="99" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="186.43" cy="163" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="186.43" cy="227" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="186.43" cy="291" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="241.85" cy="3" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="241.85" cy="67" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="241.85" cy="131" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="241.85" cy="195" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="241.85" cy="259" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="297.28" cy="-29" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="297.28" cy="35" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="297.28" cy="99" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="297.28" cy="163" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="297.28" cy="227" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="297.28" cy="291" r="64" fill="none" stroke="#334155" stroke-width=".7" clip-path="url(#c)" />
-            <circle cx="75.57" cy="99" r="16" fill="white" stroke="#334155" stroke-width="3" clip-path="url(#c)" />
-            <circle cx="75.57" cy="163" r="16" fill="white" stroke="#334155" stroke-width="3" clip-path="url(#c)" />
-            <circle cx="131" cy="67" r="16" fill="white" stroke="#334155" stroke-width="3" clip-path="url(#c)" />
-            <circle cx="131" cy="131" r="16" fill="white" stroke="#334155" stroke-width="3" clip-path="url(#c)" />
-            <circle cx="131" cy="195" r="16" fill="white" stroke="#334155" stroke-width="3" clip-path="url(#c)" />
-            <circle cx="186.43" cy="99" r="16" fill="white" stroke="#334155" stroke-width="3" clip-path="url(#c)" />
-            <circle cx="186.43" cy="163" r="16" fill="white" stroke="#334155" stroke-width="3" clip-path="url(#c)" />
-        </g>
-    </svg>`;
-
-    const getPopupOptions = (lat: number, lng: number) => {
-        const map = mapInstance.current;
-        const point = map?.latLngToContainerPoint([lat, lng]);
-        const size = map?.getSize();
-        // Vertical: flip below when the marker sits near the top edge.
-        const openBelow = point ? point.y < 170 : false;
-        // Horizontal: the popup is centred (~300px wide) — near a side edge, nudge it inward
-        // by exactly the overhang so it never opens off the map.
-        const HALF = 160;
-        let dx = 0;
-        if (point && size) {
-            if (point.x < HALF) dx = HALF - point.x;
-            else if (size.x - point.x < HALF) dx = -(HALF - (size.x - point.x));
-        }
-
-        return {
-            autoPan: false,
-            closeButton: false,
-            offset: [dx, openBelow ? 18 : -18] as [number, number],
-            className: openBelow ? 'forest-popup-below' : 'forest-popup-above',
-        };
+    // Leaflet popups are bottom-anchored and only ever grow upward — no offset or CSS class
+    // can truly flip one below its marker. So we don't fight the geometry: autoPan pans the
+    // MAP just enough for the popup to fit (the marker rides along, staying visible), on every
+    // edge, at every zoom, with zero per-open math.
+    const POPUP_OPTIONS = {
+        autoPan: true,
+        autoPanPadding: [28, 28] as [number, number],
+        closeButton: false,
+        offset: [0, -18] as [number, number],
+        maxWidth: 260,
     };
 
-    // Recompute the popup's placement at OPEN time — bind-time coordinates go stale the
-    // moment the map pans or zooms, which kept opening popups off the edge.
-    const repositionPopup = (lat: number, lng: number) => (e: any) => {
-        const fresh = getPopupOptions(lat, lng);
-        const popup = e.popup;
-        popup.options.offset = fresh.offset;
-        const el = popup.getElement && popup.getElement();
-        if (el) {
-            el.classList.remove('forest-popup-above', 'forest-popup-below');
-            el.classList.add(fresh.className);
-        }
-        popup.update();
-    };
-
-    // Declared before the polling effect below so the effect closes over the declared function.
+    // Declared before the loader effect below so the effect closes over the declared function.
     const initMap = (L: any) => {
         if (!mapContainer.current || mapInstance.current) return;
 
@@ -173,7 +124,11 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
 
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-            maxZoom: 19
+            maxZoom: 19,
+            // A ring of parked tiles for smoother panning; CORS mode so responses are
+            // non-opaque and the service worker's tile cache can actually hold them.
+            keepBuffer: 4,
+            crossOrigin: true
         }).addTo(mapInstance.current);
 
         L.control.zoom({ position: 'bottomright' }).addTo(mapInstance.current);
@@ -192,25 +147,30 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
             setExpansionStack(prev => prev.length > 0 ? [] : prev);
         });
 
-        setTimeout(() => {
+        // Leaflet caches its container size; re-measure exactly when the container's box
+        // changes (the measured mapHeight landing, sidebars, orientation) — no guessed timers.
+        const ro = new ResizeObserver(() => mapInstance.current?.invalidateSize());
+        ro.observe(mapContainer.current);
+        containerObserverRef.current = ro;
+
+        requestAnimationFrame(() => {
             mapInstance.current?.invalidateSize();
             updateMarkersRef.current(L, true);
-        }, 250);
+        });
     }
 
     useEffect(() => {
-        const checkLeaflet = setInterval(() => {
-            const L = (window as any).L;
-            if (L && mapContainer.current) {
-                clearInterval(checkLeaflet);
-                initMap(L);
-            }
-        }, 100);
-        return () => clearInterval(checkLeaflet);
+        let alive = true;
+        loadLeaflet().then(L => {
+            if (!alive) return;
+            leafletRef.current = L;
+            initMap(L);
+        });
+        return () => { alive = false; };
     }, []);
 
     useEffect(() => {
-        const L = (window as any).L;
+        const L = leafletRef.current;
         if (!L || !mapInstance.current || !isMapReady) return;
         const timer = window.setTimeout(() => {
             mapInstance.current?.invalidateSize();
@@ -221,7 +181,7 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
 
     useEffect(() => {
         if (!isMapReady || loading || visibleTreeCount === 0 || markerCount > 0) return;
-        const L = (window as any).L;
+        const L = leafletRef.current;
         if (!L || !mapInstance.current) return;
 
         const retry = window.setTimeout(() => {
@@ -232,33 +192,47 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
         return () => window.clearTimeout(retry);
     }, [isMapReady, loading, visibleTreeCount, markerCount, treesSignature, expansionSignature]);
 
-    // Default view: zoom in to frame at least the seven nearest lifetrees, so the user
-    // always lands on a populated view (not an empty ocean).
+    // Default view — everyone lands on a populated frame, never an empty ocean:
+    // with a primary lifetree, the seven nearest trees; without one (visitor, or not yet
+    // planted), the whole forest. And if the view has already left the default world frame
+    // (the user explored while data was still arriving), never yank it anywhere.
     useEffect(() => {
         if (!isMapReady || didInitialFocusRef.current) return;
-        const L = (window as any).L;
-        if (!L || !mapInstance.current || !primaryTree) return;
-        const center = getTreeCoordinates(primaryTree);
-        if (!center) return;
+        const L = leafletRef.current;
+        const map = mapInstance.current;
+        if (!L || !map) return;
+
+        const c = map.getCenter();
+        if (map.getZoom() !== 2 || Math.abs(c.lat - 20) > 0.5 || Math.abs(c.lng) > 0.5) {
+            didInitialFocusRef.current = true; // the walker moved first — their view wins
+            return;
+        }
 
         const located = visibleTrees
             .map(getTreeCoordinates)
             .filter(Boolean) as { lat: number; lng: number }[];
         if (located.length === 0) return; // trees not loaded yet — retry when they arrive
+
+        const center = primaryTree ? getTreeCoordinates(primaryTree) : null;
         didInitialFocusRef.current = true;
 
+        if (!center) {
+            map.fitBounds(L.latLngBounds(located.map(x => [x.lat, x.lng])).pad(0.2), { animate: false, maxZoom: 10 });
+            return;
+        }
+
         const nearest = located
-            .map(c => ({ c, d: (c.lat - center.lat) ** 2 + (c.lng - center.lng) ** 2 }))
+            .map(x => ({ x, d: (x.lat - center.lat) ** 2 + (x.lng - center.lng) ** 2 }))
             .sort((a, b) => a.d - b.d)
             .slice(0, 7)
-            .map(x => x.c);
+            .map(n => n.x);
 
         if (nearest.length >= 2) {
-            const bounds = L.latLngBounds(nearest.map(c => [c.lat, c.lng]));
-            mapInstance.current.fitBounds(bounds.pad(0.3), { animate: false, maxZoom: 16 });
+            const bounds = L.latLngBounds(nearest.map(x => [x.lat, x.lng]));
+            map.fitBounds(bounds.pad(0.3), { animate: false, maxZoom: 16 });
         } else {
             // Only one tree to show — fall back to a ~100 km radius around it.
-            mapInstance.current.fitBounds(L.latLng(center.lat, center.lng).toBounds(200000), { animate: false });
+            map.fitBounds(L.latLng(center.lat, center.lng).toBounds(200000), { animate: false });
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on treesSignature on purpose: visibleTrees changes identity every render; the one-shot initial focus only needs to re-run when the tree set actually changes
     }, [isMapReady, primaryTree, treesSignature]);
@@ -269,13 +243,15 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
         const guardianCount = guardianCounts.get(tree.id) || 0;
         const sizeClass = isSmall ? 'w-10 h-10' : 'w-12 h-12';
         const borderClass = isSmall ? 'border' : 'border-2';
-        const displayImage = safeImageUrl(tree.latestGrowthUrl || tree.imageUrl || (tree.id === 'GENESIS_TREE' ? '/mahameru.svg' : ''), DARK_MARKER_FALLBACK);
+        const displayImage = safeImageUrl(tree.latestGrowthUrl || tree.imageUrl || (tree.id === 'GENESIS_TREE' ? '/mahameru.svg' : ''), DARK_IMAGE_FALLBACK);
         const imgStyle = "width: 100%; height: 100%; object-fit: cover; display: block;";
         const animStyle = `animation-delay: ${delay}ms;`;
 
+        const ariaName = escapeHtml(tree.name || 'lifetree');
+
         if (isNature) {
             return `
-            <div class="marker-pop relative ${sizeClass} hover:scale-110 transition-transform duration-300 group" style="${animStyle}">
+            <div class="marker-pop relative ${sizeClass} hover:scale-110 transition-transform duration-300 group" style="${animStyle}" role="button" aria-label="${ariaName}">
                 ${isWateringOverdue(tree) ? '<div class="absolute -inset-1 rounded-full border-2 border-sky-400 animate-pulse z-20"></div>' : ''}
                 <div class="absolute inset-0 bg-sky-500 rounded-full animate-pulse opacity-20"></div>
                 <div class="relative ${sizeClass} rounded-full ${borderClass} border-white shadow-xl overflow-hidden bg-white z-10">
@@ -289,7 +265,7 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
         }
 
         return `
-        <div class="marker-pop relative ${sizeClass} hover:scale-110 transition-transform duration-300" style="${animStyle}">
+        <div class="marker-pop relative ${sizeClass} hover:scale-110 transition-transform duration-300" style="${animStyle}" role="button" aria-label="${ariaName}">
             ${isWateringOverdue(tree) ? '<div class="absolute -inset-1 rounded-full border-2 border-sky-400 animate-pulse z-20"></div>' : ''}
             <div class="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-20"></div>
             <div class="relative ${sizeClass} rounded-full ${borderClass} border-white shadow-xl overflow-hidden bg-white">
@@ -300,7 +276,7 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
         </div>`;
     }
 
-    const clusterImage = (tree: Lifetree) => safeImageUrl(tree.latestGrowthUrl || tree.imageUrl || (tree.id === 'GENESIS_TREE' ? '/mahameru.svg' : ''), DARK_MARKER_FALLBACK);
+    const clusterImage = (tree: Lifetree) => safeImageUrl(tree.latestGrowthUrl || tree.imageUrl || (tree.id === 'GENESIS_TREE' ? '/mahameru.svg' : ''), DARK_IMAGE_FALLBACK);
 
     // A cluster of nearby trees as a pie of their images (up to 4 slices, rest in the count badge).
     const getClusterPieHtml = (trees: Lifetree[], clusterId: string) => {
@@ -340,8 +316,8 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
                     <h3 class="font-bold text-sm text-slate-800 mb-1">${escapeHtml(tree.name)}</h3>
                     <p class="text-xs text-slate-500 line-clamp-2 italic mb-2">"${escapeHtml(tree.body)}"</p>
                     <div class="grid grid-cols-2 gap-2">
-                        <button class="view-btn bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-full w-full">View</button>
-                        <button class="reach-btn bg-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-full w-full">Reach</button>
+                        <button class="view-btn bg-emerald-600 text-white text-xs font-bold px-3 py-2.5 rounded-full w-full">View</button>
+                        <button class="reach-btn bg-amber-500 text-white text-xs font-bold px-3 py-2.5 rounded-full w-full">Reach</button>
                     </div>
                 </div>
             </div>
@@ -374,6 +350,9 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
         const sortedTrees = [...visibleTrees].sort((a, b) =>
             (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0)
         );
+        // The expansion stack stores tree snapshots from click time; a data refresh must not
+        // leave the open Seed of Life showing yesterday's images and statuses.
+        const liveById = new Map(visibleTrees.map(t => [t.id, t]));
 
         // Project every tree to pixel space ONCE (the costly step), then cluster on the
         // cached points with squared-distance math — avoids ~n² Leaflet projections + sqrt.
@@ -423,8 +402,7 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
                 });
                 L.marker([cluster.lat, cluster.lng], { icon })
                  .addTo(nextLayer)
-                 .bindPopup(createPopupContent(cluster.center), getPopupOptions(cluster.lat, cluster.lng))
-                 .on('popupopen', repositionPopup(cluster.lat, cluster.lng));
+                 .bindPopup(() => createPopupContent(cluster.center), POPUP_OPTIONS);
                 nextMarkerCount += 1;
 
             } else if (cluster.id === activeClusterId && topLevel) {
@@ -433,8 +411,9 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
                 const stackDepth = expansionStack.length;
                 const depthZOffset = stackDepth * 1000;
 
-                const centerTree = topLevel.trees[0];
-                const children = topLevel.trees.slice(1);
+                const levelTrees = topLevel.trees.map(t => liveById.get(t.id) || t);
+                const centerTree = levelTrees[0];
+                const children = levelTrees.slice(1);
                 const hasMore = children.length > 6;
                 // If overflow exists, reserve slot 5 (index 5) for the sub-cluster node
                 const visibleChildren = hasMore ? children.slice(0, 5) : children;
@@ -459,13 +438,13 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
                 const xPoint = map.layerPointToLatLng(L.point(centerPoint.x, centerPoint.y - 72));
                 const isDeep = expansionStack.length > 1;
                 const xHtml = `
-                <div class="marker-pop flex items-center justify-center w-8 h-8 rounded-full border-2 border-white shadow-lg cursor-pointer hover:scale-110 transition-transform"
-                     style="background:${isDeep ? '#f59e0b' : '#ef4444'};animation-delay:0ms;">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" style="width:12px;height:12px;">
+                <div class="marker-pop flex items-center justify-center w-10 h-10 rounded-full border-2 border-white shadow-lg cursor-pointer hover:scale-110 transition-transform"
+                     style="background:${isDeep ? '#f59e0b' : '#ef4444'};animation-delay:0ms;" role="button" aria-label="Close">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" style="width:14px;height:14px;">
                         <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                     </svg>
                 </div>`;
-                const xIcon = L.divIcon({ html: xHtml, className: '', iconSize: [32, 32], iconAnchor: [16, 16] });
+                const xIcon = L.divIcon({ html: xHtml, className: '', iconSize: [40, 40], iconAnchor: [20, 20] });
                 const xMarker = L.marker(xPoint, { icon: xIcon, zIndexOffset: depthZOffset + 500 });
                 xMarker.on('click', (e: any) => {
                     L.DomEvent.stopPropagation(e);
@@ -483,8 +462,7 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
                 });
                 L.marker([topLevel.lat, topLevel.lng], { icon: centerIcon, zIndexOffset: depthZOffset })
                  .addTo(nextLayer)
-                 .bindPopup(createPopupContent(centerTree), getPopupOptions(topLevel.lat, topLevel.lng))
-                 .on('popupopen', repositionPopup(topLevel.lat, topLevel.lng));
+                 .bindPopup(() => createPopupContent(centerTree), POPUP_OPTIONS);
                 nextMarkerCount += 1;
 
                 // Petals
@@ -510,8 +488,7 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
                     });
                     L.marker(childLatLng, { icon: childIcon, zIndexOffset: depthZOffset })
                      .addTo(nextLayer)
-                     .bindPopup(createPopupContent(child), getPopupOptions(childLatLng.lat, childLatLng.lng))
-                     .on('popupopen', repositionPopup(childLatLng.lat, childLatLng.lng));
+                     .bindPopup(() => createPopupContent(child), POPUP_OPTIONS);
                     nextMarkerCount += 1;
                 });
 
@@ -531,9 +508,9 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
                     }).addTo(nextLayer);
 
                     const moreHtml = `
-                    <div class="marker-pop relative w-10 h-10 cursor-pointer hover:scale-110 transition-transform duration-300" style="animation-delay:${6 * 50}ms;">
+                    <div class="marker-pop relative w-10 h-10 cursor-pointer hover:scale-110 transition-transform duration-300" style="animation-delay:${6 * 50}ms;" role="button" aria-label="${remainingTrees.length} more lifetrees">
                         <div class="absolute inset-0 drop-shadow-lg">
-                            ${logoSvg}
+                            <img src="/logo.svg" alt="" style="width:100%;height:100%;display:block;" />
                         </div>
                         <div class="absolute -top-1 -right-1 w-5 h-5 bg-emerald-600 border-2 border-white text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow z-20">
                             ${remainingTrees.length}
@@ -545,8 +522,10 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
                     const moreMarker = L.marker(moreLatLng, { icon: moreIcon, zIndexOffset: depthZOffset });
                     moreMarker.on('click', (e: any) => {
                         L.DomEvent.stopPropagation(e);
-                        // Push new level: remaining trees become the next center + petals
-                        setExpansionStack(prev => [...prev, {
+                        // Push new level: remaining trees become the next center + petals.
+                        // Guarded: a zoom/background-click can empty the stack while this
+                        // marker is still on screen — clicking it then must be a no-op.
+                        setExpansionStack(prev => prev.length === 0 ? prev : [...prev, {
                             clusterId: prev[0].clusterId,
                             trees: remainingTrees,
                             lat: topLevel.lat,
@@ -562,7 +541,7 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
                 const clusterTrees = [cluster.center, ...cluster.children];
                 const hasDanger = clusterTrees.some(t => t.status === 'DANGER');
                 const html = `
-                <div class="relative w-16 h-16 group cursor-pointer transition-transform duration-300 hover:scale-150 hover:z-[400]" style="transform-origin:center;">
+                <div class="relative w-16 h-16 group cursor-pointer transition-transform duration-300 hover:scale-150 hover:z-[400]" style="transform-origin:center;" role="button" aria-label="${count} lifetrees here">
                     <div class="absolute inset-0 drop-shadow-xl">
                         ${getClusterPieHtml(clusterTrees, cluster.id)}
                     </div>
@@ -607,6 +586,8 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
 
     useEffect(() => {
         return () => {
+            containerObserverRef.current?.disconnect();
+            containerObserverRef.current = null;
             if (mapInstance.current) {
                 mapInstance.current.remove();
                 mapInstance.current = null;
@@ -626,25 +607,25 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
                     animation: pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
                     opacity: 0;
                 }
-                .leaflet-popup.forest-popup-below .leaflet-popup-content-wrapper {
-                    margin-top: 14px;
-                }
-                .leaflet-popup.forest-popup-below .leaflet-popup-tip-container {
-                    position: absolute;
-                    top: 0;
-                    bottom: auto;
-                    left: 50%;
-                    margin-top: 0;
-                    transform: translate(-50%, -50%) rotate(180deg);
+                /* The living breath: markers pulse a few times after appearing, then rest —
+                   an always-on compositor loop per marker drains phone batteries. The danger
+                   dot keeps bouncing: it is a call for help. */
+                .marker-pop .animate-ping { animation-iteration-count: 6; }
+                .marker-pop .animate-pulse { animation-iteration-count: 8; }
+                @media (prefers-reduced-motion: reduce) {
+                    .marker-pop { animation: none; opacity: 1; }
+                    .marker-pop .animate-ping,
+                    .marker-pop .animate-pulse,
+                    .marker-pop .animate-bounce { animation: none; }
                 }
             `}</style>
             <div className="relative">
-                <div ref={mapContainer} style={{ width: '100%', height: 'calc(100vh - 300px)', minHeight: '400px', maxHeight: '760px', zIndex: 1 }} className="w-full rounded-xl shadow-inner border border-slate-700 bg-slate-900" />
+                <div ref={mapContainer} style={{ width: '100%', height: mapHeight, minHeight: '400px', zIndex: 1 }} className="w-full rounded-xl shadow-inner border border-slate-700 bg-slate-900" />
                 {onRefresh && (
                     <button
                         onClick={() => {
                             // Re-frame the primary lifetree (the default 100 km view), then reload the forest.
-                            const L = (window as any).L;
+                            const L = leafletRef.current;
                             const coords = primaryTree ? getTreeCoordinates(primaryTree) : null;
                             if (L && mapInstance.current && coords) {
                                 mapInstance.current.fitBounds(L.latLng(coords.lat, coords.lng).toBounds(200000), { animate: true });
@@ -654,13 +635,13 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
                         disabled={loading}
                         title="Refresh forest"
                         aria-label="Refresh forest"
-                        className="absolute top-3 right-3 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-lg ring-1 ring-slate-200 transition-all hover:bg-white hover:text-emerald-600 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="absolute top-3 right-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-lg ring-1 ring-slate-200 transition-all hover:bg-white hover:text-emerald-600 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <Icons.Refresh />
                     </button>
                 )}
                 {(loading || (isMapReady && visibleTreeCount > 0 && markerCount === 0)) && (
-                    <div className="absolute inset-0 z-20 flex items-center justify-center rounded-xl bg-slate-950/30 backdrop-blur-[2px]">
+                    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-slate-950/30 backdrop-blur-[2px]">
                         <div className="flex flex-col items-center gap-3 rounded-2xl bg-white/90 px-6 py-5 shadow-lg">
                             <Loading />
                             <span className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">{loading ? 'Loading Forest' : 'Rendering Trees'}</span>

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { loadLeaflet } from '../../services/leaflet';
 
 interface LocationPickerProps {
   value: { latitude: number; longitude: number } | null;
@@ -6,13 +7,14 @@ interface LocationPickerProps {
   className?: string;
 }
 
-// A small interactive Leaflet map for picking a tree's coordinates. Reuses the
-// globally-loaded Leaflet (window.L), the same as ForestMap. Tap the map to set
+// A small interactive Leaflet map for picking a tree's coordinates. Uses the same
+// bundled, lazily-loaded Leaflet as ForestMap (services/leaflet). Tap the map to set
 // the location; it also follows external updates (e.g. the "Locate" button / GPS).
 export const LocationPicker: React.FC<LocationPickerProps> = ({ value, onChange, className }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
+  const leafletRef = useRef<any>(null);
   const onChangeRef = useRef(onChange);
   // Keep the latest onChange for the map click handler without re-binding Leaflet listeners.
   useEffect(() => { onChangeRef.current = onChange; });
@@ -25,11 +27,9 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({ value, onChange,
       else markerRef.current = L.marker([lat, lng]).addTo(mapRef.current);
     };
 
-    const init = () => {
-      const L = (window as any).L;
-      if (cancelled) return;
-      if (!L || !containerRef.current) { window.setTimeout(init, 150); return; }
-      if (mapRef.current) return;
+    const init = (L: any) => {
+      leafletRef.current = L;
+      if (cancelled || !containerRef.current || mapRef.current) return;
 
       const start: [number, number] = value ? [value.latitude, value.longitude] : [20, 0];
       const map = L.map(containerRef.current, { zoomControl: true, attributionControl: false }).setView(start, value ? 13 : 2);
@@ -48,7 +48,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({ value, onChange,
       window.setTimeout(() => map.invalidateSize(), 200);
     };
 
-    init();
+    loadLeaflet().then(init);
 
     return () => {
       cancelled = true;
@@ -59,7 +59,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({ value, onChange,
 
   // Follow external coordinate changes (Locate button, GPS, image EXIF).
   useEffect(() => {
-    const L = (window as any).L;
+    const L = leafletRef.current;
     const map = mapRef.current;
     if (!L || !map || !value) return;
     if (markerRef.current) markerRef.current.setLatLng([value.latitude, value.longitude]);

@@ -58,6 +58,29 @@ export default defineConfig(({ mode }) => {
             // Never serve the SPA shell for Firebase's reserved paths: /__/* (auth helpers)
             // and /u/* (the unsubscribe Cloud Function rewrite).
             navigateFallbackDenylist: [/^\/__\//, /^\/u\//],
+            runtimeCaching: [
+              {
+                // Satellite tiles: pan/zoom and repeat visits hit the local copy first;
+                // imagery this old doesn't change under our feet.
+                urlPattern: /^https:\/\/server\.arcgisonline\.com\/.*\/tile\/.*/i,
+                handler: 'CacheFirst',
+                options: {
+                  cacheName: 'map-tiles',
+                  expiration: { maxEntries: 600, maxAgeSeconds: 60 * 60 * 24 * 30, purgeOnQuotaError: true },
+                  cacheableResponse: { statuses: [0, 200] },
+                },
+              },
+              {
+                // Tree portraits (webp'd on upload): serve cached, refresh in the background.
+                urlPattern: /^https:\/\/firebasestorage\.googleapis\.com\/.*/i,
+                handler: 'StaleWhileRevalidate',
+                options: {
+                  cacheName: 'tree-images',
+                  expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 14, purgeOnQuotaError: true },
+                  cacheableResponse: { statuses: [0, 200] },
+                },
+              },
+            ],
           },
         }),
       ],

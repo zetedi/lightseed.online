@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
@@ -467,10 +468,14 @@ export const Navigation = ({
 
             {/* Mobile menu — split into a top panel (actions + destinations) and a bottom
                 panel (About + utilities). The page shows through the transparent middle;
-                tapping there closes the menu. */}
-            {isMenuOpen && (
+                tapping there closes the menu. Portaled to <body>: inside the sticky header
+                its z-index was capped at the header's own layer (z-30, itself inside a z-20
+                wrapper), so ANY root-level overlay above z-20 painted over the open menu.
+                z-[95]: above the scroll chevrons (90) and corner switcher (40), below
+                dialogs (100). */}
+            {isMenuOpen && createPortal(
                 <div
-                    className="xl:hidden fixed inset-x-0 top-20 bottom-0 z-[1100] flex flex-col justify-between gap-2 overflow-y-auto"
+                    className="xl:hidden fixed inset-x-0 top-20 bottom-0 z-[95] flex flex-col justify-between gap-2 overflow-y-auto"
                     onClick={() => setIsMenuOpen(false)}
                 >
                     {/* TOP PANEL */}
@@ -557,7 +562,8 @@ export const Navigation = ({
                             )}
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {showLogoutConfirm && (
