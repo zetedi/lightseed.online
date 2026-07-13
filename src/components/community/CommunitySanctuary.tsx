@@ -1,22 +1,31 @@
 import React from 'react';
 import { Community, Sanctuary } from '../../types';
 import { tabTone } from '../../utils/tabTheme';
-import { SanctuarySection } from '../sections/SanctuarySection';
+import { SanctuarySection, type SanctuaryDraft } from '../sections/SanctuarySection';
 
 interface CommunitySanctuaryProps {
   community: Community;
-  // The first sanctuary rooted in this domain (earliest), shown as "The Sanctuary".
-  sanctuary: Sanctuary | null;
+  // Every sanctuary rooted in this domain THAT THE VIEWER MAY SEE (gated by the shell).
+  sanctuaries: Sanctuary[];
+  // Keepers (and staff) may consecrate new sanctuaries for this community.
+  canEdit?: boolean;
+  onCreate?: (draft: SanctuaryDraft) => Promise<void>;
+  onUploadImage?: (file: File) => Promise<string>;
+  onOpen?: (sanctuary: Sanctuary) => void;
 }
 
-// The Sanctuary tab — a thin community binding over the entity-generic SanctuarySection:
-// the shell loads the domain's first sanctuary; this supplies it plus headings and accent.
-export const CommunitySanctuary: React.FC<CommunitySanctuaryProps> = ({ community, sanctuary }) => (
+// The Sanctuaries tab — a thin community binding over the entity-generic SanctuarySection:
+// the shell loads and visibility-gates the domain's sanctuaries; this supplies headings + accent.
+export const CommunitySanctuary: React.FC<CommunitySanctuaryProps> = ({ community, sanctuaries, canEdit = false, onCreate, onUploadImage, onOpen }) => (
   <SanctuarySection
-    title="The Sanctuary"
-    sub="The first sacred place that holds this community's lifetrees."
-    sanctuary={sanctuary}
+    title="Sanctuaries"
+    sub="The sacred places that hold this community's lifetrees."
+    sanctuaries={sanctuaries}
     emptyMessage="No sanctuary has been consecrated for this community yet."
     placeholderColor={community.theme?.primary || tabTone('communities')}
+    canCreate={canEdit}
+    onCreate={onCreate}
+    onUploadImage={onUploadImage}
+    onOpen={onOpen}
   />
 );

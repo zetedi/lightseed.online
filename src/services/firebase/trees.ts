@@ -376,13 +376,36 @@ export const getTreesByDomain = async (domain: string, ownerUid?: string): Promi
 
 // Sanctuaries rooted in a community's domain, earliest first. Mirrors getTreesByDomain
 // so the "First Tree" and "The Sanctuary" tabs behave identically.
-export const getSanctuariesByDomain = async (domain: string): Promise<Sanctuary[]> => {
+export const getSanctuariesByDomain = async (domain: string, opts?: { publicOnly?: boolean }): Promise<Sanctuary[]> => {
     const normalized = normalizeDomain(domain);
-    const snap = await getDocs(query(sanctuariesCollection, where('domain', '==', normalized)));
+    const q = opts?.publicOnly
+        ? query(sanctuariesCollection, where('domain', '==', normalized), where('visibility', '==', 'public'))
+        : query(sanctuariesCollection, where('domain', '==', normalized));
+    const snap = await getDocs(q);
     return snap.docs
         .map(d => (mapDoc(d) as Sanctuary))
         .sort((a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0));
 };
+
+// Every placed sanctuary in the network — the hub map shows what the viewer may see.
+// Signed-out viewers may only query public docs (the read rule rejects wider queries).
+export const getAllSanctuaries = async (opts?: { publicOnly?: boolean }): Promise<Sanctuary[]> =>
+    (await getDocs(opts?.publicOnly ? query(sanctuariesCollection, where('visibility', '==', 'public')) : sanctuariesCollection))
+        .docs.map(d => (mapDoc(d) as Sanctuary));
+
+// Consecrate a sanctuary — community keepers do this from the Sanctuary tab.
+export const createSanctuary = async (data: Partial<Sanctuary> & { name: string; ownerId: string }) => {
+    const ref = await addDoc(sanctuariesCollection, {
+        ...Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined && v !== '')),
+        lid: uuidv7(),
+        createdAt: serverTimestamp(),
+    });
+    return ref.id;
+};
+
+// Open a sanctuary wider (or draw it back) — owner or staff, per the rules.
+export const setSanctuaryVisibility = (sanctuaryId: string, visibility: 'community' | 'node' | 'public') =>
+    updateDoc(doc(db, 'sanctuaries', sanctuaryId), { visibility });
 
 export const checkIsAdmin = async (uid: string): Promise<boolean> => (await getDoc(doc(db, 'admins', uid))).exists();
 

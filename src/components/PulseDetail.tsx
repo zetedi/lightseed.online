@@ -1,7 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pulse, Lifetree } from '../types';
 import { Icons } from './ui/Icons';
 import { ProfileHero } from './ui/ProfileHero';
+import { useSession } from '../contexts/SessionContext';
+import { firestoreStore } from '../adapters/firestore';
+import { vetoGrowthPulse } from '../services/firebase/pulses';
+import { canVeto, isVetoed, vetoProgress, type VetoInput } from '../domain/guardianVeto';
+import { showAlert, showConfirm } from './ui/Dialog';
 
 // The generic pulse view — a PROFILE, not a modal: the same ProfileHero + full-page scaffold as
 // VisionProfile / EventProfile / AlignmentView, so every entity (tree, vision, event, alignment,
@@ -21,6 +26,48 @@ export const PulseDetail = ({ pulse, onClose, backLabel = "Back", canEdit, onEdi
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const images = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
 
+    // The guardians' conscience — on a growth mint, the tree's guardians may consensus-veto
+    // (domain/guardianVeto). The chain stays append-only: a vetoed mint is marked, not erased.
+    const { lightseed } = useSession();
+    const viewerUid = lightseed?.uid;
+    const isGrowthMint = pulse.type === 'tree_growth' && !!pulse.lifetreeId;
+    const [guardianUids, setGuardianUids] = useState<string[]>([]);
+    const [vetoes, setVetoes] = useState<string[]>(pulse.vetoes || []);
+    const [isVetoing, setIsVetoing] = useState(false);
+    useEffect(() => {
+        if (!isGrowthMint) return;
+        let alive = true;
+        firestoreStore.linksTo(pulse.lifetreeId!, 'guardian')
+            .then(links => { if (alive) setGuardianUids(links.map(l => l.from)); })
+            .catch(() => {});
+        return () => { alive = false; };
+    }, [isGrowthMint, pulse.lifetreeId]);
+    // Captured once per mount — the 72h veto window doesn't need a ticking clock.
+    const [nowMs] = useState(() => Date.now());
+    const vetoInput: VetoInput = {
+        pulseType: pulse.type,
+        pulseAuthorId: pulse.authorId || '',
+        pulseCreatedAtMs: pulse.createdAt?.toMillis?.() || 0,
+        guardianUids,
+        vetoUids: vetoes,
+        nowMs,
+    };
+    const vetoed = isGrowthMint && isVetoed(vetoInput);
+    const viewerCanVeto = isGrowthMint && canVeto(vetoInput, viewerUid);
+    const progress = vetoProgress(vetoInput);
+    const handleVeto = async () => {
+        if (!viewerUid || isVetoing) return;
+        if (!(await showConfirm('Cast your veto on this mint? It stands only if every guardian agrees.', { title: 'Guardian veto', confirmText: 'Veto', danger: true }))) return;
+        setIsVetoing(true);
+        try {
+            await vetoGrowthPulse(pulse.id, viewerUid);
+            setVetoes(prev => prev.includes(viewerUid) ? prev : [...prev, viewerUid]);
+        } catch (e: any) {
+            showAlert(e?.message || 'Could not cast the veto.');
+        }
+        setIsVetoing(false);
+    };
+
     return (
         <div className="min-h-screen animate-in fade-in zoom-in-95 duration-300 pb-20 bg-slate-50">
             {/* Hero — back button + type/status chips, then avatar + title + meta. */}
@@ -35,6 +82,11 @@ export const PulseDetail = ({ pulse, onClose, backLabel = "Back", canEdit, onEdi
                             <button onClick={onEdit} className="flex items-center gap-1.5 rounded-full bg-sky-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-sky-700">
                                 <Icons.Pencil /> Edit
                             </button>
+                        )}
+                        {vetoed && (
+                            <span className="flex items-center gap-1 rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700">
+                                ⊘ Vetoed by guardians
+                            </span>
                         )}
                         {pulse.care === 'watering' && (
                             <span className="flex items-center gap-1 rounded-full bg-sky-100 px-3 py-1 text-xs font-bold text-sky-700">
@@ -130,6 +182,37 @@ export const PulseDetail = ({ pulse, onClose, backLabel = "Back", canEdit, onEdi
                         {pulse.content || pulse.body}
                     </p>
                 </div>
+
+                {/* The guardians' conscience — consensus veto on a growth mint. */}
+                {isGrowthMint && guardianUids.length > 0 && (
+                    <div className={`mt-6 rounded-2xl border p-5 shadow-sm ${vetoed ? 'border-red-200 bg-red-50' : 'border-amber-100 bg-amber-50/50'}`}>
+                        <h3 className={`mb-2 flex items-center text-xs font-bold uppercase tracking-wider ${vetoed ? 'text-red-500' : 'text-amber-600'}`}>
+                            <Icons.Shield /><span className="ml-2">Guardians' conscience</span>
+                        </h3>
+                        {vetoed ? (
+                            <p className="text-sm text-red-700">
+                                This mint was vetoed by guardian consensus — it stands on the chain, marked and discounted.
+                            </p>
+                        ) : (
+                            <div className="flex flex-wrap items-center gap-3">
+                                <p className="text-sm text-amber-800">
+                                    {progress.cast === 0
+                                        ? 'The tree\'s guardians may veto this mint in consensus.'
+                                        : `Veto: ${progress.cast} of ${progress.needed} guardians — it stands only in full agreement.`}
+                                </p>
+                                {viewerCanVeto && (
+                                    <button onClick={handleVeto} disabled={isVetoing}
+                                        className="rounded-full border border-red-300 bg-white px-4 py-1.5 text-xs font-bold text-red-600 transition-colors hover:bg-red-600 hover:text-white disabled:opacity-50">
+                                        {isVetoing ? 'Casting…' : 'Veto this mint'}
+                                    </button>
+                                )}
+                                {!viewerCanVeto && viewerUid && vetoes.includes(viewerUid) && (
+                                    <span className="text-xs font-bold text-red-500">Your veto is cast.</span>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Network Memory — the pulse's standing on the chain, kept slim. The Translation
                     Depth System moved out of the pulse profile (readings live in the reach shadow

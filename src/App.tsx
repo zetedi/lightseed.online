@@ -55,6 +55,9 @@ import { Loading } from './components/ui/Loading';
 import { SectionHeader } from './components/ui/SectionHeader';
 import { ScrollChevrons } from './components/ui/ScrollChevrons';
 import { UpdateToast } from './components/ui/UpdateToast';
+import { ToastHost, notify } from './components/ui/Toast';
+import { setSanctuaryVisibility } from './services/firebase';
+import type { Sanctuary } from './domain/sanctuary';
 import { CustomLandingPage } from './pages/CustomLandingPage';
 import { Footer } from './components/ui/Footer';
 import { PathwayCTA } from './components/PathwayCTA';
@@ -91,6 +94,7 @@ const LifetreeDetail = lazy(() => import('./components/LifetreeDetail').then(m =
 const VisionProfile = lazy(() => import('./components/VisionProfile').then(m => ({ default: m.VisionProfile })));
 const EventProfile = lazy(() => import('./components/EventProfile').then(m => ({ default: m.EventProfile })));
 const PulseDetail = lazy(() => import('./components/PulseDetail').then(m => ({ default: m.PulseDetail })));
+const SanctuaryProfile = lazy(() => import('./components/SanctuaryProfile').then(m => ({ default: m.SanctuaryProfile })));
 const GrowthPlayerModal = lazy(() => import('./components/GrowthPlayerModal').then(m => ({ default: m.GrowthPlayerModal })));
 const PlantTreeModal = lazy(() => import('./components/modals/PlantTreeModal').then(m => ({ default: m.PlantTreeModal })));
 const AuthModal = lazy(() => import('./components/modals/AuthModal').then(m => ({ default: m.AuthModal })));
@@ -148,6 +152,8 @@ const AppContent = () => {
     // Custom-landing domains: false = the organisation's own page fills the screen;
     // true = the visitor stepped through the corner seed-logo into the full app.
     const [seedView, setSeedView] = useState(false);
+    // A sanctuary opened into its own profile page (from the map marker or the Sanctuary tab).
+    const [viewingSanctuary, setViewingSanctuary] = useState<Sanctuary | null>(null);
     // The Path overview — the Light Path's full ruleset, opened from the card's label.
     const [showPathOverview, setShowPathOverview] = useState(false);
     // On non-hub domains, hold the shell until we know whether this domain has a custom
@@ -276,6 +282,12 @@ const AppContent = () => {
     // Sync the chain-lock flag from the node's community ("big red stamp"). Off until a node sets it.
     useEffect(() => {
         setChainLocked(!!(impersonatedCommunity || hostCommunity)?.chainLocked);
+    }, [impersonatedCommunity, hostCommunity]);
+
+    // The browser tab wears the community's name when a community drives the view.
+    useEffect(() => {
+        const c = impersonatedCommunity || hostCommunity;
+        document.title = c?.name ? c.name : '.seed — Lightseed, life recognising life';
     }, [impersonatedCommunity, hostCommunity]);
 
     // Sync the tokenisation flag (AI-token economy) from the node's community. Off until enabled.
@@ -646,6 +658,7 @@ const AppContent = () => {
             if (!aboutCommunity) return <div className="min-h-screen flex items-center justify-center"><Loading /></div>;
             return (
                 <CommunityProfile
+                    onViewSanctuary={setViewingSanctuary}
                     community={aboutCommunity}
                     onViewTree={(tree: Lifetree) => setSelectedTree(tree)}
                     onClose={() => setTab('dashboard')}
@@ -786,6 +799,8 @@ const AppContent = () => {
 
                 {tab === 'forest' ? (
                     <ForestPage
+                        sanctuaryDomain={(impersonatedCommunity || hostCommunity)?.domain || null}
+                        onViewSanctuary={setViewingSanctuary}
                         effectiveIsDark={effectiveIsDark}
                         showNatureTrees={showNatureTrees} setShowNatureTrees={setShowNatureTrees}
                         showUserTrees={showUserTrees} setShowUserTrees={setShowUserTrees}
@@ -876,6 +891,7 @@ const AppContent = () => {
             <div className="fixed inset-0 z-0 pointer-events-none" style={backgroundStyle}></div>
             {/* New-deploy prompt — the service worker waits for consent instead of silent swap. */}
             <UpdateToast />
+            <ToastHost />
             {/* Page-level scroll affordance — only on the main page (hidden while a detail/modal is open). */}
             {openKeys.length === 0 && <ScrollChevrons axis="y" fixed />}
 
@@ -1060,6 +1076,21 @@ const AppContent = () => {
                 </DetailWrapper>
             )}
 
+            {viewingSanctuary && (
+                <DetailWrapper>
+                    <SanctuaryProfile
+                        sanctuary={viewingSanctuary}
+                        onClose={() => setViewingSanctuary(null)}
+                        canEdit={isSuperAdmin || isAdmin || viewingSanctuary.ownerId === lightseed?.uid}
+                        onSetVisibility={async (id, v) => {
+                            await setSanctuaryVisibility(id, v);
+                            setViewingSanctuary(prev => prev && prev.id === id ? { ...prev, visibility: v } : prev);
+                            notify(`Sanctuary is now ${v === 'community' ? 'community-only' : v}.`);
+                        }}
+                    />
+                </DetailWrapper>
+            )}
+
             {editingEvent && (
                 <EventModal
                     lightseed={lightseed}
@@ -1080,6 +1111,7 @@ const AppContent = () => {
             {selectedCommunity && (
                 <DetailWrapper>
                     <CommunityProfile
+                    onViewSanctuary={setViewingSanctuary}
                         community={selectedCommunity}
                         onViewTree={(tree: Lifetree) => { setSelectedCommunity(null); setSelectedTree(tree); }}
                         onViewEvent={(p: Pulse) => { setSelectedCommunity(null); void onViewPulseOrAlignment(p); }}

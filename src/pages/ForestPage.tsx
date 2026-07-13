@@ -2,6 +2,7 @@ import React from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from '../components/ui/Icons';
 import { ForestMap } from '../components/ForestMap';
+import type { Sanctuary } from '../domain/sanctuary';
 import { LifetreeCard } from '../components/LifetreeCard';
 import { Loading } from '../components/ui/Loading';
 import type { Lifetree } from '../types';
@@ -33,6 +34,9 @@ interface ForestPageProps {
   onQuickSnap: (id: string, file: File) => Promise<void>;
   onValidate: (id: string, nextValidated: boolean) => void;
   onRefresh: () => void;
+  // Sanctuary map scope: a community's domain shows its own, null (the hub) shows all.
+  sanctuaryDomain?: string | null;
+  onViewSanctuary?: (s: Sanctuary) => void;
 }
 
 export const ForestPage = ({
@@ -40,6 +44,7 @@ export const ForestPage = ({
   showValidatedTrees, setShowValidatedTrees, viewMode, filteredData, loadingMore, activeTree,
   mapRefreshKey, isAdmin, isSuperAdmin, isInitiate, currentUserId, guardedTreeIds, sentinelRef,
   onView, onReach, onPlayGrowth, onQuickSnap, onValidate, onRefresh,
+  sanctuaryDomain = null, onViewSanctuary,
 }: ForestPageProps) => {
   const { t } = useLanguage();
   const toggleCls = "flex cursor-pointer items-center gap-2 text-sm font-medium text-emerald-900 dark:text-emerald-100";
@@ -71,10 +76,7 @@ export const ForestPage = ({
   return (
     <>
       {viewMode === 'map' ? (
-        <div className="relative">
-          <ForestMap trees={filteredData} onView={onView} onReach={onReach} loading={loadingMore && filteredData.length === 0} onRefresh={onRefresh} primaryTree={activeTree} refreshKey={mapRefreshKey} />
-          <div className="absolute left-3 top-3 z-20 max-w-[calc(100%-1.5rem)]">{filters(false)}</div>
-        </div>
+        <ForestMap trees={filteredData} onView={onView} onReach={onReach} loading={loadingMore && filteredData.length === 0} onRefresh={onRefresh} primaryTree={activeTree} refreshKey={mapRefreshKey} sanctuaryDomain={sanctuaryDomain} onViewSanctuary={onViewSanctuary} filtersOverlay={filters(false)} />
       ) : (
         <>
           <div className="mb-4 flex justify-center">{filters(true)}</div>

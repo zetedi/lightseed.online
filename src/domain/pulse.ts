@@ -94,6 +94,10 @@ export interface Pulse extends Being {
   isGroup?: boolean;        // True for circle/group reaches (a shared, multi-person thread).
   mintNotice?: boolean;     // A system line in a thread announcing someone minted the conversation.
   
+  // The guardians' veto (domain/guardianVeto): uids of guardians who vetoed this mint.
+  // Consensus semantics are derived, never stored — the chain stays append-only.
+  vetoes?: string[];
+
   // V2 AI
   aiInterpretation?: PulseInterpretation;
   validationScore?: number;

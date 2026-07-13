@@ -7,6 +7,11 @@ import { normalizePulseType, isTreeGrowth, type PulseVisibility } from '../../do
 import { isExplicitlyValidatedTree } from '../../utils/validation';
 import { buildThreadId, buildGroupThreadId, reachAudienceLabels } from '../../utils/reachPermissions';
 import { db, toMillis, mapDoc, mapPulse, pulsesCollection } from './core';
+
+// The guardians' veto — a guardian appends exactly their own uid to a growth mint's
+// vetoes (rules clause (e) enforces the shape; domain/guardianVeto derives consensus).
+export const vetoGrowthPulse = (pulseId: string, uid: string) =>
+    updateDoc(doc(db, 'pulses', pulseId), { vetoes: arrayUnion(uid), updatedAt: serverTimestamp() });
 import { isHubDomain } from './trees';
 
 const fetchPulsesRaw = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, levels?: PulseVisibility[], pageSize?: number) => {

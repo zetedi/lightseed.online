@@ -394,7 +394,11 @@ service cloud.firestore {
 
     // Sanctuaries: sacred places per domain (read public, write owner/staff).
     match /sanctuaries/{sanctuaryId} {
-      allow read: if true;
+      // Private by default: absent visibility = 'community'. Signed-out viewers see only
+      // public sanctuaries (their queries must filter visibility == 'public'); the finer
+      // community/node gate is client-side (domain/sanctuary.ts canViewSanctuary), the
+      // same tradeoff canViewTree documents.
+      allow read: if resource.data.get('visibility', 'community') == 'public' || isSignedIn();
       allow create: if isSignedIn();
       allow update, delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
     }

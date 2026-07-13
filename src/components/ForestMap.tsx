@@ -1,5 +1,5 @@
 
-import { useRef, useEffect, useMemo, useState } from 'react';
+import React, { useRef, useEffect, useMemo, useState } from 'react';
 import { type Lifetree } from '../types';
 import { isExplicitlyValidatedTree } from '../utils/validation';
 import { escapeHtml, safeImageUrl, DARK_IMAGE_FALLBACK } from '../utils/sanitize';
@@ -9,6 +9,9 @@ import { Icons } from './ui/Icons';
 import { treeCoordinates as getTreeCoordinates, forestMarkers } from '../domain/views/forest';
 import { firestoreStore } from '../adapters/firestore';
 import { loadLeaflet } from '../services/leaflet';
+import { getAllSanctuaries, getSanctuariesByDomain } from '../services/firebase/trees';
+import { canViewSanctuary, type Sanctuary } from '../domain/sanctuary';
+import { useSession } from '../contexts/SessionContext';
 
 interface Cluster {
     id: string;
@@ -25,11 +28,18 @@ interface StackLevel {
     lng: number;
 }
 
-export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, primaryTree = null, refreshKey = 0 }: { trees: Lifetree[], onView: (tree: Lifetree) => void, onReach?: (tree: Lifetree) => void, loading?: boolean, onRefresh?: () => void, primaryTree?: Lifetree | null, refreshKey?: number }) => {
+// A sanctuary rides the map as a being like any other — this pseudo-tree shape lets it join
+// the same clustering, petal expansion and popup plumbing the trees use.
+type MapBeing = Lifetree & { __sanctuary?: Sanctuary };
+
+export const ForestMap = ({ trees, onView, onReach, onViewSanctuary, loading = false, onRefresh, primaryTree = null, refreshKey = 0, sanctuaryDomain = null, filtersOverlay = null }: { trees: Lifetree[], onView: (tree: Lifetree) => void, onReach?: (tree: Lifetree) => void, onViewSanctuary?: (s: Sanctuary) => void, loading?: boolean, onRefresh?: () => void, primaryTree?: Lifetree | null, refreshKey?: number, sanctuaryDomain?: string | null, filtersOverlay?: React.ReactNode }) => {
     const mapContainer = useRef<HTMLDivElement>(null);
     const mapInstance = useRef<any>(null);
     const leafletRef = useRef<any>(null);
     const containerObserverRef = useRef<ResizeObserver | null>(null);
+    // The filters overlay lives INSIDE the map container's stacking context, below the popup
+    // pane (700) — so an opening marker popup paints ABOVE the filters, not under them.
+    const overlayRef = useRef<HTMLDivElement>(null);
     const markersLayer = useRef<any>(null);
     const updateMarkersRef = useRef<(L: any, force?: boolean) => void>(() => {});
     const expansionStackRef = useRef<StackLevel[]>([]);
@@ -37,6 +47,21 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
     // Ensures we only auto-frame the primary lifetree once (not on every data refresh,
     // so we never yank the view back while the user is panning around).
     const didInitialFocusRef = useRef(false);
+
+    // Sanctuary visibility needs the viewer: who they are, whether staff, which communities
+    // they belong to (member links). Fetched once per sign-in.
+    const { lightseed, isAdmin, isSuperAdmin } = useSession();
+    const viewerUid = lightseed?.uid;
+    const [memberCommunityIds, setMemberCommunityIds] = useState<Set<string>>(new Set());
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- reset-on-signout before the async links fetch below (same pattern as CommunityProfile's guardedTreeIds)
+        if (!viewerUid) { setMemberCommunityIds(prev => prev.size === 0 ? prev : new Set()); return; }
+        let alive = true;
+        firestoreStore.linksFrom(viewerUid, 'member')
+            .then(links => { if (alive) setMemberCommunityIds(new Set(links.map(l => l.to))); })
+            .catch(() => {});
+        return () => { alive = false; };
+    }, [viewerUid]);
 
     const [expansionStack, setExpansionStack] = useState<StackLevel[]>([]);
     // The map fills the vertical space it's given: from wherever it starts (just under the
@@ -54,7 +79,7 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
             const below = footer
                 ? footer.getBoundingClientRect().bottom - rect.bottom
                 : 16;
-            setMapHeight(Math.max(400, window.innerHeight - absTop - below));
+            setMapHeight(Math.max(480, window.innerHeight - absTop - below + 16));
         };
         // Layout above and below the map shifts without any window resize (the Light Path
         // card dismisses, the footer's content arrives async, filters wrap) — so watch the
@@ -88,6 +113,38 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
         }).catch(() => {});
         return () => { alive = false; };
     }, [treeIdsKey, refreshKey]);
+    // Sanctuaries — sacred places on the map. Scoped like the trees: a community domain
+    // shows its own, the hub shows them all.
+    const [allSanctuaries, setAllSanctuaries] = useState<Sanctuary[]>([]);
+    useEffect(() => {
+        let alive = true;
+        // Signed-out viewers may only query public docs — the read rule rejects wider queries.
+        const opts = { publicOnly: !viewerUid };
+        (sanctuaryDomain ? getSanctuariesByDomain(sanctuaryDomain, opts) : getAllSanctuaries(opts))
+            .then(list => {
+                if (!alive) return;
+                setAllSanctuaries(list.filter(x => Number.isFinite(x.latitude) && Number.isFinite(x.longitude)));
+            })
+            .catch(() => {});
+        return () => { alive = false; };
+    }, [sanctuaryDomain, refreshKey, viewerUid]);
+    // Private by default: only what THIS viewer may see glows on the map.
+    const sanctuaries = useMemo(
+        () => allSanctuaries.filter(s => canViewSanctuary(s, { uid: viewerUid, isStaff: isAdmin || isSuperAdmin, memberCommunityIds })),
+        [allSanctuaries, viewerUid, isAdmin, isSuperAdmin, memberCommunityIds],
+    );
+    const sanctuariesSignature = sanctuaries.map(x => [x.id, x.latitude, x.longitude, x.imageUrl || '', x.splatUrl || ''].join(':')).join('|');
+    const sanctuaryBeings = useMemo<MapBeing[]>(() => sanctuaries.map(s => ({
+        id: `sanctuary__${s.id}`,
+        name: s.name,
+        ownerId: s.ownerId || '',
+        latitude: s.latitude,
+        longitude: s.longitude,
+        imageUrl: s.imageUrl || '/mahameru.svg',
+        createdAt: s.createdAt,
+        __sanctuary: s,
+    } as MapBeing)), [sanctuaries]);
+
     // Memoized + slimmed: only fields that change a marker's appearance (name included —
     // it labels the marker for screen readers). Excludes body/heavy text so this isn't
     // rebuilt megabyte-sized on every render once the map holds hundreds of trees.
@@ -165,6 +222,12 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
             if (!alive) return;
             leafletRef.current = L;
             initMap(L);
+            // The filters overlay sits inside Leaflet's container: without this, tapping a
+            // filter would double as a map click (collapsing expansions, closing popups).
+            if (overlayRef.current) {
+                L.DomEvent.disableClickPropagation(overlayRef.current);
+                L.DomEvent.disableScrollPropagation(overlayRef.current);
+            }
         });
         return () => { alive = false; };
     }, []);
@@ -177,7 +240,7 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
             updateMarkersRef.current(L);
         }, 50);
         return () => window.clearTimeout(timer);
-    }, [treesSignature, expansionSignature, loading, isMapReady]);
+    }, [treesSignature, expansionSignature, sanctuariesSignature, loading, isMapReady]);
 
     useEffect(() => {
         if (!isMapReady || loading || visibleTreeCount === 0 || markerCount > 0) return;
@@ -238,6 +301,19 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
     }, [isMapReady, primaryTree, treesSignature]);
 
     const getHtmlForTree = (tree: Lifetree, isSmall = false, delay = 0) => {
+        const sanct = (tree as MapBeing).__sanctuary;
+        if (sanct) {
+            const size = isSmall ? 'w-10 h-10' : 'w-12 h-12';
+            const img = safeImageUrl(sanct.imageUrl || '/mahameru.svg', DARK_IMAGE_FALLBACK);
+            return `
+            <div class="marker-pop relative ${size} hover:scale-110 transition-transform duration-300" style="animation-delay: ${delay}ms;" role="button" aria-label="${escapeHtml(sanct.name)} — sanctuary">
+                <div class="sanctuary-glow absolute -inset-4 rounded-full"></div>
+                <div class="absolute -inset-1 rounded-full border-2 border-yellow-300/90"></div>
+                <div class="relative ${size} rounded-full border-2 border-amber-400 overflow-hidden bg-[#04070f] shadow-xl z-10">
+                    <img src="${img}" style="width:100%;height:100%;object-fit:cover;display:block;" />
+                </div>
+            </div>`;
+        }
         const isNature = tree.isNature;
         const isDanger = tree.status === 'DANGER';
         const guardianCount = guardianCounts.get(tree.id) || 0;
@@ -307,6 +383,8 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
     };
 
     const createPopupContent = (tree: Lifetree) => {
+        const sanct = (tree as MapBeing).__sanctuary;
+        if (sanct) return createSanctuaryPopup(sanct);
         const displayImage = safeImageUrl(tree.latestGrowthUrl || tree.imageUrl);
         const div = document.createElement('div');
         div.innerHTML = `
@@ -333,6 +411,29 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
         return div;
     }
 
+    const createSanctuaryPopup = (s: Sanctuary) => {
+        const div = document.createElement('div');
+        div.innerHTML = `
+            <div class="text-center min-w-[170px]">
+                ${s.imageUrl ? `<img src="${safeImageUrl(s.imageUrl)}" style="width:100%;height:110px;object-fit:cover;display:block;" class="rounded-t-lg" />` : ''}
+                <div class="p-2.5">
+                    <p class="text-[9px] font-bold uppercase tracking-[0.22em] text-amber-500">Sanctuary</p>
+                    <h3 class="font-bold text-sm text-slate-800 mt-0.5">${escapeHtml(s.name)}</h3>
+                    ${s.locationName ? `<p class="text-[10px] text-slate-400 mt-0.5">${escapeHtml(s.locationName)}</p>` : ''}
+                    ${s.body ? `<p class="text-xs text-slate-500 line-clamp-2 italic mt-1">${escapeHtml(s.body)}</p>` : ''}
+                    <div class="mt-2 grid ${s.splatUrl ? 'grid-cols-2' : 'grid-cols-1'} gap-2">
+                        <button class="sanctuary-view-btn bg-emerald-600 text-white text-xs font-bold px-3 py-2.5 rounded-full w-full">View</button>
+                        ${s.splatUrl ? `<a href="${safeImageUrl(s.splatUrl)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-full bg-amber-500 px-3 py-2.5 text-xs font-bold text-white">In 3D ✦</a>` : ''}
+                    </div>
+                </div>
+            </div>`;
+        div.querySelector('.sanctuary-view-btn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            onViewSanctuary?.(s);
+        });
+        return div;
+    };
+
     const updateMarkers = (L: any, force = false) => {
         if (!markersLayer.current || !mapInstance.current) return;
 
@@ -342,17 +443,19 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
         const map = mapInstance.current;
         const nextLayer = L.layerGroup();
         let nextMarkerCount = 0;
-        const renderKey = `${map.getZoom?.() || ''}|${treesSignature}|${expansionSignature}|${loading ? 'loading' : 'ready'}`;
+        const renderKey = `${map.getZoom?.() || ''}|${treesSignature}|${expansionSignature}|${sanctuariesSignature}|${loading ? 'loading' : 'ready'}`;
 
         if (!force && renderKey === lastMarkerRenderKeyRef.current) return;
         lastMarkerRenderKeyRef.current = renderKey;
 
-        const sortedTrees = [...visibleTrees].sort((a, b) =>
+        // One field of beings: trees and sanctuaries cluster together, petal out together —
+        // a sanctuary never hides a tree, it stands beside it in the same Seed of Life.
+        const sortedTrees = ([...visibleTrees, ...sanctuaryBeings] as MapBeing[]).sort((a, b) =>
             (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0)
         );
-        // The expansion stack stores tree snapshots from click time; a data refresh must not
+        // The expansion stack stores snapshots from click time; a data refresh must not
         // leave the open Seed of Life showing yesterday's images and statuses.
-        const liveById = new Map(visibleTrees.map(t => [t.id, t]));
+        const liveById = new Map(sortedTrees.map(t => [t.id, t]));
 
         // Project every tree to pixel space ONCE (the costly step), then cluster on the
         // cached points with squared-distance math — avoids ~n² Leaflet projections + sqrt.
@@ -607,6 +710,15 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
                     animation: pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
                     opacity: 0;
                 }
+                @keyframes sanctuary-breathe {
+                    0%, 100% { opacity: 0.55; transform: scale(1); }
+                    50% { opacity: 0.95; transform: scale(1.12); }
+                }
+                .sanctuary-glow {
+                    background: radial-gradient(circle, rgba(253,224,71,0.55) 0%, rgba(252,211,77,0.25) 55%, transparent 78%);
+                    animation: sanctuary-breathe 3.2s ease-in-out infinite;
+                    pointer-events: none;
+                }
                 /* The living breath: markers pulse a few times after appearing, then rest —
                    an always-on compositor loop per marker drains phone batteries. The danger
                    dot keeps bouncing: it is a call for help. */
@@ -617,10 +729,17 @@ export const ForestMap = ({ trees, onView, onReach, loading = false, onRefresh, 
                     .marker-pop .animate-ping,
                     .marker-pop .animate-pulse,
                     .marker-pop .animate-bounce { animation: none; }
+                    .sanctuary-glow { animation: none; opacity: 0.7; }
                 }
             `}</style>
             <div className="relative">
-                <div ref={mapContainer} style={{ width: '100%', height: mapHeight, minHeight: '400px', zIndex: 1 }} className="w-full rounded-xl shadow-inner border border-slate-700 bg-slate-900" />
+                <div ref={mapContainer} style={{ width: '100%', height: mapHeight, minHeight: '480px', zIndex: 1 }} className="w-full rounded-xl shadow-inner border border-slate-700 bg-slate-900">
+                    {filtersOverlay && (
+                        <div ref={overlayRef} className="absolute left-3 top-3 max-w-[calc(100%-1.5rem)]" style={{ zIndex: 350 }}>
+                            {filtersOverlay}
+                        </div>
+                    )}
+                </div>
                 {onRefresh && (
                     <button
                         onClick={() => {

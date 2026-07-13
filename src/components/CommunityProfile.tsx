@@ -6,7 +6,7 @@ import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
 import { MahameruAvatar } from './ui/MahameruAvatar';
 import { Community, Lifetree, Pulse, Sanctuary } from '../types';
-import { updateCommunity, uploadImage, getTreesByDomain, getParticipatingTrees, deleteCommunity, getCommunityByDomain, getSanctuariesByDomain } from '../services/firebase';
+import { updateCommunity, uploadImage, getTreesByDomain, getParticipatingTrees, deleteCommunity, getCommunityByDomain, getSanctuariesByDomain, createSanctuary } from '../services/firebase';
 import { CommunityVision } from './community/CommunityVision';
 import { CommunityCouncil } from './community/CommunityCouncil';
 import { CommunityEvents } from './community/CommunityEvents';
@@ -22,6 +22,8 @@ import { BeingProfile, type BeingSection } from './BeingProfile';
 import { SectionTitle } from './ui/SectionTitle';
 import { SuperDot } from './ui/SuperDot';
 import { normalizeTheme } from '../utils/theme';
+import { canViewSanctuary, type Sanctuary as SanctuaryType } from '../domain/sanctuary';
+import { notify } from './ui/Toast';
 import { LoreSection, loreTabs, type LoreTabId } from './about/AboutSections';
 import { NodeGrowthTree } from './about/NodeGrowthTree';
 import { queryableLevels } from '../domain/pulseVisibility';
@@ -34,6 +36,7 @@ interface CommunityProfileProps {
   onUpdate?: (updates: Partial<Community>) => void;
   onClose: () => void;
   onViewTree?: (tree: Lifetree) => void;
+  onViewSanctuary?: (s: SanctuaryType) => void;
   // Open an event's page. Seeing an event implies at least viewer rights, so this is
   // offered to everyone — not gated behind edit permissions.
   onViewEvent?: (event: Pulse) => void;
@@ -50,6 +53,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   onViewTree,
   onViewEvent,
   onEnterCommunityView,
+  onViewSanctuary,
 }) => {
   const { t } = useLanguage();
   // Session-derived values from context (were prop-drilled from App).
@@ -160,8 +164,14 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     getSanctuariesByDomain(community.domain).then(setSanctuaries).catch(() => {});
   }, [community.domain]);
 
-  // The first sanctuary rooted in this domain (earliest), shown as "The Sanctuary".
-  const firstSanctuary = sanctuaries[0] || null;
+  // The sanctuaries rooted in this domain THAT THIS VIEWER MAY SEE —
+  // sanctuaries are private (community-level) by default.
+  const viewableSanctuaries = useMemo(() => sanctuaries.filter(s => canViewSanctuary(s, {
+    uid: currentUserId,
+    isStaff: isSuperAdmin || isAdmin,
+    memberCommunityIds: isMember ? new Set([community.id]) : new Set(),
+  })), [sanctuaries, currentUserId, isSuperAdmin, isAdmin, isMember, community.id]);
+
 
   // The first lifetree rooted in this community's domain (earliest planted).
   const domainTrees = useMemo(() => {
@@ -226,6 +236,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       const fresh = await getCommunityByDomain(community.domain);
       if (onUpdate) onUpdate(fresh ? { ...fresh } : updates);
       setStatus('Saved.');
+      notify('🌱 Saved.');
       setTimeout(() => setStatus(null), 2500);
     } catch (e) {
       console.error(e);
@@ -347,8 +358,26 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       ),
     },
     {
-      key: 'sanctuary', label: 'The Sanctuary', icon: <Icons.Sun />, render: () => (
-        <CommunitySanctuary community={community} sanctuary={firstSanctuary} />
+      key: 'sanctuary', label: 'Sanctuaries', icon: <Icons.Sun />, render: () => (
+        <CommunitySanctuary
+          community={community}
+          sanctuaries={viewableSanctuaries}
+          canEdit={canEdit}
+          onCreate={async (draft) => {
+            if (!currentUserId) return;
+            await createSanctuary({
+              ...draft,
+              ownerId: currentUserId,
+              domain: community.domain,
+              communityId: community.id,
+              communityIds: [community.id],
+            });
+            getSanctuariesByDomain(community.domain).then(setSanctuaries).catch(() => {});
+            notify('🌞 Sanctuary consecrated.');
+          }}
+          onUploadImage={(file) => uploadImage(file, `communities/${community.id}/sanctuaries/${file.name}`)}
+          onOpen={onViewSanctuary}
+        />
       ),
     },
     {

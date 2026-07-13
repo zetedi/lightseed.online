@@ -226,7 +226,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
             </div>
             <div className="flex gap-2 mt-auto pb-4">
               <button onClick={() => setPlantStep(1)} className={`flex-1 py-3 rounded-xl font-bold uppercase tracking-widest transition-all ${treeType !== 'GUARDED' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Back</button>
-              <button onClick={() => setPlantStep(3)} className="flex-[2] py-3 rounded-xl font-bold uppercase tracking-widest bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg transition-all flex items-center justify-center gap-2"><span>Next</span><span className="sm:hidden animate-bounce"><Icons.ChevronRight className="rotate-90" /></span><span className="hidden sm:inline"><Icons.ChevronRight /></span></button>
+              <button onClick={() => setPlantStep(treeType === 'GUARDED' ? 4 : 3)} className="flex-[2] py-3 rounded-xl font-bold uppercase tracking-widest bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg transition-all flex items-center justify-center gap-2"><span>Next</span><span className="sm:hidden animate-bounce"><Icons.ChevronRight className="rotate-90" /></span><span className="hidden sm:inline"><Icons.ChevronRight /></span></button>
             </div>
           </div>
         )}
@@ -273,8 +273,8 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
         {plantStep === 4 && (
           <div className={`flex-1 flex flex-col gap-6 ${stepAnim}`}>
             <div className={`text-center ${treeType !== 'GUARDED' ? 'text-white' : 'text-slate-800'}`}>
-              <h2 className="text-xl font-bold mb-2">Imagine</h2>
-              <p className="text-sm opacity-70">Upload a portrait of your tree — or let AI imagine one from your vision.</p>
+              <h2 className="text-xl font-bold mb-2">{treeType === 'GUARDED' ? 'A Photo' : 'Imagine'}</h2>
+              <p className="text-sm opacity-70">{treeType === 'GUARDED' ? 'Add a photo of the tree you guard — or skip and simply place it on the map.' : 'Upload a portrait of your tree — or let AI imagine one from your vision.'}</p>
             </div>
             <div className="flex-1 flex flex-col gap-3 min-h-[220px]">
               <ImagePicker
@@ -287,19 +287,19 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
                 isDark={treeType !== 'GUARDED'}
                 className="h-full min-h-[180px]"
               />
-              <button
+              {treeType !== 'GUARDED' && <button
                 type="button"
                 onClick={handleImagine}
                 disabled={isImagining || uploading}
-                className={`flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-50 ${treeType !== 'GUARDED' ? 'bg-white/10 text-white hover:bg-white/20 border border-white/20' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'}`}
+                className="flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-50 bg-white/10 text-white hover:bg-white/20 border border-white/20"
               >
                 {isImagining ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div> : <Icons.Wizard />}
                 <span>{isImagining ? 'Imagining…' : 'Imagine with AI'}</span>
-              </button>
+              </button>}
               {imagineError && <p className={`rounded-lg px-3 py-2 text-xs ${treeType !== 'GUARDED' ? 'bg-red-500/20 text-red-100' : 'bg-red-50 text-red-600'}`}>{imagineError}</p>}
             </div>
             <div className="flex gap-2 mt-auto pb-4">
-              <button onClick={() => setPlantStep(3)} className={`flex-1 py-3 rounded-xl font-bold uppercase tracking-widest transition-all ${treeType !== 'GUARDED' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Back</button>
+              <button onClick={() => setPlantStep(treeType === 'GUARDED' ? 2 : 3)} className={`flex-1 py-3 rounded-xl font-bold uppercase tracking-widest transition-all ${treeType !== 'GUARDED' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Back</button>
               <button onClick={() => setPlantStep(5)} className="flex-[2] py-3 rounded-xl font-bold uppercase tracking-widest bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg transition-all flex items-center justify-center gap-2"><span>Next</span><span className="sm:hidden animate-bounce"><Icons.ChevronRight className="rotate-90" /></span><span className="hidden sm:inline"><Icons.ChevronRight /></span></button>
             </div>
           </div>
