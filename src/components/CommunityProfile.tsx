@@ -6,7 +6,7 @@ import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
 import { MahameruAvatar } from './ui/MahameruAvatar';
 import { Community, Lifetree, Pulse, Sanctuary } from '../types';
-import { updateCommunity, uploadImage, getTreesByDomain, getParticipatingTrees, deleteCommunity, getCommunityByDomain, getSanctuariesByDomain, createSanctuary } from '../services/firebase';
+import { updateCommunity, uploadImage, getTreesByDomain, getParticipatingTrees, deleteCommunity, getCommunityByDomain, getSanctuariesByDomain, getSanctuariesByCommunity, getAllSanctuaries, createSanctuary, adoptSanctuary } from '../services/firebase';
 import { CommunityVision } from './community/CommunityVision';
 import { CommunityCouncil } from './community/CommunityCouncil';
 import { CommunityEvents } from './community/CommunityEvents';
@@ -164,8 +164,34 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   }, [community.domain, currentUserId]);
 
   useEffect(() => {
-    getSanctuariesByDomain(community.domain).then(setSanctuaries).catch(() => {});
-  }, [community.domain, sanctuarySignal]);
+    // Rooted here (by domain) PLUS stepped-into (by communityIds), deduped. Signed-out
+    // viewers may only run public-provable queries — the read rule refuses the rest.
+    const publicOnly = !currentUserId;
+    Promise.all([
+      getSanctuariesByDomain(community.domain, { publicOnly }).catch(() => [] as Sanctuary[]),
+      publicOnly ? Promise.resolve([] as Sanctuary[]) : getSanctuariesByCommunity(community.id).catch(() => [] as Sanctuary[]),
+    ]).then(([byDomain, byBelonging]) => {
+      const seen = new Set<string>();
+      setSanctuaries([...byDomain, ...byBelonging].filter(s => !seen.has(s.id) && seen.add(s.id) !== undefined));
+    }).catch(() => {});
+  }, [community.domain, community.id, currentUserId, sanctuarySignal]);
+
+  // Sanctuaries elsewhere in the network this community could step into — keepers only.
+  const [adoptable, setAdoptable] = useState<Sanctuary[]>([]);
+  useEffect(() => {
+    if (!canEdit || !currentUserId) { return; }
+    let alive = true;
+    getAllSanctuaries().then(all => {
+      if (!alive) return;
+      setAdoptable(all.filter(s => {
+        const homes = s.communityIds?.length ? s.communityIds : (s.communityId ? [s.communityId] : []);
+        return !homes.includes(community.id)
+          && s.domain !== community.domain
+          && canViewSanctuary(s, { uid: currentUserId, isStaff: isSuperAdmin || isAdmin, memberCommunityIds: new Set<string>() });
+      }));
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, [canEdit, currentUserId, isSuperAdmin, isAdmin, community.id, community.domain, sanctuarySignal]);
 
   // The sanctuaries rooted in this domain THAT THIS VIEWER MAY SEE —
   // sanctuaries are private (community-level) by default.
@@ -380,6 +406,12 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
           }}
           onUploadImage={(file) => uploadImage(file, `communities/${community.id}/sanctuaries/${file.name}`)}
           onOpen={onViewSanctuary}
+          adoptable={adoptable}
+          onAdopt={async (s) => {
+            await adoptSanctuary(s.id, community.id);
+            announce('sanctuaries');
+            notify(`${s.name} now holds this community too.`);
+          }}
         />
       ),
     },

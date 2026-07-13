@@ -408,7 +408,17 @@ service cloud.firestore {
       // same tradeoff canViewTree documents.
       allow read: if resource.data.get('visibility', 'community') == 'public' || isSignedIn();
       allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
+      allow update: if isSignedIn() && (
+        (resource.data.ownerId == request.auth.uid || isStaff())
+        // Stepping in: any signed-in being may ADD a community to a sanctuary's circle —
+        // append-only (no community can be pushed out this way), nothing else may change.
+        || (
+             request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['communityIds', 'updatedAt'])
+             && request.resource.data.get('communityIds', []).hasAll(resource.data.get('communityIds', []))
+           )
+      );
+      allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
     }
 
     // Invite requests — anyone (signed out) can ask to join; only staff can read/triage.

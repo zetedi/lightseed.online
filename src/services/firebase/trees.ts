@@ -1,4 +1,4 @@
-import { collection, query, orderBy, getDocs, addDoc, setDoc, serverTimestamp, doc, getDoc, where, updateDoc, deleteDoc, limit, startAfter, QueryDocumentSnapshot, getCountFromServer } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, addDoc, setDoc, serverTimestamp, doc, getDoc, where, updateDoc, deleteDoc, limit, startAfter, QueryDocumentSnapshot, getCountFromServer, arrayUnion } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { type Lifetree, type Sanctuary, type TreeOwnershipInvite, type InvitableRole } from '../../types';
 import { createBlock } from '../../utils/crypto';
@@ -402,6 +402,17 @@ export const createSanctuary = async (data: Partial<Sanctuary> & { name: string;
     });
     return ref.id;
 };
+
+// Sanctuaries that hold a community in their circle (communityIds) — a sanctuary can
+// belong to many communities beyond the domain it is rooted in.
+export const getSanctuariesByCommunity = async (communityId: string): Promise<Sanctuary[]> =>
+    (await getDocs(query(sanctuariesCollection, where('communityIds', 'array-contains', communityId))))
+        .docs.map(d => (mapDoc(d) as Sanctuary));
+
+// Step a community into an existing sanctuary — append-only (the rules enforce that
+// nothing leaves the circle this way, and nothing else changes).
+export const adoptSanctuary = (sanctuaryId: string, communityId: string) =>
+    updateDoc(doc(db, 'sanctuaries', sanctuaryId), { communityIds: arrayUnion(communityId), updatedAt: serverTimestamp() });
 
 // Release a sanctuary — owner or staff, per the rules.
 export const deleteSanctuary = (sanctuaryId: string) => deleteDoc(doc(db, 'sanctuaries', sanctuaryId));

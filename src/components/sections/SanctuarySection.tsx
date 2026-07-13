@@ -42,6 +42,9 @@ interface SanctuarySectionProps {
   onUploadImage?: (file: File) => Promise<string>;
   // Click a card to open the sanctuary's own profile page.
   onOpen?: (sanctuary: Sanctuary) => void;
+  // Existing sanctuaries (elsewhere in the network) this community could step into.
+  adoptable?: Sanctuary[];
+  onAdopt?: (sanctuary: Sanctuary) => Promise<void>;
 }
 
 export const SanctuarySection: React.FC<SanctuarySectionProps> = ({
@@ -54,8 +57,12 @@ export const SanctuarySection: React.FC<SanctuarySectionProps> = ({
   onCreate,
   onUploadImage,
   onOpen,
+  adoptable = [],
+  onAdopt,
 }) => {
   const [showForm, setShowForm] = useState(false);
+  const [showAdopt, setShowAdopt] = useState(false);
+  const [adoptingId, setAdoptingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [body, setBody] = useState('');
   const [imageUrl, setImageUrl] = useState('');
@@ -140,6 +147,53 @@ export const SanctuarySection: React.FC<SanctuarySectionProps> = ({
     </div>
   );
 
+  const stepIn = async (s: Sanctuary) => {
+    if (!onAdopt || adoptingId) return;
+    setAdoptingId(s.id);
+    try {
+      await onAdopt(s);
+      setShowAdopt(false);
+    } catch (e: any) {
+      showAlert(e?.message || 'Could not step into the sanctuary.');
+    }
+    setAdoptingId(null);
+  };
+
+  const adoptPanel = (
+    <div className="mt-4 space-y-2 rounded-2xl border border-amber-100 bg-amber-50/40 p-4 text-left animate-in fade-in slide-in-from-bottom-2">
+      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Sanctuaries open to step into</p>
+      {adoptable.map(s => (
+        <div key={s.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-2.5">
+          <img src={s.imageUrl || '/lighthouse.webp'} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover bg-[#04070f]" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-bold text-slate-800">{s.name}</p>
+            <p className="truncate text-[11px] text-slate-400">{s.locationName || s.domain || ''}</p>
+          </div>
+          <button onClick={() => stepIn(s)} disabled={adoptingId === s.id}
+            className="shrink-0 rounded-full bg-amber-500 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-amber-600 disabled:opacity-50">
+            {adoptingId === s.id ? 'Stepping…' : 'Step in'}
+          </button>
+        </div>
+      ))}
+      <button onClick={() => setShowAdopt(false)} className="w-full rounded-xl bg-slate-100 py-2 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-200">Close</button>
+    </div>
+  );
+
+  const keeperActions = canCreate && (
+    <div className="flex flex-wrap justify-center gap-2">
+      {onCreate && !showForm && (
+        <button onClick={() => { setShowForm(true); setShowAdopt(false); }} className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-amber-700 transition-colors hover:bg-amber-100">
+          {sanctuaries.length === 0 ? 'Consecrate a sanctuary' : 'Consecrate another'}
+        </button>
+      )}
+      {onAdopt && adoptable.length > 0 && !showAdopt && (
+        <button onClick={() => { setShowAdopt(true); setShowForm(false); }} className="rounded-full border border-amber-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-widest text-amber-700 transition-colors hover:bg-amber-50">
+          Step into a sanctuary
+        </button>
+      )}
+    </div>
+  );
+
   return (
     <div>
       <SectionTitle title={title} sub={sub} />
@@ -147,12 +201,9 @@ export const SanctuarySection: React.FC<SanctuarySectionProps> = ({
         <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-500"><Icons.Sun /></div>
           <p className="text-sm">{emptyMessage}</p>
-          {canCreate && onCreate && !showForm && (
-            <button onClick={() => setShowForm(true)} className="mt-4 rounded-full bg-amber-500 px-5 py-2 text-xs font-bold uppercase tracking-widest text-white shadow transition-colors hover:bg-amber-600">
-              Consecrate a sanctuary
-            </button>
-          )}
+          <div className="mt-4">{keeperActions}</div>
           {canCreate && onCreate && showForm && form}
+          {canCreate && onAdopt && showAdopt && adoptPanel}
         </div>
       ) : (
         <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -187,13 +238,9 @@ export const SanctuarySection: React.FC<SanctuarySectionProps> = ({
             ))}
           </div>
 
-          {canCreate && onCreate && (
-            showForm ? form : (
-              <button onClick={() => setShowForm(true)} className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-amber-700 transition-colors hover:bg-amber-100">
-                Consecrate another
-              </button>
-            )
-          )}
+          {keeperActions}
+          {canCreate && onCreate && showForm && form}
+          {canCreate && onAdopt && showAdopt && adoptPanel}
         </div>
       )}
     </div>

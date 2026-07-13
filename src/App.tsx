@@ -1110,6 +1110,7 @@ const AppContent = () => {
                     <SanctuaryProfile
                         sanctuary={viewingSanctuary}
                         onClose={() => setViewingSanctuary(null)}
+                        onViewCommunity={setSelectedCommunity}
                         canEdit={isSuperAdmin || isAdmin || viewingSanctuary.ownerId === lightseed?.uid}
                         editIsStaffOnly={viewingSanctuary.ownerId !== lightseed?.uid && (isSuperAdmin || isAdmin)}
                         onDelete={async (id) => {
