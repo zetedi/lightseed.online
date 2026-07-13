@@ -56,7 +56,10 @@ import { SectionHeader } from './components/ui/SectionHeader';
 import { ScrollChevrons } from './components/ui/ScrollChevrons';
 import { UpdateToast } from './components/ui/UpdateToast';
 import { ToastHost, notify } from './components/ui/Toast';
-import { setSanctuaryVisibility } from './services/firebase';
+import { setSanctuaryVisibility, deleteSanctuary } from './services/firebase';
+import { announce, onRefresh as onBusRefresh } from './services/refreshBus';
+import { findBeingByLid } from './services/firebase/beings';
+import { lidFromPath } from './domain/beingLink';
 import type { Sanctuary } from './domain/sanctuary';
 import { CustomLandingPage } from './pages/CustomLandingPage';
 import { Footer } from './components/ui/Footer';
@@ -240,6 +243,15 @@ const AppContent = () => {
         tab, viewMode, lightseed, isSuperAdmin, isAdmin, setAlignments,
     });
 
+    // The refresh bus, heard by the live feed: when an event/pulse is deleted anywhere
+    // (its profile page, a community tab), prune it from the loaded list — no reload.
+    useEffect(() => onBusRefresh(e => {
+        if ((e.topic === 'events' || e.topic === 'pulses') && e.id) {
+            setData(prev => prev.some(item => item.id === e.id) ? prev.filter(item => item.id !== e.id) : prev);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setData is a stable setter from useForestFeed
+    }), []);
+
     // Load the tab's content when the view changes.
     useEffect(() => {
         if (tab !== 'dashboard') loadContent(true);
@@ -283,6 +295,23 @@ const AppContent = () => {
     useEffect(() => {
         setChainLocked(!!(impersonatedCommunity || hostCommunity)?.chainLocked);
     }, [impersonatedCommunity, hostCommunity]);
+
+    // The /b/<lid> door — a scanned QR lands here. Resolved once the session settles
+    // (what the scanner may see depends on who they are), then the path is cleaned.
+    useEffect(() => {
+        if (authLoading) return;
+        const lid = lidFromPath(window.location.pathname);
+        if (!lid) return;
+        window.history.replaceState({}, '', '/');
+        findBeingByLid(lid, !!lightseed).then(found => {
+            if (!found) { notify('This link names a being you cannot see from here.'); return; }
+            if (found.kind === 'tree') setSelectedTree(found.tree);
+            else if (found.kind === 'sanctuary') setViewingSanctuary(found.sanctuary);
+            else if (found.kind === 'vision') setSelectedVision(found.vision);
+            else setSelectedPulse(found.pulse);
+        }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot door: runs when auth settles; the path is consumed on first resolution
+    }, [authLoading]);
 
     // The browser tab wears the community's name when a community drives the view.
     useEffect(() => {
@@ -1082,9 +1111,17 @@ const AppContent = () => {
                         sanctuary={viewingSanctuary}
                         onClose={() => setViewingSanctuary(null)}
                         canEdit={isSuperAdmin || isAdmin || viewingSanctuary.ownerId === lightseed?.uid}
+                        editIsStaffOnly={viewingSanctuary.ownerId !== lightseed?.uid && (isSuperAdmin || isAdmin)}
+                        onDelete={async (id) => {
+                            await deleteSanctuary(id);
+                            setViewingSanctuary(null);
+                            announce('sanctuaries', id);
+                            notify('The sanctuary was released.');
+                        }}
                         onSetVisibility={async (id, v) => {
                             await setSanctuaryVisibility(id, v);
                             setViewingSanctuary(prev => prev && prev.id === id ? { ...prev, visibility: v } : prev);
+                            announce('sanctuaries', id);
                             notify(`Sanctuary is now ${v === 'community' ? 'community-only' : v}.`);
                         }}
                     />

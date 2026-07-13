@@ -5,6 +5,8 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
 import { SuperDot } from './ui/SuperDot';
+import { BeingQr } from './ui/BeingQr';
+import { mintBeingQr } from '../services/firebase/beings';
 import { ValidationBadge } from './ValidationBadge';
 import { updateLifetree, setTreeStatus, getPulsesByTreeId } from '../services/firebase';
 import { Pulse, type Lifetree } from '../types';
@@ -364,6 +366,10 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                     <button onClick={handleShare} title="Share this tree" className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-bold text-white transition-colors hover:bg-white/25">
                                         <Icons.Link /> <span>{shared ? 'Copied' : 'Share'}</span>
                                     </button>
+                                    <BeingQr lid={tree.lid} name={tree.name} savedHref={tree.qr?.href}
+                                        canMint={canEdit}
+                                        onMint={(href) => mintBeingQr('lifetrees', tree.id, href)}
+                                        className="h-7 w-7 bg-white/15 text-white hover:bg-white/25" />
                                     {isNature && <span className="inline-flex items-center gap-1 rounded-full bg-sky-500 px-2 py-0.5 text-[10px] font-bold"><Icons.Shield /> NATURE</span>}
                                     {tree.visibility && tree.visibility !== 'public' && <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">{tree.visibility}</span>}
                                 </div>

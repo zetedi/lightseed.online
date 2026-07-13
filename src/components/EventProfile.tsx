@@ -2,10 +2,14 @@ import { useState } from 'react';
 import { useSession } from '../contexts/SessionContext';
 import { showAlert, showConfirm } from './ui/Dialog';
 import { deleteCommunityEvent } from '../services/firebase';
+import { announce } from '../services/refreshBus';
 import { SuperDot } from './ui/SuperDot';
+import { BeingQr } from './ui/BeingQr';
+import { mintBeingQr } from '../services/firebase/beings';
 import { Pulse, Lifetree } from '../types';
 import { Icons } from './ui/Icons';
 import { MahameruAvatar } from './ui/MahameruAvatar';
+import { EventWeather } from './ui/EventWeather';
 import { ProfileHero } from './ui/ProfileHero';
 import { ProfileLayout } from './ui/ProfileLayout';
 import { SectionTitle } from './ui/SectionTitle';
@@ -41,6 +45,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
         setIsDeleting(true);
         try {
             await deleteCommunityEvent(pulse.id);
+            announce('events', pulse.id);
             onClose();
         } catch (e: any) {
             showAlert(e?.message || 'Could not delete the event.');
@@ -80,7 +85,12 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
                                 {!isAuthor && <SuperDot />}
                             </button>
                         )}
+                        <EventWeather location={pulse.eventLocation} dateIso={pulse.eventDate} className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-slate-100" />
                         <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-slate-200">Event</span>
+                        <BeingQr lid={pulse.lid} name={pulse.title} savedHref={pulse.qr?.href}
+                            canMint={isAuthor || isAdmin || isSuperAdmin}
+                            onMint={(href) => mintBeingQr('pulses', pulse.id, href)}
+                            className="h-8 w-8 border border-white/15 bg-white/10 text-slate-200 hover:bg-white/25 hover:text-white" />
                     </div>
                 </div>
 

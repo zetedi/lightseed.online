@@ -23,6 +23,9 @@ import type { Timestamp } from 'firebase/firestore';
 // Every doc stored on THIS node carries one — minted at creation, or backfilled.
 export interface Being {
   lid?: string;          // Lightseed ID — the true name.
+  // The minted offline link: the exact URL this being's QR was generated with
+  // (domain/beingLink). Stale when the home domain moves; a keeper re-mints.
+  qr?: { href: string };
   createdAt?: Timestamp; // the birth time; optional on the base (derived/transient objects),
                          // required by concrete stored types that always stamp it.
 }

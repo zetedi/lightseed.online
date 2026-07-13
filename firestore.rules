@@ -342,7 +342,15 @@ service cloud.firestore {
              && request.auth.uid in request.resource.data.get('vetoes', [])
            )
 
-        // (f) Staff may mend anything.
+        // (f) The QR mint — the being remembers its printed link (domain/beingLink).
+        //     Author or staff; only the qr overlay may change.
+        || (
+             (isStaff() || resource.data.authorId == request.auth.uid)
+             && request.resource.data.diff(resource.data).affectedKeys()
+                  .hasOnly(['qr', 'updatedAt'])
+           )
+
+        // (g) Staff may mend anything.
         || isStaff()
       );
       allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff() || isCommunityOwner(resource.data.communityId));

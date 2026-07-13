@@ -1,6 +1,9 @@
 import { Icons } from './ui/Icons';
 import { ProfileHero } from './ui/ProfileHero';
-import { MahameruAvatar } from './ui/MahameruAvatar';
+import { SuperDot } from './ui/SuperDot';
+import { showAlert, showConfirm } from './ui/Dialog';
+import { BeingQr } from './ui/BeingQr';
+import { mintBeingQr } from '../services/firebase/beings';
 import { sanctuaryVisibility, type Sanctuary, type SanctuaryVisibility } from '../domain/sanctuary';
 
 // The sanctuary's own page — the shared profile anatomy (ProfileHero + full-page scaffold),
@@ -12,34 +15,51 @@ interface SanctuaryProfileProps {
     onClose: () => void;
     backLabel?: string;
     canEdit?: boolean;
+    // True when canEdit comes from staff privilege rather than being the keeper (amber dot).
+    editIsStaffOnly?: boolean;
     onSetVisibility?: (id: string, visibility: SanctuaryVisibility) => Promise<void>;
+    onDelete?: (id: string) => Promise<void>;
 }
 
-export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEdit = false, onSetVisibility }: SanctuaryProfileProps) => {
+export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEdit = false, editIsStaffOnly = false, onSetVisibility, onDelete }: SanctuaryProfileProps) => {
     const visibility = sanctuaryVisibility(sanctuary);
+    const handleDelete = async () => {
+        if (!onDelete) return;
+        if (!(await showConfirm(`Release the sanctuary "${sanctuary.name}"? This cannot be undone.`, { title: 'Release sanctuary', confirmText: 'Release', danger: true }))) return;
+        try { await onDelete(sanctuary.id); } catch (e: any) { showAlert(e?.message || 'Could not release the sanctuary.'); }
+    };
 
     return (
         <div className="min-h-screen animate-in fade-in zoom-in-95 duration-300 pb-20 bg-slate-50">
-            <ProfileHero heroImageUrl={sanctuary.imageUrl}>
+            <ProfileHero heroImageUrl={sanctuary.imageUrl || '/lighthouse.webp'}>
                 <div className="flex items-center justify-between mb-6">
                     <button onClick={onClose} className="flex items-center gap-2 text-white/70 hover:text-white text-sm font-medium">
                         <Icons.ArrowLeft />
                         <span>{backLabel}</span>
                     </button>
                     <div className="flex items-center gap-2">
+                        {canEdit && onDelete && (
+                            <button onClick={handleDelete} title="Release this sanctuary" aria-label="Release this sanctuary"
+                                className="relative flex items-center gap-1.5 rounded-full border border-red-400/40 bg-red-500/20 px-3 py-1.5 text-xs font-bold text-red-200 transition-colors hover:bg-red-500 hover:text-white">
+                                <Icons.Trash /> Release
+                                {editIsStaffOnly && <SuperDot />}
+                            </button>
+                        )}
                         <span className="flex items-center gap-1 rounded-full bg-amber-400/20 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-200">
                             <Icons.Sun /> Sanctuary
                         </span>
                         <span className="rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-200">
                             {visibility}
                         </span>
+                        <BeingQr lid={sanctuary.lid} name={sanctuary.name} savedHref={sanctuary.qr?.href}
+                            canMint={canEdit}
+                            onMint={(href) => mintBeingQr('sanctuaries', sanctuary.id, href)}
+                            className="h-8 w-8 border border-white/15 bg-white/10 text-slate-200 hover:bg-white/25 hover:text-white" />
                     </div>
                 </div>
                 <div className="flex items-center gap-4 sm:gap-5">
                     <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-amber-200 bg-[#04070f] shadow-xl">
-                        {sanctuary.imageUrl
-                            ? <img src={sanctuary.imageUrl} className="h-full w-full object-cover" alt={sanctuary.name} referrerPolicy="no-referrer" />
-                            : <MahameruAvatar className="h-full w-full !ring-0" />}
+                        <img src={sanctuary.imageUrl || '/lighthouse.webp'} className="h-full w-full object-cover" alt={sanctuary.name} referrerPolicy="no-referrer" />
                     </div>
                     <div className="min-w-0 flex-1">
                         <h1 dir="auto" className="min-w-0 break-words text-2xl font-light tracking-wide">{sanctuary.name}</h1>

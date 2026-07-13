@@ -7,6 +7,8 @@ import { firestoreStore } from '../adapters/firestore';
 import { vetoGrowthPulse } from '../services/firebase/pulses';
 import { canVeto, isVetoed, vetoProgress, type VetoInput } from '../domain/guardianVeto';
 import { showAlert, showConfirm } from './ui/Dialog';
+import { BeingQr } from './ui/BeingQr';
+import { mintBeingQr } from '../services/firebase/beings';
 
 // The generic pulse view — a PROFILE, not a modal: the same ProfileHero + full-page scaffold as
 // VisionProfile / EventProfile / AlignmentView, so every entity (tree, vision, event, alignment,
@@ -97,6 +99,10 @@ export const PulseDetail = ({ pulse, onClose, backLabel = "Back", canEdit, onEdi
                         <span className="flex items-center gap-1 rounded-full bg-white/15 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-200">
                             <Icons.Hash /> {pulse.type}
                         </span>
+                        <BeingQr lid={pulse.lid} name={pulse.title} savedHref={pulse.qr?.href}
+                            canMint={!!viewerUid && (pulse.authorId === viewerUid)}
+                            onMint={(href) => mintBeingQr('pulses', pulse.id, href)}
+                            className="h-8 w-8 border border-white/15 bg-white/10 text-slate-200 hover:bg-white/25 hover:text-white" />
                     </div>
                 </div>
                 <div className="flex items-center gap-4 sm:gap-5">

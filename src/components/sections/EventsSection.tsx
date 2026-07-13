@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { showAlert, showConfirm } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useSession } from '../../contexts/SessionContext';
+import { announce } from '../../services/refreshBus';
+import { useRefreshSignal } from '../../hooks/useRefreshSignal';
 import { SuperDot } from '../ui/SuperDot';
 import { Icons } from '../ui/Icons';
 import { Pulse } from '../../types';
@@ -10,6 +12,7 @@ import { Pulse } from '../../types';
 import { updateEvent, deleteCommunityEvent, uploadImage } from '../../services/firebase';
 import { ImagePicker } from '../ui/ImagePicker';
 import { SectionTitle } from '../ui/SectionTitle';
+import { EventWeather } from '../ui/EventWeather';
 import { visibilitiesForScope } from '../../domain/pulseVisibility';
 import type { PulseVisibility } from '../../domain/pulse';
 
@@ -98,13 +101,16 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
   const refreshEvents = useCallback(() => {
     loadEvents().then(setEvents).catch(() => {});
   }, [loadEvents]);
-  useEffect(() => { refreshEvents(); }, [refreshEvents]);
+  // Re-fetch when an event changes anywhere else (e.g. deleted on its profile page).
+  const eventsSignal = useRefreshSignal(['events']);
+  useEffect(() => { refreshEvents(); }, [refreshEvents, eventsSignal]);
 
   const handleDeleteEvent = async (eventId: string) => {
     if (!(await showConfirm(t('delete_event_confirm'), { title: t('delete'), confirmText: t('delete'), danger: true }))) return;
     try {
       await deleteCommunityEvent(eventId);
       setEvents(prev => prev.filter(e => e.id !== eventId));
+      announce('events', eventId);
     } catch (e: any) {
       showAlert(e?.message || 'Could not delete the event.');
     }
@@ -238,6 +244,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                   {ev.eventDate ? new Date(ev.eventDate).toLocaleString() : ''}{ev.eventLocation ? ` · ${ev.eventLocation}` : ''}
                 </p>
               </div>
+              <EventWeather location={ev.eventLocation} dateIso={ev.eventDate} className="shrink-0 rounded-full bg-sky-50 px-2 py-1 text-sky-800" />
               {(canEdit || ev.authorId === currentUserId) && (
                 <button onClick={(e) => { e.stopPropagation(); startEditEvent(ev); }} title={t('edit')} className="shrink-0 rounded-full p-2 text-slate-400 transition-colors hover:bg-sky-50 hover:text-sky-600 sm:opacity-0 sm:group-hover:opacity-100">
                   <Icons.Pencil />

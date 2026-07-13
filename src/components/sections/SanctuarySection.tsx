@@ -169,7 +169,7 @@ export const SanctuarySection: React.FC<SanctuarySectionProps> = ({
                   <img src={s.imageUrl} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" alt={s.name} />
                 ) : (
                   <div className="absolute inset-0" style={{ backgroundColor: placeholderColor || '#04070f' }}>
-                    <img src="/mahameru.svg" className="h-full w-full object-cover opacity-80" alt="" />
+                    <img src="/lighthouse.webp" className="h-full w-full object-cover" alt="" />
                   </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-black/10" />

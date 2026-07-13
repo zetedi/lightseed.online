@@ -403,6 +403,9 @@ export const createSanctuary = async (data: Partial<Sanctuary> & { name: string;
     return ref.id;
 };
 
+// Release a sanctuary — owner or staff, per the rules.
+export const deleteSanctuary = (sanctuaryId: string) => deleteDoc(doc(db, 'sanctuaries', sanctuaryId));
+
 // Open a sanctuary wider (or draw it back) — owner or staff, per the rules.
 export const setSanctuaryVisibility = (sanctuaryId: string, visibility: 'community' | 'node' | 'public') =>
     updateDoc(doc(db, 'sanctuaries', sanctuaryId), { visibility });

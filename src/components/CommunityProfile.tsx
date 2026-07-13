@@ -24,6 +24,8 @@ import { SuperDot } from './ui/SuperDot';
 import { normalizeTheme } from '../utils/theme';
 import { canViewSanctuary, type Sanctuary as SanctuaryType } from '../domain/sanctuary';
 import { notify } from './ui/Toast';
+import { announce } from '../services/refreshBus';
+import { useRefreshSignal } from '../hooks/useRefreshSignal';
 import { LoreSection, loreTabs, type LoreTabId } from './about/AboutSections';
 import { NodeGrowthTree } from './about/NodeGrowthTree';
 import { queryableLevels } from '../domain/pulseVisibility';
@@ -120,6 +122,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   // Trees that joined this community via 'participant' links (invited, or self-joined).
   const [participatingTrees, setParticipatingTrees] = useState<Lifetree[]>([]);
   const [sanctuaries, setSanctuaries] = useState<Sanctuary[]>([]);
+  const sanctuarySignal = useRefreshSignal(['sanctuaries']);
 
   const [togglingId, setTogglingId] = useState<string | null>(null);
   // Which trees the signed-in user guards — read from their outgoing 'guardian' links (the LIN),
@@ -162,7 +165,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
 
   useEffect(() => {
     getSanctuariesByDomain(community.domain).then(setSanctuaries).catch(() => {});
-  }, [community.domain]);
+  }, [community.domain, sanctuarySignal]);
 
   // The sanctuaries rooted in this domain THAT THIS VIEWER MAY SEE —
   // sanctuaries are private (community-level) by default.
@@ -372,7 +375,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
               communityId: community.id,
               communityIds: [community.id],
             });
-            getSanctuariesByDomain(community.domain).then(setSanctuaries).catch(() => {});
+            announce('sanctuaries');
             notify('🌞 Sanctuary consecrated.');
           }}
           onUploadImage={(file) => uploadImage(file, `communities/${community.id}/sanctuaries/${file.name}`)}

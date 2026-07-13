@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { showAlert } from './ui/Dialog';
 import { Vision } from '../types';
 import { Icons } from './ui/Icons';
+import { BeingQr } from './ui/BeingQr';
+import { mintBeingQr } from '../services/firebase/beings';
 import { MahameruAvatar } from './ui/MahameruAvatar';
 import { useLanguage } from '../contexts/LanguageContext';
 import { canJoinVision } from '../domain/policy';
@@ -95,7 +97,7 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
 
     return (
         <div className="min-h-screen animate-in fade-in zoom-in-95 duration-300 pb-20 bg-slate-50">
-            <ProfileHero heroImageUrl={vision.imageUrl}>
+            <ProfileHero heroImageUrl={vision.imageUrl || '/mahameru.svg'}>
                 {/* Top bar — back + join / delete / root badge */}
                 <div className="flex items-center justify-between mb-6">
                     <button onClick={onClose} className="flex items-center gap-2 text-white/70 hover:text-white text-sm font-medium">
@@ -142,11 +144,7 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                 {/* Avatar + title + meta */}
                 <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5">
                     <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-amber-50 shadow-xl">
-                        {vision.imageUrl ? (
-                            <img src={vision.imageUrl} className="h-full w-full object-cover" alt={vision.title} referrerPolicy="no-referrer" />
-                        ) : (
-                            <span className="text-amber-400"><Icons.Eye /></span>
-                        )}
+                        <img src={vision.imageUrl || '/mahameru.svg'} className="h-full w-full object-cover" alt={vision.title} referrerPolicy="no-referrer" />
                     </div>
                     <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 justify-center sm:justify-start">
@@ -159,6 +157,10 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                             {vision.visibility && vision.visibility !== 'public' && (
                                 <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">{vision.visibility}</span>
                             )}
+                            <BeingQr lid={vision.lid} name={vision.title} savedHref={vision.qr?.href}
+                                canMint={isAuthor}
+                                onMint={(href) => mintBeingQr('visions', vision.id, href)}
+                                className="h-8 w-8 border border-white/15 bg-white/10 text-slate-200 hover:bg-white/25 hover:text-white" />
                             {rootTree && !isRoot && (
                                 <button
                                     onClick={() => onViewTree?.(rootTree)}

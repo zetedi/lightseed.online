@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from '../components/ui/Icons';
 import { ForestMap } from '../components/ForestMap';
@@ -47,6 +47,8 @@ export const ForestPage = ({
   sanctuaryDomain = null, onViewSanctuary,
 }: ForestPageProps) => {
   const { t } = useLanguage();
+  // Sanctuaries are a map layer of their own — the lighthouses. On by default.
+  const [showSanctuaries, setShowSanctuaries] = useState(true);
   const toggleCls = "flex cursor-pointer items-center gap-2 text-sm font-medium text-emerald-900 dark:text-emerald-100";
   // One emerald card holding the three filters. On the map it's a top-left overlay (z-20, BELOW the
   // sticky nav's z-30) stacked vertically on mobile; on the grid it sits in flow as ONE horizontal
@@ -70,13 +72,19 @@ export const ForestPage = ({
           <input type="checkbox" checked={showValidatedTrees} onChange={(e) => setShowValidatedTrees(e.target.checked)} className="h-4 w-4 rounded accent-emerald-600" />
           <span className="flex items-center gap-1"><span className={horizontal ? 'hidden sm:inline-flex' : 'inline-flex'}><Icons.ShieldCheck /></span> {t('validated_trees')}</span>
         </label>
+        {!horizontal && (
+          <label className={toggleCls}>
+            <input type="checkbox" checked={showSanctuaries} onChange={(e) => setShowSanctuaries(e.target.checked)} className="h-4 w-4 rounded accent-amber-500" />
+            <span className="flex items-center gap-1"><span className="inline-flex"><Icons.Sun /></span> Sanctuaries</span>
+          </label>
+        )}
       </div>
     </div>
   );
   return (
     <>
       {viewMode === 'map' ? (
-        <ForestMap trees={filteredData} onView={onView} onReach={onReach} loading={loadingMore && filteredData.length === 0} onRefresh={onRefresh} primaryTree={activeTree} refreshKey={mapRefreshKey} sanctuaryDomain={sanctuaryDomain} onViewSanctuary={onViewSanctuary} filtersOverlay={filters(false)} />
+        <ForestMap trees={filteredData} onView={onView} onReach={onReach} loading={loadingMore && filteredData.length === 0} onRefresh={onRefresh} primaryTree={activeTree} refreshKey={mapRefreshKey} sanctuaryDomain={sanctuaryDomain} showSanctuaries={showSanctuaries} onViewSanctuary={onViewSanctuary} filtersOverlay={filters(false)} />
       ) : (
         <>
           <div className="mb-4 flex justify-center">{filters(true)}</div>
