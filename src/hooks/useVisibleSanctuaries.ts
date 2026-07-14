@@ -27,17 +27,32 @@ export const useVisibleSanctuaries = (domain: string | null, refreshKey = 0): Sa
     }, [viewerUid]);
 
     const [all, setAll] = useState<Sanctuary[]>([]);
+    // Belonging is LIN edges (sanctuary __shelters__ community) — one query, grouped.
+    const [homesOf, setHomesOf] = useState<Map<string, string[]>>(new Map());
     useEffect(() => {
         let alive = true;
         const opts = { publicOnly: !viewerUid };
-        (domain ? getSanctuariesByDomain(domain, opts) : getAllSanctuaries(opts))
-            .then(list => { if (alive) setAll(list); })
+        Promise.all([
+            (domain ? getSanctuariesByDomain(domain, opts) : getAllSanctuaries(opts)),
+            viewerUid ? firestoreStore.linksByRel('shelters').catch(() => []) : Promise.resolve([]),
+        ])
+            .then(([list, links]) => {
+                if (!alive) return;
+                const map = new Map<string, string[]>();
+                for (const l of links) map.set(l.from, [...(map.get(l.from) || []), l.to]);
+                setAll(list);
+                setHomesOf(map);
+            })
             .catch(() => {});
         return () => { alive = false; };
     }, [domain, refreshKey, viewerUid, signal]);
 
     return useMemo(
-        () => all.filter(s => canViewSanctuary(s, { uid: viewerUid, isStaff: isAdmin || isSuperAdmin, memberCommunityIds })),
-        [all, viewerUid, isAdmin, isSuperAdmin, memberCommunityIds],
+        () => all.filter(s => canViewSanctuary(
+            s,
+            { uid: viewerUid, isStaff: isAdmin || isSuperAdmin, memberCommunityIds },
+            [...(s.communityId ? [s.communityId] : []), ...(homesOf.get(s.id) || [])],
+        )),
+        [all, homesOf, viewerUid, isAdmin, isSuperAdmin, memberCommunityIds],
     );
 };

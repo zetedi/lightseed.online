@@ -8,7 +8,9 @@ import { SuperDot } from './ui/SuperDot';
 import { showAlert, showConfirm } from './ui/Dialog';
 import { BeingQr } from './ui/BeingQr';
 import { mintBeingQr } from '../services/firebase/beings';
-import { getCommunityById, updateSanctuary, getLifetreeById, getTreesByDomain } from '../services/firebase';
+import { getCommunityById, updateSanctuary, getLifetreeById, requestStay, getStaysForHost, getMyStays, setStayStatus, withdrawStay } from '../services/firebase';
+import { stayRequestProblem, bedsFreeFor, type Stay } from '../domain/stay';
+import { useSession } from '../contexts/SessionContext';
 import { firestoreStore } from '../adapters/firestore';
 import { LocationPicker } from './ui/LocationPicker';
 import { announce } from '../services/refreshBus';
@@ -21,7 +23,7 @@ import type { Community, Lifetree } from '../types';
 // Sanctuaries tab. Two sections: About (the story, the 3D door, the visibility chips) and
 // Communities — the mirror of the community profile: which houses this sanctuary holds.
 
-type SanctuarySection = 'about' | 'communities' | 'tree';
+type SanctuarySection = 'about' | 'communities' | 'tree' | 'beds';
 
 interface SanctuaryProfileProps {
     sanctuary: Sanctuary;
@@ -66,23 +68,29 @@ export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEd
         setIsSavingPlace(false);
     };
 
-    // The circle of communities this sanctuary holds (communityIds + the primary), resolved
-    // lazily to their documents — a sanctuary can belong to many houses.
-    const homeIdsKey = [...new Set([...(sanctuary.communityIds || []), ...(sanctuary.communityId ? [sanctuary.communityId] : [])])].join(',');
+    // The circle of communities this sanctuary shelters — LIN edges plus the primary,
+    // resolved lazily to their documents. Belonging is links, never arrays.
     const [homes, setHomes] = useState<Community[] | null>(null);
     useEffect(() => {
         let alive = true;
-        const ids = homeIdsKey ? homeIdsKey.split(',') : [];
-        Promise.all(ids.map(id => getCommunityById(id).catch(() => null)))
-            .then(list => { if (alive) setHomes(list.filter(Boolean) as Community[]); });
+        firestoreStore.linksFrom(sanctuary.id, 'shelters')
+            .then(links => {
+                const ids = [...new Set([...(sanctuary.communityId ? [sanctuary.communityId] : []), ...links.map(l => l.to)])];
+                return Promise.all(ids.map(id => getCommunityById(id).catch(() => null)));
+            })
+            .then(list => { if (alive) setHomes((list || []).filter(Boolean) as Community[]); })
+            .catch(() => { if (alive) setHomes([]); });
         return () => { alive = false; };
-    }, [homeIdsKey]);
+    }, [sanctuary.id, sanctuary.communityId]);
 
     // The tree this sanctuary is ROOTED IN (sanctuary __rooted__ tree) — that tree is a
     // mother tree. A sanctuary is never built before a tree is planted.
     const [rootTree, setRootTree] = useState<Lifetree | null>(null);
     const [rootLoaded, setRootLoaded] = useState(false);
-    const [domainTrees, setDomainTrees] = useState<Lifetree[]>([]);
+    // The keeper roots the sanctuary in one of THEIR OWN lifetrees — a personal avatar,
+    // never a guarded nature tree: the mother is a being who answers for it.
+    const { myTrees: sessionTrees } = useSession();
+    const rootCandidates = (sessionTrees || []).filter((t: Lifetree) => !t.isNature);
     const [isRooting, setIsRooting] = useState(false);
     useEffect(() => {
         let alive = true;
@@ -95,14 +103,6 @@ export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEd
             .catch(() => { if (alive) setRootLoaded(true); });
         return () => { alive = false; };
     }, [sanctuary.id]);
-    useEffect(() => {
-        if (!canEdit || !sanctuary.domain) return;
-        let alive = true;
-        getTreesByDomain(sanctuary.domain)
-            .then(list => { if (alive) setDomainTrees(list); })
-            .catch(() => {});
-        return () => { alive = false; };
-    }, [canEdit, sanctuary.domain]);
     const rootIn = async (tree: Lifetree) => {
         if (isRooting) return;
         setIsRooting(true);
@@ -115,9 +115,73 @@ export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEd
         setIsRooting(false);
     };
 
+    // Beds — the physical welcome. The keeper sets the beds and answers requests; a
+    // signed-in guest asks for nights. Payments join later with the care economy.
+    const { lightseed } = useSession();
+    const viewerUid = lightseed?.uid;
+    const isKeeperViewer = !!viewerUid && sanctuary.ownerId === viewerUid;
+    const [beds, setBeds] = useState<number>(sanctuary.beds || 0);
+    const [bedNote, setBedNote] = useState(sanctuary.bedNote || '');
+    // The saved offer — the display truth (the sanctuary PROP is a snapshot from the
+    // opener and doesn't hear the save; this does).
+    const [offer, setOffer] = useState<{ beds: number; note: string }>({ beds: sanctuary.beds || 0, note: sanctuary.bedNote || '' });
+    const [isSavingBeds, setIsSavingBeds] = useState(false);
+    const [stays, setStays] = useState<Stay[]>([]);
+    // Captured once per mount — date validation needs a day, not a ticking clock.
+    const [nowMs] = useState(() => Date.now());
+    const [fromDate, setFromDate] = useState('');
+    const [toDate, setToDate] = useState('');
+    const [stayNote, setStayNote] = useState('');
+    const [isRequesting, setIsRequesting] = useState(false);
+    useEffect(() => {
+        if (!viewerUid) return;
+        let alive = true;
+        (isKeeperViewer ? getStaysForHost(viewerUid, sanctuary.id) : getMyStays(viewerUid, sanctuary.id))
+            .then(list => { if (alive) setStays(list.sort((a, b) => a.fromDate.localeCompare(b.fromDate))); })
+            .catch(() => {});
+        return () => { alive = false; };
+    }, [viewerUid, isKeeperViewer, sanctuary.id]);
+    const saveBeds = async () => {
+        if (isSavingBeds) return;
+        setIsSavingBeds(true);
+        try {
+            const nextBeds = Math.max(0, Math.round(Number(beds) || 0));
+            await updateSanctuary(sanctuary.id, {
+                beds: nextBeds,
+                bedNote: bedNote.trim() || undefined,
+            });
+            setOffer({ beds: nextBeds, note: bedNote.trim() });
+            announce('sanctuaries', sanctuary.id);
+            notify('🛏️ Beds saved.');
+        } catch (e: any) { showAlert(e?.message || 'Could not save the beds.'); }
+        setIsSavingBeds(false);
+    };
+    const askForStay = async () => {
+        if (!viewerUid || isRequesting) return;
+        const problem = stayRequestProblem(fromDate, toDate, nowMs);
+        if (problem) { showAlert(problem); return; }
+        setIsRequesting(true);
+        try {
+            await requestStay(sanctuary, { uid: viewerUid, name: lightseed?.displayName || '' }, { fromDate, toDate, note: stayNote.trim() });
+            setStays(prev => [...prev, { id: 'local', sanctuaryId: sanctuary.id, uid: viewerUid, hostUid: sanctuary.ownerId || '', fromDate, toDate, nights: 0, status: 'requested' } as Stay]);
+            setFromDate(''); setToDate(''); setStayNote('');
+            notify('🌙 Your stay request is on its way to the keeper.');
+        } catch (e: any) { showAlert(e?.message || 'Could not send the request.'); }
+        setIsRequesting(false);
+    };
+    const answerStay = async (stay: Stay, status: 'accepted' | 'declined') => {
+        try {
+            await setStayStatus(stay.id, status);
+            setStays(prev => prev.map(x => x.id === stay.id ? { ...x, status } : x));
+            notify(status === 'accepted' ? `🌙 ${stay.guestName || 'The guest'} has a bed.` : 'The request was declined, gently.');
+        } catch (e: any) { showAlert(e?.message || 'Could not answer the request.'); }
+    };
+    const acceptedStays = stays.filter(x => x.status === 'accepted');
+
     const sections: SectionItem[] = [
         { key: 'about', label: 'About', icon: <Icons.Sun /> },
         { key: 'tree', label: 'The Tree', icon: <Icons.Tree /> },
+        { key: 'beds', label: `Beds${offer.beds > 0 ? ` (${offer.beds})` : ''}`, icon: <Icons.Moon /> },
         { key: 'communities', label: `Communities${homes && homes.length > 0 ? ` (${homes.length})` : ''}`, icon: <Icons.Globe /> },
     ];
 
@@ -253,11 +317,11 @@ export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEd
                         )}
 
                         {/* The keeper roots (or re-roots) the sanctuary in one of the domain's trees. */}
-                        {canEdit && domainTrees.length > 0 && (
+                        {canEdit && rootCandidates.length > 0 && (
                             <div className="mt-6 rounded-2xl border border-amber-100 bg-amber-50/50 p-4">
                                 <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-amber-600">{rootTree ? 'Re-root in another tree' : 'Root this sanctuary in a tree'}</p>
                                 <div className="space-y-2">
-                                    {domainTrees.filter(t => t.id !== rootTree?.id).map(t => (
+                                    {rootCandidates.filter(t => t.id !== rootTree?.id).map(t => (
                                         <div key={t.id} className="flex items-center gap-3 rounded-xl border border-amber-100 bg-white p-2.5">
                                             <img src={t.latestGrowthUrl || t.imageUrl || '/mahameru.svg'} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover bg-[#04070f]" />
                                             <p className="min-w-0 flex-1 truncate text-sm font-medium text-slate-700">{t.name}</p>
@@ -268,6 +332,105 @@ export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEd
                                         </div>
                                     ))}
                                 </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {section === 'beds' && (
+                    <div className="space-y-6">
+                        <SectionTitle title="Beds" sub="The bed this sanctuary can offer." />
+
+                        {offer.beds > 0 ? (
+                            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                                <p className="text-sm text-slate-700">
+                                    <span className="font-bold">{offer.beds}</span> bed{offer.beds === 1 ? '' : 's'}
+                                </p>
+                                {offer.note && <p className="mt-2 whitespace-pre-line font-serif text-sm leading-relaxed text-slate-600">{offer.note}</p>}
+                                {/* The reservation path, visible: three steps from wish to pillow. */}
+                                <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500">
+                                    <span className="rounded-full bg-sky-50 px-2.5 py-1"><span className="font-bold text-sky-700">1</span> Ask for your nights below</span>
+                                    <span className="text-slate-300">→</span>
+                                    <span className="rounded-full bg-sky-50 px-2.5 py-1"><span className="font-bold text-sky-700">2</span> The keeper answers</span>
+                                    <span className="text-slate-300">→</span>
+                                    <span className="rounded-full bg-sky-50 px-2.5 py-1"><span className="font-bold text-sky-700">3</span> Seal the details with a Reach — payment through the existing channels</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">No beds offered here yet.</p>
+                        )}
+
+                        {/* A guest asks for nights. */}
+                        {viewerUid && !isKeeperViewer && offer.beds > 0 && (
+                            <div className="rounded-2xl border border-sky-100 bg-sky-50/50 p-4">
+                                <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-sky-600">Request a stay</p>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)}
+                                        className="rounded-xl border border-slate-200 bg-white p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" aria-label="Arrival" />
+                                    <span className="text-xs text-slate-400">→</span>
+                                    <input type="date" value={toDate} onChange={e => setToDate(e.target.value)}
+                                        className="rounded-xl border border-slate-200 bg-white p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" aria-label="Departure" />
+                                    {fromDate && toDate && !stayRequestProblem(fromDate, toDate, nowMs) && (
+                                        <span className="text-[11px] text-slate-500">
+                                            {bedsFreeFor(offer.beds, acceptedStays, fromDate, toDate)} bed(s) look free
+                                        </span>
+                                    )}
+                                </div>
+                                <textarea value={stayNote} onChange={e => setStayNote(e.target.value)} placeholder="Who you are, why these nights…"
+                                    className="mt-2 min-h-[70px] w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
+                                <button onClick={askForStay} disabled={isRequesting}
+                                    className="mt-2 rounded-full bg-sky-600 px-5 py-2 text-xs font-bold uppercase tracking-widest text-white shadow transition-colors hover:bg-sky-700 disabled:opacity-50">
+                                    {isRequesting ? 'Sending…' : 'Ask for these nights'}
+                                </button>
+                            </div>
+                        )}
+
+                        {/* The viewer's own requests / the keeper's inbox. */}
+                        {viewerUid && stays.length > 0 && (
+                            <div className="space-y-2">
+                                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{isKeeperViewer ? 'Requests' : 'Your requests'}</p>
+                                {stays.map(stay => (
+                                    <div key={stay.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
+                                        <div className="min-w-0 flex-1">
+                                            <p className="truncate text-sm font-bold text-slate-800">{isKeeperViewer ? (stay.guestName || 'A traveller') : sanctuary.name}</p>
+                                            <p className="text-[11px] text-slate-500">{stay.fromDate} → {stay.toDate}{stay.note ? ` · “${stay.note}”` : ''}</p>
+                                        </div>
+                                        <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${stay.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : stay.status === 'declined' ? 'bg-slate-100 text-slate-500' : 'bg-amber-100 text-amber-700'}`}>{stay.status}</span>
+                                        {!isKeeperViewer && stay.status === 'accepted' && rootTree && onViewTree && (
+                                            <button onClick={() => onViewTree(rootTree)}
+                                                className="shrink-0 rounded-full bg-amber-500 px-3 py-1 text-[11px] font-bold text-white transition-colors hover:bg-amber-600">
+                                                Seal it — Reach {rootTree.name}
+                                            </button>
+                                        )}
+                                        {isKeeperViewer && stay.status === 'requested' && (
+                                            <span className="flex gap-1.5">
+                                                <button onClick={() => answerStay(stay, 'accepted')} className="rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-bold text-white hover:bg-emerald-500">Accept</button>
+                                                <button onClick={() => answerStay(stay, 'declined')} className="rounded-full border border-slate-200 px-3 py-1 text-[11px] font-bold text-slate-500 hover:bg-slate-50">Decline</button>
+                                            </span>
+                                        )}
+                                        {!isKeeperViewer && stay.status === 'requested' && stay.id !== 'local' && (
+                                            <button onClick={() => withdrawStay(stay.id).then(() => setStays(prev => prev.filter(x => x.id !== stay.id))).catch(() => {})}
+                                                className="text-[11px] font-medium text-slate-400 hover:text-slate-600">Withdraw</button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* The keeper shapes the offer. */}
+                        {canEdit && (
+                            <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-4">
+                                <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-amber-600">The offer</p>
+                                <label className="flex items-center gap-2 text-sm text-slate-600">Beds
+                                    <input type="number" min={0} max={144} value={beds} onChange={e => setBeds(Number(e.target.value))}
+                                        className="w-20 rounded-xl border border-slate-200 bg-white p-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                                </label>
+                                <textarea value={bedNote} onChange={e => setBedNote(e.target.value)} placeholder="What staying here is like…"
+                                    className="mt-2 min-h-[70px] w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                                <button onClick={saveBeds} disabled={isSavingBeds}
+                                    className="mt-2 rounded-full bg-amber-500 px-5 py-2 text-xs font-bold text-white shadow transition-colors hover:bg-amber-600 disabled:opacity-50">
+                                    {isSavingBeds ? 'Saving…' : 'Save the offer'}
+                                </button>
                             </div>
                         )}
                     </div>

@@ -181,15 +181,18 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   useEffect(() => {
     if (!canEdit || !currentUserId) { return; }
     let alive = true;
-    getAllSanctuaries().then(all => {
-      if (!alive) return;
-      setAdoptable(all.filter(s => {
-        const homes = s.communityIds?.length ? s.communityIds : (s.communityId ? [s.communityId] : []);
-        return !homes.includes(community.id)
-          && s.domain !== community.domain
-          && canViewSanctuary(s, { uid: currentUserId, isStaff: isSuperAdmin || isAdmin, memberCommunityIds: new Set<string>() });
-      }));
-    }).catch(() => {});
+    Promise.all([getAllSanctuaries(), firestoreStore.linksByRel('shelters')])
+      .then(([all, shelterLinks]) => {
+        if (!alive) return;
+        const homesOf = new Map<string, string[]>();
+        for (const l of shelterLinks) homesOf.set(l.from, [...(homesOf.get(l.from) || []), l.to]);
+        setAdoptable(all.filter(s => {
+          const homes = [...(s.communityId ? [s.communityId] : []), ...(homesOf.get(s.id) || [])];
+          return !homes.includes(community.id)
+            && s.domain !== community.domain
+            && canViewSanctuary(s, { uid: currentUserId, isStaff: isSuperAdmin || isAdmin, memberCommunityIds: new Set<string>() }, homes);
+        }));
+      }).catch(() => {});
     return () => { alive = false; };
   }, [canEdit, currentUserId, isSuperAdmin, isAdmin, community.id, community.domain, sanctuarySignal]);
 
@@ -399,7 +402,6 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
               ownerId: currentUserId,
               domain: community.domain,
               communityId: community.id,
-              communityIds: [community.id],
             });
             announce('sanctuaries');
             notify('🌞 Sanctuary consecrated.');

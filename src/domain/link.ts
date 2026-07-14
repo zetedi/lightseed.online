@@ -9,7 +9,8 @@ import type { Being } from './being';
 // replaces the edge with a 'member' link.
 // 'rooted': a SANCTUARY rooted in a lifetree — the tree that holds it becomes a MOTHER
 // TREE. A sanctuary is never built before a tree is planted.
-export type LinkRel = 'guardian' | 'co_owner' | 'steward' | 'observer' | 'member' | 'joined' | 'participant' | 'join_request' | 'rooted';
+// 'shelters': a SANCTUARY shelters a community — belonging as an edge, never an array.
+export type LinkRel = 'guardian' | 'co_owner' | 'steward' | 'observer' | 'member' | 'joined' | 'participant' | 'join_request' | 'rooted' | 'shelters';
 
 export interface Link extends Being {
   type: 'link';

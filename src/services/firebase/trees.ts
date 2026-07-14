@@ -1,4 +1,4 @@
-import { collection, query, orderBy, getDocs, addDoc, setDoc, serverTimestamp, doc, getDoc, where, updateDoc, deleteDoc, limit, startAfter, QueryDocumentSnapshot, getCountFromServer, arrayUnion, Timestamp } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, addDoc, setDoc, serverTimestamp, doc, getDoc, where, updateDoc, deleteDoc, limit, startAfter, QueryDocumentSnapshot, getCountFromServer, Timestamp } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { type Lifetree, type Sanctuary, type TreeOwnershipInvite, type InvitableRole } from '../../types';
 import { createBlock } from '../../utils/crypto';
@@ -433,20 +433,32 @@ export const getSanctuaryById = async (id: string): Promise<Sanctuary | null> =>
     return snap.exists() ? (mapDoc(snap as any) as Sanctuary) : null;
 };
 
-// Sanctuaries that hold a community in their circle (communityIds) — a sanctuary can
-// belong to many communities beyond the domain it is rooted in.
-export const getSanctuariesByCommunity = async (communityId: string): Promise<Sanctuary[]> =>
-    (await getDocs(query(sanctuariesCollection, where('communityIds', 'array-contains', communityId))))
-        .docs.map(d => (mapDoc(d) as Sanctuary));
+// Sanctuaries sheltering a community — belonging lives in the LIN (sanctuary __shelters__
+// community), plus the primary communityId scalar for sanctuaries rooted there directly.
+export const getSanctuariesByCommunity = async (communityId: string): Promise<Sanctuary[]> => {
+    const [links, primary] = await Promise.all([
+        getDocs(query(collection(db, 'links'), where('rel', '==', 'shelters'), where('to', '==', communityId))),
+        getDocs(query(sanctuariesCollection, where('communityId', '==', communityId))),
+    ]);
+    const out = new Map<string, Sanctuary>();
+    for (const d of primary.docs) out.set(d.id, mapDoc(d) as Sanctuary);
+    const missing = links.docs.map(l => (l.data() as any).from).filter((id: string) => !out.has(id));
+    const fetched = await Promise.all(missing.map((id: string) => getSanctuaryById(id).catch(() => null)));
+    for (const s of fetched) if (s) out.set(s.id, s);
+    return [...out.values()];
+};
 
-// Step a community into an existing sanctuary — append-only (the rules enforce that
-// nothing leaves the circle this way, and nothing else changes).
-export const adoptSanctuary = (sanctuaryId: string, communityId: string) =>
-    updateDoc(doc(db, 'sanctuaries', sanctuaryId), { communityIds: arrayUnion(communityId), updatedAt: serverTimestamp() });
+// The sanctuary steps into (shelters) a community — one LIN edge, minted by its keeper.
+export const adoptSanctuary = async (sanctuaryId: string, communityId: string) => {
+    await setDoc(doc(db, 'links', `${sanctuaryId}__shelters__${communityId}`),
+        { lid: uuidv7(), type: 'link', rel: 'shelters', from: sanctuaryId, to: communityId, createdAt: serverTimestamp() });
+};
 
-// Move / describe a sanctuary's place — owner or staff, per the rules.
+// Move / describe a sanctuary — owner or staff, per the rules. Undefined and empty-string
+// values are stripped (belt and braces alongside ignoreUndefinedProperties).
 export const updateSanctuary = (sanctuaryId: string, data: Partial<Sanctuary>) =>
-    updateDoc(doc(db, 'sanctuaries', sanctuaryId), { ...data });
+    updateDoc(doc(db, 'sanctuaries', sanctuaryId),
+        Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined && v !== '')) as any);
 
 // Release a sanctuary — owner or staff, per the rules.
 export const deleteSanctuary = (sanctuaryId: string) => deleteDoc(doc(db, 'sanctuaries', sanctuaryId));

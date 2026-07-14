@@ -68,9 +68,11 @@ export const canToggleValidation = ({
   isSuperAdmin?: boolean;
   isInitiate?: boolean;
 }) => {
-  if (!tree || tree.isNature) return false;
-  // Un-validating stays staff-only; initiates only pass validation ON.
+  if (!tree) return false;
+  // Un-validating stays staff-only — and works on ANY validated tree, nature included
+  // (a guarded tree can be validated for support, so staff must be able to take it back).
   if (isExplicitlyValidatedTree(tree)) return Boolean(isSuperAdmin || isAdmin);
+  if (tree.isNature) return false;
   if (isSuperAdmin || isAdmin || isInitiate) return true;
   return Boolean(myActiveTree && isValidationLive(myActiveTree) && myActiveTree.id !== tree.id);
 };

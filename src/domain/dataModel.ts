@@ -161,7 +161,7 @@ export const DATA_MODEL: ModelEntity[] = [
   // --- Sanctuary & engagement ----------------------------------------------
   {
     key: 'Sanctuary', label: 'Sanctuary', collection: 'sanctuaries', x: 970, y: 250,
-    note: 'a sacred place on a domain',
+    note: 'a sacred place \u00b7 belonging = shelters links',
     fields: [
       { name: 'id', type: 'string', pk: true },
       { name: 'ownerId', type: 'uid', ref: 'Person' },
@@ -269,6 +269,20 @@ export const DATA_MODEL: ModelEntity[] = [
       { name: 'choice', type: 'supporter|ai_need' },
       { name: 'periodStartMs', type: 'number' },
       { name: 'periodEndMs', type: 'number' },
+    ],
+  },
+
+  {
+    key: 'Stay', label: 'Stay', collection: 'stays', x: 970, y: 940,
+    note: 'a bed under a sanctuary\u2019s roof',
+    fields: [
+      { name: 'id', type: 'string', pk: true },
+      { name: 'sanctuaryId', type: 'id', ref: 'Sanctuary' },
+      { name: 'uid', type: 'uid', ref: 'Person' },
+      { name: 'hostUid', type: 'uid', ref: 'Person' },
+      { name: 'fromDate', type: 'yyyy-mm-dd' },
+      { name: 'toDate', type: 'yyyy-mm-dd' },
+      { name: 'status', type: 'requested|accepted|declined' },
     ],
   },
 

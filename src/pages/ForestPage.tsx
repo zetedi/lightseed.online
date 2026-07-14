@@ -52,6 +52,22 @@ export const ForestPage = ({
   // Sanctuaries are a layer of their own — the lighthouses. On by default, in both views.
   const [showSanctuaries, setShowSanctuaries] = useState(true);
   const sanctuaries = useVisibleSanctuaries(sanctuaryDomain, mapRefreshKey);
+  // Sanctuaries of one community gather as a DECK of cards: one stacked pile with a count,
+  // opening into its cards on a tap. Loners stand alone.
+  const [openDecks, setOpenDecks] = useState<Set<string>>(new Set());
+  const sanctuaryDecks = React.useMemo(() => {
+    const groups = new Map<string, Sanctuary[]>();
+    for (const s of sanctuaries) {
+      const key = s.communityId || s.domain || s.id;
+      groups.set(key, [...(groups.get(key) || []), s]);
+    }
+    return [...groups.entries()];
+  }, [sanctuaries]);
+  const toggleDeck = (key: string) => setOpenDecks(prev => {
+    const next = new Set(prev);
+    if (next.has(key)) next.delete(key); else next.add(key);
+    return next;
+  });
   const toggleCls = "flex cursor-pointer items-center gap-2 text-sm font-medium text-emerald-900 dark:text-emerald-100";
   // One emerald card holding the three filters. On the map it's a top-left overlay (z-20, BELOW the
   // sticky nav's z-30) stacked vertically on mobile; on the grid it sits in flow as ONE horizontal
@@ -90,9 +106,41 @@ export const ForestPage = ({
         <>
           <div className="mb-4 flex justify-center">{filters(true)}</div>
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {showSanctuaries && sanctuaries.map(s => (
-              <SanctuaryCard key={`sanctuary-${s.id}`} sanctuary={s} onOpen={onViewSanctuary} className="h-56" />
-            ))}
+            {showSanctuaries && sanctuaryDecks.map(([deckId, group]) => {
+              if (group.length === 1) {
+                return <SanctuaryCard key={`sanctuary-${group[0].id}`} sanctuary={group[0]} onOpen={onViewSanctuary} className="h-56" />;
+              }
+              if (!openDecks.has(deckId)) {
+                return (
+                  <div
+                    key={`deck-${deckId}`}
+                    onClick={() => toggleDeck(deckId)}
+                    role="button"
+                    aria-label={`${group.length} sanctuaries of one community — open the deck`}
+                    className="relative h-56 cursor-pointer transition-transform hover:-translate-y-1"
+                  >
+                    <div className="absolute inset-0 translate-x-2.5 translate-y-2.5 rotate-[2.5deg] rounded-2xl bg-amber-200/60 ring-1 ring-amber-300/50" />
+                    <div className="absolute inset-0 translate-x-1 translate-y-1 rotate-[1deg] rounded-2xl bg-amber-100/80 ring-1 ring-amber-200/60" />
+                    <SanctuaryCard sanctuary={group[0]} className="absolute inset-0 h-full" />
+                    <span className="absolute -right-1.5 -top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-amber-500 text-xs font-black text-white shadow">{group.length}</span>
+                  </div>
+                );
+              }
+              return group.map((s, i) => (
+                <div key={`sanctuary-${s.id}`} className="relative">
+                  <SanctuaryCard sanctuary={s} onOpen={onViewSanctuary} className="h-56" />
+                  {i === 0 && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleDeck(deckId); }}
+                      className="absolute bottom-3 left-3 z-10 rounded-full bg-black/50 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur transition-colors hover:bg-black/70"
+                      aria-label="Gather the deck"
+                    >
+                      ⧉ stack
+                    </button>
+                  )}
+                </div>
+              ));
+            })}
             {filteredData.length === 0 && !loadingMore && !(showSanctuaries && sanctuaries.length > 0) ? (
               /* No trees yet: Mahameru remains — the sea of creation, Orion over still water. */
               <div className="col-span-full relative overflow-hidden rounded-3xl border border-slate-800/40 shadow-xl">

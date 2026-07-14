@@ -363,6 +363,31 @@ service cloud.firestore {
     }
 
     // Alignments: Read public, Write signed in
+    // Stays — bed requests under a sanctuary's roof (domain/stay.ts). The guest creates
+    // their own request (hostUid frozen to the sanctuary's keeper); the keeper (or staff)
+    // answers with a status; either side may withdraw/read their own.
+    match /stays/{stayId} {
+      allow read: if isSignedIn() && (
+        resource.data.uid == request.auth.uid
+        || resource.data.hostUid == request.auth.uid
+        || isStaff()
+      );
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.get('status', '') == 'requested'
+        && request.resource.data.get('hostUid', '') ==
+             get(/databases/$(database)/documents/sanctuaries/$(request.resource.data.sanctuaryId)).data.ownerId;
+      allow update: if isSignedIn()
+        && (resource.data.hostUid == request.auth.uid || isStaff())
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+        && request.resource.data.get('status', '') in ['requested', 'accepted', 'declined'];
+      allow delete: if isSignedIn() && (
+        resource.data.uid == request.auth.uid
+        || resource.data.hostUid == request.auth.uid
+        || isStaff()
+      );
+    }
+
     // The care economy (domain/support.ts): a year of support for one tree. Written ONLY by
     // the payment rail (Cloud Functions bypass rules); the app just reads its own flows.
     match /supports/{supportId} {
@@ -408,17 +433,8 @@ service cloud.firestore {
       // same tradeoff canViewTree documents.
       allow read: if resource.data.get('visibility', 'community') == 'public' || isSignedIn();
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && (
-        (resource.data.ownerId == request.auth.uid || isStaff())
-        // Stepping in: any signed-in being may ADD a community to a sanctuary's circle —
-        // append-only (no community can be pushed out this way), nothing else may change.
-        || (
-             request.resource.data.diff(resource.data).affectedKeys()
-               .hasOnly(['communityIds', 'updatedAt'])
-             && request.resource.data.get('communityIds', []).hasAll(resource.data.get('communityIds', []))
-           )
-      );
-      allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
+      // Belonging is LIN edges now (sanctuary __shelters__ community) — no array clause.
+      allow update, delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
     }
 
     // Invite requests — anyone (signed out) can ask to join; only staff can read/triage.
@@ -511,7 +527,7 @@ service cloud.firestore {
         || (isSignedIn() && request.resource.data.rel == 'participant'
             && isTreeOwner(request.resource.data.from))
         // Rooting: a sanctuary's keeper roots THEIR sanctuary in a tree (from = sanctuary id).
-        || (isSignedIn() && request.resource.data.rel == 'rooted'
+        || (isSignedIn() && request.resource.data.rel in ['rooted', 'shelters']
             && get(/databases/$(database)/documents/sanctuaries/$(request.resource.data.from)).data.ownerId == request.auth.uid)
         // The community owner accepts a join request by minting the member link themself.
         || (isSignedIn() && request.resource.data.rel == 'member'
@@ -520,7 +536,7 @@ service cloud.firestore {
         resource.data.from == request.auth.uid
         || isStaff()
         || (resource.data.get('rel', '') == 'participant' && isTreeOwner(resource.data.from))
-        || (resource.data.get('rel', '') == 'rooted'
+        || (resource.data.get('rel', '') in ['rooted', 'shelters']
             && get(/databases/$(database)/documents/sanctuaries/$(resource.data.from)).data.ownerId == request.auth.uid)
         // The community owner can decline requests and remove members of their community.
         || (resource.data.get('rel', '') in ['member', 'join_request']

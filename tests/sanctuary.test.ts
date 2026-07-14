@@ -5,7 +5,7 @@ import { canViewSanctuary, sanctuaryVisibility } from '../src/domain/sanctuary';
 // The three levels — community (members), node (anyone signed in), public (the world).
 
 const sanctum = (over: Record<string, unknown> = {}) =>
-  ({ ownerId: 'keeper', communityId: 'per-auset', communityIds: ['per-auset'], ...over }) as any;
+  ({ ownerId: 'keeper', communityId: 'per-auset', ...over }) as any;
 
 describe('sanctuaryVisibility', () => {
   it('absent visibility means community — private by default', () => {
@@ -34,14 +34,13 @@ describe('canViewSanctuary', () => {
     expect(canViewSanctuary(s, { uid: 'other', memberCommunityIds: new Set(['elsewhere']) })).toBe(false);
   });
 
-  it('a sanctuary of many communities opens to a member of any of them', () => {
-    const shared = sanctum({ communityIds: ['per-auset', 'second-grove'] });
-    expect(canViewSanctuary(shared, { uid: 'm', memberCommunityIds: new Set(['second-grove']) })).toBe(true);
+  it('a sanctuary sheltering many communities (LIN homes) opens to a member of any of them', () => {
+    const homes = ['per-auset', 'second-grove']; // read from sanctuary __shelters__ links
+    expect(canViewSanctuary(sanctum(), { uid: 'm', memberCommunityIds: new Set(['second-grove']) }, homes)).toBe(true);
   });
 
-  it('falls back to the primary communityId when the list is absent', () => {
-    const bare = sanctum({ communityIds: undefined });
-    expect(canViewSanctuary(bare, { uid: 'm', memberCommunityIds: new Set(['per-auset']) })).toBe(true);
-    expect(canViewSanctuary(bare, { uid: 'm', memberCommunityIds: new Set() })).toBe(false);
+  it('falls back to the primary communityId when no homes are supplied', () => {
+    expect(canViewSanctuary(sanctum(), { uid: 'm', memberCommunityIds: new Set(['per-auset']) })).toBe(true);
+    expect(canViewSanctuary(sanctum(), { uid: 'm', memberCommunityIds: new Set() })).toBe(false);
   });
 });

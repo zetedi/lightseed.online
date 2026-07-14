@@ -339,6 +339,7 @@ const AppContent = () => {
     // the last open layer is topmost (closed first on Back). See useHistoryLayers.
     const openKeys = useHistoryLayers([
         { key: 'tree', open: !!selectedTree, close: () => setSelectedTree(null) },
+        { key: 'sanctuary', open: !!viewingSanctuary, close: () => setViewingSanctuary(null) },
         { key: 'community', open: !!selectedCommunity, close: () => setSelectedCommunity(null) },
         { key: 'vision', open: !!selectedVision, close: () => setSelectedVision(null) },
         { key: 'alignment', open: !!selectedAlignment, close: () => setSelectedAlignment(null) },
@@ -1105,31 +1106,6 @@ const AppContent = () => {
                 </DetailWrapper>
             )}
 
-            {viewingSanctuary && (
-                <DetailWrapper>
-                    <SanctuaryProfile
-                        sanctuary={viewingSanctuary}
-                        onClose={() => setViewingSanctuary(null)}
-                        onViewCommunity={setSelectedCommunity}
-                        onViewTree={(t) => setSelectedTree(t)}
-                        canEdit={isSuperAdmin || isAdmin || viewingSanctuary.ownerId === lightseed?.uid}
-                        editIsStaffOnly={viewingSanctuary.ownerId !== lightseed?.uid && (isSuperAdmin || isAdmin)}
-                        onDelete={async (id) => {
-                            await deleteSanctuary(id);
-                            setViewingSanctuary(null);
-                            announce('sanctuaries', id);
-                            notify('The sanctuary was released.');
-                        }}
-                        onSetVisibility={async (id, v) => {
-                            await setSanctuaryVisibility(id, v);
-                            setViewingSanctuary(prev => prev && prev.id === id ? { ...prev, visibility: v } : prev);
-                            announce('sanctuaries', id);
-                            notify(`Sanctuary is now ${v === 'community' ? 'community-only' : v}.`);
-                        }}
-                    />
-                </DetailWrapper>
-            )}
-
             {editingEvent && (
                 <EventModal
                     lightseed={lightseed}
@@ -1174,6 +1150,32 @@ const AppContent = () => {
                     />
                 </DetailWrapper>
             )}
+
+            {viewingSanctuary && (
+                <DetailWrapper>
+                    <SanctuaryProfile
+                        sanctuary={viewingSanctuary}
+                        onClose={() => setViewingSanctuary(null)}
+                        onViewCommunity={setSelectedCommunity}
+                        onViewTree={(t) => setSelectedTree(t)}
+                        canEdit={isSuperAdmin || isAdmin || viewingSanctuary.ownerId === lightseed?.uid}
+                        editIsStaffOnly={viewingSanctuary.ownerId !== lightseed?.uid && (isSuperAdmin || isAdmin)}
+                        onDelete={async (id) => {
+                            await deleteSanctuary(id);
+                            setViewingSanctuary(null);
+                            announce('sanctuaries', id);
+                            notify('The sanctuary was released.');
+                        }}
+                        onSetVisibility={async (id, v) => {
+                            await setSanctuaryVisibility(id, v);
+                            setViewingSanctuary(prev => prev && prev.id === id ? { ...prev, visibility: v } : prev);
+                            announce('sanctuaries', id);
+                            notify(`Sanctuary is now ${v === 'community' ? 'community-only' : v}.`);
+                        }}
+                    />
+                </DetailWrapper>
+            )}
+
 
             {/* Direct Messages as a large overlay: the nav envelope and reach deep-links open the
                 inbox here, in place, instead of steering to the profile's Reaches tab. */}
