@@ -10,8 +10,9 @@ Every intelligence entering this project roots first in the same living context.
 5. Read the current section of `root/ROADMAP.md`.
 6. Inspect the code and Git history — `BRIDGE.md` maps the beings to the code.
 7. **Never silently contradict the root.** When the code reveals a better truth,
-   propose a change to the root documents — the relationship is circular:
-   *seed → code → experience → reflection → clearer seed.*
+   propose a change to the root documents — the loop has no sovereign layer:
+   *root ↕ code ↕ experience ↕ living beings and place ↕ reflection ↕ new ring.*
+   Sometimes a tree dies while every gate remains green.
 
 ## Working rules
 

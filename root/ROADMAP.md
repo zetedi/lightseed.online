@@ -33,11 +33,18 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
 - **Federation (adoption ladder layer 4)**: nodes running elsewhere, lids
   traveling between them; chain-as-tree for every being across nodes.
 - **Own models**: node-level intelligences; big nodes with private ones.
-- **The code garden**: a place with a lock on who develops the code — which
-  tree, which hands — where others can JOIN the session through a community /
-  group reach. The root, the code, the humans and the trees grow together;
-  humans no longer need to code, but they can look — and one human remains who
-  can understand the code when needed.
+- **The Code Tree** — the development locus as a first-class Being: not a
+  hidden GitHub permission but a tree with a council, visible lineage, and
+  explicit authority. Its relations, in the LIN's own tongue:
+  `__maintained_by__ Person · __reviewed_by__ Council · __serves__ Community ·
+  __implements__ Root · __deployed_as__ Node`. A community/group Reach opens a
+  **development session** (itself a Being: participants, purpose, root commit,
+  proposals, reviews, authorizedBy, resulting commit + ring) — so code
+  development becomes a social, traceable act. People who cannot code can still
+  witness the proposal, understand its purpose, question its consequences, test
+  the lived result, and take part in whether it belongs. The flow:
+  need → Reach → session → root inspection → proposal → review → human
+  authorization → commit + ring + deployment.
 - Embedded Gaussian-splat viewer for sanctuary 3D doors (today: external URL).
 - Initiation layer growth: the git ledger beyond its first three sponsors.
 - **`root/GLOSSARY.md`** — the linguistic rings (Lumo's suggestion): a glossary

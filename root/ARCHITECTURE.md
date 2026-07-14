@@ -1,7 +1,14 @@
 # ARCHITECTURE — how it currently lives
 
 The current organism: systems, boundaries, data flow, interfaces.
-When this drifts from the code, the code is the truth — propose a change here.
+
+When architecture drifts from implementation, the code reveals the CURRENT
+BEHAVIOR — not necessarily what the community intended, what life needs, or
+what should happen next. When behavior drifts from the root or from lived
+reality, the contradiction must be surfaced and consciously resolved. Sometimes
+experience reveals the flaw before a test does; sometimes a vulnerable person
+sees the danger before the maintainer understands the code; sometimes a tree
+dies while every gate remains green. No layer is supreme in isolation.
 
 ## Stack
 

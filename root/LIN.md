@@ -46,6 +46,18 @@ additionally grow a **Council** — the organ by which many become one voice.
 10. **The internet has no weather, only moods.** Physical reality is first-class:
     real coordinates, real EXIF moments, real fires at real sanctuaries.
 
+## The loop
+
+No layer is supreme in isolation:
+
+```
+root ↕ code ↕ experience ↕ living beings and place ↕ reflection ↕ new ring
+```
+
+The root expresses the best understanding so far. The code tests it. Experience
+refines it. Living beings and places judge it in ways no gate can. Reflection
+names what happened. The ring makes it history. Then the root grows clearer.
+
 ## Language
 
 *tend* (care as action) · *mint* (seal a moment onto a chain) · *water* (the
@@ -86,3 +98,9 @@ sanctuary sheltering a community) · *the Moment* (see GENESIS.md).
 - `ARCHITECTURE.md` is maintained beside the code, debts listed honestly.
 - Deep roots permit greater speed: when first principles are clear, fewer
   decisions have to be rediscovered every week.
+- **The code human translates, or becomes a priest.** One human who deeply
+  understands the code may be enough for a small circle — but their
+  understanding must continually flow into tests, architecture, readable
+  explanations, review records, and teachable patterns. The ideal code human is
+  not the only one allowed to see; they are responsible for helping everyone
+  else see as far as they reasonably can.

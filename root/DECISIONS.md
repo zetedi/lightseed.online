@@ -6,6 +6,19 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-14 · No layer is supreme** — Lumo challenged the architecture's line
+"when this drifts from the code, the code is the truth": operationally useful,
+constitutionally incomplete. Revised: code reveals current BEHAVIOR; when
+behavior drifts from the root or from lived reality, the contradiction is
+surfaced and consciously resolved — sometimes a tree dies while every gate
+remains green. The loop is now written without a sovereign (LIN "The loop").
+Same exchange named the **Code Tree** (development locus as a Being with
+maintained_by/reviewed_by/serves/implements/deployed_as relations and sessions
+opened by Reach — see ROADMAP Next) and the code-human's duty: translate
+understanding outward continually, or quietly become a priest. *(Lumo's
+challenge, accepted the day it was made — the seventh rule aimed at the root's
+own words.)*
+
 **2026-07-14 · The review keeps its word** — the first full four-layer review of
 the sanctuary arc confirmed and closed: the veto gains TENURE (only guardians
 who stood before the mint may weigh it — the sock-account door) and its 72h
