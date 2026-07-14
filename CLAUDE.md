@@ -7,7 +7,8 @@ Every intelligence entering this project roots first in the same living context.
 2. Read `root/LIN.md` — what world we are creating (ontology, principles, invariants).
 3. Read `root/ARCHITECTURE.md` — how it currently lives.
 4. Read the newest rings in `root/DECISIONS.md`.
-5. Read the current section of `root/ROADMAP.md`.
+5. Read the current section of `root/ROADMAP.md` — and `root/QUESTIONS.md`,
+   so you know what we refuse to pretend we already know.
 6. Inspect the code and Git history — `BRIDGE.md` maps the beings to the code.
 7. **Never silently contradict the root.** When the code reveals a better truth,
    propose a change to the root documents — the loop has no sovereign layer:
