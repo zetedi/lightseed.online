@@ -8,16 +8,20 @@ import { SuperDot } from './ui/SuperDot';
 import { showAlert, showConfirm } from './ui/Dialog';
 import { BeingQr } from './ui/BeingQr';
 import { mintBeingQr } from '../services/firebase/beings';
-import { getCommunityById } from '../services/firebase';
+import { getCommunityById, updateSanctuary, getLifetreeById, getTreesByDomain } from '../services/firebase';
+import { firestoreStore } from '../adapters/firestore';
+import { LocationPicker } from './ui/LocationPicker';
+import { announce } from '../services/refreshBus';
+import { notify } from './ui/Toast';
 import { sanctuaryVisibility, type Sanctuary, type SanctuaryVisibility } from '../domain/sanctuary';
-import type { Community } from '../types';
+import type { Community, Lifetree } from '../types';
 
 // The sanctuary's own page — the shared profile anatomy (ProfileHero + ProfileLayout), so a
 // sacred place opens like every other being: from its map marker, or from a community's
 // Sanctuaries tab. Two sections: About (the story, the 3D door, the visibility chips) and
 // Communities — the mirror of the community profile: which houses this sanctuary holds.
 
-type SanctuarySection = 'about' | 'communities';
+type SanctuarySection = 'about' | 'communities' | 'tree';
 
 interface SanctuaryProfileProps {
     sanctuary: Sanctuary;
@@ -29,11 +33,38 @@ interface SanctuaryProfileProps {
     onSetVisibility?: (id: string, visibility: SanctuaryVisibility) => Promise<void>;
     onDelete?: (id: string) => Promise<void>;
     onViewCommunity?: (community: Community) => void;
+    onViewTree?: (tree: Lifetree) => void;
 }
 
-export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEdit = false, editIsStaffOnly = false, onSetVisibility, onDelete, onViewCommunity }: SanctuaryProfileProps) => {
+export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEdit = false, editIsStaffOnly = false, onSetVisibility, onDelete, onViewCommunity, onViewTree }: SanctuaryProfileProps) => {
     const visibility = sanctuaryVisibility(sanctuary);
     const [section, setSection] = useState<SanctuarySection>('about');
+
+    // The place, editable by keepers: tap the map (or refine the name), then save.
+    const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(
+        Number.isFinite(sanctuary.latitude) && Number.isFinite(sanctuary.longitude)
+            ? { latitude: sanctuary.latitude!, longitude: sanctuary.longitude! }
+            : null,
+    );
+    const [placeName, setPlaceName] = useState(sanctuary.locationName || '');
+    const [isSavingPlace, setIsSavingPlace] = useState(false);
+    const placeDirty = (coords?.latitude !== sanctuary.latitude) || (coords?.longitude !== sanctuary.longitude) || placeName.trim() !== (sanctuary.locationName || '');
+    const savePlace = async () => {
+        if (isSavingPlace) return;
+        setIsSavingPlace(true);
+        try {
+            await updateSanctuary(sanctuary.id, {
+                latitude: coords?.latitude,
+                longitude: coords?.longitude,
+                locationName: placeName.trim() || undefined,
+            });
+            announce('sanctuaries', sanctuary.id);
+            notify('🌍 The sanctuary found its place.');
+        } catch (e: any) {
+            showAlert(e?.message || 'Could not save the place.');
+        }
+        setIsSavingPlace(false);
+    };
 
     // The circle of communities this sanctuary holds (communityIds + the primary), resolved
     // lazily to their documents — a sanctuary can belong to many houses.
@@ -47,8 +78,46 @@ export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEd
         return () => { alive = false; };
     }, [homeIdsKey]);
 
+    // The tree this sanctuary is ROOTED IN (sanctuary __rooted__ tree) — that tree is a
+    // mother tree. A sanctuary is never built before a tree is planted.
+    const [rootTree, setRootTree] = useState<Lifetree | null>(null);
+    const [rootLoaded, setRootLoaded] = useState(false);
+    const [domainTrees, setDomainTrees] = useState<Lifetree[]>([]);
+    const [isRooting, setIsRooting] = useState(false);
+    useEffect(() => {
+        let alive = true;
+        firestoreStore.linksFrom(sanctuary.id, 'rooted')
+            .then(async links => {
+                const tid = links[0]?.to;
+                const t = tid ? await getLifetreeById(tid).catch(() => null) : null;
+                if (alive) { setRootTree(t); setRootLoaded(true); }
+            })
+            .catch(() => { if (alive) setRootLoaded(true); });
+        return () => { alive = false; };
+    }, [sanctuary.id]);
+    useEffect(() => {
+        if (!canEdit || !sanctuary.domain) return;
+        let alive = true;
+        getTreesByDomain(sanctuary.domain)
+            .then(list => { if (alive) setDomainTrees(list); })
+            .catch(() => {});
+        return () => { alive = false; };
+    }, [canEdit, sanctuary.domain]);
+    const rootIn = async (tree: Lifetree) => {
+        if (isRooting) return;
+        setIsRooting(true);
+        try {
+            if (rootTree) await firestoreStore.unlink(sanctuary.id, 'rooted', rootTree.id);
+            await firestoreStore.link(sanctuary.id, 'rooted', tree.id);
+            setRootTree(tree);
+            notify(`🌳 ${sanctuary.name} is rooted in ${tree.name} — a mother tree now.`);
+        } catch (e: any) { showAlert(e?.message || 'Could not root the sanctuary.'); }
+        setIsRooting(false);
+    };
+
     const sections: SectionItem[] = [
         { key: 'about', label: 'About', icon: <Icons.Sun /> },
+        { key: 'tree', label: 'The Tree', icon: <Icons.Tree /> },
         { key: 'communities', label: `Communities${homes && homes.length > 0 ? ` (${homes.length})` : ''}`, icon: <Icons.Globe /> },
     ];
 
@@ -124,6 +193,23 @@ export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEd
                             </a>
                         )}
 
+                        {/* The place — keepers move the sanctuary with the map's help. */}
+                        {canEdit && (
+                            <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-5 shadow-sm">
+                                <h3 className="mb-2.5 text-xs font-bold uppercase tracking-wider text-amber-600">The place</h3>
+                                <p className="mb-2 text-[11px] text-slate-500">Tap the map to move the sanctuary — it glows where you place it in the forest.</p>
+                                <LocationPicker value={coords} onChange={setCoords} className="h-56 w-full overflow-hidden rounded-xl border border-amber-100 shadow-inner" />
+                                <div className="mt-3 flex flex-wrap items-center gap-2">
+                                    <input value={placeName} onChange={e => setPlaceName(e.target.value)} placeholder="Place name (e.g. The Olive Grove, Crete)"
+                                        className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                                    <button onClick={savePlace} disabled={!placeDirty || isSavingPlace}
+                                        className="rounded-full bg-amber-500 px-5 py-2 text-xs font-bold text-white shadow transition-colors hover:bg-amber-600 disabled:opacity-40">
+                                        {isSavingPlace ? 'Saving…' : 'Save place'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Who may see it — keepers can open it wider or draw it back, right here. */}
                         {canEdit && onSetVisibility && (
                             <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-5 shadow-sm">
@@ -135,6 +221,51 @@ export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEd
                                             className={`rounded-full border px-4 py-1.5 text-xs font-bold capitalize transition-all ${visibility === v ? 'border-amber-400 bg-amber-100 text-amber-800' : 'border-slate-200 bg-white text-slate-500 hover:border-amber-200'}`}>
                                             {v}
                                         </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {section === 'tree' && (
+                    <div>
+                        <SectionTitle title="The Tree" sub="A sanctuary roots in a tree — never before one. The tree that holds it is a mother tree." />
+                        {!rootLoaded ? (
+                            <p className="py-8 text-center text-sm text-slate-400">Listening…</p>
+                        ) : rootTree ? (
+                            <div
+                                onClick={onViewTree ? () => onViewTree(rootTree) : undefined}
+                                role={onViewTree ? 'button' : undefined}
+                                className={`flex items-center gap-4 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-white p-4 shadow-sm ${onViewTree ? 'cursor-pointer transition-shadow hover:shadow-md' : ''}`}
+                            >
+                                <img src={rootTree.latestGrowthUrl || rootTree.imageUrl || '/mahameru.svg'} alt="" className="h-16 w-16 shrink-0 rounded-full border-4 border-amber-300 object-cover bg-[#04070f] shadow" />
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-lg font-light tracking-wide text-slate-800">{rootTree.name}</p>
+                                    <p className="text-[10px] font-black uppercase tracking-wide text-amber-600">☀ Mother tree — this sanctuary is rooted here</p>
+                                </div>
+                                <Icons.ArrowRight size={18} className="shrink-0 text-amber-300" />
+                            </div>
+                        ) : (
+                            <p className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">
+                                This sanctuary is not rooted in a tree yet.
+                            </p>
+                        )}
+
+                        {/* The keeper roots (or re-roots) the sanctuary in one of the domain's trees. */}
+                        {canEdit && domainTrees.length > 0 && (
+                            <div className="mt-6 rounded-2xl border border-amber-100 bg-amber-50/50 p-4">
+                                <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-amber-600">{rootTree ? 'Re-root in another tree' : 'Root this sanctuary in a tree'}</p>
+                                <div className="space-y-2">
+                                    {domainTrees.filter(t => t.id !== rootTree?.id).map(t => (
+                                        <div key={t.id} className="flex items-center gap-3 rounded-xl border border-amber-100 bg-white p-2.5">
+                                            <img src={t.latestGrowthUrl || t.imageUrl || '/mahameru.svg'} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover bg-[#04070f]" />
+                                            <p className="min-w-0 flex-1 truncate text-sm font-medium text-slate-700">{t.name}</p>
+                                            <button onClick={() => rootIn(t)} disabled={isRooting}
+                                                className="shrink-0 rounded-full bg-amber-500 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-amber-600 disabled:opacity-50">
+                                                {isRooting ? 'Rooting…' : 'Root here'}
+                                            </button>
+                                        </div>
                                     ))}
                                 </div>
                             </div>

@@ -74,13 +74,13 @@ describe('derivePathway — the ladder, stage by stage', () => {
   });
 
   it('guarding a tree already IS a connection', () => {
-    const p = derivePathway(being({ guardedCount: 1, connectionsCount: 0, isMember: false }), NOW);
+    const p = derivePathway(being({ guardedCount: 1, connectionsCount: 0, isMember: false, ownsCommunity: false }), NOW);
     expect(p.stage).toBe('connected');
     expect(p.next?.key).toBe('join');
   });
 
   it('connected but standing with no community → become a member', () => {
-    const p = derivePathway(being({ isMember: false }), NOW);
+    const p = derivePathway(being({ isMember: false, ownsCommunity: false }), NOW);
     expect(p.stage).toBe('connected');
     expect(p.next?.key).toBe('join');
   });
@@ -129,7 +129,7 @@ describe('derivePathway — shape and progression', () => {
       [being({ myTreesCount: 0, guardedCount: 0 }), 'invited'],
       [being({ lastTendedAtMs: null }), 'rooted'],
       [being({ guardedCount: 0, connectionsCount: 0 }), 'tending'],
-      [being({ isMember: false }), 'connected'],
+      [being({ isMember: false, ownsCommunity: false }), 'connected'],
       [being({ followedVisionsCount: 0 }), 'member'],
       [being({ circleSize: 0 }), 'visionary'],
       [being({ ownsCommunity: false }), 'circling'],
@@ -149,7 +149,7 @@ describe('derivePathway — shape and progression', () => {
       being({ myTreesCount: 0, guardedCount: 0 }),
       being({ lastTendedAtMs: null }),
       being({ guardedCount: 0, connectionsCount: 0 }),
-      being({ isMember: false }),
+      being({ isMember: false, ownsCommunity: false }),
       being({ followedVisionsCount: 0 }),
       being({ circleSize: 0 }),
       being({ ownsCommunity: false }),
@@ -186,3 +186,16 @@ describe('derivePathway — shape and progression', () => {
     }
   });
 });
+
+describe('keepers are members by definition', () => {
+  it('owning a community passes the join milestone without an explicit member link', () => {
+    const keeper = being({ isMember: false, ownsCommunity: true });
+    const s = derivePathway(keeper, NOW);
+    expect(s.next?.key).not.toBe('join');
+    expect(['circling', 'founding', 'sovereign', 'visionary', 'member']).toContain(s.stage);
+  });
+  it('without a community, the join call still sounds', () => {
+    expect(derivePathway(being({ isMember: false, ownsCommunity: false, communityHasCustomDomain: false, communityHasTheme: false }), NOW).next?.key).toBe('join');
+  });
+});
+

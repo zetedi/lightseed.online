@@ -510,6 +510,9 @@ service cloud.firestore {
             && request.resource.data.rel in ['guardian', 'joined', 'join_request'])
         || (isSignedIn() && request.resource.data.rel == 'participant'
             && isTreeOwner(request.resource.data.from))
+        // Rooting: a sanctuary's keeper roots THEIR sanctuary in a tree (from = sanctuary id).
+        || (isSignedIn() && request.resource.data.rel == 'rooted'
+            && get(/databases/$(database)/documents/sanctuaries/$(request.resource.data.from)).data.ownerId == request.auth.uid)
         // The community owner accepts a join request by minting the member link themself.
         || (isSignedIn() && request.resource.data.rel == 'member'
             && isCommunityOwner(request.resource.data.to));
@@ -517,6 +520,8 @@ service cloud.firestore {
         resource.data.from == request.auth.uid
         || isStaff()
         || (resource.data.get('rel', '') == 'participant' && isTreeOwner(resource.data.from))
+        || (resource.data.get('rel', '') == 'rooted'
+            && get(/databases/$(database)/documents/sanctuaries/$(resource.data.from)).data.ownerId == request.auth.uid)
         // The community owner can decline requests and remove members of their community.
         || (resource.data.get('rel', '') in ['member', 'join_request']
             && isCommunityOwner(resource.data.to)));

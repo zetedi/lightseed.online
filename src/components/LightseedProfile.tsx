@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { showAlert } from "./ui/Dialog";
 import { type Lifetree, type Alignment, type Vision, type Pulse, type ReachAudience } from '../types';
-import { listenToUserProfile, updateUserProfile, tendTree } from '../services/firebase';
+import { getLifetreeById, listenToUserProfile, updateUserProfile, tendTree } from '../services/firebase';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
@@ -116,7 +116,20 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
     const hasValidatedTree = myTrees.some((t: Lifetree) => liveValidated(t));
     const allValidated = myTrees.length > 0 && myTrees.every((t: Lifetree) => liveValidated(t));
     // Trees I guard but don't own — shown separately from my planted trees.
-    const guardedOnly = (guardedTrees as Lifetree[]).filter((tree: Lifetree) => tree.ownerId !== lightseed?.uid);
+    // Guarded = every tree in the guarded list that isn't already shown as a personal
+    // avatar. Owned NATURE trees belong here (their planter is their first guardian) —
+    // filtering by ownership made them vanish from both sections.
+    const myTreeIds = new Set((myTrees as Lifetree[]).map((t: Lifetree) => t.id));
+    const guardedOnly = (guardedTrees as Lifetree[]).filter((tree: Lifetree) => !myTreeIds.has(tree.id));
+
+    // The Original Tree — Mahameru, everyone's last section: indestructible, dissolved
+    // into Nature, part of every tree planted since.
+    const [originalTree, setOriginalTree] = useState<Lifetree | null>(null);
+    useEffect(() => {
+        let alive = true;
+        getLifetreeById('GENESIS_TREE').then(t => { if (alive) setOriginalTree(t); }).catch(() => {});
+        return () => { alive = false; };
+    }, []);
 
     if (!lightseed) return null;
 
@@ -129,6 +142,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                 <ProfileTrees
                     myTrees={myTrees}
                     guardedOnly={guardedOnly}
+                    originalTree={originalTree}
                     defaultTreeId={defaultTreeId}
                     onSetDefaultTree={onSetDefaultTree}
                     onViewTree={onViewTree}

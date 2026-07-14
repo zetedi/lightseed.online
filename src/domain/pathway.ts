@@ -169,7 +169,8 @@ export const derivePathway = (input: PathwayInput, now: number = Date.now()): Pa
     return state('rooted', 'tend');
   }
   if (input.guardedCount === 0 && input.connectionsCount === 0) return state('tending', 'connect');
-  if (!input.isMember) return state('connected', 'join');
+  // Keepers stand with their community by definition — owning one IS membership.
+  if (!input.isMember && !input.ownsCommunity) return state('connected', 'join');
   if (input.followedVisionsCount === 0) return state('member', 'followVision');
   if (input.circleSize === 0) return state('visionary', 'formCircle');
   if (!input.ownsCommunity) return state('circling', 'nameCommunity');

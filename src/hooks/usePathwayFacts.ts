@@ -52,16 +52,16 @@ export const usePathwayFacts = (lightseed: Lightseed | null, myTrees: Lifetree[]
     ]).then(([memberLinks, joinedLinks, perTreeLinks, communities]) => {
       if (!alive) return;
       const circleSize = perTreeLinks.flat().filter(l => l.rel === 'co_owner' || l.rel === 'steward').length;
-      const community = communities[0];
-      const theme = community?.theme;
       setFacts({
         loaded: true,
         isMember: memberLinks.length > 0,
         followedVisionsCount: joinedLinks.length,
         circleSize,
         ownsCommunity: communities.length > 0,
-        communityHasCustomDomain: !!community && !isHubDomain(community.domain),
-        communityHasTheme: !!theme && Object.values(theme).some(v => !!v),
+        // With several communities, ANY of them counts — the path asks whether the walker
+        // has rooted a domain / tailored a theme somewhere, not on an arbitrary first pick.
+        communityHasCustomDomain: communities.some(c => !isHubDomain(c.domain)),
+        communityHasTheme: communities.some(c => !!c.theme && Object.values(c.theme).some(v => !!v)),
       });
     });
     return () => { alive = false; };

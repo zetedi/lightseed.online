@@ -7,7 +7,9 @@ import type { Being } from './being';
 // enlisted in an event or vision. Every other rel points a person at a target.
 // 'join_request' is a person asking to become a community member — the owner accepting it
 // replaces the edge with a 'member' link.
-export type LinkRel = 'guardian' | 'co_owner' | 'steward' | 'observer' | 'member' | 'joined' | 'participant' | 'join_request';
+// 'rooted': a SANCTUARY rooted in a lifetree — the tree that holds it becomes a MOTHER
+// TREE. A sanctuary is never built before a tree is planted.
+export type LinkRel = 'guardian' | 'co_owner' | 'steward' | 'observer' | 'member' | 'joined' | 'participant' | 'join_request' | 'rooted';
 
 export interface Link extends Being {
   type: 'link';

@@ -1,10 +1,29 @@
 
 import { useState, useEffect } from 'react';
+import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../services/firebase/core';
+import { uuidv7 } from '../utils/id';
 import { onAuthChange, getMyLifetrees, getGuardedTrees, checkIsAdmin, checkIsSuperAdmin, getSuperAdminUid, claimSuperAdmin, listenToUserProfile, updateUserProfile, ensurePersonEntity } from '../services/firebase';
 import { getInitiateByUid, type Initiate } from '../domain/initiation';
 import { type Lightseed, type Lifetree } from '../types';
 
 const SUPERADMIN_EMAIL = 'zetedi@gmail.com';
+
+
+// Owned trees split into what a being WEARS (personal lifetrees) and what it GUARDS
+// (nature trees). Legacy nature trees planted before the guardian edge existed are merged
+// into the guarded list and their missing 'guardian' link is self-healed, best-effort.
+const splitTreeLists = (uid: string, owned: Lifetree[], guarded: Lifetree[]): { personal: Lifetree[]; guardedAll: Lifetree[] } => {
+    const personal = owned.filter(t => !t.isNature);
+    const ownedNature = owned.filter(t => t.isNature);
+    const guardedIds = new Set(guarded.map(t => t.id));
+    for (const t of ownedNature.filter(x => !guardedIds.has(x.id))) {
+        setDoc(doc(db, 'links', `${uid}__guardian__${t.id}`),
+            { lid: uuidv7(), type: 'link', rel: 'guardian', from: uid, to: t.id, createdAt: serverTimestamp() }).catch(() => {});
+    }
+    const guardedAll = [...guarded, ...ownedNature.filter(x => !guardedIds.has(x.id))];
+    return { personal, guardedAll };
+};
 
 export const useLifeseed = () => {
     const [lightseed, setLightseed] = useState<Lightseed | null>(null);
@@ -41,8 +60,9 @@ export const useLifeseed = () => {
                         getMyLifetrees(user.uid),
                         getGuardedTrees(user.uid),
                     ]);
-                    setMyTrees(owned);
-                    setGuardedTrees(guarded);
+                    const { personal, guardedAll } = splitTreeLists(user.uid, owned, guarded);
+                    setMyTrees(personal);
+                    setGuardedTrees(guardedAll);
                 } catch (e) {
                     console.error("Failed to fetch user trees", e);
                 }
@@ -107,8 +127,9 @@ export const useLifeseed = () => {
                 getMyLifetrees(lightseed.uid),
                 getGuardedTrees(lightseed.uid)
             ]);
-            setMyTrees(owned);
-            setGuardedTrees(guarded);
+            const { personal, guardedAll } = splitTreeLists(lightseed.uid, owned, guarded);
+            setMyTrees(personal);
+            setGuardedTrees(guardedAll);
         }
     };
 

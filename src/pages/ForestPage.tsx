@@ -3,6 +3,8 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from '../components/ui/Icons';
 import { ForestMap } from '../components/ForestMap';
 import type { Sanctuary } from '../domain/sanctuary';
+import { SanctuaryCard } from '../components/SanctuaryCard';
+import { useVisibleSanctuaries } from '../hooks/useVisibleSanctuaries';
 import { LifetreeCard } from '../components/LifetreeCard';
 import { Loading } from '../components/ui/Loading';
 import type { Lifetree } from '../types';
@@ -47,8 +49,9 @@ export const ForestPage = ({
   sanctuaryDomain = null, onViewSanctuary,
 }: ForestPageProps) => {
   const { t } = useLanguage();
-  // Sanctuaries are a map layer of their own — the lighthouses. On by default.
+  // Sanctuaries are a layer of their own — the lighthouses. On by default, in both views.
   const [showSanctuaries, setShowSanctuaries] = useState(true);
+  const sanctuaries = useVisibleSanctuaries(sanctuaryDomain, mapRefreshKey);
   const toggleCls = "flex cursor-pointer items-center gap-2 text-sm font-medium text-emerald-900 dark:text-emerald-100";
   // One emerald card holding the three filters. On the map it's a top-left overlay (z-20, BELOW the
   // sticky nav's z-30) stacked vertically on mobile; on the grid it sits in flow as ONE horizontal
@@ -72,12 +75,10 @@ export const ForestPage = ({
           <input type="checkbox" checked={showValidatedTrees} onChange={(e) => setShowValidatedTrees(e.target.checked)} className="h-4 w-4 rounded accent-emerald-600" />
           <span className="flex items-center gap-1"><span className={horizontal ? 'hidden sm:inline-flex' : 'inline-flex'}><Icons.ShieldCheck /></span> {t('validated_trees')}</span>
         </label>
-        {!horizontal && (
-          <label className={toggleCls}>
-            <input type="checkbox" checked={showSanctuaries} onChange={(e) => setShowSanctuaries(e.target.checked)} className="h-4 w-4 rounded accent-amber-500" />
-            <span className="flex items-center gap-1"><span className="inline-flex"><Icons.Sun /></span> Sanctuaries</span>
-          </label>
-        )}
+        <label className={toggleCls}>
+          <input type="checkbox" checked={showSanctuaries} onChange={(e) => setShowSanctuaries(e.target.checked)} className="h-4 w-4 rounded accent-amber-500" />
+          <span className="flex items-center gap-1"><span className={horizontal ? 'hidden sm:inline-flex' : 'inline-flex'}><Icons.Sun /></span> Sanctuaries</span>
+        </label>
       </div>
     </div>
   );
@@ -89,7 +90,10 @@ export const ForestPage = ({
         <>
           <div className="mb-4 flex justify-center">{filters(true)}</div>
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {filteredData.length === 0 && !loadingMore ? (
+            {showSanctuaries && sanctuaries.map(s => (
+              <SanctuaryCard key={`sanctuary-${s.id}`} sanctuary={s} onOpen={onViewSanctuary} className="h-56" />
+            ))}
+            {filteredData.length === 0 && !loadingMore && !(showSanctuaries && sanctuaries.length > 0) ? (
               /* No trees yet: Mahameru remains — the sea of creation, Orion over still water. */
               <div className="col-span-full relative overflow-hidden rounded-3xl border border-slate-800/40 shadow-xl">
                 <img src="/mahameru.svg" alt="Mahameru — the sea of creation" className="h-80 w-full object-cover sm:h-96" />

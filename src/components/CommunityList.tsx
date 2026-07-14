@@ -5,7 +5,10 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
 import { MahameruAvatar } from './ui/MahameruAvatar';
 import { Community, Lifetree } from '../types';
-import { fetchCommunities, createCommunity, getCommunityByDomain } from '../services/firebase';
+import { fetchCommunities, createCommunity, getCommunityByDomain, getMyVisions } from '../services/firebase';
+import { matchCommunities, type CommunityMatch } from '../domain/match';
+import { firestoreStore } from '../adapters/firestore';
+import { notify } from './ui/Toast';
 import { communityThemePresets } from '../utils/theme';
 import { sanitizeRichText } from '../utils/sanitize';
 import { Loading } from './ui/Loading';
@@ -21,7 +24,9 @@ interface CommunityListProps {
 
 // The community's hero image IS the card's background; the content reads over it. Without an
 // image the card wears the community's own colour (or the communities tone) — no placeholder art.
-const CommunityCard = ({ community, isGenesis = false, onSelect }: { community: Community, isGenesis?: boolean, onSelect: (community: Community) => void }) => {
+type CardStanding = 'keeper' | 'member' | 'requested' | 'joinable';
+
+const CommunityCard = ({ community, isGenesis = false, onSelect, standing = 'joinable', onJoin }: { community: Community, isGenesis?: boolean, onSelect: (community: Community) => void, standing?: CardStanding, onJoin?: (community: Community) => void }) => {
   const hero = (community as any).heroImageUrl || community.imageUrls?.[0];
   return (
   <div
@@ -59,9 +64,28 @@ const CommunityCard = ({ community, isGenesis = false, onSelect }: { community: 
               className="text-white/85 text-sm line-clamp-2 mb-3 leading-relaxed overflow-hidden drop-shadow [&_img]:hidden"
               dangerouslySetInnerHTML={{ __html: community.vision ? sanitizeRichText(community.vision) : 'No vision shared yet.' }}
           />
-          <button className="text-white font-bold text-xs uppercase tracking-widest flex items-center gap-1 group-hover:gap-2 transition-all drop-shadow">
-              View Profile <Icons.ArrowRight size={16} />
-          </button>
+          <div className="flex items-center justify-between gap-2">
+              <button className="text-white font-bold text-xs uppercase tracking-widest flex items-center gap-1 group-hover:gap-2 transition-all drop-shadow">
+                  View Profile <Icons.ArrowRight size={16} />
+              </button>
+              {standing === 'keeper' && (
+                  <span className="rounded-full bg-amber-400/90 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-amber-950 shadow">Keeper</span>
+              )}
+              {standing === 'member' && (
+                  <span className="rounded-full bg-emerald-500/90 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-white shadow">Member</span>
+              )}
+              {standing === 'requested' && (
+                  <span className="rounded-full bg-white/25 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-white shadow backdrop-blur">Requested</span>
+              )}
+              {standing === 'joinable' && onJoin && (
+                  <button
+                      onClick={(e) => { e.stopPropagation(); onJoin(community); }}
+                      className={`rounded-full bg-emerald-600 px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-white shadow-lg transition-all hover:bg-emerald-500 active:scale-95 ${CTA_GLOW}`}
+                  >
+                      Join
+                  </button>
+              )}
+          </div>
       </div>
   </div>
 ); };
@@ -76,6 +100,65 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
   const [newDomain, setNewDomain] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [search, setSearch] = useState('');
+  // Where the viewer already stands: keeper / member / requested — read from the LIN once.
+  const [memberIds, setMemberIds] = useState<Set<string>>(new Set());
+  const [requestedIds, setRequestedIds] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    if (!currentUserId) return;
+    let alive = true;
+    Promise.all([
+      firestoreStore.linksFrom(currentUserId, 'member').catch(() => []),
+      firestoreStore.linksFrom(currentUserId, 'join_request').catch(() => []),
+    ]).then(([members, requests]) => {
+      if (!alive) return;
+      setMemberIds(new Set(members.map(l => l.to)));
+      setRequestedIds(new Set(requests.map(l => l.to)));
+    });
+    return () => { alive = false; };
+  }, [currentUserId]);
+
+  const standingOf = (c: Community): CardStanding =>
+    c.ownerId === currentUserId ? 'keeper'
+      : memberIds.has(c.id) ? 'member'
+      : requestedIds.has(c.id) ? 'requested'
+      : 'joinable';
+
+  // Join straight from the card — the same request the community profile sends.
+  const handleJoin = async (c: Community) => {
+    if (!currentUserId) { showAlert('Sign in to join this community.'); return; }
+    try {
+      await firestoreStore.link(currentUserId, 'join_request', c.id);
+      setRequestedIds(prev => new Set([...prev, c.id]));
+      notify(`Your request to join ${c.name} is on its way to its keepers.`);
+    } catch (e: any) {
+      showAlert(e?.message || 'Could not send the join request.');
+    }
+  };
+
+  // Vision ↔ community resonance: the top three communities whose visions share the most
+  // ground with the visions this being has created (domain/match — inspectable words, no AI).
+  const [matches, setMatches] = useState<CommunityMatch<Community>[] | null>(null);
+  const [isMatching, setIsMatching] = useState(false);
+  const handleMatch = async () => {
+    if (!currentUserId) { showAlert('Sign in to find your resonant communities.'); return; }
+    if (isMatching) return;
+    setIsMatching(true);
+    try {
+      const visions = await getMyVisions(currentUserId);
+      const texts = visions.map(v => `${v.title || ''} ${v.body || ''} ${(v as any).description || ''}`);
+      if (texts.length === 0) {
+        showAlert('Create a vision first — matching reads the visions you have planted.');
+      } else {
+        const pool = [...communities, ...(genesisCommunity ? [genesisCommunity] : [])];
+        const found = matchCommunities(texts, pool, 3);
+        setMatches(found);
+        if (found.length === 0) showAlert('No shared ground found yet — your visions speak a language no community here speaks. Yet.');
+      }
+    } catch (e: any) {
+      showAlert(e?.message || 'Could not read the resonance.');
+    }
+    setIsMatching(false);
+  };
 
   const matchesSearch = (c: Community) => {
     const term = search.trim().toLowerCase();
@@ -194,14 +277,54 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
         ) : (filteredCommunities.length === 0 && !showGenesis) ? (
           <p className="text-center text-slate-500 py-16">No communities match your search.</p>
         ) : (
+          <>
+          {currentUserId && (
+            <div className="mb-5 flex flex-wrap items-center gap-3">
+              <button onClick={handleMatch} disabled={isMatching}
+                className={`flex items-center gap-2 rounded-full bg-amber-500 px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-white shadow-lg transition-all hover:bg-amber-600 active:scale-95 disabled:opacity-60 ${CTA_GLOW}`}>
+                <Icons.Venn />
+                <span>{isMatching ? 'Reading resonance…' : 'Match with a community'}</span>
+              </button>
+              {matches && matches.length > 0 && (
+                <button onClick={() => setMatches(null)} className="text-xs font-medium text-slate-400 transition-colors hover:text-slate-600">Clear</button>
+              )}
+            </div>
+          )}
+
+          {matches && matches.length > 0 && (
+            <div className="mb-8 space-y-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 animate-in fade-in slide-in-from-top-2">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-amber-600">Your resonant communities — read from your visions</p>
+              {matches.map((m, i) => (
+                <div key={m.community.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-100 bg-white p-3 shadow-sm">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500 text-sm font-black text-white">{i + 1}</span>
+                  <button onClick={() => onSelect(m.community)} className="min-w-0 flex-1 text-left">
+                    <span className="block truncate text-sm font-bold text-slate-800 hover:text-amber-700">{m.community.name}</span>
+                    <span className="block truncate text-[11px] text-slate-400">
+                      {Math.round(m.score * 100)}% shared ground · {m.shared.join(' · ')}
+                    </span>
+                  </button>
+                  {standingOf(m.community) === 'joinable' ? (
+                    <button onClick={() => handleJoin(m.community)}
+                      className="shrink-0 rounded-full bg-emerald-600 px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-white shadow transition-all hover:bg-emerald-500 active:scale-95">
+                      Join
+                    </button>
+                  ) : (
+                    <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-500 capitalize">{standingOf(m.community)}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8">
-            {showGenesis && <CommunityCard community={genesisCommunity!} isGenesis={true} onSelect={onSelect} />}
+            {showGenesis && <CommunityCard community={genesisCommunity!} isGenesis={true} onSelect={onSelect} standing={standingOf(genesisCommunity!)} onJoin={handleJoin} />}
             {filteredCommunities.map(community => (
               <div key={community.id}>
-                <CommunityCard community={community} onSelect={onSelect} />
+                <CommunityCard community={community} onSelect={onSelect} standing={standingOf(community)} onJoin={handleJoin} />
               </div>
             ))}
           </div>
+          </>
         )}
         </ListBox>
       </SectionHeader>

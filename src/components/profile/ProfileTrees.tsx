@@ -13,6 +13,8 @@ import { isExplicitlyValidatedTree, daysUntilLapse } from '../../utils/validatio
 interface ProfileTreesProps {
   myTrees: Lifetree[];
   guardedOnly: Lifetree[];
+  // Mahameru — shown to everyone, last: The Original Tree.
+  originalTree?: Lifetree | null;
   defaultTreeId?: string;
   onSetDefaultTree?: (treeId: string) => void;
   onViewTree: (tree: Lifetree, section?: string) => void;
@@ -30,6 +32,7 @@ interface ProfileTreesProps {
 export const ProfileTrees: React.FC<ProfileTreesProps> = ({
   myTrees,
   guardedOnly,
+  originalTree,
   defaultTreeId,
   onSetDefaultTree,
   onViewTree,
@@ -153,6 +156,30 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
           </div>
         )}
       </div>
+
+      {/* The Original Tree — Mahameru, for everyone, last. */}
+      {originalTree && (
+        <div>
+          <SectionTitle
+            title="The Original Tree"
+            sub="Indestructible — it has dissolved into Nature, and became part of Phoenix, and of every tree planted since."
+          />
+          <div
+            onClick={() => onViewTree(originalTree)}
+            role="button"
+            aria-label="Open Mahameru — The Original Tree"
+            className="group flex cursor-pointer items-center gap-4 overflow-hidden rounded-2xl border border-amber-200/60 bg-[#04070f] p-4 shadow-lg transition-shadow hover:shadow-xl"
+          >
+            <img src={originalTree.latestGrowthUrl || originalTree.imageUrl || '/mahameru.svg'} alt="Mahameru"
+                 className="h-16 w-16 shrink-0 rounded-full border-2 border-amber-300/70 object-cover transition-transform duration-700 group-hover:scale-105" />
+            <div className="min-w-0 flex-1">
+              <h3 className="truncate text-lg font-light tracking-wide text-amber-100">{originalTree.name || 'Mahameru'}</h3>
+              <p className="mt-0.5 text-[11px] leading-relaxed text-slate-400">The sea of creation — Orion over still water. Every chain remembers it.</p>
+            </div>
+            <Icons.ArrowRight size={18} className="shrink-0 text-amber-300/70" />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

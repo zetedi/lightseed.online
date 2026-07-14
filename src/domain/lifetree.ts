@@ -6,6 +6,12 @@ export type LifetreeType = "human" | "ai" | "community" | "project" | "LIFETREE"
 
 // The Being / immutable-chain container / Living Identity
 export interface Lifetree extends Being {
+  // Provenance — the REAL planting moment (from the birth photo's EXIF): when the being
+  // was touched and cut from its parent, and where. createdAt stays the doc's own birth.
+  plantedAt?: Timestamp;
+  plantedLatitude?: number;
+  plantedLongitude?: number;
+  plantedAltitudeM?: number;
   id: string;
   ownerId: string; // canonical owner — load-bearing (rules + queries)
   name: string;

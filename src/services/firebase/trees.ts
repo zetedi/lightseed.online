@@ -1,9 +1,10 @@
-import { collection, query, orderBy, getDocs, addDoc, setDoc, serverTimestamp, doc, getDoc, where, updateDoc, deleteDoc, limit, startAfter, QueryDocumentSnapshot, getCountFromServer, arrayUnion } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, addDoc, setDoc, serverTimestamp, doc, getDoc, where, updateDoc, deleteDoc, limit, startAfter, QueryDocumentSnapshot, getCountFromServer, arrayUnion, Timestamp } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { type Lifetree, type Sanctuary, type TreeOwnershipInvite, type InvitableRole } from '../../types';
 import { createBlock } from '../../utils/crypto';
 import { treePlantingGate, normalizeNodeLimits, DEFAULT_NODE_LIMITS, type NodeLimits } from '../../domain/limits';
 import { uuidv7 } from '../../utils/id';
+import { GENESIS_MOMENT_MS, GENESIS_PLACE } from '../../domain/genesis';
 import { oldEmeraldEarthThemeValues } from '../../utils/theme';
 import { auth, db, functions, mapDoc, lifetreesCollection, visionsCollection, sanctuariesCollection } from './core';
 // getCommunityByDomain lives in ./spaces; trees ↔ spaces is a runtime-safe cycle (both use the
@@ -13,6 +14,7 @@ import { getCommunityByDomain } from './spaces';
 // Mahameru's face — a starry sky bearing Orion, in the code so it travels with every node.
 // When no trees are planted, this is what remains: the sea of creation.
 export const MAHAMERU_IMAGE = '/mahameru.svg';
+// The Moment — see domain/genesis.ts: the one timestamp the network grows from.
 
 export const ensureGenesis = async () => {
     const user = auth.currentUser;
@@ -27,9 +29,21 @@ export const ensureGenesis = async () => {
         // display cache that wins over imageUrl in the renderers — align both. Staff-run.
         if (genesisSnap.exists()) {
             const g = genesisSnap.data() as any;
-            if ((g.imageUrl !== MAHAMERU_IMAGE || (g.latestGrowthUrl && g.latestGrowthUrl !== MAHAMERU_IMAGE))
+            const momentDrifted = (g.createdAt?.toMillis?.() !== GENESIS_MOMENT_MS) || !g.plantedAt;
+            if ((g.imageUrl !== MAHAMERU_IMAGE || (g.latestGrowthUrl && g.latestGrowthUrl !== MAHAMERU_IMAGE) || momentDrifted)
                 && await checkIsSuperAdmin(user.uid)) {
-                await updateDoc(genesisRef, { imageUrl: MAHAMERU_IMAGE, latestGrowthUrl: MAHAMERU_IMAGE }).catch(() => {});
+                await updateDoc(genesisRef, {
+                    imageUrl: MAHAMERU_IMAGE, latestGrowthUrl: MAHAMERU_IMAGE,
+                    // The Moment is the one: birth, place and meaning stay golden.
+                    createdAt: Timestamp.fromMillis(GENESIS_MOMENT_MS),
+                    plantedAt: Timestamp.fromMillis(GENESIS_MOMENT_MS),
+                    plantedLatitude: GENESIS_PLACE.latitude,
+                    plantedLongitude: GENESIS_PLACE.longitude,
+                    plantedAltitudeM: GENESIS_PLACE.altitudeM,
+                    latitude: GENESIS_PLACE.latitude,
+                    longitude: GENESIS_PLACE.longitude,
+                    locationName: GENESIS_PLACE.name,
+                }).catch(() => {});
             }
         }
         if (!genesisSnap.exists()) {
@@ -42,8 +56,13 @@ export const ensureGenesis = async () => {
             await setDoc(genesisRef, {
                 lid: uuidv7(),
                 ownerId: 'GENESIS_SYSTEM', name: 'Mahameru', shortTitle: 'Live Light', body: genesisBody,
-                imageUrl: MAHAMERU_IMAGE, latitude: 50.8354, longitude: 4.4145, locationName: 'The Source',
-                createdAt: serverTimestamp(), genesisHash, latestHash: genesisHash, blockHeight: 0,
+                imageUrl: MAHAMERU_IMAGE,
+                latitude: GENESIS_PLACE.latitude, longitude: GENESIS_PLACE.longitude, locationName: GENESIS_PLACE.name,
+                createdAt: Timestamp.fromMillis(GENESIS_MOMENT_MS),
+                plantedAt: Timestamp.fromMillis(GENESIS_MOMENT_MS),
+                plantedLatitude: GENESIS_PLACE.latitude, plantedLongitude: GENESIS_PLACE.longitude,
+                plantedAltitudeM: GENESIS_PLACE.altitudeM,
+                genesisHash, latestHash: genesisHash, blockHeight: 0,
                 validated: true, validatorId: 'SYSTEM', isNature: true, domain: 'lightseed.online'
             });
             await setDoc(doc(db, 'visions', 'GENESIS_VISION'), {
@@ -226,6 +245,12 @@ export const plantLifetree = async (data: Partial<Lifetree> & { ownerId: string;
         lid: uuidv7(),
         lifetreeId: treeDoc.id, authorId: data.ownerId, title: "Root Vision", body: data.body, createdAt: serverTimestamp(), domain
     });
+    // A guarded (nature) tree is GUARDED, not worn: its planter is its first guardian —
+    // the edge lives in the LIN, and the session lists it under guarded trees, not avatars.
+    if (plantingType === 'GUARDED') {
+        await setDoc(doc(db, 'links', `${data.ownerId}__guardian__${treeDoc.id}`),
+            { lid: uuidv7(), type: 'link', rel: 'guardian', from: data.ownerId, to: treeDoc.id, createdAt: serverTimestamp() }).catch(() => {});
+    }
     return treeDoc;
 };
 
@@ -403,6 +428,11 @@ export const createSanctuary = async (data: Partial<Sanctuary> & { name: string;
     return ref.id;
 };
 
+export const getSanctuaryById = async (id: string): Promise<Sanctuary | null> => {
+    const snap = await getDoc(doc(db, 'sanctuaries', id));
+    return snap.exists() ? (mapDoc(snap as any) as Sanctuary) : null;
+};
+
 // Sanctuaries that hold a community in their circle (communityIds) — a sanctuary can
 // belong to many communities beyond the domain it is rooted in.
 export const getSanctuariesByCommunity = async (communityId: string): Promise<Sanctuary[]> =>
@@ -413,6 +443,10 @@ export const getSanctuariesByCommunity = async (communityId: string): Promise<Sa
 // nothing leaves the circle this way, and nothing else changes).
 export const adoptSanctuary = (sanctuaryId: string, communityId: string) =>
     updateDoc(doc(db, 'sanctuaries', sanctuaryId), { communityIds: arrayUnion(communityId), updatedAt: serverTimestamp() });
+
+// Move / describe a sanctuary's place — owner or staff, per the rules.
+export const updateSanctuary = (sanctuaryId: string, data: Partial<Sanctuary>) =>
+    updateDoc(doc(db, 'sanctuaries', sanctuaryId), { ...data });
 
 // Release a sanctuary — owner or staff, per the rules.
 export const deleteSanctuary = (sanctuaryId: string) => deleteDoc(doc(db, 'sanctuaries', sanctuaryId));

@@ -38,6 +38,12 @@ try {
 const PROJECT_ID = 'lifeseed-75dfe';
 const DOMAINS = process.argv.slice(2).length ? process.argv.slice(2) : ['lightseed.online', 'lifeseed.online'];
 
+// THE MOMENT — mirrors src/domain/genesis.ts (golden; never drift):
+// Mahameru's cutting at the pond by Place Jourdain, Brussels — the end of the search,
+// connected to enlightenment. Mahameru died; Phoenix grew from its soil.
+const GENESIS_MOMENT = new Date('2019-08-18T19:27:23+02:00');
+const GENESIS_PLACE = { latitude: 50.838535, longitude: 4.3804, altitudeM: 85.9, name: 'The Source' };
+
 const PHOENIX_BODY = [
   'Mahameru, the first lifetree died. Its name is Mahameru, the three dimensional representation of the Sri Yantra. The name carried the intention: to connect to the deepest layer of creation and create a new society from there, from the bindu, from the center of the center, from the spiritual heart of the Universe and each and every one of us.',
   "His parent is from Place Jourdain in Brussels and it was planted from a branch. It survived the winter and new lovely leaves sprouted. However the insects loved it too much and I overcared. I've buried it in the same pot where I've planted a new branch of a willow tree from Waterloo.",
@@ -140,3 +146,27 @@ run().catch(err => {
   console.error('  Check your Admin credentials (see the header of this file).');
   process.exit(1);
 });
+
+// --- Mahameru: make the Moment the one (merge — body, images and chain stay untouched). ---
+{
+  const db2 = admin.firestore();
+  const genesisRef = db2.collection('lifetrees').doc('GENESIS_TREE');
+  const g = await genesisRef.get();
+  const moment = admin.firestore.Timestamp.fromDate(GENESIS_MOMENT);
+  const momentFields = {
+    createdAt: moment,
+    plantedAt: moment,
+    plantedLatitude: GENESIS_PLACE.latitude,
+    plantedLongitude: GENESIS_PLACE.longitude,
+    plantedAltitudeM: GENESIS_PLACE.altitudeM,
+    latitude: GENESIS_PLACE.latitude,
+    longitude: GENESIS_PLACE.longitude,
+    locationName: GENESIS_PLACE.name,
+  };
+  if (g.exists) {
+    await genesisRef.update(momentFields);
+    console.log('✓ Mahameru (GENESIS_TREE): the Moment is the one — 2019-08-18 19:27:23 +02:00, Place Jourdain pond.');
+  } else {
+    console.log('… GENESIS_TREE does not exist yet — open the app as superadmin once (ensureGenesis creates it with the Moment), or re-run this seed after.');
+  }
+}

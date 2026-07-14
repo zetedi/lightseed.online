@@ -9,10 +9,8 @@ import { Icons } from './ui/Icons';
 import { treeCoordinates as getTreeCoordinates, forestMarkers } from '../domain/views/forest';
 import { firestoreStore } from '../adapters/firestore';
 import { loadLeaflet } from '../services/leaflet';
-import { getAllSanctuaries, getSanctuariesByDomain } from '../services/firebase/trees';
-import { canViewSanctuary, type Sanctuary } from '../domain/sanctuary';
-import { useSession } from '../contexts/SessionContext';
-import { useRefreshSignal } from '../hooks/useRefreshSignal';
+import type { Sanctuary } from '../domain/sanctuary';
+import { useVisibleSanctuaries } from '../hooks/useVisibleSanctuaries';
 
 interface Cluster {
     id: string;
@@ -48,21 +46,6 @@ export const ForestMap = ({ trees, onView, onReach, onViewSanctuary, loading = f
     // Ensures we only auto-frame the primary lifetree once (not on every data refresh,
     // so we never yank the view back while the user is panning around).
     const didInitialFocusRef = useRef(false);
-
-    // Sanctuary visibility needs the viewer: who they are, whether staff, which communities
-    // they belong to (member links). Fetched once per sign-in.
-    const { lightseed, isAdmin, isSuperAdmin } = useSession();
-    const viewerUid = lightseed?.uid;
-    const [memberCommunityIds, setMemberCommunityIds] = useState<Set<string>>(new Set());
-    useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- reset-on-signout before the async links fetch below (same pattern as CommunityProfile's guardedTreeIds)
-        if (!viewerUid) { setMemberCommunityIds(prev => prev.size === 0 ? prev : new Set()); return; }
-        let alive = true;
-        firestoreStore.linksFrom(viewerUid, 'member')
-            .then(links => { if (alive) setMemberCommunityIds(new Set(links.map(l => l.to))); })
-            .catch(() => {});
-        return () => { alive = false; };
-    }, [viewerUid]);
 
     const [expansionStack, setExpansionStack] = useState<StackLevel[]>([]);
     // The map fills the vertical space it's given: from wherever it starts (just under the
@@ -114,26 +97,12 @@ export const ForestMap = ({ trees, onView, onReach, onViewSanctuary, loading = f
         }).catch(() => {});
         return () => { alive = false; };
     }, [treeIdsKey, refreshKey]);
-    // Sanctuaries — sacred places on the map. Scoped like the trees: a community domain
-    // shows its own, the hub shows them all.
-    const [allSanctuaries, setAllSanctuaries] = useState<Sanctuary[]>([]);
-    const sanctuarySignal = useRefreshSignal(['sanctuaries']);
-    useEffect(() => {
-        let alive = true;
-        // Signed-out viewers may only query public docs — the read rule rejects wider queries.
-        const opts = { publicOnly: !viewerUid };
-        (sanctuaryDomain ? getSanctuariesByDomain(sanctuaryDomain, opts) : getAllSanctuaries(opts))
-            .then(list => {
-                if (!alive) return;
-                setAllSanctuaries(list.filter(x => Number.isFinite(x.latitude) && Number.isFinite(x.longitude)));
-            })
-            .catch(() => {});
-        return () => { alive = false; };
-    }, [sanctuaryDomain, refreshKey, viewerUid, sanctuarySignal]);
-    // Private by default: only what THIS viewer may see glows on the map.
+    // Sanctuaries — one shared source with the forest grid (useVisibleSanctuaries);
+    // the map keeps only the placeable ones.
+    const visibleSanctuaries = useVisibleSanctuaries(sanctuaryDomain, refreshKey);
     const sanctuaries = useMemo(
-        () => allSanctuaries.filter(s => canViewSanctuary(s, { uid: viewerUid, isStaff: isAdmin || isSuperAdmin, memberCommunityIds })),
-        [allSanctuaries, viewerUid, isAdmin, isSuperAdmin, memberCommunityIds],
+        () => visibleSanctuaries.filter(x => Number.isFinite(x.latitude) && Number.isFinite(x.longitude)),
+        [visibleSanctuaries],
     );
     const sanctuariesSignature = sanctuaries.map(x => [x.id, x.latitude, x.longitude, x.imageUrl || '', x.splatUrl || ''].join(':')).join('|');
     const sanctuaryBeings = useMemo<MapBeing[]>(() => sanctuaries.map(s => ({

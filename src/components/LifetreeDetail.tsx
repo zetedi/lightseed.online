@@ -7,6 +7,8 @@ import { Icons } from './ui/Icons';
 import { SuperDot } from './ui/SuperDot';
 import { BeingQr } from './ui/BeingQr';
 import { mintBeingQr } from '../services/firebase/beings';
+import { getSanctuaryById } from '../services/firebase';
+import type { Sanctuary } from '../domain/sanctuary';
 import { ValidationBadge } from './ValidationBadge';
 import { updateLifetree, setTreeStatus, getPulsesByTreeId } from '../services/firebase';
 import { Pulse, type Lifetree } from '../types';
@@ -61,6 +63,19 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const currentUserId = lightseed?.uid;
    const myActiveTree = activeTree;
    const isOwner = currentUserId === tree.ownerId;
+
+   // Sanctuaries rooted IN this tree (sanctuary __rooted__ tree): holding even one makes
+   // this a MOTHER TREE. Read-only here — rooting is done from the sanctuary's page.
+   const [holdingSanctuaries, setHoldingSanctuaries] = useState<Sanctuary[]>([]);
+   useEffect(() => {
+       let alive = true;
+       firestoreStore.linksTo(tree.id, 'rooted')
+           .then(links => Promise.all(links.map(l => getSanctuaryById(l.from).catch(() => null))))
+           .then(list => { if (alive) setHoldingSanctuaries((list || []).filter(Boolean) as Sanctuary[]); })
+           .catch(() => {});
+       return () => { alive = false; };
+   }, [tree.id]);
+   const isMotherTree = holdingSanctuaries.length > 0;
    const isNature = tree.isNature;
    // Guardianship is a lightweight public follow with no powers — tending vests in the invited
    // roles (co_owner/steward), tracked as `isTender` (see the circle effect below). The guardian
@@ -371,11 +386,18 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                         onMint={(href) => mintBeingQr('lifetrees', tree.id, href)}
                                         className="h-7 w-7 bg-white/15 text-white hover:bg-white/25" />
                                     {isNature && <span className="inline-flex items-center gap-1 rounded-full bg-sky-500 px-2 py-0.5 text-[10px] font-bold"><Icons.Shield /> NATURE</span>}
+                                    {isMotherTree && <span className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-black text-amber-950" title={`Holds ${holdingSanctuaries.map(x => x.name).join(', ')}`}><Icons.Sun /> MOTHER TREE</span>}
                                     {tree.visibility && tree.visibility !== 'public' && <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">{tree.visibility}</span>}
                                 </div>
                                 {tree.shortTitle && <p dir="auto" className="mt-0.5 text-xs font-bold uppercase tracking-widest text-emerald-200">{tree.shortTitle}</p>}
-                                <div className="mt-1.5 flex items-center gap-2">
+                                <div className="mt-1.5 flex flex-wrap items-center gap-2">
                                     <span dir="ltr" className="truncate font-mono text-xs text-slate-300" title={tree.id}>{tree.id}</span>
+                                    {tree.plantedAt && (
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] text-emerald-200"
+                                              title={Number.isFinite(tree.plantedLatitude) ? `Planted at ${tree.plantedLatitude?.toFixed(5)}, ${tree.plantedLongitude?.toFixed(5)}${Number.isFinite(tree.plantedAltitudeM) ? ` · ${Math.round(tree.plantedAltitudeM!)} m` : ''}` : 'The real planting moment'}>
+                                            🌱 Planted {new Date(tree.plantedAt.toMillis()).toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' })}
+                                        </span>
+                                    )}
                                 </div>
                             </>
                         )}
