@@ -6,6 +6,14 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-14 · Invariants apart from practices** — LIN separates the reasons
+(life is primary; communities retain agency; models are participants, not
+authorities; identity belongs to beings; truth is traceable; the cap is
+intimacy) from the habits that serve them (root-reading, rings, green gates).
+Practices may evolve; invariants almost never. GLOSSARY.md deliberately waits
+until the vocabulary outgrows LIN's Language section. *(Lumo's reflection on
+the root, adopted the same day — the seventh rule working on the root itself.)*
+
 **2026-07-14 · The root system itself** — every intelligence entering the project
 roots first in `root/` (GENESIS → LIN → ARCHITECTURE → DECISIONS → ROADMAP), then
 code and git history. The documents are not scripture: when the code reveals a

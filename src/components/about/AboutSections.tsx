@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { WhitePaperSection } from './WhitePaper';
 import { showAlert } from "../ui/Dialog";
 import Logo from '../Logo';
 import { Icons } from '../ui/Icons';
@@ -545,6 +546,7 @@ export const YantraSection = () => (
 // (its four phases ride as the tooltip on the card's label) — one trail, not two.
 export const loreTabs = [
     { id: 'genesis', label: 'Genesis', meta: 'The first block' },
+    { id: 'whitepaper', label: 'The White Paper', meta: 'The root, readable' },
     { id: 'yantra', label: 'The Yantra', meta: 'Logo & brand' },
     { id: 'protection', label: 'Protection', meta: 'Trademarks' },
 ] as const;
@@ -555,6 +557,7 @@ export type LoreTabId = typeof loreTabs[number]['id'];
 export const LoreSection = ({ id }: { id: LoreTabId }) => {
     switch (id) {
         case 'genesis': return <GenesisSection />;
+        case 'whitepaper': return <WhitePaperSection />;
         case 'yantra': return <YantraSection />;
         case 'protection': return <ProtectionSection />;
         default: return null;

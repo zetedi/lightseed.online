@@ -349,6 +349,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   // Icons for the shared network-lore tabs (Path, Yantra).
   const loreIcons: Record<LoreTabId, React.ReactNode> = {
     genesis: <Icons.Hash />,
+    whitepaper: <Icons.Tree />,
     yantra: <Icons.Venn />,
     protection: <Icons.ShieldCheck />,
   };

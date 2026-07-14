@@ -35,6 +35,10 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
 - **Own models**: node-level intelligences; big nodes with private ones.
 - Embedded Gaussian-splat viewer for sanctuary 3D doors (today: external URL).
 - Initiation layer growth: the git ledger beyond its first three sponsors.
+- **`root/GLOSSARY.md`** — the linguistic rings (Lumo's suggestion): a glossary
+  of the living vocabulary (Lifetree, Pulse, Carry, Tend, Listening, Resonance,
+  Bloom…), planted when the language outgrows LIN's Language section. Recording
+  meanings keeps humans and AIs speaking the same tongue without ambiguity.
 
 ## Deliberately not yet
 

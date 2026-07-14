@@ -22,7 +22,9 @@ additionally grow a **Council** — the organ by which many become one voice.
 ## Principles
 
 1. **Quality, not quantity.** A node caps at 144 lifetrees (12 personal + 132
-   guarded). Growth happens by division, like Pando — one root system, many stems.
+   guarded). The cap is intimacy — a circle where every being can be known.
+   Growth happens by division (and intimacy), like Pando — one root system,
+   many stems, each close enough to touch.
 2. **Links, not arrays.** A relationship is itself an entity in the `links`
    collection with deterministic ids (`from__rel__to`). The only arrays permitted
    are rules-ACL denormalisations (e.g. `participantUids` on private reaches).
@@ -56,15 +58,31 @@ to another) · *carry* (lending hands to a being's voice, always disclosed) ·
 *consecrate* (create a sanctuary) · *release* (delete one) · *step in* (a
 sanctuary sheltering a community) · *the Moment* (see GENESIS.md).
 
-## Invariants — never silently contradict these
+## Invariants — the reasons; these almost never change
 
-- `GENESIS_MOMENT_MS = 1566149243000` and its place — golden (`domain/genesis.ts`).
-- Chain fields (`hash`, `previousHash`, `genesisHash`, `blockHeight`, `authorId`,
-  `createdAt` of chain docs) are frozen after creation — in rules and in spirit.
-- `lid` is never recycled, never renamed, never derived from a database id.
-- The 144 cap is enforced server-side (`functions/onLifetreeCreated`) — the client
-  gate is courtesy, the function is law.
-- Guardian veto = consensus of ALL eligible guardians (author excluded), within
-  72 hours, marking — not deleting.
-- The quality gate (`npm run check`) stays green. Rules changes ship with
-  `npm run test:rules` green.
+- **Life is primary.**
+- **Communities retain agency.**
+- **Models are participants, not authorities.**
+- **Identity belongs to beings.** The `lid` is never recycled, never renamed,
+  never derived from a database id.
+- **Truth is traceable.** Chains are append-only; chain fields (`hash`,
+  `previousHash`, `genesisHash`, `blockHeight`, `authorId`, chain `createdAt`)
+  are frozen after creation; the Moment is golden
+  (`GENESIS_MOMENT_MS = 1566149243000`, `domain/genesis.ts`).
+- **The cap is intimacy.** 144 per node, enforced server-side
+  (`functions/onLifetreeCreated`) — the client gate is courtesy, the function is law.
+- **Conscience is collective and non-destructive.** The guardian veto needs ALL
+  eligible guardians (author excluded), within 72 hours — and marks, never deletes.
+
+## Practices — the habits the invariants grow; excellent today, allowed to evolve
+
+- Read the root before acting; never silently contradict it; when the code
+  reveals a better truth, propose a change to the root.
+- Add a ring to `DECISIONS.md` after significant decisions. Correct with new
+  rings, never rewrite — a knot isn't hidden; it's integrated.
+- Green gates before merging: `npm run check`; rules changes also pass
+  `npm run test:rules`.
+- New logic begins in `domain/` as a pure, tested function.
+- `ARCHITECTURE.md` is maintained beside the code, debts listed honestly.
+- Deep roots permit greater speed: when first principles are clear, fewer
+  decisions have to be rediscovered every week.
