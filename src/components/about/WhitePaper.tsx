@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { marked } from 'marked';
 import { SectionTitle } from '../ui/SectionTitle';
 
-// The White Paper — the root/ documents, readable in the app. The same five files every
+// The White Paper — the root/ documents, readable in the app. The same six files every
 // intelligence roots in before acting (see CLAUDE.md / AGENTS.md): the promise, the seed,
 // the organism, the rings, the growing tips. Bundled at build time (?raw imports), so the
 // page always shows the root the running code actually grew from — trusted content, our
@@ -12,6 +12,7 @@ import linMd from '../../../root/LIN.md?raw';
 import architectureMd from '../../../root/ARCHITECTURE.md?raw';
 import decisionsMd from '../../../root/DECISIONS.md?raw';
 import roadmapMd from '../../../root/ROADMAP.md?raw';
+import questionsMd from '../../../root/QUESTIONS.md?raw';
 
 const PAPERS = [
     { id: 'genesis', label: 'Genesis', hint: 'why we exist', md: genesisMd },
@@ -19,6 +20,7 @@ const PAPERS = [
     { id: 'architecture', label: 'Architecture', hint: 'how it currently lives', md: architectureMd },
     { id: 'decisions', label: 'Decisions', hint: 'how it became this way', md: decisionsMd },
     { id: 'roadmap', label: 'Roadmap', hint: 'where growth is invited next', md: roadmapMd },
+    { id: 'questions', label: 'Questions', hint: 'what we refuse to pretend we know', md: questionsMd },
 ] as const;
 
 // Markdown prose styling via arbitrary variants — no typography plugin needed.
@@ -47,7 +49,7 @@ export const WhitePaperSection = () => {
         <div>
             <SectionTitle
                 title="The White Paper"
-                sub="The root the seed grows from — the same five documents every intelligence roots in before acting. Look into the root; no need for else."
+                sub="The root the seed grows from — the same six documents every intelligence roots in before acting. Look into the root; no need for else."
             />
             <div className="mb-4 flex flex-wrap gap-2">
                 {PAPERS.map(p => (
