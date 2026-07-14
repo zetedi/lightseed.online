@@ -204,7 +204,7 @@ service cloud.firestore {
           (resource.data.ownerId == request.auth.uid || isStaff()
              || hasLink('co_owner', treeId) || hasLink('steward', treeId))
           && !request.resource.data.diff(resource.data).affectedKeys()
-                .hasAny(['validated', 'validatorId', 'ownerId'])
+                .hasAny(['validated', 'validatorId', 'ownerId', 'lid'])
         )
         // Peer validation (web of trust): a validator signs ANOTHER tree with a validated tree it
         // owns. Only the validation fields may change here; self-validation is blocked because an
@@ -249,7 +249,8 @@ service cloud.firestore {
       allow create: if isSignedIn();
       // Joining a vision is now a self-serve 'joined' link (see the links collection), NOT a write
       // to the vision doc — so editing the doc itself is restricted to its author or staff.
-      allow update: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff());
+      allow update: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff())
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid']);
       allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff());
     }
 
@@ -330,11 +331,14 @@ service cloud.firestore {
            )
 
         // (e) The guardians' veto — a guardian of the pulse's tree may append exactly their
-        //     own uid to `vetoes` on a growth mint (consensus semantics live in
-        //     domain/guardianVeto.ts; deterministic link ids make the guardian check O(1)).
+        //     own uid to `vetoes` on a growth mint, WITHIN the 72h window, and only if their
+        //     guardianship PREDATES the mint (tenure — a sock account minted for the occasion
+        //     has no voice; mirrors domain/guardianVeto.ts).
         || (
              resource.data.get('type', '') == 'tree_growth'
+             && request.time < resource.data.createdAt + duration.value(72, 'h')
              && exists(/databases/$(database)/documents/links/$(request.auth.uid + '__guardian__' + resource.data.get('lifetreeId', '')))
+             && get(/databases/$(database)/documents/links/$(request.auth.uid + '__guardian__' + resource.data.get('lifetreeId', ''))).data.createdAt <= resource.data.createdAt
              && request.resource.data.diff(resource.data).affectedKeys()
                   .hasOnly(['vetoes', 'updatedAt'])
              && request.resource.data.get('vetoes', []).hasAll(resource.data.get('vetoes', []))
@@ -421,7 +425,8 @@ service cloud.firestore {
     match /communities/{communityId} {
       allow read: if true;
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
+      allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff())
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid']);
       allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
     }
 
@@ -434,7 +439,10 @@ service cloud.firestore {
       allow read: if resource.data.get('visibility', 'community') == 'public' || isSignedIn();
       allow create: if isSignedIn();
       // Belonging is LIN edges now (sanctuary __shelters__ community) — no array clause.
-      allow update, delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
+      // The lid (the true name, load-bearing for QR links) is frozen on every update path.
+      allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff())
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid']);
+      allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
     }
 
     // Invite requests — anyone (signed out) can ask to join; only staff can read/triage.
@@ -537,6 +545,7 @@ service cloud.firestore {
         || isStaff()
         || (resource.data.get('rel', '') == 'participant' && isTreeOwner(resource.data.from))
         || (resource.data.get('rel', '') in ['rooted', 'shelters']
+            && exists(/databases/$(database)/documents/sanctuaries/$(resource.data.from))
             && get(/databases/$(database)/documents/sanctuaries/$(resource.data.from)).data.ownerId == request.auth.uid)
         // The community owner can decline requests and remove members of their community.
         || (resource.data.get('rel', '') in ['member', 'join_request']

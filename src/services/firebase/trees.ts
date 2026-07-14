@@ -460,8 +460,17 @@ export const updateSanctuary = (sanctuaryId: string, data: Partial<Sanctuary>) =
     updateDoc(doc(db, 'sanctuaries', sanctuaryId),
         Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined && v !== '')) as any);
 
-// Release a sanctuary — owner or staff, per the rules.
-export const deleteSanctuary = (sanctuaryId: string) => deleteDoc(doc(db, 'sanctuaries', sanctuaryId));
+// Release a sanctuary — owner or staff, per the rules. Its LIN edges (rooted, shelters)
+// are released FIRST (while the ownership check can still see the doc), best-effort.
+export const deleteSanctuary = async (sanctuaryId: string) => {
+    try {
+        const links = await getDocs(query(collection(db, 'links'), where('from', '==', sanctuaryId)));
+        await Promise.all(links.docs
+            .filter(d => ['rooted', 'shelters'].includes((d.data() as any).rel))
+            .map(d => deleteDoc(d.ref).catch(() => {})));
+    } catch { /* best-effort — the exists-guarded rules allow later staff cleanup */ }
+    await deleteDoc(doc(db, 'sanctuaries', sanctuaryId));
+};
 
 // Open a sanctuary wider (or draw it back) — owner or staff, per the rules.
 export const setSanctuaryVisibility = (sanctuaryId: string, visibility: 'community' | 'node' | 'public') =>

@@ -19,6 +19,7 @@ const STOPWORDS = new Set([
 export const tokenize = (text: string): string[] =>
   (text || '')
     .replace(/<[^>]*>/g, ' ')
+    .replace(/&[a-z]+;|&#\d+;/gi, ' ') // entities (&nbsp; &amp; …) are glue, not words
     .toLowerCase()
     .split(/[^\p{L}\p{N}]+/u)
     .filter(w => w.length >= 3 && !STOPWORDS.has(w));

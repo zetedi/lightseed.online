@@ -17,6 +17,12 @@ export interface OverlayLayer {
 export function useHistoryLayers(layers: OverlayLayer[]): string[] {
   const openKeys = layers.filter(l => l.open).map(l => l.key);
 
+  // The REAL stack: keys in the order they actually OPENED. The static array order lies
+  // when a lower layer opens something listed above it (community → sanctuary → community):
+  // Back must peel what the walker most recently opened, not what the array ranks last.
+  // Maintained post-commit (with the other refs) — popstate reads it later, never render.
+  const openOrderRef = useRef<string[]>([]);
+
   const openKeysRef = useRef<string[]>([]);
   // The closers, keyed — refreshed after every render (in an effect, not during render) so
   // popstate always invokes the latest closer for the current open set.
@@ -24,6 +30,9 @@ export function useHistoryLayers(layers: OverlayLayer[]): string[] {
   useEffect(() => {
     openKeysRef.current = openKeys;
     closersRef.current = Object.fromEntries(layers.map(l => [l.key, l.close]));
+    const openSet = new Set(openKeys);
+    openOrderRef.current = openOrderRef.current.filter(k => openSet.has(k));
+    for (const k of openKeys) if (!openOrderRef.current.includes(k)) openOrderRef.current.push(k);
   });
 
   // We keep at most ONE history entry while any overlay is open ("armed").
@@ -50,7 +59,9 @@ export function useHistoryLayers(layers: OverlayLayer[]): string[] {
       if (skipNextPopRef.current) { skipNextPopRef.current = false; return; } // our own back()
       const keys = openKeysRef.current;
       if (keys.length === 0) { armedRef.current = false; return; } // nothing of ours → let the browser go
-      closersRef.current[keys[keys.length - 1]]?.(); // close ONLY the topmost layer
+      const order = openOrderRef.current;
+      const top = order.length > 0 ? order[order.length - 1] : keys[keys.length - 1];
+      closersRef.current[top]?.(); // close ONLY the most recently opened layer
       if (keys.length - 1 > 0) {
         window.history.pushState({ lsOverlay: true }, ''); // layers remain → re-arm for the next Back
       } else {

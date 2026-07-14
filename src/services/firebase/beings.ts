@@ -1,6 +1,7 @@
-import { getDocs, query, where, limit, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { getDocs, query, where, limit, doc, updateDoc, serverTimestamp, collection } from 'firebase/firestore';
 import { db, mapDoc, mapPulse, lifetreesCollection, sanctuariesCollection, visionsCollection, pulsesCollection } from './core';
 import type { Lifetree, Vision, Pulse, Sanctuary } from '../../types';
+import { canViewSanctuary } from '../../domain/sanctuary';
 
 // Being resolution — the /b/<lid> door. A lid names exactly one being somewhere in the
 // collections; we ask each in turn. Every query is wrapped: one the rules refuse (visibility
@@ -22,7 +23,7 @@ const tryOne = async (q: ReturnType<typeof query>): Promise<any | null> => {
     }
 };
 
-export const findBeingByLid = async (lid: string, signedIn: boolean): Promise<FoundBeing | null> => {
+export const findBeingByLid = async (lid: string, signedIn: boolean, viewer?: { uid?: string; isStaff?: boolean }): Promise<FoundBeing | null> => {
     const byLid = where('lid', '==', lid);
 
     // Trees — bare query first (staff / permissive rules), then visibility-provable fallbacks.
@@ -39,7 +40,19 @@ export const findBeingByLid = async (lid: string, signedIn: boolean): Promise<Fo
         query(sanctuariesCollection, byLid, where('visibility', '==', 'public'), limit(1)),
     ]) {
         const d = await tryOne(q2);
-        if (d) return { kind: 'sanctuary', sanctuary: mapDoc(d) as Sanctuary };
+        if (d) {
+            const sanctuary = mapDoc(d) as Sanctuary;
+            // The read rule is permissive for the signed-in; the fine gate is ours to keep:
+            // a scanned QR shows what the scanner may see, and no more.
+            const [memberLinks, shelterLinks] = await Promise.all([
+                viewer?.uid ? getDocs(query(collection(db, 'links'), where('from', '==', viewer.uid), where('rel', '==', 'member'))).catch(() => null) : null,
+                getDocs(query(collection(db, 'links'), where('from', '==', sanctuary.id), where('rel', '==', 'shelters'))).catch(() => null),
+            ]);
+            const memberCommunityIds = new Set((memberLinks?.docs || []).map(x => (x.data() as any).to as string));
+            const homes = [...(sanctuary.communityId ? [sanctuary.communityId] : []), ...(shelterLinks?.docs || []).map(x => (x.data() as any).to as string)];
+            if (!canViewSanctuary(sanctuary, { uid: viewer?.uid, isStaff: viewer?.isStaff, memberCommunityIds }, homes)) return null;
+            return { kind: 'sanctuary', sanctuary };
+        }
     }
 
     for (const q3 of [

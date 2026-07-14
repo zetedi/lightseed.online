@@ -33,6 +33,11 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
 - **Federation (adoption ladder layer 4)**: nodes running elsewhere, lids
   traveling between them; chain-as-tree for every being across nodes.
 - **Own models**: node-level intelligences; big nodes with private ones.
+- **The code garden**: a place with a lock on who develops the code — which
+  tree, which hands — where others can JOIN the session through a community /
+  group reach. The root, the code, the humans and the trees grow together;
+  humans no longer need to code, but they can look — and one human remains who
+  can understand the code when needed.
 - Embedded Gaussian-splat viewer for sanctuary 3D doors (today: external URL).
 - Initiation layer growth: the git ledger beyond its first three sponsors.
 - **`root/GLOSSARY.md`** — the linguistic rings (Lumo's suggestion): a glossary

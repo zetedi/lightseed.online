@@ -6,6 +6,30 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-14 · The review keeps its word** — the first full four-layer review of
+the sanctuary arc confirmed and closed: the veto gains TENURE (only guardians
+who stood before the mint may weigh it — the sock-account door) and its 72h
+window moved into the rules; the lid is frozen on every update path (the true
+name is load-bearing for QR links); the /b/ door gates sanctuaries through
+canViewSanctuary (no signed-in leak of community-private places); step-in offers
+only what the rules would allow (consent stays with the sanctuary's keeper);
+stepped-in sanctuaries show in the community they shelter; Back peels layers in
+the order they opened; the guest "beds look free" hint was removed (stay privacy
+makes it unknowable — an honest absence over a confident lie); entities are glue,
+not matched words; un-validation wears the amber dot; released sanctuaries
+release their edges. Rules suite grew 18 → 24. *(Also a ring of method: the
+review's verifier fleet was cut down by a usage quota and mislabeled unverified
+findings as refuted — the empty reasons betrayed it; every one was re-judged by
+hand. Verification interrupted is not verification.)*
+
+**2026-07-14 · The rhythm and the guardian's hand** — commits are conscious:
+inspect → understand → test → review (four layers: correctness, architecture,
+security, meaning) → propose → ask → commit → record the ring. Agents may
+propose and prepare commits; a human guardian authorizes consequential history —
+not because humans are always more correct, but because responsibility must
+remain locatable while beings cannot yet sign for themselves. *(Zoltán's
+instruction, Lumo's articulation, same day.)*
+
 **2026-07-14 · Invariants apart from practices** — LIN separates the reasons
 (life is primary; communities retain agency; models are participants, not
 authorities; identity belongs to beings; truth is traceable; the cap is

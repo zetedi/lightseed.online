@@ -9,7 +9,7 @@ import { showAlert, showConfirm } from './ui/Dialog';
 import { BeingQr } from './ui/BeingQr';
 import { mintBeingQr } from '../services/firebase/beings';
 import { getCommunityById, updateSanctuary, getLifetreeById, requestStay, getStaysForHost, getMyStays, setStayStatus, withdrawStay } from '../services/firebase';
-import { stayRequestProblem, bedsFreeFor, type Stay } from '../domain/stay';
+import { stayRequestProblem, type Stay } from '../domain/stay';
 import { useSession } from '../contexts/SessionContext';
 import { firestoreStore } from '../adapters/firestore';
 import { LocationPicker } from './ui/LocationPicker';
@@ -176,7 +176,6 @@ export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEd
             notify(status === 'accepted' ? `🌙 ${stay.guestName || 'The guest'} has a bed.` : 'The request was declined, gently.');
         } catch (e: any) { showAlert(e?.message || 'Could not answer the request.'); }
     };
-    const acceptedStays = stays.filter(x => x.status === 'accepted');
 
     const sections: SectionItem[] = [
         { key: 'about', label: 'About', icon: <Icons.Sun /> },
@@ -370,11 +369,8 @@ export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEd
                                     <span className="text-xs text-slate-400">→</span>
                                     <input type="date" value={toDate} onChange={e => setToDate(e.target.value)}
                                         className="rounded-xl border border-slate-200 bg-white p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" aria-label="Departure" />
-                                    {fromDate && toDate && !stayRequestProblem(fromDate, toDate, nowMs) && (
-                                        <span className="text-[11px] text-slate-500">
-                                            {bedsFreeFor(offer.beds, acceptedStays, fromDate, toDate)} bed(s) look free
-                                        </span>
-                                    )}
+                                    {/* No availability hint for guests: stay privacy means we
+                                        can't see others' bookings — the keeper answers truthfully. */}
                                 </div>
                                 <textarea value={stayNote} onChange={e => setStayNote(e.target.value)} placeholder="Who you are, why these nights…"
                                     className="mt-2 min-h-[70px] w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />

@@ -303,7 +303,7 @@ const AppContent = () => {
         const lid = lidFromPath(window.location.pathname);
         if (!lid) return;
         window.history.replaceState({}, '', '/');
-        findBeingByLid(lid, !!lightseed).then(found => {
+        findBeingByLid(lid, !!lightseed, { uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin }).then(found => {
             if (!found) { notify('This link names a being you cannot see from here.'); return; }
             if (found.kind === 'tree') setSelectedTree(found.tree);
             else if (found.kind === 'sanctuary') setViewingSanctuary(found.sanctuary);

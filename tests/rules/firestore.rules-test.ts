@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import {
   initializeTestEnvironment, assertSucceeds, assertFails, type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { doc, setDoc, updateDoc, getDoc, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, getDoc, deleteDoc, Timestamp } from 'firebase/firestore';
 
 // The security fence around the release's hottest rules. Runs under the Firestore emulator:
 //   npm run test:rules
@@ -169,5 +169,60 @@ describe('collabs — staff-curated, world-readable', () => {
     await assertFails(setDoc(doc(db(MALLORY), 'collabs', 'c2'), { name: 'EvilCorp', agreement: 'founder' }));
     await assertSucceeds(setDoc(doc(db(STAFF), 'collabs', 'c3'), { name: 'GoodOrg', agreement: 'founder' }));
     await assertFails(deleteDoc(doc(db(MALLORY), 'collabs', 'c1')));
+  });
+});
+
+describe('the lid is frozen — the true name is load-bearing (QR links stand on it)', () => {
+  it('a tree owner may edit their tree but never its lid', async () => {
+    await assertSucceeds(updateDoc(doc(db(BOB), 'lifetrees', 'treeB'), { name: 'Renamed' }));
+    await assertFails(updateDoc(doc(db(BOB), 'lifetrees', 'treeB'), { lid: 'forged-lid' }));
+  });
+  it('a sanctuary keeper and a community keeper hit the same wall', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'sanctuaries', 'sanc1'), { ownerId: ALICE, name: 'S', lid: 'true-name' });
+    });
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'sanctuaries', 'sanc1'), { name: 'S2' }));
+    await assertFails(updateDoc(doc(db(ALICE), 'sanctuaries', 'sanc1'), { lid: 'forged' }));
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'communities', 'com1'), { name: 'Com2' }));
+    await assertFails(updateDoc(doc(db(ALICE), 'communities', 'com1'), { lid: 'forged' }));
+  });
+});
+
+describe('guardian veto — window and tenure live in the rules, not only the client', () => {
+  const mintPulse = async (createdAtMs: number, guardianSinceMs?: number) => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const d = ctx.firestore();
+      await setDoc(doc(d, 'pulses', 'mint1'), {
+        type: 'tree_growth', lifetreeId: 'treeB', authorId: BOB,
+        title: 'g', body: 'g', createdAt: Timestamp.fromMillis(createdAtMs), vetoes: [],
+      });
+      if (guardianSinceMs !== undefined) {
+        await setDoc(doc(d, 'links', `${ALICE}__guardian__treeB`), {
+          rel: 'guardian', from: ALICE, to: 'treeB', type: 'link',
+          createdAt: Timestamp.fromMillis(guardianSinceMs),
+        });
+      }
+    });
+  };
+
+  it('a tenured guardian vetoes a fresh mint', async () => {
+    const now = Date.now();
+    await mintPulse(now - 1000, now - 100000); // guardian stood before the mint
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'pulses', 'mint1'), { vetoes: [ALICE] }));
+  });
+  it('a guardian minted AFTER the pulse has no voice (the sock-account door)', async () => {
+    const now = Date.now();
+    await mintPulse(now - 100000, now - 1000); // guardian arrived after the mint
+    await assertFails(updateDoc(doc(db(ALICE), 'pulses', 'mint1'), { vetoes: [ALICE] }));
+  });
+  it('after 72 hours the mint is settled history', async () => {
+    const now = Date.now();
+    await mintPulse(now - 73 * 60 * 60 * 1000, now - 80 * 60 * 60 * 1000); // old mint, older guardian
+    await assertFails(updateDoc(doc(db(ALICE), 'pulses', 'mint1'), { vetoes: [ALICE] }));
+  });
+  it('a non-guardian cannot veto at all', async () => {
+    const now = Date.now();
+    await mintPulse(now - 1000); // no guardian link
+    await assertFails(updateDoc(doc(db(MALLORY), 'pulses', 'mint1'), { vetoes: [MALLORY] }));
   });
 });

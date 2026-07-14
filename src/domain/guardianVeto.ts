@@ -12,20 +12,33 @@ export const VETOABLE_TYPES: readonly string[] = ['tree_growth'];
 // Three days of daylight: after that, the mint is settled history.
 export const VETO_WINDOW_MS = 72 * 60 * 60 * 1000;
 
+export interface VetoGuardian {
+  uid: string;
+  // When the guardian edge was minted. Only guardians who stood BEFORE the mint may weigh
+  // it — a follower arriving after the fact (or a sock account minted for the occasion)
+  // has no voice over history it didn't witness. 0/absent = legacy edge, counted.
+  sinceMs?: number;
+}
+
 export interface VetoInput {
   pulseType: string;
   pulseAuthorId: string;
   pulseCreatedAtMs: number;
-  guardianUids: string[]; // the tree's guardian edges (the LIN)
-  vetoUids: string[];     // guardians who have cast a veto
+  guardians: VetoGuardian[]; // the tree's guardian edges (the LIN), with their birth times
+  vetoUids: string[];        // guardians who have cast a veto
   nowMs: number;
 }
 
 const unique = (xs: string[]) => [...new Set(xs)];
 
-// The author's own guardianship never counts — no one weighs their own mint.
-export const eligibleGuardians = (i: Pick<VetoInput, 'guardianUids' | 'pulseAuthorId'>): string[] =>
-  unique(i.guardianUids).filter(uid => uid && uid !== i.pulseAuthorId);
+// The author's own guardianship never counts — no one weighs their own mint. Neither does
+// a guardianship younger than the mint itself (tenure: you must have been standing there).
+export const eligibleGuardians = (i: Pick<VetoInput, 'guardians' | 'pulseAuthorId' | 'pulseCreatedAtMs'>): string[] =>
+  unique(
+    i.guardians
+      .filter(g => g.uid && g.uid !== i.pulseAuthorId && (g.sinceMs || 0) <= i.pulseCreatedAtMs)
+      .map(g => g.uid),
+  );
 
 export const validVetoes = (i: VetoInput): string[] => {
   const eligible = new Set(eligibleGuardians(i));

@@ -12,6 +12,9 @@ describe('tokenize', () => {
   it('speaks unicode', () => {
     expect(tokenize('Erdő és fény')).toContain('erdő');
   });
+  it('entities are glue, not words', () => {
+    expect(tokenize('garden&nbsp;of&nbsp;souls &amp; trees')).toEqual(['garden', 'souls', 'trees']);
+  });
 });
 
 describe('matchCommunities', () => {

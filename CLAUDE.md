@@ -21,5 +21,21 @@ Every intelligence entering this project roots first in the same living context.
 - Relationships are LIN links (`from__rel__to`), never arrays.
 - Chains are append-only: mark, never delete.
 - Commit messages are short poetic lines ("Sanctuaries glow.", "Paper remembers.").
+- **Commits are conscious**: the agent proposes a commit at natural completion
+  points (message ready) — and always ASKS Zoltán before committing. Never
+  commit or push unasked.
+- **Review before commit**: every substantive batch gets a deep code review
+  first — quality of understanding over surface checks; findings verified
+  against the real code before they're believed. Review on FOUR layers:
+  correctness (do tests prove the right thing), architecture (links-over-arrays,
+  domain boundaries, root invariants), security & data integrity (permissions,
+  ownership, migration risk, failure modes), and MEANING (does the
+  implementation still express the concept, or has the metaphor begun hiding a
+  weaker data model).
+- **The rhythm**: inspect → understand → test → review → propose → ask →
+  commit → record the ring. Never: change → commit → explain afterward.
+- **Agents may propose and prepare commits. A human guardian authorizes
+  consequential history** — responsibility stays locatable while beings cannot
+  yet sign for themselves.
 - We grow as fast as trees grow: prefer one whole, tested change over three
   hurried ones.

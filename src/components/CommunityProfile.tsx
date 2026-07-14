@@ -188,7 +188,11 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
         for (const l of shelterLinks) homesOf.set(l.from, [...(homesOf.get(l.from) || []), l.to]);
         setAdoptable(all.filter(s => {
           const homes = [...(s.communityId ? [s.communityId] : []), ...(homesOf.get(s.id) || [])];
-          return !homes.includes(community.id)
+          // Consent lives with the sanctuary: only its keeper (or staff) may step it in —
+          // the rules enforce this, so the panel offers only what would actually succeed.
+          const mayStepIn = s.ownerId === currentUserId || isSuperAdmin || isAdmin;
+          return mayStepIn
+            && !homes.includes(community.id)
             && s.domain !== community.domain
             && canViewSanctuary(s, { uid: currentUserId, isStaff: isSuperAdmin || isAdmin, memberCommunityIds: new Set<string>() }, homes);
         }));
@@ -198,11 +202,24 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
 
   // The sanctuaries rooted in this domain THAT THIS VIEWER MAY SEE —
   // sanctuaries are private (community-level) by default.
+  // Homes come from the shelters links, so a stepped-in sanctuary is visible to members
+  // of THIS community even when its primary home is elsewhere.
+  const [shelterHomes, setShelterHomes] = useState<Map<string, string[]>>(new Map());
+  useEffect(() => {
+    let alive = true;
+    firestoreStore.linksByRel('shelters').then(links => {
+      if (!alive) return;
+      const m = new Map<string, string[]>();
+      for (const l of links) m.set(l.from, [...(m.get(l.from) || []), l.to]);
+      setShelterHomes(m);
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, [sanctuarySignal]);
   const viewableSanctuaries = useMemo(() => sanctuaries.filter(s => canViewSanctuary(s, {
     uid: currentUserId,
     isStaff: isSuperAdmin || isAdmin,
     memberCommunityIds: isMember ? new Set([community.id]) : new Set(),
-  })), [sanctuaries, currentUserId, isSuperAdmin, isAdmin, isMember, community.id]);
+  }, [...(s.communityId ? [s.communityId] : []), ...(shelterHomes.get(s.id) || [])])), [sanctuaries, shelterHomes, currentUserId, isSuperAdmin, isAdmin, isMember, community.id]);
 
 
   // The first lifetree rooted in this community's domain (earliest planted).

@@ -33,14 +33,14 @@ export const PulseDetail = ({ pulse, onClose, backLabel = "Back", canEdit, onEdi
     const { lightseed } = useSession();
     const viewerUid = lightseed?.uid;
     const isGrowthMint = pulse.type === 'tree_growth' && !!pulse.lifetreeId;
-    const [guardianUids, setGuardianUids] = useState<string[]>([]);
+    const [guardians, setGuardians] = useState<{ uid: string; sinceMs?: number }[]>([]);
     const [vetoes, setVetoes] = useState<string[]>(pulse.vetoes || []);
     const [isVetoing, setIsVetoing] = useState(false);
     useEffect(() => {
         if (!isGrowthMint) return;
         let alive = true;
         firestoreStore.linksTo(pulse.lifetreeId!, 'guardian')
-            .then(links => { if (alive) setGuardianUids(links.map(l => l.from)); })
+            .then(links => { if (alive) setGuardians(links.map(l => ({ uid: l.from, sinceMs: (l as any).createdAt?.toMillis?.() || 0 }))); })
             .catch(() => {});
         return () => { alive = false; };
     }, [isGrowthMint, pulse.lifetreeId]);
@@ -50,7 +50,7 @@ export const PulseDetail = ({ pulse, onClose, backLabel = "Back", canEdit, onEdi
         pulseType: pulse.type,
         pulseAuthorId: pulse.authorId || '',
         pulseCreatedAtMs: pulse.createdAt?.toMillis?.() || 0,
-        guardianUids,
+        guardians,
         vetoUids: vetoes,
         nowMs,
     };
@@ -190,7 +190,7 @@ export const PulseDetail = ({ pulse, onClose, backLabel = "Back", canEdit, onEdi
                 </div>
 
                 {/* The guardians' conscience — consensus veto on a growth mint. */}
-                {isGrowthMint && guardianUids.length > 0 && (
+                {isGrowthMint && guardians.length > 0 && (
                     <div className={`mt-6 rounded-2xl border p-5 shadow-sm ${vetoed ? 'border-red-200 bg-red-50' : 'border-amber-100 bg-amber-50/50'}`}>
                         <h3 className={`mb-2 flex items-center text-xs font-bold uppercase tracking-wider ${vetoed ? 'text-red-500' : 'text-amber-600'}`}>
                             <Icons.Shield /><span className="ml-2">Guardians' conscience</span>
