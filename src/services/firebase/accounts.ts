@@ -111,9 +111,24 @@ export const resetPassword = (email: string) => sendPasswordResetEmail(auth, ema
 // Invite allotments: a node manager (superadmin) is unlimited (pass opts.unlimited); a community
 // manager has 144 (granted on createCommunity); a member has the default 7. Unlimited callers
 // skip the per-user counter entirely.
-export const createNetworkInvite = async (email: string, invitedByUserId: string, message = '', opts?: { unlimited?: boolean }): Promise<{ id: string; link: string }> => {
+export const createNetworkInvite = async (email: string, invitedByUserId: string, message = '', opts?: { unlimited?: boolean }): Promise<{ id?: string; link?: string; alreadyMember?: boolean; alreadyInvited?: boolean }> => {
     const cleanEmail = email.trim().toLowerCase();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) throw new Error('Please enter a valid email.');
+
+    // Already a member? (Readable by staff; for others the query degrades to "unknown".)
+    const memberSnap = await getDocs(query(collection(db, 'users'), where('email', '==', cleanEmail), limit(1))).catch(() => null);
+    if (memberSnap && !memberSnap.empty) return { alreadyMember: true };
+
+    // Already invited? A duplicate costs NO invite — but the intention still flies (a second
+    // invite doc + email), so the invited soul may well see two invitations. Staff see every
+    // pending invite; others at least see their own.
+    let alreadyInvited = false;
+    const anyPending = await getDocs(query(networkInvitesCollection, where('email', '==', cleanEmail), where('status', '==', 'pending'), limit(1))).catch(() => null);
+    if (anyPending) alreadyInvited = !anyPending.empty;
+    else {
+        const minePending = await getDocs(query(networkInvitesCollection, where('invitedByUserId', '==', invitedByUserId), where('email', '==', cleanEmail), where('status', '==', 'pending'), limit(1))).catch(() => null);
+        alreadyInvited = !!minePending && !minePending.empty;
+    }
     // Staff are ALWAYS unlimited, checked here rather than trusted to every caller — the
     // approve-request flow used to forget opts.unlimited and told the node owner
     // "No invites remaining".
@@ -125,8 +140,8 @@ export const createNetworkInvite = async (email: string, invitedByUserId: string
         ]);
         unlimited = (superadmin?.exists() && (superadmin.data() as any)?.uid === invitedByUserId) || !!adminDoc?.exists();
     }
-    if (!unlimited) {
-        // Spend one of the inviter's allotment atomically.
+    if (!unlimited && !alreadyInvited) {
+        // Spend one of the inviter's allotment atomically (a duplicate costs nothing).
         await runTransaction(db, async (t) => {
             const ref = doc(db, 'users', invitedByUserId);
             const snap = await t.get(ref);
@@ -145,7 +160,7 @@ export const createNetworkInvite = async (email: string, invitedByUserId: string
             `${message ? `"${message}"\n\n` : ''}You have been invited to join the lightseed network.`, invitedByUserId,
             { ctaUrl: link, ctaLabel: 'Accept your invitation' });
     } catch (e) { console.warn('Invite email failed:', e); }
-    return { id: ref.id, link };
+    return { id: ref.id, link, alreadyInvited };
 };
 
 export const getNetworkInvite = async (inviteId: string): Promise<any | null> => {

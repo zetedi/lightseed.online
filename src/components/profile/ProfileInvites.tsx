@@ -99,12 +99,18 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
     if (!inviteEmail) return;
     setSendingInvite(true);
     try {
-      await createNetworkInvite(inviteEmail, uid, inviteMessage, { unlimited: isSuperAdmin });
-      refreshSentInvites();
-      notify(t('invite_sent'));
-      setShowInviteModal(false);
-      setInviteEmail('');
-      setInviteMessage('');
+      const outcome = await createNetworkInvite(inviteEmail, uid, inviteMessage, { unlimited: isSuperAdmin });
+      if (outcome.alreadyMember) {
+        notify('🌳 That soul is already a member — no invite needed.');
+      } else {
+        refreshSentInvites();
+        notify(outcome.alreadyInvited
+          ? 'Already invited — your intention flew to them anyway; no invite spent.'
+          : t('invite_sent'));
+        setShowInviteModal(false);
+        setInviteEmail('');
+        setInviteMessage('');
+      }
     } catch (e: any) {
       notify(e.message || 'Failed to send invite');
     }

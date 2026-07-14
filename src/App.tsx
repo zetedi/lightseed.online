@@ -486,7 +486,9 @@ const AppContent = () => {
             const alignment = await getAlignmentById(p.matchId).catch(() => null);
             if (alignment) { setSelectedTree(null); setSelectedAlignment(alignment); return; }
         }
-        setSelectedTree(null);
+        // A leaf opened from its own tree keeps the tree beneath it — the pulse overlay
+        // paints above, and Back peels it away to land on the tree again.
+        setSelectedTree(prev => (prev && p.lifetreeId === prev.id) ? prev : null);
         setSelectedPulse(p);
     };
 
@@ -611,7 +613,7 @@ const AppContent = () => {
                                     />
                                 </div>
                             ) : (
-                                <PulseDetail pulse={selectedPulse} activeTree={activeTree} onClose={() => setSelectedPulse(null)} />
+                                <PulseDetail pulse={selectedPulse} activeTree={activeTree} onClose={() => setSelectedPulse(null)} backLabel={selectedTree && selectedPulse.lifetreeId === selectedTree.id ? `Back to ${selectedTree.name}` : 'Back'} />
                             )}
                         </DetailWrapper>
                     )}
@@ -1100,6 +1102,7 @@ const AppContent = () => {
                         pulse={selectedPulse}
                         activeTree={activeTree}
                         onClose={() => setSelectedPulse(null)}
+                        backLabel={selectedTree && selectedPulse.lifetreeId === selectedTree.id ? `Back to ${selectedTree.name}` : 'Back'}
                         canEdit={canEditEvent(selectedPulse, { uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin }, { hostCommunity })}
                         onEdit={() => setEditingEvent(selectedPulse)}
                     />
