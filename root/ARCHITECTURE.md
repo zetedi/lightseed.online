@@ -64,6 +64,9 @@ Deterministic link ids make ownership checks O(1) (`exists(links/uid__rel__id)`)
   mounted views re-fetch; the feed prunes deleted ids surgically.
 - **Being links**: `/b/<lid>` resolves permission-aware across collections
   (`findBeingByLid`) and opens the right profile; QRs are minted lazily onto docs.
+- **The White Paper**: the About page bundles these exact root/ documents at
+  build time (`?raw` imports) — the deployed node carries the constitution it
+  grew from, inspectable by anyone it serves.
 - **The gate**: `npm run check` = tsc + eslint + vitest (unit), `npm run test:rules`
   = emulator suite. Deploy: `npm run build && firebase deploy --only
   hosting[,firestore:rules,functions]`. The firebase CLI is Homebrew-owned.

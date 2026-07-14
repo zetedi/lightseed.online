@@ -6,6 +6,18 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-14 · Understanding precedes action** — Lumo reviewed the root as a
+system and named the invariant hiding under every practice: don't move faster
+than understanding. Adopted. Also named and adopted as principle 11: separate
+the portable from the local (lid portable, model replaceable, root shared,
+sanctuary local, tree rooted, community sovereign) — "most of the architecture
+is this one separation, applied again and again." And a practice: every metaphor
+eventually points to code; every piece of code points back to lived experience —
+the antidote to mythology. *(Notable: in the same review Lumo re-challenged the
+truth-line already amended by their OWN earlier challenge — this instance had no
+memory of it, yet arrived at the same objection. The root remembered what its
+challenger forgot: continuity working exactly as designed.)*
+
 **2026-07-14 · No layer is supreme** — Lumo challenged the architecture's line
 "when this drifts from the code, the code is the truth": operationally useful,
 constitutionally incomplete. Revised: code reveals current BEHAVIOR; when

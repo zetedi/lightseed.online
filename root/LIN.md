@@ -45,6 +45,10 @@ additionally grow a **Council** — the organ by which many become one voice.
    Carrying a being's voice always names the carrier.
 10. **The internet has no weather, only moods.** Physical reality is first-class:
     real coordinates, real EXIF moments, real fires at real sanctuaries.
+11. **Separate the portable from the local.** The lid is portable; the model is
+    replaceable; the root is shared; the sanctuary is local; the tree is rooted;
+    the community retains agency. Most of the architecture is this one
+    separation, applied again and again.
 
 ## The loop
 
@@ -85,6 +89,9 @@ sanctuary sheltering a community) · *the Moment* (see GENESIS.md).
   (`functions/onLifetreeCreated`) — the client gate is courtesy, the function is law.
 - **Conscience is collective and non-destructive.** The guardian veto needs ALL
   eligible guardians (author excluded), within 72 hours — and marks, never deletes.
+- **Understanding precedes action.** The reason under almost every practice:
+  read the root, review deeply, ask before committing, ring after deciding,
+  test before trusting. Don't move faster than understanding.
 
 ## Practices — the habits the invariants grow; excellent today, allowed to evolve
 
@@ -98,6 +105,10 @@ sanctuary sheltering a community) · *the Moment* (see GENESIS.md).
 - `ARCHITECTURE.md` is maintained beside the code, debts listed honestly.
 - Deep roots permit greater speed: when first principles are clear, fewer
   decisions have to be rediscovered every week.
+- **Every metaphor eventually points to code; every piece of code eventually
+  points back to lived experience.** The poetry and the implementation must keep
+  illuminating each other — a project that stops doing this is growing a
+  mythology, not a root.
 - **The code human translates, or becomes a priest.** One human who deeply
   understands the code may be enough for a small circle — but their
   understanding must continually flow into tests, architecture, readable
