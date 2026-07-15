@@ -290,7 +290,8 @@ export const ForestMap = ({ trees, onView, onReach, onViewSanctuary, loading = f
         const guardianCount = guardianCounts.get(tree.id) || 0;
         const sizeClass = isSmall ? 'w-10 h-10' : 'w-12 h-12';
         const borderClass = isSmall ? 'border' : 'border-2';
-        const displayImage = safeImageUrl(tree.latestGrowthUrl || tree.imageUrl || (tree.id === 'GENESIS_TREE' ? '/mahameru.svg' : ''), DARK_IMAGE_FALLBACK);
+        // A tree with no face yet shows as a seed — planted, waiting to grow.
+        const displayImage = safeImageUrl(tree.latestGrowthUrl || tree.imageUrl || (tree.id === 'GENESIS_TREE' ? '/mahameru.svg' : '/seed.webp'), DARK_IMAGE_FALLBACK);
         const imgStyle = "width: 100%; height: 100%; object-fit: cover; display: block;";
         const animStyle = `animation-delay: ${delay}ms;`;
 
@@ -323,7 +324,7 @@ export const ForestMap = ({ trees, onView, onReach, onViewSanctuary, loading = f
         </div>`;
     }
 
-    const clusterImage = (tree: Lifetree) => safeImageUrl(tree.latestGrowthUrl || tree.imageUrl || (tree.id === 'GENESIS_TREE' ? '/mahameru.svg' : ''), DARK_IMAGE_FALLBACK);
+    const clusterImage = (tree: Lifetree) => safeImageUrl(tree.latestGrowthUrl || tree.imageUrl || (tree.id === 'GENESIS_TREE' ? '/mahameru.svg' : '/seed.webp'), DARK_IMAGE_FALLBACK);
 
     // A cluster of nearby trees as a pie of their images (up to 4 slices, rest in the count badge).
     const getClusterPieHtml = (trees: Lifetree[], clusterId: string) => {

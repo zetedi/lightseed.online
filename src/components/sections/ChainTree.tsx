@@ -150,7 +150,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                                 {/* Container Wrapper */}
                                 {/* Mobile: Padded left to avoid trunk. Desktop: Half width. */}
                                 <div className={`
-                                    w-full md:w-1/2 relative flex items-center
+                                    w-full md:w-1/2 min-w-0 relative flex items-center
                                     pl-12 md:pl-0
                                     ${isRightSide ? 'md:pl-16' : 'md:pr-16 md:flex-row-reverse'}
                                 `}>
@@ -177,7 +177,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                                             block relative bg-white border-2 border-emerald-700/80 hover:border-emerald-700
                                             shadow-[inset_0_3px_14px_rgba(4,90,55,0.28),0_4px_12px_rgba(4,120,87,0.2)]
                                             hover:shadow-[inset_0_3px_14px_rgba(4,90,55,0.28),0_0_26px_rgba(250,204,21,0.55)]
-                                            transition-all cursor-pointer group w-full md:max-w-sm
+                                            transition-all cursor-pointer group w-full min-w-0 overflow-hidden md:max-w-sm
                                             rounded-[2rem] rounded-tr-none md:rounded-bl-[3rem]
                                             ${isRightSide
                                                 ? 'md:text-left'
@@ -214,9 +214,9 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                                                         )}
                                                     </div>
                                                 )}
-                                                <div>
-                                                    <h4 dir="auto" className="font-bold text-slate-800 text-base md:text-lg leading-tight mb-1 md:mb-2">{pulse.title}</h4>
-                                                    <p dir="auto" className="text-xs text-slate-500 line-clamp-3">{pulse.body}</p>
+                                                <div className="min-w-0 flex-1">
+                                                    <h4 dir="auto" className="font-bold text-slate-800 text-base md:text-lg leading-tight mb-1 md:mb-2 break-words">{pulse.title}</h4>
+                                                    <p dir="auto" className="text-xs text-slate-500 line-clamp-3 break-words">{pulse.body}</p>
                                                     {/* The bridge stays visible downstream: a being's words, a human's hands. */}
                                                     {pulse.carriedByName && <p className="mt-1 text-[10px] italic text-purple-500">🤲 carried by {pulse.carriedByName}</p>}
                                                 </div>
