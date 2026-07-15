@@ -6,6 +6,24 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-15 · Every node can be a commons (Indra's net)** — refining the ring
+below (*Identity is open…*): Zoltán dissolved the hub/node split it leaned on.
+There is **no privileged hub**. Commons is a **mode, not a place**: in Indra's net
+every jewel reflects all the others, so **every node may choose whether it reflects
+the instance's public data** (a window onto the whole) or stays a scoped pond
+showing only its own. lightseed.online is not special in kind — only the node that
+currently has "reflect everything public" turned on (today hardcoded as
+`isHubDomain`; the design makes it a per-node setting). **Two dials, kept apart:**
+how far a being's own content *reaches out* (the ladder community → node → public)
+and how much of the whole a node *reflects in* (its commons-ness). They compose: a
+community keeps its unfinished play below public so no commons can reflect it;
+raising it to public lets every reflecting node show it — protection in one's own
+dial, exposure in others'. Supersedes the "hub node" phrasing in ROADMAP's
+grandfather step: legacy node-content homes to the node it was minted under
+(lightseed, the origin, for the pre-node era), not to a special hub. *(The loop
+working: understanding refined the ring the same day it was cut — no sovereign
+layer, not even the morning's own decision.)*
+
 **2026-07-15 · Identity is open; membership is local; the invite carries its soil**
 — designing *nodes become real* (ROADMAP → Next), Zoltán set the layers.
 **Identity is open**: anyone may hold an account — the portable layer is universal,

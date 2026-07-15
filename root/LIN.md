@@ -30,8 +30,14 @@ additionally grow a **Council** — the organ by which many become one voice.
    are rules-ACL denormalisations (e.g. `participantUids` on private reaches).
 3. **The chain is append-only.** Nothing on a chain is ever rewritten or deleted;
    wrong things are *marked* (the guardian veto), never erased.
-4. **Private by default.** Opening something to the world is a deliberate act.
-   The visibility ladder: community → node → public.
+4. **Private by default — sensitive to light.** Opening something to the world is
+   a deliberate act; some parts can be harmed by a gaze they are not ready for — a
+   play copied before its story is whole. Two dials, kept apart: how far a being's
+   own content *reaches out* (community → node → public), and how much of the
+   instance's public a node *reflects in*. Commons is a **mode, not a place**:
+   every node may choose to be a window onto the whole or a scoped pond (Indra's
+   net) — there is no privileged hub, only the node currently reflecting all that
+   is public.
 5. **Data, not code.** Organisations get landings, themes, pages as *data* —
    never per-org source files.
 6. **Paper outlives databases.** Every being carries a QR with its lid
@@ -77,7 +83,9 @@ open / invitation / closed — who may enter, distinct from who may see) ·
 *steward* (a delegated door-keeper: accepts knocks, mints invitations —
 shares the door, not the deed) · *invited by* (append-only provenance: how a
 being arrived; a mark, never a power — the inviter gains nothing through the
-door) · *the Moment* (see GENESIS.md).
+door) · *commons* (a mode, not a place: a node choosing to reflect the instance's
+public — a window onto the whole; every jewel may) · *reflect* (a node showing
+another's public content; Indra's net as a setting) · *the Moment* (see GENESIS.md).
 
 ## Invariants — the reasons; these almost never change
 

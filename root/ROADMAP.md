@@ -30,25 +30,29 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
   account/lid across the whole instance — the door gates membership, never being),
   membership is *local* (a `member` edge to the node's host community; a node IS a
   community, so no new rel). Decided 2026-07-15 (see DECISIONS): identity open,
-  membership local; some parts are *sensitive to light* — the ladder protects what
+  membership local; **commons is a per-node mode, not a place** (every node may
+  reflect the instance's public or stay a scoped pond, Indra's net; no privileged
+  hub, only the node reflecting all public); some parts are *sensitive to light* — the ladder protects what
   is not yet ready for a wide gaze. Three phases, each its own ring:
   1. **The node's door becomes real** — `useConfig` reads the host community's
      `door` (open/invite/closed, already built) instead of the constant, so a
-     keeper can open or close *their* node. Absent door keeps today's behaviour
+     keeper can open or close *their* node; and a per-node **reflect-the-instance-
+     public** toggle replaces the hardcoded `isHubDomain` unscoping, so commons
+     becomes a setting any node can choose. Absent door keeps today's behaviour
      (invitation required); mechanical, no meaning-change.
   2. **Invitations carry the node** — stamp the host community on each
      `networkInvite` (**the domain it was sent from**); on accept, mint `member`
      (node) + `invited_by` (provenance), so one personal invitation carries someone
      from no-account to member-of-my-node, names the right node, and **opens that
      domain's OPEN communities** to them (tender ones still ask for their own key).
-     A one-time link of every existing account to the hub node grandfathers all
-     current standing.
+     A one-time link of every existing account to the origin node (lightseed, the
+     node reflecting all public) grandfathers all current standing.
   3. **`node` visibility means "member of THIS node"** — not any signed-in being;
      and **"open" narrows from instance-wide to domain-scoped** (the open door
      shipped 2026-07-15 admits any account today — it becomes open-to-the-domain).
      Its own ring, because it redefines principle 4's node tier: node-scoped
      pulses/trees gain a nodeId, and `canView` mirrors the `community` branch.
-     Nothing vanishes on day one (everyone is a hub-node member from phase 2).
+     Nothing vanishes on day one (everyone is an origin-node member from phase 2).
   Precursor to Federation (below): one node truly whole before lids travel
   between many. Open questions recorded in QUESTIONS.md (2026-07-15).
 - **Stay ripening**: keeper notification emails for bed requests; calendars.
