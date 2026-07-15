@@ -11,6 +11,11 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
 - Consecrate **The O House** in the app (name, photo, place, beds).
 - The **guardian veto council test** in Per Auset — the social trial of the
   conscience mechanism.
+- The **Listening Root** now stands in the virtual forest. Invite Sam Altman to
+  plant its living sacred fig in Kataragama on 8/8; seek a cutting propagated
+  and freely offered by the Jaya Sri Maha Bodhi's custodians in Anuradhapura,
+  only if safe for the parent tree; if Sam cannot, Zoltán will. The virtual tree
+  remains unvalidated until the living act tends it.
 - **Rules parity pass** for the client-side visibility gates (trees, sanctuaries).
 - perauset.com goes live on 8/8 (deploy `--only hosting:perauset`); printed QRs
   should carry the final domain (refresh mints after the move).
