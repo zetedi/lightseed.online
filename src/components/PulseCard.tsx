@@ -69,6 +69,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
                         <h3 dir="auto" className="truncate text-sm font-semibold text-slate-800">{pulse.title}</h3>
+                        {pulse.carriedByName && <p className="truncate text-[10px] italic text-purple-500">🤲 carried by {pulse.carriedByName}</p>}
                         {badges}
                     </div>
                     <p dir="auto" className="mt-0.5 line-clamp-2 text-xs font-light leading-relaxed text-slate-500">{meta}</p>
@@ -95,6 +96,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
                 )}
                 <div className="p-2">
                     <h3 dir="auto" className="truncate text-xs font-semibold text-slate-800">{pulse.title}</h3>
+                        {pulse.carriedByName && <p className="truncate text-[10px] italic text-purple-500">🤲 carried by {pulse.carriedByName}</p>}
                     <div className="mt-1 flex items-center justify-between">
                         <button onClick={handleLove} disabled={!lightseed} className="flex items-center gap-1 text-slate-400 transition-colors hover:text-red-500">
                             <Icons.Heart filled={loved} /><span className="text-[10px]">{count}</span>

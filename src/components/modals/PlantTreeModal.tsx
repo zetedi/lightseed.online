@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, FormEvent } from 'react';
 import { showAlert } from "../ui/Dialog";
+import { notify } from '../ui/Toast';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { Modal } from '../ui/Modal';
@@ -125,7 +126,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
           const coords = await extractGpsFromImage(treeFile);
           if (coords) {
             setPlantLocation(coords);
-            showAlert("Location extracted from image!");
+            notify("📍 Location extracted from the image.");
           } else {
             showAlert("Could not get location from browser or image. Please set it manually if needed.");
           }

@@ -1,10 +1,10 @@
 
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
 import { getNetworkStats } from '../services/firebase';
+import { headerSurface } from '../domain/themeSurface';
 import { Icons } from './ui/Icons';
-import { LeafTexture } from './ui/LeafTexture';
 import { ScrollChevrons } from './ui/ScrollChevrons';
 import { QuoteCarousel } from './ui/QuoteCarousel';
 import { LIGHTSEED_QUOTES } from '../content/quotes';
@@ -26,41 +26,32 @@ export interface DashboardProps {
     onPlant: () => void;
     onLogin: () => void;
     // Themed domains colour the planting CTAs from Appearance settings.
-    theme?: { primary?: string };
+    theme?: { primary?: string; surface?: string; background?: string; text?: string; neutral?: string };
+    isDark?: boolean;
 }
 
 
-const lifetreeImage = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 800'%3E%3Cdefs%3E%3CradialGradient id='g' cx='50%25' cy='50%25' r='60%25'%3E%3Cstop offset='0%25' stop-color='%23d1fae5'/%3E%3Cstop offset='100%25' stop-color='%23047857'/%3E%3C/radialGradient%3E%3Cfilter id='glow'%3E%3CfeGaussianBlur stdDeviation='8' result='coloredBlur'/%3E%3CfeMerge%3E%3CfeMergeNode in='coloredBlur'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23g)'/%3E%3Cg opacity='0.3'%3E%3Ccircle cx='400' cy='400' r='350' fill='none' stroke='%23fff' stroke-width='1'/%3E%3Ccircle cx='400' cy='400' r='250' fill='none' stroke='%23fff' stroke-width='1'/%3E%3Cpath d='M400 50 L400 750 M50 400 L750 400' stroke='%23fff' stroke-width='1' stroke-dasharray='10 10'/%3E%3C/g%3E%3Cpath d='M400 800 C 350 700 300 650 400 550 C 500 650 450 700 400 800' fill='%235d4037' opacity='0.8'/%3E%3Cg transform='translate(0,-50)'%3E%3Ccircle cx='400' cy='400' r='160' fill='%2310b981'/%3E%3Ccircle cx='300' cy='350' r='100' fill='%2334d399' opacity='0.9'/%3E%3Ccircle cx='500' cy='350' r='100' fill='%2334d399' opacity='0.9'/%3E%3Ccircle cx='400' cy='250' r='120' fill='%23059669' opacity='0.9'/%3E%3Ccircle cx='250' cy='450' r='80' fill='%236ee7b7' opacity='0.8'/%3E%3Ccircle cx='550' cy='450' r='80' fill='%236ee7b7' opacity='0.8'/%3E%3C/g%3E%3Cg filter='url(%23glow)'%3E%3Ccircle cx='400' cy='350' r='15' fill='%23fcd34d'/%3E%3Ccircle cx='320' cy='300' r='12' fill='%23fcd34d' opacity='0.8'/%3E%3Ccircle cx='480' cy='300' r='12' fill='%23fcd34d' opacity='0.8'/%3E%3Ccircle cx='280' cy='420' r='10' fill='%23fbbf24' opacity='0.8'/%3E%3Ccircle cx='520' cy='420' r='10' fill='%23fbbf24' opacity='0.8'/%3E%3Ccircle cx='400' cy='220' r='18' fill='%23fff' opacity='0.9'/%3E%3C/g%3E%3Cpath d='M400 350 L 320 300 M 400 350 L 480 300 M 400 350 L 400 220' stroke='%23fff' stroke-width='2' opacity='0.4'/%3E%3C/svg%3E`;
 
 
-export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab, onPlant, onLogin, theme }: DashboardProps) => {
+export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab, onPlant, onLogin, theme, isDark = false }: DashboardProps) => {
     // Themed domains colour the planting CTAs from Appearance (hub default stays emerald).
     const ctaPrimary = theme?.primary || '#059669';
+    // The events banner wears the HEADER's actual surface — light where the header is
+    // light (the hub), themed where a community themes it.
+    const banner = headerSurface(theme, isDark);
     const { t } = useLanguage();
     // Session-derived values read straight from context (no longer prop-drilled from App).
     const { lightseed, activeTree } = useSession();
     const firstTreeImage = activeTree?.latestGrowthUrl || activeTree?.imageUrl;
     const eventsScrollRef = useRef<HTMLDivElement>(null);
     const [networkStats, setNetworkStats] = useState({ trees: 0, pulses: 0, visions: 0 });
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const [videoEnded, setVideoEnded] = useState(false);
-
 
     useEffect(() => {
         // The Forest card counts THIS place: the community's domain on custom domains, the
         // whole node on the hub (getNetworkStats decides by hub-ness).
         getNetworkStats(hostCommunity?.domain || window.location.hostname).then(setNetworkStats);
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the primitive domain; the community object changes identity per fetch
     }, [lightseed, hostCommunity?.domain]);
 
-    const handleReplay = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (videoRef.current) {
-            videoRef.current.currentTime = 0;
-            videoRef.current.play();
-            setVideoEnded(false);
-        }
-    };
 
     return (
         <div className="space-y-3 sm:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -75,36 +66,31 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab,
                 tall. A distorted node/community hero, a living leaf texture, and an oversized
                 EVENTS wordmark running behind the cards. Looks special with or without a hero. */}
             {lightseed && events && events.length > 0 && (
-                <div className="relative w-full overflow-hidden rounded-2xl h-80 md:h-96 bg-emerald-900 ring-1 ring-amber-300/50 shadow-[0_0_40px_-4px_rgba(251,191,36,0.5)]">
-                    {/* Background: always the emerald wash — the blurred community hero fought
-                        with the event cards on the default dashboard. */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-700 via-emerald-950 to-slate-900"></div>
-                    {/* Leaf-toned wash for legibility + character — light so the hero reads airier */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/30 via-slate-900/15 to-emerald-800/25"></div>
-                    <LeafTexture stroke="white" opacity={0.08} />
+                <div className="relative w-full overflow-hidden rounded-2xl h-80 md:h-96 ring-1 ring-amber-300/50 shadow-[0_0_40px_-4px_rgba(251,191,36,0.5)]"
+                     style={{ backgroundColor: banner.background }}>
                     {/* Cards float over the wash, under an explicit Events label. */}
                     <div className="relative z-10 flex h-full flex-col px-4 py-3">
                         <div className="mb-2 flex items-baseline gap-2">
-                            <span className="text-sm sm:text-lg font-bold uppercase tracking-widest text-white drop-shadow-md">{t('events')}</span>
-                            <span className="truncate text-[11px] text-white/75">{t('events_sub')}</span>
+                            <span className="text-sm sm:text-lg font-bold uppercase tracking-widest" style={{ color: banner.text }}>{t('events')}</span>
+                            <span className="truncate text-[11px]" style={{ color: banner.muted }}>{t('events_sub')}</span>
                         </div>
                         <div ref={eventsScrollRef} className="scroll-hide-bar flex flex-1 items-stretch gap-7 overflow-x-auto">
                         {events.map(ev => (
                             <button
                                 key={ev.id}
                                 onClick={() => onViewEvent?.(ev)}
-                                className="group flex w-36 shrink-0 flex-col overflow-hidden rounded-xl border border-white/25 bg-white/30 text-left shadow-lg backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-white/40 md:w-44"
+                                className={`group flex w-48 shrink-0 flex-col overflow-hidden rounded-xl border text-left shadow-lg backdrop-blur-md transition-all hover:-translate-y-0.5 md:w-60 ${banner.isDark ? 'border-white/25 bg-white/30 hover:bg-white/40' : 'border-slate-900/10 bg-white/70 hover:bg-white'}`}
                             >
                                 <div className="w-full flex-1 overflow-hidden bg-white/10">
                                     {ev.imageUrl ? (
                                         <img src={ev.imageUrl} className="h-full w-full object-cover" alt={ev.title} />
                                     ) : (
-                                        <div className="flex h-full w-full items-center justify-center text-white/60"><Icons.Loc /></div>
+                                        <div className={`flex h-full w-full items-center justify-center ${banner.isDark ? 'text-white/60' : 'text-slate-400'}`}><Icons.Loc /></div>
                                     )}
                                 </div>
                                 <div className="min-w-0 p-2">
-                                    <p className="truncate text-lg font-light tracking-wide text-white drop-shadow">{ev.title}</p>
-                                    <p className="truncate text-[11px] text-white/95">
+                                    <p className="truncate text-lg font-light tracking-wide" style={{ color: banner.text }}>{ev.title}</p>
+                                    <p className="truncate text-[11px]" style={{ color: banner.muted }}>
                                         {ev.eventDate ? new Date(ev.eventDate).toLocaleDateString() : ''}{ev.eventLocation ? ` · ${ev.eventLocation}` : ''}
                                     </p>
                                 </div>
@@ -170,28 +156,9 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab,
             {/* Box 2: Plant — signed-out only (signed-in users get the small CTA in the Home card). */}
             {!lightseed && (
             <div onClick={() => { if (!lightseed) onLogin(); else onPlant(); }} className="relative h-56 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
-                <img src={lifetreeImage} className="absolute inset-0 w-full h-full object-cover" alt="Lifetree" />
-                <video 
-                    ref={videoRef}
-                    src="/planting.mp4" 
-                    autoPlay 
-                    muted 
-                    playsInline 
-                    onEnded={() => setVideoEnded(true)}
-                    className={`absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform opacity-90`}
-                />
-                <div className={`absolute inset-0 bg-black/10 ${videoEnded ? 'bg-black/40' : ''} transition-colors`}></div>
-                
-                {videoEnded && (
-                    <div className="absolute top-2 right-2 z-20">
-                        <button 
-                            onClick={handleReplay}
-                            className="bg-white/20 hover:bg-white/40 text-white p-2 rounded-full backdrop-blur-md transition-all hover:scale-110 shadow-lg border border-white/30"
-                        >
-                            <Icons.Refresh />
-                        </button>
-                    </div>
-                )}
+                {/* Real bark — the middle of trunkb.jpg, webp-treated. The planting film retired. */}
+                <img src="/trunkb.webp" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform" alt="" />
+                <div className="absolute inset-0 bg-black/25 group-hover:bg-black/20 transition-colors"></div>
 
                 <div className="relative h-full p-4 flex flex-col justify-between text-white">
                     <div className="flex justify-between items-start">

@@ -15,6 +15,8 @@ import { Loading } from './ui/Loading';
 import { SectionHeader } from './ui/SectionHeader';
 import { ListBox } from './ui/ListBox';
 import { tabTone, CTA_GLOW } from '../utils/tabTheme';
+import { useListDensity, type ListDensity } from '../hooks/useListDensity';
+import { ViewDensityToggle } from './ui/ViewDensityToggle';
 
 interface CommunityListProps {
   onSelect: (community: Community) => void;
@@ -26,8 +28,57 @@ interface CommunityListProps {
 // image the card wears the community's own colour (or the communities tone) — no placeholder art.
 type CardStanding = 'keeper' | 'member' | 'requested' | 'joinable';
 
-const CommunityCard = ({ community, isGenesis = false, onSelect, standing = 'joinable', onJoin }: { community: Community, isGenesis?: boolean, onSelect: (community: Community) => void, standing?: CardStanding, onJoin?: (community: Community) => void }) => {
+const StandingMark = ({ standing, community, onJoin, small = false }: { standing: CardStanding, community: Community, onJoin?: (community: Community) => void, small?: boolean }) => (
+  standing === 'keeper' ? <span className={`rounded-full bg-amber-400/90 font-black uppercase tracking-wide text-amber-950 shadow ${small ? 'px-2 py-0.5 text-[9px]' : 'px-3 py-1 text-[10px]'}`}>Keeper</span>
+  : standing === 'member' ? <span className={`rounded-full bg-emerald-500/90 font-black uppercase tracking-wide text-white shadow ${small ? 'px-2 py-0.5 text-[9px]' : 'px-3 py-1 text-[10px]'}`}>Member</span>
+  : standing === 'requested' ? <span className={`rounded-full bg-slate-400/60 font-black uppercase tracking-wide text-white shadow backdrop-blur ${small ? 'px-2 py-0.5 text-[9px]' : 'px-3 py-1 text-[10px]'}`}>Requested</span>
+  : onJoin ? (
+    <button onClick={(e) => { e.stopPropagation(); onJoin(community); }}
+      className={`rounded-full bg-emerald-600 font-bold uppercase tracking-widest text-white shadow-lg transition-all hover:bg-emerald-500 active:scale-95 ${small ? 'px-3 py-1 text-[10px]' : `px-4 py-1.5 text-[11px] ${CTA_GLOW}`}`}>
+      Join
+    </button>
+  ) : null
+);
+
+const CommunityCard = ({ community, isGenesis = false, onSelect, standing = 'joinable', onJoin, density = 'cards' }: { community: Community, isGenesis?: boolean, onSelect: (community: Community) => void, standing?: CardStanding, onJoin?: (community: Community) => void, density?: ListDensity }) => {
   const hero = (community as any).heroImageUrl || community.imageUrls?.[0];
+
+  // ROWS — one line: logo, name+domain, standing.
+  if (density === 'rows') {
+    return (
+      <div onClick={() => onSelect(community)}
+        className={`flex cursor-pointer items-center gap-3 rounded-xl border bg-white p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${isGenesis ? 'border-amber-300 ring-2 ring-amber-300/30' : 'border-slate-100'}`}>
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-100 bg-slate-50 text-slate-400">
+          {community.logoUrl ? <img src={community.logoUrl} className="h-full w-full object-cover" alt="" /> : <Icons.Globe />}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-bold text-slate-800">{community.name}{isGenesis && <span className="ml-2 text-[9px] font-black uppercase tracking-wide text-amber-600">Community 0</span>}</p>
+          <p className="truncate font-mono text-[11px] text-slate-400">{community.domain}</p>
+        </div>
+        <StandingMark standing={standing} community={community} onJoin={onJoin} small />
+      </div>
+    );
+  }
+
+  // MINI — a half-size card.
+  if (density === 'mini') {
+    return (
+      <div onClick={() => onSelect(community)}
+        className={`group relative flex min-h-[8.5rem] cursor-pointer flex-col justify-end overflow-hidden rounded-xl border shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl ${isGenesis ? 'border-amber-400 ring-2 ring-amber-400/25' : 'border-slate-100'}`}
+        style={!hero ? { backgroundColor: (community as any).theme?.primary || tabTone('communities') } : undefined}>
+        {hero && (<><img src={hero} className="absolute inset-0 h-full w-full object-cover" alt={community.name} /><div className="absolute inset-0 bg-gradient-to-t from-black/75 to-black/10" /></>)}
+        {!hero && <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent" />}
+        <div className="relative z-10 flex items-end justify-between gap-2 p-3">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-bold text-white drop-shadow">{community.name}</p>
+            <p className="truncate font-mono text-[10px] text-emerald-200">{community.domain}</p>
+          </div>
+          <StandingMark standing={standing} community={community} onJoin={onJoin} small />
+        </div>
+      </div>
+    );
+  }
+
   return (
   <div
       onClick={() => onSelect(community)}
@@ -68,23 +119,7 @@ const CommunityCard = ({ community, isGenesis = false, onSelect, standing = 'joi
               <button className="text-white font-bold text-xs uppercase tracking-widest flex items-center gap-1 group-hover:gap-2 transition-all drop-shadow">
                   View Profile <Icons.ArrowRight size={16} />
               </button>
-              {standing === 'keeper' && (
-                  <span className="rounded-full bg-amber-400/90 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-amber-950 shadow">Keeper</span>
-              )}
-              {standing === 'member' && (
-                  <span className="rounded-full bg-emerald-500/90 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-white shadow">Member</span>
-              )}
-              {standing === 'requested' && (
-                  <span className="rounded-full bg-white/25 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-white shadow backdrop-blur">Requested</span>
-              )}
-              {standing === 'joinable' && onJoin && (
-                  <button
-                      onClick={(e) => { e.stopPropagation(); onJoin(community); }}
-                      className={`rounded-full bg-emerald-600 px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-white shadow-lg transition-all hover:bg-emerald-500 active:scale-95 ${CTA_GLOW}`}
-                  >
-                      Join
-                  </button>
-              )}
+              <StandingMark standing={standing} community={community} onJoin={onJoin} />
           </div>
       </div>
   </div>
@@ -100,6 +135,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
   const [newDomain, setNewDomain] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [search, setSearch] = useState('');
+  const [density, setDensity] = useListDensity('communities');
   // Where the viewer already stands: keeper / member / requested — read from the LIN once.
   const [memberIds, setMemberIds] = useState<Set<string>>(new Set());
   const [requestedIds, setRequestedIds] = useState<Set<string>>(new Set());
@@ -222,6 +258,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
       <SectionHeader
         title={t('communities')}
         tone={tabTone('communities')}
+        toggle={<ViewDensityToggle value={density} onChange={setDensity} />}
         footer={
           <div className="relative w-full">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Icons.Search /></div>
@@ -316,11 +353,15 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8">
-            {showGenesis && <CommunityCard community={genesisCommunity!} isGenesis={true} onSelect={onSelect} standing={standingOf(genesisCommunity!)} onJoin={handleJoin} />}
+          <div className={density === 'rows'
+              ? 'space-y-2.5'
+              : density === 'mini'
+                ? 'grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4'
+                : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8'}>
+            {showGenesis && <CommunityCard community={genesisCommunity!} isGenesis={true} onSelect={onSelect} standing={standingOf(genesisCommunity!)} onJoin={handleJoin} density={density} />}
             {filteredCommunities.map(community => (
               <div key={community.id}>
-                <CommunityCard community={community} onSelect={onSelect} standing={standingOf(community)} onJoin={handleJoin} />
+                <CommunityCard community={community} onSelect={onSelect} standing={standingOf(community)} onJoin={handleJoin} density={density} />
               </div>
             ))}
           </div>

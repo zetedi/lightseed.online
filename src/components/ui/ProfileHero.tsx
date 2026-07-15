@@ -23,6 +23,8 @@ export interface ProfileHeroProps {
     imageClassName?: string;
     /** Full-width content rendered ABOVE the gradient (e.g. a danger banner). */
     banner?: React.ReactNode;
+    /** Inline style on the shell — e.g. a theme-colored header (overrides the slate gradient). */
+    style?: React.CSSProperties;
     children: React.ReactNode;
 }
 
@@ -36,11 +38,12 @@ export const ProfileHero = ({
     alwaysOverlay = false,
     imageClassName = '',
     banner,
+    style,
     children,
 }: ProfileHeroProps) => (
     <>
         {banner}
-        <div className={`relative overflow-hidden bg-gradient-to-b from-slate-800 to-slate-900 text-white ${padding}`}>
+        <div className={`relative overflow-hidden bg-gradient-to-b from-slate-800 to-slate-900 text-white ${padding}`} style={style}>
             {heroImageUrl && (
                 <img
                     src={heroImageUrl}

@@ -29,11 +29,13 @@ interface EventProfileProps {
     onEdit?: () => void;
     currentUserId?: string;
     myTrees?: Lifetree[];
+    // The community's colours: the event header links to the theme; the body stays neutral.
+    theme?: { primary?: string };
 }
 
 type EventSection = 'about' | 'participants' | 'reflect';
 
-export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, currentUserId, myTrees }: EventProfileProps) => {
+export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, currentUserId, myTrees, theme }: EventProfileProps) => {
     const { isAdmin, isSuperAdmin } = useSession();
     // Deletion mirrors the rules: the author may, and staff may. The amber dot marks the
     // latter — power by role, not authorship.
@@ -66,7 +68,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
 
     return (
         <div className="min-h-screen animate-in fade-in zoom-in-95 duration-300 pb-20 bg-slate-50">
-            <ProfileHero heroImageUrl={images[0]}>
+            <ProfileHero heroImageUrl={images[0]} style={theme?.primary ? { background: theme.primary } : undefined}>
                 {/* Top bar — back + edit */}
                 <div className="flex items-center justify-between mb-6">
                     <button onClick={onClose} className="flex items-center gap-2 text-white/70 hover:text-white text-sm font-medium">
@@ -75,7 +77,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
                     </button>
                     <div className="flex items-center gap-2">
                         {canEdit && onEdit && (
-                            <button onClick={onEdit} className="flex items-center gap-1.5 rounded-full bg-sky-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-sky-700">
+                            <button onClick={onEdit} style={theme?.primary ? { backgroundColor: theme.primary } : undefined} className="flex items-center gap-1.5 rounded-full bg-sky-600 px-4 py-2 text-xs font-bold text-white shadow-sm ring-1 ring-white/25 transition-all hover:brightness-110">
                                 <Icons.Pencil /> Edit
                             </button>
                         )}
@@ -107,7 +109,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 justify-center sm:justify-start">
                             <h1 dir="auto" className="min-w-0 break-words text-2xl font-light tracking-wide">{pulse.title}</h1>
                             {whenText && (
-                                <span className="inline-flex items-center gap-1 rounded-full border border-sky-400/40 bg-sky-400/10 px-2.5 py-0.5 text-xs font-medium text-sky-200">
+                                <span className="inline-flex items-center gap-1 rounded-full border border-white/25 bg-white/10 px-2.5 py-0.5 text-xs font-medium text-white/90">
                                     {whenText}
                                 </span>
                             )}
@@ -156,7 +158,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
                             </div>
                         )}
                         {(whenText || pulse.eventLocation) && (
-                            <div className="mb-6 grid gap-2 rounded-2xl border border-sky-100 bg-sky-50 p-4 text-sm text-sky-900">
+                            <div className="mb-6 grid gap-2 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700">
                                 {whenText && <div><span className="font-bold">When:</span> {whenText}</div>}
                                 {pulse.eventLocation && <div><span className="font-bold">Where:</span> {pulse.eventLocation}</div>}
                             </div>

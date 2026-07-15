@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Icons } from './Icons';
 
 // A dependency-free image cropper: pan (drag) + zoom (slider/wheel) over a fixed-aspect
@@ -162,7 +163,10 @@ export const ImageCropModal = ({
         }
     };
 
-    return (
+    // Portaled to <body>: `fixed` inside a transformed ancestor (the profile pages'
+    // zoom-in animation) positions against the ancestor, flinging the editor out of the
+    // viewport on mobile. The body has no transform; the editor stays centred.
+    return createPortal(
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4" onClick={(e) => { e.stopPropagation(); onCancel(); }}>
             <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl" onClick={e => e.stopPropagation()}>
                 <div className="mb-3 flex items-center justify-between">
@@ -211,6 +215,7 @@ export const ImageCropModal = ({
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body,
     );
 };

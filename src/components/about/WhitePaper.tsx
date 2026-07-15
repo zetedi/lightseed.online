@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { marked } from 'marked';
-import { SectionTitle } from '../ui/SectionTitle';
+import { Icons } from '../ui/Icons';
+import { SectionMenu, SectionItem } from '../ui/SectionMenu';
 
-// The White Paper — the root/ documents, readable in the app. The same six files every
-// intelligence roots in before acting (see CLAUDE.md / AGENTS.md): the promise, the seed,
-// the organism, the rings, the growing tips. Bundled at build time (?raw imports), so the
-// page always shows the root the running code actually grew from — trusted content, our
-// own repository, rendered as-is.
+// The White Paper — the root/ documents as a BOOK: a full-screen reader below the page
+// header, chapters down the left side on desktop, the usual horizontal menu on mobile.
+// Bundled at build time (?raw imports), so the node always ships the exact root it grew
+// from. One day every being may carry a book like this — the same model at every scale.
 import genesisMd from '../../../root/GENESIS.md?raw';
 import linMd from '../../../root/LIN.md?raw';
 import architectureMd from '../../../root/ARCHITECTURE.md?raw';
@@ -41,32 +42,53 @@ const PROSE =
     '[&_strong]:font-bold [&_strong]:text-slate-900';
 
 export const WhitePaperSection = () => {
+    const [open, setOpen] = useState(true); // arriving at the tab opens the book
     const [paper, setPaper] = useState<(typeof PAPERS)[number]['id']>('genesis');
     const active = PAPERS.find(p => p.id === paper) || PAPERS[0];
     const html = useMemo(() => marked.parse(active.md, { async: false }) as string, [active.md]);
 
+    const chapters: SectionItem[] = PAPERS.map(p => ({ key: p.id, label: p.label }));
+
     return (
-        <div>
-            <SectionTitle
-                title="The White Paper"
-                sub="The root the seed grows from — the same six documents every intelligence roots in before acting. Look into the root; no need for else."
-            />
-            <div className="mb-4 flex flex-wrap gap-2">
-                {PAPERS.map(p => (
-                    <button
-                        key={p.id}
-                        onClick={() => setPaper(p.id)}
-                        className={`rounded-full border px-3.5 py-1.5 text-left transition-all ${paper === p.id ? 'border-emerald-300 bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200' : 'border-slate-200 bg-white text-slate-500 hover:border-emerald-200'}`}
-                    >
-                        <span className="block text-xs font-bold">{p.label}</span>
-                        <span className="block text-[9px] uppercase tracking-wide opacity-70">{p.hint}</span>
-                    </button>
-                ))}
+        <>
+            {/* In-page card — the book's cover; the reader opens over it. */}
+            <div className="rounded-2xl border border-slate-100 bg-white p-8 text-center shadow-sm">
+                <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">The White Paper</p>
+                <p className="mx-auto mt-2 max-w-md font-serif text-sm italic text-slate-500">
+                    The root the seed grows from — six documents every intelligence roots in before acting.
+                </p>
+                <button onClick={() => setOpen(true)}
+                    className="mt-4 rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-bold uppercase tracking-widest text-white shadow transition-colors hover:bg-emerald-700">
+                    Open the book
+                </button>
             </div>
-            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-8">
-                {/* Trusted content: our own repo's root/ markdown, bundled at build time. */}
-                <div className={PROSE} dangerouslySetInnerHTML={{ __html: html }} />
-            </div>
-        </div>
+
+            {/* The reader — full screen below the page header: chapters left (desktop),
+                horizontal menu on mobile, one document open at a time. A book. */}
+            {open && createPortal(
+                <div className="fixed inset-x-0 bottom-0 top-20 z-50 overflow-hidden bg-slate-50">
+                    <div className="mx-auto flex h-full max-w-6xl flex-col gap-3 px-3 py-3 sm:px-4 sm:py-4 lg:flex-row lg:gap-6">
+                        <div className="shrink-0 lg:w-60">
+                            <div className="mb-2 flex items-center justify-between lg:mb-4">
+                                <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">The White Paper</p>
+                                <button onClick={() => setOpen(false)} title="Close the book" aria-label="Close the book"
+                                    className="rounded-full bg-white p-2 text-slate-400 shadow-sm ring-1 ring-slate-200 transition-colors hover:text-slate-700">
+                                    <Icons.Close />
+                                </button>
+                            </div>
+                            <SectionMenu items={chapters} active={paper} onSelect={(k) => setPaper(k as typeof paper)} />
+                            <p className="mt-3 hidden text-[11px] italic leading-relaxed text-slate-400 lg:block">
+                                {active.hint}. Look into the root; no need for else.
+                            </p>
+                        </div>
+                        <div className="min-h-0 flex-1 overflow-y-auto rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-10">
+                            {/* Trusted content: our own repo's root/ markdown, bundled at build time. */}
+                            <div className={PROSE} dangerouslySetInnerHTML={{ __html: html }} />
+                        </div>
+                    </div>
+                </div>,
+                document.body,
+            )}
+        </>
     );
 };

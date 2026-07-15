@@ -93,7 +93,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     try {
       await firestoreStore.link(currentUserId, 'join_request', community.id);
       setJoinRequested(true);
-      showAlert(`Your request to join ${community.name} is on its way to its keepers.`);
+      notify(`🌱 Your request to join ${community.name} is on its way to its keepers.`);
     } catch (e: any) { showAlert(e?.message || 'Could not send the join request.'); }
     setJoining(false);
   };

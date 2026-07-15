@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { notify } from '../ui/Toast';
 import { Modal } from '../ui/Modal';
 import { Icons } from '../ui/Icons';
 import { showAlert } from '../ui/Dialog';
@@ -83,7 +84,7 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly, theme }: { onClose: (
 
   const handleReset = async () => {
     if (!email.trim()) { showAlert(t('auth_enter_email_first')); return; }
-    try { await resetPassword(email); showAlert(t('auth_reset_sent')); }
+    try { await resetPassword(email); notify(`✉️ ${t('auth_reset_sent')}`); }
     catch (e: any) { showAlert(friendlyAuthError(e, t('auth_reset_failed'))); }
   };
 

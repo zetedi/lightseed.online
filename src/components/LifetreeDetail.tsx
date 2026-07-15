@@ -207,6 +207,34 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    // The tree's avatar/banner image — its latest growth (or its planting image).
    const heroImg = tree.latestGrowthUrl || tree.imageUrl || '';
    const [shared, setShared] = useState(false);
+   // The tree's action row — one definition, two homes (desktop name-column / mobile footer).
+   // One calm green for every action: the icon differentiates, the tree stays forward.
+   const ACTION_GREEN = 'bg-emerald-600 text-white hover:bg-emerald-700';
+   const actionRow = (
+                    <>
+                        <ActionBtn onClick={() => onPlayGrowth(tree.id)} title="Play growth" color={ACTION_GREEN} icon={<Icons.Play />} label="Play" />
+                        {canReach
+                            ? <ActionBtn onClick={() => onReachTree?.(tree)} title="Reach" color={ACTION_GREEN} icon={<Icons.Lightning />} label="Reach" />
+                            : <ActionBtn disabled title={t('only_if_validated')} color="bg-white/20 text-white/70" icon={<Icons.Eye />} label={t('only_if_validated')} />}
+                        {isOwner && !isEditing && <ActionBtn onClick={onCreatePulse} title="Tend this tree — a pulse of care (we both grow)" color={ACTION_GREEN} icon={<Icons.Drop />} label="Tend" />}
+                        {/* Carry this being's voice — superadmin voice-bridge, on trees they tend
+                            (owner/co_owner/steward). Impersonation hides the bridge; carrying
+                            reveals it: the display author becomes the being, the carrier is named,
+                            and the block stays signed by the real uid until beings sign themselves. */}
+                        {isSuperAdmin && (isOwner || isTender) && onCarry && !isEditing && (
+                            <ActionBtn
+                                onClick={() => onCarry(carrying ? null : tree)}
+                                title={carrying ? 'Stop carrying this being\'s voice' : "Carry this being's voice — pulses name you as the carrier"}
+                                color={carrying ? `${ACTION_GREEN} ring-2 ring-white/70` : ACTION_GREEN}
+                                icon={<Icons.Wizard />}
+                                label={carrying ? 'Carrying' : 'Carry a pulse'}
+                            />
+                        )}
+                        {isOwner && !isEditing && onSetDefault && <ActionBtn onClick={() => { if (!isDefaultTree) onSetDefault(); }} disabled={isDefaultTree} title={isDefaultTree ? 'Your default tree' : 'Set as default tree'} color={isDefaultTree ? `${ACTION_GREEN} ring-2 ring-white/70` : ACTION_GREEN} icon={<Icons.Star filled={isDefaultTree} />} label="Favourite" />}
+                        {canEdit && !isEditing && <ActionBtn onClick={() => { setIsEditing(true); setSection('details'); }} title={t('edit')} color="bg-slate-100 text-slate-700 hover:bg-slate-200" icon={<Icons.Pencil />} label={t('edit')} />}
+                    </>
+   );
+
    const handleShare = async () => {
        const url = `${window.location.origin}/?tree=${tree.id}`;
        try {
@@ -385,8 +413,27 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                         canMint={canEdit}
                                         onMint={(href) => mintBeingQr('lifetrees', tree.id, href)}
                                         className="h-7 w-7 bg-white/15 text-white hover:bg-white/25" />
-                                    {isNature && <span className="inline-flex items-center gap-1 rounded-full bg-sky-500 px-2 py-0.5 text-[10px] font-bold"><Icons.Shield /> NATURE</span>}
+                                    {isNature && <span className="inline-flex items-center gap-1 rounded-full border border-white/70 bg-sky-500 px-2 py-0.5 text-[10px] font-bold"><Icons.Shield /> NATURE</span>}
                                     {isMotherTree && <span className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-black text-amber-950" title={`Holds ${holdingSanctuaries.map(x => x.name).join(', ')}`}><Icons.Sun /> MOTHER TREE</span>}
+                                    {/* Validation, as one icon: grey = not yet, green = validated.
+                                        For those who may act, the icon itself opens the modal. */}
+                                    <span className="relative inline-flex shrink-0">
+                                        <button
+                                            type="button"
+                                            disabled={!showValidateAction}
+                                            onClick={async () => {
+                                                if (!showValidateAction) return;
+                                                const nv = !hasValidationBadge;
+                                                if (await showConfirm(nv ? 'Validate this tree?' : 'Remove validation from this tree?', { title: 'Validation' })) onValidate(tree.id, nv);
+                                            }}
+                                            title={hasValidationBadge ? (showValidateAction ? 'Validated — remove (staff)' : 'Validated') : (showValidateAction ? t('validate_action') : 'Not validated yet')}
+                                            aria-label={hasValidationBadge ? 'Validated' : 'Not validated'}
+                                            className={`inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/60 shadow-md transition-transform ${hasValidationBadge ? 'bg-emerald-500 text-white' : 'bg-slate-500/90 text-white/85'} ${showValidateAction ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}
+                                        >
+                                            <Icons.ShieldCheck className="h-4 w-4 text-current" />
+                                        </button>
+                                        {hasValidationBadge && showValidateAction && <SuperDot />}
+                                    </span>
                                     {tree.visibility && tree.visibility !== 'public' && <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">{tree.visibility}</span>}
                                 </div>
                                 {tree.shortTitle && <p dir="auto" className="mt-0.5 text-xs font-bold uppercase tracking-widest text-emerald-200">{tree.shortTitle}</p>}
@@ -399,6 +446,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                         </span>
                                     )}
                                 </div>
+                                <div className="mt-3 hidden flex-wrap gap-2 md:flex">{actionRow}</div>
                             </>
                         )}
                     </div>
@@ -415,36 +463,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     )}
                     </div>
                 ),
-                // Actions — in the tree header; icon+label on desktop, icon-only on mobile; coloured.
+                // Actions — desktop: under the hash in the name column; mobile: the footer row.
                 footer: (
-                    <div className="mt-4 flex flex-wrap gap-2">
-                        <ActionBtn onClick={() => onPlayGrowth(tree.id)} title="Play growth" color="bg-emerald-600 text-white hover:bg-emerald-700" icon={<Icons.Play />} label="Play" />
-                        {canReach
-                            ? <ActionBtn onClick={() => onReachTree?.(tree)} title="Reach" color="bg-amber-500 text-white hover:bg-amber-600" icon={<Icons.Lightning />} label="Reach" />
-                            : <ActionBtn disabled title={t('only_if_validated')} color="bg-white/20 text-white/70" icon={<Icons.Eye />} label={t('only_if_validated')} />}
-                        {showValidateAction && (
-                            <span className="relative inline-flex">
-                                <ActionBtn onClick={async () => { const nv = !hasValidationBadge; if (await showConfirm(nv ? 'Validate this tree?' : 'Remove validation from this tree?', { title: 'Validation' })) onValidate(tree.id, nv); }} title={hasValidationBadge ? 'Remove validation (staff)' : t('validate_action')} color="bg-emerald-600 text-white hover:bg-emerald-700" icon={<Icons.ShieldCheck />} label={hasValidationBadge ? 'Validated' : t('validate_action')} />
-                                {hasValidationBadge && <SuperDot />}
-                            </span>
-                        )}
-                        {isOwner && !isEditing && <ActionBtn onClick={onCreatePulse} title="Tend this tree — a pulse of care (we both grow)" color="bg-white text-emerald-700 hover:bg-emerald-50" icon={<Icons.HandLeaf />} label="Tend" />}
-                        {/* Carry this being's voice — superadmin voice-bridge, on trees they tend
-                            (owner/co_owner/steward). Impersonation hides the bridge; carrying
-                            reveals it: the display author becomes the being, the carrier is named,
-                            and the block stays signed by the real uid until beings sign themselves. */}
-                        {isSuperAdmin && (isOwner || isTender) && onCarry && !isEditing && (
-                            <ActionBtn
-                                onClick={() => onCarry(carrying ? null : tree)}
-                                title={carrying ? 'Stop carrying this being\'s voice' : "Carry this being's voice — pulses name you as the carrier"}
-                                color={carrying ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-purple-100 text-purple-700 hover:bg-purple-200'}
-                                icon={<Icons.Wizard />}
-                                label={carrying ? 'Carrying' : 'Carry a pulse'}
-                            />
-                        )}
-                        {isOwner && !isEditing && onSetDefault && <ActionBtn onClick={() => { if (!isDefaultTree) onSetDefault(); }} disabled={isDefaultTree} title={isDefaultTree ? 'Your default tree' : 'Set as default tree'} color={isDefaultTree ? 'bg-amber-400 text-amber-950' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'} icon={<Icons.Star filled={isDefaultTree} />} label="Favourite" />}
-                        {canEdit && !isEditing && <ActionBtn onClick={() => { setIsEditing(true); setSection('details'); }} title={t('edit')} color="bg-slate-100 text-slate-700 hover:bg-slate-200" icon={<Icons.Pencil />} label={t('edit')} />}
-                    </div>
+                    <div className="mt-4 flex flex-wrap justify-center gap-2 md:hidden">{actionRow}</div>
                 ),
             }}
             // Body — section menu on the left (desktop), a strip on mobile; profile-style.

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { notify } from '../ui/Toast';
 import { showAlert } from '../ui/Dialog';
 import { Icons } from '../ui/Icons';
 import { Lifetree } from '../../types';
@@ -74,7 +75,7 @@ export const TreesSection: React.FC<TreesSectionProps> = ({
     setInviteBusyId(tree.id);
     try {
       await onInvite(tree);
-      showAlert(`Invitation sent — ${tree.name}'s keeper will decide.`, 'Invite a tree');
+      notify(`🌱 Invitation sent — ${tree.name}'s keeper will decide.`);
       setInviteCandidates(prev => (prev || []).filter(t => t.id !== tree.id));
     } catch (e) {
       showAlert((e instanceof Error && e.message) || 'Could not send the invite.');

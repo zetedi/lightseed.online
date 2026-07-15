@@ -174,7 +174,7 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
                  className="h-16 w-16 shrink-0 rounded-full border-2 border-amber-300/70 object-cover transition-transform duration-700 group-hover:scale-105" />
             <div className="min-w-0 flex-1">
               <h3 className="truncate text-lg font-light tracking-wide text-amber-100">{originalTree.name || 'Mahameru'}</h3>
-              <p className="mt-0.5 text-[11px] leading-relaxed text-slate-400">The sea of creation — Orion over still water. Every chain remembers it.</p>
+              <p className="mt-0.5 text-[11px] leading-relaxed text-slate-400">The sea of creation — every chain remembers it.</p>
             </div>
             <Icons.ArrowRight size={18} className="shrink-0 text-amber-300/70" />
           </div>

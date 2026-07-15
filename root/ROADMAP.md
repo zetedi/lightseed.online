@@ -47,6 +47,10 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
   authorization → commit + ring + deployment.
 - Embedded Gaussian-splat viewer for sanctuary 3D doors (today: external URL).
 - Initiation layer growth: the git ledger beyond its first three sponsors.
+- **The Book** — the White Paper reader generalized: every being's root as a
+  readable book. The same data model applies at every scale — the Book of Life,
+  the book of a grocery store, the book of a brain — chapters as documents,
+  rings as history; or a Roam-like garden of linked thought.
 - **`root/GLOSSARY.md`** — the linguistic rings (Lumo's suggestion): a glossary
   of the living vocabulary (Lifetree, Pulse, Carry, Tend, Listening, Resonance,
   Bloom…), planted when the language outgrows LIN's Language section. Recording

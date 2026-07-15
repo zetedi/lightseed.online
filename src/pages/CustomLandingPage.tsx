@@ -81,10 +81,9 @@ export const CustomLandingPage: React.FC<CustomLandingPageProps> = ({
 
   return (
     <div className="relative min-h-dvh overflow-x-hidden" style={{ backgroundColor: background }}>
-      {/* The organisation's hero — full screen. Mobile crops to fill; desktop shows the WHOLE
-          artwork (object-contain) floating on the theme's background. */}
+      {/* The organisation's hero — covering the whole background on every device. */}
       <div className="fixed inset-0 z-0" style={{ backgroundColor: background }}>
-        {heroUrl && <img src={heroUrl} alt={community.name} className="h-full w-full object-cover lg:object-contain" />}
+        {heroUrl && <img src={heroUrl} alt={community.name} className="h-full w-full object-cover" />}
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/25" />
       </div>
 

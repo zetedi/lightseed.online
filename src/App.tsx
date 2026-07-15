@@ -111,8 +111,10 @@ const ProfileReaches = lazy(() => import('./components/profile/ProfileReaches').
 // The full-screen overlay every detail view (tree / vision / event / community) scrolls inside.
 // Module-scope so it keeps a stable identity (an inline definition remounts its subtree — and
 // resets scroll — on every parent render).
-const DetailWrapper = ({ children }: { children?: React.ReactNode }) => (
-    <div className="fixed inset-0 z-40 overflow-y-auto bg-slate-900/90 backdrop-blur-sm">
+const DetailWrapper = ({ children, belowHeader = false }: { children?: React.ReactNode; belowHeader?: boolean }) => (
+    // belowHeader: the overlay starts under the sticky header (h-20) so the page header
+    // stays visible and usable — the community profile reads as a page, not a curtain.
+    <div className={`fixed inset-x-0 bottom-0 z-40 overflow-y-auto bg-slate-900/90 backdrop-blur-sm ${belowHeader ? 'top-20' : 'top-0'}`}>
         {children}
     </div>
 );
@@ -312,6 +314,13 @@ const AppContent = () => {
         }).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot door: runs when auth settles; the path is consumed on first resolution
     }, [authLoading]);
+
+    // With the header visible above the community profile, a tab click should land on that
+    // tab — not stay hidden behind the overlay. Navigating closes the community.
+    useEffect(() => {
+        setSelectedCommunity(null);
+        setSelectedPulse(null);
+    }, [tab]);
 
     // The browser tab wears the community's name when a community drives the view.
     useEffect(() => {
@@ -605,6 +614,7 @@ const AppContent = () => {
                             {selectedPulse.type === 'event' ? (
                                 <div className="min-h-screen bg-slate-50">
                                     <EventProfile
+                                        theme={effectiveTheme}
                                         pulse={selectedPulse}
                                         activeTree={activeTree}
                                         onClose={() => setSelectedPulse(null)}
@@ -640,6 +650,7 @@ const AppContent = () => {
                         }}
                         hostCommunity={impersonatedCommunity || hostCommunity}
                         theme={effectiveTheme}
+                        isDark={effectiveIsDark}
                         events={dashboardEvents}
                         onViewEvent={(p: Pulse) => { void onViewPulseOrAlignment(p); }}
                         onViewCommunity={setSelectedCommunity}
@@ -1065,6 +1076,7 @@ const AppContent = () => {
                     // Events render in-flow (below the sticky nav header), like the tree/vision views.
                     <div className="animate-in fade-in duration-200">
                         <EventProfile
+                            theme={effectiveTheme}
                             pulse={selectedPulse}
                             activeTree={activeTree}
                             onClose={() => setSelectedPulse(null)}
@@ -1097,7 +1109,7 @@ const AppContent = () => {
             <Suspense fallback={null}>
             {/* Non-event pulses keep the full-screen overlay (they carry their own sticky top bar). */}
             {selectedPulse && selectedPulse.type !== 'event' && (
-                <DetailWrapper>
+                <DetailWrapper belowHeader>
                     <PulseDetail
                         pulse={selectedPulse}
                         activeTree={activeTree}
@@ -1127,7 +1139,7 @@ const AppContent = () => {
             )}
 
             {selectedCommunity && (
-                <DetailWrapper>
+                <DetailWrapper belowHeader>
                     <CommunityProfile
                     onViewSanctuary={setViewingSanctuary}
                         community={selectedCommunity}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { notify } from '../ui/Toast';
 import { WhitePaperSection } from './WhitePaper';
 import { showAlert } from "../ui/Dialog";
 import Logo from '../Logo';
@@ -364,7 +365,7 @@ export const MembershipPathSection = () => {
         setSubmitting(true);
         try {
             await subscribeToNewsletter(email);
-            showAlert(`${t('subscribed_success')} ${email}`);
+            notify(`🌱 ${t('subscribed_success')} ${email}`);
             setShowSubModal(false);
         } catch (e) { showAlert(t('subscription_failed')); }
         setSubmitting(false);

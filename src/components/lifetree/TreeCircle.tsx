@@ -84,7 +84,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({ tree, currentUserId, can
                     <button type="button" onClick={() => setShowInvite(false)} className="text-xs font-medium text-slate-500 hover:text-slate-700">Cancel</button>
                 </form>
             ) : (
-                <button onClick={() => setShowInvite(true)} className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 font-bold uppercase tracking-widest text-white shadow-lg transition-all hover:bg-emerald-700 active:scale-95">
+                <button onClick={() => setShowInvite(true)} className="mx-auto flex items-center justify-center gap-2 rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-bold uppercase tracking-widest text-white shadow-lg transition-all hover:bg-emerald-700 active:scale-95">
                     <Icons.UserPlus /> <span>Invite to Tree Circle</span>
                 </button>
             ))}

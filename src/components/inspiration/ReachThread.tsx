@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { notify } from '../ui/Toast';
 import { showAlert, showConfirm } from "../ui/Dialog";
 import { useLanguage } from '../../contexts/LanguageContext';
 import { sendMessageToOracle, generateImage, translatePulse, type TranslationResponse } from '../../services/gemini';
@@ -490,7 +491,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                     await sendReach({ fromTree: activeTree, toTree: selectedTree, text: noticeText, sender: lightseed, audience, mintNotice: true, isAdmin, isSuperAdmin });
                 }
                 setMessages(prev => [...prev, { role: 'model', system: true, text: noticeText }]);
-                showAlert("Conversation minted to the chain.");
+                notify("🌿 Conversation minted to the chain.");
             } catch (e: any) {
                 console.error(e);
                 showAlert("Minting failed: " + (e?.message || ''));
@@ -521,7 +522,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                 authorName: lightseed.displayName || "Soul",
                 authorPhoto: lightseed.photoURL ?? undefined,
             });
-            showAlert("Conversation minted as a Pulse!");
+            notify("🌿 Conversation minted as a Pulse.");
         } catch (e: any) {
             console.error(e);
             showAlert("Minting failed: " + e.message);

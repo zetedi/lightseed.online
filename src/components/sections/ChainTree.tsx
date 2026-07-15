@@ -97,7 +97,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                 <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-4 md:w-8 -ml-2 md:-ml-4 rounded-t-full rounded-b-2xl shadow-inner overflow-hidden z-0"
                      style={{
                          backgroundColor: '#4E342E',
-                         backgroundImage: 'url(/trunk.webp)',
+                         backgroundImage: 'url(/trunkb.webp)',
                          backgroundSize: '56px auto',
                          backgroundRepeat: 'repeat-y',
                          backgroundPosition: 'center top',
@@ -115,7 +115,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                         <div className="flex w-full justify-start pl-12 md:justify-center md:pl-0">
                             <button onClick={onTend} title="Tend this tree — a pulse of care (we both grow)"
                                 className="relative z-10 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-7 py-3 font-bold uppercase tracking-widest text-white ring-2 ring-yellow-300/60 shadow-[0_0_22px_rgba(250,204,21,0.55)] transition-all hover:bg-emerald-700 hover:shadow-[0_0_32px_rgba(250,204,21,0.85)] active:scale-95">
-                                <Icons.HandLeaf /> <span>Tend</span>
+                                <Icons.Drop /> <span>Tend</span>
                             </button>
                         </div>
                     )}
@@ -155,46 +155,36 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                                     ${isRightSide ? 'md:pl-16' : 'md:pr-16 md:flex-row-reverse'}
                                 `}>
 
-                                    {/* Mobile Branch (Always Left Trunk to Card) — the trunk bark
-                                        turned 90° (trunk-branch.webp), so branches are wood too. */}
+                                    {/* Mobile Branch — a living green stem from trunk to leaf. */}
                                     <div className="md:hidden absolute top-1/2 -mt-[3px] left-[1.15rem] w-12 h-[6px] rounded-full pointer-events-none z-0"
                                          style={{
-                                             backgroundColor: '#5D4037',
-                                             backgroundImage: 'url(/trunk-branch.webp)',
-                                             backgroundSize: 'auto 300%',
-                                             backgroundRepeat: 'repeat-x',
-                                             backgroundPosition: 'center',
-                                             boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.45)',
+                                             background: 'linear-gradient(180deg, #34d399 0%, #047857 45%, #065f46 100%)',
+                                             boxShadow: 'inset 0 1px 2px rgba(3,60,45,0.55)',
                                          }} />
 
-                                    {/* Desktop Branch — same bark bar, kept at the exact height the
+                                    {/* Desktop Branch — the same green stem, at the height the
                                         old SVG line drew at (8px below the card's vertical centre). */}
                                     <div className={`hidden md:block absolute top-1/2 mt-[3px] w-20 h-[9px] rounded-full pointer-events-none z-0 ${isRightSide ? 'left-0 -ml-2' : 'right-0 -mr-2'}`}
                                          style={{
-                                             backgroundColor: '#5D4037',
-                                             backgroundImage: 'url(/trunk-branch.webp)',
-                                             backgroundSize: 'auto 300%',
-                                             backgroundRepeat: 'repeat-x',
-                                             backgroundPosition: 'center',
-                                             boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.45)',
+                                             background: 'linear-gradient(180deg, #34d399 0%, #047857 45%, #065f46 100%)',
+                                             boxShadow: 'inset 0 1px 2px rgba(3,60,45,0.55)',
                                          }} />
 
                                     {/* Leaf Card */}
                                     <CardTag
                                         {...cardProps}
                                         className={`
-                                            block relative bg-white border-2 border-emerald-100 shadow-md shadow-emerald-600/20 hover:shadow-xl hover:shadow-emerald-500/30 hover:border-emerald-300
-                                            transition-all cursor-pointer group w-full md:max-w-sm rounded-xl
+                                            block relative bg-white border-2 border-emerald-700/80 hover:border-emerald-700
+                                            shadow-[inset_0_3px_14px_rgba(4,90,55,0.28),0_4px_12px_rgba(4,120,87,0.2)]
+                                            hover:shadow-[inset_0_3px_14px_rgba(4,90,55,0.28),0_0_26px_rgba(250,204,21,0.55)]
+                                            transition-all cursor-pointer group w-full md:max-w-sm
+                                            rounded-[2rem] rounded-tr-none md:rounded-bl-[3rem]
                                             ${isRightSide
-                                                ? 'md:rounded-tl-[0] md:rounded-bl-[3rem] md:rounded-tr-[2rem] md:rounded-br-[2rem] md:text-left'
-                                                : 'md:rounded-tr-[0] md:rounded-br-[3rem] md:rounded-tl-[2rem] md:rounded-bl-[2rem] md:text-right'}
+                                                ? 'md:text-left'
+                                                : 'md:rounded-tr-[2rem] md:rounded-tl-none md:rounded-br-[3rem] md:rounded-bl-[2rem] md:text-right'}
                                             text-left z-10
                                         `}
                                     >
-                                        {/* Decorative Vein SVG */}
-                                        <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-5 text-emerald-500" viewBox="0 0 100 100" preserveAspectRatio="none">
-                                            <path d={isRightSide ? "M0,50 Q50,25 100,0" : "M100,50 Q50,25 0,0"} stroke="currentColor" strokeWidth="1" fill="none" />
-                                        </svg>
 
                                         <div className="p-4 md:p-6 relative z-10">
                                             <div className={`flex items-center gap-2 mb-3 ${isRightSide ? '' : 'md:flex-row-reverse'} flex-row`}>
@@ -227,6 +217,8 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                                                 <div>
                                                     <h4 dir="auto" className="font-bold text-slate-800 text-base md:text-lg leading-tight mb-1 md:mb-2">{pulse.title}</h4>
                                                     <p dir="auto" className="text-xs text-slate-500 line-clamp-3">{pulse.body}</p>
+                                                    {/* The bridge stays visible downstream: a being's words, a human's hands. */}
+                                                    {pulse.carriedByName && <p className="mt-1 text-[10px] italic text-purple-500">🤲 carried by {pulse.carriedByName}</p>}
                                                 </div>
                                             </div>
 
