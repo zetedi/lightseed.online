@@ -248,6 +248,7 @@ const AppContent = () => {
     // The paginated forest / pulse / vision / event / reach feed + infinite scroll (see useForestFeed).
     const { data, setData, loadContent, loadingMore, forestSentinelRef } = useForestFeed({
         tab, viewMode, lightseed, isSuperAdmin, isAdmin, setAlignments,
+        hostReflectsPublic: (impersonatedCommunity || hostCommunity)?.reflectsPublic,
     });
 
     // The refresh bus, heard by the live feed: when an event/pulse is deleted anywhere

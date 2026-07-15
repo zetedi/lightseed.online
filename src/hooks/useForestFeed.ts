@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import type { Alignment, Lightseed } from '../types';
 import {
   fetchAllLifetrees, fetchLifetrees, fetchPulses, fetchEventPulses, fetchReachPulses, fetchVisions,
-  getPendingAlignments,
+  getPendingAlignments, isHubDomain,
 } from '../services/firebase';
 import { queryableLevels } from '../domain/pulseVisibility';
+import { reflectsInstancePublic } from '../domain/communityDoor';
 
 // The paginated forest / pulse / vision / event / reach feed and its infinite scroll. Owns `data`
 // plus the cursor / loading / hasMore machinery; loadContent(reset) (re)loads the current tab,
@@ -17,8 +18,12 @@ export function useForestFeed(params: {
   isSuperAdmin: boolean;
   isAdmin: boolean;
   setAlignments: (a: Alignment[]) => void;
+  // The active node's commons setting: when it reflects the instance's public, the feed is
+  // unscoped (shows every domain's public); otherwise it scopes to this domain. Undefined =
+  // fall back to the hub-domain default (zero migration). See domain/communityDoor.
+  hostReflectsPublic?: boolean;
 }) {
-  const { tab, viewMode, lightseed, isSuperAdmin, isAdmin, setAlignments } = params;
+  const { tab, viewMode, lightseed, isSuperAdmin, isAdmin, setAlignments, hostReflectsPublic } = params;
 
   const [data, setData] = useState<any[]>([]);
   const [lastDoc, setLastDoc] = useState<any>(null);
@@ -41,7 +46,13 @@ export function useForestFeed(params: {
     const currentLastDoc = reset ? undefined : lastDoc;
     const isDevHost = /localhost|127\.0\.0\.1|^192\.168\.|\.local$/.test(window.location.hostname);
     // On dev hosts a superadmin sees the whole network (no domain scoping).
-    const currentDomain = (isDevHost && isSuperAdmin) ? 'lightseed.online' : window.location.hostname;
+    const rawDomain = (isDevHost && isSuperAdmin) ? 'lightseed.online' : window.location.hostname;
+    // Commons mode: if this node reflects the instance's public, pass no domain (every feed
+    // treats an absent domain as unscoped → the whole instance); otherwise scope to this domain.
+    // Unset flag falls back to the hub default, so the hub keeps reflecting and others stay scoped.
+    const currentDomain = reflectsInstancePublic(hostReflectsPublic, isHubDomain(rawDomain))
+      ? undefined
+      : rawDomain;
     // Broad feeds carry no scope, so this resolves to public (+ node when signed in; all
     // but private for staff) — keeping the query to docs the rules will allow.
     const feedLevels = queryableLevels({ uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin });

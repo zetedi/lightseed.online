@@ -6,6 +6,22 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-15 · Phase 1 stands: the door delegates sign-up, the node reflects (or ponds)**
+— the first phase of *nodes become real* shipped. (1a, commit `0c7dbd6`) a node's
+door governs **sign-up on its domain** — open delegates the front gate to the
+keeper. (1b) `reflectsPublic` on the host community decides whether a node
+**reflects** the whole instance's PUBLIC forest/feed or shows only its own — a
+per-node commons toggle (Indra's net). Built by hoisting the reflect decision to
+`useForestFeed`/Dashboard and passing *no* domain when a node reflects (every feed
+already treats an absent domain as unscoped), so no hot query path changed — zero
+migration, and an unset flag falls back to the hub domains. Only PUBLIC content
+reflects; node/community visibility stays local. **Known limit, named not hidden:**
+the toggle can turn a scoped node INTO a commons, but a hardcoded hub domain
+(lightseed.online) can't be scoped OFF this way — its internal `isHubDomain` still
+forces unscoped, so the toggle is hidden there rather than shown broken. Fully
+decoupling `isHubDomain` from scoping is a later step, only if a hub ever needs to
+pond. Next: Phase 2 (invitations carry the node, mint membership).
+
 **2026-07-15 · Every node can be a commons (Indra's net)** — refining the ring
 below (*Identity is open…*): Zoltán dissolved the hub/node split it leaned on.
 There is **no privileged hub**. Commons is a **mode, not a place**: in Indra's net

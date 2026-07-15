@@ -37,6 +37,17 @@ export const joinAffordance = (door: CommunityDoor): JoinAffordance =>
 export const signupRequiresInvite = (community?: { door?: string | null } | null): boolean =>
   doorOf(community) !== 'open';
 
+// COMMONS mode — a node policy sibling to the door. A node (host community) may be a commons,
+// reflecting the whole instance's PUBLIC forest/feed, or a scoped pond showing only its own
+// domain. Per-node choice (Indra's net; there is no privileged hub). The `reflectsPublic` flag
+// decides; when unset it falls back to the caller's legacy default (the canonical hub domains),
+// so nothing changes until a keeper flips it — zero migration. Only PUBLIC content reflects;
+// node/community-visibility ("sensitive to light") stays local either way.
+export const reflectsInstancePublic = (
+  reflectsPublicFlag: boolean | null | undefined,
+  hubDefault: boolean,
+): boolean => reflectsPublicFlag ?? hubDefault;
+
 // An invitation as the domain sees it — times in ms so the module stays pure of Firestore.
 export interface CommunityInviteCheck {
   communityId: string;

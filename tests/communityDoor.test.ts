@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   DEFAULT_DOOR, doorOf, joinAffordance, checkInvite, inviteStatus, signupRequiresInvite,
-  communityInviteUrl, inviteIdFromPath,
+  reflectsInstancePublic, communityInviteUrl, inviteIdFromPath,
   type CommunityInviteCheck,
 } from '../src/domain/communityDoor';
 
@@ -75,6 +75,18 @@ describe('signupRequiresInvite (the node door governs sign-up on its domain)', (
     expect(signupRequiresInvite({})).toBe(true);
     expect(signupRequiresInvite(null)).toBe(true);
     expect(signupRequiresInvite(undefined)).toBe(true);
+  });
+});
+
+describe('reflectsInstancePublic (a node reflects the instance, or stays a scoped pond)', () => {
+  it('an explicit flag wins in both directions', () => {
+    expect(reflectsInstancePublic(true, false)).toBe(true);   // a scoped domain chose to reflect
+    expect(reflectsInstancePublic(false, true)).toBe(false);  // a reflecting domain chose to scope
+  });
+  it('unset falls back to the hub default — zero migration', () => {
+    expect(reflectsInstancePublic(undefined, true)).toBe(true);   // hub reflects by default
+    expect(reflectsInstancePublic(undefined, false)).toBe(false); // others stay scoped
+    expect(reflectsInstancePublic(null, true)).toBe(true);
   });
 });
 

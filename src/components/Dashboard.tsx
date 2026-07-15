@@ -2,7 +2,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
-import { getNetworkStats } from '../services/firebase';
+import { getNetworkStats, isHubDomain } from '../services/firebase';
+import { reflectsInstancePublic } from '../domain/communityDoor';
 import { headerSurface } from '../domain/themeSurface';
 import { Icons } from './ui/Icons';
 import { ScrollChevrons } from './ui/ScrollChevrons';
@@ -47,10 +48,13 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab,
     const [networkStats, setNetworkStats] = useState({ trees: 0, pulses: 0, visions: 0 });
 
     useEffect(() => {
-        // The Forest card counts THIS place: the community's domain on custom domains, the
-        // whole node on the hub (getNetworkStats decides by hub-ness).
-        getNetworkStats(hostCommunity?.domain || window.location.hostname).then(setNetworkStats);
-    }, [lightseed, hostCommunity?.domain]);
+        // The Forest card counts THIS place: only its own domain when the node is a scoped pond,
+        // or the whole instance when it reflects the commons (getNetworkStats treats an absent
+        // domain as unscoped). The reflect flag falls back to the hub-domain default when unset.
+        const activeDomain = hostCommunity?.domain || window.location.hostname;
+        const reflects = reflectsInstancePublic(hostCommunity?.reflectsPublic, isHubDomain(activeDomain));
+        getNetworkStats(reflects ? undefined : activeDomain).then(setNetworkStats);
+    }, [lightseed, hostCommunity?.domain, hostCommunity?.reflectsPublic]);
 
 
     return (
