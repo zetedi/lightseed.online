@@ -20,6 +20,32 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/communities/$(communityId)) &&
         get(/databases/$(database)/documents/communities/$(communityId)).data.ownerId == request.auth.uid;
     }
+    // A keeper of the community's DOOR: its owner, or a linked steward — the delegated hands
+    // that accept knocks, remove members, and mint/revoke invitations. Delegation is a link.
+    function isCommunityKeeper(communityId) {
+      return isCommunityOwner(communityId)
+        || (communityId is string
+            && exists(/databases/$(database)/documents/links/$(request.auth.uid + '__steward__' + communityId)));
+    }
+    // The community's door (domain/communityDoor.ts). Absent = 'invite' (the pre-door
+    // behaviour: knock + accept). A missing community's door reads as closed — deny.
+    function communityDoor(communityId) {
+      return (communityId is string
+          && exists(/databases/$(database)/documents/communities/$(communityId)))
+        ? get(/databases/$(database)/documents/communities/$(communityId)).data.get('door', 'invite')
+        : 'closed';
+    }
+    // A community invitation usable for `communityId` right now: it belongs to that community,
+    // is unrevoked and unexpired — and even a valid invitation waits while the door is closed.
+    function inviteOpensDoor(inviteId, communityId) {
+      return inviteId is string && inviteId != ''
+        && exists(/databases/$(database)/documents/communityInvites/$(inviteId))
+        && get(/databases/$(database)/documents/communityInvites/$(inviteId)).data.communityId == communityId
+        && get(/databases/$(database)/documents/communityInvites/$(inviteId)).data.get('revokedAt', null) == null
+        && (get(/databases/$(database)/documents/communityInvites/$(inviteId)).data.get('expiresAt', null) == null
+            || get(/databases/$(database)/documents/communityInvites/$(inviteId)).data.expiresAt > request.time)
+        && communityDoor(communityId) != 'closed';
+    }
     // Visibility enforcement for pulses (events/decisions/reaches/growth). Mirrors the
     // generator in src/domain/pulseVisibility.ts → canView(). Same-document get()s are
     // cached within one request, so a scoped query (one community / one tree) costs one read.
@@ -452,6 +478,27 @@ service cloud.firestore {
       allow update, delete: if isStaff();
     }
 
+    // Community invitations — the shareable door key (/i/<id>), see domain/communityDoor.ts.
+    // Unguessable auto-id: anyone holding the link may GET it (to be greeted before joining);
+    // listing stays with the community's keepers. Append-only in spirit: revocation is a
+    // mark (revokedAt), never a delete — the used invitation IS the provenance record.
+    match /communityInvites/{inviteId} {
+      allow get: if true;
+      allow list: if isSignedIn() && (isStaff() || isCommunityKeeper(resource.data.communityId));
+      allow create: if isSignedIn()
+        && request.resource.data.createdBy == request.auth.uid
+        && isCommunityKeeper(request.resource.data.communityId);
+      // The only mutation is revocation by a keeper: stamp a non-null revokedAt onto an invite
+      // that is not already revoked, and touch nothing else. Revocation is one-way — a revoked
+      // key is never resurrected (no clearing revokedAt back to null), keeping the mark honest.
+      allow update: if isSignedIn()
+        && isCommunityKeeper(resource.data.communityId)
+        && resource.data.get('revokedAt', null) == null
+        && request.resource.data.get('revokedAt', null) != null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['revokedAt']);
+      allow delete: if isStaff();
+    }
+
     // Network onboarding invites. The invite id is an unguessable token, so a single
     // doc is fetchable by anyone holding the link (to lock the email on the sign-up
     // page); listing is staff-only. The inviter creates; the invited user consumes it.
@@ -529,26 +576,62 @@ service cloud.firestore {
     // 'participant' edge — so it is safe as a self-serve, owner-gated membership marker.
     match /links/{linkId} {
       allow read: if true;
-      allow create: if isStaff()
+      // The doc id MUST equal `from__rel__to` (domain/link.ts linkId). Authority is resolved
+      // by PATH elsewhere (hasLink/isCommunityKeeper/isTreeTender do exists() on a computed
+      // path), and exists() is blind to a doc's data — so without this binding a self-serve
+      // link (rel 'joined') placed at a privileged path (…__steward__…, …__co_owner__…) would
+      // be read as that role. Binding id to data closes the whole forgery class; every real
+      // writer already uses linkId(), so nothing legitimate breaks.
+      allow create: if linkId == request.resource.data.from + '__' + request.resource.data.rel + '__' + request.resource.data.to
+        && (isStaff()
         || (isSignedIn() && request.resource.data.from == request.auth.uid
-            && request.resource.data.rel in ['guardian', 'joined', 'join_request'])
+            && request.resource.data.rel in ['guardian', 'joined'])
+        // A knock at the door — possible unless the community's door is closed.
+        || (isSignedIn() && request.resource.data.from == request.auth.uid
+            && request.resource.data.rel == 'join_request'
+            && communityDoor(request.resource.data.to) != 'closed')
         || (isSignedIn() && request.resource.data.rel == 'participant'
             && isTreeOwner(request.resource.data.from))
         // Rooting: a sanctuary's keeper roots THEIR sanctuary in a tree (from = sanctuary id).
         || (isSignedIn() && request.resource.data.rel in ['rooted', 'shelters']
             && get(/databases/$(database)/documents/sanctuaries/$(request.resource.data.from)).data.ownerId == request.auth.uid)
-        // The community owner accepts a join request by minting the member link themself.
+        // Membership through the DOOR (domain/communityDoor.ts): a keeper (owner or steward)
+        // accepts a knock; or the joiner steps in themself while the door is open; or they
+        // arrive holding a live invitation (which also carries provenance on the edge).
         || (isSignedIn() && request.resource.data.rel == 'member'
-            && isCommunityOwner(request.resource.data.to));
+            && (isCommunityKeeper(request.resource.data.to)
+                || (request.resource.data.from == request.auth.uid
+                    && (communityDoor(request.resource.data.to) == 'open'
+                        || inviteOpensDoor(request.resource.data.get('inviteId', ''), request.resource.data.to)))))
+        // Provenance: "I arrived into THIS community through this invitation" — from = newcomer,
+        // to = the community, and inviteId names the real (keeper-minted) invitation; the inviter
+        // is that invite's createdBy. Per-community, so arriving in two places leaves two marks.
+        // Grants nothing (no rule reads it) and is append-only (see the delete clause). It is
+        // deliberately NOT guardianship: power over a being flows from that being's keeper's
+        // later choice, never from the door itself.
+        || (isSignedIn() && request.resource.data.from == request.auth.uid
+            && request.resource.data.rel == 'invited_by'
+            && request.resource.data.get('inviteId', '') != ''
+            && exists(/databases/$(database)/documents/communityInvites/$(request.resource.data.inviteId))
+            && get(/databases/$(database)/documents/communityInvites/$(request.resource.data.inviteId)).data.communityId == request.resource.data.to)
+        // The community owner appoints stewards — delegated door-keepers. A steward may step
+        // down themself (the from == uid delete clause below); the owner may also remove them.
+        || (isSignedIn() && request.resource.data.rel == 'steward'
+            && isCommunityOwner(request.resource.data.to)));
       allow delete: if isSignedIn() && (
-        resource.data.from == request.auth.uid
+        // Append-only provenance: even its subject may not erase how they arrived (mark, never
+        // delete — the root invariant). Staff remain the escape hatch for genuine error.
+        (resource.data.from == request.auth.uid && resource.data.get('rel', '') != 'invited_by')
         || isStaff()
         || (resource.data.get('rel', '') == 'participant' && isTreeOwner(resource.data.from))
         || (resource.data.get('rel', '') in ['rooted', 'shelters']
             && exists(/databases/$(database)/documents/sanctuaries/$(resource.data.from))
             && get(/databases/$(database)/documents/sanctuaries/$(resource.data.from)).data.ownerId == request.auth.uid)
-        // The community owner can decline requests and remove members of their community.
+        // A door-keeper (owner or steward) can decline requests and remove members.
         || (resource.data.get('rel', '') in ['member', 'join_request']
+            && isCommunityKeeper(resource.data.to))
+        // The owner can remove a steward they appointed.
+        || (resource.data.get('rel', '') == 'steward'
             && isCommunityOwner(resource.data.to)));
       allow update: if false;
     }

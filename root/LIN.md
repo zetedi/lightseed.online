@@ -72,7 +72,12 @@ in the web of trust) · *sanctuary* (a sacred place; a lighthouse on the map) ·
 trail — ultimately each community's own ruleset) · *reach* (one being speaking
 to another) · *carry* (lending hands to a being's voice, always disclosed) ·
 *consecrate* (create a sanctuary) · *release* (delete one) · *step in* (a
-sanctuary sheltering a community) · *the Moment* (see GENESIS.md).
+sanctuary sheltering a community) · *the door* (a community's join state:
+open / invitation / closed — who may enter, distinct from who may see) ·
+*steward* (a delegated door-keeper: accepts knocks, mints invitations —
+shares the door, not the deed) · *invited by* (append-only provenance: how a
+being arrived; a mark, never a power — the inviter gains nothing through the
+door) · *the Moment* (see GENESIS.md).
 
 ## Invariants — the reasons; these almost never change
 

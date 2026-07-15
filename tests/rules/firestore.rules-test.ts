@@ -226,3 +226,150 @@ describe('guardian veto — window and tenure live in the rules, not only the cl
     await assertFails(updateDoc(doc(db(MALLORY), 'pulses', 'mint1'), { vetoes: [MALLORY] }));
   });
 });
+
+describe('the door — open lets beings in, closed closes ALL ways, keepers are delegated', () => {
+  const SAM = 'sam-uid'; // steward of com1 — the delegated door-keeper
+  const link = (from: string, rel: string, to: string, extra: object = {}) =>
+    ({ lid: 'x', type: 'link', rel, from, to, ...extra, createdAt: 1 });
+
+  // Door fixtures beside the seeded com1 (door absent = 'invite').
+  const seedDoors = () => env.withSecurityRulesDisabled(async (ctx) => {
+    const d = ctx.firestore();
+    await setDoc(doc(d, 'communities', 'open1'), { ownerId: ALICE, name: 'Open', domain: 'o', door: 'open' });
+    await setDoc(doc(d, 'communities', 'closed1'), { ownerId: ALICE, name: 'Closed', domain: 'c', door: 'closed' });
+    await setDoc(doc(d, 'links', `${SAM}__steward__com1`), link(SAM, 'steward', 'com1'));
+  });
+
+  it('open door: a signed-in being steps in themself; invite and closed doors refuse self-admission', async () => {
+    await seedDoors();
+    await assertSucceeds(setDoc(doc(db(BOB), 'links', `${BOB}__member__open1`), link(BOB, 'member', 'open1')));
+    await assertFails(setDoc(doc(db(BOB), 'links', `${BOB}__member__com1`), link(BOB, 'member', 'com1')));
+    await assertFails(setDoc(doc(db(BOB), 'links', `${BOB}__member__closed1`), link(BOB, 'member', 'closed1')));
+  });
+
+  it('closed door: even the knock is refused; the invite door still hears it', async () => {
+    await seedDoors();
+    await assertFails(setDoc(doc(db(BOB), 'links', `${BOB}__join_request__closed1`), link(BOB, 'join_request', 'closed1')));
+    await assertSucceeds(setDoc(doc(db(BOB), 'links', `${BOB}__join_request__com1`), link(BOB, 'join_request', 'com1')));
+  });
+
+  it('a steward accepts a knock and tends the roster; a mere member cannot', async () => {
+    await seedDoors();
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const d = ctx.firestore();
+      await setDoc(doc(d, 'links', `${BOB}__join_request__com1`), link(BOB, 'join_request', 'com1'));
+      await setDoc(doc(d, 'links', `${MALLORY}__member__com1`), link(MALLORY, 'member', 'com1'));
+    });
+    await assertSucceeds(setDoc(doc(db(SAM), 'links', `${BOB}__member__com1`), link(BOB, 'member', 'com1')));
+    await assertSucceeds(deleteDoc(doc(db(SAM), 'links', `${BOB}__join_request__com1`)));
+    await assertSucceeds(deleteDoc(doc(db(SAM), 'links', `${MALLORY}__member__com1`)));
+    await assertFails(setDoc(doc(db(MALLORY), 'links', `${BOB}__member__com1`), link(BOB, 'member', 'com1')));
+  });
+
+  it('only the owner appoints stewards; a steward may step down; the owner may remove them', async () => {
+    await seedDoors();
+    await assertSucceeds(setDoc(doc(db(ALICE), 'links', `${BOB}__steward__com1`), link(BOB, 'steward', 'com1')));
+    await assertFails(setDoc(doc(db(BOB), 'links', `${MALLORY}__steward__com1`), link(MALLORY, 'steward', 'com1')));
+    await assertSucceeds(deleteDoc(doc(db(SAM), 'links', `${SAM}__steward__com1`)));   // steps down
+    await assertSucceeds(deleteDoc(doc(db(ALICE), 'links', `${BOB}__steward__com1`))); // owner removes
+  });
+});
+
+describe('community invitations — the shareable key: live opens, revoked/expired/foreign do not', () => {
+  const SAM = 'sam-uid';
+  const link = (from: string, rel: string, to: string, extra: object = {}) =>
+    ({ lid: 'x', type: 'link', rel, from, to, ...extra, createdAt: 1 });
+
+  const seedInvites = () => env.withSecurityRulesDisabled(async (ctx) => {
+    const d = ctx.firestore();
+    await setDoc(doc(d, 'communities', 'closed1'), { ownerId: ALICE, name: 'Closed', domain: 'c', door: 'closed' });
+    await setDoc(doc(d, 'links', `${SAM}__steward__com1`), link(SAM, 'steward', 'com1'));
+    await setDoc(doc(d, 'communityInvites', 'inv-live-0001'), { communityId: 'com1', createdBy: ALICE, createdAt: 1 });
+    await setDoc(doc(d, 'communityInvites', 'inv-revoked-1'), { communityId: 'com1', createdBy: ALICE, createdAt: 1, revokedAt: Timestamp.fromMillis(1000) });
+    await setDoc(doc(d, 'communityInvites', 'inv-expired-1'), { communityId: 'com1', createdBy: ALICE, createdAt: 1, expiresAt: Timestamp.fromMillis(1000) });
+    await setDoc(doc(d, 'communityInvites', 'inv-future-01'), { communityId: 'com1', createdBy: ALICE, createdAt: 1, expiresAt: Timestamp.fromMillis(Date.now() + 86400000) });
+    await setDoc(doc(d, 'communityInvites', 'inv-closed-01'), { communityId: 'closed1', createdBy: ALICE, createdAt: 1 });
+  });
+
+  it('a live invitation admits its holder — as a member of ITS community, with the edge carrying provenance', async () => {
+    await seedInvites();
+    await assertSucceeds(setDoc(doc(db(BOB), 'links', `${BOB}__member__com1`),
+      link(BOB, 'member', 'com1', { inviteId: 'inv-live-0001' })));
+  });
+
+  it('an unexpired deadline admits; revoked and expired do not; a foreign invite opens nothing else', async () => {
+    await seedInvites();
+    await assertSucceeds(setDoc(doc(db(BOB), 'links', `${BOB}__member__com1`),
+      link(BOB, 'member', 'com1', { inviteId: 'inv-future-01' })));
+    await assertFails(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__member__com1`),
+      link(MALLORY, 'member', 'com1', { inviteId: 'inv-revoked-1' })));
+    await assertFails(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__member__com1`),
+      link(MALLORY, 'member', 'com1', { inviteId: 'inv-expired-1' })));
+    await assertFails(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__member__closed1`),
+      link(MALLORY, 'member', 'closed1', { inviteId: 'inv-live-0001' }))); // com1's key, closed1's door
+  });
+
+  it('a closed door refuses even its own valid invitation', async () => {
+    await seedInvites();
+    await assertFails(setDoc(doc(db(BOB), 'links', `${BOB}__member__closed1`),
+      link(BOB, 'member', 'closed1', { inviteId: 'inv-closed-01' })));
+  });
+
+  it('invited_by is truthful, per-community provenance: only with a real invitation for THAT community', async () => {
+    await seedInvites();
+    // from = newcomer, to = the community; the inviter is recoverable via the invite's createdBy.
+    await assertSucceeds(setDoc(doc(db(BOB), 'links', `${BOB}__invited_by__com1`),
+      link(BOB, 'invited_by', 'com1', { inviteId: 'inv-live-0001' })));
+    await assertFails(setDoc(doc(db(BOB), 'links', `${BOB}__invited_by__closed1`),
+      link(BOB, 'invited_by', 'closed1', { inviteId: 'inv-live-0001' }))); // com1's key, closed1 named
+    await assertFails(setDoc(doc(db(BOB), 'links', `${BOB}__invited_by__com1`),
+      link(BOB, 'invited_by', 'com1'))); // no invitation at all
+    await assertFails(setDoc(doc(db(MALLORY), 'links', `${BOB}__invited_by__com1`),
+      link(BOB, 'invited_by', 'com1', { inviteId: 'inv-live-0001' }))); // forged actor
+  });
+
+  it('the invited_by mark is append-only — not even its subject may erase how they arrived', async () => {
+    await seedInvites();
+    await env.withSecurityRulesDisabled(async (ctx) =>
+      setDoc(doc(ctx.firestore(), 'links', `${BOB}__invited_by__com1`), link(BOB, 'invited_by', 'com1', { inviteId: 'inv-live-0001' })));
+    await assertFails(deleteDoc(doc(db(BOB), 'links', `${BOB}__invited_by__com1`)));   // the subject cannot erase it
+    await assertSucceeds(deleteDoc(doc(db(STAFF), 'links', `${BOB}__invited_by__com1`))); // staff remain the escape hatch
+  });
+
+  it('keepers mint and revoke; strangers hold the key but cannot cut new ones, and revocation is one-way', async () => {
+    await seedInvites();
+    await assertSucceeds(setDoc(doc(db(ALICE), 'communityInvites', 'inv-by-owner1'),
+      { communityId: 'com1', createdBy: ALICE, createdAt: 1 }));
+    await assertSucceeds(setDoc(doc(db(SAM), 'communityInvites', 'inv-by-stewrd'),
+      { communityId: 'com1', createdBy: SAM, createdAt: 1 }));
+    await assertFails(setDoc(doc(db(BOB), 'communityInvites', 'inv-by-nonkpr'),
+      { communityId: 'com1', createdBy: BOB, createdAt: 1 })); // not a keeper
+    await assertFails(setDoc(doc(db(ALICE), 'communityInvites', 'inv-forged-by'),
+      { communityId: 'com1', createdBy: BOB, createdAt: 1 })); // keeper, but forged createdBy
+    await assertSucceeds(getDoc(doc(db(), 'communityInvites', 'inv-live-0001'))); // link-holder GET, signed out
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'communityInvites', 'inv-live-0001'),
+      { revokedAt: Timestamp.fromMillis(Date.now()) }));
+    await assertFails(updateDoc(doc(db(MALLORY), 'communityInvites', 'inv-future-01'),
+      { revokedAt: Timestamp.fromMillis(Date.now()) }));
+    await assertFails(updateDoc(doc(db(ALICE), 'communityInvites', 'inv-future-01'),
+      { communityId: 'other' })); // revocation is the ONLY mutation
+    // Revocation is one-way: a revoked key is never resurrected by clearing revokedAt.
+    await assertFails(updateDoc(doc(db(ALICE), 'communityInvites', 'inv-revoked-1'),
+      { revokedAt: null }));
+    await assertFails(deleteDoc(doc(db(ALICE), 'communityInvites', 'inv-live-0001'))); // never deleted, marked
+  });
+});
+
+describe('link id-binding — authority resolves by path, so the doc id must equal from__rel__to', () => {
+  const link = (from: string, rel: string, to: string, extra: object = {}) =>
+    ({ lid: 'x', type: 'link', rel, from, to, ...extra, createdAt: 1 });
+
+  it('a self-serve rel cannot masquerade at a privileged path (no steward/keeper by forgery)', async () => {
+    // Mallory tries to land a 'joined' link (self-serve) at the steward path for com1.
+    await assertFails(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__steward__com1`), link(MALLORY, 'joined', MALLORY)));
+    // And cannot forge tree-tender power by placing a self-serve rel at a co_owner path.
+    await assertFails(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__co_owner__treeB`), link(MALLORY, 'joined', MALLORY)));
+    // The honest self-serve write (id matches data) still succeeds.
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__joined__vX`), link(MALLORY, 'joined', 'vX')));
+  });
+});

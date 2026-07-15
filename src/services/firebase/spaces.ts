@@ -1,8 +1,9 @@
-import { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, setDoc, runTransaction, getDoc, where, updateDoc, deleteDoc, limit, startAfter, QueryDocumentSnapshot, writeBatch, deleteField, getCountFromServer, type CollectionReference, type DocumentData } from 'firebase/firestore';
-import { type Pulse, type Vision, type Community, type Being } from '../../types';
+import { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, setDoc, runTransaction, getDoc, where, updateDoc, deleteDoc, limit, startAfter, QueryDocumentSnapshot, writeBatch, deleteField, getCountFromServer, Timestamp, type CollectionReference, type DocumentData } from 'firebase/firestore';
+import { type Pulse, type Vision, type Community, type Being, type CommunityInvite } from '../../types';
 import { uuidv7 } from '../../utils/id';
 import { type PulseVisibility } from '../../domain/pulse';
-import { db, toMillis, mapDoc, lifetreesCollection, visionsCollection, pulsesCollection, communitiesCollection, sanctuariesCollection } from './core';
+import { db, toMillis, mapDoc, lifetreesCollection, visionsCollection, pulsesCollection, communitiesCollection, sanctuariesCollection, communityInvitesCollection } from './core';
+import { firestoreStore } from '../../adapters/firestore';
 import { isHubDomain } from './trees';
 
 export const fetchVisions = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {
@@ -105,6 +106,55 @@ export const updateCommunity = (id: string, data: Partial<Community>) =>
     updateDoc(doc(db, 'communities', id), { ...data, updatedAt: serverTimestamp() });
 
 export const deleteCommunity = (id: string) => deleteDoc(doc(db, 'communities', id));
+
+// ─── The DOOR (domain/communityDoor.ts) — shareable invitations + door-aware joining ────────
+// The rules re-verify everything below; these calls only carry the claim.
+
+export const mintCommunityInvite = async (
+    communityId: string, createdBy: string, label?: string, expiresAtMs?: number,
+): Promise<CommunityInvite> => {
+    const expiresAt = expiresAtMs ? Timestamp.fromMillis(expiresAtMs) : null;
+    const payload: DocumentData = { communityId, createdBy, createdAt: serverTimestamp() };
+    if (label) payload.label = label;
+    if (expiresAt) payload.expiresAt = expiresAt;
+    const ref = await addDoc(communityInvitesCollection, payload);
+    // A complete, honest optimistic copy (the server stamps the true createdAt moments later).
+    return { id: ref.id, communityId, createdBy, createdAt: Timestamp.now(), expiresAt, ...(label ? { label } : {}) };
+};
+
+export const getCommunityInvite = async (inviteId: string): Promise<CommunityInvite | null> => {
+    const snap = await getDoc(doc(db, 'communityInvites', inviteId));
+    return snap.exists() ? ({ id: snap.id, ...snap.data() } as CommunityInvite) : null;
+};
+
+// Keeper's ledger of a community's invitations, newest first. Sorted client-side so the
+// equality query needs no composite index.
+export const listCommunityInvites = async (communityId: string): Promise<CommunityInvite[]> =>
+    (await getDocs(query(communityInvitesCollection, where('communityId', '==', communityId))))
+        .docs.map(d => ({ id: d.id, ...d.data() } as CommunityInvite))
+        .sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
+
+// Revocation is a mark, never a delete — the used invitation IS the provenance record.
+export const revokeCommunityInvite = (inviteId: string) =>
+    updateDoc(doc(db, 'communityInvites', inviteId), { revokedAt: serverTimestamp() });
+
+// Step in through an OPEN door — the joiner mints their own member link.
+export const joinCommunityOpen = (uid: string, communityId: string) =>
+    firestoreStore.link(uid, 'member', communityId);
+
+// Arrive holding an invitation: the member edge carries the invite as provenance, and the
+// append-only 'invited_by' mark (newcomer → community, inviter recoverable via inviteId)
+// records the arrival durably — surviving even if the member later leaves. Admitted only if
+// the invitation is real (a keeper minted it for this community). Returns whether the durable
+// mark was written, so the caller never claims remembrance the code did not keep.
+export const joinCommunityWithInvite = async (uid: string, invite: CommunityInvite): Promise<{ remembered: boolean }> => {
+    await firestoreStore.link(uid, 'member', invite.communityId, { inviteId: invite.id });
+    // The mark is best-effort: membership must stand even if provenance is somehow refused.
+    try {
+        await firestoreStore.link(uid, 'invited_by', invite.communityId, { inviteId: invite.id });
+        return { remembered: true };
+    } catch { return { remembered: false }; }
+};
 
 // All events created under a community, newest first. Single-field query (no composite
 // index); we filter to event pulses and sort client-side.

@@ -39,10 +39,14 @@ them; nothing in `domain/` imports upward.
 `pulses` — one ledger for growth/care/events/decisions/reaches; overlay-key rules.
 `links` — the LIN: `from__rel__to`; rels: guardian, co_owner, steward, observer,
 member, joined, participant, join_request, **rooted** (sanctuary→tree),
-**shelters** (sanctuary→community).
-`visions` `communities` `sanctuaries` `stays` `alignments` `supports` (server-only)
+**shelters** (sanctuary→community), **invited_by** (newcomer→community; append-only
+provenance, grants nothing — see domain/communityDoor). Doc id MUST equal `from__rel__to`
+(rules bind it: authority is resolved by path, so an unbound id would be forgeable).
+`visions` `communities` (bearing the **door**: open/invite/closed) `sanctuaries`
+`stays` `alignments` `supports` (server-only)
 `intelligences` `personas` `memories` `providerCredentials` — the intelligence commons.
-`networkInvites` `treeOwnershipInvites` `communityTreeInvites` `inviteRequests`.
+`networkInvites` `communityInvites` (shareable /i/ door keys; revoked, never deleted)
+`treeOwnershipInvites` `communityTreeInvites` `inviteRequests`.
 
 ## Rules philosophy
 

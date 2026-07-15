@@ -60,6 +60,9 @@ import { setSanctuaryVisibility, deleteSanctuary } from './services/firebase';
 import { announce, onRefresh as onBusRefresh } from './services/refreshBus';
 import { findBeingByLid } from './services/firebase/beings';
 import { lidFromPath } from './domain/beingLink';
+import { inviteIdFromPath } from './domain/communityDoor';
+import { getCommunityInvite, getCommunityById } from './services/firebase';
+import type { CommunityInvite } from './types';
 import type { Sanctuary } from './domain/sanctuary';
 import { CustomLandingPage } from './pages/CustomLandingPage';
 import { Footer } from './components/ui/Footer';
@@ -146,6 +149,8 @@ const AppContent = () => {
     // The Observatory's oracle quote (moved out of the dashboard card into the page header).
     const { observatoryQuote, quoteCopied: obsQuoteCopied, copyQuote: copyObservatoryQuote } = useObservatoryQuote(tab);
     const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
+    // An invitation the visitor arrived holding (/i/<id>) — carried until used or dismissed.
+    const [arrivedInvite, setArrivedInvite] = useState<CommunityInvite | null>(null);
     const [reachTree, setReachTree] = useState<Lifetree | null>(null);
     // Preselected audience for a requested reach — 'guardians' when opened from a danger alert.
     const [reachAudience, setReachAudience] = useState<ReachAudience | undefined>(undefined);
@@ -312,6 +317,23 @@ const AppContent = () => {
             else if (found.kind === 'vision') setSelectedVision(found.vision);
             else setSelectedPulse(found.pulse);
         }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot door: runs when auth settles; the path is consumed on first resolution
+    }, [authLoading]);
+
+    // The /i/<inviteId> door — a community invitation link lands here. The community is
+    // shown to anyone (greeting first); the invitation itself is carried into the profile,
+    // where signing in and entering happen. The path is consumed like the /b/ door's.
+    useEffect(() => {
+        if (authLoading) return;
+        const inviteId = inviteIdFromPath(window.location.pathname);
+        if (!inviteId) return;
+        window.history.replaceState({}, '', '/');
+        getCommunityInvite(inviteId).then(async invite => {
+            const community = invite ? await getCommunityById(invite.communityId) : null;
+            if (!invite || !community) { notify('This invitation could not be found.'); return; }
+            setArrivedInvite(invite);
+            setSelectedCommunity(community);
+        }).catch(() => notify('This invitation could not be found.'));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot door: runs when auth settles; the path is consumed on first resolution
     }, [authLoading]);
 
@@ -1143,9 +1165,10 @@ const AppContent = () => {
                     <CommunityProfile
                     onViewSanctuary={setViewingSanctuary}
                         community={selectedCommunity}
+                        arrivedInvite={arrivedInvite}
                         onViewTree={(tree: Lifetree) => { setSelectedCommunity(null); setSelectedTree(tree); }}
                         onViewEvent={(p: Pulse) => { setSelectedCommunity(null); void onViewPulseOrAlignment(p); }}
-                        onClose={() => { setSelectedCommunity(null); setMapRefreshKey(k => k + 1); }}
+                        onClose={() => { setSelectedCommunity(null); setArrivedInvite(null); setMapRefreshKey(k => k + 1); }}
                         onUpdate={(updates) => {
                             setSelectedCommunity(prev => prev ? { ...prev, ...updates } : null);
                             // If this is the host community, refresh the app shell (theme/logo) too.

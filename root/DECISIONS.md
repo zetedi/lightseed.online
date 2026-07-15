@@ -27,6 +27,31 @@ intention, not a fact or a LIN edge.
 Rejected: waiting for the physical act before allowing the virtual being to
 exist, and calling database persistence life.
 
+**2026-07-15 · The door** — a community gains a *door* (open / invitation / closed),
+distinct from *visibility* (who may see): open lets any signed-in being step in;
+invitation means knock-and-a-keeper-accepts, or arrive holding a shareable
+`/i/<id>` key; closed rests the public door (a keeper may still bring someone in
+by hand). Acceptance **delegates**: the owner appoints *stewards* (a `steward`
+link) who keep the door — accept knocks, remove members, mint/revoke
+invitations — sharing the door, not the deed. Three truths were kept
+deliberately separate: **invitation** = provenance (an append-only `invited_by`
+mark, newcomer→community, granting nothing — the inviter is recoverable but gains
+no power); **guardianship** = chosen care (never auto-granted through the door —
+guardians hold veto standing); **validation** = aliveness (only a real tend).
+Default door is `invite` — the exact pre-door behaviour, so legacy communities
+need no migration. *(Review ring, the rhythm keeping its word: a four-layer
+adversarial fleet — 16 agents, correctness/architecture/security/meaning, each
+finding then attacked to refute — surfaced 12 real defects in the first cut and
+0 false positives. One was **critical and pre-existing**: link authority is
+resolved by document PATH (`exists(…__steward__…)`), but creates validated only
+the data, never binding id to `from__rel__to` — so a self-serve link placed at a
+privileged path could forge keeper/tender/member power. The door widened that
+surface and the fix closed the whole class: creates now require
+`id == from__rel__to`. Also fixed: the `invited_by` mark was self-deletable
+(now append-only in the rules), collapsed across communities (now per-community),
+and a revoked invitation could be un-revoked (now one-way). The metaphor was
+made to match the rules, not the other way around.)*
+
 **2026-07-15 · The seed shows its face** — the Aspen's first pulse — *"The root
 holds what I cannot"* — overflowed the leaf that carried it: every flex layer
 insisted on its intrinsic width until each was taught to yield (`min-w-0`), and

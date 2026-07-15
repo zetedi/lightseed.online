@@ -58,4 +58,7 @@ export interface Community extends Being {
   // is gone from both the type and the data (dropLegacyArrays cleared the docs).
   formation?: 'tree_co_ownership' | 'project' | 'organization' | 'manual';
   visibility?: 'private' | 'invited' | 'public';
+  // The DOOR — who may join, and how (domain/communityDoor.ts). Distinct from `visibility`
+  // (who may see). Absent = 'invite': the pre-door behaviour (knock, a keeper accepts).
+  door?: import('./communityDoor').CommunityDoor;
 }

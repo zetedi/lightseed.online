@@ -11,7 +11,8 @@ export interface Store {
   // Read: every edge of a relation across the network — e.g. all 'guardian' edges (for counts).
   linksByRel(rel: LinkRel): Promise<Link[]>;
   // Write: create / remove an edge. The adapter persists it into the `links` collection
-  // (the LIN as data) — swap the adapter and the call sites never change.
-  link(from: string, rel: LinkRel, to: string): Promise<void>;
+  // (the LIN as data) — swap the adapter and the call sites never change. `extra` carries
+  // the edge's optional provenance (inviteId) or energy (weight).
+  link(from: string, rel: LinkRel, to: string, extra?: Pick<Link, 'inviteId' | 'weight'>): Promise<void>;
   unlink(from: string, rel: LinkRel, to: string): Promise<void>;
 }

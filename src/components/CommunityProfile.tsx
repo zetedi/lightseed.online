@@ -5,8 +5,9 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
 import { MahameruAvatar } from './ui/MahameruAvatar';
-import { Community, Lifetree, Pulse, Sanctuary } from '../types';
-import { updateCommunity, uploadImage, getTreesByDomain, getParticipatingTrees, deleteCommunity, getCommunityByDomain, getSanctuariesByDomain, getSanctuariesByCommunity, getAllSanctuaries, createSanctuary, adoptSanctuary } from '../services/firebase';
+import { Community, CommunityInvite, Lifetree, Pulse, Sanctuary } from '../types';
+import { doorOf, checkInvite } from '../domain/communityDoor';
+import { updateCommunity, uploadImage, getTreesByDomain, getParticipatingTrees, deleteCommunity, getCommunityByDomain, getSanctuariesByDomain, getSanctuariesByCommunity, getAllSanctuaries, createSanctuary, adoptSanctuary, getPersonName, joinCommunityOpen, joinCommunityWithInvite } from '../services/firebase';
 import { CommunityVision } from './community/CommunityVision';
 import { CommunityCouncil } from './community/CommunityCouncil';
 import { CommunityEvents } from './community/CommunityEvents';
@@ -35,6 +36,8 @@ import { canTendTree } from '../domain/policy';
 
 interface CommunityProfileProps {
   community: Community;
+  // An invitation the viewer arrived holding (/i/<id>) — the door greets them by it.
+  arrivedInvite?: CommunityInvite | null;
   onUpdate?: (updates: Partial<Community>) => void;
   onClose: () => void;
   onViewTree?: (tree: Lifetree) => void;
@@ -50,6 +53,7 @@ const bareDomain = (d?: string) => (d || '').toLowerCase().replace(/^www\./, '')
 
 export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   community,
+  arrivedInvite,
   onUpdate,
   onClose,
   onViewTree,
@@ -73,6 +77,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   // Has this viewer already asked to join? (join_request link — see the Members tab.)
   const [joinRequested, setJoinRequested] = useState(false);
   const [joining, setJoining] = useState(false);
+  // Stewardship — the delegated door-keepers (accept knocks, mint invitations).
+  const [isSteward, setIsSteward] = useState(false);
   useEffect(() => {
     let alive = true;
     firestoreStore.linksTo(community.id)
@@ -80,11 +86,21 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
         if (!alive) return;
         setMemberByLink(isParticipant(links.filter(l => l.rel === 'member'), currentUserId));
         setJoinRequested(!!currentUserId && links.some(l => l.rel === 'join_request' && l.from === currentUserId));
+        setIsSteward(!!currentUserId && links.some(l => l.rel === 'steward' && l.from === currentUserId));
       })
       .catch(() => {});
     return () => { alive = false; };
   }, [community.id, currentUserId]);
   const isMember = memberSeed || memberByLink;
+
+  // The DOOR (domain/communityDoor.ts) — how a non-member may enter, if at all.
+  const door = doorOf(community);
+  const inviteForHere = arrivedInvite && arrivedInvite.communityId === community.id ? arrivedInvite : null;
+  const [inviterName, setInviterName] = useState('');
+  useEffect(() => {
+    if (!inviteForHere) return;
+    getPersonName(inviteForHere.createdBy).then(n => setInviterName(n || '')).catch(() => {});
+  }, [inviteForHere]);
 
   // Join — a request for the community's keeper(s), surfaced on their Members tab.
   const handleJoin = async () => {
@@ -95,6 +111,41 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       setJoinRequested(true);
       notify(`🌱 Your request to join ${community.name} is on its way to its keepers.`);
     } catch (e: any) { showAlert(e?.message || 'Could not send the join request.'); }
+    setJoining(false);
+  };
+  // Step in through an OPEN door — no knock needed while the founding season lasts.
+  const handleStepIn = async () => {
+    if (!currentUserId) return;
+    setJoining(true);
+    try {
+      await joinCommunityOpen(currentUserId, community.id);
+      setMemberByLink(true);
+      notify(`🌿 Welcome to ${community.name}.`);
+    } catch (e: any) { showAlert(e?.message || 'Could not join.'); }
+    setJoining(false);
+  };
+  // Enter holding an invitation — membership plus the append-only 'invited_by' mark.
+  const handleEnterWithInvite = async () => {
+    if (!currentUserId || !inviteForHere) return;
+    const verdict = checkInvite({
+      communityId: inviteForHere.communityId,
+      createdBy: inviteForHere.createdBy,
+      revokedAtMs: inviteForHere.revokedAt ? inviteForHere.revokedAt.toMillis() : null,
+      expiresAtMs: inviteForHere.expiresAt ? inviteForHere.expiresAt.toMillis() : null,
+    }, community.id, door, Date.now());
+    if (!verdict.usable) {
+      showAlert(verdict.reason === 'revoked' ? 'This invitation has been revoked.'
+        : verdict.reason === 'expired' ? 'This invitation has expired.'
+        : verdict.reason === 'door_closed' ? 'The door is closed for now — even invitations wait.'
+        : 'This invitation belongs to another community.');
+      return;
+    }
+    setJoining(true);
+    try {
+      const { remembered } = await joinCommunityWithInvite(currentUserId, inviteForHere);
+      setMemberByLink(true);
+      notify(remembered ? `🌿 Welcome to ${community.name}. Your arrival is remembered.` : `🌿 Welcome to ${community.name}.`);
+    } catch (e: any) { showAlert(e?.message || 'The door did not open — the invitation may no longer stand.'); }
     setJoining(false);
   };
   // The visibility levels this viewer may query at community scope — shared by the events and
@@ -476,7 +527,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     },
     {
       key: 'members', label: 'Members', icon: <Icons.Users />, render: () => (
-        <CommunityMembers community={community} currentUserId={currentUserId} canManage={canEdit} />
+        <CommunityMembers community={community} currentUserId={currentUserId} canManage={canEdit || isSteward} isOwner={canEdit} onCommunityUpdate={onUpdate} />
       ),
     },
     {
@@ -549,10 +600,29 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
         heroProps: { padding: 'pt-5 pb-12 px-4' },
         actions: (
           <>
-            {/* Join — visitors ask, keepers accept on the Members tab. Members see their standing.
+            {/* The DOOR — open: step in; invite: knock (or enter holding an invitation);
+                closed: rest. Keepers accept knocks on the Members tab. Members see standing.
                 Mobile keeps every action compact (icons, tight padding) so nothing overflows. */}
-            {currentUserId && !isMember && (
-              joinRequested ? (
+            {!currentUserId && inviteForHere && (
+              <span className="flex items-center gap-1 rounded-full border border-amber-300/50 bg-amber-400/15 px-2.5 py-1.5 text-[11px] font-bold text-amber-200 sm:px-4 sm:py-2 sm:text-xs">
+                🎟 Sign in to use your invitation
+              </span>
+            )}
+            {currentUserId && !isMember && inviteForHere && (
+              <button onClick={handleEnterWithInvite} disabled={joining} className="flex items-center gap-1 rounded-full bg-amber-500 px-2.5 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-amber-400 disabled:opacity-50 sm:px-4 sm:py-2 sm:text-xs">
+                🎟 <span>{joining ? 'Entering…' : `Enter — invited${inviterName ? ` by ${inviterName}` : ''}`}</span>
+              </button>
+            )}
+            {currentUserId && !isMember && !inviteForHere && (
+              door === 'open' ? (
+                <button onClick={handleStepIn} disabled={joining} className="flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50 sm:px-4 sm:py-2 sm:text-xs">
+                  <Icons.Users size={14} /><span>{joining ? 'Stepping in…' : 'Step in'}</span>
+                </button>
+              ) : door === 'closed' ? (
+                <span className="flex items-center gap-1 rounded-full border border-slate-400/40 bg-slate-400/10 px-2.5 py-1.5 text-[11px] font-bold text-slate-300 sm:px-4 sm:py-2 sm:text-xs">
+                  The door is closed
+                </span>
+              ) : joinRequested ? (
                 <span className="flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-1.5 text-[11px] font-bold text-emerald-300 sm:px-4 sm:py-2 sm:text-xs">
                   <Icons.Users size={14} /> Requested
                 </span>

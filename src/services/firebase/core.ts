@@ -71,6 +71,7 @@ export const alignmentsCollection = collection(db, 'alignments');
 export const communitiesCollection = collection(db, 'communities');
 export const sanctuariesCollection = collection(db, 'sanctuaries');
 export const networkInvitesCollection = collection(db, 'networkInvites');
+export const communityInvitesCollection = collection(db, 'communityInvites');
 export const newsletterConfigRef = doc(db, 'config', 'newsletter');
 
 export const onAuthChange = (callback: (user: FirebaseUser | null) => void) => onAuthStateChanged(auth, callback);

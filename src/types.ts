@@ -11,6 +11,7 @@ export * from './domain/pulse';
 export * from './domain/reach';
 export * from './domain/link';
 export * from './domain/community';
+export * from './domain/communityDoor';
 export * from './domain/decision';
 export * from './domain/intelligence';
 export * from './domain/sanctuary';

@@ -30,9 +30,9 @@ export const firestoreStore: Store = {
     return (await getDocs(query(linksCol, where('rel', '==', rel)))).docs.map(d => d.data() as Link);
   },
 
-  async link(from: string, rel: LinkRel, to: string): Promise<void> {
+  async link(from: string, rel: LinkRel, to: string, extra?: Pick<Link, 'inviteId' | 'weight'>): Promise<void> {
     await setDoc(doc(db, 'links', linkId(from, rel, to)),
-      { lid: uuidv7(), type: 'link', rel, from, to, createdAt: serverTimestamp() });
+      { lid: uuidv7(), type: 'link', rel, from, to, ...(extra || {}), createdAt: serverTimestamp() });
   },
 
   async unlink(from: string, rel: LinkRel, to: string): Promise<void> {

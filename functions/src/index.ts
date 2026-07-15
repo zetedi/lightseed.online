@@ -364,30 +364,40 @@ export const onJoinRequestCreated = onDocumentCreated("links/{linkId}", async (e
     if (link.rel !== "join_request") return;
 
     try {
-        const [communitySnap, personSnap] = await Promise.all([
+        const [communitySnap, personSnap, stewardSnap] = await Promise.all([
             db.collection("communities").doc(String(link.to)).get(),
             db.collection("persons").doc(String(link.from)).get(),
+            // The knock reaches every door-keeper: the owner AND the delegated stewards.
+            db.collection("links").where("rel", "==", "steward").where("to", "==", String(link.to)).get(),
         ]);
         if (!communitySnap.exists) return;
         const community = communitySnap.data() as any;
         const ownerId = community.ownerId as string;
-        if (!ownerId || ownerId === link.from) return;
-
-        const owner = await db.collection("users").doc(ownerId).get();
-        const email = owner.exists ? (owner.data() as any)?.email : null;
-        if (!email) return;
+        // Bound the fan-out: a knock reaches the owner and up to a few stewards, never an
+        // unbounded blast (each recipient is one queued email against the node's quota).
+        const MAX_KNOCK_RECIPIENTS = 6;
+        const keeperIds = Array.from(new Set(
+            [ownerId, ...stewardSnap.docs.map((d) => (d.data() as any).from as string)]
+                .filter((uid) => uid && uid !== link.from),
+        )).slice(0, MAX_KNOCK_RECIPIENTS);
+        if (keeperIds.length === 0) return;
 
         const requester = (personSnap.exists && (personSnap.data() as any)?.displayName) || "Someone";
         const communityName = community.name || "your community";
         const text = `${requester} asked to join ${communityName}.\n\nYou can accept or decline on the community's Members tab.`;
         const html = composeSystemEmailHtml(text, "https://lightseed.online", "Open lightseed");
-        await writeMail({
-            to: [email],
-            subject: `${requester} asked to join ${communityName}`,
-            html,
-            text: `${text}\n\nhttps://lightseed.online`,
-            uid: ownerId,
-        });
+        await Promise.all(keeperIds.map(async (uid) => {
+            const keeper = await db.collection("users").doc(uid).get();
+            const email = keeper.exists ? (keeper.data() as any)?.email : null;
+            if (!email) return;
+            await writeMail({
+                to: [email],
+                subject: `${requester} asked to join ${communityName}`,
+                html,
+                text: `${text}\n\nhttps://lightseed.online`,
+                uid,
+            });
+        }));
     } catch (e) {
         console.error("Join-request email failed:", e);
     }

@@ -41,11 +41,23 @@ What a being LOOKS like: `src/components/BeingProfile.tsx` + `src/components/sec
   `tests/pathway.test.ts`). UI: `src/components/PathwayCTA.tsx`, rendered on dashboard/forest.
   The glow always means: *your next step*.
 
+## The door (who may join a community, and how)
+
+- Pure logic: `src/domain/communityDoor.ts` (open / invite / closed, default `invite` = the
+  pre-door behaviour; invitation validity; `/i/<id>` URLs; tested in `tests/communityDoor.test.ts`).
+- Enforcement: `firestore.rules` — `communityDoor()`, `isCommunityKeeper()` (owner OR `steward`
+  link), `inviteOpensDoor()`; the `communityInvites` collection (revocation is a mark, never a
+  delete). Tested in `tests/rules/firestore.rules-test.ts` ("the door" + "community invitations").
+- Three truths kept separate: `invited_by` link = provenance (grants nothing) · guardianship =
+  chosen care (never auto-granted through the door — guardians hold veto standing) · validation =
+  aliveness (only a real tend). UI: Members tab (door panel, invitations, stewards) +
+  `/i/<inviteId>` arrival in `src/App.tsx`.
+
 ## The gate (run before every commit)
 
 ```
-npm run check     # strict typecheck + lint (0/0) + 54 unit tests
-npm run test:rules  # 12 Firestore rules tests (needs the emulator/Java)
+npm run check     # strict typecheck + lint (0/0) + 154 unit tests
+npm run test:rules  # 33 Firestore rules tests (needs the emulator/Java)
 ```
 
 CI runs all of it on every push (`.github/workflows/quality-gate.yml`).
