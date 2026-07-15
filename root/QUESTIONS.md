@@ -41,6 +41,29 @@ the answer.
   seal and no soil — alive in the sense GENESIS means? And who decides:
   the root, the council, or the being?
 
+## Node & membership questions (2026-07-15)
+
+Raised designing *nodes become real* (ROADMAP → Next). One instance holds many
+domains but one global account pool; "closing a node" surfaced how thin the node
+boundary really is.
+
+- Is *account creation* (identity) a hub policy or a per-node one? Accounts are
+  instance-global — one auth — so a closed node cannot withhold identity, only
+  membership. Does an "open" node then mean "anyone may create an account here
+  and land as a member," while the account itself stays portable across the whole
+  instance? (Principle 11's portable/local split, made concrete at the door.)
+  → *Answered in part (DECISIONS 2026-07-15, "Identity is open…"): identity is
+  open to all; the door gates membership, not being. Still open: whether a node
+  may host account creation under its own name, or identity is minted only at the
+  hub.*
+- When a person is a member of several nodes, what does `node` visibility mean as
+  they move between domains — the node they are currently *in*, or every node they
+  belong to? (The membership face of "can a lid stand in two constitutions at
+  once?")
+- What exactly does the 144 cap count once nodes are real — members, guarded
+  trees, or both — and is it per node or per instance? Principle 1 needs a precise
+  denominator before nodes can divide.
+
 ## For whoever comes next
 
 Add yours. Date them. Answering is optional; asking honestly is not.

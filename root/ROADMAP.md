@@ -22,6 +22,35 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
 
 ## Next (after 8/8)
 
+- **Nodes become real (the domain–DB link).** Today a "node" is only skin:
+  `inviteOnly` is a hardcoded global constant (never read from the DB, identical
+  on every domain), accounts are instance-wide, and `node` visibility means
+  merely "signed in." Recognise the node as **the community that owns a domain**
+  — principle 11 once more: identity is *portable and open* (anyone may hold one
+  account/lid across the whole instance — the door gates membership, never being),
+  membership is *local* (a `member` edge to the node's host community; a node IS a
+  community, so no new rel). Decided 2026-07-15 (see DECISIONS): identity open,
+  membership local; some parts are *sensitive to light* — the ladder protects what
+  is not yet ready for a wide gaze. Three phases, each its own ring:
+  1. **The node's door becomes real** — `useConfig` reads the host community's
+     `door` (open/invite/closed, already built) instead of the constant, so a
+     keeper can open or close *their* node. Absent door keeps today's behaviour
+     (invitation required); mechanical, no meaning-change.
+  2. **Invitations carry the node** — stamp the host community on each
+     `networkInvite` (**the domain it was sent from**); on accept, mint `member`
+     (node) + `invited_by` (provenance), so one personal invitation carries someone
+     from no-account to member-of-my-node, names the right node, and **opens that
+     domain's OPEN communities** to them (tender ones still ask for their own key).
+     A one-time link of every existing account to the hub node grandfathers all
+     current standing.
+  3. **`node` visibility means "member of THIS node"** — not any signed-in being;
+     and **"open" narrows from instance-wide to domain-scoped** (the open door
+     shipped 2026-07-15 admits any account today — it becomes open-to-the-domain).
+     Its own ring, because it redefines principle 4's node tier: node-scoped
+     pulses/trees gain a nodeId, and `canView` mirrors the `community` branch.
+     Nothing vanishes on day one (everyone is a hub-node member from phase 2).
+  Precursor to Federation (below): one node truly whole before lids travel
+  between many. Open questions recorded in QUESTIONS.md (2026-07-15).
 - **Stay ripening**: keeper notification emails for bed requests; calendars.
 - **Hosted AI, live**: the node credential (`credentialScope: 'node'`) wired in
   functions, funded by the node share; `Intelligence.hosted` becomes real.

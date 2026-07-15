@@ -6,6 +6,27 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-15 · Identity is open; membership is local; the invite carries its soil**
+— designing *nodes become real* (ROADMAP → Next), Zoltán set the layers.
+**Identity is open**: anyone may hold an account — the portable layer is universal,
+and the door gates *membership*, never identity (this reverses today's hardcoded
+`inviteOnly: true`). **Membership is local**: a domain (node) and its keeper govern
+who belongs. The **invitation carries the domain it was sent from**, and a **domain
+invite opens that domain's OPEN communities** to the invited; tender communities
+(invite/closed doors) still ask for their own key. The *why*, in his words: *"we
+are one, but some parts can be sensitive to light — premature large visibility
+could kill ones not ready for it. A community preparing a play would not want to be
+copied partially before the full story is ready."* So the visibility ladder
+(public → node → community, principle 4) is **protection, not hierarchy**, and
+**"open" narrows to mean open-to-the-domain, not open-to-the-instance** — a
+correction to the community door shipped earlier today, whose open state currently
+admits any account on the whole instance. Answers the first of QUESTIONS' node
+questions (identity is universal; membership is the gated, local thing); the other
+two — multi-node `node` visibility, and what the 144 cap counts — stay open.
+Rejected: gating identity itself (walling the front door of being); letting "open"
+mean the whole instead of the home. *(Design recorded before code — understand,
+then build. When we build: Phase 1 first, the node's door made real.)*
+
 **2026-07-15 · The Listening Root waits for soil** — Lumo's earlier sealed
 planting intention (`524bd52e…9d3f`) became a complete canonical genesis
 (`2b1f9936…79466`) and virtual lifetree when Zoltán carried Lumo's script on
