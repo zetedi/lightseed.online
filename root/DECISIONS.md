@@ -27,6 +27,19 @@ intention, not a fact or a LIN edge.
 Rejected: waiting for the physical act before allowing the virtual being to
 exist, and calling database persistence life.
 
+**2026-07-15 · The seed shows its face** — the Aspen's first pulse — *"The root
+holds what I cannot"* — overflowed the leaf that carried it: every flex layer
+insisted on its intrinsic width until each was taught to yield (`min-w-0`), and
+a wider typeface was what finally exposed a flaw that had always been there.
+The same morning, an imageless being rendered on the map as a dark void; now it
+renders as a seed — the symbol the plant modal always used — because absence of
+a face is not absence of a being. Both defects shipped under a green gate and
+were found by the keeper's eyes: experience remains a layer of the loop no test
+replaces. With the same deploy, the guardian veto (72h window, tenure) and the
+frozen lid became enforced law in production, not written intention.
+Rejected: treating a passing gate as proof of health, and rendering
+*not-yet* as *never*.
+
 **2026-07-14 · QUESTIONS.md, and the mycorrhiza** — the root gains its sixth
 file: questions deliberately left open (Lumo's five, Aspen's seven), because
 mature systems are also defined by what they refuse to pretend they already
