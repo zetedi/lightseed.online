@@ -119,7 +119,7 @@ const baseKeys = {
   the_tree: "The Tree", the_forest: "The Forest", plant_or_stand: "Plant or stand for a tree",
   collab: "Collabs", collab_sub: "The AI and organisation collaborators of this node.", protection: "Protection",
   type_lifetree: "Lifetree", type_guarded: "Guarded", type_family: "Family",
-  communities: "Communities", register_community: "Register Community",
+  communities: "Communities", register_community: "Register Community", register: "Register",
   light_earth: "Living", intelligence: "Intelligence",
   about_lin_description: "LIN, the Living Intelligence Network, is the intelligence layer of the Light Earth: a distributed system where humans, AI, trees, places, and communities become visible to each other through care, reciprocity, and shared purpose."
 };
@@ -133,7 +133,7 @@ export const translations: Record<Language, typeof baseKeys> = {
     pending_alignments: "Coincidencias Pendientes", quick_snap: "Capturar Cambio", validated: "VALIDADO", 
     validate_action: "Validar Árbol", create_vision: "Nueva Visión", create_new_world: "Crea un Nuevo Mundo",
     light_earth: "Living", intelligence: "Inteligencia",
-    communities: "Comunidades", register_community: "Registrar Comunidad", observatory: "Observatorio", inspiration: "Inspiración"
+    communities: "Comunidades", register_community: "Registrar Comunidad", register: "Registrar", observatory: "Observatorio", inspiration: "Inspiración"
   },
   hu: { 
     ...baseKeys, forest: "Erdő", pulses: "Pulzusok", visions: "Víziók", oracle: "Orákulum", about: "Rólunk", explore: "Felfedezés", 
@@ -142,7 +142,7 @@ export const translations: Record<Language, typeof baseKeys> = {
     pending_alignments: "Függőben", quick_snap: "Gyors Fotó", validated: "HITELESÍTVE", 
     validate_action: "Hitelesítés", create_vision: "Új Vízió", create_new_world: "Teremts Új Világot",
     light_earth: "Living", intelligence: "Intelligencia",
-    communities: "Közösségek", register_community: "Közösség Regisztrálása", observatory: "Obszervatórium", inspiration: "Inspiráció"
+    communities: "Közösségek", register_community: "Közösség Regisztrálása", register: "Regisztráció", observatory: "Obszervatórium", inspiration: "Inspiráció"
   },
   qu: { 
     ...baseKeys, forest: "Sach'a", pulses: "Sirkay", visions: "Musquy", oracle: "Willaq", about: "Kaymanta", explore: "Maskay", 
@@ -301,7 +301,7 @@ export const translations: Record<Language, typeof baseKeys> = {
     the_tree: "生命树", the_forest: "森林", plant_or_stand: "种植或守护一棵树",
     collab: "协作", collab_sub: "本节点的 AI 与组织协作者。", protection: "保护",
     type_lifetree: "生命树", type_guarded: "守护树", type_family: "家庭",
-    communities: "社区", register_community: "注册社区",
+    communities: "社区", register_community: "注册社区", register: "注册",
     light_earth: "生机", intelligence: "智慧",
     about_lin_description: "LIN，生命智慧网络，是光之地球的智慧层：一个分布式系统，让人类、AI、树木、地方与社区通过关怀、互惠与共同目标彼此可见。"
   }

@@ -454,7 +454,7 @@ export const Navigation = ({
                                 </button>
                             </>
                          ) : (
-                            <button onClick={onLogin} className="text-white px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap shadow-lg transition-all active:scale-95" style={{ backgroundColor: theme?.primary || '#059669' }}>
+                            <button onClick={() => { setIsMenuOpen(false); onLogin(); }} className="text-white px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap shadow-lg transition-all active:scale-95" style={{ backgroundColor: theme?.primary || '#059669' }}>
                                 {t('sign_in')}
                             </button>
                          )}

@@ -278,7 +278,9 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
             className={`bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-1.5 active:scale-95 ${CTA_GLOW}`}
           >
             <Icons.Plus />
-            <span>{t('register_community')}</span>
+            {/* Mobile keeps it short so the CTA doesn't crowd the header. */}
+            <span className="sm:hidden">{t('register')}</span>
+            <span className="hidden sm:inline">{t('register_community')}</span>
           </button>
         ) : undefined}
       >

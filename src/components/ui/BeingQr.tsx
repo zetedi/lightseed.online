@@ -49,7 +49,7 @@ export const BeingQr = ({ lid, name, savedHref, canMint = false, onMint, classNa
             setDataUrl(await QRCode.toDataURL(liveHref, { width: 512, margin: 2, color: { dark: '#0f172a', light: '#ffffff' } }));
             notify('QR link refreshed.');
         } catch {
-            notify('Could not refresh the QR link.');
+            notify('Could not refresh the QR link.', 'error');
         }
     };
 

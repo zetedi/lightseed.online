@@ -249,6 +249,7 @@ const AppContent = () => {
     const { data, setData, loadContent, loadingMore, forestSentinelRef } = useForestFeed({
         tab, viewMode, lightseed, isSuperAdmin, isAdmin, setAlignments,
         hostReflectsPublic: (impersonatedCommunity || hostCommunity)?.reflectsPublic,
+        hostDomain: (impersonatedCommunity || hostCommunity)?.domain,
     });
 
     // The refresh bus, heard by the live feed: when an event/pulse is deleted anywhere
@@ -260,11 +261,12 @@ const AppContent = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- setData is a stable setter from useForestFeed
     }), []);
 
-    // Load the tab's content when the view changes.
+    // Load the tab's content when the view changes — or when the active node's commons/domain
+    // changes (flipping "reflect the commons" re-scopes the feed live, no refresh needed).
     useEffect(() => {
         if (tab !== 'dashboard') loadContent(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- loadContent is recreated per render; adding it would refetch the feed on every render (loop). It already closes over tab/viewMode/lightseed.
-    }, [tab, lightseed, viewMode]);
+    }, [tab, lightseed, viewMode, (impersonatedCommunity || hostCommunity)?.reflectsPublic, (impersonatedCommunity || hostCommunity)?.domain]);
 
     // Genesis + the host community depend only on the signed-in user, not the tab — so run them
     // once per session (and on login), not on every tab/view switch as they used to.

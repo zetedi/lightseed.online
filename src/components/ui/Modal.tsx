@@ -13,8 +13,10 @@ interface ModalProps {
 
 export const Modal = ({ children, onClose, title, backgroundImage, fullScreenOnMobile, innerGlow, wide }: ModalProps) => {
     const desktopWidth = wide ? 'sm:max-w-2xl' : 'sm:max-w-md';
+    // z-[98]: above the mobile menu (95) so a modal opened from it isn't shown through, below
+    // dialogs (100) so a confirm/alert still layers on top.
     return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 backdrop-blur-md ${fullScreenOnMobile ? 'p-0 sm:p-4' : 'p-4'}`}>
+    <div className={`fixed inset-0 z-[98] flex items-center justify-center bg-slate-900/90 backdrop-blur-md ${fullScreenOnMobile ? 'p-0 sm:p-4' : 'p-4'}`}>
         <div
             className={`shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 ${backgroundImage ? 'text-white' : 'bg-white'} ${
                 fullScreenOnMobile

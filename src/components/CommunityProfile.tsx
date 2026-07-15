@@ -341,6 +341,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     } catch (e) {
       console.error(e);
       setStatus('Failed to save. Please try again.');
+      notify('Could not save. Please try again.', 'error');
     }
     setIsSaving(false);
   };

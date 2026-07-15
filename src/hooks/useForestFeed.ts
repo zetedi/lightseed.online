@@ -19,11 +19,15 @@ export function useForestFeed(params: {
   isAdmin: boolean;
   setAlignments: (a: Alignment[]) => void;
   // The active node's commons setting: when it reflects the instance's public, the feed is
-  // unscoped (shows every domain's public); otherwise it scopes to this domain. Undefined =
+  // unscoped (shows every domain's public); otherwise it scopes to this node. Undefined =
   // fall back to the hub-domain default (zero migration). See domain/communityDoor.
   hostReflectsPublic?: boolean;
+  // The active node's CANONICAL domain (impersonated || host community). Scoping keys on this,
+  // not the raw hostname — so impersonation and hub-alias hosts (lifeseed.online) scope by the
+  // node actually being viewed, matching how trees/pulses are tagged (plantLifetree).
+  hostDomain?: string;
 }) {
-  const { tab, viewMode, lightseed, isSuperAdmin, isAdmin, setAlignments, hostReflectsPublic } = params;
+  const { tab, viewMode, lightseed, isSuperAdmin, isAdmin, setAlignments, hostReflectsPublic, hostDomain } = params;
 
   const [data, setData] = useState<any[]>([]);
   const [lastDoc, setLastDoc] = useState<any>(null);
@@ -45,14 +49,15 @@ export function useForestFeed(params: {
     setLoadingMore(true);
     const currentLastDoc = reset ? undefined : lastDoc;
     const isDevHost = /localhost|127\.0\.0\.1|^192\.168\.|\.local$/.test(window.location.hostname);
-    // On dev hosts a superadmin sees the whole network (no domain scoping).
-    const rawDomain = (isDevHost && isSuperAdmin) ? 'lightseed.online' : window.location.hostname;
+    // The node being viewed: its canonical domain (so impersonation and hub aliases scope by the
+    // right node), falling back to the raw hostname. Dev superadmin sees the whole network.
+    const activeDomain = (isDevHost && isSuperAdmin) ? undefined : (hostDomain || window.location.hostname);
     // Commons mode: if this node reflects the instance's public, pass no domain (every feed
-    // treats an absent domain as unscoped → the whole instance); otherwise scope to this domain.
+    // treats an absent domain as unscoped → the whole instance); otherwise scope to this node.
     // Unset flag falls back to the hub default, so the hub keeps reflecting and others stay scoped.
-    const currentDomain = reflectsInstancePublic(hostReflectsPublic, isHubDomain(rawDomain))
+    const currentDomain = reflectsInstancePublic(hostReflectsPublic, isHubDomain(activeDomain))
       ? undefined
-      : rawDomain;
+      : activeDomain;
     // Broad feeds carry no scope, so this resolves to public (+ node when signed in; all
     // but private for staff) — keeping the query to docs the rules will allow.
     const feedLevels = queryableLevels({ uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin });

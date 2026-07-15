@@ -18,9 +18,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeh
   const quillRef = useRef<ReactQuill>(null);
 
   // Quill re-initialises when `modules` changes identity — memoize, or every parent render
-  // rebuilds the editor (and eats the focus).
+  // rebuilds the editor (and eats the focus). Read-only = no toolbar: the controls belong to
+  // editing only, so a displayed value shows as clean prose, not a chrome-wrapped editor.
   const modules = useMemo(() => ({
-    toolbar: {
+    toolbar: readOnly ? false : {
       container: [
         [{ 'header': [1, 2, 3, false] }],
         ['bold', 'italic', 'underline', 'strike', 'blockquote'],
@@ -51,7 +52,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeh
         },
       } : {},
     },
-  }), [onImageUpload]);
+  }), [onImageUpload, readOnly]);
 
   // Quill 2 (react-quill-new) registers only 'list' — 'bullet' is a toolbar value, not a
   // separate format, so listing it here throws "Cannot register 'bullet'".

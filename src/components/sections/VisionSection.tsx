@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import RichTextEditor from '../ui/RichTextEditor';
 import { SectionTitle } from '../ui/SectionTitle';
+import { Icons } from '../ui/Icons';
 import { sanitizeRichText } from '../../utils/sanitize';
 
 // Being-generic vision section — any being's "what am I growing towards" (Indra's net).
@@ -32,7 +33,9 @@ interface VisionSectionProps {
   extras?: React.ReactNode;
 }
 
-// Vision section — edit or present the vision of any entity (community, node, personal).
+// Vision section — present the vision by default; the rich editor and its controls appear only
+// when an editor actively chooses to edit (not merely because they *may*). The being-specific
+// commitments in `extras` stay visible to owners regardless — they are node settings, not prose.
 export const VisionSection: React.FC<VisionSectionProps> = ({
   canEdit,
   vision,
@@ -47,22 +50,35 @@ export const VisionSection: React.FC<VisionSectionProps> = ({
   placeholder = 'Share your vision...',
   emptyMessage = 'No vision shared yet.',
   extras,
-}) => (
-  <div>
-    <SectionTitle title={title} sub={sub} />
-    {canEdit ? (
-      <>
-        <RichTextEditor value={editValue} onChange={onChange} placeholder={placeholder} />
-        <div className="mt-6 flex items-center gap-3">
-          <button onClick={onSave} disabled={saveDisabled} className="rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-700 disabled:opacity-50">
-            {isSaving ? 'Saving...' : 'Save Changes'}
-          </button>
-          {status && <span className="text-sm text-slate-500">{status}</span>}
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+  return (
+    <div>
+      <SectionTitle title={title} sub={sub} />
+      {canEdit && isEditing ? (
+        <>
+          <RichTextEditor value={editValue} onChange={onChange} placeholder={placeholder} />
+          <div className="mt-6 flex items-center gap-3">
+            <button onClick={() => { onSave(); setIsEditing(false); }} disabled={saveDisabled} className="rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-700 disabled:opacity-50">
+              {isSaving ? 'Saving...' : 'Save Changes'}
+            </button>
+            <button onClick={() => setIsEditing(false)} className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-500 transition-colors hover:bg-slate-50">
+              Cancel
+            </button>
+            {status && <span className="text-sm text-slate-500">{status}</span>}
+          </div>
+        </>
+      ) : (
+        <div>
+          <div className="prose prose-slate max-w-none text-slate-700 leading-relaxed break-words [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg" dangerouslySetInnerHTML={{ __html: vision ? sanitizeRichText(vision) : `<p>${emptyMessage}</p>` }} />
+          {canEdit && (
+            <button onClick={() => setIsEditing(true)} className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-500 transition-colors hover:border-emerald-200 hover:text-emerald-700">
+              <Icons.Pencil /> Edit
+            </button>
+          )}
         </div>
-      </>
-    ) : (
-      <div className="prose prose-slate max-w-none text-slate-700 leading-relaxed break-words [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg" dangerouslySetInnerHTML={{ __html: vision ? sanitizeRichText(vision) : `<p>${emptyMessage}</p>` }} />
-    )}
-    {extras}
-  </div>
-);
+      )}
+      {extras}
+    </div>
+  );
+};
