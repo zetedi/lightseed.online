@@ -27,6 +27,16 @@ export type JoinAffordance = 'join' | 'request' | 'none';
 export const joinAffordance = (door: CommunityDoor): JoinAffordance =>
   door === 'open' ? 'join' : door === 'invite' ? 'request' : 'none';
 
+// A node's door also governs SIGN-UP on its domain: an open door means anyone may create an
+// account here (identity open — delegated to the keeper who opened it), so a person can sign up
+// and experience the community in one motion; any other state keeps sign-up invitation-gated
+// (today's default). Only the HOST community (the one owning the current domain) gates sign-up;
+// inner communities' doors govern joining only. Absent door = invite-gated, so nothing opens by
+// accident. This is what turns two gates (superadmin invites + keeper memberships) into one — the
+// keeper's door.
+export const signupRequiresInvite = (community?: { door?: string | null } | null): boolean =>
+  doorOf(community) !== 'open';
+
 // An invitation as the domain sees it — times in ms so the module stays pure of Firestore.
 export interface CommunityInviteCheck {
   communityId: string;

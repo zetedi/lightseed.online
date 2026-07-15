@@ -53,6 +53,13 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
   const [door, setDoor] = useState<CommunityDoor>(doorOf(community));
   const [doorBusy, setDoorBusy] = useState(false);
 
+  // Does this community own the domain we're viewing from? Then it is the node here, and its
+  // door also governs sign-up (not just joining) — worth saying so to its keeper.
+  const norm = (d?: string) => (d || '').toLowerCase().replace(/^www\./, '');
+  const isThisDomainsNode = !!community.domain
+    && typeof window !== 'undefined'
+    && norm(community.domain) === norm(window.location.hostname);
+
   const [invites, setInvites] = useState<CommunityInvite[]>([]);
   const [minting, setMinting] = useState(false);
 
@@ -197,6 +204,15 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
             ))}
           </div>
           <p className="mt-2 text-[11px] italic text-slate-400">{DOORS.find(d => d.value === door)?.hint}.</p>
+          {/* When this community owns the current domain (it is the node here), its door also
+              governs SIGN-UP — opening it delegates the front gate to the keeper. */}
+          {isThisDomainsNode && (
+            <p className="mt-1 text-[11px] italic text-emerald-600">
+              This community is the node for {community.domain}. {door === 'open'
+                ? 'New visitors can sign up here without an invitation.'
+                : 'Signing up here needs an invitation until the door is open.'}
+            </p>
+          )}
         </div>
       )}
 

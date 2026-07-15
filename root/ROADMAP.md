@@ -36,7 +36,9 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
   is not yet ready for a wide gaze. Three phases, each its own ring:
   1. **The node's door becomes real** — `useConfig` reads the host community's
      `door` (open/invite/closed, already built) instead of the constant, so a
-     keeper can open or close *their* node; and a per-node **reflect-the-instance-
+     keeper can open or close *their* node — its door now also governs **sign-up on
+     its domain** (open = open sign-up delegated to the keeper; else invitation-
+     gated), turning two gates into one; and a per-node **reflect-the-instance-
      public** toggle replaces the hardcoded `isHubDomain` unscoping, so commons
      becomes a setting any node can choose. Absent door keeps today's behaviour
      (invitation required); mechanical, no meaning-change.

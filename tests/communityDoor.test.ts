@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-  DEFAULT_DOOR, doorOf, joinAffordance, checkInvite, inviteStatus, communityInviteUrl, inviteIdFromPath,
+  DEFAULT_DOOR, doorOf, joinAffordance, checkInvite, inviteStatus, signupRequiresInvite,
+  communityInviteUrl, inviteIdFromPath,
   type CommunityInviteCheck,
 } from '../src/domain/communityDoor';
 
@@ -61,6 +62,19 @@ describe('checkInvite', () => {
   it('checks in order: belonging before liveness', () => {
     expect(checkInvite(invite({ revokedAtMs: NOW - 5 }), 'c2', 'closed', NOW))
       .toEqual({ usable: false, reason: 'wrong_community' });
+  });
+});
+
+describe('signupRequiresInvite (the node door governs sign-up on its domain)', () => {
+  it('an open door opens sign-up — identity open, delegated to the keeper', () => {
+    expect(signupRequiresInvite({ door: 'open' })).toBe(false);
+  });
+  it("invite / closed / absent keep sign-up invitation-gated — today's default, nothing opens by accident", () => {
+    expect(signupRequiresInvite({ door: 'invite' })).toBe(true);
+    expect(signupRequiresInvite({ door: 'closed' })).toBe(true);
+    expect(signupRequiresInvite({})).toBe(true);
+    expect(signupRequiresInvite(null)).toBe(true);
+    expect(signupRequiresInvite(undefined)).toBe(true);
   });
 });
 

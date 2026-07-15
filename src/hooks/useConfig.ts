@@ -2,6 +2,7 @@
 import { useMemo } from 'react';
 import { Community } from '../types';
 import { defaultConfig } from '../config/default';
+import { signupRequiresInvite } from '../domain/communityDoor';
 import { normalizeTheme, oldEmeraldEarthTheme } from '../utils/theme';
 
 export const isHubDomain = (domain?: string) => {
@@ -50,6 +51,9 @@ export const useConfig = (hostCommunity: Community | null) => {
       name: hostCommunity.name || defaultConfig.name,
       logoUrl: hostCommunity.logoUrl,
       domain: hostCommunity.domain || defaultConfig.domain,
+      // Sign-up on this domain is governed by the node's own door: open = anyone may create an
+      // account (identity open, delegated to the keeper); else invitation-gated (the default).
+      inviteOnly: signupRequiresInvite(hostCommunity),
       theme: normalizeTheme(
         hostDomain === 'lifeseed.online' && isPreviousLifeseedDefaultTheme(hostCommunity.theme)
           ? undefined
