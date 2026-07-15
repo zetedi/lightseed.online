@@ -208,9 +208,9 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
               governs SIGN-UP — opening it delegates the front gate to the keeper. */}
           {isThisDomainsNode && (
             <p className="mt-1 text-[11px] italic text-emerald-600">
-              This community is the node for {community.domain}. {door === 'open'
-                ? 'New visitors can sign up here without an invitation.'
-                : 'Signing up here needs an invitation until the door is open.'}
+              This community is the node for {community.domain}. {door === 'closed'
+                ? 'Sign-up here is closed — only invited people can create an account.'
+                : 'Anyone can create an account here (identity is open); the door still gates who becomes a member.'}
             </p>
           )}
         </div>

@@ -65,16 +65,16 @@ describe('checkInvite', () => {
   });
 });
 
-describe('signupRequiresInvite (the node door governs sign-up on its domain)', () => {
-  it('an open door opens sign-up — identity open, delegated to the keeper', () => {
-    expect(signupRequiresInvite({ door: 'open' })).toBe(false);
-  });
-  it("invite / closed / absent keep sign-up invitation-gated — today's default, nothing opens by accident", () => {
-    expect(signupRequiresInvite({ door: 'invite' })).toBe(true);
+describe('signupRequiresInvite (identity is open; only a closed door gates sign-up)', () => {
+  it('only a CLOSED node requires an invitation to create an account on its domain', () => {
     expect(signupRequiresInvite({ door: 'closed' })).toBe(true);
-    expect(signupRequiresInvite({})).toBe(true);
-    expect(signupRequiresInvite(null)).toBe(true);
-    expect(signupRequiresInvite(undefined)).toBe(true);
+  });
+  it('open, invite, and the absent default all leave sign-up open — identity is open', () => {
+    expect(signupRequiresInvite({ door: 'open' })).toBe(false);
+    expect(signupRequiresInvite({ door: 'invite' })).toBe(false);
+    expect(signupRequiresInvite({})).toBe(false);
+    expect(signupRequiresInvite(null)).toBe(false);
+    expect(signupRequiresInvite(undefined)).toBe(false);
   });
 });
 

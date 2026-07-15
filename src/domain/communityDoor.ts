@@ -27,15 +27,14 @@ export type JoinAffordance = 'join' | 'request' | 'none';
 export const joinAffordance = (door: CommunityDoor): JoinAffordance =>
   door === 'open' ? 'join' : door === 'invite' ? 'request' : 'none';
 
-// A node's door also governs SIGN-UP on its domain: an open door means anyone may create an
-// account here (identity open — delegated to the keeper who opened it), so a person can sign up
-// and experience the community in one motion; any other state keeps sign-up invitation-gated
-// (today's default). Only the HOST community (the one owning the current domain) gates sign-up;
-// inner communities' doors govern joining only. Absent door = invite-gated, so nothing opens by
-// accident. This is what turns two gates (superadmin invites + keeper memberships) into one — the
-// keeper's door.
+// Identity is OPEN (the ring "Identity is open"): anyone may create an account, so sign-up on a
+// domain is open by default. The node's door gates MEMBERSHIP, not identity — the one exception
+// is a deliberately CLOSED node, which also closes its front door to new accounts (a resting
+// place takes no one in). Open and invite doors (and the absent default) all leave sign-up open;
+// joining still needs a knock or invitation where the door asks for one. Only the HOST community
+// (the one owning the current domain) governs sign-up; inner communities' doors govern joining.
 export const signupRequiresInvite = (community?: { door?: string | null } | null): boolean =>
-  doorOf(community) !== 'open';
+  doorOf(community) === 'closed';
 
 // COMMONS mode — a node policy sibling to the door. A node (host community) may be a commons,
 // reflecting the whole instance's PUBLIC forest/feed, or a scoped pond showing only its own

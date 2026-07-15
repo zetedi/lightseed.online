@@ -99,8 +99,14 @@ export const signUpWithEmail = async (email: string, password: string, displayNa
     return user;
 };
 
-export const signInWithEmail = (email: string, password: string) =>
-    signInWithEmailAndPassword(auth, email.trim(), password).then(c => c.user);
+export const signInWithEmail = async (email: string, password: string) => {
+    const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
+    // Self-heal: a half-deleted account (the Auth user survived a failed account deletion, but its
+    // profile doc was already gone) would otherwise sign in to nothing. ensureUserProfile is
+    // idempotent — a no-op when the profile exists, a rebuild when it doesn't. Non-fatal.
+    try { await ensureUserProfile(cred.user); } catch (e) { console.warn('Profile self-heal skipped:', e); }
+    return cred.user;
+};
 
 export const sendVerificationEmail = () =>
     auth.currentUser ? sendEmailVerification(auth.currentUser) : Promise.reject(new Error('Not signed in'));

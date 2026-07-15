@@ -20,5 +20,7 @@ export const defaultConfig: AppConfig = {
   domain: 'lightseed.online',
   model: 'gemini-3.5-flash',
   githubActionsEnabled: false,
-  inviteOnly: true,
+  // Identity is open (root: "Identity is open"): anyone may create an account. A node closes its
+  // door to gate sign-up on its own domain; the fallback (no host community) stays open.
+  inviteOnly: false,
 };

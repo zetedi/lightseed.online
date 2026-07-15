@@ -6,6 +6,25 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-15 · Identity is open by default — the code meets its ring** — the ring
+*"Identity is open"* was written, but the code still shipped `inviteOnly: true`
+(identity *closed*) — a silent contradiction, and the exact wall hit trying to
+create an account on lifeseed.online (a hardcoded hub alias with no open-door
+node). Reconciled: sign-up is now **open by default** (`defaultConfig.inviteOnly
+= false`), and the node's door gates MEMBERSHIP, not identity — the one exception
+is a **closed** node, which also closes its front door
+(`signupRequiresInvite = door === 'closed'`). This supersedes the Phase 1a framing
+("open door = open sign-up, else invitation-gated"; the ring *"One gate, the
+keeper's"*): the gate is not *opening* a door, it is the absence of a *closed*
+one. Joining still needs a knock or invitation where the door asks. Also fixed: a
+half-deleted account (the Auth user survived a failed deletion, its profile gone)
+now **self-heals on sign-in** (`ensureUserProfile`, idempotent) — it recovers
+instead of signing in to nothing. The delete-ordering that breeds the limbo (the
+Firestore docs are deleted *before* the Auth user, whose deletion then fails on
+`requires-recent-login`) is noted for a proper server-side cleanup later.
+Rejected: gating identity by default (walling being); leaving root and code in
+quiet contradiction.
+
 **2026-07-15 · Phase 1 stands: the door delegates sign-up, the node reflects (or ponds)**
 — the first phase of *nodes become real* shipped. (1a, commit `0c7dbd6`) a node's
 door governs **sign-up on its domain** — open delegates the front gate to the
