@@ -108,15 +108,18 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
         );
     }
 
-    // CARDS — the full card (the original look).
+    // CARDS — the full card (the original look). A fixed height so every card in the grid is the
+    // same size, whatever it carries (image or words, long body or none); the top image/text block
+    // stays h-36 and the love row pins to the bottom, so a text card's spare room reads as
+    // breathing space rather than a ragged edge.
     return (
         <div
             onClick={() => onView && onView(pulse)}
-            className={`bg-white rounded-lg overflow-hidden shadow-sm border border-slate-200 ${POP} group cursor-pointer ${ringCls}`}
+            className={`flex h-60 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm ${POP} group cursor-pointer ${ringCls}`}
         >
             {images.length > 0 ? (
                 // With an image: the photo carries the card, title overlaid.
-                <div className="relative h-36 bg-slate-100 overflow-hidden group">
+                <div className="relative h-36 shrink-0 bg-slate-100 overflow-hidden group">
                     <div className="absolute top-2 right-2 z-20 flex gap-1">{badges}</div>
                     <img src={images[0]} alt={pulse.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent pointer-events-none"></div>
@@ -126,7 +129,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
                 </div>
             ) : (
                 // No image: let the words carry it — no placeholder artwork.
-                <div className="flex h-36 flex-col justify-between p-3">
+                <div className="flex h-36 shrink-0 flex-col justify-between p-3">
                     <div className="flex items-start justify-between gap-2">
                         <h3 dir="auto" className="line-clamp-2 text-base font-semibold tracking-wide text-slate-800">{pulse.title}</h3>
                         <div className="flex shrink-0 gap-1">{badges}</div>
@@ -135,12 +138,12 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
                 </div>
             )}
 
-            <div className="p-3">
+            <div className="flex flex-1 flex-col p-3">
                 {/* Text-only cards already show the body above — don't repeat it here. */}
                 {(images.length > 0 || (isEvent && pulse.eventDate)) && (
                     <p dir="auto" className="text-slate-600 text-xs font-light leading-relaxed truncate">{meta}</p>
                 )}
-                <div className={`${images.length > 0 || (isEvent && pulse.eventDate) ? 'mt-3 pt-2 border-t border-slate-100' : ''} flex justify-between items-center`}>
+                <div className={`mt-auto flex items-center justify-between ${images.length > 0 || (isEvent && pulse.eventDate) ? 'pt-2 border-t border-slate-100' : ''}`}>
                     <button onClick={handleLove} disabled={!lightseed} className="flex items-center gap-1 text-slate-500 hover:text-red-500 transition-colors">
                         <Icons.Heart filled={loved} />
                         <span className="text-xs">{count}</span>

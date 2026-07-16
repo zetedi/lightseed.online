@@ -170,19 +170,27 @@ export const TreeCare: React.FC<TreeCareProps> = ({
 
     return (
         <SectionCard title="Watering" icon={<Icons.Droplet />} className={overdue ? 'ring-2 ring-sky-300' : ''}>
-            <div className="mb-4 text-sm text-sky-800/90">
-                {selfSustaining ? (
-                    <p>🌳 Self-sustaining — this tree needs no scheduled watering.</p>
-                ) : scheduled ? (
-                    overdue ? (
-                        <p className="font-semibold text-sky-700">{stageEmoji} Thirsty — {overByDays > 0 ? `${overByDays} day${overByDays > 1 ? 's' : ''} overdue` : 'watering due today'}.</p>
+            <div className="mb-4 flex items-start justify-between gap-3">
+                <div className="text-sm text-sky-800/90">
+                    {selfSustaining ? (
+                        <p>🌳 Self-sustaining — this tree needs no scheduled watering.</p>
+                    ) : scheduled ? (
+                        overdue ? (
+                            <p className="font-semibold text-sky-700">{stageEmoji} Thirsty — {overByDays > 0 ? `${overByDays} day${overByDays > 1 ? 's' : ''} overdue` : 'watering due today'}.</p>
+                        ) : (
+                            <p>{stageEmoji} {stage === 'potted' ? 'A seed in its pot — next' : 'Next'} watering in {dueInDays} day{dueInDays !== 1 ? 's' : ''}.</p>
+                        )
                     ) : (
-                        <p>{stageEmoji} {stage === 'potted' ? 'A seed in its pot — next' : 'Next'} watering in {dueInDays} day{dueInDays !== 1 ? 's' : ''}.</p>
-                    )
-                ) : (
-                    <p>No watering schedule yet.</p>
+                        <p>No watering schedule yet.</p>
+                    )}
+                    {lastWateredMs > 0 && <p className="mt-1 text-xs text-sky-700/70">Last watered {new Date(lastWateredMs).toLocaleDateString()}.</p>}
+                </div>
+                {/* The primary action sits right beside the status — water this tree now. */}
+                {canWater && !selfSustaining && (
+                    <button type="button" onClick={waterOnChain ? handleWaterPick : handleWaterBypass} disabled={waterBusy} className="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-full bg-sky-600 px-4 py-2 text-sm font-bold text-white shadow transition-all hover:bg-sky-700 active:scale-95 disabled:opacity-50">
+                        <Icons.Droplet /> <span className="whitespace-nowrap">I Watered Today</span>
+                    </button>
                 )}
-                {lastWateredMs > 0 && <p className="mt-1 text-xs text-sky-700/70">Last watered {new Date(lastWateredMs).toLocaleDateString()}.</p>}
             </div>
 
             {canManageSchedule && (
@@ -218,7 +226,7 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                             <span>day{waterInterval !== 1 ? 's' : ''}</span>
                         </div>
                     )}
-                    <button type="button" onClick={handleSaveSchedule} disabled={waterBusy} className="w-full rounded-lg bg-sky-600 py-2 text-sm font-bold text-white hover:bg-sky-700 disabled:opacity-50">{waterBusy ? 'Saving…' : 'Save'}</button>
+                    <button type="button" onClick={handleSaveSchedule} disabled={waterBusy} className="ml-auto block rounded-lg bg-sky-600 px-8 py-2 text-sm font-bold text-white hover:bg-sky-700 disabled:opacity-50">{waterBusy ? 'Saving…' : 'Save'}</button>
                 </div>
             )}
 
@@ -226,11 +234,8 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                 <div className="space-y-2">
                     <input ref={waterFileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleWaterFile} />
                     <div className="flex flex-wrap items-center gap-3">
-                        <button type="button" onClick={waterOnChain ? handleWaterPick : handleWaterBypass} disabled={waterBusy} className="inline-flex items-center justify-center gap-1.5 rounded-full bg-sky-600 px-4 py-2 text-sm font-bold text-white shadow transition-all hover:bg-sky-700 active:scale-95 disabled:opacity-50">
-                            <Icons.Droplet /> <span>I Watered Today</span>
-                        </button>
-                        {/* Off-chain by default: routine waterings just tick the cadence. Opting in takes
-                            a photo and mints a growth block on the tree's immutable chain. */}
+                        {/* The water action moved up beside the status; its options stay here —
+                            off-chain by default; opting in takes a photo + mints a growth block. */}
                         <label className="flex cursor-pointer items-center gap-2 text-xs leading-tight text-sky-700/80" title="For waterings worth remembering.">
                             <input type="checkbox" checked={waterOnChain} onChange={e => setWaterOnChain(e.target.checked)} className="accent-sky-600" />
                             <span>

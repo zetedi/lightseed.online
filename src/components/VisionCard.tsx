@@ -48,11 +48,12 @@ export const VisionCard = ({ vision, density = 'cards' }: { vision: Vision; dens
         );
     }
 
-    // CARDS — the full card.
+    // CARDS — the full card. Fixed height (matching PulseCard) so every vision in the grid is the
+    // same size; the galaxy/image block stays h-36 and the quote fills the rest of the card.
     return (
-        <div className={`bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden ${POP} group`}>
+        <div className={`flex h-60 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm ${POP} group`}>
             {/* The image (or the galaxy) carries the card, heading overlaid. */}
-            <div className="relative h-36 bg-[#04070f] overflow-hidden">
+            <div className="relative h-36 shrink-0 bg-[#04070f] overflow-hidden">
                     <img src={visionImage} alt={heading} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
 
                     {/* Author avatar — the soul this vision grows from. */}
@@ -75,8 +76,8 @@ export const VisionCard = ({ vision, density = 'cards' }: { vision: Vision; dens
                         </a>
                     )}
                 </div>
-            <div className="p-3">
-                <p dir="auto" className="text-slate-600 text-xs font-light italic leading-relaxed truncate">
+            <div className="flex flex-1 flex-col p-3">
+                <p dir="auto" className="text-slate-600 text-xs font-light italic leading-relaxed line-clamp-3">
                     {subtext ? `"${subtext}"` : ' '}
                 </p>
             </div>

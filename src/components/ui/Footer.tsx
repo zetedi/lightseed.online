@@ -34,9 +34,9 @@ export const Footer = ({ community, theme, isDark = false }: { community?: Commu
     <footer className="relative z-10 border-t px-6 py-3"
             style={{ backgroundColor: surface.background, color: surface.text, borderColor: surface.border }}>
       {/* "life recognising life" sits in the centre; the brand line + socials are right-aligned. */}
-      <div className="relative mx-auto flex min-h-[3.5rem] max-w-5xl flex-col items-center justify-center gap-2 sm:block">
-        <p className="text-sm italic sm:absolute sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2" style={{ color: surface.muted }}>life recognising life</p>
-        <div className="flex items-center gap-4 sm:absolute sm:right-0 sm:top-1/2 sm:-translate-y-1/2">
+      <div className="relative mx-auto flex min-h-[3.5rem] max-w-5xl flex-col items-center justify-center gap-2 lg:block">
+        <p className="text-sm italic lg:absolute lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2" style={{ color: surface.muted }}>life recognising life</p>
+        <div className="flex items-center gap-4 lg:absolute lg:right-0 lg:top-1/2 lg:-translate-y-1/2">
           <p className="text-sm font-medium" style={{ color: surface.text }}>
             <span dir="ltr" className="font-bold" style={{ color: surface.border }}>.seed</span>
             <span className="mx-2 opacity-40">·</span>{name}
