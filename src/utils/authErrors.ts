@@ -18,8 +18,19 @@ const FRIENDLY: Record<string, string> = {
 };
 
 // Firebase errors carry the code both in `e.code` and inside the message ("(auth/…)").
+const authCode = (e: any): string =>
+  e?.code || (String(e?.message || '').match(/\(auth\/[a-z-]+\)/)?.[0]?.slice(1, -1) ?? '');
+
+// The person simply dismissed the sign-in popup, or a double-trigger cancelled a redundant one
+// while the first already completed. Not a failure to surface — the caller swallows it silently
+// so no alarm appears after a normal (or intentionally abandoned) sign-in.
+export const isUserCancelledAuth = (e: any): boolean => {
+  const code = authCode(e);
+  return code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request';
+};
+
 export const friendlyAuthError = (e: any, fallback: string): string => {
-  const code: string = e?.code || (String(e?.message || '').match(/\(auth\/[a-z-]+\)/)?.[0]?.slice(1, -1) ?? '');
+  const code = authCode(e);
   if (code && FRIENDLY[code]) return FRIENDLY[code];
   const message = String(e?.message || '');
   // A hand-thrown, already-human message (no Firebase wrapper) passes through untouched.

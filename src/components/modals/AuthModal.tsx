@@ -7,7 +7,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { TermsModal } from '../TermsModal';
 import { getTerms } from '../../utils/terms';
 import { signInWithGoogle, signUpWithEmail, signInWithEmail, resetPassword, getNetworkInvite, submitInviteRequest } from '../../services/firebase';
-import { friendlyAuthError } from '../../utils/authErrors';
+import { friendlyAuthError, isUserCancelledAuth } from '../../utils/authErrors';
 
 const field = "h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-slate-100 disabled:text-slate-500";
 
@@ -48,9 +48,13 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly, theme }: { onClose: (
     setBusy(true);
     try { await signInWithGoogle({ inviteId, inviteOnly }); onClose(); }
     catch (e: any) {
-      showAlert(e?.message === 'INVITE_ONLY'
-        ? t('auth_invite_only_alert')
-        : friendlyAuthError(e, t('auth_signin_failed')));
+      // A dismissed / double-triggered popup isn't a failure — stay quiet and leave the modal
+      // open so they can simply try again; only real problems get an alert.
+      if (!isUserCancelledAuth(e)) {
+        showAlert(e?.message === 'INVITE_ONLY'
+          ? t('auth_invite_only_alert')
+          : friendlyAuthError(e, t('auth_signin_failed')));
+      }
     }
     setBusy(false);
   };
