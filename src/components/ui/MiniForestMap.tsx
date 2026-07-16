@@ -1,22 +1,18 @@
 import { useEffect, useRef } from 'react';
-import { type Lifetree } from '../../types';
 import { loadLeaflet } from '../../services/leaflet';
-import { treeCoordinates } from '../../domain/views/forest';
 
-// A small, non-interactive live map of the forest — the same satellite tiles + tree positions as
-// the full forest view, shrunk to sit behind the Forest card. Every Leaflet interaction is off and
-// the container is pointer-events-none, so a tap falls straight through to the card (which opens
-// the real forest). No controls, no min-height, no clustering — just emerald dots where trees stand.
-export const MiniForestMap = ({ trees, className = '' }: { trees: Lifetree[]; className?: string }) => {
+export type MapPoint = { lat: number; lng: number; kind: 'lighthouse' | 'tree' };
+
+// A small, non-interactive live map behind the Forest card — the same satellite tiles as the full
+// forest view, marked only with the node's lighthouses (amber) and the mother trees they root into
+// (emerald). Every Leaflet interaction is off and the container is pointer-events-none, so a tap
+// falls straight through to the card (which opens the real forest). No controls, no clustering.
+export const MiniForestMap = ({ points, className = '' }: { points: MapPoint[]; className?: string }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<any>(null);
 
-    // Stable signature of the PLACED trees (lat/lng), so we rebuild only when the dots really change
-    // — not on every parent render that hands us a fresh array identity.
-    const key = trees
-        .map(t => { const c = treeCoordinates(t); return c ? `${c.lat},${c.lng}` : ''; })
-        .filter(Boolean)
-        .join('|');
+    // Stable signature, so we rebuild only when the marks actually change — not on every render.
+    const key = points.map(p => `${p.kind}:${p.lat},${p.lng}`).join('|');
 
     useEffect(() => {
         let cancelled = false;
@@ -31,16 +27,32 @@ export const MiniForestMap = ({ trees, className = '' }: { trees: Lifetree[]; cl
                 zoomAnimation: false, fadeAnimation: false,
             }).setView([20, 0], 2);
             mapRef.current = map;
-            // Same satellite basemap the forest view wears. `noWrap` keeps the world from tiling
-            // sideways (no doubled continents) so the card frames one Earth.
+            // Same satellite basemap the forest view wears; noWrap keeps the world from doubling.
             L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, noWrap: true }).addTo(map);
 
-            const coords: [number, number][] = key ? key.split('|').map(s => { const [a, b] = s.split(',').map(Number); return [a, b]; }) : [];
-            coords.forEach(([lat, lng]) => L.circleMarker([lat, lng], { radius: 4, weight: 1.5, color: '#ffffff', fillColor: '#34d399', fillOpacity: 0.95 }).addTo(map));
-            // Snug bounds (little padding) so the node's trees fill the card rather than floating in ocean.
-            if (coords.length) map.fitBounds(L.latLngBounds(coords).pad(0.12), { animate: false, maxZoom: 12 });
+            const pts = key ? key.split('|').map(s => {
+                const [kind, ll] = s.split(':');
+                const [lat, lng] = ll.split(',').map(Number);
+                return { kind, lat, lng };
+            }) : [];
+            // Each mark is a little glowing lightseed — a warm yellow dot with a soft halo. Light
+            // houses are a touch larger and ride above the mother trees when they share a spot.
+            const seed = (kind: string) => {
+                const size = kind === 'lighthouse' ? 16 : 12;
+                return L.divIcon({
+                    className: '',
+                    iconSize: [size, size],
+                    iconAnchor: [size / 2, size / 2],
+                    html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:#fde047;box-shadow:0 0 ${Math.round(size * 0.7)}px ${Math.round(size * 0.3)}px rgba(250,204,21,0.85);border:1px solid rgba(255,255,255,0.85);"></div>`,
+                });
+            };
+            pts.forEach(p => L.marker([p.lat, p.lng], {
+                icon: seed(p.kind), interactive: false, keyboard: false,
+                zIndexOffset: p.kind === 'lighthouse' ? 1000 : 0,
+            }).addTo(map));
+            // Snug bounds so the node's marks fill the card rather than floating in ocean.
+            if (pts.length) map.fitBounds(L.latLngBounds(pts.map(p => [p.lat, p.lng])).pad(0.25), { animate: false, maxZoom: 11 });
 
-            // The container is laid out by the card AFTER mount; recompute size when it settles.
             ro = new ResizeObserver(() => { if (mapRef.current) mapRef.current.invalidateSize(); });
             ro.observe(containerRef.current);
         });
@@ -51,7 +63,5 @@ export const MiniForestMap = ({ trees, className = '' }: { trees: Lifetree[]; cl
         };
     }, [key]);
 
-    // A gentle wash — desaturated and lightened so the live map sits warm and quiet behind the card,
-    // in the same key as the bark of the tree card rather than a loud, saturated satellite photo.
-    return <div ref={containerRef} className={`pointer-events-none ${className}`} style={{ filter: 'saturate(0.6) brightness(1.08) contrast(0.93)' }} aria-hidden="true" />;
+    return <div ref={containerRef} className={`pointer-events-none ${className}`} aria-hidden="true" />;
 };

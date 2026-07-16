@@ -2,17 +2,18 @@
 import { useEffect, useState, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
-import { getNetworkStats, isHubDomain } from '../services/firebase';
+import { getNetworkStats, isHubDomain, getSanctuariesByDomain, getAllSanctuaries, getRootedTrees } from '../services/firebase';
 import { reflectsInstancePublic } from '../domain/communityDoor';
 import { headerSurface } from '../domain/themeSurface';
+import { treeCoordinates } from '../domain/views/forest';
 import { PlantCTA } from './ui/PlantCTA';
 import { Icons } from './ui/Icons';
 import { ScrollChevrons } from './ui/ScrollChevrons';
 import { QuoteCarousel } from './ui/QuoteCarousel';
 import { LIGHTSEED_QUOTES } from '../content/quotes';
 import { useScrollEdges } from '../hooks/useScrollEdges';
-import { MiniForestMap } from './ui/MiniForestMap';
-import { Community, Pulse, Lifetree } from '../types';
+import { MiniForestMap, type MapPoint } from './ui/MiniForestMap';
+import { Community, Pulse } from '../types';
 
 export interface DashboardProps {
     stats: {
@@ -23,8 +24,6 @@ export interface DashboardProps {
         danger: number;
     };
     hostCommunity?: Community | null;
-    // The forest's trees — drives the live mini-map behind the Forest card.
-    forestTrees?: Lifetree[];
     events?: Pulse[];
     onViewEvent?: (event: Pulse) => void;
     onViewCommunity?: (community: Community) => void;
@@ -39,7 +38,7 @@ export interface DashboardProps {
 
 
 
-export const Dashboard = ({ stats, hostCommunity, forestTrees, events, onViewEvent, onSetTab, onPlant, onLogin, theme, isDark = false }: DashboardProps) => {
+export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab, onPlant, onLogin, theme, isDark = false }: DashboardProps) => {
     // Themed domains colour the planting CTAs from Appearance (hub default stays emerald).
     const ctaPrimary = theme?.primary || '#059669';
     // The events banner wears the HEADER's actual surface — light where the header is
@@ -49,7 +48,7 @@ export const Dashboard = ({ stats, hostCommunity, forestTrees, events, onViewEve
     const showStats = hostCommunity?.showStats === true;
     const { t } = useLanguage();
     // Session-derived values read straight from context (no longer prop-drilled from App).
-    const { lightseed, activeTree } = useSession();
+    const { lightseed, activeTree, isSuperAdmin } = useSession();
     const firstTreeImage = activeTree?.latestGrowthUrl || activeTree?.imageUrl;
     const eventsScrollRef = useRef<HTMLDivElement>(null);
     // Fade only the side(s) that hide a card — the same source the nav arrows read, so a fade
@@ -61,6 +60,32 @@ export const Dashboard = ({ stats, hostCommunity, forestTrees, events, onViewEve
         : evNext ? 'linear-gradient(to right, #000 calc(100% - 2rem), transparent)'
         : undefined;
     const [networkStats, setNetworkStats] = useState({ trees: 0, pulses: 0, visions: 0 });
+
+    // The Forest card shows a live mini-map of just the node's lighthouses + the mother trees they
+    // root into — a small, dedicated fetch (not the whole forest feed). Scoped like the community /
+    // forest view: a real node by its domain; the dev host (as superadmin) shows everything, so the
+    // map isn't empty while developing.
+    const [mapPoints, setMapPoints] = useState<MapPoint[]>([]);
+    const isDevHost = typeof window !== 'undefined' && /localhost|127\.0\.0\.1|^192\.168\.|\.local$/.test(window.location.hostname);
+    const scopeDomain = (isDevHost && isSuperAdmin) ? undefined : (hostCommunity?.domain || (typeof window !== 'undefined' ? window.location.hostname : ''));
+    useEffect(() => {
+        let alive = true;
+        const publicOnly = !lightseed;
+        (scopeDomain ? getSanctuariesByDomain(scopeDomain, { publicOnly }) : getAllSanctuaries({ publicOnly }))
+            .then(async sancts => {
+                const trees = await getRootedTrees(sancts.map(s => s.id));
+                if (!alive) return;
+                setMapPoints([
+                    ...sancts.filter(s => typeof s.latitude === 'number' && typeof s.longitude === 'number')
+                        .map(s => ({ lat: s.latitude as number, lng: s.longitude as number, kind: 'lighthouse' as const })),
+                    ...trees.map(t => treeCoordinates(t)).filter((c): c is { lat: number; lng: number } => !!c)
+                        .map(c => ({ lat: c.lat, lng: c.lng, kind: 'tree' as const })),
+                ]);
+            })
+            .catch((e) => { console.warn('Mini-map lighthouse fetch failed:', e); if (alive) setMapPoints([]); });
+        return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on scope + sign-in (lightseed?.uid); lightseed's object identity changes without the uid
+    }, [scopeDomain, lightseed?.uid]);
 
     useEffect(() => {
         // The Forest card counts THIS place: only its own domain when the node is a scoped pond,
@@ -210,7 +235,7 @@ export const Dashboard = ({ stats, hostCommunity, forestTrees, events, onViewEve
 
             {/* Box 4: Forest — a live mini-map of the real forest (non-interactive; tap opens it). */}
             <div onClick={() => onSetTab('forest')} className="relative h-56 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
-                <MiniForestMap trees={forestTrees || []} className="absolute inset-0 h-full w-full bg-slate-900" />
+                <MiniForestMap points={mapPoints} className="absolute inset-0 h-full w-full bg-slate-900" />
                 {/* Darker at top/bottom for the title + EXPLORE; a warm amber wash through the middle
                     ties the live map to the bark of the tree card. */}
                 <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-amber-900/15 to-black/60 group-hover:from-black/45 group-hover:to-black/50 transition-colors"></div>

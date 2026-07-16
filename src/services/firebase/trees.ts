@@ -412,6 +412,21 @@ export const getSanctuariesByDomain = async (domain: string, opts?: { publicOnly
         .sort((a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0));
 };
 
+// The "mother trees" of a set of sanctuaries: the trees each lighthouse is rooted into (the
+// `sanctuary __rooted__ tree` LIN edge). Used by the dashboard mini-map, which shows only
+// lighthouses + the trees they root. Best-effort per tree (a rooted tree may be private).
+export const getRootedTrees = async (sanctuaryIds: string[]): Promise<Lifetree[]> => {
+    if (!sanctuaryIds.length) return [];
+    const linkSnaps = await Promise.all(sanctuaryIds.map(sid =>
+        getDocs(query(collection(db, 'links'), where('from', '==', sid), where('rel', '==', 'rooted'))).catch(() => null)
+    ));
+    const treeIds = [...new Set(linkSnaps.flatMap(snap => snap ? snap.docs.map(d => (d.data() as any).to as string) : []))];
+    const trees = await Promise.all(treeIds.map(id =>
+        getDoc(doc(db, 'lifetrees', id)).then(s => s.exists() ? ({ id: s.id, ...s.data() } as Lifetree) : null).catch(() => null)
+    ));
+    return trees.filter((t): t is Lifetree => t !== null);
+};
+
 // Every placed sanctuary in the network — the hub map shows what the viewer may see.
 // Signed-out viewers may only query public docs (the read rule rejects wider queries).
 export const getAllSanctuaries = async (opts?: { publicOnly?: boolean }): Promise<Sanctuary[]> =>

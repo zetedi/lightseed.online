@@ -3,6 +3,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { updateUserSiteTheme, uploadImage } from '../../services/firebase';
 import { normalizeTheme, type CommunityThemePreset } from '../../utils/theme';
 import { AppearanceEditor } from '../ui/AppearanceEditor';
+import { notify as toast } from '../ui/Toast';
 
 type EditableTheme = ReturnType<typeof normalizeTheme>;
 
@@ -71,7 +72,7 @@ export const ProfileAppearance: React.FC<ProfileAppearanceProps> = ({
         siteLogoUrl,
         siteHeroUrl,
       });
-      notify('Your profile theme has been saved.');
+      toast('🌱 Your profile theme has been saved.');
     } catch (e: any) {
       notify(e.message || 'Failed to save theme.');
     }
@@ -92,7 +93,7 @@ export const ProfileAppearance: React.FC<ProfileAppearanceProps> = ({
         siteLogoUrl: '',
         siteHeroUrl: '',
       });
-      notify('Your profile theme has been reset to the node default.');
+      toast('Your profile theme has been reset to the node default.');
     } catch (e: any) {
       notify(e.message || 'Failed to reset theme.');
     }

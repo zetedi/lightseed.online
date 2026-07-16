@@ -682,7 +682,6 @@ const AppContent = () => {
                             danger: guardedTrees.filter(t => t.status === 'DANGER').length
                         }}
                         hostCommunity={impersonatedCommunity || hostCommunity || defaultCommunity}
-                        forestTrees={filteredData}
                         theme={effectiveTheme}
                         isDark={effectiveIsDark}
                         events={dashboardEvents}
