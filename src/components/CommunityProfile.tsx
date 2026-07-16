@@ -162,6 +162,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const [editSocial, setEditSocial] = useState<{ instagram?: string; telegram?: string; whatsapp?: string; website?: string }>(community.socialLinks || {});
   const [editCarouselQuotes, setEditCarouselQuotes] = useState<string[]>(community.carouselQuotes || []);
   const [editCustomLanding, setEditCustomLanding] = useState(community.customLanding === true);
+  const [editShowStats, setEditShowStats] = useState(community.showStats === true);
   const [editLandingPages, setEditLandingPages] = useState<{ id: string; label: string; html: string }[]>(community.landingPages || []);
   const [editTheme, setEditTheme] = useState(normalizeTheme(community.theme));
   const [logoUrl, setLogoUrl] = useState(community.logoUrl || '');
@@ -206,9 +207,10 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     setHeroImageUrl(community.heroImageUrl || '');
     setImageUrls(community.imageUrls || []);
     setEditCustomLanding(community.customLanding === true);
+    setEditShowStats(community.showStats === true);
     setEditLandingPages(community.landingPages || []);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on primitive fields (arrays via imageUrlsKey); socialLinks/imageUrls object identities change per fetch and would re-run this, clobbering in-flight edits
-  }, [community.id, community.name, community.vision, community.logoUrl, community.heroImageUrl, community.theme, community.customLanding, imageUrlsKey]);
+  }, [community.id, community.name, community.vision, community.logoUrl, community.heroImageUrl, community.theme, community.customLanding, community.showStats, imageUrlsKey]);
 
   useEffect(() => {
     getTreesByDomain(community.domain, currentUserId).then(setLinkedTrees).catch(() => {});
@@ -329,6 +331,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
         socialLinks: editSocial,
         carouselQuotes: editCarouselQuotes.map(q => q.trim()).filter(Boolean),
         customLanding: editCustomLanding,
+        showStats: editShowStats,
         landingPages: editLandingPages.filter(p => p.label.trim()),
       };
       await updateCommunity(community.id, updates);
@@ -579,6 +582,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
             onCarouselQuotesChange={setEditCarouselQuotes}
             editCustomLanding={editCustomLanding}
             onCustomLandingChange={setEditCustomLanding}
+            editShowStats={editShowStats}
+            onShowStatsChange={setEditShowStats}
             editLandingPages={editLandingPages}
             onLandingPagesChange={setEditLandingPages}
             onSave={handleSave}

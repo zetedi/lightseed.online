@@ -36,6 +36,9 @@ export interface Community extends Being {
   // The landing's own pages (menu panels): authored rich text — a food menu, an About, an
   // offering list. Data, not code: every organisation shapes its own site from these blocks.
   landingPages?: { id: string; label: string; html: string }[];
+  // Vanity counts (trees/pulses/visions on the home cards) stay hidden unless a node opts in —
+  // this is not about numbers. Off by default; toggled from the Appearance tab.
+  showStats?: boolean;
   // The "big red stamp": once a node locks, new blocks are sealed with the canonical, verifiable
   // hash (src/domain/chain). Off by default; the shell syncs it into the chain-lock flag on load.
   chainLocked?: boolean;

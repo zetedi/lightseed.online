@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { NavArrow, NAV_ARROW_PREV_X, NAV_ARROW_NEXT_X } from './NavArrow';
 
 // A reusable profile-style section menu: a horizontal strip on mobile, a vertical list on lg+.
 // Shared across the tree / community / user / event "profile" views. On mobile the strip gets
@@ -14,7 +15,6 @@ export const SectionMenu = ({ items, active, onSelect, className = '', orientati
 }) => {
   const navRef = useRef<HTMLElement>(null);
   const nudge = (dx: number) => navRef.current?.scrollBy({ left: dx, behavior: 'smooth' });
-  const arrowCls = 'absolute top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-slate-100 bg-white/95 text-slate-500 shadow-md transition-colors hover:text-emerald-700 lg:hidden';
 
   return (
     <div className={`relative ${className}`}>
@@ -33,12 +33,8 @@ export const SectionMenu = ({ items, active, onSelect, className = '', orientati
         })}
       </nav>
       {/* Mobile-only scroll arrows (the lg sidebar is vertical and never overflows sideways). */}
-      <button type="button" onClick={() => nudge(-180)} aria-label="Scroll menu left" className={`${arrowCls} -left-3.5`}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
-      </button>
-      <button type="button" onClick={() => nudge(180)} aria-label="Scroll menu right" className={`${arrowCls} -right-3.5`}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
-      </button>
+      <NavArrow dir="left" small label="Scroll menu left" onClick={() => nudge(-180)} pos={`${NAV_ARROW_PREV_X} lg:hidden`} />
+      <NavArrow dir="right" small label="Scroll menu right" onClick={() => nudge(180)} pos={`${NAV_ARROW_NEXT_X} lg:hidden`} />
     </div>
   );
 };

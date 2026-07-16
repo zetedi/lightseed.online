@@ -58,6 +58,7 @@ import { UpdateToast } from './components/ui/UpdateToast';
 import { ToastHost, notify } from './components/ui/Toast';
 import { setSanctuaryVisibility, deleteSanctuary } from './services/firebase';
 import { announce, onRefresh as onBusRefresh } from './services/refreshBus';
+import { useRefreshSignal } from './hooks/useRefreshSignal';
 import { findBeingByLid } from './services/firebase/beings';
 import { lidFromPath } from './domain/beingLink';
 import { inviteIdFromPath } from './domain/communityDoor';
@@ -359,7 +360,9 @@ const AppContent = () => {
         setTokenisationEnabled(!!(impersonatedCommunity || hostCommunity)?.tokenisationEnabled);
     }, [impersonatedCommunity, hostCommunity]);
 
-    // Events for the logged-in home carousel — visibility-scoped to this viewer + node.
+    // Events for the logged-in home carousel — visibility-scoped to this viewer + node. Re-fetches
+    // on the 'events' bus signal, so an edit/create/delete anywhere shows up in the banner too.
+    const eventsRefresh = useRefreshSignal(['events']);
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- reset-on-signout before the async fetch below
         if (!lightseed) { setDashboardEvents([]); return; }
@@ -367,8 +370,8 @@ const AppContent = () => {
         const currentDomain = (isDevHost && isSuperAdmin) ? 'lightseed.online' : window.location.hostname;
         const levels = queryableLevels({ uid: lightseed.uid, isStaff: isSuperAdmin || isAdmin });
         fetchEventPulses(undefined, currentDomain, levels).then(r => setDashboardEvents(r.items)).catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on uid on purpose: the lightseed object changes identity without the uid changing; refetching per object would loop
-    }, [lightseed?.uid, isSuperAdmin, isAdmin]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on uid + the events bus signal on purpose: the lightseed object changes identity without the uid changing; refetching per object would loop
+    }, [lightseed?.uid, isSuperAdmin, isAdmin, eventsRefresh]);
 
     // Browser back closes overlays LAYER BY LAYER instead of leaving the app. Ordered base-first;
     // the last open layer is topmost (closed first on Back). See useHistoryLayers.
@@ -543,10 +546,14 @@ const AppContent = () => {
     // Trees of mine (owned or guarded) whose watering is overdue — drives the blue care marker
     // on the nav envelope, computed straight from the trees so it shows even before the daily
     // sweep mints a "water me" reach.
-    const wateringNeededCount = useMemo(
-        () => [...myTrees, ...guardedTrees].filter(t => isWateringOverdue(t)).length,
-        [myTrees, guardedTrees]
-    );
+    // myTrees (owned, non-nature) and guardedTrees (guardian edges + owned nature) can overlap — a
+    // tree you own AND hold a guardian link to sits in both. Dedupe by id so one thirsty tree is
+    // counted once (the badge was reading 2 for a single overdue tree whose droplet draws once).
+    const wateringNeededCount = useMemo(() => {
+        const byId = new Map<string, Lifetree>();
+        for (const tree of [...myTrees, ...guardedTrees]) byId.set(tree.id, tree);
+        return [...byId.values()].filter(t => isWateringOverdue(t)).length;
+    }, [myTrees, guardedTrees]);
 
     // --- The Pathway — the plain facts derivePathway reads (domain/pathway) ----------------
     // Session facts come straight from the trees/stats already in hand; the link-borne ones
@@ -674,7 +681,8 @@ const AppContent = () => {
                             alignments: stats.alignments,
                             danger: guardedTrees.filter(t => t.status === 'DANGER').length
                         }}
-                        hostCommunity={impersonatedCommunity || hostCommunity}
+                        hostCommunity={impersonatedCommunity || hostCommunity || defaultCommunity}
+                        forestTrees={filteredData}
                         theme={effectiveTheme}
                         isDark={effectiveIsDark}
                         events={dashboardEvents}
@@ -1175,9 +1183,13 @@ const AppContent = () => {
                         onClose={() => { setSelectedCommunity(null); setArrivedInvite(null); setMapRefreshKey(k => k + 1); }}
                         onUpdate={(updates) => {
                             setSelectedCommunity(prev => prev ? { ...prev, ...updates } : null);
-                            // If this is the host community, refresh the app shell (theme/logo) too.
+                            // If this is the host (or default/dev) community, refresh the app shell so
+                            // settings like showStats/theme apply to the dashboard immediately, not on reload.
                             if (selectedCommunity && hostCommunity && selectedCommunity.id === hostCommunity.id) {
                                 setHostCommunity(prev => prev ? { ...prev, ...updates } : null);
+                            }
+                            if (selectedCommunity && defaultCommunity && selectedCommunity.id === defaultCommunity.id) {
+                                setDefaultCommunity(prev => prev ? { ...prev, ...updates } : null);
                             }
                         }}
                         onEnterCommunityView={isSuperAdmin ? (community) => {

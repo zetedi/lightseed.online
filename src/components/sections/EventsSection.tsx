@@ -162,6 +162,9 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
       setEditingEventId(null);
       setShowEventForm(false);
       refreshEvents();
+      // Tell every other events view (the dashboard banner, other tabs) to re-fetch too, so an
+      // edit shows up everywhere — not just in this list.
+      announce('events', editingEventId || '');
     } catch (error: any) {
       console.error(error);
       showAlert('Failed to save event: ' + (error.message || 'Unknown error'));

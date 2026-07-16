@@ -5,11 +5,14 @@ import { useSession } from '../contexts/SessionContext';
 import { getNetworkStats, isHubDomain } from '../services/firebase';
 import { reflectsInstancePublic } from '../domain/communityDoor';
 import { headerSurface } from '../domain/themeSurface';
+import { PlantCTA } from './ui/PlantCTA';
 import { Icons } from './ui/Icons';
 import { ScrollChevrons } from './ui/ScrollChevrons';
 import { QuoteCarousel } from './ui/QuoteCarousel';
 import { LIGHTSEED_QUOTES } from '../content/quotes';
-import { Community, Pulse } from '../types';
+import { useScrollEdges } from '../hooks/useScrollEdges';
+import { MiniForestMap } from './ui/MiniForestMap';
+import { Community, Pulse, Lifetree } from '../types';
 
 export interface DashboardProps {
     stats: {
@@ -20,6 +23,8 @@ export interface DashboardProps {
         danger: number;
     };
     hostCommunity?: Community | null;
+    // The forest's trees — drives the live mini-map behind the Forest card.
+    forestTrees?: Lifetree[];
     events?: Pulse[];
     onViewEvent?: (event: Pulse) => void;
     onViewCommunity?: (community: Community) => void;
@@ -34,17 +39,27 @@ export interface DashboardProps {
 
 
 
-export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab, onPlant, onLogin, theme, isDark = false }: DashboardProps) => {
+export const Dashboard = ({ stats, hostCommunity, forestTrees, events, onViewEvent, onSetTab, onPlant, onLogin, theme, isDark = false }: DashboardProps) => {
     // Themed domains colour the planting CTAs from Appearance (hub default stays emerald).
     const ctaPrimary = theme?.primary || '#059669';
     // The events banner wears the HEADER's actual surface — light where the header is
     // light (the hub), themed where a community themes it.
     const banner = headerSurface(theme, isDark);
+    // Vanity counts stay hidden unless the node opts in from Appearance — the home is not numbers.
+    const showStats = hostCommunity?.showStats === true;
     const { t } = useLanguage();
     // Session-derived values read straight from context (no longer prop-drilled from App).
     const { lightseed, activeTree } = useSession();
     const firstTreeImage = activeTree?.latestGrowthUrl || activeTree?.imageUrl;
     const eventsScrollRef = useRef<HTMLDivElement>(null);
+    // Fade only the side(s) that hide a card — the same source the nav arrows read, so a fade
+    // shows exactly where an arrow does (and neither when everything fits).
+    const { canPrev: evPrev, canNext: evNext } = useScrollEdges(eventsScrollRef, 'x');
+    const eventsMask = evPrev && evNext
+        ? 'linear-gradient(to right, transparent, #000 2rem, #000 calc(100% - 2rem), transparent)'
+        : evPrev ? 'linear-gradient(to right, transparent, #000 2rem)'
+        : evNext ? 'linear-gradient(to right, #000 calc(100% - 2rem), transparent)'
+        : undefined;
     const [networkStats, setNetworkStats] = useState({ trees: 0, pulses: 0, visions: 0 });
 
     useEffect(() => {
@@ -70,7 +85,10 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab,
                 tall. A distorted node/community hero, a living leaf texture, and an oversized
                 EVENTS wordmark running behind the cards. Looks special with or without a hero. */}
             {lightseed && events && events.length > 0 && (
-                <div className="relative w-full overflow-hidden rounded-2xl h-80 md:h-96 ring-1 ring-amber-300/50 shadow-[0_0_40px_-4px_rgba(251,191,36,0.5)]"
+                // Outer wrapper does NOT clip, so the nav arrows can overhang the banner's border;
+                // the inner banner keeps overflow-hidden for its rounded corners + wordmark wash.
+                <div className="relative w-full">
+                <div className="relative w-full overflow-hidden rounded-2xl h-80 md:h-96 ring-1 ring-amber-300/40 shadow-[0_0_14px_-6px_rgba(251,191,36,0.4)]"
                      style={{ backgroundColor: banner.background }}>
                     {/* Cards float over the wash, under an explicit Events label. */}
                     <div className="relative z-10 flex h-full flex-col px-4 py-3">
@@ -78,7 +96,12 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab,
                             <span className="text-sm sm:text-lg font-bold uppercase tracking-widest" style={{ color: banner.text }}>{t('events')}</span>
                             <span className="truncate text-[11px]" style={{ color: banner.muted }}>{t('events_sub')}</span>
                         </div>
-                        <div ref={eventsScrollRef} className="scroll-hide-bar flex flex-1 items-stretch gap-7 overflow-x-auto">
+                        {/* A half-seen card at a scrollable edge dissolves into the wash rather than
+                            being hard-cut — but only on the side that actually hides a card. The
+                            vertical padding gives each card's drop-shadow room to breathe instead of
+                            being clipped by the scroller's edge. */}
+                        <div ref={eventsScrollRef} className="scroll-hide-bar flex flex-1 items-stretch gap-7 overflow-x-auto py-3"
+                             style={{ maskImage: eventsMask, WebkitMaskImage: eventsMask }}>
                         {events.map(ev => (
                             <button
                                 key={ev.id}
@@ -102,7 +125,8 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab,
                         ))}
                         </div>
                     </div>
-                    <ScrollChevrons scrollRef={eventsScrollRef} axis="x" />
+                </div>
+                <ScrollChevrons scrollRef={eventsScrollRef} axis="x" />
                 </div>
             )}
 
@@ -115,39 +139,48 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab,
                 <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors"></div>
                 
                 <div className="relative h-full p-4 flex flex-col justify-between text-white">
-                    <div className="flex justify-between items-start">
+                    <div className="flex items-start justify-between gap-2">
                         <div>
                             <h2 className="text-sm sm:text-lg font-bold uppercase tracking-widest text-white drop-shadow-md">Home</h2>
-                            <div className="text-lg sm:text-xl font-light truncate max-w-[120px]">{lightseed ? lightseed.displayName : t('sign_in')}</div>
+                            <div className="text-lg sm:text-xl font-light truncate max-w-[180px]">{lightseed ? lightseed.displayName : t('sign_in')}</div>
                             <div className="text-[10px] text-amber-200 font-mono uppercase tracking-widest mt-1">{t('light_of_value')}</div>
                         </div>
-                        {/* Plant CTA in the top-right (replaces the profile icon); icon-only on mobile. */}
-                        <button onClick={(e) => { e.stopPropagation(); onPlant(); }} title={t('plant_or_stand')} style={{ backgroundColor: ctaPrimary }} className="shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-2 text-[10px] font-bold uppercase tracking-wide text-white shadow ring-1 ring-white/25 transition-opacity hover:opacity-90 sm:px-3 [&>svg]:h-4 [&>svg]:w-4">
-                            <Icons.Tree /> <span className="hidden sm:inline">{t('plant_or_stand')}</span>
-                        </button>
+                        {/* Stats on → a small tree in the corner (the CTA lives at the foot now). */}
+                        {showStats && (
+                            <div className="shrink-0 rounded-lg bg-white/10 p-2 backdrop-blur [&>svg]:h-5 [&>svg]:w-5"><Icons.Tree /></div>
+                        )}
                     </div>
 
-                    {lightseed && (
-                        <div className="grid grid-cols-2 bg-white/10 backdrop-blur p-2 rounded-lg border border-white/10 mt-2">
-                            <div className="text-center border-r border-b border-white/10 pb-2">
-                                <span className="block text-[10px] uppercase text-emerald-200">{t('trees')}</span>
-                                <span className="font-bold text-sm">{stats.trees}</span>
+                    {/* Moved low: the CTA sits at the foot of the card (it clipped in the top-right).
+                        Full counts only when the node opts in; else a minimal T/P/V/A in the corner. */}
+                    <div className="space-y-2">
+                        {showStats && (
+                            <div className="grid grid-cols-2 bg-white/10 backdrop-blur p-2 rounded-lg border border-white/10">
+                                <div className="text-center border-r border-b border-white/10 pb-2">
+                                    <span className="block text-[10px] uppercase text-emerald-200">{t('trees')}</span>
+                                    <span className="font-bold text-sm">{stats.trees}</span>
+                                </div>
+                                <div className="text-center border-b border-white/10 pb-2">
+                                    <span className="block text-[10px] uppercase text-sky-200">{t('pulses')}</span>
+                                    <span className="font-bold text-sm">{stats.pulses}</span>
+                                </div>
+                                <div className="text-center border-r border-white/10 pt-2">
+                                    <span className="block text-[10px] uppercase text-amber-200">{t('visions')}</span>
+                                    <span className="font-bold text-sm">{stats.visions}</span>
+                                </div>
+                                <div className="text-center pt-2">
+                                    <span className="block text-[10px] uppercase text-rose-200">{t('alignments')}</span>
+                                    <span className="font-bold text-sm">{stats.alignments}</span>
+                                </div>
                             </div>
-                            <div className="text-center border-b border-white/10 pb-2">
-                                <span className="block text-[10px] uppercase text-sky-200">{t('pulses')}</span>
-                                <span className="font-bold text-sm">{stats.pulses}</span>
-                            </div>
-                            <div className="text-center border-r border-white/10 pt-2">
-                                <span className="block text-[10px] uppercase text-amber-200">{t('visions')}</span>
-                                <span className="font-bold text-sm">{stats.visions}</span>
-                            </div>
-                            <div className="text-center pt-2">
-                                <span className="block text-[10px] uppercase text-rose-200">{t('alignments')}</span>
-                                <span className="font-bold text-sm">{stats.alignments}</span>
-                            </div>
-                        </div>
-                    )}
-                    
+                        )}
+                        <PlantCTA color={ctaPrimary} onClick={(e) => { e.stopPropagation(); onPlant(); }} />
+                        {/* Stats off: a quiet tally just below the CTA — trees/pulses/visions/alignments. */}
+                        {!showStats && stats.danger === 0 && (
+                            <p className="text-right font-mono text-[10px] font-bold uppercase tracking-wider text-white/75 drop-shadow-md">T{stats.trees} P{stats.pulses} V{stats.visions} A{stats.alignments}</p>
+                        )}
+                    </div>
+
                     {stats.danger > 0 && (
                         <div className="absolute bottom-2 right-2 bg-red-600 text-white text-[10px] font-bold px-3 py-1 rounded-full animate-pulse shadow-lg flex items-center gap-1 whitespace-nowrap z-20 border-2 border-white/20">
                             <Icons.Siren /> {stats.danger} {t('guard_tree')}!
@@ -169,24 +202,25 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab,
                         <h2 className="text-sm sm:text-lg font-bold uppercase tracking-widest text-white drop-shadow-md">{t('the_tree')}</h2>
                         <div className="p-2 bg-white/10 backdrop-blur rounded-lg"><Icons.Tree /></div>
                     </div>
-                    <span style={{ backgroundColor: ctaPrimary }} className="inline-flex w-full flex-col items-center justify-center self-stretch rounded-full px-4 py-2 shadow-lg ring-1 ring-white/25 transition-all sm:w-auto sm:self-start sm:group-hover:scale-[1.03]">
-                        <span className="text-center text-[11px] font-bold uppercase leading-tight tracking-wide sm:text-sm sm:tracking-widest">{t('plant_or_stand')}</span>
-                        <span className="text-center text-[9px] font-medium leading-tight tracking-normal text-white/85 sm:text-[10px]">{t('create_new_world')}</span>
-                    </span>
+                    {/* The shared Plant CTA — same glowing two-line pill as the signed-in card. */}
+                    <PlantCTA color={ctaPrimary} className="self-start sm:group-hover:scale-[1.03]" />
                 </div>
             </div>
             )}
 
-            {/* Box 4: Forest (Banner Style + Stats) */}
+            {/* Box 4: Forest — a live mini-map of the real forest (non-interactive; tap opens it). */}
             <div onClick={() => onSetTab('forest')} className="relative h-56 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
-                <img src="/mother.webp" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors"></div>
+                <MiniForestMap trees={forestTrees || []} className="absolute inset-0 h-full w-full bg-slate-900" />
+                {/* Darker at top/bottom for the title + EXPLORE; a warm amber wash through the middle
+                    ties the live map to the bark of the tree card. */}
+                <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-amber-900/15 to-black/60 group-hover:from-black/45 group-hover:to-black/50 transition-colors"></div>
                 <div className="relative h-full p-4 flex flex-col justify-between text-white">
                     <div className="flex justify-between items-start">
                         <h2 className="text-sm sm:text-lg font-bold uppercase tracking-widest text-white drop-shadow-md">{t('the_forest')}</h2>
                         <div className="p-2 bg-white/10 backdrop-blur rounded-lg"><Icons.Map /></div>
                     </div>
                     
+                    {showStats && (
                     <div className="grid grid-cols-2 md:grid-cols-3 bg-white/10 backdrop-blur p-2 rounded-lg border border-white/10">
                         <div className="text-center border-r border-b md:border-b-0 border-white/10 pb-2 md:pb-0">
                             <span className="block text-[10px] uppercase text-emerald-200">{t('trees')}</span>
@@ -201,8 +235,15 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab,
                             <span className="font-bold text-sm">{networkStats.visions}</span>
                         </div>
                     </div>
+                    )}
 
-                    <div className="text-sm font-medium uppercase tracking-wide border-t border-white/30 pt-2">{t('explore')}</div>
+                    {/* EXPLORE + a minimal T/P/V tally, the same quiet style as the home card. */}
+                    <div className="flex items-end justify-between gap-2 border-t border-white/30 pt-2">
+                        <span className="text-sm font-medium uppercase tracking-wide">{t('explore')}</span>
+                        {!showStats && (
+                            <span className="whitespace-nowrap font-mono text-[10px] font-bold uppercase tracking-wider text-white/75 drop-shadow-md">T{networkStats.trees} P{networkStats.pulses} V{networkStats.visions}</span>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

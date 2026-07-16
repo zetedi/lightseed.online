@@ -38,6 +38,9 @@ interface CommunityAppearanceProps {
   // Custom landing — the org's own full-screen page on its domain (see CustomLandingPage).
   editCustomLanding: boolean;
   onCustomLandingChange: (value: boolean) => void;
+  // Show the vanity counts (trees/pulses/visions) on the home cards. Off by default — not numbers.
+  editShowStats: boolean;
+  onShowStatsChange: (value: boolean) => void;
   // The landing's authored pages (menu panels) — rich text blocks, data not code.
   editLandingPages: { id: string; label: string; html: string }[];
   onLandingPagesChange: React.Dispatch<React.SetStateAction<{ id: string; label: string; html: string }[]>>;
@@ -72,6 +75,8 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
   onCarouselQuotesChange,
   editCustomLanding,
   onCustomLandingChange,
+  editShowStats,
+  onShowStatsChange,
   editLandingPages,
   onLandingPagesChange,
   onSave,
@@ -155,6 +160,24 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
         ))}
       </div>
     )}
+    {/* Show counts — the trees/pulses/visions tallies on the home cards. Off by default: the home
+        stays about the living, not the numbers. */}
+    <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-white p-4">
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-slate-800">Show counts on the home</p>
+        <p className="text-xs text-slate-500">The trees / pulses / visions tallies on the home cards. Left off, the home stays about the living, not the numbers.</p>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={editShowStats}
+        onClick={() => onShowStatsChange(!editShowStats)}
+        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors ${editShowStats ? 'bg-emerald-500' : 'bg-slate-300'}`}
+      >
+        <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${editShowStats ? 'translate-x-5' : 'translate-x-0'}`} />
+      </button>
+    </div>
+
     <AppearanceSection
       name={editName}
       onNameChange={onNameChange}
