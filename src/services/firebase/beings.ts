@@ -1,7 +1,7 @@
 import { getDocs, query, where, limit, doc, updateDoc, serverTimestamp, collection } from 'firebase/firestore';
-import { db, mapDoc, mapPulse, lifetreesCollection, sanctuariesCollection, visionsCollection, pulsesCollection } from './core';
-import type { Lifetree, Vision, Pulse, Sanctuary } from '../../types';
-import { canViewSanctuary } from '../../domain/sanctuary';
+import { db, mapDoc, mapPulse, lifetreesCollection, lightHousesCollection, visionsCollection, pulsesCollection } from './core';
+import type { Lifetree, Vision, Pulse, LightHouse } from '../../types';
+import { canViewLightHouse } from '../../domain/lightHouse';
 
 // Being resolution — the /b/<lid> door. A lid names exactly one being somewhere in the
 // collections; we ask each in turn. Every query is wrapped: one the rules refuse (visibility
@@ -10,7 +10,7 @@ import { canViewSanctuary } from '../../domain/sanctuary';
 
 export type FoundBeing =
     | { kind: 'tree'; tree: Lifetree }
-    | { kind: 'sanctuary'; sanctuary: Sanctuary }
+    | { kind: 'lightHouse'; lightHouse: LightHouse }
     | { kind: 'vision'; vision: Vision }
     | { kind: 'pulse'; pulse: Pulse };
 
@@ -36,22 +36,22 @@ export const findBeingByLid = async (lid: string, signedIn: boolean, viewer?: { 
     }
 
     for (const q2 of [
-        query(sanctuariesCollection, byLid, limit(1)),
-        query(sanctuariesCollection, byLid, where('visibility', '==', 'public'), limit(1)),
+        query(lightHousesCollection, byLid, limit(1)),
+        query(lightHousesCollection, byLid, where('visibility', '==', 'public'), limit(1)),
     ]) {
         const d = await tryOne(q2);
         if (d) {
-            const sanctuary = mapDoc(d) as Sanctuary;
+            const lightHouse = mapDoc(d) as LightHouse;
             // The read rule is permissive for the signed-in; the fine gate is ours to keep:
             // a scanned QR shows what the scanner may see, and no more.
             const [memberLinks, shelterLinks] = await Promise.all([
                 viewer?.uid ? getDocs(query(collection(db, 'links'), where('from', '==', viewer.uid), where('rel', '==', 'member'))).catch(() => null) : null,
-                getDocs(query(collection(db, 'links'), where('from', '==', sanctuary.id), where('rel', '==', 'shelters'))).catch(() => null),
+                getDocs(query(collection(db, 'links'), where('from', '==', lightHouse.id), where('rel', '==', 'shelters'))).catch(() => null),
             ]);
             const memberCommunityIds = new Set((memberLinks?.docs || []).map(x => (x.data() as any).to as string));
-            const homes = [...(sanctuary.communityId ? [sanctuary.communityId] : []), ...(shelterLinks?.docs || []).map(x => (x.data() as any).to as string)];
-            if (!canViewSanctuary(sanctuary, { uid: viewer?.uid, isStaff: viewer?.isStaff, memberCommunityIds }, homes)) return null;
-            return { kind: 'sanctuary', sanctuary };
+            const homes = [...(lightHouse.communityId ? [lightHouse.communityId] : []), ...(shelterLinks?.docs || []).map(x => (x.data() as any).to as string)];
+            if (!canViewLightHouse(lightHouse, { uid: viewer?.uid, isStaff: viewer?.isStaff, memberCommunityIds }, homes)) return null;
+            return { kind: 'lightHouse', lightHouse };
         }
     }
 
@@ -77,7 +77,7 @@ export const findBeingByLid = async (lid: string, signedIn: boolean, viewer?: { 
 // Mint (or re-mint) a being's QR: persist the exact URL the code was generated with, so
 // the app can tell a printed code from a moved domain and offer a refresh.
 export const mintBeingQr = (
-    collectionName: 'lifetrees' | 'sanctuaries' | 'visions' | 'pulses',
+    collectionName: 'lifetrees' | 'lightHouses' | 'visions' | 'pulses',
     id: string,
     href: string,
 ) => updateDoc(doc(db, collectionName, id), { qr: { href }, updatedAt: serverTimestamp() });

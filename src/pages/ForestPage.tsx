@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from '../components/ui/Icons';
 import { ForestMap } from '../components/ForestMap';
-import type { Sanctuary } from '../domain/sanctuary';
-import { SanctuaryCard } from '../components/SanctuaryCard';
-import { useVisibleSanctuaries } from '../hooks/useVisibleSanctuaries';
+import type { LightHouse } from '../domain/lightHouse';
+import { LightHouseCard } from '../components/LightHouseCard';
+import { useVisibleLightHouses } from '../hooks/useVisibleLightHouses';
 import { LifetreeCard } from '../components/LifetreeCard';
 import { Loading } from '../components/ui/Loading';
 import type { Lifetree } from '../types';
@@ -36,9 +36,9 @@ interface ForestPageProps {
   onQuickSnap: (id: string, file: File) => Promise<void>;
   onValidate: (id: string, nextValidated: boolean) => void;
   onRefresh: () => void;
-  // Sanctuary map scope: a community's domain shows its own, null (the hub) shows all.
-  sanctuaryDomain?: string | null;
-  onViewSanctuary?: (s: Sanctuary) => void;
+  // LightHouse map scope: a community's domain shows its own, null (the hub) shows all.
+  lightHouseDomain?: string | null;
+  onViewLightHouse?: (s: LightHouse) => void;
 }
 
 export const ForestPage = ({
@@ -46,23 +46,23 @@ export const ForestPage = ({
   showValidatedTrees, setShowValidatedTrees, viewMode, filteredData, loadingMore, activeTree,
   mapRefreshKey, isAdmin, isSuperAdmin, isInitiate, currentUserId, guardedTreeIds, sentinelRef,
   onView, onReach, onPlayGrowth, onQuickSnap, onValidate, onRefresh,
-  sanctuaryDomain = null, onViewSanctuary,
+  lightHouseDomain = null, onViewLightHouse,
 }: ForestPageProps) => {
   const { t } = useLanguage();
-  // Sanctuaries are a layer of their own — the lighthouses. On by default, in both views.
-  const [showSanctuaries, setShowSanctuaries] = useState(true);
-  const sanctuaries = useVisibleSanctuaries(sanctuaryDomain, mapRefreshKey);
-  // Sanctuaries of one community gather as a DECK of cards: one stacked pile with a count,
+  // LightHouses are a layer of their own — the lighthouses. On by default, in both views.
+  const [showLightHouses, setShowLightHouses] = useState(true);
+  const lightHouses = useVisibleLightHouses(lightHouseDomain, mapRefreshKey);
+  // LightHouses of one community gather as a DECK of cards: one stacked pile with a count,
   // opening into its cards on a tap. Loners stand alone.
   const [openDecks, setOpenDecks] = useState<Set<string>>(new Set());
-  const sanctuaryDecks = React.useMemo(() => {
-    const groups = new Map<string, Sanctuary[]>();
-    for (const s of sanctuaries) {
+  const lightHouseDecks = React.useMemo(() => {
+    const groups = new Map<string, LightHouse[]>();
+    for (const s of lightHouses) {
       const key = s.communityId || s.domain || s.id;
       groups.set(key, [...(groups.get(key) || []), s]);
     }
     return [...groups.entries()];
-  }, [sanctuaries]);
+  }, [lightHouses]);
   const toggleDeck = (key: string) => setOpenDecks(prev => {
     const next = new Set(prev);
     if (next.has(key)) next.delete(key); else next.add(key);
@@ -92,8 +92,8 @@ export const ForestPage = ({
           <span className="flex items-center gap-1"><span className={horizontal ? 'hidden sm:inline-flex' : 'inline-flex'}><Icons.ShieldCheck /></span> {t('validated_trees')}</span>
         </label>
         <label className={toggleCls}>
-          <input type="checkbox" checked={showSanctuaries} onChange={(e) => setShowSanctuaries(e.target.checked)} className="h-4 w-4 rounded accent-amber-500" />
-          <span className="flex items-center gap-1"><span className={horizontal ? 'hidden sm:inline-flex' : 'inline-flex'}><Icons.Sun /></span> Sanctuaries</span>
+          <input type="checkbox" checked={showLightHouses} onChange={(e) => setShowLightHouses(e.target.checked)} className="h-4 w-4 rounded accent-amber-500" />
+          <span className="flex items-center gap-1"><span className={horizontal ? 'hidden sm:inline-flex' : 'inline-flex'}><Icons.Sun /></span> Light Houses</span>
         </label>
       </div>
     </div>
@@ -101,14 +101,14 @@ export const ForestPage = ({
   return (
     <>
       {viewMode === 'map' ? (
-        <ForestMap trees={filteredData} onView={onView} onReach={onReach} loading={loadingMore && filteredData.length === 0} onRefresh={onRefresh} primaryTree={activeTree} refreshKey={mapRefreshKey} sanctuaryDomain={sanctuaryDomain} showSanctuaries={showSanctuaries} onViewSanctuary={onViewSanctuary} filtersOverlay={filters(false)} />
+        <ForestMap trees={filteredData} onView={onView} onReach={onReach} loading={loadingMore && filteredData.length === 0} onRefresh={onRefresh} primaryTree={activeTree} refreshKey={mapRefreshKey} lightHouseDomain={lightHouseDomain} showLightHouses={showLightHouses} onViewLightHouse={onViewLightHouse} filtersOverlay={filters(false)} />
       ) : (
         <>
           <div className="mb-4 flex justify-center">{filters(true)}</div>
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {showSanctuaries && sanctuaryDecks.map(([deckId, group]) => {
+            {showLightHouses && lightHouseDecks.map(([deckId, group]) => {
               if (group.length === 1) {
-                return <SanctuaryCard key={`sanctuary-${group[0].id}`} sanctuary={group[0]} onOpen={onViewSanctuary} className="h-56" />;
+                return <LightHouseCard key={`lightHouse-${group[0].id}`} lightHouse={group[0]} onOpen={onViewLightHouse} className="h-56" />;
               }
               if (!openDecks.has(deckId)) {
                 return (
@@ -116,19 +116,19 @@ export const ForestPage = ({
                     key={`deck-${deckId}`}
                     onClick={() => toggleDeck(deckId)}
                     role="button"
-                    aria-label={`${group.length} sanctuaries of one community — open the deck`}
+                    aria-label={`${group.length} Light Houses of one community — open the deck`}
                     className="relative h-56 cursor-pointer transition-transform hover:-translate-y-1"
                   >
                     <div className="absolute inset-0 translate-x-2.5 translate-y-2.5 rotate-[2.5deg] rounded-2xl bg-amber-200/60 ring-1 ring-amber-300/50" />
                     <div className="absolute inset-0 translate-x-1 translate-y-1 rotate-[1deg] rounded-2xl bg-amber-100/80 ring-1 ring-amber-200/60" />
-                    <SanctuaryCard sanctuary={group[0]} className="absolute inset-0 h-full" />
+                    <LightHouseCard lightHouse={group[0]} className="absolute inset-0 h-full" />
                     <span className="absolute -right-1.5 -top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-amber-500 text-xs font-black text-white shadow">{group.length}</span>
                   </div>
                 );
               }
               return group.map((s, i) => (
-                <div key={`sanctuary-${s.id}`} className="relative">
-                  <SanctuaryCard sanctuary={s} onOpen={onViewSanctuary} className="h-56" />
+                <div key={`lightHouse-${s.id}`} className="relative">
+                  <LightHouseCard lightHouse={s} onOpen={onViewLightHouse} className="h-56" />
                   {i === 0 && (
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleDeck(deckId); }}
@@ -141,7 +141,7 @@ export const ForestPage = ({
                 </div>
               ));
             })}
-            {filteredData.length === 0 && !loadingMore && !(showSanctuaries && sanctuaries.length > 0) ? (
+            {filteredData.length === 0 && !loadingMore && !(showLightHouses && lightHouses.length > 0) ? (
               /* No trees yet: Mahameru remains — the sea of creation, Orion over still water. */
               <div className="col-span-full relative overflow-hidden rounded-3xl border border-slate-800/40 shadow-xl">
                 <img src="/mahameru.svg" alt="Mahameru — the sea of creation" className="h-80 w-full object-cover sm:h-96" />

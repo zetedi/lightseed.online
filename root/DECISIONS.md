@@ -6,6 +6,25 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-17 · Sanctuaries become Light Houses** — a full rename, name and archetype
+(so earlier rings still say *sanctuary*; here is where it changed). Not a synonym: a
+sanctuary's care points inward (safety by keeping the world out); a **Light House**'s
+points outward — it keeps a light for ships it never meets. "A house that keeps a
+light." Ashram (*become*) → Sanctuary (*be*) → Light House (*illuminate*); the last
+adds **orientation** — not telling anyone where to go, only *here is solid ground,
+here are the rocks*. The metaphor was already latent (LIN read "a lighthouse on the
+map"; the map already gave sanctuaries "lighthouse precedence") — this makes the name
+literal. Decided with Lumo. **Display is "Light House"** (two words — un-fusing the
+compound re-opens *a house where light lives*); **code is `LightHouse` / `lightHouses`**
+(the Firestore collection too). A **mother tree** stays what LIN already said: a tree
+that holds a Light House (the `rooted` edge). Migration: a superadmin, idempotent CF
+`migrateLightHouses` copies `sanctuaries/{id}` → `lightHouses/{id}` and renames the
+stays field `sanctuaryId` → `lightHouseId`, leaving the old collection for safety —
+**run it before deploying the renamed rules + app**. Verified with an adversarial pass
+(missed occurrences, migration correctness, rules, orphaned refs).
+
+---
+
 **2026-07-16 · Phase 2: invitations carry the node; a being can erase itself cleanly** —
 the second phase of *nodes become real*. A network invitation now carries the
 **node** it was sent from (`nodeCommunityId` + `nodeDomain`, frozen on the invite

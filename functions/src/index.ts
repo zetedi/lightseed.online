@@ -53,6 +53,41 @@ const isStaffUid = async (uid: string): Promise<boolean> => {
     return adminDoc.exists || (superadmin.exists && superadmin.data()?.uid === uid);
 };
 
+// One-time migration for the Light House rename: copies each sanctuaries/{id} → lightHouses/{id}
+// (same id, create-if-absent) and renames the stays field sanctuaryId → lightHouseId. Superadmin-
+// only, idempotent, and it LEAVES the old `sanctuaries` collection in place (delete by hand once
+// verified). Run it BEFORE deploying the renamed rules + app. Admin rights bypass the (now-renamed)
+// rules, so the old collection is still readable here.
+export const migrateLightHouses = onCall({ cors: true }, async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
+    const sa = await db.collection("config").doc("superadmin").get();
+    if (!sa.exists || sa.data()?.uid !== request.auth.uid) {
+        throw new HttpsError("permission-denied", "Only the node owner (superadmin) may migrate.");
+    }
+    let lightHouses = 0, staysUpdated = 0;
+    // Create-if-absent: never overwrite a lightHouses doc that already exists, so a re-run can't
+    // clobber edits a keeper made in the new app after the first migration (true idempotence).
+    const existing = new Set((await db.collection("lightHouses").select().get()).docs.map(d => d.id));
+    const sancts = await db.collection("sanctuaries").get();
+    for (let i = 0; i < sancts.docs.length; i += 400) {
+        const fresh = sancts.docs.slice(i, i + 400).filter(d => !existing.has(d.id));
+        if (!fresh.length) continue;
+        const batch = db.batch();
+        fresh.forEach(d => { batch.set(db.collection("lightHouses").doc(d.id), d.data()); lightHouses++; });
+        await batch.commit();
+    }
+    const stays = await db.collection("stays").get();
+    for (let i = 0; i < stays.docs.length; i += 400) {
+        const batch = db.batch();
+        stays.docs.slice(i, i + 400).forEach(d => {
+            const data = d.data() as any;
+            if (data.sanctuaryId && !data.lightHouseId) { batch.update(d.ref, { lightHouseId: data.sanctuaryId }); staysUpdated++; }
+        });
+        await batch.commit();
+    }
+    return { migrated: true, lightHouses, staysUpdated };
+});
+
 const NODE_AI_TEXT_LIMIT = 21;
 const NODE_AI_IMAGE_LIMIT = 3;
 const DAILY_EMAIL_LIMIT = 20;

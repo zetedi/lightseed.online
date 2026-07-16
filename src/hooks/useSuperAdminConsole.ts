@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { ensureIntelligenceCommons } from '../services/intelligence';
 import {
   backfillPulseVisibility, migrateArraysToLinks, migratePulseTypeCasing, dropLegacyArrays, migrateTreeVisibility,
-  migrateBackfillLids, migrateBackfillMatchIds,
+  migrateBackfillLids, migrateBackfillMatchIds, migrateLightHouses,
 } from '../services/firebase';
 import { setChainLocked, canonicalize, computeCanonicalHash, blockContent, verifyChain } from '../domain/chain';
 
@@ -53,7 +53,7 @@ export function useSuperAdminConsole(isSuperAdmin: boolean, uid?: string) {
       return r;
     };
     // Backfill lids (UUIDv7 true-names, seeded from createdAt) on every doc missing one across
-    // communities/lifetrees/visions/pulses/sanctuaries/persons. Idempotent.
+    // communities/lifetrees/visions/pulses/lightHouses/persons. Idempotent.
     w.migrateBackfillLids = async () => {
       console.log('[lightseed] backfilling lids (UUIDv7, seeded from createdAt)…');
       const r = await migrateBackfillLids();
@@ -68,6 +68,14 @@ export function useSuperAdminConsole(isSuperAdmin: boolean, uid?: string) {
       console.log(`[lightseed] done — stamped ${r.stamped}, unresolved ${r.unresolved}, sealed skipped ${r.skippedSealed}.`);
       return r;
     };
+    // The sanctuaries → lightHouses rename migration (Cloud Function). Run ONCE, AFTER deploying
+    // functions and BEFORE the renamed rules + app go live. Idempotent (create-if-absent).
+    w.migrateLightHouses = async () => {
+      console.log('[lightseed] migrating sanctuaries → lightHouses…');
+      const r = await migrateLightHouses();
+      console.log(`[lightseed] done — copied ${r.lightHouses} light house(s), updated ${r.staysUpdated} stay(s).`);
+      return r;
+    };
     // Crystal: flip the in-memory chain lock to TEST canonical (verifiable) minting this session,
     // and expose the chain toolkit for manual console verification. (The real switch is the
     // node's About → Vision stamp, persisted on community.chainLocked.)
@@ -79,7 +87,7 @@ export function useSuperAdminConsole(isSuperAdmin: boolean, uid?: string) {
     return () => {
       delete w.backfillPulseVisibility; delete w.migrateArraysToLinks; delete w.migratePulseTypeCasing;
       delete w.dropLegacyArrays; delete w.migrateTreeVisibility; delete w.setChainLocked; delete w.lightseedChain;
-      delete w.migrateBackfillLids; delete w.migrateBackfillMatchIds;
+      delete w.migrateBackfillLids; delete w.migrateBackfillMatchIds; delete w.migrateLightHouses;
     };
   }, [isSuperAdmin]);
 }

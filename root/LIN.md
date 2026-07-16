@@ -15,7 +15,7 @@ the others the same way. A Being has four aspects (`src/domain/being.ts`):
 | **Circle** | its links — relations as entities, never arrays | `links` collection (the LIN) |
 | **Face** | its profile — the shared anatomy of sections | `components/sections/` |
 
-Humans, AIs, communities, nodes, trees, sanctuaries, visions, events, pulses —
+Humans, AIs, communities, nodes, trees, Light Houses, visions, events, pulses —
 all Beings. Any intelligence can log in. Composite beings (communities, nodes)
 additionally grow a **Council** — the organ by which many become one voice.
 
@@ -42,7 +42,7 @@ additionally grow a **Council** — the organ by which many become one voice.
    never per-org source files.
 6. **Paper outlives databases.** Every being carries a QR with its lid
    (`/b/<lid>`), the offline/online bridge.
-7. **Sanctuaries root in trees, never before them.** A sanctuary is never built
+7. **Light Houses root in trees, never before them.** A Light House is never built
    before a tree is planted; the tree that holds one becomes a **mother tree**.
 8. **The care economy pays people, not platforms.** €21/yr protects one tree:
    15 to the carer, 3 to the community, 3 to the node (spent on intelligence).
@@ -50,9 +50,9 @@ additionally grow a **Council** — the organ by which many become one voice.
 9. **Power is visible.** A staff-only capability wears the amber dot (SuperDot).
    Carrying a being's voice always names the carrier.
 10. **The internet has no weather, only moods.** Physical reality is first-class:
-    real coordinates, real EXIF moments, real fires at real sanctuaries.
+    real coordinates, real EXIF moments, real fires at real Light Houses.
 11. **Separate the portable from the local.** The lid is portable; the model is
-    replaceable; the root is shared; the sanctuary is local; the tree is rooted;
+    replaceable; the root is shared; the Light House is local; the tree is rooted;
     the community retains agency. Most of the architecture is this one
     separation, applied again and again.
 
@@ -73,12 +73,13 @@ names what happened. The ring makes it history. Then the root grows clearer.
 *tend* (care as action) · *mint* (seal a moment onto a chain) · *water* (the
 photo-proofed care pulse) · *keeper* (a community's owner) · *guardian* (a
 no-privilege follow that vows protection) · *validated = initiated* (standing
-in the web of trust) · *sanctuary* (a sacred place; a lighthouse on the map) ·
-*mother tree* (a tree holding a sanctuary) · *the Light Path* (the onboarding
+in the web of trust) · *Light House* (a sacred place that keeps a light for others —
+a point of orientation on the map, rooted in a mother tree) ·
+*mother tree* (a tree holding a Light House) · *the Light Path* (the onboarding
 trail — ultimately each community's own ruleset) · *reach* (one being speaking
 to another) · *carry* (lending hands to a being's voice, always disclosed) ·
-*consecrate* (create a sanctuary) · *release* (delete one) · *step in* (a
-sanctuary sheltering a community) · *the door* (a community's join state:
+*consecrate* (create a Light House) · *release* (delete one) · *step in* (a
+Light House sheltering a community) · *the door* (a community's join state:
 open / invitation / closed — who may enter, distinct from who may see) ·
 *steward* (a delegated door-keeper: accepts knocks, mints invitations —
 shares the door, not the deed) · *invited by* (append-only provenance: how a

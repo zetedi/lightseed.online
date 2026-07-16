@@ -1,19 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSession } from '../contexts/SessionContext';
 import { firestoreStore } from '../adapters/firestore';
-import { getAllSanctuaries, getSanctuariesByDomain } from '../services/firebase/trees';
-import { canViewSanctuary, type Sanctuary } from '../domain/sanctuary';
+import { getAllLightHouses, getLightHousesByDomain } from '../services/firebase/trees';
+import { canViewLightHouse, type LightHouse } from '../domain/lightHouse';
 import { useRefreshSignal } from './useRefreshSignal';
 
-// The sanctuaries THIS viewer may see, scoped like the trees: a community domain shows its
+// The lightHouses THIS viewer may see, scoped like the trees: a community domain shows its
 // own, the hub (domain null) shows them all. One source for the map markers AND the forest
 // grid cards: fetch what the rules allow (public-only when signed out), then gate per-doc
-// with canViewSanctuary using the viewer's member links.
+// with canViewLightHouse using the viewer's member links.
 
-export const useVisibleSanctuaries = (domain: string | null, refreshKey = 0): Sanctuary[] => {
+export const useVisibleLightHouses = (domain: string | null, refreshKey = 0): LightHouse[] => {
     const { lightseed, isAdmin, isSuperAdmin } = useSession();
     const viewerUid = lightseed?.uid;
-    const signal = useRefreshSignal(['sanctuaries']);
+    const signal = useRefreshSignal(['lightHouses']);
 
     const [memberCommunityIds, setMemberCommunityIds] = useState<Set<string>>(new Set());
     useEffect(() => {
@@ -26,14 +26,14 @@ export const useVisibleSanctuaries = (domain: string | null, refreshKey = 0): Sa
         return () => { alive = false; };
     }, [viewerUid]);
 
-    const [all, setAll] = useState<Sanctuary[]>([]);
-    // Belonging is LIN edges (sanctuary __shelters__ community) — one query, grouped.
+    const [all, setAll] = useState<LightHouse[]>([]);
+    // Belonging is LIN edges (lightHouse __shelters__ community) — one query, grouped.
     const [homesOf, setHomesOf] = useState<Map<string, string[]>>(new Map());
     useEffect(() => {
         let alive = true;
         const opts = { publicOnly: !viewerUid };
         Promise.all([
-            (domain ? getSanctuariesByDomain(domain, opts) : getAllSanctuaries(opts)),
+            (domain ? getLightHousesByDomain(domain, opts) : getAllLightHouses(opts)),
             viewerUid ? firestoreStore.linksByRel('shelters').catch(() => []) : Promise.resolve([]),
         ])
             .then(([list, links]) => {
@@ -48,7 +48,7 @@ export const useVisibleSanctuaries = (domain: string | null, refreshKey = 0): Sa
     }, [domain, refreshKey, viewerUid, signal]);
 
     return useMemo(
-        () => all.filter(s => canViewSanctuary(
+        () => all.filter(s => canViewLightHouse(
             s,
             { uid: viewerUid, isStaff: isAdmin || isSuperAdmin, memberCommunityIds },
             [...(s.communityId ? [s.communityId] : []), ...(homesOf.get(s.id) || [])],

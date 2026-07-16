@@ -16,7 +16,7 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
   and freely offered by the Jaya Sri Maha Bodhi's custodians in Anuradhapura,
   only if safe for the parent tree; if Sam cannot, Zoltán will. The virtual tree
   remains unvalidated until the living act tends it.
-- **Rules parity pass** for the client-side visibility gates (trees, sanctuaries).
+- **Rules parity pass** for the client-side visibility gates (trees, Light Houses).
 - perauset.com goes live on 8/8 (deploy `--only hosting:perauset`); printed QRs
   should carry the final domain (refresh mints after the move).
 
@@ -63,7 +63,7 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
   functions, funded by the node share; `Intelligence.hosted` becomes real.
 - **AI-need chooser** for tree support (`choice: 'ai_need'` in domain/support).
 - Mother-tree denormalised flag → badge on cards and map markers.
-- Consent handshake for sanctuary step-ins if the network outgrows trust-by-
+- Consent handshake for Light House step-ins if the network outgrows trust-by-
   acquaintance (the `join_request` pattern is ready).
 - The veto surfaced on growth timelines, not only the pulse page.
 
@@ -86,7 +86,7 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
   the lived result, and take part in whether it belongs. The flow:
   need → Reach → session → root inspection → proposal → review → human
   authorization → commit + ring + deployment.
-- Embedded Gaussian-splat viewer for sanctuary 3D doors (today: external URL).
+- Embedded Gaussian-splat viewer for Light House 3D doors (today: external URL).
 - Initiation layer growth: the git ledger beyond its first three sponsors.
 - **The Book** — the White Paper reader generalized: every being's root as a
   readable book. The same data model applies at every scale — the Book of Life,

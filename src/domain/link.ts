@@ -7,9 +7,9 @@ import type { Being } from './being';
 // enlisted in an event or vision. Every other rel points a person at a target.
 // 'join_request' is a person asking to become a community member — the owner or a steward
 // accepting it replaces the edge with a 'member' link (see domain/communityDoor for the door).
-// 'rooted': a SANCTUARY rooted in a lifetree — the tree that holds it becomes a MOTHER
-// TREE. A sanctuary is never built before a tree is planted.
-// 'shelters': a SANCTUARY shelters a community — belonging as an edge, never an array.
+// 'rooted': a LIGHT HOUSE rooted in a lifetree — the tree that holds it becomes a MOTHER
+// TREE. A lightHouse is never built before a tree is planted.
+// 'shelters': a LIGHT HOUSE shelters a community — belonging as an edge, never an array.
 // 'invited_by': provenance — HOW someone arrived into a community (newcomer → community; the
 // inviter is the carried invitation's createdBy, via inviteId). Per-community, so arriving in
 // two places leaves two marks. Append-only (the rules refuse even its subject's delete) and

@@ -1,17 +1,17 @@
-// Beds in sanctuaries — the last link of the self-sustaining chain: a tree, a circle, a
+// Beds in lightHouses — the last link of the self-sustaining chain: a tree, a circle, a
 // community, a domain, a BED — and a way to start a new world from there. A stay is a
-// request to sleep under a sanctuary's roof; the keeper answers. The payment rail joins
+// request to sleep under a lightHouse's roof; the keeper answers. The payment rail joins
 // later with the rest of the care economy (domain/support.ts) — the structure is whole now.
 
 export type StayStatus = 'requested' | 'accepted' | 'declined';
 
 export interface Stay {
   id: string;
-  sanctuaryId: string;
-  sanctuaryName?: string;
+  lightHouseId: string;
+  lightHouseName?: string;
   uid: string;          // the guest
   guestName?: string;
-  hostUid: string;      // the sanctuary's keeper at request time (denormalised — the
+  hostUid: string;      // the lightHouse's keeper at request time (denormalised — the
                         // rules and the keeper's inbox query stand on this field)
   fromDate: string;     // yyyy-mm-dd
   toDate: string;       // yyyy-mm-dd (departure day — nights = to - from)

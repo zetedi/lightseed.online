@@ -5,14 +5,14 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
 import { MahameruAvatar } from './ui/MahameruAvatar';
-import { Community, CommunityInvite, Lifetree, Pulse, Sanctuary } from '../types';
+import { Community, CommunityInvite, Lifetree, Pulse, LightHouse } from '../types';
 import { doorOf, checkInvite } from '../domain/communityDoor';
-import { updateCommunity, uploadImage, getTreesByDomain, getParticipatingTrees, deleteCommunity, getCommunityByDomain, getSanctuariesByDomain, getSanctuariesByCommunity, getAllSanctuaries, createSanctuary, adoptSanctuary, getPersonName, joinCommunityOpen, joinCommunityWithInvite } from '../services/firebase';
+import { updateCommunity, uploadImage, getTreesByDomain, getParticipatingTrees, deleteCommunity, getCommunityByDomain, getLightHousesByDomain, getLightHousesByCommunity, getAllLightHouses, createLightHouse, adoptLightHouse, getPersonName, joinCommunityOpen, joinCommunityWithInvite } from '../services/firebase';
 import { CommunityVision } from './community/CommunityVision';
 import { CommunityCouncil } from './community/CommunityCouncil';
 import { CommunityEvents } from './community/CommunityEvents';
 import { CommunityFirstTree } from './community/CommunityFirstTree';
-import { CommunitySanctuary } from './community/CommunitySanctuary';
+import { CommunityLightHouse } from './community/CommunityLightHouse';
 import { CommunityTreesTab } from './community/CommunityTreesTab';
 import { CommunityMembers } from './community/CommunityMembers';
 import { PathOverview } from './PathOverview';
@@ -23,7 +23,7 @@ import { BeingProfile, type BeingSection } from './BeingProfile';
 import { SectionTitle } from './ui/SectionTitle';
 import { SuperDot } from './ui/SuperDot';
 import { normalizeTheme } from '../utils/theme';
-import { canViewSanctuary, type Sanctuary as SanctuaryType } from '../domain/sanctuary';
+import { canViewLightHouse, type LightHouse as LightHouseType } from '../domain/lightHouse';
 import { notify } from './ui/Toast';
 import { announce } from '../services/refreshBus';
 import { useRefreshSignal } from '../hooks/useRefreshSignal';
@@ -41,7 +41,7 @@ interface CommunityProfileProps {
   onUpdate?: (updates: Partial<Community>) => void;
   onClose: () => void;
   onViewTree?: (tree: Lifetree) => void;
-  onViewSanctuary?: (s: SanctuaryType) => void;
+  onViewLightHouse?: (s: LightHouseType) => void;
   // Open an event's page. Seeing an event implies at least viewer rights, so this is
   // offered to everyone — not gated behind edit permissions.
   onViewEvent?: (event: Pulse) => void;
@@ -59,7 +59,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   onViewTree,
   onViewEvent,
   onEnterCommunityView,
-  onViewSanctuary,
+  onViewLightHouse,
 }) => {
   const { t } = useLanguage();
   // Session-derived values from context (were prop-drilled from App).
@@ -173,8 +173,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const [linkedTrees, setLinkedTrees] = useState<Lifetree[]>([]);
   // Trees that joined this community via 'participant' links (invited, or self-joined).
   const [participatingTrees, setParticipatingTrees] = useState<Lifetree[]>([]);
-  const [sanctuaries, setSanctuaries] = useState<Sanctuary[]>([]);
-  const sanctuarySignal = useRefreshSignal(['sanctuaries']);
+  const [lightHouses, setLightHouses] = useState<LightHouse[]>([]);
+  const lightHouseSignal = useRefreshSignal(['lightHouses']);
 
   const [togglingId, setTogglingId] = useState<string | null>(null);
   // Which trees the signed-in user guards — read from their outgoing 'guardian' links (the LIN),
@@ -221,41 +221,41 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     // viewers may only run public-provable queries — the read rule refuses the rest.
     const publicOnly = !currentUserId;
     Promise.all([
-      getSanctuariesByDomain(community.domain, { publicOnly }).catch(() => [] as Sanctuary[]),
-      publicOnly ? Promise.resolve([] as Sanctuary[]) : getSanctuariesByCommunity(community.id).catch(() => [] as Sanctuary[]),
+      getLightHousesByDomain(community.domain, { publicOnly }).catch(() => [] as LightHouse[]),
+      publicOnly ? Promise.resolve([] as LightHouse[]) : getLightHousesByCommunity(community.id).catch(() => [] as LightHouse[]),
     ]).then(([byDomain, byBelonging]) => {
       const seen = new Set<string>();
-      setSanctuaries([...byDomain, ...byBelonging].filter(s => !seen.has(s.id) && seen.add(s.id) !== undefined));
+      setLightHouses([...byDomain, ...byBelonging].filter(s => !seen.has(s.id) && seen.add(s.id) !== undefined));
     }).catch(() => {});
-  }, [community.domain, community.id, currentUserId, sanctuarySignal]);
+  }, [community.domain, community.id, currentUserId, lightHouseSignal]);
 
-  // Sanctuaries elsewhere in the network this community could step into — keepers only.
-  const [adoptable, setAdoptable] = useState<Sanctuary[]>([]);
+  // LightHouses elsewhere in the network this community could step into — keepers only.
+  const [adoptable, setAdoptable] = useState<LightHouse[]>([]);
   useEffect(() => {
     if (!canEdit || !currentUserId) { return; }
     let alive = true;
-    Promise.all([getAllSanctuaries(), firestoreStore.linksByRel('shelters')])
+    Promise.all([getAllLightHouses(), firestoreStore.linksByRel('shelters')])
       .then(([all, shelterLinks]) => {
         if (!alive) return;
         const homesOf = new Map<string, string[]>();
         for (const l of shelterLinks) homesOf.set(l.from, [...(homesOf.get(l.from) || []), l.to]);
         setAdoptable(all.filter(s => {
           const homes = [...(s.communityId ? [s.communityId] : []), ...(homesOf.get(s.id) || [])];
-          // Consent lives with the sanctuary: only its keeper (or staff) may step it in —
+          // Consent lives with the lightHouse: only its keeper (or staff) may step it in —
           // the rules enforce this, so the panel offers only what would actually succeed.
           const mayStepIn = s.ownerId === currentUserId || isSuperAdmin || isAdmin;
           return mayStepIn
             && !homes.includes(community.id)
             && s.domain !== community.domain
-            && canViewSanctuary(s, { uid: currentUserId, isStaff: isSuperAdmin || isAdmin, memberCommunityIds: new Set<string>() }, homes);
+            && canViewLightHouse(s, { uid: currentUserId, isStaff: isSuperAdmin || isAdmin, memberCommunityIds: new Set<string>() }, homes);
         }));
       }).catch(() => {});
     return () => { alive = false; };
-  }, [canEdit, currentUserId, isSuperAdmin, isAdmin, community.id, community.domain, sanctuarySignal]);
+  }, [canEdit, currentUserId, isSuperAdmin, isAdmin, community.id, community.domain, lightHouseSignal]);
 
-  // The sanctuaries rooted in this domain THAT THIS VIEWER MAY SEE —
-  // sanctuaries are private (community-level) by default.
-  // Homes come from the shelters links, so a stepped-in sanctuary is visible to members
+  // The lightHouses rooted in this domain THAT THIS VIEWER MAY SEE —
+  // lightHouses are private (community-level) by default.
+  // Homes come from the shelters links, so a stepped-in lightHouse is visible to members
   // of THIS community even when its primary home is elsewhere.
   const [shelterHomes, setShelterHomes] = useState<Map<string, string[]>>(new Map());
   useEffect(() => {
@@ -267,12 +267,12 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       setShelterHomes(m);
     }).catch(() => {});
     return () => { alive = false; };
-  }, [sanctuarySignal]);
-  const viewableSanctuaries = useMemo(() => sanctuaries.filter(s => canViewSanctuary(s, {
+  }, [lightHouseSignal]);
+  const viewableLightHouses = useMemo(() => lightHouses.filter(s => canViewLightHouse(s, {
     uid: currentUserId,
     isStaff: isSuperAdmin || isAdmin,
     memberCommunityIds: isMember ? new Set([community.id]) : new Set(),
-  }, [...(s.communityId ? [s.communityId] : []), ...(shelterHomes.get(s.id) || [])])), [sanctuaries, shelterHomes, currentUserId, isSuperAdmin, isAdmin, isMember, community.id]);
+  }, [...(s.communityId ? [s.communityId] : []), ...(shelterHomes.get(s.id) || [])])), [lightHouses, shelterHomes, currentUserId, isSuperAdmin, isAdmin, isMember, community.id]);
 
 
   // The first lifetree rooted in this community's domain (earliest planted).
@@ -463,28 +463,28 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       ),
     },
     {
-      key: 'sanctuary', label: 'Sanctuaries', icon: <Icons.Sun />, render: () => (
-        <CommunitySanctuary
+      key: 'lightHouse', label: 'Light Houses', icon: <Icons.Sun />, render: () => (
+        <CommunityLightHouse
           community={community}
-          sanctuaries={viewableSanctuaries}
+          lightHouses={viewableLightHouses}
           canEdit={canEdit}
           onCreate={async (draft) => {
             if (!currentUserId) return;
-            await createSanctuary({
+            await createLightHouse({
               ...draft,
               ownerId: currentUserId,
               domain: community.domain,
               communityId: community.id,
             });
-            announce('sanctuaries');
-            notify('🌞 Sanctuary consecrated.');
+            announce('lightHouses');
+            notify('🌞 Light House consecrated.');
           }}
-          onUploadImage={(file) => uploadImage(file, `communities/${community.id}/sanctuaries/${file.name}`)}
-          onOpen={onViewSanctuary}
+          onUploadImage={(file) => uploadImage(file, `communities/${community.id}/lightHouses/${file.name}`)}
+          onOpen={onViewLightHouse}
           adoptable={adoptable}
           onAdopt={async (s) => {
-            await adoptSanctuary(s.id, community.id);
-            announce('sanctuaries');
+            await adoptLightHouse(s.id, community.id);
+            announce('lightHouses');
             notify(`${s.name} now holds this community too.`);
           }}
         />

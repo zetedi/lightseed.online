@@ -11,7 +11,7 @@ import type { Timestamp } from 'firebase/firestore';
 //   - a CIRCLE     — its links: the LIN, the relations in the `links` collection
 //                    (guardian, member, participant, co_owner, …).
 //   - a FACE       — its profile: the shared anatomy in components/sections/ (Vision, Events,
-//                    Trees, Sanctuary, Intelligence, Appearance, AlignmentView, ChainTree).
+//                    Trees, LightHouse, Intelligence, Appearance, AlignmentView, ChainTree).
 //                    Composite beings (communities, nodes) additionally grow a Council — the
 //                    organ by which many become one voice.
 //

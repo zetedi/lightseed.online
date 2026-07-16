@@ -9,8 +9,8 @@ import { Icons } from './ui/Icons';
 import { treeCoordinates as getTreeCoordinates, forestMarkers } from '../domain/views/forest';
 import { firestoreStore } from '../adapters/firestore';
 import { loadLeaflet } from '../services/leaflet';
-import type { Sanctuary } from '../domain/sanctuary';
-import { useVisibleSanctuaries } from '../hooks/useVisibleSanctuaries';
+import type { LightHouse } from '../domain/lightHouse';
+import { useVisibleLightHouses } from '../hooks/useVisibleLightHouses';
 
 interface Cluster {
     id: string;
@@ -27,11 +27,11 @@ interface StackLevel {
     lng: number;
 }
 
-// A sanctuary rides the map as a being like any other — this pseudo-tree shape lets it join
+// A lightHouse rides the map as a being like any other — this pseudo-tree shape lets it join
 // the same clustering, petal expansion and popup plumbing the trees use.
-type MapBeing = Lifetree & { __sanctuary?: Sanctuary };
+type MapBeing = Lifetree & { __lightHouse?: LightHouse };
 
-export const ForestMap = ({ trees, onView, onReach, onViewSanctuary, loading = false, onRefresh, primaryTree = null, refreshKey = 0, sanctuaryDomain = null, showSanctuaries = true, filtersOverlay = null }: { trees: Lifetree[], onView: (tree: Lifetree) => void, onReach?: (tree: Lifetree) => void, onViewSanctuary?: (s: Sanctuary) => void, loading?: boolean, onRefresh?: () => void, primaryTree?: Lifetree | null, refreshKey?: number, sanctuaryDomain?: string | null, showSanctuaries?: boolean, filtersOverlay?: React.ReactNode }) => {
+export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = false, onRefresh, primaryTree = null, refreshKey = 0, lightHouseDomain = null, showLightHouses = true, filtersOverlay = null }: { trees: Lifetree[], onView: (tree: Lifetree) => void, onReach?: (tree: Lifetree) => void, onViewLightHouse?: (s: LightHouse) => void, loading?: boolean, onRefresh?: () => void, primaryTree?: Lifetree | null, refreshKey?: number, lightHouseDomain?: string | null, showLightHouses?: boolean, filtersOverlay?: React.ReactNode }) => {
     const mapContainer = useRef<HTMLDivElement>(null);
     const mapInstance = useRef<any>(null);
     const leafletRef = useRef<any>(null);
@@ -97,24 +97,24 @@ export const ForestMap = ({ trees, onView, onReach, onViewSanctuary, loading = f
         }).catch(() => {});
         return () => { alive = false; };
     }, [treeIdsKey, refreshKey]);
-    // Sanctuaries — one shared source with the forest grid (useVisibleSanctuaries);
+    // LightHouses — one shared source with the forest grid (useVisibleLightHouses);
     // the map keeps only the placeable ones.
-    const visibleSanctuaries = useVisibleSanctuaries(sanctuaryDomain, refreshKey);
-    const sanctuaries = useMemo(
-        () => visibleSanctuaries.filter(x => Number.isFinite(x.latitude) && Number.isFinite(x.longitude)),
-        [visibleSanctuaries],
+    const visibleLightHouses = useVisibleLightHouses(lightHouseDomain, refreshKey);
+    const lightHouses = useMemo(
+        () => visibleLightHouses.filter(x => Number.isFinite(x.latitude) && Number.isFinite(x.longitude)),
+        [visibleLightHouses],
     );
-    const sanctuariesSignature = sanctuaries.map(x => [x.id, x.latitude, x.longitude, x.imageUrl || '', x.splatUrl || ''].join(':')).join('|');
-    const sanctuaryBeings = useMemo<MapBeing[]>(() => sanctuaries.map(s => ({
-        id: `sanctuary__${s.id}`,
+    const lightHousesSignature = lightHouses.map(x => [x.id, x.latitude, x.longitude, x.imageUrl || '', x.splatUrl || ''].join(':')).join('|');
+    const lightHouseBeings = useMemo<MapBeing[]>(() => lightHouses.map(s => ({
+        id: `lightHouse__${s.id}`,
         name: s.name,
         ownerId: s.ownerId || '',
         latitude: s.latitude,
         longitude: s.longitude,
         imageUrl: s.imageUrl || '/lighthouse.webp',
         createdAt: s.createdAt,
-        __sanctuary: s,
-    } as MapBeing)), [sanctuaries]);
+        __lightHouse: s,
+    } as MapBeing)), [lightHouses]);
 
     // Memoized + slimmed: only fields that change a marker's appearance (name included —
     // it labels the marker for screen readers). Excludes body/heavy text so this isn't
@@ -211,7 +211,7 @@ export const ForestMap = ({ trees, onView, onReach, onViewSanctuary, loading = f
             updateMarkersRef.current(L);
         }, 50);
         return () => window.clearTimeout(timer);
-    }, [treesSignature, expansionSignature, sanctuariesSignature, showSanctuaries, loading, isMapReady]);
+    }, [treesSignature, expansionSignature, lightHousesSignature, showLightHouses, loading, isMapReady]);
 
     useEffect(() => {
         if (!isMapReady || loading || visibleTreeCount === 0 || markerCount > 0) return;
@@ -272,13 +272,13 @@ export const ForestMap = ({ trees, onView, onReach, onViewSanctuary, loading = f
     }, [isMapReady, primaryTree, treesSignature]);
 
     const getHtmlForTree = (tree: Lifetree, isSmall = false, delay = 0) => {
-        const sanct = (tree as MapBeing).__sanctuary;
+        const sanct = (tree as MapBeing).__lightHouse;
         if (sanct) {
             const size = isSmall ? 'w-10 h-10' : 'w-12 h-12';
             const img = safeImageUrl(sanct.imageUrl || '/lighthouse.webp', DARK_IMAGE_FALLBACK);
             return `
-            <div class="marker-pop relative ${size} hover:scale-110 transition-transform duration-300" style="animation-delay: ${delay}ms;" role="button" aria-label="${escapeHtml(sanct.name)} — sanctuary">
-                <div class="sanctuary-glow absolute -inset-4 rounded-full"></div>
+            <div class="marker-pop relative ${size} hover:scale-110 transition-transform duration-300" style="animation-delay: ${delay}ms;" role="button" aria-label="${escapeHtml(sanct.name)} — Light House">
+                <div class="lightHouse-glow absolute -inset-4 rounded-full"></div>
                 <div class="absolute -inset-1 rounded-full border-2 border-yellow-300/90"></div>
                 <div class="relative ${size} rounded-full border-2 border-amber-400 overflow-hidden bg-[#04070f] shadow-xl z-10">
                     <img src="${img}" style="width:100%;height:100%;object-fit:cover;display:block;" />
@@ -355,8 +355,8 @@ export const ForestMap = ({ trees, onView, onReach, onViewSanctuary, loading = f
     };
 
     const createPopupContent = (tree: Lifetree) => {
-        const sanct = (tree as MapBeing).__sanctuary;
-        if (sanct) return createSanctuaryPopup(sanct);
+        const sanct = (tree as MapBeing).__lightHouse;
+        if (sanct) return createLightHousePopup(sanct);
         const displayImage = safeImageUrl(tree.latestGrowthUrl || tree.imageUrl);
         const div = document.createElement('div');
         div.innerHTML = `
@@ -383,25 +383,25 @@ export const ForestMap = ({ trees, onView, onReach, onViewSanctuary, loading = f
         return div;
     }
 
-    const createSanctuaryPopup = (s: Sanctuary) => {
+    const createLightHousePopup = (s: LightHouse) => {
         const div = document.createElement('div');
         div.innerHTML = `
             <div class="text-center min-w-[170px]">
                 ${s.imageUrl ? `<img src="${safeImageUrl(s.imageUrl)}" style="width:100%;height:110px;object-fit:cover;display:block;" class="rounded-t-lg" />` : ''}
                 <div class="p-2.5">
-                    <p class="text-[9px] font-bold uppercase tracking-[0.22em] text-amber-500">Sanctuary</p>
+                    <p class="text-[9px] font-bold uppercase tracking-[0.22em] text-amber-500">Light House</p>
                     <h3 class="font-bold text-sm text-slate-800 mt-0.5">${escapeHtml(s.name)}</h3>
                     ${s.locationName ? `<p class="text-[10px] text-slate-400 mt-0.5">${escapeHtml(s.locationName)}</p>` : ''}
                     ${s.body ? `<p class="text-xs text-slate-500 line-clamp-2 italic mt-1">${escapeHtml(s.body)}</p>` : ''}
                     <div class="mt-2 grid ${s.splatUrl ? 'grid-cols-2' : 'grid-cols-1'} gap-2">
-                        <button class="sanctuary-view-btn bg-emerald-600 text-white text-xs font-bold px-3 py-2.5 rounded-full w-full">View</button>
+                        <button class="lightHouse-view-btn bg-emerald-600 text-white text-xs font-bold px-3 py-2.5 rounded-full w-full">View</button>
                         ${s.splatUrl ? `<a href="${safeImageUrl(s.splatUrl)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-full bg-amber-500 px-3 py-2.5 text-xs font-bold text-white">In 3D ✦</a>` : ''}
                     </div>
                 </div>
             </div>`;
-        div.querySelector('.sanctuary-view-btn')?.addEventListener('click', (e) => {
+        div.querySelector('.lightHouse-view-btn')?.addEventListener('click', (e) => {
             e.stopPropagation();
-            onViewSanctuary?.(s);
+            onViewLightHouse?.(s);
         });
         return div;
     };
@@ -415,17 +415,17 @@ export const ForestMap = ({ trees, onView, onReach, onViewSanctuary, loading = f
         const map = mapInstance.current;
         const nextLayer = L.layerGroup();
         let nextMarkerCount = 0;
-        const renderKey = `${map.getZoom?.() || ''}|${treesSignature}|${expansionSignature}|${sanctuariesSignature}|${showSanctuaries ? 'S' : 's'}|${loading ? 'loading' : 'ready'}`;
+        const renderKey = `${map.getZoom?.() || ''}|${treesSignature}|${expansionSignature}|${lightHousesSignature}|${showLightHouses ? 'S' : 's'}|${loading ? 'loading' : 'ready'}`;
 
         if (!force && renderKey === lastMarkerRenderKeyRef.current) return;
         lastMarkerRenderKeyRef.current = renderKey;
 
-        // One field of beings — but the lighthouses come first: a sanctuary SEEDS its
-        // cluster, so wherever trees stand near one, the sanctuary is the face they gather
-        // around, and opening it petals the trees out around the sanctuary.
-        const sortedTrees = ([...visibleTrees, ...(showSanctuaries ? sanctuaryBeings : [])] as MapBeing[]).sort((a, b) => {
-            const pa = (a as MapBeing).__sanctuary ? 0 : 1;
-            const pb = (b as MapBeing).__sanctuary ? 0 : 1;
+        // One field of beings — but the lighthouses come first: a lightHouse SEEDS its
+        // cluster, so wherever trees stand near one, the lightHouse is the face they gather
+        // around, and opening it petals the trees out around the lightHouse.
+        const sortedTrees = ([...visibleTrees, ...(showLightHouses ? lightHouseBeings : [])] as MapBeing[]).sort((a, b) => {
+            const pa = (a as MapBeing).__lightHouse ? 0 : 1;
+            const pb = (b as MapBeing).__lightHouse ? 0 : 1;
             return pa - pb || (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0);
         });
         // The expansion stack stores snapshots from click time; a data refresh must not
@@ -614,13 +614,13 @@ export const ForestMap = ({ trees, onView, onReach, onViewSanctuary, loading = f
                     nextMarkerCount += 1;
                 }
 
-            } else if ((cluster.center as MapBeing).__sanctuary) {
-                // COLLAPSED CLUSTER AROUND A LIGHTHOUSE — the sanctuary is the face; the
+            } else if ((cluster.center as MapBeing).__lightHouse) {
+                // COLLAPSED CLUSTER AROUND A LIGHTHOUSE — the lightHouse is the face; the
                 // count badge tells how many beings gather in its light.
                 const clusterTrees = [cluster.center, ...cluster.children];
                 const hasDanger = clusterTrees.some(t => t.status === 'DANGER');
                 const html = `
-                <div class="relative w-12 h-12 group cursor-pointer transition-transform duration-300 hover:scale-125" style="transform-origin:center;" role="button" aria-label="${escapeHtml(cluster.center.name || 'Sanctuary')} — ${count} beings">
+                <div class="relative w-12 h-12 group cursor-pointer transition-transform duration-300 hover:scale-125" style="transform-origin:center;" role="button" aria-label="${escapeHtml(cluster.center.name || 'Light House')} — ${count} beings">
                     ${getHtmlForTree(cluster.center)}
                     <div class="absolute -top-1.5 -right-1.5 w-6 h-6 bg-amber-500 border-2 border-white text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-md z-20">
                         ${count}
@@ -633,7 +633,7 @@ export const ForestMap = ({ trees, onView, onReach, onViewSanctuary, loading = f
                 marker.on('click', (e: any) => {
                     L.DomEvent.stopPropagation(e);
                     map.setView([cluster.lat, cluster.lng], map.getZoom(), { animate: true });
-                    // The circle view: trees petal out AROUND the sanctuary at the center.
+                    // The circle view: trees petal out AROUND the lightHouse at the center.
                     setExpansionStack([{
                         clusterId: cluster.id,
                         trees: [cluster.center, ...cluster.children],
@@ -715,13 +715,13 @@ export const ForestMap = ({ trees, onView, onReach, onViewSanctuary, loading = f
                     animation: pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
                     opacity: 0;
                 }
-                @keyframes sanctuary-breathe {
+                @keyframes lightHouse-breathe {
                     0%, 100% { opacity: 0.55; transform: scale(1); }
                     50% { opacity: 0.95; transform: scale(1.12); }
                 }
-                .sanctuary-glow {
+                .lightHouse-glow {
                     background: radial-gradient(circle, rgba(253,224,71,0.55) 0%, rgba(252,211,77,0.25) 55%, transparent 78%);
-                    animation: sanctuary-breathe 3.2s ease-in-out infinite;
+                    animation: lightHouse-breathe 3.2s ease-in-out infinite;
                     pointer-events: none;
                 }
                 /* The living breath: markers pulse a few times after appearing, then rest —
@@ -734,7 +734,7 @@ export const ForestMap = ({ trees, onView, onReach, onViewSanctuary, loading = f
                     .marker-pop .animate-ping,
                     .marker-pop .animate-pulse,
                     .marker-pop .animate-bounce { animation: none; }
-                    .sanctuary-glow { animation: none; opacity: 0.7; }
+                    .lightHouse-glow { animation: none; opacity: 0.7; }
                 }
             `}</style>
             <div className="relative">

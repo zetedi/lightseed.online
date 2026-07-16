@@ -2,25 +2,25 @@ import { addDoc, collection, getDocs, query, serverTimestamp, where, doc, update
 import { db, mapDoc } from './core';
 import { uuidv7 } from '../../utils/id';
 import { nightsBetween, type Stay, type StayStatus } from '../../domain/stay';
-import type { Sanctuary } from '../../types';
+import type { LightHouse } from '../../types';
 
-// Stays — bed requests under a sanctuary's roof. The stay denormalises the keeper
+// Stays — bed requests under a lightHouse's roof. The stay denormalises the keeper
 // (hostUid) so the rules and the keeper's inbox query stand on plain fields.
 
 const staysCollection = collection(db, 'stays');
 
 export const requestStay = async (
-    sanctuary: Sanctuary,
+    lightHouse: LightHouse,
     guest: { uid: string; name?: string },
     draft: { fromDate: string; toDate: string; note?: string },
 ): Promise<string> => {
     const ref = await addDoc(staysCollection, {
         lid: uuidv7(),
-        sanctuaryId: sanctuary.id,
-        sanctuaryName: sanctuary.name,
+        lightHouseId: lightHouse.id,
+        lightHouseName: lightHouse.name,
         uid: guest.uid,
         guestName: guest.name || '',
-        hostUid: sanctuary.ownerId || '',
+        hostUid: lightHouse.ownerId || '',
         fromDate: draft.fromDate,
         toDate: draft.toDate,
         nights: nightsBetween(draft.fromDate, draft.toDate),
@@ -31,18 +31,18 @@ export const requestStay = async (
     return ref.id;
 };
 
-// The keeper's view of a sanctuary's stays (their hostUid makes the query provable).
-export const getStaysForHost = async (hostUid: string, sanctuaryId?: string): Promise<Stay[]> => {
-    const q = sanctuaryId
-        ? query(staysCollection, where('hostUid', '==', hostUid), where('sanctuaryId', '==', sanctuaryId))
+// The keeper's view of a lightHouse's stays (their hostUid makes the query provable).
+export const getStaysForHost = async (hostUid: string, lightHouseId?: string): Promise<Stay[]> => {
+    const q = lightHouseId
+        ? query(staysCollection, where('hostUid', '==', hostUid), where('lightHouseId', '==', lightHouseId))
         : query(staysCollection, where('hostUid', '==', hostUid));
     return (await getDocs(q)).docs.map(d => (mapDoc(d) as Stay));
 };
 
 // The guest's own requests.
-export const getMyStays = async (uid: string, sanctuaryId?: string): Promise<Stay[]> => {
-    const q = sanctuaryId
-        ? query(staysCollection, where('uid', '==', uid), where('sanctuaryId', '==', sanctuaryId))
+export const getMyStays = async (uid: string, lightHouseId?: string): Promise<Stay[]> => {
+    const q = lightHouseId
+        ? query(staysCollection, where('uid', '==', uid), where('lightHouseId', '==', lightHouseId))
         : query(staysCollection, where('uid', '==', uid));
     return (await getDocs(q)).docs.map(d => (mapDoc(d) as Stay));
 };

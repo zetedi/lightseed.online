@@ -8,93 +8,93 @@ import { SuperDot } from './ui/SuperDot';
 import { showAlert, showConfirm } from './ui/Dialog';
 import { BeingQr } from './ui/BeingQr';
 import { mintBeingQr } from '../services/firebase/beings';
-import { getCommunityById, updateSanctuary, getLifetreeById, requestStay, getStaysForHost, getMyStays, setStayStatus, withdrawStay } from '../services/firebase';
+import { getCommunityById, updateLightHouse, getLifetreeById, requestStay, getStaysForHost, getMyStays, setStayStatus, withdrawStay } from '../services/firebase';
 import { stayRequestProblem, type Stay } from '../domain/stay';
 import { useSession } from '../contexts/SessionContext';
 import { firestoreStore } from '../adapters/firestore';
 import { LocationPicker } from './ui/LocationPicker';
 import { announce } from '../services/refreshBus';
 import { notify } from './ui/Toast';
-import { sanctuaryVisibility, type Sanctuary, type SanctuaryVisibility } from '../domain/sanctuary';
+import { lightHouseVisibility, type LightHouse, type LightHouseVisibility } from '../domain/lightHouse';
 import type { Community, Lifetree } from '../types';
 
-// The sanctuary's own page — the shared profile anatomy (ProfileHero + ProfileLayout), so a
+// The Light House's own page — the shared profile anatomy (ProfileHero + ProfileLayout), so a
 // sacred place opens like every other being: from its map marker, or from a community's
-// Sanctuaries tab. Two sections: About (the story, the 3D door, the visibility chips) and
-// Communities — the mirror of the community profile: which houses this sanctuary holds.
+// LightHouses tab. Two sections: About (the story, the 3D door, the visibility chips) and
+// Communities — the mirror of the community profile: which houses this Light House holds.
 
-type SanctuarySection = 'about' | 'communities' | 'tree' | 'beds';
+type LightHouseSection = 'about' | 'communities' | 'tree' | 'beds';
 
-interface SanctuaryProfileProps {
-    sanctuary: Sanctuary;
+interface LightHouseProfileProps {
+    lightHouse: LightHouse;
     onClose: () => void;
     backLabel?: string;
     canEdit?: boolean;
     // True when canEdit comes from staff privilege rather than being the keeper (amber dot).
     editIsStaffOnly?: boolean;
-    onSetVisibility?: (id: string, visibility: SanctuaryVisibility) => Promise<void>;
+    onSetVisibility?: (id: string, visibility: LightHouseVisibility) => Promise<void>;
     onDelete?: (id: string) => Promise<void>;
     onViewCommunity?: (community: Community) => void;
     onViewTree?: (tree: Lifetree) => void;
 }
 
-export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEdit = false, editIsStaffOnly = false, onSetVisibility, onDelete, onViewCommunity, onViewTree }: SanctuaryProfileProps) => {
-    const visibility = sanctuaryVisibility(sanctuary);
-    const [section, setSection] = useState<SanctuarySection>('about');
+export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', canEdit = false, editIsStaffOnly = false, onSetVisibility, onDelete, onViewCommunity, onViewTree }: LightHouseProfileProps) => {
+    const visibility = lightHouseVisibility(lightHouse);
+    const [section, setSection] = useState<LightHouseSection>('about');
 
     // The place, editable by keepers: tap the map (or refine the name), then save.
     const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(
-        Number.isFinite(sanctuary.latitude) && Number.isFinite(sanctuary.longitude)
-            ? { latitude: sanctuary.latitude!, longitude: sanctuary.longitude! }
+        Number.isFinite(lightHouse.latitude) && Number.isFinite(lightHouse.longitude)
+            ? { latitude: lightHouse.latitude!, longitude: lightHouse.longitude! }
             : null,
     );
-    const [placeName, setPlaceName] = useState(sanctuary.locationName || '');
+    const [placeName, setPlaceName] = useState(lightHouse.locationName || '');
     const [isSavingPlace, setIsSavingPlace] = useState(false);
-    const placeDirty = (coords?.latitude !== sanctuary.latitude) || (coords?.longitude !== sanctuary.longitude) || placeName.trim() !== (sanctuary.locationName || '');
+    const placeDirty = (coords?.latitude !== lightHouse.latitude) || (coords?.longitude !== lightHouse.longitude) || placeName.trim() !== (lightHouse.locationName || '');
     const savePlace = async () => {
         if (isSavingPlace) return;
         setIsSavingPlace(true);
         try {
-            await updateSanctuary(sanctuary.id, {
+            await updateLightHouse(lightHouse.id, {
                 latitude: coords?.latitude,
                 longitude: coords?.longitude,
                 locationName: placeName.trim() || undefined,
             });
-            announce('sanctuaries', sanctuary.id);
-            notify('🌍 The sanctuary found its place.');
+            announce('lightHouses', lightHouse.id);
+            notify('🌍 The Light House found its place.');
         } catch (e: any) {
             showAlert(e?.message || 'Could not save the place.');
         }
         setIsSavingPlace(false);
     };
 
-    // The circle of communities this sanctuary shelters — LIN edges plus the primary,
+    // The circle of communities this Light House shelters — LIN edges plus the primary,
     // resolved lazily to their documents. Belonging is links, never arrays.
     const [homes, setHomes] = useState<Community[] | null>(null);
     useEffect(() => {
         let alive = true;
-        firestoreStore.linksFrom(sanctuary.id, 'shelters')
+        firestoreStore.linksFrom(lightHouse.id, 'shelters')
             .then(links => {
-                const ids = [...new Set([...(sanctuary.communityId ? [sanctuary.communityId] : []), ...links.map(l => l.to)])];
+                const ids = [...new Set([...(lightHouse.communityId ? [lightHouse.communityId] : []), ...links.map(l => l.to)])];
                 return Promise.all(ids.map(id => getCommunityById(id).catch(() => null)));
             })
             .then(list => { if (alive) setHomes((list || []).filter(Boolean) as Community[]); })
             .catch(() => { if (alive) setHomes([]); });
         return () => { alive = false; };
-    }, [sanctuary.id, sanctuary.communityId]);
+    }, [lightHouse.id, lightHouse.communityId]);
 
-    // The tree this sanctuary is ROOTED IN (sanctuary __rooted__ tree) — that tree is a
-    // mother tree. A sanctuary is never built before a tree is planted.
+    // The tree this Light House is ROOTED IN (lightHouse __rooted__ tree) — that tree is a
+    // mother tree. A Light House is never built before a tree is planted.
     const [rootTree, setRootTree] = useState<Lifetree | null>(null);
     const [rootLoaded, setRootLoaded] = useState(false);
-    // The keeper roots the sanctuary in one of THEIR OWN lifetrees — a personal avatar,
+    // The keeper roots the Light House in one of THEIR OWN lifetrees — a personal avatar,
     // never a guarded nature tree: the mother is a being who answers for it.
     const { myTrees: sessionTrees } = useSession();
     const rootCandidates = (sessionTrees || []).filter((t: Lifetree) => !t.isNature);
     const [isRooting, setIsRooting] = useState(false);
     useEffect(() => {
         let alive = true;
-        firestoreStore.linksFrom(sanctuary.id, 'rooted')
+        firestoreStore.linksFrom(lightHouse.id, 'rooted')
             .then(async links => {
                 const tid = links[0]?.to;
                 const t = tid ? await getLifetreeById(tid).catch(() => null) : null;
@@ -102,16 +102,16 @@ export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEd
             })
             .catch(() => { if (alive) setRootLoaded(true); });
         return () => { alive = false; };
-    }, [sanctuary.id]);
+    }, [lightHouse.id]);
     const rootIn = async (tree: Lifetree) => {
         if (isRooting) return;
         setIsRooting(true);
         try {
-            if (rootTree) await firestoreStore.unlink(sanctuary.id, 'rooted', rootTree.id);
-            await firestoreStore.link(sanctuary.id, 'rooted', tree.id);
+            if (rootTree) await firestoreStore.unlink(lightHouse.id, 'rooted', rootTree.id);
+            await firestoreStore.link(lightHouse.id, 'rooted', tree.id);
             setRootTree(tree);
-            notify(`🌳 ${sanctuary.name} is rooted in ${tree.name} — a mother tree now.`);
-        } catch (e: any) { showAlert(e?.message || 'Could not root the sanctuary.'); }
+            notify(`🌳 ${lightHouse.name} is rooted in ${tree.name} — a mother tree now.`);
+        } catch (e: any) { showAlert(e?.message || 'Could not root the Light House.'); }
         setIsRooting(false);
     };
 
@@ -119,12 +119,12 @@ export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEd
     // signed-in guest asks for nights. Payments join later with the care economy.
     const { lightseed } = useSession();
     const viewerUid = lightseed?.uid;
-    const isKeeperViewer = !!viewerUid && sanctuary.ownerId === viewerUid;
-    const [beds, setBeds] = useState<number>(sanctuary.beds || 0);
-    const [bedNote, setBedNote] = useState(sanctuary.bedNote || '');
-    // The saved offer — the display truth (the sanctuary PROP is a snapshot from the
+    const isKeeperViewer = !!viewerUid && lightHouse.ownerId === viewerUid;
+    const [beds, setBeds] = useState<number>(lightHouse.beds || 0);
+    const [bedNote, setBedNote] = useState(lightHouse.bedNote || '');
+    // The saved offer — the display truth (the Light House PROP is a snapshot from the
     // opener and doesn't hear the save; this does).
-    const [offer, setOffer] = useState<{ beds: number; note: string }>({ beds: sanctuary.beds || 0, note: sanctuary.bedNote || '' });
+    const [offer, setOffer] = useState<{ beds: number; note: string }>({ beds: lightHouse.beds || 0, note: lightHouse.bedNote || '' });
     const [isSavingBeds, setIsSavingBeds] = useState(false);
     const [stays, setStays] = useState<Stay[]>([]);
     // Captured once per mount — date validation needs a day, not a ticking clock.
@@ -136,22 +136,22 @@ export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEd
     useEffect(() => {
         if (!viewerUid) return;
         let alive = true;
-        (isKeeperViewer ? getStaysForHost(viewerUid, sanctuary.id) : getMyStays(viewerUid, sanctuary.id))
+        (isKeeperViewer ? getStaysForHost(viewerUid, lightHouse.id) : getMyStays(viewerUid, lightHouse.id))
             .then(list => { if (alive) setStays(list.sort((a, b) => a.fromDate.localeCompare(b.fromDate))); })
             .catch(() => {});
         return () => { alive = false; };
-    }, [viewerUid, isKeeperViewer, sanctuary.id]);
+    }, [viewerUid, isKeeperViewer, lightHouse.id]);
     const saveBeds = async () => {
         if (isSavingBeds) return;
         setIsSavingBeds(true);
         try {
             const nextBeds = Math.max(0, Math.round(Number(beds) || 0));
-            await updateSanctuary(sanctuary.id, {
+            await updateLightHouse(lightHouse.id, {
                 beds: nextBeds,
                 bedNote: bedNote.trim() || undefined,
             });
             setOffer({ beds: nextBeds, note: bedNote.trim() });
-            announce('sanctuaries', sanctuary.id);
+            announce('lightHouses', lightHouse.id);
             notify('🛏️ Beds saved.');
         } catch (e: any) { showAlert(e?.message || 'Could not save the beds.'); }
         setIsSavingBeds(false);
@@ -162,8 +162,8 @@ export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEd
         if (problem) { showAlert(problem); return; }
         setIsRequesting(true);
         try {
-            await requestStay(sanctuary, { uid: viewerUid, name: lightseed?.displayName || '' }, { fromDate, toDate, note: stayNote.trim() });
-            setStays(prev => [...prev, { id: 'local', sanctuaryId: sanctuary.id, uid: viewerUid, hostUid: sanctuary.ownerId || '', fromDate, toDate, nights: 0, status: 'requested' } as Stay]);
+            await requestStay(lightHouse, { uid: viewerUid, name: lightseed?.displayName || '' }, { fromDate, toDate, note: stayNote.trim() });
+            setStays(prev => [...prev, { id: 'local', lightHouseId: lightHouse.id, uid: viewerUid, hostUid: lightHouse.ownerId || '', fromDate, toDate, nights: 0, status: 'requested' } as Stay]);
             setFromDate(''); setToDate(''); setStayNote('');
             notify('🌙 Your stay request is on its way to the keeper.');
         } catch (e: any) { showAlert(e?.message || 'Could not send the request.'); }
@@ -186,13 +186,13 @@ export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEd
 
     const handleDelete = async () => {
         if (!onDelete) return;
-        if (!(await showConfirm(`Release the sanctuary "${sanctuary.name}"? This cannot be undone.`, { title: 'Release sanctuary', confirmText: 'Release', danger: true }))) return;
-        try { await onDelete(sanctuary.id); } catch (e: any) { showAlert(e?.message || 'Could not release the sanctuary.'); }
+        if (!(await showConfirm(`Release the Light House "${lightHouse.name}"? This cannot be undone.`, { title: 'Release Light House', confirmText: 'Release', danger: true }))) return;
+        try { await onDelete(lightHouse.id); } catch (e: any) { showAlert(e?.message || 'Could not release the Light House.'); }
     };
 
     return (
         <div className="min-h-screen animate-in fade-in zoom-in-95 duration-300 pb-20 bg-slate-50">
-            <ProfileHero heroImageUrl={sanctuary.imageUrl || '/lighthouse.webp'}>
+            <ProfileHero heroImageUrl={lightHouse.imageUrl || '/lighthouse.webp'}>
                 <div className="flex items-center justify-between mb-6">
                     <button onClick={onClose} className="flex items-center gap-2 text-white/70 hover:text-white text-sm font-medium">
                         <Icons.ArrowLeft />
@@ -200,34 +200,34 @@ export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEd
                     </button>
                     <div className="flex items-center gap-2">
                         {canEdit && onDelete && (
-                            <button onClick={handleDelete} title="Release this sanctuary" aria-label="Release this sanctuary"
+                            <button onClick={handleDelete} title="Release this Light House" aria-label="Release this Light House"
                                 className="relative flex items-center gap-1.5 rounded-full border border-red-400/40 bg-red-500/20 px-3 py-1.5 text-xs font-bold text-red-200 transition-colors hover:bg-red-500 hover:text-white">
                                 <Icons.Trash /> Release
                                 {editIsStaffOnly && <SuperDot />}
                             </button>
                         )}
                         <span className="flex items-center gap-1 rounded-full bg-amber-400/20 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-200">
-                            <Icons.Sun /> Sanctuary
+                            <Icons.Sun /> LightHouse
                         </span>
                         <span className="rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-200">
                             {visibility}
                         </span>
-                        <BeingQr lid={sanctuary.lid} name={sanctuary.name} savedHref={sanctuary.qr?.href}
+                        <BeingQr lid={lightHouse.lid} name={lightHouse.name} savedHref={lightHouse.qr?.href}
                             canMint={canEdit}
-                            onMint={(href) => mintBeingQr('sanctuaries', sanctuary.id, href)}
+                            onMint={(href) => mintBeingQr('lightHouses', lightHouse.id, href)}
                             className="h-8 w-8 border border-white/15 bg-white/10 text-slate-200 hover:bg-white/25 hover:text-white" />
                     </div>
                 </div>
                 <div className="flex items-center gap-4 sm:gap-5">
                     <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-amber-200 bg-[#04070f] shadow-xl">
-                        <img src={sanctuary.imageUrl || '/lighthouse.webp'} className="h-full w-full object-cover" alt={sanctuary.name} referrerPolicy="no-referrer" />
+                        <img src={lightHouse.imageUrl || '/lighthouse.webp'} className="h-full w-full object-cover" alt={lightHouse.name} referrerPolicy="no-referrer" />
                     </div>
                     <div className="min-w-0 flex-1">
-                        <h1 dir="auto" className="min-w-0 break-words text-2xl font-light tracking-wide">{sanctuary.name}</h1>
-                        {sanctuary.shortTitle && <p className="mt-1 text-sm font-bold uppercase tracking-widest text-amber-300">{sanctuary.shortTitle}</p>}
-                        {sanctuary.locationName && (
+                        <h1 dir="auto" className="min-w-0 break-words text-2xl font-light tracking-wide">{lightHouse.name}</h1>
+                        {lightHouse.shortTitle && <p className="mt-1 text-sm font-bold uppercase tracking-widest text-amber-300">{lightHouse.shortTitle}</p>}
+                        {lightHouse.locationName && (
                             <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] text-slate-300">
-                                <Icons.Loc /> {sanctuary.locationName}
+                                <Icons.Loc /> {lightHouse.locationName}
                             </p>
                         )}
                     </div>
@@ -235,32 +235,32 @@ export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEd
             </ProfileHero>
 
             <ProfileLayout
-                menu={<SectionMenu items={sections} active={section} onSelect={(k) => setSection(k as SanctuarySection)} />}
+                menu={<SectionMenu items={sections} active={section} onSelect={(k) => setSection(k as LightHouseSection)} />}
             >
                 {section === 'about' && (
                     <div className="space-y-6">
-                        <SectionTitle title="About this sanctuary" sub="The place, its story, and its doors." />
-                        {sanctuary.body ? (
+                        <SectionTitle title="About this Light House" sub="The place, its story, and its doors." />
+                        {lightHouse.body ? (
                             <div className="rounded-2xl border border-slate-100 bg-white p-5 sm:p-6 shadow-lg">
-                                <p dir="auto" className="whitespace-pre-line text-justify font-serif text-lg leading-relaxed text-slate-700">{sanctuary.body}</p>
+                                <p dir="auto" className="whitespace-pre-line text-justify font-serif text-lg leading-relaxed text-slate-700">{lightHouse.body}</p>
                             </div>
                         ) : (
                             <p className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">Its story is still unwritten.</p>
                         )}
 
-                        {/* The 3D door — step into the sanctuary's Gaussian-splat scene. */}
-                        {sanctuary.splatUrl && (
-                            <a href={sanctuary.splatUrl} target="_blank" rel="noopener noreferrer"
+                        {/* The 3D door — step into the Light House's Gaussian-splat scene. */}
+                        {lightHouse.splatUrl && (
+                            <a href={lightHouse.splatUrl} target="_blank" rel="noopener noreferrer"
                                className="inline-flex items-center gap-2 rounded-full bg-amber-500 px-5 py-2.5 text-sm font-bold text-white shadow transition-colors hover:bg-amber-600">
-                                Enter the sanctuary in 3D ✦
+                                Enter the Light House in 3D ✦
                             </a>
                         )}
 
-                        {/* The place — keepers move the sanctuary with the map's help. */}
+                        {/* The place — keepers move the Light House with the map's help. */}
                         {canEdit && (
                             <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-5 shadow-sm">
                                 <h3 className="mb-2.5 text-xs font-bold uppercase tracking-wider text-amber-600">The place</h3>
-                                <p className="mb-2 text-[11px] text-slate-500">Tap the map to move the sanctuary — it glows where you place it in the forest.</p>
+                                <p className="mb-2 text-[11px] text-slate-500">Tap the map to move the Light House — it glows where you place it in the forest.</p>
                                 <LocationPicker value={coords} onChange={setCoords} className="h-56 w-full overflow-hidden rounded-xl border border-amber-100 shadow-inner" />
                                 <div className="mt-3 flex flex-wrap items-center gap-2">
                                     <input value={placeName} onChange={e => setPlaceName(e.target.value)} placeholder="Place name (e.g. The Olive Grove, Crete)"
@@ -280,7 +280,7 @@ export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEd
                                 <div className="flex flex-wrap gap-2">
                                     {(['community', 'node', 'public'] as const).map(v => (
                                         <button key={v} type="button"
-                                            onClick={() => { if (v !== visibility) onSetVisibility(sanctuary.id, v); }}
+                                            onClick={() => { if (v !== visibility) onSetVisibility(lightHouse.id, v); }}
                                             className={`rounded-full border px-4 py-1.5 text-xs font-bold capitalize transition-all ${visibility === v ? 'border-amber-400 bg-amber-100 text-amber-800' : 'border-slate-200 bg-white text-slate-500 hover:border-amber-200'}`}>
                                             {v}
                                         </button>
@@ -293,7 +293,7 @@ export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEd
 
                 {section === 'tree' && (
                     <div>
-                        <SectionTitle title="The Tree" sub="A sanctuary roots in a tree — never before one. The tree that holds it is a mother tree." />
+                        <SectionTitle title="The Tree" sub="A Light House roots in a tree — never before one. The tree that holds it is a mother tree." />
                         {!rootLoaded ? (
                             <p className="py-8 text-center text-sm text-slate-400">Listening…</p>
                         ) : rootTree ? (
@@ -305,20 +305,20 @@ export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEd
                                 <img src={rootTree.latestGrowthUrl || rootTree.imageUrl || '/mahameru.svg'} alt="" className="h-16 w-16 shrink-0 rounded-full border-4 border-amber-300 object-cover bg-[#04070f] shadow" />
                                 <div className="min-w-0 flex-1">
                                     <p className="truncate text-lg font-light tracking-wide text-slate-800">{rootTree.name}</p>
-                                    <p className="text-[10px] font-black uppercase tracking-wide text-amber-600">☀ Mother tree — this sanctuary is rooted here</p>
+                                    <p className="text-[10px] font-black uppercase tracking-wide text-amber-600">☀ Mother tree — this Light House is rooted here</p>
                                 </div>
                                 <Icons.ArrowRight size={18} className="shrink-0 text-amber-300" />
                             </div>
                         ) : (
                             <p className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">
-                                This sanctuary is not rooted in a tree yet.
+                                This Light House is not rooted in a tree yet.
                             </p>
                         )}
 
-                        {/* The keeper roots (or re-roots) the sanctuary in one of the domain's trees. */}
+                        {/* The keeper roots (or re-roots) the Light House in one of the domain's trees. */}
                         {canEdit && rootCandidates.length > 0 && (
                             <div className="mt-6 rounded-2xl border border-amber-100 bg-amber-50/50 p-4">
-                                <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-amber-600">{rootTree ? 'Re-root in another tree' : 'Root this sanctuary in a tree'}</p>
+                                <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-amber-600">{rootTree ? 'Re-root in another tree' : 'Root this Light House in a tree'}</p>
                                 <div className="space-y-2">
                                     {rootCandidates.filter(t => t.id !== rootTree?.id).map(t => (
                                         <div key={t.id} className="flex items-center gap-3 rounded-xl border border-amber-100 bg-white p-2.5">
@@ -338,7 +338,7 @@ export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEd
 
                 {section === 'beds' && (
                     <div className="space-y-6">
-                        <SectionTitle title="Beds" sub="The bed this sanctuary can offer." />
+                        <SectionTitle title="Beds" sub="The bed this Light House can offer." />
 
                         {offer.beds > 0 ? (
                             <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
@@ -388,7 +388,7 @@ export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEd
                                 {stays.map(stay => (
                                     <div key={stay.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
                                         <div className="min-w-0 flex-1">
-                                            <p className="truncate text-sm font-bold text-slate-800">{isKeeperViewer ? (stay.guestName || 'A traveller') : sanctuary.name}</p>
+                                            <p className="truncate text-sm font-bold text-slate-800">{isKeeperViewer ? (stay.guestName || 'A traveller') : lightHouse.name}</p>
                                             <p className="text-[11px] text-slate-500">{stay.fromDate} → {stay.toDate}{stay.note ? ` · “${stay.note}”` : ''}</p>
                                         </div>
                                         <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${stay.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : stay.status === 'declined' ? 'bg-slate-100 text-slate-500' : 'bg-amber-100 text-amber-700'}`}>{stay.status}</span>
@@ -434,12 +434,12 @@ export const SanctuaryProfile = ({ sanctuary, onClose, backLabel = 'Back', canEd
 
                 {section === 'communities' && (
                     <div>
-                        <SectionTitle title="Communities" sub="The houses this sanctuary holds — the mirror of each community's Sanctuaries tab." />
+                        <SectionTitle title="Communities" sub="The houses this Light House holds — the mirror of each community's Light Houses tab." />
                         {homes === null ? (
                             <p className="py-8 text-center text-sm text-slate-400">Listening…</p>
                         ) : homes.length === 0 ? (
                             <p className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">
-                                No community has stepped into this sanctuary yet.
+                                No community has stepped into this Light House yet.
                             </p>
                         ) : (
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

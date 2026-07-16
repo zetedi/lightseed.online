@@ -56,7 +56,7 @@ import { SectionHeader } from './components/ui/SectionHeader';
 import { ScrollChevrons } from './components/ui/ScrollChevrons';
 import { UpdateToast } from './components/ui/UpdateToast';
 import { ToastHost, notify } from './components/ui/Toast';
-import { setSanctuaryVisibility, deleteSanctuary } from './services/firebase';
+import { setLightHouseVisibility, deleteLightHouse } from './services/firebase';
 import { announce, onRefresh as onBusRefresh } from './services/refreshBus';
 import { useRefreshSignal } from './hooks/useRefreshSignal';
 import { findBeingByLid } from './services/firebase/beings';
@@ -64,7 +64,7 @@ import { lidFromPath } from './domain/beingLink';
 import { inviteIdFromPath } from './domain/communityDoor';
 import { getCommunityInvite, getCommunityById } from './services/firebase';
 import type { CommunityInvite } from './types';
-import type { Sanctuary } from './domain/sanctuary';
+import type { LightHouse } from './domain/lightHouse';
 import { CustomLandingPage } from './pages/CustomLandingPage';
 import { Footer } from './components/ui/Footer';
 import { PathwayCTA } from './components/PathwayCTA';
@@ -101,7 +101,7 @@ const LifetreeDetail = lazy(() => import('./components/LifetreeDetail').then(m =
 const VisionProfile = lazy(() => import('./components/VisionProfile').then(m => ({ default: m.VisionProfile })));
 const EventProfile = lazy(() => import('./components/EventProfile').then(m => ({ default: m.EventProfile })));
 const PulseDetail = lazy(() => import('./components/PulseDetail').then(m => ({ default: m.PulseDetail })));
-const SanctuaryProfile = lazy(() => import('./components/SanctuaryProfile').then(m => ({ default: m.SanctuaryProfile })));
+const LightHouseProfile = lazy(() => import('./components/LightHouseProfile').then(m => ({ default: m.LightHouseProfile })));
 const GrowthPlayerModal = lazy(() => import('./components/GrowthPlayerModal').then(m => ({ default: m.GrowthPlayerModal })));
 const PlantTreeModal = lazy(() => import('./components/modals/PlantTreeModal').then(m => ({ default: m.PlantTreeModal })));
 const AuthModal = lazy(() => import('./components/modals/AuthModal').then(m => ({ default: m.AuthModal })));
@@ -163,8 +163,8 @@ const AppContent = () => {
     // Custom-landing domains: false = the organisation's own page fills the screen;
     // true = the visitor stepped through the corner seed-logo into the full app.
     const [seedView, setSeedView] = useState(false);
-    // A sanctuary opened into its own profile page (from the map marker or the Sanctuary tab).
-    const [viewingSanctuary, setViewingSanctuary] = useState<Sanctuary | null>(null);
+    // A Light House opened into its own profile page (from the map marker or the LightHouse tab).
+    const [viewingLightHouse, setViewingLightHouse] = useState<LightHouse | null>(null);
     // The Path overview — the Light Path's full ruleset, opened from the card's label.
     const [showPathOverview, setShowPathOverview] = useState(false);
     // On non-hub domains, hold the shell until we know whether this domain has a custom
@@ -318,7 +318,7 @@ const AppContent = () => {
         findBeingByLid(lid, !!lightseed, { uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin }).then(found => {
             if (!found) { notify('This link names a being you cannot see from here.'); return; }
             if (found.kind === 'tree') setSelectedTree(found.tree);
-            else if (found.kind === 'sanctuary') setViewingSanctuary(found.sanctuary);
+            else if (found.kind === 'lightHouse') setViewingLightHouse(found.lightHouse);
             else if (found.kind === 'vision') setSelectedVision(found.vision);
             else setSelectedPulse(found.pulse);
         }).catch(() => {});
@@ -377,7 +377,7 @@ const AppContent = () => {
     // the last open layer is topmost (closed first on Back). See useHistoryLayers.
     const openKeys = useHistoryLayers([
         { key: 'tree', open: !!selectedTree, close: () => setSelectedTree(null) },
-        { key: 'sanctuary', open: !!viewingSanctuary, close: () => setViewingSanctuary(null) },
+        { key: 'lightHouse', open: !!viewingLightHouse, close: () => setViewingLightHouse(null) },
         { key: 'community', open: !!selectedCommunity, close: () => setSelectedCommunity(null) },
         { key: 'vision', open: !!selectedVision, close: () => setSelectedVision(null) },
         { key: 'alignment', open: !!selectedAlignment, close: () => setSelectedAlignment(null) },
@@ -734,7 +734,7 @@ const AppContent = () => {
             if (!aboutCommunity) return <div className="min-h-screen flex items-center justify-center"><Loading /></div>;
             return (
                 <CommunityProfile
-                    onViewSanctuary={setViewingSanctuary}
+                    onViewLightHouse={setViewingLightHouse}
                     community={aboutCommunity}
                     onViewTree={(tree: Lifetree) => setSelectedTree(tree)}
                     onClose={() => setTab('dashboard')}
@@ -875,8 +875,8 @@ const AppContent = () => {
 
                 {tab === 'forest' ? (
                     <ForestPage
-                        sanctuaryDomain={(impersonatedCommunity || hostCommunity)?.domain || null}
-                        onViewSanctuary={setViewingSanctuary}
+                        lightHouseDomain={(impersonatedCommunity || hostCommunity)?.domain || null}
+                        onViewLightHouse={setViewingLightHouse}
                         effectiveIsDark={effectiveIsDark}
                         showNatureTrees={showNatureTrees} setShowNatureTrees={setShowNatureTrees}
                         showUserTrees={showUserTrees} setShowUserTrees={setShowUserTrees}
@@ -1174,7 +1174,7 @@ const AppContent = () => {
             {selectedCommunity && (
                 <DetailWrapper belowHeader>
                     <CommunityProfile
-                    onViewSanctuary={setViewingSanctuary}
+                    onViewLightHouse={setViewingLightHouse}
                         community={selectedCommunity}
                         arrivedInvite={arrivedInvite}
                         onViewTree={(tree: Lifetree) => { setSelectedCommunity(null); setSelectedTree(tree); }}
@@ -1204,26 +1204,26 @@ const AppContent = () => {
                 </DetailWrapper>
             )}
 
-            {viewingSanctuary && (
+            {viewingLightHouse && (
                 <DetailWrapper>
-                    <SanctuaryProfile
-                        sanctuary={viewingSanctuary}
-                        onClose={() => setViewingSanctuary(null)}
+                    <LightHouseProfile
+                        lightHouse={viewingLightHouse}
+                        onClose={() => setViewingLightHouse(null)}
                         onViewCommunity={setSelectedCommunity}
                         onViewTree={(t) => setSelectedTree(t)}
-                        canEdit={isSuperAdmin || isAdmin || viewingSanctuary.ownerId === lightseed?.uid}
-                        editIsStaffOnly={viewingSanctuary.ownerId !== lightseed?.uid && (isSuperAdmin || isAdmin)}
+                        canEdit={isSuperAdmin || isAdmin || viewingLightHouse.ownerId === lightseed?.uid}
+                        editIsStaffOnly={viewingLightHouse.ownerId !== lightseed?.uid && (isSuperAdmin || isAdmin)}
                         onDelete={async (id) => {
-                            await deleteSanctuary(id);
-                            setViewingSanctuary(null);
-                            announce('sanctuaries', id);
-                            notify('The sanctuary was released.');
+                            await deleteLightHouse(id);
+                            setViewingLightHouse(null);
+                            announce('lightHouses', id);
+                            notify('The Light House was released.');
                         }}
                         onSetVisibility={async (id, v) => {
-                            await setSanctuaryVisibility(id, v);
-                            setViewingSanctuary(prev => prev && prev.id === id ? { ...prev, visibility: v } : prev);
-                            announce('sanctuaries', id);
-                            notify(`Sanctuary is now ${v === 'community' ? 'community-only' : v}.`);
+                            await setLightHouseVisibility(id, v);
+                            setViewingLightHouse(prev => prev && prev.id === id ? { ...prev, visibility: v } : prev);
+                            announce('lightHouses', id);
+                            notify(`Light House is now ${v === 'community' ? 'community-only' : v}.`);
                         }}
                     />
                 </DetailWrapper>

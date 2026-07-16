@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
 import { Icons } from '../ui/Icons';
-import { Sanctuary } from '../../types';
+import { LightHouse } from '../../types';
 import { SectionTitle } from '../ui/SectionTitle';
 import { ImagePicker } from '../ui/ImagePicker';
 import { LocationPicker } from '../ui/LocationPicker';
 import { showAlert } from '../ui/Dialog';
-import { SanctuaryCard } from '../SanctuaryCard';
+import { LightHouseCard } from '../LightHouseCard';
 
-// Being-generic sanctuaries section — the sacred places that hold any being's lifetrees
-// (Indra's net), shown as a card garden. Each card opens the sanctuary's own profile page;
+// Being-generic lightHouses section — the sacred places that hold any being's lifetrees
+// (Indra's net), shown as a card garden. Each card opens the Light House's own profile page;
 // keepers consecrate new ones here. The owner shell loads (and visibility-gates) the list
 // and passes it in — this section stays pure-presentational plus the consecration form.
-// CommunitySanctuary is a thin wrapper over this.
+// CommunityLightHouse is a thin wrapper over this.
 
-// What a keeper consecrates: the fields createSanctuary persists (minus scope, which the
+// What a keeper consecrates: the fields createLightHouse persists (minus scope, which the
 // owner shell supplies — domain / communityIds / ownerId).
-export interface SanctuaryDraft {
+export interface LightHouseDraft {
   name: string;
   body: string;
   imageUrl?: string;
@@ -23,35 +23,35 @@ export interface SanctuaryDraft {
   latitude?: number;
   longitude?: number;
   splatUrl?: string;
-  // Private by default: 'community'. Opening a sanctuary wider is a deliberate act.
+  // Private by default: 'community'. Opening a Light House wider is a deliberate act.
   visibility: 'community' | 'node' | 'public';
 }
 
-interface SanctuarySectionProps {
+interface LightHouseSectionProps {
   // Section heading (the owner names its own anatomy).
   title: string;
   sub?: string;
-  // The sanctuaries this viewer may see (loaded and gated by the owner shell).
-  sanctuaries: Sanctuary[];
+  // The lightHouses this viewer may see (loaded and gated by the owner shell).
+  lightHouses: LightHouse[];
   emptyMessage?: string;
-  // Background for a card when the sanctuary has no image (the owner's theme accent).
+  // Background for a card when the Light House has no image (the owner's theme accent).
   placeholderColor?: string;
-  // Keepers may consecrate a sanctuary: show the form and receive the draft.
+  // Keepers may consecrate a Light House: show the form and receive the draft.
   canCreate?: boolean;
-  onCreate?: (draft: SanctuaryDraft) => Promise<void>;
+  onCreate?: (draft: LightHouseDraft) => Promise<void>;
   onUploadImage?: (file: File) => Promise<string>;
-  // Click a card to open the sanctuary's own profile page.
-  onOpen?: (sanctuary: Sanctuary) => void;
-  // Existing sanctuaries (elsewhere in the network) this community could step into.
-  adoptable?: Sanctuary[];
-  onAdopt?: (sanctuary: Sanctuary) => Promise<void>;
+  // Click a card to open the Light House's own profile page.
+  onOpen?: (lightHouse: LightHouse) => void;
+  // Existing lightHouses (elsewhere in the network) this community could step into.
+  adoptable?: LightHouse[];
+  onAdopt?: (lightHouse: LightHouse) => Promise<void>;
 }
 
-export const SanctuarySection: React.FC<SanctuarySectionProps> = ({
+export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
   title,
   sub,
-  sanctuaries,
-  emptyMessage = 'No sanctuary has been consecrated yet.',
+  lightHouses,
+  emptyMessage = 'No Light House has been consecrated yet.',
   placeholderColor,
   canCreate = false,
   onCreate,
@@ -90,14 +90,14 @@ export const SanctuarySection: React.FC<SanctuarySectionProps> = ({
       setShowForm(false);
       setName(''); setBody(''); setImageUrl(''); setLocationName(''); setSplatUrl(''); setCoords(null); setVisibility('community');
     } catch (e: any) {
-      showAlert(e?.message || 'Could not consecrate the sanctuary.');
+      showAlert(e?.message || 'Could not consecrate the Light House.');
     }
     setIsSaving(false);
   };
 
   const form = (
     <div className="mt-4 space-y-3 rounded-2xl border border-amber-100 bg-amber-50/40 p-4 text-left animate-in fade-in slide-in-from-bottom-2">
-      <input dir="auto" value={name} onChange={e => setName(e.target.value)} placeholder="Name of the sanctuary"
+      <input dir="auto" value={name} onChange={e => setName(e.target.value)} placeholder="Name of the Light House"
         className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
       <textarea dir="auto" value={body} onChange={e => setBody(e.target.value)} placeholder="What this place holds…"
         className="min-h-[90px] w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
@@ -116,7 +116,7 @@ export const SanctuarySection: React.FC<SanctuarySectionProps> = ({
       <input value={locationName} onChange={e => setLocationName(e.target.value)} placeholder="Place name (e.g. The Olive Grove, Crete)"
         className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
       <div className="space-y-1">
-        <p className="ml-1 text-[11px] text-slate-500">Tap the map to place the sanctuary — it will glow there in the forest.</p>
+        <p className="ml-1 text-[11px] text-slate-500">Tap the map to place the Light House — it will glow there in the forest.</p>
         <LocationPicker value={coords} onChange={setCoords} />
       </div>
       <input value={splatUrl} onChange={e => setSplatUrl(e.target.value)} placeholder="3D scene URL (Gaussian splat viewer, optional)"
@@ -147,21 +147,21 @@ export const SanctuarySection: React.FC<SanctuarySectionProps> = ({
     </div>
   );
 
-  const stepIn = async (s: Sanctuary) => {
+  const stepIn = async (s: LightHouse) => {
     if (!onAdopt || adoptingId) return;
     setAdoptingId(s.id);
     try {
       await onAdopt(s);
       setShowAdopt(false);
     } catch (e: any) {
-      showAlert(e?.message || 'Could not step into the sanctuary.');
+      showAlert(e?.message || 'Could not step into the Light House.');
     }
     setAdoptingId(null);
   };
 
   const adoptPanel = (
     <div className="mt-4 space-y-2 rounded-2xl border border-amber-100 bg-amber-50/40 p-4 text-left animate-in fade-in slide-in-from-bottom-2">
-      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Sanctuaries open to step into</p>
+      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Light Houses open to step into</p>
       {adoptable.map(s => (
         <div key={s.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-2.5">
           <img src={s.imageUrl || '/lighthouse.webp'} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover bg-[#04070f]" />
@@ -183,12 +183,12 @@ export const SanctuarySection: React.FC<SanctuarySectionProps> = ({
     <div className="flex flex-wrap justify-center gap-2">
       {onCreate && !showForm && (
         <button onClick={() => { setShowForm(true); setShowAdopt(false); }} className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-amber-700 transition-colors hover:bg-amber-100">
-          {sanctuaries.length === 0 ? 'Consecrate a sanctuary' : 'Consecrate another'}
+          {lightHouses.length === 0 ? 'Consecrate a Light House' : 'Consecrate another'}
         </button>
       )}
       {onAdopt && adoptable.length > 0 && !showAdopt && (
         <button onClick={() => { setShowAdopt(true); setShowForm(false); }} className="rounded-full border border-amber-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-widest text-amber-700 transition-colors hover:bg-amber-50">
-          Step into a sanctuary
+          Step into a Light House
         </button>
       )}
     </div>
@@ -197,7 +197,7 @@ export const SanctuarySection: React.FC<SanctuarySectionProps> = ({
   return (
     <div>
       <SectionTitle title={title} sub={sub} />
-      {sanctuaries.length === 0 ? (
+      {lightHouses.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-500"><Icons.Sun /></div>
           <p className="text-sm">{emptyMessage}</p>
@@ -208,8 +208,8 @@ export const SanctuarySection: React.FC<SanctuarySectionProps> = ({
       ) : (
         <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {sanctuaries.map(s => (
-              <SanctuaryCard key={s.id} sanctuary={s} onOpen={onOpen} placeholderColor={placeholderColor} />
+            {lightHouses.map(s => (
+              <LightHouseCard key={s.id} lightHouse={s} onOpen={onOpen} placeholderColor={placeholderColor} />
             ))}
           </div>
 

@@ -177,12 +177,12 @@ describe('the lid is frozen — the true name is load-bearing (QR links stand on
     await assertSucceeds(updateDoc(doc(db(BOB), 'lifetrees', 'treeB'), { name: 'Renamed' }));
     await assertFails(updateDoc(doc(db(BOB), 'lifetrees', 'treeB'), { lid: 'forged-lid' }));
   });
-  it('a sanctuary keeper and a community keeper hit the same wall', async () => {
+  it('a lightHouse keeper and a community keeper hit the same wall', async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), 'sanctuaries', 'sanc1'), { ownerId: ALICE, name: 'S', lid: 'true-name' });
+      await setDoc(doc(ctx.firestore(), 'lightHouses', 'sanc1'), { ownerId: ALICE, name: 'S', lid: 'true-name' });
     });
-    await assertSucceeds(updateDoc(doc(db(ALICE), 'sanctuaries', 'sanc1'), { name: 'S2' }));
-    await assertFails(updateDoc(doc(db(ALICE), 'sanctuaries', 'sanc1'), { lid: 'forged' }));
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'lightHouses', 'sanc1'), { name: 'S2' }));
+    await assertFails(updateDoc(doc(db(ALICE), 'lightHouses', 'sanc1'), { lid: 'forged' }));
     await assertSucceeds(updateDoc(doc(db(ALICE), 'communities', 'com1'), { name: 'Com2' }));
     await assertFails(updateDoc(doc(db(ALICE), 'communities', 'com1'), { lid: 'forged' }));
   });

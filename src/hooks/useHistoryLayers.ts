@@ -18,7 +18,7 @@ export function useHistoryLayers(layers: OverlayLayer[]): string[] {
   const openKeys = layers.filter(l => l.open).map(l => l.key);
 
   // The REAL stack: keys in the order they actually OPENED. The static array order lies
-  // when a lower layer opens something listed above it (community → sanctuary → community):
+  // when a lower layer opens something listed above it (community → lightHouse → community):
   // Back must peel what the walker most recently opened, not what the array ranks last.
   // Maintained post-commit (with the other refs) — popstate reads it later, never render.
   const openOrderRef = useRef<string[]>([]);

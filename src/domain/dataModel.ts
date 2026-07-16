@@ -158,9 +158,9 @@ export const DATA_MODEL: ModelEntity[] = [
     ],
   },
 
-  // --- Sanctuary & engagement ----------------------------------------------
+  // --- LightHouse & engagement ----------------------------------------------
   {
-    key: 'Sanctuary', label: 'Sanctuary', collection: 'sanctuaries', x: 970, y: 250,
+    key: 'LightHouse', label: 'Light House', collection: 'lightHouses', x: 970, y: 250,
     note: 'a sacred place \u00b7 belonging = shelters links',
     fields: [
       { name: 'id', type: 'string', pk: true },
@@ -274,10 +274,10 @@ export const DATA_MODEL: ModelEntity[] = [
 
   {
     key: 'Stay', label: 'Stay', collection: 'stays', x: 970, y: 940,
-    note: 'a bed under a sanctuary\u2019s roof',
+    note: 'a bed under a Light House\u2019s roof',
     fields: [
       { name: 'id', type: 'string', pk: true },
-      { name: 'sanctuaryId', type: 'id', ref: 'Sanctuary' },
+      { name: 'lightHouseId', type: 'id', ref: 'LightHouse' },
       { name: 'uid', type: 'uid', ref: 'Person' },
       { name: 'hostUid', type: 'uid', ref: 'Person' },
       { name: 'fromDate', type: 'yyyy-mm-dd' },

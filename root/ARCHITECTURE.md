@@ -24,7 +24,7 @@ Leaflet is bundled from npm, lazy-loaded on first map render (`services/leaflet.
 domain/     pure rules, no backend, no React — ALWAYS testable (tests/ mirrors it)
 adapters/   the Store port (firestoreStore: links CRUD by deterministic id)
 services/   Firebase aggregates (barrel: services/firebase.ts) + weather, refreshBus
-hooks/      session (useLifeseed → SessionContext), feeds, facts, visible-sanctuaries
+hooks/      session (useLifeseed → SessionContext), feeds, facts, visible-lightHouses
 components/ the faces; components/sections/ = the shared Being anatomy (8 organs)
 pages/      tab-level shells; App.tsx is the single conductor (overlays, routing)
 ```
@@ -38,11 +38,11 @@ them; nothing in `domain/` imports upward.
 `lifetrees` — the seed beings; chain fields frozen; provenance (`plantedAt`+coords).
 `pulses` — one ledger for growth/care/events/decisions/reaches; overlay-key rules.
 `links` — the LIN: `from__rel__to`; rels: guardian, co_owner, steward, observer,
-member, joined, participant, join_request, **rooted** (sanctuary→tree),
-**shelters** (sanctuary→community), **invited_by** (newcomer→community; append-only
+member, joined, participant, join_request, **rooted** (Light House→tree),
+**shelters** (Light House→community), **invited_by** (newcomer→community; append-only
 provenance, grants nothing — see domain/communityDoor). Doc id MUST equal `from__rel__to`
 (rules bind it: authority is resolved by path, so an unbound id would be forgeable).
-`visions` `communities` (bearing the **door**: open/invite/closed) `sanctuaries`
+`visions` `communities` (bearing the **door**: open/invite/closed) `lightHouses`
 `stays` `alignments` `supports` (server-only)
 `intelligences` `personas` `memories` `providerCredentials` — the intelligence commons.
 `networkInvites` `communityInvites` (shareable /i/ door keys; revoked, never deleted)
@@ -53,7 +53,7 @@ provenance, grants nothing — see domain/communityDoor). Doc id MUST equal `fro
 Queries must be **provable**: list queries carry the constraints the rules demand
 (visibility filters for the signed-out, `hostUid`/`participantUids` for inboxes).
 Fine-grained gates live as pure domain functions (`canViewTree`,
-`canViewSanctuary`, `canView` for pulses) mirrored by the rules; overlay updates
+`canViewLightHouse`, `canView` for pulses) mirrored by the rules; overlay updates
 are constrained to exact key sets via `diff().affectedKeys().hasOnly(...)`.
 Deterministic link ids make ownership checks O(1) (`exists(links/uid__rel__id)`).
 
@@ -61,8 +61,8 @@ Deterministic link ids make ownership checks O(1) (`exists(links/uid__rel__id)`)
 
 - **Domain scoping**: non-hub hostnames filter forest/pulses/events/visions by
   `domain == hostname`; the hub is unscoped. Custom landings are community DATA.
-- **The map**: pixel-space clustering (50px) over trees + sanctuary pseudo-beings;
-  sanctuaries seed clusters (lighthouse precedence); Seed-of-Life petal expansion;
+- **The map**: pixel-space clustering (50px) over trees + Light House pseudo-beings;
+  Light Houses seed clusters (lighthouse precedence); Seed-of-Life petal expansion;
   popups via Leaflet autoPan (bottom-anchored popups can never flip — don't try).
 - **Refresh bus** (`services/refreshBus.ts`): mutation sites `announce(topic, id?)`;
   mounted views re-fetch; the feed prunes deleted ids surgically.
@@ -77,8 +77,8 @@ Deterministic link ids make ownership checks O(1) (`exists(links/uid__rel__id)`)
 
 ## Known debts (kept honestly)
 
-- Client-side visibility gates (trees, sanctuaries) await full rules parity.
-- Sanctuary step-in consent is keeper-side only since the shelters migration.
+- Client-side visibility gates (trees, Light Houses) await full rules parity.
+- Light House step-in consent is keeper-side only since the shelters migration.
 - Mother-tree badge lives on the tree page only (no denormalised flag yet).
 - Payments, hosted-AI node credential, and the AI-need chooser are scaffolded,
   not live (see ROADMAP).

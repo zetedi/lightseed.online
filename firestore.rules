@@ -393,8 +393,8 @@ service cloud.firestore {
     }
 
     // Alignments: Read public, Write signed in
-    // Stays — bed requests under a sanctuary's roof (domain/stay.ts). The guest creates
-    // their own request (hostUid frozen to the sanctuary's keeper); the keeper (or staff)
+    // Stays — bed requests under a lightHouse's roof (domain/stay.ts). The guest creates
+    // their own request (hostUid frozen to the lightHouse's keeper); the keeper (or staff)
     // answers with a status; either side may withdraw/read their own.
     match /stays/{stayId} {
       allow read: if isSignedIn() && (
@@ -406,7 +406,7 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.get('status', '') == 'requested'
         && request.resource.data.get('hostUid', '') ==
-             get(/databases/$(database)/documents/sanctuaries/$(request.resource.data.sanctuaryId)).data.ownerId;
+             get(/databases/$(database)/documents/lightHouses/$(request.resource.data.lightHouseId)).data.ownerId;
       allow update: if isSignedIn()
         && (resource.data.hostUid == request.auth.uid || isStaff())
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
@@ -456,15 +456,15 @@ service cloud.firestore {
       allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
     }
 
-    // Sanctuaries: sacred places per domain (read public, write owner/staff).
-    match /sanctuaries/{sanctuaryId} {
+    // LightHouses: sacred places per domain (read public, write owner/staff).
+    match /lightHouses/{lightHouseId} {
       // Private by default: absent visibility = 'community'. Signed-out viewers see only
-      // public sanctuaries (their queries must filter visibility == 'public'); the finer
-      // community/node gate is client-side (domain/sanctuary.ts canViewSanctuary), the
+      // public lightHouses (their queries must filter visibility == 'public'); the finer
+      // community/node gate is client-side (domain/lightHouse.ts canViewLightHouse), the
       // same tradeoff canViewTree documents.
       allow read: if resource.data.get('visibility', 'community') == 'public' || isSignedIn();
       allow create: if isSignedIn();
-      // Belonging is LIN edges now (sanctuary __shelters__ community) — no array clause.
+      // Belonging is LIN edges now (lightHouse __shelters__ community) — no array clause.
       // The lid (the true name, load-bearing for QR links) is frozen on every update path.
       allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff())
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid']);
@@ -595,9 +595,9 @@ service cloud.firestore {
             && communityDoor(request.resource.data.to) != 'closed')
         || (isSignedIn() && request.resource.data.rel == 'participant'
             && isTreeOwner(request.resource.data.from))
-        // Rooting: a sanctuary's keeper roots THEIR sanctuary in a tree (from = sanctuary id).
+        // Rooting: a lightHouse's keeper roots THEIR lightHouse in a tree (from = lightHouse id).
         || (isSignedIn() && request.resource.data.rel in ['rooted', 'shelters']
-            && get(/databases/$(database)/documents/sanctuaries/$(request.resource.data.from)).data.ownerId == request.auth.uid)
+            && get(/databases/$(database)/documents/lightHouses/$(request.resource.data.from)).data.ownerId == request.auth.uid)
         // Membership through the DOOR (domain/communityDoor.ts): a keeper (owner or steward)
         // accepts a knock; or the joiner steps in themself while the door is open; or they
         // arrive holding a live invitation (which also carries provenance on the edge).
@@ -628,8 +628,8 @@ service cloud.firestore {
         || isStaff()
         || (resource.data.get('rel', '') == 'participant' && isTreeOwner(resource.data.from))
         || (resource.data.get('rel', '') in ['rooted', 'shelters']
-            && exists(/databases/$(database)/documents/sanctuaries/$(resource.data.from))
-            && get(/databases/$(database)/documents/sanctuaries/$(resource.data.from)).data.ownerId == request.auth.uid)
+            && exists(/databases/$(database)/documents/lightHouses/$(resource.data.from))
+            && get(/databases/$(database)/documents/lightHouses/$(resource.data.from)).data.ownerId == request.auth.uid)
         // A door-keeper (owner or steward) can decline requests and remove members.
         || (resource.data.get('rel', '') in ['member', 'join_request']
             && isCommunityKeeper(resource.data.to))

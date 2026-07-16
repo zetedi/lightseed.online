@@ -1,9 +1,9 @@
-// The refresh bus — mutation sites announce WHAT changed ('sanctuaries', 'events', …, with
+// The refresh bus — mutation sites announce WHAT changed ('lightHouses', 'events', …, with
 // the doc id when they have one); mounted views showing that data re-fetch or prune. Views
 // that aren't mounted need nothing: they load fresh on mount. Lazy by design — no polling,
 // no global reloads, just a whisper across the open windows.
 
-export type RefreshTopic = 'sanctuaries' | 'events' | 'pulses' | 'trees';
+export type RefreshTopic = 'lightHouses' | 'events' | 'pulses' | 'trees';
 
 export interface RefreshEvent {
   topic: RefreshTopic;

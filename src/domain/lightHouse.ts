@@ -1,15 +1,15 @@
 import type { Timestamp } from 'firebase/firestore';
 import type { Being } from './being';
 
-// A sanctuary is a sacred place / platform that holds a community's lifetrees —
+// A lightHouse is a sacred place / platform that holds a community's lifetrees —
 // e.g. "The Secret Sun" for lightseed. Like the first tree, it is data-driven per
-// domain: each node shows its own first sanctuary, generically "The Sanctuary".
+// domain: each node shows its own first lightHouse, generically "The LightHouse".
 // An Being like every other being — it carries a lid (backfilled by migrateBackfillLids).
-// Who may see a sanctuary: its community's members (the default — a sanctuary is private
+// Who may see a lightHouse: its community's members (the default — a lightHouse is private
 // until deliberately opened), anyone signed in on the node, or the whole world.
-export type SanctuaryVisibility = 'community' | 'node' | 'public';
+export type LightHouseVisibility = 'community' | 'node' | 'public';
 
-export interface Sanctuary extends Being {
+export interface LightHouse extends Being {
   id: string;
   name: string;
   shortTitle?: string;
@@ -18,9 +18,9 @@ export interface Sanctuary extends Being {
   ownerId?: string;        // who consecrated it (rules: owner or staff may edit)
   domain?: string;         // the domain it is rooted in (map + tab scoping)
   communityId?: string;    // primary community — a denormalised scalar the rules read.
-                           // FURTHER belonging lives in the LIN: sanctuary __shelters__ community.
+                           // FURTHER belonging lives in the LIN: lightHouse __shelters__ community.
   // Absent = 'community' — private by default; opening it up is a deliberate act.
-  visibility?: SanctuaryVisibility;
+  visibility?: LightHouseVisibility;
   locationName?: string;
   latitude?: number;
   longitude?: number;
@@ -34,19 +34,19 @@ export interface Sanctuary extends Being {
   createdAt: Timestamp;
 }
 
-export const sanctuaryVisibility = (s: Pick<Sanctuary, 'visibility'>): SanctuaryVisibility =>
+export const lightHouseVisibility = (s: Pick<LightHouse, 'visibility'>): LightHouseVisibility =>
   s.visibility || 'community';
 
-// May this viewer see this sanctuary? Mirrors canViewTree's shape (client-side gate for the
+// May this viewer see this lightHouse? Mirrors canViewTree's shape (client-side gate for the
 // UI; firestore.rules hides non-public docs from the signed-out at the query level).
-// `homes` = the communities sheltering this sanctuary, read from its LIN edges
-// (sanctuary __shelters__ community); when absent, the primary communityId stands alone.
-export function canViewSanctuary(
-  s: Pick<Sanctuary, 'visibility' | 'ownerId' | 'communityId'>,
+// `homes` = the communities sheltering this lightHouse, read from its LIN edges
+// (lightHouse __shelters__ community); when absent, the primary communityId stands alone.
+export function canViewLightHouse(
+  s: Pick<LightHouse, 'visibility' | 'ownerId' | 'communityId'>,
   viewer: { uid?: string; isStaff?: boolean; memberCommunityIds?: Set<string> },
   homes?: string[],
 ): boolean {
-  const v = sanctuaryVisibility(s);
+  const v = lightHouseVisibility(s);
   if (v === 'public') return true;
   if (viewer.isStaff) return true;
   if (viewer.uid && s.ownerId === viewer.uid) return true;

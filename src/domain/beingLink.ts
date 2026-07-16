@@ -1,7 +1,7 @@
 // The being link — a being's offline/online bridge. The URL carries the LID (the true
 // name, portable across nodes and storage backends), never a Firestore doc id: paper
 // outlives databases. `/b/<lid>` is resolved by the shell (findBeingByLid) into whichever
-// profile the lid names — tree, sanctuary, vision, pulse, event.
+// profile the lid names — tree, lightHouse, vision, pulse, event.
 
 export const beingPath = (lid: string): string => `/b/${lid}`;
 

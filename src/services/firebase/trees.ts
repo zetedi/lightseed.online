@@ -1,12 +1,12 @@
 import { collection, query, orderBy, getDocs, addDoc, setDoc, serverTimestamp, doc, getDoc, where, updateDoc, deleteDoc, limit, startAfter, QueryDocumentSnapshot, getCountFromServer, Timestamp } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
-import { type Lifetree, type Sanctuary, type TreeOwnershipInvite, type InvitableRole } from '../../types';
+import { type Lifetree, type LightHouse, type TreeOwnershipInvite, type InvitableRole } from '../../types';
 import { createBlock } from '../../utils/crypto';
 import { treePlantingGate, normalizeNodeLimits, DEFAULT_NODE_LIMITS, type NodeLimits } from '../../domain/limits';
 import { uuidv7 } from '../../utils/id';
 import { GENESIS_MOMENT_MS, GENESIS_PLACE } from '../../domain/genesis';
 import { oldEmeraldEarthThemeValues } from '../../utils/theme';
-import { auth, db, functions, mapDoc, lifetreesCollection, visionsCollection, sanctuariesCollection } from './core';
+import { auth, db, functions, mapDoc, lifetreesCollection, visionsCollection, lightHousesCollection } from './core';
 // getCommunityByDomain lives in ./spaces; trees ↔ spaces is a runtime-safe cycle (both use the
 // import only inside function bodies, so ESM resolves the binding lazily on call).
 import { getCommunityByDomain } from './spaces';
@@ -399,25 +399,25 @@ export const getTreesByDomain = async (domain: string, ownerUid?: string): Promi
     return Array.from(byId.values());
 };
 
-// Sanctuaries rooted in a community's domain, earliest first. Mirrors getTreesByDomain
-// so the "First Tree" and "The Sanctuary" tabs behave identically.
-export const getSanctuariesByDomain = async (domain: string, opts?: { publicOnly?: boolean }): Promise<Sanctuary[]> => {
+// LightHouses rooted in a community's domain, earliest first. Mirrors getTreesByDomain
+// so the "First Tree" and "The LightHouse" tabs behave identically.
+export const getLightHousesByDomain = async (domain: string, opts?: { publicOnly?: boolean }): Promise<LightHouse[]> => {
     const normalized = normalizeDomain(domain);
     const q = opts?.publicOnly
-        ? query(sanctuariesCollection, where('domain', '==', normalized), where('visibility', '==', 'public'))
-        : query(sanctuariesCollection, where('domain', '==', normalized));
+        ? query(lightHousesCollection, where('domain', '==', normalized), where('visibility', '==', 'public'))
+        : query(lightHousesCollection, where('domain', '==', normalized));
     const snap = await getDocs(q);
     return snap.docs
-        .map(d => (mapDoc(d) as Sanctuary))
+        .map(d => (mapDoc(d) as LightHouse))
         .sort((a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0));
 };
 
-// The "mother trees" of a set of sanctuaries: the trees each lighthouse is rooted into (the
-// `sanctuary __rooted__ tree` LIN edge). Used by the dashboard mini-map, which shows only
+// The "mother trees" of a set of lightHouses: the trees each lighthouse is rooted into (the
+// `lightHouse __rooted__ tree` LIN edge). Used by the dashboard mini-map, which shows only
 // lighthouses + the trees they root. Best-effort per tree (a rooted tree may be private).
-export const getRootedTrees = async (sanctuaryIds: string[]): Promise<Lifetree[]> => {
-    if (!sanctuaryIds.length) return [];
-    const linkSnaps = await Promise.all(sanctuaryIds.map(sid =>
+export const getRootedTrees = async (lightHouseIds: string[]): Promise<Lifetree[]> => {
+    if (!lightHouseIds.length) return [];
+    const linkSnaps = await Promise.all(lightHouseIds.map(sid =>
         getDocs(query(collection(db, 'links'), where('from', '==', sid), where('rel', '==', 'rooted'))).catch(() => null)
     ));
     const treeIds = [...new Set(linkSnaps.flatMap(snap => snap ? snap.docs.map(d => (d.data() as any).to as string) : []))];
@@ -427,15 +427,23 @@ export const getRootedTrees = async (sanctuaryIds: string[]): Promise<Lifetree[]
     return trees.filter((t): t is Lifetree => t !== null);
 };
 
-// Every placed sanctuary in the network — the hub map shows what the viewer may see.
-// Signed-out viewers may only query public docs (the read rule rejects wider queries).
-export const getAllSanctuaries = async (opts?: { publicOnly?: boolean }): Promise<Sanctuary[]> =>
-    (await getDocs(opts?.publicOnly ? query(sanctuariesCollection, where('visibility', '==', 'public')) : sanctuariesCollection))
-        .docs.map(d => (mapDoc(d) as Sanctuary));
+// Run the sanctuaries → lightHouses data migration (the `migrateLightHouses` Cloud Function,
+// superadmin-only, idempotent). Invoked from the superadmin console AFTER deploying functions and
+// BEFORE the renamed rules + app go live. See root/DECISIONS "Sanctuaries become Light Houses".
+export const migrateLightHouses = async (): Promise<{ lightHouses: number; staysUpdated: number }> => {
+    const res = await httpsCallable(functions, 'migrateLightHouses')();
+    return res.data as { lightHouses: number; staysUpdated: number };
+};
 
-// Consecrate a sanctuary — community keepers do this from the Sanctuary tab.
-export const createSanctuary = async (data: Partial<Sanctuary> & { name: string; ownerId: string }) => {
-    const ref = await addDoc(sanctuariesCollection, {
+// Every placed lightHouse in the network — the hub map shows what the viewer may see.
+// Signed-out viewers may only query public docs (the read rule rejects wider queries).
+export const getAllLightHouses = async (opts?: { publicOnly?: boolean }): Promise<LightHouse[]> =>
+    (await getDocs(opts?.publicOnly ? query(lightHousesCollection, where('visibility', '==', 'public')) : lightHousesCollection))
+        .docs.map(d => (mapDoc(d) as LightHouse));
+
+// Consecrate a lightHouse — community keepers do this from the LightHouse tab.
+export const createLightHouse = async (data: Partial<LightHouse> & { name: string; ownerId: string }) => {
+    const ref = await addDoc(lightHousesCollection, {
         ...Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined && v !== '')),
         lid: uuidv7(),
         createdAt: serverTimestamp(),
@@ -443,53 +451,53 @@ export const createSanctuary = async (data: Partial<Sanctuary> & { name: string;
     return ref.id;
 };
 
-export const getSanctuaryById = async (id: string): Promise<Sanctuary | null> => {
-    const snap = await getDoc(doc(db, 'sanctuaries', id));
-    return snap.exists() ? (mapDoc(snap as any) as Sanctuary) : null;
+export const getLightHouseById = async (id: string): Promise<LightHouse | null> => {
+    const snap = await getDoc(doc(db, 'lightHouses', id));
+    return snap.exists() ? (mapDoc(snap as any) as LightHouse) : null;
 };
 
-// Sanctuaries sheltering a community — belonging lives in the LIN (sanctuary __shelters__
-// community), plus the primary communityId scalar for sanctuaries rooted there directly.
-export const getSanctuariesByCommunity = async (communityId: string): Promise<Sanctuary[]> => {
+// LightHouses sheltering a community — belonging lives in the LIN (lightHouse __shelters__
+// community), plus the primary communityId scalar for lightHouses rooted there directly.
+export const getLightHousesByCommunity = async (communityId: string): Promise<LightHouse[]> => {
     const [links, primary] = await Promise.all([
         getDocs(query(collection(db, 'links'), where('rel', '==', 'shelters'), where('to', '==', communityId))),
-        getDocs(query(sanctuariesCollection, where('communityId', '==', communityId))),
+        getDocs(query(lightHousesCollection, where('communityId', '==', communityId))),
     ]);
-    const out = new Map<string, Sanctuary>();
-    for (const d of primary.docs) out.set(d.id, mapDoc(d) as Sanctuary);
+    const out = new Map<string, LightHouse>();
+    for (const d of primary.docs) out.set(d.id, mapDoc(d) as LightHouse);
     const missing = links.docs.map(l => (l.data() as any).from).filter((id: string) => !out.has(id));
-    const fetched = await Promise.all(missing.map((id: string) => getSanctuaryById(id).catch(() => null)));
+    const fetched = await Promise.all(missing.map((id: string) => getLightHouseById(id).catch(() => null)));
     for (const s of fetched) if (s) out.set(s.id, s);
     return [...out.values()];
 };
 
-// The sanctuary steps into (shelters) a community — one LIN edge, minted by its keeper.
-export const adoptSanctuary = async (sanctuaryId: string, communityId: string) => {
-    await setDoc(doc(db, 'links', `${sanctuaryId}__shelters__${communityId}`),
-        { lid: uuidv7(), type: 'link', rel: 'shelters', from: sanctuaryId, to: communityId, createdAt: serverTimestamp() });
+// The lightHouse steps into (shelters) a community — one LIN edge, minted by its keeper.
+export const adoptLightHouse = async (lightHouseId: string, communityId: string) => {
+    await setDoc(doc(db, 'links', `${lightHouseId}__shelters__${communityId}`),
+        { lid: uuidv7(), type: 'link', rel: 'shelters', from: lightHouseId, to: communityId, createdAt: serverTimestamp() });
 };
 
-// Move / describe a sanctuary — owner or staff, per the rules. Undefined and empty-string
+// Move / describe a lightHouse — owner or staff, per the rules. Undefined and empty-string
 // values are stripped (belt and braces alongside ignoreUndefinedProperties).
-export const updateSanctuary = (sanctuaryId: string, data: Partial<Sanctuary>) =>
-    updateDoc(doc(db, 'sanctuaries', sanctuaryId),
+export const updateLightHouse = (lightHouseId: string, data: Partial<LightHouse>) =>
+    updateDoc(doc(db, 'lightHouses', lightHouseId),
         Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined && v !== '')) as any);
 
-// Release a sanctuary — owner or staff, per the rules. Its LIN edges (rooted, shelters)
+// Release a lightHouse — owner or staff, per the rules. Its LIN edges (rooted, shelters)
 // are released FIRST (while the ownership check can still see the doc), best-effort.
-export const deleteSanctuary = async (sanctuaryId: string) => {
+export const deleteLightHouse = async (lightHouseId: string) => {
     try {
-        const links = await getDocs(query(collection(db, 'links'), where('from', '==', sanctuaryId)));
+        const links = await getDocs(query(collection(db, 'links'), where('from', '==', lightHouseId)));
         await Promise.all(links.docs
             .filter(d => ['rooted', 'shelters'].includes((d.data() as any).rel))
             .map(d => deleteDoc(d.ref).catch(() => {})));
     } catch { /* best-effort — the exists-guarded rules allow later staff cleanup */ }
-    await deleteDoc(doc(db, 'sanctuaries', sanctuaryId));
+    await deleteDoc(doc(db, 'lightHouses', lightHouseId));
 };
 
-// Open a sanctuary wider (or draw it back) — owner or staff, per the rules.
-export const setSanctuaryVisibility = (sanctuaryId: string, visibility: 'community' | 'node' | 'public') =>
-    updateDoc(doc(db, 'sanctuaries', sanctuaryId), { visibility });
+// Open a lightHouse wider (or draw it back) — owner or staff, per the rules.
+export const setLightHouseVisibility = (lightHouseId: string, visibility: 'community' | 'node' | 'public') =>
+    updateDoc(doc(db, 'lightHouses', lightHouseId), { visibility });
 
 export const checkIsAdmin = async (uid: string): Promise<boolean> => (await getDoc(doc(db, 'admins', uid))).exists();
 

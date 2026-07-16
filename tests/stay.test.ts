@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { bedsFreeFor, MAX_STAY_NIGHTS, nightsBetween, stayRequestProblem, staysOverlap } from '../src/domain/stay';
 
-// Beds in sanctuaries — the stay arithmetic, testable without any backend.
+// Beds in lightHouses — the stay arithmetic, testable without any backend.
 
 const NOW = Date.parse('2026-07-14T12:00:00Z');
 

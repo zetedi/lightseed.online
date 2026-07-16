@@ -22,7 +22,7 @@ Every intelligence entering this project roots first in the same living context.
 - New logic starts in `src/domain/` as a pure, tested function.
 - Relationships are LIN links (`from__rel__to`), never arrays.
 - Chains are append-only: mark, never delete.
-- Commit messages are short poetic lines ("Sanctuaries glow.", "Paper remembers.").
+- Commit messages are short poetic lines ("Light Houses glow.", "Paper remembers.").
 - **Commits are conscious**: the agent proposes a commit at natural completion
   points (message ready) — and always ASKS Zoltán before committing. Never
   commit or push unasked.

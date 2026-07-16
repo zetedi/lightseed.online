@@ -7,8 +7,8 @@ import { Icons } from './ui/Icons';
 import { SuperDot } from './ui/SuperDot';
 import { BeingQr } from './ui/BeingQr';
 import { mintBeingQr } from '../services/firebase/beings';
-import { getSanctuaryById } from '../services/firebase';
-import type { Sanctuary } from '../domain/sanctuary';
+import { getLightHouseById } from '../services/firebase';
+import type { LightHouse } from '../domain/lightHouse';
 import { ValidationBadge } from './ValidationBadge';
 import { updateLifetree, setTreeStatus, getPulsesByTreeId } from '../services/firebase';
 import { Pulse, type Lifetree } from '../types';
@@ -64,18 +64,18 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const myActiveTree = activeTree;
    const isOwner = currentUserId === tree.ownerId;
 
-   // Sanctuaries rooted IN this tree (sanctuary __rooted__ tree): holding even one makes
-   // this a MOTHER TREE. Read-only here — rooting is done from the sanctuary's page.
-   const [holdingSanctuaries, setHoldingSanctuaries] = useState<Sanctuary[]>([]);
+   // LightHouses rooted IN this tree (lightHouse __rooted__ tree): holding even one makes
+   // this a MOTHER TREE. Read-only here — rooting is done from the lightHouse's page.
+   const [holdingLightHouses, setHoldingLightHouses] = useState<LightHouse[]>([]);
    useEffect(() => {
        let alive = true;
        firestoreStore.linksTo(tree.id, 'rooted')
-           .then(links => Promise.all(links.map(l => getSanctuaryById(l.from).catch(() => null))))
-           .then(list => { if (alive) setHoldingSanctuaries((list || []).filter(Boolean) as Sanctuary[]); })
+           .then(links => Promise.all(links.map(l => getLightHouseById(l.from).catch(() => null))))
+           .then(list => { if (alive) setHoldingLightHouses((list || []).filter(Boolean) as LightHouse[]); })
            .catch(() => {});
        return () => { alive = false; };
    }, [tree.id]);
-   const isMotherTree = holdingSanctuaries.length > 0;
+   const isMotherTree = holdingLightHouses.length > 0;
    const isNature = tree.isNature;
    // Guardianship is a lightweight public follow with no powers — tending vests in the invited
    // roles (co_owner/steward), tracked as `isTender` (see the circle effect below). The guardian
@@ -414,7 +414,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                         onMint={(href) => mintBeingQr('lifetrees', tree.id, href)}
                                         className="h-7 w-7 bg-white/15 text-white hover:bg-white/25" />
                                     {isNature && <span className="inline-flex items-center gap-1 rounded-full border border-white/70 bg-sky-500 px-2 py-0.5 text-[10px] font-bold"><Icons.Shield /> NATURE</span>}
-                                    {isMotherTree && <span className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-black text-amber-950" title={`Holds ${holdingSanctuaries.map(x => x.name).join(', ')}`}><Icons.Sun /> MOTHER TREE</span>}
+                                    {isMotherTree && <span className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-black text-amber-950" title={`Holds ${holdingLightHouses.map(x => x.name).join(', ')}`}><Icons.Sun /> MOTHER TREE</span>}
                                     {/* Validation, as one icon: grey = not yet, green = validated.
                                         For those who may act, the icon itself opens the modal. */}
                                     <span className="relative inline-flex shrink-0">

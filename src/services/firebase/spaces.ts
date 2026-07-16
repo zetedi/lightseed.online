@@ -2,7 +2,7 @@ import { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, setD
 import { type Pulse, type Vision, type Community, type Being, type CommunityInvite } from '../../types';
 import { uuidv7 } from '../../utils/id';
 import { type PulseVisibility } from '../../domain/pulse';
-import { db, toMillis, mapDoc, lifetreesCollection, visionsCollection, pulsesCollection, communitiesCollection, sanctuariesCollection, communityInvitesCollection } from './core';
+import { db, toMillis, mapDoc, lifetreesCollection, visionsCollection, pulsesCollection, communitiesCollection, lightHousesCollection, communityInvitesCollection } from './core';
 import { firestoreStore } from '../../adapters/firestore';
 import { isHubDomain } from './trees';
 
@@ -287,7 +287,7 @@ export const migrateBackfillLids = async (): Promise<Record<string, number>> => 
         ['lifetrees', lifetreesCollection],
         ['visions', visionsCollection],
         ['pulses', pulsesCollection],
-        ['sanctuaries', sanctuariesCollection],
+        ['lightHouses', lightHousesCollection],
         ['persons', collection(db, 'persons')],
     ];
     const counts: Record<string, number> = {};

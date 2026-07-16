@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
-import { getNetworkStats, isHubDomain, getSanctuariesByDomain, getAllSanctuaries, getRootedTrees } from '../services/firebase';
+import { getNetworkStats, isHubDomain, getLightHousesByDomain, getAllLightHouses, getRootedTrees } from '../services/firebase';
 import { reflectsInstancePublic } from '../domain/communityDoor';
 import { headerSurface } from '../domain/themeSurface';
 import { treeCoordinates } from '../domain/views/forest';
@@ -71,7 +71,7 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab,
     useEffect(() => {
         let alive = true;
         const publicOnly = !lightseed;
-        (scopeDomain ? getSanctuariesByDomain(scopeDomain, { publicOnly }) : getAllSanctuaries({ publicOnly }))
+        (scopeDomain ? getLightHousesByDomain(scopeDomain, { publicOnly }) : getAllLightHouses({ publicOnly }))
             .then(async sancts => {
                 const trees = await getRootedTrees(sancts.map(s => s.id));
                 if (!alive) return;

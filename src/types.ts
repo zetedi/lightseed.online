@@ -14,7 +14,7 @@ export * from './domain/community';
 export * from './domain/communityDoor';
 export * from './domain/decision';
 export * from './domain/intelligence';
-export * from './domain/sanctuary';
+export * from './domain/lightHouse';
 export * from './domain/treeCircle';
 
 export type Lightseed = Pick<FirebaseUser, 'uid' | 'email' | 'displayName' | 'photoURL'>;
