@@ -201,12 +201,12 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
                     <div className="flex items-center gap-2">
                         {canEdit && onDelete && (
                             <button onClick={handleDelete} title="Release this Light House" aria-label="Release this Light House"
-                                className="relative flex items-center gap-1.5 rounded-full border border-red-400/40 bg-red-500/20 px-3 py-1.5 text-xs font-bold text-red-200 transition-colors hover:bg-red-500 hover:text-white">
+                                className="relative flex items-center gap-1.5 rounded-full border border-red-400/40 bg-red-500/20 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-red-200 transition-colors hover:bg-red-500 hover:text-white [&>svg]:h-3 [&>svg]:w-3">
                                 <Icons.Trash /> Release
                                 {editIsStaffOnly && <SuperDot />}
                             </button>
                         )}
-                        <span className="flex items-center gap-1 rounded-full bg-amber-400/20 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-200">
+                        <span className="flex items-center gap-1 rounded-full bg-amber-400/20 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-200 [&>svg]:h-3 [&>svg]:w-3">
                             <Icons.Sun /> Light House
                         </span>
                         <span className="rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-200">
