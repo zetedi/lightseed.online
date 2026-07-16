@@ -2,12 +2,12 @@
 /**
  * Seed the lightseed / lifeseed nodes with their foundational data:
  *   - Phoenix         → the first lifetree   (collection: lifetrees,   "First Tree" tab)
- *   - The Secret Sun  → the first sanctuary  (collection: sanctuaries, "The Sanctuary" tab)
+ *   - The Secret Sun  → the first light house  (collection: lightHouses, "The Light House" tab)
  *
  * Phoenix is ONE being: it lives once, on the hub domain (the first passed domain). The old
  * per-domain seeding minted a Phoenix per node — and since the hub forest shows every domain,
  * the tree appeared twice. This version seeds a single Phoenix and DELETES the per-domain
- * duplicates it used to create. Sanctuaries stay per-domain (they only surface on their own
+ * duplicates it used to create. Light Houses stay per-domain (they only surface on their own
  * community tab, so they never duplicate in a shared view).
  *
  * Planted with an early date so it sorts ahead of any later entries. Idempotent
@@ -123,8 +123,8 @@ async function run() {
       }
     }
 
-    // The Secret Sun — the first sanctuary (per-domain: shown only on its own community tab).
-    await db.collection('sanctuaries').doc(`secret-sun-${slug}`).set({
+    // The Secret Sun — the first light house (per-domain: shown only on its own community tab).
+    await db.collection('lightHouses').doc(`secret-sun-${slug}`).set({
       name: 'The Secret Sun',
       shortTitle: 'Sacred Platform',
       body: SECRET_SUN_BODY,
@@ -134,10 +134,10 @@ async function run() {
       createdAt: plantedAt,
     }, { merge: true });
 
-    console.log(`✓ ${domain}  →  sanctuaries/secret-sun-${slug}  (owner: ${ownerId})`);
+    console.log(`✓ ${domain}  →  lightHouses/secret-sun-${slug}  (owner: ${ownerId})`);
   }
 
-  console.log('\nDone. One Phoenix under "First Tree"; The Secret Sun under "The Sanctuary".');
+  console.log('\nDone. One Phoenix under "First Tree"; The Secret Sun under "The Light House".');
   process.exit(0);
 }
 

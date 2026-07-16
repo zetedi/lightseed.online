@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Belonging is links, never arrays: migrate every sanctuary's legacy communityIds[] into
- * LIN edges (links/{sanctuaryId}__shelters__{communityId}), then delete the array field.
+ * Belonging is links, never arrays: migrate every light house's legacy communityIds[] into
+ * LIN edges (links/{lightHouseId}__shelters__{communityId}), then delete the array field.
  * The primary communityId scalar stays (the rules' denormalised read gate). Idempotent.
  * Auth like the other seeds: gcloud auth application-default login.
  */
@@ -27,7 +27,7 @@ if (process.env.GOOGLE_APPLICATION_CREDENTIALS || !existsSync(saPath)) {
 const db = admin.firestore();
 const { randomUUID } = await import('node:crypto');
 
-const snap = await db.collection('sanctuaries').get();
+const snap = await db.collection('lightHouses').get();
 let minted = 0, cleaned = 0;
 for (const docSnap of snap.docs) {
   const d = docSnap.data();

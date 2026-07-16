@@ -427,14 +427,6 @@ export const getRootedTrees = async (lightHouseIds: string[]): Promise<Lifetree[
     return trees.filter((t): t is Lifetree => t !== null);
 };
 
-// Run the sanctuaries → lightHouses data migration (the `migrateLightHouses` Cloud Function,
-// superadmin-only, idempotent). Invoked from the superadmin console AFTER deploying functions and
-// BEFORE the renamed rules + app go live. See root/DECISIONS "Sanctuaries become Light Houses".
-export const migrateLightHouses = async (): Promise<{ lightHouses: number; staysUpdated: number }> => {
-    const res = await httpsCallable(functions, 'migrateLightHouses')();
-    return res.data as { lightHouses: number; staysUpdated: number };
-};
-
 // Every placed lightHouse in the network — the hub map shows what the viewer may see.
 // Signed-out viewers may only query public docs (the read rule rejects wider queries).
 export const getAllLightHouses = async (opts?: { publicOnly?: boolean }): Promise<LightHouse[]> =>

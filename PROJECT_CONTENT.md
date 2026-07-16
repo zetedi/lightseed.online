@@ -109,7 +109,7 @@ Examples:
 
 - code
 - article
-- sanctuary
+- light house
 - tree planting
 - image
 - service
