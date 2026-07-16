@@ -1,5 +1,5 @@
 import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
-import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as admin from "firebase-admin";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -400,6 +400,57 @@ export const onJoinRequestCreated = onDocumentCreated("links/{linkId}", async (e
         }));
     } catch (e) {
         console.error("Join-request email failed:", e);
+    }
+});
+
+// --- Node membership: an accepted network invite makes the newcomer a member of the node it
+// was sent from (Phase 2, "invitations carry the node"). Runs server-side so the member link is
+// minted with admin rights the newcomer could not grant themselves. The ESCALATION GUARD is the
+// heart of it: anyone may create a network invite and stamp any node on it, so we mint membership
+// ONLY when the INVITER actually belongs to that node (its owner or a member) — otherwise a
+// stranger's invite could hand out membership of a community they have nothing to do with.
+export const onNetworkInviteAccepted = onDocumentUpdated("networkInvites/{inviteId}", async (event) => {
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+    if (!before || !after) return;
+    // Only the pending → accepted transition, once.
+    if (before.status === "accepted" || after.status !== "accepted") return;
+
+    const nodeCommunityId = String(after.nodeCommunityId || "");
+    const memberUid = String(after.acceptedByUserId || "");
+    const inviterUid = String(after.invitedByUserId || "");
+    if (!nodeCommunityId || !memberUid || !inviterUid) return; // a plain (nodeless) invite: no membership
+
+    try {
+        const [community, inviterMember] = await Promise.all([
+            db.collection("communities").doc(nodeCommunityId).get(),
+            db.collection("links").doc(`${inviterUid}__member__${nodeCommunityId}`).get(),
+        ]);
+        if (!community.exists) return;
+        const inviterBelongs = (community.data() as any)?.ownerId === inviterUid || inviterMember.exists;
+        if (!inviterBelongs) {
+            console.warn(`onNetworkInviteAccepted: inviter ${inviterUid} does not belong to node ${nodeCommunityId}; no membership minted for ${memberUid}.`);
+            return;
+        }
+        // Mint TWO edges (mirrors the door's join): the `member` link (which the being may later
+        // drop by leaving) and an append-only `invited_by` provenance mark (from=newcomer,
+        // to=node) that survives leaving — how they arrived, who vouched. Both in a transaction
+        // that creates each only when ABSENT, so Eventarc's at-least-once redelivery never rewrites
+        // a stable lid or resets a join date (create-if-absent, never clobber).
+        const memberRef = db.collection("links").doc(`${memberUid}__member__${nodeCommunityId}`);
+        const provRef = db.collection("links").doc(`${memberUid}__invited_by__${nodeCommunityId}`);
+        await db.runTransaction(async (tx) => {
+            const [m, p] = await Promise.all([tx.get(memberRef), tx.get(provRef)]);
+            const edge = (rel: string) => ({
+                lid: randomUUID(), type: "link", rel, from: memberUid, to: nodeCommunityId,
+                inviteId: event.params.inviteId, invitedBy: inviterUid,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            if (!m.exists) tx.set(memberRef, edge("member"));
+            if (!p.exists) tx.set(provRef, edge("invited_by"));
+        });
+    } catch (e) {
+        console.error("Node membership mint failed:", e);
     }
 });
 
@@ -947,6 +998,32 @@ export const listUsersAsAdmin = onCall({ cors: true }, async (request) => {
 // Staff-only. Removes the target's lifetrees/pulses/visions/links/person/user docs and their
 // Auth record. Useful for re-testing onboarding. The node owner (superadmin) can't be deleted
 // by a non-superadmin.
+// Erase a being's data and Auth record, server-side and in order: content first, then the
+// profile docs, then the Auth user LAST (admin SDK — no `requires-recent-login`, the failure
+// mode that leaves a half-deleted account in limbo when done from the client). Shared by the
+// admin path and the self-serve path so both delete the same things the same way.
+async function purgeUserData(uid: string) {
+    const deleteWhere = async (coll: string, field: string) => {
+        const qs = await db.collection(coll).where(field, "==", uid).get();
+        for (let i = 0; i < qs.docs.length; i += 400) {
+            const batch = db.batch();
+            qs.docs.slice(i, i + 400).forEach(d => batch.delete(d.ref));
+            await batch.commit();
+        }
+        return qs.size;
+    };
+    const counts = {
+        lifetrees: await deleteWhere("lifetrees", "ownerId"),
+        pulses: await deleteWhere("pulses", "authorId"),
+        visions: await deleteWhere("visions", "authorId"),
+        links: await deleteWhere("links", "from"),
+    };
+    await db.collection("persons").doc(uid).delete().catch(() => undefined);
+    await db.collection("users").doc(uid).delete().catch(() => undefined);
+    try { await admin.auth().deleteUser(uid); } catch (e: any) { console.warn("Auth delete failed:", e?.message); }
+    return counts;
+}
+
 export const deleteUserAsAdmin = onCall({ cors: true }, async (request) => {
     if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
     const callerUid = request.auth.uid;
@@ -966,25 +1043,24 @@ export const deleteUserAsAdmin = onCall({ cors: true }, async (request) => {
         throw new HttpsError("permission-denied", "Only the node owner can delete an admin.");
     }
 
-    const deleteWhere = async (coll: string, field: string) => {
-        const qs = await db.collection(coll).where(field, "==", targetUid).get();
-        for (let i = 0; i < qs.docs.length; i += 400) {
-            const batch = db.batch();
-            qs.docs.slice(i, i + 400).forEach(d => batch.delete(d.ref));
-            await batch.commit();
+    const counts = await purgeUserData(targetUid);
+    return { deleted: true, ...counts };
+});
+
+// Self-serve account deletion — the being erases itself. Server-side (admin) so the Auth user is
+// removed cleanly regardless of how recently they signed in; the client used to delete the docs
+// first and then fail on `requires-recent-login`, leaving the Auth user alive with no profile.
+export const deleteMyAccount = onCall({ cors: true }, async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
+    const uid = request.auth.uid;
+    // A farewell before the record is gone (best-effort; never blocks the deletion).
+    try {
+        const record = await admin.auth().getUser(uid).catch(() => null);
+        if (record?.email) {
+            const text = "It was wonderful to have you. See you!";
+            await writeMail({ to: [record.email], subject: "Goodbye from lightseed", html: composeSystemEmailHtml(text, "https://lightseed.online", "lightseed"), text, uid });
         }
-        return qs.size;
-    };
-
-    const counts = {
-        lifetrees: await deleteWhere("lifetrees", "ownerId"),
-        pulses: await deleteWhere("pulses", "authorId"),
-        visions: await deleteWhere("visions", "authorId"),
-        links: await deleteWhere("links", "from"),
-    };
-    await db.collection("persons").doc(targetUid).delete().catch(() => undefined);
-    await db.collection("users").doc(targetUid).delete().catch(() => undefined);
-    try { await admin.auth().deleteUser(targetUid); } catch (e: any) { console.warn("Auth delete failed:", e?.message); }
-
+    } catch (e) { console.warn("Goodbye email skipped:", e); }
+    const counts = await purgeUserData(uid);
     return { deleted: true, ...counts };
 });

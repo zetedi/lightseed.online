@@ -53,6 +53,27 @@ What a being LOOKS like: `src/components/BeingProfile.tsx` + `src/components/sec
   aliveness (only a real tend). UI: Members tab (door panel, invitations, stewards) +
   `/i/<inviteId>` arrival in `src/App.tsx`.
 
+## Nodes become real (identity → membership → commons)
+
+- **Sign-up is open** (root: "Identity is open"). `signupRequiresInvite = door === 'closed'`
+  (`domain/communityDoor.ts`); `useConfig` reads it into `config.inviteOnly`. A node closes its
+  door to gate sign-up on its domain; everything else is open.
+- **A node = the community that owns a domain.** Node membership = a `member` link to that host
+  community. **Reflect** (`community.reflectsPublic`) makes a node a commons (whole instance's
+  public forest/feed) or a scoped pond; **strict scope** (`strictScope`) also hides the keeper's
+  own off-domain trees. Decided in `useForestFeed` (scopes by the active node's canonical domain,
+  not the raw hostname) — toggles on the community Vision tab.
+- **Invitations carry the node** (Phase 2): `createNetworkInvite` stamps `nodeCommunityId` +
+  `nodeDomain`; the CF `onNetworkInviteAccepted` mints the newcomer's `member` link on acceptance
+  — but ONLY if the inviter belongs to that node (the escalation guard). Node fields are frozen
+  on the invite once minted (rules).
+- **Self-delete is server-side**: `deleteMyAccount` CF → `purgeUserData(uid)` (content → profile →
+  Auth, in order, admin rights) so a stale login can't strand a half-deleted account. Shared with
+  `deleteUserAsAdmin`. Client `deleteUserAccount` just calls it. Sign-in **self-heals** a missing
+  profile (`ensureUserProfile`). Needs a `--only functions` deploy.
+- Still a hardcoded **hub alias**: `isHubDomain` (`services/firebase/trees.ts`) treats
+  lightseed.online + lifeseed.online as always-reflecting hubs; dissolving that is a later step.
+
 ## The gate (run before every commit)
 
 ```

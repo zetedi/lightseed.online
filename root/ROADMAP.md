@@ -33,8 +33,8 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
   membership local; **commons is a per-node mode, not a place** (every node may
   reflect the instance's public or stay a scoped pond, Indra's net; no privileged
   hub, only the node reflecting all public); some parts are *sensitive to light* — the ladder protects what
-  is not yet ready for a wide gaze. Three phases, each its own ring (**Phase 1
-  shipped 2026-07-15** — see DECISIONS):
+  is not yet ready for a wide gaze. Three phases, each its own ring (**Phases 1–2
+  shipped 2026-07-15/16** — see DECISIONS):
   1. **The node's door becomes real** — `useConfig` reads the host community's
      `door` (open/invite/closed, already built) instead of the constant, so a
      keeper can open or close *their* node — **identity is open by default**, and a

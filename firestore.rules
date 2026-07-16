@@ -507,13 +507,16 @@ service cloud.firestore {
       allow list: if isSignedIn() && (isStaff() || resource.data.invitedByUserId == request.auth.uid);
       allow create: if isSignedIn() && request.resource.data.invitedByUserId == request.auth.uid;
       // The only legitimate update is the invited user consuming a still-pending invite: they may
-      // flip it to 'accepted' and stamp THEMSELVES, but may not alter the locked email or inviter.
+      // flip it to 'accepted' and stamp THEMSELVES, but may not alter the locked email, inviter,
+      // or the node it carries (which drives the membership the CF mints on acceptance).
       allow update: if isSignedIn()
         && resource.data.status == 'pending'
         && request.resource.data.status == 'accepted'
         && request.resource.data.acceptedByUserId == request.auth.uid
         && request.resource.data.email == resource.data.email
-        && request.resource.data.invitedByUserId == resource.data.invitedByUserId;
+        && request.resource.data.invitedByUserId == resource.data.invitedByUserId
+        && request.resource.data.get('nodeCommunityId', '') == resource.data.get('nodeCommunityId', '')
+        && request.resource.data.get('nodeDomain', '') == resource.data.get('nodeDomain', '');
       allow delete: if isStaff();
     }
 

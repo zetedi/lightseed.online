@@ -6,6 +6,32 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-16 · Phase 2: invitations carry the node; a being can erase itself cleanly** —
+the second phase of *nodes become real*. A network invitation now carries the
+**node** it was sent from (`nodeCommunityId` + `nodeDomain`, frozen on the invite
+once set); on acceptance a Cloud Function (`onNetworkInviteAccepted`) mints the
+newcomer's node membership — a `member` link **and** an append-only `invited_by`
+mark (mirroring the door's join) — **only if the inviter actually belongs to that
+node** (its owner or a member). That escalation guard is the crux: anyone may
+create an invite and stamp any node, so a stranger must not hand out membership;
+on an open node the invite adds nothing self-join didn't already allow, on a gated
+node a non-member can't be a valid inviter. **Self-deletion moved server-side**
+(`deleteMyAccount` → `purgeUserData`, content → profile → Auth in order, admin
+rights), killing the half-delete limbo at its root (the client used to delete docs
+then fail to delete Auth on a stale login); sign-in already self-heals a missing
+profile. Account deletion **hard-deletes** the being's own trees/pulses/links — a
+deliberate exception to append-only (correction heals honest error; this is the
+right to be forgotten, self-scoped). *(Review ring: a 9-agent adversarial pass —
+escalation / correctness / rules / meaning, each finding attacked to refute — found
+2 real defects the guard hadn't broken but the mint had: the member link rewrote
+its stable `lid` and join-date on Eventarc's at-least-once redelivery (now
+create-if-absent in a transaction), and provenance rode as erasable scalars on the
+deletable member edge instead of the append-only `invited_by` link the ROADMAP
+specified (now both minted). Three refuted: owner-self-delete orphaning a community
+and dangling inbound edges are real but pre-existing / out of scope; hard-deleting
+one's own pulses is the accepted exception above.)* Deferred: the grandfather
+migration (existing accounts → origin node) and dissolving the hardcoded hub alias.
+
 **2026-07-15 · Identity is open by default — the code meets its ring** — the ring
 *"Identity is open"* was written, but the code still shipped `inviteOnly: true`
 (identity *closed*) — a silent contradiction, and the exact wall hit trying to

@@ -1,5 +1,5 @@
 import { collection, query, orderBy, getDocs, addDoc, setDoc, serverTimestamp, doc, runTransaction, getDoc, where, updateDoc, limit, startAfter, QueryDocumentSnapshot, writeBatch, onSnapshot, Timestamp } from 'firebase/firestore';
-import { signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, updateProfile, type User as FirebaseUser, signOut as firebaseSignOut, deleteUser as firebaseDeleteUser } from 'firebase/auth';
+import { signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, updateProfile, type User as FirebaseUser, signOut as firebaseSignOut } from 'firebase/auth';
 import { httpsCallable } from 'firebase/functions';
 import { type Pulse, type Lifetree, type Vision } from '../../types';
 import { uuidv7 } from '../../utils/id';
@@ -157,8 +157,18 @@ export const createNetworkInvite = async (email: string, invitedByUserId: string
             t.update(ref, { invitesRemaining: remaining - 1 });
         });
     }
+    // Stamp the NODE this invite is sent from (the host community of the current domain), so
+    // acceptance can mint membership of it. The Cloud Function verifies the inviter actually
+    // belongs to that node before minting — a stranger can't grant membership by stamping a node.
+    const normHost = window.location.hostname.replace(/^www\./, '');
+    const hostSnap = await getDocs(query(collection(db, 'communities'), where('domain', '==', normHost), limit(1))).catch(() => null);
+    const hostNode = hostSnap && !hostSnap.empty
+        ? { id: hostSnap.docs[0].id, domain: (hostSnap.docs[0].data() as any).domain || normHost }
+        : null;
+
     const ref = await addDoc(networkInvitesCollection, {
         email: cleanEmail, invitedByUserId, status: 'pending', message, createdAt: serverTimestamp(),
+        ...(hostNode ? { nodeCommunityId: hostNode.id, nodeDomain: hostNode.domain } : {}),
     });
     const link = `${window.location.origin}?invite=${ref.id}`;
     try {
@@ -262,33 +272,12 @@ export const setOnlyValidatedCanReach = async (userId: string, value: boolean) =
 export const deleteUserAccount = async () => {
     const user = auth.currentUser;
     if (!user) throw new Error("No user signed in");
-    const uid = user.uid;
-    const email = user.email;
-
-    try {
-        const treesQ = query(collection(db, 'lifetrees'), where('ownerId', '==', uid));
-        const treesSnap = await getDocs(treesQ);
-        const batch = writeBatch(db);
-        treesSnap.docs.forEach(d => batch.delete(d.ref));
-
-        const pulsesQ = query(collection(db, 'pulses'), where('authorId', '==', uid));
-        const pulsesSnap = await getDocs(pulsesQ);
-        pulsesSnap.docs.forEach(d => batch.delete(d.ref));
-
-        const visionsQ = query(collection(db, 'visions'), where('authorId', '==', uid));
-        const visionsSnap = await getDocs(visionsQ);
-        visionsSnap.docs.forEach(d => batch.delete(d.ref));
-
-        const userRef = doc(db, 'users', uid);
-        batch.delete(userRef);
-        await batch.commit();
-
-        if (email) await triggerSystemEmail(email, "Goodbye from lightseed", "It was wonderful to have you. See you!", uid);
-        await firebaseDeleteUser(user);
-    } catch (e: any) {
-        if (e.code === 'auth/requires-recent-login') throw new Error("Please log out and log in again to confirm deletion security.");
-        throw e;
-    }
+    // Server-side (deleteMyAccount CF): the content, profile and Auth user are removed in order
+    // with admin rights — so a stale login can't leave a half-deleted account behind (docs gone,
+    // Auth user stranded), the way the old client-first delete did. Then sign out locally.
+    const fn = httpsCallable(functions, 'deleteMyAccount');
+    await fn();
+    await firebaseSignOut(auth).catch(() => undefined);
 }
 
 export const checkAndIncrementAiUsage = async (type: 'text' | 'image'): Promise<boolean> => {

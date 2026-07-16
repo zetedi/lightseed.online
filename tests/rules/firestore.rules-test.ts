@@ -373,3 +373,29 @@ describe('link id-binding — authority resolves by path, so the doc id must equ
     await assertSucceeds(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__joined__vX`), link(MALLORY, 'joined', 'vX')));
   });
 });
+
+describe('networkInvites — consuming cannot rewrite the email, inviter, or the node it carries', () => {
+  const seedInvite = () => env.withSecurityRulesDisabled(async (ctx) =>
+    setDoc(doc(ctx.firestore(), 'networkInvites', 'ninv1'), {
+      email: 'newcomer@x.com', invitedByUserId: ALICE, status: 'pending', createdAt: 1,
+      nodeCommunityId: 'com1', nodeDomain: 'perauset.com',
+    }));
+
+  it('the invited user consumes it — accepted, stamping themselves, node fields intact', async () => {
+    await seedInvite();
+    await assertSucceeds(updateDoc(doc(db(BOB), 'networkInvites', 'ninv1'),
+      { status: 'accepted', acceptedByUserId: BOB, acceptedAt: 2 }));
+  });
+
+  it('cannot re-stamp the node, the inviter, the email, or accept as someone else', async () => {
+    await seedInvite();
+    await assertFails(updateDoc(doc(db(BOB), 'networkInvites', 'ninv1'),
+      { status: 'accepted', acceptedByUserId: BOB, nodeCommunityId: 'other' }));   // forged node
+    await assertFails(updateDoc(doc(db(BOB), 'networkInvites', 'ninv1'),
+      { status: 'accepted', acceptedByUserId: BOB, nodeDomain: 'evil.com' }));      // forged domain
+    await assertFails(updateDoc(doc(db(BOB), 'networkInvites', 'ninv1'),
+      { status: 'accepted', acceptedByUserId: BOB, invitedByUserId: BOB }));        // forged inviter
+    await assertFails(updateDoc(doc(db(BOB), 'networkInvites', 'ninv1'),
+      { status: 'accepted', acceptedByUserId: MALLORY }));                          // accept as another
+  });
+});
