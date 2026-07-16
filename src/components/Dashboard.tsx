@@ -67,7 +67,12 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab,
     // map isn't empty while developing.
     const [mapPoints, setMapPoints] = useState<MapPoint[]>([]);
     const isDevHost = typeof window !== 'undefined' && /localhost|127\.0\.0\.1|^192\.168\.|\.local$/.test(window.location.hostname);
-    const scopeDomain = (isDevHost && isSuperAdmin) ? undefined : (hostCommunity?.domain || (typeof window !== 'undefined' ? window.location.hostname : ''));
+    // Scope like the community/forest view: a reflecting hub (or the dev host as superadmin) shows
+    // EVERY public light house; a scoped node shows only its own domain's. Otherwise a signed-out
+    // visitor on the hub would miss public light houses that live on other domains.
+    const mapActiveDomain = hostCommunity?.domain || (typeof window !== 'undefined' ? window.location.hostname : '');
+    const mapReflects = reflectsInstancePublic(hostCommunity?.reflectsPublic, isHubDomain(mapActiveDomain));
+    const scopeDomain = (mapReflects || (isDevHost && isSuperAdmin)) ? undefined : mapActiveDomain;
     useEffect(() => {
         let alive = true;
         const publicOnly = !lightseed;
