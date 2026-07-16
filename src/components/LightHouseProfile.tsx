@@ -207,7 +207,7 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
                             </button>
                         )}
                         <span className="flex items-center gap-1 rounded-full bg-amber-400/20 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-200">
-                            <Icons.Sun /> LightHouse
+                            <Icons.Sun /> Light House
                         </span>
                         <span className="rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-200">
                             {visibility}

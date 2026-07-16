@@ -1205,7 +1205,7 @@ const AppContent = () => {
             )}
 
             {viewingLightHouse && (
-                <DetailWrapper>
+                <DetailWrapper belowHeader>
                     <LightHouseProfile
                         lightHouse={viewingLightHouse}
                         onClose={() => setViewingLightHouse(null)}

@@ -235,7 +235,7 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab,
 
             {/* Box 4: Forest — a live mini-map of the real forest (non-interactive; tap opens it). */}
             <div onClick={() => onSetTab('forest')} className="relative h-56 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-xl cursor-pointer group">
-                <MiniForestMap points={mapPoints} className="absolute inset-0 h-full w-full bg-slate-900" />
+                <MiniForestMap points={mapPoints} className="absolute inset-0 h-full w-full bg-slate-900 isolate" />
                 {/* Darker at top/bottom for the title + EXPLORE; a warm amber wash through the middle
                     ties the live map to the bark of the tree card. */}
                 <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-amber-900/15 to-black/60 group-hover:from-black/45 group-hover:to-black/50 transition-colors"></div>
@@ -262,12 +262,18 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab,
                     </div>
                     )}
 
-                    {/* EXPLORE + a minimal T/P/V tally, the same quiet style as the home card. */}
-                    <div className="flex items-end justify-between gap-2 border-t border-white/30 pt-2">
-                        <span className="text-sm font-medium uppercase tracking-wide">{t('explore')}</span>
-                        {!showStats && (
-                            <span className="whitespace-nowrap font-mono text-[10px] font-bold uppercase tracking-wider text-white/75 drop-shadow-md">T{networkStats.trees} P{networkStats.pulses} V{networkStats.visions}</span>
-                        )}
+                    {/* A tiny legend for the map marks, then EXPLORE + the minimal T/P/V tally. */}
+                    <div className="space-y-1.5">
+                        <div className="flex items-center gap-3 text-[10px] font-medium text-white/85 drop-shadow-md">
+                            <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 shrink-0 rounded-full bg-yellow-300 shadow-[0_0_6px_2px_rgba(250,204,21,0.75)]" /> Light Houses</span>
+                            <span className="flex items-center gap-1.5"><span className="h-2 w-2 shrink-0 rounded-full bg-yellow-300 shadow-[0_0_4px_1px_rgba(250,204,21,0.65)]" /> Mother Trees</span>
+                        </div>
+                        <div className="flex items-end justify-between gap-2 border-t border-white/30 pt-2">
+                            <span className="text-sm font-medium uppercase tracking-wide">{t('explore')}</span>
+                            {!showStats && (
+                                <span className="whitespace-nowrap font-mono text-[10px] font-bold uppercase tracking-wider text-white/75 drop-shadow-md">T{networkStats.trees} P{networkStats.pulses} V{networkStats.visions}</span>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
