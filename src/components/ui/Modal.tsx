@@ -1,5 +1,6 @@
 
 import { ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 
 interface ModalProps {
     children?: ReactNode;
@@ -13,9 +14,12 @@ interface ModalProps {
 
 export const Modal = ({ children, onClose, title, backgroundImage, fullScreenOnMobile, innerGlow, wide }: ModalProps) => {
     const desktopWidth = wide ? 'sm:max-w-2xl' : 'sm:max-w-md';
-    // z-[98]: above the mobile menu (95) so a modal opened from it isn't shown through, below
-    // dialogs (100) so a confirm/alert still layers on top.
-    return (
+    // Portaled to <body>: a Modal is often rendered inside a stacking context (the sticky z-30
+    // nav, a transformed card) where its own z-index is capped below root overlays like the
+    // body-portaled mobile menu (z-95) — so it would paint UNDER the menu no matter its z-index,
+    // and a confirm inside it would need a second tap. At the body it is truly on top.
+    // z-[98]: above the mobile menu (95), below dialogs (100) so a confirm/alert still layers up.
+    return createPortal(
     <div className={`fixed inset-0 z-[98] flex items-center justify-center bg-slate-900/90 backdrop-blur-md ${fullScreenOnMobile ? 'p-0 sm:p-4' : 'p-4'}`}>
         <div
             className={`shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 ${backgroundImage ? 'text-white' : 'bg-white'} ${
@@ -33,6 +37,7 @@ export const Modal = ({ children, onClose, title, backgroundImage, fullScreenOnM
                 {children}
             </div>
         </div>
-    </div>
+    </div>,
+    document.body,
     );
 };

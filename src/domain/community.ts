@@ -65,4 +65,8 @@ export interface Community extends Being {
   // public forest/feed, or shows only its own domain. Per-node choice (Indra's net). Absent =
   // the legacy default (the canonical hub domains reflect, others stay scoped) — zero migration.
   reflectsPublic?: boolean;
+  // STRICT scope: when scoped (not reflecting), also hide the viewer's OWN trees from other
+  // domains (suppress the creator-sees-their-own-trees merge) — a clean "this place only" view.
+  // No effect while reflecting. Absent = the owner-merge stays (today's behaviour).
+  strictScope?: boolean;
 }

@@ -250,6 +250,7 @@ const AppContent = () => {
         tab, viewMode, lightseed, isSuperAdmin, isAdmin, setAlignments,
         hostReflectsPublic: (impersonatedCommunity || hostCommunity)?.reflectsPublic,
         hostDomain: (impersonatedCommunity || hostCommunity)?.domain,
+        hostStrictScope: (impersonatedCommunity || hostCommunity)?.strictScope,
     });
 
     // The refresh bus, heard by the live feed: when an event/pulse is deleted anywhere
@@ -266,7 +267,7 @@ const AppContent = () => {
     useEffect(() => {
         if (tab !== 'dashboard') loadContent(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- loadContent is recreated per render; adding it would refetch the feed on every render (loop). It already closes over tab/viewMode/lightseed.
-    }, [tab, lightseed, viewMode, (impersonatedCommunity || hostCommunity)?.reflectsPublic, (impersonatedCommunity || hostCommunity)?.domain]);
+    }, [tab, lightseed, viewMode, (impersonatedCommunity || hostCommunity)?.reflectsPublic, (impersonatedCommunity || hostCommunity)?.domain, (impersonatedCommunity || hostCommunity)?.strictScope]);
 
     // Genesis + the host community depend only on the signed-in user, not the tab — so run them
     // once per session (and on login), not on every tab/view switch as they used to.

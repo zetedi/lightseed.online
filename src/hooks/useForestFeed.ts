@@ -26,8 +26,11 @@ export function useForestFeed(params: {
   // not the raw hostname — so impersonation and hub-alias hosts (lifeseed.online) scope by the
   // node actually being viewed, matching how trees/pulses are tagged (plantLifetree).
   hostDomain?: string;
+  // Strict scope: when scoped, hide even the viewer's own off-domain trees (a "this place only"
+  // forest). Only meaningful while NOT reflecting. See domain/community.strictScope.
+  hostStrictScope?: boolean;
 }) {
-  const { tab, viewMode, lightseed, isSuperAdmin, isAdmin, setAlignments, hostReflectsPublic, hostDomain } = params;
+  const { tab, viewMode, lightseed, isSuperAdmin, isAdmin, setAlignments, hostReflectsPublic, hostDomain, hostStrictScope } = params;
 
   const [data, setData] = useState<any[]>([]);
   const [lastDoc, setLastDoc] = useState<any>(null);
@@ -55,9 +58,12 @@ export function useForestFeed(params: {
     // Commons mode: if this node reflects the instance's public, pass no domain (every feed
     // treats an absent domain as unscoped → the whole instance); otherwise scope to this node.
     // Unset flag falls back to the hub default, so the hub keeps reflecting and others stay scoped.
-    const currentDomain = reflectsInstancePublic(hostReflectsPublic, isHubDomain(activeDomain))
-      ? undefined
-      : activeDomain;
+    const reflects = reflectsInstancePublic(hostReflectsPublic, isHubDomain(activeDomain));
+    const currentDomain = reflects ? undefined : activeDomain;
+    // The tree feeds merge the viewer's OWN trees so a creator is never lost on a custom domain.
+    // A strict, scoped node suppresses that merge (pass no ownerUid) for a clean "this place only"
+    // forest. Reflecting shows everything anyway, so strictness only bites while scoped.
+    const feedOwnerUid = (!reflects && hostStrictScope) ? undefined : lightseed?.uid;
     // Broad feeds carry no scope, so this resolves to public (+ node when signed in; all
     // but private for staff) — keeping the query to docs the rules will allow.
     const feedLevels = queryableLevels({ uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin });
@@ -68,12 +74,12 @@ export function useForestFeed(params: {
       if (tab === 'forest') {
         if (viewMode === 'map') {
           // The map shows the whole forest at once (no pagination) so every tree appears.
-          const all = await fetchAllLifetrees(currentDomain, lightseed?.uid, treeLevels);
+          const all = await fetchAllLifetrees(currentDomain, feedOwnerUid, treeLevels);
           setData(all);
           setLastDoc(null);
           setHasMore(false);
         } else {
-          const res = await fetchLifetrees(currentLastDoc, currentDomain, lightseed?.uid, treeLevels);
+          const res = await fetchLifetrees(currentLastDoc, currentDomain, feedOwnerUid, treeLevels);
           setData(prev => {
             const newItems = res.items;
             if (reset) return newItems;

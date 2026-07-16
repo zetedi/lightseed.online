@@ -64,13 +64,18 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
   const [isTogglingReflect, setIsTogglingReflect] = useState(false);
   const isDomainNode = !!community.domain && !isHubDomain(community.domain);
 
+  // The strict-scope toggle — mirrors community.strictScope. Only bites while scoped (reflect off).
+  const [strictOn, setStrictOn] = useState(!!community.strictScope);
+  const [isTogglingStrict, setIsTogglingStrict] = useState(false);
+
   // Keep the mirrors in sync whenever the community prop changes (e.g. after refresh).
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- prop→state sync of optimistic toggles; deriving would lose the optimistic flips made while a save is in flight
     setChainSealed(!!community.chainLocked);
     setTokenisationOn(!!community.tokenisationEnabled);
     setReflectsOn(!!community.reflectsPublic);
-  }, [community.chainLocked, community.tokenisationEnabled, community.reflectsPublic]);
+    setStrictOn(!!community.strictScope);
+  }, [community.chainLocked, community.tokenisationEnabled, community.reflectsPublic, community.strictScope]);
 
   // The chain seal ("big red stamp", About → Vision). Sealing persists community.chainLocked so new
   // blocks are hashed with the canonical, reproducible scheme (src/domain/chain). When this is the
@@ -127,6 +132,19 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
       setReflectsOn(!next); // revert on failure
     }
     setIsTogglingReflect(false);
+  };
+
+  const handleToggleStrict = async (next: boolean) => {
+    setIsTogglingStrict(true);
+    setStrictOn(next); // optimistic
+    try {
+      await updateCommunity(community.id, { strictScope: next });
+      onUpdate?.({ strictScope: next });
+    } catch (e) {
+      console.error(e);
+      setStrictOn(!next); // revert on failure
+    }
+    setIsTogglingStrict(false);
   };
 
   // Verify the node's sealed blocks: recompute each canonically-sealed block's hash and confirm it
@@ -264,6 +282,28 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${reflectsOn ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
           </div>
+
+          {/* Strict scope — only offered while scoped (reflect off). Hides even the keeper's own
+              off-domain trees, for a clean "this place only" forest. */}
+          {!reflectsOn && (
+            <div className="mt-2 flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500"><Icons.Eye /></span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-slate-800">Strict scope</p>
+                <p className="mt-0.5 text-sm text-slate-500">Show only {community.domain}'s own trees — hide even your own trees from other domains, for a clean single-place forest. No effect while reflecting the commons.</p>
+              </div>
+              <button
+                onClick={() => handleToggleStrict(!strictOn)}
+                disabled={isTogglingStrict}
+                role="switch"
+                aria-checked={strictOn}
+                title={strictOn ? 'Strict — this place only' : 'Your own trees still show'}
+                className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${strictOn ? 'bg-emerald-600' : 'bg-slate-300'}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${strictOn ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
+          )}
         </div>
       )}
     </>
