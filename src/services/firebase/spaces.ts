@@ -65,7 +65,22 @@ export const getVisionById = async (id: string): Promise<Vision | null> => {
     const snap = await getDoc(doc(db, 'visions', id));
     return snap.exists() ? ({ id: snap.id, ...snap.data() } as Vision) : null;
 };
-export const deleteVision = (id: string) => deleteDoc(doc(db, 'visions', id));
+// A vision now has its OWN chain (contributions) + incoming links (joined / participant). Best-
+// effort cascade so a deleted vision doesn't orphan its story: remove the vision's contribution
+// pulses (visionId-tagged) and its incoming links, then the vision doc itself. Each item's delete
+// is swallowed — the actor removes what the rules permit (their own; all as staff). A stray
+// guarded-tree Root Vision has neither pulses nor links, so for it this is simply a plain delete.
+export const deleteVision = async (id: string) => {
+    try {
+        const pulses = await getDocs(query(pulsesCollection, where('visionId', '==', id)));
+        await Promise.all(pulses.docs.map(d => deleteDoc(d.ref).catch(() => { /* not mine to remove */ })));
+    } catch { /* contribution pulses unreadable — leave them */ }
+    try {
+        const links = await getDocs(query(collection(db, 'links'), where('to', '==', id)));
+        await Promise.all(links.docs.map(d => deleteDoc(d.ref).catch(() => { /* not mine to remove */ })));
+    } catch { /* links the actor can't remove — leave them */ }
+    await deleteDoc(doc(db, 'visions', id));
+};
 
 // Communities
 export const fetchCommunities = async () => {

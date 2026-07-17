@@ -45,6 +45,10 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
     const { t } = useLanguage();
     const isAuthor = currentUserId === vision.authorId;
     const isRoot = vision.title.toLowerCase() === 'root vision';
+    // A Root Vision on a GUARDED tree is a mistake (a guarded tree is stood-for, not dreamed
+    // forward — it should never have had one), so its author may delete it. The Root Vision of a
+    // personal LIFETREE stays its protected foundation and cannot be removed.
+    const rootOnGuarded = isRoot && !!myTrees?.find(tr => tr.id === vision.lifetreeId && (tr.treeType === 'GUARDED' || tr.isNature));
 
     const [section, setSection] = useState<VisionSection>('about');
     const [isJoined, setIsJoined] = useState(false);
@@ -182,16 +186,16 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                                 <span>{isJoined ? 'Joined' : 'Join Vision'}</span>
                             </button>
                         )}
-                        {isAuthor && !isRoot && onDelete && (
+                        {isAuthor && onDelete && (!isRoot || rootOnGuarded) && (
                             <button
                                 onClick={() => onDelete(vision.id)}
                                 className="flex items-center gap-1 rounded-full bg-red-500/15 px-4 py-2 text-xs font-bold text-red-300 border border-red-400/30 transition-colors hover:bg-red-500 hover:text-white"
                             >
                                 <Icons.Trash />
-                                <span>Delete</span>
+                                <span>{rootOnGuarded ? 'Delete (stray)' : 'Delete'}</span>
                             </button>
                         )}
-                        {isAuthor && isRoot && (
+                        {isAuthor && isRoot && !rootOnGuarded && (
                             <span className="flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/15 px-3 py-1.5 text-[10px] font-bold text-emerald-200" title="This vision is the tree's own root — its foundation.">
                                 <Icons.ShieldCheck /> ROOT VISION
                             </span>
