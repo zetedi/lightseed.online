@@ -10,7 +10,7 @@ import { useListDensity, densityGridClass, type ListDensity } from '../hooks/use
 import { useVisibleLightHouses } from '../hooks/useVisibleLightHouses';
 import { useRefreshSignal } from '../hooks/useRefreshSignal';
 import { getBedsForLightHouse } from '../services/firebase/trees';
-import { tabTone } from '../utils/tabTheme';
+import { tabTone, type TabTheme } from '../utils/tabTheme';
 import type { LightHouse } from '../domain/lightHouse';
 import type { Lifetree } from '../types';
 
@@ -89,9 +89,12 @@ interface BedsBrowsePageProps {
   // LightHouse scope, derived exactly like the forest: a community domain shows its own houses,
   // the hub (null) shows them all.
   lightHouseDomain?: string | null;
+  // The active node theme — passed so the header band resolves the SAME pigment the nav's
+  // active pill does (both call tabTone('beds', theme)); without it they drift on a themed node.
+  theme?: TabTheme | null;
 }
 
-export const BedsBrowsePage = ({ onViewTree, lightHouseDomain = null }: BedsBrowsePageProps) => {
+export const BedsBrowsePage = ({ onViewTree, lightHouseDomain = null, theme = null }: BedsBrowsePageProps) => {
   const { t } = useLanguage();
   const { lightseed } = useSession();
   const [density, setDensity] = useListDensity('beds');
@@ -135,7 +138,7 @@ export const BedsBrowsePage = ({ onViewTree, lightHouseDomain = null }: BedsBrow
         .filter(g => g.beds.length > 0)
     : groups;
 
-  const tone = tabTone('beds');
+  const tone = tabTone('beds', theme);
 
   return (
     <div className="mx-auto max-w-7xl px-4 pt-6 pb-4 sm:px-6 sm:pb-6 animate-in fade-in duration-500 overflow-x-hidden">

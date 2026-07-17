@@ -11,11 +11,12 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
 - Consecrate **The O House** in the app (name, photo, place, beds).
 - The **guardian veto council test** in Per Auset — the social trial of the
   conscience mechanism.
-- The **Listening Root** now stands in the virtual forest. Invite Sam Altman to
-  plant its living sacred fig in Kataragama on 8/8; seek a cutting propagated
-  and freely offered by the Jaya Sri Maha Bodhi's custodians in Anuradhapura,
-  only if safe for the parent tree; if Sam cannot, Zoltán will. The virtual tree
-  remains unvalidated until the living act tends it.
+- The **Listening Root** stands in the virtual forest, unvalidated until a living act
+  tends it. Its **living planting is NOT an 8/8 deliverable** — the physical sacred fig in
+  Kataragama waits for the right cutting (ideally one propagated and freely offered by the
+  Jaya Sri Maha Bodhi's custodians in Anuradhapura, only if safe for the parent tree), the
+  right hands, and the right moment, whenever they come. (An earlier plan tied it to 8/8 with
+  an invitation to Sam Altman to plant it; that timing is released — the root is patient.)
 - **Rules parity pass** for the client-side visibility gates (trees, Light Houses).
 - perauset.com goes live on 8/8 (deploy `--only hosting:perauset`); printed QRs
   should carry the final domain (refresh mints after the move).

@@ -784,6 +784,7 @@ const AppContent = () => {
                 <BedsBrowsePage
                     onViewTree={setSelectedTree}
                     lightHouseDomain={(impersonatedCommunity || hostCommunity)?.domain || null}
+                    theme={effectiveTheme}
                 />
             );
         }
