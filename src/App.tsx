@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
 import {
   logout,
   fetchEventPulses,
@@ -64,7 +64,7 @@ import { setLightHouseVisibility, deleteLightHouse } from './services/firebase';
 import { announce, onRefresh as onBusRefresh } from './services/refreshBus';
 import { useRefreshSignal } from './hooks/useRefreshSignal';
 import { findBeingByLid } from './services/firebase/beings';
-import { lidFromPath } from './domain/beingLink';
+import { lidFromPath, beingPath } from './domain/beingLink';
 import { inviteIdFromPath } from './domain/communityDoor';
 import { getCommunityInvite, getCommunityById } from './services/firebase';
 import type { CommunityInvite } from './types';
@@ -329,7 +329,9 @@ const AppContent = () => {
         if (authLoading) return;
         const lid = lidFromPath(window.location.pathname);
         if (!lid) return;
-        window.history.replaceState({}, '', '/');
+        // The address is KEPT (only normalized) — /b/<lid> is a real, refreshable door now:
+        // the hosting rewrite serves the shell for it, and this effect re-opens the being.
+        window.history.replaceState(window.history.state, '', beingPath(lid));
         findBeingByLid(lid, !!lightseed, { uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin }).then(found => {
             if (!found) { notify('This link names a being you cannot see from here.'); return; }
             if (found.kind === 'tree') setSelectedTree(found.tree);
@@ -407,6 +409,25 @@ const AppContent = () => {
         { key: 'editingEvent', open: !!editingEvent, close: () => setEditingEvent(null) },      // nested on a pulse detail
         { key: 'growthPlayer', open: !!showGrowthPlayer, close: () => setShowGrowthPlayer(null) }, // nested on a tree detail (or standalone)
     ]);
+
+    // The address bar mirrors the open being: while a tree / light house / vision with a lid
+    // stands on screen, the bar wears its /b/<lid> address — copyable and refreshable (a refresh
+    // hits the /b/** hosting rewrite, the shell boots, and the arrival effect above re-opens it).
+    // replaceState ONLY, and declared AFTER useHistoryLayers so its pushState (same commit, on
+    // open) runs first and this write lands on the armed entry: the entry COUNT never changes,
+    // so the back-button machinery's pushState/back() arithmetic is untouched. A being without
+    // a lid leaves the bar alone; when the last of the three closes, the bar returns to '/'.
+    const beingWasOpenRef = useRef(false);
+    useEffect(() => {
+        const top = selectedTree || viewingLightHouse || selectedVision;
+        if (top) {
+            beingWasOpenRef.current = true;
+            if (top.lid) window.history.replaceState(window.history.state, '', beingPath(top.lid));
+        } else if (beingWasOpenRef.current) {
+            beingWasOpenRef.current = false;
+            if (lidFromPath(window.location.pathname)) window.history.replaceState(window.history.state, '', '/');
+        }
+    }, [selectedTree, viewingLightHouse, selectedVision]);
 
     const handleTreeUpdate = (treeId: string, updates: any) => {
         setData(prev => prev.map(item => item.id === treeId ? { ...item, ...updates } : item));

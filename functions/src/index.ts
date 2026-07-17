@@ -1287,3 +1287,236 @@ export const deleteMyAccount = onCall({ cors: true }, async (request) => {
     const counts = await purgeUserData(uid);
     return { deleted: true, ...counts };
 });
+
+// ---------------------------------------------------------------------------
+// The living world, visible — per-being link previews + the living sitemap.
+//
+// /b/<lid> is served by `beingPreview` (a hosting rewrite ahead of the ** catch-
+// all): EVERYONE receives the same 200 page — the deployed index.html with its
+// head meta swapped to the being's own name, words and image. Bots read the
+// meta; a human's SPA boots and lidFromPath opens the being. No user-agent
+// sniffing. PUBLIC beings only: anything node/community/private (or unknown)
+// serves the UNMODIFIED shell — the generic card, never a leaked name. Every
+// interpolated field is HTML-escaped: a being's name/body is user content
+// entering raw HTML.
+// ---------------------------------------------------------------------------
+
+// Node 22 ships global fetch; the functions tsconfig lib (es2022) has no type for it.
+declare const fetch: (url: string) => Promise<{ ok: boolean; text(): Promise<string> }>;
+
+// Mirrors src/domain/beingLink.ts lidFromPath — the lid a /b/ path names.
+const LID_RE = /^\/b\/([0-9a-fA-F-]{8,})\/?$/;
+
+// Attribute-safe escape for user content entering raw HTML. (The email
+// escapeHtml above leaves ' alone; meta content deserves all five.)
+const escapeHtmlFull = (s: string): string => s
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+
+const collapseWhitespace = (s: string): string => s.replace(/\s+/g, " ").trim();
+const truncate160 = (s: string): string => (s.length <= 160 ? s : `${s.slice(0, 159).trimEnd()}…`);
+
+// The host the visitor actually asked for (hosting forwards it in x-forwarded-host),
+// pattern-gated so a forged header can never inject into a fetch URL or the canonical.
+const requestHost = (req: { hostname?: string; headers: Record<string, unknown> }): string => {
+    const fwd = String(req.headers["x-forwarded-host"] || "").split(",")[0].trim();
+    const host = fwd || String(req.hostname || "");
+    return /^[a-z0-9][a-z0-9.-]*$/i.test(host) ? host : "lightseed.online";
+};
+
+interface PublicBeingCard {
+    name: string;
+    body: string;
+    image?: string;
+    // Present only for a public Light House — becomes a JSON-LD Place block.
+    place?: { latitude?: number; longitude?: number };
+}
+
+// Server-side mirror of findBeingByLid (src/services/firebase/beings.ts), PUBLIC-ONLY:
+// the admin SDK sees everything, so the visibility gate lives here, per collection.
+// A lid names exactly one being — once a collection matches, its gate decides alone.
+const findPublicBeingByLid = async (lid: string): Promise<PublicBeingCard | null> => {
+    const one = async (coll: string) =>
+        (await db.collection(coll).where("lid", "==", lid).limit(1).get()).docs[0];
+
+    const treeDoc = await one("lifetrees");
+    if (treeDoc) {
+        const t = treeDoc.data() as any;
+        // Absent visibility = public (legacy trees) — but a BED's absent default is
+        // 'node' (domain/bed.ts), so only an explicit 'public' opens a bed.
+        const isPublic = t.visibility === "public" || (t.visibility == null && t.treeType !== "BED");
+        if (!isPublic) return null;
+        return {
+            name: String(t.name || ""),
+            body: String(t.body || ""),
+            image: (t.latestGrowthUrl || t.imageUrl || undefined) as string | undefined,
+        };
+    }
+
+    const houseDoc = await one("lightHouses");
+    if (houseDoc) {
+        const h = houseDoc.data() as any;
+        if (h.visibility !== "public") return null; // absent = 'community' — NOT public
+        return {
+            name: String(h.name || ""),
+            body: String(h.body || ""),
+            image: (h.imageUrl || undefined) as string | undefined,
+            place: {
+                latitude: typeof h.latitude === "number" ? h.latitude : undefined,
+                longitude: typeof h.longitude === "number" ? h.longitude : undefined,
+            },
+        };
+    }
+
+    const visionDoc = await one("visions");
+    if (visionDoc) {
+        const v = visionDoc.data() as any;
+        if (!(v.visibility === "public" || v.visibility == null)) return null;
+        return {
+            name: String(v.title || ""),
+            body: String(v.body || ""),
+            image: (v.imageUrl || undefined) as string | undefined,
+        };
+    }
+
+    return null;
+};
+
+// Replace the text between two captured delimiters with an already-escaped value.
+// A replacer FUNCTION, never a replacement string: user content may contain `$&`
+// and friends, which String.replace would expand.
+const setBetween = (html: string, re: RegExp, value: string): string =>
+    html.replace(re, (_m, pre: string, post: string) => `${pre}${value}${post}`);
+
+// Swap the deployed shell's head meta for one being. All values arrive RAW and are
+// escaped here, once, at the boundary.
+const swapHeadMeta = (
+    shell: string,
+    raw: { title: string; description: string; image: string; url: string },
+    placeLd?: object,
+): string => {
+    const title = escapeHtmlFull(raw.title);
+    const description = escapeHtmlFull(raw.description);
+    const image = escapeHtmlFull(raw.image);
+    const url = escapeHtmlFull(raw.url);
+
+    let out = shell;
+    out = setBetween(out, /(<title>)[\s\S]*?(<\/title>)/, title);
+    out = setBetween(out, /(<meta name="description" content=")[^"]*(")/, description);
+    out = setBetween(out, /(<link rel="canonical" href=")[^"]*(")/, url);
+    for (const [prop, value] of [
+        ["og:title", title], ["og:description", description],
+        ["og:url", url], ["og:image", image], ["og:image:alt", title],
+    ] as const) {
+        out = setBetween(out, new RegExp(`(<meta property="${prop}" content=")[^"]*(")`), value);
+    }
+    for (const [name, value] of [
+        ["twitter:title", title], ["twitter:description", description], ["twitter:image", image],
+    ] as const) {
+        out = setBetween(out, new RegExp(`(<meta name="${name}" content=")[^"]*(")`), value);
+    }
+    // The static og:image dimensions/type describe og.png; for a being's own image
+    // they would lie, so they are dropped.
+    if (!raw.image.endsWith("/og.png")) {
+        out = out.replace(/\n?\s*<meta property="og:image:(?:type|width|height)" content="[^"]*" \/>/g, "");
+    }
+    if (placeLd) {
+        // <-escape < so user content can never break out via </script>. The replacement is a
+        // FUNCTION for the same reason as setBetween: `$&`/`$'`/"$`" in user content would
+        // otherwise be expanded by String.replace and splice document text into the script.
+        const json = JSON.stringify(placeLd).replace(/</g, "\\u003c");
+        out = out.replace("</head>", () => `<script type="application/ld+json">${json}</script>\n</head>`);
+    }
+    return out;
+};
+
+export const beingPreview = onRequest(async (req, res) => {
+    // The deployed shell, fetched from the CDN (the static file is served before
+    // rewrites, so /index.html can never loop back into this function).
+    const host = requestHost(req);
+    let shell = "";
+    try {
+        const r = await fetch(`https://${host}/index.html`);
+        if (r.ok) shell = await r.text();
+    } catch (e) {
+        console.error("beingPreview: shell fetch failed:", e);
+    }
+    if (!shell) { res.redirect(302, "/"); return; } // no shell to dress — hand the visitor to the CDN
+
+    res.set("Content-Type", "text/html; charset=utf-8");
+    res.set("Cache-Control", "public, max-age=300, s-maxage=600");
+    try {
+        const lid = ((req.path || "").match(LID_RE) || [])[1];
+        const being = lid ? await findPublicBeingByLid(lid) : null;
+        if (!being || !being.name) { res.status(200).send(shell); return; } // generic card
+
+        const description = truncate160(collapseWhitespace(being.body)) || `${being.name} — a living being on Lightseed.`;
+        const image = being.image && /^https?:\/\//.test(being.image) ? being.image : `https://${host}/og.png`;
+        const url = `https://${host}/b/${lid}`;
+        const placeLd = being.place ? {
+            "@context": "https://schema.org",
+            "@type": "Place",
+            "name": being.name,
+            "description": description,
+            "url": url,
+            ...(being.place.latitude != null && being.place.longitude != null ? {
+                "geo": { "@type": "GeoCoordinates", "latitude": being.place.latitude, "longitude": being.place.longitude },
+            } : {}),
+        } : undefined;
+
+        res.status(200).send(swapHeadMeta(shell, {
+            title: `${being.name} — Lightseed`,
+            description,
+            image,
+            url,
+        }, placeLd));
+    } catch (e) {
+        console.error("beingPreview failed:", e);
+        res.status(200).send(shell); // never a broken page — the generic shell stands in
+    }
+});
+
+// --- The living sitemap ------------------------------------------------------
+// /sitemap.xml (a hosting rewrite; the static public/sitemap.xml is deleted so it
+// can't shadow this). Home + every PUBLIC being as /b/<lid>. Only an explicit
+// visibility 'public' is listed — which also keeps beds' non-public defaults and
+// every absent-legacy doc out of the index (the preview above still serves those;
+// the sitemap is an invitation, not the gate).
+export const sitemap = onRequest(async (req, res) => {
+    const host = requestHost(req);
+    const xmlOf = (urls: string[]): string =>
+        `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join("\n")}\n</urlset>\n`;
+    const home = `  <url>\n    <loc>https://${host}/</loc>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>`;
+    res.set("Content-Type", "application/xml; charset=utf-8");
+    res.set("Cache-Control", "public, max-age=3600, s-maxage=21600");
+    try {
+        const [trees, houses, visions] = await Promise.all([
+            db.collection("lifetrees").where("visibility", "==", "public").get(),
+            db.collection("lightHouses").where("visibility", "==", "public").get(),
+            db.collection("visions").where("visibility", "==", "public").get(),
+        ]);
+        const beings: { lid: string; ms: number }[] = [];
+        for (const snap of [trees, houses, visions]) {
+            for (const d of snap.docs) {
+                const x = d.data() as any;
+                if (typeof x.lid === "string" && x.lid) {
+                    beings.push({ lid: x.lid, ms: tsToMs(x.updatedAt) || tsToMs(x.createdAt) });
+                }
+            }
+        }
+        beings.sort((a, b) => b.ms - a.ms);
+        const MAX_SITEMAP_BEINGS = 500;
+        if (beings.length > MAX_SITEMAP_BEINGS) {
+            console.warn(`sitemap: ${beings.length} public beings exceed the ${MAX_SITEMAP_BEINGS}-entry cap; newest kept.`);
+        }
+        const xmlEscape = (s: string): string => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        const entries = beings.slice(0, MAX_SITEMAP_BEINGS).map((b) => {
+            const lastmod = b.ms ? `\n    <lastmod>${new Date(b.ms).toISOString().slice(0, 10)}</lastmod>` : "";
+            return `  <url>\n    <loc>https://${host}/b/${xmlEscape(b.lid)}</loc>${lastmod}\n  </url>`;
+        });
+        res.status(200).send(xmlOf([home, ...entries]));
+    } catch (e) {
+        console.error("sitemap failed:", e);
+        res.status(200).send(xmlOf([home])); // never a broken sitemap — home alone stands
+    }
+});

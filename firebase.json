@@ -27,6 +27,14 @@
         "function": "unsubscribe"
       },
       {
+        "source": "/b/**",
+        "function": "beingPreview"
+      },
+      {
+        "source": "/sitemap.xml",
+        "function": "sitemap"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
@@ -76,6 +84,10 @@
       {
         "source": "/u/**",
         "function": "unsubscribe"
+      },
+      {
+        "source": "/b/**",
+        "function": "beingPreview"
       },
       {
         "source": "**",
