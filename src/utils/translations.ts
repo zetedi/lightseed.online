@@ -89,6 +89,12 @@ const baseKeys = {
   covenant_signed_toast: "Signed in your own hand.",
   covenant_sealed_toast: "The covenant is sealed — every party has signed.",
   covenant_broken_toast: "The covenant is marked broken — its chain remembers.",
+  // A decision seven people sign (Covenant, phase 3) — a vote is a cryptographic signature.
+  decision_verified: "{n} of {q} signatures verify against the frozen proposal.",
+  decision_verified_forged: "This decision claims to be passed, but its signatures do not verify.",
+  decision_signed_toast: "Signed in your own hand.",
+  decision_enacted_toast: "Enacted — the circle's signatures seal it.",
+  decision_signed_badge: "signed",
   admin_title: "Admin", admin_sub: "Network stewardship and roles.",
   planted_trees: "Planted Trees", planted_trees_sub: "Living identities you have planted and steward.",
   guarded_trees: "Guarded Trees", guarded_trees_sub: "Trees you help protect as a guardian.",

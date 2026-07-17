@@ -1,8 +1,11 @@
-import { query, getDocs, addDoc, serverTimestamp, doc, runTransaction, where, updateDoc, deleteDoc, Timestamp } from 'firebase/firestore';
+import { query, getDocs, getDoc, addDoc, setDoc, collection, serverTimestamp, doc, runTransaction, where, updateDoc, deleteDoc, Timestamp, type DocumentData } from 'firebase/firestore';
 import { type Pulse, type Community, type Decision, type DecisionNature, type DecisionMode, type ConsensusStance, votesRequired } from '../../types';
 import { createBlock } from '../../utils/crypto';
 import { uuidv7 } from '../../utils/id';
 import { type PulseVisibility } from '../../domain/pulse';
+import { DECISION_DOMAIN, decisionIdentity, decisionEnacted, decisionAuthoritative } from '../../domain/decision';
+import { signatureBindsToIdentity } from '../../domain/covenant';
+import { ensureSigningKey, publishSigningKey, sign as signWithKey, verify as verifyWithKey } from '../keys';
 import { auth, db, toMillis, mapDoc, pulsesCollection } from './core';
 import { normalizeDomain } from './trees';
 
@@ -82,6 +85,233 @@ export const voteOnDecision = async (decisionId: string, uid: string): Promise<V
         tx.update(ref, { votes: next });
         return 'open' as const;
     });
+};
+
+// ── The signed vote — a decision seven people sign (Covenant, phase 3) ─────────────────────────────
+// A vote becomes an Ed25519 SIGNATURE over the decision's frozen canonical identity (domain/decision.ts).
+// Signatures live one-per-member in pulses/{decisionId}/signatures/{uid} — the open-membership analogue
+// of the covenant's signature subcollection (there is no fixed roster; any community member may sign
+// until quorum). Enactment is by the VERIFIED count, never the raw votes[] — the seal is the signatures.
+
+// A per-member signature doc: the base64 Ed25519 signature over the decision identity, plus the signer's
+// published SPKI public key AT SIGNING TIME (so verification never depends on a later-rotated key). In
+// consensus mode a `position` of 'unite' marks it as an affirmative uniting signature (stand_aside /
+// block are NOT signed — they stay positions/concerns as before).
+export interface DecisionSignature {
+  uid: string;       // == the signatures doc id (each member writes only their own slot)
+  sig: string;       // base64 Ed25519 signature over decisionIdentity(...)
+  pubkey: string;    // base64 SPKI public key used to sign
+  position?: ConsensusStance; // 'unite' in consensus mode; absent in threshold mode
+  signedAt?: unknown;
+}
+
+const decisionSignaturesCol = (decisionId: string) => collection(db, 'pulses', decisionId, 'signatures');
+
+// A being's PUBLISHED identity key — persons/{uid}.publicKeyPem (base64 SPKI, world-readable). A
+// signature counts toward enactment only if its recorded pubkey EQUALS this key (signatureBindsToIdentity)
+// AND verifies. Absent reads as '' (a member who has not set up signing cannot yet contribute a count).
+const getPublishedKey = async (uid: string): Promise<string> => {
+  const snap = await getDoc(doc(db, 'persons', uid));
+  return snap.exists() ? ((snap.data() as DocumentData).publicKeyPem as string | undefined ?? '') : '';
+};
+
+// Read the freshest decision doc (identity + chain head + status). Returns null if it vanished.
+const readDecision = async (decisionId: string): Promise<Decision | null> => {
+  const snap = await getDoc(doc(db, 'pulses', decisionId));
+  return snap.exists() ? ({ id: snap.id, ...(snap.data() as DocumentData) } as Decision) : null;
+};
+
+export const getDecisionSignatures = async (decisionId: string): Promise<DecisionSignature[]> => {
+  const snap = await getDocs(decisionSignaturesCol(decisionId));
+  return snap.docs.map(d => ({ uid: d.id, ...(d.data() as DocumentData) } as DecisionSignature));
+};
+
+// Verify a decision the way any reader can: re-derive the frozen identity, then count the signatures
+// whose recorded pubkey EQUALS the signer's currently-published persons key AND whose Ed25519 verifies
+// against that identity. In consensus mode only 'unite' signatures are affirmatives. `enacted` is
+// whether the crypto meets the quorum RIGHT NOW; `valid` is whether the decision's CLAIMED status is
+// honest — a threshold decision flipped to 'passed' with fewer verified signatures than required fails
+// here (the seal is the signatures, not the flag). Membership is enforced at WRITE time by the rules
+// (only a community member may create a signature), so verification binds to the IDENTITY key, matching
+// verifyCovenant. Legacy unsigned uid-votes are not signatures and never appear here — they remain
+// valid-by-auth on the `votes` array (see the migration note), simply outside the crypto count.
+export const verifyDecision = async (
+  decision: Pick<Decision, 'lid' | 'communityId' | 'nature' | 'title' | 'body' | 'votesRequired' | 'status' | 'mode'>,
+  sigs: DecisionSignature[],
+): Promise<{ valid: boolean; verifiedCount: number; enacted: boolean }> => {
+  const identity = decisionIdentity(decision);
+  const mode: DecisionMode = decision.mode || 'threshold';
+  const uids = [...new Set(sigs.map(s => s.uid))];
+  const published = new Map<string, string>();
+  await Promise.all(uids.map(async uid => published.set(uid, await getPublishedKey(uid))));
+  let verifiedCount = 0;
+  for (const s of sigs) {
+    if (mode === 'consensus' && s.position !== 'unite') continue;       // only uniting signatures count
+    if (!signatureBindsToIdentity(s.pubkey, published.get(s.uid) ?? '')) continue; // must be the PUBLISHED key
+    if (await verifyWithKey(s.pubkey, s.sig, identity, DECISION_DOMAIN)) verifiedCount++;
+  }
+  const enacted = decisionEnacted(verifiedCount, decision.votesRequired);
+  const valid = decisionAuthoritative(decision.status, verifiedCount, decision.votesRequired, mode);
+  return { valid, verifiedCount, enacted };
+};
+
+// Everything the council view needs to show a decision's crypto state in one call: the raw signatures
+// and the re-run verification (verified count vs. the quorum, and whether a claimed 'passed' is honest).
+export const getDecisionSignatureState = async (
+  decision: Pick<Decision, 'id' | 'lid' | 'communityId' | 'nature' | 'title' | 'body' | 'votesRequired' | 'status' | 'mode'>,
+): Promise<{ signatures: DecisionSignature[]; verifiedCount: number; enacted: boolean; valid: boolean }> => {
+  const signatures = await getDecisionSignatures(decision.id);
+  const v = await verifyDecision(decision, signatures);
+  return { signatures, ...v };
+};
+
+export interface SignDecisionResult {
+  // 'enacted' — this signature landed the quorum (threshold); 'signed' — recorded, quorum not yet met;
+  // 'already' — the member had already signed; 'listening'/'closed' — the proposal took no signature.
+  outcome: 'enacted' | 'signed' | 'already' | 'listening' | 'closed';
+  verifiedCount: number;
+  // Present ONLY when the device key was created during this call — surface it for backup, then let it
+  // go (never persisted, never shown again).
+  recoveryPhrase?: string[];
+}
+
+// Sign a decision in your own hand. Ensures the caller has a device key (returning the recovery phrase
+// ONCE if freshly created), confirms they are a community member, signs the frozen identity, and writes
+// their OWN signature slot. It ALSO denormalises into the decision doc — appending the uid to `votes`
+// (threshold) or recording a 'unite' position (consensus) — so existing queries/UI keep working. Then it
+// re-reads + verifies every signature and, in THRESHOLD mode, enacts at the VERIFIED quorum (mint the
+// enactedHash block + status 'passed', in a transaction that bails if already enacted — no double-enact).
+// CONSENSUS enactment stays with the clerk's discernment (discernDecision); a 'unite' here is a recorded,
+// signed affirmative, not an auto-pass. stand_aside / block are NOT signed — route those through
+// recordPosition as before.
+export const signDecision = async (
+  decision: Pick<Decision, 'id'>,
+  position?: ConsensusStance,
+): Promise<SignDecisionResult> => {
+  const uid = auth.currentUser?.uid;
+  if (!uid) throw new Error('Sign in to add your voice.');
+  const decisionId = decision.id;
+  const ref = doc(db, 'pulses', decisionId);
+
+  const fresh = await readDecision(decisionId);
+  if (!fresh) throw new Error('Decision not found.');
+  const mode: DecisionMode = fresh.mode || 'threshold';
+
+  // Guards mirror voteOnDecision / recordPosition — settle these BEFORE prompting for a key.
+  if (fresh.status === 'passed') return { outcome: 'enacted', verifiedCount: fresh.votesRequired };
+  if (['withdrawn', 'rejected', 'expired'].includes(fresh.status)) return { outcome: 'closed', verifiedCount: 0 };
+  if (mode === 'threshold' && fresh.listening) return { outcome: 'listening', verifiedCount: 0 };
+
+  // Only a community member may sign — the crypto analogue of the covenant's party check (the rules
+  // enforce the same at write time). Owner is implicitly a member of their own circle.
+  if (!(await isDecisionMember(fresh.communityId, uid))) {
+    throw new Error('Only a member of this community may sign this decision.');
+  }
+
+  const key = await ensureSigningKey(uid); // idempotent — creates on first use, returns the phrase once
+
+  // The count binds to the PUBLISHED identity key: this signature only counts if its pubkey equals
+  // persons/{uid}.publicKeyPem. ensureSigningKey already (re)publishes it, but assert + self-heal so a
+  // past failed publish can't make this signature silently fail to count. Refuse rather than sign into
+  // the void if it still can't be published.
+  if ((await getPublishedKey(uid)) !== key.publicKeyB64) {
+    await publishSigningKey(uid, key.publicKeyB64);
+    if ((await getPublishedKey(uid)) !== key.publicKeyB64) {
+      throw new Error('Your published signing key could not be set. Please try again in a moment.');
+    }
+  }
+
+  const identity = decisionIdentity(fresh);
+  const sig = await signWithKey(identity, DECISION_DOMAIN, uid);
+  const sigPosition: ConsensusStance | undefined = mode === 'consensus' ? (position ?? 'unite') : undefined;
+
+  // Each member writes ONLY their own slot (doc id == uid); the rules enforce it and community
+  // membership. The pubkey is frozen here so verification never depends on a later-rotated key.
+  await setDoc(doc(decisionSignaturesCol(decisionId), uid), {
+    sig, pubkey: key.publicKeyB64, signedAt: serverTimestamp(),
+    ...(sigPosition ? { position: sigPosition } : {}),
+  });
+
+  // Denormalise into the decision doc so existing queries/UI (councilView) keep working: the uid on
+  // `votes` (threshold, the who-signed) or a 'unite' position (consensus). serverTimestamp can't live in
+  // an array element, so a position is client-stamped, exactly like recordPosition.
+  let alreadyVoted = false;
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists()) return;
+    const d = snap.data() as DocumentData;
+    if (mode === 'consensus') {
+      const positions = (Array.isArray(d.positions) ? d.positions : []).filter((p: { by: string }) => p.by !== uid);
+      positions.push({ by: uid, stance: 'unite', note: '', at: Timestamp.fromMillis(Date.now()) });
+      tx.update(ref, { positions });
+    } else {
+      const votes: string[] = Array.isArray(d.votes) ? d.votes : [];
+      alreadyVoted = votes.includes(uid);
+      if (!alreadyVoted) tx.update(ref, { votes: [...votes, uid] });
+    }
+  });
+
+  // Re-read every signature and verify against the frozen identity — enactment counts VERIFIED
+  // signatures, never a raw doc/array count, so the seal can never outrun the crypto.
+  const sigs = await getDecisionSignatures(decisionId);
+  const { verifiedCount, enacted } = await verifyDecision(fresh, sigs);
+
+  if (mode === 'threshold' && enacted) {
+    // The SEAL is the signatures: verifyDecision has already confirmed a quorum of VERIFIED signatures,
+    // so this decision IS cryptographically enacted right now, whoever the signer is. The status flag +
+    // chain seal-block are a BEST-EFFORT denormalisation of that fact: the pulses rule gates a
+    // status→'passed' flip to the proposer / community owner / staff, so a plain member landing the
+    // sealing signature can't flip it — and must not be shown an error for a write the crypto already
+    // settled. When a privileged party signs (or later touches it), the flag catches up; the transaction
+    // re-checks status so a concurrent enactment can't double-advance the chain. (fresh.status was
+    // narrowed away from 'passed' by the early guard above.)
+    try {
+      await runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+        if (!snap.exists()) throw new Error('Decision vanished mid-enact.');
+        const d = snap.data() as DocumentData;
+        if (d.status === 'passed') return; // another client already enacted — nothing to do
+        const votes: string[] = Array.isArray(d.votes) ? d.votes : [];
+        const enactedHash = await createBlock(d.hash || 'DECISION', { decision: decisionId, votes, enacted: true, sealedBySignatures: true }, Date.now());
+        tx.update(ref, { status: 'passed', passedAt: serverTimestamp(), enactedHash });
+      });
+    } catch { /* status flip is privileged (rules); the crypto quorum stands regardless — the flag catches up */ }
+    return { outcome: 'enacted', verifiedCount, ...(key.created && key.recoveryPhrase ? { recoveryPhrase: key.recoveryPhrase } : {}) };
+  }
+
+  const outcome: SignDecisionResult['outcome'] = (mode === 'threshold' && alreadyVoted) ? 'already' : 'signed';
+  return { outcome, verifiedCount, ...(key.created && key.recoveryPhrase ? { recoveryPhrase: key.recoveryPhrase } : {}) };
+};
+
+// Community membership for signing: a `member` link, or being the community's owner (implicitly inside
+// their own circle). Mirrors the rules' isCommunityMember (hasLink('member', …) || owner).
+const isDecisionMember = async (communityId: string, uid: string): Promise<boolean> => {
+  if (!communityId) return false;
+  const linkSnap = await getDoc(doc(db, 'links', `${uid}__member__${communityId}`));
+  if (linkSnap.exists()) return true;
+  const comSnap = await getDoc(doc(db, 'communities', communityId));
+  return comSnap.exists() && (comSnap.data() as DocumentData).ownerId === uid;
+};
+
+// ── Migration (BUILT, NOT RUN) ─────────────────────────────────────────────────────────────────────
+// A CENSUS, not a rewrite. Existing uid-votes CANNOT be retro-signed — no server holds a being's private
+// key, and a signature must be minted by the being itself (in the app, on its device). So legacy unsigned
+// votes REMAIN valid-by-auth on the `votes` array; only new votes are signed. This walks the decisions
+// and reports the crossover — how many carry cryptographic signatures vs. legacy-only votes — so a
+// guardian can watch the ledger cut over. Idempotent and read-only (it writes nothing). Staff-run from
+// the superadmin console; NOT invoked anywhere.
+export const migrateDecisionsToSignatures = async (): Promise<{ scanned: number; signed: number; legacyUnsigned: number }> => {
+  const snap = await getDocs(pulsesCollection);
+  let scanned = 0, signed = 0, legacyUnsigned = 0;
+  for (const d of snap.docs) {
+    const data = d.data() as DocumentData;
+    if (data.type !== 'decision') continue;
+    scanned++;
+    const sigs = await getDocs(decisionSignaturesCol(d.id));
+    if (!sigs.empty) signed++;
+    else if (Array.isArray(data.votes) && data.votes.length) legacyUnsigned++;
+  }
+  return { scanned, signed, legacyUnsigned };
 };
 
 // Raise a concern (a veto that opens reflection, not just a halt). Records the concern and puts

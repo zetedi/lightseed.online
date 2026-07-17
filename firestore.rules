@@ -526,6 +526,23 @@ service cloud.firestore {
           allow read: if true;
           allow write: if isSignedIn() && isOwner(loveId);
       }
+
+      // Decision signatures — a decision seven people SIGN (domain/decision.ts, Covenant phase 3). A
+      // vote is an Ed25519 signature over the decision's frozen identity, one per member. This is the
+      // OPEN-membership analogue of covenants/{id}/signatures: no fixed roster — ANY member of the
+      // decision's community may sign, each ONLY their own slot (doc id == their uid). A signature is
+      // IMMUTABLE (update:false) — the pubkey + sig are frozen the moment they land — so anyone can
+      // re-run verifyDecision and confirm enactment is real, not merely a 'passed' flag. The parent
+      // pulse must be a decision, and the writer must be a member of its community (isCommunityMember,
+      // mirrored in the service). Any signed-in reader may read, to verify.
+      match /signatures/{sigUid} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && sigUid == request.auth.uid
+          && get(/databases/$(database)/documents/pulses/$(pulseId)).data.get('type', '') == 'decision'
+          && isCommunityMember(get(/databases/$(database)/documents/pulses/$(pulseId)).data.get('communityId', ''));
+        allow update: if false;
+        allow delete: if isStaff();
+      }
     }
 
     // Alignments: Read public, Write signed in

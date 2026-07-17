@@ -6,6 +6,27 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-17 · A decision seven people sign (Covenant, phase 3)** — the n-party form, and the
+Covenant stands whole. A Council vote is no longer a bare authenticated uid append: it becomes an
+Ed25519 **signature** over the decision's **frozen canonical identity** `{lid, communityId, nature,
+title, body, votesRequired}` (`DECISION_DOMAIN='lifeseed.decision.v1'`, reusing the phase-1 crystal +
+phase-2 `signatureBindsToIdentity`). Signatures live one-per-member in `pulses/{id}/signatures/{uid}`
+— the **open-membership** analogue of the covenant (there is no fixed party roster; any community
+member may sign until quorum), own-slot + member-gated + immutable in the rules. **Enactment is by
+VERIFIED signatures** (`verifyDecision`), never the raw `votes[]` or the `status` flag: a `'passed'`
+with fewer verified signatures than the quorum is reported non-authoritative (a 6-of-7 forgery fails,
+proven end-to-end with a real Ed25519 test). Consensus keeps its Quaker shape: a `'unite'` position is
+a signature; `stand_aside`/`block` stay unsigned and the clerk still discerns the sense of the meeting.
+**Additive**: legacy unsigned uid-votes remain valid-by-auth (the UI only checks the crypto once a
+signature exists), and can't be retro-signed since no server holds a key — `migrateDecisionsToSignatures`
+is a built, NOT-run census of the crossover. Residual (LOW): the `status`→`passed` flip stays
+proposer/owner/staff-gated (Firestore rules can't verify Ed25519), so a plain member can land the
+sealing signature while the flag + chain seal-block catch up on a privileged touch — the seal is the
+signatures, not the flag. **The Covenant, whole: a being signs in its own hand → two beings seal a
+pledge neither can deny → seven sign a decision.** See the two prior Covenant rings.
+
+---
+
 **2026-07-17 · The Covenant — a mint two beings sign (phase 2)** — the two-sided mint arrives,
 standing on the signing crystal. A **Covenant** is a Being in its own `covenants` collection with its
 **own chain** (genesis → seal → break): a pledge that seals only when its parties **cryptographically

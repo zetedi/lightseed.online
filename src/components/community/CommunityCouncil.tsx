@@ -1,13 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { SuperDot } from '../ui/SuperDot';
+import { Icons } from '../ui/Icons';
 import { showAlert, showConfirm } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { SectionTitle } from '../ui/SectionTitle';
 import { Community } from '../../types';
-import { createDecision, voteOnDecision, getDecisions, raiseConcern, resumeDecision, withdrawDecision, recordPosition, discernDecision, setDecisionVisibility, deleteDecision } from '../../services/firebase';
+import { createDecision, getDecisions, raiseConcern, resumeDecision, withdrawDecision, recordPosition, discernDecision, setDecisionVisibility, deleteDecision, signDecision, getDecisionSignatureState } from '../../services/firebase';
+import { hasSigningKey } from '../../services/keys';
+import { SigningKeyModal } from '../modals/SigningKeyModal';
 import { DECISION_NATURES, decisionStatusLabels, consensusStanceLabels, votesRequired, type Decision, type DecisionNature, type DecisionMode, type ConsensusStance } from '../../domain/decision';
 import { councilView } from '../../domain/views/council';
 import type { PulseVisibility } from '../../domain/pulse';
+
+// The crypto standing of a decision — how many signatures verify against its frozen identity, whether a
+// claimed 'passed' is honest, and who has signed. Re-run from the raw signatures so the seal is PROVEN.
+interface SigState { verifiedCount: number; valid: boolean; signedUids: Set<string> }
 
 interface CommunityCouncilProps {
   community: Community;
@@ -28,11 +35,39 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
   const [decMode, setDecMode] = useState<DecisionMode>('threshold');
   const [proposing, setProposing] = useState(false);
   const [votingId, setVotingId] = useState<string | null>(null);
+  // The crypto standing of each decision (id → verified signatures), re-run from the raw signatures.
+  const [sigStates, setSigStates] = useState<Record<string, SigState>>({});
+  // Signing-key setup: if the being has no device key yet, we open the modal and resume the pending
+  // signing action once a key exists (mirrors CovenantProfile's onSignClick → doSign flow).
+  const [showKey, setShowKey] = useState(false);
+  const [pendingSign, setPendingSign] = useState<(() => Promise<void>) | null>(null);
+  const [phrase, setPhrase] = useState<string[] | null>(null);
 
   const refreshDecisions = useCallback(() => {
-    getDecisions(community.id, communityLevels).then(setDecisions).catch(() => {});
+    getDecisions(community.id, communityLevels).then(async (ds) => {
+      setDecisions(ds);
+      // Re-verify each decision's signatures (best-effort; a failure just leaves it unproven).
+      const entries = await Promise.all(ds.map(async (d) => {
+        try {
+          const s = await getDecisionSignatureState(d);
+          return [d.id, { verifiedCount: s.verifiedCount, valid: s.valid, signedUids: new Set(s.signatures.map(x => x.uid)) }] as const;
+        } catch { return [d.id, { verifiedCount: 0, valid: true, signedUids: new Set<string>() }] as const; }
+      }));
+      setSigStates(Object.fromEntries(entries));
+    }).catch(() => {});
   }, [community.id, communityLevels]);
   useEffect(() => { refreshDecisions(); }, [refreshDecisions]);
+
+  // Run a signing action, routing through SigningKeyModal first if the being has no device key yet.
+  // On return, surface a freshly-born recovery phrase once, and refresh the crypto standing.
+  const withSigningKey = useCallback(async (id: string, run: () => Promise<void>) => {
+    if (!currentUserId) { showAlert('Sign in to add your voice.'); return; }
+    if (!(await hasSigningKey(currentUserId))) { setPendingSign(() => run); setShowKey(true); return; }
+    setVotingId(id);
+    try { await run(); }
+    catch (e: any) { showAlert(e?.message || 'Could not record your voice.'); }
+    setVotingId(null);
+  }, [currentUserId]);
 
   // Circle ↔ public square: decisions are community-visible by default; showing one to the
   // public is a deliberate act (proposer / keeper / staff — mirrored in the rules).
@@ -58,17 +93,16 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
     setProposing(false);
   };
 
-  const handleVote = async (id: string) => {
-    if (!currentUserId) { showAlert('Sign in to add your voice.'); return; }
-    setVotingId(id);
-    try {
-      const outcome = await voteOnDecision(id, currentUserId);
-      if (outcome === 'listening') showAlert('This proposal is in listening — a concern was raised. It can continue once the concern is tended.');
-      refreshDecisions();
-    }
-    catch (e: any) { showAlert(e?.message || 'Could not record your voice.'); }
-    setVotingId(null);
-  };
+  // A threshold vote is now a SIGNATURE over the decision's frozen identity (Covenant, phase 3): it
+  // signs, denormalises the uid onto votes[], and enacts by the VERIFIED quorum — routing through the
+  // key modal if the being has no device key yet.
+  const handleVote = (id: string) => withSigningKey(id, async () => {
+    const res = await signDecision({ id });
+    if (res.recoveryPhrase) setPhrase(res.recoveryPhrase); // a key was born mid-sign — surface it once
+    if (res.outcome === 'listening') showAlert('This proposal is in listening — a concern was raised. It can continue once the concern is tended.');
+    else if (res.outcome === 'enacted') showAlert(t('decision_enacted_toast'));
+    refreshDecisions();
+  });
 
   const handleRaiseConcern = async (id: string) => {
     if (!currentUserId) { showAlert('Sign in to raise a concern.'); return; }
@@ -95,8 +129,19 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
   };
 
   // --- Quaker consensus handlers ---
+  // A 'unite' position is an affirmative SIGNATURE (position:'unite') — it signs the frozen identity and
+  // records the uniting position, routing through the key modal if needed. stand_aside / block are NOT
+  // signed (we never force-sign a block): they stay plain positions, recorded as before.
   const handlePosition = async (id: string, stance: ConsensusStance) => {
     if (!currentUserId) { showAlert('Sign in to take a position.'); return; }
+    if (stance === 'unite') {
+      await withSigningKey(id, async () => {
+        const res = await signDecision({ id }, 'unite');
+        if (res.recoveryPhrase) setPhrase(res.recoveryPhrase);
+        refreshDecisions();
+      });
+      return;
+    }
     let note: string | undefined;
     if (stance === 'block') {
       const reason = window.prompt('A block is a principled objection that halts unity. What is your concern?');
@@ -211,6 +256,30 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                     </div>
                     {d.body && <p className="mt-1 text-xs italic text-slate-500">{d.body}</p>}
 
+                    {/* The seal PROVEN, not asserted — verified signatures against the frozen proposal. */}
+                    {(() => {
+                      const sig = sigStates[d.id];
+                      if (!sig) return null;
+                      // A forgery alarm fires ONLY once the crypto era was actually entered — i.e. at
+                      // least one signature was cast (signedUids) yet the claimed 'passed' still doesn't
+                      // reach a verified quorum. A 'passed' with ZERO signatures is not a forgery: it is
+                      // a LEGACY uid-vote decision or a one-voice intention (createDecision auto-passes an
+                      // intention without a signature). Those keep their valid-by-auth standing and simply
+                      // show no crypto line — never a red "unverified" warning that would invalidate them.
+                      const forged = !sig.valid && sig.signedUids.size > 0;
+                      if (sig.verifiedCount === 0 && !forged) return null; // nothing signed yet (legacy/voices only)
+                      return (
+                        <div className={`mt-2 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-medium ${
+                          forged ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-800'
+                        }`}>
+                          <span className="[&>svg]:h-3.5 [&>svg]:w-3.5">{forged ? <Icons.Shield /> : <Icons.ShieldCheck />}</span>
+                          <span>{forged
+                            ? t('decision_verified_forged')
+                            : t('decision_verified').replace('{n}', String(sig.verifiedCount)).replace('{q}', String(d.voicesRequired))}</span>
+                        </div>
+                      );
+                    })()}
+
                     {consensus ? (
                       <>
                         <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-bold">
@@ -280,6 +349,41 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Signing-key setup — opened when a being tries to sign a vote without a device key yet.
+          On close, if a key now exists, resume the signing action they set out to do. */}
+      {showKey && currentUserId && (
+        <SigningKeyModal
+          uid={currentUserId}
+          notify={m => showAlert(m)}
+          onClose={async () => {
+            setShowKey(false);
+            const run = pendingSign;
+            setPendingSign(null);
+            if (run && await hasSigningKey(currentUserId)) {
+              setVotingId('key');
+              try { await run(); } catch (e: any) { showAlert(e?.message || 'Could not record your voice.'); }
+              setVotingId(null);
+            }
+          }}
+        />
+      )}
+
+      {/* A freshly-born recovery phrase (only if a device key was created mid-sign) — shown once. */}
+      {phrase && (
+        <div className="fixed inset-x-0 bottom-4 z-50 mx-auto max-w-md rounded-xl border border-amber-200 bg-amber-50 p-3 shadow-lg">
+          <p className="mb-2 text-xs font-semibold text-amber-800">{t('signing_phrase_warn')}</p>
+          <ol className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+            {phrase.map((w, i) => (
+              <li key={i} className="flex items-baseline gap-2 rounded-lg border border-amber-100 bg-white px-2.5 py-1.5">
+                <span className="w-5 shrink-0 text-right text-[10px] font-bold text-slate-400">{i + 1}</span>
+                <span className="font-mono text-sm text-slate-800">{w}</span>
+              </li>
+            ))}
+          </ol>
+          <button type="button" onClick={() => setPhrase(null)} className="mt-2 text-xs font-bold text-amber-700 underline">{t('signing_phrase_done')}</button>
         </div>
       )}
     </div>

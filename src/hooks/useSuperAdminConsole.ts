@@ -3,6 +3,7 @@ import { ensureIntelligenceCommons } from '../services/intelligence';
 import {
   backfillPulseVisibility, migrateArraysToLinks, migratePulseTypeCasing, dropLegacyArrays, migrateTreeVisibility,
   migrateBackfillLids, migrateBackfillMatchIds, backfillVisionChains, migrateAlignmentsToCovenants,
+  migrateDecisionsToSignatures,
 } from '../services/firebase';
 import { setChainLocked, canonicalize, computeCanonicalHash, blockContent, verifyChain } from '../domain/chain';
 
@@ -86,6 +87,17 @@ export function useSuperAdminConsole(isSuperAdmin: boolean, uid?: string) {
       console.log(`[lightseed] done — minted ${r.created} covenant(s), ${r.skipped} already shadowed/invalid.`);
       return r;
     };
+    // A decision seven people SIGN (Covenant, phase 3). This is a CENSUS, not a rewrite: existing
+    // uid-votes CANNOT be retro-signed (no server holds a being's private key — a signature is minted by
+    // the being, on its device, in the app). Legacy unsigned votes REMAIN valid-by-auth; only new votes
+    // are signed. Reports the crossover — how many decisions carry signatures vs. legacy-only votes.
+    // Read-only + idempotent. Built, NOT run automatically.
+    w.migrateDecisionsToSignatures = async () => {
+      console.log('[lightseed] census: decision signatures vs. legacy votes…');
+      const r = await migrateDecisionsToSignatures();
+      console.log(`[lightseed] done — ${r.scanned} decision(s): ${r.signed} signed, ${r.legacyUnsigned} legacy-unsigned (votes only).`);
+      return r;
+    };
     // Crystal: flip the in-memory chain lock to TEST canonical (verifiable) minting this session,
     // and expose the chain toolkit for manual console verification. (The real switch is the
     // node's About → Vision stamp, persisted on community.chainLocked.)
@@ -98,7 +110,7 @@ export function useSuperAdminConsole(isSuperAdmin: boolean, uid?: string) {
       delete w.backfillPulseVisibility; delete w.migrateArraysToLinks; delete w.migratePulseTypeCasing;
       delete w.dropLegacyArrays; delete w.migrateTreeVisibility; delete w.setChainLocked; delete w.lightseedChain;
       delete w.migrateBackfillLids; delete w.migrateBackfillMatchIds; delete w.backfillVisionChains;
-      delete w.migrateAlignmentsToCovenants;
+      delete w.migrateAlignmentsToCovenants; delete w.migrateDecisionsToSignatures;
     };
   }, [isSuperAdmin]);
 }

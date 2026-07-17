@@ -769,3 +769,56 @@ describe('covenants — the two-sided mint: proposer names parties, each signs o
     await assertFails(setDoc(doc(db(ALICE), 'links', `${MALLORY}__party__cov1`), party(MALLORY)));
   });
 });
+
+describe('decision signatures — a decision the community SIGNS: member-gated, own-slot, immutable', () => {
+  // A charter decision (a pulse of type 'decision') in ALICE's community com1. BOB is a member of com1;
+  // MALLORY is not. Each member signs ONLY their own slot in pulses/{id}/signatures/{uid}.
+  const seedDecision = () => env.withSecurityRulesDisabled(async (ctx) => {
+    const d = ctx.firestore();
+    await setDoc(doc(d, 'pulses', 'dec1'), {
+      type: 'decision', lid: 'dec1-lid', communityId: 'com1',
+      nature: 'charter', title: 'Adopt the charter', body: 'We tend together.',
+      proposedBy: ALICE, mode: 'threshold', votes: [ALICE], votesRequired: 7,
+      status: 'open', previousHash: 'DECISION', hash: 'h0', createdAt: 1,
+    });
+    // BOB joins com1 (a member link); ALICE is com1's owner (implicitly a member).
+    await setDoc(doc(d, 'links', `${BOB}__member__com1`), { lid: 'x', type: 'link', rel: 'member', from: BOB, to: 'com1', createdAt: 1 });
+  });
+  const sig = { sig: 'base64-signature', pubkey: 'base64-spki-pubkey', signedAt: 1 };
+
+  it('a community member signs their OWN slot; a non-member cannot sign at all', async () => {
+    await seedDecision();
+    await assertSucceeds(setDoc(doc(db(BOB), 'pulses', 'dec1', 'signatures', BOB), sig));      // member, own slot
+    await assertSucceeds(setDoc(doc(db(ALICE), 'pulses', 'dec1', 'signatures', ALICE), sig));  // owner is a member
+    await assertFails(setDoc(doc(db(MALLORY), 'pulses', 'dec1', 'signatures', MALLORY), sig)); // not a member of com1
+  });
+
+  it('a member may sign only their OWN slot — never another member\'s', async () => {
+    await seedDecision();
+    await assertFails(setDoc(doc(db(BOB), 'pulses', 'dec1', 'signatures', ALICE), sig)); // BOB writing ALICE's slot
+  });
+
+  it('a signature is immutable once written — even by its own signer', async () => {
+    await seedDecision();
+    await env.withSecurityRulesDisabled(async (ctx) => setDoc(doc(ctx.firestore(), 'pulses', 'dec1', 'signatures', BOB), sig));
+    await assertFails(updateDoc(doc(db(BOB), 'pulses', 'dec1', 'signatures', BOB), { sig: 'forged' }));
+  });
+
+  it('signatures attach only to a DECISION pulse, not an ordinary event', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const d = ctx.firestore();
+      await setDoc(doc(d, 'pulses', 'ev1'), { type: 'event', communityId: 'com1', title: 'Gathering', createdAt: 1 });
+      await setDoc(doc(d, 'links', `${BOB}__member__com1`), { lid: 'x', type: 'link', rel: 'member', from: BOB, to: 'com1', createdAt: 1 });
+    });
+    await assertFails(setDoc(doc(db(BOB), 'pulses', 'ev1', 'signatures', BOB), sig));
+  });
+
+  it('the STATUS flag is not the seal — a mere member cannot flip a decision to passed (the enactment gate holds)', async () => {
+    await seedDecision();
+    // Even a signer cannot self-declare the circle's will: flipping status stays with proposer/owner/staff.
+    // (Enactment is authoritative only when the VERIFIED signatures meet the quorum — the crypto, not the
+    // flag; a member landing a signature never gains the power to flip the flag on their own.)
+    await assertFails(updateDoc(doc(db(BOB), 'pulses', 'dec1'), { status: 'passed', passedAt: 2 }));
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'pulses', 'dec1'), { status: 'passed', passedAt: 2 })); // proposer/owner
+  });
+});
