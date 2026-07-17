@@ -6,6 +6,28 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-17 · A being signs in its own hand — the signing crystal (Covenant, phase 1)** — Stage 3
+arrives. Until now all cryptographic signing lived offline in git (the initiation ledger's `.pem` +
+CI); the app was a read-only mirror and `persons.publicKeyPem` sat reserved and null. Now a being can
+hold its own **Ed25519 keypair** in the browser and sign: the keypair is generated with WebCrypto, the
+**private key stored NON-EXTRACTABLE in IndexedDB** (script/XSS can't lift it), the **public key**
+published to `persons.publicKeyPem` (world-readable → anyone verifies), and the private key backed up
+ONCE as a standard **BIP39** 24-word recovery phrase (custody = device key + backup, chosen over
+device-only or seed-only — the phrase is verified against the official BIP39 test vectors, so it is
+interoperable, not just real-looking). Signatures cover `signingPreimage(domainTag, payload)` = version
+‖ tag ‖ `canonicalize(payload)` — the SAME canonical serializer the chain hashes, so a signature and a
+chain block agree byte-for-byte, and the domain tag sits *inside* the signed bytes so a signature can
+never be replayed for another purpose. Ed25519 + base64-SPKI match the initiation scheme EXACTLY (proven:
+an app signature cross-verifies under `node:crypto`), so app-signed and git-signed artifacts share one
+algorithm and one key shape. This is the foundation the two-sided mint stands on — next, the **Covenant**:
+a being with its own chain, its parties' signatures, sealing only when the quorum signs (the alignment is
+the 2-party form; a charter decision, seven). Custody is one-way by design: lose the device key AND the
+phrase = unrecoverable, and no server ever holds the private key. Residual (pre-existing): staff can
+technically overwrite another's `publicKeyPem` via the broad `persons` update — a field-level tightening
+is its own ring. See [[initiation-layer]] and person.ts's reserved-key comment.
+
+---
+
 **2026-07-17 · The community's Light House gate is now LAW, not a veil** — the follow-on the
 rules-parity ring deferred has landed. The `/lightHouses` read rule no longer says `visibility ==
 'public' || isSignedIn()` (any signed-in user could read any house's raw doc, with member-narrowing

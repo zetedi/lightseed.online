@@ -5,6 +5,7 @@ import { setNewsletterSubscription, updateUserProfile, setOnlyValidatedCanReach,
 import { isLightPathOn, setLightPathOn } from '../PathwayCTA';
 import { SectionTitle } from '../ui/SectionTitle';
 import { Modal } from '../ui/Modal';
+import { SigningKeyModal } from '../modals/SigningKeyModal';
 
 // Module-scope (not created during render) so React keeps the DOM node between renders.
 const Toggle = ({ on, onClick, disabled }: { on: boolean; onClick: () => void; disabled?: boolean }) => (
@@ -52,6 +53,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   const [togglingDmEmail, setTogglingDmEmail] = useState(false);
   const [togglingValidatedReach, setTogglingValidatedReach] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showSigningKey, setShowSigningKey] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [lightPathOn, setLightPathOnState] = useState(isLightPathOn);
 
@@ -161,6 +163,19 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
           </div>
           <Toggle on={lightPathOn} onClick={handleLightPathToggle} />
         </div>
+        <div className="p-4 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="font-semibold text-slate-800 text-sm">{t('signing_key')}</p>
+            <p className="text-xs text-slate-500">{t('signing_key_help')}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowSigningKey(true)}
+            className="rounded-full border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-xs font-bold px-4 py-2 transition-colors whitespace-nowrap"
+          >
+            {t('edit')}
+          </button>
+        </div>
       </div>
       <div className="mt-6 rounded-2xl border border-red-100 bg-red-50/40 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -169,6 +184,8 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
         </div>
         <button onClick={() => setShowDeleteConfirm(true)} className="rounded-full border border-red-200 bg-white text-red-600 hover:bg-red-600 hover:text-white text-xs font-bold px-4 py-2 transition-colors whitespace-nowrap self-start sm:self-auto">{t('delete_account')}</button>
       </div>
+
+      {showSigningKey && <SigningKeyModal uid={uid} notify={notify} onClose={() => setShowSigningKey(false)} />}
 
       {/* Delete Confirm Modal */}
       {showDeleteConfirm && (
