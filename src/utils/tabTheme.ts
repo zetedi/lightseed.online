@@ -41,7 +41,9 @@ export const tabTone = (tab: string, theme?: TabTheme | null): string => {
     // Pulses is intentionally NOT theme-mapped: events takes theme.secondary, and mapping both
     // there made the two tabs indistinguishable. Pulses keeps its own orange.
     : tab === 'events' || tab === 'inspiration' ? theme?.secondary
-    : tab === 'pulses' ? undefined
+    // Pulses keeps its own orange; beds keep their moonlit indigo — neither inherits the node's
+    // primary, so the beds header + active pill stay indigo whatever theme the node wears.
+    : tab === 'pulses' || tab === 'beds' ? undefined
     : theme?.primary;
   return themed || FALLBACK[tab] || '#334155';
 };

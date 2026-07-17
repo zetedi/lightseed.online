@@ -170,10 +170,10 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                         {canGrow && onGrow && (
                             <button
                                 onClick={() => onGrow(vision)}
-                                className="flex items-center gap-1 rounded-full bg-emerald-500 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-emerald-600 active:scale-95"
+                                className="flex items-center gap-1.5 rounded-full bg-emerald-500 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-emerald-600 active:scale-95"
                             >
-                                <Icons.HandLeaf />
-                                <span>{t('grow_vision')}</span>
+                                <Icons.Drop />
+                                <span>{t('tend')}</span>
                             </button>
                         )}
                         {currentUserId && !isAuthor && (
