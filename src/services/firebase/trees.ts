@@ -3,6 +3,7 @@ import { httpsCallable } from 'firebase/functions';
 import { type Lifetree, type LightHouse, type TreeOwnershipInvite, type InvitableRole } from '../../types';
 import { createBlock } from '../../utils/crypto';
 import { treePlantingGate, normalizeNodeLimits, DEFAULT_NODE_LIMITS, type NodeLimits } from '../../domain/limits';
+import { BED_DEFAULT_VISIBILITY, BED_TREE_TYPE, bedPlantingProblem, excludeBedTrees, isBedTree, isRealPlace } from '../../domain/bed';
 import { uuidv7 } from '../../utils/id';
 import { GENESIS_MOMENT_MS, GENESIS_PLACE } from '../../domain/genesis';
 import { oldEmeraldEarthThemeValues } from '../../utils/theme';
@@ -173,13 +174,16 @@ export const getNetworkStats = async (domain?: string) => {
         const scope = (coll: string) => scoped
             ? query(collection(db, coll), where('domain', '==', d))
             : collection(db, coll);
-        const [trees, pulses, visions] = await Promise.all([
+        const [trees, pulses, visions, beds] = await Promise.all([
             getCountFromServer(scope('lifetrees')),
             getCountFromServer(scope('pulses')),
-            getCountFromServer(scope('visions'))
+            getCountFromServer(scope('visions')),
+            // Beds are a Light House's furniture, not forest: subtract them from the unscoped
+            // tree count. Scoped counts never see them — a bed carries no domain.
+            scoped ? Promise.resolve(null) : getCountFromServer(query(collection(db, 'lifetrees'), where('treeType', '==', BED_TREE_TYPE))),
         ]);
         return {
-            trees: trees.data().count,
+            trees: Math.max(0, trees.data().count - (beds ? beds.data().count : 0)),
             pulses: pulses.data().count,
             visions: visions.data().count
         };
@@ -252,6 +256,68 @@ export const plantLifetree = async (data: Partial<Lifetree> & { ownerId: string;
             { lid: uuidv7(), type: 'link', rel: 'guardian', from: data.ownerId, to: treeDoc.id, createdAt: serverTimestamp() }).catch(() => {});
     }
     return treeDoc;
+};
+
+// Plant a BED — housed inside a Light House, or loose at a coordinate under open stars
+// (domain/bed.ts). Mirrors plantLifetree's genesis seal, but: no `domain` (domain-scoped
+// queries must never surface it), no Root Vision (the welcome lives in `body`), no guardian
+// edge, and no planting-cap gate (furniture is not forest — the rules hold the real gate:
+// housed beds need the house's keeper; loose beds need a place).
+export const plantBed = async (draft: {
+    name: string; lightHouseId?: string; latitude?: number; longitude?: number;
+    locationName?: string; imageUrl?: string; body?: string;
+}) => {
+    const user = auth.currentUser;
+    if (!user) throw new Error('Sign in to offer a bed.');
+    const refusal = bedPlantingProblem(draft);
+    if (refusal) throw new Error(refusal);
+    if (draft.lightHouseId) {
+        // HOUSED: only the Light House's keeper offers its beds.
+        const house = await getLightHouseById(draft.lightHouseId);
+        if (!house) throw new Error('That Light House no longer stands.');
+        if (house.ownerId !== user.uid) throw new Error("Only the Light House's keeper may offer its beds.");
+    }
+
+    // Only a REAL place is written (NaN / Infinity / off-Earth coordinates are nowhere).
+    const hasPlace = isRealPlace(draft.latitude, draft.longitude);
+    const genesisHash = await createBlock("0", { msg: "Birth" }, Date.now());
+    return addDoc(lifetreesCollection, {
+        lid: uuidv7(),
+        ownerId: user.uid, // housed: the house's keeper; loose: whoever stands it — bound by the rules
+        name: draft.name.trim(),
+        ...(draft.imageUrl ? { imageUrl: draft.imageUrl } : {}),
+        body: draft.body?.trim() || '',
+        treeType: BED_TREE_TYPE,
+        // A housed bed carries its house; a loose bed carries NO lightHouseId — its place is enough.
+        ...(draft.lightHouseId ? { lightHouseId: draft.lightHouseId } : {}),
+        ...(hasPlace ? { latitude: draft.latitude, longitude: draft.longitude } : {}),
+        ...(draft.locationName?.trim() ? { locationName: draft.locationName.trim() } : {}),
+        visibility: BED_DEFAULT_VISIBILITY,
+        createdAt: serverTimestamp(), genesisHash, latestHash: genesisHash, blockHeight: 0,
+        validated: false, validatorId: null, status: 'HEALTHY',
+    });
+};
+
+// The beds standing in one Light House, earliest first. The visibility filter keeps the list
+// query provable under the rules (default 'node' — see BED_DEFAULT_VISIBILITY); the keeper
+// merge lets the house's keeper see even a bed drawn back to private.
+export const getBedsForLightHouse = async (lightHouseId: string): Promise<Lifetree[]> => {
+    const uid = auth.currentUser?.uid;
+    const levels = uid ? ['public', 'node'] : ['public'];
+    const byId = new Map<string, Lifetree>();
+    const add = (d: QueryDocumentSnapshot) => byId.set(d.id, mapDoc(d) as Lifetree);
+    (await getDocs(query(lifetreesCollection,
+        where('treeType', '==', BED_TREE_TYPE),
+        where('lightHouseId', '==', lightHouseId),
+        where('visibility', 'in', levels)))).docs.forEach(add);
+    if (uid) {
+        (await getDocs(query(lifetreesCollection,
+            where('lightHouseId', '==', lightHouseId),
+            where('ownerId', '==', uid)))).docs.forEach(add);
+    }
+    return [...byId.values()]
+        .filter(isBedTree)
+        .sort((a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0));
 };
 
 export const updateLifetree = (id: string, data: Partial<Lifetree>) => updateDoc(doc(db, 'lifetrees', id), { ...data });
@@ -330,7 +396,8 @@ export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter
         }
     }
 
-    return { items, lastDoc: snap.docs[snap.docs.length-1] || null };
+    // Beds are furniture, not forest — never listed among the trees (domain/bed.ts).
+    return { items: excludeBedTrees(items), lastDoc: snap.docs[snap.docs.length-1] || null };
 }
 
 // Whole forest at once (no pagination) — used by the map so every tree appears,
@@ -373,10 +440,15 @@ export const fetchAllLifetrees = async (domainFilter?: string, ownerUid?: string
         if (genesisSnap.exists()) byId.set(genesisSnap.id, { id: genesisSnap.id, ...(genesisSnap.data() as any) } as Lifetree);
     }
 
-    return Array.from(byId.values());
+    // Beds are furniture, not forest — the map never shows one (domain/bed.ts).
+    return excludeBedTrees(Array.from(byId.values()));
 };
 
-export const getMyLifetrees = async (uid: string) => (await getDocs(query(lifetreesCollection, where('ownerId', '==', uid)))).docs.map(d => (mapDoc(d) as Lifetree));
+// A being's own trees — the personal forest. Beds the keeper owns are furniture — housed
+// or loose — not trees they wear or guard: excluded here so the session (useLifeseed) and
+// the planting gate never see them; getBedsForLightHouse is the housed beds' own door.
+export const getMyLifetrees = async (uid: string) =>
+    excludeBedTrees((await getDocs(query(lifetreesCollection, where('ownerId', '==', uid)))).docs.map(d => (mapDoc(d) as Lifetree)));
 
 export const normalizeDomain = (domain: string) =>
     domain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
@@ -396,7 +468,8 @@ export const getTreesByDomain = async (domain: string, ownerUid?: string): Promi
         mine.docs.forEach(d => byId.set(d.id, mapDoc(d) as Lifetree));
     }
 
-    return Array.from(byId.values());
+    // Beds carry no domain, but the owner-merge above could carry them in — furniture stays out.
+    return excludeBedTrees(Array.from(byId.values()));
 };
 
 // LightHouses rooted in a community's domain, earliest first. Mirrors getTreesByDomain
@@ -424,7 +497,8 @@ export const getRootedTrees = async (lightHouseIds: string[]): Promise<Lifetree[
     const trees = await Promise.all(treeIds.map(id =>
         getDoc(doc(db, 'lifetrees', id)).then(s => s.exists() ? ({ id: s.id, ...s.data() } as Lifetree) : null).catch(() => null)
     ));
-    return trees.filter((t): t is Lifetree => t !== null);
+    // A mother tree is never a bed — the mini-map shows forest only (domain/bed.ts).
+    return trees.filter((t): t is Lifetree => t !== null && !isBedTree(t));
 };
 
 // Every placed lightHouse in the network — the hub map shows what the viewer may see.
@@ -522,7 +596,8 @@ export const getGuardedTrees = async (uid: string): Promise<Lifetree[]> => {
             return snap.exists() ? ({ id: snap.id, ...(snap.data() as any) } as Lifetree) : null;
         } catch { return null; } // e.g. a guarded tree the owner made private
     }));
-    return trees.filter((t): t is Lifetree => t !== null);
+    // Guardian links are self-serve, so one could point at a bed — furniture stays out.
+    return trees.filter((t): t is Lifetree => t !== null && !isBedTree(t));
 };
 
 // Trees participating in an event or vision — a prism over its incoming 'participant' links
@@ -536,7 +611,8 @@ export const getParticipatingTrees = async (entityId: string): Promise<Lifetree[
             return snap.exists() ? ({ id: snap.id, ...(snap.data() as any) } as Lifetree) : null;
         } catch { return null; } // a participating tree that later went private
     }));
-    return trees.filter((t): t is Lifetree => t !== null);
+    // A bed never stands in an event or vision — participants are forest (domain/bed.ts).
+    return trees.filter((t): t is Lifetree => t !== null && !isBedTree(t));
 };
 
 // --- Tree Circle: shared care of a Lifetree → a rooted community ---------------

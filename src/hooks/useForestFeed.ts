@@ -6,6 +6,7 @@ import {
 } from '../services/firebase';
 import { queryableLevels } from '../domain/pulseVisibility';
 import { reflectsInstancePublic } from '../domain/communityDoor';
+import { excludeBedTrees } from '../domain/bed';
 
 // The paginated forest / pulse / vision / event / reach feed and its infinite scroll. Owns `data`
 // plus the cursor / loading / hasMore machinery; loadContent(reset) (re)loads the current tab,
@@ -74,14 +75,16 @@ export function useForestFeed(params: {
       if (tab === 'forest') {
         if (viewMode === 'map') {
           // The map shows the whole forest at once (no pagination) so every tree appears.
-          const all = await fetchAllLifetrees(currentDomain, feedOwnerUid, treeLevels);
+          // Beds are already excluded at the service layer — the guard here is the belt
+          // to that braces (a bed must never reach the forest, whatever the source).
+          const all = excludeBedTrees(await fetchAllLifetrees(currentDomain, feedOwnerUid, treeLevels));
           setData(all);
           setLastDoc(null);
           setHasMore(false);
         } else {
           const res = await fetchLifetrees(currentLastDoc, currentDomain, feedOwnerUid, treeLevels);
           setData(prev => {
-            const newItems = res.items;
+            const newItems = excludeBedTrees(res.items);
             if (reset) return newItems;
             // Deduplicate items based on ID to prevent visual duplicates
             const existingIds = new Set(prev.map(p => p.id));

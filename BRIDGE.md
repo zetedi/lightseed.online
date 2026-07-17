@@ -74,11 +74,31 @@ What a being LOOKS like: `src/components/BeingProfile.tsx` + `src/components/sec
 - Still a hardcoded **hub alias**: `isHubDomain` (`services/firebase/trees.ts`) treats
   lightseed.online + lifeseed.online as always-reflecting hubs; dissolving that is a later step.
 
+## The bed (a place to sleep, as a being)
+
+- **A bed IS a Lifetree** (`treeType: 'BED'`) — a full Being: own chain (each stay a **leaf**),
+  `/b/<lid>` QR, living validation, tenders (guardian links) — but *furniture, not forest*,
+  excluded from every broad tree listing. Its home is **optional and soft**: HOUSED in a Light
+  House (`lightHouseId`) or LOOSE at a real coordinate under open stars. A loose bed that gathers
+  can one day **graduate** into a mother tree (seed → bed → gathering → Light House).
+- **Pure logic:** `src/domain/bed.ts` — `isBedTree`/`excludeBedTrees`, `isHousedBed`/`isLooseBed`,
+  `isRealPlace` (the ±90/±180 guard), `bedPlantingProblem`; tested in `tests/bed.test.ts`.
+- **Service:** `plantBed` + `getBedsForLightHouse` (`services/firebase/trees.ts`); the exclusion
+  belt lives there and in `useForestFeed`, `domain/limits.ts`, `services/firebase/accounts.ts`.
+- **Law:** `firestore.rules` — housed-or-loose-real-place create gate (binds staff for data
+  validity), and update invariants binding EVERY writer: bed-line immutable, loose = a real place
+  for life, no `domain` ever, `lightHouseId` soft but un-forgeable. Caps: `functions/index.ts`
+  `MAX_BEDS_PER_LIGHT_HOUSE = 64` + `MAX_LOOSE_BEDS_PER_KEEPER = 32`, at birth (`onLifetreeCreated`)
+  and on every home-move (`onBedHomeMoved` reverts a breaching move, never deletes). Ring:
+  *"A bed is a being, and its home is soft"* (2026-07-17).
+- **UI:** the bed profile (bed-tree + calendar + tenders), the density-card list in a Light House,
+  and per-guest reservations (`bedId` on stays, the view-hold) — `src/components/` (in progress).
+
 ## The gate (run before every commit)
 
 ```
-npm run check     # strict typecheck + lint (0/0) + 154 unit tests
-npm run test:rules  # 33 Firestore rules tests (needs the emulator/Java)
+npm run check     # strict typecheck + lint (0/0) + 179 unit tests
+npm run test:rules  # 49 Firestore rules tests (needs the emulator/Java)
 ```
 
 CI runs all of it on every push (`.github/workflows/quality-gate.yml`).

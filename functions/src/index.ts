@@ -318,6 +318,35 @@ export const onReachCreated = onDocumentCreated("pulses/{pulseId}", async (event
 // (config/limits, defaults 12 lifetrees + 132 guarded per being), the newest over-cap tree
 // is uprooted. Quality, not quantity — enforced where it can't be dodged. Staff and the
 // system are exempt, mirroring every other quota.
+//
+// Beds have their own ceilings: exempt from the 12/132 forest caps (furniture is not
+// forest), but a HOUSED bed is bounded per Light House — else the open lightHouses create
+// plus the bed exemption would reopen an unbounded, cap-exempt write channel into
+// `lifetrees` — and a LOOSE bed (no house to bound it) is bounded per keeper.
+const MAX_BEDS_PER_LIGHT_HOUSE = 64;
+const MAX_LOOSE_BEDS_PER_KEEPER = 32;
+
+// Shared bed-counting, consulted at birth (onLifetreeCreated) and on every home-move
+// (onBedHomeMoved). Each count INCLUDES the bed just written, so `> MAX` means the
+// ceiling is already breached.
+const countBedsInHouse = async (houseId: string): Promise<number> => {
+    const beds = await db.collection("lifetrees")
+        .where("treeType", "==", "BED")
+        .where("lightHouseId", "==", houseId)
+        .get();
+    return beds.size;
+};
+
+// LOOSE beds: the field may be absent or '', so count the keeper's beds and keep only
+// the houseless ones.
+const countLooseBedsOfKeeper = async (ownerId: string): Promise<number> => {
+    const mine = await db.collection("lifetrees")
+        .where("treeType", "==", "BED")
+        .where("ownerId", "==", ownerId)
+        .get();
+    return mine.docs.filter((d) => !d.data().lightHouseId).length;
+};
+
 export const onLifetreeCreated = onDocumentCreated("lifetrees/{treeId}", async (event) => {
     const snap = event.data;
     if (!snap) return;
@@ -326,6 +355,34 @@ export const onLifetreeCreated = onDocumentCreated("lifetrees/{treeId}", async (
     if (!ownerId || ownerId === "GENESIS_SYSTEM") return;
     try {
         if (await isStaffUid(ownerId)) return;
+
+        const isBedTree = (t: any) => t.treeType === "BED";
+
+        // Beds (treeType BED, domain/bed.ts) are furniture, not the keeper's personal forest:
+        // exempt from the 12/132 caps below, but bounded by their own ceilings. A HOUSED bed
+        // counts against its Light House — otherwise anyone could mint a Light House and pour
+        // unlimited cap-exempt beds into `lifetrees`. A LOOSE bed (no house — standing at a
+        // coordinate under open stars) has no house to bound it, so it counts against its
+        // keeper instead. Over either ceiling, the just-created bed is uprooted, mirroring
+        // the forest-cap uproot below. (Mass Light-House creation itself remains a broader,
+        // pre-existing vector — out of scope here; see root/QUESTIONS.md.)
+        if (isBedTree(tree)) {
+            const houseId = String(tree.lightHouseId ?? "");
+            if (houseId === "") {
+                const loose = await countLooseBedsOfKeeper(ownerId);
+                if (loose > MAX_LOOSE_BEDS_PER_KEEPER) {
+                    await snap.ref.delete();
+                    console.warn(`Loose-bed cap enforced: uprooted ${snap.id} (keeper ${ownerId}, ${loose} loose beds vs ${MAX_LOOSE_BEDS_PER_KEEPER}).`);
+                }
+                return;
+            }
+            const housed = await countBedsInHouse(houseId);
+            if (housed > MAX_BEDS_PER_LIGHT_HOUSE) {
+                await snap.ref.delete();
+                console.warn(`Bed cap enforced: uprooted ${snap.id} (lightHouse ${houseId}, ${housed} beds vs ${MAX_BEDS_PER_LIGHT_HOUSE}).`);
+            }
+            return;
+        }
 
         const [limitsSnap, mine] = await Promise.all([
             db.collection("config").doc("limits").get(),
@@ -340,7 +397,7 @@ export const onLifetreeCreated = onDocumentCreated("lifetrees/{treeId}", async (
         const maxGuardedTrees = num(raw?.maxGuardedTrees, 132);
 
         const isGuardedTree = (t: any) => t.treeType === "GUARDED" || (!t.treeType && t.isNature === true);
-        const trees = mine.docs.map((d) => d.data());
+        const trees = mine.docs.map((d) => d.data()).filter((t) => !isBedTree(t));
         const guarded = trees.filter(isGuardedTree).length;
         const lifetrees = trees.length - guarded;
         const over = isGuardedTree(tree) ? guarded > maxGuardedTrees : lifetrees > maxLifetrees;
@@ -350,6 +407,56 @@ export const onLifetreeCreated = onDocumentCreated("lifetrees/{treeId}", async (
         console.warn(`Planting cap enforced: uprooted ${snap.id} (owner ${ownerId}, ${lifetrees} lifetrees / ${guarded} guarded vs ${maxLifetrees}/${maxGuardedTrees}).`);
     } catch (e) {
         console.error(`Planting cap check failed for ${snap.id}:`, e);
+    }
+});
+
+// A bed's home is SOFT — `lightHouseId` may change after birth (loose ↔ housed, house to
+// house), so the create-time ceilings above would be paper walls if the edit path could
+// walk around them: plant 64 housed beds, edit them all loose, plant 64 more... Every
+// HOME-MOVE therefore re-consults the DESTINATION's ceiling. A breaching move is REVERTED
+// — the home returns to its prior value — never deleted: an established bed may already
+// carry stays and leaves; only the newborn is uprooted (create path above).
+//
+// Loop-safety: we act only when the home actually changed, and only the DESTINATION is
+// consulted — the source held this bed a moment ago, so returning there is within cap in
+// the common case, and the revert's own echo-trigger finds its destination within cap and
+// rests. If BOTH homes breach (caps crossed by concurrent moves), the bed is left LOOSE
+// with a log line rather than ping-ponged between two full houses: loose is the absorbing
+// state, so every path converges after at most one revert write.
+export const onBedHomeMoved = onDocumentUpdated("lifetrees/{treeId}", async (event) => {
+    const before = event.data?.before.data() as any;
+    const after = event.data?.after.data() as any;
+    if (!before || !after || after.treeType !== "BED") return;
+    const beforeHouse = String(before.lightHouseId ?? "");
+    const afterHouse = String(after.lightHouseId ?? "");
+    if (beforeHouse === afterHouse) return; // no home-move — nothing to guard
+
+    const ownerId = String(after.ownerId ?? "");
+    if (!ownerId || ownerId === "GENESIS_SYSTEM") return;
+    try {
+        if (await isStaffUid(ownerId)) return; // staff stay exempt, mirroring every quota
+
+        // Is the DESTINATION over its ceiling, with this bed now counted inside it?
+        const overCap = afterHouse === ""
+            ? (await countLooseBedsOfKeeper(ownerId)) > MAX_LOOSE_BEDS_PER_KEEPER
+            : (await countBedsInHouse(afterHouse)) > MAX_BEDS_PER_LIGHT_HOUSE;
+        if (!overCap) return;
+
+        // Would returning breach the source house too? (+1: the bed would re-enter that count.)
+        const sourceWouldBreach = beforeHouse !== ""
+            && (await countBedsInHouse(beforeHouse)) + 1 > MAX_BEDS_PER_LIGHT_HOUSE;
+
+        if (afterHouse === "" && sourceWouldBreach) {
+            // Both homes breach and the bed already stands loose: leave it under open
+            // stars and say so — a write would only ping-pong between two full homes.
+            console.warn(`Bed cap: both homes of ${event.params.treeId} breach; left loose (keeper ${ownerId}).`);
+            return;
+        }
+        const revertTo = sourceWouldBreach ? "" : beforeHouse;
+        await event.data!.after.ref.update({ lightHouseId: revertTo });
+        console.warn(`Bed cap enforced on home-move: ${event.params.treeId} sent home to ${revertTo === "" ? "the open stars (loose)" : revertTo} — destination ${afterHouse === "" ? "loose" : afterHouse} is over its ceiling (keeper ${ownerId}).`);
+    } catch (e) {
+        console.error(`Bed home-move cap check failed for ${event.params.treeId}:`, e);
     }
 });
 

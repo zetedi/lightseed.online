@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import {
   initializeTestEnvironment, assertSucceeds, assertFails, type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { doc, setDoc, updateDoc, getDoc, deleteDoc, Timestamp } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, getDoc, deleteDoc, deleteField, Timestamp } from 'firebase/firestore';
 
 // The security fence around the release's hottest rules. Runs under the Firestore emulator:
 //   npm run test:rules
@@ -33,6 +33,7 @@ const seed = async () => {
     await setDoc(doc(d, 'lifetrees', 'treeB'), { ownerId: BOB, name: 'Bobs tree', validated: false, validatorId: null });
     await setDoc(doc(d, 'initiates', ALICE), { handle: 'alice', name: 'Alice', lid: 'x', pubkey: 'y', initiatedAt: '2026-07-07' });
     await setDoc(doc(d, 'communities', 'com1'), { ownerId: ALICE, name: 'Com', domain: 'com.online' });
+    await setDoc(doc(d, 'lightHouses', 'lh1'), { ownerId: ALICE, name: 'The Hearth', lid: 'lh1-lid' });
   });
 };
 
@@ -371,6 +372,155 @@ describe('link id-binding — authority resolves by path, so the doc id must equ
     await assertFails(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__co_owner__treeB`), link(MALLORY, 'joined', MALLORY)));
     // The honest self-serve write (id matches data) still succeeds.
     await assertSucceeds(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__joined__vX`), link(MALLORY, 'joined', 'vX')));
+  });
+});
+
+describe("beds — housed by a keeper or loose at a place; a bed never forges into a house", () => {
+  const bed = (over: object = {}) => ({
+    ownerId: ALICE, name: 'Cedar bed', body: 'Welcome, traveller.',
+    treeType: 'BED', lightHouseId: 'lh1', visibility: 'node',
+    createdAt: 1, genesisHash: 'g0', latestHash: 'g0', blockHeight: 0,
+    validated: false, validatorId: null, ...over,
+  });
+  // A loose bed: no house — a coordinate under open stars.
+  const looseBed = (over: object = {}) => {
+    const { lightHouseId: _dropped, ...rest } = bed({ latitude: 6.03, longitude: 81.33 }) as Record<string, unknown>;
+    return { ...rest, ...over };
+  };
+
+  it('the keeper plants a bed in their own house; staff may too', async () => {
+    await assertSucceeds(setDoc(doc(db(ALICE), 'lifetrees', 'bed1'), bed()));
+    await assertSucceeds(setDoc(doc(db(STAFF), 'lifetrees', 'bed2'), bed({ ownerId: STAFF })));
+  });
+
+  it("a stranger cannot plant a bed in someone else's house — nor the keeper in another's name", async () => {
+    await assertFails(setDoc(doc(db(MALLORY), 'lifetrees', 'bedX'), bed({ ownerId: MALLORY }))); // not lh1's keeper
+    await assertFails(setDoc(doc(db(ALICE), 'lifetrees', 'bedY'), bed({ ownerId: BOB })));       // forged owner
+  });
+
+  it('a loose bed at a coordinate is welcome — anyone, in their own name, no house needed', async () => {
+    await assertSucceeds(setDoc(doc(db(BOB), 'lifetrees', 'bedL1'), looseBed({ ownerId: BOB })));
+    await assertSucceeds(setDoc(doc(db(BOB), 'lifetrees', 'bedL2'),
+      looseBed({ ownerId: BOB, lightHouseId: '' }))); // an explicit '' is loose too
+    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedLf'), looseBed({ ownerId: ALICE }))); // forged owner
+  });
+
+  it('a loose bed at a NON-place is refused: NaN, Infinity, and off-Earth coordinates are nowhere', async () => {
+    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedN'), looseBed({ ownerId: BOB, latitude: NaN, longitude: NaN })));
+    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedI'), looseBed({ ownerId: BOB, latitude: Infinity })));
+    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedJ'), looseBed({ ownerId: BOB, longitude: -Infinity })));
+    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedO'), looseBed({ ownerId: BOB, latitude: 91 })));
+    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedP'), looseBed({ ownerId: BOB, longitude: 181 })));
+    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedQ'), looseBed({ ownerId: BOB, latitude: 999, longitude: -999 })));
+    // The edges of the map are still places — the poles and the antimeridian welcome a bed.
+    await assertSucceeds(setDoc(doc(db(BOB), 'lifetrees', 'bedR'), looseBed({ ownerId: BOB, latitude: 90, longitude: -180 })));
+    await assertSucceeds(setDoc(doc(db(BOB), 'lifetrees', 'bedT'), looseBed({ ownerId: BOB, latitude: -90, longitude: 180 })));
+    // And zero is a real place (the equator, the meridian).
+    await assertSucceeds(setDoc(doc(db(BOB), 'lifetrees', 'bedU'), looseBed({ ownerId: BOB, latitude: 0, longitude: 0 })));
+  });
+
+  it('a bed with NEITHER a house NOR a place is still refused', async () => {
+    const { latitude: _lat, longitude: _lng, ...nowhere } = looseBed();
+    await assertFails(setDoc(doc(db(ALICE), 'lifetrees', 'bedZ'), nowhere));
+    const { longitude: _half, ...halfPlaced } = looseBed();
+    await assertFails(setDoc(doc(db(ALICE), 'lifetrees', 'bedH'), halfPlaced));            // half a coordinate
+    await assertFails(setDoc(doc(db(ALICE), 'lifetrees', 'bedS'), looseBed({ latitude: '6.03' }))); // a string is no place
+    // An ordinary tree still plants freely, house or no house.
+    await assertSucceeds(setDoc(doc(db(BOB), 'lifetrees', 'tree2'),
+      { ownerId: BOB, name: 'Oak', treeType: 'LIFETREE', createdAt: 1, validated: false, validatorId: null }));
+  });
+
+  it('a bed never carries a domain — housed or loose, at birth (keeper or staff) or by edit', async () => {
+    await assertFails(setDoc(doc(db(ALICE), 'lifetrees', 'bedD'), bed({ domain: 'lh.online' })));
+    await assertFails(setDoc(doc(db(STAFF), 'lifetrees', 'bedE'), bed({ ownerId: STAFF, domain: 'lh.online' })));
+    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedF'), looseBed({ ownerId: BOB, domain: 'lh.online' })));
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'lifetrees', 'bed1'), bed());
+      await setDoc(doc(ctx.firestore(), 'lifetrees', 'bedL1'), looseBed({ ownerId: BOB }));
+    });
+    await assertFails(updateDoc(doc(db(ALICE), 'lifetrees', 'bed1'), { domain: 'lh.online' }));
+    await assertFails(updateDoc(doc(db(BOB), 'lifetrees', 'bedL1'), { domain: 'lh.online' }));
+    // An ordinary tree still carries and changes a domain freely — the exclusion is the bed's alone.
+    await assertSucceeds(setDoc(doc(db(BOB), 'lifetrees', 'tree3'),
+      { ownerId: BOB, name: 'Elm', treeType: 'LIFETREE', domain: 'com.online', createdAt: 1, validated: false, validatorId: null }));
+    await assertSucceeds(updateDoc(doc(db(BOB), 'lifetrees', 'tree3'), { domain: 'other.online' }));
+  });
+
+  it('the domain-freeze binds even staff: a staff edit cannot give a bed a domain', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) =>
+      setDoc(doc(ctx.firestore(), 'lifetrees', 'bed1'), bed()));
+    await assertFails(updateDoc(doc(db(STAFF), 'lifetrees', 'bed1'), { domain: 'lh.online' }));
+    // Staff's broad powers otherwise breathe on — the frozen fields still bend to them.
+    await assertSucceeds(updateDoc(doc(db(STAFF), 'lifetrees', 'bed1'),
+      { name: 'Willow bed', validated: true, validatorId: STAFF }));
+    // And a staff edit on an ordinary tree's domain remains free.
+    await assertSucceeds(updateDoc(doc(db(STAFF), 'lifetrees', 'treeB'), { domain: 'staff.online' }));
+  });
+
+  it('a bed stays a bed — and a tree never becomes one', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) =>
+      setDoc(doc(ctx.firestore(), 'lifetrees', 'bed1'), bed()));
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'lifetrees', 'bed1'), { name: 'Willow bed' }));
+    await assertFails(updateDoc(doc(db(ALICE), 'lifetrees', 'bed1'), { treeType: 'LIFETREE' }));   // out of bed-hood
+    await assertFails(updateDoc(doc(db(BOB), 'lifetrees', 'treeB'), { treeType: 'BED' })); // never becomes one
+    await assertSucceeds(updateDoc(doc(db(BOB), 'lifetrees', 'treeB'), { treeType: 'GUARDED', isNature: true })); // convert still breathes
+  });
+
+  it("containment is soft: a bed may go loose or come home, but never into a house its writer doesn't keep", async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'lifetrees', 'bed1'), bed({ latitude: 6.03, longitude: 81.33 }));
+      await setDoc(doc(ctx.firestore(), 'lightHouses', 'lh2'), { ownerId: BOB, name: "Bob's Light", lid: 'lh2-lid' });
+    });
+    // The owner may clear the house — the bed goes loose, chain intact.
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'lifetrees', 'bed1'), { lightHouseId: '' }));
+    // And point it home again — ALICE keeps lh1.
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'lifetrees', 'bed1'), { lightHouseId: 'lh1' }));
+    // But never into a house the writer does not keep — real (Bob's) or imaginary.
+    await assertFails(updateDoc(doc(db(ALICE), 'lifetrees', 'bed1'), { lightHouseId: 'lh2' }));
+    await assertFails(updateDoc(doc(db(ALICE), 'lifetrees', 'bed1'), { lightHouseId: 'lh-nowhere' }));
+  });
+
+  it('a loose bed keeps its REAL place for LIFE — no edit may strand it at a non-place', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'lifetrees', 'bedL1'), looseBed({ ownerId: BOB }));
+      await setDoc(doc(ctx.firestore(), 'lifetrees', 'bed1'), bed()); // housed — carries no coordinate
+    });
+    // The owner may not push their own loose bed off the map, into NaN, or into nowhere.
+    await assertFails(updateDoc(doc(db(BOB), 'lifetrees', 'bedL1'), { latitude: 999 }));
+    await assertFails(updateDoc(doc(db(BOB), 'lifetrees', 'bedL1'), { latitude: NaN }));
+    await assertFails(updateDoc(doc(db(BOB), 'lifetrees', 'bedL1'), { latitude: deleteField() }));
+    // A coordinate-less housed bed cannot be cut loose into placelessness…
+    await assertFails(updateDoc(doc(db(ALICE), 'lifetrees', 'bed1'), { lightHouseId: '' }));
+    // …but going loose WITH a real place remains a legitimate soft-home move.
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'lifetrees', 'bed1'),
+      { lightHouseId: '', latitude: 6.03, longitude: 81.33 }));
+    // An overlay that leaves the coordinate untouched still breathes: initiate validation
+    // on a real-placed loose bed (the after-state is still a real place).
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'lifetrees', 'bedL1'),
+      { validated: true, validatorId: ALICE, updatedAt: 1 }));
+    // And an ordinary owner edit on the real-placed loose bed passes untroubled.
+    await assertSucceeds(updateDoc(doc(db(BOB), 'lifetrees', 'bedL1'), { name: 'Fern bed' }));
+  });
+
+  it('bed-hood is immutable for EVERY writer — even staff cannot lift a bed into the forest', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) =>
+      setDoc(doc(ctx.firestore(), 'lifetrees', 'bed1'), bed({ validated: true, validatorId: STAFF })));
+    // Staff can neither promote a bed out of bed-hood nor press a tree into it.
+    await assertFails(updateDoc(doc(db(STAFF), 'lifetrees', 'bed1'), { treeType: 'LIFETREE' }));
+    await assertFails(updateDoc(doc(db(STAFF), 'lifetrees', 'treeB'), { treeType: 'BED' }));
+    // Staff's dimming hand still reaches a bed's validation…
+    await assertSucceeds(updateDoc(doc(db(STAFF), 'lifetrees', 'bed1'), { validated: false, validatorId: null }));
+    // …and the owner's LIFETREE<->GUARDED conversion still breathes, both ways.
+    await assertSucceeds(updateDoc(doc(db(BOB), 'lifetrees', 'treeB'), { treeType: 'GUARDED' }));
+    await assertSucceeds(updateDoc(doc(db(BOB), 'lifetrees', 'treeB'), { treeType: 'LIFETREE' }));
+  });
+
+  it('the place gate binds staff at birth too — no hand may plant a placeless loose bed', async () => {
+    const { latitude: _lat, longitude: _lng, ...nowhere } = looseBed({ ownerId: STAFF });
+    await assertFails(setDoc(doc(db(STAFF), 'lifetrees', 'bedSA'), nowhere));                                  // no coordinate
+    await assertFails(setDoc(doc(db(STAFF), 'lifetrees', 'bedSB'), looseBed({ ownerId: STAFF, latitude: NaN }))); // a non-place
+    await assertSucceeds(setDoc(doc(db(STAFF), 'lifetrees', 'bedSC'), looseBed({ ownerId: STAFF })));          // a real place
+    await assertSucceeds(setDoc(doc(db(STAFF), 'lifetrees', 'bedSD'), bed({ ownerId: STAFF })));               // housed — no coordinate needed
   });
 });
 

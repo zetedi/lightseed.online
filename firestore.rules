@@ -221,16 +221,102 @@ service cloud.firestore {
                      || (isSignedIn() && resource.data.visibility == 'node')
                      || (isSignedIn() && resource.data.ownerId == request.auth.uid)
                      || isStaff();
-      allow create: if isSignedIn();
+      // Planting is open — except a BED (domain/bed.ts), whose home is optional and SOFT:
+      // it is born either HOUSED (lightHouseId set — only that Light House's keeper plants
+      // one, in their own name) or LOOSE (no lightHouseId — standing at a real coordinate
+      // under open stars, planted by its own keeper). A bed with NEITHER a house NOR a place
+      // is refused — from EVERY hand: the place gate, like the domain gate, is a DATA-VALIDITY
+      // invariant that binds staff too (staff stay exempt only from the ownership check).
+      // EVERY bed — housed, loose, staff-planted — is born domainless
+      // (domain == '' is the structural forest-exclusion invariant: a domain-scoped query
+      // must never surface a bed).
+      allow create: if isSignedIn() && (
+        request.resource.data.get('treeType', '') != 'BED'
+        || (
+          request.resource.data.get('domain', '') == ''
+          // LOOSE (no house): a REAL place instead (the internet has no weather).
+          // On-Earth ranges only: NaN fails every comparison and Infinity fails the
+          // range, so a bed can never be born at a non-place. The edges of the map
+          // are still places — the poles (±90) and the antimeridian (±180) welcome it.
+          // A HOUSED bed needs no coordinate — its place is its house.
+          && (
+            request.resource.data.get('lightHouseId', '') != ''
+            || (
+              request.resource.data.get('latitude', '') is number
+              && request.resource.data.latitude >= -90
+              && request.resource.data.latitude <= 90
+              && request.resource.data.get('longitude', '') is number
+              && request.resource.data.longitude >= -180
+              && request.resource.data.longitude <= 180
+            )
+          )
+          && (
+            isStaff()
+            || (
+              request.resource.data.ownerId == request.auth.uid
+              && (
+                // HOUSED: the house names its keeper, and the keeper is the writer.
+                (
+                  request.resource.data.get('lightHouseId', '') != ''
+                  && get(/databases/$(database)/documents/lightHouses/$(request.resource.data.lightHouseId)).data.ownerId == request.auth.uid
+                )
+                // LOOSE: no house — the shared place gate above has already proven the coordinate.
+                || request.resource.data.get('lightHouseId', '') == ''
+              )
+            )
+          )
+        )
+      );
       // Tenders (owner/co_owner/steward) or staff may edit a tree — but `validated`/`validatorId`
       // and `ownerId` are FROZEN on the edit path, so a tree can neither self-validate (the flag
       // that bypasses onlyValidatedCanReach) nor transfer its own ownership from the client.
-      allow update: if isSignedIn() && (
+      // `lightHouseId` is SOFT, not frozen (a loose bed may one day graduate or join a house) —
+      // but any write that sets or changes it to a non-empty house must come from that house's
+      // keeper (a bed never forges into a house it isn't welcome in); clearing it back to ''
+      // (going loose) is free — provided the bed then stands at a real place (below).
+      //
+      // Two DATA-VALIDITY gates stand before every branch and bind EVERY writer, staff
+      // included — exactly like the domain gate at birth:
+      //   (1) the BED line is uncrossable by edit: treeType may still flip between LIFETREE
+      //       and GUARDED (the convert feature), but a bed stays a bed and a tree never
+      //       becomes one — else an edit could dodge the keeper-only create gate above,
+      //       or surface a bed in the forest as a tree;
+      //   (2) a loose bed is a REAL place for its whole LIFE, not only at birth: if the
+      //       RESULTING doc is a loose bed (BED, no house), it must carry an on-Earth
+      //       coordinate — no edit may strand it at latitude 999, NaN, or nowhere. A housed
+      //       bed needs no coordinate, and overlay edits (validation, watering) that leave
+      //       a real place untouched pass untroubled.
+      allow update: if isSignedIn()
+        && (request.resource.data.get('treeType', '') == 'BED')
+            == (resource.data.get('treeType', '') == 'BED')
+        && (
+          request.resource.data.get('treeType', '') != 'BED'
+          || request.resource.data.get('lightHouseId', '') != ''
+          || (
+            request.resource.data.get('latitude', '') is number
+            && request.resource.data.latitude >= -90
+            && request.resource.data.latitude <= 90
+            && request.resource.data.get('longitude', '') is number
+            && request.resource.data.longitude >= -180
+            && request.resource.data.longitude <= 180
+          )
+        )
+        && (
         (
           (resource.data.ownerId == request.auth.uid || isStaff()
              || hasLink('co_owner', treeId) || hasLink('steward', treeId))
           && !request.resource.data.diff(resource.data).affectedKeys()
                 .hasAny(['validated', 'validatorId', 'ownerId', 'lid'])
+          // ...and a bed never gains or alters a `domain`: the forest-exclusion invariant
+          // holds for its whole life, not only at birth.
+          && (resource.data.get('treeType', '') != 'BED'
+              || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['domain']))
+          // Soft containment: pointing at a house requires keeping that house.
+          && (
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lightHouseId'])
+            || request.resource.data.get('lightHouseId', '') == ''
+            || get(/databases/$(database)/documents/lightHouses/$(request.resource.data.lightHouseId)).data.ownerId == request.auth.uid
+          )
         )
         // Peer validation (web of trust): a validator signs ANOTHER tree with a validated tree it
         // owns. Only the validation fields may change here; self-validation is blocked because an
@@ -249,7 +335,14 @@ service cloud.firestore {
           && request.resource.data.get('validatorId', '') == request.auth.uid
           && exists(/databases/$(database)/documents/initiates/$(request.auth.uid))
         )
-        || isStaff()
+        // Staff keep their broad edit powers (dimming validation, repairs) — but the bed's
+        // domain-freeze binds even them, exactly as at birth: a bed never carries a domain,
+        // at create or edit, staff or not.
+        || (
+          isStaff()
+          && (resource.data.get('treeType', '') != 'BED'
+              || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['domain']))
+        )
       );
       allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
     }

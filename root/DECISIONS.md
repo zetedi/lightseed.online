@@ -6,6 +6,35 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-17 · A bed is a being, and its home is soft** — beds become first-class beings.
+A bed IS a Lifetree (`treeType: 'BED'`), so it inherits the whole machinery instead of us
+rebuilding it: its immutable chain is its history (each stay a **leaf**), its guardian links are
+its **tenders** ("left in better shape than before"), and its profile / image / `/b/<lid>` QR /
+living validation all already exist. The only genuinely new code is the bed layer — `bedId` on
+stays, the calendar, the view-hold — the rest "falls out of the infrastructure." Correcting a
+design first locked too hard (the Phase-1 foundation *required* and *froze* `lightHouseId`, and
+even refused a houseless bed): a bed's home is **optional and soft**, never required-and-frozen.
+A bed may stand inside a Light House (`lightHouseId`) OR loose under open stars (a GPS coordinate,
+no home) — principle 10, "the internet has no weather": a bed under the sky is as real as one
+under a roof. Containment stays soft because the ontology has a **ladder**: a bed is a tree, a
+Light House is "a place rooted in a mother tree" (principle 7), so a loose bed that gathers other
+beds can **graduate** — its own tree becomes the mother tree a Light House roots into, keeping its
+whole chain and taking a new role. Seed → bed → gathering → Light House; "from a dream to a dream."
+Beds are excluded from the *forest* (furniture, not forest) but a loose bed with a coordinate still
+deserves to be **findable** on its own layer, not erased. (Zoltán's insight — it made the
+foundation more correct, not more complex; caps must now cover loose beds per keeper too, since
+the per-house ceiling no longer contains them.) The invariants bind EVERY writer, staff included:
+the bed line is uncrossable by edit (a bed stays a bed, a tree never becomes one), a loose bed is a
+real place for its whole life (not only at birth), a bed never carries a domain nor forges into a
+house it isn't kept by — and the caps follow a bed on every home-move (`onBedHomeMoved` reverts a
+breaching move, never deletes an established being). Accepted residuals (LOW, staff-only or
+self-healing, verified under the emulator): staff may point a bed at a non-existent Light House (it
+simply dangles, owner-repairable), and a legacy placeless loose bed is locked until an edit gives it
+a real place (intentional — a support note, not a bug). Later: the graduation flow itself; the
+loose-bed map layer. See [[lighthouse-rename]] and QUESTIONS.md.
+
+---
+
 **2026-07-17 · Sanctuaries become Light Houses** — a full rename, name and archetype
 (so earlier rings still say *sanctuary*; here is where it changed). Not a synonym: a
 sanctuary's care points inward (safety by keeping the world out); a **Light House**'s

@@ -6,6 +6,8 @@
 // what already lives; the refusal message IS the point, so it lives here with the numbers
 // it explains.
 
+import { isBedTree } from './bed';
+
 export const DEFAULT_MAX_LIFETREES = 12;
 export const DEFAULT_MAX_GUARDED_TREES = 132;
 
@@ -42,8 +44,11 @@ export const treePlantingGate = (
   type: 'LIFETREE' | 'GUARDED',
   limits: NodeLimits = DEFAULT_NODE_LIMITS,
 ): string | null => {
-  const guarded = existing.filter(isGuarded).length;
-  const lifetrees = existing.length - guarded;
+  // Beds (domain/bed.ts) are a Light House's furniture, not the keeper's personal forest —
+  // they never count against either cap (mirrored server-side in functions/onLifetreeCreated).
+  const countable = existing.filter(t => !isBedTree(t));
+  const guarded = countable.filter(isGuarded).length;
+  const lifetrees = countable.length - guarded;
 
   if (type === 'LIFETREE' && lifetrees >= limits.maxLifetrees) {
     return `You already tend ${limits.maxLifetrees} lifetree${limits.maxLifetrees === 1 ? '' : 's'} — a full personal forest. We would like quality, not quantity: deepen the trees you have, and let each one truly live.`;

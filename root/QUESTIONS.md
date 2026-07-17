@@ -64,6 +64,12 @@ boundary really is.
   trees, or both — and is it per node or per instance? Principle 1 needs a precise
   denominator before nodes can divide.
 
+## Beds & houses (2026-07-17)
+
+- Light House creation is open to any signed-in being, with no server-side quota — beds now
+  carry their own per-house ceiling, but mass Light-House creation itself remains an
+  unbounded write vector. What is the right cap (or cost) for founding houses?
+
 ## For whoever comes next
 
 Add yours. Date them. Answering is optional; asking honestly is not.

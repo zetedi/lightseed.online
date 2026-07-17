@@ -2,6 +2,7 @@ import { collection, query, orderBy, getDocs, addDoc, setDoc, serverTimestamp, d
 import { signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, updateProfile, type User as FirebaseUser, signOut as firebaseSignOut } from 'firebase/auth';
 import { httpsCallable } from 'firebase/functions';
 import { type Pulse, type Lifetree, type Vision } from '../../types';
+import { excludeBedTrees } from '../../domain/bed';
 import { uuidv7 } from '../../utils/id';
 import { auth, db, functions, googleProvider, mapDoc, lifetreesCollection, visionsCollection, pulsesCollection, networkInvitesCollection, newsletterConfigRef } from './core';
 
@@ -399,13 +400,24 @@ export const setNewsletterSubscription = async (uid: string, email: string, subs
     }
 };
 
-const fetchNewsletterChanges = async <T>(collectionRef: any, lastSentAt: Timestamp | null, mapper: (doc: any) => T) => {
+// The digest names at most this many of each kind.
+const NEWSLETTER_DIGEST_SIZE = 8;
+
+const fetchNewsletterChanges = async <T>(
+    collectionRef: any, lastSentAt: Timestamp | null, mapper: (doc: any) => T,
+    sieve?: (items: T[]) => T[],
+) => {
+    // A sieve (excludeBedTrees) runs BEFORE the newest-N slice: over-fetch head-room so the
+    // rows it removes never occupy digest slots — a burst of new beds must not displace
+    // real trees from the digest.
+    const fetchLimit = sieve ? NEWSLETTER_DIGEST_SIZE * 6 : NEWSLETTER_DIGEST_SIZE;
     const q = lastSentAt
-        ? query(collectionRef, where('createdAt', '>', lastSentAt), orderBy('createdAt', 'desc'), limit(8))
-        : query(collectionRef, orderBy('createdAt', 'desc'), limit(8));
+        ? query(collectionRef, where('createdAt', '>', lastSentAt), orderBy('createdAt', 'desc'), limit(fetchLimit))
+        : query(collectionRef, orderBy('createdAt', 'desc'), limit(fetchLimit));
 
     const snap = await getDocs(q);
-    return snap.docs.map(mapper);
+    const items = snap.docs.map(mapper);
+    return (sieve ? sieve(items) : items).slice(0, NEWSLETTER_DIGEST_SIZE);
 };
 
 export const getNewsletterDraftData = async () => {
@@ -418,7 +430,9 @@ export const getNewsletterDraftData = async () => {
     }
 
     const [trees, visions, pulses] = await Promise.all([
-        fetchNewsletterChanges(lifetreesCollection, lastSentAt, (d) => (mapDoc(d) as Lifetree)),
+        // Beds are furniture, not forest — the digest of new trees never names one, and the
+        // sieve runs before the slice so beds cannot displace real trees (domain/bed.ts).
+        fetchNewsletterChanges(lifetreesCollection, lastSentAt, (d) => (mapDoc(d) as Lifetree), excludeBedTrees),
         fetchNewsletterChanges(visionsCollection, lastSentAt, (d) => (mapDoc(d) as Vision)),
         fetchNewsletterChanges(pulsesCollection, lastSentAt, (d) => (mapDoc(d) as Pulse)),
     ]);

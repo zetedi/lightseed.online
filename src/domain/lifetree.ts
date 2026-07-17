@@ -2,7 +2,12 @@ import type { Timestamp } from 'firebase/firestore';
 import type { Being } from './being';
 import type { WateringSchedule } from './watering';
 
-export type LifetreeType = "human" | "ai" | "community" | "project" | "LIFETREE" | "GUARDED" | "FAMILY";
+// The kind of a tree — the value persisted in `treeType`. All uppercase; absent = 'LIFETREE'.
+//   'LIFETREE' — a being's own tree · 'GUARDED' — a real tree in nature, stood for ·
+//   'BED' — a place to sleep (see src/domain/bed.ts): a full Being with its own chain, housed
+//     in a Light House or loose under open stars, but furniture rather than forest — never
+//     listed among the trees.
+export type LifetreeType = "LIFETREE" | "GUARDED" | "BED";
 
 // The Being / immutable-chain container / Living Identity
 export interface Lifetree extends Being {
@@ -34,6 +39,13 @@ export interface Lifetree extends Being {
   locationName?: string;
 
   domain?: string; // Associated website domain, e.g. "example.com"
+  // The Light House a BED stands in — set only when treeType === 'BED' and the bed is HOUSED;
+  // a loose bed (under open stars, at a coordinate) carries none. Soft and mutable, not frozen:
+  // a bed may graduate (see src/domain/bed.ts and the 2026-07-17 ring). Single-owner
+  // containment, so a denormalised scalar is permitted (like Stay.lightHouseId); shared
+  // belonging stays LIN links. A bed carries NO `domain`, so domain-scoped forest queries
+  // never surface it.
+  lightHouseId?: string;
   createdAt: Timestamp;
 
   // Who can see this tree. 'public' = the whole world (the forest); 'node' = signed-in members

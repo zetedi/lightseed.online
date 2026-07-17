@@ -75,7 +75,11 @@ photo-proofed care pulse) · *keeper* (a community's owner) · *guardian* (a
 no-privilege follow that vows protection) · *validated = initiated* (standing
 in the web of trust) · *Light House* (a sacred place that keeps a light for others —
 a point of orientation on the map, rooted in a mother tree) ·
-*mother tree* (a tree holding a Light House) · *the Light Path* (the onboarding
+*mother tree* (a tree holding a Light House) ·
+*bed* (a being — a Lifetree with a place to sleep, inside a Light House *or* loose under open
+stars at a coordinate; each stay a leaf on its chain, each tender a guardian. Home is soft and
+optional: a loose bed that gathers can **graduate** — its tree becomes the mother tree a Light
+House roots into. Seed → bed → gathering → Light House) · *the Light Path* (the onboarding
 trail — ultimately each community's own ruleset) · *reach* (one being speaking
 to another) · *carry* (lending hands to a being's voice, always disclosed) ·
 *consecrate* (create a Light House) · *release* (delete one) · *step in* (a
