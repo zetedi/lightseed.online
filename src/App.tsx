@@ -6,6 +6,8 @@ import {
   createEvent,
   updateEvent,
   mintPulse,
+  growVision,
+  getVisionById,
   plantLifetree,
   uploadBase64Image,
   validateLifetree,
@@ -479,6 +481,22 @@ const AppContent = () => {
             showAlert("Error deleting tree: " + e.message);
         }
     }
+
+    // A contribution sealed onto the vision's own chain. After it commits, refresh the open vision
+    // so its chain head (blockHeight/latestHash) and the Contributions view reflect the new leaf.
+    const handleGrowVision = async (vision: Vision, data: { title?: string; body?: string; imageUrl?: string; growthCategory?: string }) => {
+        if (!lightseed) return;
+        await growVision(vision, {
+            ...data,
+            authorId: lightseed.uid,
+            authorName: lightseed.displayName || 'Soul',
+            authorPhoto: lightseed.photoURL || undefined,
+        });
+        try {
+            const fresh = await getVisionById(vision.id);
+            if (fresh) setSelectedVision(prev => (prev && prev.id === fresh.id ? fresh : prev));
+        } catch { /* the view simply keeps its prior head until reopened */ }
+    };
 
     const handleDeleteVisionInApp = async (visionId: string) => {
         if (!(await showConfirm("Are you sure you want to delete this vision?", { title: 'Delete Vision', confirmText: 'Delete', danger: true }))) return;
@@ -1117,6 +1135,7 @@ const AppContent = () => {
                             onDelete={handleDeleteVisionInApp}
                             myTrees={myTrees}
                             onGrow={(v) => openVisionGrowth(v)}
+                            onViewPulse={(p) => setSelectedPulse(p)}
                             onViewTree={(tree) => { setSelectedVision(null); setSelectedTree(tree); }}
                         />
                     </div>
@@ -1345,6 +1364,7 @@ const AppContent = () => {
                             await mintPulse(data);
                         }
                     }}
+                    onGrowVision={handleGrowVision}
                     onProposeAlignment={async (data: any) => { await proposeAlignment(data); }}
                     onGrown={handleTreeGrown}
                     uploading={uploading}

@@ -21,6 +21,9 @@ interface EmitPulseModalProps {
   targetVision?: Vision | null;
   onClose: () => void;
   onMint: (data: any) => Promise<void>;
+  // Grow a vision — seals a CONTRIBUTION onto the VISION'S OWN chain (not the rooted tree).
+  // The tree grows by tending (onMint → the tree's chain); the vision by contributions.
+  onGrowVision?: (vision: Vision, data: { title?: string; body?: string; imageUrl?: string; growthCategory?: string }) => Promise<void>;
   onProposeAlignment: (data: any) => Promise<void>;
   // Fired after a tree growth mints, so the caller can refresh the tree's latest image.
   onGrown?: (treeId: string, imageUrl?: string) => void;
@@ -68,6 +71,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
   targetVision,
   onClose,
   onMint,
+  onGrowVision,
   onProposeAlignment,
   onGrown,
   uploading,
@@ -141,14 +145,10 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
     e?.preventDefault();
     if (!lightseed || isSubmitting) return;
 
-    // Every growth pulse is sealed onto a tree's chain. A vision grows on its rooted tree.
-    const lifetreeId = growthKind === 'tree'
-      ? (growthTree?.id || '')
-      : (selectedVision?.lifetreeId || growthTree?.id || '');
-    if (!lifetreeId) {
-      showAlert(growthKind === 'vision' ? 'This vision is not rooted in a tree yet, so it cannot grow.' : 'Plant a lifetree before emitting growth.');
-      return;
-    }
+    // A tree growth seals onto the tree's chain; a vision growth is a CONTRIBUTION sealed onto
+    // the VISION'S OWN chain — the twins diverge, each keeping its own ledger.
+    if (growthKind === 'vision' && !selectedVision) { showAlert('Pick a vision to grow.'); return; }
+    if (growthKind === 'tree' && !growthTree?.id) { showAlert('Plant a lifetree before emitting growth.'); return; }
 
     setIsSubmitting(true);
     try {
@@ -156,17 +156,26 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
       if (pulseImageUrl.startsWith('data:')) {
         finalImageUrl = await uploadBase64Image(pulseImageUrl, `users/${lightseed.uid}/pulses/ai/${Date.now()}`);
       }
+
+      if (growthKind === 'vision' && selectedVision) {
+        // Seal the contribution onto the vision's own chain (growVision), not the rooted tree.
+        if (!onGrowVision) throw new Error('Growing this vision is not available here.');
+        await onGrowVision(selectedVision, {
+          title: pulseTitle.trim() || undefined,
+          body: pulseBody,
+          imageUrl: finalImageUrl || undefined,
+          growthCategory: growthCategory || undefined,
+        });
+        onClose();
+        return;
+      }
+
+      // Tree growth — sealed onto the tree's chain via onMint (unchanged).
+      const lifetreeId = growthTree?.id || '';
       await onMint({
         lifetreeId,
-        // Canonical lowercase types: tree growth updates the tree's latest growth view;
-        // vision growth is a distinct type tied to the vision (not just a casing).
-        type: growthKind === 'tree' ? 'tree_growth' : 'vision_growth',
-        ...(growthKind === 'vision' && selectedVision
-          ? { visionId: selectedVision.id, visionTitle: selectedVision.title, growthCategory }
-          : {}),
-        title: pulseTitle.trim() || (growthKind === 'tree'
-          ? `${growthTree?.name || 'Tree'} growth`
-          : (selectedVision?.title ? `${selectedVision.title} growth` : 'Vision growth')),
+        type: 'tree_growth',
+        title: pulseTitle.trim() || `${growthTree?.name || 'Tree'} growth`,
         body: pulseBody,
         imageUrl: finalImageUrl,
         authorId: lightseed.uid,
@@ -174,7 +183,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
         authorPhoto: lightseed.photoURL || undefined,
       });
       // Let the caller refresh the tree's latest image / chain after a tree growth.
-      if (growthKind === 'tree' && lifetreeId) onGrown?.(lifetreeId, finalImageUrl || undefined);
+      onGrown?.(lifetreeId, finalImageUrl || undefined);
       onClose();
     } catch (e: any) {
       showAlert(e.message);

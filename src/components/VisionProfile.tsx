@@ -1,21 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { showAlert } from './ui/Dialog';
-import { Vision } from '../types';
+import { Vision, Pulse } from '../types';
 import { Icons } from './ui/Icons';
 import { BeingQr } from './ui/BeingQr';
 import { mintBeingQr } from '../services/firebase/beings';
 import { MahameruAvatar } from './ui/MahameruAvatar';
 import { useLanguage } from '../contexts/LanguageContext';
 import { canJoinVision } from '../domain/policy';
-import { getLifetreeById } from '../services/firebase';
+import { getLifetreeById, getPulsesByVisionId, getPulsesByTreeId } from '../services/firebase';
 import { firestoreStore } from '../adapters/firestore';
 import { participants, isParticipant } from '../domain/views/participation';
 import { ProfileHero } from './ui/ProfileHero';
 import { ProfileLayout } from './ui/ProfileLayout';
 import { SectionTitle } from './ui/SectionTitle';
 import { SectionMenu, SectionItem } from './ui/SectionMenu';
+import { ChainTree } from './sections/ChainTree';
 import { TreeParticipants } from './TreeParticipants';
 import { Lifetree } from '../types';
+
+// The vision's genesis is a sealed block, not a pulse (like a bed) — so the chain view draws its
+// root from the vision itself; any pulse whose previousHash is the sentinel is treated as a root.
+const isGenesisPulse = (p: Pulse) => p.previousHash === '0' || p.title === 'Genesis Pulse';
 
 // The vision view, rendered through the shared profile scaffold so a vision reads like the community
 // / lifetree / event profiles. Joining a vision is a self-serve 'joined' link (people); trees join
@@ -26,15 +31,17 @@ interface VisionProfileProps {
     currentUserId?: string;
     onDelete?: (id: string) => void;
     myTrees?: Lifetree[];
-    // Grow this vision — emit a vision_growth pulse onto its rooted tree.
+    // Grow this vision — seal a contribution onto the vision's OWN chain (growVision).
     onGrow?: (vision: Vision) => void;
     // Open the vision's root tree.
     onViewTree?: (tree: Lifetree) => void;
+    // View a single contribution/leaf.
+    onViewPulse?: (pulse: Pulse) => void;
 }
 
-type VisionSection = 'about' | 'participants';
+type VisionSection = 'about' | 'participants' | 'contributions' | 'shadow';
 
-export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTrees, onGrow, onViewTree }: VisionProfileProps) => {
+export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTrees, onGrow, onViewTree, onViewPulse }: VisionProfileProps) => {
     const { t } = useLanguage();
     const isAuthor = currentUserId === vision.authorId;
     const isRoot = vision.title.toLowerCase() === 'root vision';
@@ -56,9 +63,57 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
         return () => { alive = false; };
     }, [vision.lifetreeId, myTrees]);
 
-    // Growing a vision seals a vision_growth block onto its root tree — available to the vision's
-    // author or the root tree's owner, and only once the vision is actually rooted in a tree.
-    const canGrow = !!currentUserId && !!vision.lifetreeId && (isAuthor || rootTree?.ownerId === currentUserId);
+    // Growing a vision seals a CONTRIBUTION onto the vision's OWN chain — no rooted tree required
+    // now (the idea-twin grows independently). The vision belongs to its author, exactly as the
+    // tree belongs to its owner (the twins each tend their own chain); the Firestore rules gate
+    // the chain advance to the author (or staff), so the button matches that gate.
+    const canGrow = !!currentUserId && isAuthor;
+
+    // The vision's own chain — its CONTRIBUTIONS. getPulsesByVisionId surfaces BOTH the new
+    // vision-chained growVision blocks AND the historical vision_growth pulses once sealed onto the
+    // rooted tree (they still carry visionId), so the timeline stays whole across the divergence.
+    const [contribGenesis, setContribGenesis] = useState<Pulse | null>(null);
+    const [contribBlocks, setContribBlocks] = useState<Pulse[]>([]);
+    const [loadingContrib, setLoadingContrib] = useState(true);
+    const loadContributions = useCallback(() => {
+        setLoadingContrib(true);
+        getPulsesByVisionId(vision.id).then(pulses => {
+            setContribGenesis(pulses.find(isGenesisPulse) || null);
+            setContribBlocks(pulses.filter(p => !isGenesisPulse(p)));
+        }).catch(() => {}).finally(() => setLoadingContrib(false));
+    // Re-runs when the vision's head advances (a fresh contribution) as well as per vision.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- head fields are refresh triggers, not body deps
+    }, [vision.id, vision.blockHeight, vision.latestHash]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- async chain fetch kickoff
+    useEffect(() => { loadContributions(); }, [loadContributions]);
+
+    // The shadow TREE's chain (tree↔vision compare) — fetched only when this vision is rooted.
+    const [shadowGenesis, setShadowGenesis] = useState<Pulse | null>(null);
+    const [shadowBlocks, setShadowBlocks] = useState<Pulse[]>([]);
+    const [loadingShadow, setLoadingShadow] = useState(false);
+    const [shadowSide, setShadowSide] = useState<'vision' | 'tree'>('vision');
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- clears the shadow when the vision has no tree; the async fetch follows
+        if (!vision.lifetreeId) { setShadowGenesis(null); setShadowBlocks([]); return; }
+        let alive = true;
+        setLoadingShadow(true);
+        getPulsesByTreeId(vision.lifetreeId).then(pulses => {
+            if (!alive) return;
+            setShadowGenesis(pulses.find(isGenesisPulse) || null);
+            setShadowBlocks(pulses.filter(p => !isGenesisPulse(p)));
+        }).catch(() => {}).finally(() => { if (alive) setLoadingShadow(false); });
+        return () => { alive = false; };
+    }, [vision.lifetreeId]);
+
+    // The chain's ROOT card + stats, drawn from the vision itself (its genesis is a sealed block).
+    const visionChainRoot = {
+        imageUrl: vision.imageUrl,
+        name: vision.title,
+        body: vision.body,
+        plantedLabel: vision.createdAt?.toDate ? vision.createdAt.toDate().toLocaleDateString() : '',
+        hash: vision.genesisHash,
+    };
+    const visionChainStats = { blockHeight: vision.blockHeight, genesisHash: vision.genesisHash, latestHash: vision.latestHash };
 
     // Participation as a prism over the LIN: the vision's incoming 'joined' links.
     useEffect(() => {
@@ -92,6 +147,9 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
 
     const sections: SectionItem[] = [
         { key: 'about', label: 'About', icon: <Icons.Eye /> },
+        { key: 'contributions', label: t('contributions'), icon: <Icons.HandLeaf /> },
+        // The shadow-compare only appears when the vision keeps a tree twin.
+        ...(vision.lifetreeId ? [{ key: 'shadow', label: t('shadow'), icon: <Icons.Tree /> }] as SectionItem[] : []),
         { key: 'participants', label: 'Participants', icon: <Icons.Users /> },
     ];
 
@@ -221,6 +279,76 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                                     <span className="break-all">{vision.link}</span>
                                 </a>
                             </div>
+                        )}
+                    </div>
+                )}
+
+                {section === 'contributions' && (
+                    <div className="space-y-6">
+                        <SectionTitle title={t('contributions')} sub={t('contributions_sub')} />
+                        <ChainTree
+                            genesisBlock={contribGenesis}
+                            blocks={contribBlocks}
+                            loading={loadingContrib}
+                            onViewPulse={onViewPulse ?? (() => {})}
+                            canTend={!!canGrow && !!onGrow}
+                            onTend={() => onGrow?.(vision)}
+                            root={visionChainRoot}
+                            stats={visionChainStats}
+                            emptyText={t('no_contributions')}
+                        />
+                    </div>
+                )}
+
+                {section === 'shadow' && vision.lifetreeId && (
+                    <div className="space-y-6">
+                        <SectionTitle title={t('shadow')} sub={t('shadow_sub')} />
+                        {/* One birth, two chains: a labelled toggle lays the twins side by side so the
+                            viewer can compare how the idea grew (contributions) against how the tree
+                            grew (tending). */}
+                        <div className="flex items-center justify-center gap-2">
+                            <button
+                                onClick={() => setShadowSide('vision')}
+                                className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-colors ${shadowSide === 'vision' ? 'bg-amber-500 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                            >
+                                <Icons.Eye /> {t('vision')}
+                            </button>
+                            <button
+                                onClick={() => setShadowSide('tree')}
+                                className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-colors ${shadowSide === 'tree' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                            >
+                                <Icons.Tree /> {rootTree?.name || t('tree')}
+                            </button>
+                        </div>
+                        {shadowSide === 'vision' ? (
+                            <ChainTree
+                                genesisBlock={contribGenesis}
+                                blocks={contribBlocks}
+                                loading={loadingContrib}
+                                onViewPulse={onViewPulse ?? (() => {})}
+                                canTend={false}
+                                onTend={() => {}}
+                                root={visionChainRoot}
+                                stats={visionChainStats}
+                                emptyText={t('no_contributions')}
+                            />
+                        ) : (
+                            <ChainTree
+                                genesisBlock={shadowGenesis}
+                                blocks={shadowBlocks}
+                                loading={loadingShadow}
+                                onViewPulse={onViewPulse ?? (() => {})}
+                                canTend={false}
+                                onTend={() => {}}
+                                root={rootTree ? {
+                                    imageUrl: rootTree.latestGrowthUrl || rootTree.imageUrl,
+                                    name: rootTree.name,
+                                    body: rootTree.body,
+                                    plantedLabel: rootTree.createdAt?.toDate ? rootTree.createdAt.toDate().toLocaleDateString() : '',
+                                    hash: rootTree.genesisHash,
+                                } : null}
+                                stats={rootTree ? { blockHeight: rootTree.blockHeight, genesisHash: rootTree.genesisHash, latestHash: rootTree.latestHash } : null}
+                            />
                         )}
                     </div>
                 )}

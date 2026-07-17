@@ -396,8 +396,17 @@ service cloud.firestore {
       allow create: if isSignedIn();
       // Joining a vision is now a self-serve 'joined' link (see the links collection), NOT a write
       // to the vision doc — so editing the doc itself is restricted to its author or staff.
+      // The vision grows its OWN chain (growVision): its head — latestHash/blockHeight — advances
+      // freely on the author's (or staff's) write, but the GENESIS is frozen the moment it exists
+      // (like a tree's/bed's root): the birth block can be BORN once (an absent genesisHash may be
+      // set — createVision at birth, or the backfill on a legacy vision) but never REWRITTEN. So a
+      // contribution may extend the chain, and no one may forge or replace its root. `lid` stays frozen.
       allow update: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff())
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid']);
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid'])
+        && (
+          !('genesisHash' in resource.data)
+          || request.resource.data.get('genesisHash', '') == resource.data.get('genesisHash', '')
+        );
       allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff());
     }
 

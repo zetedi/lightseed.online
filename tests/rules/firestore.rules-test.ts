@@ -595,3 +595,44 @@ describe('networkInvites — consuming cannot rewrite the email, inviter, or the
       { status: 'accepted', acceptedByUserId: MALLORY }));                          // accept as another
   });
 });
+
+describe('visions — the idea-twin grows its own chain; the genesis is frozen', () => {
+  // BOB authors the vision; its head advances by contributions (growVision), its root is sealed once.
+  const seedVisions = () => env.withSecurityRulesDisabled(async (ctx) => {
+    const d = ctx.firestore();
+    await setDoc(doc(d, 'visions', 'v1'), {
+      authorId: BOB, title: 'V', visibility: 'public', lid: 'v1-lid',
+      genesisHash: 'g0', latestHash: 'g0', blockHeight: 0,
+    });
+    // A legacy vision, minted before the twins grew chains — no genesis yet.
+    await setDoc(doc(d, 'visions', 'vLegacy'), { authorId: BOB, title: 'Old', visibility: 'public', lid: 'vL-lid' });
+  });
+
+  it('the author advances the chain — latestHash/blockHeight move freely (a contribution seals)', async () => {
+    await seedVisions();
+    await assertSucceeds(updateDoc(doc(db(BOB), 'visions', 'v1'), { latestHash: 'h1', blockHeight: 1 }));
+  });
+
+  it("a stranger cannot grow (advance) someone else's vision", async () => {
+    await seedVisions();
+    await assertFails(updateDoc(doc(db(MALLORY), 'visions', 'v1'), { latestHash: 'h1', blockHeight: 1 }));
+  });
+
+  it('the genesis is frozen — even the author cannot rewrite or forge it, alone or smuggled along', async () => {
+    await seedVisions();
+    await assertFails(updateDoc(doc(db(BOB), 'visions', 'v1'), { genesisHash: 'forged' }));
+    await assertFails(updateDoc(doc(db(BOB), 'visions', 'v1'), { latestHash: 'h1', blockHeight: 1, genesisHash: 'forged' }));
+  });
+
+  it('a legacy vision may be BORN a chain once (absent genesis set) — by its author or by staff (the backfill)', async () => {
+    await seedVisions();
+    await assertSucceeds(updateDoc(doc(db(BOB), 'visions', 'vLegacy'), { genesisHash: 'g0', latestHash: 'g0', blockHeight: 0 }));
+    await seedVisions(); // reset the legacy vision back to chainless
+    await assertSucceeds(updateDoc(doc(db(STAFF), 'visions', 'vLegacy'), { genesisHash: 'g0', latestHash: 'g0', blockHeight: 0 }));
+  });
+
+  it('the lid stays frozen on a vision (the true name is load-bearing)', async () => {
+    await seedVisions();
+    await assertFails(updateDoc(doc(db(BOB), 'visions', 'v1'), { lid: 'forged' }));
+  });
+});

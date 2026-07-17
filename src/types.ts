@@ -42,6 +42,14 @@ export interface Vision extends Being {
   // Absent = 'public' (legacy default). 'node' = signed-in only; 'private' = author + staff.
   visibility?: 'public' | 'node' | 'private';
 
+  // The vision's OWN chain — the idea-twin grows by CONTRIBUTIONS, sealed here (not on the
+  // rooted tree). Born the same moment as the tree (createVision seals a genesis), then diverges.
+  // Frozen genesis; latestHash/blockHeight advance as contributions accrue. Legacy visions gain
+  // these via the backfillVisionChains migration.
+  genesisHash?: string;
+  latestHash?: string;
+  blockHeight?: number;
+
   // V2
   status?: VisionStatus;
   resonanceScore?: number;

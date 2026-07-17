@@ -4,6 +4,7 @@ import { uuidv7 } from '../../utils/id';
 import { type PulseVisibility } from '../../domain/pulse';
 import { db, toMillis, mapDoc, lifetreesCollection, visionsCollection, pulsesCollection, communitiesCollection, lightHousesCollection, communityInvitesCollection } from './core';
 import { firestoreStore } from '../../adapters/firestore';
+import { createBlock } from '../../utils/crypto';
 import { isHubDomain } from './trees';
 
 export const fetchVisions = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {
@@ -47,12 +48,22 @@ export const createVision = async (data: Partial<Vision> & { authorId: string; t
     if (!communityId && domain) {
         try { communityId = (await getCommunityByDomain(domain))?.id; } catch { /* offline / no match */ }
     }
+    // The vision is a Being with its OWN chain — born the same moment as any rooted tree, then
+    // diverging: the tree grows by tending, the vision by contributions. Seal its genesis here
+    // (mirrors plantBed / plantLifetree) so the twin starts life chain-verifiable, not mute.
+    const genesisHash = await createBlock('0', { msg: 'Birth' }, Date.now());
     // Default to public so legacy/unspecified visions stay visible (mirrors tree visibility).
     return addDoc(visionsCollection, {
         ...data, lid: uuidv7(), domain,
         ...(communityId ? { communityId } : {}),
-        visibility: data.visibility || 'public', createdAt: serverTimestamp(),
+        visibility: data.visibility || 'public',
+        genesisHash, latestHash: genesisHash, blockHeight: 0,
+        createdAt: serverTimestamp(),
     });
+};
+export const getVisionById = async (id: string): Promise<Vision | null> => {
+    const snap = await getDoc(doc(db, 'visions', id));
+    return snap.exists() ? ({ id: snap.id, ...snap.data() } as Vision) : null;
 };
 export const deleteVision = (id: string) => deleteDoc(doc(db, 'visions', id));
 
@@ -271,6 +282,30 @@ export const dropLegacyArrays = async (): Promise<number> => {
     await clear(communitiesCollection, ['memberIds']);
     await clear(visionsCollection, ['joinedUserIds']);
     return n;
+};
+
+// The twin awakens: initialise a genesis chain on every existing vision that lacks one, so the
+// idea-twin can grow its own contribution chain (the 2026-07-17 ring). ADDITIVE ONLY — no field
+// removed, no doc moved: a vision stays a vision in its own collection, it simply gains
+// genesisHash/latestHash/blockHeight. Each genesis is sealed from the vision's OWN birth-time
+// (createdAt) so the id and the chain root agree. Idempotent — a vision that already has a
+// genesisHash is skipped. Staff-run from the superadmin console; NOT invoked automatically.
+export const backfillVisionChains = async (): Promise<{ updated: number; skipped: number }> => {
+    const snap = await getDocs(visionsCollection);
+    const missing = snap.docs.filter(d => !(d.data() as any).genesisHash);
+    const sealed = await Promise.all(missing.map(async d => ({
+        ref: d.ref,
+        genesisHash: await createBlock('0', { msg: 'Birth' }, toMillis((d.data() as any).createdAt) || Date.now()),
+    })));
+    for (let i = 0; i < sealed.length; i += 400) {
+        const batch = writeBatch(db);
+        sealed.slice(i, i + 400).forEach(s => batch.update(s.ref, {
+            genesisHash: s.genesisHash, latestHash: s.genesisHash, blockHeight: 0,
+        }));
+        await batch.commit();
+    }
+    console.log(`[lightseed] vision chain backfill: ${sealed.length} sealed, ${snap.size - missing.length} already chained`);
+    return { updated: sealed.length, skipped: snap.size - missing.length };
 };
 
 // One-time migration to a fully lid-carrying data model: mint a `lid` (Lightseed ID, UUIDv7)

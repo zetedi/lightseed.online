@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { ensureIntelligenceCommons } from '../services/intelligence';
 import {
   backfillPulseVisibility, migrateArraysToLinks, migratePulseTypeCasing, dropLegacyArrays, migrateTreeVisibility,
-  migrateBackfillLids, migrateBackfillMatchIds,
+  migrateBackfillLids, migrateBackfillMatchIds, backfillVisionChains,
 } from '../services/firebase';
 import { setChainLocked, canonicalize, computeCanonicalHash, blockContent, verifyChain } from '../domain/chain';
 
@@ -68,6 +68,14 @@ export function useSuperAdminConsole(isSuperAdmin: boolean, uid?: string) {
       console.log(`[lightseed] done — stamped ${r.stamped}, unresolved ${r.unresolved}, sealed skipped ${r.skippedSealed}.`);
       return r;
     };
+    // Twin awakens: seal a genesis chain on every existing vision lacking one, so the idea-twin
+    // can grow its own contribution chain (additive; a vision stays a vision). Idempotent.
+    w.backfillVisionChains = async () => {
+      console.log('[lightseed] backfilling vision genesis chains…');
+      const r = await backfillVisionChains();
+      console.log(`[lightseed] done — sealed ${r.updated} vision(s), ${r.skipped} already chained.`);
+      return r;
+    };
     // Crystal: flip the in-memory chain lock to TEST canonical (verifiable) minting this session,
     // and expose the chain toolkit for manual console verification. (The real switch is the
     // node's About → Vision stamp, persisted on community.chainLocked.)
@@ -79,7 +87,7 @@ export function useSuperAdminConsole(isSuperAdmin: boolean, uid?: string) {
     return () => {
       delete w.backfillPulseVisibility; delete w.migrateArraysToLinks; delete w.migratePulseTypeCasing;
       delete w.dropLegacyArrays; delete w.migrateTreeVisibility; delete w.setChainLocked; delete w.lightseedChain;
-      delete w.migrateBackfillLids; delete w.migrateBackfillMatchIds;
+      delete w.migrateBackfillLids; delete w.migrateBackfillMatchIds; delete w.backfillVisionChains;
     };
   }, [isSuperAdmin]);
 }

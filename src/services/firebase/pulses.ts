@@ -1,5 +1,5 @@
 import { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, runTransaction, getDoc, where, updateDoc, limit, startAfter, QueryDocumentSnapshot, arrayUnion, onSnapshot, getCountFromServer } from 'firebase/firestore';
-import { type Pulse, type Lifetree, type ReachAudience } from '../../types';
+import { type Pulse, type Lifetree, type Vision, type ReachAudience } from '../../types';
 import { createBlock } from '../../utils/crypto';
 import { uuidv7 } from '../../utils/id';
 import { computeCanonicalHash, isChainLocked, BLOCK_HASH_VERSION } from '../../domain/chain';
@@ -404,6 +404,15 @@ export const getMyPulses = async (uid: string) => (await getDocs(query(pulsesCol
 // window where they leak into a tree's growth timeline.
 export const fetchGrowthPulses = async (treeId: string) => (await getDocs(query(pulsesCollection, where('lifetreeId', '==', treeId), where('type', 'in', ['tree_growth', 'GROWTH'])))).docs.map(mapPulse).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 
+// A vision's CONTRIBUTIONS — every pulse tagged with this visionId, newest first. This surfaces
+// BOTH the vision's own chain (new growVision blocks) AND the historical vision_growth pulses that
+// were once sealed onto the rooted tree (they still carry visionId) — so the idea-twin's timeline
+// stays whole across the divergence. Single-field equality + client sort (no composite index).
+export const getPulsesByVisionId = async (visionId: string) => {
+    const snap = await getDocs(query(pulsesCollection, where('visionId', '==', visionId)));
+    return snap.docs.map(mapPulse).sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+};
+
 export const getPulsesByTreeId = async (treeId: string) => {
     // Exclude reaches/tree_chat: they are private DMs minted onto the sender tree's chain, so
     // a tree's public timeline must never surface them — and (since they are now readable only
@@ -472,6 +481,63 @@ export const mintPulse = async (pulseData: Partial<Pulse> & { lifetreeId: string
         t.update(treeRef, updateData);
     });
 }
+
+// Grow a VISION — mint a CONTRIBUTION pulse onto the VISION'S OWN chain (not the rooted tree's).
+// The twin of mintPulse, targeting visions/{id}: the tree grows by tending, the vision by
+// contributions, and each keeps its own append-only ledger. Mirrors mintPulse's block shape and
+// hashing (legacy hash for unsealed chains, canonical when the node's stamp is flipped) so a
+// vision's chain is verifiable exactly like a tree's. Does NOT touch mintPulse or any tree doc.
+export const growVision = async (
+    vision: Pick<Vision, 'id'>,
+    data: {
+        title?: string; body?: string; imageUrl?: string; growthCategory?: string;
+        authorId: string; authorName?: string; authorPhoto?: string;
+        visibility?: Pulse['visibility'];
+    },
+) => {
+    return runTransaction(db, async (t) => {
+        const visionRef = doc(db, 'visions', vision.id);
+        const visionDoc = await t.get(visionRef);
+        if (!visionDoc.exists()) throw new Error('Vision missing');
+        const v = visionDoc.data() as Vision;
+        const newPulseRef = doc(pulsesCollection);
+        const domain = v.domain || window.location.hostname.replace(/^www\./, '');
+        // The chain's tail — the vision's genesis (createVision) or, on a legacy vision not yet
+        // backfilled, the sentinel '0' so its first contribution still links to a root.
+        const previousHash = v.latestHash || v.genesisHash || '0';
+        const mintedAt = Date.now();
+        const record = {
+            lid: uuidv7(mintedAt),
+            type: 'vision_growth' as const,
+            visionId: vision.id,
+            visionTitle: v.title,
+            ...(data.growthCategory ? { growthCategory: data.growthCategory } : {}),
+            title: data.title?.trim() || `${v.title} growth`,
+            body: data.body || '',
+            ...(data.imageUrl ? { imageUrl: data.imageUrl } : {}),
+            authorId: data.authorId,
+            ...(data.authorName ? { authorName: data.authorName } : {}),
+            ...(data.authorPhoto ? { authorPhoto: data.authorPhoto } : {}),
+            domain,
+            id: newPulseRef.id,
+            visibility: data.visibility || v.visibility || 'public',
+            loveCount: 0,
+            commentCount: 0,
+            mintedAt,
+            previousHash,
+        };
+        // Locked nodes seal the canonical, reproducible hash; unlocked keep the legacy hash — the
+        // exact same split mintPulse uses, so tree and vision chains verify the same way.
+        const locked = isChainLocked();
+        const newHash = locked
+            ? await computeCanonicalHash(previousHash, mintedAt, record)
+            : await createBlock(previousHash, record, mintedAt);
+        t.set(newPulseRef, { ...record, ...(locked ? { hashVersion: BLOCK_HASH_VERSION } : {}), createdAt: serverTimestamp(), hash: newHash });
+        // The vision's chain advances in the SAME transaction — no window where the block exists
+        // but the vision's head is stale (the chain can never fork).
+        t.update(visionRef, { latestHash: newHash, blockHeight: (v.blockHeight || 0) + 1 });
+    });
+};
 
 // An explicit tend — the lightweight "it still lives" confirmation. Writes a small TEND
 // block onto the tree's own chain and refreshes its validation liveness.

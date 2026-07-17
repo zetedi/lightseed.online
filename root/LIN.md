@@ -79,7 +79,11 @@ a point of orientation on the map, rooted in a mother tree) ·
 *bed* (a being — a Lifetree with a place to sleep, inside a Light House *or* loose under open
 stars at a coordinate; each stay a leaf on its chain, each tender a guardian. Home is soft and
 optional: a loose bed that gathers can **graduate** — its tree becomes the mother tree a Light
-House roots into. Seed → bed → gathering → Light House) · *the Light Path* (the onboarding
+House roots into. Seed → bed → gathering → Light House) ·
+*vision* (a being — the **idea-twin of a tree**: when a tree is planted its Root Vision is born the
+*same moment*; matter and idea, they diverge, each growing its own chain — the tree's of tending,
+the vision's of **contributions**. A vision keeps its tree as a **shadow** (`lifetreeId`), so the two
+growths can be laid side by side and compared) · *the Light Path* (the onboarding
 trail — ultimately each community's own ruleset) · *reach* (one being speaking
 to another) · *carry* (lending hands to a being's voice, always disclosed) ·
 *consecrate* (create a Light House) · *release* (delete one) · *step in* (a

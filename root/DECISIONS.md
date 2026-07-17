@@ -6,6 +6,26 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-17 · Tree and vision are twins; the vision grows its own chain** — when a tree is
+planted, its **Root Vision** is born the *same moment* (`plantLifetree` already mints both, linked
+by `vision.lifetreeId`). Until now the vision was the mute twin — a flat being with no chain, while
+the tree did all the growing. We give the vision **its own genesis chain**: matter and idea, born
+together, then **diverging** — the tree's chain grows by *tending* (photos, waterings, physical
+life), the vision's by **contributions** (how the dream sharpened). The vision's "tree view" is
+therefore **Contributions**, and because the twins share a birth and keep the `lifetreeId` shadow
+link, their two chains can be **laid side by side and compared** (tree↔vision shadow-compare).
+Chosen over moving visions into the `lifetrees` collection: augmenting the vision *in place* (its
+own chain, staying a vision) **preserves** the tree↔vision duality rather than collapsing it — and
+that separation is what grants freedom (a combined "visiontree" view, or the shadow-compare, become
+pure rendering choices, not migrations). New contributions **seal onto the vision's own chain** (the
+rooted tree no longer receives `vision_growth` blocks — a contribution belongs to the vision);
+existing `visionId`-tagged growth pulses still show as historical contributions. A backfill
+initialises a genesis chain on every existing vision (additive — no field removed, no doc moved),
+authorised by the guardian before it runs. Zoltán's insight: *"we plant visions… the tree and the
+root vision are the same moment and they diverge."* See [[aspen-tree]] and LIN's *vision* entry.
+
+---
+
 **2026-07-17 · The bed opens — a page, a calendar, a leaf** — the bed feature grows its
 face. Because a bed IS a Lifetree, a bed opens in its own being-page (`BedProfile`) through the
 same `/b/<lid>` door as any being: a HOUSED/LOOSE pill, its **chain of leaves** (who stayed),
