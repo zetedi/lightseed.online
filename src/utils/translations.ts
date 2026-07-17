@@ -17,6 +17,7 @@ const baseKeys = {
   housed: "Housed", loose: "Loose",
   view_hold_note: "Held for you while you choose…", bed_being_viewed: "Someone is choosing these nights…",
   a_place_to_sleep: "A place to sleep",
+  my_stays: "Stays", my_stays_sub: "The beds you've asked to sleep in.",
   // Being section labels are non-possessive: profiles are entity-generic (Indra's net) — the menu is the entity's anatomy, not the viewer's possessions.
   profile: "Profile", my_trees: "Trees", my_pulses: "Pulses", my_alignments: "Alignments",
   edit: "Edit", be_mother_tree: "Plant or Stand for a tree", guard_tree: "Guard Tree", alignments: "Alignments",
@@ -117,6 +118,9 @@ const baseKeys = {
   alignment_meaning: "Accepting weaves a shared sync-block into both chains — a lasting, mutual mark that these trees aligned. It can’t be undone.",
   alignment_declined: "Alignment declined.",
   grow_vision: "Grow", rooted_in: "Rooted in",
+  contributions: "Contributions", contributions_sub: "How this vision sharpened — its own chain of growth.",
+  no_contributions: "No contributions yet. Grow the first.",
+  shadow: "Tree ↔ Vision", shadow_sub: "One birth, two chains: lay the twins side by side and compare how each grew.",
   propose_alignment: "Propose Alignment", alignment_with: "Aligning with", alignment_request_desc: "Send a resonance request.",
   internal_pulse: "Internal (Growth) Pulse", send_request: "Send Request", invite_sent: "Invite sent!",
   invite_email_placeholder: "Friend's email", invite_message_placeholder: "Message (optional)",

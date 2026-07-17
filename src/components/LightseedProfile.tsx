@@ -18,6 +18,7 @@ import { ProfileTrees } from './profile/ProfileTrees';
 import { ProfilePulses } from './profile/ProfilePulses';
 import { ProfileVisions } from './profile/ProfileVisions';
 import { ProfileHistory } from './profile/ProfileHistory';
+import { ProfileStays } from './profile/ProfileStays';
 import { ProfileReaches } from './profile/ProfileReaches';
 import { ProfileInvites } from './profile/ProfileInvites';
 import { ProfileSettings } from './profile/ProfileSettings';
@@ -54,7 +55,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
     const { t } = useLanguage();
     // Session state comes from context now (was prop-drilled from App).
     const { lightseed, myTrees, guardedTrees, isAdmin, isSuperAdmin, superAdminExists } = useSession();
-    const [activeTab, setActiveTab] = useState<'trees' | 'pulses' | 'visions' | 'history' | 'reaches' | 'invites' | 'appearance' | 'intelligence' | 'settings' | 'admin'>('trees');
+    const [activeTab, setActiveTab] = useState<'trees' | 'pulses' | 'visions' | 'stays' | 'history' | 'reaches' | 'invites' | 'appearance' | 'intelligence' | 'settings' | 'admin'>('trees');
     const [dialogMessage, setDialogMessage] = useState<string | null>(null);
 
     // Live profile state — written by the listenToUserProfile listener below, read across
@@ -181,6 +182,11 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                     onCreateVision={onCreateVision}
                     notify={setDialogMessage}
                 />
+            ),
+        },
+        {
+            key: 'stays', label: t('my_stays'), icon: <Icons.Moon />, render: () => (
+                <ProfileStays uid={lightseed.uid} onViewTree={onViewTree} />
             ),
         },
         {
