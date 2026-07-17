@@ -345,6 +345,34 @@ service cloud.firestore {
         )
       );
       allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
+
+      // A bed's occupancy — the accepted date-ranges, and NOTHING else: no guest, no identity.
+      // Any signed-in being reads it to see busy/free nights (the full stays stay host/guest-
+      // only). Written only by the bed's keeper or staff — in practice the Cloud Function
+      // (admin) owns it on accept/decline, so a guest can never forge availability.
+      match /occupancy/{stayId} {
+        // Availability is public + identity-free by design: a signed-OUT visitor must see busy
+        // nights too, or a booked bed would show as free. The payload carries only dates.
+        allow read: if true;
+        allow write: if isSignedIn() && (
+          get(/databases/$(database)/documents/lifetrees/$(treeId)).data.ownerId == request.auth.uid
+          || isStaff()
+        );
+      }
+
+      // The view-hold (domain/hold.ts) — a soft, self-expiring lock while a guest chooses nights.
+      // Each being writes ONLY its own hold doc (id == its uid); anyone signed-in may read, to
+      // see that another is choosing. It grants nothing and blocks nothing hard.
+      match /holds/{holdUid} {
+        allow read: if isSignedIn();
+        // expiresAt is bounded to the near future (well above HOLD_TTL_MS=120s, with slack for
+        // clock skew) so no one can mint a far-future hold that keeps the soft "being viewed"
+        // advisory alive forever — the domain's self-expiring promise holds.
+        allow create, update: if isSignedIn() && holdUid == request.auth.uid
+          && request.resource.data.expiresAt is number
+          && request.resource.data.expiresAt <= request.time.toMillis() + 600000;
+        allow delete: if isSignedIn() && (holdUid == request.auth.uid || isStaff());
+      }
     }
 
     // Persons: the canonical person entity (doc id = uid). World-readable (it carries a public
@@ -486,9 +514,11 @@ service cloud.firestore {
     }
 
     // Alignments: Read public, Write signed in
-    // Stays — bed requests under a lightHouse's roof (domain/stay.ts). The guest creates
-    // their own request (hostUid frozen to the lightHouse's keeper); the keeper (or staff)
-    // answers with a status; either side may withdraw/read their own.
+    // Stays — a request to sleep in a specific BED (domain/stay.ts). The guest creates their
+    // own request; hostUid is frozen to the BED's keeper (verified server-side, so a guest can
+    // neither forge the host nor aim a stay at a non-bed). The keeper (or staff) answers with a
+    // status — and ONLY the status/updatedAt may change, so bedId and the guest's denormalised
+    // face are frozen for the stay's life. Either side may withdraw/read their own.
     match /stays/{stayId} {
       allow read: if isSignedIn() && (
         resource.data.uid == request.auth.uid
@@ -498,8 +528,15 @@ service cloud.firestore {
       allow create: if isSignedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.get('status', '') == 'requested'
+        && request.resource.data.get('bedId', '') != ''
+        // Dates must be well-formed and ordered server-side, so a direct write can't carry a
+        // reversed range or a nights count that disagrees with the range the host answers.
+        && request.resource.data.fromDate is string
+        && request.resource.data.toDate is string
+        && request.resource.data.fromDate < request.resource.data.toDate
+        && get(/databases/$(database)/documents/lifetrees/$(request.resource.data.bedId)).data.get('treeType', '') == 'BED'
         && request.resource.data.get('hostUid', '') ==
-             get(/databases/$(database)/documents/lightHouses/$(request.resource.data.lightHouseId)).data.ownerId;
+             get(/databases/$(database)/documents/lifetrees/$(request.resource.data.bedId)).data.ownerId;
       allow update: if isSignedIn()
         && (resource.data.hostUid == request.auth.uid || isStaff())
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])

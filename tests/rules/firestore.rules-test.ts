@@ -34,6 +34,7 @@ const seed = async () => {
     await setDoc(doc(d, 'initiates', ALICE), { handle: 'alice', name: 'Alice', lid: 'x', pubkey: 'y', initiatedAt: '2026-07-07' });
     await setDoc(doc(d, 'communities', 'com1'), { ownerId: ALICE, name: 'Com', domain: 'com.online' });
     await setDoc(doc(d, 'lightHouses', 'lh1'), { ownerId: ALICE, name: 'The Hearth', lid: 'lh1-lid' });
+    await setDoc(doc(d, 'lifetrees', 'bedStay'), { ownerId: ALICE, name: 'Cedar', treeType: 'BED', lightHouseId: 'lh1', visibility: 'node', validated: false, validatorId: null });
   });
 };
 
@@ -521,6 +522,51 @@ describe("beds — housed by a keeper or loose at a place; a bed never forges in
     await assertFails(setDoc(doc(db(STAFF), 'lifetrees', 'bedSB'), looseBed({ ownerId: STAFF, latitude: NaN }))); // a non-place
     await assertSucceeds(setDoc(doc(db(STAFF), 'lifetrees', 'bedSC'), looseBed({ ownerId: STAFF })));          // a real place
     await assertSucceeds(setDoc(doc(db(STAFF), 'lifetrees', 'bedSD'), bed({ ownerId: STAFF })));               // housed — no coordinate needed
+  });
+});
+
+describe('stays — a request to sleep in a BED; hostUid is the bed keeper, frozen after birth', () => {
+  const stay = (over: object = {}) => ({
+    bedId: 'bedStay', bedName: 'Cedar', lightHouseId: 'lh1',
+    uid: BOB, guestName: 'Bob', guestTreeId: 'gt', guestTreeName: 'Bob\'s Oak', guestTreeGrowthUrl: '',
+    hostUid: ALICE, fromDate: '2026-09-01', toDate: '2026-09-04', nights: 3, status: 'requested', ...over,
+  });
+
+  it('a guest requests a stay on a bed — hostUid must be that bed\'s keeper', async () => {
+    await assertSucceeds(setDoc(doc(db(BOB), 'stays', 's1'), stay()));
+    await assertFails(setDoc(doc(db(BOB), 'stays', 's2'), stay({ hostUid: BOB })));        // forged host
+    await assertFails(setDoc(doc(db(BOB), 'stays', 's3'), stay({ uid: ALICE })));           // forged guest
+    await assertFails(setDoc(doc(db(BOB), 'stays', 's4'), stay({ status: 'accepted' })));   // no self-accept
+    await assertFails(setDoc(doc(db(BOB), 'stays', 's5'), stay({ bedId: '' })));            // must name a bed
+    await assertFails(setDoc(doc(db(BOB), 'stays', 's6'), stay({ fromDate: '2026-09-05', toDate: '2026-09-04' }))); // reversed range
+    await assertFails(setDoc(doc(db(BOB), 'stays', 's7'), stay({ fromDate: '2026-09-04', toDate: '2026-09-04' }))); // zero nights
+  });
+
+  it('a stay cannot aim at a non-bed (only a BED carries beds)', async () => {
+    // treeB is a LIFETREE owned by BOB — even as its owner, BOB cannot host a stay on it.
+    await assertFails(setDoc(doc(db(BOB), 'stays', 'sT'), stay({ bedId: 'treeB', hostUid: BOB })));
+  });
+
+  it('only the bed keeper flips status; bedId and the guest face are frozen after birth', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => setDoc(doc(ctx.firestore(), 'stays', 's1'), stay()));
+    await assertFails(updateDoc(doc(db(BOB), 'stays', 's1'), { status: 'accepted' }));          // guest can't accept
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'stays', 's1'), { status: 'accepted' }));     // keeper can
+    await assertFails(updateDoc(doc(db(ALICE), 'stays', 's1'), { status: 'accepted', bedId: 'other' })); // bedId frozen
+    await assertFails(updateDoc(doc(db(ALICE), 'stays', 's1'), { guestTreeName: 'spoofed' }));  // the face is frozen
+  });
+
+  it('occupancy is public to read, keeper-only to write — no forged availability', async () => {
+    await assertSucceeds(setDoc(doc(db(ALICE), 'lifetrees', 'bedStay', 'occupancy', 's1'), { fromDate: '2026-09-01', toDate: '2026-09-04' }));
+    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedStay', 'occupancy', 's2'), { fromDate: '2026-09-10', toDate: '2026-09-12' }));
+    await assertSucceeds(getDoc(doc(db(BOB), 'lifetrees', 'bedStay', 'occupancy', 's1'))); // any signed-in guest sees busy/free
+    await assertSucceeds(getDoc(doc(db(), 'lifetrees', 'bedStay', 'occupancy', 's1')));    // public: a signed-OUT visitor too
+  });
+
+  it("a view-hold is yours alone — you cannot forge or steal another being's", async () => {
+    await assertSucceeds(setDoc(doc(db(BOB), 'lifetrees', 'bedStay', 'holds', BOB), { holderUid: BOB, expiresAt: Date.now() + 60000 }));
+    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedStay', 'holds', ALICE), { holderUid: ALICE, expiresAt: Date.now() + 60000 })); // not your doc
+    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedStay', 'holds', BOB), { holderUid: BOB, expiresAt: 9999999999999 })); // no far-future hostage
+    await assertSucceeds(getDoc(doc(db(ALICE), 'lifetrees', 'bedStay', 'holds', BOB))); // readable by anyone signed in
   });
 });
 

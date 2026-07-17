@@ -41,7 +41,7 @@ const fetchPulsesRaw = async (lastD?: QueryDocumentSnapshot, domainFilter?: stri
 // The main Pulses feed shows offerings, dreams and other content pulses.
 // Reaches live in the Inspiration view, so they are excluded here.
 // Pulse types that have their own surfaces and must not bleed into the general pulse feed.
-const NON_FEED_PULSE_TYPES = new Set(['reach', 'tree_chat', 'event', 'decision']);
+const NON_FEED_PULSE_TYPES = new Set(['reach', 'tree_chat', 'event', 'decision', 'stay']);
 
 // The number of feed pulses a user has authored — server-side COUNTs instead of downloading every
 // doc just to measure length. Excludes the same non-feed types as getMyPulses; computed as

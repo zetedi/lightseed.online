@@ -253,7 +253,7 @@ export const Navigation = ({
         if (activeTab === key) {
             const themes: any = { 
                 dashboard: 'bg-indigo-600', visions: 'bg-amber-500', forest: 'bg-emerald-600', 
-                pulses: 'bg-orange-600', events: 'bg-teal-600', observatory: 'bg-rose-600', inspiration: 'bg-indigo-600', about: 'bg-purple-600', communities: 'bg-teal-600', collab: 'bg-violet-600'
+                pulses: 'bg-orange-600', events: 'bg-teal-600', beds: 'bg-indigo-500', observatory: 'bg-rose-600', inspiration: 'bg-indigo-600', about: 'bg-purple-600', communities: 'bg-teal-600', collab: 'bg-violet-600'
             };
             return `${themes[key] || 'bg-slate-700'} text-white shadow-lg shadow-black/20 font-bold tracking-wide`;
         }
@@ -270,7 +270,7 @@ export const Navigation = ({
 
     // Signed-out visitors get a slimmer menu: no Visions, Pulses, or Observatory.
     const signedIn = !!lightseed;
-    const lightEarthTabs = signedIn ? ['forest', 'visions', 'events', 'pulses'] : ['forest', 'events'];
+    const lightEarthTabs = signedIn ? ['forest', 'visions', 'events', 'pulses', 'beds'] : ['forest', 'events'];
     // AI Collab (the node's intelligences) lives in the Intelligence group, visible to everyone.
     const intelligenceTabs = signedIn ? ['observatory', 'collab'] : ['collab'];
     const otherTabs = ['communities', 'about'];
@@ -281,6 +281,7 @@ export const Navigation = ({
         visions: <Icons.Eye />,
         events: <Icons.Loc />,
         pulses: <Icons.PulseDuo />,
+        beds: <Icons.Moon />,
         observatory: <Icons.Exchange />,
         communities: <Icons.Globe />,
         collab: <Icons.Users />,
@@ -499,9 +500,10 @@ export const Navigation = ({
                             </div>
 
                             {/* Row 2 — secondary destinations, short (matches the bottom row's height) */}
-                            <div className="mt-1.5 grid grid-cols-5 gap-1.5">
+                            <div className="mt-1.5 grid grid-cols-6 gap-1.5">
                                 <MobileNavTile tab="visions" short {...mobileTileProps} />
                                 <MobileNavTile tab="events" short {...mobileTileProps} />
+                                <MobileNavTile tab="beds" short {...mobileTileProps} />
                                 <MobileNavTile tab="observatory" short label="Observe" {...mobileTileProps} />
                                 <MobileNavTile tab="collab" short label="Collab" {...mobileTileProps} />
                                 <MobileNavTile tab="communities" short label="Commune" {...mobileTileProps} />

@@ -6,6 +6,34 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-17 · The bed opens — a page, a calendar, a leaf** — the bed feature grows its
+face. Because a bed IS a Lifetree, a bed opens in its own being-page (`BedProfile`) through the
+same `/b/<lid>` door as any being: a HOUSED/LOOSE pill, its **chain of leaves** (who stayed),
+its **tenders**, and its **calendar**. A Light House shows its beds as a density-card list with
+a keeper-only "offer a bed"; the old whole-house **count offer is retired** (the
+`LightHouse.beds`/`bedNote` data remains, now unused by the UI). Reservations move from a house
+count to the **bed itself**: a `Stay` anchors on `bedId` and carries the guest's *chosen* tree
+face (denormalised, since the host can't read the guest's profile). **Availability is public and
+identity-free** — accepted ranges live in a per-bed `occupancy` subcollection (world-readable,
+no names) so anyone sees busy/free; full stays stay host/guest-only. A daily Cloud Function seals
+each **completed** stay as a leaf on the bed's chain, using the exact legacy hash `mintPulse`
+uses (a bed is unsealed), idempotently in a transaction so the chain never forks. A soft,
+self-expiring **view-hold** whispers when another is choosing. Built by hand (the fable quota was
+exhausted mid-build) and then **adversarially reviewed** (four lenses on Opus): seven fixes
+followed — the sharpest were a *feed-bleed* (stay leaves were surfacing in the general pulse feed,
+republishing a guest's name node-wide → `'stay'` added to `NON_FEED_PULSE_TYPES`) and *booked
+nights shown as free* to signed-out visitors (occupancy read made truly public). The leaf now
+wears only the guest's tree face, never their human name. **Accepted residual** (LOW): the
+`holds` subcollection reveals *who* is choosing (their uid) to any signed-in reader for a short
+(≤10 min, bounded) window — hiding it would break the self-only-write property the rules test
+proves, or need a Cloud-Function `heldCount`; deferred to that clean future fix. Beds are also
+**browsable**: a searchable, density-card directory in the *Living* menu (`BedsBrowsePage`), each
+bed stacked under its Light House exactly as Light Houses stack under communities — housed beds
+only for now (a loose-bed directory awaits its own query). Later still: the loose-bed map layer;
+payments through the care economy. See [[aspen-tree]] and QUESTIONS.md.
+
+---
+
 **2026-07-17 · A bed is a being, and its home is soft** — beds become first-class beings.
 A bed IS a Lifetree (`treeType: 'BED'`), so it inherits the whole machinery instead of us
 rebuilding it: its immutable chain is its history (each stay a **leaf**), its guardian links are

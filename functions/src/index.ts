@@ -1,10 +1,10 @@
 import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
-import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
+import { onDocumentCreated, onDocumentUpdated, onDocumentWritten } from "firebase-functions/v2/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as admin from "firebase-admin";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Anthropic from "@anthropic-ai/sdk";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 
 admin.initializeApp();
 
@@ -457,6 +457,122 @@ export const onBedHomeMoved = onDocumentUpdated("lifetrees/{treeId}", async (eve
         console.warn(`Bed cap enforced on home-move: ${event.params.treeId} sent home to ${revertTo === "" ? "the open stars (loose)" : revertTo} — destination ${afterHouse === "" ? "loose" : afterHouse} is over its ceiling (keeper ${ownerId}).`);
     } catch (e) {
         console.error(`Bed home-move cap check failed for ${event.params.treeId}:`, e);
+    }
+});
+
+// --- Beds: availability + the leaves of who stayed -------------------------------------------
+// A stay is a request to sleep in a specific BED (domain/stay.ts). Two server duties keep a bed's
+// calendar honest and its story permanent.
+const stayRangesOverlap = (a: { fromDate: string; toDate: string }, b: { fromDate: string; toDate: string }): boolean =>
+    a.fromDate < b.toDate && b.fromDate < a.toDate; // half-open [from, to) — the departure day is free
+
+// When a keeper ACCEPTS a stay: refuse a double-booking (a bed holds one guest at a time), then
+// publish the identity-free occupancy so any guest sees busy/free nights. When a stay LEAVES
+// 'accepted' (declined or withdrawn/deleted), withdraw that occupancy. Reverting a conflicting
+// accept to 'declined' re-fires this trigger (accepted→declined), which finds no occupancy to
+// remove and rests — convergent. (In the rare case a keeper accepts two overlapping requests in
+// the very same instant, both may be declined; that is safe — a bed is never double-booked — and
+// the keeper simply re-accepts one.)
+export const onStayWritten = onDocumentWritten("stays/{stayId}", async (event) => {
+    const before = event.data?.before?.data() as Record<string, unknown> | undefined;
+    const after = event.data?.after?.data() as Record<string, unknown> | undefined;
+    const stayId = event.params.stayId;
+    const wasAccepted = before?.status === "accepted";
+    const isAccepted = after?.status === "accepted";
+    try {
+        if (isAccepted && !wasAccepted && after) {
+            const bedId = String(after.bedId || "");
+            if (!bedId) return;
+            const range = { fromDate: String(after.fromDate || ""), toDate: String(after.toDate || "") };
+            const others = await db.collection("stays")
+                .where("bedId", "==", bedId).where("status", "==", "accepted").get();
+            const conflict = others.docs.some(d =>
+                d.id !== stayId && stayRangesOverlap(d.data() as { fromDate: string; toDate: string }, range));
+            if (conflict) {
+                await event.data!.after!.ref.update({ status: "declined" });
+                console.warn(`Bed double-booking refused: stay ${stayId} on bed ${bedId} overlaps an accepted stay — declined.`);
+                return;
+            }
+            await db.doc(`lifetrees/${bedId}/occupancy/${stayId}`).set(range);
+        } else if (wasAccepted && !isAccepted && before) {
+            const bedId = String(before.bedId || "");
+            if (bedId) await db.doc(`lifetrees/${bedId}/occupancy/${stayId}`).delete().catch(() => { /* already gone */ });
+        }
+    } catch (e) {
+        console.error(`onStayWritten failed for ${stayId}:`, e);
+    }
+});
+
+// The legacy block hash — sha256(JSON.stringify(pulseData) + previousHash + mintedAt) — the exact
+// scheme mintPulse (src/services/firebase/pulses.ts) uses for an UNSEALED chain. A bed is not a
+// node, so its chain is unsealed; the same UTF-8 preimage yields the same digest in Node, so a bed
+// stays verifiable under src/domain/chain (linkage + height; legacy blocks aren't re-hashed).
+const legacyBlockHash = (pulseData: object, previousHash: string, mintedAt: number): string =>
+    createHash("sha256").update(JSON.stringify(pulseData) + previousHash + mintedAt).digest("hex");
+
+// Seal ONE completed stay as a leaf on its bed's chain — atomically and idempotently: the mint,
+// the bed's new head, and the stay's `leafed` flag ride a single transaction, so a leaf is never
+// minted twice and concurrent mints cannot fork the chain (previousHash is always the freshly-read
+// head). Mirrors mintPulse: the hashed `pulseData` is the immutable content; the stored doc adds id
+// / lid / mintedAt / previousHash / createdAt / hash around it.
+const mintStayLeaf = async (stayId: string): Promise<void> => {
+    const stayRef = db.doc(`stays/${stayId}`);
+    await db.runTransaction(async (t) => {
+        const staySnap = await t.get(stayRef);
+        const s = staySnap.data() as Record<string, any> | undefined;
+        if (!staySnap.exists || !s || s.leafed || s.status !== "accepted") return;
+        const bedRef = db.doc(`lifetrees/${s.bedId}`);
+        const bedSnap = await t.get(bedRef);
+        if (!bedSnap.exists) return;
+        const bed = bedSnap.data() as Record<string, any>;
+        const prevHash = String(bed.latestHash || bed.genesisHash || "0");
+        const mintedAt = Date.now();
+        const pulseData: Record<string, unknown> = {
+            lifetreeId: s.bedId,
+            type: "stay",
+            visibility: "node",
+            // The leaf wears the guest's chosen tree face only — never their human display name.
+            // A guest who picked no tree stays anonymous ("A guest"); the node-visible chain must
+            // not become an identity-linked whereabouts record for a real (loose-bed) coordinate.
+            title: s.guestTreeName || "A guest",
+            body: `stayed ${s.fromDate} → ${s.toDate}`,
+            authorId: s.uid,
+            authorName: s.guestTreeName || "",
+            ...(s.guestTreeGrowthUrl ? { imageUrl: s.guestTreeGrowthUrl } : {}),
+        };
+        const hash = legacyBlockHash(pulseData, prevHash, mintedAt);
+        const pulseRef = db.collection("pulses").doc();
+        t.set(pulseRef, {
+            ...pulseData,
+            lid: randomUUID(),
+            id: pulseRef.id,
+            loveCount: 0,
+            commentCount: 0,
+            mintedAt,
+            previousHash: prevHash,
+            stayId,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            hash,
+        });
+        t.update(bedRef, { latestHash: hash, blockHeight: (bed.blockHeight || 0) + 1 });
+        t.update(stayRef, { leafed: true });
+    });
+};
+
+// Daily: every accepted stay whose departure has passed and that isn't yet leafed becomes a
+// permanent leaf on its bed's chain — the record of who stayed.
+export const mintStayLeaves = onSchedule("every day 03:00", async () => {
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const snap = await db.collection("stays").where("status", "==", "accepted").get();
+    for (const d of snap.docs) {
+        const s = d.data() as Record<string, any>;
+        if (s.leafed || !(String(s.toDate || "") < today)) continue;
+        try {
+            await mintStayLeaf(d.id);
+        } catch (e) {
+            console.error(`mintStayLeaf failed for stay ${d.id}:`, e);
+        }
     }
 });
 

@@ -91,14 +91,24 @@ What a being LOOKS like: `src/components/BeingProfile.tsx` + `src/components/sec
   `MAX_BEDS_PER_LIGHT_HOUSE = 64` + `MAX_LOOSE_BEDS_PER_KEEPER = 32`, at birth (`onLifetreeCreated`)
   and on every home-move (`onBedHomeMoved` reverts a breaching move, never deletes). Ring:
   *"A bed is a being, and its home is soft"* (2026-07-17).
-- **UI:** the bed profile (bed-tree + calendar + tenders), the density-card list in a Light House,
-  and per-guest reservations (`bedId` on stays, the view-hold) — `src/components/` (in progress).
+- **UI:** a bed opens in `src/components/beds/BedProfile.tsx` (via `/b/<lid>` → the App `isBedTree`
+  branch) — hero pill, `ChainTree` leaves (who stayed), `TreeGuardians` tenders, and
+  `beds/BedCalendar.tsx` (month grid on `domain/calendar.ts`). Keepers offer beds via
+  `modals/PlantBedModal.tsx` from the Light House's density-card list (`LightHouseProfile` beds tab;
+  the old count offer is retired). Browse all beds in the **Living** menu → `pages/BedsBrowsePage.tsx`
+  (searchable, density-toggled, beds stacked under their Light House via `useVisibleLightHouses` ×
+  `getBedsForLightHouse`). Reservations: `Stay.bedId` + denormalised guest tree face;
+  availability is the public identity-free `lifetrees/{bedId}/occupancy` subcollection; the soft
+  view-hold is `domain/hold.ts` + `services/firebase/holds.ts`. Server: `onStayWritten` (occupancy +
+  double-booking guard) and the daily `mintStayLeaves` (a completed stay → a chain leaf). **Residual**
+  (LOW): the `holds` subcollection reveals *who* is choosing to any signed-in reader for a bounded
+  window — a CF `heldCount` is the clean future fix (2026-07-17 ring).
 
 ## The gate (run before every commit)
 
 ```
-npm run check     # strict typecheck + lint (0/0) + 179 unit tests
-npm run test:rules  # 49 Firestore rules tests (needs the emulator/Java)
+npm run check     # strict typecheck + lint (0/0) + 189 unit tests
+npm run test:rules  # 54 Firestore rules tests (needs the emulator/Java)
 ```
 
 CI runs all of it on every push (`.github/workflows/quality-gate.yml`).

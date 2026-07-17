@@ -51,6 +51,7 @@ import { Navigation } from './components/Navigation';
 import { queryableLevels, canEditEvent, pulseScope } from './domain/pulseVisibility';
 import { passesForestFilter, canViewTree } from './domain/views/forest';
 import { isWateringOverdue } from './domain/watering';
+import { isBedTree } from './domain/bed';
 import { Loading } from './components/ui/Loading';
 import { SectionHeader } from './components/ui/SectionHeader';
 import { ScrollChevrons } from './components/ui/ScrollChevrons';
@@ -95,9 +96,11 @@ const CommunityProfile = lazy(() => import('./components/CommunityProfile').then
 const CollabsPage = lazy(() => import('./pages/CollabsPage').then(m => ({ default: m.CollabsPage })));
 const ObservatoryPage = lazy(() => import('./pages/ObservatoryPage').then(m => ({ default: m.ObservatoryPage })));
 const ForestPage = lazy(() => import('./pages/ForestPage').then(m => ({ default: m.ForestPage })));
+const BedsBrowsePage = lazy(() => import('./pages/BedsBrowsePage').then(m => ({ default: m.BedsBrowsePage })));
 const VisionsPage = lazy(() => import('./pages/VisionsPage').then(m => ({ default: m.VisionsPage })));
 const PulseFeedPage = lazy(() => import('./pages/PulseFeedPage').then(m => ({ default: m.PulseFeedPage })));
 const LifetreeDetail = lazy(() => import('./components/LifetreeDetail').then(m => ({ default: m.LifetreeDetail })));
+const BedProfile = lazy(() => import('./components/beds/BedProfile').then(m => ({ default: m.BedProfile })));
 const VisionProfile = lazy(() => import('./components/VisionProfile').then(m => ({ default: m.VisionProfile })));
 const EventProfile = lazy(() => import('./components/EventProfile').then(m => ({ default: m.EventProfile })));
 const PulseDetail = lazy(() => import('./components/PulseDetail').then(m => ({ default: m.PulseDetail })));
@@ -757,6 +760,16 @@ const AppContent = () => {
             );
         }
 
+        if (tab === 'beds') {
+            // Beds stacked under their Light House — scope derived exactly like the forest.
+            return (
+                <BedsBrowsePage
+                    onViewTree={setSelectedTree}
+                    lightHouseDomain={(impersonatedCommunity || hostCommunity)?.domain || null}
+                />
+            );
+        }
+
         if (tab === 'collab') {
             return (
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-8">
@@ -1053,6 +1066,16 @@ const AppContent = () => {
                 <Suspense fallback={<div className="min-h-[60vh] flex items-center justify-center"><Loading /></div>}>
                 {selectedTree ? (
                     <div className="animate-in fade-in duration-200">
+                        {isBedTree(selectedTree) ? (
+                        <BedProfile
+                            bed={selectedTree}
+                            onClose={() => { setSelectedTree(null); setMapRefreshKey(k => k + 1); }}
+                            onViewTree={setSelectedTree}
+                            onViewPulse={onViewPulseOrAlignment}
+                            onUpdate={(updates: Partial<Lifetree>) => handleTreeUpdate(selectedTree.id, updates)}
+                            onDelete={() => { setSelectedTree(null); setMapRefreshKey(k => k + 1); }}
+                        />
+                        ) : (
                         <LifetreeDetail
                             tree={selectedTree}
                             onClose={() => { setSelectedTree(null); setMapRefreshKey(k => k + 1); }}
@@ -1082,6 +1105,7 @@ const AppContent = () => {
                             onSetDefault={() => { setDefaultTree(selectedTree.id); showAlert(`${selectedTree.name} is now your default tree.`); }}
                             targetUserProfile={{ onlyValidatedCanReach: selectedTree.onlyValidatedCanReach }}
                         />
+                        )}
                         {showGrowthPlayer && <GrowthPlayerModal treeId={showGrowthPlayer} onClose={() => setShowGrowthPlayer(null)} />}
                     </div>
                 ) : selectedVision ? (
@@ -1210,7 +1234,10 @@ const AppContent = () => {
                         lightHouse={viewingLightHouse}
                         onClose={() => setViewingLightHouse(null)}
                         onViewCommunity={setSelectedCommunity}
-                        onViewTree={(t) => setSelectedTree(t)}
+                        // Opening a bed/tree from a Light House closes the house overlay so the
+                        // detail comes to the foreground (selectedTree renders in-flow, beneath the
+                        // fixed DetailWrapper — without this it opens in the background).
+                        onViewTree={(t) => { setViewingLightHouse(null); setSelectedTree(t); }}
                         canEdit={isSuperAdmin || isAdmin || viewingLightHouse.ownerId === lightseed?.uid}
                         editIsStaffOnly={viewingLightHouse.ownerId !== lightseed?.uid && (isSuperAdmin || isAdmin)}
                         onDelete={async (id) => {

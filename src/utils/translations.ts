@@ -10,6 +10,13 @@ const baseKeys = {
   map_view: "Map View", list_view: "List View", upload_photo: "Upload Photo", validated: "VALIDATED",
   unvalidated: "Unvalidated", validate_action: "Validate Tree", quick_snap: "Capture Change", back_forest: "Back",
   genesis: "Genesis Hash", steward: "Steward", location: "Location", tree_details: "Tree Details",
+  // Beds — a place to sleep, as a being (domain/bed.ts)
+  plant_bed: "Offer a Bed", offer_a_bed: "Offer a bed", beds: "Beds", bed_details: "Bed Details",
+  reserve: "Reserve", request_stay: "Request these nights", arrival: "Arrival", departure: "Departure",
+  nights: "Nights", booked: "Booked", available: "Available", who_stayed: "Who stayed",
+  housed: "Housed", loose: "Loose",
+  view_hold_note: "Held for you while you choose…", bed_being_viewed: "Someone is choosing these nights…",
+  a_place_to_sleep: "A place to sleep",
   // Being section labels are non-possessive: profiles are entity-generic (Indra's net) — the menu is the entity's anatomy, not the viewer's possessions.
   profile: "Profile", my_trees: "Trees", my_pulses: "Pulses", my_alignments: "Alignments",
   edit: "Edit", be_mother_tree: "Plant or Stand for a tree", guard_tree: "Guard Tree", alignments: "Alignments",

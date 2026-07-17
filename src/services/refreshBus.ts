@@ -3,7 +3,7 @@
 // that aren't mounted need nothing: they load fresh on mount. Lazy by design — no polling,
 // no global reloads, just a whisper across the open windows.
 
-export type RefreshTopic = 'lightHouses' | 'events' | 'pulses' | 'trees';
+export type RefreshTopic = 'lightHouses' | 'events' | 'pulses' | 'trees' | 'beds';
 
 export interface RefreshEvent {
   topic: RefreshTopic;

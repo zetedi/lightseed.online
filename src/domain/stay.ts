@@ -7,17 +7,26 @@ export type StayStatus = 'requested' | 'accepted' | 'declined';
 
 export interface Stay {
   id: string;
-  lightHouseId: string;
+  bedId: string;        // the reserved BED being — the anchor of a stay (a bed holds one guest
+                        // at a time). The rules verify hostUid against THIS bed's ownerId.
+  bedName?: string;     // denormalised for the host inbox and the guest's own list
+  lightHouseId: string; // the bed's house for context/queries — '' for a loose bed
   lightHouseName?: string;
   uid: string;          // the guest
   guestName?: string;
-  hostUid: string;      // the lightHouse's keeper at request time (denormalised — the
-                        // rules and the keeper's inbox query stand on this field)
+  // The guest's shared face, denormalised at request time. The host cannot read the guest's
+  // users doc (rules), so the tree the guest chooses to show rides on the stay itself.
+  guestTreeId?: string;
+  guestTreeName?: string;
+  guestTreeGrowthUrl?: string;
+  hostUid: string;      // the BED's ownerId at request time (denormalised — the rules and the
+                        // keeper's inbox query stand on this field)
   fromDate: string;     // yyyy-mm-dd
   toDate: string;       // yyyy-mm-dd (departure day — nights = to - from)
   nights: number;
   note?: string;
   status: StayStatus;
+  leafed?: boolean;     // true once a COMPLETED stay has been minted as a leaf on the bed's chain
 }
 
 const DAY_MS = 86400000;
@@ -47,7 +56,8 @@ export const stayRequestProblem = (fromDate: string, toDate: string, nowMs: numb
 export const staysOverlap = (a: Pick<Stay, 'fromDate' | 'toDate'>, b: Pick<Stay, 'fromDate' | 'toDate'>): boolean =>
   a.fromDate < b.toDate && b.fromDate < a.toDate;
 
-// How many beds remain free for a candidate range, given the accepted stays.
+// How many beds remain free for a candidate range, given the accepted stays. (Count-based —
+// the old whole-house offer; kept for its tests. Per-bed reservations use bedIsFreeFor below.)
 export const bedsFreeFor = (
   beds: number,
   accepted: Pick<Stay, 'fromDate' | 'toDate'>[],
@@ -57,4 +67,16 @@ export const bedsFreeFor = (
   const range = { fromDate, toDate };
   const taken = accepted.filter(s => staysOverlap(s, range)).length;
   return Math.max(0, beds - taken);
+};
+
+// A single bed holds ONE guest at a time: is the candidate range free of accepted stays for
+// THIS bed? (Departure-day-free, via staysOverlap.)
+export const bedIsFreeFor = (
+  bedId: string,
+  accepted: Pick<Stay, 'bedId' | 'fromDate' | 'toDate'>[],
+  fromDate: string,
+  toDate: string,
+): boolean => {
+  const range = { fromDate, toDate };
+  return !accepted.some(s => s.bedId === bedId && staysOverlap(s, range));
 };

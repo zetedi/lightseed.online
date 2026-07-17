@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { bedsFreeFor, MAX_STAY_NIGHTS, nightsBetween, stayRequestProblem, staysOverlap } from '../src/domain/stay';
+import { bedIsFreeFor, bedsFreeFor, MAX_STAY_NIGHTS, nightsBetween, stayRequestProblem, staysOverlap } from '../src/domain/stay';
 
 // Beds in lightHouses — the stay arithmetic, testable without any backend.
 
@@ -42,5 +42,18 @@ describe('bedsFreeFor', () => {
     expect(bedsFreeFor(2, accepted, '2026-08-06', '2026-08-08')).toBe(0);
     expect(bedsFreeFor(1, accepted, '2026-08-20', '2026-08-22')).toBe(1);
     expect(bedsFreeFor(0, [], '2026-08-20', '2026-08-22')).toBe(0);
+  });
+});
+
+describe('bedIsFreeFor — one bed, one guest at a time', () => {
+  const accepted = [
+    { bedId: 'bedA', fromDate: '2026-08-01', toDate: '2026-08-05' },
+    { bedId: 'bedB', fromDate: '2026-08-10', toDate: '2026-08-20' },
+  ];
+  it('only accepted stays for THAT bed can block it (departure-day-free)', () => {
+    expect(bedIsFreeFor('bedA', accepted, '2026-08-05', '2026-08-08')).toBe(true);  // back-to-back
+    expect(bedIsFreeFor('bedA', accepted, '2026-08-03', '2026-08-06')).toBe(false); // overlaps bedA
+    expect(bedIsFreeFor('bedA', accepted, '2026-08-12', '2026-08-15')).toBe(true);  // bedB busy, bedA free
+    expect(bedIsFreeFor('bedC', accepted, '2026-08-01', '2026-08-30')).toBe(true);  // an untouched bed
   });
 });

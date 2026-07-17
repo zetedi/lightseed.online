@@ -8,8 +8,9 @@ import { SuperDot } from './ui/SuperDot';
 import { showAlert, showConfirm } from './ui/Dialog';
 import { BeingQr } from './ui/BeingQr';
 import { mintBeingQr } from '../services/firebase/beings';
-import { getCommunityById, updateLightHouse, getLifetreeById, requestStay, getStaysForHost, getMyStays, setStayStatus, withdrawStay } from '../services/firebase';
-import { stayRequestProblem, type Stay } from '../domain/stay';
+import { getCommunityById, updateLightHouse, getLifetreeById, getBedsForLightHouse } from '../services/firebase';
+import { useRefreshSignal } from '../hooks/useRefreshSignal';
+import { PlantBedModal } from './modals/PlantBedModal';
 import { useSession } from '../contexts/SessionContext';
 import { firestoreStore } from '../adapters/firestore';
 import { LocationPicker } from './ui/LocationPicker';
@@ -115,72 +116,25 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
         setIsRooting(false);
     };
 
-    // Beds — the physical welcome. The keeper sets the beds and answers requests; a
-    // signed-in guest asks for nights. Payments join later with the care economy.
+    // Beds — a Light House's beds are BEINGS (domain/bed.ts): each its own Lifetree with a
+    // profile, a chain (the leaves of who stayed), and a calendar. The keeper offers them; a
+    // guest reserves them on the bed's own page. (The old whole-house count offer is retired.)
     const { lightseed } = useSession();
     const viewerUid = lightseed?.uid;
     const isKeeperViewer = !!viewerUid && lightHouse.ownerId === viewerUid;
-    const [beds, setBeds] = useState<number>(lightHouse.beds || 0);
-    const [bedNote, setBedNote] = useState(lightHouse.bedNote || '');
-    // The saved offer — the display truth (the Light House PROP is a snapshot from the
-    // opener and doesn't hear the save; this does).
-    const [offer, setOffer] = useState<{ beds: number; note: string }>({ beds: lightHouse.beds || 0, note: lightHouse.bedNote || '' });
-    const [isSavingBeds, setIsSavingBeds] = useState(false);
-    const [stays, setStays] = useState<Stay[]>([]);
-    // Captured once per mount — date validation needs a day, not a ticking clock.
-    const [nowMs] = useState(() => Date.now());
-    const [fromDate, setFromDate] = useState('');
-    const [toDate, setToDate] = useState('');
-    const [stayNote, setStayNote] = useState('');
-    const [isRequesting, setIsRequesting] = useState(false);
+    const bedsBump = useRefreshSignal(['beds']);
+    const [bedList, setBedList] = useState<Lifetree[]>([]);
+    const [showOfferBed, setShowOfferBed] = useState(false);
     useEffect(() => {
-        if (!viewerUid) return;
         let alive = true;
-        (isKeeperViewer ? getStaysForHost(viewerUid, lightHouse.id) : getMyStays(viewerUid, lightHouse.id))
-            .then(list => { if (alive) setStays(list.sort((a, b) => a.fromDate.localeCompare(b.fromDate))); })
-            .catch(() => {});
+        getBedsForLightHouse(lightHouse.id).then(list => { if (alive) setBedList(list); }).catch(() => {});
         return () => { alive = false; };
-    }, [viewerUid, isKeeperViewer, lightHouse.id]);
-    const saveBeds = async () => {
-        if (isSavingBeds) return;
-        setIsSavingBeds(true);
-        try {
-            const nextBeds = Math.max(0, Math.round(Number(beds) || 0));
-            await updateLightHouse(lightHouse.id, {
-                beds: nextBeds,
-                bedNote: bedNote.trim() || undefined,
-            });
-            setOffer({ beds: nextBeds, note: bedNote.trim() });
-            announce('lightHouses', lightHouse.id);
-            notify('🛏️ Beds saved.');
-        } catch (e: any) { showAlert(e?.message || 'Could not save the beds.'); }
-        setIsSavingBeds(false);
-    };
-    const askForStay = async () => {
-        if (!viewerUid || isRequesting) return;
-        const problem = stayRequestProblem(fromDate, toDate, nowMs);
-        if (problem) { showAlert(problem); return; }
-        setIsRequesting(true);
-        try {
-            await requestStay(lightHouse, { uid: viewerUid, name: lightseed?.displayName || '' }, { fromDate, toDate, note: stayNote.trim() });
-            setStays(prev => [...prev, { id: 'local', lightHouseId: lightHouse.id, uid: viewerUid, hostUid: lightHouse.ownerId || '', fromDate, toDate, nights: 0, status: 'requested' } as Stay]);
-            setFromDate(''); setToDate(''); setStayNote('');
-            notify('🌙 Your stay request is on its way to the keeper.');
-        } catch (e: any) { showAlert(e?.message || 'Could not send the request.'); }
-        setIsRequesting(false);
-    };
-    const answerStay = async (stay: Stay, status: 'accepted' | 'declined') => {
-        try {
-            await setStayStatus(stay.id, status);
-            setStays(prev => prev.map(x => x.id === stay.id ? { ...x, status } : x));
-            notify(status === 'accepted' ? `🌙 ${stay.guestName || 'The guest'} has a bed.` : 'The request was declined, gently.');
-        } catch (e: any) { showAlert(e?.message || 'Could not answer the request.'); }
-    };
+    }, [lightHouse.id, bedsBump]);
 
     const sections: SectionItem[] = [
         { key: 'about', label: 'About', icon: <Icons.Sun /> },
         { key: 'tree', label: 'The Tree', icon: <Icons.Tree /> },
-        { key: 'beds', label: `Beds${offer.beds > 0 ? ` (${offer.beds})` : ''}`, icon: <Icons.Moon /> },
+        { key: 'beds', label: `Beds${bedList.length > 0 ? ` (${bedList.length})` : ''}`, icon: <Icons.Moon /> },
         { key: 'communities', label: `Communities${homes && homes.length > 0 ? ` (${homes.length})` : ''}`, icon: <Icons.Globe /> },
     ];
 
@@ -338,96 +292,41 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
 
                 {section === 'beds' && (
                     <div className="space-y-6">
-                        <SectionTitle title="Beds" sub="The bed this Light House can offer." />
+                        <SectionTitle title="Beds" sub="Places to sleep — each a being, with its own page and calendar." />
 
-                        {offer.beds > 0 ? (
-                            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                                <p className="text-sm text-slate-700">
-                                    <span className="font-bold">{offer.beds}</span> bed{offer.beds === 1 ? '' : 's'}
-                                </p>
-                                {offer.note && <p className="mt-2 whitespace-pre-line font-serif text-sm leading-relaxed text-slate-600">{offer.note}</p>}
-                                {/* The reservation path, visible: three steps from wish to pillow. */}
-                                <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500">
-                                    <span className="rounded-full bg-sky-50 px-2.5 py-1"><span className="font-bold text-sky-700">1</span> Ask for your nights below</span>
-                                    <span className="text-slate-300">→</span>
-                                    <span className="rounded-full bg-sky-50 px-2.5 py-1"><span className="font-bold text-sky-700">2</span> The keeper answers</span>
-                                    <span className="text-slate-300">→</span>
-                                    <span className="rounded-full bg-sky-50 px-2.5 py-1"><span className="font-bold text-sky-700">3</span> Seal the details with a Reach — payment through the existing channels</span>
-                                </div>
+                        {bedList.length > 0 ? (
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                {bedList.map(bed => {
+                                    const img = bed.latestGrowthUrl || bed.imageUrl || '';
+                                    return (
+                                        <button key={bed.id} type="button" onClick={() => onViewTree?.(bed)}
+                                            className="group flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-3 text-left shadow-sm transition-colors hover:border-slate-200 hover:bg-slate-50">
+                                            {img
+                                                ? <img src={img} alt={bed.name} className="h-14 w-14 flex-none rounded-xl object-cover" />
+                                                : <span className="flex h-14 w-14 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-indigo-400 to-violet-500 text-white [&>svg]:h-6 [&>svg]:w-6"><Icons.Moon /></span>}
+                                            <div className="min-w-0 flex-1">
+                                                <p className="truncate text-sm font-bold text-slate-800">{bed.name}</p>
+                                                <p className="truncate text-[11px] text-slate-400">{bed.body ? bed.body.slice(0, 60) : 'A place to sleep'}</p>
+                                            </div>
+                                            <span className="flex-none text-slate-300 [&>svg]:h-4 [&>svg]:w-4 group-hover:text-slate-500"><Icons.ChevronRight /></span>
+                                        </button>
+                                    );
+                                })}
                             </div>
                         ) : (
-                            <p className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">No beds offered here yet.</p>
+                            <p className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">No beds here yet.</p>
                         )}
 
-                        {/* A guest asks for nights. */}
-                        {viewerUid && !isKeeperViewer && offer.beds > 0 && (
-                            <div className="rounded-2xl border border-sky-100 bg-sky-50/50 p-4">
-                                <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-sky-600">Request a stay</p>
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)}
-                                        className="rounded-xl border border-slate-200 bg-white p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" aria-label="Arrival" />
-                                    <span className="text-xs text-slate-400">→</span>
-                                    <input type="date" value={toDate} onChange={e => setToDate(e.target.value)}
-                                        className="rounded-xl border border-slate-200 bg-white p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" aria-label="Departure" />
-                                    {/* No availability hint for guests: stay privacy means we
-                                        can't see others' bookings — the keeper answers truthfully. */}
-                                </div>
-                                <textarea value={stayNote} onChange={e => setStayNote(e.target.value)} placeholder="Who you are, why these nights…"
-                                    className="mt-2 min-h-[70px] w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
-                                <button onClick={askForStay} disabled={isRequesting}
-                                    className="mt-2 rounded-full bg-sky-600 px-5 py-2 text-xs font-bold uppercase tracking-widest text-white shadow transition-colors hover:bg-sky-700 disabled:opacity-50">
-                                    {isRequesting ? 'Sending…' : 'Ask for these nights'}
-                                </button>
-                            </div>
+                        {isKeeperViewer && (
+                            <button type="button" onClick={() => setShowOfferBed(true)}
+                                className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-white shadow transition-colors hover:bg-emerald-700">
+                                <span className="[&>svg]:h-4 [&>svg]:w-4"><Icons.Plus /></span>Offer a bed
+                            </button>
                         )}
 
-                        {/* The viewer's own requests / the keeper's inbox. */}
-                        {viewerUid && stays.length > 0 && (
-                            <div className="space-y-2">
-                                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{isKeeperViewer ? 'Requests' : 'Your requests'}</p>
-                                {stays.map(stay => (
-                                    <div key={stay.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
-                                        <div className="min-w-0 flex-1">
-                                            <p className="truncate text-sm font-bold text-slate-800">{isKeeperViewer ? (stay.guestName || 'A traveller') : lightHouse.name}</p>
-                                            <p className="text-[11px] text-slate-500">{stay.fromDate} → {stay.toDate}{stay.note ? ` · “${stay.note}”` : ''}</p>
-                                        </div>
-                                        <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${stay.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : stay.status === 'declined' ? 'bg-slate-100 text-slate-500' : 'bg-amber-100 text-amber-700'}`}>{stay.status}</span>
-                                        {!isKeeperViewer && stay.status === 'accepted' && rootTree && onViewTree && (
-                                            <button onClick={() => onViewTree(rootTree)}
-                                                className="shrink-0 rounded-full bg-amber-500 px-3 py-1 text-[11px] font-bold text-white transition-colors hover:bg-amber-600">
-                                                Seal it — Reach {rootTree.name}
-                                            </button>
-                                        )}
-                                        {isKeeperViewer && stay.status === 'requested' && (
-                                            <span className="flex gap-1.5">
-                                                <button onClick={() => answerStay(stay, 'accepted')} className="rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-bold text-white hover:bg-emerald-500">Accept</button>
-                                                <button onClick={() => answerStay(stay, 'declined')} className="rounded-full border border-slate-200 px-3 py-1 text-[11px] font-bold text-slate-500 hover:bg-slate-50">Decline</button>
-                                            </span>
-                                        )}
-                                        {!isKeeperViewer && stay.status === 'requested' && stay.id !== 'local' && (
-                                            <button onClick={() => withdrawStay(stay.id).then(() => setStays(prev => prev.filter(x => x.id !== stay.id))).catch(() => {})}
-                                                className="text-[11px] font-medium text-slate-400 hover:text-slate-600">Withdraw</button>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* The keeper shapes the offer. */}
-                        {canEdit && (
-                            <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-4">
-                                <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-amber-600">The offer</p>
-                                <label className="flex items-center gap-2 text-sm text-slate-600">Beds
-                                    <input type="number" min={0} max={144} value={beds} onChange={e => setBeds(Number(e.target.value))}
-                                        className="w-20 rounded-xl border border-slate-200 bg-white p-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
-                                </label>
-                                <textarea value={bedNote} onChange={e => setBedNote(e.target.value)} placeholder="What staying here is like…"
-                                    className="mt-2 min-h-[70px] w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
-                                <button onClick={saveBeds} disabled={isSavingBeds}
-                                    className="mt-2 rounded-full bg-amber-500 px-5 py-2 text-xs font-bold text-white shadow transition-colors hover:bg-amber-600 disabled:opacity-50">
-                                    {isSavingBeds ? 'Saving…' : 'Save the offer'}
-                                </button>
-                            </div>
+                        {showOfferBed && (
+                            <PlantBedModal lightHouse={lightHouse} onClose={() => setShowOfferBed(false)}
+                                onPlanted={() => announce('beds', lightHouse.id)} />
                         )}
                     </div>
                 )}
