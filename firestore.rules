@@ -597,11 +597,23 @@ service cloud.firestore {
 
     // LightHouses: sacred places per domain (read public, write owner/staff).
     match /lightHouses/{lightHouseId} {
-      // Private by default: absent visibility = 'community'. Signed-out viewers see only
-      // public lightHouses (their queries must filter visibility == 'public'); the finer
-      // community/node gate is client-side (domain/lightHouse.ts canViewLightHouse), the
-      // same tradeoff canViewTree documents.
-      allow read: if resource.data.get('visibility', 'community') == 'public' || isSignedIn();
+      // The community's choice is LAW, enforced AT REST — not a client-only veil. Private by
+      // default: absent visibility = 'community'. Membership is proven by the PRIMARY communityId,
+      // the one get() the rules engine can afford (isCommunityMember). So a signed-in NON-member
+      // can no longer read a community house's raw doc; canViewLightHouse (domain/lightHouse.ts)
+      // is now a belt, not the lock. Signed-out see public only.
+      //   HONEST LIMIT: a house sheltering MULTIPLE communities via LIN `lightHouse __shelters__
+      //   community` edges is gated HERE only on its PRIMARY communityId — full multi-edge
+      //   membership needs an ACL denormalisation on the doc (out of scope; see the DECISIONS ring).
+      //   Map/domain reads MUST therefore be a rule-provable UNION (public ∪ node ∪ my-community
+      //   houses ∪ my own — services/firebase/trees.ts), or the whole list query is rejected.
+      allow read: if resource.data.get('visibility', 'community') == 'public'
+                     || (isSignedIn() && (
+                          resource.data.get('visibility', 'community') == 'node'
+                          || resource.data.get('ownerId', '') == request.auth.uid
+                          || isStaff()
+                          || isCommunityMember(resource.data.get('communityId', ''))
+                        ));
       allow create: if isSignedIn();
       // Belonging is LIN edges now (lightHouse __shelters__ community) — no array clause.
       // The lid (the true name, load-bearing for QR links) is frozen on every update path.

@@ -31,7 +31,9 @@ export const useVisibleLightHouses = (domain: string | null, refreshKey = 0): Li
     const [homesOf, setHomesOf] = useState<Map<string, string[]>>(new Map());
     useEffect(() => {
         let alive = true;
-        const opts = { publicOnly: !viewerUid };
+        // The service reads the rule-provable UNION (public ∪ node ∪ my-community ∪ my-own); we
+        // hand it the member communities already derived above so it skips a duplicate links read.
+        const opts = { publicOnly: !viewerUid, viewerUid, memberCommunityIds: [...memberCommunityIds] };
         Promise.all([
             (domain ? getLightHousesByDomain(domain, opts) : getAllLightHouses(opts)),
             viewerUid ? firestoreStore.linksByRel('shelters').catch(() => []) : Promise.resolve([]),
@@ -45,7 +47,7 @@ export const useVisibleLightHouses = (domain: string | null, refreshKey = 0): Li
             })
             .catch(() => {});
         return () => { alive = false; };
-    }, [domain, refreshKey, viewerUid, signal]);
+    }, [domain, refreshKey, viewerUid, signal, memberCommunityIds]);
 
     return useMemo(
         () => all.filter(s => canViewLightHouse(

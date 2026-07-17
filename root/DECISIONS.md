@@ -6,6 +6,29 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-17 · The community's Light House gate is now LAW, not a veil** — the follow-on the
+rules-parity ring deferred has landed. The `/lightHouses` read rule no longer says `visibility ==
+'public' || isSignedIn()` (any signed-in user could read any house's raw doc, with member-narrowing
+only in the client `canViewLightHouse`). It now enforces membership **at rest** via the PRIMARY
+`communityId` — the single `get()` the rules engine can afford (`isCommunityMember`): a house is
+readable iff it is public, or the viewer is signed-in AND (it is `node`, or they own it, or they are
+staff, or they are a member of its primary community). Absent visibility still means `community`
+(private by default). Because a signed-in non-member's whole-collection read is now **rejected the
+instant one community house exists**, the map/domain fetch (`getAllLightHouses` /
+`getLightHousesByDomain`) is rewritten as a rule-provable **UNION** — public ∪ node ∪ my
+member-communities' community houses (`communityId in`, chunked ≤10) ∪ my own — merged and deduped
+by id, with `canViewLightHouse` kept as the belt in `useVisibleLightHouses`. The viewer + member
+communities are auto-derived from `auth` so every caller stays provable; the hook passes its already
+-derived ids to skip a duplicate read. One composite index added (`lightHouses` `communityId +
+visibility`). **HONEST LIMIT (unchanged, now recorded):** a house sheltering SEVERAL communities via
+LIN `__shelters__` edges is gated only on its PRIMARY `communityId`; full multi-edge membership needs
+an ACL denormalisation on the doc — deferred. Rules tests cover: non-member denied, member allowed,
+public world-readable incl. signed-out, node any-signed-in, owner + staff, and the absent-visibility
+default behaving as community. *(Zoltán's decision — the community should decide, and that choice is
+law; the gap the previous ring flagged, closed.)*
+
+---
+
 **2026-07-17 · Rules-parity: the client obeys the law, and the community's gate will too** — a
 Lion's-Gate pass aligning the client VISIBILITY gates to the Firestore rules (the law). Four client
 fixes so a query can never be rejected wholesale nor leak past a client-only veil: (1) `getTreesByDomain`

@@ -596,6 +596,56 @@ describe('networkInvites — consuming cannot rewrite the email, inviter, or the
   });
 });
 
+describe("lightHouses — the community's choice is LAW: membership enforced at rest", () => {
+  const CAROL = 'carol-uid'; // a keeper who consecrates houses in com1
+  // BOB belongs to com1 (ALICE's community); MALLORY does not. Houses at each visibility tier.
+  const seedHouses = () => env.withSecurityRulesDisabled(async (ctx) => {
+    const d = ctx.firestore();
+    await setDoc(doc(d, 'links', `${BOB}__member__com1`), { lid: 'x', type: 'link', rel: 'member', from: BOB, to: 'com1', createdAt: 1 });
+    await setDoc(doc(d, 'lightHouses', 'lhPublic'),  { ownerId: CAROL,   name: 'Beacon',    lid: 'lhp',  communityId: 'com1', visibility: 'public' });
+    await setDoc(doc(d, 'lightHouses', 'lhNode'),    { ownerId: CAROL,   name: 'Nodehouse', lid: 'lhn',  communityId: 'com1', visibility: 'node' });
+    await setDoc(doc(d, 'lightHouses', 'lhComm'),    { ownerId: CAROL,   name: 'Hearth',    lid: 'lhc',  communityId: 'com1', visibility: 'community' });
+    await setDoc(doc(d, 'lightHouses', 'lhDefault'), { ownerId: CAROL,   name: 'Old',       lid: 'lhd',  communityId: 'com1' }); // absent visibility
+    await setDoc(doc(d, 'lightHouses', 'lhMallory'), { ownerId: MALLORY, name: 'Mine',      lid: 'lhm',  communityId: 'com1', visibility: 'community' });
+  });
+
+  it('public houses are readable by everyone, signed-in or not', async () => {
+    await seedHouses();
+    await assertSucceeds(getDoc(doc(db(), 'lightHouses', 'lhPublic')));        // signed-out
+    await assertSucceeds(getDoc(doc(db(BOB), 'lightHouses', 'lhPublic')));     // member
+    await assertSucceeds(getDoc(doc(db(MALLORY), 'lightHouses', 'lhPublic'))); // non-member
+  });
+
+  it('node houses open to any signed-in being, but the signed-out are turned away', async () => {
+    await seedHouses();
+    await assertSucceeds(getDoc(doc(db(BOB), 'lightHouses', 'lhNode')));
+    await assertSucceeds(getDoc(doc(db(MALLORY), 'lightHouses', 'lhNode'))); // signed-in non-member still sees node
+    await assertFails(getDoc(doc(db(), 'lightHouses', 'lhNode')));           // signed-out cannot
+  });
+
+  it('a community house is law: a member reads it; a signed-in NON-member cannot; nor the signed-out', async () => {
+    await seedHouses();
+    await assertSucceeds(getDoc(doc(db(BOB), 'lightHouses', 'lhComm')));   // member link
+    await assertSucceeds(getDoc(doc(db(ALICE), 'lightHouses', 'lhComm'))); // com1's owner is a member
+    await assertFails(getDoc(doc(db(MALLORY), 'lightHouses', 'lhComm')));  // signed-in, but no membership — the veil is now a wall
+    await assertFails(getDoc(doc(db(), 'lightHouses', 'lhComm')));         // signed-out
+  });
+
+  it('absent visibility behaves as community — the default is private, member-only', async () => {
+    await seedHouses();
+    await assertSucceeds(getDoc(doc(db(BOB), 'lightHouses', 'lhDefault')));
+    await assertFails(getDoc(doc(db(MALLORY), 'lightHouses', 'lhDefault')));
+    await assertFails(getDoc(doc(db(), 'lightHouses', 'lhDefault')));
+  });
+
+  it('the owner reads their own community house even as a non-member; staff read any', async () => {
+    await seedHouses();
+    await assertSucceeds(getDoc(doc(db(MALLORY), 'lightHouses', 'lhMallory'))); // owner, though not in com1
+    await assertSucceeds(getDoc(doc(db(STAFF), 'lightHouses', 'lhComm')));      // staff sees any
+    await assertSucceeds(getDoc(doc(db(STAFF), 'lightHouses', 'lhDefault')));
+  });
+});
+
 describe('visions — the idea-twin grows its own chain; the genesis is frozen', () => {
   // BOB authors the vision; its head advances by contributions (growVision), its root is sealed once.
   const seedVisions = () => env.withSecurityRulesDisabled(async (ctx) => {

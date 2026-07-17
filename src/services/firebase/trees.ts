@@ -257,10 +257,18 @@ export const plantLifetree = async (data: Partial<Lifetree> & { ownerId: string;
         validated: false, validatorId: null, status: 'HEALTHY'
         // Relations (guardian/co_owner/…) live in the `links` collection — no legacy arrays.
     });
-    await addDoc(visionsCollection, {
-        lid: uuidv7(),
-        lifetreeId: treeDoc.id, authorId: data.ownerId, title: "Root Vision", body: data.body, createdAt: serverTimestamp(), domain
-    });
+    // A GUARDED (nature) tree has NO Root Vision — like a bed, it is stood-for, not dreamed
+    // forward; its welcome lives in `body`. A LIFETREE's Root Vision is its idea-twin, born the
+    // same moment WITH its own genesis chain (the 2026-07-17 twin ring), not mute.
+    if (plantingType !== 'GUARDED') {
+        const visionGenesis = await createBlock('0', { msg: 'Birth' }, Date.now());
+        await addDoc(visionsCollection, {
+            lid: uuidv7(),
+            lifetreeId: treeDoc.id, authorId: data.ownerId, title: "Root Vision", body: data.body,
+            genesisHash: visionGenesis, latestHash: visionGenesis, blockHeight: 0,
+            createdAt: serverTimestamp(), domain,
+        });
+    }
     // A guarded (nature) tree is GUARDED, not worn: its planter is its first guardian —
     // the edge lives in the LIN, and the session lists it under guarded trees, not avatars.
     if (plantingType === 'GUARDED') {
@@ -508,17 +516,77 @@ export const getTreesByDomain = async (domain: string, ownerUid?: string): Promi
     return excludeBedTrees(Array.from(byId.values()));
 };
 
+// What a Light House query may ask for. The rules enforce membership AT REST (firestore.rules
+// /lightHouses), so a signed-in caller's whole-collection read is now REJECTED the instant one
+// community house exists — every read must be a rule-provable UNION. The viewer + their member
+// communities are auto-derived from `auth`; a caller that already has them (useVisibleLightHouses)
+// passes them to skip the extra member-links read. `publicOnly` forces the signed-out path.
+export interface VisibleLightHouseOpts {
+    publicOnly?: boolean;
+    viewerUid?: string;
+    memberCommunityIds?: string[];
+}
+
+const chunk10 = <T>(a: T[]): T[][] => {
+    const out: T[][] = [];
+    for (let i = 0; i < a.length; i += 10) out.push(a.slice(i, i + 10));
+    return out;
+};
+
+// The communities this being has a `member` link to (mirrors the rules' isCommunityMember,
+// membership branch). Community ownership also grants read at the rule, but a keeper's OWN houses
+// are already caught by the ownerId sub-query below, so the member set is enough for the union.
+const memberCommunityIdsOf = async (uid: string): Promise<string[]> =>
+    (await getDocs(query(collection(db, 'links'), where('from', '==', uid), where('rel', '==', 'member'))))
+        .docs.map(d => (d.data() as { to: string }).to);
+
+// The Light Houses THIS viewer may read, assembled as a UNION of individually rule-provable
+// sub-queries so no list read is ever rejected, then merged + deduped by id:
+//   • public          — visibility == 'public'            [everyone; the public branch]
+//   • node            — visibility == 'node'              [signed-in; the node branch]
+//   • my community    — visibility == 'community' AND communityId in <my member communities>
+//                       chunked ≤10 per 'in'              [isCommunityMember proves each]
+//   • my own          — ownerId == me                     [the owner branch]
+// Signed-out (or publicOnly) collapses to public alone. The belt (canViewLightHouse) still runs
+// in the hook. NOTE: absent-visibility legacy houses (default 'community') are only surfaced to
+// their community's members through the owner sub-query if theirs; today's create form always
+// writes `visibility`, so new houses are fully covered.
+const fetchVisibleLightHouses = async (opts?: VisibleLightHouseOpts): Promise<LightHouse[]> => {
+    const byId = new Map<string, LightHouse>();
+    const add = (d: QueryDocumentSnapshot) => byId.set(d.id, mapDoc(d) as LightHouse);
+    const uid = opts?.publicOnly ? undefined : (opts?.viewerUid ?? auth.currentUser?.uid);
+    if (!uid) {
+        (await getDocs(query(lightHousesCollection, where('visibility', '==', 'public')))).docs.forEach(add);
+        return [...byId.values()];
+    }
+    const mine = opts?.memberCommunityIds ?? await memberCommunityIdsOf(uid);
+    const snaps = await Promise.all([
+        getDocs(query(lightHousesCollection, where('visibility', '==', 'public'))),
+        getDocs(query(lightHousesCollection, where('visibility', '==', 'node'))),
+        getDocs(query(lightHousesCollection, where('ownerId', '==', uid))),
+        ...chunk10(mine).map(ids =>
+            getDocs(query(lightHousesCollection, where('visibility', '==', 'community'), where('communityId', 'in', ids)))),
+    ]);
+    snaps.forEach(snap => snap.docs.forEach(add));
+    return [...byId.values()];
+};
+
 // LightHouses rooted in a community's domain, earliest first. Mirrors getTreesByDomain
-// so the "First Tree" and "The LightHouse" tabs behave identically.
-export const getLightHousesByDomain = async (domain: string, opts?: { publicOnly?: boolean }): Promise<LightHouse[]> => {
+// so the "First Tree" and "The LightHouse" tabs behave identically. Signed-out: the provable
+// two-equality (domain + public) query, scoped at the source. Signed-in: the membership-scoped
+// union, narrowed to this domain client-side (a per-domain community query would need a 3-field
+// composite; the union stays 1-2 fields).
+export const getLightHousesByDomain = async (domain: string, opts?: VisibleLightHouseOpts): Promise<LightHouse[]> => {
     const normalized = normalizeDomain(domain);
-    const q = opts?.publicOnly
-        ? query(lightHousesCollection, where('domain', '==', normalized), where('visibility', '==', 'public'))
-        : query(lightHousesCollection, where('domain', '==', normalized));
-    const snap = await getDocs(q);
-    return snap.docs
-        .map(d => (mapDoc(d) as LightHouse))
-        .sort((a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0));
+    const byBirth = (l: LightHouse[]) =>
+        l.sort((a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0));
+    const uid = opts?.publicOnly ? undefined : (opts?.viewerUid ?? auth.currentUser?.uid);
+    if (!uid) {
+        const snap = await getDocs(query(lightHousesCollection, where('domain', '==', normalized), where('visibility', '==', 'public')));
+        return byBirth(snap.docs.map(d => (mapDoc(d) as LightHouse)));
+    }
+    const visible = await fetchVisibleLightHouses({ ...opts, viewerUid: uid });
+    return byBirth(visible.filter(s => (s.domain || '') === normalized));
 };
 
 // The "mother trees" of a set of lightHouses: the trees each lighthouse is rooted into (the
@@ -537,11 +605,10 @@ export const getRootedTrees = async (lightHouseIds: string[]): Promise<Lifetree[
     return trees.filter((t): t is Lifetree => t !== null && !isBedTree(t));
 };
 
-// Every placed lightHouse in the network — the hub map shows what the viewer may see.
-// Signed-out viewers may only query public docs (the read rule rejects wider queries).
-export const getAllLightHouses = async (opts?: { publicOnly?: boolean }): Promise<LightHouse[]> =>
-    (await getDocs(opts?.publicOnly ? query(lightHousesCollection, where('visibility', '==', 'public')) : lightHousesCollection))
-        .docs.map(d => (mapDoc(d) as LightHouse));
+// Every placed lightHouse in the network — the hub map shows what the viewer may see, as the
+// rule-provable membership union (fetchVisibleLightHouses). Signed-out sees public only.
+export const getAllLightHouses = (opts?: VisibleLightHouseOpts): Promise<LightHouse[]> =>
+    fetchVisibleLightHouses(opts);
 
 // Consecrate a lightHouse — community keepers do this from the LightHouse tab.
 export const createLightHouse = async (data: Partial<LightHouse> & { name: string; ownerId: string }) => {
