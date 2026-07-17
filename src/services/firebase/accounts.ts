@@ -96,7 +96,8 @@ export const signUpWithEmail = async (email: string, password: string, displayNa
     if (displayName.trim()) { try { await updateProfile(user, { displayName: displayName.trim() }); } catch {} }
     if (resolved.consume) await consumeNetworkInvite(resolved.consume, user.uid);
     await ensureUserProfile(user, { displayName: displayName.trim(), acceptedTerms: true, ...(resolved.invitedBy ? { invitedBy: resolved.invitedBy } : {}) });
-    try { await sendEmailVerification(user); } catch (e) { console.warn("Verification email failed:", e); }
+    // No verification email here — emailVerified is read nowhere, so a second, unbranded mail is
+    // pure friction (and reads like phishing). The branded welcome from ensureUserProfile stands alone.
     return user;
 };
 

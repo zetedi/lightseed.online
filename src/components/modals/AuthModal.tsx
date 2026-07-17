@@ -13,10 +13,10 @@ const field = "h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 t
 
 type Mode = 'signin' | 'signup' | 'request';
 
-export const AuthModal = ({ onClose, inviteId, inviteOnly, theme }: { onClose: () => void; inviteId?: string; inviteOnly: boolean; theme?: { primary?: string } }) => {
+export const AuthModal = ({ onClose, inviteId, inviteOnly, theme, startMode, greetName }: { onClose: () => void; inviteId?: string; inviteOnly: boolean; theme?: { primary?: string }; startMode?: Mode; greetName?: string }) => {
   const { t, language } = useLanguage();
   const terms = getTerms(language);
-  const [mode, setMode] = useState<Mode>(inviteId ? 'signup' : 'signin');
+  const [mode, setMode] = useState<Mode>(startMode || (inviteId ? 'signup' : 'signin'));
   const [lockedEmail, setLockedEmail] = useState<string | null>(null);
   const [inviteValid, setInviteValid] = useState<boolean | null>(inviteId ? null : false);
   const [email, setEmail] = useState('');
@@ -130,6 +130,11 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly, theme }: { onClose: (
         )
       ) : (
         <div className="space-y-4">
+          {greetName && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+              You've been invited to <span className="font-bold">{greetName}</span>. Create your account to step in.
+            </div>
+          )}
           {inviteId && inviteValid === false && (
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{t('auth_invite_invalid')}</div>
           )}

@@ -69,17 +69,21 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
   );
   const rangeFree = (from: string, to: string) => !occupancy.some(o => o.fromDate < to && from < o.toDate);
 
-  const onPick = (dateStr: string, disabled: boolean) => {
-    if (disabled) return;
+  // `asDeparture` marks a click on an occupied cell being used as the check-out morning (a taken
+  // cell later than the chosen arrival — legitimately free; rangeFree validates the span).
+  const onPick = (dateStr: string, asDeparture: boolean) => {
     setPick(p => {
+      if (asDeparture && p.from) return { from: p.from, to: dateStr };
       if (!p.from || (p.from && p.to)) return { from: dateStr };
       if (dateStr <= p.from) return { from: dateStr };
       return { from: p.from, to: dateStr };
     });
   };
 
-  const problem = !pick.from || !pick.to
+  const problem = !pick.from
     ? t('arrival') + ' → ' + t('departure')
+    : !pick.to
+    ? 'Pick your departure day'
     : (stayRequestProblem(pick.from, pick.to, nowMs) || (rangeFree(pick.from, pick.to) ? null : t('booked')));
 
   const request = async () => {
@@ -164,6 +168,9 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
             <span className="inline-block [&>svg]:h-4 [&>svg]:w-4"><Icons.ChevronRight /></span>
           </button>
         </div>
+        {uid && !isHost && (
+          <p className="mb-2 text-center text-[11px] text-slate-400">Tap your first night, then the morning you leave.</p>
+        )}
         <div className="mb-1 grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase tracking-wide text-slate-300">
           {WEEKDAYS.map(d => <div key={d}>{d}</div>)}
         </div>
@@ -176,6 +183,11 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
             const inRange = pick.from && (pick.to
               ? cell.dateStr >= pick.from && cell.dateStr < pick.to
               : cell.dateStr === pick.from);
+            // Checking out on someone's check-in day is free: an occupied cell later than the chosen
+            // arrival may still be picked as the DEPARTURE morning (taken, yet a valid endpoint).
+            const asDeparture = taken && !!pick.from && !past && cell.inMonth && cell.dateStr > pick.from;
+            const isDeparture = !!pick.to && cell.dateStr === pick.to && cell.inMonth;
+            const clickable = !disabled || asDeparture;
             const base = 'aspect-square rounded-lg text-xs flex items-center justify-center transition-colors';
             // A booked night always reads as booked, even inside a picked span (taken wins).
             const tone = !cell.inMonth ? 'text-slate-200'
@@ -183,10 +195,12 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
               : inRange ? 'bg-emerald-600 text-white font-semibold'
               : past ? 'text-slate-300'
               : 'text-slate-600 hover:bg-emerald-50';
+            // The chosen check-out morning gets a distinct ring so the second tap plainly registers.
+            const ring = isDeparture ? 'ring-2 ring-emerald-500 ring-offset-1' : '';
             return (
-              <button key={i} type="button" disabled={disabled || (!uid) || isHost}
-                onClick={() => onPick(cell.dateStr, disabled)}
-                className={`${base} ${tone} ${disabled ? 'cursor-default' : ''}`}>
+              <button key={i} type="button" disabled={!clickable || (!uid) || isHost}
+                onClick={() => onPick(cell.dateStr, asDeparture)}
+                className={`${base} ${tone} ${ring} ${!clickable ? 'cursor-default' : ''}`}>
                 {cell.day}
               </button>
             );

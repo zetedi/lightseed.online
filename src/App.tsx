@@ -307,6 +307,13 @@ const AppContent = () => {
         if (inviteParam && !lightseed && !authLoading) setShowAuthModal(true);
     }, [inviteParam, lightseed, authLoading]);
 
+    // Arriving on a community invitation (/i/), signed out, opens the join door directly — the
+    // auth modal greets by the community name and starts in sign-up (see the AuthModal render).
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- reacts to the resolved /i/ arrival once auth settles; mirrors the ?invite effect above
+        if (arrivedInvite && !lightseed && !authLoading) setShowAuthModal(true);
+    }, [arrivedInvite, lightseed, authLoading]);
+
     // Seed the Intelligence Commons (default personas + Gemini Oracle) once a super-admin
     // is known. Idempotent and gated by Firestore rules.
     useSuperAdminConsole(isSuperAdmin, lightseed?.uid);
@@ -676,7 +683,12 @@ const AppContent = () => {
     const landingCommunity = impersonatedCommunity?.customLanding
         ? impersonatedCommunity
         : (hostCommunity?.customLanding && !impersonatedCommunity ? hostCommunity : null);
-    if (landingCommunity && !seedView) {
+    // An arrival overlay (a scanned /b/ being, or an /i/ invitation) sets state that the landing
+    // page never draws — and the URL is already consumed — so a QR scan or invite link on a
+    // custom-landing domain would dead-end. When any arrival is pending, fall through to the full
+    // seed shell so its overlay renders.
+    const arrivalPending = [selectedCommunity, viewingLightHouse, selectedTree, selectedVision].some(Boolean);
+    if (landingCommunity && !seedView && !arrivalPending) {
         return (
             <>
                 <CustomLandingPage
@@ -1211,7 +1223,9 @@ const AppContent = () => {
                 <GDPRBanner />
 
                 {showAuthModal && !lightseed && (
-                    <AuthModal onClose={() => setShowAuthModal(false)} inviteId={inviteParam} inviteOnly={config.inviteOnly} theme={effectiveTheme} />
+                    <AuthModal onClose={() => setShowAuthModal(false)} inviteId={inviteParam} inviteOnly={config.inviteOnly} theme={effectiveTheme}
+                        startMode={arrivedInvite ? 'signup' : undefined}
+                        greetName={arrivedInvite ? selectedCommunity?.name : undefined} />
                 )}
 
                 {/* The Path, whole — the Light Path's ruleset with the walker's position lit. */}
@@ -1264,6 +1278,7 @@ const AppContent = () => {
                     onViewLightHouse={setViewingLightHouse}
                         community={selectedCommunity}
                         arrivedInvite={arrivedInvite}
+                        onSignIn={() => setShowAuthModal(true)}
                         onViewTree={(tree: Lifetree) => { setSelectedCommunity(null); setSelectedTree(tree); }}
                         onViewEvent={(p: Pulse) => { setSelectedCommunity(null); void onViewPulseOrAlignment(p); }}
                         onClose={() => { setSelectedCommunity(null); setArrivedInvite(null); setMapRefreshKey(k => k + 1); }}

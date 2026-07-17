@@ -38,6 +38,8 @@ interface CommunityProfileProps {
   community: Community;
   // An invitation the viewer arrived holding (/i/<id>) — the door greets them by it.
   arrivedInvite?: CommunityInvite | null;
+  // Open the auth modal — the signed-out invitee's door out of the greeting.
+  onSignIn?: () => void;
   onUpdate?: (updates: Partial<Community>) => void;
   onClose: () => void;
   onViewTree?: (tree: Lifetree) => void;
@@ -54,6 +56,7 @@ const bareDomain = (d?: string) => (d || '').toLowerCase().replace(/^www\./, '')
 export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   community,
   arrivedInvite,
+  onSignIn,
   onUpdate,
   onClose,
   onViewTree,
@@ -610,9 +613,9 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                 closed: rest. Keepers accept knocks on the Members tab. Members see standing.
                 Mobile keeps every action compact (icons, tight padding) so nothing overflows. */}
             {!currentUserId && inviteForHere && (
-              <span className="flex items-center gap-1 rounded-full border border-amber-300/50 bg-amber-400/15 px-2.5 py-1.5 text-[11px] font-bold text-amber-200 sm:px-4 sm:py-2 sm:text-xs">
+              <button onClick={() => onSignIn?.()} className="flex items-center gap-1 rounded-full border border-amber-300/50 bg-amber-400/15 px-2.5 py-1.5 text-[11px] font-bold text-amber-200 transition-colors hover:bg-amber-400 hover:text-white sm:px-4 sm:py-2 sm:text-xs">
                 🎟 Sign in to use your invitation
-              </span>
+              </button>
             )}
             {currentUserId && !isMember && inviteForHere && (
               <button onClick={handleEnterWithInvite} disabled={joining} className="flex items-center gap-1 rounded-full bg-amber-500 px-2.5 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-amber-400 disabled:opacity-50 sm:px-4 sm:py-2 sm:text-xs">

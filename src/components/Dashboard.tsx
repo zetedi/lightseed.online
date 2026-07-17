@@ -205,8 +205,9 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onSetTab,
                             </div>
                         )}
                         <PlantCTA color={ctaPrimary} onClick={(e) => { e.stopPropagation(); onPlant(); }} />
-                        {/* Stats off: a quiet tally just below the CTA — trees/pulses/visions/alignments. */}
-                        {!showStats && stats.danger === 0 && (
+                        {/* Stats off: a quiet tally just below the CTA — trees/pulses/visions/alignments.
+                            Hidden for a day-one newcomer (all zero) so they meet no cold cipher of zeros. */}
+                        {!showStats && stats.danger === 0 && (stats.trees + stats.pulses + stats.visions + stats.alignments) > 0 && (
                             <p className="text-right font-mono text-[10px] font-bold uppercase tracking-wider text-white/75 drop-shadow-md">T{stats.trees} P{stats.pulses} V{stats.visions} A{stats.alignments}</p>
                         )}
                     </div>
