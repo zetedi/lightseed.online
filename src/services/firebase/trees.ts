@@ -168,29 +168,41 @@ export const getGenesisHash = async (): Promise<string | null> => {
 // Forest-card counters. On the hub the whole node counts; on a custom domain only that
 // place's life counts (privacy of the place — its numbers are its own).
 export const getNetworkStats = async (domain?: string) => {
-    try {
-        const scoped = !!(domain && !isHubDomain(domain));
-        const d = domain?.replace(/^www\./, '');
-        const scope = (coll: string) => scoped
-            ? query(collection(db, coll), where('domain', '==', d))
-            : collection(db, coll);
-        const [trees, pulses, visions, beds] = await Promise.all([
-            getCountFromServer(scope('lifetrees')),
-            getCountFromServer(scope('pulses')),
-            getCountFromServer(scope('visions')),
-            // Beds are a Light House's furniture, not forest: subtract them from the unscoped
-            // tree count. Scoped counts never see them — a bed carries no domain.
-            scoped ? Promise.resolve(null) : getCountFromServer(query(collection(db, 'lifetrees'), where('treeType', '==', BED_TREE_TYPE))),
-        ]);
-        return {
-            trees: Math.max(0, trees.data().count - (beds ? beds.data().count : 0)),
-            pulses: pulses.data().count,
-            visions: visions.data().count
-        };
-    } catch (e) {
-        console.error("Failed to fetch network stats:", e);
-        return { trees: 0, pulses: 0, visions: 0 };
-    }
+    const scoped = !!(domain && !isHubDomain(domain));
+    const d = domain?.replace(/^www\./, '');
+    // A count (getCountFromServer) is rejected WHOLESALE unless EVERY matched doc is rule-readable
+    // — so one private tree (or node tree, for a signed-out viewer) would otherwise zero the card.
+    // The viewer's provable levels, mirroring the read rules: public only when signed out, public
+    // + node when signed in (staff read all, so their unfiltered attempt just succeeds).
+    const levels = auth.currentUser?.uid ? ['public', 'node'] : ['public'];
+    // Try the true (unfiltered) count first — accurate, and provable while every matched doc is
+    // public/legacy. If the rules reject it (a non-public doc now exists), retry constrained to
+    // the provable levels: an as-permitted count that never zeros. null = even that was rejected
+    // (e.g. a missing composite index) — the caller treats it as an unknown, not a hard zero.
+    const provableCount = async (coll: string, extra: any[] = []): Promise<number | null> => {
+        try {
+            return (await getCountFromServer(query(collection(db, coll), ...extra))).data().count;
+        } catch {
+            try {
+                return (await getCountFromServer(query(collection(db, coll), ...extra, where('visibility', 'in', levels)))).data().count;
+            } catch { return null; }
+        }
+    };
+    const domainCons = scoped ? [where('domain', '==', d)] : [];
+    // Counts run independently: one collection's rejection must not zero the others.
+    const [trees, pulses, visions, beds] = await Promise.all([
+        provableCount('lifetrees', domainCons),
+        provableCount('pulses', domainCons),
+        provableCount('visions', domainCons),
+        // Beds are a Light House's furniture, not forest: subtract them from the unscoped tree
+        // count. Scoped counts never see them — a bed carries no domain.
+        scoped ? Promise.resolve(0) : provableCount('lifetrees', [where('treeType', '==', BED_TREE_TYPE)]),
+    ]);
+    return {
+        trees: Math.max(0, (trees ?? 0) - (beds ?? 0)),
+        pulses: pulses ?? 0,
+        visions: visions ?? 0,
+    };
 }
 
 // The node's planting caps, set by node admins on the admin page (config/limits, world-readable);
@@ -455,17 +467,41 @@ export const normalizeDomain = (domain: string) =>
 
 export const getTreesByDomain = async (domain: string, ownerUid?: string): Promise<Lifetree[]> => {
     const normalized = normalizeDomain(domain);
-    // No orderBy — avoids requiring a composite Firestore index
-    const q = query(lifetreesCollection, where('domain', '==', normalized));
-    const snap = await getDocs(q);
+    // Only return trees this viewer may READ, matching the rules (firestore.rules /lifetrees):
+    // a signed-out reader gets public only, any signed-in member gets public + node — else the
+    // WHOLE list query is rejected the moment one 'node'/'private' tree carries this domain.
+    // (Mirrors fetchLifetrees; no orderBy keeps the composite index to domain + visibility.)
+    const uid = auth.currentUser?.uid;
+    const levels = uid ? ['public', 'node'] : ['public'];
     const byId = new Map<string, Lifetree>();
-    snap.docs.forEach(d => byId.set(d.id, mapDoc(d) as Lifetree));
+    const add = (d: QueryDocumentSnapshot) => byId.set(d.id, mapDoc(d) as Lifetree);
 
-    // The creator always sees their own trees here, even if they pointed a tree
-    // at a different domain than this community.
+    try {
+        (await getDocs(query(lifetreesCollection, where('domain', '==', normalized), where('visibility', 'in', levels)))).docs.forEach(add);
+    } catch (e) {
+        // Composite (domain + visibility) index still building — fall back to visibility-only
+        // (single-field, always provable) and narrow to the domain client-side.
+        console.warn('Community tree query fell back (visibility index building?)', e);
+        (await getDocs(query(lifetreesCollection, where('visibility', 'in', levels))))
+            .docs.map(d => mapDoc(d) as Lifetree)
+            .filter(t => (t.domain || '') === normalized)
+            .forEach(t => byId.set(t.id, t));
+    }
+
+    // Pre-backfill safety: legacy trees lack `visibility`, so the filtered query matches none.
+    // If nothing came back, retry unfiltered (rules still allow it while no tree is private yet);
+    // once a private tree exists this is denied and we honestly keep the list empty.
+    if (byId.size === 0) {
+        try {
+            (await getDocs(query(lifetreesCollection, where('domain', '==', normalized)))).docs.forEach(add);
+        } catch { /* rules now block the unfiltered read (private trees exist) — keep empty */ }
+    }
+
+    // The creator always sees their own trees here, even if they pointed a tree at a different
+    // domain than this community. An owner-scoped query is always rule-provable (owner reads own).
     if (ownerUid) {
         const mine = await getDocs(query(lifetreesCollection, where('ownerId', '==', ownerUid)));
-        mine.docs.forEach(d => byId.set(d.id, mapDoc(d) as Lifetree));
+        mine.docs.forEach(add);
     }
 
     // Beds carry no domain, but the owner-merge above could carry them in — furniture stays out.

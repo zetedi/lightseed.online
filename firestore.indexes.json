@@ -16,6 +16,20 @@
       ]
     },
     {
+      "collectionGroup": "visions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "domain",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "visibility",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "lifetrees",
       "queryScope": "COLLECTION",
       "fields": [

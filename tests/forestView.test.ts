@@ -42,12 +42,40 @@ describe('canViewTree', () => {
     expect(canViewTree(t, viewerless)).toBe(false);
     expect(canViewTree(t, { uid: 'stranger' })).toBe(true);
   });
-  it('private trees open only to owner, guardians, and staff', () => {
+  it('private trees open only to owner and staff — NOT guardians (a no-privilege follow)', () => {
     const t = tree({ visibility: 'private' });
     expect(canViewTree(t, { uid: 'stranger' })).toBe(false);
     expect(canViewTree(t, { uid: 'u1' })).toBe(true);
-    expect(canViewTree(t, { uid: 'g1', guardedIds: new Set(['t1']) })).toBe(true);
+    // A guardian gets NOTHING for a private tree — matches the rule (firestore.rules /lifetrees,
+    // which grants private only to owner or staff; guardian is a bare follow).
+    expect(canViewTree(t, { uid: 'g1', guardedIds: new Set(['t1']) })).toBe(false);
     expect(canViewTree(t, { uid: 's1', isStaff: true })).toBe(true);
+  });
+
+  // Parity table: the client gate MUST equal the rule intent across every tier × viewer.
+  // Rule (firestore.rules:219-223): absent/public = everyone; node = any signed-in; private =
+  // owner or staff only. Each row is [visibility, viewer, ruleAllows] — canViewTree must agree.
+  describe('parity with the read rule across tiers', () => {
+    const owner = { uid: 'u1' };
+    const signedIn = { uid: 'stranger' };
+    const signedOut = {};
+    const staff = { uid: 's1', isStaff: true };
+    const guardian = { uid: 'g1', guardedIds: new Set(['t1']) }; // guards t1 but does not own it
+    const rows: Array<[string, Parameters<typeof canViewTree>[1], boolean]> = [
+      // public — the rule allows everyone (missing field reads as public too).
+      ['public', signedOut, true], ['public', signedIn, true], ['public', guardian, true], ['public', staff, true],
+      // node — the rule allows ANY signed-in reader; the signed-out are denied.
+      ['node', signedOut, false], ['node', signedIn, true], ['node', guardian, true], ['node', owner, true], ['node', staff, true],
+      // private — the rule allows ONLY owner or staff; a stranger AND a guardian are denied.
+      ['private', signedOut, false], ['private', signedIn, false], ['private', guardian, false],
+      ['private', owner, true], ['private', staff, true],
+    ];
+    it.each(rows)('visibility=%s → the gate matches the rule', (visibility, viewer, ruleAllows) => {
+      expect(canViewTree(tree({ visibility: visibility as Lifetree['visibility'] }), viewer)).toBe(ruleAllows);
+    });
+    it('absent visibility reads as public (legacy-safe), matching the rule', () => {
+      expect(canViewTree(tree({ visibility: undefined }), signedOut)).toBe(true);
+    });
   });
 });
 

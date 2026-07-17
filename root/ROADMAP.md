@@ -58,6 +58,10 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
      Nothing vanishes on day one (everyone is an origin-node member from phase 2).
   Precursor to Federation (below): one node truly whole before lids travel
   between many. Open questions recorded in QUESTIONS.md (2026-07-15).
+- **Harden the community Light House gate**: enforce member-only visibility at rest
+  (rule via the primary `communityId` + a membership-scoped map query) so the community's
+  visibility choice is law, not a client-only veil. Until then the `community` tier is
+  signed-in-readable at the doc (see the 2026-07-17 rules-parity ring).
 - **Stay ripening**: keeper notification emails for bed requests; calendars.
 - **Hosted AI, live**: the node credential (`credentialScope: 'node'`) wired in
   functions, funded by the node share; `Intelligence.hosted` becomes real.

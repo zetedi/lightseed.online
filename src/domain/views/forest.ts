@@ -25,9 +25,12 @@ export function treeCoordinates(tree: Pick<Lifetree, 'latitude' | 'longitude'>):
   return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
 }
 
-// Can this viewer see a tree, given its visibility? 'public' = everyone; 'node' = any signed-in
-// member; 'private' = owner, its guardians, or staff. (Client-side gate for the forest UI; rules
-// hardening is a separate step.)
+// Can this viewer see a tree, given its visibility? Mirrors the read rule EXACTLY
+// (firestore.rules /lifetrees 'allow read'): 'public' = everyone; 'node' = any signed-in
+// member; 'private' = owner or staff ONLY. Guardianship is a no-privilege follow (the rule
+// grants a guardian nothing for a private tree), so it confers no read here either — the
+// client must not greenlight what the law denies. `guardedIds` is still accepted for call-site
+// symmetry with the pulse gates, but it never widens tree visibility.
 export function canViewTree(
   tree: Pick<Lifetree, 'ownerId' | 'visibility'> & { id?: string },
   viewer: { uid?: string; isStaff?: boolean; guardedIds?: Set<string> },
@@ -36,9 +39,8 @@ export function canViewTree(
   if (v === 'public') return true;
   if (viewer.isStaff) return true;
   if (viewer.uid && tree.ownerId === viewer.uid) return true;
-  if (tree.id && viewer.guardedIds?.has(tree.id)) return true;
   if (v === 'node') return !!viewer.uid;
-  return false; // private, and not owner / guardian / staff
+  return false; // private, and not owner / staff (a guardian gets nothing — matches the rule)
 }
 
 // Can this viewer see a vision, given its visibility? Mirrors canViewTree, but the author is the

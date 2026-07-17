@@ -30,10 +30,17 @@ export const CommunityTreesTab: React.FC<CommunityTreesTabProps> = ({
 }) => {
   // Both bindings are memoized so the section holds stable scope-bound loaders.
   const searchInvitable = useCallback(async (term: string) => {
-    const all = await fetchAllLifetrees();
+    // Provable levels only, or the whole query is rejected the moment one private tree exists
+    // (mirrors getTreesByDomain / fetchLifetrees). A member invites VISIBLE trees — public + node
+    // when signed in, public when not — plus their own (ownerUid merge, always rule-provable).
+    const all = await fetchAllLifetrees(
+      undefined,
+      currentUserId,
+      currentUserId ? ['public', 'node'] : ['public'],
+    );
     const here = new Set(communityTrees.map(t => t.id));
     return all.filter(t => !t.isNature && !here.has(t.id) && (t.name || '').toLowerCase().includes(term)).slice(0, 8);
-  }, [communityTrees]);
+  }, [communityTrees, currentUserId]);
 
   const handleInvite = useCallback(async (tree: Lifetree) => {
     if (!currentUserId) throw new Error('Sign in to invite a tree.');

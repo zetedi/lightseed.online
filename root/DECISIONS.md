@@ -6,6 +6,29 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-17 · Rules-parity: the client obeys the law, and the community's gate will too** — a
+Lion's-Gate pass aligning the client VISIBILITY gates to the Firestore rules (the law). Four client
+fixes so a query can never be rejected wholesale nor leak past a client-only veil: (1) `getTreesByDomain`
+now filters to the viewer's provable levels (public, +node signed-in) with an owner-merge + legacy
+fallback — the widget/community-profile tree lists no longer break the instant a node/private tree
+carries the domain; (2) `getNetworkStats` counts only rule-readable docs (try-true-then-filtered, each
+count independent) so one private tree can't zero the Forest card; (3) the same whole-collection read
+in the community invite-tree search (`CommunityTreesTab`) is made provable; (4) `canViewTree` no longer
+grants a **guardian** a read of a *private* tree — guardianship is a no-privilege follow, exactly as the
+rule says. **The one open divergence — the community's gate:** a `community`-visibility Light House (the
+DEFAULT tier) is today readable at the DOC level by ANY signed-in user (rule: `visibility=='public' ||
+isSignedIn()`), member-narrowing enforced only client-side in `canViewLightHouse`. This is NOT ratified
+as permanent: *the community should decide whether its Light House is visible, and that choice should be
+**law**, not a UI veil* (Zoltán). It is a **known gap to HARDEN** — enforce membership at rest via the
+primary `communityId` (a single `get()` the rules engine can do) and rewrite the map query to be
+membership-scoped (public ∪ node ∪ my-community houses). Deferred to its own reviewed change (it changes
+the map — a non-member stops seeing a community-only house), with one honest limit: a house sheltering
+*several* communities via `__shelters__` edges can enforce only its **primary** community until an ACL is
+denormalised. The four fixes ship now (8/8); the community-gate hardening follows. See [[community-door]]
+and the `/lightHouses` rule comment.
+
+---
+
 **2026-07-17 · Tree and vision are twins; the vision grows its own chain** — when a tree is
 planted, its **Root Vision** is born the *same moment* (`plantLifetree` already mints both, linked
 by `vision.lifetreeId`). Until now the vision was the mute twin — a flat being with no chain, while
