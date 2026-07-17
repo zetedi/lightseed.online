@@ -68,6 +68,7 @@ export const lifetreesCollection = collection(db, 'lifetrees');
 export const visionsCollection = collection(db, 'visions');
 export const pulsesCollection = collection(db, 'pulses');
 export const alignmentsCollection = collection(db, 'alignments');
+export const covenantsCollection = collection(db, 'covenants');
 export const communitiesCollection = collection(db, 'communities');
 export const lightHousesCollection = collection(db, 'lightHouses');
 export const networkInvitesCollection = collection(db, 'networkInvites');

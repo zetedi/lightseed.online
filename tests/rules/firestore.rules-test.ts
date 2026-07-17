@@ -686,3 +686,86 @@ describe('visions — the idea-twin grows its own chain; the genesis is frozen',
     await assertFails(updateDoc(doc(db(BOB), 'visions', 'v1'), { lid: 'forged' }));
   });
 });
+
+describe('covenants — the two-sided mint: proposer names parties, each signs only their own slot', () => {
+  const CAROL = 'carol-uid';
+  // cov1: ALICE proposes; ALICE + BOB are its two parties (quorum 2). ALICE is both proposer and party.
+  const seedCov = () => env.withSecurityRulesDisabled(async (ctx) => {
+    const d = ctx.firestore();
+    await setDoc(doc(d, 'covenants', 'cov1'), {
+      lid: 'cov1-lid', genesisHash: 'g0', latestHash: 'g0', blockHeight: 0,
+      kind: 'covenant', title: 'We tend together', body: 'Each waters when able.',
+      quorum: 2, proposedBy: ALICE, status: 'proposed',
+    });
+    await setDoc(doc(d, 'links', `${ALICE}__party__cov1`), { lid: 'pa', type: 'link', rel: 'party', from: ALICE, to: 'cov1', role: 'initiator', createdAt: 1 });
+    await setDoc(doc(d, 'links', `${BOB}__party__cov1`), { lid: 'pb', type: 'link', rel: 'party', from: BOB, to: 'cov1', createdAt: 1 });
+  });
+  const covDoc = (over: object = {}) => ({
+    lid: 'l', genesisHash: 'g', latestHash: 'g', blockHeight: 0,
+    kind: 'covenant', title: 'T', body: 'B', quorum: 1, proposedBy: ALICE, status: 'proposed', ...over,
+  });
+  const party = (uid: string, extra: object = {}) => ({ lid: 'x', type: 'link', rel: 'party', from: uid, to: 'cov1', ...extra, createdAt: 1 });
+  const sig = { sig: 'base64-signature', pubkey: 'base64-spki-pubkey', signedAt: 1 };
+
+  it('the proposer creates it naming themselves; a stranger cannot forge the proposer', async () => {
+    await assertSucceeds(setDoc(doc(db(ALICE), 'covenants', 'covA'), covDoc()));
+    await assertFails(setDoc(doc(db(MALLORY), 'covenants', 'covB'), covDoc()));            // proposedBy != writer
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'covenants', 'covC'), covDoc({ proposedBy: MALLORY })));
+  });
+
+  it('ONLY the proposer mints party links — a party (non-proposer) or stranger cannot add to the roster', async () => {
+    await seedCov();
+    await assertSucceeds(setDoc(doc(db(ALICE), 'links', `${CAROL}__party__cov1`), party(CAROL)));   // proposer names a party
+    await assertFails(setDoc(doc(db(BOB), 'links', `${MALLORY}__party__cov1`), party(MALLORY)));    // BOB is a party, not the proposer
+    await assertFails(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__party__cov1`), party(MALLORY))); // a stranger
+    // A party link cannot masquerade at a privileged path either (id must equal from__party__to).
+    await assertFails(setDoc(doc(db(ALICE), 'links', `${CAROL}__steward__cov1`), party(CAROL)));
+  });
+
+  it('a party signs ONLY their own slot; a stranger cannot sign at all', async () => {
+    await seedCov();
+    await assertSucceeds(setDoc(doc(db(BOB), 'covenants', 'cov1', 'signatures', BOB), sig));          // own slot
+    await assertFails(setDoc(doc(db(BOB), 'covenants', 'cov1', 'signatures', ALICE), sig));           // another's slot
+    await assertFails(setDoc(doc(db(MALLORY), 'covenants', 'cov1', 'signatures', MALLORY), sig));     // not a party
+  });
+
+  it('a signature is immutable once written — even by its own signer', async () => {
+    await seedCov();
+    await env.withSecurityRulesDisabled(async (ctx) => setDoc(doc(ctx.firestore(), 'covenants', 'cov1', 'signatures', BOB), sig));
+    await assertFails(updateDoc(doc(db(BOB), 'covenants', 'cov1', 'signatures', BOB), { sig: 'forged' }));
+  });
+
+  it('the identity is FROZEN — only status + chain head advance; title/quorum/proposedBy cannot move', async () => {
+    await seedCov();
+    // A party seals: status + head only — allowed.
+    await assertSucceeds(updateDoc(doc(db(BOB), 'covenants', 'cov1'), { status: 'sealed', latestHash: 'h1', blockHeight: 1, sealedAt: 2 }));
+    await seedCov();
+    await assertFails(updateDoc(doc(db(BOB), 'covenants', 'cov1'), { title: 'changed' }));
+    await assertFails(updateDoc(doc(db(BOB), 'covenants', 'cov1'), { quorum: 1 }));
+    await assertFails(updateDoc(doc(db(BOB), 'covenants', 'cov1'), { genesisHash: 'forged' }));
+    await assertFails(updateDoc(doc(db(ALICE), 'covenants', 'cov1'), { proposedBy: MALLORY }));
+    await assertFails(updateDoc(doc(db(BOB), 'covenants', 'cov1'), { status: 'sealed', quorum: 1 })); // no smuggling alongside
+  });
+
+  it('a non-party, non-proposer cannot advance the covenant', async () => {
+    await seedCov();
+    await assertFails(updateDoc(doc(db(MALLORY), 'covenants', 'cov1'), { status: 'broken' }));
+  });
+
+  it('the roster is append-only — a party may not delete their own slot; staff may mend', async () => {
+    await seedCov();
+    await assertFails(deleteDoc(doc(db(BOB), 'links', `${BOB}__party__cov1`)));
+    await assertSucceeds(deleteDoc(doc(db(STAFF), 'links', `${BOB}__party__cov1`)));
+  });
+
+  it('the roster is frozen once SEALED — the proposer cannot add a party to repudiate a sealed covenant', async () => {
+    await seedCov();
+    // While still 'proposed', the proposer may extend the roster (the atomic-mint path).
+    await assertSucceeds(setDoc(doc(db(ALICE), 'links', `${CAROL}__party__cov1`), party(CAROL)));
+    // Seal it, then the identity (roster included) is frozen: even the proposer cannot add a party,
+    // which would otherwise change the signed identity and un-verify every existing signature.
+    await env.withSecurityRulesDisabled(async (ctx) =>
+      updateDoc(doc(ctx.firestore(), 'covenants', 'cov1'), { status: 'sealed' }));
+    await assertFails(setDoc(doc(db(ALICE), 'links', `${MALLORY}__party__cov1`), party(MALLORY)));
+  });
+});

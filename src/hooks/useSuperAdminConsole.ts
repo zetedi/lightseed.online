@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { ensureIntelligenceCommons } from '../services/intelligence';
 import {
   backfillPulseVisibility, migrateArraysToLinks, migratePulseTypeCasing, dropLegacyArrays, migrateTreeVisibility,
-  migrateBackfillLids, migrateBackfillMatchIds, backfillVisionChains,
+  migrateBackfillLids, migrateBackfillMatchIds, backfillVisionChains, migrateAlignmentsToCovenants,
 } from '../services/firebase';
 import { setChainLocked, canonicalize, computeCanonicalHash, blockContent, verifyChain } from '../domain/chain';
 
@@ -76,6 +76,16 @@ export function useSuperAdminConsole(isSuperAdmin: boolean, uid?: string) {
       console.log(`[lightseed] done — sealed ${r.updated} vision(s), ${r.skipped} already chained.`);
       return r;
     };
+    // Retrofit: mint the canonical 2-party COVENANT (+ its two party links) for every existing
+    // alignment that lacks one (two-sided mint, phase 2). ADDITIVE — the alignment doc is untouched
+    // and keeps working; signatures are re-signed by each party in the app (no server holds a key),
+    // so migrated covenants start UNSEALED. Idempotent (an alignment already shadowed is skipped).
+    w.migrateAlignmentsToCovenants = async () => {
+      console.log('[lightseed] minting covenants for existing alignments…');
+      const r = await migrateAlignmentsToCovenants();
+      console.log(`[lightseed] done — minted ${r.created} covenant(s), ${r.skipped} already shadowed/invalid.`);
+      return r;
+    };
     // Crystal: flip the in-memory chain lock to TEST canonical (verifiable) minting this session,
     // and expose the chain toolkit for manual console verification. (The real switch is the
     // node's About → Vision stamp, persisted on community.chainLocked.)
@@ -88,6 +98,7 @@ export function useSuperAdminConsole(isSuperAdmin: boolean, uid?: string) {
       delete w.backfillPulseVisibility; delete w.migrateArraysToLinks; delete w.migratePulseTypeCasing;
       delete w.dropLegacyArrays; delete w.migrateTreeVisibility; delete w.setChainLocked; delete w.lightseedChain;
       delete w.migrateBackfillLids; delete w.migrateBackfillMatchIds; delete w.backfillVisionChains;
+      delete w.migrateAlignmentsToCovenants;
     };
   }, [isSuperAdmin]);
 }

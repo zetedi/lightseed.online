@@ -11,5 +11,6 @@ export * from './firebase/governance';
 export * from './firebase/pulses';
 export * from './firebase/watering';
 export * from './firebase/engagement';
+export * from './firebase/covenants';
 export * from './firebase/stays';
 export * from './firebase/holds';

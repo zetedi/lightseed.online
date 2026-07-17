@@ -6,6 +6,33 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-17 · The Covenant — a mint two beings sign (phase 2)** — the two-sided mint arrives,
+standing on the signing crystal. A **Covenant** is a Being in its own `covenants` collection with its
+**own chain** (genesis → seal → break): a pledge that seals only when its parties **cryptographically
+sign**. Its **parties are `party` links** (links-over-arrays — *who*); each party's **Ed25519 signature**
+lives in a per-party subcollection `covenants/{id}/signatures/{uid}` — links are immutable, so signing
+happens there, and the doc-id==uid rule means a being can sign only its OWN slot. What is signed is the
+**frozen canonical identity** (lid, kind, title, body, quorum, genesis, the sorted party roster), frozen
+the moment the covenant leaves `proposed` so the roster can't change under a signer (the review caught
+this: an added party silently breaks every existing signature — non-repudiation defeated — so the
+party-link mint now requires status `proposed`). It **seals when a quorum of VERIFIED signatures lands**
+(a seal block on its chain); **un-forgeability is the signatures, not the flag** — `verifyCovenant`
+re-derives the identity and counts a signature only if its recorded pubkey **equals the signer's
+published `persons.publicKeyPem`** (a throwaway key can't be used to later repudiate — the seal binds to
+the being's IDENTITY, not just a key in the slot) and its Ed25519 verifies. Breaking **marks** (a
+`broken` block), never deletes — the guardian-veto ethic. **Both mints stay**: the self-mint (a being's
+own truth) needs no counter-signature; the Covenant is only the *two-sided* path. The **alignment** is
+retrofitted as the canonical 2-party covenant (kind `alignment`, quorum 2) — additively (the alignment
+doc is never touched; a deterministic `align_<id>` covenant makes it race-free); accepting an alignment
+now **signs** it. `migrateAlignmentsToCovenants` (superadmin console) mints a covenant per existing
+alignment — **built, NOT run** (a guardian runs it; signatures re-signed in-app, since no server holds a
+key). Accepted residuals (LOW): covenant `status` isn't rules-monotonic (harmless — the crypto is
+authoritative, not the flag); an unsealed covenant's proposer can still add a party (self-grief on an
+un-quorumed pledge). Next: the n-party form — a **charter decision, seven signatures**. See the "A being
+signs in its own hand" ring and [[initiation-layer]].
+
+---
+
 **2026-07-17 · A being signs in its own hand — the signing crystal (Covenant, phase 1)** — Stage 3
 arrives. Until now all cryptographic signing lived offline in git (the initiation ledger's `.pem` +
 CI); the app was a read-only mirror and `persons.publicKeyPem` sat reserved and null. Now a being can

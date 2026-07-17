@@ -16,7 +16,12 @@ import type { Being } from './being';
 // grants nothing (no rule reads it); admitted only with a real keeper-minted invitation. It is
 // deliberately NOT guardianship: power over a being flows from that being's keeper's later
 // choice, never from the door itself (guardians hold veto standing).
-export type LinkRel = 'guardian' | 'co_owner' | 'steward' | 'observer' | 'member' | 'joined' | 'participant' | 'join_request' | 'rooted' | 'shelters' | 'invited_by';
+// 'party': WHO a covenant binds (partyUid __party__ covenantId) — the two-sided mint's roster
+// (domain/covenant.ts). Minted ONLY by the covenant's proposer (naming each party); grants no
+// power on its own — the crypto lives in the covenants/{id}/signatures subcollection, where each
+// party signs ONLY their own slot. The party link is the immutable statement of who; the signature
+// doc is the proof they signed. (Links are immutable, so a signature can't live on the link.)
+export type LinkRel = 'guardian' | 'co_owner' | 'steward' | 'observer' | 'member' | 'joined' | 'participant' | 'join_request' | 'rooted' | 'shelters' | 'invited_by' | 'party';
 
 export interface Link extends Being {
   type: 'link';

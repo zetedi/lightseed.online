@@ -74,6 +74,13 @@ async function publishPublicKey(uid: string, publicKeyB64: string): Promise<void
   await setDoc(doc(db, 'persons', uid), { publicKeyPem: publicKeyB64 }, { merge: true });
 }
 
+// (Re)publish a known public key to persons/{uid}.publicKeyPem. Used defensively by the covenant seal
+// path to self-heal a party's published identity key when a prior publish failed — the covenant seal
+// counts a signature only if its pubkey matches this published key, so it must be present and correct.
+export async function publishSigningKey(uid: string, publicKeyB64: string): Promise<void> {
+  await publishPublicKey(uid, publicKeyB64);
+}
+
 const currentUid = (uid?: string): string => {
   const resolved = uid ?? auth.currentUser?.uid;
   if (!resolved) throw new Error('No signing identity — sign in first.');

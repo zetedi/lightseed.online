@@ -15,6 +15,7 @@ import {
   proposeAlignment,
   acceptAlignment,
   rejectAlignment,
+  signAlignmentCovenant,
   getAlignmentById,
   getLifetreeById,
   getPulseById,
@@ -115,6 +116,7 @@ const EventModal = lazy(() => import('./components/modals/EventModal').then(m =>
 const CreateVisionModal = lazy(() => import('./components/modals/CreateVisionModal').then(m => ({ default: m.CreateVisionModal })));
 const DataModelCrystal = lazy(() => import('./components/about/DataModelCrystal').then(m => ({ default: m.DataModelCrystal })));
 const AlignmentView = lazy(() => import('./components/sections/AlignmentView').then(m => ({ default: m.AlignmentView })));
+const CovenantProfile = lazy(() => import('./components/CovenantProfile').then(m => ({ default: m.CovenantProfile })));
 const ProfileReaches = lazy(() => import('./components/profile/ProfileReaches').then(m => ({ default: m.ProfileReaches })));
 
 // The full-screen overlay every detail view (tree / vision / event / community) scrolls inside.
@@ -147,6 +149,7 @@ const AppContent = () => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- clears the section hint when the tree detail closes; the hint is set from many call sites, so deriving it there is riskier than this reset
     useEffect(() => { if (!selectedTree) setTreeSectionHint(null); }, [selectedTree]);
     const [selectedAlignment, setSelectedAlignment] = useState<Alignment | null>(null);
+    const [selectedCovenantId, setSelectedCovenantId] = useState<string | null>(null);
     const [selectedPulse, setSelectedPulse] = useState<Pulse | null>(null);
     // Bumped whenever we finish touching a tree (guardianship, edits) so the map re-reads it.
     const [mapRefreshKey, setMapRefreshKey] = useState(0);
@@ -386,6 +389,7 @@ const AppContent = () => {
         { key: 'community', open: !!selectedCommunity, close: () => setSelectedCommunity(null) },
         { key: 'vision', open: !!selectedVision, close: () => setSelectedVision(null) },
         { key: 'alignment', open: !!selectedAlignment, close: () => setSelectedAlignment(null) },
+        { key: 'covenant', open: !!selectedCovenantId, close: () => setSelectedCovenantId(null) },
         { key: 'pulse', open: !!selectedPulse, close: () => setSelectedPulse(null) },
         { key: 'auth', open: showAuthModal, close: () => setShowAuthModal(false) },
         { key: 'plant', open: showPlantModal, close: () => setShowPlantModal(false) },
@@ -514,10 +518,24 @@ const AppContent = () => {
             const res = await acceptAlignment(id);
             setAlignments(prev => prev.filter(a => a.id !== id)); // drop the accepted request
             await showAlert("Aligned — a shared sync-block is now on both chains.", 'Alignment');
+            // Accepting an alignment also SIGNS its covenant (the canonical 2-party form) — additive:
+            // the sync-block above stays, and the alignment gains a cryptographic twin the accepting
+            // party signs in their own hand. Best-effort: a missing/unavailable signing key must never
+            // block the accept (the alignment already succeeded). The covenant is minted lazily on the
+            // first party to sign; when the initiator later opens it and signs, quorum 2 seals it.
+            const alignment = await getAlignmentById(id).catch(() => null);
+            let openedCovenant = false;
+            if (alignment && lightseed?.uid) {
+                try {
+                    const signed = await signAlignmentCovenant(alignment);
+                    if (signed?.covenantId) { setSelectedCovenantId(signed.covenantId); openedCovenant = true; }
+                } catch (covErr) { console.warn('Covenant co-sign skipped:', covErr); }
+            }
             // Open the resulting block on your chain — through the unified router, so the
-            // freshly minted sync-block lands on the alignment view like everywhere else.
+            // freshly minted sync-block lands on the alignment view like everywhere else. If the
+            // covenant profile opened (the co-sign landed), let it stand instead.
             const pulse = await getPulseById(res.targetPulseId).catch(() => null);
-            if (pulse) await onViewPulseOrAlignment(pulse);
+            if (pulse && !openedCovenant) await onViewPulseOrAlignment(pulse);
             loadContent(true);
         }
         catch(e:any) {
@@ -1147,6 +1165,16 @@ const AppContent = () => {
                             currentUserId={lightseed?.uid}
                             onClose={() => setSelectedAlignment(null)}
                             onViewTree={(tree) => { setSelectedAlignment(null); setSelectedTree(tree); }}
+                            onViewCovenant={(id) => setSelectedCovenantId(id)}
+                        />
+                    </div>
+                ) : selectedCovenantId ? (
+                    <div className="animate-in fade-in duration-200">
+                        <CovenantProfile
+                            covenantId={selectedCovenantId}
+                            currentUserId={lightseed?.uid}
+                            onClose={() => setSelectedCovenantId(null)}
+                            notify={notify}
                         />
                     </div>
                 ) : (selectedPulse && selectedPulse.type === 'event') ? (

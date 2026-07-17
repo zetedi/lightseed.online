@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Alignment, AlignmentNote, Lifetree } from '../../types';
-import { getLifetreeById, getPulseById, getPersonName, postAlignmentNote, getAlignmentById } from '../../services/firebase';
+import { getLifetreeById, getPulseById, getPersonName, postAlignmentNote, getAlignmentById, getCovenantForAlignment } from '../../services/firebase';
 import { Icons } from '../ui/Icons';
 import { Loading } from '../ui/Loading';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -25,6 +25,8 @@ interface AlignmentViewProps {
   onClose: () => void;
   // Navigate to a side's entity — a lifetree today; other party kinds later.
   onViewTree?: (tree: Lifetree) => void;
+  // Open this alignment's cryptographic twin — the 2-party Covenant (domain/covenant.ts).
+  onViewCovenant?: (covenantId: string) => void;
 }
 
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -58,11 +60,12 @@ const PulseChip = ({ cap, text, tone }: { cap: string; text?: string; tone: 'sky
   </div>
 );
 
-export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree }: AlignmentViewProps) => {
+export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree, onViewCovenant }: AlignmentViewProps) => {
   const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [initiator, setInitiator] = useState<Side>({ tree: null });
   const [target, setTarget] = useState<Side>({ tree: null });
+  const [covenantId, setCovenantId] = useState<string | null>(null);
   // The live alignment — the prop can be stale (e.g. loaded with the profile's history tab), so
   // messages and status are refreshed from the source on open and after every send.
   const [messages, setMessages] = useState<AlignmentNote[]>(alignment.messages || []);
@@ -79,7 +82,7 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree }:
     setLiveStatus(alignment.status);
     setDraft(''); setError(null);
     (async () => {
-      const [live, iTree, tTree, iPulse, tPulse, iName, tName] = await Promise.all([
+      const [live, iTree, tTree, iPulse, tPulse, iName, tName, covenant] = await Promise.all([
         getAlignmentById(alignment.id).catch(() => null),
         getLifetreeById(alignment.initiatorTreeId).catch(() => null),
         getLifetreeById(alignment.targetTreeId).catch(() => null),
@@ -87,8 +90,10 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree }:
         getPulseById(alignment.targetPulseId).catch(() => null),
         getPersonName(alignment.initiatorUid).catch(() => undefined),
         getPersonName(alignment.targetUid).catch(() => undefined),
+        getCovenantForAlignment(alignment.id).catch(() => null),
       ]);
       if (!alive) return;
+      setCovenantId(covenant?.id ?? null);
       if (live) { setMessages(live.messages || []); setLiveStatus(live.status); }
       setInitiator({ tree: iTree, ownerName: iName, pulse: iPulse ? { title: (iPulse as any).title, body: (iPulse as any).body } : null });
       setTarget({ tree: tTree, ownerName: tName, pulse: tPulse ? { title: (tPulse as any).title, body: (tPulse as any).body } : null });
@@ -223,6 +228,16 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree }:
               </div>
             )}
           </div>
+
+          {isParticipant && covenantId && onViewCovenant && (
+            <button
+              onClick={() => onViewCovenant(covenantId)}
+              className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white py-3 text-sm font-bold text-emerald-700 shadow-sm hover:bg-emerald-50"
+            >
+              <span className="[&>svg]:h-4 [&>svg]:w-4"><Icons.Venn /></span>
+              {t('covenant_open')}
+            </button>
+          )}
 
           <div className="mt-6 flex items-start gap-2 rounded-xl bg-emerald-50 px-4 py-3.5 text-sm leading-snug text-emerald-800">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 shrink-0"><path d="M12 3v18M5 10l7-7 7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
