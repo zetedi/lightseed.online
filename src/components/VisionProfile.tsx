@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { showAlert } from './ui/Dialog';
 import { Vision, Pulse } from '../types';
 import { Icons } from './ui/Icons';
+import { SuperDot } from './ui/SuperDot';
+import { useSession } from '../contexts/SessionContext';
 import { BeingQr } from './ui/BeingQr';
 import { mintBeingQr } from '../services/firebase/beings';
 import { MahameruAvatar } from './ui/MahameruAvatar';
@@ -43,12 +45,18 @@ type VisionSection = 'about' | 'participants' | 'contributions' | 'shadow';
 
 export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTrees, onGrow, onViewTree, onViewPulse }: VisionProfileProps) => {
     const { t } = useLanguage();
+    const { isSuperAdmin } = useSession();
     const isAuthor = currentUserId === vision.authorId;
     const isRoot = vision.title.toLowerCase() === 'root vision';
     // A Root Vision on a GUARDED tree is a mistake (a guarded tree is stood-for, not dreamed
     // forward — it should never have had one), so its author may delete it. The Root Vision of a
     // personal LIFETREE stays its protected foundation and cannot be removed.
     const rootOnGuarded = isRoot && !!myTrees?.find(tr => tr.id === vision.lifetreeId && (tr.treeType === 'GUARDED' || tr.isNature));
+    // The author may delete their own vision (a Root Vision only when it's the stray guarded kind).
+    const canDeleteAsAuthor = isAuthor && (!isRoot || rootOnGuarded);
+    // A superadmin may release ANY vision — the rules already grant staff the delete; the button
+    // wears the amber SuperDot when it's this staff capability rather than the author's own hand.
+    const canDeleteAsStaff = !!isSuperAdmin && !canDeleteAsAuthor;
 
     const [section, setSection] = useState<VisionSection>('about');
     const [isJoined, setIsJoined] = useState(false);
@@ -186,16 +194,20 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                                 <span>{isJoined ? 'Joined' : 'Join Vision'}</span>
                             </button>
                         )}
-                        {isAuthor && onDelete && (!isRoot || rootOnGuarded) && (
+                        {onDelete && (canDeleteAsAuthor || canDeleteAsStaff) && (
                             <button
                                 onClick={() => onDelete(vision.id)}
+                                title={canDeleteAsStaff ? 'Release this vision (staff)' : undefined}
                                 className="flex items-center gap-1 rounded-full bg-red-500/15 px-4 py-2 text-xs font-bold text-red-300 border border-red-400/30 transition-colors hover:bg-red-500 hover:text-white"
                             >
+                                {canDeleteAsStaff && <SuperDot />}
                                 <Icons.Trash />
                                 <span>{rootOnGuarded ? 'Delete (stray)' : 'Delete'}</span>
                             </button>
                         )}
-                        {isAuthor && isRoot && !rootOnGuarded && (
+                        {/* The protected-foundation badge — a personal tree's Root Vision. A superadmin
+                            sees the delete instead (they may release any vision). */}
+                        {isAuthor && isRoot && !rootOnGuarded && !isSuperAdmin && (
                             <span className="flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/15 px-3 py-1.5 text-[10px] font-bold text-emerald-200" title="This vision is the tree's own root — its foundation.">
                                 <Icons.ShieldCheck /> ROOT VISION
                             </span>

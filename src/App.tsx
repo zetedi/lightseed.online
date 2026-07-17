@@ -502,13 +502,20 @@ const AppContent = () => {
         } catch { /* the view simply keeps its prior head until reopened */ }
     };
 
+    // A blocking overlay for the few operations that take a beat (a vision's cascade delete removes
+    // its chain + links). Darkens the app, shows the spinner, and confirms in a snackbar when done.
+    const [busyLabel, setBusyLabel] = useState<string | null>(null);
     const handleDeleteVisionInApp = async (visionId: string) => {
         if (!(await showConfirm("Are you sure you want to delete this vision?", { title: 'Delete Vision', confirmText: 'Delete', danger: true }))) return;
+        setBusyLabel('Releasing the vision…');
         try {
             await deleteVision(visionId);
             setSelectedVision(null);
             loadContent(true);
+            setBusyLabel(null);
+            notify('🌱 The vision was released.');
         } catch (e: any) {
+            setBusyLabel(null);
             showAlert("Delete failed: " + e.message);
         }
     }
@@ -1018,6 +1025,14 @@ const AppContent = () => {
             {/* New-deploy prompt — the service worker waits for consent instead of silent swap. */}
             <UpdateToast />
             <ToastHost />
+            {/* Blocking busy overlay — a darkened backdrop + the spinner while an operation runs
+                (e.g. a vision's cascade delete). Above modals (z-100); the snackbar confirms after. */}
+            {busyLabel && (
+                <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 bg-black/60 backdrop-blur-sm" role="status" aria-live="polite">
+                    <Loading size={56} />
+                    <p className="text-sm font-medium text-white/90">{busyLabel}</p>
+                </div>
+            )}
             {/* Page-level scroll affordance — only on the main page (hidden while a detail/modal is open). */}
             {openKeys.length === 0 && <ScrollChevrons axis="y" fixed />}
 
