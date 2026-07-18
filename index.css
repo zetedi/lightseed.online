@@ -1,30 +1,197 @@
-body {
-    background: linear-gradient(to right, rgb(0,49,0), rgba(0,49,0,0));
-    font-family: 'Roboto', sans-serif;
-}
-h1 {
-    font-size: 35px;
-    font-weight: 400;
-    color: white;
-    text-align: center;
-}
-#wallpaper {
-    background-color: white;
-    padding: 2em;
-}
-#main-container {
-    align-items: center;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    margin: 7px;
-}
-#login-container {
-    color: white;
-}
-#z-container {    
-    color: #004900;
-    font-size: 7px;    
-    font-weight: bold;
-    float: right;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.5rem;
+    --root-background-image: url("/harmony.svg");
+    --root-background-size: 108px;
+    --root-background-color: white;
+    --lifeseed-logo: url("/lifeseed.svg");
+    --accent-color: hsl(var(--accent));
+    --text-background: 0 0% 98%;
   }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --root-background-image: url("/harmony-dark.svg");
+    --root-background-size: 108px;
+    --root-background-color: black;
+    --lifeseed-logo: url("/lifeseed-dark.svg");
+    --text-background: 222.2 84% 4.9%;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    background-image: var(--root-background-image);
+    background-size: var(--root-background-size);
+    background-color: var(--root-background-color);
+    background-position: center;
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  .text-strip {
+    @apply bg-[hsl(var(--text-background)/0.9)] text-foreground rounded-lg;
+  }
+
+  .filmstrip-arrow {
+    @apply bg-background/80 border border-[var(--accent-color)] text-foreground rounded-full flex items-center justify-center hover:bg-accent transition-all;
+    font-size: 1rem;
+    line-height: 1;
+    margin: 0 2px;
+  }
+
+  .carousel-container {
+    @apply w-full max-w-none sm:max-w-lg md:max-w-3xl px-2 sm:px-4;
+  }
+
+  .text-light-fallback {
+    color: hsl(var(--foreground)); /* Should use light mode foreground */
+  }
+
+  .light .text-light-fallback {
+    color: hsl(210, 40%, 98%); /* Explicit light mode fallback */
+  }
+}
+
+*, ::before, ::after { box-sizing: border-box; }
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  min-width: 320px;
+}
+
+.lifeseed {
+  border: solid 21px #700;
+  height: 173px;
+  width: 173px;
+  background-color: var(--root-background-color, transparent);
+  background-image: var(--lifeseed-logo);
+  background-size: 108px;
+  background-repeat: no-repeat;
+  background-position: center center;
+}
+
+.redbutton {
+  border-radius: 50px;
+  background-color: #700;
+}
+
+.tree {
+  background-image: url("/aitree.png");
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: 888px;
+  padding: 14px;
+  max-width: 1280px;
+}
+
+.centered-holder {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+}
+
+.clearfix::after {
+  content: '';
+  display: table;
+  clear: both;
+}
+
+.outerCircle { fill: white; stroke: #555; stroke-width: 7; }
+.circle { fill: none; stroke: #555; stroke-width: 0.7; }
+.innerCircle { fill: white; stroke: #555; stroke-width: 3; }
+
+.markdown > * { all: revert; }
+
+.card {
+  @apply bg-card/100 rounded-2xl border border-white/10 p-3;
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent), #121820;
+}
+
+.btn {
+  @apply border border-border bg-card text-foreground px-3 py-1.5 rounded-lg font-semibold;
+}
+
+.btn:hover { @apply border-accent; }
+
+.btn-primary {
+  @apply border-accent/60 bg-primary text-primary-foreground shadow-glow;
+}
+
+.image-link {
+  @apply relative flex items-start justify-start p-2 sm:p-3 text-foreground font-bold text-lg w-[150px] h-[100px] md:w-auto md:h-32 rounded-lg border-2 border-[#700] shadow-lg shadow-green-900/50 dark:shadow-white/30 overflow-hidden transition-all duration-300;
+  background-size: cover;
+  background-position: center top;
+}
+
+.image-link-overlay {
+  @apply absolute inset-0 bg-black bg-opacity-40 flex items-start justify-start p-2 sm:p-3 transition-all duration-300 group-hover:bg-opacity-20;
+}
+
+.article-image {
+  @apply m-4 float-right clear-right w-1/2 md:w-1/3 rounded-lg shadow-md;
+}

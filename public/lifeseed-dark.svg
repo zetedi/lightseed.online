@@ -1,0 +1,83 @@
+<svg width="262" height="262" xmlns="http://www.w3.org/2000/svg">
+    <style>
+        .outerCircle {
+            fill: black;
+            stroke: #fff;
+            stroke-width: 7;
+        }
+
+        .circle {
+            fill: none;
+            stroke: #fff;
+            stroke-width: .7;
+        }
+
+        .innerCircle {
+            fill: black;
+            stroke: #fff;
+            stroke-width: 3;
+        }
+    </style>
+    <defs>
+        <clipPath id="clean">
+            <circle cx="131" cy="131" r="131" />
+        </clipPath>
+    </defs>
+    <g>
+        <circle cx="131" cy="131" r="131" class="outerCircle" clip-path="url(#clean)"/>
+
+        <circle cx="-35.2768775" cy="-29" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="-35.2768775" cy="35" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="-35.2768775" cy="99" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="-35.2768775" cy="163" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="-35.2768775" cy="227" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="-35.2768775" cy="291" r="64" class="circle" clip-path="url(#clean)" />
+
+        <circle cx="20.1487483" cy="3" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="20.1487483" cy="67" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="20.1487483" cy="131" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="20.1487483" cy="195" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="20.1487483" cy="259" r="64" class="circle" clip-path="url(#clean)" />
+
+        <circle cx="75.5743741" cy="-29" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="75.5743741" cy="35" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="75.5743741" cy="99" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="75.5743741" cy="163" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="75.5743741" cy="227" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="75.5743741" cy="291" r="64" class="circle" clip-path="url(#clean)" />
+
+        <circle cx="131" cy="3" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="131" cy="67" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="131" cy="131" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="131" cy="195" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="131" cy="259" r="64" class="circle" clip-path="url(#clean)" />
+
+        <circle cx="186.4256258" cy="-29" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="186.4256258" cy="35" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="186.4256258" cy="99" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="186.4256258" cy="163" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="186.4256258" cy="227" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="186.4256258" cy="291" r="64" class="circle" clip-path="url(#clean)" />
+
+        <circle cx="241.8512516" cy="3" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="241.8512516" cy="67" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="241.8512516" cy="131" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="241.8512516" cy="195" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="241.8512516" cy="259" r="64" class="circle" clip-path="url(#clean)" />
+
+        <circle cx="297.2768775" cy="-29" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="297.2768775" cy="35" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="297.2768775" cy="99" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="297.2768775" cy="163" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="297.2768775" cy="227" r="64" class="circle" clip-path="url(#clean)" />
+        <circle cx="297.2768775" cy="291" r="64" class="circle" clip-path="url(#clean)" />
+
+        <circle cx="75.5743741" cy="99" r="16" class="innerCircle" clip-path="url(#clean)" />
+        <circle cx="75.5743741" cy="163" r="16" class="innerCircle" clip-path="url(#clean)" />
+        <circle cx="131" cy="67" r="16" class="innerCircle" clip-path="url(#clean)" />
+        <circle cx="131" cy="131" r="16" class="innerCircle" clip-path="url(#clean)" />
+        <circle cx="131" cy="195" r="16" class="innerCircle" clip-path="url(#clean)" />
+        <circle cx="186.4256258" cy="99" r="16" class="innerCircle" clip-path="url(#clean)" />
+        <circle cx="186.4256258" cy="163" r="16" class="innerCircle" clip-path="url(#clean)" />
+    </g>
+</svg>
