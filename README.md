@@ -10,6 +10,21 @@ A living network where every Lifetree is an immutable chain of moments — a bri
 > Lightseed is not a platform asking humans to feed an algorithm.
 > It is a network in which attention returns to living beings, relationships, and places.
 
+## 🌱 Clone the Living Tree
+
+The repository preserves Lightseed's complete code lineage. For a quick local setup or deployment, clone only the current tip:
+
+```bash
+git clone --depth=1 --single-branch \
+  https://github.com/zetedi/lightseed.online.git
+```
+
+This creates a shallow clone: the current application is complete, while older commits remain preserved on GitHub instead of being downloaded locally. If you later need the full lineage, restore it from inside the clone with:
+
+```bash
+git fetch --unshallow
+```
+
 ## 🌟 Core Concepts
 
 - **Lifetree**: A digital–physical being with an immutable chain (genesis → growth). Planted by a person, community, project, or a guarded wild tree. Its standing is **validated** by another live tree.
