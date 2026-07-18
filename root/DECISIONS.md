@@ -6,6 +6,35 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-18 · One signer, one slot — the quorum can't be inflated (Lumo's finding)** — Lumo's
+review named a real CRITICAL flaw in the Covenant: a single signature could fill many quorum slots.
+Three holes, one wound — every signature reader spread the doc body over the path uid
+(`{uid: d.id, ...d.data()}`), so a body `uid` field overrode the authenticated slot; the verify-loops
+never deduped by signer; and the rules gated only the doc **id**, not its **fields**. A world-readable
+signature copied into six keyless members' slots + one duplicate counted as **eight**. Closed with a
+**belt-and-lock of four independent layers**, each load-bearing alone: (1) **path authority** —
+`signatureFromDoc(id, data)` spreads the body FIRST and the id LAST, so the slot the write was bound
+to always wins; (2) **per-signer dedupe** — the pure counting rule (`countVerifiedCovenantSignatures`,
+`countVerifiedDecisionSignatures`) counts each uid at most once; (3) **rules field-lock** —
+`hasOnly(['sig','pubkey','signedAt'(,'position')])` refuses a smuggled `uid` or any extra field
+(emulator-proven); (4) **signer-bound signatures** — `DOMAIN` bumped to **v2**, the signed payload is
+now `{covenant/decision, signer: uid}`, so a signature is NON-TRANSFERABLE: a copied signature verified
+against another slot's uid simply fails. The exact exploit is reproduced as a test and proven dead —
+alice's sig in six keyless slots + a dupe → `verifiedCount 1`, a seven-quorum does not enact. Clean
+cutover: prod held only unsigned covenants and zero signed decisions at the v1→v2 bump, so no legacy
+verification path survives. **Near-term key guardrails** also land as the first stone of the coming
+verify-at-signing-time work: no silent key regeneration over a published key (`SigningKeyNeedsRestoreError`
++ a `needs_restore` modal that offers restore, with "start fresh" only behind a red-warned checkbox),
+and an **append-only** `persons/{uid}/keys/{fingerprint}` lineage (create-once, pubkey immutable under
+its fingerprint, never deleted). Deferred by deliberate choice, each its own coming ring: **(a)
+verify-at-signing-time** — a signature records its key-epoch and verifies against the key valid THEN, so
+rotation/recovery no longer breaks history (rotation signed by the prior key; revoke/recover events);
+**(b) draft vanishes, minted withdraws** — a draft/listening decision may be hard-deleted, but a
+signed/enacted one may only be WITHDRAWN, marked never erased, resolving the deletable-decision
+contradiction Lumo also named. Gates: `check` 275 · `test:rules` 83.
+
+---
+
 **2026-07-17 · A decision seven people sign (Covenant, phase 3)** — the n-party form, and the
 Covenant stands whole. A Council vote is no longer a bare authenticated uid append: it becomes an
 Ed25519 **signature** over the decision's **frozen canonical identity** `{lid, communityId, nature,
