@@ -129,7 +129,12 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
         let alive = true;
         getBedsForLightHouse(lightHouse.id).then(list => { if (alive) setBedList(list); }).catch(() => {});
         return () => { alive = false; };
-    }, [lightHouse.id, bedsBump]);
+        // viewerUid: the fetch reads auth at CALL time (node-visibility beds need a signed-in
+        // viewer). If this profile mounts before the session hydrates (cold start via QR, deep
+        // link, or an early tap), the first fetch runs signed-out and misses them; re-running on
+        // hydration keeps the profile honest with the beds menu, whose house list is already
+        // session-reactive (useVisibleLightHouses re-fetches on viewerUid).
+    }, [lightHouse.id, bedsBump, viewerUid]);
 
     const sections: SectionItem[] = [
         { key: 'about', label: 'About', icon: <Icons.Sun /> },
