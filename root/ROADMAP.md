@@ -67,6 +67,16 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
 - **Hosted AI, live**: the node credential (`credentialScope: 'node'`) wired in
   functions, funded by the node share; `Intelligence.hosted` becomes real.
 - **AI-need chooser** for tree support (`choice: 'ai_need'` in domain/support).
+- **Key revocation & epochs (verify-at-signing-time, step 2).** Judge a signature
+  against the key valid AT its moment, not merely a key once published: pin
+  `signedAt` to `request.time` in the rules, resolve epochs over the frozen
+  `publishedAt` timeline, add revoke/recover events — so a compromised key can be
+  retired without unbinding its honest history. Today a key once published binds
+  forever (deliberate residual — see the continuity ring and ARCHITECTURE debts,
+  2026-07-18); the perimeter is auth-gated signature slots. Needs a guardian
+  decision on the social shape first: who may say "this hand is no longer mine,"
+  and whether seals made before a revocation ask the circle's re-affirmation
+  (question recorded in QUESTIONS.md).
 - Mother-tree denormalised flag → badge on cards and map markers.
 - Consent handshake for Light House step-ins if the network outgrows trust-by-
   acquaintance (the `join_request` pattern is ready).

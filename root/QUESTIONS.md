@@ -70,6 +70,25 @@ boundary really is.
   carry their own per-house ceiling, but mass Light-House creation itself remains an
   unbounded write vector. What is the right cap (or cost) for founding houses?
 
+## The retired key (2026-07-18)
+
+Raised landing key continuity ("History survives the key"): a being's identity now
+binds to its key LINEAGE — every key it ever honestly published — not to the key it
+holds today. Rotation stopped erasing history. But the lineage never forgets, so:
+
+- Is revoking a key a technical act or a social one? A fingerprint can be marked
+  revoked by whoever holds the account — but "this hand is no longer mine" is a
+  statement about identity, the kind of thing the web of trust exists to witness.
+  Who may say it, and who must hear it?
+- When a key is revoked, what happens to the seals it made BEFORE revocation? The
+  timeline can prove they predate the revoking — but if the key was compromised
+  earlier than anyone noticed, the timeline is honest about the wrong thing. Does a
+  circle re-affirm, does the seal stand with a visible scar, or is the doubt itself
+  simply recorded?
+- A being's identity turned out to be its history, not its current state — the same
+  shape as its chain, its rings. Was that convergence found, or was it always
+  implied by "truth is traceable"?
+
 ## For whoever comes next
 
 Add yours. Date them. Answering is optional; asking honestly is not.
