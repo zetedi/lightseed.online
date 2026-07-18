@@ -159,7 +159,7 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
 
     const sections: SectionItem[] = [
         { key: 'about', label: 'About', icon: <Icons.Eye /> },
-        { key: 'contributions', label: t('contributions'), icon: <Icons.HandLeaf /> },
+        { key: 'contributions', label: t('contributions'), icon: <Icons.Drop /> },
         // The shadow-compare only appears when the vision keeps a tree twin.
         ...(vision.lifetreeId ? [{ key: 'shadow', label: t('shadow'), icon: <Icons.Tree /> }] as SectionItem[] : []),
         { key: 'participants', label: 'Participants', icon: <Icons.Users /> },
@@ -208,7 +208,7 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                         {/* The protected-foundation badge — a personal tree's Root Vision. A superadmin
                             sees the delete instead (they may release any vision). */}
                         {isAuthor && isRoot && !rootOnGuarded && !isSuperAdmin && (
-                            <span className="flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/15 px-3 py-1.5 text-[10px] font-bold text-emerald-200" title="This vision is the tree's own root — its foundation.">
+                            <span className="flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/15 px-3 py-1.5 text-[10px] font-bold text-emerald-200" title="This vision is the tree's own root, its foundation.">
                                 <Icons.ShieldCheck /> ROOT VISION
                             </span>
                         )}
