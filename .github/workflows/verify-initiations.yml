@@ -1,0 +1,24 @@
+# The three-sponsor rule, enforced. Any PR that touches the initiation ledger must pass the
+# cryptographic verifier — three valid signatures per newcomer — or it cannot merge.
+name: Verify initiations
+on:
+  pull_request:
+    paths:
+      - 'initiations/**'
+      - 'scripts/verify-initiations.mjs'
+      - '.github/workflows/verify-initiations.yml'
+  push:
+    paths:
+      - 'initiations/**'
+      - 'scripts/verify-initiations.mjs'
+      - '.github/workflows/verify-initiations.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify the initiation ledger
+        run: node scripts/verify-initiations.mjs

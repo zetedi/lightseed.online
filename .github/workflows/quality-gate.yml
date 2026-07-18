@@ -1,0 +1,48 @@
+# The quality gate, enforced. Every push/PR runs the same fence the repo runs locally:
+# strict typecheck, lint (0 errors), the unit suite (incl. the Aspen golden hash and the
+# initiation-ledger attacks), and the Firestore rules suite under the emulator.
+# What's green can only stay green — the ratchet never loosens.
+name: Quality gate
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v5   # the Firestore emulator is a Java process
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - name: Typecheck (full strict)
+        run: npm run typecheck
+      - name: Lint (0 errors)
+        run: npm run lint
+      - name: Unit tests
+        run: npm test
+      - name: Firestore rules tests (emulator)
+        run: npx firebase-tools emulators:exec --only firestore "npx vitest run --config vitest.rules.config.ts" --project demo-lifeseed
+
+  # The functions are their own compilation unit with their own node_modules — the app gate's
+  # root tsconfig excludes them, so they get their own job.
+  functions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+      - run: npm ci
+        working-directory: functions
+      - name: Typecheck functions
+        run: npx tsc --noEmit -p tsconfig.json
+        working-directory: functions

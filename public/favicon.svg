@@ -1,0 +1,25 @@
+<svg width="32" height="32" viewBox="0 0 262 262" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="131" cy="131" r="131" fill="white" stroke="#334155" stroke-width="7"/>
+  <!-- Flower of life grid (faint) -->
+  <circle cx="20.15" cy="131" r="64" fill="none" stroke="#334155" stroke-width=".7"/>
+  <circle cx="75.57" cy="35" r="64" fill="none" stroke="#334155" stroke-width=".7"/>
+  <circle cx="75.57" cy="99" r="64" fill="none" stroke="#334155" stroke-width=".7"/>
+  <circle cx="75.57" cy="163" r="64" fill="none" stroke="#334155" stroke-width=".7"/>
+  <circle cx="75.57" cy="227" r="64" fill="none" stroke="#334155" stroke-width=".7"/>
+  <circle cx="131" cy="67" r="64" fill="none" stroke="#334155" stroke-width=".7"/>
+  <circle cx="131" cy="131" r="64" fill="none" stroke="#334155" stroke-width=".7"/>
+  <circle cx="131" cy="195" r="64" fill="none" stroke="#334155" stroke-width=".7"/>
+  <circle cx="186.43" cy="35" r="64" fill="none" stroke="#334155" stroke-width=".7"/>
+  <circle cx="186.43" cy="99" r="64" fill="none" stroke="#334155" stroke-width=".7"/>
+  <circle cx="186.43" cy="163" r="64" fill="none" stroke="#334155" stroke-width=".7"/>
+  <circle cx="186.43" cy="227" r="64" fill="none" stroke="#334155" stroke-width=".7"/>
+  <circle cx="241.85" cy="131" r="64" fill="none" stroke="#334155" stroke-width=".7"/>
+  <!-- Inner seed circles -->
+  <circle cx="75.57" cy="99" r="16" fill="white" stroke="#334155" stroke-width="3"/>
+  <circle cx="75.57" cy="163" r="16" fill="white" stroke="#334155" stroke-width="3"/>
+  <circle cx="131" cy="67" r="16" fill="white" stroke="#334155" stroke-width="3"/>
+  <circle cx="131" cy="131" r="16" fill="white" stroke="#334155" stroke-width="3"/>
+  <circle cx="131" cy="195" r="16" fill="white" stroke="#334155" stroke-width="3"/>
+  <circle cx="186.43" cy="99" r="16" fill="white" stroke="#334155" stroke-width="3"/>
+  <circle cx="186.43" cy="163" r="16" fill="white" stroke="#334155" stroke-width="3"/>
+</svg>

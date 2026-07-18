@@ -1,0 +1,412 @@
+// The data model — the "crystal". A structured, single-source description of the lifeseed
+// entities and how they link, used both to render the in-app diagram and to emit a draw.io
+// (mxGraph) XML you can open/edit in diagrams.net. Positions are the diagram layout (top-left of
+// each box, on a column grid: 6 columns at x = 40 + n·310, boxes BOX_WIDTH wide).
+
+// Shared box geometry — one source for the SVG crystal, the draw.io export, and any overlap math.
+export const BOX_WIDTH = 210;
+export const BOX_HEADER = 38;
+export const BOX_NOTE_ROW = 12; // extra header line when an entity carries a note
+export const BOX_ROW = 18;
+export const BOX_PAD = 8;
+
+export interface ModelField {
+  name: string;
+  type: string;
+  ref?: string; // key of the entity this field points at (a relationship)
+  pk?: boolean; // part of the document id
+  many?: boolean; // an array of refs
+}
+
+export interface ModelEntity {
+  key: string;
+  label: string;
+  collection: string; // Firestore collection
+  note?: string; // subtypes / clarifications
+  x: number;
+  y: number;
+  fields: ModelField[];
+}
+
+export const boxHeaderHeight = (e: ModelEntity) => BOX_HEADER + (e.note ? BOX_NOTE_ROW : 0);
+export const boxHeight = (e: ModelEntity) => boxHeaderHeight(e) + e.fields.length * BOX_ROW + BOX_PAD;
+
+// The concept the whole model rests on — shown in the diagram legend and the draw.io export.
+export const BEING_NOTE =
+  'Every entity is a Being: lid (true name) + chain (story) + links (circle) + profile (face) — Indra’s net.';
+
+export const DATA_MODEL: ModelEntity[] = [
+  // The Being — not a collection but the concept every collection instantiates (Indra's net).
+  // Its four aspects are the four fields below; the crystal draws it in gold, apart.
+  {
+    key: 'Being', label: 'Being', collection: '∀ every collection', x: 40, y: 40,
+    note: 'the concept every entity instantiates',
+    fields: [
+      { name: 'lid', type: 'uuidv7 · the true name', pk: true },
+      { name: 'chain', type: 'pulses · the story' },
+      { name: 'links', type: 'LIN · the circle' },
+      { name: 'profile', type: 'sections · the face' },
+    ],
+  },
+  {
+    key: 'Person', label: 'Person', collection: 'persons', x: 40, y: 300,
+    note: 'canonical identity (doc id = uid)',
+    fields: [
+      { name: 'uid', type: 'string', pk: true },
+      { name: 'lid', type: 'uuidv7' },
+      { name: 'displayName', type: 'string' },
+      { name: 'publicKeyPem', type: 'string?' },
+    ],
+  },
+  {
+    key: 'Community', label: 'Community', collection: 'communities', x: 660, y: 40,
+    note: 'a node — drives its domain',
+    fields: [
+      { name: 'id', type: 'string', pk: true },
+      { name: 'lid', type: 'uuidv7' },
+      { name: 'ownerId', type: 'uid', ref: 'Person' },
+      { name: 'name', type: 'string' },
+      { name: 'domain', type: 'string' },
+      { name: 'heroImageUrl', type: 'string?' },
+      { name: 'theme', type: 'map?' },
+      { name: 'chainLocked', type: 'bool?' },
+      { name: 'tokenisationEnabled', type: 'bool?' },
+    ],
+  },
+  {
+    key: 'Lifetree', label: 'Lifetree', collection: 'lifetrees', x: 660, y: 300,
+    note: 'the seed — carries its own chain',
+    fields: [
+      { name: 'id', type: 'string', pk: true },
+      { name: 'ownerId', type: 'uid', ref: 'Person' },
+      { name: 'communityId', type: 'string?', ref: 'Community' },
+      { name: 'validated', type: 'bool' },
+      { name: 'validatorId', type: 'string?', ref: 'Lifetree' },
+      { name: 'genesisHash', type: 'string' },
+      { name: 'latestHash', type: 'string' },
+      { name: 'blockHeight', type: 'number' },
+    ],
+  },
+  {
+    key: 'Vision', label: 'Vision', collection: 'visions', x: 970, y: 40,
+    fields: [
+      { name: 'id', type: 'string', pk: true },
+      { name: 'lifetreeId', type: 'string?', ref: 'Lifetree' },
+      { name: 'authorId', type: 'uid', ref: 'Person' },
+      { name: 'communityId', type: 'string?', ref: 'Community' },
+      { name: 'title', type: 'string' },
+      { name: 'body', type: 'string' },
+    ],
+  },
+  {
+    key: 'Pulse', label: 'Pulse', collection: 'pulses', x: 660, y: 545,
+    note: 'block on a tree chain · subtypes: growth · event · reach · decision',
+    fields: [
+      { name: 'id', type: 'string', pk: true },
+      { name: 'lid', type: 'uuidv7' },
+      { name: 'lifetreeId', type: 'string', ref: 'Lifetree' },
+      { name: 'authorId', type: 'uid', ref: 'Person' },
+      { name: 'communityId', type: 'string?', ref: 'Community' },
+      { name: 'domain', type: 'string?' },
+      { name: 'type', type: 'PulseType' },
+      { name: 'hash', type: 'string' },
+      { name: 'previousHash', type: 'string' },
+      { name: 'visibility', type: 'enum' },
+    ],
+  },
+  {
+    key: 'Alignment', label: 'Alignment', collection: 'alignments', x: 970, y: 460,
+    note: 'a mutual sync between two trees',
+    fields: [
+      { name: 'id', type: 'string', pk: true },
+      { name: 'initiatorTreeId', type: 'id', ref: 'Lifetree' },
+      { name: 'targetTreeId', type: 'id', ref: 'Lifetree' },
+      { name: 'initiatorUid', type: 'uid', ref: 'Person' },
+      { name: 'targetUid', type: 'uid', ref: 'Person' },
+      { name: 'status', type: 'PENDING|ACCEPTED|REJECTED' },
+      { name: 'messages', type: 'AlignmentNote[]' },
+    ],
+  },
+
+  // --- Identity & account ---------------------------------------------------
+  {
+    key: 'User', label: 'User', collection: 'users', x: 40, y: 470,
+    note: 'account profile (doc id = uid)',
+    fields: [
+      { name: 'uid', type: 'string', ref: 'Person', pk: true },
+      { name: 'email', type: 'string' },
+      { name: 'displayName', type: 'string' },
+      { name: 'invitesRemaining', type: 'number' },
+      { name: 'onlyValidatedCanReach', type: 'bool?' },
+      { name: 'emailNotifications', type: 'map' },
+      { name: 'newsletterSubscribed', type: 'bool' },
+      { name: 'preferredIntelligenceId', type: 'string?', ref: 'Intelligence' },
+      { name: 'siteTheme', type: 'map?' },
+    ],
+  },
+  {
+    key: 'Admin', label: 'Admin', collection: 'admins', x: 40, y: 730,
+    note: 'staff roster — existence = staff',
+    fields: [{ name: 'uid', type: 'string', ref: 'Person', pk: true }],
+  },
+  {
+    key: 'Config', label: 'Config', collection: 'config', x: 40, y: 845,
+    note: 'config/superadmin singleton',
+    fields: [
+      { name: 'id', type: '"superadmin"', pk: true },
+      { name: 'uid', type: 'uid', ref: 'Person' },
+    ],
+  },
+
+  // --- LightHouse & engagement ----------------------------------------------
+  {
+    key: 'LightHouse', label: 'Light House', collection: 'lightHouses', x: 970, y: 250,
+    note: 'a sacred place \u00b7 belonging = shelters links',
+    fields: [
+      { name: 'id', type: 'string', pk: true },
+      { name: 'ownerId', type: 'uid', ref: 'Person' },
+      { name: 'name', type: 'string' },
+      { name: 'body', type: 'string' },
+      { name: 'domain', type: 'string?' },
+      { name: 'locationName', type: 'string?' },
+    ],
+  },
+  {
+    key: 'Love', label: 'Love', collection: 'pulses/{id}/loves', x: 660, y: 825,
+    note: 'like on a pulse (doc id = uid)',
+    fields: [
+      { name: 'uid', type: 'string', ref: 'Person', pk: true },
+      { name: 'createdAt', type: 'timestamp' },
+    ],
+  },
+
+  // --- Initiation (git ledger mirror) ----------------------------------------
+  {
+    key: 'Initiate', label: 'Initiate', collection: 'initiates', x: 350, y: 40,
+    note: 'mirror of the git initiation ledger (doc id = uid)',
+    fields: [
+      { name: 'uid', type: 'string', ref: 'Person', pk: true },
+      { name: 'handle', type: 'string' },
+      { name: 'name', type: 'string' },
+      { name: 'lid', type: 'uuidv7' },
+      { name: 'pubkey', type: 'string' },
+      { name: 'domain', type: 'string?' },
+      { name: 'genesis', type: 'bool?' },
+      { name: 'initiatedAt', type: 'string' },
+    ],
+  },
+
+  // --- Invitations ----------------------------------------------------------
+  {
+    key: 'TreeInvite', label: 'Tree Invite', collection: 'treeOwnershipInvites', x: 1280, y: 40,
+    note: 'invite to a tree circle role',
+    fields: [
+      { name: 'id', type: 'string', pk: true },
+      { name: 'lifetreeId', type: 'id', ref: 'Lifetree' },
+      { name: 'invitedByUserId', type: 'uid', ref: 'Person' },
+      { name: 'invitedUserId', type: 'uid', ref: 'Person' },
+      { name: 'role', type: 'co_owner|steward|observer' },
+      { name: 'status', type: 'enum' },
+    ],
+  },
+  {
+    key: 'NetworkInvite', label: 'Network Invite', collection: 'networkInvites', x: 1280, y: 250,
+    note: 'onboarding token',
+    fields: [
+      { name: 'id', type: 'token', pk: true },
+      { name: 'email', type: 'string' },
+      { name: 'invitedByUserId', type: 'uid', ref: 'Person' },
+      { name: 'acceptedByUserId', type: 'uid?', ref: 'Person' },
+      { name: 'status', type: 'enum' },
+      { name: 'message', type: 'string' },
+    ],
+  },
+  {
+    key: 'InviteRequest', label: 'Invite Request', collection: 'inviteRequests', x: 1280, y: 460,
+    note: 'a request to join',
+    fields: [
+      { name: 'id', type: 'string', pk: true },
+      { name: 'email', type: 'string' },
+      { name: 'reason', type: 'string' },
+      { name: 'status', type: 'enum' },
+      { name: 'approvedBy', type: 'uid?', ref: 'Person' },
+    ],
+  },
+  {
+    key: 'CommunityTreeInvite', label: 'Community Tree Invite', collection: 'communityTreeInvites', x: 1280, y: 650,
+    note: 'acceptance mints a participant link',
+    fields: [
+      { name: 'id', type: 'string', pk: true },
+      { name: 'communityId', type: 'id', ref: 'Community' },
+      { name: 'lifetreeId', type: 'id', ref: 'Lifetree' },
+      { name: 'invitedUserId', type: 'uid', ref: 'Person' },
+      { name: 'invitedByUserId', type: 'uid', ref: 'Person' },
+      { name: 'status', type: 'pending|accepted|declined' },
+    ],
+  },
+  {
+    key: 'OrgCollab', label: 'Org Collab', collection: 'collabs', x: 1280, y: 860,
+    note: 'this node’s organisation collaborators',
+    fields: [
+      { name: 'id', type: 'string', pk: true },
+      { name: 'lid', type: 'uuidv7' },
+      { name: 'name', type: 'string' },
+      { name: 'url', type: 'string?' },
+      { name: 'blurb', type: 'string?' },
+      { name: 'agreement', type: 'founder|contract' },
+    ],
+  },
+
+  // --- The care economy -------------------------------------------------------
+  {
+    key: 'Support', label: 'Support', collection: 'supports', x: 970, y: 690,
+    note: '€21/yr → 15 carer · 3 community · 3 node',
+    fields: [
+      { name: 'id', type: 'string', pk: true },
+      { name: 'supporterUid', type: 'uid', ref: 'Person' },
+      { name: 'lifetreeId', type: 'id', ref: 'Lifetree' },
+      { name: 'eur', type: 'number' },
+      { name: 'choice', type: 'supporter|ai_need' },
+      { name: 'periodStartMs', type: 'number' },
+      { name: 'periodEndMs', type: 'number' },
+    ],
+  },
+
+  {
+    key: 'Stay', label: 'Stay', collection: 'stays', x: 970, y: 940,
+    note: 'a bed under a Light House\u2019s roof',
+    fields: [
+      { name: 'id', type: 'string', pk: true },
+      { name: 'lightHouseId', type: 'id', ref: 'LightHouse' },
+      { name: 'uid', type: 'uid', ref: 'Person' },
+      { name: 'hostUid', type: 'uid', ref: 'Person' },
+      { name: 'fromDate', type: 'yyyy-mm-dd' },
+      { name: 'toDate', type: 'yyyy-mm-dd' },
+      { name: 'status', type: 'requested|accepted|declined' },
+    ],
+  },
+
+  // --- Intelligence commons -------------------------------------------------
+  {
+    key: 'Intelligence', label: 'Intelligence', collection: 'intelligences', x: 1590, y: 40,
+    note: 'a configured AI',
+    fields: [
+      { name: 'id', type: 'string', pk: true },
+      { name: 'ownerId', type: 'uid?', ref: 'Person' },
+      { name: 'name', type: 'string' },
+      { name: 'provider', type: 'enum' },
+      { name: 'model', type: 'string' },
+      { name: 'public', type: 'bool' },
+      { name: 'hosted', type: 'bool?' },
+      { name: 'personaId', type: 'string?', ref: 'Persona' },
+      { name: 'communityIds[]', type: 'id[]', ref: 'Community', many: true },
+      { name: 'memoryIds[]', type: 'id[]', ref: 'Memory', many: true },
+    ],
+  },
+  {
+    key: 'Persona', label: 'Persona', collection: 'personas', x: 1590, y: 300,
+    note: 'behaviour template (staff)',
+    fields: [
+      { name: 'id', type: 'string', pk: true },
+      { name: 'name', type: 'string' },
+      { name: 'description', type: 'string' },
+      { name: 'systemPrompt', type: 'string' },
+    ],
+  },
+  {
+    key: 'Memory', label: 'Memory', collection: 'memories', x: 1590, y: 470,
+    note: 'what an intelligence recalls',
+    fields: [
+      { name: 'id', type: 'string', pk: true },
+      { name: 'name', type: 'string' },
+      { name: 'text', type: 'string?' },
+      { name: 'visibility', type: 'enum' },
+      { name: 'communityId', type: 'string?', ref: 'Community' },
+      { name: 'sourceIds[]', type: 'id[]' },
+    ],
+  },
+  {
+    key: 'ProviderCredential', label: 'Provider Credential', collection: 'providerCredentials', x: 1590, y: 680,
+    note: 'server-only · API keys',
+    fields: [
+      { name: 'id', type: 'scope_owner_provider', pk: true },
+      { name: 'provider', type: 'enum' },
+      { name: 'scope', type: 'user|community' },
+      { name: 'ownerId', type: 'id', ref: 'Person' },
+      { name: 'keyHint', type: 'string' },
+      { name: 'key', type: 'secret 🔒' },
+    ],
+  },
+
+  // --- System (server-written) ----------------------------------------------
+  {
+    key: 'Link', label: 'Link (LIN)', collection: 'links', x: 350, y: 290,
+    note: 'a relationship is itself an entity',
+    fields: [
+      { name: 'id', type: 'from__rel__to', pk: true },
+      { name: 'from', type: 'id', ref: 'Person' },
+      { name: 'rel', type: 'guardian|member|…' },
+      { name: 'to', type: 'id', ref: 'Lifetree' },
+      { name: 'weight', type: 'number?' },
+    ],
+  },
+  {
+    key: 'Mail', label: 'Mail', collection: 'mail', x: 350, y: 480,
+    note: 'server-only · outbound queue',
+    fields: [
+      { name: 'id', type: 'string', pk: true },
+      { name: 'uid', type: 'uid?', ref: 'Person' },
+      { name: 'to', type: 'string[]' },
+      { name: 'message', type: 'map' },
+      { name: 'delivery', type: 'map (ext)' },
+    ],
+  },
+  {
+    key: 'Usage', label: 'Usage', collection: 'usage', x: 350, y: 670,
+    note: 'server-only · daily quota (id = uid)',
+    fields: [
+      { name: 'uid', type: 'string', ref: 'Person', pk: true },
+      { name: 'day', type: 'yyyy-mm-dd' },
+      { name: 'dailyAiText', type: 'number' },
+      { name: 'dailyAiImage', type: 'number' },
+      { name: 'dailyEmail', type: 'number' },
+    ],
+  },
+  {
+    key: 'Subscription', label: 'Subscription', collection: 'subscriptions', x: 660, y: 960,
+    note: 'newsletter (id = enc email)',
+    fields: [
+      { name: 'id', type: 'enc(email)', pk: true },
+      { name: 'email', type: 'string' },
+      { name: 'active', type: 'bool' },
+      { name: 'uid', type: 'uid?', ref: 'Person' },
+    ],
+  },
+];
+
+export interface ModelRelation {
+  from: string; // entity key
+  to: string;   // entity key
+  label: string;
+  many?: boolean;
+  lin?: boolean; // a polymorphic LIN edge (drawn dashed)
+}
+
+// Relations derived from every ref field, plus the polymorphic LIN edges the `links` collection
+// forms (from a Person to any target). Self-references (validatorId) are kept — they're real.
+export const DATA_RELATIONS: ModelRelation[] = (() => {
+  const rels: ModelRelation[] = [];
+  for (const e of DATA_MODEL) {
+    for (const f of e.fields) {
+      if (f.ref) rels.push({ from: e.key, to: f.ref, label: f.name, many: f.many });
+    }
+  }
+  // The LIN connects a Person to communities / visions / events beyond the single `to` ref above.
+  rels.push({ from: 'Link', to: 'Community', label: 'to', lin: true });
+  rels.push({ from: 'Link', to: 'Vision', label: 'to', lin: true });
+  // Love is a subcollection of Pulse (pulses/{id}/loves/{uid}).
+  rels.push({ from: 'Love', to: 'Pulse', label: 'of' });
+  // Initiation is what grants the right to validate trees (checked by the security rules).
+  rels.push({ from: 'Initiate', to: 'Lifetree', label: 'grants validation', lin: true });
+  return rels;
+})();

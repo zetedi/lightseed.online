@@ -1,0 +1,896 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    function isSuperAdmin() {
+      return exists(/databases/$(database)/documents/config/superadmin) &&
+             get(/databases/$(database)/documents/config/superadmin).data.uid == request.auth.uid;
+    }
+    function isStaff() {
+      return exists(/databases/$(database)/documents/admins/$(request.auth.uid)) || request.auth.token.admin == true || isSuperAdmin();
+    }
+    function isCommunityOwner(communityId) {
+      return communityId is string &&
+        exists(/databases/$(database)/documents/communities/$(communityId)) &&
+        get(/databases/$(database)/documents/communities/$(communityId)).data.ownerId == request.auth.uid;
+    }
+    // A keeper of the community's DOOR: its owner, or a linked steward — the delegated hands
+    // that accept knocks, remove members, and mint/revoke invitations. Delegation is a link.
+    function isCommunityKeeper(communityId) {
+      return isCommunityOwner(communityId)
+        || (communityId is string
+            && exists(/databases/$(database)/documents/links/$(request.auth.uid + '__steward__' + communityId)));
+    }
+    // The community's door (domain/communityDoor.ts). Absent = 'invite' (the pre-door
+    // behaviour: knock + accept). A missing community's door reads as closed — deny.
+    function communityDoor(communityId) {
+      return (communityId is string
+          && exists(/databases/$(database)/documents/communities/$(communityId)))
+        ? get(/databases/$(database)/documents/communities/$(communityId)).data.get('door', 'invite')
+        : 'closed';
+    }
+    // A community invitation usable for `communityId` right now: it belongs to that community,
+    // is unrevoked and unexpired — and even a valid invitation waits while the door is closed.
+    function inviteOpensDoor(inviteId, communityId) {
+      return inviteId is string && inviteId != ''
+        && exists(/databases/$(database)/documents/communityInvites/$(inviteId))
+        && get(/databases/$(database)/documents/communityInvites/$(inviteId)).data.communityId == communityId
+        && get(/databases/$(database)/documents/communityInvites/$(inviteId)).data.get('revokedAt', null) == null
+        && (get(/databases/$(database)/documents/communityInvites/$(inviteId)).data.get('expiresAt', null) == null
+            || get(/databases/$(database)/documents/communityInvites/$(inviteId)).data.expiresAt > request.time)
+        && communityDoor(communityId) != 'closed';
+    }
+    // Visibility enforcement for pulses (events/decisions/reaches/growth). Mirrors the
+    // generator in src/domain/pulseVisibility.ts → canView(). Same-document get()s are
+    // cached within one request, so a scoped query (one community / one tree) costs one read.
+    // True if the signed-in user has a `${uid}__${rel}__${toId}` edge in the links collection.
+    function hasLink(rel, toId) {
+      return exists(/databases/$(database)/documents/links/$(request.auth.uid + '__' + rel + '__' + toId));
+    }
+    // Membership is the LIN: a `member` link, or being the community's owner (implicitly inside
+    // their own circle). The legacy array branches are gone — links are the single source of truth.
+    function isCommunityMember(communityId) {
+      return communityId is string && communityId != '' && (
+        hasLink('member', communityId)
+        || (exists(/databases/$(database)/documents/communities/$(communityId))
+            && get(/databases/$(database)/documents/communities/$(communityId)).data.ownerId == request.auth.uid));
+    }
+    // A party to a covenant: does the signed-in user hold a `party` link into it? Authority-by-path,
+    // exactly like hasLink — the covenant's proposer minted these (domain/covenant.ts).
+    function isCovenantParty(covenantId) {
+      return covenantId is string && covenantId != '' &&
+        exists(/databases/$(database)/documents/links/$(request.auth.uid + '__party__' + covenantId));
+    }
+    // Tree roles split by privilege. A `guardian` link is a LIGHTWEIGHT, self-serve public follow
+    // (any signed-in user may add one) and grants NO privileges — it is deliberately excluded from
+    // every check below. Tending and circle access vest only in the invited roles (co_owner /
+    // steward / observer), whose links are minted server-side by acceptTreeInvite (never self-serve).
+    function isTreeOwner(treeId) {
+      return treeId is string && treeId != '' &&
+        exists(/databases/$(database)/documents/lifetrees/$(treeId)) &&
+        get(/databases/$(database)/documents/lifetrees/$(treeId)).data.ownerId == request.auth.uid;
+    }
+    // TENDERS may edit a tree and confirm its watering: owner, co_owner, or steward.
+    function isTreeTender(treeId) {
+      return treeId is string && treeId != '' && (
+        hasLink('co_owner', treeId) || hasLink('steward', treeId) || isTreeOwner(treeId));
+    }
+    // The CIRCLE may read a tree's private (circle-visibility) pulses: tenders plus observers.
+    function isTreeCircle(treeId) {
+      return treeId is string && treeId != '' && (
+        hasLink('co_owner', treeId) || hasLink('steward', treeId)
+        || hasLink('observer', treeId) || isTreeOwner(treeId));
+    }
+    // The credential a peer needs to pass validation on: a lifetree the caller OWNS that is itself
+    // validated (the web-of-trust root is a staff/GENESIS-validated tree). Mirrors canValidateTree
+    // in src/utils/validation.ts, minus its time-based "live" freshness check (still enforced in the
+    // UI/service layer). Blocks self-validation: an unvalidated tree cannot be its own validator.
+    function isOwnedValidatedTree(treeId) {
+      return treeId is string && treeId != ''
+        && exists(/databases/$(database)/documents/lifetrees/$(treeId))
+        && get(/databases/$(database)/documents/lifetrees/$(treeId)).data.ownerId == request.auth.uid
+        && get(/databases/$(database)/documents/lifetrees/$(treeId)).data.get('validated', false) == true;
+    }
+    // A private direct message / group reach: a 'reach' pulse that names its recipients
+    // (participantUids) or a single recipient (legacy recipientUid). Minted, public "reach"
+    // reflections have neither and stay world-readable through the normal visibility path.
+    function isPrivateReach() {
+      return resource.data.get('type', '') == 'reach' && (
+             resource.data.get('participantUids', null) != null
+             || resource.data.get('recipientUid', null) != null);
+    }
+    function canReadPulse() {
+      // Private reaches are NEVER public: only the author, the addressed recipient, the
+      // people in the thread, and staff may read them — regardless of any visibility field.
+      return isPrivateReach()
+        ? (isSignedIn() && (
+             isStaff()
+             || resource.data.authorId == request.auth.uid
+             || resource.data.get('recipientUid', '') == request.auth.uid
+             || request.auth.uid in resource.data.get('participantUids', [])
+           ))
+        // Absent visibility = 'public', so every legacy (non-reach) pulse stays readable.
+        : (resource.data.get('visibility', 'public') == 'public'
+        || (isSignedIn() && (
+             isStaff()
+             || resource.data.authorId == request.auth.uid
+             || resource.data.get('visibility', 'public') == 'node'
+             || (resource.data.get('visibility', 'public') == 'community' && isCommunityMember(resource.data.get('communityId', '')))
+             || (resource.data.get('visibility', 'public') == 'circle'
+                 && (isTreeCircle(resource.data.get('treeId', '')) || isTreeCircle(resource.data.get('lifetreeId', ''))))
+           )));
+    }
+
+    // Admins collection: read staff, no direct write
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // A community inviting a lifetree to stand with it. Anyone signed-in may extend an invite
+    // (naming themselves as inviter); only the invitee (the tree's owner) settles it. The
+    // resulting membership is a 'participant' link, governed by the links rules.
+    match /communityTreeInvites/{id} {
+      // Read is signed-in-wide: the dupe-check queries by lifetreeId, which per-participant
+      // read rules would reject (list rules must hold for every possible result).
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.invitedByUserId == request.auth.uid;
+      allow update: if isSignedIn() && (resource.data.invitedUserId == request.auth.uid || resource.data.invitedByUserId == request.auth.uid);
+      allow delete: if isStaff();
+    }
+
+    // Organisation collabs — the node's collaborators (founder-agreed or by contract).
+    // World-readable. Any signed-in member may add an org, naming themselves as creator
+    // (the app additionally gates the UI to validated/initiated members). The creator may
+    // tend their own entry's communityId/logoUrl/blurb (field-level diff, like alignments)
+    // and remove it; everything else stays staff.
+    match /collabs/{id} {
+      allow read: if true;
+      allow create: if isStaff() || (isSignedIn() && request.resource.data.createdBy == request.auth.uid);
+      allow update: if isStaff()
+        || (isSignedIn()
+            && resource.data.get('createdBy', '') == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['communityId', 'logoUrl', 'blurb']));
+      allow delete: if isStaff() || (isSignedIn() && resource.data.get('createdBy', '') == request.auth.uid);
+    }
+
+    // The initiated layer — a Firestore MIRROR of the git initiation ledger (initiations/ in the
+    // repo, three-sponsor rule enforced in CI). Git is the source of truth; the superadmin syncs
+    // records that declare a uid so the rules below can check initiate rights server-side.
+    match /initiates/{uid} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    // Config collection: read staff/config-specific, no direct write.
+    // config/limits (the node's planting caps) is world-readable — the client planting gate
+    // reads it — and staff-writable from the node admin page.
+    match /config/{configId} {
+      allow read: if configId in ['superadmin', 'limits'] || isStaff();
+      allow write: if configId == 'limits' && isStaff();
+    }
+
+    // Users collection: Read self/staff, Write self
+    // Self-write covers the onlyValidatedCanReach contact-privacy flag. That flag is
+    // mirrored onto the user's (world-readable) lifetrees so the reach gate can read it
+    // without exposing the rest of the private user doc to other members.
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isStaff();
+      allow create, delete: if isOwner(userId) || isStaff();
+      // `invitesRemaining` is a server-authoritative allowance. From the client a user may only
+      // SPEND it (lower it) or hold it within the self-serve allotment (144, granted on community
+      // creation) — it can never be inflated past that, closing the "set invitesRemaining:1e6 →
+      // unlimited invites" hole. All other profile fields (theme, prefs, privacy flags) stay
+      // self-writable. Staff may set any value.
+      allow update: if isStaff()
+        || (isOwner(userId) && (
+             request.resource.data.get('invitesRemaining', 0) <= resource.data.get('invitesRemaining', 0)
+             || request.resource.data.get('invitesRemaining', 0) <= 144
+           ));
+    }
+
+    // Subscriptions: Create public, Read staff
+    match /subscriptions/{subId} {
+      allow read: if isStaff();
+      allow create: if true;
+      allow update, delete: if isStaff();
+    }
+
+    // Mail: read your own / staff. Creation is SERVER-ONLY — every outbound email is composed and
+    // queued by Cloud Functions via the Admin SDK (sendSystemEmail / newsletter), which bypass
+    // these rules. A direct client write is an open-relay vector, so it is denied.
+    match /mail/{mailId} {
+      allow read: if isSignedIn() && (resource.data.uid == request.auth.uid || isStaff());
+      allow create: if false;
+      allow delete: if isStaff();
+    }
+
+    // Usage: per-user server-authoritative daily counters (AI free-tier + outbound email). Written
+    // ONLY by Cloud Functions via the Admin SDK; a user may read their own to display allowance.
+    match /usage/{userId} {
+      allow read: if isOwner(userId) || isStaff();
+      allow write: if false;
+    }
+
+    // Lifetrees: Read public, Write owner/staff
+    match /lifetrees/{treeId} {
+      // Visibility-gated reads. Missing visibility = public (legacy-safe). 'node' = any signed-in
+      // member; 'private' = owner or staff only. (List queries must filter to the same levels.)
+      allow read: if !('visibility' in resource.data)
+                     || resource.data.visibility == 'public'
+                     || (isSignedIn() && resource.data.visibility == 'node')
+                     || (isSignedIn() && resource.data.ownerId == request.auth.uid)
+                     || isStaff();
+      // Planting is open — except a BED (domain/bed.ts), whose home is optional and SOFT:
+      // it is born either HOUSED (lightHouseId set — only that Light House's keeper plants
+      // one, in their own name) or LOOSE (no lightHouseId — standing at a real coordinate
+      // under open stars, planted by its own keeper). A bed with NEITHER a house NOR a place
+      // is refused — from EVERY hand: the place gate, like the domain gate, is a DATA-VALIDITY
+      // invariant that binds staff too (staff stay exempt only from the ownership check).
+      // EVERY bed — housed, loose, staff-planted — is born domainless
+      // (domain == '' is the structural forest-exclusion invariant: a domain-scoped query
+      // must never surface a bed).
+      allow create: if isSignedIn() && (
+        request.resource.data.get('treeType', '') != 'BED'
+        || (
+          request.resource.data.get('domain', '') == ''
+          // LOOSE (no house): a REAL place instead (the internet has no weather).
+          // On-Earth ranges only: NaN fails every comparison and Infinity fails the
+          // range, so a bed can never be born at a non-place. The edges of the map
+          // are still places — the poles (±90) and the antimeridian (±180) welcome it.
+          // A HOUSED bed needs no coordinate — its place is its house.
+          && (
+            request.resource.data.get('lightHouseId', '') != ''
+            || (
+              request.resource.data.get('latitude', '') is number
+              && request.resource.data.latitude >= -90
+              && request.resource.data.latitude <= 90
+              && request.resource.data.get('longitude', '') is number
+              && request.resource.data.longitude >= -180
+              && request.resource.data.longitude <= 180
+            )
+          )
+          && (
+            isStaff()
+            || (
+              request.resource.data.ownerId == request.auth.uid
+              && (
+                // HOUSED: the house names its keeper, and the keeper is the writer.
+                (
+                  request.resource.data.get('lightHouseId', '') != ''
+                  && get(/databases/$(database)/documents/lightHouses/$(request.resource.data.lightHouseId)).data.ownerId == request.auth.uid
+                )
+                // LOOSE: no house — the shared place gate above has already proven the coordinate.
+                || request.resource.data.get('lightHouseId', '') == ''
+              )
+            )
+          )
+        )
+      );
+      // Tenders (owner/co_owner/steward) or staff may edit a tree — but `validated`/`validatorId`
+      // and `ownerId` are FROZEN on the edit path, so a tree can neither self-validate (the flag
+      // that bypasses onlyValidatedCanReach) nor transfer its own ownership from the client.
+      // `lightHouseId` is SOFT, not frozen (a loose bed may one day graduate or join a house) —
+      // but any write that sets or changes it to a non-empty house must come from that house's
+      // keeper (a bed never forges into a house it isn't welcome in); clearing it back to ''
+      // (going loose) is free — provided the bed then stands at a real place (below).
+      //
+      // Two DATA-VALIDITY gates stand before every branch and bind EVERY writer, staff
+      // included — exactly like the domain gate at birth:
+      //   (1) the BED line is uncrossable by edit: treeType may still flip between LIFETREE
+      //       and GUARDED (the convert feature), but a bed stays a bed and a tree never
+      //       becomes one — else an edit could dodge the keeper-only create gate above,
+      //       or surface a bed in the forest as a tree;
+      //   (2) a loose bed is a REAL place for its whole LIFE, not only at birth: if the
+      //       RESULTING doc is a loose bed (BED, no house), it must carry an on-Earth
+      //       coordinate — no edit may strand it at latitude 999, NaN, or nowhere. A housed
+      //       bed needs no coordinate, and overlay edits (validation, watering) that leave
+      //       a real place untouched pass untroubled.
+      allow update: if isSignedIn()
+        && (request.resource.data.get('treeType', '') == 'BED')
+            == (resource.data.get('treeType', '') == 'BED')
+        && (
+          request.resource.data.get('treeType', '') != 'BED'
+          || request.resource.data.get('lightHouseId', '') != ''
+          || (
+            request.resource.data.get('latitude', '') is number
+            && request.resource.data.latitude >= -90
+            && request.resource.data.latitude <= 90
+            && request.resource.data.get('longitude', '') is number
+            && request.resource.data.longitude >= -180
+            && request.resource.data.longitude <= 180
+          )
+        )
+        && (
+        (
+          (resource.data.ownerId == request.auth.uid || isStaff()
+             || hasLink('co_owner', treeId) || hasLink('steward', treeId))
+          && !request.resource.data.diff(resource.data).affectedKeys()
+                .hasAny(['validated', 'validatorId', 'ownerId', 'lid'])
+          // ...and a bed never gains or alters a `domain`: the forest-exclusion invariant
+          // holds for its whole life, not only at birth.
+          && (resource.data.get('treeType', '') != 'BED'
+              || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['domain']))
+          // Soft containment: pointing at a house requires keeping that house.
+          && (
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lightHouseId'])
+            || request.resource.data.get('lightHouseId', '') == ''
+            || get(/databases/$(database)/documents/lightHouses/$(request.resource.data.lightHouseId)).data.ownerId == request.auth.uid
+          )
+        )
+        // Peer validation (web of trust): a validator signs ANOTHER tree with a validated tree it
+        // owns. Only the validation fields may change here; self-validation is blocked because an
+        // unvalidated tree fails isOwnedValidatedTree.
+        || (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['validated', 'validatorId', 'updatedAt'])
+          && request.resource.data.get('validated', false) == true
+          && isOwnedValidatedTree(request.resource.data.get('validatorId', ''))
+        )
+        // Initiate validation: a member of the initiated layer (git ledger, mirrored to
+        // /initiates/{uid}) signs in their own name. Same validation-fields-only constraint;
+        // validatorId must be the initiate themselves. Validate-on only — dimming stays staff.
+        || (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['validated', 'validatorId', 'updatedAt'])
+          && request.resource.data.get('validated', false) == true
+          && request.resource.data.get('validatorId', '') == request.auth.uid
+          && exists(/databases/$(database)/documents/initiates/$(request.auth.uid))
+        )
+        // Staff keep their broad edit powers (dimming validation, repairs) — but the bed's
+        // domain-freeze binds even them, exactly as at birth: a bed never carries a domain,
+        // at create or edit, staff or not.
+        || (
+          isStaff()
+          && (resource.data.get('treeType', '') != 'BED'
+              || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['domain']))
+        )
+      );
+      allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
+
+      // A bed's occupancy — the accepted date-ranges, and NOTHING else: no guest, no identity.
+      // Any signed-in being reads it to see busy/free nights (the full stays stay host/guest-
+      // only). Written only by the bed's keeper or staff — in practice the Cloud Function
+      // (admin) owns it on accept/decline, so a guest can never forge availability.
+      match /occupancy/{stayId} {
+        // Availability is public + identity-free by design: a signed-OUT visitor must see busy
+        // nights too, or a booked bed would show as free. The payload carries only dates.
+        allow read: if true;
+        allow write: if isSignedIn() && (
+          get(/databases/$(database)/documents/lifetrees/$(treeId)).data.ownerId == request.auth.uid
+          || isStaff()
+        );
+      }
+
+      // The view-hold (domain/hold.ts) — a soft, self-expiring lock while a guest chooses nights.
+      // Each being writes ONLY its own hold doc (id == its uid); anyone signed-in may read, to
+      // see that another is choosing. It grants nothing and blocks nothing hard.
+      match /holds/{holdUid} {
+        allow read: if isSignedIn();
+        // expiresAt is bounded to the near future (well above HOLD_TTL_MS=120s, with slack for
+        // clock skew) so no one can mint a far-future hold that keeps the soft "being viewed"
+        // advisory alive forever — the domain's self-expiring promise holds.
+        allow create, update: if isSignedIn() && holdUid == request.auth.uid
+          && request.resource.data.expiresAt is number
+          && request.resource.data.expiresAt <= request.time.toMillis() + 600000;
+        allow delete: if isSignedIn() && (holdUid == request.auth.uid || isStaff());
+      }
+    }
+
+    // Persons: the canonical person entity (doc id = uid). World-readable (it carries a public
+    // lid and, later, a public key); each user writes only their own. Staff may update (e.g. the
+    // superadmin lid backfill — migrateBackfillLids) but never create-for or delete.
+    match /persons/{personId} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.auth.uid == personId;
+      allow update: if isSignedIn() && (request.auth.uid == personId || isStaff());
+      allow delete: if false;
+
+      // APPEND-ONLY KEY HISTORY — persons/{uid}/keys/{fingerprint}: one doc per identity key ever
+      // published (doc id = a stable SHA-256 fingerprint of the pubkey), { pubkey, publishedAt }.
+      // World-readable lineage so a future verifier can bind a signature to the key that was
+      // published AT SIGNING TIME. Owner-create only; re-publishing the SAME key may touch its own
+      // doc (a no-op merge) but the recorded pubkey can never change under its fingerprint; never
+      // deleted — history is never rewritten.
+      match /keys/{fingerprint} {
+        allow read: if true;
+        allow create: if isSignedIn() && request.auth.uid == personId
+          && request.resource.data.keys().hasOnly(['pubkey', 'publishedAt'])
+          && request.resource.data.get('pubkey', '') != '';
+        allow update: if isSignedIn() && request.auth.uid == personId
+          && request.resource.data.keys().hasOnly(['pubkey', 'publishedAt'])
+          && request.resource.data.get('pubkey', '') == resource.data.get('pubkey', '');
+        allow delete: if false;
+      }
+    }
+
+    // Visions: visibility-gated reads (protect fragile/early visions). Missing visibility =
+    // public (legacy-safe). 'node' = any signed-in member; 'private' = author or staff only.
+    match /visions/{visionId} {
+      allow read: if !('visibility' in resource.data)
+                     || resource.data.visibility == 'public'
+                     || (isSignedIn() && resource.data.visibility == 'node')
+                     || (isSignedIn() && resource.data.authorId == request.auth.uid)
+                     || isStaff();
+      allow create: if isSignedIn();
+      // Joining a vision is now a self-serve 'joined' link (see the links collection), NOT a write
+      // to the vision doc — so editing the doc itself is restricted to its author or staff.
+      // The vision grows its OWN chain (growVision): its head — latestHash/blockHeight — advances
+      // freely on the author's (or staff's) write, but the GENESIS is frozen the moment it exists
+      // (like a tree's/bed's root): the birth block can be BORN once (an absent genesisHash may be
+      // set — createVision at birth, or the backfill on a legacy vision) but never REWRITTEN. So a
+      // contribution may extend the chain, and no one may forge or replace its root. `lid` stays frozen.
+      allow update: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff())
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid'])
+        && (
+          !('genesisHash' in resource.data)
+          || request.resource.data.get('genesisHash', '') == resource.data.get('genesisHash', '')
+        );
+      allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff());
+    }
+
+    // Pulses: Read public, Write signed in
+    // NOTE: The validation-gated reach rule (a "protected" target only accepts reaches
+    // from validated trees) would require cross-document reads of the target tree's
+    // mirrored privacy flag at write time. To avoid weakening these rules with an
+    // expensive get(), that rule is enforced in the service layer (sendReach) and the
+    // UI (canReachTree). See src/services/firebase.ts -> sendReach.
+    match /pulses/{pulseId} {
+      allow read: if canReadPulse();
+      allow create: if isSignedIn() && (
+        request.resource.data.type != 'event' ||
+        !('communityId' in request.resource.data) ||   // standalone event — anyone may plant one
+        isStaff() ||
+        isCommunityOwner(request.resource.data.communityId)
+      );
+      // The append-only ledger: a pulse's identity and chain fields (hash, previousHash, authorId,
+      // type, createdAt, lifetreeId, treeId, communityId, participantUids, …) are FROZEN after
+      // creation. Only the interaction/governance overlays below may change, and EACH is scoped to
+      // its own key set via diff().affectedKeys() — so a "voter" or "translator" can never also
+      // rewrite content or re-link the chain (the ledger stays tamper-evident and un-defaceable).
+      allow update: if isSignedIn() && (
+        // (a) Broad interaction overlays — any signed-in user, but only these keys. loveCount /
+        // validationScore are the like counters (updated by lovePulse alongside a loves/{uid} write).
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['seenBy', 'aiInterpretation', 'loveCount', 'validationScore', 'updatedAt'])
+
+        // (b) Watering confirmation — the tree's tenders (owner/co_owner/steward) or staff.
+        || (
+             (isStaff() || isTreeTender(resource.data.get('lifetreeId', '')))
+             && request.resource.data.diff(resource.data).affectedKeys()
+                  .hasOnly(['wateringConfirmedBy', 'wateringConfirmation', 'updatedAt'])
+           )
+
+        // (c) Governance on a decision — voting and raising a concern (listening false→true) stay
+        //     open to signed-in members; flipping STATUS or resuming (listening true→false) needs
+        //     the proposer, community owner, or staff. Content/chain keys can't ride along.
+        || (
+             resource.data.get('type', '') == 'decision'
+             && request.resource.data.diff(resource.data).affectedKeys()
+                  .hasOnly(['votes', 'concerns', 'positions', 'listening', 'status', 'passedAt', 'enactedHash', 'withdrawnAt', 'rejectedAt', 'updatedAt'])
+             && (
+                  request.resource.data.get('status', '') == resource.data.get('status', '')
+                  || isStaff()
+                  || resource.data.get('proposedBy', '') == request.auth.uid
+                  || isCommunityOwner(resource.data.get('communityId', ''))
+                )
+             && (
+                  !(resource.data.get('listening', false) == true && request.resource.data.get('listening', false) == false)
+                  || isStaff()
+                  || resource.data.get('proposedBy', '') == request.auth.uid
+                  || isCommunityOwner(resource.data.get('communityId', ''))
+                )
+           )
+
+        // (d) Decision visibility flip — circle ↔ public square. Proposer, keeper or staff only;
+        //     nothing else may ride along. Decisions are community-visible by default; showing
+        //     one to the public is a deliberate act.
+        || (
+             resource.data.get('type', '') == 'decision'
+             && request.resource.data.diff(resource.data).affectedKeys()
+                  .hasOnly(['visibility', 'updatedAt'])
+             && request.resource.data.get('visibility', '') in ['public', 'community']
+             && (
+                  isStaff()
+                  || resource.data.get('proposedBy', '') == request.auth.uid
+                  || isCommunityOwner(resource.data.get('communityId', ''))
+                )
+           )
+
+        // (d) Event content edits — author, community owner, or staff; content keys only.
+        || (
+             resource.data.get('type', '') == 'event'
+             && (isStaff() || resource.data.authorId == request.auth.uid || isCommunityOwner(resource.data.get('communityId', '')))
+             && request.resource.data.diff(resource.data).affectedKeys()
+                  .hasOnly(['title', 'body', 'content', 'imageUrl', 'imageUrls', 'eventDate', 'eventLocation', 'visibility', 'updatedAt'])
+           )
+
+        // (e) The guardians' veto — a guardian of the pulse's tree may append exactly their
+        //     own uid to `vetoes` on a growth mint, WITHIN the 72h window, and only if their
+        //     guardianship PREDATES the mint (tenure — a sock account minted for the occasion
+        //     has no voice; mirrors domain/guardianVeto.ts).
+        || (
+             resource.data.get('type', '') == 'tree_growth'
+             && request.time < resource.data.createdAt + duration.value(72, 'h')
+             && exists(/databases/$(database)/documents/links/$(request.auth.uid + '__guardian__' + resource.data.get('lifetreeId', '')))
+             && get(/databases/$(database)/documents/links/$(request.auth.uid + '__guardian__' + resource.data.get('lifetreeId', ''))).data.createdAt <= resource.data.createdAt
+             && request.resource.data.diff(resource.data).affectedKeys()
+                  .hasOnly(['vetoes', 'updatedAt'])
+             && request.resource.data.get('vetoes', []).hasAll(resource.data.get('vetoes', []))
+             && resource.data.get('vetoes', []).concat([request.auth.uid]).hasAll(request.resource.data.get('vetoes', []))
+             && request.auth.uid in request.resource.data.get('vetoes', [])
+           )
+
+        // (f) The QR mint — the being remembers its printed link (domain/beingLink).
+        //     Author or staff; only the qr overlay may change.
+        || (
+             (isStaff() || resource.data.authorId == request.auth.uid)
+             && request.resource.data.diff(resource.data).affectedKeys()
+                  .hasOnly(['qr', 'updatedAt'])
+           )
+
+        // (g) Staff may mend anything.
+        || isStaff()
+      );
+      allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff() || isCommunityOwner(resource.data.communityId));
+
+      // Loves subcollection
+      match /loves/{loveId} {
+          allow read: if true;
+          allow write: if isSignedIn() && isOwner(loveId);
+      }
+
+      // Decision signatures — a decision seven people SIGN (domain/decision.ts, Covenant phase 3). A
+      // vote is an Ed25519 signature over the decision's frozen identity, one per member. This is the
+      // OPEN-membership analogue of covenants/{id}/signatures: no fixed roster — ANY member of the
+      // decision's community may sign, each ONLY their own slot (doc id == their uid). A signature is
+      // IMMUTABLE (update:false) — the pubkey + sig are frozen the moment they land — so anyone can
+      // re-run verifyDecision and confirm enactment is real, not merely a 'passed' flag. The parent
+      // pulse must be a decision, and the writer must be a member of its community (isCommunityMember,
+      // mirrored in the service). Any signed-in reader may read, to verify.
+      match /signatures/{sigUid} {
+        allow read: if isSignedIn();
+        // FIELD-LOCK: exactly the signature fields, nothing else — a body `uid` (or any smuggled
+        // field) is refused, so a record can never carry a claim about WHO signed; the doc id is the
+        // only signer, and the readers treat it as path-authoritative.
+        allow create: if isSignedIn() && sigUid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['sig', 'pubkey', 'signedAt', 'position'])
+          && get(/databases/$(database)/documents/pulses/$(pulseId)).data.get('type', '') == 'decision'
+          && isCommunityMember(get(/databases/$(database)/documents/pulses/$(pulseId)).data.get('communityId', ''));
+        allow update: if false;
+        allow delete: if isStaff();
+      }
+    }
+
+    // Alignments: Read public, Write signed in
+    // Stays — a request to sleep in a specific BED (domain/stay.ts). The guest creates their
+    // own request; hostUid is frozen to the BED's keeper (verified server-side, so a guest can
+    // neither forge the host nor aim a stay at a non-bed). The keeper (or staff) answers with a
+    // status — and ONLY the status/updatedAt may change, so bedId and the guest's denormalised
+    // face are frozen for the stay's life. Either side may withdraw/read their own.
+    match /stays/{stayId} {
+      allow read: if isSignedIn() && (
+        resource.data.uid == request.auth.uid
+        || resource.data.hostUid == request.auth.uid
+        || isStaff()
+      );
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.get('status', '') == 'requested'
+        && request.resource.data.get('bedId', '') != ''
+        // Dates must be well-formed and ordered server-side, so a direct write can't carry a
+        // reversed range or a nights count that disagrees with the range the host answers.
+        && request.resource.data.fromDate is string
+        && request.resource.data.toDate is string
+        && request.resource.data.fromDate < request.resource.data.toDate
+        && get(/databases/$(database)/documents/lifetrees/$(request.resource.data.bedId)).data.get('treeType', '') == 'BED'
+        && request.resource.data.get('hostUid', '') ==
+             get(/databases/$(database)/documents/lifetrees/$(request.resource.data.bedId)).data.ownerId;
+      allow update: if isSignedIn()
+        && (resource.data.hostUid == request.auth.uid || isStaff())
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+        && request.resource.data.get('status', '') in ['requested', 'accepted', 'declined'];
+      allow delete: if isSignedIn() && (
+        resource.data.uid == request.auth.uid
+        || resource.data.hostUid == request.auth.uid
+        || isStaff()
+      );
+    }
+
+    // The care economy (domain/support.ts): a year of support for one tree. Written ONLY by
+    // the payment rail (Cloud Functions bypass rules); the app just reads its own flows.
+    match /supports/{supportId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /alignments/{id} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      // Field-level: (a) the discussion — either participant may write `messages` while the
+      // alignment is still open; (b) settling — only the TARGET may flip `status` (accept mints the
+      // sync-blocks in the same transaction; decline is a plain flip). The initiator can no longer
+      // self-accept, and no one can rewrite the pulses/trees an alignment points at.
+      allow update: if isSignedIn() && (
+        (
+          (resource.data.targetUid == request.auth.uid || resource.data.initiatorUid == request.auth.uid)
+          && resource.data.status == 'PENDING'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['messages'])
+        )
+        || (
+          resource.data.targetUid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        )
+        || isStaff()
+      );
+      allow delete: if isStaff();
+    }
+
+    // Covenants — the two-sided cryptographic mint (domain/covenant.ts). A covenant is a Being with
+    // its OWN chain and a FROZEN IDENTITY: proposed with title/body/quorum/kind, its parties named by
+    // `party` links, each party signing its own slot in the /signatures subcollection. It SEALS only
+    // when a quorum of signatures verify. Un-forgeability is the SIGNATURES (verifyCovenant), not the
+    // status flag — so the doc's identity is frozen and only the chain head / status may advance.
+    match /covenants/{id} {
+      allow read: if isSignedIn();
+      // Create names yourself as the proposer (staff exempt — the alignment retrofit migration).
+      allow create: if isSignedIn() && (isStaff() || request.resource.data.proposedBy == request.auth.uid);
+      // FREEZE the identity: lid/genesisHash/kind/title/body/quorum/proposedBy/alignmentId/createdAt
+      // never change — only status advances (proposed → sealed/broken) and the chain head moves. What
+      // a party signed can never shift under them. A party, the proposer, or staff may advance it.
+      allow update: if isSignedIn()
+        && (isCovenantParty(id) || resource.data.proposedBy == request.auth.uid || isStaff())
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['status', 'latestHash', 'blockHeight', 'sealedAt'])
+        && request.resource.data.get('status', '') in ['proposed', 'sealed', 'broken'];
+      allow delete: if isStaff();
+
+      // Per-party signatures — the crypto the seal stands on. Each party writes ONLY their own slot
+      // (doc id == their uid) and only if they are a party (a `party` link exists). A signature is
+      // IMMUTABLE (update:false) — the pubkey + sig are frozen the moment they land. Any signed-in
+      // reader may read, so anyone can re-run verifyCovenant and confirm the seal is real.
+      match /signatures/{sigUid} {
+        allow read: if isSignedIn();
+        // FIELD-LOCK: exactly the signature fields, nothing else — a body `uid` (or any smuggled
+        // field) is refused, so a record can never carry a claim about WHO signed; the doc id is the
+        // only signer, and the readers treat it as path-authoritative.
+        allow create: if isSignedIn() && sigUid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['sig', 'pubkey', 'signedAt'])
+          && exists(/databases/$(database)/documents/links/$(request.auth.uid + '__party__' + id));
+        allow update: if false;
+        allow delete: if isStaff();
+      }
+    }
+
+    // Communities: Read public, Write staff/owner
+    match /communities/{communityId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff())
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid']);
+      allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
+    }
+
+    // LightHouses: sacred places per domain (read public, write owner/staff).
+    match /lightHouses/{lightHouseId} {
+      // The community's choice is LAW, enforced AT REST — not a client-only veil. Private by
+      // default: absent visibility = 'community'. Membership is proven by the PRIMARY communityId,
+      // the one get() the rules engine can afford (isCommunityMember). So a signed-in NON-member
+      // can no longer read a community house's raw doc; canViewLightHouse (domain/lightHouse.ts)
+      // is now a belt, not the lock. Signed-out see public only.
+      //   HONEST LIMIT: a house sheltering MULTIPLE communities via LIN `lightHouse __shelters__
+      //   community` edges is gated HERE only on its PRIMARY communityId — full multi-edge
+      //   membership needs an ACL denormalisation on the doc (out of scope; see the DECISIONS ring).
+      //   Map/domain reads MUST therefore be a rule-provable UNION (public ∪ node ∪ my-community
+      //   houses ∪ my own — services/firebase/trees.ts), or the whole list query is rejected.
+      allow read: if resource.data.get('visibility', 'community') == 'public'
+                     || (isSignedIn() && (
+                          resource.data.get('visibility', 'community') == 'node'
+                          || resource.data.get('ownerId', '') == request.auth.uid
+                          || isStaff()
+                          || isCommunityMember(resource.data.get('communityId', ''))
+                        ));
+      allow create: if isSignedIn();
+      // Belonging is LIN edges now (lightHouse __shelters__ community) — no array clause.
+      // The lid (the true name, load-bearing for QR links) is frozen on every update path.
+      allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff())
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid']);
+      allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
+    }
+
+    // Invite requests — anyone (signed out) can ask to join; only staff can read/triage.
+    match /inviteRequests/{requestId} {
+      allow create: if request.resource.data.status == 'pending';
+      allow read, list: if isStaff();
+      allow update, delete: if isStaff();
+    }
+
+    // Community invitations — the shareable door key (/i/<id>), see domain/communityDoor.ts.
+    // Unguessable auto-id: anyone holding the link may GET it (to be greeted before joining);
+    // listing stays with the community's keepers. Append-only in spirit: revocation is a
+    // mark (revokedAt), never a delete — the used invitation IS the provenance record.
+    match /communityInvites/{inviteId} {
+      allow get: if true;
+      allow list: if isSignedIn() && (isStaff() || isCommunityKeeper(resource.data.communityId));
+      allow create: if isSignedIn()
+        && request.resource.data.createdBy == request.auth.uid
+        && isCommunityKeeper(request.resource.data.communityId);
+      // The only mutation is revocation by a keeper: stamp a non-null revokedAt onto an invite
+      // that is not already revoked, and touch nothing else. Revocation is one-way — a revoked
+      // key is never resurrected (no clearing revokedAt back to null), keeping the mark honest.
+      allow update: if isSignedIn()
+        && isCommunityKeeper(resource.data.communityId)
+        && resource.data.get('revokedAt', null) == null
+        && request.resource.data.get('revokedAt', null) != null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['revokedAt']);
+      allow delete: if isStaff();
+    }
+
+    // Network onboarding invites. The invite id is an unguessable token, so a single
+    // doc is fetchable by anyone holding the link (to lock the email on the sign-up
+    // page); listing is staff-only. The inviter creates; the invited user consumes it.
+    match /networkInvites/{inviteId} {
+      allow get: if true;
+      allow list: if isSignedIn() && (isStaff() || resource.data.invitedByUserId == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.invitedByUserId == request.auth.uid;
+      // The only legitimate update is the invited user consuming a still-pending invite: they may
+      // flip it to 'accepted' and stamp THEMSELVES, but may not alter the locked email, inviter,
+      // or the node it carries (which drives the membership the CF mints on acceptance).
+      allow update: if isSignedIn()
+        && resource.data.status == 'pending'
+        && request.resource.data.status == 'accepted'
+        && request.resource.data.acceptedByUserId == request.auth.uid
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.invitedByUserId == resource.data.invitedByUserId
+        && request.resource.data.get('nodeCommunityId', '') == resource.data.get('nodeCommunityId', '')
+        && request.resource.data.get('nodeDomain', '') == resource.data.get('nodeDomain', '');
+      allow delete: if isStaff();
+    }
+
+    // Tree Circle invites. The Lifetree owner creates invites; the invitee or inviter
+    // can read theirs; the invitee declines and the inviter revokes. Acceptance (which
+    // also writes the tree's role arrays + the rooted community) goes through the
+    // acceptTreeInvite Cloud Function with admin rights — never a direct client write.
+    match /treeOwnershipInvites/{inviteId} {
+      allow read: if isSignedIn() && (
+        resource.data.invitedUserId == request.auth.uid ||
+        resource.data.invitedByUserId == request.auth.uid ||
+        isStaff()
+      );
+      allow create: if isSignedIn() &&
+        request.resource.data.invitedByUserId == request.auth.uid &&
+        (isStaff() || get(/databases/$(database)/documents/lifetrees/$(request.resource.data.lifetreeId)).data.ownerId == request.auth.uid);
+      // Decline (invitee) / revoke (inviter). Acceptance is server-only (admin SDK).
+      allow update: if isSignedIn() &&
+        (resource.data.invitedUserId == request.auth.uid || resource.data.invitedByUserId == request.auth.uid || isStaff()) &&
+        request.resource.data.status in ['declined', 'revoked'];
+      allow delete: if isStaff();
+    }
+
+    // Intelligence Commons -------------------------------------------------
+
+    // Intelligences: public ones are world-readable; private ones only to owner/staff.
+    match /intelligences/{intelligenceId} {
+      allow read: if resource.data.public == true ||
+        (isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff()));
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
+    }
+
+    // Personas: behaviour templates, world-readable; only staff curate them.
+    match /personas/{personaId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    // Memories: public to all, community memory to signed-in members, private to staff.
+    match /memories/{memoryId} {
+      allow read: if resource.data.visibility == 'public' ||
+        isStaff() ||
+        (isSignedIn() && resource.data.visibility == 'community');
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() &&
+        (isStaff() || isCommunityOwner(resource.data.communityId));
+    }
+
+    // (Governance decisions are now pulses of type 'decision' — see the /pulses rules.
+    // create: any signed-in member [non-event branch]; update: signed-in, for voting.)
+
+    // Links — the LIN as data: directed edges between entities {from, rel, to}. Edges are
+    // world-readable (they lived on world-readable docs). A user self-creates/removes their own
+    // 'guardian'/'joined' edges; role/member edges are server-only (the acceptTreeInvite Cloud
+    // Function via the Admin SDK). Staff may create any edge (the one-time migration). Immutable.
+    //
+    // 'participant' is the exception whose `from` is a LIFETREE (a tree enlisted in an event/vision):
+    // only that tree's OWNER may add or remove it. It grants NO privileges — no rule below reads a
+    // 'participant' edge — so it is safe as a self-serve, owner-gated membership marker.
+    match /links/{linkId} {
+      allow read: if true;
+      // The doc id MUST equal `from__rel__to` (domain/link.ts linkId). Authority is resolved
+      // by PATH elsewhere (hasLink/isCommunityKeeper/isTreeTender do exists() on a computed
+      // path), and exists() is blind to a doc's data — so without this binding a self-serve
+      // link (rel 'joined') placed at a privileged path (…__steward__…, …__co_owner__…) would
+      // be read as that role. Binding id to data closes the whole forgery class; every real
+      // writer already uses linkId(), so nothing legitimate breaks.
+      allow create: if linkId == request.resource.data.from + '__' + request.resource.data.rel + '__' + request.resource.data.to
+        && (isStaff()
+        || (isSignedIn() && request.resource.data.from == request.auth.uid
+            && request.resource.data.rel in ['guardian', 'joined'])
+        // A knock at the door — possible unless the community's door is closed.
+        || (isSignedIn() && request.resource.data.from == request.auth.uid
+            && request.resource.data.rel == 'join_request'
+            && communityDoor(request.resource.data.to) != 'closed')
+        || (isSignedIn() && request.resource.data.rel == 'participant'
+            && isTreeOwner(request.resource.data.from))
+        // Rooting: a lightHouse's keeper roots THEIR lightHouse in a tree (from = lightHouse id).
+        || (isSignedIn() && request.resource.data.rel in ['rooted', 'shelters']
+            && get(/databases/$(database)/documents/lightHouses/$(request.resource.data.from)).data.ownerId == request.auth.uid)
+        // Membership through the DOOR (domain/communityDoor.ts): a keeper (owner or steward)
+        // accepts a knock; or the joiner steps in themself while the door is open; or they
+        // arrive holding a live invitation (which also carries provenance on the edge).
+        || (isSignedIn() && request.resource.data.rel == 'member'
+            && (isCommunityKeeper(request.resource.data.to)
+                || (request.resource.data.from == request.auth.uid
+                    && (communityDoor(request.resource.data.to) == 'open'
+                        || inviteOpensDoor(request.resource.data.get('inviteId', ''), request.resource.data.to)))))
+        // Provenance: "I arrived into THIS community through this invitation" — from = newcomer,
+        // to = the community, and inviteId names the real (keeper-minted) invitation; the inviter
+        // is that invite's createdBy. Per-community, so arriving in two places leaves two marks.
+        // Grants nothing (no rule reads it) and is append-only (see the delete clause). It is
+        // deliberately NOT guardianship: power over a being flows from that being's keeper's
+        // later choice, never from the door itself.
+        || (isSignedIn() && request.resource.data.from == request.auth.uid
+            && request.resource.data.rel == 'invited_by'
+            && request.resource.data.get('inviteId', '') != ''
+            && exists(/databases/$(database)/documents/communityInvites/$(request.resource.data.inviteId))
+            && get(/databases/$(database)/documents/communityInvites/$(request.resource.data.inviteId)).data.communityId == request.resource.data.to)
+        // The community owner appoints stewards — delegated door-keepers. A steward may step
+        // down themself (the from == uid delete clause below); the owner may also remove them.
+        || (isSignedIn() && request.resource.data.rel == 'steward'
+            && isCommunityOwner(request.resource.data.to))
+        // A covenant's PROPOSER mints the roster: one `party` link per party (from = a party's uid,
+        // to = the covenant). Only that covenant's proposer may (its proposedBy). Grants no power on
+        // its own — the crypto lives in the covenants/{id}/signatures subcollection. Staff (the
+        // retrofit migration) are covered by the isStaff() branch at the top of this create rule.
+        // The roster may only grow while the covenant is still 'proposed' — once it SEALS (or breaks),
+        // the signed identity is frozen: adding a party would change what every signer signed and let a
+        // proposer retroactively un-verify (repudiate) a sealed covenant. The service mints the whole
+        // roster atomically at propose time, so nothing legitimate needs to add a party later.
+        || (isSignedIn() && request.resource.data.rel == 'party'
+            && exists(/databases/$(database)/documents/covenants/$(request.resource.data.to))
+            && get(/databases/$(database)/documents/covenants/$(request.resource.data.to)).data.proposedBy == request.auth.uid
+            && get(/databases/$(database)/documents/covenants/$(request.resource.data.to)).data.get('status', 'proposed') == 'proposed'));
+      allow delete: if isSignedIn() && (
+        // Append-only provenance: even its subject may not erase how they arrived (mark, never
+        // delete — the root invariant). The covenant ROSTER is likewise append-only — a `party`
+        // link is load-bearing for the signed identity (removing it would change what was signed),
+        // so a party may not delete their own slot. Staff remain the escape hatch for genuine error.
+        (resource.data.from == request.auth.uid
+          && resource.data.get('rel', '') != 'invited_by'
+          && resource.data.get('rel', '') != 'party')
+        || isStaff()
+        || (resource.data.get('rel', '') == 'participant' && isTreeOwner(resource.data.from))
+        || (resource.data.get('rel', '') in ['rooted', 'shelters']
+            && exists(/databases/$(database)/documents/lightHouses/$(resource.data.from))
+            && get(/databases/$(database)/documents/lightHouses/$(resource.data.from)).data.ownerId == request.auth.uid)
+        // A door-keeper (owner or steward) can decline requests and remove members.
+        || (resource.data.get('rel', '') in ['member', 'join_request']
+            && isCommunityKeeper(resource.data.to))
+        // The owner can remove a steward they appointed.
+        || (resource.data.get('rel', '') == 'steward'
+            && isCommunityOwner(resource.data.to)));
+      allow update: if false;
+    }
+
+    // Provider credentials: third-party AI API keys. NEVER readable or writable by any
+    // client — they are managed exclusively by Cloud Functions via the Admin SDK
+    // (saveProviderCredential / generateClaudeContent), which bypass these rules.
+    match /providerCredentials/{credId} {
+      allow read, write: if false;
+    }
+  }
+}

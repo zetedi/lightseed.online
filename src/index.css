@@ -1,0 +1,66 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --color-primary-theme: var(--color-primary);
+  --color-secondary-theme: var(--color-secondary);
+  --color-accent-theme: var(--color-accent);
+  --color-background-theme: var(--color-background);
+  --color-surface-theme: var(--color-surface);
+  --color-ink-theme: var(--color-text);
+}
+
+/* Visible keyboard focus everywhere (accessibility) */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 0.375rem;
+}
+
+:root {
+  --color-primary: #059669;
+  --color-secondary: #0284c7;
+  --color-accent: #f59e0b;
+  --color-background: #ffffff;
+  --color-surface: #ffffff;
+  --color-text: #0f172a;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  background: var(--color-background);
+  color: var(--color-text);
+}
+
+:root[data-mode="dark"] {
+  color-scheme: dark;
+}
+
+/* Scroll affordance (ScrollChevrons): hide the raw bar on overlay scrollers and bob the arrows. */
+.scroll-hide-bar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scroll-hide-bar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+@keyframes sc-bob-down {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
+}
+@keyframes sc-bob-up {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes sc-bob-left {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(-4px); }
+}
+@keyframes sc-bob-right {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(4px); }
+}

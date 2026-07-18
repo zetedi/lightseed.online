@@ -1,13 +1,95 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/lifeseed.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>lightseed</title>
-  </head>
-  <body>
+    <title>.seed — Lightseed, life recognising life</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#065f46" />
+    <meta name="description" content="A living commons where trees, people and intelligences meet. Plant a lifetree, find your resonance, and help grow a New Earth." />
+    <link rel="canonical" href="https://lightseed.online/" />
+    <meta name="robots" content="index, follow" />
+    <meta name="keywords" content="regen, regeneration, ai, artificial intelligence, blockchain, vision, lifetree, trees, community, nature, consciousness, New Earth, living network, light house, care economy, web of trust" />
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Lightseed",
+      "alternateName": ".seed",
+      "url": "https://lightseed.online",
+      "description": "A living commons where trees, people and intelligences meet. Regen, AI and blockchain native — plant a lifetree, find your resonance, and help grow a New Earth.",
+      "keywords": "regen, ai, blockchain, vision, lifetree, community, nature, consciousness"
+    }
+    </script>
+
+    <!-- Open Graph / link previews -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Lightseed" />
+    <meta property="og:title" content="Lightseed — life recognising life" />
+    <meta property="og:description" content="A living commons where trees, people and intelligences meet. Plant a lifetree, find your resonance, and help grow a New Earth." />
+    <meta property="og:url" content="https://lightseed.online" />
+    <meta property="og:image" content="https://lightseed.online/og.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Lightseed — life recognising life" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Lightseed — life recognising life" />
+    <meta name="twitter:description" content="A living commons where trees, people and intelligences meet." />
+    <meta name="twitter:image" content="https://lightseed.online/og.png" />
+    <script>
+      // Immediate shim to prevent "Cannot read properties of undefined (reading 'env')"
+      // This runs before any module code to ensure window.process exists.
+      if (typeof window !== 'undefined') {
+        window.process = window.process || {};
+        window.process.env = window.process.env || {};
+      }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Font trial: Montserrat (was Inter — swap both lines back to revert). -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet is bundled (services/leaflet.ts) — loaded lazily the first time a map renders.
+         The tile server gets a head start on its TLS handshake instead. -->
+    <link rel="preconnect" href="https://server.arcgisonline.com" crossorigin />
+    <style>
+      body {
+        font-family: 'Montserrat', sans-serif;
+      }
+    </style>
+    <!-- Structured data: who we are, for search engines. -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Lightseed",
+      "alternateName": ".seed",
+      "url": "https://lightseed.online/",
+      "description": "A living commons where trees, people and intelligences meet. Plant a lifetree, find your resonance, and help grow a New Earth.",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Lightseed",
+        "url": "https://lightseed.online/",
+        "logo": "https://lightseed.online/pwa-512x512.png"
+      }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Lightseed",
+      "url": "https://lightseed.online/",
+      "logo": "https://lightseed.online/logo.svg"
+    }
+    </script>
+<link rel="stylesheet" href="/src/index.css">
+</head>
+  <body class="bg-[#B2713A] text-white">
     <div id="root"></div>
-    <script type="module" src="/main.tsx"></script>
+    <script type="module" src="/src/index.tsx"></script>
   </body>
 </html>

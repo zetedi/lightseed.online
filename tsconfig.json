@@ -1,26 +1,43 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "useDefineForClassFields": true,
-    "lib": ["DOM", "DOM.Iterable", "ESNext"],
-    "allowJs": false,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
+    "target": "ES2022",
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
     "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "resolveJsonModule": true,
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "skipLibCheck": true,
+    "types": [
+      "node",
+      "vite/client"
+    ],
+    "moduleResolution": "bundler",
     "isolatedModules": true,
-    "noEmit": true,
+    "moduleDetection": "force",
+    "allowJs": true,
     "jsx": "react-jsx",
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     },
-    "types": ["vite/client", "@types/node"]
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+
+    // FULL strict + no dead code, and it must stay that way. (The old "~4700 errors to
+    // noImplicitAny" mountain was a mirage: @types/react was never installed, so every JSX
+    // element and react import counted as an implicit any. With the types in place the real
+    // distance was ~25 errors — closed on 2026-07-08.) Explicit `: any` annotations still
+    // exist in the god components; burning those down is the next quality rung.
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
   },
-  "include": ["src", "vite-env.d.ts"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  // Functions are their own compilation unit (functions/tsconfig.json, `npm run typecheck:functions`)
+  // with their own node_modules — CI doesn't install those for the app gate, so the root sweep
+  // must not reach into them.
+  "exclude": ["functions", "dist", "dev-dist", "node_modules"]
 }

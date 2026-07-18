@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://lifeseed.online/initiations/schema.json",
+  "title": "Initiation record",
+  "description": "One initiate in the lightseed initiation ledger. Git is the source of truth.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "handle", "lid", "pubkey", "vision", "initiatedAt", "genesis", "sponsors"],
+  "properties": {
+    "name": { "type": "string", "minLength": 1, "description": "Chosen name — how the forest calls you." },
+    "handle": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$", "description": "Kebab handle; must equal the filename stem." },
+    "lid": { "type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$", "description": "The Lightseed ID — a UUIDv7, the initiate's portable true name across nodes (equals persons/{uid}.lid)." },
+    "pubkey": { "type": "string", "minLength": 1, "description": "base64 of the ed25519 public key in SPKI/DER form." },
+    "vision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "description": "The validated vision (authored by a validated user) this initiation is built on.",
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string" },
+        "url": { "type": "string" }
+      }
+    },
+    "domain": { "type": "string", "description": "Optional — the forest/domain this initiation forms or joins." },
+    "uid": { "type": "string", "description": "Optional — the app account (Firebase uid) this initiate declares as theirs; binds the ledger identity to the mirror." },
+    "initiatedAt": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "genesis": { "type": "boolean", "description": "A founding-ring member; exempt from the three-sponsor rule." },
+    "sponsors": {
+      "type": "array",
+      "description": "Three existing initiates who signed this newcomer's pubkey. Empty only for genesis members.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["handle", "signature"],
+        "properties": {
+          "handle": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+          "signature": { "type": "string", "minLength": 1, "description": "base64 ed25519 signature over the signing message." }
+        }
+      }
+    }
+  }
+}

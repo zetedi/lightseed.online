@@ -1,0 +1,20 @@
+{
+  "name": "Chosen Name",
+  "handle": "chosen-name",
+  "lid": "REPLACE_WITH_UUIDV7_LIGHTSEED_ID",
+  "pubkey": "REPLACE_WITH_BASE64_ED25519_SPKI_DER",
+  "vision": {
+    "id": "REPLACE_WITH_VISION_ID",
+    "title": "The validated vision this initiation grows from",
+    "url": "https://lifeseed.online/?vision=REPLACE_WITH_VISION_ID"
+  },
+  "domain": "example.online",
+  "uid": "OPTIONAL_FIREBASE_UID_FOR_THE_APP_MIRROR",
+  "initiatedAt": "2026-07-07",
+  "genesis": false,
+  "sponsors": [
+    { "handle": "root-a", "signature": "REPLACE_WITH_BASE64_SIGNATURE" },
+    { "handle": "root-b", "signature": "REPLACE_WITH_BASE64_SIGNATURE" },
+    { "handle": "root-c", "signature": "REPLACE_WITH_BASE64_SIGNATURE" }
+  ]
+}

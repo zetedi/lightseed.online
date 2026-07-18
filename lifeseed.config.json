@@ -1,0 +1,5 @@
+{
+  "model": "gemini-3.5-flash",
+  "imageModel": "gemini-2.5-flash-image",
+  "githubActionsEnabled": false
+}

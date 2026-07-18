@@ -1,0 +1,116 @@
+import { useEffect } from 'react';
+import { ensureIntelligenceCommons } from '../services/intelligence';
+import {
+  backfillPulseVisibility, migrateArraysToLinks, migratePulseTypeCasing, dropLegacyArrays, migrateTreeVisibility,
+  migrateBackfillLids, migrateBackfillMatchIds, backfillVisionChains, migrateAlignmentsToCovenants,
+  migrateDecisionsToSignatures,
+} from '../services/firebase';
+import { setChainLocked, canonicalize, computeCanonicalHash, blockContent, verifyChain } from '../domain/chain';
+
+// Superadmin-only devtools, attached to `window` (run from the deployed site's console). No React
+// state — pure effects, self-cleaning on unmount. Extracted verbatim from App, plus the crystal
+// testing handles (flip the in-memory chain lock to TEST canonical minting + expose the toolkit).
+export function useSuperAdminConsole(isSuperAdmin: boolean, uid?: string) {
+  useEffect(() => {
+    if (isSuperAdmin && uid) ensureIntelligenceCommons(uid);
+  }, [isSuperAdmin, uid]);
+
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    const w = window as any;
+    // Backfill pulse visibility → 'public' on legacy pulses. Idempotent.
+    w.backfillPulseVisibility = async () => {
+      console.log('[lightseed] backfilling pulse visibility…');
+      const n = await backfillPulseVisibility();
+      console.log(`[lightseed] done — stamped visibility:"public" on ${n} legacy pulse(s).`);
+      return n;
+    };
+    // LIN migration (stage 3): relationship arrays → links. Idempotent.
+    w.migrateArraysToLinks = async () => {
+      console.log('[lightseed] migrating relationship arrays → links…');
+      const r = await migrateArraysToLinks();
+      console.log('[lightseed] done — links created:', r);
+      return r;
+    };
+    // Pulse type casing → canonical lowercase. Run once after deploy. Idempotent.
+    w.migratePulseTypeCasing = async () => {
+      console.log('[lightseed] migrating pulse type casing → lowercase…');
+      const n = await migratePulseTypeCasing();
+      console.log(`[lightseed] done — retyped ${n} pulse(s).`);
+      return n;
+    };
+    // LIN migration (stage 5): drop legacy arrays — ONLY after links are live + verified.
+    w.dropLegacyArrays = async () => {
+      console.log('[lightseed] dropping legacy relationship arrays…');
+      const n = await dropLegacyArrays();
+      console.log(`[lightseed] done — cleared arrays on ${n} doc(s).`);
+      return n;
+    };
+    // Backfill tree visibility → 'public'. Run ONCE after deploying indexes, BEFORE the tightened rules.
+    w.migrateTreeVisibility = async () => {
+      console.log('[lightseed] backfilling tree visibility → public…');
+      const r = await migrateTreeVisibility();
+      console.log(`[lightseed] done — stamped ${r.updated} tree(s).`);
+      return r;
+    };
+    // Backfill lids (UUIDv7 true-names, seeded from createdAt) on every doc missing one across
+    // communities/lifetrees/visions/pulses/lightHouses/persons. Idempotent.
+    w.migrateBackfillLids = async () => {
+      console.log('[lightseed] backfilling lids (UUIDv7, seeded from createdAt)…');
+      const r = await migrateBackfillLids();
+      console.log('[lightseed] done — lids minted:', r);
+      return r;
+    };
+    // Backfill matchId on legacy alignment sync-blocks (isMatch without matchId). After a verified
+    // run, the runtime fallback (findAlignmentForSyncBlock) is only a safety net. Idempotent.
+    w.migrateBackfillMatchIds = async () => {
+      console.log('[lightseed] backfilling matchId on legacy alignment sync-blocks…');
+      const r = await migrateBackfillMatchIds();
+      console.log(`[lightseed] done — stamped ${r.stamped}, unresolved ${r.unresolved}, sealed skipped ${r.skippedSealed}.`);
+      return r;
+    };
+    // Twin awakens: seal a genesis chain on every existing vision lacking one, so the idea-twin
+    // can grow its own contribution chain (additive; a vision stays a vision). Idempotent.
+    w.backfillVisionChains = async () => {
+      console.log('[lightseed] backfilling vision genesis chains…');
+      const r = await backfillVisionChains();
+      console.log(`[lightseed] done — sealed ${r.updated} vision(s), ${r.skipped} already chained.`);
+      return r;
+    };
+    // Retrofit: mint the canonical 2-party COVENANT (+ its two party links) for every existing
+    // alignment that lacks one (two-sided mint, phase 2). ADDITIVE — the alignment doc is untouched
+    // and keeps working; signatures are re-signed by each party in the app (no server holds a key),
+    // so migrated covenants start UNSEALED. Idempotent (an alignment already shadowed is skipped).
+    w.migrateAlignmentsToCovenants = async () => {
+      console.log('[lightseed] minting covenants for existing alignments…');
+      const r = await migrateAlignmentsToCovenants();
+      console.log(`[lightseed] done — minted ${r.created} covenant(s), ${r.skipped} already shadowed/invalid.`);
+      return r;
+    };
+    // A decision seven people SIGN (Covenant, phase 3). This is a CENSUS, not a rewrite: existing
+    // uid-votes CANNOT be retro-signed (no server holds a being's private key — a signature is minted by
+    // the being, on its device, in the app). Legacy unsigned votes REMAIN valid-by-auth; only new votes
+    // are signed. Reports the crossover — how many decisions carry signatures vs. legacy-only votes.
+    // Read-only + idempotent. Built, NOT run automatically.
+    w.migrateDecisionsToSignatures = async () => {
+      console.log('[lightseed] census: decision signatures vs. legacy votes…');
+      const r = await migrateDecisionsToSignatures();
+      console.log(`[lightseed] done — ${r.scanned} decision(s): ${r.signed} signed, ${r.legacyUnsigned} legacy-unsigned (votes only).`);
+      return r;
+    };
+    // Crystal: flip the in-memory chain lock to TEST canonical (verifiable) minting this session,
+    // and expose the chain toolkit for manual console verification. (The real switch is the
+    // node's About → Vision stamp, persisted on community.chainLocked.)
+    w.setChainLocked = (v: boolean) => {
+      setChainLocked(!!v);
+      console.log(`[lightseed] chain lock ${v ? 'ON — new blocks sealed with the canonical hash' : 'OFF — legacy hashing'} (this session).`);
+    };
+    w.lightseedChain = { canonicalize, computeCanonicalHash, blockContent, verifyChain };
+    return () => {
+      delete w.backfillPulseVisibility; delete w.migrateArraysToLinks; delete w.migratePulseTypeCasing;
+      delete w.dropLegacyArrays; delete w.migrateTreeVisibility; delete w.setChainLocked; delete w.lightseedChain;
+      delete w.migrateBackfillLids; delete w.migrateBackfillMatchIds; delete w.backfillVisionChains;
+      delete w.migrateAlignmentsToCovenants; delete w.migrateDecisionsToSignatures;
+    };
+  }, [isSuperAdmin]);
+}
