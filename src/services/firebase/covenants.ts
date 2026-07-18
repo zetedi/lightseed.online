@@ -7,7 +7,8 @@ import { createBlock } from '../../utils/crypto';
 import { uuidv7 } from '../../utils/id';
 import { linkId } from '../../domain/link';
 import {
-  COVENANT_DOMAIN, covenantIdentity, covenantSealed, signatureBindsToIdentity, alignmentCovenantId,
+  COVENANT_DOMAIN, covenantIdentity, covenantSealed, alignmentCovenantId,
+  covenantSignaturePayload, countVerifiedCovenantSignatures, signatureFromDoc,
   type Covenant, type CovenantKind, type CovenantParty,
 } from '../../domain/covenant';
 import { ensureSigningKey, publishSigningKey, sign as signWithKey, verify as verifyWithKey } from '../keys';
@@ -141,7 +142,10 @@ export const getCovenantParties = async (id: string): Promise<CovenantParty[]> =
 
 export const getCovenantSignatures = async (id: string): Promise<CovenantSignature[]> => {
   const snap = await getDocs(signaturesCol(id));
-  return snap.docs.map(d => ({ uid: d.id, ...(d.data() as DocumentData) } as CovenantSignature));
+  // PATH-AUTHORITATIVE: the signer is the DOC ID (the slot the rules bound the write to). The body
+  // spreads FIRST and the id lands LAST (signatureFromDoc), so a malicious body `uid` field can
+  // never claim another signer's slot.
+  return snap.docs.map(d => signatureFromDoc(d.id, d.data() as DocumentData) as CovenantSignature);
 };
 
 // Everything a Covenant profile needs, in one call: the doc, its parties, and its signatures.
@@ -174,12 +178,10 @@ export const verifyCovenant = async (
   // pubkey matches the party's published key AND verifies against the frozen identity.
   const published = new Map<string, string>();
   await Promise.all([...partyUids].map(async uid => published.set(uid, await getPublishedKey(uid))));
-  let verifiedCount = 0;
-  for (const s of sigs) {
-    if (!partyUids.has(s.uid)) continue;               // a signature from a non-party never counts
-    if (!signatureBindsToIdentity(s.pubkey, published.get(s.uid) ?? '')) continue; // must be the PUBLISHED key
-    if (await verifyWithKey(s.pubkey, s.sig, identity, COVENANT_DOMAIN)) verifiedCount++;
-  }
+  // The counting rule is PURE (domain/covenant.ts) and shared with the adversarial tests: at most one
+  // counted signature per uid (dedupe), party-gated, published-key-bound, and each signature verified
+  // against the v2 payload bound to the RECORD'S OWN path-uid — a copied signature never counts twice.
+  const verifiedCount = await countVerifiedCovenantSignatures(identity, sigs, partyUids, published, verifyWithKey);
   const sealed = covenantSealed(verifiedCount, covenant.quorum);
   // If the doc claims 'sealed', the crypto must back it; otherwise nothing is being forged.
   const valid = covenant.status === 'sealed' ? sealed : true;
@@ -223,8 +225,10 @@ export const signCovenant = async (covenant: Pick<Covenant, 'id'>): Promise<Sign
     }
   }
 
+  // SIGNER-BOUND (v2): the signed bytes carry the covenant identity AND this signer's uid, so this
+  // signature can only ever verify in this party's own slot — it is non-transferable by construction.
   const identity = covenantIdentity(fresh, parties);
-  const sig = await signWithKey(identity, COVENANT_DOMAIN, uid);
+  const sig = await signWithKey(covenantSignaturePayload(identity, uid), COVENANT_DOMAIN, uid);
 
   // Each party writes ONLY their own slot (doc id == uid); the rules enforce it and that the writer
   // is a party. The pubkey is frozen here so verification never depends on a later-rotated key.

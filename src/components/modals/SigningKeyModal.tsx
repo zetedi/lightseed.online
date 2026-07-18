@@ -2,14 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { Modal } from '../ui/Modal';
-import { ensureSigningKey, restoreFromPhrase, hasSigningKey, signingAvailable } from '../../services/keys';
+import { ensureSigningKey, restoreFromPhrase, hasSigningKey, signingAvailable, SigningKeyNeedsRestoreError } from '../../services/keys';
 import { parsePhrase } from '../../domain/signing';
 
 // The signing-key setup + backup flow (Covenant, Phase 1). This wires NO signing action yet — it only
 // lets a being create their device keypair (and see the recovery phrase ONCE) or restore it from the
 // phrase on a new device. The private key never leaves the device; only the public key is published.
+// If a key is ALREADY PUBLISHED but absent from this device, creation refuses (a silent new key would
+// unbind every prior signature) and the 'needs_restore' view surfaces restore-from-phrase — with an
+// explicit, strongly-warned "start fresh" escape hatch as a deliberate choice, never a silent default.
 
-type View = 'status' | 'phrase' | 'restore';
+type View = 'status' | 'phrase' | 'restore' | 'needs_restore';
 
 export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notify: (m: string) => void }> = ({ uid, onClose, notify }) => {
   const { t } = useLanguage();
@@ -35,19 +38,44 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
     return () => { alive = false; };
   }, [uid]);
 
+  const [confirmedFresh, setConfirmedFresh] = useState(false);
+
+  // Shared success handling for create / start-fresh: surface the phrase once, or settle to ready.
+  const settleEnsured = (res: { created: boolean; publicKeyB64: string; recoveryPhrase?: string[] }) => {
+    setPublicKeyB64(res.publicKeyB64);
+    if (res.created && res.recoveryPhrase) {
+      setPhrase(res.recoveryPhrase);
+      setConfirmedSaved(false);
+      setView('phrase');
+    } else {
+      setHasKey(true);
+      notify(t('signing_key_ready'));
+    }
+  };
+
   const create = async () => {
     setBusy(true); setErr(null);
     try {
-      const res = await ensureSigningKey(uid);
-      setPublicKeyB64(res.publicKeyB64);
-      if (res.created && res.recoveryPhrase) {
-        setPhrase(res.recoveryPhrase);
-        setConfirmedSaved(false);
-        setView('phrase');
+      settleEnsured(await ensureSigningKey(uid));
+    } catch (e) {
+      if (e instanceof SigningKeyNeedsRestoreError) {
+        // A key is published but not on this device: never silently mint a new one — offer restore,
+        // with "start fresh" only as an explicit, warned choice.
+        setConfirmedFresh(false);
+        setView('needs_restore');
       } else {
-        setHasKey(true);
-        notify(t('signing_key_ready'));
+        setErr(e instanceof Error ? e.message : 'Could not create the signing key.');
       }
+    }
+    setBusy(false);
+  };
+
+  // The deliberate escape hatch: mint a NEW key even though one is published — invalidating every
+  // prior signature. Reachable only from the needs_restore view, behind an explicit confirmation.
+  const startFresh = async () => {
+    setBusy(true); setErr(null);
+    try {
+      settleEnsured(await ensureSigningKey(uid, { replacePublished: true }));
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Could not create the signing key.');
     }
@@ -80,7 +108,10 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
     try { await navigator.clipboard.writeText(phrase.join(' ')); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* clipboard blocked */ }
   };
 
-  const title = view === 'phrase' ? t('signing_phrase_title') : view === 'restore' ? t('signing_restore_title') : t('signing_key');
+  const title = view === 'phrase' ? t('signing_phrase_title')
+    : view === 'restore' ? t('signing_restore_title')
+    : view === 'needs_restore' ? t('signing_needs_restore_title')
+    : t('signing_key');
 
   return (
     <Modal title={title} onClose={onClose}>
@@ -149,6 +180,31 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
               className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
               {t('signing_phrase_done')}
             </button>
+          </>
+        )}
+
+        {view === 'needs_restore' && (
+          <>
+            <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
+              <span className="mt-0.5 text-amber-600 [&>svg]:h-5 [&>svg]:w-5"><Icons.Shield /></span>
+              <p className="text-xs text-amber-800">{t('signing_needs_restore_warn')}</p>
+            </div>
+            {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{err}</p>}
+            <button type="button" onClick={() => { setErr(null); setView('restore'); }}
+              className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700">
+              {t('signing_key_restore')}
+            </button>
+            <div className="space-y-2 rounded-xl border border-red-200 bg-red-50 p-3">
+              <p className="text-xs text-red-700">{t('signing_start_fresh_warn')}</p>
+              <label className="flex items-start gap-2 text-xs text-red-800">
+                <input type="checkbox" checked={confirmedFresh} onChange={e => setConfirmedFresh(e.target.checked)} className="mt-0.5 h-4 w-4" />
+                <span>{t('signing_start_fresh_confirm')}</span>
+              </label>
+              <button type="button" onClick={startFresh} disabled={busy || !confirmedFresh}
+                className="w-full rounded-xl border border-red-300 bg-white py-2.5 text-sm font-bold text-red-700 hover:bg-red-100 disabled:opacity-50">
+                {busy ? t('signing_key_creating') : t('signing_start_fresh')}
+              </button>
+            </div>
           </>
         )}
 

@@ -735,6 +735,16 @@ describe('covenants — the two-sided mint: proposer names parties, each signs o
     await assertFails(updateDoc(doc(db(BOB), 'covenants', 'cov1', 'signatures', BOB), { sig: 'forged' }));
   });
 
+  it('FIELD-LOCK: a signature carrying a body `uid` (or any extra field) is REFUSED — the doc id is the only signer', async () => {
+    await seedCov();
+    // The quorum-inflation write: a party smuggles a body uid claiming another signer's hand.
+    await assertFails(setDoc(doc(db(BOB), 'covenants', 'cov1', 'signatures', BOB), { ...sig, uid: ALICE }));
+    await assertFails(setDoc(doc(db(BOB), 'covenants', 'cov1', 'signatures', BOB), { ...sig, uid: BOB }));   // even their own
+    await assertFails(setDoc(doc(db(BOB), 'covenants', 'cov1', 'signatures', BOB), { ...sig, extra: 'x' }));
+    // The legit field set still lands.
+    await assertSucceeds(setDoc(doc(db(BOB), 'covenants', 'cov1', 'signatures', BOB), sig));
+  });
+
   it('the identity is FROZEN — only status + chain head advance; title/quorum/proposedBy cannot move', async () => {
     await seedCov();
     // A party seals: status + head only — allowed.
@@ -804,6 +814,17 @@ describe('decision signatures — a decision the community SIGNS: member-gated, 
     await assertFails(updateDoc(doc(db(BOB), 'pulses', 'dec1', 'signatures', BOB), { sig: 'forged' }));
   });
 
+  it('FIELD-LOCK: a signature carrying a body `uid` (or any extra field) is REFUSED; the legit sets still land', async () => {
+    await seedDecision();
+    // The quorum-inflation write: a member smuggles a body uid claiming another signer's hand.
+    await assertFails(setDoc(doc(db(BOB), 'pulses', 'dec1', 'signatures', BOB), { ...sig, uid: ALICE }));
+    await assertFails(setDoc(doc(db(BOB), 'pulses', 'dec1', 'signatures', BOB), { ...sig, uid: BOB }));   // even their own
+    await assertFails(setDoc(doc(db(BOB), 'pulses', 'dec1', 'signatures', BOB), { ...sig, extra: 'x' }));
+    // The legit field sets: threshold (sig/pubkey/signedAt) and consensus (+ position).
+    await assertSucceeds(setDoc(doc(db(BOB), 'pulses', 'dec1', 'signatures', BOB), sig));
+    await assertSucceeds(setDoc(doc(db(ALICE), 'pulses', 'dec1', 'signatures', ALICE), { ...sig, position: 'unite' }));
+  });
+
   it('signatures attach only to a DECISION pulse, not an ordinary event', async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {
       const d = ctx.firestore();
@@ -820,5 +841,33 @@ describe('decision signatures — a decision the community SIGNS: member-gated, 
     // flag; a member landing a signature never gains the power to flip the flag on their own.)
     await assertFails(updateDoc(doc(db(BOB), 'pulses', 'dec1'), { status: 'passed', passedAt: 2 }));
     await assertSucceeds(updateDoc(doc(db(ALICE), 'pulses', 'dec1'), { status: 'passed', passedAt: 2 })); // proposer/owner
+  });
+});
+
+describe('persons key history — append-only lineage at persons/{uid}/keys/{fingerprint}', () => {
+  const FP = 'a'.repeat(64); // a stable fingerprint-shaped doc id
+  const keyDoc = { pubkey: 'base64-spki-key-A', publishedAt: 1 };
+
+  it('the owner records their own key; a stranger cannot write into another\'s history', async () => {
+    await assertSucceeds(setDoc(doc(db(ALICE), 'persons', ALICE, 'keys', FP), keyDoc));
+    await assertFails(setDoc(doc(db(MALLORY), 'persons', ALICE, 'keys', 'other-fp'), keyDoc));
+  });
+
+  it('exactly { pubkey, publishedAt } — extra fields and an empty pubkey are refused', async () => {
+    await assertFails(setDoc(doc(db(ALICE), 'persons', ALICE, 'keys', FP), { ...keyDoc, extra: 'x' }));
+    await assertFails(setDoc(doc(db(ALICE), 'persons', ALICE, 'keys', FP), { pubkey: '', publishedAt: 1 }));
+  });
+
+  it('append-only: the recorded pubkey can never change under its fingerprint; re-publishing the SAME key may merge; no delete, not even staff', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => setDoc(doc(ctx.firestore(), 'persons', ALICE, 'keys', FP), keyDoc));
+    await assertFails(updateDoc(doc(db(ALICE), 'persons', ALICE, 'keys', FP), { pubkey: 'a-DIFFERENT-key' }));
+    await assertSucceeds(setDoc(doc(db(ALICE), 'persons', ALICE, 'keys', FP), keyDoc, { merge: true })); // same-key no-op
+    await assertFails(deleteDoc(doc(db(ALICE), 'persons', ALICE, 'keys', FP)));
+    await assertFails(deleteDoc(doc(db(STAFF), 'persons', ALICE, 'keys', FP)));
+  });
+
+  it('the history is world-readable — anyone can verify lineage', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => setDoc(doc(ctx.firestore(), 'persons', ALICE, 'keys', FP), keyDoc));
+    await assertSucceeds(getDoc(doc(db(), 'persons', ALICE, 'keys', FP)));
   });
 });

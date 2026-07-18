@@ -1,11 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import {
   COVENANT_DOMAIN, covenantIdentity, isQuorumMet, covenantSealed,
   signatureBindsToIdentity, alignmentCovenantId,
-  type Covenant, type CovenantParty,
+  covenantSignaturePayload, countVerifiedCovenantSignatures, signatureFromDoc,
+  type Covenant, type CovenantParty, type RecordedSignature,
 } from '../src/domain/covenant';
 import { canonicalize } from '../src/domain/chain/canonical';
 import { signingPreimage } from '../src/domain/signing';
+import { keypairFromSeed, signPayload, verifyPayload, subtleEd25519Available } from '../src/services/signingCrypto';
 
 // The pure covenant crystal: the canonical IDENTITY every party signs (deterministic, party-order
 // independent, role-normalised), the signing domain tag, and the quorum/seal logic. No crypto here.
@@ -20,8 +22,8 @@ const base: Pick<Covenant, 'lid' | 'kind' | 'title' | 'body' | 'quorum' | 'genes
 };
 
 describe('COVENANT_DOMAIN', () => {
-  it('is a versioned, dedicated tag — never the raw signing version', () => {
-    expect(COVENANT_DOMAIN).toBe('lifeseed.covenant.v1');
+  it('is a versioned, dedicated tag — v2, the SIGNER-BOUND generation', () => {
+    expect(COVENANT_DOMAIN).toBe('lifeseed.covenant.v2');
   });
   it('separates a covenant signature from any other purpose (a Council decision cannot replay it)', () => {
     const payload = { any: 'value' };
@@ -96,6 +98,105 @@ describe('alignmentCovenantId — the deterministic twin id (race-free get-or-mi
   it('is distinct per alignment, and namespaced so it can never collide with an auto-id covenant', () => {
     expect(alignmentCovenantId('a')).not.toBe(alignmentCovenantId('b'));
     expect(alignmentCovenantId('align-123')).toBe('align_align-123');
+  });
+});
+
+describe('signatureFromDoc — PATH AUTHORITY: the doc id is the only signer', () => {
+  it('the doc id WINS over a malicious body `uid` — a record can never claim another signer', () => {
+    const rec = signatureFromDoc('mallory', { uid: 'victim', sig: 's', pubkey: 'p' });
+    expect(rec.uid).toBe('mallory');
+  });
+  it('a record without a body uid simply gains its path uid', () => {
+    expect(signatureFromDoc('alice', { sig: 's', pubkey: 'p' }).uid).toBe('alice');
+  });
+});
+
+describe('covenantSignaturePayload — signatures are SIGNER-BOUND (non-transferable)', () => {
+  it('binds the covenant identity to the signer uid — different signer, different bytes', () => {
+    const identity = covenantIdentity(base, [{ uid: 'alice' }, { uid: 'bob' }]);
+    expect(covenantSignaturePayload(identity, 'alice')).toEqual({ covenant: identity, signer: 'alice' });
+    expect(canonicalize(covenantSignaturePayload(identity, 'alice')))
+      .not.toBe(canonicalize(covenantSignaturePayload(identity, 'bob')));
+  });
+});
+
+describe('countVerifiedCovenantSignatures — the quorum cannot be inflated (adversarial)', () => {
+  let available = false;
+  beforeAll(async () => { available = await subtleEd25519Available(); });
+
+  const seedOf = (n: number) => Uint8Array.from({ length: 32 }, (_, j) => (n * 31 + j + 1) & 0xff);
+  const parties: CovenantParty[] = [{ uid: 'alice' }, { uid: 'bob' }, { uid: 'mallory' }];
+  const identity = covenantIdentity(base, parties); // quorum 3
+  const partyUids = new Set(parties.map(p => p.uid));
+
+  it('a VALID signature copied into another slot NEVER counts — even when the attacker republishes the victim\'s pubkey as their own', async () => {
+    if (!available) return; // Ed25519 subtle unavailable in this runtime — skip the crypto leg
+    const kpAlice = await keypairFromSeed(seedOf(1));
+    // Alice signs her own slot (v2: bound to HER uid). The signature is world-readable.
+    const sigAlice = await signPayload(kpAlice.privateKey, covenantSignaturePayload(identity, 'alice'), COVENANT_DOMAIN);
+    // Mallory (a keyless party) copies it into their own slot AND publishes Alice's pubkey as their
+    // published identity key (they may — persons/{mallory} is their own doc). Pre-fix this counted
+    // as a second signature; post-fix the signer-binding kills it: the copied signature verifies
+    // only against a payload bound to 'alice', never one bound to 'mallory'.
+    const records: RecordedSignature[] = [
+      { uid: 'alice', sig: sigAlice, pubkey: kpAlice.publicKeyB64 },
+      { uid: 'mallory', sig: sigAlice, pubkey: kpAlice.publicKeyB64 },
+    ];
+    const published = new Map([['alice', kpAlice.publicKeyB64], ['mallory', kpAlice.publicKeyB64]]);
+    expect(await countVerifiedCovenantSignatures(identity, records, partyUids, published, verifyPayload)).toBe(1);
+  });
+
+  it('a record whose body-uid claimed another signer is neutralized by path authority before counting', async () => {
+    if (!available) return;
+    const kpAlice = await keypairFromSeed(seedOf(1));
+    const sigAlice = await signPayload(kpAlice.privateKey, covenantSignaturePayload(identity, 'alice'), COVENANT_DOMAIN);
+    // The attack write: mallory's slot with body { uid: 'alice', ... }. The reader maps through
+    // signatureFromDoc, so the record reaches the counter as uid 'mallory' — and does not verify there.
+    const attack = signatureFromDoc('mallory', { uid: 'alice', sig: sigAlice, pubkey: kpAlice.publicKeyB64 });
+    expect(attack.uid).toBe('mallory');
+    const published = new Map([['alice', kpAlice.publicKeyB64], ['mallory', kpAlice.publicKeyB64]]);
+    expect(await countVerifiedCovenantSignatures(
+      identity,
+      [{ uid: 'alice', sig: sigAlice, pubkey: kpAlice.publicKeyB64 }, attack],
+      partyUids, published, verifyPayload,
+    )).toBe(1);
+  });
+
+  it('two records for ONE uid count once (dedupe), and honest distinct signers count fully', async () => {
+    if (!available) return;
+    const kpAlice = await keypairFromSeed(seedOf(1));
+    const kpBob = await keypairFromSeed(seedOf(2));
+    const sigAlice = await signPayload(kpAlice.privateKey, covenantSignaturePayload(identity, 'alice'), COVENANT_DOMAIN);
+    const sigBob = await signPayload(kpBob.privateKey, covenantSignaturePayload(identity, 'bob'), COVENANT_DOMAIN);
+    const published = new Map([['alice', kpAlice.publicKeyB64], ['bob', kpBob.publicKeyB64]]);
+    // Duplicated alice records collapse to one; alice + bob = two.
+    expect(await countVerifiedCovenantSignatures(
+      identity,
+      [
+        { uid: 'alice', sig: sigAlice, pubkey: kpAlice.publicKeyB64 },
+        { uid: 'alice', sig: sigAlice, pubkey: kpAlice.publicKeyB64 },
+        { uid: 'bob', sig: sigBob, pubkey: kpBob.publicKeyB64 },
+      ],
+      partyUids, published, verifyPayload,
+    )).toBe(2);
+  });
+
+  it('a non-party signature and an unpublished-key signature still never count', async () => {
+    if (!available) return;
+    const kpEve = await keypairFromSeed(seedOf(3));
+    const sigEve = await signPayload(kpEve.privateKey, covenantSignaturePayload(identity, 'eve'), COVENANT_DOMAIN);
+    // eve is not a party; and alice-with-no-published-key fails the identity binding.
+    const kpAlice = await keypairFromSeed(seedOf(1));
+    const sigAlice = await signPayload(kpAlice.privateKey, covenantSignaturePayload(identity, 'alice'), COVENANT_DOMAIN);
+    const published = new Map([['eve', kpEve.publicKeyB64]]); // alice published nothing
+    expect(await countVerifiedCovenantSignatures(
+      identity,
+      [
+        { uid: 'eve', sig: sigEve, pubkey: kpEve.publicKeyB64 },
+        { uid: 'alice', sig: sigAlice, pubkey: kpAlice.publicKeyB64 },
+      ],
+      partyUids, published, verifyPayload,
+    )).toBe(0);
   });
 });
 

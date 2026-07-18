@@ -3,8 +3,11 @@ import { type Pulse, type Community, type Decision, type DecisionNature, type De
 import { createBlock } from '../../utils/crypto';
 import { uuidv7 } from '../../utils/id';
 import { type PulseVisibility } from '../../domain/pulse';
-import { DECISION_DOMAIN, decisionIdentity, decisionEnacted, decisionAuthoritative } from '../../domain/decision';
-import { signatureBindsToIdentity } from '../../domain/covenant';
+import {
+  DECISION_DOMAIN, decisionIdentity, decisionEnacted, decisionAuthoritative,
+  decisionSignaturePayload, countVerifiedDecisionSignatures,
+} from '../../domain/decision';
+import { signatureFromDoc } from '../../domain/covenant';
 import { ensureSigningKey, publishSigningKey, sign as signWithKey, verify as verifyWithKey } from '../keys';
 import { auth, db, toMillis, mapDoc, pulsesCollection } from './core';
 import { normalizeDomain } from './trees';
@@ -123,7 +126,10 @@ const readDecision = async (decisionId: string): Promise<Decision | null> => {
 
 export const getDecisionSignatures = async (decisionId: string): Promise<DecisionSignature[]> => {
   const snap = await getDocs(decisionSignaturesCol(decisionId));
-  return snap.docs.map(d => ({ uid: d.id, ...(d.data() as DocumentData) } as DecisionSignature));
+  // PATH-AUTHORITATIVE: the signer is the DOC ID (the slot the rules bound the write to). The body
+  // spreads FIRST and the id lands LAST (signatureFromDoc), so a malicious body `uid` field can
+  // never claim another member's slot.
+  return snap.docs.map(d => signatureFromDoc(d.id, d.data() as DocumentData) as DecisionSignature);
 };
 
 // Verify a decision the way any reader can: re-derive the frozen identity, then count the signatures
@@ -144,12 +150,11 @@ export const verifyDecision = async (
   const uids = [...new Set(sigs.map(s => s.uid))];
   const published = new Map<string, string>();
   await Promise.all(uids.map(async uid => published.set(uid, await getPublishedKey(uid))));
-  let verifiedCount = 0;
-  for (const s of sigs) {
-    if (mode === 'consensus' && s.position !== 'unite') continue;       // only uniting signatures count
-    if (!signatureBindsToIdentity(s.pubkey, published.get(s.uid) ?? '')) continue; // must be the PUBLISHED key
-    if (await verifyWithKey(s.pubkey, s.sig, identity, DECISION_DOMAIN)) verifiedCount++;
-  }
+  // The counting rule is PURE (domain/decision.ts) and shared with the adversarial tests: at most one
+  // counted signature per uid (dedupe), consensus-position-gated, published-key-bound, and each
+  // signature verified against the v2 payload bound to the RECORD'S OWN path-uid — a copied signature
+  // can never verify in another member's slot, so one real hand can never fill a seven-quorum.
+  const verifiedCount = await countVerifiedDecisionSignatures(identity, sigs, mode, published, verifyWithKey);
   const enacted = decisionEnacted(verifiedCount, decision.votesRequired);
   const valid = decisionAuthoritative(decision.status, verifiedCount, decision.votesRequired, mode);
   return { valid, verifiedCount, enacted };
@@ -221,8 +226,10 @@ export const signDecision = async (
     }
   }
 
+  // SIGNER-BOUND (v2): the signed bytes carry the decision identity AND this signer's uid, so this
+  // signature can only ever verify in this member's own slot — it is non-transferable by construction.
   const identity = decisionIdentity(fresh);
-  const sig = await signWithKey(identity, DECISION_DOMAIN, uid);
+  const sig = await signWithKey(decisionSignaturePayload(identity, uid), DECISION_DOMAIN, uid);
   const sigPosition: ConsensusStance | undefined = mode === 'consensus' ? (position ?? 'unite') : undefined;
 
   // Each member writes ONLY their own slot (doc id == uid); the rules enforce it and community

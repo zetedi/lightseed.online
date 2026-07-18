@@ -70,6 +70,11 @@ const baseKeys = {
   signing_restore_placeholder: "word1 word2 word3 …",
   signing_pubkey_label: "Public key (anyone can verify with this):",
   signing_unavailable: "This browser can't create signing keys (Ed25519 unavailable).",
+  signing_needs_restore_title: "Restore your signing key",
+  signing_needs_restore_warn: "A signing key is already published for this account, but this device doesn't hold it. Restore it from your 24-word recovery phrase — everything you have signed stays valid.",
+  signing_start_fresh: "Start fresh (invalidates prior signatures)",
+  signing_start_fresh_warn: "Starting fresh mints a NEW key and INVALIDATES every signature you made with the old one — sealed covenants and signed decisions will no longer verify as yours. Only do this if the recovery phrase is truly lost.",
+  signing_start_fresh_confirm: "I understand my previous signatures will no longer verify.",
   copy: "Copy", copied: "Copied",
   // Covenant — the two-sided cryptographic mint (domain/covenant.ts)
   covenant: "Covenant",

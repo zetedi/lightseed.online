@@ -1,5 +1,6 @@
 import type { Timestamp } from 'firebase/firestore';
 import type { Being } from './being';
+import { signatureBindsToIdentity, type SignatureVerifier } from './covenant';
 
 // Governance as an event: an event IS a decision, and its NATURE sets how many voices it
 // needs. Light intentions need one voice; weightier acts need a circle. The numbers nod to
@@ -106,7 +107,11 @@ export interface Decision extends Being {
 // The domain tag inside every decision signature's preimage (signingPreimage). Versioned + domain-
 // separated exactly like COVENANT_DOMAIN: a signature minted for a decision can never be replayed as a
 // covenant signature or any other signed artifact — the purpose is signed into the bytes.
-export const DECISION_DOMAIN = 'lifeseed.decision.v1';
+// v2 — SIGNER-BOUND: the signed payload is decisionSignaturePayload (the identity PLUS the signer's
+// uid), so a valid signature is non-transferable between slots. v1 signed the bare identity, which
+// made a world-readable signature copyable into another member's slot (quorum inflation); no legacy
+// v1 verification path exists — prod held zero signed decisions at the cutover.
+export const DECISION_DOMAIN = 'lifeseed.decision.v2';
 
 // The CANONICAL DECISION IDENTITY — the exact value every member signs (under DECISION_DOMAIN). It is
 // the frozen essence of the PROPOSAL: its true name, the community it belongs to, its nature, its words,
@@ -134,6 +139,52 @@ export function decisionIdentity(
     body: d.body ?? '',
     votesRequired: d.votesRequired,
   };
+}
+
+// The exact value a member signs under DECISION_DOMAIN (v2): the decision identity BOUND to the
+// signer's own uid — the open-membership twin of covenantSignaturePayload. A copied signature,
+// replayed into another member's slot, is verified against THAT slot's uid and fails: signatures are
+// non-transferable, so one real hand can never fill a seven-member quorum.
+export interface DecisionSignaturePayload {
+  decision: DecisionIdentity;
+  signer: string;
+}
+
+export function decisionSignaturePayload(identity: DecisionIdentity, signerUid: string): DecisionSignaturePayload {
+  return { decision: identity, signer: signerUid };
+}
+
+// A recorded signature as read from pulses/{id}/signatures — its uid is PATH-AUTHORITATIVE (the doc
+// id via covenant.signatureFromDoc), never a body field.
+export interface RecordedDecisionSignature {
+  uid: string;
+  sig: string;
+  pubkey: string;
+  position?: ConsensusStance;
+}
+
+// Count the signatures that enact a decision — the ONE counting rule verifyDecision and the tests
+// share. Gates, in order: (1) DEDUPE — at most one counted signature per signer uid; (2) in
+// consensus mode only 'unite' signatures are affirmatives; (3) IDENTITY-KEY BINDING — the recorded
+// pubkey must equal the signer's published key; (4) SIGNER-BOUND CRYPTO — the signature must verify
+// the v2 payload bound to the RECORD'S OWN uid. Membership is enforced at write time by the rules.
+export async function countVerifiedDecisionSignatures(
+  identity: DecisionIdentity,
+  sigs: readonly RecordedDecisionSignature[],
+  mode: DecisionMode,
+  publishedKeys: ReadonlyMap<string, string>,
+  verify: SignatureVerifier,
+): Promise<number> {
+  const counted = new Set<string>();
+  for (const s of sigs) {
+    if (counted.has(s.uid)) continue;                       // one hand, one signature — never two slots
+    if (mode === 'consensus' && s.position !== 'unite') continue; // only uniting signatures count
+    if (!signatureBindsToIdentity(s.pubkey, publishedKeys.get(s.uid) ?? '')) continue;
+    if (await verify(s.pubkey, s.sig, decisionSignaturePayload(identity, s.uid), DECISION_DOMAIN)) {
+      counted.add(s.uid);
+    }
+  }
+  return counted.size;
 }
 
 // A decision ENACTS when at least `votesRequired` VERIFIED signatures stand — and a requirement of 0

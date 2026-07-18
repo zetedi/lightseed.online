@@ -1,4 +1,4 @@
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './firebase/core';
 import { seedToPhrase, phraseToSeed } from '../domain/signing';
 import {
@@ -68,10 +68,35 @@ async function idbPut(record: StoredKey): Promise<void> {
 }
 
 // ── Public-key publication (the only thing that ever touches Firestore) ────────────────────────
+
+// A stable fingerprint of a published key: hex SHA-256 of its base64 SPKI string. Used as the doc id
+// of the append-only key-history record, so re-publishing the same key always lands on the SAME doc
+// (a no-op) and can never overwrite a DIFFERENT key's history.
+async function keyFingerprint(publicKeyB64: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(publicKeyB64));
+  return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 async function publishPublicKey(uid: string, publicKeyB64: string): Promise<void> {
   // persons/{uid} is world-readable; rules let only the owner (uid) write their own doc. The private
   // key is never in this write — just the public half, in the same base64 SPKI shape as initiation.
   await setDoc(doc(db, 'persons', uid), { publicKeyPem: publicKeyB64 }, { merge: true });
+  // APPEND-ONLY KEY HISTORY: every key ever published leaves a permanent, world-readable record at
+  // persons/{uid}/keys/{fingerprint} — lineage for verify-at-signing-time, without changing today's
+  // verification (which still binds to the currently-published key). Created once; re-publishing the
+  // same key is a no-op (the doc already exists, publishedAt stays the FIRST publication). Best-
+  // effort: a history hiccup must never block a signing action the identity key itself allows.
+  try {
+    const ref = doc(db, 'persons', uid, 'keys', await keyFingerprint(publicKeyB64));
+    const existing = await getDoc(ref);
+    if (!existing.exists()) await setDoc(ref, { pubkey: publicKeyB64, publishedAt: serverTimestamp() });
+  } catch { /* lineage only — the published identity key above is the load-bearing write */ }
+}
+
+// The being's currently-PUBLISHED identity key (persons/{uid}.publicKeyPem), '' if none/unreadable.
+async function readPublishedKey(uid: string): Promise<string> {
+  const snap = await getDoc(doc(db, 'persons', uid));
+  return snap.exists() ? ((snap.data() as { publicKeyPem?: string }).publicKeyPem ?? '') : '';
 }
 
 // (Re)publish a known public key to persons/{uid}.publicKeyPem. Used defensively by the covenant seal
@@ -108,17 +133,45 @@ export interface EnsureKeyResult {
   recoveryPhrase?: string[];
 }
 
+// Thrown when this device holds NO key but an identity key is ALREADY PUBLISHED: silently minting a
+// fresh keypair here would republish a NEW key and retroactively unbind every signature the being
+// ever made (verification binds to the published key). The being must either RESTORE from their
+// recovery phrase, or deliberately choose to start fresh ({ replacePublished: true } — offered by
+// the SigningKeyModal with an explicit warning, never taken silently).
+export class SigningKeyNeedsRestoreError extends Error {
+  readonly code = 'needs-restore' as const;
+  constructor() {
+    super('A signing key is already published for this account, but this device holds no key. Restore it from your recovery phrase.');
+    this.name = 'SigningKeyNeedsRestoreError';
+  }
+}
+
+export interface EnsureKeyOptions {
+  // The explicit, strongly-warned escape hatch: mint a NEW keypair even though a different key is
+  // already published — invalidating every signature made with the old key. A deliberate user
+  // choice surfaced by the modal; never the default.
+  replacePublished?: boolean;
+}
+
 // Get-or-create the user's Ed25519 keypair on THIS device. Idempotent: if a key already exists in
 // IndexedDB it is reused and NO phrase is returned (the seed is long gone). On first creation the
 // seed is generated via crypto.subtle.generateKey, exported once to build the recovery phrase, then
-// the private key is stored non-extractable and the public key published.
-export async function ensureSigningKey(uid?: string): Promise<EnsureKeyResult> {
+// the private key is stored non-extractable and the public key published. If NO device key exists
+// but an identity key is already PUBLISHED, this refuses to silently replace it — it throws
+// SigningKeyNeedsRestoreError so the caller can surface the restore-from-phrase flow.
+export async function ensureSigningKey(uid?: string, options?: EnsureKeyOptions): Promise<EnsureKeyResult> {
   const id = currentUid(uid);
   const existing = await idbGet(id);
   if (existing) {
     // Self-heal: make sure the published pubkey is present even if a past publish failed.
     try { await publishPublicKey(id, existing.publicKeyB64); } catch { /* non-fatal */ }
     return { created: false, publicKeyB64: existing.publicKeyB64 };
+  }
+
+  // No device key. If an identity key is already published, generating a fresh one would silently
+  // unbind every prior signature — refuse, unless the being explicitly chose to start fresh.
+  if (!options?.replacePublished && (await readPublishedKey(id)) !== '') {
+    throw new SigningKeyNeedsRestoreError();
   }
 
   // Generate an extractable key, export the raw 32-byte seed ONCE (JWK `d`), derive the phrase, then

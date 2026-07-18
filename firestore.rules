@@ -389,6 +389,23 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.auth.uid == personId;
       allow update: if isSignedIn() && (request.auth.uid == personId || isStaff());
       allow delete: if false;
+
+      // APPEND-ONLY KEY HISTORY — persons/{uid}/keys/{fingerprint}: one doc per identity key ever
+      // published (doc id = a stable SHA-256 fingerprint of the pubkey), { pubkey, publishedAt }.
+      // World-readable lineage so a future verifier can bind a signature to the key that was
+      // published AT SIGNING TIME. Owner-create only; re-publishing the SAME key may touch its own
+      // doc (a no-op merge) but the recorded pubkey can never change under its fingerprint; never
+      // deleted — history is never rewritten.
+      match /keys/{fingerprint} {
+        allow read: if true;
+        allow create: if isSignedIn() && request.auth.uid == personId
+          && request.resource.data.keys().hasOnly(['pubkey', 'publishedAt'])
+          && request.resource.data.get('pubkey', '') != '';
+        allow update: if isSignedIn() && request.auth.uid == personId
+          && request.resource.data.keys().hasOnly(['pubkey', 'publishedAt'])
+          && request.resource.data.get('pubkey', '') == resource.data.get('pubkey', '');
+        allow delete: if false;
+      }
     }
 
     // Visions: visibility-gated reads (protect fragile/early visions). Missing visibility =
@@ -537,7 +554,11 @@ service cloud.firestore {
       // mirrored in the service). Any signed-in reader may read, to verify.
       match /signatures/{sigUid} {
         allow read: if isSignedIn();
+        // FIELD-LOCK: exactly the signature fields, nothing else — a body `uid` (or any smuggled
+        // field) is refused, so a record can never carry a claim about WHO signed; the doc id is the
+        // only signer, and the readers treat it as path-authoritative.
         allow create: if isSignedIn() && sigUid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['sig', 'pubkey', 'signedAt', 'position'])
           && get(/databases/$(database)/documents/pulses/$(pulseId)).data.get('type', '') == 'decision'
           && isCommunityMember(get(/databases/$(database)/documents/pulses/$(pulseId)).data.get('communityId', ''));
         allow update: if false;
@@ -634,7 +655,11 @@ service cloud.firestore {
       // reader may read, so anyone can re-run verifyCovenant and confirm the seal is real.
       match /signatures/{sigUid} {
         allow read: if isSignedIn();
+        // FIELD-LOCK: exactly the signature fields, nothing else — a body `uid` (or any smuggled
+        // field) is refused, so a record can never carry a claim about WHO signed; the doc id is the
+        // only signer, and the readers treat it as path-authoritative.
         allow create: if isSignedIn() && sigUid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['sig', 'pubkey', 'signedAt'])
           && exists(/databases/$(database)/documents/links/$(request.auth.uid + '__party__' + id));
         allow update: if false;
         allow delete: if isStaff();

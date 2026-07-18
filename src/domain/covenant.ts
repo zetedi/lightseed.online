@@ -16,7 +16,11 @@ import type { Being } from './being';
 // The domain tag that sits INSIDE every covenant signature's preimage (signingPreimage). Versioned
 // and domain-separated exactly like SIGNING_VERSION: a signature minted for a covenant can never be
 // replayed as a Council decision (phase 3) or any other signed artifact — the purpose is signed.
-export const COVENANT_DOMAIN = 'lifeseed.covenant.v1';
+// v2 — SIGNER-BOUND: the signed payload is covenantSignaturePayload (the identity PLUS the signer's
+// uid), so a valid signature is non-transferable between slots. v1 signed the bare identity, which
+// made a world-readable signature copyable into another signer's slot (quorum inflation); no legacy
+// v1 verification path exists — prod held only unsigned covenants at the cutover.
+export const COVENANT_DOMAIN = 'lifeseed.covenant.v2';
 
 // 'alignment' — the 2-party form (the resonance handshake, quorum 2). 'covenant' — the general
 // N-party pledge (a charter, a shared vow). Same machinery; the kind is inside the signed identity.
@@ -88,6 +92,27 @@ export function covenantIdentity(
   };
 }
 
+// The exact value a party signs under COVENANT_DOMAIN (v2): the covenant identity BOUND to the
+// signer's own uid. Binding the signer INTO the signed bytes makes a signature NON-TRANSFERABLE: a
+// copied signature, replayed into another slot, is verified against THAT slot's uid — and fails.
+// This is the constitutional guard against quorum inflation (one hand occupying many slots), and it
+// holds even if every outer guard (path authority, dedupe, rules field-locks) were to fail.
+export interface CovenantSignaturePayload {
+  covenant: CovenantIdentity;
+  signer: string;
+}
+
+export function covenantSignaturePayload(identity: CovenantIdentity, signerUid: string): CovenantSignaturePayload {
+  return { covenant: identity, signer: signerUid };
+}
+
+// PATH AUTHORITY — a signature's signer IS its doc id. The body fields spread FIRST and the
+// path-derived uid lands LAST, so a malicious body `uid` field can never override the authenticated
+// slot the rules bound the write to. Every signature reader maps through this.
+export function signatureFromDoc<T extends object>(docId: string, data: T): T & { uid: string } {
+  return { ...data, uid: docId };
+}
+
 // The seal binds to the being's PUBLISHED IDENTITY KEY, not merely "a key in the slot". A signature
 // counts toward the quorum ONLY IF the pubkey it recorded at signing time EQUALS the party's currently
 // published key at persons/{uid}.publicKeyPem (base64 SPKI). The recorded pubkey is still kept on the
@@ -108,6 +133,50 @@ export function signatureBindsToIdentity(recordedPubkey: string, publishedPubkey
 // auto-id covenant minted by proposeCovenant.
 export function alignmentCovenantId(alignmentId: string): string {
   return `align_${alignmentId}`;
+}
+
+// A recorded signature as read from the signatures subcollection — its uid is PATH-AUTHORITATIVE
+// (the doc id via signatureFromDoc), never a body field.
+export interface RecordedSignature {
+  uid: string;
+  sig: string;
+  pubkey: string;
+}
+
+// An injected Ed25519 verifier (services/signingCrypto.verifyPayload in production) — kept OUT of
+// this module so the counting rule stays pure and unit-testable without WebCrypto wiring.
+export type SignatureVerifier = (
+  publicKeyB64: string,
+  signatureB64: string,
+  payload: unknown,
+  domainTag: string,
+) => Promise<boolean>;
+
+// Count the signatures that seal a covenant — the ONE counting rule verifyCovenant and the tests
+// share. Four gates, in order:
+//   (1) DEDUPE — at most ONE counted signature per signer uid; a second record claiming the same
+//       hand can never inflate the quorum.
+//   (2) PARTY — the signer must be on the frozen roster.
+//   (3) IDENTITY-KEY BINDING — the recorded pubkey must equal the signer's published key.
+//   (4) SIGNER-BOUND CRYPTO — the signature must verify the v2 payload bound to the RECORD'S OWN
+//       uid, so a signature minted by one hand can never verify in another's slot.
+export async function countVerifiedCovenantSignatures(
+  identity: CovenantIdentity,
+  sigs: readonly RecordedSignature[],
+  partyUids: ReadonlySet<string>,
+  publishedKeys: ReadonlyMap<string, string>,
+  verify: SignatureVerifier,
+): Promise<number> {
+  const counted = new Set<string>();
+  for (const s of sigs) {
+    if (counted.has(s.uid)) continue;                  // one hand, one signature — never two slots
+    if (!partyUids.has(s.uid)) continue;               // a signature from a non-party never counts
+    if (!signatureBindsToIdentity(s.pubkey, publishedKeys.get(s.uid) ?? '')) continue;
+    if (await verify(s.pubkey, s.sig, covenantSignaturePayload(identity, s.uid), COVENANT_DOMAIN)) {
+      counted.add(s.uid);
+    }
+  }
+  return counted.size;
 }
 
 // The quorum is met when at least `quorum` valid signatures stand — and a quorum of 0 or less can
