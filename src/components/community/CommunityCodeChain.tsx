@@ -40,7 +40,7 @@ const commitToPulse = (c: CommitEntry, previousSha: string): Pulse => ({
 const noop = (): void => {};
 
 // The repo the code chain mirrors — each growth leaf links straight to its commit.
-const REPO_URL = 'https://github.com/zetedi/lifeseed.online';
+const REPO_URL = 'https://github.com/zetedi/lightseed.online';
 
 export const CommunityCodeChain: React.FC = () => {
     const [commits, setCommits] = useState<CommitEntry[] | null>(null);
