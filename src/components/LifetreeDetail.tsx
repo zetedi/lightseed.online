@@ -216,7 +216,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                         {canReach
                             ? <ActionBtn onClick={() => onReachTree?.(tree)} title="Reach" color={ACTION_GREEN} icon={<Icons.Lightning />} label="Reach" />
                             : <ActionBtn disabled title={t('only_if_validated')} color="bg-white/20 text-white/70" icon={<Icons.Eye />} label={t('only_if_validated')} />}
-                        {isOwner && !isEditing && <ActionBtn onClick={onCreatePulse} title="Tend this tree — a pulse of care (we both grow)" color={ACTION_GREEN} icon={<Icons.Drop />} label="Tend" />}
+                        {isOwner && !isEditing && <ActionBtn onClick={onCreatePulse} title="Tend this tree: a pulse of care (we both grow)" color={ACTION_GREEN} icon={<Icons.Drop />} label="Tend" />}
                         {/* Carry this being's voice — superadmin voice-bridge, on trees they tend
                             (owner/co_owner/steward). Impersonation hides the bridge; carrying
                             reveals it: the display author becomes the being, the carrier is named,
@@ -224,7 +224,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                         {isSuperAdmin && (isOwner || isTender) && onCarry && !isEditing && (
                             <ActionBtn
                                 onClick={() => onCarry(carrying ? null : tree)}
-                                title={carrying ? 'Stop carrying this being\'s voice' : "Carry this being's voice — pulses name you as the carrier"}
+                                title={carrying ? 'Stop carrying this being\'s voice' : "Carry this being's voice; pulses name you as the carrier"}
                                 color={carrying ? `${ACTION_GREEN} ring-2 ring-white/70` : ACTION_GREEN}
                                 icon={<Icons.Wizard />}
                                 label={carrying ? 'Carrying' : 'Carry a pulse'}
@@ -371,7 +371,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                         >
                             <div className="flex items-center justify-center space-x-2">
                                 <Icons.Siren />
-                                <span>ALERT: THIS TREE IS IN DANGER{onAlertGuardians ? ' — message guardians' : ''}</span>
+                                <span>ALERT: THIS TREE IS IN DANGER{onAlertGuardians ? ' (message guardians)' : ''}</span>
                                 <Icons.Siren />
                             </div>
                         </button>
@@ -426,7 +426,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                                 const nv = !hasValidationBadge;
                                                 if (await showConfirm(nv ? 'Validate this tree?' : 'Remove validation from this tree?', { title: 'Validation' })) onValidate(tree.id, nv);
                                             }}
-                                            title={hasValidationBadge ? (showValidateAction ? 'Validated — remove (staff)' : 'Validated') : (showValidateAction ? t('validate_action') : 'Not validated yet')}
+                                            title={hasValidationBadge ? (showValidateAction ? 'Validated: remove (staff)' : 'Validated') : (showValidateAction ? t('validate_action') : 'Not validated yet')}
                                             aria-label={hasValidationBadge ? 'Validated' : 'Not validated'}
                                             className={`inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/60 shadow-md transition-transform ${hasValidationBadge ? 'bg-emerald-500 text-white' : 'bg-slate-500/90 text-white/85'} ${showValidateAction ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}
                                         >

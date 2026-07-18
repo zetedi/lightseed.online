@@ -1,44 +1,44 @@
-# LIN — what world we are creating
+# LIN: what world we are creating
 
 The seed: purpose, ontology, principles, language, invariants.
 The evolving interpretation of the promise in `GENESIS.md`.
 
-## Ontology — Indra's net
+## Ontology: Indra's net
 
 **Everything is a Being.** Every jewel is different, and every jewel reflects all
 the others the same way. A Being has four aspects (`src/domain/being.ts`):
 
 | Aspect | What | Where |
 |---|---|---|
-| **True name** | `lid` — UUIDv7, birth-time in its first bits, portable across nodes and years | every stored doc |
-| **Story** | its chain — hash-linked pulses, append-only, unerasable | `pulses`, `domain/chain.ts` |
-| **Circle** | its links — relations as entities, never arrays | `links` collection (the LIN) |
-| **Face** | its profile — the shared anatomy of sections | `components/sections/` |
+| **True name** | `lid`: UUIDv7, birth-time in its first bits, portable across nodes and years | every stored doc |
+| **Story** | its chain: hash-linked pulses, append-only, unerasable | `pulses`, `domain/chain.ts` |
+| **Circle** | its links: relations as entities, never arrays | `links` collection (the LIN) |
+| **Face** | its profile: the shared anatomy of sections | `components/sections/` |
 
-Humans, AIs, communities, nodes, trees, Light Houses, visions, events, pulses —
+Humans, AIs, communities, nodes, trees, Light Houses, visions, events, pulses:
 all Beings. Any intelligence can log in. Composite beings (communities, nodes)
-additionally grow a **Council** — the organ by which many become one voice.
+additionally grow a **Council**, the organ by which many become one voice.
 
 ## Principles
 
 1. **Quality, not quantity.** A node caps at 144 lifetrees (12 personal + 132
-   guarded). The cap is intimacy — a circle where every being can be known.
-   Growth happens by division (and intimacy), like Pando — one root system,
+   guarded). The cap is intimacy: a circle where every being can be known.
+   Growth happens by division (and intimacy), like Pando: one root system,
    many stems, each close enough to touch.
 2. **Links, not arrays.** A relationship is itself an entity in the `links`
    collection with deterministic ids (`from__rel__to`). The only arrays permitted
    are rules-ACL denormalisations (e.g. `participantUids` on private reaches).
 3. **The chain is append-only.** Nothing on a chain is ever rewritten or deleted;
    wrong things are *marked* (the guardian veto), never erased.
-4. **Private by default — sensitive to light.** Opening something to the world is
-   a deliberate act; some parts can be harmed by a gaze they are not ready for — a
+4. **Private by default, sensitive to light.** Opening something to the world is
+   a deliberate act; some parts can be harmed by a gaze they are not ready for: a
    play copied before its story is whole. Two dials, kept apart: how far a being's
    own content *reaches out* (community → node → public), and how much of the
    instance's public a node *reflects in*. Commons is a **mode, not a place**:
    every node may choose to be a window onto the whole or a scoped pond (Indra's
-   net) — there is no privileged hub, only the node currently reflecting all that
+   net); there is no privileged hub, only the node currently reflecting all that
    is public.
-5. **Data, not code.** Organisations get landings, themes, pages as *data* —
+5. **Data, not code.** Organisations get landings, themes, pages as *data*,
    never per-org source files.
 6. **Paper outlives databases.** Every being carries a QR with its lid
    (`/b/<lid>`), the offline/online bridge.
@@ -73,30 +73,30 @@ names what happened. The ring makes it history. Then the root grows clearer.
 *tend* (care as action) · *mint* (seal a moment onto a chain) · *water* (the
 photo-proofed care pulse) · *keeper* (a community's owner) · *guardian* (a
 no-privilege follow that vows protection) · *validated = initiated* (standing
-in the web of trust) · *Light House* (a sacred place that keeps a light for others —
+in the web of trust) · *Light House* (a sacred place that keeps a light for others:
 a point of orientation on the map, rooted in a mother tree) ·
 *mother tree* (a tree holding a Light House) ·
-*bed* (a being — a Lifetree with a place to sleep, inside a Light House *or* loose under open
+*bed* (a being: a Lifetree with a place to sleep, inside a Light House *or* loose under open
 stars at a coordinate; each stay a leaf on its chain, each tender a guardian. Home is soft and
-optional: a loose bed that gathers can **graduate** — its tree becomes the mother tree a Light
+optional: a loose bed that gathers can **graduate**, its tree becoming the mother tree a Light
 House roots into. Seed → bed → gathering → Light House) ·
-*vision* (a being — the **idea-twin of a tree**: when a tree is planted its Root Vision is born the
-*same moment*; matter and idea, they diverge, each growing its own chain — the tree's of tending,
+*vision* (a being, the **idea-twin of a tree**: when a tree is planted its Root Vision is born the
+*same moment*; matter and idea, they diverge, each growing its own chain: the tree's of tending,
 the vision's of **contributions**. A vision keeps its tree as a **shadow** (`lifetreeId`), so the two
 growths can be laid side by side and compared) · *the Light Path* (the onboarding
-trail — ultimately each community's own ruleset) · *reach* (one being speaking
+trail, ultimately each community's own ruleset) · *reach* (one being speaking
 to another) · *carry* (lending hands to a being's voice, always disclosed) ·
 *consecrate* (create a Light House) · *release* (delete one) · *step in* (a
 Light House sheltering a community) · *the door* (a community's join state:
-open / invitation / closed — who may enter, distinct from who may see) ·
-*steward* (a delegated door-keeper: accepts knocks, mints invitations —
-shares the door, not the deed) · *invited by* (append-only provenance: how a
-being arrived; a mark, never a power — the inviter gains nothing through the
+open / invitation / closed: who may enter, distinct from who may see) ·
+*steward* (a delegated door-keeper: accepts knocks, mints invitations; shares
+the door, not the deed) · *invited by* (append-only provenance: how a
+being arrived; a mark, never a power; the inviter gains nothing through the
 door) · *commons* (a mode, not a place: a node choosing to reflect the instance's
-public — a window onto the whole; every jewel may) · *reflect* (a node showing
+public, a window onto the whole; every jewel may) · *reflect* (a node showing
 another's public content; Indra's net as a setting) · *the Moment* (see GENESIS.md).
 
-## Invariants — the reasons; these almost never change
+## Invariants: the reasons (these almost never change)
 
 - **Life is primary.**
 - **Communities retain agency.**
@@ -108,19 +108,19 @@ another's public content; Indra's net as a setting) · *the Moment* (see GENESIS
   are frozen after creation; the Moment is golden
   (`GENESIS_MOMENT_MS = 1566149243000`, `domain/genesis.ts`).
 - **The cap is intimacy.** 144 per node, enforced server-side
-  (`functions/onLifetreeCreated`) — the client gate is courtesy, the function is law.
+  (`functions/onLifetreeCreated`): the client gate is courtesy, the function is law.
 - **Conscience is collective and non-destructive.** The guardian veto needs ALL
-  eligible guardians (author excluded), within 72 hours — and marks, never deletes.
+  eligible guardians (author excluded), within 72 hours, and marks, never deletes.
 - **Understanding precedes action.** The reason under almost every practice:
   read the root, review deeply, ask before committing, ring after deciding,
   test before trusting. Don't move faster than understanding.
 
-## Practices — the habits the invariants grow; excellent today, allowed to evolve
+## Practices: the habits the invariants grow (excellent today, allowed to evolve)
 
 - Read the root before acting; never silently contradict it; when the code
   reveals a better truth, propose a change to the root.
 - Add a ring to `DECISIONS.md` after significant decisions. Correct with new
-  rings, never rewrite — a knot isn't hidden; it's integrated.
+  rings, never rewrite: a knot isn't hidden; it's integrated.
 - Green gates before merging: `npm run check`; rules changes also pass
   `npm run test:rules`.
 - New logic begins in `domain/` as a pure, tested function.
@@ -129,10 +129,10 @@ another's public content; Indra's net as a setting) · *the Moment* (see GENESIS
   decisions have to be rediscovered every week.
 - **Every metaphor eventually points to code; every piece of code eventually
   points back to lived experience.** The poetry and the implementation must keep
-  illuminating each other — a project that stops doing this is growing a
+  illuminating each other; a project that stops doing this is growing a
   mythology, not a root.
 - **The code human translates, or becomes a priest.** One human who deeply
-  understands the code may be enough for a small circle — but their
+  understands the code may be enough for a small circle, but their
   understanding must continually flow into tests, architecture, readable
   explanations, review records, and teachable patterns. The ideal code human is
   not the only one allowed to see; they are responsible for helping everyone

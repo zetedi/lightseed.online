@@ -113,7 +113,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                         naturally. Tending (our breath, our presence) is the care that lets it. */}
                     {canTend && onTend && (
                         <div className="flex w-full justify-start pl-12 md:justify-center md:pl-0">
-                            <button onClick={onTend} title="Tend this tree — a pulse of care (we both grow)"
+                            <button onClick={onTend} title="Tend this tree: a pulse of care (we both grow)"
                                 className="relative z-10 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-7 py-3 font-bold uppercase tracking-widest text-white ring-2 ring-yellow-300/60 shadow-[0_0_22px_rgba(250,204,21,0.55)] transition-all hover:bg-emerald-700 hover:shadow-[0_0_32px_rgba(250,204,21,0.85)] active:scale-95">
                                 <Icons.Drop /> <span>Tend</span>
                             </button>
@@ -127,7 +127,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                                     <button onClick={() => setChainExpanded(true)}
                                         className="relative z-10 flex w-full items-center justify-center gap-2 rounded-full border-2 border-dashed border-emerald-300 bg-emerald-50/80 py-2.5 text-xs font-bold text-emerald-700 backdrop-blur-sm transition-colors hover:bg-emerald-100 md:max-w-md">
                                         <Icons.List />
-                                        <span>{hiddenChainCount} more pulse{hiddenChainCount !== 1 ? 's' : ''} hidden — tap to expand</span>
+                                        <span>{hiddenChainCount} more pulse{hiddenChainCount !== 1 ? 's' : ''} hidden, tap to expand</span>
                                     </button>
                                 </div>
                             );

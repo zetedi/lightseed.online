@@ -51,7 +51,7 @@ export const ProfileStays: React.FC<ProfileStaysProps> = ({ uid, onViewTree }) =
         <div className="flex justify-center rounded-2xl border border-slate-100 bg-slate-50/50 py-16"><Loading /></div>
       ) : stays.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-400">
-          No stays yet — find a bed in the Living menu.
+          No stays yet; find a bed in the Living menu.
         </p>
       ) : (
         <div className="space-y-2">

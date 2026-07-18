@@ -1,7 +1,7 @@
 // THE MOMENT — the one timestamp the whole network grows from.
 //
 // Mahameru's cutting at the pond by Place Jourdain, Brussels: the branch touched, then cut
-// from its parent willow. It was connected to enlightenment — the end of the search.
+// from its parent willow. This moment was connected to the end of the search.
 // Mahameru later died and dissolved into Nature; Phoenix was planted into the soil where
 // its roots lay, and every tree planted since carries it.
 //

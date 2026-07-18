@@ -84,7 +84,7 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
   };
 
   const handleDeleteDecision = async (id: string, title: string) => {
-    if (!(await showConfirm(`Remove the draft "${title}" entirely? Only an unsigned draft can vanish — this cannot be undone.`, { title: 'Delete draft', confirmText: 'Delete', danger: true }))) return;
+    if (!(await showConfirm(`Remove the draft "${title}" entirely? Only an unsigned draft can vanish; this cannot be undone.`, { title: 'Delete draft', confirmText: 'Delete', danger: true }))) return;
     try { await deleteDecision(id); refreshDecisions(); }
     catch (e: any) { showAlert(e?.message || 'Could not delete the decision.'); }
   };
@@ -106,14 +106,14 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
   const handleVote = (id: string) => withSigningKey(id, async () => {
     const res = await signDecision({ id });
     if (res.recoveryPhrase) setPhrase(res.recoveryPhrase); // a key was born mid-sign — surface it once
-    if (res.outcome === 'listening') showAlert('This proposal is in listening — a concern was raised. It can continue once the concern is tended.');
+    if (res.outcome === 'listening') showAlert('This proposal is in listening: a concern was raised. It can continue once the concern is tended.');
     else if (res.outcome === 'enacted') showAlert(t('decision_enacted_toast'));
     refreshDecisions();
   });
 
   const handleRaiseConcern = async (id: string) => {
     if (!currentUserId) { showAlert('Sign in to raise a concern.'); return; }
-    if (!(await showConfirm('Raise a concern? This pauses the proposal and opens a reflective listening — it does not reject it.', { title: 'Raise a concern', confirmText: 'Raise concern' }))) return;
+    if (!(await showConfirm('Raise a concern? This pauses the proposal and opens a reflective listening; it does not reject it.', { title: 'Raise a concern', confirmText: 'Raise concern' }))) return;
     setVotingId(id);
     try { await raiseConcern(id, currentUserId); refreshDecisions(); }
     catch (e: any) { showAlert(e?.message || 'Could not raise the concern.'); }
@@ -128,7 +128,7 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
   };
 
   const handleWithdraw = async (id: string) => {
-    if (!(await showConfirm('Withdraw this decision? Withdrawal is a mark on its chain — the record stays.', { title: 'Withdraw', confirmText: 'Withdraw', danger: true }))) return;
+    if (!(await showConfirm('Withdraw this decision? Withdrawal is a mark on its chain; the record stays.', { title: 'Withdraw', confirmText: 'Withdraw', danger: true }))) return;
     setVotingId(id);
     try { await withdrawDecision(id); refreshDecisions(); }
     catch (e: any) { showAlert(e?.message || 'Could not withdraw.'); }
@@ -196,7 +196,7 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
               <button type="button" onClick={() => setDecMode('threshold')} className={`flex-1 rounded-full px-3 py-1.5 transition-colors ${decMode === 'threshold' ? 'bg-emerald-600 text-white shadow' : 'text-slate-500 hover:text-slate-700'}`}>Voices ({votesRequired(decNature)})</button>
               <button type="button" onClick={() => setDecMode('consensus')} className={`flex-1 rounded-full px-3 py-1.5 transition-colors ${decMode === 'consensus' ? 'bg-emerald-600 text-white shadow' : 'text-slate-500 hover:text-slate-700'}`}>Consensus (Quaker)</button>
             </div>
-            <p className="text-[11px] text-slate-500">{decMode === 'consensus' ? 'No counting — the meeting seeks unity. Each voice may unite, stand aside, or block; the clerk discerns the sense of the meeting.' : `Passes when ${votesRequired(decNature)} voice(s) unite. A concern opens a reflective pause.`}</p>
+            <p className="text-[11px] text-slate-500">{decMode === 'consensus' ? 'No counting: the meeting seeks unity. Each voice may unite, stand aside, or block; the clerk discerns the sense of the meeting.' : `Passes when ${votesRequired(decNature)} voice(s) unite. A concern opens a reflective pause.`}</p>
           </div>
           <button onClick={handlePropose} disabled={proposing || !decTitle.trim()} className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">{proposing ? '…' : t('propose')}</button>
         </div>
@@ -232,7 +232,7 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                             {clerk ? (
                               <button
                                 onClick={() => handleFlipVisibility(d.id, isPublic)}
-                                title={isPublic ? 'Public — click to keep it in the circle' : 'Circle only — click to make it public'}
+                                title={isPublic ? 'Public: click to keep it in the circle' : 'Circle only: click to make it public'}
                                 className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase transition-colors ${isPublic ? 'bg-sky-600 text-white hover:bg-sky-500' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'}`}
                               >
                                 {isPublic ? 'Public' : 'Circle'}
@@ -308,7 +308,7 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                         </div>
                         {d.blocked && (
                           <div className="mt-2 rounded-xl border border-rose-100 bg-rose-50 p-2.5 text-[11px] text-rose-800">
-                            <p className="font-semibold">A block stands — the meeting is not in unity. Tend it before adopting.</p>
+                            <p className="font-semibold">A block stands; the meeting is not in unity. Tend it before adopting.</p>
                             {d.positions.filter(p => p.stance === 'block' && p.note).slice(-3).map((p, i) => <p key={i} className="mt-1 italic">“{p.note}”</p>)}
                           </div>
                         )}

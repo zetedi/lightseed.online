@@ -24,10 +24,10 @@ import type { Community } from '../types';
 
 // Per-provider fallback descriptions, used when an intelligence has no description of its own.
 const PROVIDER_BLURB: Record<string, string> = {
-  anthropic: "Anthropic's Claude — careful, nuanced reasoning over very long contexts, with a constitutional approach to safety.",
-  google: "Google's Gemini — natively multimodal (text, images, audio, video) with strong reasoning and very large context windows.",
-  openai: "OpenAI's GPT — versatile, general-purpose models, strong at coding, writing, and tool use.",
-  deepseek: "DeepSeek — open-weight models with strong reasoning and coding at low cost.",
+  anthropic: "Anthropic's Claude: careful, nuanced reasoning over very long contexts, with a constitutional approach to safety.",
+  google: "Google's Gemini: natively multimodal (text, images, audio, video) with strong reasoning and very large context windows.",
+  openai: "OpenAI's GPT: versatile, general-purpose models, strong at coding, writing, and tool use.",
+  deepseek: "DeepSeek: open-weight models with strong reasoning and coding at low cost.",
   local: "A locally-hosted model running on the node's own compute.",
 };
 

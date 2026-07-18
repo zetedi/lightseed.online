@@ -18,7 +18,7 @@ export const ValidationBadge = ({ className = '', compact = false, lapsed = fals
 
   return (
     <span
-      title={lapsed ? 'Validation lapsed — needs tending' : 'Validated'}
+      title={lapsed ? 'Validation lapsed; needs tending' : 'Validated'}
       aria-label={lapsed ? 'Validation lapsed' : 'Validated'}
       className={`relative inline-flex shrink-0 items-center justify-center rounded-full ring-2 ring-white/70 shadow-lg ${tone} ${stampSize} ${className}`}
     >

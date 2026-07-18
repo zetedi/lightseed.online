@@ -74,7 +74,7 @@ export const DataModelCrystal = () => {
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 px-5 py-3">
         <div>
           <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-emerald-300">The Model · Crystal</h3>
-          <p className="text-xs text-slate-400">The data model's shape — {DATA_MODEL.length} entities, {DATA_RELATIONS.length} links. Editable in draw.io.</p>
+          <p className="text-xs text-slate-400">The data model's shape: {DATA_MODEL.length} entities, {DATA_RELATIONS.length} links. Editable in draw.io.</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={copy} className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-200 transition-colors hover:bg-white/10">

@@ -86,7 +86,7 @@ export const PathwayCTA = ({ input, actions, theme, isDark = false, onOpenOvervi
     return (
       <div className="mx-auto max-w-7xl px-4 pt-4 sm:pt-6 animate-in fade-in duration-300">
         <p className="mx-auto max-w-2xl rounded-full border border-emerald-100 bg-emerald-50/80 px-4 py-2 text-center text-xs text-emerald-700">
-          🌙 The Light Path rests for this step — relight it anytime in Profile → Settings.
+          🌙 The Light Path rests for this step; relight it anytime in Profile → Settings.
         </p>
       </div>
     );

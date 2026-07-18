@@ -147,7 +147,7 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree, o
 
       <div className="mx-auto mt-6 max-w-3xl px-4 sm:px-6">
         <div className="rounded-2xl border border-slate-100 bg-white p-4 sm:p-6 shadow-lg">
-          <SectionTitle title="The bond" sub={canSpeak ? 'This alignment is still open — speak, then finalise when you’re ready.' : 'What these two trees aligned on.'} />
+          <SectionTitle title="The bond" sub={canSpeak ? 'This alignment is still open: speak, then finalise when you’re ready.' : 'What these two trees aligned on.'} />
 
           {loading ? (
             <div className="flex justify-center rounded-2xl border border-slate-100 bg-white py-16 shadow-sm">
@@ -179,7 +179,7 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree, o
             <ol className="space-y-3">
               <li className="flex items-start gap-2.5">
                 <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-sky-400" />
-                <p className="text-sm text-slate-600"><span className="font-semibold text-slate-800">{initiator.ownerName || 'A tree'}</span> reached toward <span className="font-semibold text-slate-800">{target.ownerName || 'another tree'}</span> — the match was acknowledged.</p>
+                <p className="text-sm text-slate-600"><span className="font-semibold text-slate-800">{initiator.ownerName || 'A tree'}</span> reached toward <span className="font-semibold text-slate-800">{target.ownerName || 'another tree'}</span>; the match was acknowledged.</p>
               </li>
               {messages.map((m, i) => {
                 const mine = m.by === currentUserId;
@@ -195,13 +195,13 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree, o
               {liveStatus === 'ACCEPTED' && (
                 <li className="flex items-start gap-2.5">
                   <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
-                  <p className="text-sm font-medium text-emerald-700">Finalised — a shared sync-block sits on both chains.</p>
+                  <p className="text-sm font-medium text-emerald-700">Finalised: a shared sync-block sits on both chains.</p>
                 </li>
               )}
               {liveStatus === 'REJECTED' && (
                 <li className="flex items-start gap-2.5">
                   <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-slate-300" />
-                  <p className="text-sm text-slate-500">Declined — this alignment was not taken up.</p>
+                  <p className="text-sm text-slate-500">Declined: this alignment was not taken up.</p>
                 </li>
               )}
             </ol>
@@ -224,7 +224,7 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree, o
                     className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-emerald-700 active:scale-95 disabled:opacity-50"
                   >{posting ? 'Sending…' : 'Send'}</button>
                 </div>
-                <p className="mt-2 text-center text-[11px] text-slate-400">The target accepts from the Observatory to finalise — that seals the sync-block on both chains.</p>
+                <p className="mt-2 text-center text-[11px] text-slate-400">The target accepts from the Observatory to finalise; that seals the sync-block on both chains.</p>
               </div>
             )}
           </div>
@@ -242,10 +242,10 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree, o
           <div className="mt-6 flex items-start gap-2 rounded-xl bg-emerald-50 px-4 py-3.5 text-sm leading-snug text-emerald-800">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 shrink-0"><path d="M12 3v18M5 10l7-7 7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
             <span>{liveStatus === 'ACCEPTED'
-              ? 'Accepted — a shared sync-block sits on both chains, a lasting mark that these trees aligned.'
+              ? 'Accepted: a shared sync-block sits on both chains, a lasting mark that these trees aligned.'
               : liveStatus === 'REJECTED'
                 ? 'This alignment was declined.'
-                : 'Once accepted, a shared sync-block is woven into both chains — a permanent, mutual link.'}</span>
+                : 'Once accepted, a shared sync-block is woven into both chains (a permanent, mutual link).'}</span>
           </div>
         </div>
       </div>

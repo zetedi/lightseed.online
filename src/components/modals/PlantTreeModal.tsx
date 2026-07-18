@@ -275,7 +275,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
           <div className={`flex-1 flex flex-col gap-6 ${stepAnim}`}>
             <div className={`text-center ${treeType !== 'GUARDED' ? 'text-white' : 'text-slate-800'}`}>
               <h2 className="text-xl font-bold mb-2">{treeType === 'GUARDED' ? 'A Photo' : 'Imagine'}</h2>
-              <p className="text-sm opacity-70">{treeType === 'GUARDED' ? 'Add a photo of the tree you guard — or skip and simply place it on the map.' : 'Upload a portrait of your tree — or let AI imagine one from your vision.'}</p>
+              <p className="text-sm opacity-70">{treeType === 'GUARDED' ? 'Add a photo of the tree you guard, or skip and simply place it on the map.' : 'Upload a portrait of your tree, or let AI imagine one from your vision.'}</p>
             </div>
             <div className="flex-1 flex flex-col gap-3 min-h-[220px]">
               <ImagePicker

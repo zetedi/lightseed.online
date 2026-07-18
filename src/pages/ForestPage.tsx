@@ -116,7 +116,7 @@ export const ForestPage = ({
                     key={`deck-${deckId}`}
                     onClick={() => toggleDeck(deckId)}
                     role="button"
-                    aria-label={`${group.length} Light Houses of one community — open the deck`}
+                    aria-label={`${group.length} Light Houses of one community; open the deck`}
                     className="relative h-56 cursor-pointer transition-transform hover:-translate-y-1"
                   >
                     <div className="absolute inset-0 translate-x-2.5 translate-y-2.5 rotate-[2.5deg] rounded-2xl bg-amber-200/60 ring-1 ring-amber-300/50" />
@@ -144,10 +144,10 @@ export const ForestPage = ({
             {filteredData.length === 0 && !loadingMore && !(showLightHouses && lightHouses.length > 0) ? (
               /* No trees yet: Mahameru remains — the sea of creation, Orion over still water. */
               <div className="col-span-full relative overflow-hidden rounded-3xl border border-slate-800/40 shadow-xl">
-                <img src="/mahameru.svg" alt="Mahameru — the sea of creation" className="h-80 w-full object-cover sm:h-96" />
+                <img src="/mahameru.svg" alt="Mahameru, the sea of creation" className="h-80 w-full object-cover sm:h-96" />
                 <div className="absolute inset-x-0 bottom-0 p-6 text-center">
                   <p className="text-sm font-bold uppercase tracking-[0.3em] text-white/90">Mahameru</p>
-                  <p className="mt-1 text-xs text-slate-300">The sea of creation — no trees planted here yet. The field awaits the first seed.</p>
+                  <p className="mt-1 text-xs text-slate-300">The sea of creation: no trees planted here yet. The field awaits the first seed.</p>
                 </div>
               </div>
             ) : (

@@ -52,7 +52,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({ tree, currentUserId, can
     return (
         <SectionCard title="Tree Circle" icon={<Icons.Venn />}>
             {circle.size <= 1 ? (
-                <p className="mb-4 text-sm text-emerald-800/80">This tree does not have a circle yet. Invite someone to care for it with you — when they accept, a community grows around the tree.</p>
+                <p className="mb-4 text-sm text-emerald-800/80">This tree does not have a circle yet. Invite someone to care for it with you. When they accept, a community grows around the tree.</p>
             ) : (
                 <div className="mb-4">
                     <p className="mb-3 text-sm text-emerald-800/80">This tree is cared for by:</p>

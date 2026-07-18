@@ -3,7 +3,7 @@
 Every intelligence entering this project roots first in the same living context.
 
 **Before acting:**
-1. Read `root/GENESIS.md` — why we exist (the promise; changes only with great care).
+1. Read `root/GENESIS.md` — the promise (changes only with great care).
 2. Read `root/LIN.md` — what world we are creating (ontology, principles, invariants).
 3. Read `root/ARCHITECTURE.md` — how it currently lives.
 4. Read the newest rings in `root/DECISIONS.md`.

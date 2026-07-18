@@ -98,7 +98,7 @@ export const NodeGrowthTree = ({ community, trees, onViewTree }: NodeGrowthTreeP
     <div className="overflow-hidden rounded-2xl border border-slate-800 shadow-xl" style={{ background: 'radial-gradient(120% 120% at 50% 35%, #0c1a16 0%, #070d0b 60%, #05080a 100%)' }}>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-white/5 px-5 py-3">
         <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-emerald-300">The Model</h3>
-        <p className="text-xs text-slate-400">How {community.name} is crystallising — each branch a tree, its weight its growth.</p>
+        <p className="text-xs text-slate-400">How {community.name} is crystallising: each branch a tree, its weight its growth.</p>
       </div>
 
       {model.n === 0 ? (
@@ -141,7 +141,7 @@ export const NodeGrowthTree = ({ community, trees, onViewTree }: NodeGrowthTreeP
             {/* Tree nodes — sized by weight, glowing when validation is lit. Clickable. */}
             {model.nodes.map((nd, i) => (
               <g key={`n${i}`} onClick={() => onViewTree?.(nd.t)} className={onViewTree ? 'cursor-pointer' : ''}>
-                <title>{nd.t.name} — {nd.t.blockHeight || 0} blocks, {nd.links} links{nd.lit ? ', validated' : ''}</title>
+                <title>{nd.t.name}: {nd.t.blockHeight || 0} blocks, {nd.links} links{nd.lit ? ', validated' : ''}</title>
                 <circle cx={nd.x} cy={nd.y} r={nd.r} fill={nd.color} filter={nd.lit ? 'url(#ngt-glow)' : undefined} fillOpacity={nd.lit ? 1 : 0.85} stroke="#ffffff" strokeOpacity={0.25} strokeWidth={1} />
                 {nd.r > 13 && (
                   <text x={nd.x + (Math.cos(nd.angle) >= 0 ? nd.r + 6 : -(nd.r + 6))} y={nd.y + 4}

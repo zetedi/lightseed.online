@@ -371,7 +371,7 @@ const AppContent = () => {
     // The browser tab wears the community's name when a community drives the view.
     useEffect(() => {
         const c = impersonatedCommunity || hostCommunity;
-        document.title = c?.name ? c.name : '.seed — Lightseed, life recognising life';
+        document.title = c?.name ? c.name : '.seed: Lightseed, life recognising life';
     }, [impersonatedCommunity, hostCommunity]);
 
     // Sync the tokenisation flag (AI-token economy) from the node's community. Off until enabled.
@@ -554,7 +554,7 @@ const AppContent = () => {
         try {
             const res = await acceptAlignment(id);
             setAlignments(prev => prev.filter(a => a.id !== id)); // drop the accepted request
-            await showAlert("Aligned — a shared sync-block is now on both chains.", 'Alignment');
+            await showAlert("Aligned: a shared sync-block is now on both chains.", 'Alignment');
             // Accepting an alignment also SIGNS its covenant (the canonical 2-party form) — additive:
             // the sync-block above stays, and the alignment gains a cryptographic twin the accepting
             // party signs in their own hand. Best-effort: a missing/unavailable signing key must never
@@ -1101,7 +1101,7 @@ const AppContent = () => {
             <div className="relative z-20 flex-1">
                 {impersonatedCommunity && (
                     <div className="sticky top-0 z-40 flex items-center justify-center gap-3 bg-amber-500 px-4 py-1.5 text-center text-xs font-bold text-white shadow-md">
-                        <span className="truncate">Viewing as <span className="font-extrabold">{impersonatedCommunity.name}</span> — community view</span>
+                        <span className="truncate">Viewing as <span className="font-extrabold">{impersonatedCommunity.name}</span> (community view)</span>
                         <button
                             onClick={() => { setImpersonatedCommunity(null); setTab('dashboard'); window.scrollTo(0, 0); }}
                             className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/25 px-2.5 py-0.5 font-bold uppercase tracking-wide hover:bg-white/40"
@@ -1114,7 +1114,7 @@ const AppContent = () => {
                     /* Honest provenance banner — mirrors the community-view banner above. The
                        bridge stays visible the whole time: the being's words, the carrier's hands. */
                     <div className="sticky top-0 z-40 flex items-center justify-center gap-3 bg-purple-600 px-4 py-1.5 text-center text-xs font-bold text-white shadow-md">
-                        <span className="truncate">Carrying <span className="font-extrabold">{carryingTree.name}</span> — carried by {lightseed?.displayName || 'you'}</span>
+                        <span className="truncate">Carrying <span className="font-extrabold">{carryingTree.name}</span>, carried by {lightseed?.displayName || 'you'}</span>
                         <button
                             onClick={() => setCarryingTree(null)}
                             className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/25 px-2.5 py-0.5 font-bold uppercase tracking-wide hover:bg-white/40"
@@ -1442,7 +1442,7 @@ const AppContent = () => {
                         // disclosure keep the bridge visible until beings sign for themselves.
                         if (isSuperAdmin && carryingTree && data.lifetreeId === carryingTree.id) {
                             const beingName = carryingTree.shortTitle
-                                ? `${carryingTree.name} — ${carryingTree.shortTitle}`
+                                ? `${carryingTree.name}, ${carryingTree.shortTitle}`
                                 : carryingTree.name;
                             const carrierName = lightseed?.displayName || 'a superadmin';
                             await mintPulse({

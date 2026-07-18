@@ -130,16 +130,16 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
       const prompt = `${selectedVision.title}. ${pulseBody}`.trim();
       const img = await generateVisionImage(prompt);
       if (img) setPulseImageUrl(img);
-      else setGenError('Could not generate an image right now — try again, or upload one.');
+      else setGenError('Could not generate an image right now. Try again, or upload one.');
     } catch (e: any) {
       // Inline (the old showAlert appeared *behind* the modal).
-      setGenError(e?.message || 'Image generation failed — try again, or upload one.');
+      setGenError(e?.message || 'Image generation failed. Try again, or upload one.');
     } finally {
       setGenerating(false);
     }
   };
 
-  const inviteTree = () => showAlert('Inviting a tree to grow this vision together is coming soon — it will become an on-chain agreement between trees.');
+  const inviteTree = () => showAlert('Inviting a tree to grow this vision together is coming soon; it will become an on-chain agreement between trees.');
 
   const handleMint = async (e?: FormEvent) => {
     e?.preventDefault();
@@ -252,7 +252,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
                       gradient="from-amber-500 to-purple-700"
                       icon={<Icons.Wizard />}
                       title="Vision Growth"
-                      desc="Inspiration, funding, collaboration — observe a vision growing."
+                      desc="Inspiration, funding, collaboration: observe a vision growing."
                       note={myVisions.length === 0 ? 'Create a vision first' : undefined}
                     />
                     <GrowthCard
@@ -262,7 +262,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
                       gradient="from-emerald-500 to-emerald-800"
                       icon={<Icons.Tree />}
                       title="Tree Growth"
-                      desc="New leaves, photos, milestones — observe your tree growing."
+                      desc="New leaves, photos, milestones: observe your tree growing."
                       note={!activeTree ? 'Plant a lifetree first' : undefined}
                     />
                   </div>
@@ -280,7 +280,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3"><p className="truncate text-sm font-bold text-white drop-shadow">{growthTree?.name}</p></div>
                       </div>
                       <ImagePicker onImageSelect={uploadImage} previewUrl={pulseImageUrl} loading={uploading} />
-                      <p className="text-xs leading-relaxed text-emerald-800/80">Upload a new photo — it becomes the tree's <span className="font-bold">latest image</span> and joins its growth timeline.</p>
+                      <p className="text-xs leading-relaxed text-emerald-800/80">Upload a new photo; it becomes the tree's <span className="font-bold">latest image</span> and joins its growth timeline.</p>
                     </div>
                   ) : growthKind === 'vision' ? (
                     <div className="space-y-3">
@@ -288,7 +288,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
                       <div className="relative h-44 w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
                         {pulseImageUrl
                           ? <img src={pulseImageUrl} alt={selectedVision?.title} className="h-full w-full object-cover" />
-                          : <div className="flex h-full flex-col items-center justify-center gap-1.5 text-slate-400"><Icons.Eye /><span className="text-xs">{selectedVision ? 'No image yet — generate or upload one' : 'Pick a vision below'}</span></div>}
+                          : <div className="flex h-full flex-col items-center justify-center gap-1.5 text-slate-400"><Icons.Eye /><span className="text-xs">{selectedVision ? 'No image yet. Generate or upload one' : 'Pick a vision below'}</span></div>}
                         {selectedVision && <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3"><p className="truncate text-sm font-bold text-white drop-shadow">{selectedVision.title}</p></div>}
                       </div>
 

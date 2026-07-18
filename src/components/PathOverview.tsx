@@ -59,7 +59,7 @@ export const PathOverview: React.FC<PathOverviewProps> = ({ current }) => {
       </ol>
 
       <p className="mt-6 rounded-xl bg-slate-50 px-4 py-3 text-[11px] leading-relaxed text-slate-400">
-        This is the node's ruleset — the trail the Light Path walks you along, one step at a time.
+        This is the node's ruleset: the trail the Light Path walks you along, one step at a time.
         In time, each community will shape its own path for the beings it welcomes.
       </p>
     </div>

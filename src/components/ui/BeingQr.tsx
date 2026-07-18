@@ -58,7 +58,7 @@ export const BeingQr = ({ lid, name, savedHref, canMint = false, onMint, classNa
             <button
                 type="button"
                 onClick={show}
-                title="QR code — this being's offline link"
+                title="QR code: this being's offline link"
                 aria-label={`QR code for ${name}`}
                 className={`inline-flex items-center justify-center rounded-full transition-colors ${className}`}
             >
@@ -73,7 +73,7 @@ export const BeingQr = ({ lid, name, savedHref, canMint = false, onMint, classNa
                             : <div className="flex h-56 w-56 items-center justify-center text-slate-300">…</div>}
                         <p className="break-all font-mono text-[11px] text-slate-400">{href || liveHref}</p>
                         <p className="max-w-xs text-xs text-slate-500">
-                            Scan to open this being — the link carries its true name (lid), for paper, posters, and the world offline.
+                            Scan to open this being. The link carries its true name (lid), for paper, posters, and the world offline.
                         </p>
                         {stale && (
                             <div className="w-full rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">

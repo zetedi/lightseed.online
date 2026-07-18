@@ -99,7 +99,7 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
         },
         { fromDate: pick.from, toDate: pick.to, note },
       );
-      notify('🛏️ Your request is in — the keeper will answer.');
+      notify('🛏️ Your request is in; the keeper will answer.');
       announce('beds', bed.id);
       setPick({});
       setNote('');

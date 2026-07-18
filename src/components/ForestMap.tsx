@@ -277,7 +277,7 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
             const size = isSmall ? 'w-10 h-10' : 'w-12 h-12';
             const img = safeImageUrl(sanct.imageUrl || '/lighthouse.webp', DARK_IMAGE_FALLBACK);
             return `
-            <div class="marker-pop relative ${size} hover:scale-110 transition-transform duration-300" style="animation-delay: ${delay}ms;" role="button" aria-label="${escapeHtml(sanct.name)} — Light House">
+            <div class="marker-pop relative ${size} hover:scale-110 transition-transform duration-300" style="animation-delay: ${delay}ms;" role="button" aria-label="${escapeHtml(sanct.name)}, Light House">
                 <div class="lightHouse-glow absolute -inset-4 rounded-full"></div>
                 <div class="absolute -inset-1 rounded-full border-2 border-yellow-300/90"></div>
                 <div class="relative ${size} rounded-full border-2 border-amber-400 overflow-hidden bg-[#04070f] shadow-xl z-10">
@@ -620,7 +620,7 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
                 const clusterTrees = [cluster.center, ...cluster.children];
                 const hasDanger = clusterTrees.some(t => t.status === 'DANGER');
                 const html = `
-                <div class="relative w-12 h-12 group cursor-pointer transition-transform duration-300 hover:scale-125" style="transform-origin:center;" role="button" aria-label="${escapeHtml(cluster.center.name || 'Light House')} — ${count} beings">
+                <div class="relative w-12 h-12 group cursor-pointer transition-transform duration-300 hover:scale-125" style="transform-origin:center;" role="button" aria-label="${escapeHtml(cluster.center.name || 'Light House')}, ${count} beings">
                     ${getHtmlForTree(cluster.center)}
                     <div class="absolute -top-1.5 -right-1.5 w-6 h-6 bg-amber-500 border-2 border-white text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-md z-20">
                         ${count}

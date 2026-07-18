@@ -84,7 +84,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
   const handleToggleSeal = async (next: boolean) => {
     const confirmed = next
       ? await showConfirm(
-          'Seal this chain? From now on, every new block this node mints is sealed with the canonical, reproducible hash — so anyone can verify the chain end to end. Blocks minted before now keep their original hashes. This is a commitment.',
+          'Seal this chain? From now on, every new block this node mints is sealed with the canonical, reproducible hash, so anyone can verify the chain end to end. Blocks minted before now keep their original hashes. This is a commitment.',
           { title: 'Seal the chain', confirmText: 'Seal it' },
         )
       : await showConfirm(
@@ -185,7 +185,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
               <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-emerald-300"><Icons.ShieldCheck /></span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold text-emerald-900">Chain sealed</p>
-                <p className="mt-0.5 text-sm text-emerald-800/80">Every new block this node mints is sealed with the canonical, reproducible hash — so its content can be verified against its hash.</p>
+                <p className="mt-0.5 text-sm text-emerald-800/80">Every new block this node mints is sealed with the canonical, reproducible hash, so its content can be verified against its hash.</p>
                 {firstTree?.latestHash && (
                   <p className="mt-1 break-all font-mono text-xs text-emerald-700/60">head {firstTree.latestHash.slice(0, 16)}…</p>
                 )}
@@ -197,7 +197,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                     {verifyResult && (
                       <p className="mt-2 text-xs">
                         {verifyResult.sealed === 0 ? (
-                          <span className="text-emerald-800/70">No sealed blocks yet — the next pulse this node mints will be the first.{verifyResult.legacy > 0 ? ` ${verifyResult.legacy} earlier block${verifyResult.legacy === 1 ? '' : 's'} predate the seal.` : ''}</span>
+                          <span className="text-emerald-800/70">No sealed blocks yet; the next pulse this node mints will be the first.{verifyResult.legacy > 0 ? ` ${verifyResult.legacy} earlier block${verifyResult.legacy === 1 ? '' : 's'} predate the seal.` : ''}</span>
                         ) : verifyResult.intact === verifyResult.sealed ? (
                           <span className="font-semibold text-emerald-700">✓ {verifyResult.sealed} sealed block{verifyResult.sealed === 1 ? '' : 's'} intact across {verifyResult.trees} tree{verifyResult.trees === 1 ? '' : 's'}.{verifyResult.legacy > 0 ? ` (${verifyResult.legacy} legacy, pre-seal.)` : ''}</span>
                         ) : (
@@ -243,7 +243,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
             <MahameruAvatar size={36} className="mt-0.5" />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold text-slate-800">AI-token economy</p>
-              <p className="mt-0.5 text-sm text-slate-500">Turn on “Attention-Energy” tokens for this node — trees earn tokens and spend them on deep AI. While off, AI stays free and the token balance/cost UI is hidden.</p>
+              <p className="mt-0.5 text-sm text-slate-500">Turn on “Attention-Energy” tokens for this node: trees earn tokens and spend them on deep AI. While off, AI stays free and the token balance/cost UI is hidden.</p>
             </div>
             <button
               onClick={() => handleToggleTokenisation(!tokenisationOn)}
@@ -269,7 +269,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
             <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500"><Icons.Globe /></span>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold text-slate-800">Reflect the commons</p>
-              <p className="mt-0.5 text-sm text-slate-500">Show the whole network's public forest here — a window onto every node. While off, {community.domain} shows only its own trees and pulses. Either way, node- and community-only content stays private.</p>
+              <p className="mt-0.5 text-sm text-slate-500">Show the whole network's public forest here, a window onto every node. While off, {community.domain} shows only its own trees and pulses. Either way, node- and community-only content stays private.</p>
             </div>
             <button
               onClick={() => handleToggleReflect(!reflectsOn)}
@@ -290,14 +290,14 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
               <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500"><Icons.Eye /></span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold text-slate-800">Strict scope</p>
-                <p className="mt-0.5 text-sm text-slate-500">Show only {community.domain}'s own trees — hide even your own trees from other domains, for a clean single-place forest. No effect while reflecting the commons.</p>
+                <p className="mt-0.5 text-sm text-slate-500">Show only {community.domain}'s own trees: hide even your own trees from other domains, for a clean single-place forest. No effect while reflecting the commons.</p>
               </div>
               <button
                 onClick={() => handleToggleStrict(!strictOn)}
                 disabled={isTogglingStrict}
                 role="switch"
                 aria-checked={strictOn}
-                title={strictOn ? 'Strict — this place only' : 'Your own trees still show'}
+                title={strictOn ? 'Strict: this place only' : 'Your own trees still show'}
                 className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${strictOn ? 'bg-emerald-600' : 'bg-slate-300'}`}
               >
                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${strictOn ? 'translate-x-6' : 'translate-x-1'}`} />

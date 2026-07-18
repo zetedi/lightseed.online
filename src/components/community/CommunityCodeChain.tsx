@@ -80,7 +80,7 @@ export const CommunityCodeChain: React.FC = () => {
         <div>
             <SectionTitle
                 title="Code chain"
-                sub="The node's body — code changes are its growth; every deploy carries its own history (Indra's net)."
+                sub="The node's body: code changes are its growth; every deploy carries its own history (Indra's net)."
             />
             {failed ? (
                 <p className="py-10 text-center text-sm text-slate-400">The code chain could not be read.</p>

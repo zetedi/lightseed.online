@@ -37,7 +37,7 @@ export const CommunityIntelligence: React.FC<CommunityIntelligenceProps> = ({ co
       onSave={saveSelection}
       onSaved={onUpdate}
       title="Community Intelligence"
-      sub="Choose which intelligences serve this community and which is the default. An intelligence is a participant, never an authority — and always replaceable."
+      sub="Choose which intelligences serve this community and which is the default. An intelligence is a participant, never an authority, and always replaceable."
       panelTitle={t('intel_community_title')}
       panelSubtitle={t('intel_community_sub')}
     />

@@ -197,7 +197,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
 
         // A group thread opened from the inbox.
         if (groupThread) {
-            const greeting = `This is a group reach — everyone in ${groupThread.partnerName} sees these messages.`;
+            const greeting = `This is a group reach: everyone in ${groupThread.partnerName} sees these messages.`;
             setMessages([]);
             setInterpretations({});
             setIsTyping(true);
@@ -460,7 +460,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
         // other party sees who minted it and where.
         if (mode === 'tree') {
             const ok = await showConfirm(
-                `Mint this conversation to “${activeTree.name}”? It will be sealed on the immutable chain — a public record on your tree, like a contract — and everyone here will be told you minted it.`,
+                `Mint this conversation to “${activeTree.name}”? It will be sealed on the immutable chain (a public record on your tree, like a contract) and everyone here will be told you minted it.`,
                 { title: 'Mint to the chain', confirmText: 'Mint' },
             );
             if (!ok) return;
@@ -656,7 +656,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                                 );
                                 if (interp && 'error' in interp) return (
                                     <div className="px-3 text-[11.5px] text-red-400">
-                                        <span aria-hidden>✦</span> couldn’t read this — {interp.error}{' '}
+                                        <span aria-hidden>✦</span> couldn’t read this: {interp.error}{' '}
                                         <button onClick={() => revealInterpretation(i, m.text)} className="font-bold underline hover:text-red-500">try again</button>
                                     </div>
                                 );
@@ -718,8 +718,8 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                     {showMintInfo && (
                         <p className="mx-auto mb-1.5 max-w-md rounded-lg border border-slate-100 bg-slate-50/90 px-3 py-2 text-[11px] italic leading-snug text-slate-400 shadow-sm">
                             {isGroup
-                                ? 'A group reach — everyone in the chosen circle sees and can answer here. Anyone can mint this conversation to their tree, sealing it on the immutable chain.'
-                                : 'Anyone here can mint the conversation to their tree — sealing it on the immutable chain as a shared record, like a contract. A mint shows here and on that tree.'}
+                                ? 'A group reach: everyone in the chosen circle sees and can answer here. Anyone can mint this conversation to their tree, sealing it on the immutable chain.'
+                                : 'Anyone here can mint the conversation to their tree, sealing it on the immutable chain as a shared record, like a contract. A mint shows here and on that tree.'}
                         </p>
                     )}
                     <button
@@ -738,7 +738,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                 honest and quietly invites the planting. */}
             {mode === 'tree' && lightseed && !activeTree && (
                 <div className="border-t border-emerald-100 bg-emerald-50/70 px-4 py-2 text-center text-xs text-emerald-800">
-                    🌱 You speak as yourself — plant a lifetree to speak as a tree.
+                    🌱 You speak as yourself. Plant a lifetree to speak as a tree.
                 </div>
             )}
             <form onSubmit={handleSend} className="p-4 bg-white border-t border-slate-100 flex space-x-3 items-center sticky bottom-0 z-10">

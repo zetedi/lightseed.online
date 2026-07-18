@@ -31,12 +31,12 @@ export const NewsletterAdmin = ({ senderUid, onBack }: { senderUid: string; onBa
             try {
                 const draft = await getNewsletterDraftData();
                 const today = new Date().toLocaleDateString();
-                const treeItems = draft.trees.map(tree => `${tree.name}${tree.locationName ? ` — ${tree.locationName}` : ''}`);
+                const treeItems = draft.trees.map(tree => `${tree.name}${tree.locationName ? `, ${tree.locationName}` : ''}`);
                 const visionItems = draft.visions.map(vision => `${vision.title} by ${vision.authorId.slice(0, 6)}...`);
                 const pulseItems = draft.pulses.map(pulse => `${pulse.title} by ${pulse.authorName}`);
 
                 setLastSentLabel(formatDate(draft.lastSentAt));
-                setSubject(`lightseed newsletter — ${today}`);
+                setSubject(`lightseed newsletter: ${today}`);
                 setHtml(`
 <div style="font-family: Georgia, serif; color: #1f2937; line-height: 1.7; max-width: 760px; margin: 0 auto; padding: 32px;">
   <h1 style="font-weight: 400; color: #065f46; margin-bottom: 8px;">lightseed newsletter</h1>

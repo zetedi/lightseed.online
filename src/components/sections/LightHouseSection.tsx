@@ -116,7 +116,7 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
       <input value={locationName} onChange={e => setLocationName(e.target.value)} placeholder="Place name (e.g. The Olive Grove, Crete)"
         className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
       <div className="space-y-1">
-        <p className="ml-1 text-[11px] text-slate-500">Tap the map to place the Light House — it will glow there in the forest.</p>
+        <p className="ml-1 text-[11px] text-slate-500">Tap the map to place the Light House; it will glow there in the forest.</p>
         <LocationPicker value={coords} onChange={setCoords} />
       </div>
       <input value={splatUrl} onChange={e => setSplatUrl(e.target.value)} placeholder="3D scene URL (Gaussian splat viewer, optional)"

@@ -37,7 +37,7 @@ interface CommunityMembersProps {
 const DOORS: { value: CommunityDoor; label: string; hint: string }[] = [
   { value: 'open', label: 'Open', hint: 'any signed-in being may step in' },
   { value: 'invite', label: 'Invitation', hint: 'knock, or arrive holding an invitation' },
-  { value: 'closed', label: 'Closed', hint: 'the community rests — no new members' },
+  { value: 'closed', label: 'Closed', hint: 'the community rests; no new members' },
 ];
 
 const resolveNames = async (uids: string[]): Promise<Row[]> =>
@@ -105,7 +105,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
 
   const copyInviteUrl = async (inviteId: string) => {
     const url = communityInviteUrl(window.location.origin, inviteId);
-    try { await navigator.clipboard.writeText(url); notify('🎟 Invitation link copied — share it to open the door.'); }
+    try { await navigator.clipboard.writeText(url); notify('🎟 Invitation link copied. Share it to open the door.'); }
     catch { showAlert(url); } // clipboard unavailable: show the link instead
   };
 
@@ -186,7 +186,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
 
   return (
     <div>
-      <SectionTitle title="Members" sub="The people of this community — and, for its keepers, the door itself." />
+      <SectionTitle title="Members" sub="The people of this community; and, for its keepers, the door itself." />
 
       {/* The DOOR — owner-set: who may join, and how. Distinct from visibility (who may see). */}
       {isOwner && (
@@ -209,7 +209,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
           {isThisDomainsNode && (
             <p className="mt-1 text-[11px] italic text-emerald-600">
               This community is the node for {community.domain}. {door === 'closed'
-                ? 'Sign-up here is closed — only invited people can create an account.'
+                ? 'Sign-up here is closed; only invited people can create an account.'
                 : 'Anyone can create an account here (identity is open); the door still gates who becomes a member.'}
             </p>
           )}
@@ -222,13 +222,13 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
           <div className="mb-2 flex items-center justify-between">
             <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Invitations</p>
             <button onClick={handleMintInvite} disabled={minting || door === 'closed'}
-              title={door === 'closed' ? 'The door is closed — invitations would wait outside.' : 'Mint a shareable invitation link'}
+              title={door === 'closed' ? 'The door is closed; invitations would wait outside.' : 'Mint a shareable invitation link'}
               className="rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50">
               {minting ? 'Minting…' : 'Mint invitation link'}
             </button>
           </div>
           {invites.length === 0 ? (
-            <p className="text-[11px] italic text-slate-400">No invitations yet. A minted link opens the door to whoever holds it — and records who invited whom.</p>
+            <p className="text-[11px] italic text-slate-400">No invitations yet. A minted link opens the door to whoever holds it, and records who invited whom.</p>
           ) : (
             <div className="space-y-1.5">
               {invites.map(i => {

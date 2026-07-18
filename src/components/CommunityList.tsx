@@ -183,12 +183,12 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
       const visions = await getMyVisions(currentUserId);
       const texts = visions.map(v => `${v.title || ''} ${v.body || ''} ${(v as any).description || ''}`);
       if (texts.length === 0) {
-        showAlert('Create a vision first — matching reads the visions you have planted.');
+        showAlert('Create a vision first: matching reads the visions you have planted.');
       } else {
         const pool = [...communities, ...(genesisCommunity ? [genesisCommunity] : [])];
         const found = matchCommunities(texts, pool, 3);
         setMatches(found);
-        if (found.length === 0) showAlert('No shared ground found yet — your visions speak a language no community here speaks. Yet.');
+        if (found.length === 0) showAlert('No shared ground found yet: your visions speak a language no community here speaks. Yet.');
       }
     } catch (e: any) {
       showAlert(e?.message || 'Could not read the resonance.');
@@ -332,7 +332,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
 
           {matches && matches.length > 0 && (
             <div className="mb-8 space-y-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 animate-in fade-in slide-in-from-top-2">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-amber-600">Your resonant communities — read from your visions</p>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-amber-600">Your resonant communities, read from your visions</p>
               {matches.map((m, i) => (
                 <div key={m.community.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-100 bg-white p-3 shadow-sm">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500 text-sm font-black text-white">{i + 1}</span>

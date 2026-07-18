@@ -12,9 +12,9 @@ import { AIAccessCard } from './AIAccessCard';
 import { SectionMenu } from '../ui/SectionMenu';
 
 const CLAUDE_MODELS = [
-  { id: 'claude-opus-4-8', label: 'Claude Opus 4.8 — deepest' },
-  { id: 'claude-sonnet-5', label: 'Claude Sonnet 5 — balanced' },
-  { id: 'claude-haiku-4-5', label: 'Claude Haiku 4.5 — fast & light' },
+  { id: 'claude-opus-4-8', label: 'Claude Opus 4.8 (deepest)' },
+  { id: 'claude-sonnet-5', label: 'Claude Sonnet 5 (balanced)' },
+  { id: 'claude-haiku-4-5', label: 'Claude Haiku 4.5 (fast & light)' },
 ];
 
 const PROVIDER_LABEL: Record<string, string> = {
@@ -160,7 +160,7 @@ export const IntelligencePanel = ({
     setPromoting(true);
     try {
       await promoteToDefaultVoice(existingClaude);
-      showAlert(`${existingClaude.name} is now the default voice for everyone on the network. Members who haven't picked their own intelligence will speak through it — on this connected key.`);
+      showAlert(`${existingClaude.name} is now the default voice for everyone on the network. Members who haven't picked their own intelligence will speak through it, on this connected key.`);
       refresh();
     } catch (e: any) {
       showAlert(e?.message || 'Could not set the default voice.');
@@ -347,7 +347,7 @@ export const IntelligencePanel = ({
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
           <div className="min-w-0">
             <div className="text-sm font-bold text-slate-800">Make {existingClaude.name} everyone's default voice</div>
-            <div className="mt-0.5 text-[11px] leading-snug text-slate-500">Network-wide. Every member who hasn't chosen their own intelligence — including new members — will speak through it, on this connected key.</div>
+            <div className="mt-0.5 text-[11px] leading-snug text-slate-500">Network-wide. Every member who hasn't chosen their own intelligence (including new members) will speak through it, on this connected key.</div>
           </div>
           <button type="button" onClick={handleMakeDefault} disabled={promoting}
             className="shrink-0 rounded-full bg-slate-900 px-4 py-2 text-xs font-bold text-amber-300 transition-colors hover:bg-slate-800 disabled:opacity-50">

@@ -75,7 +75,7 @@ export const TreesSection: React.FC<TreesSectionProps> = ({
     setInviteBusyId(tree.id);
     try {
       await onInvite(tree);
-      notify(`🌱 Invitation sent — ${tree.name}'s keeper will decide.`);
+      notify(`🌱 Invitation sent. ${tree.name}'s keeper will decide.`);
       setInviteCandidates(prev => (prev || []).filter(t => t.id !== tree.id));
     } catch (e) {
       showAlert((e instanceof Error && e.message) || 'Could not send the invite.');

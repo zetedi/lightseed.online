@@ -134,8 +134,8 @@ export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree
             <div className="mt-1 flex items-center gap-2 text-sm text-slate-700">
               <span className="text-slate-400 [&>svg]:h-4 [&>svg]:w-4">{housed ? <Icons.Building /> : <Icons.Moon />}</span>
               {housed
-                ? <span>{t('housed')} — {houseName || 'a Light House'}</span>
-                : <span>{t('loose')}{bed.locationName ? ` — ${bed.locationName}` : bed.latitude != null ? ` — ${bed.latitude.toFixed(3)}, ${bed.longitude?.toFixed(3)}` : ''}</span>}
+                ? <span>{t('housed')}: {houseName || 'a Light House'}</span>
+                : <span>{t('loose')}{bed.locationName ? `: ${bed.locationName}` : bed.latitude != null ? `: ${bed.latitude.toFixed(3)}, ${bed.longitude?.toFixed(3)}` : ''}</span>}
             </div>
           </div>
           {bed.body && (

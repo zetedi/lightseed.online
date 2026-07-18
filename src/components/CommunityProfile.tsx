@@ -139,7 +139,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     if (!verdict.usable) {
       showAlert(verdict.reason === 'revoked' ? 'This invitation has been revoked.'
         : verdict.reason === 'expired' ? 'This invitation has expired.'
-        : verdict.reason === 'door_closed' ? 'The door is closed for now — even invitations wait.'
+        : verdict.reason === 'door_closed' ? 'The door is closed for now; even invitations wait.'
         : 'This invitation belongs to another community.');
       return;
     }
@@ -148,7 +148,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       const { remembered } = await joinCommunityWithInvite(currentUserId, inviteForHere);
       setMemberByLink(true);
       notify(remembered ? `🌿 Welcome to ${community.name}. Your arrival is remembered.` : `🌿 Welcome to ${community.name}.`);
-    } catch (e: any) { showAlert(e?.message || 'The door did not open — the invitation may no longer stand.'); }
+    } catch (e: any) { showAlert(e?.message || 'The door did not open; the invitation may no longer stand.'); }
     setJoining(false);
   };
   // The visibility levels this viewer may query at community scope — shared by the events and
@@ -509,7 +509,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     {
       key: 'model', label: 'Growth', icon: <MahameruAvatar size={20} />, render: () => (
         <div>
-          <SectionTitle title="Growth" sub="How this node is crystallising — its trees weighted by their chain growth, links and pulses." />
+          <SectionTitle title="Growth" sub="How this node is crystallising: its trees weighted by their chain growth, links and pulses." />
           <NodeGrowthTree community={community} trees={domainTrees} onViewTree={onViewTree} />
         </div>
       ),
@@ -540,7 +540,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     {
       key: 'path', label: 'The Path', icon: <Icons.ArrowRight />, render: () => (
         <div>
-          <SectionTitle title="The Path" sub="From first seed to sovereign node — the onboarding trail, as a ruleset. In time each community will shape its own." />
+          <SectionTitle title="The Path" sub="From first seed to sovereign node: the onboarding trail, as a ruleset. In time each community will shape its own." />
           <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
             <PathOverview />
           </div>
@@ -619,7 +619,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
             )}
             {currentUserId && !isMember && inviteForHere && (
               <button onClick={handleEnterWithInvite} disabled={joining} className="flex items-center gap-1 rounded-full bg-amber-500 px-2.5 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-amber-400 disabled:opacity-50 sm:px-4 sm:py-2 sm:text-xs">
-                🎟 <span>{joining ? 'Entering…' : `Enter — invited${inviterName ? ` by ${inviterName}` : ''}`}</span>
+                🎟 <span>{joining ? 'Entering…' : `Enter, invited${inviterName ? ` by ${inviterName}` : ''}`}</span>
               </button>
             )}
             {currentUserId && !isMember && !inviteForHere && (

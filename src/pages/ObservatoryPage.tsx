@@ -158,7 +158,7 @@ export const ObservatoryPage = ({
               <button
                 onClick={onRefreshResonance}
                 disabled={isAnalyzingSynergy || !canRefreshResonance}
-                title={!canRefreshResonance ? `Refreshes weekly — about ${Math.max(1, Math.ceil(synergyCooldownLeft / 86400000))} day(s) left` : 'Re-read the field'}
+                title={!canRefreshResonance ? `Refreshes weekly; about ${Math.max(1, Math.ceil(synergyCooldownLeft / 86400000))} day(s) left` : 'Re-read the field'}
                 className="inline-flex shrink-0 items-center gap-2 rounded-full bg-amber-500 px-4 py-2 text-xs font-bold text-white shadow transition-all hover:bg-amber-600 active:scale-95 disabled:opacity-50"
               >
                 {isAnalyzingSynergy

@@ -100,7 +100,7 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
     <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-white p-4">
       <div className="min-w-0">
         <p className="text-sm font-semibold text-slate-800">Custom landing page</p>
-        <p className="text-xs text-slate-500">Greet visitors on this community's domain with your hero image and a single sign-in — the full seed waits behind the corner logo.</p>
+        <p className="text-xs text-slate-500">Greet visitors on this community's domain with your hero image and a single sign-in. The full seed waits behind the corner logo.</p>
       </div>
       <button
         type="button"
@@ -120,7 +120,7 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-sm font-semibold text-slate-800">Landing pages</p>
-            <p className="text-xs text-slate-500">Panels in the landing's menu — write anything: a menu of offerings, an About, directions. Saved with the Save button.</p>
+            <p className="text-xs text-slate-500">Panels in the landing's menu. Write anything: a menu of offerings, an About, directions. Saved with the Save button.</p>
           </div>
           <button
             type="button"
@@ -131,7 +131,7 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
           </button>
         </div>
         {editLandingPages.length === 0 && (
-          <p className="text-xs text-slate-400">No pages yet — the landing shows Home and Events.</p>
+          <p className="text-xs text-slate-400">No pages yet; the landing shows Home and Events.</p>
         )}
         {editLandingPages.map((page, i) => (
           <div key={page.id} className="space-y-2 rounded-xl border border-slate-100 p-3">
@@ -153,7 +153,7 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
             <RichTextEditor
               value={page.html}
               onChange={html => onLandingPagesChange(prev => prev.map((p, j) => j === i ? { ...p, html } : p))}
-              placeholder="The page's content — text, lists, images…"
+              placeholder="The page's content: text, lists, images…"
               onImageUpload={handlePageImageUpload}
             />
           </div>

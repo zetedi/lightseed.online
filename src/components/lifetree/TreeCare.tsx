@@ -11,9 +11,9 @@ import { SectionCard } from '../ui/SectionCard';
 // The three growth stages, in growing order — a seed in its pot, in the ground but still
 // tended, and finally self-sustaining. The first two are watered on a schedule.
 const STAGE_META: { key: TreeStage; label: string; hint: string; icon: React.ReactNode }[] = [
-    { key: 'potted', label: 'Seed in a pot', hint: 'A seed growing in its pot — the most fragile stage.', icon: <Icons.Pot /> },
+    { key: 'potted', label: 'Seed in a pot', hint: 'A seed growing in its pot, the most fragile stage.', icon: <Icons.Pot /> },
     { key: 'planted', label: 'In the ground', hint: 'Planted out, but still needs regular care.', icon: <Icons.Sprout /> },
-    { key: 'self_sustaining', label: 'Self-sustaining', hint: 'Established — no scheduled watering.', icon: <Icons.Tree /> },
+    { key: 'self_sustaining', label: 'Self-sustaining', hint: 'Established: no scheduled watering.', icon: <Icons.Tree /> },
 ];
 
 // The tree's or the thrown error's message, falling back when there is none.
@@ -91,8 +91,8 @@ export const TreeCare: React.FC<TreeCareProps> = ({
             onUpdate?.({ watering });
             const iv = watering.intervalDays || 0;
             setWaterMsg(waterStage === 'self_sustaining'
-                ? 'Marked self-sustaining — it grows on its own now.'
-                : `${waterStage === 'potted' ? 'Seed in its pot' : 'In the ground'} — watering every ${iv} day${iv > 1 ? 's' : ''}.`);
+                ? 'Marked self-sustaining. It grows on its own now.'
+                : `${waterStage === 'potted' ? 'Seed in its pot' : 'In the ground'}: watering every ${iv} day${iv > 1 ? 's' : ''}.`);
         } catch (e) { setWaterMsg(errMsg(e, 'Could not save the schedule.')); }
         setWaterBusy(false);
     };
@@ -113,7 +113,7 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                 lastWateredAt: Timestamp.fromMillis(now),
                 ...(iv ? { nextDueAt: Timestamp.fromMillis(computeNextDueMillis(now, iv)) } : {}),
             } });
-            setWaterMsg('Watered today 💧 — kept off the chain.');
+            setWaterMsg('Watered today 💧 (kept off the chain).');
         } catch (e) { setWaterMsg(errMsg(e, 'Could not mark watered.')); }
         setWaterBusy(false);
     };
@@ -128,7 +128,7 @@ export const TreeCare: React.FC<TreeCareProps> = ({
             setWaterMsg('The witness is looking…');
             const analysis = await analyzeWateringPhoto(img, tree);
             const auto = analysis.watering && (analysis.confidence || 0) >= 70;
-            setWaterMsg(auto ? 'Confirmed by AI — recording 💧' : 'Recording — a guardian can confirm…');
+            setWaterMsg(auto ? 'Confirmed by AI; recording 💧' : 'Recording; a guardian can confirm…');
             const { confirmedBy } = await recordWatering({ tree, sender, imageFile: file, analysis });
             const now = Date.now();
             const iv = tree.watering?.intervalDays;
@@ -140,8 +140,8 @@ export const TreeCare: React.FC<TreeCareProps> = ({
             } });
             onChainRefresh();
             setWaterMsg(confirmedBy === 'ai'
-                ? `Watered 💧 — confirmed by AI. ${analysis.note}`
-                : `Watered 💧 — awaiting a guardian to confirm. ${analysis.note}`);
+                ? `Watered 💧, confirmed by AI. ${analysis.note}`
+                : `Watered 💧, awaiting a guardian to confirm. ${analysis.note}`);
         } catch (e) { setWaterMsg(errMsg(e, 'Could not record the watering.')); }
         setWaterBusy(false);
     };
@@ -159,7 +159,7 @@ export const TreeCare: React.FC<TreeCareProps> = ({
         setWaterBusy(true); setWaterMsg(null);
         try {
             const ok = await sendWateringAlert(tree, sender);
-            setWaterMsg(ok ? 'The guardians have been asked to water 💧' : 'No guardians to notify yet — invite some to the circle.');
+            setWaterMsg(ok ? 'The guardians have been asked to water 💧' : 'No guardians to notify yet. Invite some to the circle.');
             if (ok) onUpdate?.({ watering: { ...(tree.watering || {}), overdue: true } });
         } catch (e) { setWaterMsg(errMsg(e, 'Could not send the reminder.')); }
         setWaterBusy(false);
@@ -173,12 +173,12 @@ export const TreeCare: React.FC<TreeCareProps> = ({
             <div className="mb-4 flex items-start justify-between gap-3">
                 <div className="text-sm text-sky-800/90">
                     {selfSustaining ? (
-                        <p>🌳 Self-sustaining — this tree needs no scheduled watering.</p>
+                        <p>🌳 Self-sustaining. This tree needs no scheduled watering.</p>
                     ) : scheduled ? (
                         overdue ? (
-                            <p className="font-semibold text-sky-700">{stageEmoji} Thirsty — {overByDays > 0 ? `${overByDays} day${overByDays > 1 ? 's' : ''} overdue` : 'watering due today'}.</p>
+                            <p className="font-semibold text-sky-700">{stageEmoji} Thirsty: {overByDays > 0 ? `${overByDays} day${overByDays > 1 ? 's' : ''} overdue` : 'watering due today'}.</p>
                         ) : (
-                            <p>{stageEmoji} {stage === 'potted' ? 'A seed in its pot — next' : 'Next'} watering in {dueInDays} day{dueInDays !== 1 ? 's' : ''}.</p>
+                            <p>{stageEmoji} {stage === 'potted' ? 'A seed in its pot: next' : 'Next'} watering in {dueInDays} day{dueInDays !== 1 ? 's' : ''}.</p>
                         )
                     ) : (
                         <p>No watering schedule yet.</p>
@@ -239,7 +239,7 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                         <label className="flex cursor-pointer items-center gap-2 text-xs leading-tight text-sky-700/80" title="For waterings worth remembering.">
                             <input type="checkbox" checked={waterOnChain} onChange={e => setWaterOnChain(e.target.checked)} className="accent-sky-600" />
                             <span>
-                                <span className="block">Add photo proof —</span>
+                                <span className="block">Add photo proof:</span>
                                 <span className="block">mint a growth block on the tree's chain.</span>
                             </span>
                         </label>

@@ -61,7 +61,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
     const next = !lightPathOn;
     setLightPathOn(next); // persists + clears dismissals when turning on
     setLightPathOnState(next);
-    notify(next ? 'The Light Path is lit — you will find it on your home page.' : 'The Light Path is off.');
+    notify(next ? 'The Light Path is lit. You will find it on your home page.' : 'The Light Path is off.');
   };
 
   const handleNewsletterToggle = async () => {

@@ -111,7 +111,7 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
             if (rootTree) await firestoreStore.unlink(lightHouse.id, 'rooted', rootTree.id);
             await firestoreStore.link(lightHouse.id, 'rooted', tree.id);
             setRootTree(tree);
-            notify(`🌳 ${lightHouse.name} is rooted in ${tree.name} — a mother tree now.`);
+            notify(`🌳 ${lightHouse.name} is rooted in ${tree.name}, a mother tree now.`);
         } catch (e: any) { showAlert(e?.message || 'Could not root the Light House.'); }
         setIsRooting(false);
     };
@@ -214,7 +214,7 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
                         {canEdit && (
                             <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-5 shadow-sm">
                                 <h3 className="mb-2.5 text-xs font-bold uppercase tracking-wider text-amber-600">The place</h3>
-                                <p className="mb-2 text-[11px] text-slate-500">Tap the map to move the Light House — it glows where you place it in the forest.</p>
+                                <p className="mb-2 text-[11px] text-slate-500">Tap the map to move the Light House. It glows where you place it in the forest.</p>
                                 <LocationPicker value={coords} onChange={setCoords} className="h-56 w-full overflow-hidden rounded-xl border border-amber-100 shadow-inner" />
                                 <div className="mt-3 flex flex-wrap items-center gap-2">
                                     <input value={placeName} onChange={e => setPlaceName(e.target.value)} placeholder="Place name (e.g. The Olive Grove, Crete)"
@@ -247,7 +247,7 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
 
                 {section === 'tree' && (
                     <div>
-                        <SectionTitle title="The Tree" sub="A Light House roots in a tree — never before one. The tree that holds it is a mother tree." />
+                        <SectionTitle title="The Tree" sub="A Light House roots in a tree, never before one. The tree that holds it is a mother tree." />
                         {!rootLoaded ? (
                             <p className="py-8 text-center text-sm text-slate-400">Listening…</p>
                         ) : rootTree ? (
@@ -259,7 +259,7 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
                                 <img src={rootTree.latestGrowthUrl || rootTree.imageUrl || '/mahameru.svg'} alt="" className="h-16 w-16 shrink-0 rounded-full border-4 border-amber-300 object-cover bg-[#04070f] shadow" />
                                 <div className="min-w-0 flex-1">
                                     <p className="truncate text-lg font-light tracking-wide text-slate-800">{rootTree.name}</p>
-                                    <p className="text-[10px] font-black uppercase tracking-wide text-amber-600">☀ Mother tree — this Light House is rooted here</p>
+                                    <p className="text-[10px] font-black uppercase tracking-wide text-amber-600">☀ Mother tree: this Light House is rooted here</p>
                                 </div>
                                 <Icons.ArrowRight size={18} className="shrink-0 text-amber-300" />
                             </div>
@@ -292,7 +292,7 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
 
                 {section === 'beds' && (
                     <div className="space-y-6">
-                        <SectionTitle title="Beds" sub="Places to sleep — each a being, with its own page and calendar." />
+                        <SectionTitle title="Beds" sub="Places to sleep: each a being, with its own page and calendar." />
 
                         {bedList.length > 0 ? (
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -333,7 +333,7 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
 
                 {section === 'communities' && (
                     <div>
-                        <SectionTitle title="Communities" sub="The houses this Light House holds — the mirror of each community's Light Houses tab." />
+                        <SectionTitle title="Communities" sub="The houses this Light House holds: the mirror of each community's Light Houses tab." />
                         {homes === null ? (
                             <p className="py-8 text-center text-sm text-slate-400">Listening…</p>
                         ) : homes.length === 0 ? (

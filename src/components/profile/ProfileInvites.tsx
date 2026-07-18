@@ -101,11 +101,11 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
     try {
       const outcome = await createNetworkInvite(inviteEmail, uid, inviteMessage, { unlimited: isSuperAdmin });
       if (outcome.alreadyMember) {
-        notify('🌳 That soul is already a member — no invite needed.');
+        notify('🌳 That soul is already a member; no invite needed.');
       } else {
         refreshSentInvites();
         notify(outcome.alreadyInvited
-          ? 'Already invited — your intention flew to them anyway; no invite spent.'
+          ? 'Already invited. Your intention flew to them anyway; no invite spent.'
           : t('invite_sent'));
         setShowInviteModal(false);
         setInviteEmail('');
@@ -129,7 +129,7 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
         ) : (
           <div className="rounded-2xl border border-slate-100 p-5 space-y-3">
             <p className="text-sm text-slate-500">{t('invites_remaining')}: <span className="font-bold text-emerald-600">{isSuperAdmin ? 'Unlimited' : invitesRemaining}</span></p>
-            <p className="text-xs text-slate-400">Invite someone by email — they'll receive a link that opens the join page with their email locked in.</p>
+            <p className="text-xs text-slate-400">Invite someone by email. They'll receive a link that opens the join page with their email locked in.</p>
             <button onClick={() => setShowInviteModal(true)} disabled={!isSuperAdmin && invitesRemaining <= 0} className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-emerald-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"><Icons.UserPlus /> <span>{t('send_invite')}</span></button>
           </div>
         )}

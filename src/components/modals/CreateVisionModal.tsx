@@ -150,7 +150,7 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
             <label className="block">
                 <span className="mb-1 block text-[11px] font-semibold text-slate-500">Rooted in tree</span>
                 <select value={groundTreeId} onChange={e => setGroundTreeId(e.target.value)} className="block w-full rounded-lg border border-slate-300 bg-white p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                    {groundOptions.length === 0 && <option value="">No tree yet — plant one first</option>}
+                    {groundOptions.length === 0 && <option value="">No tree yet; plant one first</option>}
                     {groundOptions.map(tr => <option key={tr.id} value={tr.id}>{tr.name}</option>)}
                 </select>
             </label>

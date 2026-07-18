@@ -170,7 +170,7 @@ export const PulseDetail = ({ pulse, onClose, backLabel = "Back", canEdit, onEdi
                             {typeof pulse.wateringConfirmation?.confidence === 'number' && (
                                 <div className="text-xs text-sky-800/90">
                                     <span className="font-semibold">AI reading:</span> {pulse.wateringConfirmation.confidence}% consistent with watering
-                                    {pulse.wateringConfirmation?.note && <span className="italic"> — “{pulse.wateringConfirmation.note}”</span>}
+                                    {pulse.wateringConfirmation?.note && <span className="italic">: “{pulse.wateringConfirmation.note}”</span>}
                                 </div>
                             )}
                             {/* The human reading — who says "yes, this was tended". */}
@@ -179,7 +179,7 @@ export const PulseDetail = ({ pulse, onClose, backLabel = "Back", canEdit, onEdi
                                 {pulse.wateringConfirmedBy === 'guardian'
                                     ? 'confirmed by a guardian'
                                     : pulse.wateringConfirmedBy === 'ai'
-                                        ? 'auto-accepted on the AI reading — a guardian can still confirm'
+                                        ? 'auto-accepted on the AI reading; a guardian can still confirm'
                                         : 'awaiting a guardian’s confirmation'}
                             </div>
                         </div>
@@ -197,14 +197,14 @@ export const PulseDetail = ({ pulse, onClose, backLabel = "Back", canEdit, onEdi
                         </h3>
                         {vetoed ? (
                             <p className="text-sm text-red-700">
-                                This mint was vetoed by guardian consensus — it stands on the chain, marked and discounted.
+                                This mint was vetoed by guardian consensus. It stands on the chain, marked and discounted.
                             </p>
                         ) : (
                             <div className="flex flex-wrap items-center gap-3">
                                 <p className="text-sm text-amber-800">
                                     {progress.cast === 0
                                         ? 'The tree\'s guardians may veto this mint in consensus.'
-                                        : `Veto: ${progress.cast} of ${progress.needed} guardians — it stands only in full agreement.`}
+                                        : `Veto: ${progress.cast} of ${progress.needed} guardians; it stands only in full agreement.`}
                                 </p>
                                 {viewerCanVeto && (
                                     <button onClick={handleVeto} disabled={isVetoing}

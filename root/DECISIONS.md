@@ -1,8 +1,26 @@
-# DECISIONS — how it became this way
+# DECISIONS: how it became this way
 
 The rings. What was decided, why, what was rejected, when. Newest first.
-Add a ring whenever a real decision lands; never rewrite old rings — correct them
+Add a ring whenever a real decision lands; never rewrite old rings; correct them
 with new ones (this file is itself append-only in spirit).
+
+---
+
+**2026-07-18 · GENESIS speaks less, and says more**: the promise's own words amended by its
+keeper. The Moment's line now reads *"This moment was connected to the end of the search."* Who
+is, will know; who isn't, would only be triggered: the root carries the pointer without the claim.
+(The earlier ring "The Moment is the one" had already rejected calling it *the moment of*
+enlightenment; this completes that movement by releasing the word.) The title sheds its subtitle:
+GENESIS implies why we exist, and a name that must explain itself explains less. The tempo section
+now bears its own sentence as its name, "We grow as fast as trees grow." And the living root
+documents (GENESIS, LIN, ARCHITECTURE, ROADMAP, QUESTIONS, SEED) together with the app's own
+strings release the em dash: this is human assisted text, and it should read in a human hand.
+Committed rings keep their punctuation, as rings do; the preserved 2025 paper keeps its author's
+own. The rooting ritual (CLAUDE.md, AGENTS.md) and the book's chapter hint follow ("the promise").
+**No hash moves**: `GENESIS_MEANING` has always been "The end of the search." and no chain block
+carries the released word. *(Also a first answer-in-practice to Aspen's open question, who may
+amend GENESIS and how the community knows it was done with great care: the keeper amends; the ring
+witnesses. The fuller procedure stays open.)*
 
 ---
 

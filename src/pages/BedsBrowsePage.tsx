@@ -163,7 +163,7 @@ export const BedsBrowsePage = ({ onViewTree, lightHouseDomain = null, theme = nu
         <ListBox tone={tone}>
           {!lightseed && (
             <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-center text-sm text-amber-700">
-              Sign in to find a place to sleep — beds reach as far as the node, no further.
+              Sign in to find a place to sleep; beds reach as far as the node, no further.
             </p>
           )}
           {loading ? (
