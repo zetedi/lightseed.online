@@ -6,7 +6,7 @@ import { ProfileHero } from './ui/ProfileHero';
 import { SectionTitle } from './ui/SectionTitle';
 import { SigningKeyModal } from './modals/SigningKeyModal';
 import { getPersonName } from '../services/firebase';
-import { hasSigningKey } from '../services/keys';
+import { hasSigningKey, readyToSign, SigningKeyNeedsRestoreError } from '../services/keys';
 import {
   getCovenantBundle, signCovenant, verifyCovenant, breakCovenant,
   type CovenantSignature,
@@ -83,7 +83,10 @@ export const CovenantProfile = ({ covenantId, currentUserId, onClose, notify }: 
       await load();
       notify?.(res.sealed ? t('covenant_sealed_toast') : t('covenant_signed_toast'));
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Could not sign this covenant.');
+      // A key conflict (stale device / published-but-absent) is the modal's business, not an error
+      // line: it shows the custody state and the doors out (restore, or a red-warned choice).
+      if (e instanceof SigningKeyNeedsRestoreError) setShowKey(true);
+      else setErr(e instanceof Error ? e.message : 'Could not sign this covenant.');
     }
     setBusy(false);
   }, [currentUserId, busy, covenantId, load, notify, t]);
@@ -237,8 +240,10 @@ export const CovenantProfile = ({ covenantId, currentUserId, onClose, notify }: 
           notify={m => notify?.(m)}
           onClose={async () => {
             setShowKey(false);
-            // If a key now exists, continue the signing the being set out to do.
-            if (await hasSigningKey(currentUserId)) await doSign();
+            // Resume ONLY when this device can actually sign now (custody resolved) — a stale
+            // device also HAS a key, and resuming on mere key presence would re-throw the custody
+            // conflict and reopen the modal in a loop the being cannot leave.
+            if (await readyToSign(currentUserId)) await doSign();
           }}
         />
       )}

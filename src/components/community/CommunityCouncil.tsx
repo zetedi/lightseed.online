@@ -6,7 +6,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { SectionTitle } from '../ui/SectionTitle';
 import { Community } from '../../types';
 import { createDecision, getDecisions, raiseConcern, resumeDecision, withdrawDecision, recordPosition, discernDecision, setDecisionVisibility, deleteDecision, signDecision, getDecisionSignatureState } from '../../services/firebase';
-import { hasSigningKey } from '../../services/keys';
+import { hasSigningKey, readyToSign, SigningKeyNeedsRestoreError } from '../../services/keys';
 import { SigningKeyModal } from '../modals/SigningKeyModal';
 import { DECISION_NATURES, decisionStatusLabels, consensusStanceLabels, votesRequired, type Decision, type DecisionNature, type DecisionMode, type ConsensusStance } from '../../domain/decision';
 import { councilView } from '../../domain/views/council';
@@ -65,7 +65,12 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
     if (!(await hasSigningKey(currentUserId))) { setPendingSign(() => run); setShowKey(true); return; }
     setVotingId(id);
     try { await run(); }
-    catch (e: any) { showAlert(e?.message || 'Could not record your voice.'); }
+    catch (e: any) {
+      // A key conflict (stale device / published-but-absent) is the modal's business, not an alert:
+      // it shows the custody state and the doors out (restore, or a red-warned deliberate choice).
+      if (e instanceof SigningKeyNeedsRestoreError) { setPendingSign(() => run); setShowKey(true); }
+      else showAlert(e?.message || 'Could not record your voice.');
+    }
     setVotingId(null);
   }, [currentUserId]);
 
@@ -362,7 +367,9 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
             setShowKey(false);
             const run = pendingSign;
             setPendingSign(null);
-            if (run && await hasSigningKey(currentUserId)) {
+            // Resume ONLY when this device can actually sign now (custody resolved) — a stale
+            // device also HAS a key; resuming on mere presence re-throws the conflict as a bare alert.
+            if (run && await readyToSign(currentUserId)) {
               setVotingId('key');
               try { await run(); } catch (e: any) { showAlert(e?.message || 'Could not record your voice.'); }
               setVotingId(null);

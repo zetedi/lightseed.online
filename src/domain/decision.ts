@@ -1,6 +1,6 @@
 import type { Timestamp } from 'firebase/firestore';
 import type { Being } from './being';
-import { signatureBindsToIdentity, type SignatureVerifier } from './covenant';
+import { signatureBindsToIdentityOrLineage, type SignatureVerifier, type LineageCheck } from './covenant';
 
 // Governance as an event: an event IS a decision, and its NATURE sets how many voices it
 // needs. Light intentions need one voice; weightier acts need a circle. The numbers nod to
@@ -163,28 +163,44 @@ export interface RecordedDecisionSignature {
   position?: ConsensusStance;
 }
 
-// Count the signatures that enact a decision — the ONE counting rule verifyDecision and the tests
-// share. Gates, in order: (1) DEDUPE — at most one counted signature per signer uid; (2) in
-// consensus mode only 'unite' signatures are affirmatives; (3) IDENTITY-KEY BINDING — the recorded
-// pubkey must equal the signer's published key; (4) SIGNER-BOUND CRYPTO — the signature must verify
-// the v2 payload bound to the RECORD'S OWN uid. Membership is enforced at write time by the rules.
+// The signatures that enact a decision — the ONE counting rule verifyDecision and the tests share.
+// Returns the SET of verified signer uids (the enactment block records exactly these — never the
+// raw votes[] array, so an invalid signature doc can never place a name in the seal). Gates, in
+// order: (1) DEDUPE — at most one counted signature per signer uid; (2) in consensus mode only
+// 'unite' signatures are affirmatives; (3) IDENTITY-KEY BINDING — the recorded pubkey must equal
+// the signer's published key, OR be a key in the signer's append-only lineage (LineageCheck —
+// history survives rotation); (4) SIGNER-BOUND CRYPTO — the signature must verify the v2 payload
+// bound to the RECORD'S OWN uid. Membership is enforced at write time by the rules.
+export async function verifiedDecisionSigners(
+  identity: DecisionIdentity,
+  sigs: readonly RecordedDecisionSignature[],
+  mode: DecisionMode,
+  publishedKeys: ReadonlyMap<string, string>,
+  verify: SignatureVerifier,
+  lineage?: LineageCheck,
+): Promise<Set<string>> {
+  const counted = new Set<string>();
+  for (const s of sigs) {
+    if (counted.has(s.uid)) continue;                       // one hand, one signature — never two slots
+    if (mode === 'consensus' && s.position !== 'unite') continue; // only uniting signatures count
+    if (!(await signatureBindsToIdentityOrLineage(s.uid, s.pubkey, publishedKeys.get(s.uid) ?? '', lineage))) continue;
+    if (await verify(s.pubkey, s.sig, decisionSignaturePayload(identity, s.uid), DECISION_DOMAIN)) {
+      counted.add(s.uid);
+    }
+  }
+  return counted;
+}
+
+// The quorum count is the size of the verified-signers set — one rule, two readings.
 export async function countVerifiedDecisionSignatures(
   identity: DecisionIdentity,
   sigs: readonly RecordedDecisionSignature[],
   mode: DecisionMode,
   publishedKeys: ReadonlyMap<string, string>,
   verify: SignatureVerifier,
+  lineage?: LineageCheck,
 ): Promise<number> {
-  const counted = new Set<string>();
-  for (const s of sigs) {
-    if (counted.has(s.uid)) continue;                       // one hand, one signature — never two slots
-    if (mode === 'consensus' && s.position !== 'unite') continue; // only uniting signatures count
-    if (!signatureBindsToIdentity(s.pubkey, publishedKeys.get(s.uid) ?? '')) continue;
-    if (await verify(s.pubkey, s.sig, decisionSignaturePayload(identity, s.uid), DECISION_DOMAIN)) {
-      counted.add(s.uid);
-    }
-  }
-  return counted.size;
+  return (await verifiedDecisionSigners(identity, sigs, mode, publishedKeys, verify, lineage)).size;
 }
 
 // A decision ENACTS when at least `votesRequired` VERIFIED signatures stand — and a requirement of 0

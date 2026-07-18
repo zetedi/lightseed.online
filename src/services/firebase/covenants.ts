@@ -8,10 +8,10 @@ import { uuidv7 } from '../../utils/id';
 import { linkId } from '../../domain/link';
 import {
   COVENANT_DOMAIN, covenantIdentity, covenantSealed, alignmentCovenantId,
-  covenantSignaturePayload, countVerifiedCovenantSignatures, signatureFromDoc,
+  covenantSignaturePayload, verifiedCovenantSigners, signatureFromDoc,
   type Covenant, type CovenantKind, type CovenantParty,
 } from '../../domain/covenant';
-import { ensureSigningKey, publishSigningKey, sign as signWithKey, verify as verifyWithKey } from '../keys';
+import { ensureSigningKey, publishSigningKey, isKeyInLineage, getPublishedSigningKey, sign as signWithKey, verify as verifyWithKey } from '../keys';
 
 // THE COVENANT SERVICE — the two-sided cryptographic mint (phase 2). A covenant is a Being with its
 // OWN chain: PROPOSED with a frozen identity + a `party` link per party, each party SIGNS its own slot
@@ -38,13 +38,11 @@ const requireUid = (): string => {
 
 const signaturesCol = (covenantId: string) => collection(db, 'covenants', covenantId, 'signatures');
 
-// A being's PUBLISHED identity key — persons/{uid}.publicKeyPem (base64 SPKI, world-readable). The
-// covenant seal binds to THIS key: a signature counts only if its recorded pubkey equals it. An absent
+// A being's PUBLISHED identity key — persons/{uid}.publicKeyPem, read through the ONE canonical
+// reader (services/keys.getPublishedSigningKey). The covenant seal binds to this key first (the fast
+// path); a rotated-away key still binds through the append-only lineage (isKeyInLineage). An absent
 // key reads as '' (a party who has not set up signing yet cannot contribute a counting signature).
-const getPublishedKey = async (uid: string): Promise<string> => {
-  const snap = await getDoc(doc(db, 'persons', uid));
-  return snap.exists() ? ((snap.data() as DocumentData).publicKeyPem as string | undefined ?? '') : '';
-};
+const getPublishedKey = getPublishedSigningKey;
 
 // ── Propose (the shared mint) ─────────────────────────────────────────────────────────────────────
 // Seal the genesis, write the covenant doc (identity frozen from birth), then mint one `party` link
@@ -160,32 +158,33 @@ export const getCovenantBundle = async (id: string): Promise<{
 
 // ── Verify (any reader) ────────────────────────────────────────────────────────────────────────
 // Re-derive the frozen identity, then count the signatures that (a) belong to a real party, (b) were
-// signed with the party's PUBLISHED IDENTITY KEY — the recorded pubkey must EQUAL persons/{uid}.
-// publicKeyPem — and (c) cryptographically verify against that identity. The identity binding (b) is
-// what makes the seal NON-REPUDIABLE: a throwaway key a signer records in their own signature doc does
-// not equal their published key, so it never counts, and no party can later disown their real key
-// while it stays published (restoreFromPhrase reproduces the SAME key from the seed phrase). `sealed`
-// is whether the crypto meets the quorum RIGHT NOW; `valid` is whether the covenant's CLAIMED status
-// is honest — a doc flipped to 'sealed' with no counting signatures fails here.
+// signed with the party's IDENTITY KEY — the recorded pubkey must EQUAL the currently-published
+// persons/{uid}.publicKeyPem, OR be a key in the party's append-only lineage at persons/{uid}/keys
+// (KEY CONTINUITY: rotation/recovery no longer unbinds history) — and (c) cryptographically verify
+// against that identity. The identity binding (b) is what makes the seal NON-REPUDIABLE: a throwaway
+// key a signer records in their own signature doc was never published to their lineage, so it never
+// counts. `sealed` is whether the crypto meets the quorum RIGHT NOW; `valid` is whether the
+// covenant's CLAIMED status is honest — a doc flipped to 'sealed' with no counting signatures fails
+// here. `verifiedSigners` (sorted) is the only list a seal block may record.
 export const verifyCovenant = async (
   covenant: Pick<Covenant, 'lid' | 'kind' | 'title' | 'body' | 'quorum' | 'genesisHash' | 'status'>,
   parties: CovenantParty[],
   sigs: CovenantSignature[],
-): Promise<{ valid: boolean; verifiedCount: number; sealed: boolean }> => {
+): Promise<{ valid: boolean; verifiedCount: number; sealed: boolean; verifiedSigners: string[] }> => {
   const identity = covenantIdentity(covenant, parties);
   const partyUids = new Set(parties.map(p => p.uid));
-  // Each party's currently-published identity key (world-readable). A sig counts only if its recorded
-  // pubkey matches the party's published key AND verifies against the frozen identity.
+  // Each party's currently-published identity key (world-readable) — the fast path; the lineage
+  // lookup runs lazily, only for a signature whose recorded pubkey no longer equals it.
   const published = new Map<string, string>();
   await Promise.all([...partyUids].map(async uid => published.set(uid, await getPublishedKey(uid))));
   // The counting rule is PURE (domain/covenant.ts) and shared with the adversarial tests: at most one
-  // counted signature per uid (dedupe), party-gated, published-key-bound, and each signature verified
-  // against the v2 payload bound to the RECORD'S OWN path-uid — a copied signature never counts twice.
-  const verifiedCount = await countVerifiedCovenantSignatures(identity, sigs, partyUids, published, verifyWithKey);
-  const sealed = covenantSealed(verifiedCount, covenant.quorum);
+  // counted signature per uid (dedupe), party-gated, identity-bound (published key or lineage), and
+  // each signature verified against the v2 payload bound to the RECORD'S OWN path-uid.
+  const signers = await verifiedCovenantSigners(identity, sigs, partyUids, published, verifyWithKey, isKeyInLineage);
+  const sealed = covenantSealed(signers.size, covenant.quorum);
   // If the doc claims 'sealed', the crypto must back it; otherwise nothing is being forged.
   const valid = covenant.status === 'sealed' ? sealed : true;
-  return { valid, verifiedCount, sealed };
+  return { valid, verifiedCount: signers.size, sealed, verifiedSigners: [...signers].sort() };
 };
 
 // ── Sign (and seal, if this signature lands the quorum) ───────────────────────────────────────────
@@ -239,13 +238,11 @@ export const signCovenant = async (covenant: Pick<Covenant, 'id'>): Promise<Sign
   // Re-read every signature and verify against the frozen identity — the quorum is counted from
   // VERIFIED signatures, never a raw doc count, so the seal can never outrun the crypto.
   const sigs = await getCovenantSignatures(covenantId);
-  const { verifiedCount, sealed } = await verifyCovenant(fresh, parties, sigs);
+  const { verifiedCount, sealed, verifiedSigners } = await verifyCovenant(fresh, parties, sigs);
 
   if (sealed && fresh.status !== 'sealed') {
-    const signers = sigs
-      .filter(s => parties.some(p => p.uid === s.uid))
-      .map(s => s.uid)
-      .sort();
+    // The seal block records ONLY the cryptographically verified signers (verifiedSigners) — an
+    // invalid signature doc in a party's slot can never place that party's name in the seal.
     await runTransaction(db, async (t) => {
       const ref = doc(covenantsCollection, covenantId);
       const snap = await t.get(ref);
@@ -253,7 +250,7 @@ export const signCovenant = async (covenant: Pick<Covenant, 'id'>): Promise<Sign
       const c = snap.data() as Covenant;
       if (c.status === 'sealed') return;   // another client already sealed — nothing to do
       const prev = c.latestHash || c.genesisHash || '0';
-      const sealHash = await createBlock(prev, { sealed: true, signers }, Date.now());
+      const sealHash = await createBlock(prev, { sealed: true, signers: verifiedSigners }, Date.now());
       t.update(ref, {
         latestHash: sealHash,
         blockHeight: (c.blockHeight || 0) + 1,

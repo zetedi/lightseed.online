@@ -6,6 +6,35 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-18 · History survives the key — continuity, custody, and the honest seal** — the first
+deferred stone from the morning's ring lands: **verify-at-signing-time, step 1 — the lineage
+fallback.** A signature now binds to the signer's identity if its recorded pubkey equals the
+CURRENTLY-published key (the fast path) **or is a key in the being's append-only lineage**
+(`persons/{uid}/keys/{fingerprint}` — owner-create-once, staff-proof, undeletable). One gate, shared
+by both counting rules (`signatureBindsToIdentityOrLineage`). Rotation, recovery, and start-fresh no
+longer unbind history; a staff-overwritten `publicKeyPem` no longer voids a being's seals; a
+throwaway key still never counts — it was never published. **Named residual, deliberately accepted
+until the revocation ring**: a key once published binds forever (the lineage never deletes), so a
+compromised key cannot yet be retired; the perimeter is that a signature slot can only be WRITTEN by
+the authenticated being (rules: doc id == auth uid). `publishedAt` is now frozen in the rules — the
+trustworthy timeline the coming epoch/revocation work will read; verification today checks existence
+only. **Custody guards close the two silent doors Lumo named**: `restoreFromPhrase` refuses a valid
+phrase deriving a DIFFERENT key than the published identity (`RestoreKeyMismatchError`; a red-warned
+replace is the only way through), and an older device can no longer silently republish its old key
+over a newer identity (`stale_device` custody → an explicit, warned takeover door). The pure custody
+rule (`keyCustody`: fresh / needs_restore / publish_needed / ready / stale_device, domain/signing)
+drives the service and the modal alike; resume-after-modal checks `readyToSign`, not mere key
+presence — the stale-device modal loop is dead, and the modal opens straight on restore guidance
+when restoring is the only honest door. **The seal is honest to the name level**: a covenant's seal
+block and a decision's enactment block now record ONLY cryptographically verified signers
+(`verifiedCovenantSigners` / `verifiedDecisionSigners`) — an invalid signature doc can no longer
+place a name in a seal, and the enactment block stops echoing the raw `votes[]`. Start-fresh's
+warning told a truth that stopped being true — it now says the opposite, honestly: prior signatures
+stay verifiable through the key lineage. Still deferred, unchanged: **draft vanishes, minted
+withdraws**. Gates: `check` 290 · `test:rules` 84.
+
+---
+
 **2026-07-18 · One signer, one slot — the quorum can't be inflated (Lumo's finding)** — Lumo's
 review named a real CRITICAL flaw in the Covenant: a single signature could fill many quorum slots.
 Three holes, one wound — every signature reader spread the doc body over the path uid

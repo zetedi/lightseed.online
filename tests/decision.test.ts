@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import {
   DECISION_DOMAIN, decisionIdentity, decisionEnacted, decisionAuthoritative,
-  decisionSignaturePayload, countVerifiedDecisionSignatures,
+  decisionSignaturePayload, countVerifiedDecisionSignatures, verifiedDecisionSigners,
   type Decision, type RecordedDecisionSignature,
 } from '../src/domain/decision';
 import { COVENANT_DOMAIN } from '../src/domain/covenant';
@@ -177,5 +177,62 @@ describe('end-to-end — a real Ed25519 signature over the signer-bound identity
     const aside: RecordedDecisionSignature = { uid: 'alice', sig: sigAlice, pubkey: kpAlice.publicKeyB64, position: 'stand_aside' };
     expect(await countVerifiedDecisionSignatures(identity, [aside], 'consensus', published, verifyPayload)).toBe(0);
     expect(await countVerifiedDecisionSignatures(identity, [unite, unite], 'consensus', published, verifyPayload)).toBe(1);
+  });
+});
+
+describe('key continuity — the lineage fallback (verify-at-signing-time, step 1)', () => {
+  let available = false;
+  beforeAll(async () => { available = await subtleEd25519Available(); });
+  const seedOf = (n: number) => Uint8Array.from({ length: 32 }, (_, j) => (n * 31 + j) & 0xff);
+
+  it('a signature made with a since-ROTATED key still counts when the key is in the signer\'s lineage', async () => {
+    if (!available) return; // Ed25519 subtle unavailable in this runtime — skip the crypto leg
+    const identity = decisionIdentity(base);
+    const kpOld = await keypairFromSeed(seedOf(1));
+    const kpNew = await keypairFromSeed(seedOf(2));
+    const sigOld = await signPayload(kpOld.privateKey, decisionSignaturePayload(identity, 'alice'), DECISION_DOMAIN);
+    const records: RecordedDecisionSignature[] = [{ uid: 'alice', sig: sigOld, pubkey: kpOld.publicKeyB64 }];
+    const published = new Map([['alice', kpNew.publicKeyB64]]); // alice rotated after signing
+    const lineage = async (uid: string, pk: string) => uid === 'alice' && pk === kpOld.publicKeyB64;
+    // WITHOUT the lineage the rotation unbinds history (the pre-continuity behavior)…
+    expect(await countVerifiedDecisionSignatures(identity, records, 'threshold', published, verifyPayload)).toBe(0);
+    // …WITH it, history survives the rotation — and the consensus position gate still applies.
+    expect(await countVerifiedDecisionSignatures(identity, records, 'threshold', published, verifyPayload, lineage)).toBe(1);
+    expect(await countVerifiedDecisionSignatures(identity, records, 'consensus', published, verifyPayload, lineage)).toBe(0);
+  });
+
+  it('a THROWAWAY key still never counts — not the published key, not in the lineage', async () => {
+    if (!available) return;
+    const identity = decisionIdentity(base);
+    const kpThrowaway = await keypairFromSeed(seedOf(3));
+    const kpPublished = await keypairFromSeed(seedOf(4));
+    const sig = await signPayload(kpThrowaway.privateKey, decisionSignaturePayload(identity, 'alice'), DECISION_DOMAIN);
+    const records: RecordedDecisionSignature[] = [{ uid: 'alice', sig, pubkey: kpThrowaway.publicKeyB64 }];
+    const published = new Map([['alice', kpPublished.publicKeyB64]]);
+    expect(await countVerifiedDecisionSignatures(identity, records, 'threshold', published, verifyPayload, async () => false)).toBe(0);
+  });
+});
+
+describe('verifiedDecisionSigners — the enactment block records only VERIFIED hands, never votes[]', () => {
+  let available = false;
+  beforeAll(async () => { available = await subtleEd25519Available(); });
+  const seedOf = (n: number) => Uint8Array.from({ length: 32 }, (_, j) => (n * 31 + j) & 0xff);
+
+  it('an INVALID signature doc never places a member\'s name among the signers', async () => {
+    if (!available) return;
+    const identity = decisionIdentity(base);
+    const kpAlice = await keypairFromSeed(seedOf(1));
+    const kpBob = await keypairFromSeed(seedOf(2));
+    const sigAlice = await signPayload(kpAlice.privateKey, decisionSignaturePayload(identity, 'alice'), DECISION_DOMAIN);
+    // Bob's slot holds garbage under his real published key: it fails the crypto, so bob must
+    // appear NOWHERE — not in the count, not in the enactment block's signer list.
+    const records: RecordedDecisionSignature[] = [
+      { uid: 'alice', sig: sigAlice, pubkey: kpAlice.publicKeyB64 },
+      { uid: 'bob', sig: 'bm90LWEtc2lnbmF0dXJl', pubkey: kpBob.publicKeyB64 },
+    ];
+    const published = new Map([['alice', kpAlice.publicKeyB64], ['bob', kpBob.publicKeyB64]]);
+    const signers = await verifiedDecisionSigners(identity, records, 'threshold', published, verifyPayload);
+    expect([...signers]).toEqual(['alice']);
+    expect(await countVerifiedDecisionSignatures(identity, records, 'threshold', published, verifyPayload)).toBe(1);
   });
 });

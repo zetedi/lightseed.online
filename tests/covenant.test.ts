@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import {
   COVENANT_DOMAIN, covenantIdentity, isQuorumMet, covenantSealed,
   signatureBindsToIdentity, alignmentCovenantId,
-  covenantSignaturePayload, countVerifiedCovenantSignatures, signatureFromDoc,
+  covenantSignaturePayload, countVerifiedCovenantSignatures, verifiedCovenantSigners, signatureFromDoc,
   type Covenant, type CovenantParty, type RecordedSignature,
 } from '../src/domain/covenant';
 import { canonicalize } from '../src/domain/chain/canonical';
@@ -214,5 +214,79 @@ describe('isQuorumMet / covenantSealed', () => {
   it('covenantSealed reads the same rule on the VERIFIED count', () => {
     expect(covenantSealed(2, 3)).toBe(false);
     expect(covenantSealed(3, 3)).toBe(true);
+  });
+});
+
+describe('key continuity — the lineage fallback (verify-at-signing-time, step 1)', () => {
+  let available = false;
+  beforeAll(async () => { available = await subtleEd25519Available(); });
+
+  const seedOf = (n: number) => Uint8Array.from({ length: 32 }, (_, j) => (n * 31 + j + 1) & 0xff);
+  const parties: CovenantParty[] = [{ uid: 'alice' }, { uid: 'bob' }];
+  const identity = covenantIdentity(base, parties);
+  const partyUids = new Set(parties.map(p => p.uid));
+
+  it('a signature made with a since-ROTATED key still counts when the key is in the signer\'s lineage', async () => {
+    if (!available) return; // Ed25519 subtle unavailable in this runtime — skip the crypto leg
+    const kpOld = await keypairFromSeed(seedOf(1));
+    const kpNew = await keypairFromSeed(seedOf(2));
+    // Alice sealed with her old key; she has since restored on a new device / started fresh, so her
+    // PUBLISHED key is now the new one. The old key lives forever in her append-only lineage.
+    const sigOld = await signPayload(kpOld.privateKey, covenantSignaturePayload(identity, 'alice'), COVENANT_DOMAIN);
+    const records: RecordedSignature[] = [{ uid: 'alice', sig: sigOld, pubkey: kpOld.publicKeyB64 }];
+    const published = new Map([['alice', kpNew.publicKeyB64]]);
+    const lineage = async (uid: string, pk: string) => uid === 'alice' && pk === kpOld.publicKeyB64;
+    // WITHOUT the lineage the rotation unbinds history (the pre-continuity behavior)…
+    expect(await countVerifiedCovenantSignatures(identity, records, partyUids, published, verifyPayload)).toBe(0);
+    // …WITH it, history survives the rotation.
+    expect(await countVerifiedCovenantSignatures(identity, records, partyUids, published, verifyPayload, lineage)).toBe(1);
+  });
+
+  it('a THROWAWAY key still never counts — not the published key, not in the lineage', async () => {
+    if (!available) return;
+    const kpThrowaway = await keypairFromSeed(seedOf(3));
+    const kpPublished = await keypairFromSeed(seedOf(4));
+    const sig = await signPayload(kpThrowaway.privateKey, covenantSignaturePayload(identity, 'alice'), COVENANT_DOMAIN);
+    const records: RecordedSignature[] = [{ uid: 'alice', sig, pubkey: kpThrowaway.publicKeyB64 }];
+    const published = new Map([['alice', kpPublished.publicKeyB64]]);
+    const lineage = async () => false; // never published to the lineage
+    expect(await countVerifiedCovenantSignatures(identity, records, partyUids, published, verifyPayload, lineage)).toBe(0);
+  });
+
+  it('the lineage can never rescue a signature that fails the CRYPTO', async () => {
+    if (!available) return;
+    const kpOld = await keypairFromSeed(seedOf(1));
+    const records: RecordedSignature[] = [{ uid: 'alice', sig: 'bm90LWEtc2lnbmF0dXJl', pubkey: kpOld.publicKeyB64 }];
+    const published = new Map([['alice', '']]);
+    const lineage = async () => true; // even a maximally generous lineage
+    expect(await countVerifiedCovenantSignatures(identity, records, partyUids, published, verifyPayload, lineage)).toBe(0);
+  });
+});
+
+describe('verifiedCovenantSigners — the seal block records only VERIFIED hands', () => {
+  let available = false;
+  beforeAll(async () => { available = await subtleEd25519Available(); });
+
+  const seedOf = (n: number) => Uint8Array.from({ length: 32 }, (_, j) => (n * 31 + j + 1) & 0xff);
+  const parties: CovenantParty[] = [{ uid: 'alice' }, { uid: 'bob' }];
+  const identity = covenantIdentity(base, parties);
+  const partyUids = new Set(parties.map(p => p.uid));
+
+  it('an INVALID signature doc in a party\'s slot never places their name in the seal', async () => {
+    if (!available) return;
+    const kpAlice = await keypairFromSeed(seedOf(1));
+    const kpBob = await keypairFromSeed(seedOf(2));
+    const sigAlice = await signPayload(kpAlice.privateKey, covenantSignaturePayload(identity, 'alice'), COVENANT_DOMAIN);
+    // Bob's slot holds garbage (a broken write, or a forgery attempt) under his real published key:
+    // it fails the crypto, so bob must appear NOWHERE — not in the count, not in the signer list.
+    const records: RecordedSignature[] = [
+      { uid: 'alice', sig: sigAlice, pubkey: kpAlice.publicKeyB64 },
+      { uid: 'bob', sig: 'bm90LWEtc2lnbmF0dXJl', pubkey: kpBob.publicKeyB64 },
+    ];
+    const published = new Map([['alice', kpAlice.publicKeyB64], ['bob', kpBob.publicKeyB64]]);
+    const signers = await verifiedCovenantSigners(identity, records, partyUids, published, verifyPayload);
+    expect([...signers]).toEqual(['alice']);
+    // And the count is exactly the set's size — one rule, two readings.
+    expect(await countVerifiedCovenantSignatures(identity, records, partyUids, published, verifyPayload)).toBe(1);
   });
 });

@@ -113,16 +113,40 @@ export function signatureFromDoc<T extends object>(docId: string, data: T): T & 
   return { ...data, uid: docId };
 }
 
-// The seal binds to the being's PUBLISHED IDENTITY KEY, not merely "a key in the slot". A signature
-// counts toward the quorum ONLY IF the pubkey it recorded at signing time EQUALS the party's currently
-// published key at persons/{uid}.publicKeyPem (base64 SPKI). The recorded pubkey is still kept on the
-// signature doc for OFFLINE/portable verification (it is pinned at signing); this predicate is the
-// additional gate that makes the seal NON-REPUDIABLE: a malicious self-signer can no longer sign with a
-// throwaway key (recorded in their own signature) and later disown it as "not my key" — a throwaway
-// key never equals the published identity key, so it never counts. A party who has published NO key
-// (empty) simply cannot contribute a counting signature until they set their signing key up.
+// The FAST PATH of identity binding: the recorded pubkey EQUALS the being's currently-published key
+// at persons/{uid}.publicKeyPem (base64 SPKI). The recorded pubkey is still kept on the signature
+// doc for OFFLINE/portable verification (it is pinned at signing). This alone is no longer the ONLY
+// gate — see signatureBindsToIdentityOrLineage below: a rotated-away key binds through the lineage.
+// A party who has published NO key (empty) can never bind through this path.
 export function signatureBindsToIdentity(recordedPubkey: string, publishedPubkey: string): boolean {
   return publishedPubkey !== '' && recordedPubkey === publishedPubkey;
+}
+
+// KEY CONTINUITY — the lineage fallback (verify-at-signing-time, first step). When a signature's
+// recorded pubkey no longer equals the CURRENT published key, it may still bind to the signer's
+// identity through their APPEND-ONLY key lineage (persons/{uid}/keys/{fingerprint}): a key the being
+// itself published, under a record only the being could create, that no one — not even staff — can
+// delete or rewrite. History thus SURVIVES rotation: restoring on a new device, starting fresh, or
+// a staff-overwritten publicKeyPem no longer silently unbinds every seal a being ever made. A
+// THROWAWAY key still never counts — it was never published to the lineage. Injected (like the
+// verifier) so the counting rule stays pure; production wires services/keys.isKeyInLineage.
+export type LineageCheck = (uid: string, pubkeyB64: string) => Promise<boolean>;
+
+// THE ONE BINDING GATE both counting rules (covenant + decision) share: a signature binds to the
+// signer's identity iff its recorded pubkey is the CURRENT published key (fast path) OR a key in
+// the signer's append-only lineage. Non-repudiation stands on "a key the being itself published" —
+// current or historical. Known, deliberate residual until the revocation ring: a key once published
+// binds FOREVER (the lineage never deletes), so lineage membership cannot retire a compromised key;
+// the perimeter against abuse is that a signature slot can only ever be WRITTEN by the
+// authenticated being itself (rules: doc id == request.auth.uid).
+export async function signatureBindsToIdentityOrLineage(
+  uid: string,
+  recordedPubkey: string,
+  publishedPubkey: string,
+  lineage?: LineageCheck,
+): Promise<boolean> {
+  if (signatureBindsToIdentity(recordedPubkey, publishedPubkey)) return true;
+  return lineage ? lineage(uid, recordedPubkey) : false;
 }
 
 // The DETERMINISTIC covenant id for an alignment's cryptographic twin. Derived purely from the
@@ -152,31 +176,46 @@ export type SignatureVerifier = (
   domainTag: string,
 ) => Promise<boolean>;
 
-// Count the signatures that seal a covenant — the ONE counting rule verifyCovenant and the tests
-// share. Four gates, in order:
+// The signatures that seal a covenant — the ONE counting rule verifyCovenant and the tests share.
+// Returns the SET of verified signer uids (the seal block records exactly these — an invalid
+// signature doc can never place a name in the seal's signer list). Four gates, in order:
 //   (1) DEDUPE — at most ONE counted signature per signer uid; a second record claiming the same
 //       hand can never inflate the quorum.
 //   (2) PARTY — the signer must be on the frozen roster.
-//   (3) IDENTITY-KEY BINDING — the recorded pubkey must equal the signer's published key.
+//   (3) IDENTITY-KEY BINDING — the recorded pubkey must equal the signer's published key, OR be a
+//       key in the signer's append-only lineage (LineageCheck — history survives rotation).
 //   (4) SIGNER-BOUND CRYPTO — the signature must verify the v2 payload bound to the RECORD'S OWN
 //       uid, so a signature minted by one hand can never verify in another's slot.
+export async function verifiedCovenantSigners(
+  identity: CovenantIdentity,
+  sigs: readonly RecordedSignature[],
+  partyUids: ReadonlySet<string>,
+  publishedKeys: ReadonlyMap<string, string>,
+  verify: SignatureVerifier,
+  lineage?: LineageCheck,
+): Promise<Set<string>> {
+  const counted = new Set<string>();
+  for (const s of sigs) {
+    if (counted.has(s.uid)) continue;                  // one hand, one signature — never two slots
+    if (!partyUids.has(s.uid)) continue;               // a signature from a non-party never counts
+    if (!(await signatureBindsToIdentityOrLineage(s.uid, s.pubkey, publishedKeys.get(s.uid) ?? '', lineage))) continue;
+    if (await verify(s.pubkey, s.sig, covenantSignaturePayload(identity, s.uid), COVENANT_DOMAIN)) {
+      counted.add(s.uid);
+    }
+  }
+  return counted;
+}
+
+// The quorum count is the size of the verified-signers set — one rule, two readings.
 export async function countVerifiedCovenantSignatures(
   identity: CovenantIdentity,
   sigs: readonly RecordedSignature[],
   partyUids: ReadonlySet<string>,
   publishedKeys: ReadonlyMap<string, string>,
   verify: SignatureVerifier,
+  lineage?: LineageCheck,
 ): Promise<number> {
-  const counted = new Set<string>();
-  for (const s of sigs) {
-    if (counted.has(s.uid)) continue;                  // one hand, one signature — never two slots
-    if (!partyUids.has(s.uid)) continue;               // a signature from a non-party never counts
-    if (!signatureBindsToIdentity(s.pubkey, publishedKeys.get(s.uid) ?? '')) continue;
-    if (await verify(s.pubkey, s.sig, covenantSignaturePayload(identity, s.uid), COVENANT_DOMAIN)) {
-      counted.add(s.uid);
-    }
-  }
-  return counted.size;
+  return (await verifiedCovenantSigners(identity, sigs, partyUids, publishedKeys, verify, lineage)).size;
 }
 
 // The quorum is met when at least `quorum` valid signatures stand — and a quorum of 0 or less can

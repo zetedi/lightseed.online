@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createHash } from 'node:crypto';
-import { SIGNING_VERSION, signingPreimage, seedToPhrase, phraseToSeed, parsePhrase } from '../src/domain/signing';
+import { SIGNING_VERSION, signingPreimage, seedToPhrase, phraseToSeed, parsePhrase, keyCustody, restoreConflictsWithPublished } from '../src/domain/signing';
 import { BIP39_WORDLIST } from '../src/domain/bip39Wordlist';
 
 // The pure signing crystal: the preimage (deterministic + domain-separated) and the recovery-phrase
@@ -125,5 +125,40 @@ describe('recovery-phrase codec — standard BIP39', () => {
 
   it('parsePhrase normalises whitespace and case', () => {
     expect(parsePhrase('  Abandon\n abilITY\tzoo ')).toEqual(['abandon', 'ability', 'zoo']);
+  });
+});
+
+describe('keyCustody — where a device stands against the published identity', () => {
+  const LOCAL = 'base64-spki-device-key';
+  const OTHER = 'base64-spki-newer-key';
+
+  it('fresh — no device key, nothing published: minting is safe', () => {
+    expect(keyCustody(null, '')).toBe('fresh');
+  });
+  it('needs_restore — no device key but an identity IS published: never silently mint', () => {
+    expect(keyCustody(null, OTHER)).toBe('needs_restore');
+  });
+  it('publish_needed — a device key with nothing published: self-heal by publishing', () => {
+    expect(keyCustody(LOCAL, '')).toBe('publish_needed');
+  });
+  it('ready — device and published agree', () => {
+    expect(keyCustody(LOCAL, LOCAL)).toBe('ready');
+  });
+  it('stale_device — the device holds an OLDER key than the published identity: never self-heal over it', () => {
+    expect(keyCustody(LOCAL, OTHER)).toBe('stale_device');
+  });
+});
+
+describe('restoreConflictsWithPublished — a restore may only land the key it claims to restore', () => {
+  const PUBLISHED = 'base64-spki-published-key';
+
+  it('a phrase deriving the PUBLISHED key restores freely', () => {
+    expect(restoreConflictsWithPublished(PUBLISHED, PUBLISHED)).toBe(false);
+  });
+  it('with NO published key, any valid phrase may install (first publication)', () => {
+    expect(restoreConflictsWithPublished('any-derived-key', '')).toBe(false);
+  });
+  it('a valid phrase deriving a DIFFERENT key conflicts — the silent-replace bypass is closed', () => {
+    expect(restoreConflictsWithPublished('another-derived-key', PUBLISHED)).toBe(true);
   });
 });

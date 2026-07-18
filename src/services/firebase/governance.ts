@@ -5,10 +5,10 @@ import { uuidv7 } from '../../utils/id';
 import { type PulseVisibility } from '../../domain/pulse';
 import {
   DECISION_DOMAIN, decisionIdentity, decisionEnacted, decisionAuthoritative,
-  decisionSignaturePayload, countVerifiedDecisionSignatures,
+  decisionSignaturePayload, verifiedDecisionSigners,
 } from '../../domain/decision';
 import { signatureFromDoc } from '../../domain/covenant';
-import { ensureSigningKey, publishSigningKey, sign as signWithKey, verify as verifyWithKey } from '../keys';
+import { ensureSigningKey, publishSigningKey, isKeyInLineage, getPublishedSigningKey, sign as signWithKey, verify as verifyWithKey } from '../keys';
 import { auth, db, toMillis, mapDoc, pulsesCollection } from './core';
 import { normalizeDomain } from './trees';
 
@@ -110,13 +110,11 @@ export interface DecisionSignature {
 
 const decisionSignaturesCol = (decisionId: string) => collection(db, 'pulses', decisionId, 'signatures');
 
-// A being's PUBLISHED identity key — persons/{uid}.publicKeyPem (base64 SPKI, world-readable). A
-// signature counts toward enactment only if its recorded pubkey EQUALS this key (signatureBindsToIdentity)
-// AND verifies. Absent reads as '' (a member who has not set up signing cannot yet contribute a count).
-const getPublishedKey = async (uid: string): Promise<string> => {
-  const snap = await getDoc(doc(db, 'persons', uid));
-  return snap.exists() ? ((snap.data() as DocumentData).publicKeyPem as string | undefined ?? '') : '';
-};
+// A being's PUBLISHED identity key — persons/{uid}.publicKeyPem, read through the ONE canonical
+// reader (services/keys.getPublishedSigningKey). A signature counts toward enactment if its recorded
+// pubkey EQUALS this key (the fast path) or lives in the signer's append-only lineage — and
+// verifies. Absent reads as '' (a member who has not set up signing cannot yet contribute a count).
+const getPublishedKey = getPublishedSigningKey;
 
 // Read the freshest decision doc (identity + chain head + status). Returns null if it vanished.
 const readDecision = async (decisionId: string): Promise<Decision | null> => {
@@ -133,31 +131,35 @@ export const getDecisionSignatures = async (decisionId: string): Promise<Decisio
 };
 
 // Verify a decision the way any reader can: re-derive the frozen identity, then count the signatures
-// whose recorded pubkey EQUALS the signer's currently-published persons key AND whose Ed25519 verifies
-// against that identity. In consensus mode only 'unite' signatures are affirmatives. `enacted` is
-// whether the crypto meets the quorum RIGHT NOW; `valid` is whether the decision's CLAIMED status is
-// honest — a threshold decision flipped to 'passed' with fewer verified signatures than required fails
-// here (the seal is the signatures, not the flag). Membership is enforced at WRITE time by the rules
-// (only a community member may create a signature), so verification binds to the IDENTITY key, matching
-// verifyCovenant. Legacy unsigned uid-votes are not signatures and never appear here — they remain
-// valid-by-auth on the `votes` array (see the migration note), simply outside the crypto count.
+// whose recorded pubkey EQUALS the signer's currently-published persons key — OR is a key in the
+// signer's append-only lineage at persons/{uid}/keys (KEY CONTINUITY: rotation/recovery no longer
+// unbinds history) — AND whose Ed25519 verifies against that identity. In consensus mode only 'unite'
+// signatures are affirmatives. `enacted` is whether the crypto meets the quorum RIGHT NOW; `valid` is
+// whether the decision's CLAIMED status is honest — a threshold decision flipped to 'passed' with
+// fewer verified signatures than required fails here (the seal is the signatures, not the flag).
+// Membership is enforced at WRITE time by the rules (only a community member may create a signature),
+// so verification binds to the IDENTITY key, matching verifyCovenant. Legacy unsigned uid-votes are
+// not signatures and never appear here — they remain valid-by-auth on the `votes` array (see the
+// migration note), simply outside the crypto count. `verifiedSigners` (sorted) is the only list an
+// enactment block may record.
 export const verifyDecision = async (
   decision: Pick<Decision, 'lid' | 'communityId' | 'nature' | 'title' | 'body' | 'votesRequired' | 'status' | 'mode'>,
   sigs: DecisionSignature[],
-): Promise<{ valid: boolean; verifiedCount: number; enacted: boolean }> => {
+): Promise<{ valid: boolean; verifiedCount: number; enacted: boolean; verifiedSigners: string[] }> => {
   const identity = decisionIdentity(decision);
   const mode: DecisionMode = decision.mode || 'threshold';
   const uids = [...new Set(sigs.map(s => s.uid))];
   const published = new Map<string, string>();
   await Promise.all(uids.map(async uid => published.set(uid, await getPublishedKey(uid))));
   // The counting rule is PURE (domain/decision.ts) and shared with the adversarial tests: at most one
-  // counted signature per uid (dedupe), consensus-position-gated, published-key-bound, and each
-  // signature verified against the v2 payload bound to the RECORD'S OWN path-uid — a copied signature
-  // can never verify in another member's slot, so one real hand can never fill a seven-quorum.
-  const verifiedCount = await countVerifiedDecisionSignatures(identity, sigs, mode, published, verifyWithKey);
-  const enacted = decisionEnacted(verifiedCount, decision.votesRequired);
-  const valid = decisionAuthoritative(decision.status, verifiedCount, decision.votesRequired, mode);
-  return { valid, verifiedCount, enacted };
+  // counted signature per uid (dedupe), consensus-position-gated, identity-bound (published key or
+  // lineage), and each signature verified against the v2 payload bound to the RECORD'S OWN path-uid —
+  // a copied signature can never verify in another member's slot, so one real hand can never fill a
+  // seven-quorum.
+  const signers = await verifiedDecisionSigners(identity, sigs, mode, published, verifyWithKey, isKeyInLineage);
+  const enacted = decisionEnacted(signers.size, decision.votesRequired);
+  const valid = decisionAuthoritative(decision.status, signers.size, decision.votesRequired, mode);
+  return { valid, verifiedCount: signers.size, enacted, verifiedSigners: [...signers].sort() };
 };
 
 // Everything the council view needs to show a decision's crypto state in one call: the raw signatures
@@ -261,7 +263,7 @@ export const signDecision = async (
   // Re-read every signature and verify against the frozen identity — enactment counts VERIFIED
   // signatures, never a raw doc/array count, so the seal can never outrun the crypto.
   const sigs = await getDecisionSignatures(decisionId);
-  const { verifiedCount, enacted } = await verifyDecision(fresh, sigs);
+  const { verifiedCount, enacted, verifiedSigners } = await verifyDecision(fresh, sigs);
 
   if (mode === 'threshold' && enacted) {
     // The SEAL is the signatures: verifyDecision has already confirmed a quorum of VERIFIED signatures,
@@ -278,8 +280,9 @@ export const signDecision = async (
         if (!snap.exists()) throw new Error('Decision vanished mid-enact.');
         const d = snap.data() as DocumentData;
         if (d.status === 'passed') return; // another client already enacted — nothing to do
-        const votes: string[] = Array.isArray(d.votes) ? d.votes : [];
-        const enactedHash = await createBlock(d.hash || 'DECISION', { decision: decisionId, votes, enacted: true, sealedBySignatures: true }, Date.now());
+        // The enactment block records ONLY the cryptographically verified signers — never the raw
+        // votes[] array, which an invalid signature doc (or a legacy unsigned voice) also feeds.
+        const enactedHash = await createBlock(d.hash || 'DECISION', { decision: decisionId, signers: verifiedSigners, enacted: true, sealedBySignatures: true }, Date.now());
         tx.update(ref, { status: 'passed', passedAt: serverTimestamp(), enactedHash });
       });
     } catch { /* status flip is privileged (rules); the crypto quorum stands regardless — the flag catches up */ }

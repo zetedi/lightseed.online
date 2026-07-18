@@ -16,6 +16,7 @@ import {
   acceptAlignment,
   rejectAlignment,
   signAlignmentCovenant,
+  getCovenantForAlignment,
   getAlignmentById,
   getLifetreeById,
   getPulseById,
@@ -32,6 +33,7 @@ import {
   getPendingTreeInvites
 } from './services/firebase';
 import { setActiveIntelligenceId } from './services/intelligence';
+import { SigningKeyNeedsRestoreError } from './services/keys';
 import { tabTone, CTA_GLOW } from './utils/tabTheme';
 import { type Pulse, type Lifetree, type Alignment, type Vision, type Community, type ReachAudience } from './types';
 import Logo from './components/Logo';
@@ -564,7 +566,17 @@ const AppContent = () => {
                 try {
                     const signed = await signAlignmentCovenant(alignment);
                     if (signed?.covenantId) { setSelectedCovenantId(signed.covenantId); openedCovenant = true; }
-                } catch (covErr) { console.warn('Covenant co-sign skipped:', covErr); }
+                } catch (covErr) {
+                    // A key-custody conflict (no device key / stale device) must not stay silent:
+                    // the covenant already exists (minted before signing), so open its profile —
+                    // its Sign button routes the being through the SigningKeyModal properly.
+                    if (covErr instanceof SigningKeyNeedsRestoreError) {
+                        const cov = await getCovenantForAlignment(alignment.id).catch(() => null);
+                        if (cov) { setSelectedCovenantId(cov.id); openedCovenant = true; }
+                    } else {
+                        console.warn('Covenant co-sign skipped:', covErr);
+                    }
+                }
             }
             // Open the resulting block on your chain — through the unified router, so the
             // freshly minted sync-block lands on the alignment view like everywhere else. If the

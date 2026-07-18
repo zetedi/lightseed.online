@@ -77,6 +77,8 @@ Deterministic link ids make ownership checks O(1) (`exists(links/uid__rel__id)`)
 
 ## Known debts (kept honestly)
 
+- Key revocation/epochs are not built: a key once published binds forever through the
+  append-only lineage (signature slots stay auth-gated — see the continuity ring, 2026-07-18).
 - Client-side visibility gates (trees, Light Houses) await full rules parity.
 - Light House step-in consent is keeper-side only since the shelters migration.
 - Mother-tree badge lives on the tree page only (no denormalised flag yet).

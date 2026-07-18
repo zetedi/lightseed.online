@@ -160,3 +160,35 @@ export function phraseToSeed(words: string[]): Uint8Array {
 export function parsePhrase(input: string): string[] {
   return input.trim().toLowerCase().split(/\s+/).filter(Boolean);
 }
+
+// ── Key custody — where does this device stand against the published identity? ────────────────────
+//
+// One being, one published identity key (persons/{uid}.publicKeyPem) — but many devices, each with
+// its own IndexedDB. This pure rule names every constellation the two can be in, so services/keys.ts
+// and the SigningKeyModal act on the SAME truth instead of each improvising a comparison:
+//
+//   'fresh'          — no device key, nothing published: first arrival; minting is safe.
+//   'needs_restore'  — no device key, but an identity IS published: NEVER silently mint — restore
+//                      from the phrase (or deliberately replace, red-warned).
+//   'publish_needed' — a device key, nothing published: a past publish failed; self-heal by
+//                      publishing this key.
+//   'ready'          — device and published agree: sign away.
+//   'stale_device'   — device and published DISAGREE: this device holds an OLDER identity (another
+//                      device rotated or started fresh). Silently republishing the local key would
+//                      hijack the identity BACK and fork the being's continuity — surface it, never
+//                      self-heal over it.
+export type KeyCustody = 'fresh' | 'needs_restore' | 'publish_needed' | 'ready' | 'stale_device';
+
+export function keyCustody(deviceKeyB64: string | null, publishedKeyB64: string): KeyCustody {
+  if (!deviceKeyB64) return publishedKeyB64 === '' ? 'fresh' : 'needs_restore';
+  if (publishedKeyB64 === '') return 'publish_needed';
+  return deviceKeyB64 === publishedKeyB64 ? 'ready' : 'stale_device';
+}
+
+// A restore may only land the key it claims to restore: if an identity key is published and the
+// phrase derives a DIFFERENT key, installing it would silently replace the published identity —
+// the exact move the needs_restore warning exists to prevent. (Any valid 24 BIP39 words derive
+// SOME key; only the right phrase derives the published one.)
+export function restoreConflictsWithPublished(restoredKeyB64: string, publishedKeyB64: string): boolean {
+  return publishedKeyB64 !== '' && restoredKeyB64 !== publishedKeyB64;
+}

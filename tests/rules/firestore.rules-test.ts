@@ -866,6 +866,12 @@ describe('persons key history — append-only lineage at persons/{uid}/keys/{fin
     await assertFails(deleteDoc(doc(db(STAFF), 'persons', ALICE, 'keys', FP)));
   });
 
+  it('the TIMELINE is as frozen as the key: publishedAt can never be rewritten (verification stands on the lineage)', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => setDoc(doc(ctx.firestore(), 'persons', ALICE, 'keys', FP), keyDoc));
+    await assertFails(updateDoc(doc(db(ALICE), 'persons', ALICE, 'keys', FP), { publishedAt: 2 }));
+    await assertFails(setDoc(doc(db(ALICE), 'persons', ALICE, 'keys', FP), { ...keyDoc, publishedAt: 99 }, { merge: true }));
+  });
+
   it('the history is world-readable — anyone can verify lineage', async () => {
     await env.withSecurityRulesDisabled(async (ctx) => setDoc(doc(ctx.firestore(), 'persons', ALICE, 'keys', FP), keyDoc));
     await assertSucceeds(getDoc(doc(db(), 'persons', ALICE, 'keys', FP)));
