@@ -17,8 +17,8 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, realpathSync, renameSync, writeFileSync } from 'node:fs';
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
 
@@ -29,6 +29,8 @@ const ARCHIVE_REPOSITORY = 'zetedi/lightseed-online-2024';
 const INTEGRATION_BRANCH = 'integration/code-lineage';
 const FIRST_PAGE = '44f458064969b99f3462ea7649cfb3eb1e80cd2a';
 const FIRST_PAGE_TAG = 'history/first-front-page';
+const SUN_DIRECTORY = 'lifeseed-sun';
+const SUN_ENTRY_PAGE = `${SUN_DIRECTORY}/pages/index.js`;
 
 const SOURCES = [
   {
@@ -65,7 +67,7 @@ const SOURCES = [
     slug: 'lifeseed-full',
     url: 'https://github.com/zetedi/lifeseed.git',
     head: 'history/lifeseed-full/main',
-    role: 'the complete pre-AI client/server application',
+    role: 'the complete pre-AI client/server application, including the lifeseed-sun phase',
   },
   {
     slug: 'lightseed-online-restart',
@@ -86,7 +88,12 @@ const JOINS = [
   ['history/light-functions/master', 'The pulse functions join the lineage.'],
   ['history/light-client/master', 'The pulse client joins the lineage.'],
   ['history/light-view/master', 'The early light view joins the lineage.'],
-  ['history/lifeseed-full/main', 'The full lifeseed joins the lineage.'],
+  ['history/lifeseed-full/main', 'The full lifeseed and its sun join the lineage.'],
+];
+
+const BRANCH_ONLY_REFS = [
+  'history/lifeseed-g-test/main',
+  'history/lifeseed-online-current/fixed-build-state',
 ];
 
 const PLAN = [
@@ -94,11 +101,11 @@ const PLAN = [
   'Fetch every source branch and tag into a permanent history/<repository>/* namespace.',
   `Tag ${FIRST_PAGE.slice(0, 8)} as ${FIRST_PAGE_TAG}.`,
   'Start the integration lineage at the original lightseed/master.',
-  'Join Angular, pulse, view, and full client/server histories without changing the trunk tree.',
+  'Join Angular as the next front-page ring; join pulse, view, and the full client/server ancestry including lifeseed-sun without changing the trunk tree.',
   'Adopt the clean lightseed.online restart as a deliberate snapshot transition.',
-  'Join the lifeseed-g experiment and the current fixed-build-state branch.',
+  'Keep the lifeseed-g experiment and current fixed-build-state as exact branch-only histories.',
   'Adopt the current local main; its exact tree becomes the final integration tree.',
-  'Verify every history branch is reachable, the final tree matches, fsck passes, and index.html reaches the first page.',
+  'Verify every history ref remains preserved, canonical ancestry is exact, and the public-doorway lineage crosses Angular’s src/index.html and lifeseed-sun/pages/index.js.',
   'Audit suspicious historical paths; install and test the final current app.',
   'Optionally push namespaced history, open a PR or fast-forward main, then rename/archive repositories.',
 ];
@@ -251,14 +258,28 @@ function commandExists(program, args = ['--version']) {
 
 let sourceRoot;
 try {
-  sourceRoot = gitText(['rev-parse', '--show-toplevel'], process.cwd());
+  sourceRoot = realpathSync(gitText(['rev-parse', '--show-toplevel'], process.cwd()));
 } catch {
   console.error('✗ Run this script from the current lifeseed.online Git worktree.');
   process.exit(1);
 }
 
+function resolveThroughExistingAncestors(path) {
+  let existing = path;
+  const missingTail = [];
+  while (!existsSync(existing)) {
+    const parent = dirname(existing);
+    if (parent === existing) break;
+    missingTail.unshift(basename(existing));
+    existing = parent;
+  }
+  return resolve(realpathSync(existing), ...missingTail);
+}
+
 const requestedWorkspace = valueAfter('--workspace');
-const workspace = resolve(requestedWorkspace || join(dirname(sourceRoot), 'lightseed-consolidation'));
+const workspace = resolveThroughExistingAncestors(
+  resolve(requestedWorkspace || join(dirname(sourceRoot), 'lightseed-consolidation')),
+);
 const workspaceRelation = relative(sourceRoot, workspace);
 if (workspaceRelation === '' || (!workspaceRelation.startsWith('..') && !isAbsolute(workspaceRelation))) {
   failEarly('The consolidation workspace must be outside the source worktree.');
@@ -281,7 +302,9 @@ function loadState() {
 
 function saveState() {
   mkdirSync(dirname(statePath), { recursive: true });
-  writeFileSync(statePath, `${JSON.stringify(state, null, 2)}\n`);
+  const temporaryStatePath = `${statePath}.tmp-${process.pid}`;
+  writeFileSync(temporaryStatePath, `${JSON.stringify(state, null, 2)}\n`);
+  renameSync(temporaryStatePath, statePath);
 }
 
 const done = (key) => state.completed.includes(key);
@@ -324,6 +347,23 @@ function tagExists(tag, cwd = workspace) {
     allowFailure: true,
     show: false,
   }).status === 0;
+}
+
+function refPointsToCommit(ref) {
+  return git(['cat-file', '-e', `${ref}^{commit}`], workspace, {
+    capture: true,
+    allowFailure: true,
+    show: false,
+  }).status === 0;
+}
+
+function preservedCommitRefs() {
+  return gitText([
+    'for-each-ref',
+    '--format=%(refname)',
+    'refs/heads/history/',
+    'refs/tags/history/',
+  ], workspace).split('\n').filter(Boolean).filter(refPointsToCommit);
 }
 
 function isAncestor(ancestor, descendant = 'HEAD') {
@@ -528,30 +568,6 @@ async function main() {
     },
   );
 
-  const laterJoins = [
-    ['history/lifeseed-g-test/main', 'The test seed joins the lineage.'],
-  ];
-  if (refExists('history/lifeseed-online-current/fixed-build-state')) {
-    laterJoins.push([
-      'history/lifeseed-online-current/fixed-build-state',
-      'The fixed build state is remembered.',
-    ]);
-  }
-
-  for (const [ref, message] of laterJoins) {
-    const key = `join:${ref}`;
-    if (isAncestor(ref)) {
-      if (!done(key)) markDone(key);
-      continue;
-    }
-    await guardedStep(
-      key,
-      `Join ${ref}`,
-      'The side branch becomes reachable without replacing the clean-restart trunk snapshot.',
-      async () => git(['merge', '-s', 'ours', '--no-ff', '--allow-unrelated-histories', '-m', message, ref], workspace),
-    );
-  }
-
   const currentRef = 'history/lifeseed-online-current/main';
   if (!done('adopt:current-main') && isAncestor(currentRef) && treesMatch('HEAD', currentRef)) {
     markDone('adopt:current-main');
@@ -572,53 +588,101 @@ async function main() {
     },
   );
 
-  // GitHub pull refs and newly-created source branches may contain commits that are not on the
-  // default branch. The reviewed inventory has none today, but “keep every commit” is stronger
-  // than assuming that remains true. Attach any such tip after the current snapshot with an ours
-  // merge: its exact DAG becomes reachable and the current application tree remains unchanged.
-  const remainingRefs = gitText(
-    ['for-each-ref', '--format=%(refname:short)', 'refs/heads/history/'],
-    workspace,
-  ).split('\n').filter(Boolean).filter((ref) => !isAncestor(ref));
-
-  for (const ref of remainingRefs) {
-    await guardedStep(
-      `join:remaining:${ref}`,
-      `Join otherwise-unreached history ${ref}`,
-      'This branch or pull-request tip is not reachable through its source default branch. An ours merge preserves it without changing the final current-app tree.',
-      async () => git([
-        'merge', '-s', 'ours', '--no-ff', '--allow-unrelated-histories',
-        '-m', `The branch ${ref} is remembered.`, ref,
-      ], workspace),
-    );
-  }
-
   await guardedStep(
     'verification',
     'Verify the whole vessel',
-    'This checks tree identity, reachability of every preserved branch, object integrity, and the visible index.html lineage.',
+    'This checks tree identity, canonical ancestry, branch-only boundaries, object integrity, and the public-doorway lineage through Angular’s src/index.html and lifeseed-sun/pages/index.js.',
     async () => {
       git(['diff', '--exit-code', currentRef, 'HEAD'], workspace);
       console.log(green('✓ final tree is byte-for-byte the current application'));
 
-      const refs = gitText(['for-each-ref', '--format=%(refname:short)', 'refs/heads/history/'], workspace)
-        .split('\n')
-        .filter(Boolean);
-      const unreachable = refs.filter((ref) => !isAncestor(ref));
-      if (unreachable.length) {
-        throw new Error(`History branches not reachable from HEAD:\n${unreachable.join('\n')}`);
+      const refs = preservedCommitRefs();
+      const canonicalRefs = [
+        'history/lightseed-first/master',
+        ...JOINS.map(([ref]) => ref),
+        restartRef,
+        currentRef,
+      ];
+      const missingCanonicalAncestry = canonicalRefs.filter((ref) => !isAncestor(ref));
+      if (missingCanonicalAncestry.length) {
+        throw new Error(`Canonical refs not reachable from HEAD:\n${missingCanonicalAncestry.join('\n')}`);
       }
-      console.log(green(`✓ all ${refs.length} preserved history branches are reachable from HEAD`));
+      console.log(green(`✓ all ${canonicalRefs.length} canonical source refs are reachable from HEAD`));
+
+      const intendedBranchOnly = BRANCH_ONLY_REFS.filter((ref) => refExists(ref));
+      const enteredCanonicalAncestry = intendedBranchOnly.filter((ref) => isAncestor(ref));
+      if (enteredCanonicalAncestry.length) {
+        throw new Error(`Branch-only refs entered canonical ancestry:\n${enteredCanonicalAncestry.join('\n')}`);
+      }
+      const branchOnlyRefs = refs.filter((ref) => !isAncestor(ref));
+      console.log(green(
+        `✓ ${branchOnlyRefs.length} branch/tag commit refs remain preserved outside canonical ancestry`,
+      ));
 
       if (!isAncestor(FIRST_PAGE)) throw new Error(`${FIRST_PAGE} is not an ancestor of HEAD.`);
       if (!isAncestor(currentRef)) throw new Error(`${currentRef} is not an ancestor of HEAD.`);
       git(['fsck', '--full'], workspace);
 
-      const count = gitText(['rev-list', 'HEAD', '--count'], workspace);
-      console.log(green(`✓ ${count} commits are reachable from the integration tip`));
+      const canonicalCount = gitText(['rev-list', 'HEAD', '--count'], workspace);
+      const repositoryCount = gitText(['rev-list', '--all', '--count'], workspace);
+      console.log(green(
+        `✓ ${canonicalCount} commits are canonical; ${repositoryCount} commits remain addressable across all refs`,
+      ));
 
-      console.log(`\n${bold('index.html, newest to seed:')}`);
+      const sunApplicationCommits = gitText([
+        'rev-list', 'history/lifeseed-full/main', '--', SUN_DIRECTORY,
+      ], workspace).split('\n').filter(Boolean);
+      const missingSunApplicationCommits = sunApplicationCommits.filter((commit) => !isAncestor(commit));
+      if (missingSunApplicationCommits.length) {
+        throw new Error(`lifeseed-sun application commits missing from canonical ancestry:\n${missingSunApplicationCommits.join('\n')}`);
+      }
+      console.log(green(
+        `✓ all ${sunApplicationCommits.length} lifeseed-sun application commits remain canonical`,
+      ));
+
+      const canonicalRootHistory = new Set(
+        gitText(['log', '--follow', '--format=%H', '--', 'index.html'], workspace)
+          .split('\n')
+          .filter(Boolean),
+      );
+      const uniqueSidePageCommits = intendedBranchOnly.flatMap((ref) =>
+        gitText(['rev-list', ref, '--not', ...canonicalRefs, '--', 'index.html'], workspace)
+          .split('\n')
+          .filter(Boolean));
+      const sidePageLeaks = uniqueSidePageCommits.filter((commit) => canonicalRootHistory.has(commit));
+      if (sidePageLeaks.length) {
+        throw new Error(`Branch-only index.html commits leaked into canonical history:\n${sidePageLeaks.join('\n')}`);
+      }
+      console.log(green('✓ side-experiment index.html commits remain outside the canonical page history'));
+
+      const pageSegments = [
+        ['history/lightseed-first/master', 'index.html'],
+        ['history/core-angular/master', 'src/index.html'],
+        ['history/lifeseed-full/main', SUN_ENTRY_PAGE],
+        [restartRef, 'index.html'],
+        [currentRef, 'index.html'],
+      ];
+      const expectedPageCommits = new Set(pageSegments.flatMap(([ref, path]) =>
+        gitText(['rev-list', ref, '--', path], workspace).split('\n').filter(Boolean)));
+      const conceptualPageHistory = new Set(
+        gitText([
+          'log', '--full-history', '--simplify-merges', '--format=%H',
+          '--', 'index.html', 'src/index.html', SUN_ENTRY_PAGE,
+        ], workspace).split('\n').filter(Boolean),
+      );
+      const missingPageCommits = [...expectedPageCommits]
+        .filter((commit) => !conceptualPageHistory.has(commit));
+      if (missingPageCommits.length) {
+        throw new Error(`Public-doorway commits missing from the conceptual lineage:\n${missingPageCommits.join('\n')}`);
+      }
+
+      console.log(`\n${bold('canonical root index.html, newest to seed:')}`);
       git(['log', '--follow', '--date-order', '--date=short', '--format=%h %ad %s', '--', 'index.html'], workspace);
+      console.log(`\n${bold('public doorway, including Angular and lifeseed-sun:')}`);
+      git([
+        'log', '--full-history', '--simplify-merges', '--date-order', '--date=short',
+        '--format=%h %ad %s', '--', 'index.html', 'src/index.html', SUN_ENTRY_PAGE,
+      ], workspace);
       console.log(`\n${bold('first page → current page:')}`);
       git(['diff', '--stat', `${FIRST_PAGE}:index.html`, 'HEAD:index.html'], workspace);
       git(['status', '--short', '--branch'], workspace);
@@ -634,7 +698,7 @@ async function main() {
       const paths = [...new Set(objects.split('\n').map((line) => line.slice(41)).filter(Boolean))];
       const suspicious = paths.filter((path) => {
         if (/\.env\.(example|sample|template)$/i.test(path)) return false;
-        return /(^|\/)(\.env($|\.)|.*service.?account.*\.json$|.*credentials?.*\.(json|ya?ml)$|id_rsa$|.*\.(pem|p12|pfx|key))$/i.test(path);
+        return /(^|\/)(\.env($|\.)|(?:keys?|secrets?)\/.*\.json$|.*service.?account.*\.json$|.*credentials?.*\.(json|ya?ml)$|id_rsa$|.*\.(pem|p12|pfx|key))$/i.test(path);
       });
 
       if (suspicious.length) {
@@ -642,6 +706,56 @@ async function main() {
         suspicious.forEach((path) => console.log(`  ! ${path}`));
       } else {
         console.log(green('✓ no obviously sensitive filenames found by the basic path audit'));
+      }
+
+      const credentialPatterns = [
+        ['private key', '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----'],
+        ['AWS access key', '(AKIA|ASIA)[A-Z0-9]{16}'],
+        ['GitHub token', 'gh[pousr]_[A-Za-z0-9]{20,}'],
+        ['OpenAI key', 'sk-(proj-)?[A-Za-z0-9_-]{20,}'],
+        ['Anthropic key', 'sk-ant-[A-Za-z0-9_-]{20,}'],
+        ['Slack token', 'xox[baprs]-[A-Za-z0-9-]{20,}'],
+        ['npm token', '_authToken[[:space:]]*[=:][[:space:]]*[^[:space:]]+'],
+      ];
+      const credentialFindings = [];
+      for (const [category, pattern] of credentialPatterns) {
+        const matches = gitText([
+          'log',
+          '--all',
+          '--extended-regexp',
+          '-G', pattern,
+          '--format=commit %H',
+          '--name-only',
+          '--diff-filter=AM',
+        ], workspace);
+        let commit = '';
+        for (const line of matches.split('\n')) {
+          if (line.startsWith('commit ')) commit = line.slice(7);
+          else if (commit && line.trim()) credentialFindings.push({ category, commit, path: line.trim() });
+        }
+      }
+
+      const uniqueCredentialFindings = [...new Map(
+        credentialFindings.map((finding) => [
+          `${finding.category}\0${finding.commit}\0${finding.path}`,
+          finding,
+        ]),
+      ).values()];
+      if (uniqueCredentialFindings.length) {
+        console.log(amber('Credential-shaped content exists in preserved history:'));
+        uniqueCredentialFindings.forEach(({ category, commit, path }) => {
+          console.log(`  ! ${category}: ${commit.slice(0, 12)}  ${path}`);
+        });
+        console.log(amber(
+          'Preserving exact commits also preserves these bytes. Revoke or rotate real credentials before publishing; never paste their values here.',
+        ));
+        const rotated = await requirePhrase(
+          'Attest that every real credential listed above has been revoked or rotated.',
+          'CREDENTIALS ROTATED',
+        );
+        if (!rotated) stop('Credential rotation was not attested; nothing will be published.');
+      } else {
+        console.log(green('✓ no credential-shaped content found by the historical diff audit'));
       }
 
       git(['count-objects', '-vH'], workspace);
@@ -661,10 +775,10 @@ async function main() {
     await guardedStep(
       'quality-gate',
       'Install and test the final current tree',
-      'Runs npm ci followed by the repository quality gate. Rules tests are unchanged and remain outside this consolidation.',
+      'Installs the locked dependencies without running dependency lifecycle scripts, then runs the repository quality gate. Rules tests are unchanged and remain outside this consolidation.',
       async () => {
         if (!commandExists('npm')) throw new Error('npm is required for the quality gate.');
-        execute('npm', ['ci'], { cwd: workspace });
+        execute('npm', ['ci', '--ignore-scripts'], { cwd: workspace });
         execute('npm', ['run', 'check'], { cwd: workspace });
         git(['diff', '--exit-code', currentRef, 'HEAD'], workspace);
       },
