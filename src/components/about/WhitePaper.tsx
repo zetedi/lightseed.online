@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { marked } from 'marked';
 import { Icons } from '../ui/Icons';
+import { PdfViewer } from '../ui/PdfViewer';
 import { SectionMenu, SectionItem } from '../ui/SectionMenu';
 
 // The White Paper — the root/ documents as a BOOK: a full-screen reader below the page
@@ -14,14 +15,18 @@ import architectureMd from '../../../root/ARCHITECTURE.md?raw';
 import decisionsMd from '../../../root/DECISIONS.md?raw';
 import roadmapMd from '../../../root/ROADMAP.md?raw';
 import questionsMd from '../../../root/QUESTIONS.md?raw';
+import seedMd from '../../../root/SEED.md?raw';
 
 const PAPERS = [
-    { id: 'genesis', label: 'Genesis', hint: 'why we exist', md: genesisMd },
+    { id: 'genesis', label: 'Genesis', hint: 'the promise', md: genesisMd },
     { id: 'lin', label: 'LIN', hint: 'what world we are creating', md: linMd },
     { id: 'architecture', label: 'Architecture', hint: 'how it currently lives', md: architectureMd },
     { id: 'decisions', label: 'Decisions', hint: 'how it became this way', md: decisionsMd },
     { id: 'roadmap', label: 'Roadmap', hint: 'where growth is invited next', md: roadmapMd },
     { id: 'questions', label: 'Questions', hint: 'what we refuse to pretend we know', md: questionsMd },
+    // The shadow chapter: the 2025 vision read against the organism it became —
+    // "a vision keeps its tree as a shadow, so the two growths can be compared" (LIN).
+    { id: 'seed', label: 'Seed', hint: 'what was dreamed, and what grew', md: seedMd },
 ] as const;
 
 // Markdown prose styling via arbitrary variants — no typography plugin needed.
@@ -44,10 +49,24 @@ const PROSE =
 export const WhitePaperSection = () => {
     const [open, setOpen] = useState(true); // arriving at the tab opens the book
     const [paper, setPaper] = useState<(typeof PAPERS)[number]['id']>('genesis');
+    // A PDF the reader opened from a chapter link — shown in the in-app viewer (reach-card style)
+    // instead of navigating the whole app away to the browser's bare document view.
+    const [pdf, setPdf] = useState<{ src: string; title: string } | null>(null);
     const active = PAPERS.find(p => p.id === paper) || PAPERS[0];
     const html = useMemo(() => marked.parse(active.md, { async: false }) as string, [active.md]);
 
     const chapters: SectionItem[] = PAPERS.map(p => ({ key: p.id, label: p.label }));
+
+    // PDF links inside a chapter open the viewer (a plain anchor would leave the app; the viewer
+    // keeps the book open underneath and offers Download). Every other link behaves as itself.
+    const onProseClick = (e: React.MouseEvent) => {
+        const a = (e.target as HTMLElement).closest('a');
+        const href = a?.getAttribute('href');
+        if (a && href && href.toLowerCase().endsWith('.pdf')) {
+            e.preventDefault();
+            setPdf({ src: href, title: a.textContent || 'Document' });
+        }
+    };
 
     return (
         <>
@@ -55,7 +74,8 @@ export const WhitePaperSection = () => {
             <div className="rounded-2xl border border-slate-100 bg-white p-8 text-center shadow-sm">
                 <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">The White Paper</p>
                 <p className="mx-auto mt-2 max-w-md font-serif text-sm italic text-slate-500">
-                    The root the seed grows from — six documents every intelligence roots in before acting.
+                    The root the seed grows from: six documents every intelligence roots in before
+                    acting, and the seed vision they grew from, laid beside them.
                 </p>
                 <button onClick={() => setOpen(true)}
                     className="mt-4 rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-bold uppercase tracking-widest text-white shadow transition-colors hover:bg-emerald-700">
@@ -82,13 +102,17 @@ export const WhitePaperSection = () => {
                             </p>
                         </div>
                         <div className="min-h-0 flex-1 overflow-y-auto rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-10">
-                            {/* Trusted content: our own repo's root/ markdown, bundled at build time. */}
-                            <div className={PROSE} dangerouslySetInnerHTML={{ __html: html }} />
+                            {/* Trusted content: our own repo's root/ markdown, bundled at build time.
+                                The click handler only delegates for anchors already in the content —
+                                keyboard activation reaches those anchors natively. */}
+                            <div className={PROSE} onClick={onProseClick} dangerouslySetInnerHTML={{ __html: html }} />
                         </div>
                     </div>
                 </div>,
                 document.body,
             )}
+
+            {pdf && <PdfViewer src={pdf.src} title={pdf.title} onClose={() => setPdf(null)} />}
         </>
     );
 };

@@ -6,6 +6,25 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-18 · The book gains its shadow (SEED.md)**: the 2025 Lifetree Network white paper
+(Ethereum fork, ERC-721 identities, decaying NetLeaves, QML, Mother Trees) was read against the
+2026 organism, and the reading became a seventh chapter of the White Paper: `root/SEED.md`, "what
+was dreamed, and what grew." The original paper is PRESERVED as a typeset PDF the chapter links
+(`/lifetree-network-white-paper-2025.pdf`, the lightseed seal on its cover, opened in an in-app
+viewer that can download it); its first home, lifeseed.online, has since become what the paper
+called a hub, running LIN itself. The finding it records: the dream's soul survived almost intact
+(tree as identity, Mother Trees verbatim, circles of seven, the guardianship pathway) while nearly
+its entire technology list was replaced by smaller organs grown from first principles (per-being
+chains + Ed25519 for the fork and tokens; participant-intelligences for AI-above-the-net; the care
+economy for NetLeaves, whose *poetry*, decay-to-trunk-history and lineage, survived as the rings
+and the key lineage; 144-as-intimacy for "billions"). SEED is a SHADOW chapter, not a rooting
+requirement: LIN's law that a vision keeps its tree as a shadow so the two growths can be
+compared, applied to the project itself. Rejected: leaving the founding vision outside the book it
+grew into. *(Zoltán's question, "how does my white paper align?", and the day's reflection,
+becoming durable the same afternoon.)*
+
+---
+
 **2026-07-18 · Draft vanishes, minted withdraws** — the second deferred stone lands, resolving the
 deletable-decision contradiction. One pure rule (`decisionDeletable`, domain/decision.ts) judges the
 OBJECT, not the actor: a decision may be HARD-DELETED only while it is still, in substance, an
