@@ -87,6 +87,7 @@ export interface Decision extends Being {
   previousHash: string;
   hash: string;
   enactedHash?: string; // the block written when the circle reaches the threshold
+  withdrawnHash?: string; // the withdrawal mark — minted withdraws, chain-recorded (never erased)
   createdAt: Timestamp;
   passedAt?: Timestamp;
   withdrawnAt?: Timestamp;
@@ -201,6 +202,28 @@ export async function countVerifiedDecisionSignatures(
   lineage?: LineageCheck,
 ): Promise<number> {
   return (await verifiedDecisionSigners(identity, sigs, mode, publishedKeys, verify, lineage)).size;
+}
+
+// DRAFT VANISHES, MINTED WITHDRAWS — resolving the deletable-decision contradiction (deferred by
+// the ring of 2026-07-18, landed here). This rule judges the OBJECT, not the actor (WHO may delete
+// stays with the rules: author, keeper, staff): a decision may be HARD-DELETED only while it is
+// still, in substance, an unsigned unshared draft — not enacted (status 'passed', the mint),
+// bearing NO cryptographic signature, and carrying no other being's voice (no vote beyond the
+// proposer's own, no recorded position). Anything more is shared history and may only be
+// WITHDRAWN — marked, never erased (the guardian-veto ethic; chains are append-only). Concerns
+// alone do not protect a draft: the ring names a listening decision as still deletable — a concern
+// pauses it, it does not co-own it. The rules mirror the doc-visible half at rest (status +
+// votes/positions — they cannot read the signatures subcollection); deleteDecision enforces the
+// signature half; this ONE rule is what both mean.
+export function decisionDeletable(
+  d: Pick<Decision, 'status' | 'proposedBy'> & { votes?: string[]; positions?: Position[] },
+  signatureCount: number,
+): boolean {
+  if (d.status === 'passed') return false;                          // minted — withdraw only
+  if (signatureCount > 0) return false;                             // signed — withdraw only
+  if ((d.votes ?? []).some(v => v !== d.proposedBy)) return false;  // another voice stands
+  if ((d.positions ?? []).length > 0) return false;                 // a position stands
+  return true;
 }
 
 // A decision ENACTS when at least `votesRequired` VERIFIED signatures stand — and a requirement of 0

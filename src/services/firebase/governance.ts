@@ -5,7 +5,7 @@ import { uuidv7 } from '../../utils/id';
 import { type PulseVisibility } from '../../domain/pulse';
 import {
   DECISION_DOMAIN, decisionIdentity, decisionEnacted, decisionAuthoritative,
-  decisionSignaturePayload, verifiedDecisionSigners,
+  decisionSignaturePayload, verifiedDecisionSigners, decisionDeletable,
 } from '../../domain/decision';
 import { signatureFromDoc } from '../../domain/covenant';
 import { ensureSigningKey, publishSigningKey, isKeyInLineage, getPublishedSigningKey, sign as signWithKey, verify as verifyWithKey } from '../keys';
@@ -347,9 +347,24 @@ export const raiseConcern = async (decisionId: string, uid: string, note?: strin
 export const resumeDecision = (decisionId: string) =>
     updateDoc(doc(db, 'pulses', decisionId), { listening: false });
 
-// The proposer (or staff) withdraws their proposal.
-export const withdrawDecision = (decisionId: string) =>
-    updateDoc(doc(db, 'pulses', decisionId), { status: 'withdrawn', listening: false, withdrawnAt: serverTimestamp() });
+// The proposer (or keeper/staff — the rules' status gate) withdraws their proposal. WITHDRAWING IS
+// A MARK: alongside the status flip, a withdrawal block is appended to the decision's chain
+// (withdrawnHash — previous: the enactment block if one stands, else the genesis), so even an
+// ENACTED decision's retirement is chain-recorded, never an erasure — "minted withdraws".
+// Idempotent: an already-closed decision is left exactly as it stands.
+export const withdrawDecision = async (decisionId: string): Promise<'withdrawn' | 'closed'> => {
+    const uid = auth.currentUser?.uid || '';
+    const ref = doc(db, 'pulses', decisionId);
+    return runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+        if (!snap.exists()) throw new Error('Decision not found.');
+        const d = snap.data() as DocumentData;
+        if (['withdrawn', 'rejected', 'expired'].includes(d.status)) return 'closed' as const;
+        const withdrawnHash = await createBlock(d.enactedHash || d.hash || 'DECISION', { decision: decisionId, withdrawn: true, by: uid }, Date.now());
+        tx.update(ref, { status: 'withdrawn', listening: false, withdrawnAt: serverTimestamp(), withdrawnHash });
+        return 'withdrawn' as const;
+    });
+};
 
 // Close a proposal as not adopted.
 export const rejectDecision = (decisionId: string) =>
@@ -360,10 +375,21 @@ export const rejectDecision = (decisionId: string) =>
 export const setDecisionVisibility = (decisionId: string, visibility: 'public' | 'community') =>
     updateDoc(doc(db, 'pulses', decisionId), { visibility, updatedAt: serverTimestamp() });
 
-// Remove a decision entirely — staff / keeper / author, per the pulses delete rule. Some
-// deliberations don't belong in the record; the circle decides what the ledger keeps.
-export const deleteDecision = (decisionId: string) =>
-    deleteDoc(doc(db, 'pulses', decisionId));
+// Remove a decision entirely — DRAFT VANISHES, MINTED WITHDRAWS (domain/decision.decisionDeletable).
+// Only a decision that is still its proposer's own draft may be erased: not passed, no signature in
+// its subcollection, no other voice on it. Everything else must be WITHDRAWN (withdrawDecision) —
+// marked, never erased. The rules enforce the doc-visible half at rest (status/votes/positions);
+// the signature half lives here, because rules cannot read a subcollection. Deleting only unsigned
+// decisions also means a delete can never orphan signature docs.
+export const deleteDecision = async (decisionId: string): Promise<void> => {
+    const fresh = await readDecision(decisionId);
+    if (!fresh) return; // already gone
+    const sigs = await getDocs(decisionSignaturesCol(decisionId));
+    if (!decisionDeletable(fresh, sigs.size)) {
+        throw new Error('This decision has been signed or enacted — it can be withdrawn, never erased.');
+    }
+    await deleteDoc(doc(db, 'pulses', decisionId));
+};
 
 // --- Quaker consensus -----------------------------------------------------------------------
 // Record a voice's position in a consensus meeting: unite, stand aside, or block. One per person

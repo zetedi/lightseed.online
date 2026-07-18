@@ -6,6 +6,30 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-18 · Draft vanishes, minted withdraws** — the second deferred stone lands, resolving the
+deletable-decision contradiction. One pure rule (`decisionDeletable`, domain/decision.ts) judges the
+OBJECT, not the actor: a decision may be HARD-DELETED only while it is still, in substance, an
+unsigned unshared draft — not passed, no cryptographic signature, no voice but the proposer's own
+(no second vote, no position). Anything more is shared history and may only be **WITHDRAWN** — and
+withdrawing is now a MARK: `withdrawDecision` appends a withdrawal block to the decision's chain
+(`withdrawnHash`, previous = the enactment block or the genesis), so even an enacted decision's
+retirement is chain-recorded, never an erasure. Enforcement is layered exactly as far as each layer
+can see: the RULES hold the doc-visible half at rest (never delete a passed decision; `votes` must
+`hasOnly` the proposer — a malformed array holding someone else's single voice still protects;
+positions empty; chain marks `enactedHash`/`withdrawnHash` may only move together WITH a status
+change, so a plain voter can never scribble a seal), the SERVICE holds the signature half (rules
+cannot read a subcollection), and the UI shows the ✕ only to a deletable draft — to its proposer,
+not only keepers, and never on a failed signature read (unknown is not unsigned). A concern alone
+does not protect a draft (a listening pause is not co-ownership — per the deferring ring); a
+keeper's power to delete a member's unsigned draft is retained, now strictly narrower than before.
+**Named residuals**: a proposer's SELF-signed-only draft is still raw-SDK-deletable (the rules
+cannot see its lone signature; only their own hand is lost); a privileged status-flipper can write a
+garbage mark (marks are denormalisations — the crypto stays the seal, `decisionAuthoritative`
+catches a forged pass); and `rejected`/`expired` still close by flag alone — their chain mark is its
+own coming ring. Gates: `check` 297 · `test:rules` 90.
+
+---
+
 **2026-07-18 · History survives the key — continuity, custody, and the honest seal** — the first
 deferred stone from the morning's ring lands: **verify-at-signing-time, step 1 — the lineage
 fallback.** A signature now binds to the signer's identity if its recorded pubkey equals the

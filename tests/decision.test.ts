@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import {
   DECISION_DOMAIN, decisionIdentity, decisionEnacted, decisionAuthoritative,
-  decisionSignaturePayload, countVerifiedDecisionSignatures, verifiedDecisionSigners,
-  type Decision, type RecordedDecisionSignature,
+  decisionSignaturePayload, countVerifiedDecisionSignatures, verifiedDecisionSigners, decisionDeletable,
+  type Decision, type RecordedDecisionSignature, type Position,
 } from '../src/domain/decision';
 import { COVENANT_DOMAIN } from '../src/domain/covenant';
 import { canonicalize } from '../src/domain/chain/canonical';
@@ -234,5 +234,32 @@ describe('verifiedDecisionSigners — the enactment block records only VERIFIED 
     const signers = await verifiedDecisionSigners(identity, records, 'threshold', published, verifyPayload);
     expect([...signers]).toEqual(['alice']);
     expect(await countVerifiedDecisionSignatures(identity, records, 'threshold', published, verifyPayload)).toBe(1);
+  });
+});
+
+describe('decisionDeletable — draft vanishes, minted withdraws', () => {
+  const draft = { status: 'open' as const, proposedBy: 'alice', votes: ['alice'] };
+  const aPosition = [{ by: 'bob', stance: 'stand_aside', at: 1 }] as unknown as Position[];
+
+  it('an unsigned draft carrying only the proposer\'s own voice may vanish', () => {
+    expect(decisionDeletable(draft, 0)).toBe(true);
+  });
+  it('a PASSED decision may only be withdrawn — the mint is never erased', () => {
+    expect(decisionDeletable({ ...draft, status: 'passed' }, 0)).toBe(false);
+  });
+  it('a single signature protects the record — signed withdraws', () => {
+    expect(decisionDeletable(draft, 1)).toBe(false);
+  });
+  it('another being\'s vote protects the record', () => {
+    expect(decisionDeletable({ ...draft, votes: ['alice', 'bob'] }, 0)).toBe(false);
+  });
+  it('a recorded position protects the record', () => {
+    expect(decisionDeletable({ ...draft, positions: aPosition }, 0)).toBe(false);
+  });
+  it('a withdrawn, unsigned, unshared draft may still vanish — retraction does not freeze it', () => {
+    expect(decisionDeletable({ ...draft, status: 'withdrawn' }, 0)).toBe(true);
+  });
+  it('absent votes read as no other voice (a legacy shape)', () => {
+    expect(decisionDeletable({ status: 'open', proposedBy: 'alice' }, 0)).toBe(true);
   });
 });

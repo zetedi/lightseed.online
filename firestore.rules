@@ -471,16 +471,22 @@ service cloud.firestore {
 
         // (c) Governance on a decision — voting and raising a concern (listening false→true) stay
         //     open to signed-in members; flipping STATUS or resuming (listening true→false) needs
-        //     the proposer, community owner, or staff. Content/chain keys can't ride along.
+        //     the proposer, community owner, or staff. Content/chain keys can't ride along — and
+        //     the chain MARKS (enactedHash / withdrawnHash) may only move together with a status
+        //     change, so a plain voter can never scribble a seal or a withdrawal mark on its own.
         || (
              resource.data.get('type', '') == 'decision'
              && request.resource.data.diff(resource.data).affectedKeys()
-                  .hasOnly(['votes', 'concerns', 'positions', 'listening', 'status', 'passedAt', 'enactedHash', 'withdrawnAt', 'rejectedAt', 'updatedAt'])
+                  .hasOnly(['votes', 'concerns', 'positions', 'listening', 'status', 'passedAt', 'enactedHash', 'withdrawnAt', 'rejectedAt', 'withdrawnHash', 'updatedAt'])
              && (
                   request.resource.data.get('status', '') == resource.data.get('status', '')
                   || isStaff()
                   || resource.data.get('proposedBy', '') == request.auth.uid
                   || isCommunityOwner(resource.data.get('communityId', ''))
+                )
+             && (
+                  !request.resource.data.diff(resource.data).affectedKeys().hasAny(['enactedHash', 'withdrawnHash'])
+                  || request.resource.data.get('status', '') != resource.data.get('status', '')
                 )
              && (
                   !(resource.data.get('listening', false) == true && request.resource.data.get('listening', false) == false)
@@ -540,7 +546,29 @@ service cloud.firestore {
         // (g) Staff may mend anything.
         || isStaff()
       );
-      allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff() || isCommunityOwner(resource.data.communityId));
+      // DRAFT VANISHES, MINTED WITHDRAWS: a decision may be erased only while it is still its
+      // proposer's own draft — never once passed, and never once another voice stands on it (a
+      // second vote or any position). Signatures live in a subcollection the rules cannot read;
+      // that half of the guard is enforced by deleteDecision (domain/decision.decisionDeletable).
+      // Everything shared retires by WITHDRAWING — a chain-marked status, never an erasure. Staff
+      // keep the mend-anything escape (the amber-dot posture, mirrored across overlays).
+      allow delete: if isSignedIn() && (
+        isStaff()
+        || (
+             (resource.data.get('authorId', '') == request.auth.uid || isCommunityOwner(resource.data.get('communityId', '')))
+             && (
+                  resource.data.get('type', '') != 'decision'
+                  || (
+                       resource.data.get('status', '') != 'passed'
+                       // No voice but the proposer's own — hasOnly, so a malformed/legacy votes
+                       // array holding someone ELSE's single voice still protects the record
+                       // (byte-for-byte the domain's votes.some(v => v !== proposedBy) reading).
+                       && resource.data.get('votes', []).hasOnly([resource.data.get('proposedBy', '')])
+                       && resource.data.get('positions', []).size() == 0
+                     )
+                )
+           )
+      );
 
       // Loves subcollection
       match /loves/{loveId} {

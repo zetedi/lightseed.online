@@ -8,13 +8,15 @@ import { Community } from '../../types';
 import { createDecision, getDecisions, raiseConcern, resumeDecision, withdrawDecision, recordPosition, discernDecision, setDecisionVisibility, deleteDecision, signDecision, getDecisionSignatureState } from '../../services/firebase';
 import { hasSigningKey, readyToSign, SigningKeyNeedsRestoreError } from '../../services/keys';
 import { SigningKeyModal } from '../modals/SigningKeyModal';
-import { DECISION_NATURES, decisionStatusLabels, consensusStanceLabels, votesRequired, type Decision, type DecisionNature, type DecisionMode, type ConsensusStance } from '../../domain/decision';
+import { DECISION_NATURES, decisionStatusLabels, consensusStanceLabels, votesRequired, decisionDeletable, type Decision, type DecisionNature, type DecisionMode, type ConsensusStance } from '../../domain/decision';
 import { councilView } from '../../domain/views/council';
 import type { PulseVisibility } from '../../domain/pulse';
 
 // The crypto standing of a decision — how many signatures verify against its frozen identity, whether a
 // claimed 'passed' is honest, and who has signed. Re-run from the raw signatures so the seal is PROVEN.
-interface SigState { verifiedCount: number; valid: boolean; signedUids: Set<string> }
+// `known` is false when the signatures could not be READ (offline/permissions) — unknown is not
+// unsigned: deletability must never be inferred from a failed read.
+interface SigState { verifiedCount: number; valid: boolean; signedUids: Set<string>; known: boolean }
 
 interface CommunityCouncilProps {
   community: Community;
@@ -50,8 +52,8 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
       const entries = await Promise.all(ds.map(async (d) => {
         try {
           const s = await getDecisionSignatureState(d);
-          return [d.id, { verifiedCount: s.verifiedCount, valid: s.valid, signedUids: new Set(s.signatures.map(x => x.uid)) }] as const;
-        } catch { return [d.id, { verifiedCount: 0, valid: true, signedUids: new Set<string>() }] as const; }
+          return [d.id, { verifiedCount: s.verifiedCount, valid: s.valid, signedUids: new Set(s.signatures.map(x => x.uid)), known: true }] as const;
+        } catch { return [d.id, { verifiedCount: 0, valid: true, signedUids: new Set<string>(), known: false }] as const; }
       }));
       setSigStates(Object.fromEntries(entries));
     }).catch(() => {});
@@ -82,7 +84,7 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
   };
 
   const handleDeleteDecision = async (id: string, title: string) => {
-    if (!(await showConfirm(`Remove the decision "${title}" from the record entirely? This cannot be undone.`, { title: 'Delete decision', confirmText: 'Delete', danger: true }))) return;
+    if (!(await showConfirm(`Remove the draft "${title}" entirely? Only an unsigned draft can vanish — this cannot be undone.`, { title: 'Delete draft', confirmText: 'Delete', danger: true }))) return;
     try { await deleteDecision(id); refreshDecisions(); }
     catch (e: any) { showAlert(e?.message || 'Could not delete the decision.'); }
   };
@@ -126,7 +128,7 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
   };
 
   const handleWithdraw = async (id: string) => {
-    if (!(await showConfirm('Withdraw this proposal?', { title: 'Withdraw', confirmText: 'Withdraw', danger: true }))) return;
+    if (!(await showConfirm('Withdraw this decision? Withdrawal is a mark on its chain — the record stays.', { title: 'Withdraw', confirmText: 'Withdraw', danger: true }))) return;
     setVotingId(id);
     try { await withdrawDecision(id); refreshDecisions(); }
     catch (e: any) { showAlert(e?.message || 'Could not withdraw.'); }
@@ -218,6 +220,13 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                       {(() => {
                         const raw = decisions.find(x => x.id === d.id) as (Decision & { visibility?: string }) | undefined;
                         const isPublic = raw?.visibility === 'public';
+                        // DRAFT VANISHES, MINTED WITHDRAWS: the ✕ appears only while the decision is
+                        // still, in substance, an unsigned unshared draft (mirrors the delete rule +
+                        // service guard). Until the signature state has LOADED — not merely failed —
+                        // deletability is unknown: err on showing nothing over a delete that would be
+                        // refused.
+                        const sig = sigStates[d.id];
+                        const deletable = !!raw && !!sig && sig.known && decisionDeletable(raw, sig.signedUids.size);
                         return (
                           <>
                             {clerk ? (
@@ -231,11 +240,13 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                             ) : isPublic && (
                               <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase text-sky-700">Public</span>
                             )}
-                            {canEdit && (
+                            {/* The proposer may vanish their OWN draft (the rules allow the author),
+                                not only keepers/staff — the door the feature exists for. */}
+                            {(d.isProposer || canEdit) && deletable && (
                               <button
                                 onClick={() => handleDeleteDecision(d.id, d.title)}
-                                title="Delete this decision"
-                                aria-label="Delete this decision"
+                                title="Delete this draft"
+                                aria-label="Delete this draft"
                                 className="relative rounded-full px-1.5 py-0.5 text-[10px] font-bold text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
                               >
                                 {currentUserId !== community.ownerId && !d.isProposer && <SuperDot />}
@@ -346,7 +357,9 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                         )}
                       </>
                     )}
-                    {open && clerk && (
+                    {/* Minted withdraws: an ENACTED decision may also be retired — a chain-marked
+                        withdrawal, never a deletion — so the clerk keeps this door after passing. */}
+                    {(open || d.passed) && clerk && (
                       <button onClick={() => handleWithdraw(d.id)} disabled={votingId === d.id} className="rounded-full px-3 py-1 text-[11px] font-medium text-slate-400 transition-colors hover:text-red-500">Withdraw</button>
                     )}
                   </div>

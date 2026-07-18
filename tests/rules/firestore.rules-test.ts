@@ -877,3 +877,59 @@ describe('persons key history — append-only lineage at persons/{uid}/keys/{fin
     await assertSucceeds(getDoc(doc(db(), 'persons', ALICE, 'keys', FP)));
   });
 });
+
+describe('draft vanishes, minted withdraws — the decision delete rule and the chain marks', () => {
+  // A decision still in DRAFT substance (not passed, only the proposer's own voice, no positions)
+  // may be deleted by its author; anything shared or enacted may only be WITHDRAWN. Signatures live
+  // in a subcollection the rules cannot read — that half of the guard is the service's
+  // (deleteDecision / domain decisionDeletable); here the doc-visible half is law.
+  const seedDec = (id: string, data: object) => env.withSecurityRulesDisabled(async (ctx) =>
+    setDoc(doc(ctx.firestore(), 'pulses', id), {
+      type: 'decision', lid: `${id}-lid`, communityId: 'com1', nature: 'charter',
+      title: 'T', body: '', proposedBy: ALICE, authorId: ALICE, mode: 'threshold',
+      votes: [ALICE], votesRequired: 7, status: 'open',
+      previousHash: 'DECISION', hash: 'h0', createdAt: 1, ...data,
+    }));
+
+  it('the author deletes their own unsigned, unshared draft', async () => {
+    await seedDec('dr1', {});
+    await assertSucceeds(deleteDoc(doc(db(ALICE), 'pulses', 'dr1')));
+  });
+
+  it('a PASSED decision can never be deleted by its author/keeper — minted withdraws', async () => {
+    await seedDec('dp1', { status: 'passed' });
+    await assertFails(deleteDoc(doc(db(ALICE), 'pulses', 'dp1')));
+  });
+
+  it('a second voice protects the record: votes beyond the proposer forbid deletion', async () => {
+    await seedDec('dv1', { votes: [ALICE, BOB] });
+    await assertFails(deleteDoc(doc(db(ALICE), 'pulses', 'dv1')));
+    // hasOnly, not size: a malformed/legacy array holding someone ELSE's single voice still protects.
+    await seedDec('dv2', { votes: [BOB] });
+    await assertFails(deleteDoc(doc(db(ALICE), 'pulses', 'dv2')));
+  });
+
+  it('a recorded position protects the record too (the consensus voices)', async () => {
+    await seedDec('dpos1', { positions: [{ by: BOB, stance: 'stand_aside', note: '', at: 1 }] });
+    await assertFails(deleteDoc(doc(db(ALICE), 'pulses', 'dpos1')));
+  });
+
+  it('staff keep the mend-anything escape; an ordinary event\'s deletion is untouched', async () => {
+    await seedDec('dp2', { status: 'passed' });
+    await assertSucceeds(deleteDoc(doc(db(STAFF), 'pulses', 'dp2')));
+    await env.withSecurityRulesDisabled(async (ctx) =>
+      setDoc(doc(ctx.firestore(), 'pulses', 'ev2'), { type: 'event', communityId: 'com1', authorId: ALICE, title: 'Fire', createdAt: 1 }));
+    await assertSucceeds(deleteDoc(doc(db(ALICE), 'pulses', 'ev2')));
+  });
+
+  it('chain marks move only WITH a status change: a voter cannot scribble enactedHash or withdrawnHash alone', async () => {
+    await seedDec('dm1', {});
+    await assertFails(updateDoc(doc(db(BOB), 'pulses', 'dm1'), { enactedHash: 'forged' }));
+    await assertFails(updateDoc(doc(db(BOB), 'pulses', 'dm1'), { withdrawnHash: 'forged' }));
+    // The real withdrawal write — status + mark together, by the proposer — lands.
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'pulses', 'dm1'), { status: 'withdrawn', listening: false, withdrawnAt: 2, withdrawnHash: 'wh1' }));
+    // And a plain vote append by a member still works (the overlay stays open to voices).
+    await seedDec('dm2', {});
+    await assertSucceeds(updateDoc(doc(db(BOB), 'pulses', 'dm2'), { votes: [ALICE, BOB] }));
+  });
+});
