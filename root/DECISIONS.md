@@ -6,6 +6,24 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-19 · The cap becomes the Earth**: the keeper amends the cap invariant, the first
+invariant to move since they were named. The personal lifetree cap grows from 12 to the UN roll
+(193, `UN_MEMBER_STATES` in domain/limits): one tree to a country, one **lightseed citizenship**
+each; a being with a tree in every land is a citizen of the whole Earth. The guarded cap stays at
+132, so intimacy keeps the grove while the Earth opens the forest; the invariant now reads "the cap
+is the Earth, and intimacy." Enforced where the law lives: `functions/onLifetreeCreated` (deploy
+functions for it to bind) and the client gate; tests moved with it. What a citizenship IS (a
+standing, a right, a relation to a land) is deliberately left open in QUESTIONS.md, beside the
+lifetree-as-relation question it rhymes with. In the same breath, **the care price becomes a
+governed parameter**: the yearly amount that protects one tree is a GLOBAL parameter of the
+instance, set by the instance covenant / board, 21 at its birth (`normalizeCareParams`,
+domain/support); the 15/3/3 split stays proportional at any price. The carer-wage cap (`FULL_GROVE`)
+deliberately holds the first form's 144 until its own ring decides whether the wage follows the
+Earth. *(Zoltán's instruction, deep in the night after the shadow chapter; 144's poetry passes to
+the guarded grove, and the personal forest begins to speak of countries.)*
+
+---
+
 **2026-07-18 · GENESIS speaks less, and says more**: the promise's own words amended by its
 keeper. The Moment's line now reads *"This moment was connected to the end of the search."* Who
 is, will know; who isn't, would only be triggered: the root carries the pointer without the claim.

@@ -71,10 +71,12 @@ principles. The rings in DECISIONS.md record most of the swaps as they happened.
   its mechanism. "Decay returning to the trunk history like tree rings,"
   "tracked with a lineage": that language now lives as the rings themselves, and
   as the key lineage identity binds to. The metaphor outlived the machine.
-- **Scale.** "Ensuring inclusivity for billions" met its answer in 12+132=144:
-  the cap is intimacy; growth is division, like Pando. Quality-not-quantity was
-  chosen *against* the paper's framing, and it is the decision that made
-  everything else buildable.
+- **Scale.** "Ensuring inclusivity for billions" met its answer in a cap: first
+  12+132=144, and since 2026-07-19 as many personal trees as UN member states
+  (one lightseed citizenship per country with a tree) beside 132 guarded. The
+  personal cap became the Earth; the guarded cap stayed intimacy; growth is
+  division, like Pando. Quality-not-quantity was chosen *against* the paper's
+  framing, and it is the decision that made everything else buildable.
 
 ## What was refused
 

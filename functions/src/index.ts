@@ -315,11 +315,12 @@ export const onReachCreated = onDocumentCreated("pulses/{pulseId}", async (event
 // --- Planting caps, enforced server-side -------------------------------------------------
 // The client gate (domain/limits + plantLifetree) is advisory — a direct Firestore write
 // bypasses it. This trigger is the backstop: when a tree lands over the node's caps
-// (config/limits, defaults 12 lifetrees + 132 guarded per being), the newest over-cap tree
+// (config/limits, defaults 193 lifetrees + 132 guarded per being; 193 = the UN roll,
+// one citizenship-tree per country), the newest over-cap tree
 // is uprooted. Quality, not quantity — enforced where it can't be dodged. Staff and the
 // system are exempt, mirroring every other quota.
 //
-// Beds have their own ceilings: exempt from the 12/132 forest caps (furniture is not
+// Beds have their own ceilings: exempt from the 193/132 forest caps (furniture is not
 // forest), but a HOUSED bed is bounded per Light House — else the open lightHouses create
 // plus the bed exemption would reopen an unbounded, cap-exempt write channel into
 // `lifetrees` — and a LOOSE bed (no house to bound it) is bounded per keeper.
@@ -359,7 +360,7 @@ export const onLifetreeCreated = onDocumentCreated("lifetrees/{treeId}", async (
         const isBedTree = (t: any) => t.treeType === "BED";
 
         // Beds (treeType BED, domain/bed.ts) are furniture, not the keeper's personal forest:
-        // exempt from the 12/132 caps below, but bounded by their own ceilings. A HOUSED bed
+        // exempt from the 193/132 caps below, but bounded by their own ceilings. A HOUSED bed
         // counts against its Light House — otherwise anyone could mint a Light House and pour
         // unlimited cap-exempt beds into `lifetrees`. A LOOSE bed (no house — standing at a
         // coordinate under open stars) has no house to bound it, so it counts against its
@@ -393,7 +394,7 @@ export const onLifetreeCreated = onDocumentCreated("lifetrees/{treeId}", async (
             return Number.isFinite(n) && n >= 1 ? Math.floor(n) : fallback;
         };
         const raw = limitsSnap.exists ? limitsSnap.data() : {};
-        const maxLifetrees = num(raw?.maxLifetrees, 12);
+        const maxLifetrees = num(raw?.maxLifetrees, 193);
         const maxGuardedTrees = num(raw?.maxGuardedTrees, 132);
 
         const isGuardedTree = (t: any) => t.treeType === "GUARDED" || (!t.treeType && t.isNature === true);

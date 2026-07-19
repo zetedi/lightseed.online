@@ -1,17 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import {
   treePlantingGate, normalizeNodeLimits,
-  DEFAULT_MAX_LIFETREES, DEFAULT_MAX_GUARDED_TREES, DEFAULT_NODE_LIMITS,
+  DEFAULT_MAX_LIFETREES, DEFAULT_MAX_GUARDED_TREES, DEFAULT_NODE_LIMITS, UN_MEMBER_STATES,
 } from '../src/domain/limits';
 
 const lifetrees = (n: number) => Array.from({ length: n }, () => ({ treeType: 'LIFETREE' }));
 const guarded = (n: number) => Array.from({ length: n }, () => ({ treeType: 'GUARDED' }));
 
 describe('treePlantingGate — quality, not quantity', () => {
-  it('the default caps sum to 144', () => {
-    expect(DEFAULT_MAX_LIFETREES).toBe(12);
+  it('the personal cap is the UN roll (one citizenship-tree per country); guarding stays 132', () => {
+    expect(UN_MEMBER_STATES).toBe(193);
+    expect(DEFAULT_MAX_LIFETREES).toBe(UN_MEMBER_STATES);
     expect(DEFAULT_MAX_GUARDED_TREES).toBe(132);
-    expect(DEFAULT_MAX_LIFETREES + DEFAULT_MAX_GUARDED_TREES).toBe(144);
   });
 
   it('allows planting below the caps', () => {
@@ -19,7 +19,7 @@ describe('treePlantingGate — quality, not quantity', () => {
     expect(treePlantingGate(guarded(DEFAULT_MAX_GUARDED_TREES - 1), 'GUARDED')).toBeNull();
   });
 
-  it('refuses the 13th lifetree with the quality-not-quantity message', () => {
+  it('refuses the lifetree beyond the last country with the quality-not-quantity message', () => {
     const refusal = treePlantingGate(lifetrees(DEFAULT_MAX_LIFETREES), 'LIFETREE');
     expect(refusal).toMatch(/quality, not quantity/);
   });

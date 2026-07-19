@@ -117,7 +117,8 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
 - **Money in the UI.** No prices, no balances, until the care economy's rail
   ships whole. (Members before launch keep today's functions free.)
 - **Growth mechanics.** No feeds optimised for attention, no counters that
-  gamify. The 144 cap is a feature; division is the growth.
+  gamify. The cap is a feature (one personal tree per UN country, 132 guarded);
+  division is the growth.
 - **Federation before the first node is whole.** One cell, complete and healthy,
   then mitosis.
 - **AI autonomy on chains.** Beings' voices are carried, disclosed, and signed

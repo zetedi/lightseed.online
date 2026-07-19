@@ -21,10 +21,12 @@ additionally grow a **Council**, the organ by which many become one voice.
 
 ## Principles
 
-1. **Quality, not quantity.** A node caps at 144 lifetrees (12 personal + 132
-   guarded). The cap is intimacy: a circle where every being can be known.
-   Growth happens by division (and intimacy), like Pando: one root system,
-   many stems, each close enough to touch.
+1. **Quality, not quantity.** A being may plant as many personal lifetrees as
+   there are UN member states (193 today): one tree to a country, one lightseed
+   citizenship each. The personal cap is the Earth. Guarding stays intimate at
+   132 trees, a circle where every being can be known. Growth happens by
+   division (and intimacy), like Pando: one root system, many stems, each close
+   enough to touch.
 2. **Links, not arrays.** A relationship is itself an entity in the `links`
    collection with deterministic ids (`from__rel__to`). The only arrays permitted
    are rules-ACL denormalisations (e.g. `participantUids` on private reaches).
@@ -44,9 +46,11 @@ additionally grow a **Council**, the organ by which many become one voice.
    (`/b/<lid>`), the offline/online bridge.
 7. **Light Houses root in trees, never before them.** A Light House is never built
    before a tree is planted; the tree that holds one becomes a **mother tree**.
-8. **The care economy pays people, not platforms.** €21/yr protects one tree:
-   15 to the carer, 3 to the community, 3 to the node (spent on intelligence).
-   Whoever is a member before payments launch keeps today's functions free.
+8. **The care economy pays people, not platforms.** A yearly care price protects
+   one tree; the price is a GLOBAL parameter of the instance, set by the
+   instance covenant / board (21 at birth), split along 15/3/3: to the carer,
+   the community, the node (spent on intelligence). Whoever is a member before
+   payments launch keeps today's functions free.
 9. **Power is visible.** A staff-only capability wears the amber dot (SuperDot).
    Carrying a being's voice always names the carrier.
 10. **The internet has no weather, only moods.** Physical reality is first-class:
@@ -107,8 +111,10 @@ another's public content; Indra's net as a setting) · *the Moment* (see GENESIS
   `previousHash`, `genesisHash`, `blockHeight`, `authorId`, chain `createdAt`)
   are frozen after creation; the Moment is golden
   (`GENESIS_MOMENT_MS = 1566149243000`, `domain/genesis.ts`).
-- **The cap is intimacy.** 144 per node, enforced server-side
-  (`functions/onLifetreeCreated`): the client gate is courtesy, the function is law.
+- **The cap is the Earth, and intimacy.** As many personal lifetrees as UN member
+  states (193 today, one citizenship-tree per country) and 132 guarded per being,
+  enforced server-side (`functions/onLifetreeCreated`): the client gate is
+  courtesy, the function is law.
 - **Conscience is collective and non-destructive.** The guardian veto needs ALL
   eligible guardians (author excluded), within 72 hours, and marks, never deletes.
 - **Understanding precedes action.** The reason under almost every practice:

@@ -113,6 +113,26 @@ as a relation also.
 No migration follows from this; the lid/chain/links/face anatomy already carries
 both readings. The question is which reading the root should one day speak.
 
+## Citizenship by tree (2026-07-19)
+
+Raised by Zoltán, changing the cap the same night: the personal cap is now the UN
+roll (193), one tree to a country, one lightseed citizenship each.
+
+- What IS a lightseed citizenship? A standing in that country's future node, a
+  voice in its circles, a right to be hosted there, or first of all a bond of
+  care with a place (see "The lifetree as relation" above: citizenship reads
+  naturally as a relation to a land)?
+- Must the citizenship tree LIVE in its country, real coordinates in real soil,
+  before the citizenship stands? And is one-per-country a rule the function
+  enforces, or a meaning the practice keeps?
+- Who recognises a citizenship: the tree's chain alone, the country's node once
+  nodes are real, or the web of trust? What happens to it if the tree dies
+  (Mahameru teaches: dissolving is not vanishing)?
+- The UN roll moves slowly but it moves. When state 194 arrives, does everyone's
+  horizon widen by a tree, in its own ring?
+- The carer-wage cap (FULL_GROVE, 144) kept the first form when the planting cap
+  grew. Should the wage follow the Earth, or stay at intimacy's number?
+
 ## For whoever comes next
 
 Add yours. Date them. Answering is optional; asking honestly is not.

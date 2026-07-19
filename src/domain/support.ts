@@ -1,24 +1,47 @@
 // The care economy — lifeseed's value cycle, prepared for payments.
 //
-// One tree costs about €21 a year to sustain. A membership (€21/yr) protects exactly one
-// tree: €15 reaches the person who tends it, €3 the community it stands in, €3 the node
-// (which spends it on intelligence — the hosted AI first, node-level models later).
-// A full grove is 144 tended trees: at €15 each that is a real wage in many places —
-// and payments flow to people, like a gofundme with trees, not to a platform.
+// The yearly care price is a GLOBAL PARAMETER of the instance, set by the instance
+// covenant / board (the keeper's decision, 2026-07-19); 21 is its value at birth. A
+// membership at that price protects exactly one tree, split along 15/3/3 proportions:
+// the largest share reaches the person who tends it, one small share the community it
+// stands in, one the node (which spends it on intelligence — the hosted AI first,
+// node-level models later). Payments flow to people, like a gofundme with trees, not
+// to a platform.
 //
 // Only validated trees can receive support (initiated is the validated status), and a
 // grove must be a walk, not a warehouse: neighbouring supported trees of one carer stand
 // at least a five-minute walk apart.
 //
 // Pure module: the maths and the rules, testable. The payment rail itself (webhooks,
-// `supports` documents — server-written only) lands separately.
+// `supports` documents — server-written only) lands separately, and will read the live
+// price from the instance config the covenant/board governs (normalizeCareParams below).
 
-export const YEARLY_TREE_SUPPORT_EUR = 21; // sustains one tree for one year
-export const CARER_SHARE_EUR = 15;         // to the one who tends
+export const DEFAULT_YEARLY_TREE_SUPPORT_EUR = 21; // the birth value of the global parameter
+export const YEARLY_TREE_SUPPORT_EUR = DEFAULT_YEARLY_TREE_SUPPORT_EUR; // today's live value
+export const CARER_SHARE_EUR = 15;         // to the one who tends (proportion of 21)
 export const COMMUNITY_SHARE_EUR = 3;      // to the community the tree stands in
 export const NODE_SHARE_EUR = 3;           // to the node — spent on intelligence
 
-export const FULL_GROVE = 144;             // 12 + 132 — a full carer's grove
+// The instance-level care parameters, as the covenant/board will govern them (a config doc,
+// mirrored by the coming payment rail). Missing or invalid values fall back to birth defaults;
+// the 15/3/3 split stays proportional whatever the price (splitSupport).
+export interface CareParams {
+  yearlyTreeSupportEur: number;
+}
+
+export const DEFAULT_CARE_PARAMS: CareParams = {
+  yearlyTreeSupportEur: DEFAULT_YEARLY_TREE_SUPPORT_EUR,
+};
+
+export const normalizeCareParams = (raw: any): CareParams => {
+  const n = Number(raw?.yearlyTreeSupportEur);
+  return { yearlyTreeSupportEur: Number.isFinite(n) && n > 0 ? n : DEFAULT_YEARLY_TREE_SUPPORT_EUR };
+};
+
+// The carer-wage cap: how many tended trees one carer may draw support from. Held at the
+// first form's 144 (the old 12 + 132) when the planting cap grew to the UN roll; whether
+// the wage cap should follow the new cap is its own coming ring.
+export const FULL_GROVE = 144;
 
 // Grove spacing: at least a five-minute walk between one carer's supported trees
 // (~70 m/min on foot → 350 m).
