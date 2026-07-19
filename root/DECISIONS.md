@@ -6,6 +6,22 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-19 · The economy buys light**: the keeper names the missing organ, in the same night the
+cap became the Earth. A payment purchases SIGHT, not access: the right to see where the money goes
+and a fractional veto over its use; the fractions of every split hold lids (the lid revealing its
+truest name, Light ID), value fits UUIDv7 at every scale and returns with a visible path; services
+trade for tokens that identify their minting domain; visibility itself becomes covenantal ("we
+agree what is visible"); and the definition under it all: **a token is something not taken**, the
+free bed being the first token. Direction, not yet design: the full vision stands in QUESTIONS
+("the light economy") in the keeper's own words. Two things move now: the payment rail is PULLED
+FORWARD to Next ("needs a great push"; the subscription refined and automatic while membership
+stays conscious), and stay-ripening gains the trust gate (a bed not taken may host any being with a
+validated, living lifetree). Money in the UI still waits until the rail ships whole. *(Zoltán's
+words, the night's third movement; the 2025 paper's economy chapter finding its 2026 organ at
+last.)*
+
+---
+
 **2026-07-19 · The cap becomes the Earth**: the keeper amends the cap invariant, the first
 invariant to move since they were named. The personal lifetree cap grows from 12 to the UN roll
 (193, `UN_MEMBER_STATES` in domain/limits): one tree to a country, one **lightseed citizenship**

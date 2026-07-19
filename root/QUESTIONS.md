@@ -133,6 +133,41 @@ roll (193), one tree to a country, one lightseed citizenship each.
 - The carer-wage cap (FULL_GROVE, 144) kept the first form when the planting cap
   grew. Should the wage follow the Earth, or stay at intimacy's number?
 
+## The light economy (2026-07-19)
+
+Spoken by Zoltán in the same night, in his own words, kept here with their
+readings beside them:
+
+- *"I buy light. Light to know where my money goes and veto it, even if just a
+  fraction."* A payment purchases SIGHT, not access: the right to watch the
+  money move, and a conscience over its use. The veto machinery (marks,
+  concerns, listening) extends to flows.
+- *"The fractions hold lids. Light IDs."* The lid says what it always was: a
+  Light ID. Each fraction of a split is a being with a lid and a chain; money is
+  not an amount but a population of small identified beings.
+- *"The smallest and largest need to fit in UUIDv7 before it comes back to
+  you."* Value has one true-name shape at every scale, and it returns with a
+  visible path (the cycle NetLeaves wanted through decay, reached through
+  return).
+- *"I give services for tokens. The tokens identify the domain."* Money that
+  remembers its home, the way an invitation carries the domain it was sent
+  from; the shape federation of value will need.
+- *"We agree what is visible."* Principle 4's dials made covenantal: visibility
+  as a term two parties seal, an agreement the Covenant can sign.
+- *"If you have a validated, living lifetree you can stay in my bed if it's not
+  taken."* Validation as passport; the web of trust as a hospitality network.
+  Living matters as much as validated: the light stays lit only while the tree
+  is tended.
+- *"Token is something not taken."* The definition the economy stands on: a
+  token is not extracted value, it IS unclaimed offering. The free bed is the
+  token; it is spent by being claimed and minted again by being freed.
+
+Open beneath it: what does a fractional veto pause, a flow's own listening? Is
+a money-fraction a full Being or a light-weight lid-bearer? How does a
+domain-token cross nodes before federation? Can availability itself be counted
+without becoming a counter that gamifies? And what keeps a subscription
+automatic while membership stays conscious?
+
 ## For whoever comes next
 
 Add yours. Date them. Answering is optional; asking honestly is not.

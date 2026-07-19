@@ -63,7 +63,10 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
   (rule via the primary `communityId` + a membership-scoped map query) so the community's
   visibility choice is law, not a client-only veil. Until then the `community` tier is
   signed-in-readable at the doc (see the 2026-07-17 rules-parity ring).
-- **Stay ripening**: keeper notification emails for bed requests; calendars.
+- **Stay ripening**: keeper notification emails for bed requests; calendars; and
+  the trust gate: a bed not taken may host any being with a validated, LIVING
+  lifetree (a pure domain gate; "token is something not taken", see QUESTIONS,
+  the light economy).
 - **Hosted AI, live**: the node credential (`credentialScope: 'node'`) wired in
   functions, funded by the node share; `Intelligence.hosted` becomes real.
 - **AI-need chooser** for tree support (`choice: 'ai_need'` in domain/support).
@@ -82,10 +85,17 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
   acquaintance (the `join_request` pattern is ready).
 - The veto surfaced on growth timelines, not only the pulse page.
 
+- **The payment rail buys light, not access** (pulled forward from Later by the
+  keeper, 2026-07-19: "needs a great push"). Stripe-or-kin webhooks writing
+  `supports` and `stays` settlements; payouts to carers (start with ONE carer in
+  ONE country). The subscription must be refined and AUTOMATIC while membership
+  stays conscious. What a payment buys is sight and a fractional veto: the
+  fractions of every split hold lids (Light IDs, UUIDv7 at every scale), flows
+  are chain-recorded and vetoable, tokens identify their minting domain. Money
+  in the UI still waits until this rail ships whole (Deliberately not yet).
+
 ## Later (seasons away)
 
-- **The payment rail**: Stripe-or-kin webhooks writing `supports` and `stays`
-  settlements; payouts to carers (start with ONE carer in ONE country).
 - **Federation (adoption ladder layer 4)**: nodes running elsewhere, lids
   traveling between them; chain-as-tree for every being across nodes.
 - **Own models**: node-level intelligences; big nodes with private ones.
