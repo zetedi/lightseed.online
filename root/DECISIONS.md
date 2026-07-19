@@ -6,6 +6,25 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-19 · The sun is the origin: light enters only through care for the living**: the origin
+gate closes the same hour it was named. Three verbs for three moments of light: KINDLE, CIRCULATE,
+ABSORB. Care for LIVING beings kindles: watering, tending, guarding, the witnessed acts the chains
+already seal (photo-proofed watering, guardian validation, the veto over growth mints); when a
+being tends life, life energy flows backwards into them, and NEW light enters the economy at that
+moment and no other. Appreciation of services (beds, woodcutting, cleaning, mentoring) never
+kindles: it CIRCULATES, conserved and glow-taxed at every prism. The glow ABSORBS, spent only by
+the circle. The received seed carries a first kindling, a welcome-gift, the way invitations already
+carry their domain. Offerings never mint: unwitnessed capacity would print light (ten fake beds),
+while tended life cannot be faked past its witnesses. And THE EMISSION RATE IS SET BY LIFE ITSELF:
+a tree can only honestly be watered as often as it needs water (the watering intervals are already
+law), so the supply of light is bounded by the biological rhythms of the beings tended. Life is
+primary, says the first invariant; here it is the central bank, and the council only tunes
+magnitudes. Open, in QUESTIONS: the magnitude each nature of care kindles, and whether a seed's
+first kindling flows from the inviter's own light or the community's glow. *(Named by the keeper in
+three words: the sun is the origin.)*
+
+---
+
 **2026-07-19 · The tax of light: the ray comes after the dream**: the first walked story of the ray
 economy, and three mechanics became precise. A bed's agreed appreciation is 7: the guest sleeps
 first, admitted by TRUST alone (validated, living lifetree, bed not taken), and rays the bed after;

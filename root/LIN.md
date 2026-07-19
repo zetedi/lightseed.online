@@ -101,6 +101,8 @@ public, a window onto the whole; every jewel may) · *reflect* (a node showing
 another's public content; Indra's net as a setting) ·
 *appreciation* (taking an offering with care: the mint event of light; an
 offering untaken is a token, and taken it becomes a token of appreciation) ·
+*kindle* (to bring new light into being by tending life: the only origin of
+light; witnessed care, bounded by the tended being's own rhythms) ·
 *ray* (a lid-bearing being born of appreciation: care's visible trace, branching
 like lightning at prisms, fading by spreading; it purchases nothing, it only
 shines) · *prism* (a station where a ray branches onward: watched and vetoable

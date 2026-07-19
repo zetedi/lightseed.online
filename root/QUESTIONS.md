@@ -185,6 +185,10 @@ its side:*
   care nudge, and never a penalty.
 - Still open from the first night: what keeps a subscription automatic while
   membership stays conscious (the money story, with the council's analysis)?
+- What magnitude does each nature of care kindle? Life's rhythms bound the
+  supply (the sun is the origin); the council tunes only the magnitudes.
+- Does a seed's first kindling flow from the inviter's own light, or from the
+  community's glow?
 
 ## For whoever comes next
 
