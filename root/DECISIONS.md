@@ -6,6 +6,28 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-19 · The tax of light: the ray comes after the dream**: the first walked story of the ray
+economy, and three mechanics became precise. A bed's agreed appreciation is 7: the guest sleeps
+first, admitted by TRUST alone (validated, living lifetree, bed not taken), and rays the bed after;
+THE RAY COMES AFTER THE DREAM, appreciation is honored, never charged, and a price is an agreement,
+never a gate. The caretaker rays the woodcutter 3 and the cleaner 3, and 1 dissolves into the
+community's glow: LIGHT IS CONSERVED AT THE PRISM (7 = 3 + 3 + 1), and fading is not a decay
+schedule but CUMULATIVE TAXATION, the glow-share applied hop by hop until all directed light has
+become commons. The glow-share is a DIAL (1/7 here, 1/8 there), each community's own, set by its
+circle with the decision natures it already has: the tax of the light world, decided where taxes
+belong. And the VETO BOUNDARY IS THE DISSOLUTION BOUNDARY: personal conscience follows directed
+light as far as the source's attention dial reaches (set at one ray, the sleeper still saw the
+woodcutter ray the forest guardian); the moment light becomes glow, the personal veto transforms
+into the member's VOTE, and the commons is spent only by the circle, never by a holder. This
+corrects the glow ring by a ring, as rings correct: the glow never fuels a person; it fuels the
+COMMONS' CARE, a new member needing a new bed and the community raying one into being (a purchase
+decision, two voices, chain-recorded). Circulation fills the commons, the commons builds beds, beds
+welcome members, members circulate: the metabolism closes. Open and named in the same breath: WHERE
+DOES A BEING'S LIGHT FIRST COME FROM (the origin gate); raised the same hour, its own coming ring.
+*(Zoltán's walked story, the morning after the ray.)*
+
+---
+
 **2026-07-19 · The glow: dissipation is the commons**: the ray's first side-question graduates the
 same day it was asked. A ray owes nothing to the community it was born in, because nothing is ever
 lost: every attenuation, the fraction shed at each prism and the slow dimming of idle light alike,
