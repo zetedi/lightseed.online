@@ -175,6 +175,9 @@ its side:*
   community's AMBIENT GLOW, then nothing is owed and nothing is lost;
   dissipation itself is what lights the commons, and "life shining around the
   community" is the exact sum of all the light that faded there.
+  → *Answered (ring 2026-07-19, "The glow: dissipation is the commons"): the
+  candidate reading is the design. Nothing is owed because nothing is lost; the
+  glow is present-tense and animates, never fuels.*
 - What of a being holding many rays unspent? Hoarded light dims alone by
   design, and that is already the answer in value terms; but is a large unspent
   brightness also a SIGNAL, an unmet longing to give, or a community short of

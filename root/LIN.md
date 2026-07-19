@@ -104,7 +104,9 @@ offering untaken is a token, and taken it becomes a token of appreciation) ·
 *ray* (a lid-bearing being born of appreciation: care's visible trace, branching
 like lightning at prisms, fading by spreading; it purchases nothing, it only
 shines) · *prism* (a station where a ray branches onward: watched and vetoable
-as far as its source cares to see) · *the Moment* (see GENESIS.md).
+as far as its source cares to see) · *glow* (a community's ambient light: the
+sum of all attenuation shed there, present-tense, fading when circulation
+stops; it animates, never fuels) · *the Moment* (see GENESIS.md).
 
 ## Invariants: the reasons (these almost never change)
 

@@ -6,6 +6,22 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-19 · The glow: dissipation is the commons**: the ray's first side-question graduates the
+same day it was asked. A ray owes nothing to the community it was born in, because nothing is ever
+lost: every attenuation, the fraction shed at each prism and the slow dimming of idle light alike,
+becomes the birth community's AMBIENT GLOW. Directed light (a ray: addressed, followable, vetoable)
+transforms into common warmth (nobody's, everybody's). Value changes only by moving: the prism is
+the value event, spending TRANSFORMS where money merely transfers, and the dimming IS the powering;
+an economy that points entropy at life instead of fighting it. Two properties held firm: the glow
+is PRESENT-TENSE (it fades too when circulation stops, so a community is never rich, only alive:
+life shining or not, now) and the glow ANIMATES, NEVER FUELS (it warms the map, draws beings,
+proves vitality; it is never spendable, or accumulation returns at the community level). Ungameable
+by construction: glow is made purely of attenuation, so the only way to brighten a community is to
+genuinely care inside it. *(Zoltán's confirming question, "and that is what lights up the community
+and powers it?", answered yes and sealed within the hour.)*
+
+---
+
 **2026-07-19 · The ray: light is the economy**: what began as "light coin" is decided in direction,
 and it is neither a coin nor a question. Two parallel stories: MONEY stays world-facing (the tether,
 15/3/3, wages and operating costs; the council/board analyses it before the rail ships) and LIGHT is
