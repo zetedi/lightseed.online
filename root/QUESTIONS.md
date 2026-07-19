@@ -187,6 +187,12 @@ its side:*
   membership stays conscious (the money story, with the council's analysis)?
 - What magnitude does each nature of care kindle? Life's rhythms bound the
   supply (the sun is the origin); the council tunes only the magnitudes.
+  → *Calibrated in the main (ring 2026-07-19, "The nights are covered by the
+  mornings"): one ray per witnessed daily care of the dwelling's tree; 49 per
+  tree, 343 a year, one per night, festivals the community's gift. Still open:
+  which daily acts kindle for a mature tree, and how a visit is witnessed
+  lightly enough to be livable (a guardian's weekly confirmation covering the
+  days between?).*
 - Does a seed's first kindling flow from the inviter's own light, or from the
   community's glow?
 

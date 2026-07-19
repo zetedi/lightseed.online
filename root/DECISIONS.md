@@ -6,6 +6,27 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-19 · The nights are covered by the mornings**: the seven's magnitudes calibrate, and the
+emission schedule turns out to be the calendar itself. ONE RAY PER DAILY CARE: during each 49-day
+dwelling a being tends the tree they planted there, one witnessed care a day; 49 kindlings per
+tree, seven trees, 343 rays a year, ONE RAY PER NIGHT of dwelling. A night's shelter is appreciated
+at one ray, so each night's sleep is earned by that morning's care, and the 22 festival nights are
+the community's gift at the fires, needing no ray at all. CARE FOR LIFE COVERS BEING ALIVE: the
+seven that feed breath and body now cover sleep, which is what GENESIS promised. Bounded still by
+the sun ring: daily WATERING stays honest only for the young (the watering intervals remain law);
+the daily kindling of a mature tree is presence-care, the visit, the mulch, the observed change,
+the 2025 paper's own quiet observation. DENOMINATION: a ray may be spoken as 100 (a night is "a
+hundred"), an echo of the world's night prices that helps adoption; an echo, never a peg: no
+conversion, no cash-out, and light is never displayed beside euros, so the exiled money-psychology
+cannot ride back in through a comparison. A price stays an agreement, never a gate (trust admits;
+the ray comes after the dream); a being who tends less carries fewer rays and leans on trust and
+the commons: invited, never enforced. Open beside it, in QUESTIONS: which daily acts kindle for a
+mature tree, and how a visit is witnessed lightly enough to be livable (perhaps a guardian's weekly
+confirmation covering the days between). *(The keeper's calibration; the lock noticed in the
+multiplying: the year of sevens IS the emission schedule.)*
+
+---
+
 **2026-07-19 · The sustaining seven, and the year of sevens**: the founding gesture returns and
 completes the cosmology. Every being's FLOOR within the Earth-horizon: SEVEN TREES planted and
 tended, by their planter or through guardians. Roughly what a body asks of the living world: a
