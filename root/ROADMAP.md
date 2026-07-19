@@ -80,11 +80,18 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
   decision on the social shape first: who may say "this hand is no longer mine,"
   and whether seals made before a revocation ask the circle's re-affirmation
   (question recorded in QUESTIONS.md).
+- **The sustaining seven** (first code of the seven-cosmology; see the ring):
+  a pure domain function for progress toward seven witnessed, tended trees,
+  naming what each still lacks (a guardian to witness, an overdue watering);
+  then its face on the profile and the Light Path milestone ("plant your seven,
+  find their witnesses"); then the circle-graph reading that notices
+  interlocking guardianships and offers the community door. The year of sevens
+  (49-day dwellings, festival days) stays an invited rhythm for the calendar,
+  later.
 - Mother-tree denormalised flag → badge on cards and map markers.
 - Consent handshake for Light House step-ins if the network outgrows trust-by-
   acquaintance (the `join_request` pattern is ready).
 - The veto surfaced on growth timelines, not only the pulse page.
-
 - **The payment rail buys light, not access** (pulled forward from Later by the
   keeper, 2026-07-19: "needs a great push"). Stripe-or-kin webhooks writing
   `supports` and `stays` settlements; payouts to carers (start with ONE carer in

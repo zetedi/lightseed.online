@@ -108,7 +108,11 @@ like lightning at prisms, fading by spreading; it purchases nothing, it only
 shines) · *prism* (a station where a ray branches onward: watched and vetoable
 as far as its source cares to see) · *glow* (a community's ambient light: the
 sum of all attenuation shed there, present-tense, fading when circulation
-stops; it animates, never fuels) · *the Moment* (see GENESIS.md).
+stops; it animates, never fuels) ·
+*the sustaining seven* (a being's floor: seven planted, witnessed, tended
+trees, roughly what a body asks of the living world) · *dwelling* (49 days of
+belonging in one community: seven dwellings and the festival days fill a year;
+invited, never enforced) · *the Moment* (see GENESIS.md).
 
 ## Invariants: the reasons (these almost never change)
 

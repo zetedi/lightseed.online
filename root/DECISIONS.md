@@ -6,6 +6,32 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-19 · The sustaining seven, and the year of sevens**: the founding gesture returns and
+completes the cosmology. Every being's FLOOR within the Earth-horizon: SEVEN TREES planted and
+tended, by their planter or through guardians. Roughly what a body asks of the living world: a
+human breathes some 300 kg of oxygen a year and a mature broadleaf releases some 100; a chosen
+seven (chestnut, walnut, olive, fruit) approaches a caloric base at maturity; the numbers are soft
+by species and climate, and the atmosphere mixes globally, so your seven feed everyone's lungs,
+which is the point. Each of the seven NEEDS GUARDIANS: unwitnessed care cannot kindle (the sun
+ring's law), so completing your seven means inviting witnesses, and witnessing pulls you into other
+circles. TREE CIRCLES BECOME COMMUNITIES by geometry, not declaration: where guardianship
+interlocks densely, the community already exists and the software only offers the door. And the
+shape of TIME: 7 x 7 x 7 = 343, seven DWELLINGS of 49 days (the bardo: each stay a small life,
+arrival a rebirth, leaving a dissolving that is not vanishing) across seven communities, and the
+year's remaining 22 days (23 when it leaps, the drift absorbed by celebration) are FESTIVAL DAYS at
+the fires, Lion's Gate 8/8 the first. ONE TREE PER DWELLING: the sustaining seven spread across the
+seven communities, each tree receiving 49 days of its planter's own hands each year, guardians
+witnessing the rest; with citizenship-by-tree, the wandering is not tourism, it is tending.
+INVITED, NEVER ENFORCED (the keeper's word: not forced, a beautiful symmetry): like the caps, an
+invitation, not a wall; fragments of the rhythm are already whole: one dwelling, one festival, one
+tree. First code, in the project's rhythm: a pure domain function for the seven's progress and its
+missing witnesses, then the Light Path milestone, then the circle-graph door. *(The keeper knew the
+seven from the beginning; the rings now show the intuition was load-bearing all along: seven trees
+to sustain a body, seven circles in the Seed of Life on the seal, seven voices for a charter, 49
+days to belong, 343 + 22 to live a year.)*
+
+---
+
 **2026-07-19 · The sun is the origin: light enters only through care for the living**: the origin
 gate closes the same hour it was named. Three verbs for three moments of light: KINDLE, CIRCULATE,
 ABSORB. Care for LIVING beings kindles: watering, tending, guarding, the witnessed acts the chains
