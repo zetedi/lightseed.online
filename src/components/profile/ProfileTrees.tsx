@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useSession } from '../../contexts/SessionContext';
 import { Icons } from '../ui/Icons';
 import { Lifetree } from '../../types';
 import { SectionTitle } from '../ui/SectionTitle';
 import { ValidationBadge } from '../ValidationBadge';
+import { firestoreStore } from '../../adapters/firestore';
 import { isWateringOverdue } from '../../domain/watering';
+import { sustainingSeven, SUSTAINING_SEVEN, type GuardianEdge } from '../../domain/sustainingSeven';
 import { isExplicitlyValidatedTree, daysUntilLapse } from '../../utils/validation';
 
 // The tending/validation state lives in the shell — the hero badge derives from the same
@@ -46,11 +49,83 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
 }) => {
   const { t } = useLanguage();
 
+  // THE SUSTAINING SEVEN (domain/sustainingSeven) — the floor's face: seven planted trees,
+  // each witnessed by a guardian besides the planter and tended in its own rhythm. The
+  // guardian edges load like the map's counts do: one links read, keyed on the tree ID SET
+  // so unrelated re-renders don't refetch. Invited, never enforced: it measures, gates nothing.
+  const { lightseed } = useSession();
+  const viewerUid = lightseed?.uid;
+  const [guardianEdges, setGuardianEdges] = useState<GuardianEdge[]>([]);
+  const treeIdsKey = useMemo(() => myTrees.map(tr => tr.id).sort().join(','), [myTrees]);
+  useEffect(() => {
+    if (!viewerUid) return;
+    let alive = true;
+    firestoreStore.linksByRel('guardian').then(links => {
+      if (alive) setGuardianEdges(links.map(l => ({ from: l.from, to: l.to })));
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, [viewerUid, treeIdsKey]);
+  const seven = useMemo(
+    () => (viewerUid ? sustainingSeven(myTrees, guardianEdges, viewerUid) : null),
+    [myTrees, guardianEdges, viewerUid],
+  );
+  const sevenLacks = seven ? seven.standings.filter(s => !s.sustaining).slice(0, SUSTAINING_SEVEN) : [];
+
   return (
     <div className="space-y-8">
       {/* Planted — trees you own and steward */}
       <div>
         <SectionTitle title={t('planted_trees')} sub={t('planted_trees_sub')} />
+
+        {seven && (
+          <div className="mb-4 rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-1.5" aria-label={`Sustaining seven: ${Math.min(seven.sustaining, seven.target)} of ${seven.target}`}>
+                {Array.from({ length: seven.target }, (_, i) => (
+                  <span
+                    key={i}
+                    className={`h-3 w-3 rounded-full ${
+                      i < seven.sustaining
+                        ? 'bg-emerald-500'
+                        : i < seven.planted
+                          ? 'border-2 border-emerald-300 bg-white'
+                          : 'border border-dashed border-slate-300 bg-transparent'
+                    }`}
+                  />
+                ))}
+              </div>
+              <p className="text-sm font-bold text-slate-800">
+                The sustaining seven
+                <span className="ml-2 text-emerald-700">{Math.min(seven.sustaining, seven.target)} / {seven.target}</span>
+              </p>
+            </div>
+            <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
+              {seven.complete
+                ? 'Your seven stand: planted, witnessed, and tended. Roughly what a body asks of the living world.'
+                : 'Seven trees, planted and tended, each witnessed by a guardian: roughly what a body asks of the living world. Invited, never enforced.'}
+            </p>
+            {!seven.complete && sevenLacks.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {sevenLacks.map(s => {
+                  const lackTree = myTrees.find(tr => tr.id === s.treeId);
+                  return (
+                    <button
+                      key={s.treeId}
+                      type="button"
+                      onClick={() => lackTree && onViewTree(lackTree, s.witnessed ? 'care' : 'circle')}
+                      className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 transition-colors hover:bg-emerald-100"
+                    >
+                      <span className="max-w-[9rem] truncate font-bold">{s.name}</span>
+                      <span className="text-slate-400">
+                        {!s.witnessed && !s.tended ? 'needs a witness and water' : !s.witnessed ? 'needs a witness' : 'needs water'}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
         {treesNeedingCare.length > 0 && (
           <div className="mb-4 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
             <span className="mt-0.5 text-amber-500"><Icons.Eye /></span>
