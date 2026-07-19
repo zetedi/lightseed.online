@@ -6,6 +6,35 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-19 · The ray: light is the economy**: what began as "light coin" is decided in direction,
+and it is neither a coin nor a question. Two parallel stories: MONEY stays world-facing (the tether,
+15/3/3, wages and operating costs; the council/board analyses it before the rail ships) and LIGHT is
+the inner economy of the LIN. The seed arrives as a QR to a being (a vision, a community, a
+lifetree) and light begins around its holder. Beings offer: events, services, use grants, beds
+housed or under open stars, mentoring for visions. CARE FLOWS BACKWARDS: the carer receives life
+energy in the act itself (the tend button always knew: "we both grow"), so nobody is paid to care;
+the ray only makes the flow visible. An offering untaken is a token; taking it with care is
+APPRECIATION, the mint event of the LIN (the idiom was exact all along: a token of appreciation). A
+ray is a lid-bearing being born of appreciation, a relation become being (see the knot question):
+its blocks are stations, PRISMS, where it branches onward like lightning. FADING IS BRANCHING: each
+branch carries a fraction of the light that arrived, brightness is the product of the splits along
+its path, dilution is the demurrage and no clock is needed; idle light also dims slowly on its own,
+so hoarded light dies alone while shared light lights a whole web first. Every branch, however
+faint, bears a lid (UUIDv7 at every scale, the first night's rule); below epsilon a branch is memory
+only, the chain intact, the light gone. The source's VETO follows its light all the way to epsilon;
+ATTENTION is sovereign: each being sets the ratio below which prisms stop notifying (rights reach
+far, interest is chosen). Rays purchase nothing: ACCESS BY TRUST (the validated, living lifetree
+gate), DIRECTION BY LIGHT, money in parallel. A community's vitality is the depth of its lightning:
+the longest rays, the most generations of appreciation before fading; what remains after fading is
+never a balance, only life shining or not. COMMUNITY AS A SERVICE, named: the community itself is
+what serves, its offerings backed by the light its members give. Two questions stay open at the
+side, in QUESTIONS: whether a ray owes a fraction to the community it was born in, and what a
+holder's many unspent rays become. Build after the rail and the council's money analysis.
+*(Zoltán's vision across three exchanges, distilled the morning after; the 2025 economy chapter
+re-imagined whole in the LIN's own tongue.)*
+
+---
+
 **2026-07-19 · The economy buys light**: the keeper names the missing organ, in the same night the
 cap became the Earth. A payment purchases SIGHT, not access: the right to see where the money goes
 and a fractional veto over its use; the fractions of every split hold lids (the lid revealing its

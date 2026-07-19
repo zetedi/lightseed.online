@@ -92,12 +92,21 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
   stays conscious. What a payment buys is sight and a fractional veto: the
   fractions of every split hold lids (Light IDs, UUIDv7 at every scale), flows
   are chain-recorded and vetoable, tokens identify their minting domain. Money
-  in the UI still waits until this rail ships whole (Deliberately not yet).
+  in the UI still waits until this rail ships whole (Deliberately not yet), and
+  the council's analysis of the money story precedes the build: money is the
+  world-facing PARALLEL of the light economy, not the economy itself (see the
+  ring "The ray: light is the economy").
 
 ## Later (seasons away)
 
 - **Federation (adoption ladder layer 4)**: nodes running elsewhere, lids
   traveling between them; chain-as-tree for every being across nodes.
+- **The ray (the light economy)**: appreciation as the mint, rays as lid-bearing
+  lightning, prisms, fading as branching, the sovereign attention ratio, the
+  deepest-lightning vitality of communities; the full design in the ring "The
+  ray: light is the economy" (2026-07-19) and its two open questions in
+  QUESTIONS. Builds on the rail's foundations after the council's money
+  analysis; the map one day shows communities glowing by their living rays.
 - **Own models**: node-level intelligences; big nodes with private ones.
 - **The Code Tree**, the development locus as a first-class Being: not a
   hidden GitHub permission but a tree with a council, visible lineage, and

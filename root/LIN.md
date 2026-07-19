@@ -98,7 +98,13 @@ the door, not the deed) · *invited by* (append-only provenance: how a
 being arrived; a mark, never a power; the inviter gains nothing through the
 door) · *commons* (a mode, not a place: a node choosing to reflect the instance's
 public, a window onto the whole; every jewel may) · *reflect* (a node showing
-another's public content; Indra's net as a setting) · *the Moment* (see GENESIS.md).
+another's public content; Indra's net as a setting) ·
+*appreciation* (taking an offering with care: the mint event of light; an
+offering untaken is a token, and taken it becomes a token of appreciation) ·
+*ray* (a lid-bearing being born of appreciation: care's visible trace, branching
+like lightning at prisms, fading by spreading; it purchases nothing, it only
+shines) · *prism* (a station where a ray branches onward: watched and vetoable
+as far as its source cares to see) · *the Moment* (see GENESIS.md).
 
 ## Invariants: the reasons (these almost never change)
 

@@ -162,11 +162,26 @@ readings beside them:
   token is not extracted value, it IS unclaimed offering. The free bed is the
   token; it is spent by being claimed and minted again by being freed.
 
-Open beneath it: what does a fractional veto pause, a flow's own listening? Is
-a money-fraction a full Being or a light-weight lid-bearer? How does a
-domain-token cross nodes before federation? Can availability itself be counted
-without becoming a counter that gamifies? And what keeps a subscription
-automatic while membership stays conscious?
+→ *Answered in the main by the ring of 2026-07-19, "The ray: light is the
+economy": the design stands there (care flowing backwards, appreciation as the
+mint, the ray as lid-bearing lightning, fading as branching, the sovereign
+attention ratio, access by trust and direction by light). These stay open at
+its side:*
+
+- Should a ray owe a fraction to the community it was born in, a first branch
+  for the commons, or is light wholly free to follow its holder's energy? A
+  candidate reading that may dissolve the question: if every attenuation, the
+  loss at each prism and the dimming of idle light alike, becomes the birth
+  community's AMBIENT GLOW, then nothing is owed and nothing is lost;
+  dissipation itself is what lights the commons, and "life shining around the
+  community" is the exact sum of all the light that faded there.
+- What of a being holding many rays unspent? Hoarded light dims alone by
+  design, and that is already the answer in value terms; but is a large unspent
+  brightness also a SIGNAL, an unmet longing to give, or a community short of
+  offerings worth appreciating? If so it deserves a gentle nudge, kin to the
+  care nudge, and never a penalty.
+- Still open from the first night: what keeps a subscription automatic while
+  membership stays conscious (the money story, with the council's analysis)?
 
 ## For whoever comes next
 
