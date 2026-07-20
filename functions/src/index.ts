@@ -840,27 +840,32 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
 
         const treeUpdate: any = { updatedAt: admin.firestore.FieldValue.serverTimestamp() };
         let communityId: string = tree.communityId;
-        if (!communityId) {
-            const communityRef = db.collection("communities").doc();
-            communityId = communityRef.id;
-            tx.set(communityRef, {
-                name: `${tree.name || "Lifetree"} Circle`,
-                rootLifetreeId: invite.lifetreeId,
-                founderUserId: tree.ownerId,
-                ownerId: tree.ownerId,
-                formation: "tree_co_ownership",
-                visibility: "invited",
-                domain: tree.domain || "",
-                vision: "",
-                imageUrls: [],
-                createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            });
-            setLink(tree.ownerId, "member", communityId); // the founder is a member of the circle
-            treeUpdate.communityId = communityId;
+        // A GUARDIAN is a lightweight, no-privilege FOLLOW (domain/policy, the rules) — accepting a
+        // guardian invitation mints only the guardian link, never a circle community or membership.
+        // The tending roles (co_owner/steward) form the circle; guardianship watches over it.
+        if (invite.role !== "guardian") {
+            if (!communityId) {
+                const communityRef = db.collection("communities").doc();
+                communityId = communityRef.id;
+                tx.set(communityRef, {
+                    name: `${tree.name || "Lifetree"} Circle`,
+                    rootLifetreeId: invite.lifetreeId,
+                    founderUserId: tree.ownerId,
+                    ownerId: tree.ownerId,
+                    formation: "tree_co_ownership",
+                    visibility: "invited",
+                    domain: tree.domain || "",
+                    vision: "",
+                    imageUrls: [],
+                    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                });
+                setLink(tree.ownerId, "member", communityId); // the founder is a member of the circle
+                treeUpdate.communityId = communityId;
+            }
+            setLink(uid, "member", communityId);      // the invitee joins the circle community
         }
-        setLink(uid, "member", communityId);          // the invitee joins the circle community
-        setLink(uid, invite.role, invite.lifetreeId); // ...and takes their tree-circle role
+        setLink(uid, invite.role, invite.lifetreeId); // ...and takes their tree-circle role (or guardianship)
         // Relations live ONLY in the links collection (the single source of truth the rules +
         // resolveCircleUids read). No legacy role arrays are written.
 

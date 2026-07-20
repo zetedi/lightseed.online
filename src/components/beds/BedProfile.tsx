@@ -8,9 +8,11 @@ import { mintBeingQr } from '../../services/firebase/beings';
 import { ValidationBadge } from '../ValidationBadge';
 import { BeingProfile, type BeingSection } from '../BeingProfile';
 import { ChainTree } from '../sections/ChainTree';
-import { TreeGuardians } from '../lifetree/TreeGuardians';
+import { TreeCircle } from '../lifetree/TreeCircle';
 import { BedCalendar } from './BedCalendar';
 import { getPulsesByTreeId, getLightHouseById, updateLifetree, deleteLifetree } from '../../services/firebase';
+import { firestoreStore } from '../../adapters/firestore';
+import { treeCircle } from '../../domain/views/circle';
 import { isHousedBed } from '../../domain/bed';
 import { type Pulse, type Lifetree } from '../../types';
 
@@ -41,6 +43,16 @@ export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree
   const [houseName, setHouseName] = useState('');
   const [vis, setVis] = useState<Lifetree['visibility']>(bed.visibility || 'node');
   const [busy, setBusy] = useState(false);
+
+  // The bed's circle (its tenders/guardians) — a prism over its incoming links, re-read when the
+  // guardian toggle fires. A bed is a Lifetree, so it wears the same Circle view as a tree.
+  const [circleNonce, setCircleNonce] = useState(0);
+  const [circle, setCircle] = useState<ReturnType<typeof treeCircle>>({ groups: [], size: 0 });
+  useEffect(() => {
+    let alive = true;
+    firestoreStore.linksTo(bed.id).then(links => { if (alive) setCircle(treeCircle(bed.ownerId, links)); }).catch(() => {});
+    return () => { alive = false; };
+  }, [bed.id, bed.ownerId, circleNonce]);
 
   const loadChain = useCallback(() => {
     setLoadingChain(true);
@@ -114,15 +126,17 @@ export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree
       ),
     },
     {
-      key: 'tenders', label: 'Tenders', icon: <Icons.Shield />, render: () => (
-        <TreeGuardians
-          treeId={bed.id}
+      key: 'tenders', label: 'Circle', icon: <Icons.Venn />, render: () => (
+        <TreeCircle
+          tree={bed}
           currentUserId={uid}
+          circle={circle}
           canEdit={false}
+          canInviteRoles={false}
           status={bed.status || 'HEALTHY'}
           busy={false}
           onToggleDanger={() => {}}
-          onGuardianChange={() => {}}
+          onGuardianChange={() => setCircleNonce(n => n + 1)}
         />
       ),
     },

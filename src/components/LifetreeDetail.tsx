@@ -20,7 +20,6 @@ import { BeingProfile, type BeingSection } from './BeingProfile';
 import { ChainTree } from './sections/ChainTree';
 import { TreeCare } from './lifetree/TreeCare';
 import { TreeCircle } from './lifetree/TreeCircle';
-import { TreeGuardians } from './lifetree/TreeGuardians';
 import { TreeDetails, type TreeDetailsUpdates } from './lifetree/TreeDetails';
 
 interface LifetreeDetailProps {
@@ -79,7 +78,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const isNature = tree.isNature;
    // Guardianship is a lightweight public follow with no powers — tending vests in the invited
    // roles (co_owner/steward), tracked as `isTender` (see the circle effect below). The guardian
-   // list itself lives in TreeGuardians; the nonce re-reads the circle when it changes there.
+   // list itself lives in the Circle view; the nonce re-reads the circle when it changes there.
    const [guardianNonce, setGuardianNonce] = useState(0);
    const [isTender, setIsTender] = useState(false);
    const canDelete = isOwner || isAdmin || isSuperAdmin;
@@ -110,7 +109,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
 
    // Profile-like sections: the tree is a being with a digital body, details, guardians, care
    // and a circle. Everything can be a lifetree, so this reads like a profile.
-   type TreeSection = 'digital' | 'details' | 'guardians' | 'care' | 'circle';
+   type TreeSection = 'digital' | 'details' | 'care' | 'circle';
    const [section, setSection] = useState<TreeSection>((initialSection as TreeSection) || 'digital');
    // A caller can steer the opening section (e.g. the profile droplet opens Care).
    // eslint-disable-next-line react-hooks/set-state-in-effect -- prop→state sync: re-steers the section when the caller changes initialSection/tree; a lazy initializer only covers first mount
@@ -307,19 +306,6 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
            ),
        },
        {
-           key: 'guardians', label: 'Guardians', icon: <Icons.Shield />, render: () => (
-               <TreeGuardians
-                   treeId={tree.id}
-                   currentUserId={currentUserId}
-                   canEdit={canEdit}
-                   status={localStatus}
-                   busy={isSaving}
-                   onToggleDanger={handleToggleDanger}
-                   onGuardianChange={() => setGuardianNonce(n => n + 1)}
-               />
-           ),
-       },
-       {
            key: 'care', label: 'Care', icon: <Icons.Droplet />, render: () => (
                (isOwner || isTender || isAdmin || isSuperAdmin)
                    ? <TreeCare
@@ -338,8 +324,19 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
            ),
        },
        {
-           key: 'circle', label: 'Tree Circle', icon: <Icons.Venn />, render: () => (
-               <TreeCircle tree={tree} currentUserId={currentUserId} canInvite={canInviteToCircle} circle={circle} />
+           key: 'circle', label: 'Circle', icon: <Icons.Venn />, render: () => (
+               <TreeCircle
+                   tree={tree}
+                   currentUserId={currentUserId}
+                   currentUserName={currentUser?.displayName}
+                   circle={circle}
+                   canEdit={canEdit}
+                   canInviteRoles={canInviteToCircle}
+                   status={localStatus}
+                   busy={isSaving}
+                   onToggleDanger={handleToggleDanger}
+                   onGuardianChange={() => setGuardianNonce(n => n + 1)}
+               />
            ),
        },
    ];
