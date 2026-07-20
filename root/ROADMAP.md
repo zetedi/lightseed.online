@@ -110,10 +110,12 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
   traveling between them; chain-as-tree for every being across nodes.
 - **The ray (the light economy)**: appreciation as the mint, rays as lid-bearing
   lightning, prisms, fading as branching, the sovereign attention ratio, the
-  deepest-lightning vitality of communities; the full design in the ring "The
-  ray: light is the economy" (2026-07-19) and its two open questions in
-  QUESTIONS. Builds on the rail's foundations after the council's money
-  analysis; the map one day shows communities glowing by their living rays.
+  deepest-lightning vitality of communities; the full design in the rings of
+  2026-07-19 and its open questions in QUESTIONS. The LIGHT side seeds before
+  the rail (the rail and the council's analysis gate only the MONEY story):
+  first the pure law (domain/light, the conservation arithmetic), then the
+  server-side mint on witnessed care, then the first faces; the map one day
+  shows communities glowing by their living rays.
 - **Own models**: node-level intelligences; big nodes with private ones.
 - **The Code Tree**, the development locus as a first-class Being: not a
   hidden GitHub permission but a tree with a council, visible lineage, and
