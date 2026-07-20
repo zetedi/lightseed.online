@@ -145,9 +145,10 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
     return (
         <SectionCard title="Circle" icon={<Icons.Venn />}>
             <p className="mb-5 text-sm text-slate-500">
-                The circle of care around this tree. <span className="text-emerald-700">Tenders</span> shape and
-                schedule it; <span className="text-sky-600">guardians</span> watch over it, holding no power but
-                the collective veto. Guarding is an open door; tending is a deeper, invited commitment.
+                The circle of care around this tree. The <span className="text-emerald-700">owner, co-owners and
+                stewards</span> shape and schedule it; <span className="text-sky-600">guardians</span> watch over
+                it, holding no power but the collective veto. Guarding is an open door anyone may enter; the
+                deeper roles are invited.
             </p>
 
             {/* Everyone, grouped by role, each shown as their tree. */}
@@ -217,7 +218,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                             <select value={inviteRole} onChange={e => setInviteRole(e.target.value as InvitableRole)}
                                 className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
                                 <option value="guardian">as Guardian</option>
-                                <option value="co_owner">as Co-guardian</option>
+                                <option value="co_owner">as Co-owner</option>
                                 <option value="steward">as Steward</option>
                                 <option value="observer">as Observer</option>
                             </select>

@@ -356,7 +356,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     alwaysOverlay: true,
                     overlayClassName: 'bg-gradient-to-b from-slate-900/45 via-slate-900/55 to-slate-900/85',
                     maxWidth: 'max-w-5xl',
-                    padding: 'pt-5 pb-5 px-4',
+                    // Airy, matching the user profile's hero height — room for the menu + content
+                    // to overlap up onto it (layoutProps below).
+                    padding: 'pt-6 pb-16 px-4',
                     // Danger Banner — click to message this tree's guardians.
                     banner: localStatus === 'DANGER' && (
                         <button
@@ -465,11 +467,12 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     <div className="mt-4 flex flex-wrap justify-center gap-2 md:hidden">{actionRow}</div>
                 ),
             }}
-            // Body — section menu on the left (desktop), a strip on mobile; profile-style.
+            // Body — section menu on the left (desktop), a strip on mobile; the menu + content
+            // sit slightly OVER the hero (like the user profile), the header extending behind them.
             layoutProps={{
                 maxWidth: 'max-w-5xl',
-                overlap: false,
-                asideClassName: 'rounded-2xl border border-slate-100 bg-white p-2 shadow-sm lg:sticky lg:top-24',
+                overlapClassName: '-mt-10',
+                asideClassName: 'rounded-2xl border border-slate-100 bg-white p-2 shadow-lg lg:sticky lg:top-24',
                 mainClassName: 'min-w-0 space-y-6',
             }}
         />

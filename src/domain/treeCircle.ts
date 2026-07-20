@@ -32,7 +32,9 @@ export interface TreeOwnershipInvite {
 
 export const treeRelationLabels: Record<TreeRelationRole, string> = {
   owner: 'Owner',
-  co_owner: 'Co-guardian',
+  // A co_owner TENDS (power) — labelled 'Co-owner' so it never reads as a kind of 'Guardian'
+  // (a no-power witness). Keeper's call on the exact word (Co-owner / Co-keeper).
+  co_owner: 'Co-owner',
   guardian: 'Guardian',
   steward: 'Steward',
   observer: 'Observer',

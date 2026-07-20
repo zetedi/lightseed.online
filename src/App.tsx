@@ -1136,7 +1136,13 @@ const AppContent = () => {
                         onPlant={() => openPlant()}
                         onPulse={() => openPulseModal()}
                         onCreateVision={() => setShowVisionModal(true)}
-                        onProfile={() => setTab('profile')}
+                        onProfile={() => {
+                            // The profile avatar ALWAYS lands on the profile — close any being-detail
+                            // overlay sitting on top (a tree opened from the profile would otherwise stay).
+                            setSelectedTree(null); setViewingLightHouse(null); setSelectedCommunity(null);
+                            setSelectedVision(null); setSelectedAlignment(null); setSelectedCovenantId(null); setSelectedPulse(null);
+                            setTab('profile');
+                        }}
                         pendingAlignmentsCount={alignments.length}
                         reachNotificationsCount={unreadReaches}
                         treeInviteCount={pendingTreeInvites}

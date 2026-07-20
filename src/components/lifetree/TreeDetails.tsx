@@ -121,30 +121,32 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
 
     return (
         <div className="space-y-6">
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center">
-                    <Icons.Eye />
-                    <span className="ml-2">{t('vision')}</span>
-                </h3>
-                {isEditing ? (
-                    <textarea
-                        dir="auto"
-                        className="w-full h-40 border border-slate-300 rounded p-2 text-lg font-serif italic text-slate-700 leading-relaxed focus:ring-2 focus:ring-emerald-500 outline-none"
-                        value={editBody}
-                        onChange={(e) => setEditBody(e.target.value)}
-                    />
-                ) : (
-                    <p dir="auto" className="text-lg font-serif italic text-slate-700 leading-relaxed">
-                        "{tree.body}"
-                    </p>
-                )}
-            </div>
+            {/* Vision + details — one card. */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-5">
+                <div>
+                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center">
+                        <Icons.Eye />
+                        <span className="ml-2">{t('vision')}</span>
+                    </h3>
+                    {isEditing ? (
+                        <textarea
+                            dir="auto"
+                            className="w-full h-40 border border-slate-300 rounded p-2 text-lg font-serif italic text-slate-700 leading-relaxed focus:ring-2 focus:ring-emerald-500 outline-none"
+                            value={editBody}
+                            onChange={(e) => setEditBody(e.target.value)}
+                        />
+                    ) : (
+                        <p dir="auto" className="text-lg font-serif italic text-slate-700 leading-relaxed">
+                            "{tree.body}"
+                        </p>
+                    )}
+                </div>
 
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+                <div className="border-t border-slate-100 pt-5 space-y-4">
                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">{t('tree_details')}</h3>
 
                 <div className="flex items-start gap-4 py-2 border-b border-slate-50">
-                    <span className="w-24 shrink-0 text-slate-500 text-sm">{t('steward')}</span>
+                    <span className="w-24 shrink-0 text-slate-500 text-sm">{isNature ? t('steward') : 'Owner'}</span>
                     <span dir="ltr" className="flex-1 text-left text-slate-800 font-mono text-sm">{isNature ? "Nature (System)" : tree.ownerId.substring(0, 10) + "..."}</span>
                 </div>
                 <div className="flex items-center gap-4 py-2 border-b border-slate-50">
@@ -305,6 +307,7 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                         {deleteIsStaffOnly && <SuperDot />}
                     </button>
                 )}
+                </div>
             </div>
 
             {hasCoordinates && (
