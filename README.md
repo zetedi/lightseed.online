@@ -220,3 +220,19 @@ This means your current website URL (e.g., `localhost:3000` or `https://xyz.idx.
 
 ### HTTP Error: 403, Permission denied on resource project...
 Your CLI is trying to deploy to an old or deleted project. Follow the "Deploying to Production" steps above to switch to your new project ID.
+
+## License
+
+lightseed is free software under the **GNU Affero General Public License v3.0
+or later** (AGPL-3.0-or-later); the full text is in [LICENSE](LICENSE).
+
+AGPL is chosen deliberately. lightseed is meant to run as a network of nodes,
+and the AGPL's section 13 closes the SaaS loophole: anyone who runs a modified
+version as a service must offer its users the modified source. This is the
+legal form of what the project already does by hand, the deployed node carries
+the very root/ constitution it grew from, inspectable by everyone it serves.
+The commons stays commons; a node cannot be quietly enclosed. You may host it,
+charge for hosting and care, and build a node on it, so long as your users keep
+the freedom to see and share the code that serves them.
+
+Copyright (C) 2019-2026 Zoltán Etédi and the lightseed contributors.

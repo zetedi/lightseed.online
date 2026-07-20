@@ -6,6 +6,21 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-21 · The commons has a legal shape (AGPL-3.0)**: the project had NO license, which in law
+means all-rights-reserved, the opposite of everything it is. Adopted the **GNU Affero General Public
+License v3.0 or later** (`LICENSE`, verbatim FSF text; `package.json` license field; a README
+section). AGPL over MIT/GPL deliberately: lightseed runs as a NETWORK of nodes, and AGPL section 13
+closes the SaaS loophole, anyone running a modified version as a service must offer its users the
+modified source. This is the legal form of what the project already does by hand (the White Paper
+bundles the live root/ into every deployed node, "the deployed node carries the constitution it grew
+from, inspectable by anyone it serves"), and the guarantee federation needs: a node can be hosted,
+charged for, built upon, but never quietly enclosed, the commons stays commons across every fork and
+every node. It sits well beside the care economy (you may charge for hosting and care) and the
+invariant that truth is traceable. Rejected: permissive licensing that would let a node take the
+code closed. *(Zoltán's call, "change licence to AGPL-3.0 if you think that is a good idea"; I do.)*
+
+---
+
 **2026-07-20 · The mint stands on server ground (Lumo's review)**: Lumo reviewed the light mint
 (3cabab7) and named it launch-blocking: the trigger-based mint TRUSTED CLIENT-SUPPLIED fields, so a
 signed-in user could create a forged "AI-confirmed" watering pulse with any `authorId`,
