@@ -106,9 +106,10 @@ light; witnessed care, bounded by the tended being's own rhythms) ·
 *ray* (a lid-bearing being born of appreciation: care's visible trace, branching
 like lightning at prisms, fading by spreading; it purchases nothing, it only
 shines) · *prism* (a station where a ray branches onward: watched and vetoable
-as far as its source cares to see) · *glow* (a community's ambient light: the
-sum of all attenuation shed there, present-tense, fading when circulation
-stops; it animates, never fuels) ·
+as far as its source cares to see) · *glow* (a community's ambient light: the sum of the light that fades as it
+CIRCULATES through it, present-tense, fading when circulation stops; it
+animates, never fuels; a being's own kindled light stays private until it
+flows in a community) ·
 *the sustaining seven* (a being's floor: seven planted, witnessed, tended
 trees, roughly what a body asks of the living world) · *dwelling* (49 days of
 belonging in one community: seven dwellings and the festival days fill a year;

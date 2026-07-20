@@ -175,14 +175,18 @@ its side:*
   community's AMBIENT GLOW, then nothing is owed and nothing is lost;
   dissipation itself is what lights the commons, and "life shining around the
   community" is the exact sum of all the light that faded there.
-  → *Answered (ring 2026-07-19, "The glow: dissipation is the commons"): the
-  candidate reading is the design. Nothing is owed because nothing is lost; the
-  glow is present-tense and animates, never fuels.*
+  → *Answered (ring 2026-07-19, "The glow: dissipation is the commons"), then
+  refined (ring 2026-07-20, "Light is a birthright, glow a belonging"): nothing
+  is owed at birth, and glow accrues where light CIRCULATES, not where it was
+  born, so a community-less carer's light has a home the moment it moves.*
 - What of a being holding many rays unspent? Hoarded light dims alone by
   design, and that is already the answer in value terms; but is a large unspent
   brightness also a SIGNAL, an unmet longing to give, or a community short of
   offerings worth appreciating? If so it deserves a gentle nudge, kin to the
   care nudge, and never a penalty.
+  → *Answered in part (ring 2026-07-20): a solo carer's light is PRIVATE, seen
+  only by them, a pull toward belonging rather than a public score. Still open:
+  the nudge, and what an in-community unspent brightness signals.*
 - Still open from the first night: what keeps a subscription automatic while
   membership stays conscious (the money story, with the council's analysis)?
 - What magnitude does each nature of care kindle? Life's rhythms bound the

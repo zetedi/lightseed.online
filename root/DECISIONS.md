@@ -6,6 +6,25 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-20 · Light is a birthright, glow a belonging**: a community-less carer refines the glow.
+Three truths, one shape. KINDLE IS FREE: light is born whole to the one who tended, because a solo
+seed-holder has no commons for a birth-fraction to flow into; the ray comes entire, no birth-tax.
+GLOW ACCRUES WHERE LIGHT CIRCULATES, not where it was born: the glow ring said the birth community,
+but a carer may belong nowhere at birth, leaving that light's glow homeless; the community a ray
+moves THROUGH (the appreciated offering's, whose dial the prism uses) always has a home, and its
+commons brightening from the care flowing within it closes the metabolism locally, a community
+taking care of its members out of the care they give each other. SOLITARY LIGHT IS PRIVATE: a being
+not yet in a community sees their own light and no one else does; never a public balance, never a
+leaderboard, so accumulation cannot become status or competition among the unbelonging (principle 4,
+and no counters that gamify). Together they name the on-ramp the economy was missing: you kindle
+free light alone by tending your seven, that light is yours and quiet, and its wish to flow and glow
+is the pull toward a circle where it finally can. Light is a solitary birthright; glow is a communal
+consequence. This corrects the two prior glow rings by a ring, as rings correct. *(Zoltan's guard:
+"I might not be in a community yet", and "a lot of light should be visible only for me, to direct
+toward community and not hoarding or competing".)*
+
+---
+
 **2026-07-19 · The nights are covered by the mornings**: the seven's magnitudes calibrate, and the
 emission schedule turns out to be the calendar itself. ONE RAY PER DAILY CARE: during each 49-day
 dwelling a being tends the tree they planted there, one witnessed care a day; 49 kindlings per
