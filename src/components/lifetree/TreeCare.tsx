@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Timestamp } from 'firebase/firestore';
-import { showAlert } from '../ui/Dialog';
 import { Icons } from '../ui/Icons';
-import { setWateringSchedule, recordWatering, markWateredOffChain, confirmWateringPulse, sendWateringAlert, fileToWebpBase64 } from '../../services/firebase';
+import { setWateringSchedule, recordWatering, markWateredOffChain, sendWateringAlert, fileToWebpBase64 } from '../../services/firebase';
 import { analyzeWateringPhoto } from '../../services/gemini';
 import { Pulse, type Lifetree } from '../../types';
 import { isOnWateringSchedule, isWateringOverdue, daysUntilWatering, daysOverdue, lastWateredMillis, wateringAlertedToday, treeStage, computeNextDueMillis, type TreeStage } from '../../domain/watering';
@@ -55,7 +54,6 @@ export const TreeCare: React.FC<TreeCareProps> = ({
     // On-chain watering is the opt-in: a photo mints a growth block. The default just ticks the
     // cadence off-chain — a photo at every routine watering would flood the chain with images.
     const [waterOnChain, setWaterOnChain] = useState(false);
-    const [confirmingId, setConfirmingId] = useState<string | null>(null);
     const waterFileRef = useRef<HTMLInputElement>(null);
     // The component instance is reused across trees, so reset the panel when the tree changes
     // (useState initialisers only run on mount).
@@ -144,14 +142,6 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                 : `Watered 💧, awaiting a guardian to confirm. ${analysis.note}`);
         } catch (e) { setWaterMsg(errMsg(e, 'Could not record the watering.')); }
         setWaterBusy(false);
-    };
-
-    const handleConfirmWatering = async (pulseId: string) => {
-        if (!currentUserId) return;
-        setConfirmingId(pulseId);
-        try { await confirmWateringPulse(pulseId, currentUserId); onChainRefresh(); }
-        catch (e) { showAlert(errMsg(e, 'Could not confirm.')); }
-        setConfirmingId(null);
     };
 
     const handleRemindGuardians = async () => {
@@ -252,17 +242,18 @@ export const TreeCare: React.FC<TreeCareProps> = ({
 
             {canWater && pendingWaterings.length > 0 && (
                 <div className="mt-4 border-t border-sky-200 pt-3">
-                    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-sky-600">Awaiting confirmation</p>
+                    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-sky-600">Awaiting a guardian's witness</p>
                     <div className="space-y-2">
                         {pendingWaterings.map((p: Pulse) => (
                             <div key={p.id} className="flex items-center gap-2 rounded-lg bg-white/70 p-2">
                                 {p.imageUrl && <img src={p.imageUrl} className="h-10 w-10 rounded object-cover" alt="watering" />}
                                 {/* eslint-disable-next-line react-hooks/purity -- Date.now() is only the display fallback for a block still missing its server timestamp; it intentionally reads as "today" */}
                                 <span className="flex-1 truncate text-xs text-sky-800">{new Date(p.createdAt?.toMillis?.() || Date.now()).toLocaleDateString()} · {p.wateringConfirmation?.note || 'Watering'}</span>
-                                <button type="button" onClick={() => handleConfirmWatering(p.id)} disabled={confirmingId === p.id} className="rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-sky-700 disabled:opacity-50">{confirmingId === p.id ? '…' : 'Confirm'}</button>
                             </div>
                         ))}
                     </div>
+                    {/* No confirm button here: care is witnessed by a GUARDIAN (not the carer), in the
+                        Circle. This just lets the carer see their care is awaiting a witness. */}
                 </div>
             )}
 

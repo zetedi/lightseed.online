@@ -58,11 +58,14 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
   const [guardianEdges, setGuardianEdges] = useState<GuardianEdge[]>([]);
   const treeIdsKey = useMemo(() => myTrees.map(tr => tr.id).sort().join(','), [myTrees]);
   useEffect(() => {
-    if (!viewerUid) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- clears edges before the async scoped read below
+    if (!viewerUid || !treeIdsKey) { setGuardianEdges([]); return; }
     let alive = true;
-    firestoreStore.linksByRel('guardian').then(links => {
-      if (alive) setGuardianEdges(links.map(l => ({ from: l.from, to: l.to })));
-    }).catch(() => {});
+    // Only the guardian links INTO my own trees — not the whole network-wide graph (Lumo's review,
+    // 2026-07-20). One scoped read per tree (few); each is the tree's own incoming guardians.
+    Promise.all(treeIdsKey.split(',').map(id =>
+      firestoreStore.linksTo(id, 'guardian').then(links => links.map(l => ({ from: l.from, to: l.to }))).catch(() => [] as GuardianEdge[]),
+    )).then(perTree => { if (alive) setGuardianEdges(perTree.flat()); });
     return () => { alive = false; };
   }, [viewerUid, treeIdsKey]);
   const seven = useMemo(

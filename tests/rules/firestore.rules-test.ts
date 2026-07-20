@@ -952,3 +952,28 @@ describe('rays — light is server-minted and privately read (the sun ring, doma
     await assertSucceeds(getDoc(doc(db(STAFF), 'rays', 'p1__carer')));   // staff audit
   });
 });
+
+describe('watering pulses — the light-mint trust root (server-mediated; Lumo review 2026-07-20)', () => {
+  // treeB is owned by BOB (a tender). ALICE/MALLORY are not tenders of it.
+  const water = (over: Record<string, any> = {}) => ({
+    type: 'tree_growth', care: 'watering', lifetreeId: 'treeB', authorId: BOB,
+    title: 'W', body: 'w', wateringConfirmedBy: 'pending', createdAt: 1, ...over,
+  });
+
+  it('a TENDER authors their OWN watering; a non-tender cannot, and authorId is bound to the author', async () => {
+    await assertSucceeds(setDoc(doc(db(BOB), 'pulses', 'w1'), water()));                       // owner = tender, own author
+    await assertFails(setDoc(doc(db(MALLORY), 'pulses', 'w2'), water({ authorId: MALLORY })));  // not a tender of treeB
+    await assertFails(setDoc(doc(db(BOB), 'pulses', 'w3'), water({ authorId: ALICE })));        // author must be the writer
+  });
+
+  it('no client may self-declare a guardian witness at creation (that is the callable\'s job)', async () => {
+    await assertFails(setDoc(doc(db(BOB), 'pulses', 'w4'), water({ wateringConfirmedBy: 'guardian' })));
+    await assertSucceeds(setDoc(doc(db(BOB), 'pulses', 'w5'), water({ wateringConfirmedBy: 'ai' }))); // AI hint is validation-only
+  });
+
+  it('confirmation is SERVER-ONLY: no client — not even a tender — may write wateringConfirmedBy / wateringConfirmation', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => setDoc(doc(ctx.firestore(), 'pulses', 'w6'), water()));
+    await assertFails(updateDoc(doc(db(BOB), 'pulses', 'w6'), { wateringConfirmedBy: 'guardian', wateringConfirmation: { confirmedByUid: BOB }, updatedAt: 2 }));
+    await assertFails(updateDoc(doc(db(MALLORY), 'pulses', 'w6'), { wateringConfirmedBy: 'guardian', updatedAt: 2 }));
+  });
+});

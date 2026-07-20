@@ -4,10 +4,10 @@ import { Icons } from '../ui/Icons';
 import { firestoreStore } from '../../adapters/firestore';
 import { canTendTree } from '../../domain/policy';
 import { SectionCard } from '../ui/SectionCard';
-import { fetchAllLifetrees, getPersonName, createTreeInvite } from '../../services/firebase';
+import { fetchAllLifetrees, getPersonName, createTreeInvite, getPulsesByTreeId, witnessWatering } from '../../services/firebase';
 import { treeCircle } from '../../domain/views/circle';
 import { treeRelationLabels, type TreeRelationRole, type InvitableRole } from '../../domain/treeCircle';
-import type { Lifetree } from '../../types';
+import type { Lifetree, Pulse } from '../../types';
 
 // THE CIRCLE — the whole circle of care around a Lifetree, one view (the two old tabs merged). It
 // is a prism over the tree's incoming links (domain/views/circle), which already groups owner +
@@ -104,6 +104,36 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
             onGuardianChange(); // the shell re-reads the circle, which flips isGuardian
         } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
         setToggleBusy(false);
+    };
+
+    // ── Witnessing — a guardian's act (the light mint; the sun ring). A guardian sees the tree's
+    // waterings that no guardian has witnessed yet (and not their own care) and may witness one:
+    // the witnessWatering callable kindles the carer's ray + the guardian's seventh, server-verified.
+    const [toWitness, setToWitness] = useState<Pulse[]>([]);
+    const [witnessing, setWitnessing] = useState<string | null>(null);
+    const [witnessNonce, setWitnessNonce] = useState(0);
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- clears the list for a non-guardian before the async fetch below
+        if (!isGuardian || !currentUserId) { setToWitness([]); return; }
+        let alive = true;
+        getPulsesByTreeId(treeId).then(ps => {
+            if (!alive) return;
+            setToWitness(ps.filter(p => p.care === 'watering' && p.wateringConfirmedBy !== 'guardian' && p.authorId !== currentUserId).slice(0, 5));
+        }).catch(() => {});
+        return () => { alive = false; };
+    }, [treeId, isGuardian, currentUserId, witnessNonce]);
+
+    const handleWitness = async (p: Pulse) => {
+        setWitnessing(p.id);
+        try {
+            const res = await witnessWatering(p.id);
+            setToWitness(prev => prev.filter(x => x.id !== p.id));
+            setWitnessNonce(n => n + 1);
+            showAlert(res.kindled
+                ? `You witnessed the care of ${tree.name || 'this tree'}. Light kindled 🌱`
+                : `You witnessed it — this tree's light for the day was already lit.`);
+        } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
+        setWitnessing(null);
     };
 
     // ── Invite by tree name ─────────────────────────────────────────────────────────────────────
@@ -207,6 +237,32 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                     </button>
                 )}
             </div>
+
+            {/* Witnessing — a guardian confirms care they witnessed, kindling its light (the sun ring). */}
+            {isGuardian && toWitness.length > 0 && (
+                <div className="mt-6 rounded-2xl border border-sky-100 bg-sky-50/60 p-4">
+                    <p className="mb-2 text-xs font-bold uppercase tracking-wide text-sky-600">Waterings to witness</p>
+                    <div className="space-y-1.5">
+                        {toWitness.map(p => (
+                            <div key={p.id} className="flex items-center gap-3 rounded-xl border border-sky-100 bg-white p-2 shadow-sm">
+                                {p.imageUrl
+                                    ? <img src={p.imageUrl} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" />
+                                    : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-500 [&>svg]:h-5 [&>svg]:w-5"><Icons.Droplet /></span>}
+                                <span className="min-w-0 flex-1 truncate text-xs text-slate-600">
+                                    {p.createdAt?.toMillis ? new Date(p.createdAt.toMillis()).toLocaleDateString() : 'A watering'} · {p.wateringConfirmation?.note || 'Watering'}
+                                </span>
+                                <button
+                                    onClick={() => handleWitness(p)}
+                                    disabled={witnessing === p.id}
+                                    className="shrink-0 rounded-full bg-sky-600 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-sky-700 disabled:opacity-50"
+                                >
+                                    {witnessing === p.id ? '…' : 'Witness'}
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Invite a tree into the circle, found by name. Anyone with edit rights invites
                 guardians (the open layer); the owner may also invite the deeper tending roles. */}

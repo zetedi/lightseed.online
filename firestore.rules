@@ -446,10 +446,18 @@ service cloud.firestore {
     match /pulses/{pulseId} {
       allow read: if canReadPulse();
       allow create: if isSignedIn() && (
-        request.resource.data.type != 'event' ||
-        !('communityId' in request.resource.data) ||   // standalone event — anyone may plant one
-        isStaff() ||
-        isCommunityOwner(request.resource.data.communityId)
+        // A WATERING pulse is the light mint's trust root (functions/witnessWatering): you author
+        // your OWN, only on a tree you TEND (owner/co_owner/steward/staff), and may never
+        // self-declare a guardian witness at creation — the confirmation is server-only. authorId
+        // is bound here so the carer the mint pays is real (Lumo's review, 2026-07-20).
+        request.resource.data.get('care', '') == 'watering'
+          ? (request.resource.data.get('authorId', '') == request.auth.uid
+             && (isStaff() || isTreeTender(request.resource.data.get('lifetreeId', '')))
+             && request.resource.data.get('wateringConfirmedBy', 'pending') != 'guardian')
+          : (request.resource.data.type != 'event'
+             || !('communityId' in request.resource.data)   // standalone event — anyone may plant one
+             || isStaff()
+             || isCommunityOwner(request.resource.data.communityId))
       );
       // The append-only ledger: a pulse's identity and chain fields (hash, previousHash, authorId,
       // type, createdAt, lifetreeId, treeId, communityId, participantUids, …) are FROZEN after
@@ -462,12 +470,11 @@ service cloud.firestore {
         request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['seenBy', 'aiInterpretation', 'loveCount', 'validationScore', 'updatedAt'])
 
-        // (b) Watering confirmation — the tree's tenders (owner/co_owner/steward) or staff.
-        || (
-             (isStaff() || isTreeTender(resource.data.get('lifetreeId', '')))
-             && request.resource.data.diff(resource.data).affectedKeys()
-                  .hasOnly(['wateringConfirmedBy', 'wateringConfirmation', 'updatedAt'])
-           )
+        // (b) Watering confirmation is SERVER-ONLY: a guardian witnesses through the
+        //     functions/witnessWatering callable (admin SDK), which derives the witness from the
+        //     authenticated caller and mints the light atomically. No client may write
+        //     wateringConfirmedBy / wateringConfirmation, so a witness can never be forged and
+        //     aimed at an account (Lumo's review, 2026-07-20). Staff keep the mend-anything escape (g).
 
         // (c) Governance on a decision — voting and raising a concern (listening false→true) stay
         //     open to signed-in members; flipping STATUS or resuming (listening true→false) needs

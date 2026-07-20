@@ -6,6 +6,40 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-20 · The mint stands on server ground (Lumo's review)**: Lumo reviewed the light mint
+(3cabab7) and named it launch-blocking: the trigger-based mint TRUSTED CLIENT-SUPPLIED fields, so a
+signed-in user could create a forged "AI-confirmed" watering pulse with any `authorId`,
+`lifetreeId`, and `mintedAt`, and drive the Admin-SDK trigger to fabricate rays (varying `mintedAt`
+bypassed the per-day id); the witness `confirmedByUid` was unauthenticated (a tender could aim the
+seventh at any account); the carer and witness rays committed in TWO transactions (a failed second
+lost the witness ray forever); and the pure domain tests never exercised the real mint. The loop
+worked as GENESIS says it must: a careful reviewer saw the danger the green gate did not. **Nothing
+had been minted in anger**: the fix landed before the mint could be trusted. **Reworked to trust
+only server ground**: minting moved from Firestore triggers to a SERVER CALLABLE, `witnessWatering`,
+where the witness is the AUTHENTICATED caller (never a stored field), the carer is the pulse's
+create-time auth-bound author, the guardian's link must exist AND PREDATE the watering (tenure,
+mirroring the veto), the day is derived from the watering's own server timestamp, and the carer's
+ray + the witness's seventh + the pulse's confirmation all ride ONE transaction. The rules were
+tightened to match: a watering pulse binds `authorId == auth.uid`, may be authored only by a TENDER
+of the tree, and may never self-declare a guardian witness at creation; watering confirmation is
+SERVER-ONLY (no client writes `wateringConfirmedBy`/`wateringConfirmation`). Proven with three new
+emulator tests (`test:rules` 95). **Product decision (a), Zoltán's call**: GUARDIANS witness, a
+narrowly scoped witnessing power (the callable), true to the rings ("the seven need guardians"); the
+carer waters (a tender), a DIFFERENT guardian witnesses. AI-confirmation is now VALIDATION-ONLY (it
+lights the tree, holds no light); a trustworthy server-side AI witness is a coming rung. Witnessing
+moved to the **Circle** (where guardians live): a guardian sees the tree's un-witnessed waterings
+and kindles their light. The seven's progress now reads only MY trees' guardian links, not the
+network-wide graph (Lumo's privacy note). **Named residuals**: Sybil self-witnessing (own a tree +
+a sock guardian) can still farm light, bounded by the one-per-tree-per-day cap, the veto, tenure,
+and that only validated trees receive support; the callable's atomicity/allocation is proven at the
+rules boundary but not yet in a functions-emulator integration test (a coming rung); the guardian
+graph stays world-readable (an explicit consent line is future). *If the flawed mint (3cabab7) was
+deployed before this, a one-time `rays/` cleanup is warranted before any spending exists.* Gates:
+`check` 319 · `test:rules` 95. *(Lumo's finding, the same day the light rings landed: the veto's
+conscience turned on the code that pays for care.)*
+
+---
+
 **2026-07-20 · Light is a birthright, glow a belonging**: a community-less carer refines the glow.
 Three truths, one shape. KINDLE IS FREE: light is born whole to the one who tended, because a solo
 seed-holder has no commons for a birth-fraction to flow into; the ray comes entire, no birth-tax.

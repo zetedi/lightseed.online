@@ -578,110 +578,108 @@ export const mintStayLeaves = onSchedule("every day 03:00", async () => {
 });
 
 // ── THE MINT: light kindled from witnessed care (the sun ring; domain/light.ts) ────────────────
-// Light enters the world ONLY through witnessed care for the living. When a watering pulse is
-// CONFIRMED (the AI at threshold, or a guardian's hand), the carer's whole ray is kindled; a
-// HUMAN witness (a guardian who confirmed, other than the carer) also kindles their SEVENTH,
-// additional (the carer's ray untouched). Rays live in the server-only `rays` collection; no
-// client may write one, so light can never be self-minted (the sun ring enforced as law, not
-// courtesy). Mirrors domain/light.kindleRays inline, since functions is a separate TS project.
+// Light enters the world ONLY through a GUARDIAN witnessing care for the living — and the mint is a
+// SERVER CALLABLE (witnessWatering) that trusts nothing the client can forge: the witness is the
+// AUTHENTICATED caller (not a stored field), the day is derived from the watering's own server
+// timestamp, and the whole mint (carer's ray + witness's seventh + the pulse's confirmation) rides
+// ONE transaction, so nothing is half-minted. Rays live in the server-only `rays` collection; no
+// client may write one. This replaced trigger-based minting, which trusted client-supplied
+// authorId / wateringConfirmedBy / mintedAt and could be driven with forged pulses (Lumo's review,
+// 2026-07-20). Mirrors domain/light.kindleRays inline, since functions is a separate TS project.
 const RAY_UNITS = 100;
 const WITNESS_SHARE_DENOMINATOR = 7;
 const witnessShareUnits = () => Math.floor(RAY_UNITS / WITNESS_SHARE_DENOMINATOR);
 
-// Kindle a role's ray at a DETERMINISTIC id (rays/{treeId}__{dayKey}__{role}). The day-keyed id
-// enforces the ring's bound in one stroke: ONE KINDLE PER TREE PER DAY (life is the central bank;
-// a tree can only honestly be cared for so often), AND idempotency against a re-fired trigger or a
-// double-confirm. Returns whether it minted fresh (the day's first) — the witness's seventh rides
-// only on a fresh carer kindle, so witnessing a redundant same-day watering adds no light.
-const kindleRay = async (
-    dayKey: string,
-    role: "carer" | "witness",
-    holderUid: string,
-    units: number,
-    sourceUid: string,
-    treeId: string,
-    communityId: string | undefined,
-    pulseId: string,
-): Promise<boolean> => {
-    const ref = db.doc(`rays/${treeId}__${dayKey}__${role}`);
-    return db.runTransaction(async (t) => {
-        if ((await t.get(ref)).exists) return false; // this tree's light for the day is already kindled
-        t.set(ref, {
-            lid: randomUUID(),
-            holderUid,
-            role,
-            sourceUid,     // whose witnessed care kindled it (the carer)
-            treeId,
-            dayKey,        // the calendar day this care kindled (the once-a-day bound)
-            ...(communityId ? { communityId } : {}), // provenance; a solo carer's tree may have none
-            units,
-            pulseId,       // provenance: the watering pulse that occasioned it
-            kindledAt: admin.firestore.FieldValue.serverTimestamp(),
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-        return true;
-    });
-};
+// The immutable body of a ray. The doc id is DETERMINISTIC (rays/{treeId}__{dayKey}__{role}), which
+// enforces ONE KINDLE PER TREE PER DAY (life is the central bank) and idempotency in one stroke.
+const rayDoc = (
+    role: "carer" | "witness", holderUid: string, units: number,
+    sourceUid: string, treeId: string, communityId: string | undefined, dayKey: string, pulseId: string,
+) => ({
+    lid: randomUUID(),
+    holderUid,
+    role,
+    sourceUid,     // whose witnessed care kindled it (the carer)
+    treeId,
+    dayKey,        // the calendar day this care kindled (the once-a-day bound)
+    ...(communityId ? { communityId } : {}), // provenance; a solo carer's tree may have none
+    units,
+    pulseId,       // provenance: the watering pulse that occasioned it
+    kindledAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+});
 
-// The UTC calendar day a care kindles in — the once-a-day denominator. Anchored on the pulse's own
-// mint time when present, so the AI (create) and guardian (update) triggers of one pulse agree.
+// The UTC calendar day a care kindles in — the once-a-day denominator, SERVER-derived from the
+// watering's own createdAt/mintedAt (never a client-chosen "now"), so mint time can't be shifted
+// to farm extra days.
 const kindleDayKey = (pulse: Record<string, any>): string => {
-    const ms = typeof pulse.mintedAt === "number" ? pulse.mintedAt
-        : (pulse.createdAt && typeof pulse.createdAt.toMillis === "function" ? pulse.createdAt.toMillis() : Date.now());
+    const ms = (pulse.createdAt && typeof pulse.createdAt.toMillis === "function") ? pulse.createdAt.toMillis()
+        : (typeof pulse.mintedAt === "number" ? pulse.mintedAt : Date.now());
     return new Date(ms).toISOString().slice(0, 10);
 };
 
-// The shared kindling for a confirmed watering pulse. witnessUid is set ONLY for a human witness
-// (a guardian confirmation); AI-confirmed care passes none, so only the carer's ray is kindled.
-const kindleFromWatering = async (
-    pulseId: string,
-    pulse: Record<string, any>,
-    witnessUid?: string,
-): Promise<void> => {
-    const carerUid = String(pulse.authorId || "");
-    const treeId = String(pulse.lifetreeId || "");
-    if (!carerUid || !treeId) return;
-    const treeSnap = await db.doc(`lifetrees/${treeId}`).get();
-    if (!treeSnap.exists) return;
-    const tree = treeSnap.data() as Record<string, any>;
-    if (tree.treeType === "BED") return; // furniture is not tended for light
-    const communityId = tree.communityId ? String(tree.communityId) : undefined;
-    const dayKey = kindleDayKey(pulse);
+// witnessWatering — a GUARDIAN witnesses a watering, kindling the light. Everything is server-derived
+// or server-verified: the witness is the authenticated caller; the carer is the pulse's (create-time
+// auth-bound) author; the guardian's link must exist AND predate the watering (tenure — a sock
+// account minted for the occasion has no voice, mirroring the guardian veto); the day is the
+// watering's own; and the carer's ray, the witness's seventh, and the pulse's confirmation all ride
+// ONE transaction. No client field decides who is paid, how much, or when.
+export const witnessWatering = onCall({ cors: true }, async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "Sign in to witness a watering.");
+    const witnessUid = request.auth.uid;
+    const pulseId = request.data?.pulseId;
+    if (!pulseId || typeof pulseId !== "string") throw new HttpsError("invalid-argument", "pulseId is required.");
 
-    const freshCarer = await kindleRay(dayKey, "carer", carerUid, RAY_UNITS, carerUid, treeId, communityId, pulseId);
-    // A human witness other than the carer earns their seventh — but only on the day's FIRST kindle;
-    // witnessing a tree already cared for that day adds no new light. No one witnesses their own care.
-    if (freshCarer && witnessUid && witnessUid !== carerUid) {
-        await kindleRay(dayKey, "witness", witnessUid, witnessShareUnits(), carerUid, treeId, communityId, pulseId);
-    }
-};
+    return db.runTransaction(async (t) => {
+        // ── all reads first (transaction rule) ──
+        const pulseRef = db.doc(`pulses/${pulseId}`);
+        const pulseSnap = await t.get(pulseRef);
+        if (!pulseSnap.exists) throw new HttpsError("not-found", "That watering no longer exists.");
+        const pulse = pulseSnap.data() as Record<string, any>;
+        if (pulse.care !== "watering") throw new HttpsError("failed-precondition", "That is not a watering.");
+        // Already witnessed by a guardian — the first witness holds the record and any light; a second
+        // guardian re-witnessing the same care changes nothing (don't overwrite the confirmation).
+        if (pulse.wateringConfirmedBy === "guardian") return { kindled: false, witnessUnits: 0, already: true };
 
-// Born confirmed by AI: kindle the carer's ray at creation (the AI holds no light — no witness ray).
-export const onWateringKindled = onDocumentCreated("pulses/{pulseId}", async (event) => {
-    const pulse = event.data?.data() as Record<string, any> | undefined;
-    if (!pulse || pulse.care !== "watering" || pulse.wateringConfirmedBy !== "ai") return;
-    try {
-        await kindleFromWatering(event.params.pulseId, pulse);
-    } catch (e) {
-        console.error(`kindle (ai) failed for pulse ${event.params.pulseId}:`, e);
-    }
-});
+        const carerUid = String(pulse.authorId || "");
+        const treeId = String(pulse.lifetreeId || "");
+        if (!carerUid || !treeId) throw new HttpsError("failed-precondition", "That watering is malformed.");
+        if (witnessUid === carerUid) throw new HttpsError("failed-precondition", "You cannot witness your own care.");
 
-// A guardian stands in for the AI (pending → guardian): kindle the carer's ray AND the witness's
-// seventh. Only on the transition INTO confirmation, so re-touches don't re-kindle.
-export const onWateringConfirmed = onDocumentUpdated("pulses/{pulseId}", async (event) => {
-    const before = event.data?.before.data() as Record<string, any> | undefined;
-    const after = event.data?.after.data() as Record<string, any> | undefined;
-    if (!after || after.care !== "watering") return;
-    const wasConfirmed = before?.wateringConfirmedBy === "ai" || before?.wateringConfirmedBy === "guardian";
-    if (wasConfirmed || after.wateringConfirmedBy !== "guardian") return;
-    const witnessUid = after.wateringConfirmation?.confirmedByUid
-        ? String(after.wateringConfirmation.confirmedByUid) : undefined;
-    try {
-        await kindleFromWatering(event.params.pulseId, after, witnessUid);
-    } catch (e) {
-        console.error(`kindle (guardian) failed for pulse ${event.params.pulseId}:`, e);
-    }
+        // The witness must be a GUARDIAN of the tree, their guardianship PREDATING this watering.
+        const gLinkSnap = await t.get(db.doc(`links/${witnessUid}__guardian__${treeId}`));
+        if (!gLinkSnap.exists) throw new HttpsError("permission-denied", "Only a guardian of this tree may witness it.");
+        const gAt = (gLinkSnap.data() as any)?.createdAt;
+        const pAt = pulse.createdAt;
+        if (gAt?.toMillis && pAt?.toMillis && gAt.toMillis() > pAt.toMillis()) {
+            throw new HttpsError("failed-precondition", "Your guardianship began after this watering.");
+        }
+
+        const treeSnap = await t.get(db.doc(`lifetrees/${treeId}`));
+        if (!treeSnap.exists) throw new HttpsError("not-found", "That tree no longer exists.");
+        const tree = treeSnap.data() as Record<string, any>;
+        if (tree.treeType === "BED") throw new HttpsError("failed-precondition", "A bed is not tended for light.");
+        const communityId = tree.communityId ? String(tree.communityId) : undefined;
+
+        const dayKey = kindleDayKey(pulse);
+        const carerRef = db.doc(`rays/${treeId}__${dayKey}__carer`);
+        const witnessRef = db.doc(`rays/${treeId}__${dayKey}__witness`);
+        const carerExists = (await t.get(carerRef)).exists;
+        const witnessExists = (await t.get(witnessRef)).exists;
+
+        // ── writes ── (atomic: confirmation + both rays in this one transaction)
+        t.update(pulseRef, {
+            wateringConfirmedBy: "guardian",
+            "wateringConfirmation.confirmedByUid": witnessUid,
+            "wateringConfirmation.confirmedAt": admin.firestore.FieldValue.serverTimestamp(),
+        });
+        if (!carerExists) t.set(carerRef, rayDoc("carer", carerUid, RAY_UNITS, carerUid, treeId, communityId, dayKey, pulseId));
+        // The witness's seventh rides only on a FRESH carer kindle: witnessing a tree already cared
+        // for (and lit) that day adds no new light.
+        if (!carerExists && !witnessExists) t.set(witnessRef, rayDoc("witness", witnessUid, witnessShareUnits(), carerUid, treeId, communityId, dayKey, pulseId));
+
+        return { kindled: !carerExists, witnessUnits: (!carerExists && !witnessExists) ? witnessShareUnits() : 0 };
+    });
 });
 
 // Community join requests: when a join_request link lands (someone pressed Join on a

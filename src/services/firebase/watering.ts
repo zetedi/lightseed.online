@@ -1,9 +1,10 @@
 import { addDoc, serverTimestamp, doc, updateDoc, Timestamp } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { type Lifetree } from '../../types';
 import { uuidv7 } from '../../utils/id';
 import { daysOverdue, computeNextDueMillis, wateringAlertedToday, type TreeStage, type WateringSchedule, type WateringAnalysis } from '../../domain/watering';
 import { buildGroupThreadId } from '../../utils/reachPermissions';
-import { db, pulsesCollection } from './core';
+import { db, functions, pulsesCollection } from './core';
 import { mintPulse, resolveCircleUids, sendThreadMessage } from './pulses';
 import { uploadImage } from './media';
 
@@ -159,13 +160,16 @@ export const recordWatering = async ({
     return { imageUrl, confirmedBy };
 };
 
-// A guardian stands in for the AI: confirm a pending watering pulse.
-export const confirmWateringPulse = (pulseId: string, guardianUid: string) =>
-    updateDoc(doc(db, 'pulses', pulseId), {
-        wateringConfirmedBy: 'guardian',
-        'wateringConfirmation.confirmedByUid': guardianUid,
-        'wateringConfirmation.confirmedAt': serverTimestamp(),
-    });
+// A guardian WITNESSES a watering — the light mint (the sun ring). SERVER-MEDIATED: the
+// witnessWatering callable derives the witness from the authenticated caller, verifies guardianship
+// + tenure, and kindles the carer's ray + the witness's seventh atomically. The witness is never a
+// client-passed field, so it can't be forged or aimed (Lumo's review, 2026-07-20). Also stamps the
+// pulse confirmed for the validation display.
+export const witnessWatering = async (pulseId: string): Promise<{ kindled: boolean; witnessUnits: number }> => {
+    const fn = httpsCallable(functions, 'witnessWatering');
+    const res = await fn({ pulseId });
+    return res.data as { kindled: boolean; witnessUnits: number };
+};
 
 // Manually ping a tree's guardians that it needs watering — the client/"remind now" path that
 // complements the daily Cloud Function. Writes an off-chain "water me" reach (careAlert flag →
