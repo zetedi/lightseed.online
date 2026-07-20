@@ -577,6 +577,113 @@ export const mintStayLeaves = onSchedule("every day 03:00", async () => {
     }
 });
 
+// ── THE MINT: light kindled from witnessed care (the sun ring; domain/light.ts) ────────────────
+// Light enters the world ONLY through witnessed care for the living. When a watering pulse is
+// CONFIRMED (the AI at threshold, or a guardian's hand), the carer's whole ray is kindled; a
+// HUMAN witness (a guardian who confirmed, other than the carer) also kindles their SEVENTH,
+// additional (the carer's ray untouched). Rays live in the server-only `rays` collection; no
+// client may write one, so light can never be self-minted (the sun ring enforced as law, not
+// courtesy). Mirrors domain/light.kindleRays inline, since functions is a separate TS project.
+const RAY_UNITS = 100;
+const WITNESS_SHARE_DENOMINATOR = 7;
+const witnessShareUnits = () => Math.floor(RAY_UNITS / WITNESS_SHARE_DENOMINATOR);
+
+// Kindle a role's ray at a DETERMINISTIC id (rays/{treeId}__{dayKey}__{role}). The day-keyed id
+// enforces the ring's bound in one stroke: ONE KINDLE PER TREE PER DAY (life is the central bank;
+// a tree can only honestly be cared for so often), AND idempotency against a re-fired trigger or a
+// double-confirm. Returns whether it minted fresh (the day's first) — the witness's seventh rides
+// only on a fresh carer kindle, so witnessing a redundant same-day watering adds no light.
+const kindleRay = async (
+    dayKey: string,
+    role: "carer" | "witness",
+    holderUid: string,
+    units: number,
+    sourceUid: string,
+    treeId: string,
+    communityId: string | undefined,
+    pulseId: string,
+): Promise<boolean> => {
+    const ref = db.doc(`rays/${treeId}__${dayKey}__${role}`);
+    return db.runTransaction(async (t) => {
+        if ((await t.get(ref)).exists) return false; // this tree's light for the day is already kindled
+        t.set(ref, {
+            lid: randomUUID(),
+            holderUid,
+            role,
+            sourceUid,     // whose witnessed care kindled it (the carer)
+            treeId,
+            dayKey,        // the calendar day this care kindled (the once-a-day bound)
+            ...(communityId ? { communityId } : {}), // provenance; a solo carer's tree may have none
+            units,
+            pulseId,       // provenance: the watering pulse that occasioned it
+            kindledAt: admin.firestore.FieldValue.serverTimestamp(),
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        return true;
+    });
+};
+
+// The UTC calendar day a care kindles in — the once-a-day denominator. Anchored on the pulse's own
+// mint time when present, so the AI (create) and guardian (update) triggers of one pulse agree.
+const kindleDayKey = (pulse: Record<string, any>): string => {
+    const ms = typeof pulse.mintedAt === "number" ? pulse.mintedAt
+        : (pulse.createdAt && typeof pulse.createdAt.toMillis === "function" ? pulse.createdAt.toMillis() : Date.now());
+    return new Date(ms).toISOString().slice(0, 10);
+};
+
+// The shared kindling for a confirmed watering pulse. witnessUid is set ONLY for a human witness
+// (a guardian confirmation); AI-confirmed care passes none, so only the carer's ray is kindled.
+const kindleFromWatering = async (
+    pulseId: string,
+    pulse: Record<string, any>,
+    witnessUid?: string,
+): Promise<void> => {
+    const carerUid = String(pulse.authorId || "");
+    const treeId = String(pulse.lifetreeId || "");
+    if (!carerUid || !treeId) return;
+    const treeSnap = await db.doc(`lifetrees/${treeId}`).get();
+    if (!treeSnap.exists) return;
+    const tree = treeSnap.data() as Record<string, any>;
+    if (tree.treeType === "BED") return; // furniture is not tended for light
+    const communityId = tree.communityId ? String(tree.communityId) : undefined;
+    const dayKey = kindleDayKey(pulse);
+
+    const freshCarer = await kindleRay(dayKey, "carer", carerUid, RAY_UNITS, carerUid, treeId, communityId, pulseId);
+    // A human witness other than the carer earns their seventh — but only on the day's FIRST kindle;
+    // witnessing a tree already cared for that day adds no new light. No one witnesses their own care.
+    if (freshCarer && witnessUid && witnessUid !== carerUid) {
+        await kindleRay(dayKey, "witness", witnessUid, witnessShareUnits(), carerUid, treeId, communityId, pulseId);
+    }
+};
+
+// Born confirmed by AI: kindle the carer's ray at creation (the AI holds no light — no witness ray).
+export const onWateringKindled = onDocumentCreated("pulses/{pulseId}", async (event) => {
+    const pulse = event.data?.data() as Record<string, any> | undefined;
+    if (!pulse || pulse.care !== "watering" || pulse.wateringConfirmedBy !== "ai") return;
+    try {
+        await kindleFromWatering(event.params.pulseId, pulse);
+    } catch (e) {
+        console.error(`kindle (ai) failed for pulse ${event.params.pulseId}:`, e);
+    }
+});
+
+// A guardian stands in for the AI (pending → guardian): kindle the carer's ray AND the witness's
+// seventh. Only on the transition INTO confirmation, so re-touches don't re-kindle.
+export const onWateringConfirmed = onDocumentUpdated("pulses/{pulseId}", async (event) => {
+    const before = event.data?.before.data() as Record<string, any> | undefined;
+    const after = event.data?.after.data() as Record<string, any> | undefined;
+    if (!after || after.care !== "watering") return;
+    const wasConfirmed = before?.wateringConfirmedBy === "ai" || before?.wateringConfirmedBy === "guardian";
+    if (wasConfirmed || after.wateringConfirmedBy !== "guardian") return;
+    const witnessUid = after.wateringConfirmation?.confirmedByUid
+        ? String(after.wateringConfirmation.confirmedByUid) : undefined;
+    try {
+        await kindleFromWatering(event.params.pulseId, after, witnessUid);
+    } catch (e) {
+        console.error(`kindle (guardian) failed for pulse ${event.params.pulseId}:`, e);
+    }
+});
+
 // Community join requests: when a join_request link lands (someone pressed Join on a
 // community), email that community's keeper. Server-side because the keeper's email lives on
 // their private user doc, which the requester can never read. The Members tab is where the

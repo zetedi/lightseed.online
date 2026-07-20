@@ -933,3 +933,22 @@ describe('draft vanishes, minted withdraws — the decision delete rule and the 
     await assertSucceeds(updateDoc(doc(db(BOB), 'pulses', 'dm2'), { votes: [ALICE, BOB] }));
   });
 });
+
+describe('rays — light is server-minted and privately read (the sun ring, domain/light)', () => {
+  const ray = { holderUid: ALICE, role: 'carer', sourceUid: ALICE, treeId: 't1', units: 100, pulseId: 'p1' };
+
+  it('no client may EVER write a ray — light can never be self-minted', async () => {
+    await assertFails(setDoc(doc(db(ALICE), 'rays', 'p1__carer'), ray));           // not even your own
+    await assertFails(setDoc(doc(db(STAFF), 'rays', 'p1__carer'), ray));           // not even staff
+    await env.withSecurityRulesDisabled(async (ctx) => setDoc(doc(ctx.firestore(), 'rays', 'p1__carer'), ray));
+    await assertFails(updateDoc(doc(db(ALICE), 'rays', 'p1__carer'), { units: 999 }));
+    await assertFails(deleteDoc(doc(db(ALICE), 'rays', 'p1__carer')));
+  });
+
+  it('a being reads only their OWN light; another\'s rays stay private (staff may audit)', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => setDoc(doc(ctx.firestore(), 'rays', 'p1__carer'), ray));
+    await assertSucceeds(getDoc(doc(db(ALICE), 'rays', 'p1__carer')));   // the holder
+    await assertFails(getDoc(doc(db(BOB), 'rays', 'p1__carer')));        // not another being
+    await assertSucceeds(getDoc(doc(db(STAFF), 'rays', 'p1__carer')));   // staff audit
+  });
+});

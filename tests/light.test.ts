@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   RAY_UNITS, KINDLE_UNITS_PER_WITNESSED_CARE,
   kindles, canKindleAgain, prismSplit, validBranching, splitEvenly, idleFade, visibleToSource,
+  WITNESS_SHARE_DENOMINATOR, witnessShareUnits, kindleRays,
 } from '../src/domain/light';
 import { DAY_MS } from '../src/domain/watering';
 
@@ -80,5 +81,38 @@ describe('attention: the sovereign dial', () => {
     expect(visibleToSource(100, RAY_UNITS)).toBe(true);
     expect(visibleToSource(99, RAY_UNITS)).toBe(false);
     expect(visibleToSource(1, 0)).toBe(true); // the right itself reaches to the last unit
+  });
+});
+
+describe('the witness of care: the eye that vouches earns a seventh', () => {
+  it('a seventh of a ray, floored to a unit', () => {
+    expect(WITNESS_SHARE_DENOMINATOR).toBe(7);
+    expect(witnessShareUnits()).toBe(14);        // floor(100 / 7)
+    expect(witnessShareUnits(700)).toBe(100);    // one whole ray of a week's care
+  });
+
+  it('AI-confirmed care: the carer keeps their whole ray, no witness holds light', () => {
+    const rays = kindleRays({ confirmed: true, treeAlive: true, carerUid: 'alice' });
+    expect(rays).toEqual([{ holderUid: 'alice', role: 'carer', units: RAY_UNITS }]);
+  });
+
+  it('a human witness earns a seventh, ADDITIONAL — the carer\'s ray is untouched', () => {
+    const rays = kindleRays({ confirmed: true, treeAlive: true, carerUid: 'alice', witnessUid: 'bob' });
+    expect(rays).toEqual([
+      { holderUid: 'alice', role: 'carer', units: RAY_UNITS },
+      { holderUid: 'bob', role: 'witness', units: witnessShareUnits() },
+    ]);
+    // The carer still receives a whole ray — the seventh is new light, not a fee.
+    expect(rays.find(r => r.role === 'carer')!.units).toBe(RAY_UNITS);
+  });
+
+  it('no one witnesses their own care: a carer confirming themself adds no witness ray', () => {
+    const rays = kindleRays({ confirmed: true, treeAlive: true, carerUid: 'alice', witnessUid: 'alice' });
+    expect(rays).toEqual([{ holderUid: 'alice', role: 'carer', units: RAY_UNITS }]);
+  });
+
+  it('the sun still gates: unconfirmed or lifeless care kindles nothing, witness or not', () => {
+    expect(kindleRays({ confirmed: false, treeAlive: true, carerUid: 'alice', witnessUid: 'bob' })).toEqual([]);
+    expect(kindleRays({ confirmed: true, treeAlive: false, carerUid: 'alice', witnessUid: 'bob' })).toEqual([]);
   });
 });

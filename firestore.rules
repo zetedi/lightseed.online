@@ -640,6 +640,16 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Rays — light kindled from witnessed care (the sun ring; domain/light.ts). SERVER-ONLY:
+    // no client may ever write a ray, so light can never be self-minted (the mint lives in
+    // functions/onWateringKindled|onWateringConfirmed, admin SDK, bypassing these rules).
+    // SOLITARY LIGHT IS PRIVATE (ring 2026-07-20): a being reads only their OWN rays; the
+    // community glow is a later, aggregated view, never another being's individual light.
+    match /rays/{rayId} {
+      allow read: if isSignedIn() && (resource.data.holderUid == request.auth.uid || isStaff());
+      allow write: if false;
+    }
+
     match /alignments/{id} {
       allow read: if true;
       allow create: if isSignedIn();

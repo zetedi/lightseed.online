@@ -42,6 +42,43 @@ export const kindles = (act: CareAct): boolean => act.confirmed && act.treeAlive
 export const canKindleAgain = (lastKindledAtMs: number | null, nowMs: number): boolean =>
   lastKindledAtMs === null || nowMs - lastKindledAtMs >= DAY_MS;
 
+// The witness's seventh (ring 2026-07-20, "the witness of care"): light enters ONLY through
+// witnessed care, so the eye that vouches co-creates the light and its own care flows back to
+// it. A HUMAN witness kindles 1/7 of a ray, ADDITIONAL (the carer keeps their whole ray, so a
+// day's sleep stays covered exactly); it funds the web of trust and is the engine of community
+// formation, since guarding another's tree becomes a source of light. The AI witness holds no
+// light (not a being), and no one witnesses their own care.
+export const WITNESS_SHARE_DENOMINATOR = 7;
+export const witnessShareUnits = (rayUnits: number = RAY_UNITS): number =>
+  Math.floor(rayUnits / WITNESS_SHARE_DENOMINATOR);
+
+// What a confirmed care brings into the world: the carer's whole ray, plus a human witness's
+// seventh when the witness is a real being other than the carer. The ONE allocation rule the
+// server mint mirrors and the tests share; unwitnessed or lifeless care kindles nothing (the sun).
+export interface KindleInput {
+  confirmed: boolean;    // witnessed per the watering law (AI at threshold, or a guardian)
+  treeAlive: boolean;
+  carerUid: string;
+  // A HUMAN witness distinct from the carer (a guardian who confirmed). Absent for AI-confirmed
+  // care and for self-confirmation — neither adds a witness ray.
+  witnessUid?: string;
+}
+
+export interface KindledRay {
+  holderUid: string;
+  role: 'carer' | 'witness';
+  units: number;
+}
+
+export const kindleRays = (input: KindleInput): KindledRay[] => {
+  if (!kindles(input)) return [];
+  const rays: KindledRay[] = [{ holderUid: input.carerUid, role: 'carer', units: RAY_UNITS }];
+  if (input.witnessUid && input.witnessUid !== input.carerUid) {
+    rays.push({ holderUid: input.witnessUid, role: 'witness', units: witnessShareUnits() });
+  }
+  return rays;
+};
+
 // ── The ray: the shared shape ─────────────────────────────────────────────────────────────
 // A ray is a lid-bearing being. This is the shape every holder of one agrees on; where it
 // is stored (and how its stations chain) is the service layer's concern, later.
