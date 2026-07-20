@@ -1,3 +1,5 @@
+import { SUSTAINING_SEVEN } from './sustainingSeven';
+
 // The Pathway — the trail a being walks through the forest, from first click to a sovereign
 // community on its own domain. Pure and testable: `derivePathway` reads plain facts (already
 // available in the app shell) and answers two questions — where does this being stand, and
@@ -11,6 +13,7 @@
 //   connected → become a community member
 //   member    → follow a vision
 //   visionary → invite a circle into shared care of your tree
+//   sevening  → grow the sustaining seven: planted, witnessed, tended
 //   circling  → your circle is already a community — name it (the keystone)
 //   founding  → root it on its own domain, then tailor its appearance
 //   sovereign → the path is walked; keep tending
@@ -23,6 +26,7 @@ export type PathwayStage =
   | 'connected'
   | 'member'
   | 'visionary'
+  | 'sevening'
   | 'circling'
   | 'founding'
   | 'sovereign';
@@ -30,7 +34,7 @@ export type PathwayStage =
 // Ordered ladder — index in this array is the progress shown by the UI's dots.
 export const PATHWAY_STAGES: readonly PathwayStage[] = [
   'visitor', 'invited', 'rooted', 'tending', 'connected',
-  'member', 'visionary', 'circling', 'founding', 'sovereign',
+  'member', 'visionary', 'sevening', 'circling', 'founding', 'sovereign',
 ];
 
 // Every actionable step on the trail. 'founding' carries two steps (domain, then theme);
@@ -44,6 +48,7 @@ export type PathwayStepKey =
   | 'join'
   | 'followVision'
   | 'formCircle'
+  | 'plantSeven'
   | 'nameCommunity'
   | 'rootDomain'
   | 'tailorTheme';
@@ -70,6 +75,7 @@ export interface PathwayInput {
   isMember: boolean;          // holds a 'member' link to any community
   followedVisionsCount: number; // 'joined' links to visions
   circleSize: number;         // co_owner + steward links into their own trees
+  sevenSustaining: number;    // planted trees both witnessed and tended (domain/sustainingSeven)
   ownsCommunity: boolean;
   communityHasCustomDomain: boolean; // their community's domain is not a hub domain
   communityHasTheme: boolean;        // their community has a tailored theme
@@ -118,6 +124,11 @@ const STEPS: Record<PathwayStepKey, PathwayStep> = {
     label: 'Form a tree circle',
     description: 'Invite a co-guardian or steward into shared care of your tree.',
   },
+  plantSeven: {
+    key: 'plantSeven',
+    label: 'Plant your seven',
+    description: 'Seven trees, planted and tended, each witnessed by a guardian: roughly what a body asks of the living world. Invited, never enforced.',
+  },
   nameCommunity: {
     key: 'nameCommunity',
     label: 'Your circle is already a community. Name it?',
@@ -146,6 +157,7 @@ export const PATHWAY_RULESET: readonly { stage: PathwayStage; step: PathwayStep 
   { stage: 'connected', step: STEPS.join },
   { stage: 'member', step: STEPS.followVision },
   { stage: 'visionary', step: STEPS.formCircle },
+  { stage: 'sevening', step: STEPS.plantSeven },
   { stage: 'circling', step: STEPS.nameCommunity },
   { stage: 'founding', step: STEPS.rootDomain },
   { stage: 'founding', step: STEPS.tailorTheme },
@@ -173,6 +185,9 @@ export const derivePathway = (input: PathwayInput, now: number = Date.now()): Pa
   if (!input.isMember && !input.ownsCommunity) return state('connected', 'join');
   if (input.followedVisionsCount === 0) return state('member', 'followVision');
   if (input.circleSize === 0) return state('visionary', 'formCircle');
+  // The long rung: the floor of seven (tree circles become communities by geometry, so the
+  // seven comes before naming one). Invited, never enforced — the trail points, it never gates.
+  if (input.sevenSustaining < SUSTAINING_SEVEN) return state('sevening', 'plantSeven');
   if (!input.ownsCommunity) return state('circling', 'nameCommunity');
   if (!input.communityHasCustomDomain) return state('founding', 'rootDomain');
   if (!input.communityHasTheme) return state('founding', 'tailorTheme');

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { firestoreStore } from '../adapters/firestore';
 import { getMyCommunities } from '../services/firebase';
 import { isHubDomain } from './useConfig';
+import type { GuardianEdge } from '../domain/sustainingSeven';
 import type { Lifetree, Lightseed } from '../types';
 
 // The pathway's link-borne facts — the signals derivePathway needs that don't already live in
@@ -14,6 +15,9 @@ export interface PathwayFacts {
   isMember: boolean;
   followedVisionsCount: number;
   circleSize: number;
+  // The guardian edges into my trees (rel 'guardian' from the same linksTo sweep) — the
+  // sustaining seven's witnesses; App derives sevenSustaining from these + the live trees.
+  guardianEdges: GuardianEdge[];
   ownsCommunity: boolean;
   communityHasCustomDomain: boolean;
   communityHasTheme: boolean;
@@ -24,6 +28,7 @@ const EMPTY: PathwayFacts = {
   isMember: false,
   followedVisionsCount: 0,
   circleSize: 0,
+  guardianEdges: [],
   ownsCommunity: false,
   communityHasCustomDomain: false,
   communityHasTheme: false,
@@ -51,12 +56,14 @@ export const usePathwayFacts = (lightseed: Lightseed | null, myTrees: Lifetree[]
       getMyCommunities(uid).catch(() => []),
     ]).then(([memberLinks, joinedLinks, perTreeLinks, communities]) => {
       if (!alive) return;
-      const circleSize = perTreeLinks.flat().filter(l => l.rel === 'co_owner' || l.rel === 'steward').length;
+      const flatLinks = perTreeLinks.flat();
+      const circleSize = flatLinks.filter(l => l.rel === 'co_owner' || l.rel === 'steward').length;
       setFacts({
         loaded: true,
         isMember: memberLinks.length > 0,
         followedVisionsCount: joinedLinks.length,
         circleSize,
+        guardianEdges: flatLinks.filter(l => l.rel === 'guardian').map(l => ({ from: l.from, to: l.to })),
         ownsCommunity: communities.length > 0,
         // With several communities, ANY of them counts — the path asks whether the walker
         // has rooted a domain / tailored a theme somewhere, not on an arbitrary first pick.

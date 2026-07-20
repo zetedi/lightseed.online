@@ -19,6 +19,7 @@ const being = (over: Partial<PathwayInput> = {}): PathwayInput => ({
   isMember: true,
   followedVisionsCount: 1,
   circleSize: 2,
+  sevenSustaining: 7,
   ownsCommunity: true,
   communityHasCustomDomain: true,
   communityHasTheme: true,
@@ -97,6 +98,15 @@ describe('derivePathway — the ladder, stage by stage', () => {
     expect(p.next?.key).toBe('formCircle');
   });
 
+  it('the long rung: a circle formed but the seven not yet standing → plant your seven', () => {
+    const p = derivePathway(being({ sevenSustaining: 3, ownsCommunity: false }), NOW);
+    expect(p.stage).toBe('sevening');
+    expect(p.next?.key).toBe('plantSeven');
+    // The floor completes at seven exactly — six is still the long rung.
+    expect(derivePathway(being({ sevenSustaining: 6 }), NOW).stage).toBe('sevening');
+    expect(derivePathway(being({ sevenSustaining: 7, ownsCommunity: false }), NOW).stage).toBe('circling');
+  });
+
   it('the keystone: a circle without a community is asked to name itself', () => {
     const p = derivePathway(being({ ownsCommunity: false, communityHasCustomDomain: false, communityHasTheme: false }), NOW);
     expect(p.stage).toBe('circling');
@@ -132,6 +142,7 @@ describe('derivePathway — shape and progression', () => {
       [being({ isMember: false, ownsCommunity: false }), 'connected'],
       [being({ followedVisionsCount: 0 }), 'member'],
       [being({ circleSize: 0 }), 'visionary'],
+      [being({ sevenSustaining: 0 }), 'sevening'],
       [being({ ownsCommunity: false }), 'circling'],
       [being({ communityHasCustomDomain: false }), 'founding'],
       [being(), 'sovereign'],
@@ -152,6 +163,7 @@ describe('derivePathway — shape and progression', () => {
       being({ isMember: false, ownsCommunity: false }),
       being({ followedVisionsCount: 0 }),
       being({ circleSize: 0 }),
+      being({ sevenSustaining: 0 }),
       being({ ownsCommunity: false }),
       being({ communityHasCustomDomain: false }),
       being({ communityHasTheme: false }),
@@ -172,7 +184,8 @@ describe('derivePathway — shape and progression', () => {
       being({ connectionsCount: 0, isMember: false, followedVisionsCount: 0, circleSize: 0, ownsCommunity: false, communityHasCustomDomain: false, communityHasTheme: false }),
       being({ isMember: false, followedVisionsCount: 0, circleSize: 0, ownsCommunity: false, communityHasCustomDomain: false, communityHasTheme: false }),
       being({ followedVisionsCount: 0, circleSize: 0, ownsCommunity: false, communityHasCustomDomain: false, communityHasTheme: false }),
-      being({ circleSize: 0, ownsCommunity: false, communityHasCustomDomain: false, communityHasTheme: false }),
+      being({ circleSize: 0, sevenSustaining: 2, ownsCommunity: false, communityHasCustomDomain: false, communityHasTheme: false }),
+      being({ sevenSustaining: 2, ownsCommunity: false, communityHasCustomDomain: false, communityHasTheme: false }),
       being({ ownsCommunity: false, communityHasCustomDomain: false, communityHasTheme: false }),
       being({ communityHasCustomDomain: false, communityHasTheme: false }),
       being({ communityHasTheme: false }),

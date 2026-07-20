@@ -50,6 +50,7 @@ const CAPTIONS: Record<PathwayStepKey, string> = {
   join: 'Join',
   followVision: 'Follow',
   formCircle: 'Invite',
+  plantSeven: 'Seven',
   nameCommunity: 'Name it',
   rootDomain: 'Root it',
   tailorTheme: 'Tailor',

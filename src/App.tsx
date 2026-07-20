@@ -77,6 +77,7 @@ import { PathwayCTA } from './components/PathwayCTA';
 import { usePathwayFacts } from './hooks/usePathwayFacts';
 import type { PathwayInput, PathwayStepKey } from './domain/pathway';
 import { derivePathway } from './domain/pathway';
+import { sustainingSeven } from './domain/sustainingSeven';
 import { PathOverview } from './components/PathOverview';
 import { Modal } from './components/ui/Modal';
 import { useImageUpload } from './hooks/useImageUpload';
@@ -661,6 +662,8 @@ const AppContent = () => {
             isMember: pathwayFacts.isMember,
             followedVisionsCount: pathwayFacts.followedVisionsCount,
             circleSize: pathwayFacts.circleSize,
+            // The floor of seven, read by the same pure rule as the profile card.
+            sevenSustaining: lightseed ? sustainingSeven(myTrees, pathwayFacts.guardianEdges, lightseed.uid).sustaining : 0,
             ownsCommunity: pathwayFacts.ownsCommunity,
             communityHasCustomDomain: pathwayFacts.communityHasCustomDomain,
             communityHasTheme: pathwayFacts.communityHasTheme,
@@ -679,6 +682,7 @@ const AppContent = () => {
         join: () => setTab('communities'),
         followVision: () => setTab('visions'),
         formCircle: () => openTreeSection(myTrees[0], 'circle'),
+        plantSeven: () => setTab('profile'),
         nameCommunity: () => setTab('communities'),
         rootDomain: () => setTab('communities'),
         tailorTheme: () => setTab('communities'),
