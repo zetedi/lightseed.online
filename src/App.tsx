@@ -58,6 +58,7 @@ import { passesForestFilter, canViewTree } from './domain/views/forest';
 import { isWateringOverdue } from './domain/watering';
 import { isBedTree } from './domain/bed';
 import { Loading } from './components/ui/Loading';
+import { NetworkStatus } from './components/ui/NetworkStatus';
 import { SectionHeader } from './components/ui/SectionHeader';
 import { ScrollChevrons } from './components/ui/ScrollChevrons';
 import { UpdateToast } from './components/ui/UpdateToast';
@@ -1527,6 +1528,8 @@ const App = () => {
     <LanguageProvider>
       <SessionProvider>
         <AppContent />
+        {/* The network's face: slow-wire loader, upload progress, offline snackbar. */}
+        <NetworkStatus />
       </SessionProvider>
     </LanguageProvider>
   );

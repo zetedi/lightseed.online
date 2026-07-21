@@ -6,6 +6,29 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-21 · The sun learns infinity, and the wire tells the truth**: three asks from
+Zoltán's phone, one honest layer. **(1) The loader**: the waiting sun no longer shows the
+circle it rides; the track is invisible now, and the path is a LEMNISCATE, two tangent circles
+ridden as an infinity: around the left one, and from the touching point around the right one
+the opposite way (both tangents at the touch point are vertical, so the crossing is seamless).
+Same technique as before (CSS offset-path, now a path instead of a circle), same little sun,
+same glow. **(2) The network's face**: a tiny shared store (services/network) now carries
+three truths: ONLINE (the browser's own events), IN FLIGHT (a patched fetch counts one-shot
+requests: callables, storage, AI calls, sign-ins), UPLOADING (0..100 from the storage task).
+One root component (NetworkStatus) renders them: when tracked requests hold the wire past a
+700 ms grace the infinity floats in top-centre, never blocking a tap, and leaves when the wire
+quiets; when the connection is gone a red snackbar sits at the bottom saying so plainly.
+Firestore is deliberately NOT counted: its listen channels live for hours and its cache
+answers instantly, so counting it would pin the loader on forever and say nothing true.
+**(3) Upload progress**: every photo upload rides ONE door (uploadImage), which switched to
+the resumable task and reports its percent to the store, so "Uploading: N%" appears under the
+loader wherever the being happens to be standing, with an optional per-call onProgress for
+faces that want it inline. Fast requests never flash anything; the grace period keeps the app
+feeling instant. Gates: check 356, warnings held at the pre-existing six. *(The sun that
+kindles the rays now also draws the sign of endlessness while you wait.)*
+
+---
+
 **2026-07-21 · One hundred and eight, and the sun can restart**: the ray finds its true number.
 RAY_UNITS moves from 100 to **108**, Zoltán's call, and the number is not decoration: 108 is
 the GEOMETRY OF LIGHT ITSELF. The Sun stands about 108 solar diameters from Earth; the Moon

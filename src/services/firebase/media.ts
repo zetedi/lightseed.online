@@ -1,5 +1,6 @@
-import { ref, uploadBytes, getDownloadURL, uploadString } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL, uploadString } from 'firebase/storage';
 import { storage } from './core';
+import { beginNetwork, endNetwork, setUploadProgress } from '../network';
 
 // Resize (cap the longest edge) and re-encode as WebP — keeps uploads small.
 const toWebP = (file: File, quality = 0.82, maxDim = 1600): Promise<Blob> =>
@@ -33,12 +34,32 @@ const toWebP = (file: File, quality = 0.82, maxDim = 1600): Promise<Blob> =>
         img.src = url;
     });
 
-export const uploadImage = async (file: File, path: string): Promise<string> => {
+// Every photo upload in the app rides through here, so ONE integration point gives the whole
+// app live transfer status: the resumable task reports 0..100 to the network store, and the
+// global NetworkStatus badge shows "Uploading: N%" under the loader wherever the user is.
+export const uploadImage = async (file: File, path: string, onProgress?: (pct: number) => void): Promise<string> => {
     const webpPath = path.replace(/\.[^.]+$/, '') + '.webp';
     const blob = await toWebP(file);
     const storageRef = ref(storage, webpPath);
-    await uploadBytes(storageRef, blob, { contentType: 'image/webp' });
-    return await getDownloadURL(storageRef);
+    beginNetwork();
+    setUploadProgress(0);
+    try {
+        await new Promise<void>((resolve, reject) => {
+            const task = uploadBytesResumable(storageRef, blob, { contentType: 'image/webp' });
+            task.on('state_changed',
+                snap => {
+                    const pct = snap.totalBytes > 0 ? Math.round((snap.bytesTransferred / snap.totalBytes) * 100) : 0;
+                    setUploadProgress(pct);
+                    onProgress?.(pct);
+                },
+                reject,
+                () => resolve());
+        });
+        return await getDownloadURL(storageRef);
+    } finally {
+        setUploadProgress(null);
+        endNetwork();
+    }
 };
 
 export const uploadBase64Image = async (base64String: string, path: string): Promise<string> => {
