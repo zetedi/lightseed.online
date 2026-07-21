@@ -67,7 +67,7 @@ export const TreeParticipants = ({ entityId, currentUserId, myTrees = [] }: {
                                 <button
                                     onClick={() => toggle(t, false)}
                                     disabled={busyId === t.id}
-                                    className="shrink-0 rounded-full border border-slate-200 px-3 py-1 text-xs font-bold text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                                    className="shrink-0 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
                                 >
                                     {busyId === t.id ? '…' : 'Remove'}
                                 </button>

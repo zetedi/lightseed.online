@@ -9,9 +9,8 @@ import { useEffect, useState } from 'react';
  * see ResonanceScan, which runs the same sun along the container's border.
  *
  * `size` is the full width of the figure (two circles side by side; height is size / 2).
- * `compact` trims the padding for badge-sized placements (the global network indicator).
  */
-export const Loading = ({ timeoutMs = 12000, label, size = 80, compact = false }: { timeoutMs?: number; label?: string; size?: number; compact?: boolean }) => {
+export const Loading = ({ timeoutMs = 12000, label, size = 80 }: { timeoutMs?: number; label?: string; size?: number }) => {
     const [timedOut, setTimedOut] = useState(false);
 
     useEffect(() => {
@@ -27,7 +26,7 @@ export const Loading = ({ timeoutMs = 12000, label, size = 80, compact = false }
     const d = `M ${2 * r} ${r} A ${r} ${r} 0 0 0 0 ${r} A ${r} ${r} 0 0 0 ${2 * r} ${r} A ${r} ${r} 0 0 1 ${4 * r} ${r} A ${r} ${r} 0 0 1 ${2 * r} ${r} Z`;
 
     return (
-        <div className={`flex flex-col items-center justify-center ${compact ? 'gap-1 p-2' : 'gap-4 p-8'}`} aria-label="Loading">
+        <div className="flex flex-col items-center justify-center gap-4 p-8" aria-label="Loading">
             <style>{`@keyframes lightseed-orbit { from { offset-distance: 0%; } to { offset-distance: 100%; } }`}</style>
             <div className="relative" style={{ width: size, height: size / 2 }}>
                 <span

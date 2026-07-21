@@ -6,6 +6,49 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-22 · The two heroes wear one face**: Zoltán put the event and the tree side by side
+and the family resemblance was not there yet; this ring corrects the morning sweep's tree
+arrangement with a better one. ONE GRAMMAR for every being's header now: back on the left of
+the top bar; the ACTIONS on its right (the tree's whole action row joins Delete up there on
+desktop; on mobile the row stays in the hero footer and Delete shrinks to its icon); SHARE and
+QR ride beside the NAME on both; the avatar is the same size on both; and the SHIELD is the
+one validation marker, worn ON the avatar (green when validated, grey when not, clickable for
+those who may act), replacing the tree's two separate validation signs. Edit and Delete are
+now SHARED PILLS (ui/HeroPills: label on desktop, icon on mobile, one 32px height,
+community-themeable), used by both profiles and meant for every profile that edits or deletes
+anything, so the same hand always looks like the same hand. The event's hero wears the tree's
+exact clothes (same image dimming, same gradient, same page background), its About became
+EVENT DETAILS (menu and title both), and its QR left the top bar for the name row. **The
+upload found its place**: a small bottom-centre card with a real progress bar (photo, percent,
+one look for every upload); the vision picker's stray spinner became the one lemniscate sun.
+Gates: check 356, warnings held at the pre-existing six. *(A correction one ring after the
+sweep: the loop is allowed to disagree with itself, as long as it says so.)*
+
+---
+
+**2026-07-22 · The morning sweep: one sun, one bar, a living menu**: five small stones from
+Zoltán's walk, each set properly. **(1) One sun, not two**: the global slow-wire indicator no
+longer draws its own loader (a page's own sun plus the floating badge clashed); instead the
+whole container dims a touch while the wire is busy, a little darker than when it's loaded,
+and brightens back when quiet. The upload keeps its own small pill ("Uploading: N%"); the
+lemniscate stays the one and only sun, drawn by the page that waits. **(2) The living menu**:
+opening a Light House from the map left the main menu dead, because the house renders in a
+FIXED wrapper and tab changes only switched the page underneath it. The menu's setTab now
+closes EVERY being-detail overlay first (tree, vision, pulse, light house, community,
+alignment, covenant), the same sweep the profile avatar already did; a tab tap always lands on
+its tab. **(3) One height on the event row**: edit, delete, the weather chip, the Event chip
+and the QR all sit at the same 32px now; nothing juts. The participants' Remove matched Add.
+**(4) The translation door narrowed**: the Translate button was a full-width slab; it stands
+centred at its own width now. **(5) The tree profile consolidated**: back, QR and delete left
+their three scattered homes (back beside the avatar, QR in the name row, delete floating far
+right) and moved into the STANDARD BeingProfile top bar: back on the left, QR + delete on the
+right, like every other being wears it; the name row keeps only what belongs to the name
+(share, badges, validation). Gates: check 356, warnings held at the pre-existing six.
+*(Polish is not vanity: every one of these was a small lie the interface told about where
+things live.)*
+
+---
+
 **2026-07-21 · The sun learns infinity, and the wire tells the truth**: three asks from
 Zoltán's phone, one honest layer. **(1) The loader**: the waiting sun no longer shows the
 circle it rides; the track is invisible now, and the path is a LEMNISCATE, two tangent circles

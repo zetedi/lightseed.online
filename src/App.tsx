@@ -1133,7 +1133,15 @@ const AppContent = () => {
                 {(
                     <Navigation
                         activeTab={tab}
-                        setTab={(t: string) => { setSelectedTree(null); setSelectedVision(null); setSelectedPulse(null); setTab(t); }}
+                        // A menu tab ALWAYS lands on its tab: close EVERY being-detail overlay first.
+                        // The Light House renders in a FIXED wrapper, so without this the tab
+                        // changed underneath while the house stayed on top (a dead-looking menu).
+                        setTab={(t: string) => {
+                            setSelectedTree(null); setSelectedVision(null); setSelectedPulse(null);
+                            setViewingLightHouse(null); setSelectedCommunity(null);
+                            setSelectedAlignment(null); setSelectedCovenantId(null);
+                            setTab(t);
+                        }}
                         onLogin={() => setShowAuthModal(true)}
                         onLogout={() => { logout(); setCarryingTree(null); setTab('dashboard'); }}
                         onPlant={() => openPlant()}

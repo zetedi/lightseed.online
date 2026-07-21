@@ -3,8 +3,9 @@ import { useSession } from '../contexts/SessionContext';
 import { showAlert, showConfirm } from './ui/Dialog';
 import { deleteCommunityEvent } from '../services/firebase';
 import { announce } from '../services/refreshBus';
-import { SuperDot } from './ui/SuperDot';
 import { BeingQr } from './ui/BeingQr';
+import { EditPill, DeletePill } from './ui/HeroPills';
+import { beingPath } from '../domain/beingLink';
 import { mintBeingQr } from '../services/firebase/beings';
 import { Pulse, Lifetree } from '../types';
 import { Icons } from './ui/Icons';
@@ -58,8 +59,19 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const images = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
 
+    // Share rides beside the name, exactly like the tree profile. The link is the being door
+    // (/b/<lid>) when the event carries its true name; older events fall back to the app root.
+    const [shared, setShared] = useState(false);
+    const handleShare = async () => {
+        const url = pulse.lid ? `${window.location.origin}${beingPath(pulse.lid)}` : window.location.origin;
+        try {
+            if (navigator.share) await navigator.share({ title: pulse.title, url });
+            else { await navigator.clipboard.writeText(url); setShared(true); setTimeout(() => setShared(false), 1500); }
+        } catch { /* user cancelled the share sheet */ }
+    };
+
     const sections: SectionItem[] = [
-        { key: 'about', label: 'About', icon: <Icons.Eye /> },
+        { key: 'about', label: 'Event details', icon: <Icons.Info /> },
         { key: 'participants', label: 'Participants', icon: <Icons.Users /> },
         { key: 'reflect', label: 'Reflect', icon: <Icons.Wizard /> },
     ];
@@ -67,8 +79,16 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
     const whenText = pulse.eventDate ? new Date(pulse.eventDate).toLocaleString() : null;
 
     return (
-        <div className="min-h-screen animate-in fade-in zoom-in-95 duration-300 pb-20 bg-slate-50">
-            <ProfileHero heroImageUrl={images[0]} style={theme?.primary ? { background: theme.primary } : undefined}>
+        <div className="min-h-screen animate-in fade-in zoom-in-95 duration-300 pb-20">
+            {/* The hero wears the tree view's exact clothes: same image dimming, same gradient,
+                so an event and a tree read as one family of beings. */}
+            <ProfileHero
+                heroImageUrl={images[0]}
+                imageClassName="opacity-70"
+                alwaysOverlay
+                overlayClassName="bg-gradient-to-b from-slate-900/45 via-slate-900/55 to-slate-900/85"
+                style={theme?.primary ? { background: theme.primary } : undefined}
+            >
                 {/* Top bar — back + edit */}
                 <div className="flex items-center justify-between mb-6">
                     <button onClick={onClose} className="flex items-center gap-2 text-white/70 hover:text-white text-sm font-medium">
@@ -76,29 +96,18 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
                         <span>Back</span>
                     </button>
                     <div className="flex items-center gap-2">
-                        {canEdit && onEdit && (
-                            <button onClick={onEdit} style={theme?.primary ? { backgroundColor: theme.primary } : undefined} className="flex items-center gap-1.5 rounded-full bg-sky-600 px-4 py-2 text-xs font-bold text-white shadow-sm ring-1 ring-white/25 transition-all hover:brightness-110">
-                                <Icons.Pencil /> Edit
-                            </button>
-                        )}
-                        {canDelete && (
-                            <button onClick={handleDelete} disabled={isDeleting} className="relative flex items-center gap-1.5 rounded-full border border-red-400/40 bg-red-500/20 px-4 py-2 text-xs font-bold text-red-200 shadow-sm transition-colors hover:bg-red-500 hover:text-white disabled:opacity-50">
-                                <Icons.Trash /> Delete
-                                {!isAuthor && <SuperDot />}
-                            </button>
-                        )}
-                        <EventWeather location={pulse.eventLocation} dateIso={pulse.eventDate} className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-slate-100" />
-                        <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-slate-200">Event</span>
-                        <BeingQr lid={pulse.lid} name={pulse.title} savedHref={pulse.qr?.href}
-                            canMint={isAuthor || isAdmin || isSuperAdmin}
-                            onMint={(href) => mintBeingQr('pulses', pulse.id, href)}
-                            className="h-8 w-8 border border-white/15 bg-white/10 text-slate-200 hover:bg-white/25 hover:text-white" />
+                        {/* One height for the whole action row (32px): the shared Edit/Delete
+                            pills and the chips. The QR lives beside the name, like the tree's. */}
+                        {canEdit && onEdit && <EditPill onClick={onEdit} themeColor={theme?.primary} />}
+                        {canDelete && <DeletePill onClick={handleDelete} disabled={isDeleting} staffDot={!isAuthor} title="Delete event" />}
+                        <EventWeather location={pulse.eventLocation} dateIso={pulse.eventDate} className="rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs text-slate-100" />
+                        <span className="hidden rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-200 sm:inline-flex">Event</span>
                     </div>
                 </div>
 
                 {/* Avatar + name + meta on one wrapping row */}
                 <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5">
-                    <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-xl">
+                    <div className="flex h-16 w-16 md:h-24 md:w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-xl">
                         {images[0] ? (
                             <img src={images[0]} className="h-full w-full object-cover" alt={pulse.title} referrerPolicy="no-referrer" />
                         ) : (
@@ -108,6 +117,14 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
                     <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 justify-center sm:justify-start">
                             <h1 dir="auto" className="min-w-0 break-words text-2xl font-light tracking-wide">{pulse.title}</h1>
+                            {/* Share + QR ride beside the name, exactly like the tree profile. */}
+                            <button onClick={handleShare} title="Share this event" className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-bold text-white transition-colors hover:bg-white/25">
+                                <Icons.Link /> <span>{shared ? 'Copied' : 'Share'}</span>
+                            </button>
+                            <BeingQr lid={pulse.lid} name={pulse.title} savedHref={pulse.qr?.href}
+                                canMint={isAuthor || isAdmin || isSuperAdmin}
+                                onMint={(href) => mintBeingQr('pulses', pulse.id, href)}
+                                className="h-7 w-7 bg-white/15 text-white hover:bg-white/25" />
                             {whenText && (
                                 <span className="inline-flex items-center gap-1 rounded-full border border-white/25 bg-white/10 px-2.5 py-0.5 text-xs font-medium text-white/90">
                                     {whenText}
@@ -138,7 +155,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
             >
                 {section === 'about' && (
                     <div>
-                        <SectionTitle title="About this event" sub="When and where it gathers, and why." />
+                        <SectionTitle title="Event details" sub="When and where it gathers, and why." />
                         {images.length > 0 && (
                             <div className="relative mb-6 h-72 w-full overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
                                 <img src={images[activeImageIndex]} alt={pulse.title} className="h-full w-full object-cover" />

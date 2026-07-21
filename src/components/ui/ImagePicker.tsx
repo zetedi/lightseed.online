@@ -2,6 +2,7 @@
 import { useRef, useState, ChangeEvent, ReactNode } from 'react';
 import { Icons } from './Icons';
 import { ImageCropModal } from './ImageCropModal';
+import { Loading } from './Loading';
 
 interface ImagePickerProps {
     onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
@@ -70,7 +71,8 @@ export const ImagePicker = ({ onChange, onImageSelect, previewUrl, loading = fal
                 <input type="file" ref={fileInput} className="hidden" accept="image/*" onChange={handleFileChange} />
 
                 {loading ? (
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+                    /* The one sun, here too — the global card carries the percent. */
+                    <Loading size={56} timeoutMs={30000} />
                 ) : previewUrl ? (
                     <img src={previewUrl} className="w-full h-full object-cover rounded-xl" />
                 ) : (

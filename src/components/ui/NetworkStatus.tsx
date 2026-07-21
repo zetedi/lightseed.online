@@ -1,11 +1,12 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
-import { Loading } from './Loading';
 import { subscribeNet, getNetSnapshot, initNetworkWatch } from '../../services/network';
 
 // THE NETWORK'S FACE — mounted once at the app root. Three truths, told plainly:
-//   SLOW: when tracked requests stay on the wire past the grace period, the infinity loader
-//         floats in (top centre, never blocking a tap) until the wire is quiet again.
-//   UPLOADING: a running photo upload shows immediately, "Uploading: N%" under the loader.
+//   SLOW: when tracked requests stay on the wire past the grace period, the whole container
+//         dims a touch (a little darker than when it's loaded) until the wire is quiet. No
+//         second sun: pages already show their own loader, and two suns clashed (Zoltán,
+//         2026-07-22) — the dim is the global signal, the page's loader the local one.
+//   UPLOADING: a running photo upload shows immediately as an "Uploading: N%" pill.
 //   OFFLINE: a red snackbar at the bottom for as long as the connection is gone.
 // Fast requests never flash anything: the grace period keeps the app feeling instant.
 
@@ -24,17 +25,26 @@ export const NetworkStatus = () => {
         return () => window.clearTimeout(t);
     }, [busy]);
 
-    const showLoader = (slow && busy) || net.uploadPct !== null;
-
     return (
         <>
-            {showLoader && (
-                <div className="pointer-events-none fixed left-1/2 top-20 z-[90] -translate-x-1/2">
-                    <div className="flex flex-col items-center rounded-2xl border border-slate-100 bg-white/95 px-4 py-1.5 shadow-lg backdrop-blur">
-                        <Loading compact size={56} timeoutMs={60000} />
-                        {net.uploadPct !== null && (
-                            <p className="pb-1 text-[11px] font-bold text-amber-600">Uploading: {net.uploadPct}%</p>
-                        )}
+            {slow && busy && (
+                <div className="pointer-events-none fixed inset-0 z-[85] bg-slate-900/10 animate-in fade-in duration-500" aria-hidden="true" />
+            )}
+            {net.uploadPct !== null && (
+                /* Bottom centre, out of the header's way: a small card with a real progress
+                   bar, one look for every upload in the app (no more stray blue circles). */
+                <div className="pointer-events-none fixed bottom-6 left-1/2 z-[95] -translate-x-1/2">
+                    <div className="w-60 rounded-2xl border border-amber-200/80 bg-white/95 px-4 py-3 shadow-xl backdrop-blur">
+                        <div className="mb-2 flex items-center justify-between text-[11px] font-bold">
+                            <span className="text-slate-600">Uploading photo</span>
+                            <span className="tabular-nums text-amber-600">{net.uploadPct}%</span>
+                        </div>
+                        <div className="h-1.5 overflow-hidden rounded-full bg-amber-100">
+                            <div
+                                className="h-full rounded-full bg-gradient-to-r from-amber-300 to-amber-500 transition-[width] duration-300"
+                                style={{ width: `${net.uploadPct}%` }}
+                            />
+                        </div>
                     </div>
                 </div>
             )}

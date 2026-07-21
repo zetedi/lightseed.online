@@ -9,7 +9,7 @@ import { BeingQr } from './ui/BeingQr';
 import { mintBeingQr } from '../services/firebase/beings';
 import { getLightHouseById } from '../services/firebase';
 import type { LightHouse } from '../domain/lightHouse';
-import { ValidationBadge } from './ValidationBadge';
+import { EditPill, DeletePill } from './ui/HeroPills';
 import { updateLifetree, setTreeStatus, getPulsesByTreeId } from '../services/firebase';
 import { Pulse, type Lifetree } from '../types';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
@@ -234,7 +234,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                             />
                         )}
                         {isOwner && !isEditing && onSetDefault && <ActionBtn onClick={() => { if (!isDefaultTree) onSetDefault(); }} disabled={isDefaultTree} title={isDefaultTree ? 'Your default tree' : 'Set as default tree'} color={isDefaultTree ? `${ACTION_GREEN} ring-2 ring-white/70` : ACTION_GREEN} icon={<Icons.Star filled={isDefaultTree} />} label="Favourite" />}
-                        {canEdit && !isEditing && <ActionBtn onClick={() => { setIsEditing(true); setSection('details'); }} title={t('edit')} color="bg-slate-100 text-slate-700 hover:bg-slate-200" icon={<Icons.Pencil />} label={t('edit')} />}
+                        {canEdit && !isEditing && <EditPill onClick={() => { setIsEditing(true); setSection('details'); }} />}
                     </>
    );
 
@@ -352,6 +352,8 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
         <>
         <BeingProfile
             className="min-h-screen animate-in fade-in zoom-in-95 duration-300"
+            onClose={onClose}
+            backLabel={t('back')}
             sections={sections}
             activeSection={section}
             onSectionChange={(k) => setSection(k as TreeSection)}
@@ -383,12 +385,18 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                         </button>
                     ),
                 },
+                // The standard top bar (BeingProfile), worn the same as the event's: back on
+                // the left; the ACTION ROW (desktop) + the shared Delete pill on the right.
+                // QR and Share ride beside the name; the shield marks the avatar. On mobile the
+                // action row stays in the hero footer, and Delete shrinks to its icon.
+                actions: !isEditing ? (
+                    <>
+                        <div className="hidden flex-wrap items-center justify-end gap-2 md:flex">{actionRow}</div>
+                        {canDelete && <DeletePill onClick={() => setShowDeleteModal(true)} staffDot={deleteIsStaffOnly} title="Delete tree" />}
+                    </>
+                ) : undefined,
                 body: (
                     <div className="flex items-center gap-3 sm:gap-4">
-                    {/* Back — left of the avatar; returns to wherever you came from. */}
-                    <button onClick={onClose} title={t('back_forest')} className="shrink-0 rounded-full bg-white/15 p-2.5 text-white transition-colors hover:bg-white/25">
-                        <Icons.ArrowLeft />
-                    </button>
                     {/* Avatar — the latest growth image. */}
                     <div className="relative shrink-0">
                         {heroImg
@@ -398,7 +406,25 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                             : tree.id === 'GENESIS_TREE'
                                 ? <img src="/mahameru.svg" alt="Mahameru" className="h-16 w-16 rounded-full border-4 border-white object-cover shadow-xl md:h-24 md:w-24" />
                                 : <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-emerald-700 text-white shadow-xl md:h-24 md:w-24"><Icons.Tree /></div>}
-                        {hasValidationBadge && <div className="absolute -bottom-1 -right-1"><ValidationBadge compact /></div>}
+                        {/* The shield IS the validation marker, worn on the avatar: green when
+                            validated, grey when not yet; for those who may act it opens the modal. */}
+                        <span className="absolute -bottom-1 -right-1 inline-flex">
+                            <button
+                                type="button"
+                                disabled={!showValidateAction}
+                                onClick={async () => {
+                                    if (!showValidateAction) return;
+                                    const nv = !hasValidationBadge;
+                                    if (await showConfirm(nv ? 'Validate this tree?' : 'Remove validation from this tree?', { title: 'Validation' })) onValidate(tree.id, nv);
+                                }}
+                                title={hasValidationBadge ? (showValidateAction ? 'Validated: remove (staff)' : 'Validated') : (showValidateAction ? t('validate_action') : 'Not validated yet')}
+                                aria-label={hasValidationBadge ? 'Validated' : 'Not validated'}
+                                className={`inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-white shadow-md transition-transform ${hasValidationBadge ? 'bg-emerald-500 text-white' : 'bg-slate-500/90 text-white/85'} ${showValidateAction ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}
+                            >
+                                <Icons.ShieldCheck className="h-4 w-4 text-current" />
+                            </button>
+                            {hasValidationBadge && showValidateAction && <SuperDot />}
+                        </span>
                     </div>
                     <div className="min-w-0 flex-1">
                         {isEditing ? (
@@ -421,25 +447,6 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                         className="h-7 w-7 bg-white/15 text-white hover:bg-white/25" />
                                     {isNature && <span className="inline-flex items-center gap-1 rounded-full border border-white/70 bg-sky-500 px-2 py-0.5 text-[10px] font-bold"><Icons.Shield /> NATURE</span>}
                                     {isMotherTree && <span className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-black text-amber-950" title={`Holds ${holdingLightHouses.map(x => x.name).join(', ')}`}><Icons.Sun /> MOTHER TREE</span>}
-                                    {/* Validation, as one icon: grey = not yet, green = validated.
-                                        For those who may act, the icon itself opens the modal. */}
-                                    <span className="relative inline-flex shrink-0">
-                                        <button
-                                            type="button"
-                                            disabled={!showValidateAction}
-                                            onClick={async () => {
-                                                if (!showValidateAction) return;
-                                                const nv = !hasValidationBadge;
-                                                if (await showConfirm(nv ? 'Validate this tree?' : 'Remove validation from this tree?', { title: 'Validation' })) onValidate(tree.id, nv);
-                                            }}
-                                            title={hasValidationBadge ? (showValidateAction ? 'Validated: remove (staff)' : 'Validated') : (showValidateAction ? t('validate_action') : 'Not validated yet')}
-                                            aria-label={hasValidationBadge ? 'Validated' : 'Not validated'}
-                                            className={`inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/60 shadow-md transition-transform ${hasValidationBadge ? 'bg-emerald-500 text-white' : 'bg-slate-500/90 text-white/85'} ${showValidateAction ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}
-                                        >
-                                            <Icons.ShieldCheck className="h-4 w-4 text-current" />
-                                        </button>
-                                        {hasValidationBadge && showValidateAction && <SuperDot />}
-                                    </span>
                                     {tree.visibility && tree.visibility !== 'public' && <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">{tree.visibility}</span>}
                                 </div>
                                 {tree.shortTitle && <p dir="auto" className="mt-0.5 text-xs font-bold uppercase tracking-widest text-emerald-200">{tree.shortTitle}</p>}
@@ -452,21 +459,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                         </span>
                                     )}
                                 </div>
-                                <div className="mt-3 hidden flex-wrap gap-2 md:flex">{actionRow}</div>
                             </>
                         )}
                     </div>
-                    {canDelete && !isEditing && (
-                        <button
-                            onClick={() => setShowDeleteModal(true)}
-                            title="Delete tree"
-                            aria-label="Delete tree"
-                            className="relative ml-auto shrink-0 self-start rounded-full border border-red-400/30 bg-red-500/15 p-2 text-red-300 transition-colors hover:bg-red-500 hover:text-white"
-                        >
-                            <Icons.Trash />
-                            {deleteIsStaffOnly && <SuperDot />}
-                        </button>
-                    )}
                     </div>
                 ),
                 // Actions — desktop: under the hash in the name column; mobile: the footer row.
