@@ -1470,6 +1470,36 @@ export const deleteUserAsAdmin = onCall({ cors: true }, async (request) => {
     return { deleted: true, ...counts };
 });
 
+// RESET LIGHT (ring 2026-07-21) — the testing-phase restart: empties the WHOLE light economy,
+// every ray and every glow, in one stroke. NODE OWNER ONLY (not staff): this erases value, so
+// only the hand that answers for the instance may pull it. Nothing else is touched; the care
+// was real and remains on the chains and tending records — the deleted light leaves the trees
+// in better shape, so it is not lost. Light re-enters only through witnessed care.
+export const resetLight = onCall({ cors: true }, async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
+    const superadmin = await db.collection("config").doc("superadmin").get();
+    if (!(superadmin.exists && superadmin.data()?.uid === request.auth.uid)) {
+        throw new HttpsError("permission-denied", "Only the node owner may reset the light.");
+    }
+    const burn = async (coll: string): Promise<{ docs: number; units: number }> => {
+        const qs = await db.collection(coll).get();
+        let units = 0;
+        for (let i = 0; i < qs.docs.length; i += 400) {
+            const batch = db.batch();
+            qs.docs.slice(i, i + 400).forEach(d => {
+                units += typeof d.data().units === "number" ? d.data().units : 0;
+                batch.delete(d.ref);
+            });
+            await batch.commit();
+        }
+        return { docs: qs.size, units };
+    };
+    const rays = await burn("rays");
+    const glow = await burn("glow");
+    console.log(`Light reset by ${request.auth.uid}: ${rays.docs} rays (${rays.units} units), ${glow.docs} glow homes (${glow.units} units).`);
+    return { rays: rays.docs, rayUnits: rays.units, glowHomes: glow.docs, glowUnits: glow.units };
+});
+
 // Self-serve account deletion — the being erases itself. Server-side (admin) so the Auth user is
 // removed cleanly regardless of how recently they signed in; the client used to delete the docs
 // first and then fail on `requires-recent-login`, leaving the Auth user alive with no profile.

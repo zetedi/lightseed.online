@@ -9,7 +9,7 @@ import { RAY_UNITS } from '../../domain/light';
 // Glow (the community commons) is not shown here — glow begins where light circulates, and
 // spending does not exist yet; this face is the first visible end of the care-to-light loop.
 
-// A ray is spoken as a hundred (the nights are covered by the mornings).
+// A ray is spoken as 108, the geometry of light (the nights are covered by the mornings).
 const spoken = (units: number): string => {
     const whole = Math.floor(units / RAY_UNITS);
     const rest = units % RAY_UNITS;

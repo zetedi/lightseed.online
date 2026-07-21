@@ -23,16 +23,16 @@ describe('the sun: only witnessed care for the living kindles', () => {
     expect(canKindleAgain(now - DAY_MS + 1, now)).toBe(false);
   });
 
-  it('one witnessed daily care kindles one ray, spoken as a hundred', () => {
+  it('one witnessed daily care kindles one ray, spoken as 108 (the geometry of light)', () => {
     expect(KINDLE_UNITS_PER_WITNESSED_CARE).toBe(RAY_UNITS);
-    expect(RAY_UNITS).toBe(100);
+    expect(RAY_UNITS).toBe(108);
   });
 });
 
 describe('the prism: light is conserved, the glow is the tax', () => {
-  it('a week\'s bed passed onward (7 rays, not the kindle moment): 700 units, 1/7 glows (100), 300 + 300 to two providers', () => {
+  it('a week\'s bed passed onward (7 rays, not the kindle moment): 756 units, 1/7 glows (exactly one ray), 324 + 324 to two providers', () => {
     // Kindling is FREE (one care, one whole ray); the splitting happens only when light is
-    // SPENT. A night is 1 ray; the walked story\'s "7" is a week, so 700 units flow here.
+    // SPENT. A night is 1 ray; the walked story\'s "7" is a week, so 7 x 108 = 756 units flow.
     const { glow, spendable } = prismSplit(7 * RAY_UNITS, 7);
     expect(glow).toBe(RAY_UNITS);        // one ray dissolves into the commons
     expect(spendable).toBe(6 * RAY_UNITS);
@@ -76,10 +76,10 @@ describe('fading: hoarded light dims into the same glow', () => {
 });
 
 describe('attention: the sovereign dial', () => {
-  it('a branch notifies its source only at or above the floor ("one ray" = 100 units)', () => {
+  it('a branch notifies its source only at or above the floor ("one ray" = 108 units)', () => {
     expect(visibleToSource(300, RAY_UNITS)).toBe(true);
-    expect(visibleToSource(100, RAY_UNITS)).toBe(true);
-    expect(visibleToSource(99, RAY_UNITS)).toBe(false);
+    expect(visibleToSource(RAY_UNITS, RAY_UNITS)).toBe(true);
+    expect(visibleToSource(RAY_UNITS - 1, RAY_UNITS)).toBe(false);
     expect(visibleToSource(1, 0)).toBe(true); // the right itself reaches to the last unit
   });
 });
@@ -87,8 +87,8 @@ describe('attention: the sovereign dial', () => {
 describe('the witness of care: the eye that vouches earns a seventh', () => {
   it('a seventh of a ray, floored to a unit', () => {
     expect(WITNESS_SHARE_DENOMINATOR).toBe(7);
-    expect(witnessShareUnits()).toBe(14);        // floor(100 / 7)
-    expect(witnessShareUnits(700)).toBe(100);    // one whole ray of a week's care
+    expect(witnessShareUnits()).toBe(15);                    // floor(108 / 7)
+    expect(witnessShareUnits(7 * RAY_UNITS)).toBe(RAY_UNITS); // a week's care witnessed = EXACTLY one ray (756 / 7 = 108)
   });
 
   it('AI validation alone kindles nothing: it lights the tree, holds no light (the ring, 2026-07-20)', () => {

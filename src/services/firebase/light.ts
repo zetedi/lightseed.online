@@ -1,5 +1,6 @@
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
-import { db } from './core';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions } from './core';
 
 // --- Light: the rays a being holds -----------------------------------------------------------
 // Rays are SERVER-MINTED (the witnessWatering callable; functions/src/mint.ts) and holder-private
@@ -36,6 +37,15 @@ export const fetchMyRays = async (uid: string): Promise<HeldRay[]> => {
         })
         // Newest care first; the carer's ray ahead of the witness's seventh on the same day.
         .sort((a, b) => b.dayKey.localeCompare(a.dayKey) || a.role.localeCompare(b.role));
+};
+
+// RESET LIGHT — the testing-phase restart (ring 2026-07-21): empties every ray and every glow.
+// Node owner only (the callable enforces it). The care itself stays on the chains; the deleted
+// light leaves the trees in better shape, so it is not lost.
+export const resetLight = async (): Promise<{ rays: number; rayUnits: number; glowHomes: number; glowUnits: number }> => {
+    const fn = httpsCallable(functions, 'resetLight');
+    const res = await fn();
+    return res.data as { rays: number; rayUnits: number; glowHomes: number; glowUnits: number };
 };
 
 // Names for the trees a holder's light came from (bounded: the distinct trees in their rays).

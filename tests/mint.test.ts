@@ -130,21 +130,21 @@ describe('the last spend: where light goes when its holder leaves (ring 2026-07-
   });
 
   it('no heir: the whole ray dissolves into its provenance community\'s glow', () => {
-    expect(releaseRay({ units: 100, communityId: 'c1' }, false)).toEqual({ toHeir: 0, glow: 100, glowHome: 'c1' });
+    expect(releaseRay({ units: 108, communityId: 'c1' }, false)).toEqual({ toHeir: 0, glow: 108, glowHome: 'c1' });
   });
 
   it('no heir, no community: the node commons receives it (the home of last resort)', () => {
-    expect(releaseRay({ units: 14, communityId: null }, false)).toEqual({ toHeir: 0, glow: 14, glowHome: NODE_GLOW_HOME });
+    expect(releaseRay({ units: 15, communityId: null }, false)).toEqual({ toHeir: 0, glow: 15, glowHome: NODE_GLOW_HOME });
   });
 
   it('a chosen heir receives through the prism: the glow keeps the default seventh', () => {
-    const r = releaseRay({ units: 100, communityId: 'c1' }, true);
-    expect(r).toEqual({ toHeir: 86, glow: 14, glowHome: 'c1' });
-    expect(r.glow).toBe(Math.floor(100 / DEFAULT_GLOW_SHARE_DENOMINATOR));
+    const r = releaseRay({ units: 108, communityId: 'c1' }, true);
+    expect(r).toEqual({ toHeir: 93, glow: 15, glowHome: 'c1' });
+    expect(r.glow).toBe(Math.floor(108 / DEFAULT_GLOW_SHARE_DENOMINATOR));
   });
 
   it('conservation to the last unit, heir or none', () => {
-    for (const units of [0, 1, 6, 7, 14, 99, 100, 114, 700]) {
+    for (const units of [0, 1, 6, 7, 15, 99, 108, 123, 756]) {
       for (const hasHeir of [true, false]) {
         const r = releaseRay({ units, communityId: 'c1' }, hasHeir);
         expect(r.toHeir + r.glow).toBe(units);

@@ -6,6 +6,26 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-21 · One hundred and eight, and the sun can restart**: the ray finds its true number.
+RAY_UNITS moves from 100 to **108**, Zoltán's call, and the number is not decoration: 108 is
+the GEOMETRY OF LIGHT ITSELF. The Sun stands about 108 solar diameters from Earth; the Moon
+about 108 lunar diameters from us; the Sun spans about 108 Earths: the very proportion by which
+sunlight reaches a tree. It is the mala's 108 beads, the 108 Upanishads, and it generates
+itself (1^1 x 2^2 x 3^3 = 108). It stays close enough to the world's night prices to keep the
+adoption echo, and it brings a hidden exactness the hundred never had: a week of care, 7 x 108
+= 756 units, witnessed at a seventh, is EXACTLY one whole ray, no remainder; the witness's
+daily seventh becomes floor(108/7) = 15. The domain, the server mirror, and every test moved
+together (the mirror test made drift impossible; the golden week became 756, one ray glows,
+324 + 324 travel on). **And the sun can restart**: testing will take a few dawns, so the node
+owner (and no one else, not even staff) now holds RESET LIGHT, a callable + admin-panel door
+that burns every ray and every glow back to zero in one stroke. Nothing real is lost: the care
+already happened, the chains and tending records keep it, and the deleted light leaves the
+trees in better shape; light re-enters only through witnessed care, as always. Gates: check 356
+green through the change, functions build clean. *(The sun's own number, found on the same day
+the light first became visible.)*
+
+---
+
 **2026-07-21 · The last spend takes root**: the cascade implemented, same evening as its ring.
 The pure law lives in the mint mirror (functions/src/mint.ts): `prismSplit` mirrored from the
 domain and held to it by the root tests, and `releaseRay`, one departing ray's disposition

@@ -4,7 +4,7 @@
 // laws can never drift apart silently (Lumo's second review, 2026-07-21). index.ts owns only
 // the transaction plumbing: it gathers facts from snapshots, asks judgeWitness, and applies.
 
-export const RAY_UNITS = 100;
+export const RAY_UNITS = 108; // the geometry of light (see src/domain/light.ts; ring 2026-07-21)
 export const WITNESS_SHARE_DENOMINATOR = 7;
 export const witnessShareUnits = (): number => Math.floor(RAY_UNITS / WITNESS_SHARE_DENOMINATOR);
 

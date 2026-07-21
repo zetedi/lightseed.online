@@ -4,7 +4,7 @@ import type { Being } from './being';
 // THE LAW OF LIGHT: the five rings of 2026-07-19 as arithmetic, pure and testable:
 //
 //   The sun is the origin        light enters ONLY through witnessed care for the living
-//   The nights / the mornings    one ray per witnessed daily care; a ray spoken as 100
+//   The nights / the mornings    one ray per witnessed daily care; a ray spoken as 108
 //   The ray                      lid-bearing, branching at prisms, fading by spreading
 //   The tax of light             conserved at the prism: branches + glow = what arrived
 //   The glow                     every attenuation lights the birth community's commons
@@ -20,9 +20,13 @@ import type { Being } from './being';
 // own light alone, never a public balance).
 
 // ── The unit ──────────────────────────────────────────────────────────────────────────────
-// One ray is spoken as "a hundred" (a night is a hundred): an echo of the world's night
-// prices that helps adoption; an echo, never a peg. Integer units keep conservation exact.
-export const RAY_UNITS = 100;
+// One ray is spoken as ONE HUNDRED AND EIGHT: the geometry of light itself (the Sun stands
+// ~108 solar diameters from Earth, the Moon ~108 lunar diameters, the Sun spans ~108 Earths;
+// the proportion by which sunlight reaches a tree), the mala's count, 1^1 x 2^2 x 3^3. Close
+// enough to the world's night prices to keep the adoption echo; an echo, never a peg. And a
+// hidden exactness: a week of care (7 x 108 = 756) witnessed at a seventh is EXACTLY one ray,
+// no remainder. Integer units keep conservation exact. (Ring 2026-07-21; was 100.)
+export const RAY_UNITS = 108;
 
 // One witnessed daily care kindles one ray (the nights are covered by the mornings).
 export const KINDLE_UNITS_PER_WITNESSED_CARE = RAY_UNITS;

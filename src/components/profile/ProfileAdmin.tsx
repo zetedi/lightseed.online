@@ -3,6 +3,7 @@ import { showAlert, showConfirm } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { getAdmins, deleteUserAsAdmin, listUsersAsAdmin, triggerSystemEmail, getNodeLimits, setNodeLimits } from '../../services/firebase';
+import { resetLight } from '../../services/firebase/light';
 import type { AdminUserRow } from '../../services/firebase';
 import { DEFAULT_NODE_LIMITS } from '../../domain/limits';
 import { SectionTitle } from '../ui/SectionTitle';
@@ -93,6 +94,25 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
     setDeletingUser(false);
   };
 
+  // RESET LIGHT — the testing-phase restart (ring 2026-07-21). Node owner only; the callable
+  // enforces it too. Burns every ray and every glow; the care itself stays on the chains.
+  const [resettingLight, setResettingLight] = useState(false);
+  const handleResetLight = async () => {
+    const sure = await showConfirm(
+      'Remove ALL light from the system? Every ray and every glow burns back to zero. The care itself stays on the chains, and the light already left the trees in better shape, so nothing real is lost. Light re-enters only through witnessed care.',
+      { title: 'Reset light', confirmText: 'Reset light', danger: true },
+    );
+    if (!sure) return;
+    setResettingLight(true);
+    try {
+      const r = await resetLight();
+      notify(`The light is reset: ${r.rays} rays (${r.rayUnits} units) and ${r.glowHomes} glow homes (${r.glowUnits} units) returned to the sun.`);
+    } catch (e: any) {
+      notify(e?.message || 'Could not reset the light.');
+    }
+    setResettingLight(false);
+  };
+
   const handleTestEmail = async () => {
     const targetEmail = prompt('Enter the email address to send test to:', email ?? undefined);
     if (!targetEmail) return;
@@ -118,6 +138,19 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
   return (
     <div>
       <SectionTitle title={t('admin_title')} sub={t('admin_sub')} />
+      {/* The testing-phase restart — node owner only (the callable refuses everyone else). */}
+      {isSuperAdmin && (
+        <div className="mb-4 flex items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50/50 p-4">
+          <div className="min-w-0">
+            <p className="font-semibold text-amber-900 text-sm">Reset light</p>
+            <p className="text-xs text-amber-700/80">Burn every ray and every glow back to zero. The care stays on the chains; the trees keep what the light gave them.</p>
+          </div>
+          <button onClick={handleResetLight} disabled={resettingLight} className="rounded-full border border-amber-300 bg-white text-amber-700 hover:bg-amber-100 text-xs font-bold px-4 py-2 whitespace-nowrap transition-colors disabled:opacity-50">
+            {resettingLight ? 'Resetting…' : 'Reset light'}
+          </button>
+        </div>
+      )}
+
       <div className="mb-4 flex items-center justify-between gap-4 rounded-2xl border border-slate-100 p-4">
         <div className="min-w-0">
           <p className="font-semibold text-slate-800 text-sm">Email delivery test</p>
