@@ -864,6 +864,7 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
                 const communityRef = db.collection("communities").doc();
                 communityId = communityRef.id;
                 tx.set(communityRef, {
+                    lid: mintLid(), // a community is a Being; the server-born circle gets its true name too
                     name: `${tree.name || "Lifetree"} Circle`,
                     rootLifetreeId: invite.lifetreeId,
                     founderUserId: tree.ownerId,
@@ -1190,6 +1191,7 @@ export const checkWateringSchedules = onSchedule({
                     const text = waterMeText(tree.name, daysOver, w.stage);
 
                     await db.collection("pulses").add({
+                        lid: mintLid(), // even a nudge is a pulse, and a pulse is a Being (mirrors the client twin)
                         lifetreeId: docSnap.id,
                         type: "reach",
                         visibility: "private",

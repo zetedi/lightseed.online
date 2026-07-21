@@ -6,6 +6,32 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-21 · Every being is named at birth, and the name travels light**: a full lid audit
+swept every persisted collection for the Being law (a UUIDv7 lid minted at creation). The forest
+was mostly whole; four births were nameless and are now sealed: the ALIGNMENT itself (it extends
+Being in the types yet proposeAlignment never minted a lid, the very being that had just
+received its face), the server-born tree-circle community, the server's daily watering-alert
+pulse (its client twin already carried one), and the seeded default intelligences. No migration:
+Being.lid stays optional in the type for docs born before their path was sealed. Three types
+that LIVED the law without declaring it (Stay, Ray, Initiate all mint lids) now extend Being,
+so the declaration matches the lived practice. Marks stay marks: loves, signatures, invites,
+key material and server infrastructure carry no lid on purpose, they are edges and machinery,
+not beings. **And the name learned to travel light**: domain/lid62.ts is a pure bijection
+between the canonical lid and a FIXED 22-character base62 form (alphabet in ASCII order,
+zero-padded, so the UUIDv7 time-ordering survives lexicographic sorting; the top of the 62^22
+range is refused as beyond 128 bits). It is an ENCODING, never a second name: storage holds
+only canonical lids, and the codec lives at the URL/QR boundary. /b/ doors are now MINTED
+compact (a shorter URL makes a coarser QR that scans better at leaf-tag size) while the parser
+accepts both shapes forever, so every QR already on paper keeps opening its being; a
+canonical-form mint reads as stale and re-mints compact on refresh, the same self-healing the
+domain-move case already used. Base62 is case-sensitive, right for links and QR, wrong for
+hand-typing (that door, if ever needed, is Crockford Base32). /i/ invitations are untouched:
+they carry invite doc ids, not lids. Gates: check green (350, eleven new codec and door tests),
+functions build clean. *(Zoltán's two questions, answered in code: what is not a being but
+should be; and yes, base62, as a coat and not a skin.)*
+
+---
+
 **2026-07-21 · The alignment wears the being's face**: an alignment is a Being like every other,
 so it now has a real profile (BeingProfile): its NAME in the hero (the two trees it binds, "Rock
 Blossom guava ↔ Nur"), the status chip, and a section menu of The bond, The discussion, and The

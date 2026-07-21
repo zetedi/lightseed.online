@@ -1,4 +1,5 @@
 import { DAY_MS } from './watering';
+import type { Being } from './being';
 
 // THE LAW OF LIGHT: the five rings of 2026-07-19 as arithmetic, pure and testable:
 //
@@ -82,9 +83,10 @@ export const kindleRays = (input: KindleInput): KindledRay[] => {
 };
 
 // ── The ray: the shared shape ─────────────────────────────────────────────────────────────
-// A ray is a lid-bearing being. This is the shape every holder of one agrees on; where it
-// is stored (and how its stations chain) is the service layer's concern, later.
-export interface Ray {
+// A ray is a lid-bearing BEING (extends Being; type-only, so this module stays pure). This is
+// the shape every holder of one agrees on; where it is stored (and how its stations chain) is
+// the service layer's concern, later.
+export interface Ray extends Being {
   lid: string;
   sourceUid: string;      // whose witnessed care kindled it
   treeId: string;         // the living being whose tending brought it into the world

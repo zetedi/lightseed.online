@@ -5,9 +5,11 @@ import { uuidv7 } from '../../utils/id';
 import { isTokenisationEnabled } from '../../domain/tokenisation';
 import { db, toMillis, mapDoc, pulsesCollection, alignmentsCollection } from './core';
 
-// What the initiator supplies; status/createdAt are stamped here, messages grow later.
+// What the initiator supplies; lid/status/createdAt are stamped here, messages grow later.
+// The lid: an alignment is a Being (types.ts) and gets its true name at birth like every other
+// (it went nameless until the 2026-07-21 lid audit found it).
 export type AlignmentProposal = Omit<Alignment, 'id' | 'status' | 'createdAt' | 'messages'>;
-export const proposeAlignment = (data: AlignmentProposal) => addDoc(alignmentsCollection, { ...data, status: 'PENDING', createdAt: serverTimestamp() });
+export const proposeAlignment = (data: AlignmentProposal) => addDoc(alignmentsCollection, { ...data, lid: uuidv7(), status: 'PENDING', createdAt: serverTimestamp() });
 
 // Decline a pending alignment — the target owner passes on the resonance. A single field write
 // (the alignments rule already lets the initiator or target update their own proposal).

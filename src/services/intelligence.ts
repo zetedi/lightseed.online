@@ -404,7 +404,9 @@ export const ensureIntelligenceCommons = async (ownerId?: string): Promise<void>
       const ref = doc(db, 'intelligences', intelligence.id);
       if (!(await getDoc(ref)).exists()) {
         const { id, ...rest } = intelligence;
-        await setDoc(ref, { ...rest, ownerId: ownerId || 'GENESIS_SYSTEM', createdAt: serverTimestamp() });
+        // The seeded voices are Beings like the created ones: a lid at birth (createIntelligence
+        // already stamps one; the seed path went nameless until the 2026-07-21 lid audit).
+        await setDoc(ref, { ...rest, lid: uuidv7(), ownerId: ownerId || 'GENESIS_SYSTEM', createdAt: serverTimestamp() });
       }
     }
   } catch (e) {

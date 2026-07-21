@@ -1,3 +1,5 @@
+import type { Being } from './being';
+
 // The initiated layer — the app-side reader of the git initiation ledger.
 //
 // Source of truth is initiations/*.json in the repo (three-sponsor rule, enforced in CI);
@@ -7,7 +9,8 @@
 // unlocks the initiate rights in the UI (validate trees, form communities). The Firestore mirror
 // (initiates/{uid}, synced by the superadmin) is what the security rules check server-side.
 
-export interface Initiate {
+// An initiate record is a Being (the ledger mints its lid); declared since the 2026-07-21 audit.
+export interface Initiate extends Being {
   handle: string;
   name: string;
   lid: string; // the UUIDv7 Lightseed ID — the portable true name (equals persons/{uid}.lid)

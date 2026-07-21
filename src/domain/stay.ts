@@ -3,9 +3,13 @@
 // request to sleep under a lightHouse's roof; the keeper answers. The payment rail joins
 // later with the rest of the care economy (domain/support.ts) — the structure is whole now.
 
+import type { Being } from './being';
+
 export type StayStatus = 'requested' | 'accepted' | 'declined';
 
-export interface Stay {
+// A stay is a Being (requestStay mints its lid at birth); the type now says so too — the
+// declaration had lagged the lived law until the 2026-07-21 lid audit.
+export interface Stay extends Being {
   id: string;
   bedId: string;        // the reserved BED being — the anchor of a stay (a bed holds one guest
                         // at a time). The rules verify hostUid against THIS bed's ownerId.
