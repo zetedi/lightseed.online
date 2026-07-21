@@ -271,14 +271,16 @@ export const setOnlyValidatedCanReach = async (userId: string, value: boolean) =
     }
 };
 
-export const deleteUserAccount = async () => {
+export const deleteUserAccount = async (heirUid?: string) => {
     const user = auth.currentUser;
     if (!user) throw new Error("No user signed in");
     // Server-side (deleteMyAccount CF): the content, profile and Auth user are removed in order
     // with admin rights — so a stale login can't leave a half-deleted account behind (docs gone,
     // Auth user stranded), the way the old client-first delete did. Then sign out locally.
+    // `heirUid` is the last spend's chosen heir (ring 2026-07-21): who receives the departing
+    // light, through the prism; absent, it dissolves into the communities' (or node's) glow.
     const fn = httpsCallable(functions, 'deleteMyAccount');
-    await fn();
+    await fn({ heirUid: heirUid || null });
     await firebaseSignOut(auth).catch(() => undefined);
 }
 

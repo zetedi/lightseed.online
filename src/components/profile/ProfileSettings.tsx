@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
-import { setNewsletterSubscription, updateUserProfile, setOnlyValidatedCanReach, deleteUserAccount, logout } from '../../services/firebase';
+import { setNewsletterSubscription, updateUserProfile, setOnlyValidatedCanReach, deleteUserAccount, logout, fetchAllLifetrees } from '../../services/firebase';
+import { fetchMyRays } from '../../services/firebase/light';
+import type { Lifetree } from '../../types';
 import { isLightPathOn, setLightPathOn } from '../PathwayCTA';
 import { SectionTitle } from '../ui/SectionTitle';
 import { Modal } from '../ui/Modal';
@@ -55,6 +57,27 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showSigningKey, setShowSigningKey] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  // THE LAST SPEND (ring 2026-07-21): if the being holds light, the delete door offers an heir.
+  // The heir is chosen AS A TREE (identity is the tree); their owner receives the light through
+  // the prism. Left unchosen, the light dissolves into the communities' (or the node's) glow.
+  const [lightUnits, setLightUnits] = useState<number | null>(null); // null = not yet known
+  const [heirForest, setHeirForest] = useState<Lifetree[]>([]);
+  const [heirQuery, setHeirQuery] = useState('');
+  const [heirTree, setHeirTree] = useState<Lifetree | null>(null);
+  useEffect(() => {
+    if (!showDeleteConfirm) return;
+    let alive = true;
+    fetchMyRays(uid)
+      .then(rays => { if (alive) setLightUnits(rays.reduce((sum, r) => sum + r.units, 0)); })
+      .catch(() => { if (alive) setLightUnits(0); });
+    fetchAllLifetrees(undefined, undefined, ['public', 'node'])
+      .then(f => { if (alive) setHeirForest(f.filter(tr => tr.ownerId && tr.ownerId !== uid)); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [showDeleteConfirm, uid]);
+  const heirMatches = heirQuery.trim().length >= 2
+    ? heirForest.filter(tr => tr.name?.toLowerCase().includes(heirQuery.trim().toLowerCase())).slice(0, 5)
+    : [];
   const [lightPathOn, setLightPathOnState] = useState(isLightPathOn);
 
   const handleLightPathToggle = () => {
@@ -113,7 +136,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   const handleDeleteAccount = async () => {
     setIsDeleting(true);
     try {
-      await deleteUserAccount();
+      await deleteUserAccount(heirTree?.ownerId);
       await logout();
       notify(t('delete_goodbye'));
       window.location.reload();
@@ -182,7 +205,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
           <p className="font-semibold text-red-700 text-sm">{t('delete_account')}</p>
           <p className="text-xs text-red-500/80">Permanently remove your trees, pulses, visions and profile.</p>
         </div>
-        <button onClick={() => setShowDeleteConfirm(true)} className="rounded-full border border-red-200 bg-white text-red-600 hover:bg-red-600 hover:text-white text-xs font-bold px-4 py-2 transition-colors whitespace-nowrap self-start sm:self-auto">{t('delete_account')}</button>
+        <button onClick={() => { setHeirTree(null); setHeirQuery(''); setLightUnits(null); setShowDeleteConfirm(true); }} className="rounded-full border border-red-200 bg-white text-red-600 hover:bg-red-600 hover:text-white text-xs font-bold px-4 py-2 transition-colors whitespace-nowrap self-start sm:self-auto">{t('delete_account')}</button>
       </div>
 
       {showSigningKey && <SigningKeyModal uid={uid} notify={notify} onClose={() => setShowSigningKey(false)} />}
@@ -194,6 +217,53 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
             <div className="bg-red-50 border border-red-100 p-4 rounded-xl text-red-800 text-sm">
               <p className="font-bold mb-1">{t('delete_confirm_desc')}</p>
             </div>
+
+            {/* The last spend — shown only when there is light to pass on. */}
+            {lightUnits !== null && lightUnits > 0 && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <p className="text-sm font-bold text-amber-900">You hold {lightUnits} units of light.</p>
+                <p className="mt-1 text-xs leading-relaxed text-amber-800/90">
+                  Leaving is the last spend. Name an heir below and your light passes to them
+                  (a seventh dissolves into the commons on the way). Name no one and it dissolves
+                  into your communities&apos; glow, or the node&apos;s.
+                </p>
+                {heirTree ? (
+                  <div className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-amber-300 bg-white px-3 py-2">
+                    <span className="min-w-0 truncate text-sm text-amber-900">
+                      Your light goes to <span className="font-bold">{heirTree.name}</span>&apos;s keeper.
+                    </span>
+                    <button type="button" onClick={() => setHeirTree(null)} className="shrink-0 text-xs font-bold text-amber-700 underline">Change</button>
+                  </div>
+                ) : (
+                  <div className="mt-3">
+                    <input
+                      value={heirQuery}
+                      onChange={e => setHeirQuery(e.target.value)}
+                      placeholder="Find the heir by their tree's name (optional)"
+                      className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-amber-400"
+                    />
+                    {heirMatches.length > 0 && (
+                      <div className="mt-1 overflow-hidden rounded-lg border border-amber-100 bg-white">
+                        {heirMatches.map(tr => (
+                          <button
+                            key={tr.id}
+                            type="button"
+                            onClick={() => { setHeirTree(tr); setHeirQuery(''); }}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-amber-50"
+                          >
+                            {(tr.latestGrowthUrl || tr.imageUrl)
+                              ? <img src={tr.latestGrowthUrl || tr.imageUrl} alt="" className="h-6 w-6 rounded-full object-cover" />
+                              : <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-600"><Icons.Tree /></span>}
+                            <span className="truncate">{tr.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}

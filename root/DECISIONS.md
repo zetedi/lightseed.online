@@ -6,6 +6,26 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-21 · The last spend takes root**: the cascade implemented, same evening as its ring.
+The pure law lives in the mint mirror (functions/src/mint.ts): `prismSplit` mirrored from the
+domain and held to it by the root tests, and `releaseRay`, one departing ray's disposition
+(heir through the prism at the default seventh; no heir, the whole ray to its provenance
+community's glow; no community, to glow/NODE), conservation proven to the last unit. The purge
+(`releaseDepartingLight`) runs FIRST in purgeUserData, before any record is erased: held rays
+transfer to the heir or dissolve; the commons' shares land on the new GLOW LEDGER
+(glow/{communityId}, merge-increment, server-only by rule, readable by any signed-in being
+since a community's warmth is communal); rays held by others but sourced from the departed
+keep their units and their source becomes "departed". The heir rides only the SELF-SERVE door:
+deleteMyAccount takes an optional heirUid (must exist, must be another being); an admin
+deletion always follows the community cascade. The delete dialog now shows the light held and
+offers the heir BY THEIR TREE'S NAME (identity is the tree); unchosen, the dialog says plainly
+where the light goes. Six new mirror tests (prism agreement, cascade branches, conservation,
+no light invented at the door) and two new rules tests (glow server-only, communal read, no
+anonymous eyes). Gates: check 356, rules 97, functions build clean. *(The first seed of the
+glow ledger, planted by a deletion door.)*
+
+---
+
 **2026-07-21 · Leaving is the last spend**: Zoltán asked how the system handles a being who
 witnesses their own care through a second account, and where light goes when an account dies.
 One answer covers both, and it is structural, not police work. **On self-witnessing**: the mint

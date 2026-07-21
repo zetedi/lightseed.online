@@ -5,7 +5,7 @@ import * as admin from "firebase-admin";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Anthropic from "@anthropic-ai/sdk";
 import { randomUUID, randomBytes, createHash } from "node:crypto";
-import { judgeWitness, kindleDayKeyFromMs, uuidv7 } from "./mint";
+import { judgeWitness, kindleDayKeyFromMs, uuidv7, releaseRay } from "./mint";
 
 // Every lid a server function mints is a UUIDv7 (the LIN invariant: a Being's true name is
 // time-ordered and portable). node:crypto supplies the randomness; mint.ts the pure algorithm.
@@ -1356,7 +1356,65 @@ export const listUsersAsAdmin = onCall({ cors: true }, async (request) => {
 // profile docs, then the Auth user LAST (admin SDK — no `requires-recent-login`, the failure
 // mode that leaves a half-deleted account in limbo when done from the client). Shared by the
 // admin path and the self-serve path so both delete the same things the same way.
-async function purgeUserData(uid: string) {
+// THE LAST SPEND (ring 2026-07-21): the departing being's light moves one final time. With a
+// chosen heir the rays transfer through the prism (the glow keeps the default seventh); with
+// none, each ray dissolves into its provenance community's glow, or the node's (glow/NODE).
+// Rays held by OTHERS but sourced from the departed keep their units and lose the uid.
+// Conservation to the last unit; the glow ledger (server-only) receives the commons' share.
+async function releaseDepartingLight(uid: string, heirUid?: string): Promise<{ rays: number; unitsToHeir: number; unitsToGlow: number }> {
+    let batch = db.batch();
+    let ops = 0;
+    const flush = async () => { if (ops > 0) { await batch.commit(); batch = db.batch(); ops = 0; } };
+    const step = async () => { if (++ops >= 400) await flush(); };
+
+    const held = await db.collection("rays").where("holderUid", "==", uid).get();
+    const glowAdds = new Map<string, number>();
+    let unitsToHeir = 0;
+    let unitsToGlow = 0;
+    for (const d of held.docs) {
+        const r = d.data() as Record<string, any>;
+        const release = releaseRay(
+            { units: typeof r.units === "number" ? r.units : 0, communityId: r.communityId ? String(r.communityId) : null },
+            !!heirUid,
+        );
+        if (release.glow > 0) {
+            glowAdds.set(release.glowHome, (glowAdds.get(release.glowHome) || 0) + release.glow);
+            unitsToGlow += release.glow;
+        }
+        if (heirUid && release.toHeir > 0) {
+            unitsToHeir += release.toHeir;
+            batch.update(d.ref, {
+                holderUid: heirUid,
+                units: release.toHeir,
+                inheritedAt: admin.firestore.FieldValue.serverTimestamp(),
+                ...(r.sourceUid === uid ? { sourceUid: "departed" } : {}),
+            });
+        } else {
+            batch.delete(d.ref);
+        }
+        await step();
+    }
+    for (const [home, units] of glowAdds) {
+        batch.set(db.doc(`glow/${home}`), {
+            units: admin.firestore.FieldValue.increment(units),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+        await step();
+    }
+    // The witness sevenths (and gifts) others hold keep shining; only the departed uid unlinks.
+    const sourced = await db.collection("rays").where("sourceUid", "==", uid).get();
+    for (const d of sourced.docs) {
+        if ((d.data() as Record<string, any>).holderUid === uid) continue; // released above
+        batch.update(d.ref, { sourceUid: "departed" });
+        await step();
+    }
+    await flush();
+    return { rays: held.size, unitsToHeir, unitsToGlow };
+}
+
+async function purgeUserData(uid: string, heirUid?: string) {
+    // The light first (the last spend), while the rest of the record still exists.
+    const light = await releaseDepartingLight(uid, heirUid);
     const deleteWhere = async (coll: string, field: string) => {
         const qs = await db.collection(coll).where(field, "==", uid).get();
         for (let i = 0; i < qs.docs.length; i += 400) {
@@ -1371,6 +1429,7 @@ async function purgeUserData(uid: string) {
         pulses: await deleteWhere("pulses", "authorId"),
         visions: await deleteWhere("visions", "authorId"),
         links: await deleteWhere("links", "from"),
+        ...light,
     };
     await db.collection("persons").doc(uid).delete().catch(() => undefined);
     await db.collection("users").doc(uid).delete().catch(() => undefined);
@@ -1417,6 +1476,16 @@ export const deleteUserAsAdmin = onCall({ cors: true }, async (request) => {
 export const deleteMyAccount = onCall({ cors: true }, async (request) => {
     if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
     const uid = request.auth.uid;
+    // The last spend's chosen heir (optional): must be another, existing being. Only the
+    // SELF-SERVE path may name one; an admin deletion always follows the community cascade.
+    let heirUid: string | undefined;
+    const heirRaw = request.data?.heirUid;
+    if (heirRaw !== undefined && heirRaw !== null && heirRaw !== "") {
+        if (typeof heirRaw !== "string" || heirRaw === uid) throw new HttpsError("invalid-argument", "The heir must be another being.");
+        const heirSnap = await db.collection("persons").doc(heirRaw).get();
+        if (!heirSnap.exists) throw new HttpsError("not-found", "The chosen heir was not found.");
+        heirUid = heirRaw;
+    }
     // A farewell before the record is gone (best-effort; never blocks the deletion).
     try {
         const record = await admin.auth().getUser(uid).catch(() => null);
@@ -1425,7 +1494,7 @@ export const deleteMyAccount = onCall({ cors: true }, async (request) => {
             await writeMail({ to: [record.email], subject: "Goodbye from lightseed", html: composeSystemEmailHtml(text, "https://lightseed.online", "lightseed"), text, uid });
         }
     } catch (e) { console.warn("Goodbye email skipped:", e); }
-    const counts = await purgeUserData(uid);
+    const counts = await purgeUserData(uid, heirUid);
     return { deleted: true, ...counts };
 });
 

@@ -31,6 +31,44 @@ export function uuidv7(atMs: number, random10: Uint8Array): string {
     return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
+// ── THE LAST SPEND (ring 2026-07-21): where light goes when its holder leaves ─────────────
+// Deletion is the final idleness, and idle light feeds the glow. The cascade: a CHOSEN HEIR
+// receives the light through the prism (the glow keeps its share, the default seventh until
+// per-community dials exist); with no heir each ray dissolves into its own provenance
+// community's glow; with no community, into the node's (the instance commons). Conservation
+// to the last unit, the same law as the prism.
+export const DEFAULT_GLOW_SHARE_DENOMINATOR = 7;
+export const NODE_GLOW_HOME = "NODE"; // glow/NODE: the instance commons, the home of last resort
+
+// The prism law, mirrored from src/domain/light.ts (held to it by tests/mint.test.ts):
+// glow + spendable = units, always.
+export const prismSplit = (units: number, glowShareDenominator: number): { glow: number; spendable: number } => {
+    if (!Number.isInteger(units) || units < 0) return { glow: 0, spendable: Math.max(0, Math.floor(units) || 0) };
+    const d = Number.isInteger(glowShareDenominator) && glowShareDenominator >= 1 ? glowShareDenominator : 1;
+    const glow = Math.floor(units / d);
+    return { glow, spendable: units - glow };
+};
+
+export interface DepartingRay {
+    units: number;
+    communityId: string | null; // provenance: where the light was kindled (null = a solo carer's)
+}
+
+export interface RayRelease {
+    toHeir: number;   // what the heir receives (0 when there is no heir)
+    glow: number;     // what dissolves into the commons
+    glowHome: string; // which glow doc receives it: the provenance community, or the node
+}
+
+// One departing ray's disposition under the cascade. Pure; the purge applies it.
+export const releaseRay = (ray: DepartingRay, hasHeir: boolean): RayRelease => {
+    const glowHome = ray.communityId || NODE_GLOW_HOME;
+    const units = Number.isInteger(ray.units) && ray.units > 0 ? ray.units : 0;
+    if (!hasHeir) return { toHeir: 0, glow: units, glowHome };
+    const { glow, spendable } = prismSplit(units, DEFAULT_GLOW_SHARE_DENOMINATOR);
+    return { toHeir: spendable, glow, glowHome };
+};
+
 // Everything the judgment needs, as plain facts the transaction already read. `unknown` fields
 // carry whatever the documents held; the judgment does its own narrowing (the client wrote some
 // of these, so nothing is assumed well-formed).

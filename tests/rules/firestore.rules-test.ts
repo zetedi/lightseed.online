@@ -953,6 +953,23 @@ describe('rays — light is server-minted and privately read (the sun ring, doma
   });
 });
 
+describe('glow — the commons ledger is server-written, communally read (the last spend)', () => {
+  it('no client may write the glow, not even staff; the server alone feeds the commons', async () => {
+    await assertFails(setDoc(doc(db(ALICE), 'glow', 'c1'), { units: 999 }));
+    await assertFails(setDoc(doc(db(STAFF), 'glow', 'c1'), { units: 999 }));
+    await env.withSecurityRulesDisabled(async (ctx) => setDoc(doc(ctx.firestore(), 'glow', 'c1'), { units: 14 }));
+    await assertFails(updateDoc(doc(db(ALICE), 'glow', 'c1'), { units: 999 }));
+    await assertFails(deleteDoc(doc(db(ALICE), 'glow', 'c1')));
+  });
+
+  it('any signed-in being may read a community\'s warmth; the world outside may not', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => setDoc(doc(ctx.firestore(), 'glow', 'c1'), { units: 14 }));
+    await assertSucceeds(getDoc(doc(db(ALICE), 'glow', 'c1')));  // communal, not a private balance
+    await assertSucceeds(getDoc(doc(db(BOB), 'glow', 'c1')));
+    await assertFails(getDoc(doc(db(), 'glow', 'c1')));          // anonymous stays outside
+  });
+});
+
 describe('watering pulses — the light-mint trust root (server-mediated; Lumo review 2026-07-20)', () => {
   // treeB is owned by BOB (a tender). ALICE/MALLORY are not tenders of it.
   const water = (over: Record<string, any> = {}) => ({

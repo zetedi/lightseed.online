@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { RAY_UNITS, WITNESS_SHARE_DENOMINATOR, witnessShareUnits, kindleRays } from '../src/domain/light';
+import { RAY_UNITS, WITNESS_SHARE_DENOMINATOR, witnessShareUnits, kindleRays, prismSplit } from '../src/domain/light';
 import {
   RAY_UNITS as MINT_RAY_UNITS,
   WITNESS_SHARE_DENOMINATOR as MINT_WITNESS_SHARE_DENOMINATOR,
   witnessShareUnits as mintWitnessShareUnits,
+  prismSplit as mintPrismSplit,
+  releaseRay, DEFAULT_GLOW_SHARE_DENOMINATOR, NODE_GLOW_HOME,
   kindleDayKeyFromMs, uuidv7, judgeWitness, type WitnessFacts,
 } from '../functions/src/mint';
 import { timeOf } from '../src/utils/id';
@@ -117,6 +119,42 @@ describe('the cap: one kindle per tree per day, idempotent to the last ray', () 
     expect(kindleDayKeyFromMs(Date.UTC(2026, 6, 21, 0, 0, 1))).toBe('2026-07-21');
     expect(kindleDayKeyFromMs(Date.UTC(2026, 6, 21, 23, 59, 59))).toBe('2026-07-21');
     expect(kindleDayKeyFromMs(Date.UTC(2026, 6, 22, 0, 0, 0))).toBe('2026-07-22');
+  });
+});
+
+describe('the last spend: where light goes when its holder leaves (ring 2026-07-21)', () => {
+  it('the prism mirror speaks the domain law exactly', () => {
+    for (const [units, dial] of [[0, 7], [1, 7], [99, 7], [100, 7], [114, 7], [700, 8], [341, 3], [100, 1]] as const) {
+      expect(mintPrismSplit(units, dial)).toEqual(prismSplit(units, dial));
+    }
+  });
+
+  it('no heir: the whole ray dissolves into its provenance community\'s glow', () => {
+    expect(releaseRay({ units: 100, communityId: 'c1' }, false)).toEqual({ toHeir: 0, glow: 100, glowHome: 'c1' });
+  });
+
+  it('no heir, no community: the node commons receives it (the home of last resort)', () => {
+    expect(releaseRay({ units: 14, communityId: null }, false)).toEqual({ toHeir: 0, glow: 14, glowHome: NODE_GLOW_HOME });
+  });
+
+  it('a chosen heir receives through the prism: the glow keeps the default seventh', () => {
+    const r = releaseRay({ units: 100, communityId: 'c1' }, true);
+    expect(r).toEqual({ toHeir: 86, glow: 14, glowHome: 'c1' });
+    expect(r.glow).toBe(Math.floor(100 / DEFAULT_GLOW_SHARE_DENOMINATOR));
+  });
+
+  it('conservation to the last unit, heir or none', () => {
+    for (const units of [0, 1, 6, 7, 14, 99, 100, 114, 700]) {
+      for (const hasHeir of [true, false]) {
+        const r = releaseRay({ units, communityId: 'c1' }, hasHeir);
+        expect(r.toHeir + r.glow).toBe(units);
+      }
+    }
+  });
+
+  it('a malformed ray releases nothing (no light invented at the door)', () => {
+    expect(releaseRay({ units: -5, communityId: null }, true)).toEqual({ toHeir: 0, glow: 0, glowHome: NODE_GLOW_HOME });
+    expect(releaseRay({ units: 2.5 as number, communityId: null }, false)).toEqual({ toHeir: 0, glow: 0, glowHome: NODE_GLOW_HOME });
   });
 });
 

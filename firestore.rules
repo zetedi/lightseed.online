@@ -657,6 +657,15 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // The glow ledger — a community's commons of dissolved light (the last spend; later the
+    // prism's share and the idle fade). SERVER-WRITTEN only, like rays; readable by any
+    // signed-in being, because a community's warmth is communal, never a private balance.
+    // glow/NODE is the instance commons, the home of last resort.
+    match /glow/{homeId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
     match /alignments/{id} {
       allow read: if true;
       allow create: if isSignedIn();
