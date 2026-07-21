@@ -4,7 +4,12 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as admin from "firebase-admin";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Anthropic from "@anthropic-ai/sdk";
-import { randomUUID, createHash } from "node:crypto";
+import { randomUUID, randomBytes, createHash } from "node:crypto";
+import { judgeWitness, kindleDayKeyFromMs, uuidv7 } from "./mint";
+
+// Every lid a server function mints is a UUIDv7 (the LIN invariant: a Being's true name is
+// time-ordered and portable). node:crypto supplies the randomness; mint.ts the pure algorithm.
+const mintLid = () => uuidv7(Date.now(), randomBytes(10));
 
 admin.initializeApp();
 
@@ -545,7 +550,7 @@ const mintStayLeaf = async (stayId: string): Promise<void> => {
         const pulseRef = db.collection("pulses").doc();
         t.set(pulseRef, {
             ...pulseData,
-            lid: randomUUID(),
+            lid: mintLid(),
             id: pulseRef.id,
             loveCount: 0,
             commentCount: 0,
@@ -585,45 +590,36 @@ export const mintStayLeaves = onSchedule("every day 03:00", async () => {
 // ONE transaction, so nothing is half-minted. Rays live in the server-only `rays` collection; no
 // client may write one. This replaced trigger-based minting, which trusted client-supplied
 // authorId / wateringConfirmedBy / mintedAt and could be driven with forged pulses (Lumo's review,
-// 2026-07-20). Mirrors domain/light.kindleRays inline, since functions is a separate TS project.
-const RAY_UNITS = 100;
-const WITNESS_SHARE_DENOMINATOR = 7;
-const witnessShareUnits = () => Math.floor(RAY_UNITS / WITNESS_SHARE_DENOMINATOR);
+// 2026-07-20). The LAW itself (every accept/reject branch and the allocation) is the pure
+// judgeWitness in ./mint.ts, mirror-tested against src/domain/light.ts from the root suite; this
+// function owns only the transaction plumbing.
 
 // The immutable body of a ray. The doc id is DETERMINISTIC (rays/{treeId}__{dayKey}__{role}), which
 // enforces ONE KINDLE PER TREE PER DAY (life is the central bank) and idempotency in one stroke.
 const rayDoc = (
-    role: "carer" | "witness", holderUid: string, units: number,
+    ray: { holderUid: string; role: "carer" | "witness"; units: number },
     sourceUid: string, treeId: string, communityId: string | undefined, dayKey: string, pulseId: string,
 ) => ({
-    lid: randomUUID(),
-    holderUid,
-    role,
+    lid: mintLid(),
+    holderUid: ray.holderUid,
+    role: ray.role,
     sourceUid,     // whose witnessed care kindled it (the carer)
     treeId,
     dayKey,        // the calendar day this care kindled (the once-a-day bound)
     ...(communityId ? { communityId } : {}), // provenance; a solo carer's tree may have none
-    units,
+    units: ray.units,
     pulseId,       // provenance: the watering pulse that occasioned it
     kindledAt: admin.firestore.FieldValue.serverTimestamp(),
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
 });
-
-// The UTC calendar day a care kindles in — the once-a-day denominator, SERVER-derived from the
-// watering's own createdAt/mintedAt (never a client-chosen "now"), so mint time can't be shifted
-// to farm extra days.
-const kindleDayKey = (pulse: Record<string, any>): string => {
-    const ms = (pulse.createdAt && typeof pulse.createdAt.toMillis === "function") ? pulse.createdAt.toMillis()
-        : (typeof pulse.mintedAt === "number" ? pulse.mintedAt : Date.now());
-    return new Date(ms).toISOString().slice(0, 10);
-};
 
 // witnessWatering — a GUARDIAN witnesses a watering, kindling the light. Everything is server-derived
 // or server-verified: the witness is the authenticated caller; the carer is the pulse's (create-time
 // auth-bound) author; the guardian's link must exist AND predate the watering (tenure — a sock
 // account minted for the occasion has no voice, mirroring the guardian veto); the day is the
 // watering's own; and the carer's ray, the witness's seventh, and the pulse's confirmation all ride
-// ONE transaction. No client field decides who is paid, how much, or when.
+// ONE transaction. No client field decides who is paid, how much, or when — the facts gathered here
+// go through judgeWitness (./mint.ts), the pure law the tests hold to the domain.
 export const witnessWatering = onCall({ cors: true }, async (request) => {
     if (!request.auth) throw new HttpsError("unauthenticated", "Sign in to witness a watering.");
     const witnessUid = request.auth.uid;
@@ -631,41 +627,65 @@ export const witnessWatering = onCall({ cors: true }, async (request) => {
     if (!pulseId || typeof pulseId !== "string") throw new HttpsError("invalid-argument", "pulseId is required.");
 
     return db.runTransaction(async (t) => {
-        // ── all reads first (transaction rule) ──
+        // ── all reads first (transaction rule): gather the facts the judgment needs ──
         const pulseRef = db.doc(`pulses/${pulseId}`);
         const pulseSnap = await t.get(pulseRef);
-        if (!pulseSnap.exists) throw new HttpsError("not-found", "That watering no longer exists.");
-        const pulse = pulseSnap.data() as Record<string, any>;
-        if (pulse.care !== "watering") throw new HttpsError("failed-precondition", "That is not a watering.");
-        // Already witnessed by a guardian — the first witness holds the record and any light; a second
-        // guardian re-witnessing the same care changes nothing (don't overwrite the confirmation).
-        if (pulse.wateringConfirmedBy === "guardian") return { kindled: false, witnessUnits: 0, already: true };
+        const pulse = (pulseSnap.data() ?? {}) as Record<string, any>;
+        const carerUid = typeof pulse.authorId === "string" ? pulse.authorId : "";
+        const treeId = typeof pulse.lifetreeId === "string" ? pulse.lifetreeId : "";
+        const createdAtMs: number | null =
+            (pulse.createdAt && typeof pulse.createdAt.toMillis === "function") ? pulse.createdAt.toMillis() : null;
 
-        const carerUid = String(pulse.authorId || "");
-        const treeId = String(pulse.lifetreeId || "");
-        if (!carerUid || !treeId) throw new HttpsError("failed-precondition", "That watering is malformed.");
-        if (witnessUid === carerUid) throw new HttpsError("failed-precondition", "You cannot witness your own care.");
+        let guardianSinceMs: number | null = null;
+        let treeFacts: { exists: boolean; treeType?: unknown; diedAtMs: number | null } = { exists: false, diedAtMs: null };
+        let communityId: string | undefined;
+        let carerRef: FirebaseFirestore.DocumentReference | null = null;
+        let witnessRef: FirebaseFirestore.DocumentReference | null = null;
+        let carerRayExists = false;
+        let witnessRayExists = false;
 
-        // The witness must be a GUARDIAN of the tree, their guardianship PREDATING this watering.
-        const gLinkSnap = await t.get(db.doc(`links/${witnessUid}__guardian__${treeId}`));
-        if (!gLinkSnap.exists) throw new HttpsError("permission-denied", "Only a guardian of this tree may witness it.");
-        const gAt = (gLinkSnap.data() as any)?.createdAt;
-        const pAt = pulse.createdAt;
-        if (gAt?.toMillis && pAt?.toMillis && gAt.toMillis() > pAt.toMillis()) {
-            throw new HttpsError("failed-precondition", "Your guardianship began after this watering.");
+        if (pulseSnap.exists && treeId) {
+            const gLinkSnap = await t.get(db.doc(`links/${witnessUid}__guardian__${treeId}`));
+            if (gLinkSnap.exists) {
+                const gAt = (gLinkSnap.data() as any)?.createdAt;
+                // A link without a birth time predates the pulse by convention (old links).
+                guardianSinceMs = (gAt && typeof gAt.toMillis === "function") ? gAt.toMillis() : 0;
+            }
+            const treeSnap = await t.get(db.doc(`lifetrees/${treeId}`));
+            if (treeSnap.exists) {
+                const tree = treeSnap.data() as Record<string, any>;
+                treeFacts = {
+                    exists: true,
+                    treeType: tree.treeType,
+                    diedAtMs: (tree.diedAt && typeof tree.diedAt.toMillis === "function") ? tree.diedAt.toMillis() : null,
+                };
+                communityId = tree.communityId ? String(tree.communityId) : undefined;
+            }
+            if (createdAtMs !== null) {
+                const dayKey = kindleDayKeyFromMs(createdAtMs);
+                carerRef = db.doc(`rays/${treeId}__${dayKey}__carer`);
+                witnessRef = db.doc(`rays/${treeId}__${dayKey}__witness`);
+                carerRayExists = (await t.get(carerRef)).exists;
+                witnessRayExists = (await t.get(witnessRef)).exists;
+            }
         }
 
-        const treeSnap = await t.get(db.doc(`lifetrees/${treeId}`));
-        if (!treeSnap.exists) throw new HttpsError("not-found", "That tree no longer exists.");
-        const tree = treeSnap.data() as Record<string, any>;
-        if (tree.treeType === "BED") throw new HttpsError("failed-precondition", "A bed is not tended for light.");
-        const communityId = tree.communityId ? String(tree.communityId) : undefined;
+        const judgment = judgeWitness({
+            witnessUid,
+            pulse: {
+                exists: pulseSnap.exists,
+                care: pulse.care,
+                wateringConfirmedBy: pulse.wateringConfirmedBy,
+                carerUid, treeId, createdAtMs,
+            },
+            guardianSinceMs,
+            tree: treeFacts,
+            carerRayExists,
+            witnessRayExists,
+        });
 
-        const dayKey = kindleDayKey(pulse);
-        const carerRef = db.doc(`rays/${treeId}__${dayKey}__carer`);
-        const witnessRef = db.doc(`rays/${treeId}__${dayKey}__witness`);
-        const carerExists = (await t.get(carerRef)).exists;
-        const witnessExists = (await t.get(witnessRef)).exists;
+        if (judgment.outcome === "reject") throw new HttpsError(judgment.code, judgment.message);
+        if (judgment.outcome === "already") return { kindled: false, witnessUnits: 0, already: true };
 
         // ── writes ── (atomic: confirmation + both rays in this one transaction)
         t.update(pulseRef, {
@@ -673,12 +693,10 @@ export const witnessWatering = onCall({ cors: true }, async (request) => {
             "wateringConfirmation.confirmedByUid": witnessUid,
             "wateringConfirmation.confirmedAt": admin.firestore.FieldValue.serverTimestamp(),
         });
-        if (!carerExists) t.set(carerRef, rayDoc("carer", carerUid, RAY_UNITS, carerUid, treeId, communityId, dayKey, pulseId));
-        // The witness's seventh rides only on a FRESH carer kindle: witnessing a tree already cared
-        // for (and lit) that day adds no new light.
-        if (!carerExists && !witnessExists) t.set(witnessRef, rayDoc("witness", witnessUid, witnessShareUnits(), carerUid, treeId, communityId, dayKey, pulseId));
+        if (judgment.carerRay && carerRef) t.set(carerRef, rayDoc(judgment.carerRay, carerUid, treeId, communityId, judgment.dayKey, pulseId));
+        if (judgment.witnessRay && witnessRef) t.set(witnessRef, rayDoc(judgment.witnessRay, carerUid, treeId, communityId, judgment.dayKey, pulseId));
 
-        return { kindled: !carerExists, witnessUnits: (!carerExists && !witnessExists) ? witnessShareUnits() : 0 };
+        return { kindled: judgment.carerRay !== null, witnessUnits: judgment.witnessRay ? judgment.witnessRay.units : 0 };
     });
 });
 
@@ -771,7 +789,7 @@ export const onNetworkInviteAccepted = onDocumentUpdated("networkInvites/{invite
         await db.runTransaction(async (tx) => {
             const [m, p] = await Promise.all([tx.get(memberRef), tx.get(provRef)]);
             const edge = (rel: string) => ({
-                lid: randomUUID(), type: "link", rel, from: memberUid, to: nodeCommunityId,
+                lid: mintLid(), type: "link", rel, from: memberUid, to: nodeCommunityId,
                 inviteId: event.params.inviteId, invitedBy: inviterUid,
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
             });
@@ -827,7 +845,7 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
         // legacy arrays. Deterministic ids keep these writes idempotent.
         const setLink = (from: string, rel: string, to: string) => {
             tx.set(db.collection("links").doc(`${from}__${rel}__${to}`), {
-                lid: randomUUID(),
+                lid: mintLid(),
                 type: "link",
                 rel,
                 from,
@@ -1354,7 +1372,17 @@ async function purgeUserData(uid: string) {
     };
     await db.collection("persons").doc(uid).delete().catch(() => undefined);
     await db.collection("users").doc(uid).delete().catch(() => undefined);
-    try { await admin.auth().deleteUser(uid); } catch (e: any) { console.warn("Auth delete failed:", e?.message); }
+    try {
+        await admin.auth().deleteUser(uid);
+    } catch (e: any) {
+        // A missing Auth record is already the goal state (idempotent re-runs land here). Any
+        // OTHER failure must surface: reporting success while the sign-in survives would leave
+        // a live key to a purged account (Lumo's review, 2026-07-21). The data deletes above are
+        // idempotent, so the caller simply runs the deletion again.
+        if (e?.code !== "auth/user-not-found") {
+            throw new HttpsError("internal", `The data was removed but the sign-in could not be: ${e?.message || e}. Run the deletion again.`);
+        }
+    }
     return counts;
 }
 

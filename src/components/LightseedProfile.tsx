@@ -15,6 +15,7 @@ import { DEFAULT_INTELLIGENCE_ID } from '../services/intelligence';
 import { BeingProfile, type BeingSection } from './BeingProfile';
 import { ProfileInviteBanners } from './profile/ProfileInviteBanners';
 import { ProfileTrees } from './profile/ProfileTrees';
+import { ProfileLight } from './profile/ProfileLight';
 import { ProfilePulses } from './profile/ProfilePulses';
 import { ProfileVisions } from './profile/ProfileVisions';
 import { ProfileHistory } from './profile/ProfileHistory';
@@ -55,7 +56,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
     const { t } = useLanguage();
     // Session state comes from context now (was prop-drilled from App).
     const { lightseed, myTrees, guardedTrees, isAdmin, isSuperAdmin, superAdminExists } = useSession();
-    const [activeTab, setActiveTab] = useState<'trees' | 'pulses' | 'visions' | 'stays' | 'history' | 'reaches' | 'invites' | 'appearance' | 'intelligence' | 'settings' | 'admin'>('trees');
+    const [activeTab, setActiveTab] = useState<'trees' | 'light' | 'pulses' | 'visions' | 'stays' | 'history' | 'reaches' | 'invites' | 'appearance' | 'intelligence' | 'settings' | 'admin'>('trees');
     const [dialogMessage, setDialogMessage] = useState<string | null>(null);
 
     // Live profile state — written by the listenToUserProfile listener below, read across
@@ -156,6 +157,13 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                     tendingId={tendingId}
                     onTend={handleTend}
                 />
+            ),
+        },
+        {
+            // The light face: what witnessed care has kindled. Holder-private by rule, so it
+            // lives only on the OWN profile shell (there is no public balance to show anyone).
+            key: 'light', label: 'Light', icon: <Icons.Sun />, render: () => (
+                <ProfileLight uid={lightseed.uid} />
             ),
         },
         {

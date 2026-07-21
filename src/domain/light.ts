@@ -27,15 +27,17 @@ export const RAY_UNITS = 100;
 export const KINDLE_UNITS_PER_WITNESSED_CARE = RAY_UNITS;
 
 // ── The sun: what kindles ─────────────────────────────────────────────────────────────────
-// A care act kindles ONLY when witnessed (confirmed: the AI at threshold or a guardian's
-// hand, the watering law's own gate) and only for the living. Unwitnessed care warms the
-// world but mints nothing; that is the forgery-resistance of the whole economy.
+// A care act kindles ONLY when a HUMAN GUARDIAN witnesses it, and only for the living.
+// AI validation is a hint for the guardian's eye (it lights the tree's validation display),
+// never a witness: it holds no light and kindles none (ring 2026-07-20, "The mint stands on
+// server ground"; a trustworthy server-side AI witness is a coming rung). Unwitnessed care
+// warms the world but mints nothing; that is the forgery-resistance of the whole economy.
 export interface CareAct {
-  confirmed: boolean; // witnessed per domain/watering (AI_CONFIRM_THRESHOLD or a guardian)
+  witnessed: boolean; // a human guardian's authenticated hand (the witnessWatering callable)
   treeAlive: boolean; // the tended being still lives (a dead tree kindles memory, not light)
 }
 
-export const kindles = (act: CareAct): boolean => act.confirmed && act.treeAlive;
+export const kindles = (act: CareAct): boolean => act.witnessed && act.treeAlive;
 
 // One kindling per tree per day: the tree's own rhythm bounds the supply (life is the
 // central bank). `lastKindledAtMs` null = never kindled from this tree before.
@@ -52,15 +54,15 @@ export const WITNESS_SHARE_DENOMINATOR = 7;
 export const witnessShareUnits = (rayUnits: number = RAY_UNITS): number =>
   Math.floor(rayUnits / WITNESS_SHARE_DENOMINATOR);
 
-// What a confirmed care brings into the world: the carer's whole ray, plus a human witness's
-// seventh when the witness is a real being other than the carer. The ONE allocation rule the
-// server mint mirrors and the tests share; unwitnessed or lifeless care kindles nothing (the sun).
+// What a witnessed care brings into the world: the carer's whole ray, plus the witness's
+// seventh. The ONE allocation rule the server mint mirrors (functions/src/mint.ts, held to
+// this module by tests/mint.test.ts). A kindle REQUIRES a human witness distinct from the
+// carer: no witness, a self-witness, or a lifeless tree kindles nothing (the sun); AI
+// validation alone is a hint, never a witness (ring 2026-07-20).
 export interface KindleInput {
-  confirmed: boolean;    // witnessed per the watering law (AI at threshold, or a guardian)
   treeAlive: boolean;
   carerUid: string;
-  // A HUMAN witness distinct from the carer (a guardian who confirmed). Absent for AI-confirmed
-  // care and for self-confirmation — neither adds a witness ray.
+  // The authenticated human guardian who witnessed. Absent = unwitnessed (AI validation alone).
   witnessUid?: string;
 }
 
@@ -71,12 +73,12 @@ export interface KindledRay {
 }
 
 export const kindleRays = (input: KindleInput): KindledRay[] => {
-  if (!kindles(input)) return [];
-  const rays: KindledRay[] = [{ holderUid: input.carerUid, role: 'carer', units: RAY_UNITS }];
-  if (input.witnessUid && input.witnessUid !== input.carerUid) {
-    rays.push({ holderUid: input.witnessUid, role: 'witness', units: witnessShareUnits() });
-  }
-  return rays;
+  const witnessed = Boolean(input.witnessUid && input.witnessUid !== input.carerUid);
+  if (!kindles({ witnessed, treeAlive: input.treeAlive })) return [];
+  return [
+    { holderUid: input.carerUid, role: 'carer', units: RAY_UNITS },
+    { holderUid: input.witnessUid as string, role: 'witness', units: witnessShareUnits() },
+  ];
 };
 
 // ── The ray: the shared shape ─────────────────────────────────────────────────────────────

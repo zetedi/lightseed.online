@@ -10,10 +10,10 @@ import { DAY_MS } from '../src/domain/watering';
 // story as the golden case, and every fade feeding the glow. Nothing is ever lost.
 
 describe('the sun: only witnessed care for the living kindles', () => {
-  it('confirmed care of a living tree kindles; anything less warms the world but mints nothing', () => {
-    expect(kindles({ confirmed: true, treeAlive: true })).toBe(true);
-    expect(kindles({ confirmed: false, treeAlive: true })).toBe(false);
-    expect(kindles({ confirmed: true, treeAlive: false })).toBe(false);
+  it('witnessed care of a living tree kindles; anything less warms the world but mints nothing', () => {
+    expect(kindles({ witnessed: true, treeAlive: true })).toBe(true);
+    expect(kindles({ witnessed: false, treeAlive: true })).toBe(false);
+    expect(kindles({ witnessed: true, treeAlive: false })).toBe(false);
   });
 
   it('one kindling per tree per day — the tree\'s rhythm bounds the supply', () => {
@@ -91,13 +91,12 @@ describe('the witness of care: the eye that vouches earns a seventh', () => {
     expect(witnessShareUnits(700)).toBe(100);    // one whole ray of a week's care
   });
 
-  it('AI-confirmed care: the carer keeps their whole ray, no witness holds light', () => {
-    const rays = kindleRays({ confirmed: true, treeAlive: true, carerUid: 'alice' });
-    expect(rays).toEqual([{ holderUid: 'alice', role: 'carer', units: RAY_UNITS }]);
+  it('AI validation alone kindles nothing: it lights the tree, holds no light (the ring, 2026-07-20)', () => {
+    expect(kindleRays({ treeAlive: true, carerUid: 'alice' })).toEqual([]);
   });
 
-  it('a human witness earns a seventh, ADDITIONAL — the carer\'s ray is untouched', () => {
-    const rays = kindleRays({ confirmed: true, treeAlive: true, carerUid: 'alice', witnessUid: 'bob' });
+  it('a human witness kindles the carer\'s whole ray AND earns a seventh, additional', () => {
+    const rays = kindleRays({ treeAlive: true, carerUid: 'alice', witnessUid: 'bob' });
     expect(rays).toEqual([
       { holderUid: 'alice', role: 'carer', units: RAY_UNITS },
       { holderUid: 'bob', role: 'witness', units: witnessShareUnits() },
@@ -106,13 +105,11 @@ describe('the witness of care: the eye that vouches earns a seventh', () => {
     expect(rays.find(r => r.role === 'carer')!.units).toBe(RAY_UNITS);
   });
 
-  it('no one witnesses their own care: a carer confirming themself adds no witness ray', () => {
-    const rays = kindleRays({ confirmed: true, treeAlive: true, carerUid: 'alice', witnessUid: 'alice' });
-    expect(rays).toEqual([{ holderUid: 'alice', role: 'carer', units: RAY_UNITS }]);
+  it('no one witnesses their own care: a self-witness kindles nothing at all', () => {
+    expect(kindleRays({ treeAlive: true, carerUid: 'alice', witnessUid: 'alice' })).toEqual([]);
   });
 
-  it('the sun still gates: unconfirmed or lifeless care kindles nothing, witness or not', () => {
-    expect(kindleRays({ confirmed: false, treeAlive: true, carerUid: 'alice', witnessUid: 'bob' })).toEqual([]);
-    expect(kindleRays({ confirmed: true, treeAlive: false, carerUid: 'alice', witnessUid: 'bob' })).toEqual([]);
+  it('the sun still gates: lifeless care kindles nothing, witness or not', () => {
+    expect(kindleRays({ treeAlive: false, carerUid: 'alice', witnessUid: 'bob' })).toEqual([]);
   });
 });

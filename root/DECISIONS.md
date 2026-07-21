@@ -6,6 +6,47 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-21 · Lumo's second look: the law aligned, the light made visible**: Lumo re-reviewed
+main through 16af605 and found the architecture much stronger but four real gaps on the light
+path. All confirmed against the code; each got the fix its truth demanded. **(1) The AI-mint
+"regression" resolved by the RING, not by a new mint**: Lumo read domain/light.ts as promising a
+carer ray for AI-confirmed care, and the server as never minting it. The drift was real, but the
+2026-07-20 ring had already ruled: AI confirmation is VALIDATION-ONLY, it lights the tree and
+holds no light; a trustworthy server-side AI witness is a coming rung. So the DOMAIN was brought
+to the ring: `kindles` now takes `witnessed` (a human guardian's authenticated hand), and
+`kindleRays` mints NOTHING without a witness distinct from the carer; the old carer-only-ray-on-
+AI-confirmation case is gone from the law and its tests. Light enters only through a human eye,
+until an AI witness can stand on server ground. **(2) The mint's judgment is now pure and
+mirror-tested**: every accept/reject branch of witnessWatering (vanished pulse, non-watering,
+malformed, no birth time, self-witness, non-guardian, late tenure, vanished tree, bed, died
+tree, already-witnessed, the daily-cap idempotency and the seventh-rides-only-on-fresh-kindle
+rule) moved into functions/src/mint.ts as `judgeWitness`, a pure function with no Firestore in
+reach; tests/mint.test.ts imports BOTH the domain and the mirror and compares them, so the two
+laws cannot drift apart silently again (20 new tests; the full functions-emulator integration
+test remains a named rung). The day key now comes ONLY from the pulse's server birth time; the
+old client-suppliable `mintedAt` fallback is gone. **(3) Server lids are UUIDv7**: every lid a
+Cloud Function mints (rays, stay leaves, node membership edges, circle links) now carries the
+LIN's time-ordered true name via a pure `uuidv7(atMs, bytes)` shared in mint.ts, proven against
+src/utils/id.ts `timeOf` in the mirror tests; randomUUID remains only for non-lid tokens.
+**(4) The living gate has ONE home**: death is not yet in the data model, and the mint no longer
+pretends otherwise; `judgeWitness` refuses a tree with `diedAt` set, and that field is declared
+the single future home of death, so when a tree dies on record the mint honors it in exactly one
+place ("a tree that has died kindles memory, not light"). **Also landed**: account purge no
+longer swallows an Auth-delete failure and reports success (only user-not-found is idempotent-
+safe; anything else surfaces and asks to be re-run); `scripts/cleanup-rays.mjs` (dry-run by
+default, `--burn` to act) stands ready in case the flawed 3cabab7 mint was ever deployed; and
+THE LIGHT FACE: a `Light` section on the profile shell shows the holder their rays (the glow
+disc brightens with units held, each kindle listed with its tree, day and role), private by
+rule and not merely by UI, since rays are readable only by their holder. **Deliberately NOT
+done now, Zoltán's call pending**: the community-naming rung (auto-created `<tree> Circle`
+communities make the pathway's naming step unreachable; either the CTA becomes a rename flow or
+the rung is removed); the full erasure sweep (links TO the user, rays, storage, owned
+communities, subcollections); the PWA smoke test. Gates: `check` green (unit tests now 339),
+`test:rules` 95, functions build clean. *(Lumo's second review, 2026-07-21: the reviewer read
+the drift correctly and the ring answered; the loop keeps working.)*
+
+---
+
 **2026-07-21 · The commons has a legal shape (AGPL-3.0)**: the project had NO license, which in law
 means all-rights-reserved, the opposite of everything it is. Adopted the **GNU Affero General Public
 License v3.0 or later** (`LICENSE`, verbatim FSF text; `package.json` license field; a README
