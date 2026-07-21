@@ -81,6 +81,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    // list itself lives in the Circle view; the nonce re-reads the circle when it changes there.
    const [guardianNonce, setGuardianNonce] = useState(0);
    const [isTender, setIsTender] = useState(false);
+   const [isGuardian, setIsGuardian] = useState(false);
    const canDelete = isOwner || isAdmin || isSuperAdmin;
    // The amber dot: this viewer may delete ONLY through staff privilege, not ownership.
    const deleteIsStaffOnly = !isOwner && (isAdmin || isSuperAdmin);
@@ -183,6 +184,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                setCircle(treeCircle(tree.ownerId, links));
                // A tender holds an invited co_owner/steward role link (guardian/observer don't tend).
                setIsTender(!!currentUserId && links.some(l => l.from === currentUserId && (l.rel === 'co_owner' || l.rel === 'steward')));
+               // A guardian follows the tree's care without powers — Care shows them the
+               // schedule read-only, with a door to ask for stewardship.
+               setIsGuardian(!!currentUserId && links.some(l => l.from === currentUserId && l.rel === 'guardian'));
            })
            .catch(() => {});
        return () => { alive = false; };
@@ -307,7 +311,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
        },
        {
            key: 'care', label: 'Care', icon: <Icons.Droplet />, render: () => (
-               (isOwner || isTender || isAdmin || isSuperAdmin)
+               // Tenders tend; GUARDIANS see the same card read-only (the schedule, the rhythm,
+               // the pending witnesses) with a door to ask for stewardship. Outsiders see neither.
+               (isOwner || isTender || isAdmin || isSuperAdmin || isGuardian)
                    ? <TreeCare
                        tree={tree}
                        growthBlocks={growthBlocks}
@@ -317,10 +323,11 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                        isOwner={isOwner}
                        canWater={canWater}
                        canManageSchedule={canManageSchedule}
+                       canAskStewardship={isGuardian && !canWater}
                        onUpdate={onUpdate}
                        onChainRefresh={loadChain}
                    />
-                   : <p className="rounded-2xl border border-slate-100 bg-white p-6 text-center text-sm text-slate-400">Only the tree's circle can tend its care.</p>
+                   : <p className="rounded-2xl border border-slate-100 bg-white p-6 text-center text-sm text-slate-400">Only the tree's circle can tend its care. Guard the tree to follow it.</p>
            ),
        },
        {

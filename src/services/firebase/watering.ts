@@ -171,6 +171,34 @@ export const witnessWatering = async (pulseId: string): Promise<{ kindled: boole
     return res.data as { kindled: boolean; witnessUnits: number };
 };
 
+// A guardian asks to become a steward — a knock on the circle's door, carried as a message into
+// the guardians thread (the owner reads it there and invites from the Circle view). Roles are
+// LINKS minted only through accepted invitations, never self-assigned: this changes nothing by
+// itself, it only makes the wish reach the one who can invite.
+export const requestStewardship = async (
+    tree: Lifetree,
+    sender: { uid: string; displayName?: string | null; photoURL?: string | null },
+): Promise<void> => {
+    if (!tree.ownerId) throw new Error('This tree has no owner to ask.');
+    const participantUids = await resolveCircleUids(tree, 'guardians');
+    // Only a circle participant (a guardian) can knock — mirrors the thread's own rules.
+    if (!participantUids.includes(sender.uid)) throw new Error('Guard this tree first, then ask to steward it.');
+    await sendThreadMessage({
+        thread: {
+            threadId: buildGroupThreadId(tree.id, 'guardians', tree.ownerId),
+            participantUids,
+            reachTreeId: tree.id,
+            reachTreeName: tree.name,
+            threadName: `${tree.name} · Guardians`,
+            audience: 'guardians',
+            isGroup: true,
+        },
+        fromTree: tree,
+        sender,
+        text: `🌿 ${sender.displayName || 'A guardian'} asks to become a steward of ${tree.name}, to help tend its care. (The owner can invite from the Circle.)`,
+    });
+};
+
 // Manually ping a tree's guardians that it needs watering — the client/"remind now" path that
 // complements the daily Cloud Function. Writes an off-chain "water me" reach (careAlert flag →
 // blue border) into the guardians thread and marks the tree alerted. Returns false if there are

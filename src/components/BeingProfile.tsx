@@ -67,8 +67,9 @@ export interface BeingProfileProps {
     /** Renders the back button when present. */
     onClose?: () => void;
     backLabel?: string;
-    /** Full-width content between the hero and the body
-     *  (LightseedProfile's invite banners; notice modals). */
+    /** Content rendered under the section menu, above the active section's body
+     *  (LightseedProfile's invite banners; notice modals). Lives INSIDE the layout so the
+     *  overlapping menu card can never cover it. */
     banner?: React.ReactNode;
     /** Pass-through variants for ProfileLayout (overlap, max-width, card classes…). */
     layoutProps?: Omit<ProfileLayoutProps, 'menu' | 'children'>;
@@ -130,13 +131,15 @@ export const BeingProfile: React.FC<BeingProfileProps> = ({
                 {hero.footer}
             </ProfileHero>
 
-            {banner}
-
-            {/* Body: sidebar + content */}
+            {/* Body: sidebar + content. The banner rides INSIDE the layout, under the section
+                menu: the layout overlaps up onto the hero (z-10, negative margin), so anything
+                placed between hero and layout slides BEHIND the menu card on mobile — a pending
+                guardianship invitation was hiding exactly there. */}
             <ProfileLayout
                 {...layoutProps}
                 menu={<SectionMenu items={sections} active={active} onSelect={handleSelect} />}
             >
+                {banner}
                 {current?.render()}
             </ProfileLayout>
         </div>

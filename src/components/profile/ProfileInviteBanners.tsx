@@ -40,7 +40,7 @@ export const ProfileInviteBanners: React.FC<ProfileInviteBannersProps> = ({ uid,
     <>
       {/* Tree Circle invitations — someone has invited you into shared care of a tree */}
       {treeInvites.length > 0 && (
-        <div className="max-w-6xl mx-auto px-4 mt-6 space-y-3">
+        <div className="mb-6 space-y-3">
           {treeInvites.map(inv => (
             <div key={inv.id} className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
               <div className="flex-1 min-w-0">
@@ -62,7 +62,7 @@ export const ProfileInviteBanners: React.FC<ProfileInviteBannersProps> = ({ uid,
 
       {/* Community invitations — a community asked one of your trees to stand with it */}
       {communityInvites.length > 0 && (
-        <div className="max-w-6xl mx-auto px-4 mt-6 space-y-3">
+        <div className="mb-6 space-y-3">
           {communityInvites.map(inv => (
             <div key={inv.id} className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-lg border border-teal-200 bg-teal-50 p-4 shadow-sm">
               <div className="flex-1 min-w-0">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Timestamp } from 'firebase/firestore';
 import { Icons } from '../ui/Icons';
-import { setWateringSchedule, recordWatering, markWateredOffChain, sendWateringAlert, fileToWebpBase64 } from '../../services/firebase';
+import { setWateringSchedule, recordWatering, markWateredOffChain, sendWateringAlert, requestStewardship, fileToWebpBase64 } from '../../services/firebase';
 import { analyzeWateringPhoto } from '../../services/gemini';
 import { Pulse, type Lifetree } from '../../types';
 import { isOnWateringSchedule, isWateringOverdue, daysUntilWatering, daysOverdue, lastWateredMillis, wateringAlertedToday, treeStage, computeNextDueMillis, type TreeStage } from '../../domain/watering';
@@ -29,6 +29,9 @@ interface TreeCareProps {
     isOwner: boolean;
     canWater: boolean;
     canManageSchedule: boolean;
+    // A guardian without tending powers: the card reads as the schedule's read-only face,
+    // plus a door to ask the circle for stewardship (roles move only by invitation).
+    canAskStewardship?: boolean;
     onUpdate?: (updates: Partial<Lifetree>) => void;
     // Reload the shell's chain after a watering minted (or confirmed) a growth block.
     onChainRefresh: () => void;
@@ -44,6 +47,7 @@ export const TreeCare: React.FC<TreeCareProps> = ({
     isOwner,
     canWater,
     canManageSchedule,
+    canAskStewardship,
     onUpdate,
     onChainRefresh,
 }) => {
@@ -144,6 +148,17 @@ export const TreeCare: React.FC<TreeCareProps> = ({
         setWaterBusy(false);
     };
 
+    // The guardian's knock: a message into the guardians thread asking for stewardship.
+    const handleAskStewardship = async () => {
+        if (!currentUserId) return;
+        setWaterBusy(true); setWaterMsg(null);
+        try {
+            await requestStewardship(tree, sender);
+            setWaterMsg('Your ask is with the circle 🌿 The owner can invite you as a steward.');
+        } catch (e) { setWaterMsg(errMsg(e, 'Could not reach the circle.')); }
+        setWaterBusy(false);
+    };
+
     const handleRemindGuardians = async () => {
         if (!currentUserId) return;
         setWaterBusy(true); setWaterMsg(null);
@@ -172,6 +187,10 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                         )
                     ) : (
                         <p>No watering schedule yet.</p>
+                    )}
+                    {/* The rhythm, spelled out for readers without the schedule editor. */}
+                    {!canManageSchedule && scheduled && !selfSustaining && tree.watering?.intervalDays && (
+                        <p className="mt-1 text-xs text-sky-700/70">Watered every {tree.watering.intervalDays} day{tree.watering.intervalDays !== 1 ? 's' : ''}.</p>
                     )}
                     {lastWateredMs > 0 && <p className="mt-1 text-xs text-sky-700/70">Last watered {new Date(lastWateredMs).toLocaleDateString()}.</p>}
                 </div>
@@ -240,7 +259,23 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                 </div>
             )}
 
-            {canWater && pendingWaterings.length > 0 && (
+            {canAskStewardship && (
+                <div className="mb-4 rounded-xl border border-sky-100 bg-white/70 p-4">
+                    <p className="text-xs leading-relaxed text-sky-800/80">
+                        You guard this tree, so you see its care rhythm here. Tending it (watering,
+                        setting the schedule) belongs to its circle: the owner, co-owners and stewards.
+                        If you want to help tend it, ask to become a steward.
+                    </p>
+                    <button
+                        type="button"
+                        onClick={handleAskStewardship}
+                        disabled={waterBusy}
+                        className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-sky-300 bg-white px-4 py-2 text-xs font-bold text-sky-700 hover:bg-sky-50 disabled:opacity-50"
+                    >🌿 Ask to be a steward</button>
+                </div>
+            )}
+
+            {(canWater || canAskStewardship) && pendingWaterings.length > 0 && (
                 <div className="mt-4 border-t border-sky-200 pt-3">
                     <p className="mb-2 text-xs font-bold uppercase tracking-wider text-sky-600">Awaiting a guardian's witness</p>
                     <div className="space-y-2">
@@ -254,6 +289,9 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                     </div>
                     {/* No confirm button here: care is witnessed by a GUARDIAN (not the carer), in the
                         Circle. This just lets the carer see their care is awaiting a witness. */}
+                    {canAskStewardship && (
+                        <p className="mt-2 text-[11px] text-sky-600">As a guardian you can witness these in the Circle.</p>
+                    )}
                 </div>
             )}
 

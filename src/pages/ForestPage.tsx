@@ -69,7 +69,27 @@ export const ForestPage = ({
     return next;
   });
   const toggleCls = "flex cursor-pointer items-center gap-2 text-sm font-medium text-emerald-900 dark:text-emerald-100";
-  // One emerald card holding the three filters. On the map it's a top-left overlay (z-20, BELOW the
+  // The filters live BEHIND a button now: one compact Filters toggle above the cards (or on the
+  // map), opening the checkbox card only when asked, so the forest itself keeps the space. The
+  // badge counts what is currently filtered OUT, so a narrowed view is never mistaken for the
+  // whole forest.
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filteredOut = [showNatureTrees, showUserTrees, showValidatedTrees, showLightHouses].filter(v => !v).length;
+  const filterButton = (
+    <button
+      type="button"
+      onClick={() => setFiltersOpen(o => !o)}
+      aria-expanded={filtersOpen}
+      className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-white/90 px-4 py-2 text-sm font-medium text-emerald-800 shadow-sm backdrop-blur-sm hover:bg-emerald-50 dark:border-emerald-800/60 dark:bg-emerald-950/70 dark:text-emerald-100"
+    >
+      <span className="[&>svg]:h-4 [&>svg]:w-4"><Icons.Filter /></span>
+      <span>Filters</span>
+      {filteredOut > 0 && (
+        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">{filteredOut}</span>
+      )}
+    </button>
+  );
+  // One emerald card holding the filters. On the map it's a top-left overlay (z-20, BELOW the
   // sticky nav's z-30) stacked vertically on mobile; on the grid it sits in flow as ONE horizontal
   // line, so the cards below stay visible.
   const filters = (horizontal: boolean) => (
@@ -101,10 +121,18 @@ export const ForestPage = ({
   return (
     <>
       {viewMode === 'map' ? (
-        <ForestMap trees={filteredData} onView={onView} onReach={onReach} loading={loadingMore && filteredData.length === 0} onRefresh={onRefresh} primaryTree={activeTree} refreshKey={mapRefreshKey} lightHouseDomain={lightHouseDomain} showLightHouses={showLightHouses} onViewLightHouse={onViewLightHouse} filtersOverlay={filters(false)} />
+        <ForestMap trees={filteredData} onView={onView} onReach={onReach} loading={loadingMore && filteredData.length === 0} onRefresh={onRefresh} primaryTree={activeTree} refreshKey={mapRefreshKey} lightHouseDomain={lightHouseDomain} showLightHouses={showLightHouses} onViewLightHouse={onViewLightHouse} filtersOverlay={
+          <div className="flex flex-col items-start gap-2">
+            {filterButton}
+            {filtersOpen && filters(false)}
+          </div>
+        } />
       ) : (
         <>
-          <div className="mb-4 flex justify-center">{filters(true)}</div>
+          <div className="mb-4 flex flex-col items-center gap-3">
+            {filterButton}
+            {filtersOpen && filters(true)}
+          </div>
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {showLightHouses && lightHouseDecks.map(([deckId, group]) => {
               if (group.length === 1) {

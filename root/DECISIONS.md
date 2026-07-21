@@ -6,6 +6,28 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-21 · The guardian sees the rhythm and may knock**: three doors eased on Zoltán's
+mobile walk. **(1) The hidden invitation**: a pending guardianship invitation was sliding BEHIND
+the profile's section menu on mobile, because the BeingProfile banner slot rendered between the
+hero and the layout, and the layout overlaps UP onto the hero (z-10, negative margin) right over
+it. The banner slot now lives INSIDE the layout, under the section menu and above the active
+section, where nothing can cover it; the invite cards shed their own page-width wrappers since
+the layout's card now provides the frame. **(2) The guardian's Care view**: a guardian opening
+Care saw only "Only the tree's circle can tend its care", though guardianship IS a care
+relationship. Care now opens for guardians READ-ONLY: the schedule status, the spelled-out
+rhythm ("Watered every N days"), the pending witnesses (with a pointer to the Circle where a
+guardian witnesses), and a new door: **Ask to be a steward**. The ask is a message into the
+guardians thread (requestStewardship), a knock and nothing more: roles remain LINKS minted only
+through accepted invitations, so the wish reaches the owner who can invite, and no power moves
+by asking. Outsiders still see the closed door, now with the hint to guard the tree first.
+**(3) The forest breathes**: the always-open filter card gave its space back; a single Filters
+button (funnel icon, new to the icon set) sits above the cards or on the map overlay and opens
+the checkbox card only when asked. A badge counts what is currently filtered OUT, so a narrowed
+view is never mistaken for the whole forest. Gates: check green (350), warnings held at the
+pre-existing six. *(Three mobile findings from Zoltán, same morning as the lid audit.)*
+
+---
+
 **2026-07-21 · Every being is named at birth, and the name travels light**: a full lid audit
 swept every persisted collection for the Being law (a UUIDv7 lid minted at creation). The forest
 was mostly whole; four births were nameless and are now sealed: the ALIGNMENT itself (it extends
