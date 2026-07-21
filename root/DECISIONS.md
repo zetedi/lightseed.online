@@ -6,6 +6,25 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-21 · The alignment wears the being's face**: an alignment is a Being like every other,
+so it now has a real profile (BeingProfile): its NAME in the hero (the two trees it binds, "Rock
+Blossom guava ↔ Nur"), the status chip, and a section menu of The bond, The discussion, and The
+covenant. The covenant section closed a real bug: the old "Open the covenant" button set state
+BEHIND the overlay chain (selectedAlignment wins the ternary in App, so the covenant profile
+mounted but never showed; the button looked dead). Root fix, not a patch: the covenant's body
+was extracted into ONE shared face, CovenantPanel (pledge, proven verification line, parties,
+sign/break, chain head, key modal), which both the standalone CovenantProfile and the
+alignment's covenant section render, so the two surfaces can never tell different stories about
+the same seal; the accept flow's covenant opens also clear the alignment overlay first, closing
+the stacking hazard everywhere. A finalised alignment whose twin was never minted now offers its
+parties "Bring the covenant to life" (ensureAlignmentCovenant) instead of hiding the absence.
+The profile's Alignments list grew real cards too: the two trees' faces overlapping, both names,
+the date, the note count, the status chip, where before there was only a status row. Gates:
+check green (339), warnings held at the pre-existing six. *(Zoltán's ask, with the screenshot
+that showed a nameless alignment and a button that did nothing.)*
+
+---
+
 **2026-07-21 · Lumo's second look: the law aligned, the light made visible**: Lumo re-reviewed
 main through 16af605 and found the architecture much stronger but four real gaps on the light
 path. All confirmed against the code; each got the fix its truth demanded. **(1) The AI-mint

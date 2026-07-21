@@ -1,17 +1,20 @@
 import { useEffect, useState } from 'react';
 import type { Alignment, AlignmentNote, Lifetree } from '../../types';
 import { getLifetreeById, getPulseById, getPersonName, postAlignmentNote, getAlignmentById, getCovenantForAlignment } from '../../services/firebase';
+import { ensureAlignmentCovenant } from '../../services/firebase/covenants';
 import { Icons } from '../ui/Icons';
 import { Loading } from '../ui/Loading';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { ProfileHero } from '../ui/ProfileHero';
 import { SectionTitle } from '../ui/SectionTitle';
+import { BeingProfile, type BeingSection } from '../BeingProfile';
+import { CovenantPanel } from '../CovenantPanel';
 
-// THE alignment view — the one page every alignment opens into, whether reached from a feed's
-// sync-block, a tree's chain leaf, the profile's alignments list, or the Observatory. Same
-// profile scaffold as visions/events: the two sides it binds, the two pulses that rhymed, and
-// the discussion that carries it from initiation to a finalised sync-block. An accepted
-// alignment is a mutual sync-block on both chains; a pending one is still an open conversation.
+// THE alignment view — an alignment is a Being like every other, so it wears the same face
+// (BeingProfile): a hero carrying its NAME (the two trees it binds), and a section menu — The
+// bond (who aligned, on what), The discussion (how it took shape), The covenant (its
+// cryptographic twin, living INSIDE the profile rather than behind a navigation that a stacked
+// overlay could swallow). Reached from a feed's sync-block, a tree's chain leaf, the profile's
+// alignments list, or the Observatory.
 //
 // Today each side/party of an alignment is a lifetree. The direction (Indra's net) is that
 // alignments will also bind decisions, community events, and node pulses — so the framing here
@@ -25,8 +28,7 @@ interface AlignmentViewProps {
   onClose: () => void;
   // Navigate to a side's entity — a lifetree today; other party kinds later.
   onViewTree?: (tree: Lifetree) => void;
-  // Open this alignment's cryptographic twin — the 2-party Covenant (domain/covenant.ts).
-  onViewCovenant?: (covenantId: string) => void;
+  notify?: (m: string) => void;
 }
 
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -60,12 +62,14 @@ const PulseChip = ({ cap, text, tone }: { cap: string; text?: string; tone: 'sky
   </div>
 );
 
-export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree, onViewCovenant }: AlignmentViewProps) => {
+export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree, notify }: AlignmentViewProps) => {
   const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [initiator, setInitiator] = useState<Side>({ tree: null });
   const [target, setTarget] = useState<Side>({ tree: null });
   const [covenantId, setCovenantId] = useState<string | null>(null);
+  const [minting, setMinting] = useState(false);
+  const [mintError, setMintError] = useState<string | null>(null);
   // The live alignment — the prop can be stale (e.g. loaded with the profile's history tab), so
   // messages and status are refreshed from the source on open and after every send.
   const [messages, setMessages] = useState<AlignmentNote[]>(alignment.messages || []);
@@ -80,7 +84,7 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree, o
     setLoading(true);
     setMessages(alignment.messages || []);
     setLiveStatus(alignment.status);
-    setDraft(''); setError(null);
+    setDraft(''); setError(null); setMintError(null);
     (async () => {
       const [live, iTree, tTree, iPulse, tPulse, iName, tName, covenant] = await Promise.all([
         getAlignmentById(alignment.id).catch(() => null),
@@ -125,130 +129,172 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree, o
     }
   };
 
-  return (
-    <div className="min-h-screen animate-in fade-in zoom-in-95 duration-300 pb-20 bg-slate-50">
-      <ProfileHero heroImageUrl={initiator.tree?.latestGrowthUrl || initiator.tree?.imageUrl}>
-        <div className="flex items-center justify-between mb-6">
-          <button onClick={onClose} className="flex items-center gap-2 text-white/70 hover:text-white text-sm font-medium">
-            <Icons.ArrowLeft /><span>{t('back')}</span>
-          </button>
-          <span className={`rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide ${status.cls}`}>{status.label}</span>
+  // A finalised alignment without its twin yet: a party may bring the covenant to life here
+  // (ensureAlignmentCovenant mints the deterministic twin; both parties still sign to seal it).
+  const mintCovenant = async () => {
+    if (minting) return;
+    setMinting(true); setMintError(null);
+    try {
+      const covenant = await ensureAlignmentCovenant(alignment);
+      setCovenantId(covenant.id);
+    } catch (e: any) {
+      setMintError(e?.message || 'Could not bring the covenant to life.');
+    }
+    setMinting(false);
+  };
+
+  const bothNamed = !!(initiator.tree || target.tree);
+  const title = bothNamed
+    ? `${initiator.tree?.name || 'A tree'} ↔ ${target.tree?.name || 'a tree'}`
+    : 'Alignment';
+
+  const sections: BeingSection[] = [
+    {
+      key: 'bond', label: 'The bond', icon: <Icons.Venn />, render: () => (
+        <div>
+          <SectionTitle title="The bond" sub={canSpeak ? 'This alignment is still open: speak, then finalise when you’re ready.' : 'What these two trees aligned on.'} />
+          {loading ? (
+            <div className="flex justify-center py-16"><Loading /></div>
+          ) : (
+            <>
+              <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                <PartySide side={initiator} tone="sky" onView={onViewTree} />
+                {/* A calm connector — the two sides linked, no colour, no label. */}
+                <svg width="44" height="24" viewBox="0 0 44 24" fill="none" stroke="#cbd5e1" strokeWidth="1.6" aria-hidden="true" className="shrink-0">
+                  <circle cx="17" cy="12" r="8" />
+                  <circle cx="27" cy="12" r="8" />
+                </svg>
+                <PartySide side={target} tone="emerald" onView={onViewTree} />
+              </div>
+
+              {(initiator.pulse?.body || initiator.pulse?.title || target.pulse?.body || target.pulse?.title) && (
+                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <PulseChip cap="their pulse" text={initiator.pulse?.body || initiator.pulse?.title} tone="sky" />
+                  <PulseChip cap="matched pulse" text={target.pulse?.body || target.pulse?.title} tone="emerald" />
+                </div>
+              )}
+
+              <div className="mt-6 flex items-start gap-2 rounded-xl bg-emerald-50 px-4 py-3.5 text-sm leading-snug text-emerald-800">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 shrink-0"><path d="M12 3v18M5 10l7-7 7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                <span>{liveStatus === 'ACCEPTED'
+                  ? 'Accepted: a shared sync-block sits on both chains, a lasting mark that these trees aligned.'
+                  : liveStatus === 'REJECTED'
+                    ? 'This alignment was declined.'
+                    : 'Once accepted, a shared sync-block is woven into both chains (a permanent, mutual link).'}</span>
+              </div>
+            </>
+          )}
         </div>
-        <div className="flex items-center gap-4 sm:gap-5">
+      ),
+    },
+    {
+      key: 'discussion', label: 'The discussion', icon: <Icons.Chat />, render: () => (
+        <div>
+          <SectionTitle title="The discussion" sub="How this alignment took shape." />
+          {/* Initiation → response → finalised. Recursive: it stays open until the target accepts. */}
+          <ol className="space-y-3">
+            <li className="flex items-start gap-2.5">
+              <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-sky-400" />
+              <p className="text-sm text-slate-600"><span className="font-semibold text-slate-800">{initiator.ownerName || 'A tree'}</span> reached toward <span className="font-semibold text-slate-800">{target.ownerName || 'another tree'}</span>; the match was acknowledged.</p>
+            </li>
+            {messages.map((m, i) => {
+              const mine = m.by === currentUserId;
+              return (
+                <li key={i} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm ${mine ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                    <span className={`mb-0.5 block text-[10px] font-semibold uppercase tracking-wide ${mine ? 'text-white/70' : 'text-slate-400'}`}>{nameFor(m.by)}</span>
+                    <span className="whitespace-pre-wrap break-words">{m.text}</span>
+                  </div>
+                </li>
+              );
+            })}
+            {liveStatus === 'ACCEPTED' && (
+              <li className="flex items-start gap-2.5">
+                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
+                <p className="text-sm font-medium text-emerald-700">Finalised: a shared sync-block sits on both chains.</p>
+              </li>
+            )}
+            {liveStatus === 'REJECTED' && (
+              <li className="flex items-start gap-2.5">
+                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-slate-300" />
+                <p className="text-sm text-slate-500">Declined: this alignment was not taken up.</p>
+              </li>
+            )}
+          </ol>
+
+          {canSpeak && (
+            <div className="mt-4">
+              <textarea
+                value={draft}
+                onChange={e => setDraft(e.target.value)}
+                rows={2}
+                maxLength={2000}
+                placeholder="Say something back…"
+                className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 text-sm text-slate-700 outline-none focus:border-emerald-300 focus:bg-white"
+              />
+              <div className="mt-2 flex items-center justify-between gap-2">
+                {error ? <span className="text-xs text-rose-500">{error}</span> : <span />}
+                <button
+                  onClick={send}
+                  disabled={!draft.trim() || posting}
+                  className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-emerald-700 active:scale-95 disabled:opacity-50"
+                >{posting ? 'Sending…' : 'Send'}</button>
+              </div>
+              <p className="mt-2 text-center text-[11px] text-slate-400">The target accepts from the Observatory to finalise; that seals the sync-block on both chains.</p>
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'covenant', label: 'The covenant', icon: <Icons.Shield />, render: () => (
+        <div>
+          <SectionTitle title="The covenant" sub="The alignment's cryptographic twin: two hands, one seal, proven on read." />
+          {covenantId ? (
+            <CovenantPanel covenantId={covenantId} currentUserId={currentUserId} notify={notify} />
+          ) : loading ? (
+            <div className="flex justify-center py-16"><Loading /></div>
+          ) : liveStatus === 'ACCEPTED' && isParticipant ? (
+            <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-6 text-center">
+              <p className="text-sm text-slate-600">This alignment is finalised, but its covenant has not been brought to life yet.</p>
+              {mintError && <p className="mt-2 text-xs text-rose-500">{mintError}</p>}
+              <button
+                onClick={mintCovenant}
+                disabled={minting}
+                className="mt-4 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
+              >{minting ? 'Minting…' : 'Bring the covenant to life'}</button>
+              <p className="mx-auto mt-3 max-w-sm text-xs text-slate-400">Both parties then sign in their own hand; two signatures seal it.</p>
+            </div>
+          ) : (
+            <p className="rounded-2xl border border-slate-100 bg-slate-50/60 p-6 text-center text-sm text-slate-500">
+              {liveStatus === 'ACCEPTED'
+                ? 'The covenant awaits one of its parties to bring it to life.'
+                : 'The covenant is born when this alignment is finalised; its two parties then seal it with their own signatures.'}
+            </p>
+          )}
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <BeingProfile
+      className="min-h-screen animate-in fade-in zoom-in-95 duration-300 pb-20 bg-slate-50"
+      onClose={onClose}
+      backLabel={t('back')}
+      hero={{
+        imageUrl: initiator.tree?.latestGrowthUrl || initiator.tree?.imageUrl,
+        avatar: (
           <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center rounded-full border-4 border-white bg-sky-50 text-sky-500 shadow-xl">
             <Icons.Venn />
           </div>
-          <div className="min-w-0 flex-1">
-            <h1 className="min-w-0 break-words text-2xl font-light tracking-wide">Alignment</h1>
-            <p className="mt-1 text-xs text-slate-300">A resonance between two lifetrees, sealed on both chains.</p>
-          </div>
-        </div>
-      </ProfileHero>
-
-      <div className="mx-auto mt-6 max-w-3xl px-4 sm:px-6">
-        <div className="rounded-2xl border border-slate-100 bg-white p-4 sm:p-6 shadow-lg">
-          <SectionTitle title="The bond" sub={canSpeak ? 'This alignment is still open: speak, then finalise when you’re ready.' : 'What these two trees aligned on.'} />
-
-          {loading ? (
-            <div className="flex justify-center rounded-2xl border border-slate-100 bg-white py-16 shadow-sm">
-              <Loading />
-            </div>
-          ) : (
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-            <PartySide side={initiator} tone="sky" onView={onViewTree} />
-            {/* A calm connector — the two sides linked, no colour, no label. */}
-            <svg width="44" height="24" viewBox="0 0 44 24" fill="none" stroke="#cbd5e1" strokeWidth="1.6" aria-hidden="true" className="shrink-0">
-              <circle cx="17" cy="12" r="8" />
-              <circle cx="27" cy="12" r="8" />
-            </svg>
-            <PartySide side={target} tone="emerald" onView={onViewTree} />
-          </div>
-          )}
-
-          {!loading && (initiator.pulse?.body || initiator.pulse?.title || target.pulse?.body || target.pulse?.title) && (
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <PulseChip cap="their pulse" text={initiator.pulse?.body || initiator.pulse?.title} tone="sky" />
-              <PulseChip cap="matched pulse" text={target.pulse?.body || target.pulse?.title} tone="emerald" />
-            </div>
-          )}
-
-          {/* The discussion — initiation → response → finalised. Recursive: it stays open until
-              the target accepts. */}
-          <div className="mt-6">
-            <SectionTitle title="The discussion" sub="How this alignment took shape." />
-            <ol className="space-y-3">
-              <li className="flex items-start gap-2.5">
-                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-sky-400" />
-                <p className="text-sm text-slate-600"><span className="font-semibold text-slate-800">{initiator.ownerName || 'A tree'}</span> reached toward <span className="font-semibold text-slate-800">{target.ownerName || 'another tree'}</span>; the match was acknowledged.</p>
-              </li>
-              {messages.map((m, i) => {
-                const mine = m.by === currentUserId;
-                return (
-                  <li key={i} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm ${mine ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                      <span className={`mb-0.5 block text-[10px] font-semibold uppercase tracking-wide ${mine ? 'text-white/70' : 'text-slate-400'}`}>{nameFor(m.by)}</span>
-                      <span className="whitespace-pre-wrap break-words">{m.text}</span>
-                    </div>
-                  </li>
-                );
-              })}
-              {liveStatus === 'ACCEPTED' && (
-                <li className="flex items-start gap-2.5">
-                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
-                  <p className="text-sm font-medium text-emerald-700">Finalised: a shared sync-block sits on both chains.</p>
-                </li>
-              )}
-              {liveStatus === 'REJECTED' && (
-                <li className="flex items-start gap-2.5">
-                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-slate-300" />
-                  <p className="text-sm text-slate-500">Declined: this alignment was not taken up.</p>
-                </li>
-              )}
-            </ol>
-
-            {canSpeak && (
-              <div className="mt-4">
-                <textarea
-                  value={draft}
-                  onChange={e => setDraft(e.target.value)}
-                  rows={2}
-                  maxLength={2000}
-                  placeholder="Say something back…"
-                  className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 text-sm text-slate-700 outline-none focus:border-emerald-300 focus:bg-white"
-                />
-                <div className="mt-2 flex items-center justify-between gap-2">
-                  {error ? <span className="text-xs text-rose-500">{error}</span> : <span />}
-                  <button
-                    onClick={send}
-                    disabled={!draft.trim() || posting}
-                    className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-emerald-700 active:scale-95 disabled:opacity-50"
-                  >{posting ? 'Sending…' : 'Send'}</button>
-                </div>
-                <p className="mt-2 text-center text-[11px] text-slate-400">The target accepts from the Observatory to finalise; that seals the sync-block on both chains.</p>
-              </div>
-            )}
-          </div>
-
-          {isParticipant && covenantId && onViewCovenant && (
-            <button
-              onClick={() => onViewCovenant(covenantId)}
-              className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white py-3 text-sm font-bold text-emerald-700 shadow-sm hover:bg-emerald-50"
-            >
-              <span className="[&>svg]:h-4 [&>svg]:w-4"><Icons.Venn /></span>
-              {t('covenant_open')}
-            </button>
-          )}
-
-          <div className="mt-6 flex items-start gap-2 rounded-xl bg-emerald-50 px-4 py-3.5 text-sm leading-snug text-emerald-800">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 shrink-0"><path d="M12 3v18M5 10l7-7 7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            <span>{liveStatus === 'ACCEPTED'
-              ? 'Accepted: a shared sync-block sits on both chains, a lasting mark that these trees aligned.'
-              : liveStatus === 'REJECTED'
-                ? 'This alignment was declined.'
-                : 'Once accepted, a shared sync-block is woven into both chains (a permanent, mutual link).'}</span>
-          </div>
-        </div>
-      </div>
-    </div>
+        ),
+        title,
+        subtitle: <p className="mt-1 text-xs text-slate-300">A resonance between two lifetrees, sealed on both chains.</p>,
+        actions: <span className={`rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide ${status.cls}`}>{status.label}</span>,
+      }}
+      sections={sections}
+      initialSection="bond"
+    />
   );
 };

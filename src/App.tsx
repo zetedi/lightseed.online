@@ -566,14 +566,16 @@ const AppContent = () => {
             if (alignment && lightseed?.uid) {
                 try {
                     const signed = await signAlignmentCovenant(alignment);
-                    if (signed?.covenantId) { setSelectedCovenantId(signed.covenantId); openedCovenant = true; }
+                    // Clear any open alignment first: the overlay chain prefers it, and a covenant
+                    // opened behind it would silently never show (the dead-button bug's root).
+                    if (signed?.covenantId) { setSelectedAlignment(null); setSelectedCovenantId(signed.covenantId); openedCovenant = true; }
                 } catch (covErr) {
                     // A key-custody conflict (no device key / stale device) must not stay silent:
                     // the covenant already exists (minted before signing), so open its profile —
                     // its Sign button routes the being through the SigningKeyModal properly.
                     if (covErr instanceof SigningKeyNeedsRestoreError) {
                         const cov = await getCovenantForAlignment(alignment.id).catch(() => null);
-                        if (cov) { setSelectedCovenantId(cov.id); openedCovenant = true; }
+                        if (cov) { setSelectedAlignment(null); setSelectedCovenantId(cov.id); openedCovenant = true; }
                     } else {
                         console.warn('Covenant co-sign skipped:', covErr);
                     }
@@ -1235,7 +1237,7 @@ const AppContent = () => {
                             currentUserId={lightseed?.uid}
                             onClose={() => setSelectedAlignment(null)}
                             onViewTree={(tree) => { setSelectedAlignment(null); setSelectedTree(tree); }}
-                            onViewCovenant={(id) => setSelectedCovenantId(id)}
+                            notify={notify}
                         />
                     </div>
                 ) : selectedCovenantId ? (

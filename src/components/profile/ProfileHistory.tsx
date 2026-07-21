@@ -43,10 +43,23 @@ export const ProfileHistory: React.FC<ProfileHistoryProps> = ({ uid, onViewAlign
     catch { showAlert('Could not open a conversation with that tree.'); }
   };
 
+  // The two trees each alignment binds — fetched once per distinct tree so the cards can show
+  // faces and names instead of a bare status row. Best-effort: an unreadable tree stays null
+  // and its card falls back to a quiet placeholder.
+  const [treesById, setTreesById] = useState<Record<string, Lifetree | null>>({});
+
   useEffect(() => {
     let alive = true;
     getMyAlignmentsHistory(uid)
-      .then((data) => { if (alive) setHistory(data); })
+      .then(async (data) => {
+        if (!alive) return;
+        setHistory(data);
+        const ids = Array.from(new Set(data.flatMap(a => [a.initiatorTreeId, a.targetTreeId]).filter(Boolean)));
+        const pairs = await Promise.all(ids.map(async id =>
+          [id, await getLifetreeById(id).catch(() => null)] as [string, Lifetree | null],
+        ));
+        if (alive) setTreesById(Object.fromEntries(pairs));
+      })
       .catch((e) => console.error('Fetch profile data error', e))
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
@@ -68,19 +81,43 @@ export const ProfileHistory: React.FC<ProfileHistoryProps> = ({ uid, onViewAlign
       )}
 
       {loading ? <div className="flex justify-center rounded-2xl border border-slate-100 bg-slate-50/50 py-16"><Loading /></div> : (
-        <div className="space-y-4">
-          {history.length === 0 ? <p className="text-slate-400 text-center py-10">{t('no_history')}</p> : history.map((h) => (
-            <button key={h.id} onClick={() => onViewAlignment?.(h)} className="flex w-full items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-4 text-left transition-colors hover:bg-slate-100">
-              <div className="flex items-center gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sky-600"><Icons.Venn /></span>
-                <div>
-                  <p className="font-bold text-sm text-slate-700">{h.status === 'ACCEPTED' ? 'Finalised' : 'Open (in discussion)'}</p>
-                  <p className="text-xs text-slate-500">{h.createdAt ? new Date(h.createdAt.toMillis()).toLocaleDateString() : ''}</p>
-                </div>
-              </div>
-              <Icons.ChevronRight className="text-slate-400" />
-            </button>
-          ))}
+        <div className="space-y-3">
+          {history.length === 0 ? <p className="text-slate-400 text-center py-10">{t('no_history')}</p> : history.map((h) => {
+            const a = treesById[h.initiatorTreeId];
+            const b = treesById[h.targetTreeId];
+            const status = h.status === 'ACCEPTED'
+              ? { label: 'Finalised', cls: 'bg-emerald-100 text-emerald-700' }
+              : h.status === 'REJECTED'
+                ? { label: 'Declined', cls: 'bg-slate-100 text-slate-500' }
+                : { label: 'Open', cls: 'bg-amber-100 text-amber-700' };
+            const notes = h.messages?.length || 0;
+            const face = (tree: Lifetree | null, ring: string, z: string) => {
+              const img = tree?.latestGrowthUrl || tree?.imageUrl;
+              return img
+                ? <img src={img} alt="" referrerPolicy="no-referrer" className={`h-11 w-11 rounded-full object-cover ring-2 ${ring} ring-offset-1 ring-offset-white ${z}`} />
+                : <span className={`flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-slate-200 to-slate-300 font-serif text-lg text-white ring-2 ${ring} ring-offset-1 ring-offset-white ${z}`}>{(tree?.name || '·').charAt(0).toUpperCase()}</span>;
+            };
+            return (
+              <button key={h.id} onClick={() => onViewAlignment?.(h)} className="flex w-full items-center gap-3.5 rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-colors hover:bg-slate-50">
+                {/* The two trees the alignment binds, faces overlapping like the bond itself. */}
+                <span className="flex shrink-0 -space-x-3">
+                  {face(a, 'ring-sky-300', 'relative z-10')}
+                  {face(b, 'ring-emerald-300', 'relative')}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-serif text-sm font-semibold text-slate-800">
+                    {a?.name || 'A tree'} ↔ {b?.name || 'a tree'}
+                  </span>
+                  <span className="block text-xs text-slate-500">
+                    {h.createdAt ? new Date(h.createdAt.toMillis()).toLocaleDateString() : ''}
+                    {notes > 0 && ` · ${notes} note${notes === 1 ? '' : 's'} in the discussion`}
+                  </span>
+                </span>
+                <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${status.cls}`}>{status.label}</span>
+                <Icons.ChevronRight className="shrink-0 text-slate-400" />
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
