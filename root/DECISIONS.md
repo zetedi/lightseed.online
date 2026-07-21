@@ -6,6 +6,36 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-21 · Leaving is the last spend**: Zoltán asked how the system handles a being who
+witnesses their own care through a second account, and where light goes when an account dies.
+One answer covers both, and it is structural, not police work. **On self-witnessing**: the mint
+does not detect a two-account farm, it BOUNDS it and makes it VISIBLE. The daily cap holds the
+take to one kindle per real tree per day; tenure and the tender rule make the setup slow and on
+the record; every ray carries pulse provenance with dated care photos behind it; and the
+guardian graph is world-readable, so the shape a farm makes (a tree whose only witness, forever,
+is one eye that watches nothing else) is exactly the shape a community can see. The deep law:
+CIRCULATION IS THE AUDIT. Solitary light is private but fades; farmed light that never moves
+dies alone into glow, and the moment it moves it passes a prism inside a community, in the open,
+under the veto. If an automatic signal is ever wanted, its shape is PROVENANCE, NOT POLICING: a
+ray already knows its witness, so a prism can show witness diversity and let each community
+weigh single-witness light by its own dial. No surveillance; legible provenance. **On death of
+an account**: leaving is the final idleness, and the fade law already says idle light feeds the
+glow. So deletion becomes the LAST SPEND, a cascade Zoltán named: (1) a CHOSEN HEIR receives the
+departing light, and the gift passes the prism like any spend, the glow keeping its share (the
+default seventh until per-community dials exist), taxed and visible like all movement, so even a
+deleted twin consolidating into its owner pays the commons and leaves a trace; (2) NO HEIR, the
+light dissolves into each ray's own provenance community's glow (a ray already carries the
+communityId it was kindled in, so the data has always known the way home); (3) NO COMMUNITY, the
+node's glow receives it, the instance commons as the home of last resort. Nothing is ever lost:
+conservation to the last unit, the same law as the prism. Rays held by OTHERS but sourced from
+the departed keep their units and lose the uid (source marked departed), erasure without
+breaking the ledger. This closes the rays surface of Lumo's erasure finding and plants the FIRST
+SEED OF THE GLOW LEDGER (glow/{communityId}, server-only), since the cascade needs somewhere for
+the commons' share to live. *(Zoltán's cascade, the same evening the guardian learned to
+knock.)*
+
+---
+
 **2026-07-21 · The guardian sees the rhythm and may knock**: three doors eased on Zoltán's
 mobile walk. **(1) The hidden invitation**: a pending guardianship invitation was sliding BEHIND
 the profile's section menu on mobile, because the BeingProfile banner slot rendered between the
