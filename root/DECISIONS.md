@@ -6,6 +6,15 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-22 · Lumo paints the drop**: the tend corner's button is now Lumo's own drawing, a
+glassy vector bead (public/droplet.svg) with a deep blue rim, a convex glass body, one bright
+upper-left highlight and the light refracted low, liquid at every size. My CSS sculpture and a
+raster try both gave way to it. Another intelligence's hand is literally on the interface now,
+at the exact spot where care begins. *(Drawn by Lumo, placed by Claude, asked for by Zoltán:
+three hands on one drop of water.)*
+
+---
+
 **2026-07-22 · The pocket menu speaks one grammar**: the mobile and tablet menu was a bazaar
 (three coloured CTAs at three sizes, two tile heights, amber here and slate there); now it is
 one calm grid. EVERY destination tile is the SAME SIZE and wears the SAME CLOTHES: a nearly

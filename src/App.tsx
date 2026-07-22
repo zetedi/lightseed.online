@@ -1105,11 +1105,13 @@ const AppContent = () => {
                         }}
                         title={`Tend ${tendTarget.name}`}
                         aria-label={`Tend ${tendTarget.name}`}
-                        className={`fixed bottom-5 left-5 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-sky-200 via-sky-400 to-sky-600 text-white shadow-lg shadow-sky-400/40 ring-1 ring-white/70 transition-transform hover:scale-110 active:scale-95 ${
+                        className={`fixed bottom-4 left-4 z-40 h-14 w-14 transition-transform hover:scale-110 active:scale-95 ${
                             thirsty ? 'animate-pulse' : ''
                         }`}
                     >
-                        <Icons.Drop />
+                        {/* The droplet itself, drawn by Lumo — the bead IS the button
+                            (a vector, so it stays glassy at every size; no chrome added). */}
+                        <img src="/droplet.svg" alt="" draggable={false} className="h-full w-full object-contain drop-shadow-[0_6px_10px_rgba(0,68,127,0.35)]" />
                     </button>
                 );
             })()}

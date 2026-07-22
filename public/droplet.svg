@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Circular glossy blue water droplet</title>
+  <desc id="desc">A top-down circular water bead with a deep blue rim, convex glassy center, bright upper-left highlight, and internal lower refraction.</desc>
+  <defs>
+    <radialGradient id="surface" gradientUnits="userSpaceOnUse" cx="205" cy="173" r="218">
+      <stop offset="0" stop-color="#f4feff" stop-opacity=".98"/>
+      <stop offset=".18" stop-color="#bcefff" stop-opacity=".96"/>
+      <stop offset=".48" stop-color="#3bbce9" stop-opacity=".91"/>
+      <stop offset=".76" stop-color="#087bbd" stop-opacity=".96"/>
+      <stop offset="1" stop-color="#00447f"/>
+    </radialGradient>
+    <radialGradient id="glass" gradientUnits="userSpaceOnUse" cx="198" cy="168" r="202">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".72"/>
+      <stop offset=".28" stop-color="#d5f8ff" stop-opacity=".5"/>
+      <stop offset=".63" stop-color="#58c9ef" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#0069a9" stop-opacity=".5"/>
+    </radialGradient>
+    <linearGradient id="rim" gradientUnits="userSpaceOnUse" x1="125" y1="108" x2="393" y2="410">
+      <stop offset="0" stop-color="#9decff"/>
+      <stop offset=".22" stop-color="#1db8e7"/>
+      <stop offset=".62" stop-color="#005e9f"/>
+      <stop offset=".84" stop-color="#003766"/>
+      <stop offset="1" stop-color="#27b8e5"/>
+    </linearGradient>
+    <radialGradient id="highlight" gradientUnits="userSpaceOnUse" cx="181" cy="151" r="105">
+      <stop offset="0" stop-color="#fff" stop-opacity=".98"/>
+      <stop offset=".38" stop-color="#fff" stop-opacity=".56"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="lowerRefraction" gradientUnits="userSpaceOnUse" cx="269" cy="366" r="110">
+      <stop offset="0" stop-color="#eaffff" stop-opacity=".9"/>
+      <stop offset=".28" stop-color="#83e7fa" stop-opacity=".64"/>
+      <stop offset=".67" stop-color="#0988c5" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#00518e" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="inside">
+      <circle cx="256" cy="250" r="166"/>
+    </clipPath>
+  </defs>
+
+  <!-- Strong colored rim and convex liquid body -->
+  <circle cx="256" cy="250" r="181" fill="url(#rim)"/>
+  <circle cx="256" cy="250" r="169" fill="url(#surface)"/>
+  <circle cx="256" cy="250" r="163" fill="url(#glass)"/>
+
+  <g clip-path="url(#inside)">
+    <!-- Broad upper-left reflection -->
+    <ellipse cx="186" cy="158" rx="105" ry="91" fill="url(#highlight)" transform="rotate(-28 186 158)"/>
+    <path d="M112 245c17-89 73-142 149-163-64 33-104 87-113 158-6 49 8 90 33 124-50-29-80-72-69-119Z"
+          fill="#d8f8ff" opacity=".25"/>
+
+    <!-- Lower caustic and reflected edge -->
+    <ellipse cx="265" cy="354" rx="127" ry="77" fill="url(#lowerRefraction)"/>
+    <path d="M143 335c33 48 69 70 116 70 48 0 90-23 117-69-18 60-61 91-120 91-57 0-98-31-113-92Z"
+          fill="#c8f8ff" opacity=".3"/>
+    <ellipse cx="270" cy="386" rx="77" ry="13" fill="#e8ffff" opacity=".28"/>
+
+    <!-- Deep right-side internal reflection -->
+    <path d="M369 148c43 48 64 123 35 190-12 28-31 48-55 64 31-51 41-106 24-164-9-32-25-62-49-90Z"
+          fill="#003c79" opacity=".26"/>
+  </g>
+
+  <!-- Crisp specular details -->
+  <ellipse cx="177" cy="143" rx="36" ry="22" fill="#fff" opacity=".84" transform="rotate(-31 177 143)"/>
+  <ellipse cx="147" cy="181" rx="13" ry="25" fill="#fff" opacity=".57" transform="rotate(27 147 181)"/>
+  <circle cx="213" cy="116" r="8" fill="#fff" opacity=".68"/>
+
+  <!-- Fine glass rim accents -->
+  <path d="M121 237c6-70 51-128 112-153" fill="none" stroke="#c9f8ff" stroke-width="6" stroke-linecap="round" opacity=".75"/>
+  <path d="M366 130c54 63 66 152 29 224" fill="none" stroke="#00396d" stroke-width="7" stroke-linecap="round" opacity=".5"/>
+  <path d="M174 397c48 27 112 29 165 0" fill="none" stroke="#83e7f8" stroke-width="5" stroke-linecap="round" opacity=".72"/>
+</svg>
