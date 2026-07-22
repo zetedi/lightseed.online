@@ -15,7 +15,7 @@ export const EditPill = ({ onClick, themeColor, title = 'Edit' }: {
         onClick={onClick}
         title={title}
         style={themeColor ? { backgroundColor: themeColor } : undefined}
-        className="flex items-center gap-1.5 rounded-full bg-sky-600 px-3 py-2 text-xs font-bold text-white shadow-sm ring-1 ring-white/25 transition-all hover:brightness-110"
+        className="flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-sm ring-1 ring-white/25 transition-all hover:brightness-110"
     >
         <Icons.Pencil /> <span className="hidden sm:inline">Edit</span>
     </button>

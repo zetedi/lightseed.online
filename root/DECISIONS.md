@@ -6,6 +6,25 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-22 · Small waters**: the drop took the logo's measure (40px, 16px from the edges)
+and a slight white glow, so the two corners of the screen answer each other. The tree's Edit
+pill turned emerald like every other creating hand (blue belonged to water, not to editing).
+And THE SEVEN FOLDS ON MOBILE: only the dots and its name show, an accordion opening on tap,
+so the FIRST TREE stands visible right under it when the profile opens; the fuller story
+(the reading, the lack chips) waits inside, and desktop keeps it always open; its chevron
+points down when closed and up when open, the way a fold breathes. The bead now wears the
+LOGO's exact frame (a white circle, one emerald border, 32px inside, 16px from the edges), so
+the two corners of the screen answer each other in the same voice. **And the vision got its
+star**: a DEFAULT VISION mirrors the default tree (users/{uid}.defaultVisionId, starred from
+the profile's vision cards, starring again clears it). The tend drop's law, chosen for
+predictability over cleverness: with only a tree, one tap acts directly; once a vision is
+starred, the tap opens a TWO-DOOR SHEET (tend the tree / tend your vision), because a button
+whose action you cannot foresee teaches you not to press it. A small script
+(set-mahameru-vision-image.mjs, dry-run first) stands ready to dress the Mahameru vision in
+the Mahameru sky. *(The fold exists so a face is the first thing a profile shows.)*
+
+---
+
 **2026-07-22 · Lumo paints the drop**: the tend corner's button is now Lumo's own drawing, a
 glassy vector bead (public/droplet.svg) with a deep blue rim, a convex glass body, one bright
 upper-left highlight and the light refracted low, liquid at every size. My CSS sculpture and a

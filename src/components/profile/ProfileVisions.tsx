@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { showAlert, showConfirm } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useSession } from '../../contexts/SessionContext';
 import { Icons } from '../ui/Icons';
 import { MahameruAvatar } from '../ui/MahameruAvatar';
 import { Vision, VisionSynergy } from '../../types';
@@ -19,6 +20,8 @@ interface ProfileVisionsProps {
 
 // Visions tab — created + joined visions, with the AI alignment analysis.
 export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVision, onCreateVision, notify }) => {
+  // The default vision (the star) lives on the session, like the default tree.
+  const { defaultVisionId, setDefaultVision } = useSession();
   const { t } = useLanguage();
   const [visions, setVisions] = useState<Vision[]>([]);
   const [joinedVisions, setJoinedVisions] = useState<Vision[]>([]);
@@ -139,6 +142,20 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
               <div onClick={() => onViewVision(vision)} className="cursor-pointer h-full">
                 <VisionCard vision={vision} />
               </div>
+              {/* The star — a default vision, mirroring the default tree. Starring again
+                  clears it. The chosen one stays visible; the others appear on hover. */}
+              <button
+                onClick={(e) => { e.stopPropagation(); setDefaultVision(defaultVisionId === vision.id ? null : vision.id); }}
+                title={defaultVisionId === vision.id ? 'Your default vision (tap to clear)' : 'Set as default vision'}
+                aria-label={defaultVisionId === vision.id ? 'Your default vision' : 'Set as default vision'}
+                className={`absolute top-2 right-2 z-20 rounded-full border p-1.5 shadow-lg transition-all hover:scale-110 ${
+                  defaultVisionId === vision.id
+                    ? 'border-amber-300 bg-amber-400 text-white opacity-100'
+                    : 'border-slate-200 bg-white/95 text-amber-500 opacity-0 group-hover:opacity-100'
+                }`}
+              >
+                <Icons.Star filled={defaultVisionId === vision.id} size={16} />
+              </button>
               <div className="absolute top-2 left-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
                 {vision.title === "Root Vision" ? (
                   <div className="bg-white/95 backdrop-blur-sm px-2 py-1.5 rounded-lg text-[9px] text-emerald-700 font-bold border border-emerald-200 shadow-sm flex flex-col">

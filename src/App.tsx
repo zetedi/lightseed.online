@@ -136,7 +136,7 @@ const DetailWrapper = ({ children, belowHeader = false }: { children?: React.Rea
 
 const AppContent = () => {
     const { t } = useLanguage();
-    const { lightseed, myTrees, guardedTrees, activeTree, defaultTreeId, setDefaultTree, isAdmin, isSuperAdmin, isInitiate, loading: authLoading, refreshTrees } = useSession();
+    const { lightseed, myTrees, guardedTrees, activeTree, defaultTreeId, setDefaultTree, defaultVisionId, isAdmin, isSuperAdmin, isInitiate, loading: authLoading, refreshTrees } = useSession();
     // The set of trees the signed-in user guards (the LIN, via guardian links) — passed to cards
     // so a card can show its guardian affordance without a per-card read.
     const guardedTreeIds = useMemo(() => new Set(guardedTrees.map(t => t.id)), [guardedTrees]);
@@ -175,6 +175,8 @@ const AppContent = () => {
     // Custom-landing domains: false = the organisation's own page fills the screen;
     // true = the visitor stepped through the corner seed-logo into the full app.
     const [seedView, setSeedView] = useState(false);
+    // The tend corner's two-door sheet (tree or default vision), open only while choosing.
+    const [tendMenuOpen, setTendMenuOpen] = useState(false);
     // A Light House opened into its own profile page (from the map marker or the LightHouse tab).
     const [viewingLightHouse, setViewingLightHouse] = useState<LightHouse | null>(null);
     // The Path overview — the Light Path's full ruleset, opened from the card's label.
@@ -1097,22 +1099,47 @@ const AppContent = () => {
                 const tendTarget = selectedTree || activeTree || myTrees[0] || null;
                 if (!tendTarget) return null;
                 const thirsty = isWateringOverdue(tendTarget) || wateringNeededCount > 0;
+                const openCare = () => {
+                    setTendMenuOpen(false);
+                    setTreeSectionHint('care');
+                    if (!selectedTree || selectedTree.id !== tendTarget.id) setSelectedTree(tendTarget);
+                };
+                const openVision = async () => {
+                    setTendMenuOpen(false);
+                    if (!defaultVisionId) return;
+                    const vision = await getVisionById(defaultVisionId).catch(() => null);
+                    if (vision) { setSelectedTree(null); setSelectedVision(vision); }
+                };
                 return (
-                    <button
-                        onClick={() => {
-                            setTreeSectionHint('care');
-                            if (!selectedTree || selectedTree.id !== tendTarget.id) setSelectedTree(tendTarget);
-                        }}
-                        title={`Tend ${tendTarget.name}`}
-                        aria-label={`Tend ${tendTarget.name}`}
-                        className={`fixed bottom-4 left-4 z-40 h-14 w-14 transition-transform hover:scale-110 active:scale-95 ${
-                            thirsty ? 'animate-pulse' : ''
-                        }`}
-                    >
-                        {/* The droplet itself, drawn by Lumo — the bead IS the button
-                            (a vector, so it stays glassy at every size; no chrome added). */}
-                        <img src="/droplet.svg" alt="" draggable={false} className="h-full w-full object-contain drop-shadow-[0_6px_10px_rgba(0,68,127,0.35)]" />
-                    </button>
+                    <>
+                        {/* When a default VISION is starred, the drop opens a two-door sheet
+                            (predictable beats clever); with only the tree, it acts directly. */}
+                        {tendMenuOpen && defaultVisionId && (
+                            <div className="fixed bottom-16 left-4 z-40 w-56 overflow-hidden rounded-2xl border border-emerald-100 bg-white/95 shadow-xl backdrop-blur animate-in slide-in-from-bottom-2">
+                                <button onClick={openCare} className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-sky-50">
+                                    <span className="text-sky-500 [&>svg]:h-4 [&>svg]:w-4"><Icons.Drop /></span>
+                                    <span className="min-w-0 truncate">Tend {tendTarget.name}</span>
+                                </button>
+                                <button onClick={() => { void openVision(); }} className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-amber-50">
+                                    <span className="text-amber-500 [&>svg]:h-4 [&>svg]:w-4"><Icons.Eye /></span>
+                                    <span>Tend your vision</span>
+                                </button>
+                            </div>
+                        )}
+                        <button
+                            onClick={() => { if (defaultVisionId) setTendMenuOpen(o => !o); else openCare(); }}
+                            title={`Tend ${tendTarget.name}`}
+                            aria-label={`Tend ${tendTarget.name}`}
+                            className={`fixed bottom-4 left-4 z-40 rounded-full border border-emerald-200 bg-white p-1 shadow-sm transition-transform hover:scale-110 active:scale-95 ${
+                                thirsty ? 'animate-pulse' : ''
+                            }`}
+                        >
+                            {/* The droplet itself, drawn by Lumo — the bead IS the button (a
+                                vector, glassy at every size). It wears the LOGO's exact frame:
+                                a white circle, one border, 32px bead, 16px from the edges. */}
+                            <img src="/droplet.svg" alt="" draggable={false} className="h-8 w-8 object-contain drop-shadow-[0_0_6px_rgba(255,255,255,0.9)]" />
+                        </button>
+                    </>
                 );
             })()}
 

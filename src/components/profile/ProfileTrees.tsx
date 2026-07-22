@@ -56,6 +56,8 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
   const { lightseed } = useSession();
   const viewerUid = lightseed?.uid;
   const [guardianEdges, setGuardianEdges] = useState<GuardianEdge[]>([]);
+  // The seven's mobile accordion: closed by default so the first tree stays above the fold.
+  const [sevenOpen, setSevenOpen] = useState(false);
   const treeIdsKey = useMemo(() => myTrees.map(tr => tr.id).sort().join(','), [myTrees]);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- clears edges before the async scoped read below
@@ -82,7 +84,15 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
 
         {seven && (
           <div className="mb-4 rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4">
-            <div className="flex flex-wrap items-center gap-3">
+            {/* On MOBILE the seven folds to one line (dots + name), an accordion handle, so the
+                first tree stays visible right under it; on sm+ it is always open (the handle
+                stops being a button). */}
+            <button
+              type="button"
+              onClick={() => setSevenOpen(o => !o)}
+              aria-expanded={sevenOpen}
+              className="flex w-full flex-wrap items-center gap-3 text-left sm:pointer-events-none sm:cursor-default"
+            >
               <div className="flex items-center gap-1.5" aria-label={`Sustaining seven: ${Math.min(seven.sustaining, seven.target)} of ${seven.target}`}>
                 {Array.from({ length: seven.target }, (_, i) => (
                   <span
@@ -101,7 +111,11 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
                 The sustaining seven
                 <span className="ml-2 text-emerald-700">{Math.min(seven.sustaining, seven.target)} / {seven.target}</span>
               </p>
-            </div>
+              <span className={`ml-auto text-slate-400 transition-transform sm:hidden ${sevenOpen ? '-rotate-90' : 'rotate-90'}`}>
+                <Icons.ChevronRight />
+              </span>
+            </button>
+            <div className={`${sevenOpen ? '' : 'hidden'} sm:block`}>
             <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
               {seven.complete
                 ? 'Your seven stand: planted, witnessed, and tended. Roughly what a body asks of the living world.'
@@ -127,6 +141,7 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
                 })}
               </div>
             )}
+            </div>
           </div>
         )}
         {treesNeedingCare.length > 0 && (

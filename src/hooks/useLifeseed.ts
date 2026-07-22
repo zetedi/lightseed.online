@@ -37,6 +37,9 @@ export const useLifeseed = () => {
     const [loading, setLoading] = useState(true);
     // The user's chosen "closest" tree (users/{uid}.defaultTreeId). Drives `activeTree`.
     const [defaultTreeId, setDefaultTreeId] = useState<string | undefined>(undefined);
+    // The user's chosen default VISION (users/{uid}.defaultVisionId) — the star among visions,
+    // mirroring the default tree; the tend corner offers it beside the tree when set.
+    const [defaultVisionId, setDefaultVisionId] = useState<string | undefined>(undefined);
 
     useEffect(() => {
         const authTimeout = window.setTimeout(() => {
@@ -116,8 +119,11 @@ export const useLifeseed = () => {
     // Track the user's chosen default tree from their profile (live).
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- clears the default tree when the user signs out
-        if (!lightseed?.uid) { setDefaultTreeId(undefined); return; }
-        const unsub = listenToUserProfile(lightseed.uid, (data) => setDefaultTreeId(data?.defaultTreeId || undefined));
+        if (!lightseed?.uid) { setDefaultTreeId(undefined); setDefaultVisionId(undefined); return; }
+        const unsub = listenToUserProfile(lightseed.uid, (data) => {
+            setDefaultTreeId(data?.defaultTreeId || undefined);
+            setDefaultVisionId(data?.defaultVisionId || undefined);
+        });
         return () => unsub();
     }, [lightseed?.uid]);
 
@@ -140,7 +146,14 @@ export const useLifeseed = () => {
         await updateUserProfile(lightseed.uid, { defaultTreeId: treeId }).catch(() => {});
     };
 
+    // Persist the default vision the same way (starring it again clears the star).
+    const setDefaultVision = async (visionId: string | null) => {
+        if (!lightseed?.uid) return;
+        setDefaultVisionId(visionId || undefined); // optimistic
+        await updateUserProfile(lightseed.uid, { defaultVisionId: visionId || '' }).catch(() => {});
+    };
+
     // The "closest" tree: the chosen default if it's still one of mine, else the first.
     const activeTree = myTrees.find(t => t.id === defaultTreeId) || (myTrees.length > 0 ? myTrees[0] : null);
-    return { lightseed, myTrees, guardedTrees, activeTree, defaultTreeId, setDefaultTree, isAdmin, isSuperAdmin, superAdminExists, initiate, isInitiate: !!initiate, loading, refreshTrees };
+    return { lightseed, myTrees, guardedTrees, activeTree, defaultTreeId, setDefaultTree, defaultVisionId, setDefaultVision, isAdmin, isSuperAdmin, superAdminExists, initiate, isInitiate: !!initiate, loading, refreshTrees };
 };
