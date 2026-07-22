@@ -121,7 +121,9 @@ export const BeingProfile: React.FC<BeingProfileProps> = ({
                         <div className="min-w-0 flex-1">
                             {/* Name + all meta on one wrapping row */}
                             <div className={hero.titleRowClassName ?? DEFAULT_TITLE_ROW}>
-                                <h1 className="min-w-0 break-words text-2xl font-light tracking-wide">{hero.title}</h1>
+                                {/* THE ONE NAME SCALE: every being's hero name is text-2xl md:text-3xl
+                                    font-light tracking-wide (the font consolidation, 2026-07-22). */}
+                                <h1 className="min-w-0 break-words text-2xl font-light tracking-wide md:text-3xl">{hero.title}</h1>
                                 {hero.chips}
                             </div>
                             {hero.subtitle}

@@ -1,8 +1,8 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { showAlert } from "./ui/Dialog";
 import { type Lifetree, type Alignment, type Vision, type Pulse, type ReachAudience } from '../types';
-import { getLifetreeById, listenToUserProfile, updateUserProfile, tendTree } from '../services/firebase';
+import { getLifetreeById, listenToUserProfile, updateUserProfile, tendTree, auth } from '../services/firebase';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
@@ -123,6 +123,21 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
     // filtering by ownership made them vanish from both sections.
     const myTreeIds = new Set((myTrees as Lifetree[]).map((t: Lifetree) => t.id));
     const guardedOnly = (guardedTrees as Lifetree[]).filter((tree: Lifetree) => !myTreeIds.has(tree.id));
+
+    // The join date is the FIRST ROOT, not the login record: the earlier of the account's
+    // creation and the birth of the oldest tree this being keeps. For the genesis keeper the
+    // genesis tree itself sets it (zetedi joined when the tree began, not when the login did).
+    const joinedMs = useMemo(() => {
+        const created = auth.currentUser?.metadata?.creationTime;
+        const authMs = created ? Date.parse(created) : null;
+        const treeMs = (myTrees as Lifetree[]).reduce<number | null>((min, tr) => {
+            const ms = tr.createdAt?.toMillis ? tr.createdAt.toMillis() : null;
+            return ms !== null && (min === null || ms < min) ? ms : min;
+        }, null);
+        if (authMs === null) return treeMs;
+        if (treeMs === null) return authMs;
+        return Math.min(authMs, treeMs);
+    }, [myTrees]);
 
     // The Original Tree — Mahameru, everyone's last section: indestructible, dissolved
     // into Nature, part of every tree planted since.
@@ -330,6 +345,11 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                             <span className="text-base font-bold text-white">{myTrees.length}</span>
                             <span className="text-xs text-slate-400">{myTrees.length === 1 ? t('tree') : t('trees')}</span>
                         </span>
+                        {joinedMs !== null && (
+                            <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-xs text-slate-300">
+                                Since {new Date(joinedMs).toLocaleDateString()}
+                            </span>
+                        )}
                         {allValidated && (
                             <button onClick={onPlant} className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-full text-[11px] font-bold shadow-lg transition-transform active:scale-95 flex items-center gap-1.5">
                                 <Icons.Tree />

@@ -34,6 +34,8 @@ export const EventModal = ({
   const [title, setTitle] = useState(event?.title || '');
   const [date, setDate] = useState(event?.eventDate || '');
   const [location, setLocation] = useState(event?.eventLocation || '');
+  // The gathering's room, kept as text while typing; parsed (or cleared) on save.
+  const [maxParticipants, setMaxParticipants] = useState(event?.eventMaxParticipants ? String(event.eventMaxParticipants) : '');
   const [body, setBody] = useState(event?.content || event?.body || '');
   const [visibility, setVisibility] = useState<PulseVisibility>((event?.visibility as PulseVisibility) || 'public');
   const [imageUrls, setImageUrls] = useState<string[]>(event?.imageUrls?.length ? event.imageUrls : (event?.imageUrl ? [event.imageUrl] : []));
@@ -61,6 +63,9 @@ export const EventModal = ({
         imageUrls,
         eventDate: date || '',
         eventLocation: location.trim(),
+        // A positive number bounds the gathering; anything else clears the bound (null, not
+        // undefined, so an edit can REMOVE a previously set limit).
+        eventMaxParticipants: Number.parseInt(maxParticipants, 10) > 0 ? Number.parseInt(maxParticipants, 10) : null,
         visibility,
       };
       // On edit, never overwrite authorship (an admin editing another's event keeps the author).
@@ -85,6 +90,15 @@ export const EventModal = ({
           <input type="datetime-local" value={date} onChange={e => setDate(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
           <input dir="auto" value={location} onChange={e => setLocation(e.target.value)} placeholder={t('location')} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
         </div>
+        <input
+          type="number"
+          min="1"
+          inputMode="numeric"
+          value={maxParticipants}
+          onChange={e => setMaxParticipants(e.target.value)}
+          placeholder="Max participants (optional)"
+          className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        />
         <textarea dir="auto" value={body} onChange={e => setBody(e.target.value)} placeholder={t('event_details_ph')} className="min-h-24 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
         <label className="block">
           <span className="mb-1 block text-[10px] font-bold uppercase text-slate-400">{t('visibility')}</span>

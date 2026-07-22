@@ -8,10 +8,12 @@ import { getParticipatingTrees } from '../services/firebase';
 // The trees gathered around an event or vision, plus (for signed-in owners) a picker to enlist their
 // own trees. Participation is a 'participant' link from the TREE to the entity — created/removed here
 // through the same Store port the rest of the LIN uses. Shared by EventProfile and VisionProfile.
-export const TreeParticipants = ({ entityId, currentUserId, myTrees = [] }: {
+export const TreeParticipants = ({ entityId, currentUserId, myTrees = [], maxParticipants }: {
     entityId: string;
     currentUserId?: string;
     myTrees?: Lifetree[];
+    // The gathering's room (events may bound it): joining closes when the places are taken.
+    maxParticipants?: number;
 }) => {
     const [trees, setTrees] = useState<Lifetree[]>([]);
     const [loading, setLoading] = useState(true);
@@ -30,6 +32,8 @@ export const TreeParticipants = ({ entityId, currentUserId, myTrees = [] }: {
 
     const participatingIds = new Set(trees.map(t => t.id));
     const addable = myTrees.filter(t => !participatingIds.has(t.id));
+    const bounded = typeof maxParticipants === 'number' && maxParticipants > 0;
+    const full = bounded && trees.length >= maxParticipants;
 
     const toggle = async (tree: Lifetree, joining: boolean) => {
         if (busyId) return;
@@ -81,7 +85,19 @@ export const TreeParticipants = ({ entityId, currentUserId, myTrees = [] }: {
                 </div>
             )}
 
-            {currentUserId && addable.length > 0 && (
+            {bounded && (
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                    {Math.min(trees.length, maxParticipants)} of {maxParticipants} places taken
+                </p>
+            )}
+
+            {currentUserId && addable.length > 0 && full && (
+                <p className="rounded-xl border border-dashed border-amber-200 bg-amber-50/60 p-3 text-xs text-amber-700">
+                    The gathering is full. A place opens when a tree withdraws.
+                </p>
+            )}
+
+            {currentUserId && addable.length > 0 && !full && (
                 <div>
                     <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">Add one of your trees</p>
                     <div className="flex flex-wrap gap-2">

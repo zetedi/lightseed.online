@@ -605,8 +605,12 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       sections={sections}
       hero={{
         // Only the chosen hero — no gallery fallback, so removing the hero actually removes it.
+        // The hero wears the USER profile's exact clothes (Zoltán, 2026-07-22): same default
+        // padding/background, same compact row, same avatar size; the chips read the tree
+        // count first, then the birth date.
         imageUrl: heroImageUrl,
-        heroProps: { padding: 'pt-5 pb-12 px-4' },
+        avatarRowClassName: 'flex flex-row items-center gap-3 sm:gap-5',
+        titleRowClassName: 'flex flex-wrap items-center gap-x-3 gap-y-1.5 justify-start',
         actions: (
           <>
             {/* The DOOR — open: step in; invite: knock (or enter holding an invitation);
@@ -660,7 +664,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
           </>
         ),
         avatar: (
-          <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-xl">
+          <div className="flex h-14 w-14 md:h-20 md:w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-xl">
             {logoUrl ? (
               <img src={logoUrl} className="h-full w-full object-cover" alt={`${community.name} logo`} referrerPolicy="no-referrer" />
             ) : (
@@ -675,12 +679,12 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
               <span className="text-base font-bold text-white">{domainTrees.length}</span>
               <span className="text-xs text-slate-400">{domainTrees.length === 1 ? t('tree') : t('trees')}</span>
             </span>
-            <a href={`https://${community.domain}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-0.5 text-xs font-mono text-emerald-300 hover:bg-emerald-400/20">
-              <Icons.Globe size={12} /> {community.domain}
-            </a>
             <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-xs text-slate-300">
               Since {community.createdAt?.toDate ? community.createdAt.toDate().toLocaleDateString() : '—'}
             </span>
+            <a href={`https://${community.domain}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-0.5 text-xs font-mono text-emerald-300 hover:bg-emerald-400/20">
+              <Icons.Globe size={12} /> {community.domain}
+            </a>
           </>
         ),
       }}

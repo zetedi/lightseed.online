@@ -45,7 +45,7 @@ export const CovenantProfile = ({ covenantId, currentUserId, onClose, notify }: 
             <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-300">
               {covenant?.kind === 'alignment' ? t('covenant_kind_alignment') : t('covenant_kind_covenant')}
             </p>
-            <h1 className="min-w-0 break-words text-2xl font-light tracking-wide">{covenant?.title || t('covenant')}</h1>
+            <h1 className="min-w-0 break-words text-2xl font-light tracking-wide md:text-3xl">{covenant?.title || t('covenant')}</h1>
             <p className="mt-1 text-xs text-slate-300">{t('covenant_hero_sub')}</p>
           </div>
         </div>

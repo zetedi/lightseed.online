@@ -429,7 +429,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     <div className="min-w-0 flex-1">
                         {isEditing ? (
                             <div className="max-w-md space-y-2">
-                                <input dir="auto" className="w-full border-b border-white/40 bg-white/10 p-1 text-2xl font-thin tracking-tight text-white focus:outline-none md:text-3xl" value={editName} onChange={e => setEditName(e.target.value)} placeholder="Tree Name" />
+                                <input dir="auto" className="w-full border-b border-white/40 bg-white/10 p-1 text-2xl font-light tracking-wide text-white focus:outline-none md:text-3xl" value={editName} onChange={e => setEditName(e.target.value)} placeholder="Tree Name" />
                                 <input dir="auto" className="w-full border-b border-white/40 bg-white/10 p-1 text-xs font-bold uppercase tracking-widest text-white focus:outline-none" value={editShortTitle} onChange={e => setEditShortTitle(e.target.value)} placeholder="SHORT TITLE" />
                             </div>
                         ) : (

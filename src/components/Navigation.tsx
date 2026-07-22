@@ -24,6 +24,9 @@ interface NavigationProps {
   careAlertCount?: number;
   logoUrl?: string;
   appName?: string;
+  // An open being view naming itself in the header (an Event overlay says "Event");
+  // overrides the tab's name while it is open.
+  pageLabel?: string;
   theme?: {
     primary: string;
     secondary: string;
@@ -212,6 +215,7 @@ export const Navigation = ({
     treeInviteCount = 0,
     logoUrl,
     appName = '.seed',
+    pageLabel,
     theme,
     isNightMode = false,
     onToggleNightMode,
@@ -311,17 +315,33 @@ export const Navigation = ({
             style={{ backgroundColor: navBackground, borderColor: isMenuOpen ? 'rgba(251,191,36,0.6)' : navBorder, color: navText }}
         >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between h-20 items-center">
+                <div className="relative flex justify-between h-20 items-center">
+                    {/* THE HEADER'S ONE LAW (Zoltán, 2026-07-22): mobile = the page's name small
+                        beside the logo; tablet = the middle of the bar, ONE typeface for all of
+                        it (deep emerald, a touch lighter than bold, the soft emerald glow):
+                        Home wears "Lifetree Network (LIN)", an open being view names itself
+                        (an Event says Event), any other page its Capitalized name. The full
+                        menu takes over at xl. */}
+                    {!isMenuOpen && (() => {
+                        const cap = (l: string) => l.charAt(0).toUpperCase() + l.slice(1);
+                        const label = pageLabel ? cap(pageLabel)
+                            : activeTab === 'dashboard' ? 'Lifetree Network (LIN)'
+                            : cap(getTabLabel(activeTab));
+                        return (
+                            <span dir="auto" className="pointer-events-none absolute left-1/2 hidden max-w-[46vw] -translate-x-1/2 truncate text-center font-medium text-2xl tracking-wide text-emerald-700 drop-shadow-[0_1px_6px_rgba(16,185,129,0.45)] sm:block xl:hidden">{label}</span>
+                        );
+                    })()}
                     <div className="flex items-center gap-3 cursor-pointer group shrink-0" onClick={() => setTab('dashboard')}>
                         <div className={`p-1 rounded-full group-hover:scale-110 transition-transform ${navIsDark ? 'bg-white' : 'bg-slate-50 border border-slate-200'}`} style={{ borderColor: navBorder }}>
                              {logoUrl ? <img src={logoUrl} className="w-8 h-8 rounded-full object-cover" alt="Logo" /> : <Logo width={32} height={32} />}
                         </div>
                         <span dir="ltr" className="hidden max-w-[160px] truncate font-light text-2xl lowercase tracking-wide sm:inline">{appName}</span>
-                        {/* Mobile: the current list's name lives up here, next to the logo — the
+                        {/* Mobile: the current page's name lives up here, next to the logo — the
                             page headers below carry no title, so this is the "where am I". Quiet:
-                            small, in the same colour as the hamburger lines. */}
-                        {activeTab !== 'dashboard' && !isMenuOpen && (
-                            <span dir="auto" className="max-w-[40vw] truncate text-sm font-medium tracking-wide sm:hidden" style={{ color: navText }}>{getTabLabel(activeTab)}</span>
+                            small, in the same colour as the hamburger lines. (Tablet gets the
+                            centred wordmark-sized title above instead.) */}
+                        {(pageLabel || activeTab !== 'dashboard') && !isMenuOpen && (
+                            <span dir="auto" className="max-w-[40vw] truncate text-sm font-medium tracking-wide sm:hidden" style={{ color: navText }}>{pageLabel || getTabLabel(activeTab)}</span>
                         )}
                     </div>
 

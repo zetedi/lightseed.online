@@ -95,7 +95,7 @@ export const ProfileHistory: React.FC<ProfileHistoryProps> = ({ uid, onViewAlign
               const img = tree?.latestGrowthUrl || tree?.imageUrl;
               return img
                 ? <img src={img} alt="" referrerPolicy="no-referrer" className={`h-11 w-11 rounded-full object-cover ring-2 ${ring} ring-offset-1 ring-offset-white ${z}`} />
-                : <span className={`flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-slate-200 to-slate-300 font-serif text-lg text-white ring-2 ${ring} ring-offset-1 ring-offset-white ${z}`}>{(tree?.name || '·').charAt(0).toUpperCase()}</span>;
+                : <span className={`flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-slate-200 to-slate-300 text-lg text-white ring-2 ${ring} ring-offset-1 ring-offset-white ${z}`}>{(tree?.name || '·').charAt(0).toUpperCase()}</span>;
             };
             return (
               <button key={h.id} onClick={() => onViewAlignment?.(h)} className="flex w-full items-center gap-3.5 rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-colors hover:bg-slate-50">
@@ -105,7 +105,7 @@ export const ProfileHistory: React.FC<ProfileHistoryProps> = ({ uid, onViewAlign
                   {face(b, 'ring-emerald-300', 'relative')}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-serif text-sm font-semibold text-slate-800">
+                  <span className="block truncate text-sm font-semibold text-slate-800">
                     {a?.name || 'A tree'} ↔ {b?.name || 'a tree'}
                   </span>
                   <span className="block text-xs text-slate-500">

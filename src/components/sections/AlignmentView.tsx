@@ -48,8 +48,8 @@ const PartySide = ({ side, tone, onView }: { side: Side; tone: 'sky' | 'emerald'
     <button onClick={() => t && onView?.(t)} disabled={!t} className="flex min-w-0 flex-col items-center gap-1.5 text-center disabled:cursor-default">
       {img
         ? <img src={img} alt="" referrerPolicy="no-referrer" className={`h-20 w-20 rounded-full object-cover ring-2 ${ring} ring-offset-2 ring-offset-white`} />
-        : <div className={`flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br ${bg} text-3xl font-serif text-white ring-2 ${ring} ring-offset-2 ring-offset-white`}>{(t?.name || '·').charAt(0).toUpperCase()}</div>}
-      <div className="truncate max-w-full font-serif text-lg font-semibold text-slate-800">{t?.name || 'A tree'}</div>
+        : <div className={`flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br ${bg} text-3xl text-white ring-2 ${ring} ring-offset-2 ring-offset-white`}>{(t?.name || '·').charAt(0).toUpperCase()}</div>}
+      <div className="truncate max-w-full text-lg font-semibold text-slate-800">{t?.name || 'A tree'}</div>
       {side.ownerName && <div className="truncate max-w-full text-xs text-slate-500">tended by {side.ownerName}</div>}
     </button>
   );

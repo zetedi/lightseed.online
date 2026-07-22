@@ -272,16 +272,35 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
             />
           </div>
         }
-        action={myTrees.length > 0 ? (
-          <button
-            onClick={() => setShowCreate(true)}
-            className={`bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-1.5 active:scale-95 ${CTA_GLOW}`}
-          >
-            <Icons.Plus />
-            {/* Mobile keeps it short so the CTA doesn't crowd the header. */}
-            <span className="sm:hidden">{t('register')}</span>
-            <span className="hidden sm:inline">{t('register_community')}</span>
-          </button>
+        action={(myTrees.length > 0 || currentUserId) ? (
+          // The pair SHRINKS instead of overflowing: each button may give up width and cut its
+          // label to an ellipsis, so two doors always fit one phone screen.
+          <div className="flex min-w-0 items-center justify-end gap-2">
+            {myTrees.length > 0 && (
+              <button
+                onClick={() => setShowCreate(true)}
+                className={`bg-emerald-600 hover:bg-emerald-700 text-white px-3 sm:px-4 py-2 rounded-full text-sm font-bold transition-all flex min-w-0 items-center gap-1.5 active:scale-95 ${CTA_GLOW}`}
+              >
+                <Icons.Plus />
+                {/* Mobile keeps it short so the CTA doesn't crowd the header. */}
+                <span className="truncate sm:hidden">{t('register')}</span>
+                <span className="hidden truncate sm:inline">{t('register_community')}</span>
+              </button>
+            )}
+            {/* Match stands RIGHT of Register, wearing the same green: finding a community to
+                join is at least as good a door as founding one (Zoltán, 2026-07-22). */}
+            {currentUserId && (
+              <button
+                onClick={handleMatch}
+                disabled={isMatching}
+                className={`bg-emerald-600 hover:bg-emerald-700 text-white px-3 sm:px-4 py-2 rounded-full text-sm font-bold transition-all flex min-w-0 items-center gap-1.5 active:scale-95 disabled:opacity-60 ${CTA_GLOW}`}
+              >
+                <Icons.Venn />
+                <span className="truncate sm:hidden">{isMatching ? '…' : 'Match'}</span>
+                <span className="hidden truncate sm:inline">{isMatching ? 'Reading resonance…' : 'Match with a community'}</span>
+              </button>
+            )}
+          </div>
         ) : undefined}
       >
         <ListBox tone={tabTone('communities')}>
@@ -317,22 +336,12 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
           <p className="text-center text-slate-500 py-16">No communities match your search.</p>
         ) : (
           <>
-          {currentUserId && (
-            <div className="mb-5 flex flex-wrap items-center gap-3">
-              <button onClick={handleMatch} disabled={isMatching}
-                className={`flex items-center gap-2 rounded-full bg-amber-500 px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-white shadow-lg transition-all hover:bg-amber-600 active:scale-95 disabled:opacity-60 ${CTA_GLOW}`}>
-                <Icons.Venn />
-                <span>{isMatching ? 'Reading resonance…' : 'Match with a community'}</span>
-              </button>
-              {matches && matches.length > 0 && (
-                <button onClick={() => setMatches(null)} className="text-xs font-medium text-slate-400 transition-colors hover:text-slate-600">Clear</button>
-              )}
-            </div>
-          )}
-
           {matches && matches.length > 0 && (
             <div className="mb-8 space-y-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 animate-in fade-in slide-in-from-top-2">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-amber-600">Your resonant communities, read from your visions</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-amber-600">Your resonant communities, read from your visions</p>
+                <button onClick={() => setMatches(null)} className="shrink-0 text-xs font-medium text-slate-400 transition-colors hover:text-slate-600">Clear</button>
+              </div>
               {matches.map((m, i) => (
                 <div key={m.community.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-100 bg-white p-3 shadow-sm">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500 text-sm font-black text-white">{i + 1}</span>

@@ -78,6 +78,8 @@ export interface Pulse extends Being {
   imageUrls?: string[];
   eventDate?: string;
   eventLocation?: string;
+  // The gathering's room: how many trees may stand around this event (unset/null = unbounded).
+  eventMaxParticipants?: number | null;
   reachTreeId?: string;
   reachTreeName?: string;
   reachResponse?: string; // The reached tree's reply, kept so reach threads persist.

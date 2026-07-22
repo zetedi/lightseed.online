@@ -40,17 +40,18 @@ export const SectionHeader = ({ title, tone = '#059669', action, footer, toggle,
                     {footer && (
                         collapse ? (
                             <>
-                                {/* Mobile: just the magnifier. */}
+                                {/* Mobile AND tablet: just the magnifier — the action CTAs need
+                                    the room until the wide screen (Zoltán, 2026-07-22). */}
                                 <button
                                     onClick={() => setSearchOpen(true)}
                                     title="Search" aria-label="Search"
-                                    className="flex shrink-0 items-center justify-center rounded-full bg-white/15 p-2 text-white/85 backdrop-blur-sm transition-colors hover:bg-white/25 hover:text-white sm:hidden"
+                                    className="flex shrink-0 items-center justify-center rounded-full bg-white/15 p-2 text-white/85 backdrop-blur-sm transition-colors hover:bg-white/25 hover:text-white lg:hidden"
                                 >
                                     <Icons.Search />
                                 </button>
-                                <span className="flex-1 sm:hidden" />
-                                {/* Desktop: the full search box. */}
-                                <div className="hidden min-w-0 flex-1 sm:block">{footer}</div>
+                                <span className="flex-1 lg:hidden" />
+                                {/* Wide screens: the full search box. */}
+                                <div className="hidden min-w-0 flex-1 lg:block">{footer}</div>
                             </>
                         ) : (
                             <div className="min-w-0 flex-1">{footer}</div>
@@ -58,11 +59,11 @@ export const SectionHeader = ({ title, tone = '#059669', action, footer, toggle,
                     )}
                     {!footer && <span className="flex-1" />}
                     {toggle}
-                    {action && <div className="shrink-0">{action}</div>}
+                    {action && <div className="min-w-0 shrink">{action}</div>}
                 </div>
-                {/* Mobile search overlay — full width, over the switch and CTA. */}
+                {/* Mobile/tablet search overlay — full width, over the switch and CTA. */}
                 {collapse && searchOpen && (
-                    <div ref={overlayRef} className="absolute inset-0 z-20 flex items-center gap-2 px-3 sm:hidden" style={{ backgroundColor: tone }}>
+                    <div ref={overlayRef} className="absolute inset-0 z-20 flex items-center gap-2 px-3 lg:hidden" style={{ backgroundColor: tone }}>
                         <div className="min-w-0 flex-1">{footer}</div>
                         <button
                             onClick={() => setSearchOpen(false)}

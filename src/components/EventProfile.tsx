@@ -116,7 +116,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
                     </div>
                     <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 justify-center sm:justify-start">
-                            <h1 dir="auto" className="min-w-0 break-words text-2xl font-light tracking-wide">{pulse.title}</h1>
+                            <h1 dir="auto" className="min-w-0 break-words text-2xl font-light tracking-wide md:text-3xl">{pulse.title}</h1>
                             {/* Share + QR ride beside the name, exactly like the tree profile. */}
                             <button onClick={handleShare} title="Share this event" className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-bold text-white transition-colors hover:bg-white/25">
                                 <Icons.Link /> <span>{shared ? 'Copied' : 'Share'}</span>
@@ -174,10 +174,11 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
                                 )}
                             </div>
                         )}
-                        {(whenText || pulse.eventLocation) && (
+                        {(whenText || pulse.eventLocation || pulse.eventMaxParticipants) && (
                             <div className="mb-6 grid gap-2 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700">
                                 {whenText && <div><span className="font-bold">When:</span> {whenText}</div>}
                                 {pulse.eventLocation && <div><span className="font-bold">Where:</span> {pulse.eventLocation}</div>}
+                                {!!pulse.eventMaxParticipants && <div><span className="font-bold">Participants:</span> up to {pulse.eventMaxParticipants}</div>}
                             </div>
                         )}
                         <p dir="auto" className="whitespace-pre-wrap font-serif text-lg leading-relaxed text-slate-600">
@@ -189,7 +190,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
                 {section === 'participants' && (
                     <div>
                         <SectionTitle title="Participants" sub="The trees gathering around this event." />
-                        <TreeParticipants entityId={pulse.id} currentUserId={currentUserId} myTrees={myTrees} />
+                        <TreeParticipants entityId={pulse.id} currentUserId={currentUserId} myTrees={myTrees} maxParticipants={pulse.eventMaxParticipants ?? undefined} />
                     </div>
                 )}
 

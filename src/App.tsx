@@ -1161,6 +1161,8 @@ const AppContent = () => {
                         onOpenReachInbox={openDirectMessages}
                         logoUrl={configuredLogoUrl}
                         appName={isHubDomain(window.location.hostname) ? '.seed' : config.name}
+                        // An open event names itself in the header (mobile label + tablet centre).
+                        pageLabel={selectedPulse?.type === 'event' ? 'Event' : undefined}
                         isNightMode={effectiveIsDark}
                         theme={effectiveTheme}
                         onToggleNightMode={toggleNightMode}

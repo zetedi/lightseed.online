@@ -59,7 +59,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
     // A small square avatar: the first image, or the initial on a soft tone (never fake artwork).
     const avatar = (size: string, text: string) => images.length > 0
         ? <img src={images[0]} alt="" className={`${size} shrink-0 rounded-lg object-cover bg-slate-100`} />
-        : <div className={`${size} flex shrink-0 items-center justify-center rounded-lg font-serif ${text} ${isEvent ? 'bg-sky-50 text-sky-600' : 'bg-emerald-50 text-emerald-600'}`}>{(pulse.title || '·').charAt(0).toUpperCase()}</div>;
+        : <div className={`${size} flex shrink-0 items-center justify-center rounded-lg ${text} ${isEvent ? 'bg-sky-50 text-sky-600' : 'bg-emerald-50 text-emerald-600'}`}>{(pulse.title || '·').charAt(0).toUpperCase()}</div>;
 
     // ROWS — one line of the list: avatar, title + description, love at the right.
     if (density === 'rows') {

@@ -6,6 +6,51 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-22 · One family, one voice: the community joins the face, the fonts find their law**:
+the unification continues outward. **(1) The community hero wears the user profile's clothes**:
+same compact row, same avatar size, same default hero padding and background; its chips now
+read in the profile's order, the tree count first, then the birth date (Since), then the
+domain. **(2) The join date is the first root, not the login record**: the user profile now
+carries a Since chip set to the EARLIER of the account's creation and the birth of the oldest
+tree the being keeps, so the genesis keeper's date is the genesis tree's own (zetedi joined
+when the tree began, not when the login did). **(3) The events banner calmed**: its amber ring
+thinned and its glow softened; and every event card now carries the hosting community's small
+face in its bottom-right corner, a door straight to the community's profile (the host community
+opens from the doc in hand; any other resolves by id; a span, not a nested button, so the
+card's own click stays valid HTML). Events are fetched BY DOMAIN and older event pulses carry
+no communityId, so those fall back to the domain's home, the host community: the door never
+vanishes on older events. **(4) THE LAW OF FONTS**, consolidated and stated: SANS is
+the interface (names, labels, buttons, chips); SERIF belongs only to LIVING WORDS (pulse and
+vision bodies, pledges, quotes, the White Paper); MONO marks identifiers (emails, domains,
+hashes, lids). The strays were brought home: the one font-thin became font-light, serif left
+the card names and avatar initials (alignment sides, history cards, pulse initials), and every
+hero name now speaks at ONE SCALE (text-2xl md:text-3xl font-light tracking-wide), set once in
+BeingProfile and matched by the event and covenant heroes. **(5) The page's name found its
+places**: on phones it stays small beside the logo; on TABLET (where the full menu waits until
+xl) it stands in the MIDDLE of the bar at the wordmark's size in ONE typeface for all pages:
+deep emerald, a touch lighter than bold, softly glowing, Capitalized (the page is not .seed,
+which keeps its lowercase). Home wears "Lifetree Network (LIN)", and an OPEN BEING VIEW names
+itself: opening an Event puts Event in the header (a pageLabel the app hands the bar; other
+being views can join the pattern later). **(6) The gathering learned its room**: events carry
+eventMaxParticipants now (the modal offers "Max participants (optional)"; a positive number
+bounds it, clearing the field removes the bound). The banner card reads "date · place · max
+N", Event details says "Participants: up to N", and the Participants section counts "N of M
+places taken" and closes the door when full ("A place opens when a tree withdraws"), leaving
+withdrawal always open. The banner card grew corner numbers too, kept SMALL and half
+transparent so the image stays the card's face: top left "In / x / days" (Today speaks in one
+word; the past wears no countdown), top right "2/7, trees" with the live participant count
+read per card from its links. **(7) Joining stands beside founding**: on
+Communities, Match with a community left its amber side-row and now stands RIGHT of Register
+Community in the header, wearing the same green, because finding a community is at least as
+good a door as founding one; the Clear control moved into the matches panel it clears. To make
+room for two doors, the list-header search folds to its magnifier until the wide screen (lg),
+and the pair itself shrinks and cuts its labels to an ellipsis on phones instead of
+overflowing the band. Gates:
+check 356, warnings held at the pre-existing six. *(A family is recognised by its face; a
+voice by knowing when to speak in which register.)*
+
+---
+
 **2026-07-22 · The two heroes wear one face**: Zoltán put the event and the tree side by side
 and the family resemblance was not there yet; this ring corrects the morning sweep's tree
 arrangement with a better one. ONE GRAMMAR for every being's header now: back on the left of
