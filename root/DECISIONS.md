@@ -6,6 +6,32 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-22 · The pocket menu speaks one grammar**: the mobile and tablet menu was a bazaar
+(three coloured CTAs at three sizes, two tile heights, amber here and slate there); now it is
+one calm grid. EVERY destination tile is the SAME SIZE and wears the SAME CLOTHES: a nearly
+white card with an emerald border, the active page filled with its tab colour. Icons speak
+only on phones; the tablet reads clean text at a larger size. THE CREATION CTAS LEFT THE MENU
+(plant, pulse, vision) and their dead props were pruned from the bar's contract: creation
+lives on the pages themselves, and the menu's job is discovery, because what already exists,
+a vision like yours, is the invitation. The bottom panel wears the same dress: About the node
+became NODE DETAILS, standing beside the Profile page button in matching cards. **The icon
+language got its law**: PERSON = human, HANDS = agreement, CIRCLES = meeting (drop = care, sun
+= light). So Community wears two people (community is humans), Collab wears the HANDSHAKE, new
+to the icon set (intelligences shaking hands, a pointer to the covenant's digital handshake),
+and the Observatory wears the two circles (it watches circles meet). **And THE TEND CORNER**:
+care, one thumb-tap from anywhere. Bottom LEFT (the community switcher owns bottom right),
+mirroring its size; context-sensitive: an open tree is the target, otherwise the default tree;
+one tap lands on the target's Care section, and the drop pulses when the target is thirsty.
+The button IS a waterdrop: a circular sky gradient with a white rim, no chrome around it. On
+the tree profile, Edit stands beside Delete on every size now (icon-only on mobile), the two
+hands that change a being living together up top. The whole economy runs through witnessed daily care, and the daily gesture now has
+one home on every screen: where other apps' floating button creates content, this one tends
+something living. Zoltán walks the watering and planting paths daily with the early users;
+this corner is that walk, shortened to a heartbeat. Gates: check 356, warnings held at the
+pre-existing six. *(A menu is a map, not a market stall; a corner can be a watering can.)*
+
+---
+
 **2026-07-22 · One family, one voice: the community joins the face, the fonts find their law**:
 the unification continues outward. **(1) The community hero wears the user profile's clothes**:
 same compact row, same avatar size, same default hero padding and background; its chips now

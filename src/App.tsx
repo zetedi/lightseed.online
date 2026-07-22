@@ -1088,6 +1088,32 @@ const AppContent = () => {
             {/* Page-level scroll affordance — only on the main page (hidden while a detail/modal is open). */}
             {openKeys.length === 0 && <ScrollChevrons axis="y" fixed />}
 
+            {/* THE TEND CORNER (Zoltán, 2026-07-22) — care, one thumb-tap from anywhere.
+                Bottom LEFT (the community switcher owns bottom right), mirroring its size.
+                Context-sensitive: an open tree is the target; otherwise the default tree.
+                One tap lands on the target's Care section; the drop pulses sky when the
+                target is thirsty. The daily gesture of the whole economy, given one home. */}
+            {lightseed && (() => {
+                const tendTarget = selectedTree || activeTree || myTrees[0] || null;
+                if (!tendTarget) return null;
+                const thirsty = isWateringOverdue(tendTarget) || wateringNeededCount > 0;
+                return (
+                    <button
+                        onClick={() => {
+                            setTreeSectionHint('care');
+                            if (!selectedTree || selectedTree.id !== tendTarget.id) setSelectedTree(tendTarget);
+                        }}
+                        title={`Tend ${tendTarget.name}`}
+                        aria-label={`Tend ${tendTarget.name}`}
+                        className={`fixed bottom-5 left-5 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-sky-200 via-sky-400 to-sky-600 text-white shadow-lg shadow-sky-400/40 ring-1 ring-white/70 transition-transform hover:scale-110 active:scale-95 ${
+                            thirsty ? 'animate-pulse' : ''
+                        }`}
+                    >
+                        <Icons.Drop />
+                    </button>
+                );
+            })()}
+
             {/* The corner switcher back to the organisation's page — on its own domain, and for
                 staff standing in community view on the hub. */}
             {landingCommunity && seedView && (
@@ -1144,9 +1170,6 @@ const AppContent = () => {
                         }}
                         onLogin={() => setShowAuthModal(true)}
                         onLogout={() => { logout(); setCarryingTree(null); setTab('dashboard'); }}
-                        onPlant={() => openPlant()}
-                        onPulse={() => openPulseModal()}
-                        onCreateVision={() => setShowVisionModal(true)}
                         onProfile={() => {
                             // The profile avatar ALWAYS lands on the profile — close any being-detail
                             // overlay sitting on top (a tree opened from the profile would otherwise stay).

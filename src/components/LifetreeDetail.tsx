@@ -234,7 +234,6 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                             />
                         )}
                         {isOwner && !isEditing && onSetDefault && <ActionBtn onClick={() => { if (!isDefaultTree) onSetDefault(); }} disabled={isDefaultTree} title={isDefaultTree ? 'Your default tree' : 'Set as default tree'} color={isDefaultTree ? `${ACTION_GREEN} ring-2 ring-white/70` : ACTION_GREEN} icon={<Icons.Star filled={isDefaultTree} />} label="Favourite" />}
-                        {canEdit && !isEditing && <EditPill onClick={() => { setIsEditing(true); setSection('details'); }} />}
                     </>
    );
 
@@ -392,6 +391,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                 actions: !isEditing ? (
                     <>
                         <div className="hidden flex-wrap items-center justify-end gap-2 md:flex">{actionRow}</div>
+                        {/* Edit stands beside Delete on EVERY size (icon-only on mobile),
+                            so the two hands that change a being live together up top. */}
+                        {canEdit && <EditPill onClick={() => { setIsEditing(true); setSection('details'); }} />}
                         {canDelete && <DeletePill onClick={() => setShowDeleteModal(true)} staffDot={deleteIsStaffOnly} title="Delete tree" />}
                     </>
                 ) : undefined,

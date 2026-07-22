@@ -12,12 +12,9 @@ import { tabTone } from '../utils/tabTheme';
 interface NavigationProps {
   activeTab: string;
   setTab: (tab: string) => void;
-  onPlant: () => void;
-  onPulse: () => void;
   onLogin: () => void;
   onLogout: () => void;
   onProfile: () => void;
-  onCreateVision: () => void;
   pendingAlignmentsCount: number;
   reachNotificationsCount?: number;
   treeInviteCount?: number;
@@ -144,11 +141,9 @@ const NavGroup = ({ label, tabs, navMuted, navTabProps }: NavGroupProps) => (
 // Compact navigation tile used by the mobile menu (icon over a tiny label).
 interface MobileNavTileProps {
     tab: string;
-    span?: string;
-    short?: boolean;
     label?: string;
     activeTab: string;
-    navIsDark: boolean;
+    navIsDark?: boolean; // still in the shared prop bundle; the tile itself no longer varies by theme
     navBorder: string;
     tabIcons: Record<string, React.ReactNode>;
     setTab: (tab: string) => void;
@@ -158,19 +153,24 @@ interface MobileNavTileProps {
     getActiveTabColor: (tab: string) => string | undefined;
 }
 
-const MobileNavTile = ({ tab, span = '', short = false, label, activeTab, navIsDark, navBorder, tabIcons, setTab, setIsMenuOpen, getTabCount, getTabLabel, getActiveTabColor }: MobileNavTileProps) => {
+// ONE TILE GRAMMAR (Zoltán, 2026-07-22): every menu destination is the same size and wears
+// the same clothes: a nearly white card with an emerald border; the active page fills with
+// its tab colour. Icons speak only on phones; the tablet reads clean text. The creation CTAs
+// (plant / pulse / vision) left the menu: creation lives on the pages themselves, and the
+// menu's job is discovery.
+const MobileNavTile = ({ tab, label, activeTab, navBorder, tabIcons, setTab, setIsMenuOpen, getTabCount, getTabLabel, getActiveTabColor }: MobileNavTileProps) => {
     const active = activeTab === tab;
     const count = getTabCount(tab);
     return (
         <button
             onClick={() => { setTab(tab); setIsMenuOpen(false); }}
-            className={`relative flex flex-col items-center justify-center gap-1 rounded-xl px-0.5 text-center transition-all ${span} ${short ? 'py-2' : 'min-h-[50px]'} ${
-                active ? 'text-white shadow-lg' : (navIsDark ? 'bg-white/5 text-slate-200 hover:bg-white/10' : 'bg-slate-100/80 text-slate-700 hover:bg-slate-200/80')
+            className={`relative flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl border px-0.5 py-2 text-center transition-all ${
+                active ? 'border-transparent text-white shadow-lg' : 'border-emerald-200 bg-white/95 text-slate-700 hover:bg-white'
             }`}
             style={active ? { backgroundColor: getActiveTabColor(tab) || navBorder } : undefined}
         >
-            <span className="opacity-90 [&>svg]:h-4 [&>svg]:w-4">{tabIcons[tab]}</span>
-            <span className="text-[8px] font-bold uppercase leading-none tracking-tight">{label ?? getTabLabel(tab)}</span>
+            <span className="opacity-90 [&>svg]:h-4 [&>svg]:w-4 sm:hidden">{tabIcons[tab]}</span>
+            <span className="text-[8px] font-bold uppercase leading-none tracking-tight sm:text-[11px]">{label ?? getTabLabel(tab)}</span>
             {count > 0 && (
                 <span className="absolute right-0.5 top-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-red-500 px-0.5 text-[8px] font-black text-white">{count}</span>
             )}
@@ -178,37 +178,12 @@ const MobileNavTile = ({ tab, span = '', short = false, label, activeTab, navIsD
     );
 };
 
-// Wide quick-action button (Plant / Pulse / Vision) for the mobile menu's first row —
-// vertical so the label wraps to two lines, sized to match the nav tiles.
-interface MobileActionTileProps {
-    icon: React.ReactNode;
-    label: string;
-    onClick: () => void;
-    color: string;
-    signedIn: boolean;
-    onLogin: () => void;
-    setIsMenuOpen: (open: boolean) => void;
-}
-
-const MobileActionTile = ({ icon, label, onClick, color, signedIn, onLogin, setIsMenuOpen }: MobileActionTileProps) => (
-    <button
-        onClick={() => { setIsMenuOpen(false); if (signedIn) { onClick(); } else { onLogin(); } }}
-        className={`col-span-2 flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl px-1 text-center ${color} text-white shadow-lg`}
-    >
-        <span className="[&>svg]:h-4 [&>svg]:w-4">{icon}</span>
-        <span className="text-[8px] font-bold uppercase leading-[1.15] tracking-tight">{label}</span>
-    </button>
-);
-
 export const Navigation = ({
     activeTab,
     setTab,
-    onPlant,
-    onPulse,
     onLogin,
     onLogout,
     onProfile,
-    onCreateVision,
     pendingAlignmentsCount,
     reachNotificationsCount = 0,
     careAlertCount = 0,
@@ -286,9 +261,12 @@ export const Navigation = ({
         events: <Icons.Loc />,
         pulses: <Icons.PulseDuo />,
         beds: <Icons.Moon />,
-        observatory: <Icons.Exchange />,
-        communities: <Icons.Globe />,
-        collab: <Icons.Users />,
+        // The icon language (Zoltán, 2026-07-22): PERSON = human, HANDS = agreement,
+        // CIRCLES = meeting. Community is humans standing together; Collab is intelligences
+        // shaking hands (the covenant's digital handshake); the Observatory watches circles meet.
+        observatory: <Icons.Venn />,
+        communities: <Icons.Users />,
+        collab: <Icons.Handshake />,
         about: <Icons.Info />,
     };
 
@@ -307,7 +285,6 @@ export const Navigation = ({
     // components (declared at module scope so they keep a stable identity across renders).
     const navTabProps: Omit<NavTabProps, 'tab'> = { activeTab, theme, navIsDark, setTab, t, getTabStyle, getTabLabel, getTabCount };
     const mobileTileProps = { activeTab, navIsDark, navBorder, tabIcons, setTab, setIsMenuOpen, getTabCount, getTabLabel, getActiveTabColor };
-    const actionTileProps = { signedIn, onLogin, setIsMenuOpen };
 
     return (
         <nav
@@ -505,34 +482,21 @@ export const Navigation = ({
                         className="shrink-0 rounded-b-3xl border-t border-b border-amber-300/25 px-3 pb-3 pt-3 shadow-[0_22px_30px_-18px_rgba(251,191,36,0.5)] animate-in slide-in-from-top-4"
                         style={{ backgroundColor: navBackground, color: navText }}
                     >
+                        {/* Destinations only, one grammar, one size (4 columns; every tile
+                            identical). No creation CTAs here: what exists already invites. */}
                         {signedIn ? (
-                          <>
-                            {/* Row 1 — wide actions paired with their feeds (6 columns) */}
-                            <div className="grid grid-cols-6 gap-1.5">
-                                {activeTab === 'visions' ? (
-                                    <MobileActionTile icon={<Icons.Plus />} label={t('create_vision')} onClick={onCreateVision} color="bg-amber-500" {...actionTileProps} />
-                                ) : (
-                                    <MobileActionTile icon={<Icons.Tree />} label={t('plant_lifetree')} onClick={onPlant} color="bg-emerald-600" {...actionTileProps} />
-                                )}
+                            <div className="grid grid-cols-4 gap-1.5">
                                 <MobileNavTile tab="forest" {...mobileTileProps} />
-                                <MobileActionTile icon={<Icons.Pulse />} label={t('emit_pulse')} onClick={onPulse} color="bg-sky-600" {...actionTileProps} />
                                 <MobileNavTile tab="pulses" {...mobileTileProps} />
+                                <MobileNavTile tab="visions" {...mobileTileProps} />
+                                <MobileNavTile tab="events" {...mobileTileProps} />
+                                <MobileNavTile tab="beds" {...mobileTileProps} />
+                                <MobileNavTile tab="observatory" label="Observe" {...mobileTileProps} />
+                                <MobileNavTile tab="collab" label="Collab" {...mobileTileProps} />
+                                <MobileNavTile tab="communities" label="Commune" {...mobileTileProps} />
                             </div>
-
-                            {/* Row 2 — secondary destinations, short (matches the bottom row's height) */}
-                            <div className="mt-1.5 grid grid-cols-6 gap-1.5">
-                                <MobileNavTile tab="visions" short {...mobileTileProps} />
-                                <MobileNavTile tab="events" short {...mobileTileProps} />
-                                <MobileNavTile tab="beds" short {...mobileTileProps} />
-                                <MobileNavTile tab="observatory" short label="Observe" {...mobileTileProps} />
-                                <MobileNavTile tab="collab" short label="Collab" {...mobileTileProps} />
-                                <MobileNavTile tab="communities" short label="Commune" {...mobileTileProps} />
-                            </div>
-                          </>
                         ) : (
-                            /* Signed out: everything available fits one tight row (plant spans 2 → 6 cols). */
-                            <div className="grid grid-cols-6 gap-1.5">
-                                <MobileActionTile icon={<Icons.Tree />} label={t('plant_lifetree')} onClick={onPlant} color="bg-emerald-600" {...actionTileProps} />
+                            <div className="grid grid-cols-4 gap-1.5">
                                 <MobileNavTile tab="forest" {...mobileTileProps} />
                                 <MobileNavTile tab="events" {...mobileTileProps} />
                                 <MobileNavTile tab="collab" label="Collab" {...mobileTileProps} />
@@ -557,23 +521,24 @@ export const Navigation = ({
                             </button>
                         )}
 
-                        {/* Two buttons side by side: About the node · Profile page */}
+                        {/* Two buttons side by side, wearing the tiles' own clothes:
+                            Node Details · Profile page. */}
                         <div className={`grid gap-2 ${lightseed ? 'grid-cols-2' : 'grid-cols-1'}`}>
                             <button
                                 onClick={() => { setTab('about'); setIsMenuOpen(false); }}
-                                className={`flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold transition-all ${
+                                className={`flex w-full items-center justify-center gap-2 rounded-xl border py-3 text-sm font-bold transition-all ${
                                     activeTab === 'about'
-                                        ? 'text-white shadow-lg'
-                                        : (navIsDark ? 'border border-amber-300/50 bg-amber-500/10 text-amber-100' : 'border border-amber-200 bg-amber-50 text-amber-700')
+                                        ? 'border-transparent text-white shadow-lg'
+                                        : 'border-emerald-200 bg-white/95 text-slate-700 hover:bg-white'
                                 }`}
                                 style={activeTab === 'about' ? { backgroundColor: getActiveTabColor('about') || navBorder } : undefined}
                             >
-                                <span className="[&>svg]:h-[18px] [&>svg]:w-[18px]"><Icons.Info /></span>
-                                <span>{t('about_the_node')}</span>
+                                <span className="[&>svg]:h-[18px] [&>svg]:w-[18px] sm:hidden"><Icons.Info /></span>
+                                <span>Node Details</span>
                             </button>
 
                             {lightseed && (
-                                <button onClick={() => { onProfile(); setIsMenuOpen(false); }} className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-bold text-emerald-700">
+                                <button onClick={() => { onProfile(); setIsMenuOpen(false); }} className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white/95 px-3 py-2.5 text-sm font-bold text-slate-700 transition-all hover:bg-white">
                                     <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-emerald-200 bg-white">
                                         {activeTreeImage
                                             ? <img src={activeTreeImage} className="h-full w-full object-cover" alt="" referrerPolicy="no-referrer" />
