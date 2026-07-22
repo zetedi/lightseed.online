@@ -19,10 +19,17 @@ import { readFileSync, existsSync } from 'node:fs';
 import { initializeApp, cert, applicationDefault } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
+// Bare ADC (gcloud auth application-default login) often carries no project id, so read it
+// from .firebaserc (or an env override) and hand it over explicitly. A serviceAccount.json
+// already embeds its own project_id, so that branch needs nothing extra.
+const projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT || (() => {
+    try { return JSON.parse(readFileSync(new URL('../.firebaserc', import.meta.url), 'utf8')).projects?.default; }
+    catch { return undefined; }
+})();
 const saPath = new URL('../serviceAccount.json', import.meta.url);
 initializeApp(existsSync(saPath)
     ? { credential: cert(JSON.parse(readFileSync(saPath, 'utf8'))) }
-    : { credential: applicationDefault() });
+    : { credential: applicationDefault(), projectId });
 
 const db = getFirestore();
 const burn = process.argv.includes('--burn');
