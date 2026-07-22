@@ -205,12 +205,20 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                                 <span>{rootOnGuarded ? 'Delete (stray)' : 'Delete'}</span>
                             </button>
                         )}
-                        {/* The protected-foundation badge — a personal tree's Root Vision. A superadmin
-                            sees the delete instead (they may release any vision). */}
+                        {/* A personal tree's Root Vision is its foundation — the delete is present
+                            but DISABLED, and the "cannot be deleted" reason lives in its hover
+                            (the anchor message left the vision cards; it belongs only here). A
+                            superadmin sees the live delete instead (they may release any vision). */}
                         {isAuthor && isRoot && !rootOnGuarded && !isSuperAdmin && (
-                            <span className="flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/15 px-3 py-1.5 text-[10px] font-bold text-emerald-200" title="This vision is the tree's own root, its foundation.">
-                                <Icons.ShieldCheck /> ROOT VISION
-                            </span>
+                            <button
+                                type="button"
+                                disabled
+                                title="This vision is the foundation of your tree and cannot be deleted."
+                                className="flex cursor-not-allowed items-center gap-1 rounded-full border border-red-400/20 bg-red-500/10 px-4 py-2 text-xs font-bold text-red-300/50"
+                            >
+                                <Icons.Trash />
+                                <span>Delete</span>
+                            </button>
                         )}
                     </div>
                 </div>

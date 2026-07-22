@@ -6,6 +6,29 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-23 · Clearer water**: a sweep of small corrections. The tend DROP shed its white circle
+and border and glows lightseed-YELLOW now (a blue bead in a sun halo); it sits in a strip that
+MIRRORS the nav container (same max-w-7xl and px steps), so its centre lands directly under the
+logo's centre on every screen, narrow or ultra-wide, and it stands a fifth larger than the logo
+circle (48px). The EVENTS BOX
+on the home hero KEEPS its header-colour fill (the appearance setting), framed by ONLY the
+amber border, with the old amber glow shadow removed (that faint shadow, half hidden by the
+box's own edge, read as a white strip over the event shadow); and an edited event refreshes the
+banner immediately (the edit announces the 'events' bus, and updateEvent's type finally admits
+eventMaxParticipants). The /model CRYSTAL tightened to a small uniform 14px margin on every side
+(its viewBox carried a wide 40px pad) AND now fills the container width, so large screens no
+longer leave a wide right margin. The tablet-centre TITLE became white letters with a dark-green
+outline (paint-order stroke) plus an emerald shadow, legible on any theme surface, including a
+white header where the outline alone read too thin.
+The profile AVATAR wears a validation shield in its top-left corner when the being keeps a live
+validated tree. And the VISION CARDS simplified to one affordance, the default-vision star (a
+circle, top-right): the delete icon and the "anchor, cannot be deleted" message both left the
+card; deletion now lives only in a vision's own profile view, where a protected Root Vision
+shows a DISABLED delete whose hover carries the reason. Gates: check 356, warnings held at the
+pre-existing six. *(Polish is the same discipline as architecture, applied to a pixel.)*
+
+---
+
 **2026-07-22 · Small waters**: the drop took the logo's measure (40px, 16px from the edges)
 and a slight white glow, so the two corners of the screen answer each other. The tree's Edit
 pill turned emerald like every other creating hand (blue belonged to water, not to editing).

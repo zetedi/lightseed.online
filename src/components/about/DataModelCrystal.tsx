@@ -53,9 +53,15 @@ export const DataModelCrystal = () => {
   const boxList = useMemo(() => Object.values(boxes) as Box[], [boxes]);
 
   const bounds = useMemo(() => {
-    let maxX = 0, maxY = 0;
-    boxList.forEach(b => { maxX = Math.max(maxX, b.x + b.w); maxY = Math.max(maxY, b.y + b.h); });
-    return { w: maxX + 40, h: maxY + 40 };
+    let minX = Infinity, minY = Infinity, maxX = 0, maxY = 0;
+    boxList.forEach(b => {
+      minX = Math.min(minX, b.x); minY = Math.min(minY, b.y);
+      maxX = Math.max(maxX, b.x + b.w); maxY = Math.max(maxY, b.y + b.h);
+    });
+    // A small uniform margin on every side (the diagram used to carry a wide 40px pad on the
+    // right and bottom and whatever the leftmost box left on the other sides).
+    const PAD = 14;
+    return { x: minX - PAD, y: minY - PAD, w: (maxX - minX) + PAD * 2, h: (maxY - minY) + PAD * 2 };
   }, [boxList]);
 
   const download = () => {
@@ -94,7 +100,9 @@ export const DataModelCrystal = () => {
         onPointerUp={dragEnd}
         onPointerCancel={dragEnd}
       >
-        <svg viewBox={`0 0 ${bounds.w} ${bounds.h}`} width={bounds.w} className="h-auto max-w-none" style={{ minWidth: '760px' }} role="img" aria-label="lifeseed data model diagram">
+        {/* Fill the container width so large screens don't leave a wide right margin; the
+            viewBox keeps the aspect ratio, and minWidth keeps a horizontal scroll on phones. */}
+        <svg viewBox={`${bounds.x} ${bounds.y} ${bounds.w} ${bounds.h}`} className="h-auto w-full" style={{ minWidth: '760px' }} role="img" aria-label="lifeseed data model diagram">
           <defs>
             <marker id="dm-arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
               <path d="M0,0 L8,3 L0,6 Z" fill="#38bdf8" />

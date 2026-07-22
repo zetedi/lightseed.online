@@ -321,6 +321,13 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                             }}
                         />
                         <div className="absolute bottom-0.5 right-0.5 bg-emerald-500 w-4 h-4 rounded-full border-[3px] border-slate-900"></div>
+                        {/* The validation shield — top-left of the avatar when this being keeps a
+                            live validated tree (or is the node's own trusted validator). */}
+                        {(hasValidatedTree || isSuperAdmin) && (
+                            <span className="absolute -top-1 -left-1 flex h-5 w-5 md:h-6 md:w-6 items-center justify-center rounded-full border-2 border-white bg-emerald-500 text-white shadow-md" title="Validated">
+                                <Icons.ShieldCheck className="h-3 w-3 md:h-3.5 md:w-3.5" />
+                            </span>
+                        )}
                     </div>
                 ),
                 title: lightseed.displayName,

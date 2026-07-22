@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { showAlert, showConfirm } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useSession } from '../../contexts/SessionContext';
 import { Icons } from '../ui/Icons';
 import { MahameruAvatar } from '../ui/MahameruAvatar';
 import { Vision, VisionSynergy } from '../../types';
-import { getMyVisions, getJoinedVisions, deleteVision } from '../../services/firebase';
+import { getMyVisions, getJoinedVisions } from '../../services/firebase';
 import { findVisionSynergies } from '../../services/gemini';
 import { VisionCard } from '../VisionCard';
 import { Loading } from '../ui/Loading';
@@ -72,17 +71,6 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
     }
   };
 
-  const handleDeleteVision = async (e: React.MouseEvent, visionId: string) => {
-    e.stopPropagation();
-    if (!(await showConfirm('Are you sure you want to delete this vision?', { title: 'Delete Vision', confirmText: 'Delete', danger: true }))) return;
-    try {
-      await deleteVision(visionId);
-      setVisions(prev => prev.filter(v => v.id !== visionId));
-    } catch (e: any) {
-      showAlert('Delete failed: ' + e.message);
-    }
-  };
-
   if (loading) return <div className="flex justify-center rounded-2xl border border-slate-100 bg-slate-50/50 py-16"><Loading /></div>;
 
   return (
@@ -142,13 +130,15 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
               <div onClick={() => onViewVision(vision)} className="cursor-pointer h-full">
                 <VisionCard vision={vision} />
               </div>
-              {/* The star — a default vision, mirroring the default tree. Starring again
-                  clears it. The chosen one stays visible; the others appear on hover. */}
+              {/* The only affordance on the card: the star — a default vision, mirroring the
+                  default tree. A circle top-right; starring again clears it. The chosen one
+                  stays lit; the others appear on hover. (Deletion lives in the vision's own
+                  profile view now, not on the card.) */}
               <button
                 onClick={(e) => { e.stopPropagation(); setDefaultVision(defaultVisionId === vision.id ? null : vision.id); }}
                 title={defaultVisionId === vision.id ? 'Your default vision (tap to clear)' : 'Set as default vision'}
                 aria-label={defaultVisionId === vision.id ? 'Your default vision' : 'Set as default vision'}
-                className={`absolute top-2 right-2 z-20 rounded-full border p-1.5 shadow-lg transition-all hover:scale-110 ${
+                className={`absolute top-2 right-2 z-20 flex h-8 w-8 items-center justify-center rounded-full border shadow-lg transition-all hover:scale-110 ${
                   defaultVisionId === vision.id
                     ? 'border-amber-300 bg-amber-400 text-white opacity-100'
                     : 'border-slate-200 bg-white/95 text-amber-500 opacity-0 group-hover:opacity-100'
@@ -156,22 +146,6 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
               >
                 <Icons.Star filled={defaultVisionId === vision.id} size={16} />
               </button>
-              <div className="absolute top-2 left-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                {vision.title === "Root Vision" ? (
-                  <div className="bg-white/95 backdrop-blur-sm px-2 py-1.5 rounded-lg text-[9px] text-emerald-700 font-bold border border-emerald-200 shadow-sm flex flex-col">
-                    <span>ANCHOR (ROOT)</span>
-                    <span className="text-[8px] text-slate-400 font-normal leading-tight mt-0.5">This vision is the foundation of your tree and cannot be deleted.</span>
-                  </div>
-                ) : (
-                  <button
-                    onClick={(e) => handleDeleteVision(e, vision.id)}
-                    className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg border border-red-400 transition-all hover:scale-110 active:scale-95"
-                    title={t('delete_vision_title')}
-                  >
-                    <Icons.Trash />
-                  </button>
-                )}
-              </div>
             </div>
           ))}
         </div>

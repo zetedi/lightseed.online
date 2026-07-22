@@ -153,7 +153,10 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
                 // Outer wrapper does NOT clip, so the nav arrows can overhang the banner's border;
                 // the inner banner keeps overflow-hidden for its rounded corners + wordmark wash.
                 <div className="relative w-full">
-                <div className="relative w-full overflow-hidden rounded-2xl h-80 md:h-96 ring-1 ring-amber-300/20 shadow-[0_0_10px_-7px_rgba(251,191,36,0.3)]"
+                {/* The header-colour fill stays (the appearance setting), framed by ONLY the
+                    amber border — the old amber GLOW shadow is gone (that faint shadow, half
+                    hidden by the box's own edge, was the "white strip over the event shadow"). */}
+                <div className="relative w-full overflow-hidden rounded-2xl h-80 md:h-96 border border-amber-300/70"
                      style={{ backgroundColor: banner.background }}>
                     {/* Cards float over the wash, under an explicit Events label. */}
                     <div className="relative z-10 flex h-full flex-col px-4 py-3">

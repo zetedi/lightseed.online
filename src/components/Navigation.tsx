@@ -305,7 +305,17 @@ export const Navigation = ({
                             : activeTab === 'dashboard' ? 'Lifetree Network (LIN)'
                             : cap(getTabLabel(activeTab));
                         return (
-                            <span dir="auto" className="pointer-events-none absolute left-1/2 hidden max-w-[46vw] -translate-x-1/2 truncate text-center font-medium text-2xl tracking-wide text-emerald-700 drop-shadow-[0_1px_6px_rgba(16,185,129,0.45)] sm:block xl:hidden">{label}</span>
+                            // White letters with a dark-green outline: legible on ANY theme
+                            // surface, light or dark (the emerald fill failed on emerald headers).
+                            // paint-order stroke keeps the white centres clear.
+                            <span
+                                dir="auto"
+                                className="pointer-events-none absolute left-1/2 hidden max-w-[46vw] -translate-x-1/2 truncate text-center font-semibold text-2xl tracking-wide sm:block xl:hidden"
+                                // White fill + dark-green outline reads on any surface; the emerald
+                                // shadow lifts it off a WHITE header, where the white fill would
+                                // otherwise vanish and leave only a thin outline.
+                                style={{ color: '#ffffff', WebkitTextStroke: '1.2px #064e3b', paintOrder: 'stroke', textShadow: '0 1px 7px rgba(16,185,129,0.7), 0 1px 2px rgba(6,78,59,0.55)' }}
+                            >{label}</span>
                         );
                     })()}
                     <div className="flex items-center gap-3 cursor-pointer group shrink-0" onClick={() => setTab('dashboard')}>

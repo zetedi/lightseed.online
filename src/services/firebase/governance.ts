@@ -456,7 +456,7 @@ export const deleteCommunityEvent = (eventId: string) => deleteDoc(doc(db, 'puls
 // canEditEvent (creator / community admin / node owner), matching the trusted-cohort posture.
 export const updateEvent = async (
     eventId: string,
-    data: Partial<Pick<Pulse, 'title' | 'body' | 'content' | 'imageUrl' | 'imageUrls' | 'eventDate' | 'eventLocation' | 'visibility'>>,
+    data: Partial<Pick<Pulse, 'title' | 'body' | 'content' | 'imageUrl' | 'imageUrls' | 'eventDate' | 'eventLocation' | 'eventMaxParticipants' | 'visibility'>>,
 ) => {
     await updateDoc(doc(db, 'pulses', eventId), { ...data });
 };

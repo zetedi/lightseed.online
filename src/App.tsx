@@ -1111,35 +1111,44 @@ const AppContent = () => {
                     if (vision) { setSelectedTree(null); setSelectedVision(vision); }
                 };
                 return (
-                    <>
-                        {/* When a default VISION is starred, the drop opens a two-door sheet
-                            (predictable beats clever); with only the tree, it acts directly. */}
-                        {tendMenuOpen && defaultVisionId && (
-                            <div className="fixed bottom-16 left-4 z-40 w-56 overflow-hidden rounded-2xl border border-emerald-100 bg-white/95 shadow-xl backdrop-blur animate-in slide-in-from-bottom-2">
-                                <button onClick={openCare} className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-sky-50">
-                                    <span className="text-sky-500 [&>svg]:h-4 [&>svg]:w-4"><Icons.Drop /></span>
-                                    <span className="min-w-0 truncate">Tend {tendTarget.name}</span>
-                                </button>
-                                <button onClick={() => { void openVision(); }} className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-amber-50">
-                                    <span className="text-amber-500 [&>svg]:h-4 [&>svg]:w-4"><Icons.Eye /></span>
-                                    <span>Tend your vision</span>
+                    // A full-width strip that MIRRORS the nav's container (same max-w-7xl mx-auto
+                    // and px steps), so the bead sits at the same x as the logo on EVERY screen,
+                    // narrow or ultra-wide. pointer-events pass through except on the bead/menu.
+                    <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40">
+                        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                            {/* -translate-x-1 (-4px) nudges the 48px bead so its centre lands under
+                                the 40px logo's centre (both anchored to this container's left edge). */}
+                            <div className="relative inline-block -translate-x-1">
+                                {/* When a default VISION is starred, the drop opens a two-door sheet
+                                    (predictable beats clever); with only the tree, it acts directly. */}
+                                {tendMenuOpen && defaultVisionId && (
+                                    <div className="pointer-events-auto absolute bottom-full left-0 mb-2 w-56 overflow-hidden rounded-2xl border border-emerald-100 bg-white/95 shadow-xl backdrop-blur animate-in slide-in-from-bottom-2">
+                                        <button onClick={openCare} className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-sky-50">
+                                            <span className="text-sky-500 [&>svg]:h-4 [&>svg]:w-4"><Icons.Drop /></span>
+                                            <span className="min-w-0 truncate">Tend {tendTarget.name}</span>
+                                        </button>
+                                        <button onClick={() => { void openVision(); }} className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-amber-50">
+                                            <span className="text-amber-500 [&>svg]:h-4 [&>svg]:w-4"><Icons.Eye /></span>
+                                            <span>Tend your vision</span>
+                                        </button>
+                                    </div>
+                                )}
+                                <button
+                                    onClick={() => { if (defaultVisionId) setTendMenuOpen(o => !o); else openCare(); }}
+                                    title={`Tend ${tendTarget.name}`}
+                                    aria-label={`Tend ${tendTarget.name}`}
+                                    className={`pointer-events-auto block transition-transform hover:scale-110 active:scale-95 ${
+                                        thirsty ? 'animate-pulse' : ''
+                                    }`}
+                                >
+                                    {/* The droplet itself, drawn by Lumo — the bead IS the button (a
+                                        vector, glassy at every size), 48px (a fifth larger than the
+                                        logo circle), lit by a lightseed-YELLOW glow (blue bead, sun halo). */}
+                                    <img src="/droplet.svg" alt="" draggable={false} className="h-12 w-12 object-contain drop-shadow-[0_0_10px_rgba(250,204,21,0.85)]" />
                                 </button>
                             </div>
-                        )}
-                        <button
-                            onClick={() => { if (defaultVisionId) setTendMenuOpen(o => !o); else openCare(); }}
-                            title={`Tend ${tendTarget.name}`}
-                            aria-label={`Tend ${tendTarget.name}`}
-                            className={`fixed bottom-4 left-4 z-40 rounded-full border border-emerald-200 bg-white p-1 shadow-sm transition-transform hover:scale-110 active:scale-95 ${
-                                thirsty ? 'animate-pulse' : ''
-                            }`}
-                        >
-                            {/* The droplet itself, drawn by Lumo — the bead IS the button (a
-                                vector, glassy at every size). It wears the LOGO's exact frame:
-                                a white circle, one border, 32px bead, 16px from the edges. */}
-                            <img src="/droplet.svg" alt="" draggable={false} className="h-8 w-8 object-contain drop-shadow-[0_0_6px_rgba(255,255,255,0.9)]" />
-                        </button>
-                    </>
+                        </div>
+                    </div>
                 );
             })()}
 
@@ -1373,8 +1382,10 @@ const AppContent = () => {
                     handleImageUpload={handleImageUpload}
                     onCreate={async (data: any) => {
                         await updateEvent(editingEvent.id, data);
-                        // Reflect the edit immediately in the open detail view.
+                        // Reflect the edit immediately in the open detail view AND the dashboard
+                        // events banner (which re-fetches on the 'events' bus signal).
                         setSelectedPulse(prev => prev && prev.id === editingEvent.id ? { ...prev, ...data } : prev);
+                        announce('events', editingEvent.id);
                         setEditingEvent(null);
                     }}
                 />
