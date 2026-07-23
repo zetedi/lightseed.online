@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
 import { Icons } from '../components/ui/Icons';
@@ -92,9 +92,11 @@ interface BedsBrowsePageProps {
   // The active node theme — passed so the header band resolves the SAME pigment the nav's
   // active pill does (both call tabTone('beds', theme)); without it they drift on a themed node.
   theme?: TabTheme | null;
+  // The full-width tab strip above the band (beds live inside the Offerings page as a sub-tab).
+  tabs?: ReactNode;
 }
 
-export const BedsBrowsePage = ({ onViewTree, lightHouseDomain = null, theme = null }: BedsBrowsePageProps) => {
+export const BedsBrowsePage = ({ onViewTree, lightHouseDomain = null, theme = null, tabs }: BedsBrowsePageProps) => {
   const { t } = useLanguage();
   const { lightseed } = useSession();
   const [density, setDensity] = useListDensity('beds');
@@ -141,10 +143,13 @@ export const BedsBrowsePage = ({ onViewTree, lightHouseDomain = null, theme = nu
   const tone = tabTone('beds', theme);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pt-6 pb-4 sm:px-6 sm:pb-6 animate-in fade-in duration-500 overflow-x-hidden">
+    // No max-w/px/pt here: beds now render inside the Offerings page's <main>, which already
+    // provides the width, gutters and top padding (the SectionHeader's -mt-6 touches the tabs).
+    <div className="animate-in fade-in duration-500 overflow-x-hidden">
       <SectionHeader
         title={t('beds')}
         tone={tone}
+        tabs={tabs}
         toggle={<ViewDensityToggle value={density} onChange={setDensity} />}
         footer={
           <div className="relative w-full">

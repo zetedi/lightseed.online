@@ -3,6 +3,7 @@ import { Icons } from '../components/ui/Icons';
 import { SuperDot } from '../components/ui/SuperDot';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { ListBox } from '../components/ui/ListBox';
+import { FullWidthTabs } from '../components/ui/FullWidthTabs';
 import { ViewDensityToggle } from '../components/ui/ViewDensityToggle';
 import { ImagePicker } from '../components/ui/ImagePicker';
 import { useListDensity, type ListDensity } from '../hooks/useListDensity';
@@ -174,6 +175,18 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
       <SectionHeader
         title="Cocreate"
         tone={tone}
+        // The sub-tabs ride the band itself, full width: the same tab grammar as Offerings.
+        tabs={
+          <FullWidthTabs
+            active={subTab}
+            onChange={(k) => setSubTab(k as 'intelligences' | 'organisations')}
+            tone={tone}
+            tabs={[
+              { key: 'intelligences', label: 'Intelligences', icon: <Icons.Intelligence />, count: list?.length ?? undefined },
+              { key: 'organisations', label: 'Organisations', icon: <Icons.Globe />, count: orgs?.length ?? undefined },
+            ]}
+          />
+        }
         // The oracle quote lives in the band (moved here from the retired Observatory).
         footer={quote ? (
           <div className="hidden min-w-0 items-center gap-1.5 md:flex">
@@ -194,15 +207,7 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
           </button>
         ) : undefined}
       >
-        <ListBox
-          tone={tone}
-          activeTab={subTab}
-          onTab={(k) => setSubTab(k as 'intelligences' | 'organisations')}
-          tabs={[
-            { key: 'intelligences', label: 'Intelligences', icon: <Icons.Intelligence />, count: list?.length ?? undefined },
-            { key: 'organisations', label: 'Organisations', icon: <Icons.Globe />, count: orgs?.length ?? undefined },
-          ]}
-        >
+        <ListBox tone={tone}>
         {subTab === 'intelligences' ? (
           <>
             <div className={gridFor(density)}>

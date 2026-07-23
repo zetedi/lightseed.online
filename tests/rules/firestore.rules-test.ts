@@ -976,11 +976,13 @@ describe('loves: any being may be loved, the count only, the slot only your own'
     await assertSucceeds(updateDoc(doc(db(ALICE), 'lifetrees', 'treeB'), { loveCount: 1, updatedAt: 1 }));
   });
 
-  it('the same universal love works on a community and on a bed', async () => {
+  it('the same universal love works on a community, a bed and a Light House', async () => {
     await assertSucceeds(setDoc(doc(db(BOB), 'communities', 'com1', 'loves', BOB), { uid: BOB, createdAt: 1 }));
     await assertSucceeds(updateDoc(doc(db(BOB), 'communities', 'com1'), { loveCount: 1, updatedAt: 1 }));
     await assertSucceeds(setDoc(doc(db(BOB), 'lifetrees', 'bedStay', 'loves', BOB), { uid: BOB, createdAt: 1 }));
     await assertSucceeds(updateDoc(doc(db(BOB), 'lifetrees', 'bedStay'), { loveCount: 1, updatedAt: 1 }));
+    await assertSucceeds(setDoc(doc(db(BOB), 'lightHouses', 'lh1', 'loves', BOB), { uid: BOB, createdAt: 1 }));
+    await assertSucceeds(updateDoc(doc(db(BOB), 'lightHouses', 'lh1'), { loveCount: 1, updatedAt: 1 }));
   });
 
   it('you may write ONLY your own love slot, and the love overlay may touch NOTHING but the count', async () => {

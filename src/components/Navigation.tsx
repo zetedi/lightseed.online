@@ -249,7 +249,8 @@ export const Navigation = ({
 
     // Signed-out visitors get a slimmer menu: no Visions, Pulses, or Observatory.
     const signedIn = !!lightseed;
-    const lightEarthTabs = signedIn ? ['forest', 'visions', 'events', 'pulses', 'beds', 'offerings'] : ['forest', 'events'];
+    // Beds moved INSIDE Offerings (a bed is an offering) as a sub-tab, 2026-07-23; one fewer top item.
+    const lightEarthTabs = signedIn ? ['forest', 'visions', 'events', 'pulses', 'offerings'] : ['forest', 'events'];
     // Cocreate (the node's intelligences + organisations) lives in its own group. The Observatory
     // was retired (its resonance is duplicated in Visions and community matches); its oracle quote
     // moved to the Cocreate header.
@@ -505,7 +506,6 @@ export const Navigation = ({
                                 <MobileNavTile tab="pulses" {...mobileTileProps} />
                                 <MobileNavTile tab="visions" {...mobileTileProps} />
                                 <MobileNavTile tab="events" {...mobileTileProps} />
-                                <MobileNavTile tab="beds" {...mobileTileProps} />
                                 <MobileNavTile tab="offerings" label="Offer" {...mobileTileProps} />
                                 <MobileNavTile tab="collab" label="Cocreate" {...mobileTileProps} />
                                 <MobileNavTile tab="communities" label="Commune" {...mobileTileProps} />

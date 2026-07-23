@@ -790,12 +790,23 @@ service cloud.firestore {
       allow create: if isSignedIn();
       // Belonging is LIN edges now (lightHouse __shelters__ community) — no array clause.
       // The lid (the true name, load-bearing for QR links) is frozen on every update path.
-      allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff())
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid']);
+      allow update: if isSignedIn() && (
+        (
+          (resource.data.ownerId == request.auth.uid || isStaff())
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid'])
+        )
+        // LOVE: any signed-in being may change loveCount (+ updatedAt) alone.
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['loveCount', 'updatedAt'])
+      );
       allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
-      // No public loves here: a community house's READ is member-gated at rest, so a
-      // world-readable loves subcollection would leak its existence and its lovers. If a
-      // Light House ever wears a heart, gate the loves read to members (isCommunityMember).
+
+      // Loves: own-slot read/write (see the lifetrees loves note); the tally is loveCount above.
+      // Own-slot read is why a Light House CAN wear a heart even when its own read is member-gated:
+      // each being sees only their own mark, so a guarded house never leaks who loved it.
+      match /loves/{loveId} {
+        allow read: if isSignedIn() && isOwner(loveId);
+        allow write: if isSignedIn() && isOwner(loveId);
+      }
     }
 
     // Invite requests — anyone (signed out) can ask to join; only staff can read/triage.

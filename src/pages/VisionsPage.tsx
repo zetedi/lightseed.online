@@ -8,6 +8,7 @@ import { ResonanceScan } from '../components/ui/ResonanceScan';
 import { Loading } from '../components/ui/Loading';
 import { ViewDensityToggle } from '../components/ui/ViewDensityToggle';
 import { ListBox } from '../components/ui/ListBox';
+import { FullWidthTabs } from '../components/ui/FullWidthTabs';
 import { useListDensity, densityGridClass } from '../hooks/useListDensity';
 import { canViewVision } from '../domain/views/forest';
 import { CTA_GLOW } from '../utils/tabTheme';
@@ -50,6 +51,19 @@ export const VisionsPage = ({
       <SectionHeader
         title={t('visions')}
         tone={tone}
+        // The sub-tabs ride the band itself, full width: the offerings-page tab grammar,
+        // now the one tab system everywhere (both tabs share the visions tone, so no seam).
+        tabs={
+          <FullWidthTabs
+            active={subTab}
+            onChange={(k) => setSubTab(k as 'visions' | 'alignments')}
+            tone={tone}
+            tabs={[
+              { key: 'visions', label: t('visions'), icon: <Icons.Eye />, count: visibleVisions.length },
+              { key: 'alignments', label: t('alignments'), icon: <Icons.Venn />, count: synergies.length },
+            ]}
+          />
+        }
         footer={searchBox}
         toggle={<ViewDensityToggle value={density} onChange={setDensity} />}
         action={
@@ -77,15 +91,7 @@ export const VisionsPage = ({
           </div>
         }
       >
-        <ListBox
-          tone={tone}
-          activeTab={subTab}
-          onTab={(k) => setSubTab(k as 'visions' | 'alignments')}
-          tabs={[
-            { key: 'visions', label: t('visions'), icon: <Icons.Eye />, count: visibleVisions.length },
-            { key: 'alignments', label: t('alignments'), icon: <Icons.Venn />, count: synergies.length },
-          ]}
-        >
+        <ListBox tone={tone}>
           {subTab === 'alignments' ? (
             <>
               <ResonancePanel synergies={synergies} favorites={favoriteResonanceIds} onToggleFavorite={onToggleFavorite} onReach={onReach} />

@@ -11,7 +11,7 @@ import { Icons } from './Icons';
 //
 // On mobile the search collapses to a magnifier; tapping it opens the input FULL WIDTH over the
 // switch and CTA (an overlay on the band), so a phone keeps every control without cramping.
-export const SectionHeader = ({ title, tone = '#059669', action, footer, toggle, children, pattern = false, collapsibleSearch = true }: {
+export const SectionHeader = ({ title, tone = '#059669', action, footer, toggle, children, pattern = false, collapsibleSearch = true, tabs }: {
     title: string;               // screen-reader name of the section (not rendered visually)
     tone?: string;               // the active menu item's colour — one pigment, two surfaces
     action?: React.ReactNode;
@@ -20,6 +20,8 @@ export const SectionHeader = ({ title, tone = '#059669', action, footer, toggle,
     children?: React.ReactNode;
     pattern?: boolean;
     collapsibleSearch?: boolean; // false when `footer` isn't a search (e.g. the observatory quote)
+    tabs?: React.ReactNode;      // a full-width tab strip above the band (FullWidthTabs); the active
+                                 // tab shares the band's tone, so the two read as one surface
 }) => {
     const [searchOpen, setSearchOpen] = useState(false);
     const overlayRef = useRef<HTMLDivElement>(null);
@@ -32,6 +34,9 @@ export const SectionHeader = ({ title, tone = '#059669', action, footer, toggle,
 
     return (
         <section aria-label={title} className="-mt-6 mb-5 sm:mb-8">
+            {/* The tab strip sits flush ON TOP of the band; the active tab shares the band's tone
+                so the two read as one surface (no seam). The band keeps the rounded bottom. */}
+            {tabs}
             <div className="relative overflow-hidden rounded-b-lg sm:rounded-b-xl px-3 py-3 sm:px-5 sm:py-3.5 shadow-lg" style={{ backgroundColor: tone }}>
                 {pattern && <LeafTexture fade opacity={0.1} />}
                 <h2 className="sr-only">{title}</h2>

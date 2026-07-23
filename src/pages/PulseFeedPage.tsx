@@ -26,10 +26,11 @@ interface PulseFeedPageProps {
   // At the BIG-CARDS density only ('cards'), an override card per item — the events tab
   // renders the shared EventCard here; the smaller densities keep the PulseCard.
   renderBigCard?: (item: Pulse) => React.ReactNode;
+  tabs?: React.ReactNode;   // a full-width tab strip above the band (offerings ⇄ beds)
 }
 
 export const PulseFeedPage = ({
-  title, tone, densityKey, searchBox, action, items, emptyText, loadingMore, lightseed, onMatch, onView, pattern, renderBigCard,
+  title, tone, densityKey, searchBox, action, items, emptyText, loadingMore, lightseed, onMatch, onView, pattern, renderBigCard, tabs,
 }: PulseFeedPageProps) => {
   const [density, setDensity] = useListDensity(densityKey);
   return (
@@ -41,6 +42,7 @@ export const PulseFeedPage = ({
         toggle={<ViewDensityToggle value={density} onChange={setDensity} />}
         action={action}
         pattern={pattern}
+        tabs={tabs}
       >
         <ListBox tone={tone}>
           <div className={densityGridClass(density)}>

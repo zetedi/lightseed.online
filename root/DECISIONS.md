@@ -6,6 +6,48 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-23 · The crystal tells the truth about names**: separate forests are coming, so the
+lid (the portable true name, uuidv7) must be EVERYWHERE, and Zoltán asked for proof. The audit:
+in CODE it already is. All seventeen stored being types extend Being (so all carry lid); every
+creation path mints one (plantLifetree, plantBed, createCommunity, createVision,
+createLightHouse, every pulse mint including offerings and watering, every link at all three
+mint sites, covenants and their party links, decisions, stays, alignments, intelligences,
+memories, org collabs, and rays server-side); the 2026-07-09 backfill left no stored being
+nameless; the rules freeze lid on every update path that could touch it. But the CRYSTAL
+(domain/dataModel.ts, the single-source model the /model page draws) had fallen behind the
+truth: EIGHT entities (Lifetree, Vision, Alignment, LightHouse, Stay, Intelligence, Memory,
+Link) were minted with lids the diagram did not show. Healed: the lid row now stands in every
+being box, and the Love entity now says what it became (a like on ANY being, not only a pulse).
+Process records (invites, mail, usage, quotas) deliberately stay lid-less: they are paperwork,
+not beings. *(A map that lags the territory is how you get lost in your own forest.)*
+
+---
+
+**2026-07-23 · Beds are offerings; the Light House wears a heart**: three small trues. First, a
+BED IS AN OFFERING, so beds left the top menu and moved INSIDE the Offerings page as a sub-tab
+(one fewer top-level item, the menu keeps slimming). The two sub-tabs (Offerings, Beds) render
+as a FULL-WIDTH strip: N tabs each take an equal slice, so a pair holds half the screen each
+(FullWidthTabs, a new ui primitive; SectionHeader grew a `tabs` slot that sits flush on top of
+its band). The WHOLE strip wears ONE pigment, the active tab's, matching the band beneath it, so
+the active tab flows into the band and the strip never looks split down the middle (a first cut
+with two pigments read as a header sawn in half; corrected). Then the design became LAW: the
+VISIONS and COCREATE sub-tabs left the tinted ListBox's folder-tab edge and moved onto the band
+itself, the same FullWidthTabs strip, counts riding as small pills. ONE tab grammar everywhere;
+ListBox slimmed back to a plain tinted box (its tab code retired, no callers left).
+Second, the LIGHT HOUSE may now be LOVED. The earlier ring left it out for fear a guarded house
+would leak its lovers, but the loves slot is read OWN-SLOT ONLY (isOwner(loveId)): each being
+sees only their own mark, so a member-gated house never leaks who loved it. Zoltán's read holds
+too, that Light Houses are essentially public (open, or hidden/guarded like Shambhala, but not
+secret). So the loveCount overlay + own-slot loves subcollection returned to lightHouses, and a
+heart rides the Light House hero. Third, an OPEN QUESTION we chose NOT to answer yet: whether
+LOVE should ever farm LIGHT. Zoltán's leaning is no, love is for support, sharing, remembering,
+not for minting the sun. Today it is moot: tokenisation is OFF by default, so lovePulse's reward
+branch never fires; a love mints nothing. We left the reward code in place, gated, and the
+question open. Gates: check 359, rules 102. *(A bed is a gift of rest; put it where the gifts
+are, and let the house that shelters it be loved.)*
+
+---
+
 **2026-07-23 · Every being can be loved**: the affordance the last ring deferred lands whole.
 LOVE is now universal, the same gentle like a reach or an event already wore, extended to the
 beings that wear a profile hero: a tree, a bed, a community, a vision. A heart rides each hero

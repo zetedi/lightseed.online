@@ -62,6 +62,7 @@ import { NetworkStatus } from './components/ui/NetworkStatus';
 import { EventCard } from './components/EventCard';
 import { TendModal } from './components/TendModal';
 import { SectionHeader } from './components/ui/SectionHeader';
+import { FullWidthTabs } from './components/ui/FullWidthTabs';
 import { ScrollChevrons } from './components/ui/ScrollChevrons';
 import { UpdateToast } from './components/ui/UpdateToast';
 import { ToastHost, notify } from './components/ui/Toast';
@@ -228,6 +229,8 @@ const AppContent = () => {
     const openVisionGrowth = (vision: Vision) => { setPulseTargetVision(vision); setPulseTargetTree(null); setShowPulseModal(true); };
     const [showEventModal, setShowEventModal] = useState(false);
     const [showOfferModal, setShowOfferModal] = useState(false);
+    // The Offerings page holds two full-width sub-tabs: the offering pulses, and beds (a bed IS an offering).
+    const [offeringsSub, setOfferingsSub] = useState<'offerings' | 'beds'>('offerings');
     const [showVisionModal, setShowVisionModal] = useState(false);
     const [showGrowthPlayer, setShowGrowthPlayer] = useState<string | null>(null);
     const [matchCandidate, setMatchCandidate] = useState<Pulse | null>(null);
@@ -862,17 +865,6 @@ const AppContent = () => {
             );
         }
 
-        if (tab === 'beds') {
-            // Beds stacked under their Light House — scope derived exactly like the forest.
-            return (
-                <BedsBrowsePage
-                    onViewTree={setSelectedTree}
-                    lightHouseDomain={(impersonatedCommunity || hostCommunity)?.domain || null}
-                    theme={effectiveTheme}
-                />
-            );
-        }
-
         if (tab === 'collab') {
             return (
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-8">
@@ -1070,24 +1062,50 @@ const AppContent = () => {
                         }}
                     />
                 ) : tab === 'offerings' ? (
-                    <PulseFeedPage
-                        title="Offerings"
-                        tone={tabTone('offerings', effectiveTheme)}
-                        densityKey="offerings"
-                        searchBox={searchBox}
-                        action={lightseed && (
-                            <button onClick={() => setShowOfferModal(true)} className={`bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-full font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}>
-                                <Icons.Plus /> <span>Offer for light</span>
-                            </button>
-                        )}
-                        items={filteredData}
-                        emptyText="No offerings yet — offer a bed or a service for light."
-                        loadingMore={loadingMore}
-                        lightseed={lightseed}
-                        onMatch={(p: Pulse) => { setSelectedPulse(p); openPulseModal(); }}
-                        onView={(p: Pulse) => { void onViewPulseOrAlignment(p); }}
-                        pattern
-                    />
+                    // Offerings holds two full-width sub-tabs: the offering pulses, and beds (a bed
+                    // is an offering). The strip renders inside each sub-page's SectionHeader band.
+                    (() => {
+                        const offeringsTabs = (
+                            <FullWidthTabs
+                                active={offeringsSub}
+                                onChange={(k) => setOfferingsSub(k as 'offerings' | 'beds')}
+                                // One tone for the whole strip: the active sub-tab's, matching its band below.
+                                tone={tabTone(offeringsSub === 'beds' ? 'beds' : 'offerings', effectiveTheme)}
+                                tabs={[
+                                    { key: 'offerings', label: 'Offerings', icon: <Icons.Exchange /> },
+                                    { key: 'beds', label: 'Beds', icon: <Icons.Moon /> },
+                                ]}
+                            />
+                        );
+                        return offeringsSub === 'beds' ? (
+                            <BedsBrowsePage
+                                onViewTree={setSelectedTree}
+                                lightHouseDomain={(impersonatedCommunity || hostCommunity)?.domain || null}
+                                theme={effectiveTheme}
+                                tabs={offeringsTabs}
+                            />
+                        ) : (
+                            <PulseFeedPage
+                                title="Offerings"
+                                tone={tabTone('offerings', effectiveTheme)}
+                                densityKey="offerings"
+                                searchBox={searchBox}
+                                action={lightseed && (
+                                    <button onClick={() => setShowOfferModal(true)} className={`bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-full font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}>
+                                        <Icons.Plus /> <span>Offer for light</span>
+                                    </button>
+                                )}
+                                items={filteredData}
+                                emptyText="No offerings yet. Offer a bed or a service for light."
+                                loadingMore={loadingMore}
+                                lightseed={lightseed}
+                                onMatch={(p: Pulse) => { setSelectedPulse(p); openPulseModal(); }}
+                                onView={(p: Pulse) => { void onViewPulseOrAlignment(p); }}
+                                pattern
+                                tabs={offeringsTabs}
+                            />
+                        );
+                    })()
                 ) : tab !== 'observatory' && tab !== 'profile' && tab !== 'inspiration' && tab !== 'about' && tab !== 'dashboard' && tab !== 'newsletter' && tab !== 'communities' && (
                     <PulseFeedPage
                         title={t('pulses')}

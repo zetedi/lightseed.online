@@ -7,6 +7,7 @@ import { SectionTitle } from './ui/SectionTitle';
 import { SuperDot } from './ui/SuperDot';
 import { showAlert, showConfirm } from './ui/Dialog';
 import { BeingQr } from './ui/BeingQr';
+import { LoveButton } from './ui/LoveButton';
 import { mintBeingQr } from '../services/firebase/beings';
 import { getCommunityById, updateLightHouse, getLifetreeById, getBedsForLightHouse } from '../services/firebase';
 import { useRefreshSignal } from '../hooks/useRefreshSignal';
@@ -175,6 +176,8 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
                             canMint={canEdit}
                             onMint={(href) => mintBeingQr('lightHouses', lightHouse.id, href)}
                             className="h-8 w-8 border border-white/15 bg-white/10 text-slate-200 hover:bg-white/25 hover:text-white" />
+                        <LoveButton collection="lightHouses" id={lightHouse.id} initialCount={lightHouse.loveCount || 0}
+                            className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-slate-200 hover:bg-white/20" />
                     </div>
                 </div>
                 <div className="flex items-center gap-4 sm:gap-5">

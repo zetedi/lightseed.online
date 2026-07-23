@@ -78,6 +78,7 @@ export const DATA_MODEL: ModelEntity[] = [
     note: 'the seed — carries its own chain',
     fields: [
       { name: 'id', type: 'string', pk: true },
+      { name: 'lid', type: 'uuidv7' },
       { name: 'ownerId', type: 'uid', ref: 'Person' },
       { name: 'communityId', type: 'string?', ref: 'Community' },
       { name: 'validated', type: 'bool' },
@@ -91,6 +92,7 @@ export const DATA_MODEL: ModelEntity[] = [
     key: 'Vision', label: 'Vision', collection: 'visions', x: 970, y: 40,
     fields: [
       { name: 'id', type: 'string', pk: true },
+      { name: 'lid', type: 'uuidv7' },
       { name: 'lifetreeId', type: 'string?', ref: 'Lifetree' },
       { name: 'authorId', type: 'uid', ref: 'Person' },
       { name: 'communityId', type: 'string?', ref: 'Community' },
@@ -119,6 +121,7 @@ export const DATA_MODEL: ModelEntity[] = [
     note: 'a mutual sync between two trees',
     fields: [
       { name: 'id', type: 'string', pk: true },
+      { name: 'lid', type: 'uuidv7' },
       { name: 'initiatorTreeId', type: 'id', ref: 'Lifetree' },
       { name: 'targetTreeId', type: 'id', ref: 'Lifetree' },
       { name: 'initiatorUid', type: 'uid', ref: 'Person' },
@@ -164,6 +167,7 @@ export const DATA_MODEL: ModelEntity[] = [
     note: 'a sacred place \u00b7 belonging = shelters links',
     fields: [
       { name: 'id', type: 'string', pk: true },
+      { name: 'lid', type: 'uuidv7' },
       { name: 'ownerId', type: 'uid', ref: 'Person' },
       { name: 'name', type: 'string' },
       { name: 'body', type: 'string' },
@@ -172,8 +176,8 @@ export const DATA_MODEL: ModelEntity[] = [
     ],
   },
   {
-    key: 'Love', label: 'Love', collection: 'pulses/{id}/loves', x: 660, y: 825,
-    note: 'like on a pulse (doc id = uid)',
+    key: 'Love', label: 'Love', collection: '{being}/{id}/loves', x: 660, y: 825,
+    note: 'like on any being (doc id = uid)',
     fields: [
       { name: 'uid', type: 'string', ref: 'Person', pk: true },
       { name: 'createdAt', type: 'timestamp' },
@@ -303,6 +307,7 @@ export const DATA_MODEL: ModelEntity[] = [
     note: 'a bed under a Light House\u2019s roof',
     fields: [
       { name: 'id', type: 'string', pk: true },
+      { name: 'lid', type: 'uuidv7' },
       { name: 'lightHouseId', type: 'id', ref: 'LightHouse' },
       { name: 'uid', type: 'uid', ref: 'Person' },
       { name: 'hostUid', type: 'uid', ref: 'Person' },
@@ -318,6 +323,7 @@ export const DATA_MODEL: ModelEntity[] = [
     note: 'a configured AI',
     fields: [
       { name: 'id', type: 'string', pk: true },
+      { name: 'lid', type: 'uuidv7' },
       { name: 'ownerId', type: 'uid?', ref: 'Person' },
       { name: 'name', type: 'string' },
       { name: 'provider', type: 'enum' },
@@ -344,6 +350,7 @@ export const DATA_MODEL: ModelEntity[] = [
     note: 'what an intelligence recalls',
     fields: [
       { name: 'id', type: 'string', pk: true },
+      { name: 'lid', type: 'uuidv7' },
       { name: 'name', type: 'string' },
       { name: 'text', type: 'string?' },
       { name: 'visibility', type: 'enum' },
@@ -370,6 +377,7 @@ export const DATA_MODEL: ModelEntity[] = [
     note: 'a relationship is itself an entity',
     fields: [
       { name: 'id', type: 'from__rel__to', pk: true },
+      { name: 'lid', type: 'uuidv7' },
       { name: 'from', type: 'id', ref: 'Person' },
       { name: 'rel', type: 'guardian|member|…' },
       { name: 'to', type: 'id', ref: 'Lifetree' },
@@ -430,7 +438,8 @@ export const DATA_RELATIONS: ModelRelation[] = (() => {
   // The LIN connects a Person to communities / visions / events beyond the single `to` ref above.
   rels.push({ from: 'Link', to: 'Community', label: 'to', lin: true });
   rels.push({ from: 'Link', to: 'Vision', label: 'to', lin: true });
-  // Love is a subcollection of Pulse (pulses/{id}/loves/{uid}).
+  // Love is a subcollection of any lovable being (pulses, lifetrees, communities, visions,
+  // lightHouses: {collection}/{id}/loves/{uid}); the Pulse edge stands for them all.
   rels.push({ from: 'Love', to: 'Pulse', label: 'of' });
   // Glow's doc id IS the community it belongs to (or the node's "NODE" home).
   rels.push({ from: 'Glow', to: 'Community', label: 'id' });
