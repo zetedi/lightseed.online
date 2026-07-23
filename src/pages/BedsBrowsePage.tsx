@@ -144,8 +144,10 @@ export const BedsBrowsePage = ({ onViewTree, lightHouseDomain = null, theme = nu
 
   return (
     // No max-w/px/pt here: beds now render inside the Offerings page's <main>, which already
-    // provides the width, gutters and top padding (the SectionHeader's -mt-6 touches the tabs).
-    <div className="animate-in fade-in duration-500 overflow-x-hidden">
+    // provides the width, gutters and top padding. And NO overflow-x-hidden: it computes
+    // overflow-y to auto, turning this div into a clip box that would shear off the top 24px
+    // the SectionHeader's -mt-6 pulls above it (the half-cut tab labels). Match PulseFeedPage.
+    <div className="animate-in fade-in duration-500">
       <SectionHeader
         title={t('beds')}
         tone={tone}

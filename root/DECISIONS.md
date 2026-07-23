@@ -6,6 +6,20 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-24 · overflow-x-hidden is never free (the half-cut Beds tab)**: the Beds tab strip
+showed its labels sawn in half at the top, and ONLY Beds. Two honest missteps first: the strip
+had been a two-pigment seam (fixed to one shared tone), then the inactive tab's `opacity` let
+the page pattern ghost through (fixed to a dark overlay on solid tone, a real improvement, kept)
+but NEITHER was the cut. Zoltán found it: the Beds page wrapper carried `overflow-x-hidden`.
+CSS computes the other axis of a non-visible overflow to `auto`, so `overflow-x:hidden` silently
+makes the box `overflow-y:auto` too, a CLIP box, and the SectionHeader's `-mt-6` pulls the tab
+strip's top 24px ABOVE that box, where it was sheared off (24px = half a 48px strip). PulseFeedPage
+had no such wrapper, so Offerings was fine, so only Beds cut. Removed it (main already bounds the
+width; no horizontal scroll returned). *(overflow-x-hidden clips the y-axis too; the fix a user
+sees in one glance can hide under a property you thought was one-dimensional.)*
+
+---
+
 **2026-07-23 · The crystal tells the truth about names**: separate forests are coming, so the
 lid (the portable true name, uuidv7) must be EVERYWHERE, and Zoltán asked for proof. The audit:
 in CODE it already is. All seventeen stored being types extend Being (so all carry lid); every
