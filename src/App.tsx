@@ -60,6 +60,7 @@ import { isBedTree } from './domain/bed';
 import { Loading } from './components/ui/Loading';
 import { NetworkStatus } from './components/ui/NetworkStatus';
 import { EventCard } from './components/EventCard';
+import { TendModal } from './components/TendModal';
 import { SectionHeader } from './components/ui/SectionHeader';
 import { ScrollChevrons } from './components/ui/ScrollChevrons';
 import { UpdateToast } from './components/ui/UpdateToast';
@@ -118,6 +119,7 @@ const PlantTreeModal = lazy(() => import('./components/modals/PlantTreeModal').t
 const AuthModal = lazy(() => import('./components/modals/AuthModal').then(m => ({ default: m.AuthModal })));
 const EmitPulseModal = lazy(() => import('./components/modals/EmitPulseModal').then(m => ({ default: m.EmitPulseModal })));
 const EventModal = lazy(() => import('./components/modals/EventModal').then(m => ({ default: m.EventModal })));
+const OfferModal = lazy(() => import('./components/modals/OfferModal').then(m => ({ default: m.OfferModal })));
 const CreateVisionModal = lazy(() => import('./components/modals/CreateVisionModal').then(m => ({ default: m.CreateVisionModal })));
 const DataModelCrystal = lazy(() => import('./components/about/DataModelCrystal').then(m => ({ default: m.DataModelCrystal })));
 const AlignmentView = lazy(() => import('./components/sections/AlignmentView').then(m => ({ default: m.AlignmentView })));
@@ -176,8 +178,8 @@ const AppContent = () => {
     // Custom-landing domains: false = the organisation's own page fills the screen;
     // true = the visitor stepped through the corner seed-logo into the full app.
     const [seedView, setSeedView] = useState(false);
-    // The tend corner's two-door sheet (tree or default vision), open only while choosing.
-    const [tendMenuOpen, setTendMenuOpen] = useState(false);
+    // The tend corner's modal (the small tend sheet), open when the droplet is pressed.
+    const [tendModalOpen, setTendModalOpen] = useState(false);
     // A Light House opened into its own profile page (from the map marker or the LightHouse tab).
     const [viewingLightHouse, setViewingLightHouse] = useState<LightHouse | null>(null);
     // The Path overview — the Light Path's full ruleset, opened from the card's label.
@@ -225,6 +227,7 @@ const AppContent = () => {
     const openPulseModal = (target: Lifetree | null = null) => { setPulseTargetTree(target); setPulseTargetVision(null); setShowPulseModal(true); };
     const openVisionGrowth = (vision: Vision) => { setPulseTargetVision(vision); setPulseTargetTree(null); setShowPulseModal(true); };
     const [showEventModal, setShowEventModal] = useState(false);
+    const [showOfferModal, setShowOfferModal] = useState(false);
     const [showVisionModal, setShowVisionModal] = useState(false);
     const [showGrowthPlayer, setShowGrowthPlayer] = useState<string | null>(null);
     const [matchCandidate, setMatchCandidate] = useState<Pulse | null>(null);
@@ -411,6 +414,7 @@ const AppContent = () => {
         { key: 'plant', open: showPlantModal, close: () => setShowPlantModal(false) },
         { key: 'pulseModal', open: showPulseModal, close: () => setShowPulseModal(false) },
         { key: 'eventModal', open: showEventModal, close: () => setShowEventModal(false) },
+        { key: 'offerModal', open: showOfferModal, close: () => setShowOfferModal(false) },
         { key: 'visionModal', open: showVisionModal, close: () => setShowVisionModal(false) },
         { key: 'reachModal', open: showReachModal, close: () => setShowReachModal(false) },
         { key: 'editingEvent', open: !!editingEvent, close: () => setEditingEvent(null) },      // nested on a pulse detail
@@ -872,7 +876,7 @@ const AppContent = () => {
         if (tab === 'collab') {
             return (
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-8">
-                    <CollabsPage theme={effectiveTheme} onSelectCommunity={setSelectedCommunity} />
+                    <CollabsPage theme={effectiveTheme} onSelectCommunity={setSelectedCommunity} quote={observatoryQuote} quoteCopied={obsQuoteCopied} onCopyQuote={copyObservatoryQuote} />
                 </div>
             );
         }
@@ -1065,6 +1069,25 @@ const AppContent = () => {
                             );
                         }}
                     />
+                ) : tab === 'offerings' ? (
+                    <PulseFeedPage
+                        title="Offerings"
+                        tone={tabTone('offerings', effectiveTheme)}
+                        densityKey="offerings"
+                        searchBox={searchBox}
+                        action={lightseed && (
+                            <button onClick={() => setShowOfferModal(true)} className={`bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-full font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}>
+                                <Icons.Plus /> <span>Offer for light</span>
+                            </button>
+                        )}
+                        items={filteredData}
+                        emptyText="No offerings yet — offer a bed or a service for light."
+                        loadingMore={loadingMore}
+                        lightseed={lightseed}
+                        onMatch={(p: Pulse) => { setSelectedPulse(p); openPulseModal(); }}
+                        onView={(p: Pulse) => { void onViewPulseOrAlignment(p); }}
+                        pattern
+                    />
                 ) : tab !== 'observatory' && tab !== 'profile' && tab !== 'inspiration' && tab !== 'about' && tab !== 'dashboard' && tab !== 'newsletter' && tab !== 'communities' && (
                     <PulseFeedPage
                         title={t('pulses')}
@@ -1114,57 +1137,59 @@ const AppContent = () => {
                 const tendTarget = selectedTree || activeTree || myTrees[0] || null;
                 if (!tendTarget) return null;
                 const thirsty = isWateringOverdue(tendTarget) || wateringNeededCount > 0;
-                const openCare = () => {
-                    setTendMenuOpen(false);
-                    setTreeSectionHint('care');
-                    if (!selectedTree || selectedTree.id !== tendTarget.id) setSelectedTree(tendTarget);
-                };
-                const openVision = async () => {
-                    setTendMenuOpen(false);
-                    if (!defaultVisionId) return;
-                    const vision = await getVisionById(defaultVisionId).catch(() => null);
-                    if (vision) { setSelectedTree(null); setSelectedVision(vision); }
-                };
                 return (
                     // A full-width strip that MIRRORS the nav's container (same max-w-7xl mx-auto
                     // and px steps), so the bead sits at the same x as the logo on EVERY screen,
-                    // narrow or ultra-wide. pointer-events pass through except on the bead/menu.
+                    // narrow or ultra-wide. pointer-events pass through except on the bead.
                     <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40">
                         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                             {/* translateX(calc(20px - 50%)) centres the bead (any size) under the
                                 40px logo's centre, 20px from this container's left edge — so the two
                                 stay aligned even as the bead grows. */}
                             <div className="relative inline-block" style={{ transform: 'translateX(calc(20px - 50%))' }}>
-                                {/* When a default VISION is starred, the drop opens a two-door sheet
-                                    (predictable beats clever); with only the tree, it acts directly. */}
-                                {tendMenuOpen && defaultVisionId && (
-                                    <div className="pointer-events-auto absolute bottom-full left-0 mb-2 w-56 overflow-hidden rounded-2xl border border-emerald-100 bg-white/95 shadow-xl backdrop-blur animate-in slide-in-from-bottom-2">
-                                        <button onClick={openCare} className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-sky-50">
-                                            <span className="text-sky-500 [&>svg]:h-4 [&>svg]:w-4"><Icons.Drop /></span>
-                                            <span className="min-w-0 truncate">Tend {tendTarget.name}</span>
-                                        </button>
-                                        <button onClick={() => { void openVision(); }} className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-amber-50">
-                                            <span className="text-amber-500 [&>svg]:h-4 [&>svg]:w-4"><Icons.Eye /></span>
-                                            <span>Tend your vision</span>
-                                        </button>
-                                    </div>
-                                )}
                                 <button
-                                    onClick={() => { if (defaultVisionId) setTendMenuOpen(o => !o); else openCare(); }}
+                                    onClick={() => setTendModalOpen(true)}
                                     title={`Tend ${tendTarget.name}`}
                                     aria-label={`Tend ${tendTarget.name}`}
-                                    className={`pointer-events-auto block transition-transform hover:scale-110 active:scale-95 ${
+                                    className={`pointer-events-auto relative block transition-transform hover:scale-110 active:scale-95 ${
                                         thirsty ? 'animate-pulse' : ''
                                     }`}
                                 >
-                                    {/* The droplet itself, drawn by Lumo — the bead IS the button (a
-                                        vector, glassy at every size), 58px now, lit by a PURE WHITE
-                                        double glow (a tight ring, then a soft bloom). */}
-                                    <img src="/droplet.svg" alt="" draggable={false} className="h-[58px] w-[58px] object-contain drop-shadow-[0_0_3px_rgba(255,255,255,0.95)] drop-shadow-[0_0_13px_rgba(255,255,255,0.8)]" />
+                                    {/* A CIRCLE OF PURE WHITENESS around the bead — a REAL white disc
+                                        (a white drop-shadow is invisible on a light page), blurred so
+                                        it reads as a bright halo on any background. This glow is the
+                                        differentiator. */}
+                                    <span aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 h-[68px] w-[68px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white blur-[5px]" />
+                                    {/* The droplet itself, drawn by Lumo — the bead IS the button, 58px. */}
+                                    <img src="/droplet.svg" alt="" draggable={false} className="relative h-[58px] w-[58px] object-contain drop-shadow-[0_0_5px_rgba(255,255,255,0.95)]" />
                                 </button>
                             </div>
                         </div>
                     </div>
+                );
+            })()}
+
+            {/* The tend droplet's modal — a small tend sheet for the target tree. */}
+            {tendModalOpen && lightseed && (() => {
+                const tendTarget = selectedTree || activeTree || myTrees[0] || null;
+                if (!tendTarget) return null;
+                return (
+                    <TendModal
+                        tree={tendTarget}
+                        sender={{ uid: lightseed.uid, displayName: lightseed.displayName, photoURL: lightseed.photoURL }}
+                        hasVision={!!defaultVisionId}
+                        onOpenCare={() => {
+                            setTendModalOpen(false);
+                            setTreeSectionHint('care');
+                            if (!selectedTree || selectedTree.id !== tendTarget.id) setSelectedTree(tendTarget);
+                        }}
+                        onOpenVision={defaultVisionId ? async () => {
+                            setTendModalOpen(false);
+                            const vision = await getVisionById(defaultVisionId).catch(() => null);
+                            if (vision) { setSelectedTree(null); setSelectedVision(vision); }
+                        } : undefined}
+                        onClose={() => setTendModalOpen(false)}
+                    />
                 );
             })()}
 
@@ -1475,8 +1500,9 @@ const AppContent = () => {
             {showReachModal && lightseed && (
                 <DetailWrapper>
                     {/* Mobile: near-full-screen with a whisper of margin + radius, so the messages
-                        card visibly floats OVER the app; the centered card returns at sm. */}
-                    <div className="mx-auto w-full max-w-6xl px-2 py-2 sm:px-6 sm:py-6 lg:py-10">
+                        card visibly floats OVER the app; on desktop it centres vertically, so the
+                        top and bottom margins are equal. */}
+                    <div className="mx-auto w-full max-w-6xl px-2 py-2 sm:flex sm:min-h-full sm:flex-col sm:justify-center sm:px-6 sm:py-6 lg:py-10">
                         <div className="relative min-h-[calc(100dvh-1rem)] rounded-2xl bg-white p-3 pt-12 shadow-2xl sm:min-h-0 sm:p-6 sm:pt-12">
                             <button
                                 onClick={() => setShowReachModal(false)}
@@ -1527,6 +1553,13 @@ const AppContent = () => {
                         await createEvent(data);
                         if (tab === 'events') loadContent(true);
                     }}
+                />
+            )}
+
+            {showOfferModal && (
+                <OfferModal
+                    onClose={() => setShowOfferModal(false)}
+                    onCreated={() => { if (tab === 'offerings') loadContent(true); }}
                 />
             )}
 

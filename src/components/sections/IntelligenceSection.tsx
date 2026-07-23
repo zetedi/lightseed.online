@@ -167,7 +167,7 @@ export const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
       <h4 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-400">All available intelligences</h4>
       {intelligences.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-500"><Icons.Wizard /></div>
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-500"><Icons.Intelligence /></div>
           <p className="text-sm">No intelligences are available yet. A super-admin seeds the commons on first load.</p>
         </div>
       ) : (

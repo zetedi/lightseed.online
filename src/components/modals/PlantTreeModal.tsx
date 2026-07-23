@@ -294,7 +294,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
                 disabled={isImagining || uploading}
                 className="flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-50 bg-white/10 text-white hover:bg-white/20 border border-white/20"
               >
-                {isImagining ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div> : <Icons.Wizard />}
+                {isImagining ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div> : <Icons.Intelligence />}
                 <span>{isImagining ? 'Imagining…' : 'Imagine with AI'}</span>
               </button>}
               {imagineError && <p className={`rounded-lg px-3 py-2 text-xs ${treeType !== 'GUARDED' ? 'bg-red-500/20 text-red-100' : 'bg-red-50 text-red-600'}`}>{imagineError}</p>}

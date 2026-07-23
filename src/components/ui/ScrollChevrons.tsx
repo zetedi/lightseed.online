@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { NavArrow, NavChevron, NAV_ARROW_CLS, NAV_ARROW_PREV_X, NAV_ARROW_NEXT_X, NAV_ARROW_PREV_Y, NAV_ARROW_NEXT_Y } from './NavArrow';
+import { NavArrow, NavChevron, NAV_ARROW_PREV_X, NAV_ARROW_NEXT_X, NAV_ARROW_PREV_Y, NAV_ARROW_NEXT_Y } from './NavArrow';
 import { useScrollEdges } from '../../hooks/useScrollEdges';
 
 // A scroll affordance built from the shared NavArrow: a light round chevron shown only when there
@@ -34,12 +34,14 @@ export const ScrollChevrons = ({ scrollRef, axis = 'y', fixed = false }: {
     // trap/clip it. (Down only — scrolling back up is natural, and a top chevron would collide with
     // the sticky nav.)
     if (fixed) {
+        // Subtle by design: a small half-circle tab flush to the bottom edge (a dome, not a full
+        // round button), so on mobile it barely covers anything. One down chevron, gently bobbing.
         const overlay = (
-            <div className={`pointer-events-none fixed inset-x-0 bottom-3 z-[90] flex justify-center transition-opacity duration-300 ${canNext ? 'opacity-100' : 'opacity-0'}`}>
+            <div className={`pointer-events-none fixed inset-x-0 bottom-0 z-[90] flex justify-center transition-opacity duration-300 ${canNext ? 'opacity-100' : 'opacity-0'}`}>
                 <button type="button" aria-label="Scroll down" onClick={() => nudge(1)}
-                        className={`${NAV_ARROW_CLS} h-10 w-10`}
-                        style={{ animation: 'sc-bob-down 1.6s ease-in-out infinite' }}>
-                    <NavChevron dir="down" />
+                        className="pointer-events-auto flex h-5 w-11 items-center justify-center rounded-t-full bg-white/60 text-slate-400 shadow-sm ring-1 ring-emerald-100/50 backdrop-blur-sm transition-colors hover:bg-white hover:text-emerald-600"
+                        style={{ animation: 'sc-bob-down 1.8s ease-in-out infinite' }}>
+                    <NavChevron dir="down" small />
                 </button>
             </div>
         );

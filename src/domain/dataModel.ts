@@ -180,6 +180,32 @@ export const DATA_MODEL: ModelEntity[] = [
     ],
   },
 
+  // --- The light economy (the sun) ------------------------------------------
+  {
+    key: 'Ray', label: 'Ray', collection: 'rays', x: 970, y: 700,
+    note: 'light kindled by witnessed care · id = treeId__day__role',
+    fields: [
+      { name: 'lid', type: 'uuidv7', pk: true },
+      { name: 'holderUid', type: 'uid', ref: 'Person' },
+      { name: 'role', type: 'carer|witness' },
+      { name: 'sourceUid', type: 'uid', ref: 'Person' },
+      { name: 'treeId', type: 'id', ref: 'Lifetree' },
+      { name: 'communityId', type: 'string?', ref: 'Community' },
+      { name: 'pulseId', type: 'id', ref: 'Pulse' },
+      { name: 'units', type: 'number' },
+      { name: 'dayKey', type: 'string' },
+    ],
+  },
+  {
+    key: 'Glow', label: 'Glow', collection: 'glow', x: 1280, y: 880,
+    note: "a community's commons of light · id = communityId | NODE",
+    fields: [
+      { name: 'id', type: 'communityId|"NODE"', pk: true },
+      { name: 'units', type: 'number' },
+      { name: 'updatedAt', type: 'timestamp' },
+    ],
+  },
+
   // --- Initiation (git ledger mirror) ----------------------------------------
   {
     key: 'Initiate', label: 'Initiate', collection: 'initiates', x: 350, y: 40,
@@ -406,6 +432,8 @@ export const DATA_RELATIONS: ModelRelation[] = (() => {
   rels.push({ from: 'Link', to: 'Vision', label: 'to', lin: true });
   // Love is a subcollection of Pulse (pulses/{id}/loves/{uid}).
   rels.push({ from: 'Love', to: 'Pulse', label: 'of' });
+  // Glow's doc id IS the community it belongs to (or the node's "NODE" home).
+  rels.push({ from: 'Glow', to: 'Community', label: 'id' });
   // Initiation is what grants the right to validate trees (checked by the security rules).
   rels.push({ from: 'Initiate', to: 'Lifetree', label: 'grants validation', lin: true });
   return rels;

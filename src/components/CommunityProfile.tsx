@@ -17,6 +17,8 @@ import { CommunityTreesTab } from './community/CommunityTreesTab';
 import { CommunityMembers } from './community/CommunityMembers';
 import { PathOverview } from './PathOverview';
 import { CommunityIntelligence } from './community/CommunityIntelligence';
+import { CommunityLight } from './community/CommunityLight';
+import { CommunityDigitalTree } from './community/CommunityDigitalTree';
 import { CommunityCodeChain } from './community/CommunityCodeChain';
 import { CommunityAppearance } from './community/CommunityAppearance';
 import { BeingProfile, type BeingSection } from './BeingProfile';
@@ -82,6 +84,9 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const [joining, setJoining] = useState(false);
   // Stewardship — the delegated door-keepers (accept knocks, mint invitations).
   const [isSteward, setIsSteward] = useState(false);
+  // The active profile section — controlled so a section (e.g. Light) can steer to another
+  // (the Council). Undefined until the first change: BeingProfile keeps its own default first.
+  const [section, setSection] = useState<string | undefined>(undefined);
   useEffect(() => {
     let alive = true;
     firestoreStore.linksTo(community.id)
@@ -454,6 +459,11 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       ),
     },
     {
+      key: 'digital', label: 'Digital Tree', icon: <Icons.Tree />, render: () => (
+        <CommunityDigitalTree community={community} onViewPulse={onViewEvent} />
+      ),
+    },
+    {
       key: 'firsttree', label: 'First Tree', icon: <Icons.Tree />, render: () => (
         <CommunityFirstTree
           community={community}
@@ -533,6 +543,11 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       ),
     },
     {
+      key: 'light', label: 'Light', icon: <Icons.Sun />, render: () => (
+        <CommunityLight communityId={community.id} isKeeper={canEdit} onGoToCouncil={() => setSection('council')} />
+      ),
+    },
+    {
       key: 'members', label: 'Members', icon: <Icons.Users />, render: () => (
         <CommunityMembers community={community} currentUserId={currentUserId} canManage={canEdit || isSteward} isOwner={canEdit} onCommunityUpdate={onUpdate} />
       ),
@@ -556,7 +571,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     ...(isNetworkHub ? [{ key: 'codechain', label: 'Code chain', icon: <Icons.Hash />, render: () => <CommunityCodeChain /> } satisfies BeingSection] : []),
     ...(canEdit ? [
       {
-        key: 'intelligence', label: 'Intelligence', icon: <Icons.Wizard />, render: () => (
+        key: 'intelligence', label: 'Intelligence', icon: <Icons.Intelligence />, render: () => (
           <CommunityIntelligence community={community} canEdit={canEdit} currentUserId={currentUserId} onUpdate={onUpdate} />
         ),
       },
@@ -603,6 +618,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     <BeingProfile
       onClose={onClose}
       sections={sections}
+      activeSection={section}
+      onSectionChange={setSection}
       hero={{
         // Only the chosen hero — no gallery fallback, so removing the hero actually removes it.
         // The hero wears the USER profile's exact clothes (Zoltán, 2026-07-22): same default

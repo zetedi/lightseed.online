@@ -81,14 +81,6 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
 
     return (
         <div className="rounded-2xl bg-slate-900 p-5 text-slate-200 shadow-sm md:p-8">
-            {chainCollapsible && (
-                <div className="mb-4 flex justify-center">
-                    <button onClick={() => setChainExpanded(e => !e)} className="text-xs font-bold text-emerald-300 hover:text-emerald-200">
-                        {chainExpanded ? 'Collapse the middle' : `Expand all ${blocks.length} pulses`}
-                    </button>
-                </div>
-            )}
-
             <div className="relative flex flex-col items-start md:items-center">
                 {/* Central Tree Trunk — real bark: the trunk texture tiled vertically along the
                     column (a centred strip of the image repeats down the trunk), with a cylinder
@@ -109,16 +101,24 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                 </div>
 
                 <div className="w-full space-y-12 md:space-y-24 pb-24 relative z-10">
-                    {/* Tend CTA — the crown at the top of the trunk. We don't grow it; it grows
-                        naturally. Tending (our breath, our presence) is the care that lets it. */}
-                    {canTend && onTend && (
-                        <div className="flex w-full justify-start pl-12 md:justify-center md:pl-0">
-                            <button onClick={onTend} title="Tend this tree: a pulse of care (we both grow)"
-                                className="relative z-10 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-7 py-3 font-bold uppercase tracking-widest text-white ring-2 ring-yellow-300/60 shadow-[0_0_22px_rgba(250,204,21,0.55)] transition-all hover:bg-emerald-700 hover:shadow-[0_0_32px_rgba(250,204,21,0.85)] active:scale-95">
-                                <Icons.Drop /> <span>Tend</span>
-                            </button>
+                    {/* Tend CTA — the crown at the top of the trunk, smaller now, with the
+                        expand/collapse control sitting just beneath it. Tending is the care that
+                        lets it grow. */}
+                    {(canTend && onTend) || chainCollapsible ? (
+                        <div className="flex w-full flex-col items-start gap-2 pl-12 md:items-center md:pl-0">
+                            {canTend && onTend && (
+                                <button onClick={onTend} title="Tend this tree: a pulse of care (we both grow)"
+                                    className="relative z-10 inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-white ring-2 ring-yellow-300/60 shadow-[0_0_16px_rgba(250,204,21,0.5)] transition-all hover:bg-emerald-700 hover:shadow-[0_0_24px_rgba(250,204,21,0.8)] active:scale-95">
+                                    <span className="[&>svg]:h-4 [&>svg]:w-4"><Icons.Drop /></span> <span>Tend</span>
+                                </button>
+                            )}
+                            {chainCollapsible && (
+                                <button onClick={() => setChainExpanded(e => !e)} className="relative z-10 text-[11px] font-bold text-emerald-300 hover:text-emerald-200">
+                                    {chainExpanded ? 'Collapse the middle' : `Expand all ${blocks.length} pulses`}
+                                </button>
+                            )}
                         </div>
-                    )}
+                    ) : null}
                     {visibleChain.map((pulse, index) => {
                         // The collapsed middle renders as one clickable horizontal line.
                         if (pulse._collapsed) {

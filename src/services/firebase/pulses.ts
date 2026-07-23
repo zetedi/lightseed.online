@@ -76,6 +76,16 @@ export const fetchEventPulses = async (lastD?: QueryDocumentSnapshot, domainFilt
     };
 };
 
+// Offerings (beds / services for light) — sparse among recent pulses, so widen the window like
+// events do, and keep only type 'offering'.
+export const fetchOfferingPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, levels?: PulseVisibility[]) => {
+    const res = await fetchPulsesRaw(lastD, domainFilter, levels, 80);
+    return {
+        items: res.items.filter(pulse => pulse.type === 'offering'),
+        lastDoc: res.lastDoc,
+    };
+};
+
 // Reaches (and legacy 'tree_chat' pulses) power the Inspiration threads.
 const isReachPulse = (p: Pulse) => p.type === 'reach' || (p as any).type === 'tree_chat';
 
@@ -410,6 +420,13 @@ export const fetchGrowthPulses = async (treeId: string) => (await getDocs(query(
 // stays whole across the divergence. Single-field equality + client sort (no composite index).
 export const getPulsesByVisionId = async (visionId: string) => {
     const snap = await getDocs(query(pulsesCollection, where('visionId', '==', visionId)));
+    return snap.docs.map(mapPulse).sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+};
+
+// A community's own chain: the pulses scoped to it (events, decisions, offerings), newest first.
+// Reaches never carry a communityId, so the DM exclusion the tree query needs isn't required here.
+export const getPulsesByCommunity = async (communityId: string) => {
+    const snap = await getDocs(query(pulsesCollection, where('communityId', '==', communityId)));
     return snap.docs.map(mapPulse).sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 };
 

@@ -7,7 +7,6 @@ import { ViewDensityToggle } from '../components/ui/ViewDensityToggle';
 import { ImagePicker } from '../components/ui/ImagePicker';
 import { useListDensity, type ListDensity } from '../hooks/useListDensity';
 import { useImageUpload } from '../hooks/useImageUpload';
-import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
 import { showConfirm, showAlert } from '../components/ui/Dialog';
 import { getPublicIntelligences, DEFAULT_INTELLIGENCE_ID } from '../services/intelligence';
@@ -65,8 +64,7 @@ const slugify = (name: string) =>
 // The Collabs page: this node's collaborators — the AI intelligences configured here, and the
 // organisations whose founder(s) agreed to stand here or who hold a place by contract. Two entity
 // lists under one menu item, as classic tabs on one coloured box.
-export const CollabsPage = ({ theme, onSelectCommunity }: { theme?: TabTheme | null; onSelectCommunity?: (community: Community) => void }) => {
-  const { t } = useLanguage();
+export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCopyQuote }: { theme?: TabTheme | null; onSelectCommunity?: (community: Community) => void; quote?: string; quoteCopied?: boolean; onCopyQuote?: () => void }) => {
   const { lightseed, isAdmin, isSuperAdmin, isInitiate, activeTree } = useSession();
   const isStaff = isAdmin || isSuperAdmin;
   // Orgs may be added by any signed-in member whose being is validated, or who is an initiate.
@@ -174,8 +172,21 @@ export const CollabsPage = ({ theme, onSelectCommunity }: { theme?: TabTheme | n
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
       <SectionHeader
-        title={t('collab')}
+        title="Cocreate"
         tone={tone}
+        // The oracle quote lives in the band (moved here from the retired Observatory).
+        footer={quote ? (
+          <div className="hidden min-w-0 items-center gap-1.5 md:flex">
+            <p dir="auto" className="min-w-0 truncate text-sm italic text-white/90">"{quote}"</p>
+            {onCopyQuote && (
+              <button onClick={onCopyQuote} title="Copy quote" aria-label="Copy quote"
+                className="inline-flex shrink-0 items-center rounded-full bg-white/15 p-1 text-white/80 backdrop-blur transition-colors hover:bg-white/25 hover:text-white">
+                {quoteCopied ? <span className="px-0.5 text-[10px] font-bold">✓</span> : <Icons.Copy size={13} />}
+              </button>
+            )}
+          </div>
+        ) : undefined}
+        collapsibleSearch={false}
         toggle={<ViewDensityToggle value={density} onChange={setDensity} />}
         action={canAddOrg && subTab === 'organisations' && !adding ? (
           <button onClick={() => setAdding(true)} className={`rounded-full bg-white/15 px-4 py-2 text-xs font-bold text-white backdrop-blur transition-all hover:bg-white/25 active:scale-95 ${CTA_GLOW}`}>
@@ -188,7 +199,7 @@ export const CollabsPage = ({ theme, onSelectCommunity }: { theme?: TabTheme | n
           activeTab={subTab}
           onTab={(k) => setSubTab(k as 'intelligences' | 'organisations')}
           tabs={[
-            { key: 'intelligences', label: 'Intelligences', icon: <Icons.Wizard />, count: list?.length ?? undefined },
+            { key: 'intelligences', label: 'Intelligences', icon: <Icons.Intelligence />, count: list?.length ?? undefined },
             { key: 'organisations', label: 'Organisations', icon: <Icons.Globe />, count: orgs?.length ?? undefined },
           ]}
         >

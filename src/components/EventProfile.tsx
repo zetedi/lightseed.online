@@ -73,7 +73,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
     const sections: SectionItem[] = [
         { key: 'about', label: 'Event details', icon: <Icons.Info /> },
         { key: 'participants', label: 'Participants', icon: <Icons.Users /> },
-        { key: 'reflect', label: 'Reflect', icon: <Icons.Wizard /> },
+        { key: 'reflect', label: 'Reflect', icon: <Icons.Intelligence /> },
     ];
 
     const whenText = pulse.eventDate ? new Date(pulse.eventDate).toLocaleString() : null;

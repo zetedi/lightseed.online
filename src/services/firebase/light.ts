@@ -48,6 +48,17 @@ export const resetLight = async (): Promise<{ rays: number; rayUnits: number; gl
     return res.data as { rays: number; rayUnits: number; glowHomes: number; glowUnits: number };
 };
 
+// A community's accumulated GLOW — the commons of light gathered where care circulates (the last
+// spend, the prism's share, the idle fade all feed it). Server-written, readable by any signed-in
+// being. Returns 0 when the community has no glow yet.
+export const getGlow = async (homeId: string): Promise<number> => {
+    try {
+        const snap = await getDoc(doc(db, 'glow', homeId));
+        const u = snap.exists() ? (snap.data() as Record<string, unknown>).units : 0;
+        return typeof u === 'number' ? u : 0;
+    } catch { return 0; }
+};
+
 // Names for the trees a holder's light came from (bounded: the distinct trees in their rays).
 // A tree now beyond reach (unshared, deleted) keeps a quiet placeholder instead of failing the face.
 export const fetchTreeNames = async (treeIds: string[]): Promise<Record<string, string>> => {

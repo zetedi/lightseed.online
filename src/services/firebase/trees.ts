@@ -321,6 +321,14 @@ export const plantBed = async (draft: {
 // The beds standing in one Light House, earliest first. The visibility filter keeps the list
 // query provable under the rules (default 'node' — see BED_DEFAULT_VISIBILITY); the keeper
 // merge lets the house's keeper see even a bed drawn back to private.
+// The beds a being owns (BED trees they planted) — for offering one for light. Beds are excluded
+// from the normal `myTrees` list, so this reads them directly.
+export const getMyBeds = async (uid: string): Promise<Lifetree[]> => {
+    const snap = await getDocs(query(lifetreesCollection, where('ownerId', '==', uid), where('treeType', '==', BED_TREE_TYPE)));
+    return snap.docs.map(d => mapDoc(d) as Lifetree).filter(isBedTree)
+        .sort((a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0));
+};
+
 export const getBedsForLightHouse = async (lightHouseId: string): Promise<Lifetree[]> => {
     const uid = auth.currentUser?.uid;
     const levels = uid ? ['public', 'node'] : ['public'];

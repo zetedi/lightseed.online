@@ -18,6 +18,7 @@ const FALLBACK: Record<string, string> = {
   communities: '#0d9488',  // teal-600
   collab: '#7c3aed',       // violet-600
   beds: '#6366f1',         // indigo-500 — the bed's moonlit motif
+  offerings: '#d97706',    // amber-600 — offered for light
 };
 
 // A light tint of a tab's colour — the list BOX wears this (the band keeps full saturation), so

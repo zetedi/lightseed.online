@@ -106,7 +106,7 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
                 disabled={uploading || localUploading || !visionBody}
                 className="text-xs bg-amber-100 text-amber-700 px-3 py-1 rounded-full font-bold hover:bg-amber-200 disabled:opacity-50 flex items-center gap-1"
              >
-                 <Icons.Wizard />
+                 <Icons.Intelligence />
                  <span>{t('generate_image')}</span>
              </button>
         </div>

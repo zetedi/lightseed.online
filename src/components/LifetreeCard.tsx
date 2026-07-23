@@ -164,7 +164,7 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, isInit
                     {onReach && (
                         canReach ? (
                             <button onClick={(e) => { e.stopPropagation(); onReach(tree); }} className="flex items-center gap-1 text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-700 px-2 py-1 rounded transition-colors uppercase tracking-wider font-semibold">
-                                <Icons.Lightning />
+                                <Icons.Reach />
                                 <span>Reach</span>
                             </button>
                         ) : (

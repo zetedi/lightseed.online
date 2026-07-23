@@ -250,7 +250,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
                       disabled={myVisions.length === 0}
                       image={myVisions[0]?.imageUrl}
                       gradient="from-amber-500 to-purple-700"
-                      icon={<Icons.Wizard />}
+                      icon={<Icons.Intelligence />}
                       title="Vision Growth"
                       desc="Inspiration, funding, collaboration: observe a vision growing."
                       note={myVisions.length === 0 ? 'Create a vision first' : undefined}
@@ -297,7 +297,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
                         <div className="space-y-2">
                           <div className="grid grid-cols-2 gap-2">
                             <button type="button" onClick={handleGenerate} disabled={generating} className="inline-flex items-center justify-center gap-1.5 rounded-full bg-slate-900 px-3 py-2.5 text-xs font-bold text-amber-300 transition-colors hover:bg-slate-800 disabled:opacity-50">
-                              {generating ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-amber-300/40 border-t-amber-300" /> : <Icons.Wizard size={16} />}
+                              {generating ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-amber-300/40 border-t-amber-300" /> : <Icons.Intelligence size={16} />}
                               <span>{generating ? 'Generating…' : (pulseImageUrl ? 'Regenerate' : 'Generate')}</span>
                             </button>
                             <label className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full border border-slate-300 bg-white px-3 py-2.5 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50">

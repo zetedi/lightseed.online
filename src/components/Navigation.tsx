@@ -143,8 +143,10 @@ interface MobileNavTileProps {
     tab: string;
     label?: string;
     activeTab: string;
-    navIsDark?: boolean; // still in the shared prop bundle; the tile itself no longer varies by theme
+    navIsDark?: boolean;
     navBorder: string;
+    navBackground: string; // the header's colour — the inactive tile wears it too
+    navText: string;
     tabIcons: Record<string, React.ReactNode>;
     setTab: (tab: string) => void;
     setIsMenuOpen: (open: boolean) => void;
@@ -153,21 +155,19 @@ interface MobileNavTileProps {
     getActiveTabColor: (tab: string) => string | undefined;
 }
 
-// ONE TILE GRAMMAR (Zoltán, 2026-07-22): every menu destination is the same size and wears
-// the same clothes: a nearly white card with an emerald border; the active page fills with
-// its tab colour. Icons speak only on phones; the tablet reads clean text. The creation CTAs
-// (plant / pulse / vision) left the menu: creation lives on the pages themselves, and the
-// menu's job is discovery.
-const MobileNavTile = ({ tab, label, activeTab, navBorder, tabIcons, setTab, setIsMenuOpen, getTabCount, getTabLabel, getActiveTabColor }: MobileNavTileProps) => {
+// ONE TILE GRAMMAR (Zoltán, 2026-07-22): every menu destination is the same size, an emerald
+// border around the HEADER's own colour (so the tiles and the bar read as one surface); the
+// active page fills with its tab colour. Icons speak only on phones; the tablet reads clean text.
+const MobileNavTile = ({ tab, label, activeTab, navBorder, navBackground, navText, tabIcons, setTab, setIsMenuOpen, getTabCount, getTabLabel, getActiveTabColor }: MobileNavTileProps) => {
     const active = activeTab === tab;
     const count = getTabCount(tab);
     return (
         <button
             onClick={() => { setTab(tab); setIsMenuOpen(false); }}
             className={`relative flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl border px-0.5 py-2 text-center transition-all ${
-                active ? 'border-transparent text-white shadow-lg' : 'border-emerald-200 bg-white/95 text-slate-700 hover:bg-white'
+                active ? 'border-transparent text-white shadow-lg' : 'border-emerald-200 hover:brightness-95'
             }`}
-            style={active ? { backgroundColor: getActiveTabColor(tab) || navBorder } : undefined}
+            style={active ? { backgroundColor: getActiveTabColor(tab) || navBorder } : { backgroundColor: navBackground, color: navText }}
         >
             <span className="opacity-90 [&>svg]:h-4 [&>svg]:w-4 sm:hidden">{tabIcons[tab]}</span>
             <span className="text-[8px] font-bold uppercase leading-none tracking-tight sm:text-[11px]">{label ?? getTabLabel(tab)}</span>
@@ -249,9 +249,11 @@ export const Navigation = ({
 
     // Signed-out visitors get a slimmer menu: no Visions, Pulses, or Observatory.
     const signedIn = !!lightseed;
-    const lightEarthTabs = signedIn ? ['forest', 'visions', 'events', 'pulses', 'beds'] : ['forest', 'events'];
-    // AI Collab (the node's intelligences) lives in the Intelligence group, visible to everyone.
-    const intelligenceTabs = signedIn ? ['observatory', 'collab'] : ['collab'];
+    const lightEarthTabs = signedIn ? ['forest', 'visions', 'events', 'pulses', 'beds', 'offerings'] : ['forest', 'events'];
+    // Cocreate (the node's intelligences + organisations) lives in its own group. The Observatory
+    // was retired (its resonance is duplicated in Visions and community matches); its oracle quote
+    // moved to the Cocreate header.
+    const intelligenceTabs = ['collab'];
     const otherTabs = ['communities', 'about'];
 
     // Icon for each destination, used by the mobile menu tiles.
@@ -261,6 +263,7 @@ export const Navigation = ({
         events: <Icons.Loc />,
         pulses: <Icons.PulseDuo />,
         beds: <Icons.Moon />,
+        offerings: <Icons.Exchange />,
         // The icon language (Zoltán, 2026-07-22): PERSON = human, HANDS = agreement,
         // CIRCLES = meeting. Community is humans standing together; Collab is intelligences
         // shaking hands (the covenant's digital handshake); the Observatory watches circles meet.
@@ -271,6 +274,8 @@ export const Navigation = ({
     };
 
     const getTabLabel = (tab: string) => {
+        // The AI Collab tab reads "Cocreate" (the menu name; renamed 2026-07-23).
+        if (tab === 'collab') return 'Cocreate';
         // For standard translation fallback, capitalize the first letter
         const fallback = tab.charAt(0).toUpperCase() + tab.slice(1);
         return t(tab as any) || fallback;
@@ -284,7 +289,7 @@ export const Navigation = ({
     // Prop bundles for the hoisted NavTab / NavGroup / MobileNavTile / MobileActionTile
     // components (declared at module scope so they keep a stable identity across renders).
     const navTabProps: Omit<NavTabProps, 'tab'> = { activeTab, theme, navIsDark, setTab, t, getTabStyle, getTabLabel, getTabCount };
-    const mobileTileProps = { activeTab, navIsDark, navBorder, tabIcons, setTab, setIsMenuOpen, getTabCount, getTabLabel, getActiveTabColor };
+    const mobileTileProps = { activeTab, navIsDark, navBorder, navBackground, navText, tabIcons, setTab, setIsMenuOpen, getTabCount, getTabLabel, getActiveTabColor };
 
     return (
         <nav
@@ -501,15 +506,15 @@ export const Navigation = ({
                                 <MobileNavTile tab="visions" {...mobileTileProps} />
                                 <MobileNavTile tab="events" {...mobileTileProps} />
                                 <MobileNavTile tab="beds" {...mobileTileProps} />
-                                <MobileNavTile tab="observatory" label="Observe" {...mobileTileProps} />
-                                <MobileNavTile tab="collab" label="Collab" {...mobileTileProps} />
+                                <MobileNavTile tab="offerings" label="Offer" {...mobileTileProps} />
+                                <MobileNavTile tab="collab" label="Cocreate" {...mobileTileProps} />
                                 <MobileNavTile tab="communities" label="Commune" {...mobileTileProps} />
                             </div>
                         ) : (
                             <div className="grid grid-cols-4 gap-1.5">
                                 <MobileNavTile tab="forest" {...mobileTileProps} />
                                 <MobileNavTile tab="events" {...mobileTileProps} />
-                                <MobileNavTile tab="collab" label="Collab" {...mobileTileProps} />
+                                <MobileNavTile tab="collab" label="Cocreate" {...mobileTileProps} />
                                 <MobileNavTile tab="communities" label="Commune" {...mobileTileProps} />
                             </div>
                         )}

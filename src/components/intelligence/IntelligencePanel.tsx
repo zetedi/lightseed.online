@@ -185,13 +185,13 @@ export const IntelligencePanel = ({
   return (
     <div className="space-y-5">
       <div>
-        <h3 className="flex items-center gap-2 text-lg font-bold text-slate-800"><Icons.Wizard /> {title ?? t('intel_your_title')}</h3>
+        <h3 className="flex items-center gap-2 text-lg font-bold text-slate-800"><Icons.Intelligence /> {title ?? t('intel_your_title')}</h3>
         <p className="mt-1 text-sm text-slate-500">{subtitle ?? t('intel_your_sub')}</p>
       </div>
 
       <SectionMenu
         orientation="horizontal"
-        items={[{ key: 'intelligence', label: 'All Intelligences', icon: <Icons.Wizard /> }, { key: 'memory', label: t('intel_memory_title'), icon: <Icons.Leaf /> }]}
+        items={[{ key: 'intelligence', label: 'All Intelligences', icon: <Icons.Intelligence /> }, { key: 'memory', label: t('intel_memory_title'), icon: <Icons.Leaf /> }]}
         active={panelTab}
         onSelect={(k) => setPanelTab(k as 'intelligence' | 'memory')}
       />
@@ -287,7 +287,7 @@ export const IntelligencePanel = ({
       <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-amber-300"><Icons.Wizard /></span>
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-amber-300"><Icons.Intelligence /></span>
             <div>
               <div className="text-sm font-bold text-slate-800">Claude {existingClaude?.connected && <span className="ml-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">{t('intel_connected')} {existingClaude.keyHint}</span>}</div>
               <div className="text-[11px] text-slate-500">{scope === 'community' ? t('intel_byo_community') : t('intel_byo_user')}</div>

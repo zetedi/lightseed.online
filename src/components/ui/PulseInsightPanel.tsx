@@ -81,7 +81,7 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
             <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-6 rounded-2xl shadow-xl relative overflow-hidden">
                 <div className="relative z-10">
                     <h2 className="text-lg font-bold text-sky-400 uppercase tracking-wider mb-6 flex items-center">
-                        <Icons.Wizard />
+                        <Icons.Intelligence />
                         <span className="ml-2">Translation Depth System</span>
                     </h2>
 
@@ -172,7 +172,7 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
                                 onClick={handleTranslate}
                                 className="mx-auto bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-10 py-3 rounded-xl font-bold text-sm shadow-lg shadow-indigo-900/50 transition-all active:scale-95 flex justify-center items-center gap-2"
                             >
-                                {isTranslating ? <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" /> : <Icons.Wizard />}
+                                {isTranslating ? <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" /> : <Icons.Intelligence />}
                                 {isTranslating ? "Translating..." : "Translate Pulse"}
                             </button>
 

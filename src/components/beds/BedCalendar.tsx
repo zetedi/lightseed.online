@@ -168,7 +168,7 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
             <span className="inline-block [&>svg]:h-4 [&>svg]:w-4"><Icons.ChevronRight /></span>
           </button>
         </div>
-        {uid && !isHost && (
+        {uid && (
           <p className="mb-2 text-center text-[11px] text-slate-400">Tap your first night, then the morning you leave.</p>
         )}
         <div className="mb-1 grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase tracking-wide text-slate-300">
@@ -198,7 +198,7 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
             // The chosen check-out morning gets a distinct ring so the second tap plainly registers.
             const ring = isDeparture ? 'ring-2 ring-emerald-500 ring-offset-1' : '';
             return (
-              <button key={i} type="button" disabled={!clickable || (!uid) || isHost}
+              <button key={i} type="button" disabled={!clickable || !uid}
                 onClick={() => onPick(cell.dateStr, asDeparture)}
                 className={`${base} ${tone} ${ring} ${!clickable ? 'cursor-default' : ''}`}>
                 {cell.day}
@@ -212,10 +212,14 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
         </div>
       </div>
 
-      {/* Reserve — for a signed-in guest (not the host) */}
-      {uid && !isHost && (
+      {/* Reserve — for any signed-in being, INCLUDING the host reserving their own bed (a
+          personal hold; it still rides the request→accept flow, which the host completes). */}
+      {uid && (
         <div className="rounded-2xl border border-slate-100 bg-white p-5">
-          {othersChoosing && (
+          {isHost && (
+            <p className="mb-3 rounded-lg bg-indigo-50 px-3 py-2 text-xs text-indigo-700">Reserving your own bed — you approve it yourself below.</p>
+          )}
+          {othersChoosing && !isHost && (
             <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">{t('bed_being_viewed')}</p>
           )}
           <div className="mb-3 flex items-center justify-between text-sm">

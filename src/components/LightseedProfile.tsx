@@ -248,7 +248,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
             ),
         },
         {
-            key: 'intelligence', label: t('intelligence'), icon: <Icons.Wizard />, render: () => (
+            key: 'intelligence', label: t('intelligence'), icon: <Icons.Intelligence />, render: () => (
                 lightseed?.uid ? (
                     <IntelligencePanel
                         scope="user"

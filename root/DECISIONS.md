@@ -6,6 +6,70 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-23 · The menu slims, the community grows a tree**: a housekeeping sweep. The
+OBSERVATORY tab was RETIRED, its resonance already duplicated by Visions and community matches
+and the menu grown too long; its oracle quote moved to the COCREATE header (the Collab tab,
+renamed Cocreate on desktop and in the menu). The mobile/tablet menu TILES now wear the
+HEADER's own colour (an emerald border around it) instead of flat white, so the tiles and the
+bar read as one surface on every theme. The reach messages modal CENTRES vertically on desktop
+now (equal top and bottom margin). The /model diagram gained the light economy at last: RAY
+(rays, kindled by witnessed care) and GLOW (glow/{communityId|NODE}, the commons) with their
+refs drawn. A being can now STAY IN THEIR OWN BED: the reserve calendar, long hidden from the
+host, is open to them (a personal hold that still rides the request/accept flow they complete).
+And a COMMUNITY GREW A DIGITAL TREE: since a community is a being, it now has a Digital Tree
+section, its own chain of pulses (events, decisions, offerings) drawn by the being-generic
+ChainTree with the community as the root. Gates: check 359, warnings held at the pre-existing
+six. **Deliberately NOT done here, its own next piece**: loving ANY being (trees, beds,
+communities, visions), because it needs a loves-subcollection + loveCount overlay across four
+collections in the rules plus emulator tests, and a multi-collection rules change should not be
+rushed at the tail of a large batch. *(A menu is a map; trim it, and keep every road true.)*
+
+---
+
+**2026-07-23 · Offered for light**: the first SPENDING surface of the sun economy takes shape,
+the posting side of it. A being can now OFFER a BED or a SERVICE FOR LIGHT: the offering is a
+pulse of type 'offering' (already in the union), priced in light units (RAY_UNITS = one ray),
+and it flows into the ledger and onto a new OFFERINGS tab in the nav. The pure law lives in
+domain/offering.ts (offeringProblem, formatLightPrice, tested): a valid offering names itself
+and asks a whole, positive light price; a price reads as whole rays where it divides. A modal
+(OfferModal) posts one, borrowing a chosen bed's name and face (getMyBeds reads the owner's BED
+trees, which the normal myTrees list excludes); createOffering mints the pulse exactly as
+createEvent does; fetchOfferingPulses and the useForestFeed 'offerings' branch feed the tab; the
+pulse card wears an amber light-price badge. The rules already allow it (a standalone,
+communityId-less offering passes the non-event create branch). **Deliberately NOT built yet, a
+coming rung**: the EXCHANGE itself, a taker's light actually moving to the offerer through the
+prism, which waits on the same spendable-light mechanism the community glow-spend waits on; the
+modal says so plainly ("the exchange itself is coming soon"). So: offerings can be posted and
+browsed today, priced in light, ready for the day the light can move. Gates: check 359 (three
+new offering tests), warnings held at the pre-existing six. *(An economy begins with an offer,
+not a payment.)*
+
+---
+
+**2026-07-23 · A day of small hands**: a wide sweep of tree-profile and chrome refinements.
+The main-page scroll arrow became a SUBTLE half-circle tab flush to the bottom edge (one chevron
+in a dome), so on mobile it barely covers anything. The tend DROP wears a CIRCLE OF PURE
+WHITENESS: a REAL blurred white disc behind the bead (a white drop-shadow is invisible on a
+light page, so it had to be an actual element), the intended differentiator. Pressing it opens
+a small, COMPACT centred TEND MODAL (components/TendModal): the target tree, a one-tap "watered
+today", a door to full Care, and the vision when one is starred, all under an inner BLUE glow. On the tree profile: the
+VALIDATION SHIELD moved to the avatar's top-left (matching the user profile); the tree ID below
+the name faded to blend in (white/30); the FAVOURITE became a bare star beside the QR (press to
+make this your default tree), leaving the action row as just play, reach, tend, carry, which
+now sit to the left of Edit in the top bar on EVERY size (icon-only on mobile), the hero's
+separate mobile footer row retired. The DIGITAL TREE's Tend button shrank and sits at the crown with "Expand all N
+pulses" beneath it. Two ICONS were reborn in the shared language: REACH is a sealed envelope
+(currentColor body, glowing yellow flap lines, a yellow seal-dot), and INTELLIGENCE is an
+upward triangle whose three points are glowing yellow dots. The old WIZARD icon was DELETED
+entirely: every place it stood (carry, reflect, translate, all the AI-imagine buttons) now
+wears the intelligence triangle, one mark for the whole family of thinking machines. And COMMUNITIES gained a LIGHT tab
+(components/community/CommunityLight): the community's accumulated glow (glow/{communityId})
+shown as a brightening disc, framed as a commons spent only through a Council decision (a keeper
+can jump straight to the Council to propose; the decision-bound spend itself is a coming rung).
+Gates: check 356, warnings held at the pre-existing six. *(Many small hands, one shape of care.)*
+
+---
+
 **2026-07-23 · One card, one drop, one line**: three tidyings. The EVENT CARD is now ONE
 component (components/EventCard): a solid card that reads the same on a coloured banner or a
 white page, owning its own countdown and participant read, with the four image corners spoken

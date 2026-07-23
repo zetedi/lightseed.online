@@ -82,7 +82,7 @@ export const PlantBedModal: React.FC<{ lightHouse: LightHouse; onClose: () => vo
             <label className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('upload_photo')}</label>
             <button type="button" onClick={imagine} disabled={imagining || uploading}
               className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2.5 py-1 text-[11px] font-bold text-violet-700 hover:bg-violet-200 disabled:opacity-50">
-              <span className="[&>svg]:h-3 [&>svg]:w-3"><Icons.Wizard /></span>{imagining ? '…' : t('generate_image')}
+              <span className="[&>svg]:h-3 [&>svg]:w-3"><Icons.Intelligence /></span>{imagining ? '…' : t('generate_image')}
             </button>
           </div>
           <ImagePicker

@@ -480,6 +480,25 @@ export const createEvent = async (data: Partial<Pulse> & { title: string }) => {
     return { id: ref.id, lid, ...eventPayload, loveCount: 0, commentCount: 0, previousHash: 'EVENT', hash } as Pulse;
 };
 
+// An OFFERING — a bed or a service offered for light (domain/offering). A standalone pulse of
+// type 'offering', like createEvent, so it flows into the pulses ledger and the Offerings tab.
+export const createOffering = async (data: Partial<Pulse> & { title: string }) => {
+    const domain = normalizeDomain(data.domain || (typeof window !== 'undefined' ? window.location.hostname : ''));
+    const payload = { ...data, type: 'offering', domain, visibility: data.visibility || 'public' };
+    const hash = await createBlock('OFFERING', payload, Date.now());
+    const lid = uuidv7();
+    const ref = await addDoc(pulsesCollection, {
+        ...payload,
+        lid,
+        loveCount: 0,
+        commentCount: 0,
+        previousHash: 'OFFERING',
+        hash,
+        createdAt: serverTimestamp(),
+    });
+    return { id: ref.id, lid, ...payload, loveCount: 0, commentCount: 0, previousHash: 'OFFERING', hash } as Pulse;
+};
+
 export const createCommunityEvent = async (community: Community, data: Partial<Pulse> & { title: string }) => {
     const eventPayload = {
         ...data,

@@ -217,7 +217,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     <>
                         <ActionBtn onClick={() => onPlayGrowth(tree.id)} title="Play growth" color={ACTION_GREEN} icon={<Icons.Play />} label="Play" />
                         {canReach
-                            ? <ActionBtn onClick={() => onReachTree?.(tree)} title="Reach" color={ACTION_GREEN} icon={<Icons.Lightning />} label="Reach" />
+                            ? <ActionBtn onClick={() => onReachTree?.(tree)} title="Reach" color={ACTION_GREEN} icon={<Icons.Reach />} label="Reach" />
                             : <ActionBtn disabled title={t('only_if_validated')} color="bg-white/20 text-white/70" icon={<Icons.Eye />} label={t('only_if_validated')} />}
                         {isOwner && !isEditing && <ActionBtn onClick={onCreatePulse} title="Tend this tree: a pulse of care (we both grow)" color={ACTION_GREEN} icon={<Icons.Drop />} label="Tend" />}
                         {/* Carry this being's voice — superadmin voice-bridge, on trees they tend
@@ -229,11 +229,10 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                 onClick={() => onCarry(carrying ? null : tree)}
                                 title={carrying ? 'Stop carrying this being\'s voice' : "Carry this being's voice; pulses name you as the carrier"}
                                 color={carrying ? `${ACTION_GREEN} ring-2 ring-white/70` : ACTION_GREEN}
-                                icon={<Icons.Wizard />}
+                                icon={<Icons.Intelligence />}
                                 label={carrying ? 'Carrying' : 'Carry a pulse'}
                             />
                         )}
-                        {isOwner && !isEditing && onSetDefault && <ActionBtn onClick={() => { if (!isDefaultTree) onSetDefault(); }} disabled={isDefaultTree} title={isDefaultTree ? 'Your default tree' : 'Set as default tree'} color={isDefaultTree ? `${ACTION_GREEN} ring-2 ring-white/70` : ACTION_GREEN} icon={<Icons.Star filled={isDefaultTree} />} label="Favourite" />}
                     </>
    );
 
@@ -384,18 +383,16 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                         </button>
                     ),
                 },
-                // The standard top bar (BeingProfile), worn the same as the event's: back on
-                // the left; the ACTION ROW (desktop) + the shared Delete pill on the right.
-                // QR and Share ride beside the name; the shield marks the avatar. On mobile the
-                // action row stays in the hero footer, and Delete shrinks to its icon.
+                // The standard top bar (BeingProfile): back on the left; the ACTION ROW (play,
+                // reach, tend, carry) + Edit + Delete on the right, on EVERY size now (the buttons
+                // are icon-only on mobile, so all fit in the top bar). QR and Share ride beside the
+                // name; the shield marks the avatar.
                 actions: !isEditing ? (
-                    <>
-                        <div className="hidden flex-wrap items-center justify-end gap-2 md:flex">{actionRow}</div>
-                        {/* Edit stands beside Delete on EVERY size (icon-only on mobile),
-                            so the two hands that change a being live together up top. */}
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                        {actionRow}
                         {canEdit && <EditPill onClick={() => { setIsEditing(true); setSection('details'); }} />}
                         {canDelete && <DeletePill onClick={() => setShowDeleteModal(true)} staffDot={deleteIsStaffOnly} title="Delete tree" />}
-                    </>
+                    </div>
                 ) : undefined,
                 body: (
                     <div className="flex items-center gap-3 sm:gap-4">
@@ -408,9 +405,10 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                             : tree.id === 'GENESIS_TREE'
                                 ? <img src="/mahameru.svg" alt="Mahameru" className="h-16 w-16 rounded-full border-4 border-white object-cover shadow-xl md:h-24 md:w-24" />
                                 : <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-emerald-700 text-white shadow-xl md:h-24 md:w-24"><Icons.Tree /></div>}
-                        {/* The shield IS the validation marker, worn on the avatar: green when
-                            validated, grey when not yet; for those who may act it opens the modal. */}
-                        <span className="absolute -bottom-1 -right-1 inline-flex">
+                        {/* The shield IS the validation marker, worn on the TOP-LEFT of the avatar
+                            (like the user profile): green when validated, grey when not yet; for
+                            those who may act it opens the modal. */}
+                        <span className="absolute -top-1 -left-1 inline-flex">
                             <button
                                 type="button"
                                 disabled={!showValidateAction}
@@ -447,13 +445,26 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                         canMint={canEdit}
                                         onMint={(href) => mintBeingQr('lifetrees', tree.id, href)}
                                         className="h-7 w-7 bg-white/15 text-white hover:bg-white/25" />
+                                    {/* Favourite — just a star, beside the QR. Press to make this
+                                        your default tree; filled once it is. */}
+                                    {isOwner && onSetDefault && (
+                                        <button
+                                            onClick={() => { if (!isDefaultTree) onSetDefault(); }}
+                                            disabled={isDefaultTree}
+                                            title={isDefaultTree ? 'Your default tree' : 'Set as default tree'}
+                                            aria-label={isDefaultTree ? 'Your default tree' : 'Set as default tree'}
+                                            className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-transform hover:scale-110 ${isDefaultTree ? 'text-amber-300' : 'text-white/70 hover:text-amber-200'}`}
+                                        >
+                                            <Icons.Star filled={isDefaultTree} size={17} />
+                                        </button>
+                                    )}
                                     {isNature && <span className="inline-flex items-center gap-1 rounded-full border border-white/70 bg-sky-500 px-2 py-0.5 text-[10px] font-bold"><Icons.Shield /> NATURE</span>}
                                     {isMotherTree && <span className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-black text-amber-950" title={`Holds ${holdingLightHouses.map(x => x.name).join(', ')}`}><Icons.Sun /> MOTHER TREE</span>}
                                     {tree.visibility && tree.visibility !== 'public' && <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">{tree.visibility}</span>}
                                 </div>
                                 {tree.shortTitle && <p dir="auto" className="mt-0.5 text-xs font-bold uppercase tracking-widest text-emerald-200">{tree.shortTitle}</p>}
                                 <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                                    <span dir="ltr" className="truncate font-mono text-xs text-slate-300" title={tree.id}>{tree.id}</span>
+                                    <span dir="ltr" className="truncate font-mono text-xs text-white/30" title={tree.id}>{tree.id}</span>
                                     {tree.plantedAt && (
                                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] text-emerald-200"
                                               title={Number.isFinite(tree.plantedLatitude) ? `Planted at ${tree.plantedLatitude?.toFixed(5)}, ${tree.plantedLongitude?.toFixed(5)}${Number.isFinite(tree.plantedAltitudeM) ? ` · ${Math.round(tree.plantedAltitudeM!)} m` : ''}` : 'The real planting moment'}>
@@ -465,10 +476,6 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                         )}
                     </div>
                     </div>
-                ),
-                // Actions — desktop: under the hash in the name column; mobile: the footer row.
-                footer: (
-                    <div className="mt-4 flex flex-wrap justify-center gap-2 md:hidden">{actionRow}</div>
                 ),
             }}
             // Body — section menu on the left (desktop), a strip on mobile; the menu + content

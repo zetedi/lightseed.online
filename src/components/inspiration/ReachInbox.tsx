@@ -241,7 +241,7 @@ export const ReachInbox = ({
                 ) : (
                     <div className="flex flex-1 flex-col items-center justify-start px-8 pt-10 text-center text-slate-400">
                         <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 text-amber-500">
-                            <Icons.Lightning />
+                            <Icons.Reach />
                         </div>
                         <p className="font-medium text-slate-500">Select a thread</p>
                         <p className="mt-1 max-w-xs text-sm">Choose a Lifetree on the left to open your reach, or ask {aiName}.</p>

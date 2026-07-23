@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Alignment, Lightseed } from '../types';
 import {
-  fetchAllLifetrees, fetchLifetrees, fetchPulses, fetchEventPulses, fetchReachPulses, fetchVisions,
+  fetchAllLifetrees, fetchLifetrees, fetchPulses, fetchEventPulses, fetchOfferingPulses, fetchReachPulses, fetchVisions,
   getPendingAlignments, isHubDomain,
 } from '../services/firebase';
 import { queryableLevels } from '../domain/pulseVisibility';
@@ -107,6 +107,17 @@ export function useForestFeed(params: {
       }
       else if (tab === 'events') {
         const res = await fetchEventPulses(currentLastDoc, currentDomain, feedLevels);
+        setData(prev => {
+          const newItems = res.items;
+          if (reset) return newItems;
+          const existingIds = new Set(prev.map(p => p.id));
+          return [...prev, ...newItems.filter(i => !existingIds.has(i.id))];
+        });
+        setLastDoc(res.lastDoc);
+        setHasMore(!!res.lastDoc);
+      }
+      else if (tab === 'offerings') {
+        const res = await fetchOfferingPulses(currentLastDoc, currentDomain, feedLevels);
         setData(prev => {
           const newItems = res.items;
           if (reset) return newItems;
