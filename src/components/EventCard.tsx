@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Icons } from './ui/Icons';
+import { LoveButton } from './ui/LoveButton';
 import { firestoreStore } from '../adapters/firestore';
-import { isPulseLoved, lovePulse } from '../services/firebase';
-import { useSession } from '../contexts/SessionContext';
 import type { Community, Pulse } from '../types';
 
 // ONE event card, shared by the home hero banner and the Events section (DRY). A solid card, so
@@ -43,23 +42,6 @@ export const EventCard = ({ event, onOpen, community, onOpenCommunity, participa
     const max = event.eventMaxParticipants || 0;
     const faceName = event.communityName || community?.name || 'Community';
     const showFace = !!(event.communityId || community);
-
-    // Loving an event, the same gesture the pulse cards use (isPulseLoved/lovePulse). White
-    // heart until you love it; the count appears once there are loves; optimistic on tap.
-    const { lightseed } = useSession();
-    const [loved, setLoved] = useState(false);
-    const [loves, setLoves] = useState(event.loveCount || 0);
-    useEffect(() => {
-        if (lightseed) isPulseLoved(event.id, lightseed.uid).then(setLoved).catch(() => {});
-    }, [event.id, lightseed]);
-    const handleLove = async (e: React.SyntheticEvent) => {
-        e.stopPropagation();
-        if (!lightseed) return;
-        const next = !loved;
-        setLoved(next);
-        setLoves(c => next ? c + 1 : Math.max(0, c - 1));
-        await lovePulse(event.id, lightseed.uid).catch(() => {});
-    };
 
     return (
         <button onClick={onOpen} className={`group relative flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white text-left shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg ${className ?? 'w-full'}`}>
@@ -107,21 +89,19 @@ export const EventCard = ({ event, onOpen, community, onOpenCommunity, participa
                     </span>
                 )}
 
-                {/* bottom-right: love this event (the countdown's opposite corner). A white heart
-                    until loved; the count appears once there are loves. A span (role=button) so it
-                    never nests a <button> inside the card's own button. */}
-                <span
-                    role="button"
-                    tabIndex={0}
-                    title={loved ? 'You love this' : 'Love this event'}
-                    aria-label={loved ? 'Remove love' : 'Love this event'}
-                    onClick={handleLove}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); void handleLove(e); } }}
-                    className={`absolute bottom-1.5 right-1.5 flex items-center gap-1 rounded-full px-1.5 py-0.5 transition-transform hover:scale-110 ${loves > 0 ? 'bg-black/30 backdrop-blur-sm' : ''} ${loved ? 'text-rose-400' : 'text-white'}`}
-                >
-                    <span className="[&>svg]:h-4 [&>svg]:w-4 drop-shadow"><Icons.Heart filled={loved} /></span>
-                    {loves > 0 && <span className="text-[11px] font-bold tabular-nums">{loves}</span>}
-                </span>
+                {/* bottom-right: love this event (the countdown's opposite corner). The shared heart,
+                    rendered inline (a <span role=button>) so it never nests a <button> inside the
+                    card's own button; a badge bg appears once there are loves. */}
+                <LoveButton
+                    inline
+                    collection="pulses"
+                    id={event.id}
+                    initialCount={event.loveCount || 0}
+                    noun="this event"
+                    className="absolute bottom-1.5 right-1.5 rounded-full px-1.5 py-0.5 text-white"
+                    activeClassName="bg-black/30 backdrop-blur-sm"
+                    iconClassName="[&>svg]:h-4 [&>svg]:w-4 drop-shadow"
+                />
             </div>
 
             <div className="flex min-w-0 items-start justify-between gap-2 p-2.5">

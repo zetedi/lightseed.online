@@ -349,8 +349,19 @@ service cloud.firestore {
           && (resource.data.get('treeType', '') != 'BED'
               || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['domain']))
         )
+        // LOVE (like a pulse): any signed-in being may change loveCount (+ updatedAt) ALONE,
+        // alongside a loves/{uid} write. A public tally, no edit power over the tree.
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['loveCount', 'updatedAt'])
       );
       allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
+
+      // Loves: a like on this being (doc id = the lover's uid). The public tally is loveCount on
+      // the doc; each may read only their OWN slot (a private tree must not leak its lovers) and
+      // write only their own (loveBeing writes it alongside the loveCount overlay above).
+      match /loves/{loveId} {
+        allow read: if isSignedIn() && isOwner(loveId);
+        allow write: if isSignedIn() && isOwner(loveId);
+      }
 
       // A bed's occupancy — the accepted date-ranges, and NOTHING else: no guest, no identity.
       // Any signed-in being reads it to see busy/free nights (the full stays stay host/guest-
@@ -428,13 +439,25 @@ service cloud.firestore {
       // (like a tree's/bed's root): the birth block can be BORN once (an absent genesisHash may be
       // set — createVision at birth, or the backfill on a legacy vision) but never REWRITTEN. So a
       // contribution may extend the chain, and no one may forge or replace its root. `lid` stays frozen.
-      allow update: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff())
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid'])
-        && (
-          !('genesisHash' in resource.data)
-          || request.resource.data.get('genesisHash', '') == resource.data.get('genesisHash', '')
-        );
+      allow update: if isSignedIn() && (
+        (
+          (resource.data.authorId == request.auth.uid || isStaff())
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid'])
+          && (
+            !('genesisHash' in resource.data)
+            || request.resource.data.get('genesisHash', '') == resource.data.get('genesisHash', '')
+          )
+        )
+        // LOVE: any signed-in being may change loveCount (+ updatedAt) alone.
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['loveCount', 'updatedAt'])
+      );
       allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff());
+
+      // Loves: own-slot read/write (see the lifetrees loves note); the tally is loveCount above.
+      match /loves/{loveId} {
+        allow read: if isSignedIn() && isOwner(loveId);
+        allow write: if isSignedIn() && isOwner(loveId);
+      }
     }
 
     // Pulses: Read public, Write signed in
@@ -728,9 +751,21 @@ service cloud.firestore {
     match /communities/{communityId} {
       allow read: if true;
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff())
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid']);
+      allow update: if isSignedIn() && (
+        (
+          (resource.data.ownerId == request.auth.uid || isStaff())
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid'])
+        )
+        // LOVE: any signed-in being may change loveCount (+ updatedAt) alone.
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['loveCount', 'updatedAt'])
+      );
       allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
+
+      // Loves: own-slot read/write (see the lifetrees loves note); the tally is loveCount above.
+      match /loves/{loveId} {
+        allow read: if isSignedIn() && isOwner(loveId);
+        allow write: if isSignedIn() && isOwner(loveId);
+      }
     }
 
     // LightHouses: sacred places per domain (read public, write owner/staff).
@@ -758,6 +793,9 @@ service cloud.firestore {
       allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff())
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid']);
       allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
+      // No public loves here: a community house's READ is member-gated at rest, so a
+      // world-readable loves subcollection would leak its existence and its lovers. If a
+      // Light House ever wears a heart, gate the loves read to members (isCommunityMember).
     }
 
     // Invite requests — anyone (signed out) can ask to join; only staff can read/triage.

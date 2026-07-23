@@ -175,6 +175,27 @@ export const acceptAlignment = async (proposalId: string): Promise<AlignmentResu
     });
 }
 
+// Loving ANY being: a like on a tree, bed, community or vision, the same gesture as a pulse's
+// like (a loves/{uid} slot + a loveCount tally). The rules allow a signed-in being to write only
+// their own love slot and to change loveCount alone; no other field moves. No token reward here
+// (that stays a pulse-author reward); this is the plain, universal heart.
+export const isBeingLoved = async (collection: string, id: string, uid: string): Promise<boolean> =>
+    (await getDoc(doc(db, collection, id, 'loves', uid))).exists();
+
+export const loveBeing = async (collection: string, id: string, uid: string): Promise<void> => {
+    const ref = doc(db, collection, id);
+    const loveRef = doc(ref, 'loves', uid);
+    await runTransaction(db, async (t) => {
+        const snap = await t.get(ref);
+        if (!snap.exists()) return;
+        const love = await t.get(loveRef);
+        let count = snap.data()?.loveCount || 0;
+        if (love.exists()) { t.delete(loveRef); count--; }
+        else { t.set(loveRef, { uid, createdAt: serverTimestamp() }); count++; }
+        t.update(ref, { loveCount: Math.max(0, count), updatedAt: serverTimestamp() });
+    });
+};
+
 export const isPulseLoved = async (id: string, uid: string) => (await getDoc(doc(db, 'pulses', id, 'loves', uid))).exists();
 export const lovePulse = async (id: string, uid: string) => {
     const pulseRef = doc(db, 'pulses', id);

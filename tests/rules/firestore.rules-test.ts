@@ -970,6 +970,40 @@ describe('glow — the commons ledger is server-written, communally read (the la
   });
 });
 
+describe('loves: any being may be loved, the count only, the slot only your own', () => {
+  it('a signed-in being loves ANOTHER\'s tree: their own love slot + a loveCount-only bump', async () => {
+    await assertSucceeds(setDoc(doc(db(ALICE), 'lifetrees', 'treeB', 'loves', ALICE), { uid: ALICE, createdAt: 1 }));
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'lifetrees', 'treeB'), { loveCount: 1, updatedAt: 1 }));
+  });
+
+  it('the same universal love works on a community and on a bed', async () => {
+    await assertSucceeds(setDoc(doc(db(BOB), 'communities', 'com1', 'loves', BOB), { uid: BOB, createdAt: 1 }));
+    await assertSucceeds(updateDoc(doc(db(BOB), 'communities', 'com1'), { loveCount: 1, updatedAt: 1 }));
+    await assertSucceeds(setDoc(doc(db(BOB), 'lifetrees', 'bedStay', 'loves', BOB), { uid: BOB, createdAt: 1 }));
+    await assertSucceeds(updateDoc(doc(db(BOB), 'lifetrees', 'bedStay'), { loveCount: 1, updatedAt: 1 }));
+  });
+
+  it('you may write ONLY your own love slot, and the love overlay may touch NOTHING but the count', async () => {
+    await assertFails(setDoc(doc(db(ALICE), 'lifetrees', 'treeB', 'loves', BOB), { uid: BOB, createdAt: 1 })); // not your slot
+    await assertFails(updateDoc(doc(db(ALICE), 'lifetrees', 'treeB'), { loveCount: 1, name: 'stolen', updatedAt: 1 })); // rides a name change
+    await assertFails(updateDoc(doc(db(BOB), 'communities', 'com1'), { loveCount: 1, ownerId: BOB, updatedAt: 1 })); // a stranger cannot seize ownership through a love
+  });
+
+  it('the anonymous cannot love', async () => {
+    await assertFails(setDoc(doc(db(), 'lifetrees', 'treeB', 'loves', 'x'), { uid: 'x', createdAt: 1 }));
+    await assertFails(updateDoc(doc(db(), 'lifetrees', 'treeB'), { loveCount: 1, updatedAt: 1 }));
+  });
+
+  it('a love slot is private: you may read your OWN, never another being\'s (a private tree must not leak its lovers)', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'lifetrees', 'treeB', 'loves', ALICE), { uid: ALICE, createdAt: 1 });
+    });
+    await assertSucceeds(getDoc(doc(db(ALICE), 'lifetrees', 'treeB', 'loves', ALICE))); // my own mark
+    await assertFails(getDoc(doc(db(BOB), 'lifetrees', 'treeB', 'loves', ALICE)));       // not mine to see
+    await assertFails(getDoc(doc(db(), 'lifetrees', 'treeB', 'loves', ALICE)));          // nor the outside's
+  });
+});
+
 describe('watering pulses — the light-mint trust root (server-mediated; Lumo review 2026-07-20)', () => {
   // treeB is owned by BOB (a tender). ALICE/MALLORY are not tenders of it.
   const water = (over: Record<string, any> = {}) => ({

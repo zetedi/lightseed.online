@@ -6,6 +6,38 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-23 · Every being can be loved**: the affordance the last ring deferred lands whole.
+LOVE is now universal, the same gentle like a reach or an event already wore, extended to the
+beings that wear a profile hero: a tree, a bed, a community, a vision. A heart rides each hero
+(LoveButton, a signed-out visitor sees it but cannot press it); pressing it writes a
+`loves/{uid}` slot under the being and bumps its `loveCount`, releasing it un-loves and
+decrements, both in one transaction (engagement.ts, loveBeing/isBeingLoved, mirroring the older
+lovePulse). `loveCount` joins the BEING interface itself, so every being inherits the field
+without special-casing. The rules carry two ideas. First the COUNT: on lifetrees, communities
+and visions the update rule gained an OR branch allowing a write that touches NOTHING but
+`['loveCount','updatedAt']` (diff().affectedKeys().hasOnly), so a stranger may nudge the public
+tally without any other reach into the doc. Second the SLOT: a `loves/{loveId}` subcollection
+each being may read and write only at their OWN uid (isOwner(loveId)), NOT a public list, because
+a private tree or vision is owner-gated at read and a world-readable lover list would leak its
+existence and its lovers. The app only ever asks "did I love this?" (isBeingLoved reads one's own
+slot), so own-slot read is all it needs. lightHouses were DELIBERATELY left out: their read is
+member-gated at rest, and until one wears a heart, adding the subcollection only invites that same
+leak. Five emulator tests prove the shape: a stranger CAN love another's tree and bump the count
+alone; the same works on a community and a bed; the love overlay CANNOT ride a name change or
+seize ownership; the slot CANNOT be written OR read for another being; and the anonymous cannot
+love at all. And the heart became ONE: LoveButton is now the single like everywhere, worn by the
+tree, bed, community and vision profiles AND by every pulse card, event card and reach message.
+The three older hand-rolled hearts (EventCard, PulseCard's three densities, ReachThread) folded
+into it, their duplicated loved/count/optimistic logic gone. It routes by collection: a PULSE
+loves through lovePulse (which may still kindle a light token for the author's tree), a being
+through loveBeing; Icons.Heart owns the red-when-loved colour, so each site passes only its size
+and layout. The one place it renders as a `<span role=button>` (inline) is the event card, whose
+whole surface is already a button and cannot legally nest another. Gates: check 359, rules 102,
+warnings held at the pre-existing six. *(To count a love is small; to let anyone give one, and
+nothing more, is the whole art.)*
+
+---
+
 **2026-07-23 · The menu slims, the community grows a tree**: a housekeeping sweep. The
 OBSERVATORY tab was RETIRED, its resonance already duplicated by Visions and community matches
 and the menu grown too long; its oracle quote moved to the COCREATE header (the Collab tab,

@@ -5,6 +5,7 @@ import { Icons } from './ui/Icons';
 import { SuperDot } from './ui/SuperDot';
 import { useSession } from '../contexts/SessionContext';
 import { BeingQr } from './ui/BeingQr';
+import { LoveButton } from './ui/LoveButton';
 import { mintBeingQr } from '../services/firebase/beings';
 import { MahameruAvatar } from './ui/MahameruAvatar';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -243,6 +244,7 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                                 canMint={isAuthor}
                                 onMint={(href) => mintBeingQr('visions', vision.id, href)}
                                 className="h-8 w-8 border border-white/15 bg-white/10 text-slate-200 hover:bg-white/25 hover:text-white" />
+                            <LoveButton collection="visions" id={vision.id} initialCount={vision.loveCount || 0} className="rounded-full bg-white/15 px-2 py-1 text-white hover:bg-white/25" />
                             {rootTree && !isRoot && (
                                 <button
                                     onClick={() => onViewTree?.(rootTree)}

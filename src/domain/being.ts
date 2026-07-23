@@ -28,4 +28,5 @@ export interface Being {
   qr?: { href: string };
   createdAt?: Timestamp; // the birth time; optional on the base (derived/transient objects),
                          // required by concrete stored types that always stamp it.
+  loveCount?: number;    // likes on this being (loveBeing writes it alongside a loves/{uid} slot).
 }

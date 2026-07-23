@@ -4,7 +4,8 @@ import { showAlert, showConfirm } from "../ui/Dialog";
 import { useLanguage } from '../../contexts/LanguageContext';
 import { sendMessageToOracle, generateImage, translatePulse, type TranslationResponse } from '../../services/gemini';
 import { getIntelligence } from '../../services/intelligence';
-import { checkAndIncrementAiUsage, mintPulse, uploadBase64Image, listenToUserProfile, fetchReachThread, fetchThreadById, markReachesSeen, sendReach, sendThreadMessage, lovePulse, isPulseLoved, fetchGrowthPulses } from '../../services/firebase';
+import { checkAndIncrementAiUsage, mintPulse, uploadBase64Image, listenToUserProfile, fetchReachThread, fetchThreadById, markReachesSeen, sendReach, sendThreadMessage, fetchGrowthPulses } from '../../services/firebase';
+import { LoveButton } from '../ui/LoveButton';
 import { reachAudienceLabels } from '../../utils/reachPermissions';
 import { useLifeseed } from '../../hooks/useLifeseed';
 import { Icons } from '../ui/Icons';
@@ -35,27 +36,18 @@ interface ChatMessage {
     careAlert?: 'watering'; // a "water me" alert — rendered with a blue border
 }
 
-// A small heart to like a single reach message (its underlying reach pulse). Manages its own
-// loved/count state, mirroring PulseCard's love button.
-const MessageLike = ({ pulseId, initialCount, uid }: { pulseId: string; initialCount: number; uid?: string }) => {
-    const [loved, setLoved] = useState(false);
-    const [count, setCount] = useState(initialCount);
-    useEffect(() => { if (uid) isPulseLoved(pulseId, uid).then(setLoved).catch(() => {}); }, [pulseId, uid]);
-    const toggle = async () => {
-        if (!uid) return;
-        const next = !loved;
-        setLoved(next);
-        setCount(c => Math.max(0, next ? c + 1 : c - 1));
-        try { await lovePulse(pulseId, uid); }
-        catch { setLoved(!next); setCount(c => Math.max(0, next ? c - 1 : c + 1)); }
-    };
-    return (
-        <button onClick={toggle} disabled={!uid} title="Like" className="flex items-center gap-1 px-1 text-slate-400 transition-colors hover:text-red-500 disabled:opacity-40">
-            <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Heart filled={loved} /></span>
-            {count > 0 && <span className="text-[11px] tabular-nums">{count}</span>}
-        </button>
-    );
-};
+// A small heart to like a single reach message (its underlying reach pulse): the shared heart.
+const MessageLike = ({ pulseId, initialCount }: { pulseId: string; initialCount: number }) => (
+    <LoveButton
+        collection="pulses"
+        id={pulseId}
+        initialCount={initialCount}
+        noun="this reach"
+        className="px-1 text-slate-400 disabled:opacity-40"
+        iconClassName="[&>svg]:h-3.5 [&>svg]:w-3.5"
+        countClassName="text-[11px] tabular-nums"
+    />
+);
 
 // The audience options offered when starting a reach to a tree. `undefined` is the classic
 // 1:1 message to the owner; the others fan out to a shared group thread with the circle.
@@ -644,7 +636,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                             </div>
 
                             {/* Like a reach message. */}
-                            {m.id && !m.system && <MessageLike pulseId={m.id} initialCount={m.loveCount || 0} uid={lightseed?.uid} />}
+                            {m.id && !m.system && <MessageLike pulseId={m.id} initialCount={m.loveCount || 0} />}
 
                             {/* Shadow text — what the message means, read through your intelligence. */}
                             {canInterpret && (() => {

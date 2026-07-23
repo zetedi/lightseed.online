@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { type Pulse, type Lightseed } from '../types';
-import { isPulseLoved, lovePulse } from '../services/firebase';
 import { Icons } from './ui/Icons';
+import { LoveButton } from './ui/LoveButton';
 import { formatLightPrice } from '../domain/offering';
 import type { ListDensity } from '../hooks/useListDensity';
 
@@ -19,26 +19,16 @@ interface PulseCardProps {
 const POP = 'hover:shadow-xl hover:-translate-y-1 active:shadow-xl active:-translate-y-1 transition-all duration-300';
 
 export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards' }: PulseCardProps) => {
-    const [loved, setLoved] = useState(false);
-    const [count, setCount] = useState(pulse.loveCount || 0);
     const images = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
     const isOffering = pulse.type === 'offering';
     const badge = pulse.type === 'event' ? 'EVENT' : pulse.type === 'tree_growth' ? 'GROWTH' : isOffering ? (pulse.offeringKind === 'bed' ? 'BED' : 'OFFERING') : '';
     const isEvent = pulse.type === 'event';
     const meta = isEvent && pulse.eventDate ? `${new Date(pulse.eventDate).toLocaleDateString()} · ${pulse.eventLocation || pulse.body}` : pulse.body;
 
-    useEffect(() => {
-        if (lightseed) isPulseLoved(pulse.id, lightseed.uid).then(setLoved);
-    }, [pulse, lightseed]);
-
-    const handleLove = async (e: React.MouseEvent) => {
-        e.stopPropagation(); // Prevent opening detail view
-        if (!lightseed) return;
-        const newStatus = !loved;
-        setLoved(newStatus);
-        setCount(c => newStatus ? c + 1 : c - 1);
-        await lovePulse(pulse.id, lightseed.uid);
-    }
+    // The shared heart on this pulse (routed to lovePulse for pulses), sized per density below.
+    const love = (countClassName: string, className = 'text-slate-400') => (
+        <LoveButton collection="pulses" id={pulse.id} initialCount={pulse.loveCount || 0} showZero iconClassName="" className={className} countClassName={countClassName} />
+    );
 
     const handleMatchClick = (e: React.MouseEvent) => {
         e.stopPropagation(); // Prevent opening detail view
@@ -82,9 +72,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
                     </div>
                     <p dir="auto" className="mt-0.5 line-clamp-2 text-xs font-light leading-relaxed text-slate-500">{meta}</p>
                 </div>
-                <button onClick={handleLove} disabled={!lightseed} className="flex shrink-0 items-center gap-1 text-slate-400 transition-colors hover:text-red-500">
-                    <Icons.Heart filled={loved} /><span className="text-xs">{count}</span>
-                </button>
+                {love('text-xs', 'shrink-0 text-slate-400')}
             </div>
         );
     }
@@ -106,9 +94,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
                     <h3 dir="auto" className="truncate text-xs font-semibold text-slate-800">{pulse.title}</h3>
                         {pulse.carriedByName && <p className="truncate text-[10px] italic text-purple-500">🤲 carried by {pulse.carriedByName}</p>}
                     <div className="mt-1 flex items-center justify-between">
-                        <button onClick={handleLove} disabled={!lightseed} className="flex items-center gap-1 text-slate-400 transition-colors hover:text-red-500">
-                            <Icons.Heart filled={loved} /><span className="text-[10px]">{count}</span>
-                        </button>
+                        {love('text-[10px]')}
                         {badge && <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-bold ${isEvent ? 'bg-sky-100 text-sky-700' : 'bg-emerald-100 text-emerald-600'}`}>{badge}</span>}
                     </div>
                 </div>
@@ -152,10 +138,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
                     <p dir="auto" className="text-slate-600 text-xs font-light leading-relaxed truncate">{meta}</p>
                 )}
                 <div className={`mt-auto flex items-center justify-between ${images.length > 0 || (isEvent && pulse.eventDate) ? 'pt-2 border-t border-slate-100' : ''}`}>
-                    <button onClick={handleLove} disabled={!lightseed} className="flex items-center gap-1 text-slate-500 hover:text-red-500 transition-colors">
-                        <Icons.Heart filled={loved} />
-                        <span className="text-xs">{count}</span>
-                    </button>
+                    {love('text-xs', 'text-slate-500')}
 
                     {lightseed && lightseed.uid !== pulse.authorId && !pulse.isMatch && (
                         <button onClick={handleMatchClick} className="text-[10px] bg-slate-50 text-slate-500 hover:bg-sky-50 hover:text-sky-600 px-2 py-1 rounded transition-colors flex items-center gap-1">

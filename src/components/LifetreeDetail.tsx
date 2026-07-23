@@ -10,6 +10,7 @@ import { mintBeingQr } from '../services/firebase/beings';
 import { getLightHouseById } from '../services/firebase';
 import type { LightHouse } from '../domain/lightHouse';
 import { EditPill, DeletePill } from './ui/HeroPills';
+import { LoveButton } from './ui/LoveButton';
 import { updateLifetree, setTreeStatus, getPulsesByTreeId } from '../services/firebase';
 import { Pulse, type Lifetree } from '../types';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
@@ -441,6 +442,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                     <button onClick={handleShare} title="Share this tree" className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-bold text-white transition-colors hover:bg-white/25">
                                         <Icons.Link /> <span>{shared ? 'Copied' : 'Share'}</span>
                                     </button>
+                                    <LoveButton collection="lifetrees" id={tree.id} initialCount={tree.loveCount || 0} className="rounded-full bg-white/15 px-2 py-0.5 text-white hover:bg-white/25" />
                                     <BeingQr lid={tree.lid} name={tree.name} savedHref={tree.qr?.href}
                                         canMint={canEdit}
                                         onMint={(href) => mintBeingQr('lifetrees', tree.id, href)}

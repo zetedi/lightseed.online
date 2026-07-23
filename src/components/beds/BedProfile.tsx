@@ -4,6 +4,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { showConfirm, showAlert } from '../ui/Dialog';
 import { Icons } from '../ui/Icons';
 import { BeingQr } from '../ui/BeingQr';
+import { LoveButton } from '../ui/LoveButton';
 import { mintBeingQr } from '../../services/firebase/beings';
 import { ValidationBadge } from '../ValidationBadge';
 import { BeingProfile, type BeingSection } from '../BeingProfile';
@@ -200,6 +201,7 @@ export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree
             </span>
             <BeingQr lid={bed.lid} name={bed.name} savedHref={bed.qr?.href} canMint={isOwner}
               onMint={(href) => mintBeingQr('lifetrees', bed.id, href)} className="text-white/70" />
+            <LoveButton collection="lifetrees" id={bed.id} initialCount={bed.loveCount || 0} className="rounded-full bg-white/15 px-2 py-0.5 text-white hover:bg-white/25" />
           </>
         ),
       }}
