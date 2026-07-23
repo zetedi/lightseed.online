@@ -6,6 +6,27 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-23 · One card, one drop, one line**: three tidyings. The EVENT CARD is now ONE
+component (components/EventCard): a solid card that reads the same on a coloured banner or a
+white page, owning its own countdown and participant read, with the four image corners spoken
+for: top-left the countdown, top-right the seats, bottom-left the host community's face (a
+door), and bottom-right the LOVES: a WHITE heart you can TAP to love (the same isPulseLoved /
+lovePulse gesture the pulse cards use), its count appearing once there are loves. The event's
+own words sit small beneath the place. It is shared by the home hero banner AND the
+event page's BIG-CARDS density (PulseFeedPage gained a renderBigCard override for the 'cards'
+density; the smaller densities keep the PulseCard), so the same card appears wherever an event
+shows large. The Dashboard shed its per-card participant batch and daysUntil (the card carries
+them). The TEND DROP glows PURE WHITE now (a tight ring, then a soft bloom), grew again (58px),
+and its wrapper centres it under the logo with translateX(calc(20px - 50%)) so the two stay
+aligned at any bead size. And the FOOTER stacked, centred: the socials on top, then the brand
+line beneath in the middle ("life recognising life · .seed · <node> · <year>"), then a
+Privacy · Terms · Imprint line whose links open a responsive modal (components/ui/LegalModal)
+carrying generic, honest starter texts each node is told to review and adapt; a mobile bottom
+strip keeps it all clear of the fixed tend droplet. Gates: check 356, warnings held at
+the pre-existing six. *(DRY is not only fewer lines; it is one truth with one place to change it.)*
+
+---
+
 **2026-07-23 · Clearer water**: a sweep of small corrections. The tend DROP shed its white circle
 and border and glows lightseed-YELLOW now (a blue bead in a sun halo); it sits in a strip that
 MIRRORS the nav container (same max-w-7xl and px steps), so its centre lands directly under the

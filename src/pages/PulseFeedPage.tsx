@@ -23,10 +23,13 @@ interface PulseFeedPageProps {
   onMatch: (p: Pulse) => void;
   onView: (p: Pulse) => void;
   pattern?: boolean;
+  // At the BIG-CARDS density only ('cards'), an override card per item — the events tab
+  // renders the shared EventCard here; the smaller densities keep the PulseCard.
+  renderBigCard?: (item: Pulse) => React.ReactNode;
 }
 
 export const PulseFeedPage = ({
-  title, tone, densityKey, searchBox, action, items, emptyText, loadingMore, lightseed, onMatch, onView, pattern,
+  title, tone, densityKey, searchBox, action, items, emptyText, loadingMore, lightseed, onMatch, onView, pattern, renderBigCard,
 }: PulseFeedPageProps) => {
   const [density, setDensity] = useListDensity(densityKey);
   return (
@@ -46,7 +49,9 @@ export const PulseFeedPage = ({
             ) : (
               items.map(item => (
                 <div key={item.id}>
-                  <PulseCard pulse={item} lightseed={lightseed} onMatch={onMatch} onView={onView} density={density} />
+                  {density === 'cards' && renderBigCard
+                    ? renderBigCard(item)
+                    : <PulseCard pulse={item} lightseed={lightseed} onMatch={onMatch} onView={onView} density={density} />}
                 </div>
               ))
             )}

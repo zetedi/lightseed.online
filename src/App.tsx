@@ -59,6 +59,7 @@ import { isWateringOverdue } from './domain/watering';
 import { isBedTree } from './domain/bed';
 import { Loading } from './components/ui/Loading';
 import { NetworkStatus } from './components/ui/NetworkStatus';
+import { EventCard } from './components/EventCard';
 import { SectionHeader } from './components/ui/SectionHeader';
 import { ScrollChevrons } from './components/ui/ScrollChevrons';
 import { UpdateToast } from './components/ui/UpdateToast';
@@ -1049,6 +1050,20 @@ const AppContent = () => {
                         onMatch={(p: Pulse) => { setSelectedPulse(p); openPulseModal(); }}
                         onView={(p: Pulse) => { void onViewPulseOrAlignment(p); }}
                         pattern
+                        // Big-cards density uses the shared EventCard; its community face opens
+                        // the host community (the same resolution the dashboard banner uses).
+                        renderBigCard={(ev: Pulse) => {
+                            const host = impersonatedCommunity || hostCommunity || defaultCommunity;
+                            const face = host && (!ev.communityId || ev.communityId === host.id) ? host : null;
+                            return (
+                                <EventCard
+                                    event={ev}
+                                    onOpen={() => { void onViewPulseOrAlignment(ev); }}
+                                    community={face}
+                                    onOpenCommunity={face ? () => setSelectedCommunity(face) : undefined}
+                                />
+                            );
+                        }}
                     />
                 ) : tab !== 'observatory' && tab !== 'profile' && tab !== 'inspiration' && tab !== 'about' && tab !== 'dashboard' && tab !== 'newsletter' && tab !== 'communities' && (
                     <PulseFeedPage
@@ -1116,9 +1131,10 @@ const AppContent = () => {
                     // narrow or ultra-wide. pointer-events pass through except on the bead/menu.
                     <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40">
                         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                            {/* -translate-x-1 (-4px) nudges the 48px bead so its centre lands under
-                                the 40px logo's centre (both anchored to this container's left edge). */}
-                            <div className="relative inline-block -translate-x-1">
+                            {/* translateX(calc(20px - 50%)) centres the bead (any size) under the
+                                40px logo's centre, 20px from this container's left edge — so the two
+                                stay aligned even as the bead grows. */}
+                            <div className="relative inline-block" style={{ transform: 'translateX(calc(20px - 50%))' }}>
                                 {/* When a default VISION is starred, the drop opens a two-door sheet
                                     (predictable beats clever); with only the tree, it acts directly. */}
                                 {tendMenuOpen && defaultVisionId && (
@@ -1142,9 +1158,9 @@ const AppContent = () => {
                                     }`}
                                 >
                                     {/* The droplet itself, drawn by Lumo — the bead IS the button (a
-                                        vector, glassy at every size), 48px (a fifth larger than the
-                                        logo circle), lit by a lightseed-YELLOW glow (blue bead, sun halo). */}
-                                    <img src="/droplet.svg" alt="" draggable={false} className="h-12 w-12 object-contain drop-shadow-[0_0_10px_rgba(250,204,21,0.85)]" />
+                                        vector, glassy at every size), 58px now, lit by a PURE WHITE
+                                        double glow (a tight ring, then a soft bloom). */}
+                                    <img src="/droplet.svg" alt="" draggable={false} className="h-[58px] w-[58px] object-contain drop-shadow-[0_0_3px_rgba(255,255,255,0.95)] drop-shadow-[0_0_13px_rgba(255,255,255,0.8)]" />
                                 </button>
                             </div>
                         </div>

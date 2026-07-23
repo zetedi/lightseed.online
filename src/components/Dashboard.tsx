@@ -13,7 +13,7 @@ import { QuoteCarousel } from './ui/QuoteCarousel';
 import { LIGHTSEED_QUOTES } from '../content/quotes';
 import { useScrollEdges } from '../hooks/useScrollEdges';
 import { MiniForestMap, type MapPoint } from './ui/MiniForestMap';
-import { firestoreStore } from '../adapters/firestore';
+import { EventCard } from './EventCard';
 import { Community, Pulse } from '../types';
 
 export interface DashboardProps {
@@ -67,25 +67,7 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
     // the event is its own or carries no id); others show their name's initial.
     const eventCommunityFace = (ev: Pulse): Community | null =>
         hostCommunity && (!ev.communityId || ev.communityId === hostCommunity.id) ? hostCommunity : null;
-    // The corner numbers: how many trees stand around each event (participant links, one
-    // scoped read per card), for the top-right "2/7 trees" badge.
-    const [participantCounts, setParticipantCounts] = useState<Record<string, number>>({});
-    useEffect(() => {
-        let alive = true;
-        if (!events || events.length === 0) return;
-        Promise.all(events.map(async ev =>
-            [ev.id, (await firestoreStore.linksTo(ev.id, 'participant').catch(() => [])).length] as const,
-        )).then(pairs => { if (alive) setParticipantCounts(Object.fromEntries(pairs)); });
-        return () => { alive = false; };
-    }, [events]);
-    // eslint-disable-next-line react-hooks/purity -- "now" is exactly what a countdown displays; the dashboard re-renders often enough to stay honest
-    const nowMs = Date.now();
-    const daysUntil = (iso?: string): number | null => {
-        if (!iso) return null;
-        const ms = Date.parse(iso);
-        if (Number.isNaN(ms) || ms < nowMs) return null; // a past event wears no countdown
-        return Math.ceil((ms - nowMs) / 86400000);
-    };
+    // (The card owns its own countdown + participant read now — see components/EventCard.)
     // Fade only the side(s) that hide a card — the same source the nav arrows read, so a fade
     // shows exactly where an arrow does (and neither when everything fits).
     const { canPrev: evPrev, canNext: evNext } = useScrollEdges(eventsScrollRef, 'x');
@@ -171,75 +153,14 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
                         <div ref={eventsScrollRef} className="scroll-hide-bar flex flex-1 items-stretch gap-7 overflow-x-auto py-3"
                              style={{ maskImage: eventsMask, WebkitMaskImage: eventsMask }}>
                         {events.map(ev => (
-                            <button
+                            <EventCard
                                 key={ev.id}
-                                onClick={() => onViewEvent?.(ev)}
-                                className={`group relative flex w-48 shrink-0 flex-col overflow-hidden rounded-xl border text-left shadow-lg backdrop-blur-md transition-all hover:-translate-y-0.5 md:w-60 ${banner.isDark ? 'border-white/25 bg-white/30 hover:bg-white/40' : 'border-slate-900/10 bg-white/70 hover:bg-white'}`}
-                            >
-                                <div className="w-full flex-1 overflow-hidden bg-white/10">
-                                    {ev.imageUrl ? (
-                                        <img src={ev.imageUrl} className="h-full w-full object-cover" alt={ev.title} />
-                                    ) : (
-                                        <div className={`flex h-full w-full items-center justify-center ${banner.isDark ? 'text-white/60' : 'text-slate-400'}`}><Icons.Loc /></div>
-                                    )}
-                                </div>
-                                {/* Top left: how soon (In / x / days). Today speaks in one word. */}
-                                {(() => {
-                                    const days = daysUntil(ev.eventDate);
-                                    if (days === null) return null;
-                                    return (
-                                        <span className="absolute left-1.5 top-1.5 z-10 flex flex-col items-center rounded-md bg-black/25 px-1.5 py-0.5 leading-tight text-white backdrop-blur-sm">
-                                            {days === 0 ? (
-                                                <span className="text-[10px] font-bold">Today</span>
-                                            ) : (
-                                                <>
-                                                    <span className="text-[8px] uppercase tracking-wide text-white/75">In</span>
-                                                    <span className="text-xs font-bold tabular-nums">{days}</span>
-                                                    <span className="text-[8px] uppercase tracking-wide text-white/75">{days === 1 ? 'day' : 'days'}</span>
-                                                </>
-                                            )}
-                                        </span>
-                                    );
-                                })()}
-                                {/* Top right: the gathering's numbers (2/7, trees beneath). */}
-                                {(() => {
-                                    const count = participantCounts[ev.id] ?? 0;
-                                    const max = ev.eventMaxParticipants || 0;
-                                    if (!max && count === 0) return null;
-                                    return (
-                                        <span className="absolute right-1.5 top-1.5 z-10 flex flex-col items-center rounded-md bg-black/25 px-1.5 py-0.5 leading-tight text-white backdrop-blur-sm">
-                                            <span className="text-xs font-bold tabular-nums">{max ? `${count}/${max}` : count}</span>
-                                            <span className="text-[8px] uppercase tracking-wide text-white/75">{count === 1 && !max ? 'tree' : 'trees'}</span>
-                                        </span>
-                                    );
-                                })()}
-                                <div className="min-w-0 p-2 pr-9">
-                                    <p className="truncate text-lg font-light tracking-wide" style={{ color: banner.text }}>{ev.title}</p>
-                                    <p className="truncate text-[11px]" style={{ color: banner.muted }}>
-                                        {ev.eventDate ? new Date(ev.eventDate).toLocaleDateString() : ''}{ev.eventLocation ? ` · ${ev.eventLocation}` : ''}{ev.eventMaxParticipants ? ` · max ${ev.eventMaxParticipants}` : ''}
-                                    </p>
-                                </div>
-                                {/* The hosting community's face, bottom right — a door to its profile.
-                                    A span (not a nested button) so the card's own click stays valid HTML. */}
-                                {(ev.communityId || hostCommunity) && (() => {
-                                    const face = eventCommunityFace(ev);
-                                    const faceName = ev.communityName || face?.name || 'Community';
-                                    return (
-                                        <span
-                                            role="button"
-                                            tabIndex={0}
-                                            title={`Hosted by ${faceName}`}
-                                            onClick={(e) => { e.stopPropagation(); void openEventCommunity(ev); }}
-                                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); void openEventCommunity(ev); } }}
-                                            className="absolute bottom-1.5 right-1.5 z-10 flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-emerald-600 text-[11px] font-bold text-white shadow-md transition-transform hover:scale-110"
-                                        >
-                                            {face?.logoUrl
-                                                ? <img src={face.logoUrl} className="h-full w-full object-cover" alt={faceName} referrerPolicy="no-referrer" />
-                                                : faceName.charAt(0).toUpperCase()}
-                                        </span>
-                                    );
-                                })()}
-                            </button>
+                                event={ev}
+                                onOpen={() => onViewEvent?.(ev)}
+                                community={eventCommunityFace(ev)}
+                                onOpenCommunity={onViewCommunity ? () => { void openEventCommunity(ev); } : undefined}
+                                className="w-48 shrink-0 md:w-60"
+                            />
                         ))}
                         </div>
                     </div>

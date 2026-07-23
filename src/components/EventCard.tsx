@@ -1,0 +1,144 @@
+import React, { useEffect, useState } from 'react';
+import { Icons } from './ui/Icons';
+import { firestoreStore } from '../adapters/firestore';
+import { isPulseLoved, lovePulse } from '../services/firebase';
+import { useSession } from '../contexts/SessionContext';
+import type { Community, Pulse } from '../types';
+
+// ONE event card, shared by the home hero banner and the Events section (DRY). A solid card, so
+// it reads the same on a coloured banner or a white page. The image carries four corners:
+//   top-left  — the countdown (In / N / days; Today in one word)
+//   top-right — the seats (participants, N/max)
+//   bottom-left  — the host community's face (a door to it)
+//   bottom-right — the loves (opposite corner of the countdown, by request)
+// Title + when/where sit beneath; an optional `actions` slot holds edit/delete on the events page.
+export const EventCard = ({ event, onOpen, community, onOpenCommunity, participantCount, actions, className }: {
+    event: Pulse;
+    onOpen: () => void;
+    community?: Community | null;   // the host community's face, resolved by the caller
+    onOpenCommunity?: () => void;   // when set, the face becomes a door to the community
+    participantCount?: number;      // supply to skip the card's own read; else it reads once
+    actions?: React.ReactNode;      // edit/delete etc. (events page); absent on the hero
+    className?: string;             // width/shrink for the context (default w-full)
+}) => {
+    // When the caller supplies the count, use it directly; otherwise read the participant links
+    // once (the async callback sets state, so no synchronous setState in the effect body).
+    const [fetched, setFetched] = useState<number | null>(null);
+    useEffect(() => {
+        if (typeof participantCount === 'number') return;
+        let alive = true;
+        firestoreStore.linksTo(event.id, 'participant').then(l => { if (alive) setFetched(l.length); }).catch(() => {});
+        return () => { alive = false; };
+    }, [event.id, participantCount]);
+    const count = typeof participantCount === 'number' ? participantCount : (fetched ?? 0);
+
+    // eslint-disable-next-line react-hooks/purity -- a countdown reads "now"; frequent re-renders keep it honest
+    const nowMs = Date.now();
+    const days = (() => {
+        if (!event.eventDate) return null;
+        const ms = Date.parse(event.eventDate);
+        if (Number.isNaN(ms) || ms < nowMs) return null; // a past event wears no countdown
+        return Math.ceil((ms - nowMs) / 86400000);
+    })();
+    const max = event.eventMaxParticipants || 0;
+    const faceName = event.communityName || community?.name || 'Community';
+    const showFace = !!(event.communityId || community);
+
+    // Loving an event, the same gesture the pulse cards use (isPulseLoved/lovePulse). White
+    // heart until you love it; the count appears once there are loves; optimistic on tap.
+    const { lightseed } = useSession();
+    const [loved, setLoved] = useState(false);
+    const [loves, setLoves] = useState(event.loveCount || 0);
+    useEffect(() => {
+        if (lightseed) isPulseLoved(event.id, lightseed.uid).then(setLoved).catch(() => {});
+    }, [event.id, lightseed]);
+    const handleLove = async (e: React.SyntheticEvent) => {
+        e.stopPropagation();
+        if (!lightseed) return;
+        const next = !loved;
+        setLoved(next);
+        setLoves(c => next ? c + 1 : Math.max(0, c - 1));
+        await lovePulse(event.id, lightseed.uid).catch(() => {});
+    };
+
+    return (
+        <button onClick={onOpen} className={`group relative flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white text-left shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg ${className ?? 'w-full'}`}>
+            <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+                {event.imageUrl
+                    ? <img src={event.imageUrl} className="h-full w-full object-cover" alt={event.title} />
+                    : <div className="flex h-full w-full items-center justify-center text-slate-300"><Icons.Loc /></div>}
+
+                {/* top-left: how soon */}
+                {days !== null && (
+                    <span className="absolute left-1.5 top-1.5 flex flex-col items-center rounded-md bg-black/30 px-1.5 py-0.5 leading-tight text-white backdrop-blur-sm">
+                        {days === 0 ? (
+                            <span className="text-[10px] font-bold">Today</span>
+                        ) : (
+                            <>
+                                <span className="text-[8px] uppercase tracking-wide text-white/75">In</span>
+                                <span className="text-xs font-bold tabular-nums">{days}</span>
+                                <span className="text-[8px] uppercase tracking-wide text-white/75">{days === 1 ? 'day' : 'days'}</span>
+                            </>
+                        )}
+                    </span>
+                )}
+
+                {/* top-right: the gathering's seats */}
+                {(max > 0 || count > 0) && (
+                    <span className="absolute right-1.5 top-1.5 flex flex-col items-center rounded-md bg-black/30 px-1.5 py-0.5 leading-tight text-white backdrop-blur-sm">
+                        <span className="text-xs font-bold tabular-nums">{max ? `${count}/${max}` : count}</span>
+                        <span className="text-[8px] uppercase tracking-wide text-white/75">{count === 1 && !max ? 'tree' : 'trees'}</span>
+                    </span>
+                )}
+
+                {/* bottom-left: the host community's face, a door to its profile */}
+                {showFace && (
+                    <span
+                        role={onOpenCommunity ? 'button' : undefined}
+                        tabIndex={onOpenCommunity ? 0 : undefined}
+                        title={`Hosted by ${faceName}`}
+                        onClick={onOpenCommunity ? (e) => { e.stopPropagation(); onOpenCommunity(); } : undefined}
+                        onKeyDown={onOpenCommunity ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onOpenCommunity(); } } : undefined}
+                        className={`absolute bottom-1.5 left-1.5 flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-emerald-600 text-[11px] font-bold text-white shadow-md ${onOpenCommunity ? 'transition-transform hover:scale-110' : ''}`}
+                    >
+                        {community?.logoUrl
+                            ? <img src={community.logoUrl} className="h-full w-full object-cover" alt={faceName} referrerPolicy="no-referrer" />
+                            : faceName.charAt(0).toUpperCase()}
+                    </span>
+                )}
+
+                {/* bottom-right: love this event (the countdown's opposite corner). A white heart
+                    until loved; the count appears once there are loves. A span (role=button) so it
+                    never nests a <button> inside the card's own button. */}
+                <span
+                    role="button"
+                    tabIndex={0}
+                    title={loved ? 'You love this' : 'Love this event'}
+                    aria-label={loved ? 'Remove love' : 'Love this event'}
+                    onClick={handleLove}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); void handleLove(e); } }}
+                    className={`absolute bottom-1.5 right-1.5 flex items-center gap-1 rounded-full px-1.5 py-0.5 transition-transform hover:scale-110 ${loves > 0 ? 'bg-black/30 backdrop-blur-sm' : ''} ${loved ? 'text-rose-400' : 'text-white'}`}
+                >
+                    <span className="[&>svg]:h-4 [&>svg]:w-4 drop-shadow"><Icons.Heart filled={loved} /></span>
+                    {loves > 0 && <span className="text-[11px] font-bold tabular-nums">{loves}</span>}
+                </span>
+            </div>
+
+            <div className="flex min-w-0 items-start justify-between gap-2 p-2.5">
+                <div className="min-w-0">
+                    <p className="truncate text-base font-light tracking-wide text-slate-800">{event.title}</p>
+                    <p className="truncate text-[11px] text-slate-500">
+                        {event.eventDate ? new Date(event.eventDate).toLocaleDateString() : ''}{event.eventLocation ? ` · ${event.eventLocation}` : ''}{max ? ` · max ${max}` : ''}
+                    </p>
+                    {/* The event's own words, small, beneath the place. */}
+                    {(event.content || event.body) && (
+                        <p dir="auto" className="mt-1 line-clamp-2 text-[10px] leading-snug text-slate-400">{event.content || event.body}</p>
+                    )}
+                </div>
+                {actions && (
+                    <div className="flex shrink-0 items-center gap-0.5" onClick={(e) => e.stopPropagation()}>{actions}</div>
+                )}
+            </div>
+        </button>
+    );
+};
