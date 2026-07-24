@@ -6,6 +6,47 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-24 · Your light shows on the Home card**: the sun economy had been invisible to the one
+who holds it. Now the HOME card, under "The Light of Value", shows YOUR light: the sum of your
+rays, read by fetchMyRays (holder-private by rule, so it only ever resolves for you) and rendered
+through formatLightPrice ("2 rays" when whole, "100 light" for a partial, "0 light" when none). A
+first small window from the person onto their own standing in the light. Alongside, quieter polish:
+the list search now unfolds to a full box from TABLET (md) on roomy pages (Offerings, Beds, few or
+no CTAs), not only the wide screen (lg) where the CTA-heavy pages still need the room; the big
+event card grew a hairline between its date/place and its words, made to span the full width even
+when the text is short (the column was `flex-1`ed so the line no longer tracks content length);
+and the tend bead's white halo was tuned across several passes (bigger, then 40% smaller, then a
+radial gradient that read as a hard circle, then a too-large cloud) to its home: a bead-sized white
+disc simply BLURRED, so its edge is a gaussian falloff, pure white at the rim fading soft to nothing.
+The blur, not a gradient stop, does the fading, so there is no band and no circle, only a thin cloud.
+*(Show a being its own light, and the economy stops being a rumor.)*
+
+---
+
+**2026-07-24 · The chrome sits calm**: two quiet corrections to the page's own furniture. The tend
+BEAD (bottom-left) mirrors the content container, aligned under the logo; the community SWITCHER
+(bottom-right) had been pinned to the raw viewport edge, so on a wide screen the two floated at
+different insets. It now rides the same max-w-7xl container, right-anchored, its centre on the
+bead's exact horizontal line, so the logo (top-left), the bead (bottom-left) and the community
+avatar (bottom-right) read as three aligned corners of the content. And the page-bottom scroll
+CHEVRON stopped BOBBING: a gentle bob reads as seeking attention, and a scroll hint should wait,
+not wave. Its four `sc-bob-*` keyframes, all now unused, left the stylesheet. *(Furniture should
+hold the room, not perform in it.)*
+
+---
+
+**2026-07-24 · The Pulses menu retires; emitting comes home**: a pulse is rarely a thing you make
+in the abstract, it is what a tree's growth, an event, an offering, a reach, a vision's stir all
+ARE. So the top-level PULSES menu left the nav (one fewer item; the menu keeps slimming), and the
+manual "Emit Pulse" button moved onto the profile's MY PULSES tab, where your own signals already
+live. The natural pulse-makers stay where they always were, in the tending, offering and vision
+flows; only the abstract "emit anything" entry relocated, from a global tab to the place that
+holds the pulses you have emitted. Pulses still surface everywhere in context (chains, feeds,
+profiles); nothing about the pulse itself changed, only where a person reaches to make one.
+*(Put the verb next to its noun: emit a pulse where your pulses are.)*
+
+---
+
 **2026-07-24 · overflow-x-hidden is never free (the half-cut Beds tab)**: the Beds tab strip
 showed its labels sawn in half at the top, and ONLY Beds. Two honest missteps first: the strip
 had been a two-pigment seam (fixed to one shared tone), then the inactive tab's `opacity` let

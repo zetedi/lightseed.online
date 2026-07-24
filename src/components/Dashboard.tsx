@@ -14,6 +14,8 @@ import { LIGHTSEED_QUOTES } from '../content/quotes';
 import { useScrollEdges } from '../hooks/useScrollEdges';
 import { MiniForestMap, type MapPoint } from './ui/MiniForestMap';
 import { EventCard } from './EventCard';
+import { fetchMyRays } from '../services/firebase/light';
+import { formatLightPrice } from '../domain/offering';
 import { Community, Pulse } from '../types';
 
 export interface DashboardProps {
@@ -51,6 +53,18 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
     // Session-derived values read straight from context (no longer prop-drilled from App).
     const { lightseed, activeTree, isSuperAdmin } = useSession();
     const firstTreeImage = activeTree?.latestGrowthUrl || activeTree?.imageUrl;
+    // The signed-in being's own light, shown on the Home card under "Light of Value". Rays are
+    // holder-private (light.ts), so this query only ever resolves for you; the sum is your light.
+    const [lightLabel, setLightLabel] = useState<string | null>(null);
+    useEffect(() => {
+        const uid = lightseed?.uid;
+        if (!uid) return;
+        let alive = true;
+        fetchMyRays(uid)
+            .then(rays => { if (alive) setLightLabel(formatLightPrice(rays.reduce((sum, r) => sum + r.units, 0))); })
+            .catch(() => {});
+        return () => { alive = false; };
+    }, [lightseed?.uid]);
     const eventsScrollRef = useRef<HTMLDivElement>(null);
     // The event card's community door. Events are fetched BY DOMAIN, and older event pulses
     // carry no communityId — those belong to the domain's home, the host community, so the
@@ -183,6 +197,13 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
                             <h2 className="text-sm sm:text-lg font-bold uppercase tracking-widest text-white drop-shadow-md">Home</h2>
                             <div className="text-lg sm:text-xl font-light truncate max-w-[180px]">{lightseed ? lightseed.displayName : t('sign_in')}</div>
                             <div className="text-[10px] text-amber-200 font-mono uppercase tracking-widest mt-1">{t('light_of_value')}</div>
+                            {/* How much light you hold: the sum of your rays (private to you). */}
+                            {lightLabel && (
+                                <div className="mt-1 flex items-center gap-1 text-amber-100 drop-shadow">
+                                    <span className="text-amber-300 [&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Sun /></span>
+                                    <span className="text-sm font-bold tabular-nums">{lightLabel}</span>
+                                </div>
+                            )}
                         </div>
                         {/* Stats on → a small tree in the corner (the CTA lives at the foot now). */}
                         {showStats && (

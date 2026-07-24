@@ -36,6 +36,7 @@ interface LightseedProfileProps {
     onViewAlignment?: (alignment: Alignment) => void;
     onPlant: () => void;
     onCreateVision?: () => void;
+    onEmitPulse?: () => void;   // the manual "emit a pulse" entry, now homed on the My Pulses tab
     onClaimSuperAdmin: () => void;
     onGrantAdmin: (uid: string) => Promise<void>;
     onRevokeAdmin: (uid: string) => Promise<void>;
@@ -52,7 +53,7 @@ interface LightseedProfileProps {
 // being). Session state (the lightseed), the active tab and the live-profile-listener state live
 // here; each tab's own data and handlers live in its component under ./profile (mirroring the
 // CommunityProfile split).
-export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSetDefaultTree, onViewVision, onViewPulse, onViewAlignment, onPlant, onCreateVision, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachAudience, reachOpenSignal, onConsumeReach, onReachTree, nodeTheme }: LightseedProfileProps) => {
+export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSetDefaultTree, onViewVision, onViewPulse, onViewAlignment, onPlant, onCreateVision, onEmitPulse, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachAudience, reachOpenSignal, onConsumeReach, onReachTree, nodeTheme }: LightseedProfileProps) => {
     const { t } = useLanguage();
     // Session state comes from context now (was prop-drilled from App).
     const { lightseed, myTrees, guardedTrees, isAdmin, isSuperAdmin, superAdminExists } = useSession();
@@ -194,7 +195,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
         },
         {
             key: 'pulses', label: t('my_pulses'), icon: <Icons.Pulse />, render: () => (
-                <ProfilePulses uid={lightseed.uid} onViewPulse={onViewPulse} />
+                <ProfilePulses uid={lightseed.uid} onViewPulse={onViewPulse} onEmit={onEmitPulse} />
             ),
         },
         {

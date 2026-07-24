@@ -27,10 +27,11 @@ interface PulseFeedPageProps {
   // renders the shared EventCard here; the smaller densities keep the PulseCard.
   renderBigCard?: (item: Pulse) => React.ReactNode;
   tabs?: React.ReactNode;   // a full-width tab strip above the band (offerings ⇄ beds)
+  searchOnTablet?: boolean; // unfold the full search from tablet (roomy pages)
 }
 
 export const PulseFeedPage = ({
-  title, tone, densityKey, searchBox, action, items, emptyText, loadingMore, lightseed, onMatch, onView, pattern, renderBigCard, tabs,
+  title, tone, densityKey, searchBox, action, items, emptyText, loadingMore, lightseed, onMatch, onView, pattern, renderBigCard, tabs, searchOnTablet,
 }: PulseFeedPageProps) => {
   const [density, setDensity] = useListDensity(densityKey);
   return (
@@ -43,6 +44,7 @@ export const PulseFeedPage = ({
         action={action}
         pattern={pattern}
         tabs={tabs}
+        searchOnTablet={searchOnTablet}
       >
         <ListBox tone={tone}>
           <div className={densityGridClass(density)}>

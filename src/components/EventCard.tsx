@@ -105,14 +105,20 @@ export const EventCard = ({ event, onOpen, community, onOpenCommunity, participa
             </div>
 
             <div className="flex min-w-0 items-start justify-between gap-2 p-2.5">
-                <div className="min-w-0">
+                {/* flex-1 so the text column (and the hairline) always fill the card width, even when
+                    the title/description are short; otherwise the column shrinks to its content and
+                    the separator stops short of the right edge. */}
+                <div className="min-w-0 flex-1">
                     <p className="truncate text-base font-light tracking-wide text-slate-800">{event.title}</p>
                     <p className="truncate text-[11px] text-slate-500">
                         {event.eventDate ? new Date(event.eventDate).toLocaleDateString() : ''}{event.eventLocation ? ` · ${event.eventLocation}` : ''}{max ? ` · max ${max}` : ''}
                     </p>
-                    {/* The event's own words, small, beneath the place. */}
+                    {/* The event's own words, small, beneath the place; a hairline parts them. */}
                     {(event.content || event.body) && (
-                        <p dir="auto" className="mt-1 line-clamp-2 text-[10px] leading-snug text-slate-400">{event.content || event.body}</p>
+                        <>
+                            <div className="mt-1.5 border-t border-slate-100" />
+                            <p dir="auto" className="mt-1.5 line-clamp-2 text-[10px] leading-snug text-slate-400">{event.content || event.body}</p>
+                        </>
                     )}
                 </div>
                 {actions && (

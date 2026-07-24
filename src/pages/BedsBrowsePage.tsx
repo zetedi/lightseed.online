@@ -152,6 +152,7 @@ export const BedsBrowsePage = ({ onViewTree, lightHouseDomain = null, theme = nu
         title={t('beds')}
         tone={tone}
         tabs={tabs}
+        searchOnTablet
         toggle={<ViewDensityToggle value={density} onChange={setDensity} />}
         footer={
           <div className="relative w-full">

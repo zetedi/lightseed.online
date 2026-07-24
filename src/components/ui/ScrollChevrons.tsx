@@ -9,7 +9,7 @@ import { useScrollEdges } from '../../hooks/useScrollEdges';
 //   • contained (default): pass the scrollable element's ref + axis; renders `absolute` at the
 //     edges of the nearest `relative` ancestor (carousels). Give the scroller `scroll-hide-bar`.
 //   • fixed (page-level): omit scrollRef to track the document, set `fixed` — a down chevron
-//     pinned to the bottom of the viewport, portaled to <body>, gently bobbing.
+//     pinned to the bottom of the viewport, portaled to <body>, sitting still (no bob).
 
 type Axis = 'x' | 'y';
 
@@ -30,17 +30,17 @@ export const ScrollChevrons = ({ scrollRef, axis = 'y', fixed = false }: {
     };
 
     // Page-level: the shared arrow pinned to the bottom of the viewport, shown while more content
-    // lies below and gently bobbing. Portaled to <body> so no ancestor's overflow or transform can
+    // lies below, sitting still. Portaled to <body> so no ancestor's overflow or transform can
     // trap/clip it. (Down only — scrolling back up is natural, and a top chevron would collide with
     // the sticky nav.)
     if (fixed) {
         // Subtle by design: a small half-circle tab flush to the bottom edge (a dome, not a full
-        // round button), so on mobile it barely covers anything. One down chevron, gently bobbing.
+        // round button), so on mobile it barely covers anything. STILL, not bobbing: a bob reads as
+        // seeking attention; the affordance is enough when it just waits there (Zoltán, 2026-07-24).
         const overlay = (
             <div className={`pointer-events-none fixed inset-x-0 bottom-0 z-[90] flex justify-center transition-opacity duration-300 ${canNext ? 'opacity-100' : 'opacity-0'}`}>
                 <button type="button" aria-label="Scroll down" onClick={() => nudge(1)}
-                        className="pointer-events-auto flex h-5 w-11 items-center justify-center rounded-t-full bg-white/60 text-slate-400 shadow-sm ring-1 ring-emerald-100/50 backdrop-blur-sm transition-colors hover:bg-white hover:text-emerald-600"
-                        style={{ animation: 'sc-bob-down 1.8s ease-in-out infinite' }}>
+                        className="pointer-events-auto flex h-5 w-11 items-center justify-center rounded-t-full bg-white/60 text-slate-400 shadow-sm ring-1 ring-emerald-100/50 backdrop-blur-sm transition-colors hover:bg-white hover:text-emerald-600">
                     <NavChevron dir="down" small />
                 </button>
             </div>

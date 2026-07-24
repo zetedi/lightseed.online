@@ -815,6 +815,7 @@ const AppContent = () => {
                     onViewAlignment={(a: Alignment) => setSelectedAlignment(a)}
                     onPlant={() => openPlant()}
                     onCreateVision={() => setShowVisionModal(true)}
+                    onEmitPulse={() => openPulseModal()}
                     onClaimSuperAdmin={async () => {
                         const ok = await claimSuperAdmin(lightseed.uid);
                         if (ok) window.location.reload();
@@ -1103,6 +1104,7 @@ const AppContent = () => {
                                 onView={(p: Pulse) => { void onViewPulseOrAlignment(p); }}
                                 pattern
                                 tabs={offeringsTabs}
+                                searchOnTablet
                             />
                         );
                     })()
@@ -1173,13 +1175,14 @@ const AppContent = () => {
                                         thirsty ? 'animate-pulse' : ''
                                     }`}
                                 >
-                                    {/* A CIRCLE OF PURE WHITENESS around the bead — a REAL white disc
-                                        (a white drop-shadow is invisible on a light page), blurred so
-                                        it reads as a bright halo on any background. This glow is the
-                                        differentiator. */}
-                                    <span aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 h-[68px] w-[68px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white blur-[5px]" />
+                                    {/* A THIN white cloud: a bead-sized white disc BLURRED, so its edge is a
+                                        gaussian falloff, pure white right at the rim, fading soft to nothing
+                                        over ~half the bead's radius. Bead-sized (not larger) so the solid
+                                        core hides behind the bead and only the wisp shows; the blur, not a
+                                        gradient stop, does the fading, so there is no band and no hard circle. */}
+                                    <span aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 h-[58px] w-[58px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white blur-[6px]" />
                                     {/* The droplet itself, drawn by Lumo — the bead IS the button, 58px. */}
-                                    <img src="/droplet.svg" alt="" draggable={false} className="relative h-[58px] w-[58px] object-contain drop-shadow-[0_0_5px_rgba(255,255,255,0.95)]" />
+                                    <img src="/droplet.svg" alt="" draggable={false} className="relative h-[58px] w-[58px] object-contain" />
                                 </button>
                             </div>
                         </div>
@@ -1212,20 +1215,30 @@ const AppContent = () => {
             })()}
 
             {/* The corner switcher back to the organisation's page — on its own domain, and for
-                staff standing in community view on the hub. */}
+                staff standing in community view on the hub. It MIRRORS the tend bead: the same
+                max-w-7xl content container, but right-anchored, its centre 20px from the container's
+                right edge and on the SAME horizontal line as the bead's centre (bead centre = bottom-4
+                + 29px = 45px; this 48px avatar sits at bottom-[21px] so its centre is 45px too). So the
+                logo (top-left), the bead (bottom-left) and this community avatar (bottom-right) read as
+                three aligned corners of the content, not one pinned to the raw viewport edge. */}
             {landingCommunity && seedView && (
-                <button
-                    onClick={() => setSeedView(false)}
-                    title={`Back to ${landingCommunity.name}`}
-                    aria-label={`Back to ${landingCommunity.name}`}
-                    className="fixed bottom-5 right-5 z-40 flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white shadow-xl ring-2 ring-amber-300/70 transition-transform hover:scale-110 active:scale-95"
-                >
-                    {landingCommunity.logoUrl
-                        ? <img src={landingCommunity.logoUrl} alt="" className="h-full w-full object-cover" />
-                        : landingCommunity.heroImageUrl
-                            ? <img src={landingCommunity.heroImageUrl} alt="" className="h-full w-full object-cover" />
-                            : <Icons.ArrowLeft />}
-                </button>
+                <div className="pointer-events-none fixed inset-x-0 bottom-[21px] z-40">
+                    <div className="mx-auto max-w-7xl px-4 text-right sm:px-6 lg:px-8">
+                        <button
+                            onClick={() => setSeedView(false)}
+                            title={`Back to ${landingCommunity.name}`}
+                            aria-label={`Back to ${landingCommunity.name}`}
+                            className="pointer-events-auto relative inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white shadow-xl ring-2 ring-amber-300/70 transition-transform hover:scale-110 active:scale-95"
+                            style={{ transform: 'translateX(calc(50% - 20px))' }}
+                        >
+                            {landingCommunity.logoUrl
+                                ? <img src={landingCommunity.logoUrl} alt="" className="h-full w-full object-cover" />
+                                : landingCommunity.heroImageUrl
+                                    ? <img src={landingCommunity.heroImageUrl} alt="" className="h-full w-full object-cover" />
+                                    : <Icons.ArrowLeft />}
+                        </button>
+                    </div>
+                </div>
             )}
 
             <div className="relative z-20 flex-1">

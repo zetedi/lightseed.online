@@ -10,10 +10,13 @@ interface ProfilePulsesProps {
   uid: string;
   // Opens the pulse's profile view (the same one the pulses page uses).
   onViewPulse?: (pulse: Pulse) => void;
+  // The manual "emit a pulse" entry, moved here when the top-level Pulses menu retired.
+  onEmit?: () => void;
 }
 
-// My Pulses tab — everything the user has emitted, minus mycelial reach/chat messages.
-export const ProfilePulses: React.FC<ProfilePulsesProps> = ({ uid, onViewPulse }) => {
+// My Pulses tab: everything the user has emitted, minus mycelial reach/chat messages. Also the
+// home of the manual "emit a pulse" button (the top-level Pulses menu retired 2026-07-24).
+export const ProfilePulses: React.FC<ProfilePulsesProps> = ({ uid, onViewPulse, onEmit }) => {
   const { t } = useLanguage();
   const [pulses, setPulses] = useState<Pulse[]>([]);
   // Starts true: the component mounts fresh on every tab activation and fetches immediately.
@@ -33,12 +36,27 @@ export const ProfilePulses: React.FC<ProfilePulsesProps> = ({ uid, onViewPulse }
     return () => { alive = false; };
   }, [uid]);
 
+  const emitButton = onEmit && (
+    <button onClick={onEmit}
+      className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-orange-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition-all hover:bg-orange-700 active:scale-95">
+      <span className="[&>svg]:h-4 [&>svg]:w-4"><Icons.Pulse /></span> {t('emit_pulse')}
+    </button>
+  );
+
   return (
     <div>
-      <SectionTitle title={t('my_pulses')} sub={t('my_pulses_sub')} />
+      <div className="flex items-start justify-between gap-3">
+        <SectionTitle title={t('my_pulses')} sub={t('my_pulses_sub')} />
+        {emitButton}
+      </div>
       {loading ? <div className="flex justify-center rounded-2xl border border-slate-100 bg-slate-50/50 py-16"><Loading /></div> : (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {pulses.length === 0 ? <p className="col-span-full text-slate-400 text-center py-10">No pulses emitted yet.</p> : pulses.map((pulse) => (
+          {pulses.length === 0 ? (
+            <div className="col-span-full flex flex-col items-center gap-3 py-10 text-center text-slate-400">
+              <p>No pulses emitted yet.</p>
+              {emitButton}
+            </div>
+          ) : pulses.map((pulse) => (
             <div
               key={pulse.id}
               role={onViewPulse ? 'button' : undefined}

@@ -249,8 +249,10 @@ export const Navigation = ({
 
     // Signed-out visitors get a slimmer menu: no Visions, Pulses, or Observatory.
     const signedIn = !!lightseed;
-    // Beds moved INSIDE Offerings (a bed is an offering) as a sub-tab, 2026-07-23; one fewer top item.
-    const lightEarthTabs = signedIn ? ['forest', 'visions', 'events', 'pulses', 'offerings'] : ['forest', 'events'];
+    // Beds moved INSIDE Offerings (2026-07-23); Pulses left the top menu (2026-07-24): emitting a
+    // pulse is more natural from a tree/offering/vision, and the manual entry now lives on the
+    // profile's My Pulses tab. Pulses still surface everywhere in context (chains, profiles, feeds).
+    const lightEarthTabs = signedIn ? ['forest', 'visions', 'events', 'offerings'] : ['forest', 'events'];
     // Cocreate (the node's intelligences + organisations) lives in its own group. The Observatory
     // was retired (its resonance is duplicated in Visions and community matches); its oracle quote
     // moved to the Cocreate header.
@@ -503,7 +505,6 @@ export const Navigation = ({
                         {signedIn ? (
                             <div className="grid grid-cols-4 gap-1.5">
                                 <MobileNavTile tab="forest" {...mobileTileProps} />
-                                <MobileNavTile tab="pulses" {...mobileTileProps} />
                                 <MobileNavTile tab="visions" {...mobileTileProps} />
                                 <MobileNavTile tab="events" {...mobileTileProps} />
                                 <MobileNavTile tab="offerings" label="Offer" {...mobileTileProps} />
