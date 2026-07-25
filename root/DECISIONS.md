@@ -6,6 +6,33 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-25 · The backend names its keeper; the crown follows custody**:
+`dataAuthority` is not a community setting. It is the backend's own public,
+server-owned declaration (`config/dataAuthority`) naming by portable LID the
+node that governs its database. The menu compares that LID with the community
+whose domain is being served. If they differ, this is **The Host**: a community
+portal living on its parent node's data, regardless of whether it reflects.
+If they match, this is **The Node** while scoped and **The Hub** when its
+community chooses to reflect the public forest. If the declaration, domain or
+LID is absent or malformed, the crown makes no claim and stays **About**. The
+whole truth table begins as a pure domain law and is tested; the browser reads
+the declaration anonymously but no browser client, staff included, may write
+it. A confirmation-gated backend command creates the first declaration and
+refuses to overwrite it: transfer of data authority needs a future governed
+process, not a force flag.
+
+This is the identity anchor for a future self-describing backend export. Such an
+export can carry its authority LID, versioned manifest, data, Storage objects
+and metadata, schema, Firestore and Storage rules, indexes, root, source commit
+and checksums—never credentials or private keys. Only after a restored backend
+holds and verifies its own data may a hosted community become a node; changing
+the menu cannot make it so.
+The old hardcoded hub aliases still shape query scoping for compatibility, but
+they no longer confer a name. *(An address tells you where to knock. Custody
+tells you whose roots hold the house.)*
+
+---
+
 **2026-07-25 · The crown waits for truth; public means public at the source**:
 the full menu may greet a signed-out visitor — a public vision or offering can be
 the invitation — but public is enforced before data crosses the database door,

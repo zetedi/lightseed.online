@@ -26,15 +26,21 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
   these are to be hardened and walked, not expanded into an exchange: trust opens the offering;
   light follows afterward if appreciation is given.
 - **Rules parity pass** for the client-side visibility gates (trees, Light Houses).
+- **Backend custody is explicit**: a public, server-owned `dataAuthority` record
+  names the governing node by portable LID. The crown now derives **About / The
+  Host / The Node / The Hub** from that record, the hosting community and its
+  reflection decision—never from a hostname. This makes the boundary visible;
+  it does not yet split the shared backend.
 - perauset.com goes live on 8/8 (deploy `--only hosting:perauset`); printed QRs
   should carry the final domain (refresh mints after the move).
 
 ## Next (after 8/8)
 
-- **Nodes become real (the domain–DB link).** Today a "node" is not yet sovereign:
-  domains have community-governed doors and reflection settings, but Auth and
-  the database remain instance-wide, and `node` visibility means merely "signed
-  in." A domain alone makes a community reachable; it does not
+- **Nodes become real (the domain–DB link).** The first boundary now exists:
+  each backend can publicly name its governing node, and hosted domains no
+  longer borrow the node/hub name. But Auth and data remain instance-wide inside
+  that backend, and `node` visibility still means merely "signed in." A domain
+  alone makes a community reachable; it does not
   make it sovereign. Recognise the node as **the community that owns a domain
   and governs its own forest database**. A **hub is always a node**: a node acting
   as a portal, with its own data, because its community chose to reflect the
@@ -74,6 +80,14 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
      Nothing vanishes on day one (everyone is an origin-node member from phase 2).
   Precursor to Federation (below): one node truly whole before lids travel
   between many. Open questions recorded in QUESTIONS.md (2026-07-15).
+- **A self-describing backend export**: one portable package containing a
+  versioned manifest and authority LID, collection data, Storage objects and
+  metadata, schema/crystal, Firestore and Storage rules, indexes, root documents,
+  source commit and checksums, plus a verified restore path. Credentials,
+  provider secrets and private keys never enter the package; Firebase Auth
+  requires a separate, explicitly encrypted and access-controlled export.
+  Restoring and verifying this package is the step that may truthfully turn a
+  Host into a Node.
 - **Harden the community Light House gate**: enforce member-only visibility at rest
   (rule via the primary `communityId` + a membership-scoped map query) so the community's
   visibility choice is law, not a client-only veil. Until then the `community` tier is

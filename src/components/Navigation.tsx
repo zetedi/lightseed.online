@@ -7,6 +7,7 @@ import { Icons } from './ui/Icons';
 import { Modal } from './ui/Modal';
 import Logo from './Logo';
 import { tabTone, tabFg } from '../utils/tabTheme';
+import { crownName, type CrownRole } from '../domain/dataAuthority';
 
 
 interface NavigationProps {
@@ -21,6 +22,9 @@ interface NavigationProps {
   careAlertCount?: number;
   logoUrl?: string;
   appName?: string;
+  // The final menu item is derived from the backend's explicit data authority:
+  // About while unresolved, Host on a parent DB, Node when sovereign, Hub when reflecting.
+  crownRole?: CrownRole;
   // An open being view naming itself in the header (an Event overlay says "Event");
   // overrides the tab's name while it is open.
   pageLabel?: string;
@@ -191,6 +195,7 @@ export const Navigation = ({
     treeInviteCount = 0,
     logoUrl,
     appName = '.seed',
+    crownRole = 'about',
     pageLabel,
     theme,
     isNightMode = false,
@@ -278,6 +283,7 @@ export const Navigation = ({
     const getTabLabel = (tab: string) => {
         // The AI Collab tab reads "Cocreate" (the menu name; renamed 2026-07-23).
         if (tab === 'collab') return 'Cocreate';
+        if (tab === 'about') return crownRole === 'about' ? t('about') : crownName(crownRole);
         // For standard translation fallback, capitalize the first letter
         const fallback = tab.charAt(0).toUpperCase() + tab.slice(1);
         return t(tab as any) || fallback;
@@ -529,7 +535,7 @@ export const Navigation = ({
                         )}
 
                         {/* Two buttons side by side, wearing the tiles' own clothes:
-                            About · Profile page. “Node” or “Hub” waits for a truthful derived role. */}
+                            the truthfully derived crown · Profile page. */}
                         <div className={`grid gap-2 ${lightseed ? 'grid-cols-2' : 'grid-cols-1'}`}>
                             <button
                                 onClick={() => { setTab('about'); setIsMenuOpen(false); }}

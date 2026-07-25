@@ -55,6 +55,13 @@ What a being LOOKS like: `src/components/BeingProfile.tsx` + `src/components/sec
 
 ## Nodes become real (identity → membership → commons)
 
+- **The backend names its authority**: the public, server-owned
+  `config/dataAuthority` record carries the governing node's portable LID.
+  `domain/dataAuthority.ts` compares it with the host community and derives the
+  crown: **About** while unresolved, **The Host** on a parent node's database,
+  **The Node** on its own data, **The Hub** when that same node reflects the
+  commons. `scripts/declare-data-authority.mjs` creates the first declaration
+  with an explicit typed-LID confirmation; clients cannot create or alter it.
 - **Sign-up is open** (root: "Identity is open"). `signupRequiresInvite = door === 'closed'`
   (`domain/communityDoor.ts`); `useConfig` reads it into `config.inviteOnly`. A node closes its
   door to gate sign-up on its domain; everything else is open.
@@ -71,8 +78,10 @@ What a being LOOKS like: `src/components/BeingProfile.tsx` + `src/components/sec
   Auth, in order, admin rights) so a stale login can't strand a half-deleted account. Shared with
   `deleteUserAsAdmin`. Client `deleteUserAccount` just calls it. Sign-in **self-heals** a missing
   profile (`ensureUserProfile`). Needs a `--only functions` deploy.
-- Still a hardcoded **hub alias**: `isHubDomain` (`services/firebase/trees.ts`) treats
-  lightseed.online + lifeseed.online as always-reflecting hubs; dissolving that is a later step.
+- Still a hardcoded **query-scoping alias**: `isHubDomain`
+  (`services/firebase/trees.ts`) treats lightseed.online + lifeseed.online as
+  always-reflecting; the crown no longer trusts that alias, but dissolving it
+  from data queries is a later step.
 
 ## The bed (a place to sleep, as a being)
 

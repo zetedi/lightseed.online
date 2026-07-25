@@ -12,6 +12,7 @@
     "build": "vite build",
     "initiates:build": "node scripts/build-initiates.mjs",
     "commits:build": "node scripts/build-commits.mjs",
+    "authority:declare": "node scripts/declare-data-authority.mjs",
     "history:consolidate": "node scripts/consolidate-code-history.mjs",
     "initiates:verify": "node scripts/verify-initiations.mjs",
     "build:clean": "vite build --mode clean",

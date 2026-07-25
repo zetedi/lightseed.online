@@ -305,8 +305,11 @@ service cloud.firestore {
     // Config collection: read staff/config-specific, no direct write.
     // config/limits (the node's planting caps) is world-readable — the client planting gate
     // reads it — and staff-writable from the node admin page.
+    // config/dataAuthority is also world-readable: the backend publicly names the portable LID
+    // of the node that governs it. It is SERVER-WRITABLE ONLY; no client, including staff, may
+    // crown a community by rewriting the custody declaration.
     match /config/{configId} {
-      allow read: if configId in ['superadmin', 'limits'] || isStaff();
+      allow read: if configId in ['superadmin', 'limits', 'dataAuthority'] || isStaff();
       allow write: if configId == 'limits' && isStaff();
     }
 

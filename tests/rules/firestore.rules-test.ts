@@ -156,6 +156,29 @@ describe('config/limits — the node planting caps: world-readable, staff-set', 
   });
 });
 
+describe('config/dataAuthority — public custody, server-owned declaration', () => {
+  const authority = {
+    version: 1,
+    nodeLid: '019f63a2-f8e5-7f80-bea2-54d7cc8ef01a',
+  };
+
+  it('is readable without an account so the public crown can tell the truth', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) =>
+      setDoc(doc(ctx.firestore(), 'config', 'dataAuthority'), authority));
+    await assertSucceeds(getDoc(doc(db(), 'config', 'dataAuthority')));
+  });
+
+  it('cannot be declared or changed by any client, including staff', async () => {
+    await assertFails(setDoc(doc(db(ALICE), 'config', 'dataAuthority'), authority));
+    await assertFails(setDoc(doc(db(STAFF), 'config', 'dataAuthority'), authority));
+    await env.withSecurityRulesDisabled(async (ctx) =>
+      setDoc(doc(ctx.firestore(), 'config', 'dataAuthority'), authority));
+    await assertFails(updateDoc(doc(db(STAFF), 'config', 'dataAuthority'), {
+      nodeLid: '019f63a3-0000-7000-8000-000000000001',
+    }));
+  });
+});
+
 describe('community joining — anyone knocks as themselves; only the keeper opens', () => {
   const joinReq = (from: string) => ({ lid: 'x', type: 'link', rel: 'join_request', from, to: 'com1', createdAt: 1 });
   const memberLink = { lid: 'x', type: 'link', rel: 'member', from: BOB, to: 'com1', createdAt: 1 };

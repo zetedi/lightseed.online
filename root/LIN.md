@@ -38,6 +38,9 @@ additionally grow a **Council**, the organ by which many become one voice.
    own content *reaches out* (community → node → public), and how much of the
    wider public forest a node *reflects in*. A **node** is the sovereign data and
    governance boundary: its community holds and governs its own forest database.
+   A **host** is a community portal on its own domain whose data is still held by
+   a parent node; an address and community face are real, but they do not pretend
+   to be data sovereignty.
    A **hub** is always a node — a sovereign place with its own data whose
    community has chosen to act as a portal onto the wider public forest.
    Reflection is a reversible community decision, not a different infrastructure
@@ -102,6 +105,9 @@ the door, not the deed) · *invited by* (append-only provenance: how a
 being arrived; a mark, never a power; the inviter gains nothing through the
 door) · *node* (a sovereign community with a domain and its own governed forest
 database; the domain is its address, not the source of its sovereignty) ·
+*host* (a community portal with its own domain whose forest data is governed by
+a parent node; it becomes a node only after it holds and governs its own
+backend) ·
 *hub* (always a node: a portal with its own data, opened by its community's
 choice to reflect the wider public forest) · *commons* (the hub mode, not a
 place or rank: reflection may be opened or closed while the node remains) ·

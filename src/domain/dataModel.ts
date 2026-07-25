@@ -60,7 +60,7 @@ export const DATA_MODEL: ModelEntity[] = [
   },
   {
     key: 'Community', label: 'Community', collection: 'communities', x: 660, y: 40,
-    note: 'a node — drives its domain',
+    note: 'may host a domain · nodehood comes from backend authority',
     fields: [
       { name: 'id', type: 'string', pk: true },
       { name: 'lid', type: 'uuidv7' },
@@ -69,6 +69,7 @@ export const DATA_MODEL: ModelEntity[] = [
       { name: 'domain', type: 'string' },
       { name: 'heroImageUrl', type: 'string?' },
       { name: 'theme', type: 'map?' },
+      { name: 'reflectsPublic', type: 'bool?' },
       { name: 'chainLocked', type: 'bool?' },
       { name: 'tokenisationEnabled', type: 'bool?' },
     ],
@@ -154,10 +155,12 @@ export const DATA_MODEL: ModelEntity[] = [
   },
   {
     key: 'Config', label: 'Config', collection: 'config', x: 40, y: 845,
-    note: 'config/superadmin singleton',
+    note: 'backend settings · dataAuthority is public, server-owned',
     fields: [
-      { name: 'id', type: '"superadmin"', pk: true },
-      { name: 'uid', type: 'uid', ref: 'Person' },
+      { name: 'id', type: '"superadmin"|"limits"|"dataAuthority"', pk: true },
+      { name: 'uid', type: 'uid? · superadmin', ref: 'Person' },
+      { name: 'nodeLid', type: 'uuidv7? · authority' },
+      { name: 'version', type: '1?' },
     ],
   },
 

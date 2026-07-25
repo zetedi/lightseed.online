@@ -29,13 +29,14 @@ import {
   grantAdmin,
   revokeAdmin,
   getCommunityByDomain,
+  getDataAuthority,
   listenToUserProfile,
   getPendingTreeInvites
 } from './services/firebase';
 import { setActiveIntelligenceId } from './services/intelligence';
 import { SigningKeyNeedsRestoreError } from './services/keys';
 import { tabTone, tabFg, CTA_GLOW } from './utils/tabTheme';
-import { type Pulse, type Lifetree, type Alignment, type Vision, type Community, type ReachAudience } from './types';
+import { type Pulse, type Lifetree, type Alignment, type Vision, type Community, type DataAuthority, type ReachAudience } from './types';
 import Logo from './components/Logo';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { SessionProvider, useSession } from './contexts/SessionContext';
@@ -81,6 +82,7 @@ import { PathwayCTA } from './components/PathwayCTA';
 import { usePathwayFacts } from './hooks/usePathwayFacts';
 import type { PathwayInput, PathwayStepKey } from './domain/pathway';
 import { derivePathway } from './domain/pathway';
+import { deriveCrownRole } from './domain/dataAuthority';
 import { sustainingSeven } from './domain/sustainingSeven';
 import { PathOverview } from './components/PathOverview';
 import { Modal } from './components/ui/Modal';
@@ -176,6 +178,9 @@ const AppContent = () => {
     const [showReachModal, setShowReachModal] = useState(false);
     const [pendingTreeInvites, setPendingTreeInvites] = useState(0);
     const [hostCommunity, setHostCommunity] = useState<Community | null>(null);
+    // The backend's public custody declaration. Until it resolves and matches a hosting
+    // community, the crown stays "About" — sovereignty is never inferred from a hostname.
+    const [dataAuthority, setDataAuthority] = useState<DataAuthority | null>(null);
     // Custom-landing domains: false = the organisation's own page fills the screen;
     // true = the visitor stepped through the corner seed-logo into the full app.
     const [seedView, setSeedView] = useState(false);
@@ -296,10 +301,13 @@ const AppContent = () => {
     useEffect(() => {
         ensureGenesis();
         syncInitiatesMirror(); // superadmin-gated inside; keeps initiates/{uid} true to the git ledger
-        getCommunityByDomain(window.location.hostname)
-            .then(setHostCommunity)
-            .catch(() => {})
-            .finally(() => setHostResolved(true));
+        Promise.all([
+            getCommunityByDomain(window.location.hostname).catch(() => null),
+            getDataAuthority().catch(() => null),
+        ]).then(([community, authority]) => {
+            setHostCommunity(community);
+            setDataAuthority(authority);
+        }).finally(() => setHostResolved(true));
     }, [lightseed?.uid]);
 
     // Load the lightseed community once as the default About page fallback.
@@ -841,10 +849,10 @@ const AppContent = () => {
         }
         
         if (tab === 'about') {
-            // "About" is the node's community page, driven entirely from the database and
-            // rendered by the same component used everywhere a community is shown. The host
-            // (domain) community is the node's own profile; off-domain or before it loads we
-            // fall back to the lightseed community as the default about page.
+            // The crown page is the hosting community's profile, driven entirely from data and
+            // rendered by the same component used for every community. Its menu name is derived
+            // independently (About / Host / Node / Hub) from backend authority. Off-domain or
+            // before a host resolves, the lightseed community remains the fallback reading.
             const aboutCommunity = impersonatedCommunity || hostCommunity || defaultCommunity;
             if (!aboutCommunity) return <div className="min-h-screen flex items-center justify-center"><Loading /></div>;
             return (
@@ -1301,6 +1309,7 @@ const AppContent = () => {
                         onOpenReachInbox={openDirectMessages}
                         logoUrl={configuredLogoUrl}
                         appName={isHubDomain(window.location.hostname) ? '.seed' : config.name}
+                        crownRole={deriveCrownRole(impersonatedCommunity || hostCommunity, dataAuthority)}
                         // An open event names itself in the header (mobile label + tablet centre).
                         pageLabel={selectedPulse?.type === 'event' ? 'Event' : undefined}
                         isNightMode={effectiveIsDark}
