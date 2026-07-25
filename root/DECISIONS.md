@@ -6,7 +6,18 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
-**2026-07-24 · Your light shows on the Home card**: the sun economy had been invisible to the one
+**2026-07-25 · Alignments read at any density; the two tabs part by colour**: two refinements to the
+Visions menu. First, the ALIGNMENTS sub-tab (the resonance field) had lost its density: the toggle
+moved but the panel stayed a fixed two-up grid. Restored, and deeper: the ResonanceCard now wears
+the reading density the visions grid uses: a one-line ROW (pair + tier badge + star), a compact
+MINI (pair, badge, clamped reasoning), or the full CARD (tree chips, reasoning, reach buttons); the
+panel picks the grid to match. The density is shared across the menu (useListDensity('visions')), so
+switching sub-tabs keeps your chosen density. Second, the two sub-tabs now wear DIFFERENT colours:
+visions its amber, alignments the resonance ROSE (the rose the radiant tier glows). FullWidthTabs
+gained an optional per-tab tone; the band and tinted body follow the ACTIVE tab, so the whole
+surface shifts hue as you switch and each tab still flows seamlessly into its own band. Distinct
+colour, not a seam: the inactive tab keeps its own hue under an opaque veil, never see-through.
+*(One field, two moods: the dreamt and the resonant, each with its own light.)*
 who holds it. Now the HOME card, under "The Light of Value", shows YOUR light: the sum of your
 rays, read by fetchMyRays (holder-private by rule, so it only ever resolves for you) and rendered
 through formatLightPrice ("2 rays" when whole, "100 light" for a partial, "0 light" when none). A

@@ -44,23 +44,26 @@ export const VisionsPage = ({
   // Two entity lists under one menu item — Visions and Alignments (the resonance field) — so a
   // long visions list doesn't bury the alignments in scroll.
   const [subTab, setSubTab] = React.useState<'visions' | 'alignments'>('visions');
+  // The two sub-tabs wear DIFFERENT colours: visions its own amber tone, alignments the resonance
+  // rose (the same rose the radiant tier glows). The band and the tinted body follow the active
+  // tab, so the whole surface shifts hue as you switch, and each tab flows into its own band.
+  const ALIGN_TONE = '#e11d48'; // rose-600, the resonance colour
+  const activeTone = subTab === 'alignments' ? ALIGN_TONE : tone;
   // Respect vision visibility (protect fragile/early visions). Rules enforce it server-side.
   const visibleVisions = visions.filter(v => canViewVision(v, viewer));
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
       <SectionHeader
         title={t('visions')}
-        tone={tone}
-        // The sub-tabs ride the band itself, full width: the offerings-page tab grammar,
-        // now the one tab system everywhere (both tabs share the visions tone, so no seam).
+        tone={activeTone}
         tabs={
           <FullWidthTabs
             active={subTab}
             onChange={(k) => setSubTab(k as 'visions' | 'alignments')}
-            tone={tone}
+            tone={activeTone}
             tabs={[
-              { key: 'visions', label: t('visions'), icon: <Icons.Eye />, count: visibleVisions.length },
-              { key: 'alignments', label: t('alignments'), icon: <Icons.Venn />, count: synergies.length },
+              { key: 'visions', label: t('visions'), icon: <Icons.Eye />, count: visibleVisions.length, tone },
+              { key: 'alignments', label: t('alignments'), icon: <Icons.Venn />, count: synergies.length, tone: ALIGN_TONE },
             ]}
           />
         }
@@ -91,10 +94,10 @@ export const VisionsPage = ({
           </div>
         }
       >
-        <ListBox tone={tone}>
+        <ListBox tone={activeTone}>
           {subTab === 'alignments' ? (
             <>
-              <ResonancePanel synergies={synergies} favorites={favoriteResonanceIds} onToggleFavorite={onToggleFavorite} onReach={onReach} />
+              <ResonancePanel synergies={synergies} favorites={favoriteResonanceIds} onToggleFavorite={onToggleFavorite} onReach={onReach} density={density} />
               {synergies.length === 0 && <p className="py-10 text-center text-slate-500">{t('no_resonances_yet')}</p>}
             </>
           ) : (

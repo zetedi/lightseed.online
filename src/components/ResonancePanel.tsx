@@ -1,6 +1,7 @@
 import React from 'react';
 import { Icons } from './ui/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
+import type { ListDensity } from '../hooks/useListDensity';
 import type { VisionSynergy } from '../types';
 
 // Resonance read as a heat: the hotter the bond, the more radiant. High glows rose,
@@ -15,11 +16,46 @@ export const resonanceTier = (score: number): { labelKey: 'tier_radiant' | 'tier
 export const resonanceId = (s: VisionSynergy) =>
   [s.vision1Title, s.vision2Title].map(x => (x || '').trim().toLowerCase()).sort().join(' :: ');
 
-/** A single resonance pair card — shared by the Visions panel and the Observatory. */
-export const ResonanceCard = ({ s, isFavorite, onToggleFavorite, onReach }: { s: VisionSynergy; isFavorite?: boolean; onToggleFavorite?: () => void; onReach?: (treeId: string, treeName: string) => void; key?: React.Key }) => {
+/** A single resonance pair card, shared by the Visions panel and the Observatory. Wears the
+ *  reading DENSITY the visions grid uses: a full card, a compact mini, or a one-line row. */
+export const ResonanceCard = ({ s, isFavorite, onToggleFavorite, onReach, density = 'cards' }: { s: VisionSynergy; isFavorite?: boolean; onToggleFavorite?: () => void; onReach?: (treeId: string, treeName: string) => void; density?: ListDensity; key?: React.Key }) => {
   const { t } = useLanguage();
   const tier = resonanceTier(s.score || 0);
   const reachable = onReach && (s.tree1Id || s.tree2Id);
+  const badge = <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${tier.badge}`}>{t(tier.labelKey)} · {s.score}%</span>;
+  const star = onToggleFavorite && (
+    <button type="button" onClick={onToggleFavorite} title={isFavorite ? t('saved') : t('save')} aria-pressed={isFavorite}
+      className={`shrink-0 leading-none transition-transform hover:scale-110 ${isFavorite ? 'text-amber-500' : 'text-slate-300 hover:text-amber-400'}`}>
+      <span className="text-base">{isFavorite ? '★' : '☆'}</span>
+    </button>
+  );
+
+  // ROWS: one line, the pair, the resonance badge, the star.
+  if (density === 'rows') {
+    return (
+      <div className="flex items-center gap-3 rounded-xl border border-amber-100 bg-white/90 px-3 py-2 shadow-sm">
+        <div className="min-w-0 flex-1 truncate text-sm font-bold text-slate-800">{s.vision1Title} + {s.vision2Title}</div>
+        {badge}
+        {star}
+      </div>
+    );
+  }
+
+  // MINI: a small card, the pair, the badge, a clamped reasoning; no tree chips or reach buttons.
+  if (density === 'mini') {
+    return (
+      <div className="flex flex-col gap-1.5 overflow-hidden rounded-xl border border-amber-100 bg-white/90 p-3 shadow-sm">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 break-words text-xs font-bold text-slate-800">{s.vision1Title} + {s.vision2Title}</div>
+          {star}
+        </div>
+        {badge}
+        <p className="line-clamp-3 text-[11px] italic text-slate-600">"{s.reasoning}"</p>
+      </div>
+    );
+  }
+
+  // CARDS: the full pair card (the original).
   return (
     <div className="overflow-hidden rounded-xl border border-amber-100 bg-white/90 p-4 shadow-sm">
       <div className="mb-2 flex items-start justify-between gap-2">
@@ -87,23 +123,32 @@ export const ResonancePanel = ({
   favorites,
   onToggleFavorite,
   onReach,
+  density = 'cards',
 }: {
   synergies: VisionSynergy[];
   className?: string;
   favorites?: Set<string>;
   onToggleFavorite?: (s: VisionSynergy) => void;
   onReach?: (treeId: string, treeName: string) => void;
+  density?: ListDensity;
 }) => {
   if (!synergies || synergies.length === 0) return null;
   const ranked = [...synergies].sort((a, b) => (b.score || 0) - (a.score || 0));
+  // The reading density drives the grid: rows stack full-width, mini packs many, cards sit two-up.
+  const grid = density === 'rows'
+    ? 'flex flex-col gap-2.5'
+    : density === 'mini'
+      ? 'grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
+      : 'grid gap-4 md:grid-cols-2';
   // No header of its own — the page's tabs already say where we are.
   return (
     <div className={`animate-in zoom-in-95 duration-500 ${className}`}>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className={grid}>
         {ranked.map((s, i) => (
           <ResonanceCard
             key={i}
             s={s}
+            density={density}
             isFavorite={favorites?.has(resonanceId(s))}
             onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(s) : undefined}
             onReach={onReach}
