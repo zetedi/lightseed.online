@@ -56,6 +56,11 @@ export const DATA_MODEL: ModelEntity[] = [
       { name: 'lid', type: 'uuidv7' },
       { name: 'displayName', type: 'string' },
       { name: 'publicKeyPem', type: 'string?' },
+      { name: 'signingKeyFingerprint', type: 'sha256?' },
+      { name: 'signingEpochId', type: 'event id?' },
+      { name: 'signingState', type: 'active|frozen?' },
+      { name: 'keys / keyEvents', type: 'append-only subcollections' },
+      { name: 'keyRecoveries', type: '3-witness subcollection' },
     ],
   },
   {

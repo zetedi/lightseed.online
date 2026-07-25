@@ -113,6 +113,7 @@ export interface Decision extends Being {
 // made a world-readable signature copyable into another member's slot (quorum inflation); no legacy
 // v1 verification path exists — prod held zero signed decisions at the cutover.
 export const DECISION_DOMAIN = 'lifeseed.decision.v2';
+export const DECISION_EPOCH_DOMAIN = 'lifeseed.decision.v3';
 
 // The CANONICAL DECISION IDENTITY — the exact value every member signs (under DECISION_DOMAIN). It is
 // the frozen essence of the PROPOSAL: its true name, the community it belongs to, its nature, its words,
@@ -155,6 +156,23 @@ export function decisionSignaturePayload(identity: DecisionIdentity, signerUid: 
   return { decision: identity, signer: signerUid };
 }
 
+export interface DecisionEpochSignaturePayload extends DecisionSignaturePayload {
+  key: { fingerprint: string; epochId: string };
+}
+
+export function decisionEpochSignaturePayload(
+  identity: DecisionIdentity,
+  signerUid: string,
+  keyFingerprint: string,
+  epochId: string,
+): DecisionEpochSignaturePayload {
+  return {
+    decision: identity,
+    signer: signerUid,
+    key: { fingerprint: keyFingerprint, epochId },
+  };
+}
+
 // A recorded signature as read from pulses/{id}/signatures — its uid is PATH-AUTHORITATIVE (the doc
 // id via covenant.signatureFromDoc), never a body field.
 export interface RecordedDecisionSignature {
@@ -162,6 +180,11 @@ export interface RecordedDecisionSignature {
   sig: string;
   pubkey: string;
   position?: ConsensusStance;
+  version?: 3;
+  keyFingerprint?: string;
+  epochId?: string;
+  recordedAt?: unknown;
+  signedAt?: unknown;
 }
 
 // The signatures that enact a decision — the ONE counting rule verifyDecision and the tests share.
@@ -184,8 +207,15 @@ export async function verifiedDecisionSigners(
   for (const s of sigs) {
     if (counted.has(s.uid)) continue;                       // one hand, one signature — never two slots
     if (mode === 'consensus' && s.position !== 'unite') continue; // only uniting signatures count
-    if (!(await signatureBindsToIdentityOrLineage(s.uid, s.pubkey, publishedKeys.get(s.uid) ?? '', lineage))) continue;
-    if (await verify(s.pubkey, s.sig, decisionSignaturePayload(identity, s.uid), DECISION_DOMAIN)) {
+    if (!(await signatureBindsToIdentityOrLineage(
+      s.uid, s.pubkey, publishedKeys.get(s.uid) ?? '', lineage, s,
+    ))) continue;
+    const epochBound = s.version === 3 && !!s.keyFingerprint && !!s.epochId;
+    const payload = epochBound
+      ? decisionEpochSignaturePayload(identity, s.uid, s.keyFingerprint!, s.epochId!)
+      : decisionSignaturePayload(identity, s.uid);
+    const domain = epochBound ? DECISION_EPOCH_DOMAIN : DECISION_DOMAIN;
+    if (await verify(s.pubkey, s.sig, payload, domain)) {
       counted.add(s.uid);
     }
   }

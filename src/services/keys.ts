@@ -1,9 +1,19 @@
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from './firebase/core';
+import {
+  collection, doc, getDoc, getDocs, serverTimestamp, Timestamp, writeBatch,
+} from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
+import { auth, db, functions } from './firebase/core';
 import { sha256 } from '../utils/crypto';
+import { uuidv7 } from '../utils/id';
 import { seedToPhrase, phraseToSeed, keyCustody, restoreConflictsWithPublished, type KeyCustody } from '../domain/signing';
 import {
+  keyStandingAt, keyStandingCounts,
+  keyRotationPreimage, keyRecoveryPreimage, keyRecoveryWitnessPreimage,
+  type KeyEpoch, type KeyEvent, type KeyStanding,
+} from '../domain/keyEpoch';
+import {
   keypairFromSeed,
+  signPreimage,
   signPayload,
   verifyPayload,
   subtleEd25519Available,
@@ -24,7 +34,8 @@ import {
 
 const DB_NAME = 'lifeseed-keys';
 const STORE = 'signingKeys';
-const DB_VERSION = 1;
+const PENDING_STORE = 'pendingSigningKeys';
+const DB_VERSION = 2;
 
 interface StoredKey {
   uid: string;
@@ -33,12 +44,20 @@ interface StoredKey {
   publicKeyB64: string;
 }
 
+interface PendingRecoveryKey extends StoredKey {
+  eventId: string;
+  recoveryCode: string;
+}
+
 // ── IndexedDB (tiny, promise-wrapped) ──────────────────────────────────────────────────────────
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onupgradeneeded = () => {
       if (!req.result.objectStoreNames.contains(STORE)) req.result.createObjectStore(STORE, { keyPath: 'uid' });
+      if (!req.result.objectStoreNames.contains(PENDING_STORE)) {
+        req.result.createObjectStore(PENDING_STORE, { keyPath: 'eventId' });
+      }
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
@@ -68,28 +87,143 @@ async function idbPut(record: StoredKey): Promise<void> {
   } finally { dbi.close(); }
 }
 
+async function idbPendingFor(uid: string): Promise<PendingRecoveryKey | undefined> {
+  const dbi = await openDB();
+  try {
+    return await new Promise<PendingRecoveryKey | undefined>((resolve, reject) => {
+      const req = dbi.transaction(PENDING_STORE, 'readonly').objectStore(PENDING_STORE).getAll();
+      req.onsuccess = () => resolve(
+        (req.result as PendingRecoveryKey[]).find(record => record.uid === uid),
+      );
+      req.onerror = () => reject(req.error);
+    });
+  } finally { dbi.close(); }
+}
+
+async function idbPutPending(record: PendingRecoveryKey): Promise<void> {
+  const dbi = await openDB();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = dbi.transaction(PENDING_STORE, 'readwrite');
+      tx.objectStore(PENDING_STORE).put(record);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } finally { dbi.close(); }
+}
+
+async function idbDeletePending(eventId: string): Promise<void> {
+  const dbi = await openDB();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = dbi.transaction(PENDING_STORE, 'readwrite');
+      tx.objectStore(PENDING_STORE).delete(eventId);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } finally { dbi.close(); }
+}
+
 // ── Public-key publication (the only thing that ever touches Firestore) ────────────────────────
 
 // A stable fingerprint of a published key: hex SHA-256 of its base64 SPKI string (the one shared
 // sha256 — the same digest the chain uses). Used as the doc id of the append-only key-history
 // record, so re-publishing the same key always lands on the SAME doc (a no-op) and can never
 // overwrite a DIFFERENT key's history — and isKeyInLineage recomputes the identical fingerprint.
-const keyFingerprint = (publicKeyB64: string): Promise<string> => sha256(publicKeyB64);
+export const keyFingerprint = (publicKeyB64: string): Promise<string> => sha256(publicKeyB64);
 
-async function publishPublicKey(uid: string, publicKeyB64: string): Promise<void> {
-  // persons/{uid} is world-readable; rules let only the owner (uid) write their own doc. The private
-  // key is never in this write — just the public half, in the same base64 SPKI shape as initiation.
-  await setDoc(doc(db, 'persons', uid), { publicKeyPem: publicKeyB64 }, { merge: true });
-  // APPEND-ONLY KEY HISTORY: every key ever published leaves a permanent, world-readable record at
-  // persons/{uid}/keys/{fingerprint} — lineage for verify-at-signing-time, without changing today's
-  // verification (which still binds to the currently-published key). Created once; re-publishing the
-  // same key is a no-op (the doc already exists, publishedAt stays the FIRST publication). Best-
-  // effort: a history hiccup must never block a signing action the identity key itself allows.
+export type SigningKeyState = 'active' | 'frozen';
+
+export interface PublishedSigningIdentity {
+  lid: string;
+  publicKeyB64: string;
+  fingerprint: string;
+  epochId: string;
+  state: SigningKeyState;
+}
+
+const timestampMillis = (value: unknown): number =>
+  typeof value === 'number'
+    ? value
+    : (value as { toMillis?: () => number } | null)?.toMillis?.() ?? 0;
+
+// First publication (and the one-time anchoring of a pre-epoch key) is one atomic gesture: current
+// key, append-only lineage, and a server-timed anchor event. A DIFFERENT already-published key can
+// never be replaced here; rotation/recovery must pass through their proof-bearing server functions.
+async function publishPublicKey(uid: string, publicKeyB64: string): Promise<PublishedSigningIdentity> {
+  const personRef = doc(db, 'persons', uid);
+  const fingerprint = await keyFingerprint(publicKeyB64);
+  const keyRef = doc(personRef, 'keys', fingerprint);
+  const anchorId = `anchor_${fingerprint}`;
+  const anchorRef = doc(personRef, 'keyEvents', anchorId);
+  const [personSnap, keySnap, anchorSnap] = await Promise.all([
+    getDoc(personRef), getDoc(keyRef), getDoc(anchorRef),
+  ]);
+  const person = personSnap.exists() ? personSnap.data() as Record<string, unknown> : {};
+  const lid = typeof person.lid === 'string' ? person.lid : '';
+  if (!lid) throw new Error('This identity needs a portable LID before publishing a signing key.');
+  const published = typeof person.publicKeyPem === 'string' ? person.publicKeyPem : '';
+  if (published && published !== publicKeyB64) {
+    throw new SigningKeyNeedsRestoreError(await idbGet(uid) ? 'stale_device' : 'needs_restore');
+  }
+
+  const existingFingerprint = typeof person.signingKeyFingerprint === 'string'
+    ? person.signingKeyFingerprint : '';
+  const existingEpochId = typeof person.signingEpochId === 'string' ? person.signingEpochId : '';
+  const state: SigningKeyState = person.signingState === 'frozen' ? 'frozen' : 'active';
+
+  // Already anchored: only repair a missing lineage doc. The current identity fields are untouched.
+  if (existingFingerprint && existingEpochId) {
+    if (existingFingerprint !== fingerprint || published !== publicKeyB64) {
+      throw new Error('The published signing-key anchor does not match this device.');
+    }
+    if (!keySnap.exists()) {
+      const batch = writeBatch(db);
+      batch.set(keyRef, { pubkey: publicKeyB64, publishedAt: serverTimestamp() });
+      try {
+        await batch.commit();
+      } catch (error) {
+        const after = await getDoc(keyRef).catch(() => null);
+        if (!after?.exists() || (after.data() as { pubkey?: string }).pubkey !== publicKeyB64) throw error;
+      }
+    }
+    return { lid, publicKeyB64, fingerprint, epochId: existingEpochId, state };
+  }
+
+  const batch = writeBatch(db);
+  if (!keySnap.exists()) batch.set(keyRef, { pubkey: publicKeyB64, publishedAt: serverTimestamp() });
+  if (!anchorSnap.exists()) {
+    batch.set(anchorRef, {
+      version: 1,
+      type: 'anchor',
+      uid,
+      lid,
+      epochId: anchorId,
+      keyFingerprint: fingerprint,
+      recordedAt: serverTimestamp(),
+    });
+  }
+  batch.set(personRef, {
+    publicKeyPem: publicKeyB64,
+    signingKeyFingerprint: fingerprint,
+    signingEpochId: anchorId,
+    signingState: 'active',
+    signingAnchoredAt: serverTimestamp(),
+  }, { merge: true });
   try {
-    const ref = doc(db, 'persons', uid, 'keys', await keyFingerprint(publicKeyB64));
-    const existing = await getDoc(ref);
-    if (!existing.exists()) await setDoc(ref, { pubkey: publicKeyB64, publishedAt: serverTimestamp() });
-  } catch { /* lineage only — the published identity key above is the load-bearing write */ }
+    await batch.commit();
+  } catch (error) {
+    // Two first-use tabs may race the same deterministic anchor. If the other tab landed the exact
+    // identity, converge on it; any different result remains an error.
+    const after = await getPublishedSigningIdentity(uid).catch(() => null);
+    if (
+      !after
+      || after.publicKeyB64 !== publicKeyB64
+      || after.fingerprint !== fingerprint
+      || after.epochId !== anchorId
+    ) throw error;
+  }
+  return { lid, publicKeyB64, fingerprint, epochId: anchorId, state: 'active' };
 }
 
 // The being's currently-PUBLISHED identity key (persons/{uid}.publicKeyPem) — '' if none is
@@ -101,17 +235,107 @@ export async function getPublishedSigningKey(uid: string): Promise<string> {
   return snap.exists() ? ((snap.data() as { publicKeyPem?: string }).publicKeyPem ?? '') : '';
 }
 
+export async function getPublishedSigningIdentity(uid: string): Promise<PublishedSigningIdentity | null> {
+  const snap = await getDoc(doc(db, 'persons', uid));
+  if (!snap.exists()) return null;
+  const data = snap.data() as Record<string, unknown>;
+  if (
+    typeof data.publicKeyPem !== 'string' || !data.publicKeyPem
+    || typeof data.signingKeyFingerprint !== 'string' || !data.signingKeyFingerprint
+    || typeof data.signingEpochId !== 'string' || !data.signingEpochId
+  ) return null;
+  return {
+    lid: typeof data.lid === 'string' ? data.lid : '',
+    publicKeyB64: data.publicKeyPem,
+    fingerprint: data.signingKeyFingerprint,
+    epochId: data.signingEpochId,
+    state: data.signingState === 'frozen' ? 'frozen' : 'active',
+  };
+}
+
 // Is this pubkey part of the being's APPEND-ONLY key lineage (persons/{uid}/keys/{fingerprint})?
 // The lineage is the being's own permanent commitment: only the owner can create a record, the
 // pubkey under a fingerprint can never change, and no one — not even staff — can delete one. So a
 // key found here was genuinely published by the being at some recorded moment, even if the CURRENT
 // identity key has since rotated. This is the continuity check verification falls back to: history
 // survives rotation, while a throwaway key (never published) still never counts.
-export async function isKeyInLineage(uid: string, publicKeyB64: string): Promise<boolean> {
+interface EpochBoundSignature {
+  version?: 3;
+  keyFingerprint?: string;
+  epochId?: string;
+  recordedAt?: unknown;
+}
+
+export async function getSignatureKeyStanding(
+  uid: string,
+  publicKeyB64: string,
+  signature: EpochBoundSignature,
+): Promise<KeyStanding> {
+  if (
+    signature.version !== 3
+    || !signature.keyFingerprint
+    || !signature.epochId
+    || !timestampMillis(signature.recordedAt)
+  ) return 'unanchored';
+  if (await keyFingerprint(publicKeyB64) !== signature.keyFingerprint) return 'unknown_epoch';
+
+  const [personSnap, eventsSnap] = await Promise.all([
+    getDoc(doc(db, 'persons', uid)),
+    getDocs(collection(db, 'persons', uid, 'keyEvents')),
+  ]);
+  if (!personSnap.exists()) return 'unknown_epoch';
+  const person = personSnap.data() as Record<string, unknown>;
+  const currentFingerprint = typeof person.signingKeyFingerprint === 'string'
+    ? person.signingKeyFingerprint : '';
+  const personLid = typeof person.lid === 'string' ? person.lid : '';
+  const events: KeyEvent[] = eventsSnap.docs.flatMap(eventDoc => {
+    const event = eventDoc.data() as Record<string, unknown>;
+    const type = event.type;
+    const recordedAtMs = timestampMillis(event.recordedAt);
+    if (
+      !['anchor', 'rotate', 'freeze', 'recover'].includes(String(type))
+      || event.lid !== personLid
+      || typeof event.epochId !== 'string'
+      || typeof event.keyFingerprint !== 'string'
+      || !recordedAtMs
+    ) return [];
+    return [{
+      eventId: eventDoc.id,
+      type: type as KeyEvent['type'],
+      epochId: event.epochId,
+      keyFingerprint: event.keyFingerprint,
+      recordedAtMs,
+      ...(typeof event.previousFingerprint === 'string'
+        ? { previousFingerprint: event.previousFingerprint } : {}),
+      ...(timestampMillis(event.suspectedSince)
+        ? { suspectedSinceMs: timestampMillis(event.suspectedSince) } : {}),
+    }];
+  });
+  const epochs: KeyEpoch[] = events
+    .filter(event => event.type === 'anchor' || event.type === 'rotate' || event.type === 'recover')
+    .map(event => ({
+      epochId: event.epochId,
+      fingerprint: event.keyFingerprint,
+      anchoredAtMs: event.recordedAtMs,
+    }));
+  return keyStandingAt({
+    epochId: signature.epochId,
+    keyFingerprint: signature.keyFingerprint,
+    recordedAtMs: timestampMillis(signature.recordedAt),
+  }, epochs, events, currentFingerprint);
+}
+
+export async function isKeyInLineage(
+  uid: string,
+  publicKeyB64: string,
+  signature?: EpochBoundSignature,
+): Promise<boolean> {
   if (!publicKeyB64) return false;
   try {
     const snap = await getDoc(doc(db, 'persons', uid, 'keys', await keyFingerprint(publicKeyB64)));
-    return snap.exists() && (snap.data() as { pubkey?: string }).pubkey === publicKeyB64;
+    const inLineage = snap.exists() && (snap.data() as { pubkey?: string }).pubkey === publicKeyB64;
+    if (!inLineage || signature?.version !== 3) return inLineage;
+    return keyStandingCounts(await getSignatureKeyStanding(uid, publicKeyB64, signature));
   } catch {
     return false; // unreadable lineage never widens what counts
   }
@@ -138,9 +362,10 @@ const currentUid = (uid?: string): string => {
   return resolved;
 };
 
-async function storeAndPublish(uid: string, kp: SigningKeypair): Promise<void> {
+async function storeAndPublish(uid: string, kp: SigningKeypair): Promise<PublishedSigningIdentity> {
+  const identity = await publishPublicKey(uid, kp.publicKeyB64);
   await idbPut({ uid, privateKey: kp.privateKey, publicKey: kp.publicKey, publicKeyB64: kp.publicKeyB64 });
-  await publishPublicKey(uid, kp.publicKeyB64);
+  return identity;
 }
 
 // ── Public API ─────────────────────────────────────────────────────────────────────────────────
@@ -162,7 +387,9 @@ export async function readyToSign(uid?: string): Promise<boolean> {
   if (!device) return false;
   try {
     const custody = keyCustody(device.publicKeyB64, await getPublishedSigningKey(id));
-    return custody === 'ready' || custody === 'publish_needed';
+    if (custody !== 'ready' && custody !== 'publish_needed') return false;
+    const identity = await getPublishedSigningIdentity(id);
+    return !identity || identity.state === 'active';
   } catch {
     return false;
   }
@@ -171,18 +398,19 @@ export async function readyToSign(uid?: string): Promise<boolean> {
 export interface EnsureKeyResult {
   created: boolean;
   publicKeyB64: string;
+  fingerprint: string;
+  epochId: string;
   // The recovery phrase — returned ONCE, only when a key is freshly created. Show it to the being
   // for backup and then let it go; it is never persisted and cannot be shown again.
   recoveryPhrase?: string[];
 }
 
-// Thrown when this device cannot sign under the PUBLISHED identity without a deliberate choice:
+// Thrown when this device cannot sign under the PUBLISHED identity:
 //   'needs_restore' — this device holds NO key but an identity key is published. Silently minting a
-//       fresh keypair would replace it; the being must restore from the phrase (or explicitly
-//       choose { replacePublished: true } — the modal's red-warned door, never a silent default).
+//       fresh keypair would replace it; the being must restore from the phrase or use witnessed
+//       recovery after freezing the old epoch.
 //   'stale_device'  — this device holds a key, but a DIFFERENT identity key is published (another
-//       device rotated or started fresh). Silently republishing the local key would hijack the
-//       identity back; the being must restore the current phrase here, or explicitly take over.
+//       device rotated). Republishing the local key would hijack the identity back; it is refused.
 export class SigningKeyNeedsRestoreError extends Error {
   readonly code = 'needs-restore' as const;
   constructor(readonly reason: 'needs_restore' | 'stale_device' = 'needs_restore') {
@@ -196,21 +424,14 @@ export class SigningKeyNeedsRestoreError extends Error {
 // Thrown by restoreFromPhrase when the phrase is VALID BIP39 but derives a key that is NOT the
 // published identity key — a different phrase than the one backing this account. Installing it
 // would silently replace the published identity (the exact bypass the needs_restore warning
-// guards), so it is refused unless the being explicitly chooses { replacePublished: true }.
+// guards), so it is refused. A different key enters only by cross-signed rotation or witnessed
+// recovery, never through this restore path.
 export class RestoreKeyMismatchError extends Error {
   readonly code = 'restore-mismatch' as const;
   constructor() {
-    super('This recovery phrase restores a DIFFERENT key than the one published for this account. Check the phrase — or deliberately replace the published key.');
+    super('This recovery phrase restores a DIFFERENT key than the one published for this identity. Check the phrase; replacement needs cross-signed rotation or witnessed recovery.');
     this.name = 'RestoreKeyMismatchError';
   }
-}
-
-export interface EnsureKeyOptions {
-  // The explicit, strongly-warned escape hatch: publish over a DIFFERENT published identity key —
-  // minting a new keypair (needs_restore) or republishing this device's older one (stale_device).
-  // A deliberate user choice surfaced by the modal; never the default. Prior signatures stay
-  // verifiable through the append-only key lineage; only the CURRENT identity changes hands.
-  replacePublished?: boolean;
 }
 
 // Get-or-create the user's Ed25519 keypair on THIS device, guarded by the pure custody rule
@@ -221,7 +442,7 @@ export interface EnsureKeyOptions {
 // published identity in BOTH directions — no device key while one is published (needs_restore),
 // and an older device key while a NEWER one is published (stale_device) — throwing
 // SigningKeyNeedsRestoreError so the caller surfaces the restore flow.
-export async function ensureSigningKey(uid?: string, options?: EnsureKeyOptions): Promise<EnsureKeyResult> {
+export async function ensureSigningKey(uid?: string): Promise<EnsureKeyResult> {
   const id = currentUid(uid);
   const existing = await idbGet(id);
   // The custody read. For a device that already holds a key, a TRANSIENT read failure must not
@@ -240,24 +461,21 @@ export async function ensureSigningKey(uid?: string, options?: EnsureKeyOptions)
 
   if (existing) {
     if (custody === 'stale_device') {
-      // Another device rotated the identity: republishing this device's older key would silently
-      // hijack it back. Only a deliberate takeover (replacePublished) may do that — and a
-      // deliberate takeover must land, so ITS publish failure is fatal, not swallowed.
-      if (!options?.replacePublished) throw new SigningKeyNeedsRestoreError('stale_device');
-      await publishPublicKey(id, existing.publicKeyB64);
-    } else {
-      // 'ready' or 'publish_needed': self-heal the published key and its lineage record (a no-op
-      // merge when everything is already in place). Best-effort — signing paths re-assert it.
-      try { await publishPublicKey(id, existing.publicKeyB64); } catch { /* non-fatal */ }
+      throw new SigningKeyNeedsRestoreError('stale_device');
     }
-    return { created: false, publicKeyB64: existing.publicKeyB64 };
+    const identity = await publishPublicKey(id, existing.publicKeyB64);
+    if (identity.state === 'frozen') throw new SigningKeyFrozenError();
+    return {
+      created: false,
+      publicKeyB64: existing.publicKeyB64,
+      fingerprint: identity.fingerprint,
+      epochId: identity.epochId,
+    };
   }
 
   // No device key. If an identity key is already published, generating a fresh one would silently
-  // replace it — refuse, unless the being explicitly chose to start fresh.
-  if (custody === 'needs_restore' && !options?.replacePublished) {
-    throw new SigningKeyNeedsRestoreError('needs_restore');
-  }
+  // replace it — refuse. Only the witnessed-recovery path may appoint a different key.
+  if (custody === 'needs_restore') throw new SigningKeyNeedsRestoreError('needs_restore');
 
   // Generate an extractable key, export the raw 32-byte seed ONCE (JWK `d`), derive the phrase, then
   // re-import everything through keypairFromSeed so the stored private key is non-extractable and the
@@ -270,15 +488,14 @@ export async function ensureSigningKey(uid?: string, options?: EnsureKeyOptions)
   const recoveryPhrase = seedToPhrase(seed);
   const kp = await keypairFromSeed(seed);
   seed.fill(0); // best-effort scrub of the raw seed from memory
-  await storeAndPublish(id, kp);
-  return { created: true, publicKeyB64: kp.publicKeyB64, recoveryPhrase };
-}
-
-export interface RestoreOptions {
-  // The explicit, red-warned escape hatch: install and publish this phrase's key even though a
-  // DIFFERENT identity key is published. The door back for a being whose newest phrase is lost but
-  // who still holds an older one — prior signatures stay verifiable through the key lineage.
-  replacePublished?: boolean;
+  const identity = await storeAndPublish(id, kp);
+  return {
+    created: true,
+    publicKeyB64: kp.publicKeyB64,
+    fingerprint: identity.fingerprint,
+    epochId: identity.epochId,
+    recoveryPhrase,
+  };
 }
 
 // Re-derive the keypair from a recovery phrase and install it on THIS device (non-extractable),
@@ -287,23 +504,356 @@ export interface RestoreOptions {
 // phrase that derives a DIFFERENT key than the published identity is REFUSED
 // (RestoreKeyMismatchError) unless the being explicitly chose to replace it: "restore" may only
 // land the key it claims to restore, never smuggle in a new identity past the start-fresh warning.
-export async function restoreFromPhrase(words: string[], uid?: string, options?: RestoreOptions): Promise<{ publicKeyB64: string }> {
+export async function restoreFromPhrase(words: string[], uid?: string): Promise<{ publicKeyB64: string }> {
   const id = currentUid(uid);
   const seed = phraseToSeed(words); // throws on unknown word / bad checksum
   const kp = await keypairFromSeed(seed);
   seed.fill(0);
-  if (!options?.replacePublished && restoreConflictsWithPublished(kp.publicKeyB64, await getPublishedSigningKey(id))) {
+  if (restoreConflictsWithPublished(kp.publicKeyB64, await getPublishedSigningKey(id))) {
     throw new RestoreKeyMismatchError();
   }
   await storeAndPublish(id, kp);
   return { publicKeyB64: kp.publicKeyB64 };
 }
 
+export interface RotateSigningKeyResult {
+  publicKeyB64: string;
+  fingerprint: string;
+  epochId: string;
+  recoveryPhrase: string[];
+}
+
+// Planned rotation is continuity, not account takeover: the CURRENT private key and the NEW private
+// key cross-sign one transition. A callable verifies both proofs, atomically retires the old epoch,
+// anchors the new one, and only then does this device install the new non-extractable key.
+export async function rotateSigningKey(uid?: string): Promise<RotateSigningKeyResult> {
+  const id = currentUid(uid);
+  const current = await idbGet(id);
+  if (!current) throw new SigningKeyNeedsRestoreError('needs_restore');
+  const published = await getPublishedSigningIdentity(id);
+  if (!published || published.publicKeyB64 !== current.publicKeyB64) {
+    throw new SigningKeyNeedsRestoreError(published ? 'stale_device' : 'needs_restore');
+  }
+  if (published.state === 'frozen') throw new SigningKeyFrozenError();
+  if (!published.lid) throw new Error('This identity needs a portable LID before key rotation.');
+
+  const seed = new Uint8Array(32);
+  crypto.getRandomValues(seed);
+  const recoveryPhrase = seedToPhrase(seed);
+  const next = await keypairFromSeed(seed);
+  seed.fill(0);
+  const toFingerprint = await keyFingerprint(next.publicKeyB64);
+  const eventId = uuidv7();
+  const claim = {
+    uid: id,
+    lid: published.lid,
+    eventId,
+    fromFingerprint: published.fingerprint,
+    toFingerprint,
+  };
+  const preimage = keyRotationPreimage(claim);
+  const [oldSig, newSig] = await Promise.all([
+    signPreimage(current.privateKey, preimage),
+    signPreimage(next.privateKey, preimage),
+  ]);
+  const rotate = httpsCallable(functions, 'rotateSigningKey');
+  try {
+    await rotate({
+      eventId,
+      lid: published.lid,
+      fromPubkey: current.publicKeyB64,
+      toPubkey: next.publicKeyB64,
+      fromFingerprint: published.fingerprint,
+      toFingerprint,
+      oldSig,
+      newSig,
+    });
+  } catch (error) {
+    // A lost response after a committed transaction must not strand the being between epochs.
+    const after = await getPublishedSigningIdentity(id).catch(() => null);
+    if (!after || after.epochId !== eventId || after.publicKeyB64 !== next.publicKeyB64) throw error;
+  }
+  await idbPut({
+    uid: id,
+    privateKey: next.privateKey,
+    publicKey: next.publicKey,
+    publicKeyB64: next.publicKeyB64,
+  });
+  return {
+    publicKeyB64: next.publicKeyB64,
+    fingerprint: toFingerprint,
+    epochId: eventId,
+    recoveryPhrase,
+  };
+}
+
+// Emergency freeze is intentionally possible from authenticated account access even when the
+// private key is gone: its only power is to STOP future signatures. It cannot appoint a replacement
+// key or erase an earlier seal. Recovery remains a separate witnessed act.
+export async function freezeSigningKey(uid?: string, suspectedSinceMs?: number): Promise<void> {
+  const id = currentUid(uid);
+  const identity = await getPublishedSigningIdentity(id);
+  if (!identity) throw new Error('No anchored signing key exists to freeze.');
+  if (identity.state === 'frozen') return;
+  if (
+    suspectedSinceMs !== undefined
+    && (!Number.isFinite(suspectedSinceMs) || suspectedSinceMs > Date.now())
+  ) throw new Error('The suspected-compromise time cannot be in the future.');
+  if (suspectedSinceMs !== undefined) {
+    const epoch = await getDoc(doc(db, 'persons', id, 'keyEvents', identity.epochId));
+    const anchoredAt = timestampMillis(epoch.data()?.recordedAt);
+    if (!anchoredAt || suspectedSinceMs < anchoredAt) {
+      throw new Error('The suspected-compromise time cannot predate this key epoch.');
+    }
+  }
+
+  const personRef = doc(db, 'persons', id);
+  const eventId = `freeze_${identity.epochId}`;
+  const batch = writeBatch(db);
+  batch.set(doc(personRef, 'keyEvents', eventId), {
+    version: 1,
+    type: 'freeze',
+    uid: id,
+    lid: identity.lid,
+    epochId: identity.epochId,
+    keyFingerprint: identity.fingerprint,
+    recordedAt: serverTimestamp(),
+    ...(suspectedSinceMs !== undefined
+      ? { claimedSuspectedSince: Timestamp.fromMillis(suspectedSinceMs) } : {}),
+  });
+  batch.update(personRef, {
+    signingState: 'frozen',
+    signingFrozenAt: serverTimestamp(),
+    signingFreezeEventId: eventId,
+  });
+  try {
+    await batch.commit();
+  } catch (error) {
+    // Concurrent emergency gestures converge on the same one-way frozen state.
+    const after = await getPublishedSigningIdentity(id).catch(() => null);
+    if (after?.state !== 'frozen' || after.fingerprint !== identity.fingerprint) throw error;
+  }
+}
+
+interface RecoveryProposal {
+  uid: string;
+  lid: string;
+  status: 'open' | 'activated';
+  fromFingerprint: string;
+  toFingerprint: string;
+  toPubkey: string;
+  suspectedSinceMs: number;
+}
+
+export interface PendingRecovery {
+  eventId: string;
+  recoveryCode: string;
+  witnessCount: number;
+}
+
+export async function getPendingSigningKeyRecovery(uid?: string): Promise<PendingRecovery | null> {
+  const id = currentUid(uid);
+  const pending = await idbPendingFor(id);
+  if (!pending) return null;
+  const witnesses = await getDocs(collection(
+    db, 'persons', id, 'keyRecoveries', pending.eventId, 'witnesses',
+  ));
+  return {
+    eventId: pending.eventId,
+    recoveryCode: pending.recoveryCode,
+    witnessCount: new Set(witnesses.docs.flatMap(witness => {
+      const witnessUid = (witness.data() as { witnessUid?: unknown }).witnessUid;
+      return typeof witnessUid === 'string' ? [witnessUid] : [];
+    })).size,
+  };
+}
+
+export interface BeginRecoveryResult extends PendingRecovery {
+  recoveryPhrase: string[];
+}
+
+export async function beginSigningKeyRecovery(uid?: string): Promise<BeginRecoveryResult> {
+  const id = currentUid(uid);
+  if (await idbPendingFor(id)) {
+    throw new Error('A recovery is already pending on this device.');
+  }
+  const personRef = doc(db, 'persons', id);
+  const personSnap = await getDoc(personRef);
+  const person = personSnap.data() as Record<string, unknown> | undefined;
+  if (
+    !person
+    || person.signingState !== 'frozen'
+    || typeof person.lid !== 'string'
+    || typeof person.signingKeyFingerprint !== 'string'
+    || typeof person.signingFreezeEventId !== 'string'
+  ) throw new Error('Freeze the current signing key before beginning recovery.');
+  const freezeSnap = await getDoc(doc(personRef, 'keyEvents', person.signingFreezeEventId));
+  const freeze = freezeSnap.data() as Record<string, unknown> | undefined;
+  const freezeAt = timestampMillis(freeze?.recordedAt);
+  const suspectedSinceMs = timestampMillis(freeze?.claimedSuspectedSince) || freezeAt;
+  if (!freezeAt || suspectedSinceMs > freezeAt) throw new Error('The freeze boundary is incomplete.');
+
+  const seed = new Uint8Array(32);
+  crypto.getRandomValues(seed);
+  const recoveryPhrase = seedToPhrase(seed);
+  const next = await keypairFromSeed(seed);
+  seed.fill(0);
+  const toFingerprint = await keyFingerprint(next.publicKeyB64);
+  const eventId = uuidv7();
+  const claim = {
+    uid: id,
+    lid: person.lid,
+    eventId,
+    fromFingerprint: person.signingKeyFingerprint,
+    toFingerprint,
+    suspectedSinceMs,
+  };
+  const newSig = await signPreimage(next.privateKey, keyRecoveryPreimage(claim));
+  const begin = httpsCallable(functions, 'beginSigningKeyRecovery');
+  try {
+    await begin({ eventId, toPubkey: next.publicKeyB64, toFingerprint, newSig });
+  } catch (error) {
+    // As with rotation, recover from a committed callable whose response was lost.
+    const proposal = await getDoc(doc(personRef, 'keyRecoveries', eventId)).catch(() => null);
+    if (
+      !proposal?.exists()
+      || (proposal.data() as RecoveryProposal).toPubkey !== next.publicKeyB64
+    ) throw error;
+  }
+  const recoveryCode = `${id}:${eventId}`;
+  await idbPutPending({
+    uid: id,
+    eventId,
+    recoveryCode,
+    privateKey: next.privateKey,
+    publicKey: next.publicKey,
+    publicKeyB64: next.publicKeyB64,
+  });
+  return { eventId, recoveryCode, witnessCount: 0, recoveryPhrase };
+}
+
+const parseRecoveryCode = (code: string): { targetUid: string; eventId: string } => {
+  const split = code.trim().lastIndexOf(':');
+  if (split < 1 || split === code.trim().length - 1) {
+    throw new Error('Enter the complete recovery code.');
+  }
+  return {
+    targetUid: code.trim().slice(0, split),
+    eventId: code.trim().slice(split + 1),
+  };
+};
+
+export interface RecoveryPreview {
+  targetUid: string;
+  targetName: string;
+  targetLid: string;
+  eventId: string;
+  fromFingerprint: string;
+  toFingerprint: string;
+  suspectedSinceMs: number;
+}
+
+export async function getSigningKeyRecoveryPreview(code: string): Promise<RecoveryPreview> {
+  const { targetUid, eventId } = parseRecoveryCode(code);
+  const [personSnap, proposalSnap] = await Promise.all([
+    getDoc(doc(db, 'persons', targetUid)),
+    getDoc(doc(db, 'persons', targetUid, 'keyRecoveries', eventId)),
+  ]);
+  if (!proposalSnap.exists()) throw new Error('That recovery is not open.');
+  const proposal = proposalSnap.data() as RecoveryProposal;
+  if (proposal.status !== 'open') throw new Error('That recovery is no longer open.');
+  const person = personSnap.data() as Record<string, unknown> | undefined;
+  return {
+    targetUid,
+    targetName: typeof person?.displayName === 'string' && person.displayName
+      ? person.displayName : targetUid,
+    targetLid: proposal.lid,
+    eventId,
+    fromFingerprint: proposal.fromFingerprint,
+    toFingerprint: proposal.toFingerprint,
+    suspectedSinceMs: proposal.suspectedSinceMs,
+  };
+}
+
+export async function witnessSigningKeyRecovery(code: string, uid?: string): Promise<void> {
+  const witnessUid = currentUid(uid);
+  const { targetUid, eventId } = parseRecoveryCode(code);
+  if (targetUid === witnessUid) throw new Error('A being cannot witness its own recovery.');
+  const proposalSnap = await getDoc(doc(db, 'persons', targetUid, 'keyRecoveries', eventId));
+  if (!proposalSnap.exists()) throw new Error('That recovery is not open.');
+  const proposal = proposalSnap.data() as RecoveryProposal;
+  if (proposal.status !== 'open') throw new Error('That recovery is no longer open.');
+  if (!(await idbGet(witnessUid))) {
+    throw new Error('Create or restore your signing key before witnessing a recovery.');
+  }
+  const key = await ensureSigningKey(witnessUid);
+  const claim = {
+    uid: targetUid,
+    lid: proposal.lid,
+    eventId,
+    fromFingerprint: proposal.fromFingerprint,
+    toFingerprint: proposal.toFingerprint,
+    suspectedSinceMs: proposal.suspectedSinceMs,
+  };
+  const sig = await signPreimage(
+    (await idbGet(witnessUid))!.privateKey,
+    keyRecoveryWitnessPreimage(claim, witnessUid),
+  );
+  const witness = httpsCallable(functions, 'witnessSigningKeyRecovery');
+  await witness({
+    targetUid,
+    eventId,
+    sig,
+    pubkey: key.publicKeyB64,
+    keyFingerprint: key.fingerprint,
+    epochId: key.epochId,
+  });
+}
+
+export async function activateSigningKeyRecovery(uid?: string): Promise<PublishedSigningIdentity> {
+  const id = currentUid(uid);
+  const pending = await idbPendingFor(id);
+  if (!pending) throw new Error('This device does not hold the pending recovery key.');
+  const activate = httpsCallable(functions, 'activateSigningKeyRecovery');
+  try {
+    await activate({ eventId: pending.eventId });
+  } catch (error) {
+    const after = await getPublishedSigningIdentity(id).catch(() => null);
+    if (!after || after.epochId !== pending.eventId || after.publicKeyB64 !== pending.publicKeyB64) {
+      throw error;
+    }
+  }
+  await idbPut({
+    uid: id,
+    privateKey: pending.privateKey,
+    publicKey: pending.publicKey,
+    publicKeyB64: pending.publicKeyB64,
+  });
+  await idbDeletePending(pending.eventId);
+  const identity = await getPublishedSigningIdentity(id);
+  if (!identity) throw new Error('The recovered signing identity could not be read.');
+  return identity;
+}
+
 // Sign a payload under a domain tag with THIS device's private key. Throws if no key is installed.
 export async function sign(payload: unknown, domainTag: string, uid?: string): Promise<string> {
-  const record = await idbGet(currentUid(uid));
+  const id = currentUid(uid);
+  const record = await idbGet(id);
   if (!record) throw new Error('No signing key on this device. Create or restore one first.');
+  const identity = await getPublishedSigningIdentity(id);
+  if (!identity || identity.publicKeyB64 !== record.publicKeyB64) {
+    throw new SigningKeyNeedsRestoreError(identity ? 'stale_device' : 'needs_restore');
+  }
+  if (identity.state === 'frozen') throw new SigningKeyFrozenError();
   return signPayload(record.privateKey, payload, domainTag);
+}
+
+export class SigningKeyFrozenError extends Error {
+  readonly code = 'signing-key-frozen' as const;
+  constructor() {
+    super('This signing key is frozen. It cannot make new seals; recovery needs witnessed authority.');
+    this.name = 'SigningKeyFrozenError';
+  }
 }
 
 // Verify a signature with ONLY a published public key — no device key needed. Re-exported from the

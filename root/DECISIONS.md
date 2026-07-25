@@ -6,6 +6,45 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-25 · The hand may retire; the seal keeps its hour** — verify-at-signing-time
+becomes a complete epoch law. A new covenant or Council signature is v3: its
+signed payload names the signer's key fingerprint and exact epoch, while Firestore
+pins `recordedAt` to `request.time`. This is honestly called **receipt time**, not
+the unknowable instant the private key was touched. Initial publication atomically
+anchors current key + permanent lineage + an append-only `keyEvent`; direct
+`publicKeyPem` replacement is then forbidden even to staff. Prior v2 seals remain
+readable under their historical lineage rule, but are not retroactively granted a
+time the server never witnessed. Every transition also binds the person's portable
+LID, which is now set-once in the rules rather than an owner-editable label.
+
+A planned rotation is continuity: the outgoing and incoming private keys
+cross-sign one transition, and a callable verifies both hands before atomically
+retiring the old epoch. A routine rotation may only enter a fresh key. Account
+access alone can do one emergency act: **freeze** the current epoch. It can stop a
+hand; it cannot appoint the next one. A freeze may name an earlier suspected
+compromise boundary, but that date is an **allegation only**: it has no power over
+earlier seals until the recovery witnesses sign it. Stopping present speech is
+unilateral; reinterpreting history is social. Once witnessed, seals received
+before that boundary remain historical; seals inside the interval are
+**disputed** and do not silently satisfy a new quorum; the old key is invalid
+from the freeze onward. Nothing is deleted. A future re-affirmation may give a
+disputed act new assurance, but must be a new seal, never a rewrite.
+
+Recovery is social authority, not an admin reset. It begins only from a frozen
+identity; the candidate new key signs its own proposal; **three distinct
+witnesses**, excluding the being, each sign that exact transition in their own
+current epoch. A witness must be rooted in the validation web — an initiate or
+the keeper of a validated lifetree — and must still hold that active epoch when
+activation lands. Only then may the server mint a `recover` event and a new
+current epoch. The new phrase and every private key remain on the device.
+Rejected: mutable `revoked: true`; trusting client `signedAt`; silently voiding
+all old seals; staff/account takeover; one administrator as recovery oracle; and
+letting a compromised key rotate around its own freeze. *(A fingerprint says
+which hand. An epoch says when that hand was allowed to speak. Witnesses say who
+stood there when the hand itself was gone.)*
+
+---
+
 **2026-07-25 · The canopy opens only by decision**: the last hardcoded hub
 privilege is removed from data queries. Every domain community is scoped unless
 it explicitly holds `reflectsPublic: true`; absent and false mean closed canopy.

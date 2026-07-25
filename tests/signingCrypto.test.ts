@@ -1,7 +1,11 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createPublicKey, verify as edVerify, sign as edSign, createPrivateKey } from 'node:crypto';
-import { keypairFromSeed, signPayload, verifyPayload, subtleEd25519Available } from '../src/services/signingCrypto';
+import {
+  keypairFromSeed, signPayload, signPreimage, verifyPayload, verifyPreimage,
+  subtleEd25519Available,
+} from '../src/services/signingCrypto';
 import { signingPreimage, seedToPhrase, phraseToSeed } from '../src/domain/signing';
+import { keyRotationPreimage } from '../src/domain/keyEpoch';
 
 // The load-bearing proof: an app-produced Ed25519 signature (crypto.subtle) CROSS-VERIFIES with
 // node:crypto — the exact scheme the offline initiation ledger uses (scripts/verify-initiations.mjs).
@@ -42,6 +46,27 @@ describe('signingCrypto (Ed25519, one algorithm)', () => {
     const kp = await keypairFromSeed(SEED);
     const nodeSig = edSign(null, preimageBytes(), nodePrivFromSeed(SEED)).toString('base64');
     expect(await verifyPayload(kp.publicKeyB64, nodeSig, PAYLOAD, DOMAIN)).toBe(true);
+  });
+
+  it('the fixed rotation preimage cross-verifies in browser and callable directions', async () => {
+    if (!available) { expect(available).toBe(false); return; }
+    const kp = await keypairFromSeed(SEED);
+    const preimage = keyRotationPreimage({
+      uid: 'being-1',
+      lid: '019c-being-lid',
+      eventId: '018f-event',
+      fromFingerprint: 'a'.repeat(64),
+      toFingerprint: 'b'.repeat(64),
+    });
+    const browserSig = await signPreimage(kp.privateKey, preimage);
+    const nodePub = createPublicKey({
+      key: Buffer.from(kp.publicKeyB64, 'base64'), format: 'der', type: 'spki',
+    });
+    expect(edVerify(null, Buffer.from(preimage, 'utf8'), nodePub, Buffer.from(browserSig, 'base64'))).toBe(true);
+
+    const nodeSig = edSign(null, Buffer.from(preimage, 'utf8'), nodePrivFromSeed(SEED)).toString('base64');
+    expect(await verifyPreimage(kp.publicKeyB64, nodeSig, preimage)).toBe(true);
+    expect(await verifyPreimage(kp.publicKeyB64, nodeSig, `${preimage}\ntampered`)).toBe(false);
   });
 
   it('the derived SPKI public key is byte-identical to node:crypto\'s', async () => {

@@ -39,6 +39,8 @@ principles. The rings in DECISIONS.md record most of the swaps as they happened.
   open listening, and enactment recorded in chain blocks. The Covenant work made
   it cryptographic: seven *verified signatures*, non-transferable, a quorum that
   cannot be inflated, seals that survive key rotation, withdrawal as a mark.
+  The hand may now retire without erasing its honest hour: epoch-bound receipt
+  time, cross-signed rotation, one-way freeze, and three-witness recovery.
   Stricter than the paper asked.
 - **The Gradual Guardianship Pathway.** This section aligned almost eerily.
   Guarding an existing, reachable tree became the guardian link, deliberately a

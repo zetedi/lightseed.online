@@ -94,6 +94,15 @@ holds today. Rotation stopped erasing history. But the lineage never forgets, so
   shape as its chain, its rings. Was that convergence found, or was it always
   implied by "truth is traceable"?
 
+**Answered in the 2026-07-25 epoch ring, without deleting the question:** account
+access may freeze but never replace; planned rotation is old/new cross-signed;
+recovery needs three distinct initiated or validated-tree witnesses. A unilateral
+freeze stops the key now; its earlier compromise date is only an allegation until
+those witnesses sign it. Then pre-boundary seals stand, the witnessed suspected
+interval is visibly disputed and stops satisfying new quorums, and later uses are
+invalid. Re-affirmation, when it gains a face, must be a new seal rather than a
+rewrite.
+
 ## The lifetree as relation (2026-07-19)
 
 Raised by Zoltán, late at night, after the shadow chapter: we could see a lifetree

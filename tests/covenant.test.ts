@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import {
-  COVENANT_DOMAIN, covenantIdentity, isQuorumMet, covenantSealed,
+  COVENANT_DOMAIN, COVENANT_EPOCH_DOMAIN, covenantIdentity, isQuorumMet, covenantSealed,
   signatureBindsToIdentity, alignmentCovenantId,
-  covenantSignaturePayload, countVerifiedCovenantSignatures, verifiedCovenantSigners, signatureFromDoc,
+  covenantSignaturePayload, covenantEpochSignaturePayload,
+  countVerifiedCovenantSignatures, verifiedCovenantSigners, signatureFromDoc,
   type Covenant, type CovenantParty, type RecordedSignature,
 } from '../src/domain/covenant';
 import { canonicalize } from '../src/domain/chain/canonical';
@@ -117,6 +118,30 @@ describe('covenantSignaturePayload — signatures are SIGNER-BOUND (non-transfer
     expect(covenantSignaturePayload(identity, 'alice')).toEqual({ covenant: identity, signer: 'alice' });
     expect(canonicalize(covenantSignaturePayload(identity, 'alice')))
       .not.toBe(canonicalize(covenantSignaturePayload(identity, 'bob')));
+  });
+
+  it('v3 binds the signer to an exact key epoch, and requires the temporal checker even for the current key', async () => {
+    const identity = covenantIdentity(base, [{ uid: 'alice' }]);
+    const kp = await keypairFromSeed(Uint8Array.from({ length: 32 }, (_, i) => i + 1));
+    const fingerprint = 'a'.repeat(64);
+    const epochId = 'anchor-a';
+    const payload = covenantEpochSignaturePayload(identity, 'alice', fingerprint, epochId);
+    const sig = await signPayload(kp.privateKey, payload, COVENANT_EPOCH_DOMAIN);
+    const record: RecordedSignature = {
+      uid: 'alice', sig, pubkey: kp.publicKeyB64,
+      version: 3, keyFingerprint: fingerprint, epochId, recordedAt: 1,
+    };
+    const published = new Map([['alice', kp.publicKeyB64]]);
+    const parties = new Set(['alice']);
+    // Equality with the currently-published key cannot bypass epoch validation.
+    expect(await countVerifiedCovenantSignatures(
+      identity, [record], parties, published, verifyPayload,
+    )).toBe(0);
+    expect(await countVerifiedCovenantSignatures(
+      identity, [record], parties, published, verifyPayload,
+      async (_uid, _pubkey, candidate) =>
+        candidate?.version === 3 && candidate.epochId === epochId,
+    )).toBe(1);
   });
 });
 

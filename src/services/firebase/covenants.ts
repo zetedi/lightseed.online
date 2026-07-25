@@ -7,8 +7,8 @@ import { createBlock } from '../../utils/crypto';
 import { uuidv7 } from '../../utils/id';
 import { linkId } from '../../domain/link';
 import {
-  COVENANT_DOMAIN, covenantIdentity, covenantSealed, alignmentCovenantId,
-  covenantSignaturePayload, verifiedCovenantSigners, signatureFromDoc,
+  COVENANT_EPOCH_DOMAIN, covenantIdentity, covenantSealed, alignmentCovenantId,
+  covenantEpochSignaturePayload, verifiedCovenantSigners, signatureFromDoc,
   type Covenant, type CovenantKind, type CovenantParty,
 } from '../../domain/covenant';
 import { ensureSigningKey, publishSigningKey, isKeyInLineage, getPublishedSigningKey, sign as signWithKey, verify as verifyWithKey } from '../keys';
@@ -27,7 +27,11 @@ export interface CovenantSignature {
   uid: string;       // == the signatures doc id (each party writes only their own)
   sig: string;       // base64 Ed25519 signature
   pubkey: string;    // base64 SPKI public key used to sign
-  signedAt?: unknown;
+  version?: 3;
+  keyFingerprint?: string;
+  epochId?: string;
+  recordedAt?: unknown;
+  signedAt?: unknown; // historical v2 record
 }
 
 const requireUid = (): string => {
@@ -224,15 +228,24 @@ export const signCovenant = async (covenant: Pick<Covenant, 'id'>): Promise<Sign
     }
   }
 
-  // SIGNER-BOUND (v2): the signed bytes carry the covenant identity AND this signer's uid, so this
-  // signature can only ever verify in this party's own slot — it is non-transferable by construction.
+  // SIGNER + EPOCH BOUND (v3): the bytes carry this signer and the exact server-anchored key epoch.
+  // A copied signature cannot move slots; an invented/retired epoch cannot gain authority.
   const identity = covenantIdentity(fresh, parties);
-  const sig = await signWithKey(covenantSignaturePayload(identity, uid), COVENANT_DOMAIN, uid);
+  const sig = await signWithKey(
+    covenantEpochSignaturePayload(identity, uid, key.fingerprint, key.epochId),
+    COVENANT_EPOCH_DOMAIN,
+    uid,
+  );
 
   // Each party writes ONLY their own slot (doc id == uid); the rules enforce it and that the writer
   // is a party. The pubkey is frozen here so verification never depends on a later-rotated key.
   await setDoc(doc(signaturesCol(covenantId), uid), {
-    sig, pubkey: key.publicKeyB64, signedAt: serverTimestamp(),
+    sig,
+    pubkey: key.publicKeyB64,
+    version: 3,
+    keyFingerprint: key.fingerprint,
+    epochId: key.epochId,
+    recordedAt: serverTimestamp(),
   });
 
   // Re-read every signature and verify against the frozen identity — the quorum is counted from

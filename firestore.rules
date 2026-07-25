@@ -67,6 +67,69 @@ service cloud.firestore {
       return covenantId is string && covenantId != '' &&
         exists(/databases/$(database)/documents/links/$(request.auth.uid + '__party__' + covenantId));
     }
+    // THE SIGNING EPOCH: a signature counts only while the person's server-anchored CURRENT epoch
+    // is active. recordedAt is the Firestore receipt time — never a client-chosen claim. The epoch
+    // event and append-only key record must agree with the current person declaration.
+    function isCurrentEpochSignature(personId) {
+      let person = get(/databases/$(database)/documents/persons/$(personId)).data;
+      let epochId = request.resource.data.get('epochId', '');
+      let fingerprint = request.resource.data.get('keyFingerprint', '');
+      return request.resource.data.get('version', 0) == 3
+        && request.resource.data.get('recordedAt', null) == request.time
+        && person.get('signingState', '') == 'active'
+        && person.get('publicKeyPem', '') == request.resource.data.get('pubkey', '')
+        && person.get('signingKeyFingerprint', '') == fingerprint
+        && person.get('signingEpochId', '') == epochId
+        && exists(/databases/$(database)/documents/persons/$(personId)/keys/$(fingerprint))
+        && get(/databases/$(database)/documents/persons/$(personId)/keys/$(fingerprint)).data.get('pubkey', '')
+             == request.resource.data.get('pubkey', '')
+        && exists(/databases/$(database)/documents/persons/$(personId)/keyEvents/$(epochId))
+        && get(/databases/$(database)/documents/persons/$(personId)/keyEvents/$(epochId)).data.get('epochId', '') == epochId
+        && get(/databases/$(database)/documents/persons/$(personId)/keyEvents/$(epochId)).data.get('lid', '')
+             == person.get('lid', '')
+        && get(/databases/$(database)/documents/persons/$(personId)/keyEvents/$(epochId)).data.get('keyFingerprint', '') == fingerprint
+        && get(/databases/$(database)/documents/persons/$(personId)/keyEvents/$(epochId)).data.get('recordedAt', request.time) <= request.time;
+    }
+    function validSigningAnchor(personId) {
+      let fingerprint = request.resource.data.get('signingKeyFingerprint', '');
+      let epochId = request.resource.data.get('signingEpochId', '');
+      return request.resource.data.get('publicKeyPem', '') != ''
+        && fingerprint != ''
+        && epochId == 'anchor_' + fingerprint
+        && request.resource.data.get('signingState', '') == 'active'
+        && request.resource.data.get('signingAnchoredAt', null) == request.time
+        && existsAfter(/databases/$(database)/documents/persons/$(personId)/keys/$(fingerprint))
+        && getAfter(/databases/$(database)/documents/persons/$(personId)/keys/$(fingerprint)).data.get('pubkey', '')
+             == request.resource.data.get('publicKeyPem', '')
+        && existsAfter(/databases/$(database)/documents/persons/$(personId)/keyEvents/$(epochId))
+        && getAfter(/databases/$(database)/documents/persons/$(personId)/keyEvents/$(epochId)).data.get('type', '') == 'anchor'
+        && getAfter(/databases/$(database)/documents/persons/$(personId)/keyEvents/$(epochId)).data.get('uid', '') == personId
+        && getAfter(/databases/$(database)/documents/persons/$(personId)/keyEvents/$(epochId)).data.get('lid', '')
+             == request.resource.data.get('lid', '')
+        && getAfter(/databases/$(database)/documents/persons/$(personId)/keyEvents/$(epochId)).data.get('epochId', '') == epochId
+        && getAfter(/databases/$(database)/documents/persons/$(personId)/keyEvents/$(epochId)).data.get('keyFingerprint', '') == fingerprint
+        && getAfter(/databases/$(database)/documents/persons/$(personId)/keyEvents/$(epochId)).data.get('recordedAt', null) == request.time;
+    }
+    function validSigningFreeze(personId) {
+      let epochId = resource.data.get('signingEpochId', '');
+      let eventId = request.resource.data.get('signingFreezeEventId', '');
+      return resource.data.get('signingState', '') == 'active'
+        && request.resource.data.get('signingState', '') == 'frozen'
+        && request.resource.data.get('publicKeyPem', '') == resource.data.get('publicKeyPem', '')
+        && request.resource.data.get('signingKeyFingerprint', '') == resource.data.get('signingKeyFingerprint', '')
+        && request.resource.data.get('signingEpochId', '') == epochId
+        && request.resource.data.get('signingFrozenAt', null) == request.time
+        && eventId == 'freeze_' + epochId
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['signingState', 'signingFrozenAt', 'signingFreezeEventId'])
+        && existsAfter(/databases/$(database)/documents/persons/$(personId)/keyEvents/$(eventId))
+        && getAfter(/databases/$(database)/documents/persons/$(personId)/keyEvents/$(eventId)).data.get('type', '') == 'freeze'
+        && getAfter(/databases/$(database)/documents/persons/$(personId)/keyEvents/$(eventId)).data.get('uid', '') == personId
+        && getAfter(/databases/$(database)/documents/persons/$(personId)/keyEvents/$(eventId)).data.get('epochId', '') == epochId
+        && getAfter(/databases/$(database)/documents/persons/$(personId)/keyEvents/$(eventId)).data.get('keyFingerprint', '')
+             == resource.data.get('signingKeyFingerprint', '')
+        && getAfter(/databases/$(database)/documents/persons/$(personId)/keyEvents/$(eventId)).data.get('recordedAt', null) == request.time;
+    }
     // Tree roles split by privilege. A `guardian` link is a LIGHTWEIGHT, self-serve public follow
     // (any signed-in user may add one) and grants NO privileges — it is deliberately excluded from
     // every check below. Tending and circle access vest only in the invited roles (co_owner /
@@ -529,8 +592,45 @@ service cloud.firestore {
     // superadmin lid backfill — migrateBackfillLids) but never create-for or delete.
     match /persons/{personId} {
       allow read: if true;
-      allow create: if isSignedIn() && request.auth.uid == personId;
-      allow update: if isSignedIn() && (request.auth.uid == personId || isStaff());
+      allow create: if isSignedIn() && request.auth.uid == personId
+        && (
+          (
+            request.resource.data.get('publicKeyPem', null) == null
+            && !request.resource.data.keys().hasAny([
+              'signingKeyFingerprint', 'signingEpochId',
+              'signingState', 'signingAnchoredAt', 'signingFrozenAt', 'signingFreezeEventId'
+            ])
+          )
+          || validSigningAnchor(personId)
+        );
+      allow update: if isSignedIn() && (
+        (
+          (request.auth.uid == personId || isStaff())
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            'publicKeyPem', 'signingKeyFingerprint', 'signingEpochId',
+            'signingState', 'signingAnchoredAt', 'signingFrozenAt', 'signingFreezeEventId'
+          ])
+          && (
+            !('lid' in resource.data)
+            || request.resource.data.get('lid', '') == resource.data.get('lid', '')
+          )
+        )
+        || (
+          request.auth.uid == personId
+          && !('signingEpochId' in resource.data)
+          && (
+            resource.data.get('publicKeyPem', null) == null
+            || resource.data.get('publicKeyPem', '') == ''
+            || resource.data.get('publicKeyPem', '') == request.resource.data.get('publicKeyPem', '')
+          )
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'publicKeyPem', 'signingKeyFingerprint', 'signingEpochId',
+            'signingState', 'signingAnchoredAt'
+          ])
+          && validSigningAnchor(personId)
+        )
+        || (request.auth.uid == personId && validSigningFreeze(personId))
+      );
       allow delete: if false;
 
       // APPEND-ONLY KEY HISTORY — persons/{uid}/keys/{fingerprint}: one doc per identity key ever
@@ -539,19 +639,76 @@ service cloud.firestore {
       // verifiedCovenantSigners / verifiedDecisionSigners — history survives key rotation), so the
       // whole record is frozen: owner-create only; re-publishing the SAME key may touch its own doc
       // (a no-op merge) but neither the pubkey NOR its publishedAt can ever change under the
-      // fingerprint. publishedAt is not read by verification YET — it is the trustworthy timeline
-      // the coming verify-at-signing-time/revocation ring will stand on, frozen from day one.
+      // fingerprint. New publication is pinned to request.time; v3 verification stands on the
+      // server-anchored keyEvents timeline rather than trusting a client-selected timestamp.
       // Never deleted — history is never rewritten.
       match /keys/{fingerprint} {
         allow read: if true;
         allow create: if isSignedIn() && request.auth.uid == personId
           && request.resource.data.keys().hasOnly(['pubkey', 'publishedAt'])
-          && request.resource.data.get('pubkey', '') != '';
+          && request.resource.data.get('pubkey', '') != ''
+          && request.resource.data.get('publishedAt', null) == request.time;
         allow update: if isSignedIn() && request.auth.uid == personId
           && request.resource.data.keys().hasOnly(['pubkey', 'publishedAt'])
           && request.resource.data.get('pubkey', '') == resource.data.get('pubkey', '')
           && request.resource.data.get('publishedAt', 0) == resource.data.get('publishedAt', 0);
         allow delete: if false;
+      }
+
+      // Append-only epoch events. A client may anchor the FIRST key or freeze the CURRENT one; both
+      // are atomic with the person declaration and pinned to request.time. Rotation and recovery
+      // events are Admin-SDK only because their cryptographic proofs/quorum are verified server-side.
+      match /keyEvents/{eventId} {
+        allow read: if true;
+        allow create: if isSignedIn() && request.auth.uid == personId
+          && request.resource.data.keys().hasOnly([
+            'version', 'type', 'uid', 'lid', 'epochId', 'keyFingerprint',
+            'recordedAt', 'claimedSuspectedSince'
+          ])
+          && request.resource.data.get('version', 0) == 1
+          && request.resource.data.get('uid', '') == personId
+          && request.resource.data.get('lid', '') != ''
+          && request.resource.data.get('lid', '')
+               == getAfter(/databases/$(database)/documents/persons/$(personId)).data.get('lid', '')
+          && request.resource.data.get('recordedAt', null) == request.time
+          && (
+            (
+              request.resource.data.get('type', '') == 'anchor'
+              && eventId == request.resource.data.get('epochId', '')
+              && eventId == 'anchor_' + request.resource.data.get('keyFingerprint', '')
+              && getAfter(/databases/$(database)/documents/persons/$(personId)).data.get('signingEpochId', '') == eventId
+              && getAfter(/databases/$(database)/documents/persons/$(personId)).data.get('signingKeyFingerprint', '')
+                   == request.resource.data.get('keyFingerprint', '')
+            )
+            || (
+              request.resource.data.get('type', '') == 'freeze'
+              && eventId == 'freeze_' + request.resource.data.get('epochId', '')
+              && getAfter(/databases/$(database)/documents/persons/$(personId)).data.get('signingState', '') == 'frozen'
+              && getAfter(/databases/$(database)/documents/persons/$(personId)).data.get('signingFreezeEventId', '') == eventId
+              && (
+                !('claimedSuspectedSince' in request.resource.data)
+                || (
+                  request.resource.data.claimedSuspectedSince <= request.time
+                  && request.resource.data.claimedSuspectedSince
+                       >= get(/databases/$(database)/documents/persons/$(personId)/keyEvents/$(request.resource.data.get('epochId', ''))).data.get('recordedAt', request.time)
+                )
+              )
+            )
+          );
+        allow update, delete: if false;
+      }
+
+      // Social recovery is mediated by callable functions: the candidate key proves itself, each
+      // witness is checked against the validation web and their active signing epoch, and activation
+      // re-checks three distinct hands atomically. Clients may inspect/share the proposal, never
+      // manufacture or edit its state.
+      match /keyRecoveries/{recoveryId} {
+        allow read: if isSignedIn();
+        allow write: if false;
+        match /witnesses/{witnessUid} {
+          allow read: if isSignedIn();
+          allow write: if false;
+        }
       }
     }
 
@@ -757,7 +914,10 @@ service cloud.firestore {
         // field) is refused, so a record can never carry a claim about WHO signed; the doc id is the
         // only signer, and the readers treat it as path-authoritative.
         allow create: if isSignedIn() && sigUid == request.auth.uid
-          && request.resource.data.keys().hasOnly(['sig', 'pubkey', 'signedAt', 'position'])
+          && request.resource.data.keys().hasOnly([
+            'sig', 'pubkey', 'version', 'keyFingerprint', 'epochId', 'recordedAt', 'position'
+          ])
+          && isCurrentEpochSignature(sigUid)
           && get(/databases/$(database)/documents/pulses/$(pulseId)).data.get('type', '') == 'decision'
           && isCommunityMember(get(/databases/$(database)/documents/pulses/$(pulseId)).data.get('communityId', ''));
         allow update: if false;
@@ -877,7 +1037,10 @@ service cloud.firestore {
         // field) is refused, so a record can never carry a claim about WHO signed; the doc id is the
         // only signer, and the readers treat it as path-authoritative.
         allow create: if isSignedIn() && sigUid == request.auth.uid
-          && request.resource.data.keys().hasOnly(['sig', 'pubkey', 'signedAt'])
+          && request.resource.data.keys().hasOnly([
+            'sig', 'pubkey', 'version', 'keyFingerprint', 'epochId', 'recordedAt'
+          ])
+          && isCurrentEpochSignature(sigUid)
           && exists(/databases/$(database)/documents/links/$(request.auth.uid + '__party__' + id));
         allow update: if false;
         allow delete: if isStaff();

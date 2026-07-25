@@ -16,6 +16,9 @@ const ALICE = 'alice-uid';   // initiator / community founder
 const BOB = 'bob-uid';       // target / tree owner
 const MALLORY = 'mallory-uid';
 const STAFF = 'staff-uid';
+const SIGNING_PUBKEY = 'base64-spki-pubkey';
+const SIGNING_FP = 'a'.repeat(64);
+const SIGNING_EPOCH = `anchor_${SIGNING_FP}`;
 
 const db = (uid?: string) => (uid ? env.authenticatedContext(uid).firestore() : env.unauthenticatedContext().firestore());
 
@@ -60,6 +63,29 @@ const seed = async () => {
     await setDoc(doc(d, 'lifetrees', 'bedStay'), { ownerId: ALICE, name: 'Cedar', treeType: 'BED', lightHouseId: 'lh1', visibility: 'node', validated: false, validatorId: null, loveCount: 0 });
     await setDoc(doc(d, 'visions', 'vision1'), { authorId: ALICE, title: 'A clearing', visibility: 'public', loveCount: 0 });
     await setDoc(doc(d, 'pulses', 'pulseLove'), { authorId: BOB, type: 'standard', title: 'A pulse', visibility: 'public', loveCount: 0, validationScore: 0 });
+    for (const uid of [ALICE, BOB]) {
+      await setDoc(doc(d, 'persons', uid), {
+        lid: `${uid}-lid`,
+        publicKeyPem: SIGNING_PUBKEY,
+        signingKeyFingerprint: SIGNING_FP,
+        signingEpochId: SIGNING_EPOCH,
+        signingState: 'active',
+        signingAnchoredAt: Timestamp.fromMillis(1),
+      });
+      await setDoc(doc(d, 'persons', uid, 'keys', SIGNING_FP), {
+        pubkey: SIGNING_PUBKEY,
+        publishedAt: Timestamp.fromMillis(1),
+      });
+      await setDoc(doc(d, 'persons', uid, 'keyEvents', SIGNING_EPOCH), {
+        version: 1,
+        type: 'anchor',
+        uid,
+        lid: `${uid}-lid`,
+        epochId: SIGNING_EPOCH,
+        keyFingerprint: SIGNING_FP,
+        recordedAt: Timestamp.fromMillis(1),
+      });
+    }
   });
 };
 
@@ -793,7 +819,14 @@ describe('covenants — the two-sided mint: proposer names parties, each signs o
     kind: 'covenant', title: 'T', body: 'B', quorum: 1, proposedBy: ALICE, status: 'proposed', ...over,
   });
   const party = (uid: string, extra: object = {}) => ({ lid: 'x', type: 'link', rel: 'party', from: uid, to: 'cov1', ...extra, createdAt: 1 });
-  const sig = { sig: 'base64-signature', pubkey: 'base64-spki-pubkey', signedAt: 1 };
+  const sig = {
+    sig: 'base64-signature',
+    pubkey: SIGNING_PUBKEY,
+    version: 3,
+    keyFingerprint: SIGNING_FP,
+    epochId: SIGNING_EPOCH,
+    recordedAt: serverTimestamp(),
+  };
 
   it('the proposer creates it naming themselves; a stranger cannot forge the proposer', async () => {
     await assertSucceeds(setDoc(doc(db(ALICE), 'covenants', 'covA'), covDoc()));
@@ -831,6 +864,19 @@ describe('covenants — the two-sided mint: proposer names parties, each signs o
     await assertFails(setDoc(doc(db(BOB), 'covenants', 'cov1', 'signatures', BOB), { ...sig, extra: 'x' }));
     // The legit field set still lands.
     await assertSucceeds(setDoc(doc(db(BOB), 'covenants', 'cov1', 'signatures', BOB), sig));
+  });
+
+  it('recordedAt and epoch are server-witnessed — backdating, invented epochs, and frozen keys cannot sign', async () => {
+    await seedCov();
+    await assertFails(setDoc(doc(db(BOB), 'covenants', 'cov1', 'signatures', BOB), {
+      ...sig, recordedAt: Timestamp.fromMillis(1),
+    }));
+    await assertFails(setDoc(doc(db(BOB), 'covenants', 'cov1', 'signatures', BOB), {
+      ...sig, epochId: 'invented-epoch',
+    }));
+    await env.withSecurityRulesDisabled(async (ctx) =>
+      updateDoc(doc(ctx.firestore(), 'persons', BOB), { signingState: 'frozen' }));
+    await assertFails(setDoc(doc(db(BOB), 'covenants', 'cov1', 'signatures', BOB), sig));
   });
 
   it('the identity is FROZEN — only status + chain head advance; title/quorum/proposedBy cannot move', async () => {
@@ -882,7 +928,14 @@ describe('decision signatures — a decision the community SIGNS: member-gated, 
     // BOB joins com1 (a member link); ALICE is com1's owner (implicitly a member).
     await setDoc(doc(d, 'links', `${BOB}__member__com1`), { lid: 'x', type: 'link', rel: 'member', from: BOB, to: 'com1', createdAt: 1 });
   });
-  const sig = { sig: 'base64-signature', pubkey: 'base64-spki-pubkey', signedAt: 1 };
+  const sig = {
+    sig: 'base64-signature',
+    pubkey: SIGNING_PUBKEY,
+    version: 3,
+    keyFingerprint: SIGNING_FP,
+    epochId: SIGNING_EPOCH,
+    recordedAt: serverTimestamp(),
+  };
 
   it('a community member signs their OWN slot; a non-member cannot sign at all', async () => {
     await seedDecision();
@@ -937,13 +990,30 @@ describe('persons key history — append-only lineage at persons/{uid}/keys/{fin
   const keyDoc = { pubkey: 'base64-spki-key-A', publishedAt: 1 };
 
   it('the owner records their own key; a stranger cannot write into another\'s history', async () => {
-    await assertSucceeds(setDoc(doc(db(ALICE), 'persons', ALICE, 'keys', FP), keyDoc));
-    await assertFails(setDoc(doc(db(MALLORY), 'persons', ALICE, 'keys', 'other-fp'), keyDoc));
+    await assertSucceeds(setDoc(doc(db(ALICE), 'persons', ALICE, 'keys', 'new-fp'), {
+      pubkey: 'base64-spki-key-B', publishedAt: serverTimestamp(),
+    }));
+    await assertFails(setDoc(doc(db(MALLORY), 'persons', ALICE, 'keys', 'other-fp'), {
+      pubkey: 'base64-spki-key-B', publishedAt: serverTimestamp(),
+    }));
   });
 
   it('exactly { pubkey, publishedAt } — extra fields and an empty pubkey are refused', async () => {
-    await assertFails(setDoc(doc(db(ALICE), 'persons', ALICE, 'keys', FP), { ...keyDoc, extra: 'x' }));
-    await assertFails(setDoc(doc(db(ALICE), 'persons', ALICE, 'keys', FP), { pubkey: '', publishedAt: 1 }));
+    await assertFails(setDoc(doc(db(ALICE), 'persons', ALICE, 'keys', 'extra-fp'), {
+      pubkey: 'key', publishedAt: serverTimestamp(), extra: 'x',
+    }));
+    await assertFails(setDoc(doc(db(ALICE), 'persons', ALICE, 'keys', 'empty-fp'), {
+      pubkey: '', publishedAt: serverTimestamp(),
+    }));
+  });
+
+  it('publishedAt is the server receipt time — backdated and future lineage claims are refused', async () => {
+    await assertFails(setDoc(doc(db(ALICE), 'persons', ALICE, 'keys', 'backdated-fp'), {
+      pubkey: 'key', publishedAt: Timestamp.fromMillis(1),
+    }));
+    await assertFails(setDoc(doc(db(ALICE), 'persons', ALICE, 'keys', 'future-fp'), {
+      pubkey: 'key', publishedAt: Timestamp.fromMillis(Date.now() + 86_400_000),
+    }));
   });
 
   it('append-only: the recorded pubkey can never change under its fingerprint; re-publishing the SAME key may merge; no delete, not even staff', async () => {
@@ -963,6 +1033,145 @@ describe('persons key history — append-only lineage at persons/{uid}/keys/{fin
   it('the history is world-readable — anyone can verify lineage', async () => {
     await env.withSecurityRulesDisabled(async (ctx) => setDoc(doc(ctx.firestore(), 'persons', ALICE, 'keys', FP), keyDoc));
     await assertSucceeds(getDoc(doc(db(), 'persons', ALICE, 'keys', FP)));
+  });
+});
+
+describe('signing epochs — atomic anchor, immutable authority, one-way emergency freeze', () => {
+  const FP = 'c'.repeat(64);
+  const PUBKEY = 'base64-spki-mallory-key';
+  const EPOCH = `anchor_${FP}`;
+
+  const anchorMallory = async () => {
+    const store = db(MALLORY);
+    const person = doc(store, 'persons', MALLORY);
+    const batch = writeBatch(store);
+    batch.set(doc(person, 'keys', FP), { pubkey: PUBKEY, publishedAt: serverTimestamp() });
+    batch.set(doc(person, 'keyEvents', EPOCH), {
+      version: 1,
+      type: 'anchor',
+      uid: MALLORY,
+      lid: 'mallory-lid',
+      epochId: EPOCH,
+      keyFingerprint: FP,
+      recordedAt: serverTimestamp(),
+    });
+    batch.set(person, {
+      lid: 'mallory-lid',
+      publicKeyPem: PUBKEY,
+      signingKeyFingerprint: FP,
+      signingEpochId: EPOCH,
+      signingState: 'active',
+      signingAnchoredAt: serverTimestamp(),
+    }, { merge: true });
+    await batch.commit();
+  };
+
+  it('ordinary person birth may reserve a null public key without claiming an epoch', async () => {
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'persons', MALLORY), {
+      uid: MALLORY,
+      lid: 'mallory-lid',
+      displayName: 'Mallory',
+      publicKeyPem: null,
+      createdAt: serverTimestamp(),
+    }));
+    await assertFails(updateDoc(doc(db(MALLORY), 'persons', MALLORY), { lid: 'another-lid' }));
+    await assertFails(updateDoc(doc(db(STAFF), 'persons', MALLORY), { lid: 'staff-rewrite' }));
+  });
+
+  it('anchors current key + lineage + epoch in one server-timed batch', async () => {
+    await assertSucceeds(anchorMallory());
+    const person = await getDoc(doc(db(), 'persons', MALLORY));
+    expect(person.data()?.signingEpochId).toBe(EPOCH);
+    await assertSucceeds(getDoc(doc(db(), 'persons', MALLORY, 'keyEvents', EPOCH)));
+  });
+
+  it('an authenticated account and staff cannot directly replace the anchored key', async () => {
+    await anchorMallory();
+    await assertFails(updateDoc(doc(db(MALLORY), 'persons', MALLORY), {
+      publicKeyPem: 'takeover-key',
+    }));
+    await assertFails(updateDoc(doc(db(STAFF), 'persons', MALLORY), {
+      publicKeyPem: 'staff-takeover-key',
+    }));
+  });
+
+  it('freezes atomically and can never unfreeze or erase the event from a client', async () => {
+    await anchorMallory();
+    const store = db(MALLORY);
+    const person = doc(store, 'persons', MALLORY);
+    const freezeId = `freeze_${EPOCH}`;
+    const batch = writeBatch(store);
+    batch.set(doc(person, 'keyEvents', freezeId), {
+      version: 1,
+      type: 'freeze',
+      uid: MALLORY,
+      lid: 'mallory-lid',
+      epochId: EPOCH,
+      keyFingerprint: FP,
+      recordedAt: serverTimestamp(),
+    });
+    batch.update(person, {
+      signingState: 'frozen',
+      signingFrozenAt: serverTimestamp(),
+      signingFreezeEventId: freezeId,
+    });
+    await assertSucceeds(batch.commit());
+    await assertFails(updateDoc(person, { signingState: 'active' }));
+    await assertFails(deleteDoc(doc(person, 'keyEvents', freezeId)));
+  });
+
+  it('cannot claim that compromise begins in the future', async () => {
+    await anchorMallory();
+    const store = db(MALLORY);
+    const person = doc(store, 'persons', MALLORY);
+    const freezeId = `freeze_${EPOCH}`;
+    const batch = writeBatch(store);
+    batch.set(doc(person, 'keyEvents', freezeId), {
+      version: 1,
+      type: 'freeze',
+      uid: MALLORY,
+      lid: 'mallory-lid',
+      epochId: EPOCH,
+      keyFingerprint: FP,
+      claimedSuspectedSince: Timestamp.fromMillis(Date.now() + 86_400_000),
+      recordedAt: serverTimestamp(),
+    });
+    batch.update(person, {
+      signingState: 'frozen',
+      signingFrozenAt: serverTimestamp(),
+      signingFreezeEventId: freezeId,
+    });
+    await assertFails(batch.commit());
+  });
+
+  it('recovery proposals and witness slots are callable-owned, never client-forgeable', async () => {
+    await env.withSecurityRulesDisabled(async ctx => {
+      const proposal = doc(ctx.firestore(), 'persons', MALLORY, 'keyRecoveries', 'recovery-1');
+      await setDoc(proposal, {
+        version: 1,
+        uid: MALLORY,
+        status: 'open',
+        fromFingerprint: FP,
+        toFingerprint: 'd'.repeat(64),
+        toPubkey: 'candidate-key',
+        suspectedSinceMs: 1,
+        newSig: 'proof',
+        createdAt: Timestamp.fromMillis(1),
+      });
+    });
+    const proposal = doc(db(MALLORY), 'persons', MALLORY, 'keyRecoveries', 'recovery-1');
+    await assertSucceeds(getDoc(proposal));
+    await assertFails(getDoc(doc(db(), 'persons', MALLORY, 'keyRecoveries', 'recovery-1')));
+    await assertFails(setDoc(doc(proposal, 'witnesses', MALLORY), {
+      witnessUid: MALLORY,
+      version: 3,
+      sig: 'forged',
+      pubkey: PUBKEY,
+      keyFingerprint: FP,
+      epochId: EPOCH,
+      recordedAt: serverTimestamp(),
+    }));
+    await assertFails(updateDoc(proposal, { status: 'activated' }));
   });
 });
 

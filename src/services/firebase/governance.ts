@@ -4,8 +4,8 @@ import { createBlock } from '../../utils/crypto';
 import { uuidv7 } from '../../utils/id';
 import { type PulseVisibility } from '../../domain/pulse';
 import {
-  DECISION_DOMAIN, decisionIdentity, decisionEnacted, decisionAuthoritative,
-  decisionSignaturePayload, verifiedDecisionSigners, decisionDeletable,
+  DECISION_EPOCH_DOMAIN, decisionIdentity, decisionEnacted, decisionAuthoritative,
+  decisionEpochSignaturePayload, verifiedDecisionSigners, decisionDeletable,
 } from '../../domain/decision';
 import { signatureFromDoc } from '../../domain/covenant';
 import { ensureSigningKey, publishSigningKey, isKeyInLineage, getPublishedSigningKey, sign as signWithKey, verify as verifyWithKey } from '../keys';
@@ -105,7 +105,11 @@ export interface DecisionSignature {
   sig: string;       // base64 Ed25519 signature over decisionIdentity(...)
   pubkey: string;    // base64 SPKI public key used to sign
   position?: ConsensusStance; // 'unite' in consensus mode; absent in threshold mode
-  signedAt?: unknown;
+  version?: 3;
+  keyFingerprint?: string;
+  epochId?: string;
+  recordedAt?: unknown;
+  signedAt?: unknown; // historical v2 record
 }
 
 const decisionSignaturesCol = (decisionId: string) => collection(db, 'pulses', decisionId, 'signatures');
@@ -228,16 +232,24 @@ export const signDecision = async (
     }
   }
 
-  // SIGNER-BOUND (v2): the signed bytes carry the decision identity AND this signer's uid, so this
-  // signature can only ever verify in this member's own slot — it is non-transferable by construction.
+  // SIGNER + EPOCH BOUND (v3): the bytes carry this member and the exact anchored key epoch.
   const identity = decisionIdentity(fresh);
-  const sig = await signWithKey(decisionSignaturePayload(identity, uid), DECISION_DOMAIN, uid);
+  const sig = await signWithKey(
+    decisionEpochSignaturePayload(identity, uid, key.fingerprint, key.epochId),
+    DECISION_EPOCH_DOMAIN,
+    uid,
+  );
   const sigPosition: ConsensusStance | undefined = mode === 'consensus' ? (position ?? 'unite') : undefined;
 
   // Each member writes ONLY their own slot (doc id == uid); the rules enforce it and community
   // membership. The pubkey is frozen here so verification never depends on a later-rotated key.
   await setDoc(doc(decisionSignaturesCol(decisionId), uid), {
-    sig, pubkey: key.publicKeyB64, signedAt: serverTimestamp(),
+    sig,
+    pubkey: key.publicKeyB64,
+    version: 3,
+    keyFingerprint: key.fingerprint,
+    epochId: key.epochId,
+    recordedAt: serverTimestamp(),
     ...(sigPosition ? { position: sigPosition } : {}),
   });
 

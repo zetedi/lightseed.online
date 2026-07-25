@@ -36,7 +36,10 @@ them; nothing in `domain/` imports upward.
 
 `persons` `users` `admins` `config`: identity & account. The public, server-owned
 `config/dataAuthority` singleton names the portable LID of the node governing
-this backend (`version: 1`, `nodeLid`); browser clients cannot write it.
+this backend (`version: 1`, `nodeLid`); browser clients cannot write it. A
+person's signing history lives below `persons/{uid}` as append-only `keys` and
+`keyEvents`; `keyRecoveries/{id}/witnesses/{uid}__{epoch}` holds the social recovery
+proof, while the person doc names only the current epoch and active/frozen state.
 `lifetrees`: the seed beings; chain fields frozen; provenance (`plantedAt`+coords).
 `pulses`: one ledger for growth/care/events/decisions/reaches/offerings; an offering may carry
 `offeringAppreciationLight` (suggested after-gift, never admission).
@@ -96,6 +99,11 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
   mounted views re-fetch; the feed prunes deleted ids surgically.
 - **Being links**: `/b/<lid>` resolves permission-aware across collections
   (`findBeingByLid`) and opens the right profile; QRs are minted lazily onto docs.
+- **The signing crystal**: first publication atomically anchors current key,
+  lineage and epoch. V3 covenant/decision seals carry fingerprint + epoch and
+  receive server time at rest. Routine rotation is old/new cross-signed in a
+  callable; account access may only freeze; recovery activation requires three
+  current witness signatures rooted in initiation or validated lifetrees.
 - **The White Paper**: the About page bundles these exact root/ documents at
   build time (`?raw` imports); the deployed node carries the constitution it
   grew from, inspectable by anyone it serves.
@@ -109,8 +117,13 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
   still share their authority node's instance-wide Auth and database. The next
   boundary is a self-describing export/import and independent backend bootstrap;
   only after data actually moves may a former Host declare itself a Node.
-- Key revocation/epochs are not built: a key once published binds forever through the
-  append-only lineage (signature slots stay auth-gated; see the continuity ring, 2026-07-18).
+- Key epochs are append-only and server-timed. New signatures bind fingerprint +
+  epoch in their v3 payload and land with `recordedAt == request.time`; planned
+  rotation is old/new cross-signed; account access may freeze but never replace;
+  recovery needs three distinct initiated/validated-tree witnesses. Historical v2
+  signatures remain readable without pretending they acquired a trustworthy
+  receipt time after the fact. Explicit re-affirmation of disputed seals is not
+  yet a product surface.
 - Client-side visibility gates (trees, Light Houses) await full rules parity.
 - Light House step-in consent is keeper-side only since the shelters migration.
 - Mother-tree badge lives on the tree page only (no denormalised flag yet).

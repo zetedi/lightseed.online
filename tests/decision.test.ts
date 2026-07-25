@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import {
-  DECISION_DOMAIN, decisionIdentity, decisionEnacted, decisionAuthoritative,
-  decisionSignaturePayload, countVerifiedDecisionSignatures, verifiedDecisionSigners, decisionDeletable,
+  DECISION_DOMAIN, DECISION_EPOCH_DOMAIN, decisionIdentity, decisionEnacted, decisionAuthoritative,
+  decisionSignaturePayload, decisionEpochSignaturePayload,
+  countVerifiedDecisionSignatures, verifiedDecisionSigners, decisionDeletable,
   type Decision, type RecordedDecisionSignature, type Position,
 } from '../src/domain/decision';
 import { COVENANT_DOMAIN } from '../src/domain/covenant';
@@ -96,6 +97,30 @@ describe('decisionSignaturePayload — signatures are SIGNER-BOUND (non-transfer
     expect(decisionSignaturePayload(identity, 'alice')).toEqual({ decision: identity, signer: 'alice' });
     expect(canonicalize(decisionSignaturePayload(identity, 'alice')))
       .not.toBe(canonicalize(decisionSignaturePayload(identity, 'bob')));
+  });
+
+  it('v3 refuses an invented epoch even when the signature key is still current', async () => {
+    const identity = decisionIdentity(base);
+    const kp = await keypairFromSeed(Uint8Array.from({ length: 32 }, (_, i) => i + 2));
+    const fingerprint = 'b'.repeat(64);
+    const epochId = 'anchor-b';
+    const sig = await signPayload(
+      kp.privateKey,
+      decisionEpochSignaturePayload(identity, 'alice', fingerprint, epochId),
+      DECISION_EPOCH_DOMAIN,
+    );
+    const record: RecordedDecisionSignature = {
+      uid: 'alice', sig, pubkey: kp.publicKeyB64,
+      version: 3, keyFingerprint: fingerprint, epochId, recordedAt: 1,
+    };
+    const published = new Map([['alice', kp.publicKeyB64]]);
+    expect(await countVerifiedDecisionSignatures(
+      identity, [record], 'threshold', published, verifyPayload,
+    )).toBe(0);
+    expect(await countVerifiedDecisionSignatures(
+      identity, [record], 'threshold', published, verifyPayload,
+      async (_uid, _pubkey, candidate) => candidate?.epochId === epochId,
+    )).toBe(1);
   });
 });
 

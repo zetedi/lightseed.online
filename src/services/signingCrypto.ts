@@ -101,6 +101,13 @@ export async function signPayload(privateKey: CryptoKey, payload: unknown, domai
   return toB64(sig);
 }
 
+// Sign an already-versioned fixed-field preimage. Key rotation/recovery use this form because the
+// same bytes are verified inside a separate Cloud Functions package that cannot import app code.
+export async function signPreimage(privateKey: CryptoKey, preimage: string): Promise<string> {
+  const sig = await crypto.subtle.sign(ALG, privateKey, new TextEncoder().encode(preimage));
+  return toB64(sig);
+}
+
 // Verify a signature using ONLY the public key (base64 SPKI/DER) — anyone can verify, since persons
 // are world-readable. Returns false (never throws) on a bad key, bad signature, or mismatch.
 export async function verifyPayload(
@@ -113,6 +120,24 @@ export async function verifyPayload(
     const pub = await crypto.subtle.importKey('spki', fromB64(publicKeyB64Spki), { name: ALG }, true, ['verify']);
     const bytes = new TextEncoder().encode(signingPreimage(domainTag, payload));
     return await crypto.subtle.verify(ALG, pub, fromB64(signatureB64), bytes);
+  } catch {
+    return false;
+  }
+}
+
+export async function verifyPreimage(
+  publicKeyB64Spki: string,
+  signatureB64: string,
+  preimage: string,
+): Promise<boolean> {
+  try {
+    const pub = await crypto.subtle.importKey('spki', fromB64(publicKeyB64Spki), { name: ALG }, true, ['verify']);
+    return await crypto.subtle.verify(
+      ALG,
+      pub,
+      fromB64(signatureB64),
+      new TextEncoder().encode(preimage),
+    );
   } catch {
     return false;
   }

@@ -21,6 +21,7 @@ import type { Being } from './being';
 // made a world-readable signature copyable into another signer's slot (quorum inflation); no legacy
 // v1 verification path exists — prod held only unsigned covenants at the cutover.
 export const COVENANT_DOMAIN = 'lifeseed.covenant.v2';
+export const COVENANT_EPOCH_DOMAIN = 'lifeseed.covenant.v3';
 
 // 'alignment' — the 2-party form (the resonance handshake, quorum 2). 'covenant' — the general
 // N-party pledge (a charter, a shared vow). Same machinery; the kind is inside the signed identity.
@@ -106,6 +107,26 @@ export function covenantSignaturePayload(identity: CovenantIdentity, signerUid: 
   return { covenant: identity, signer: signerUid };
 }
 
+// v3 binds the seal not merely to a public key, but to the exact anchored epoch in which that key
+// was authorised to speak. The receipt time stays outside the signed payload: Firestore pins it to
+// request.time, making it a server-witnessed fact rather than a client claim.
+export interface CovenantEpochSignaturePayload extends CovenantSignaturePayload {
+  key: { fingerprint: string; epochId: string };
+}
+
+export function covenantEpochSignaturePayload(
+  identity: CovenantIdentity,
+  signerUid: string,
+  keyFingerprint: string,
+  epochId: string,
+): CovenantEpochSignaturePayload {
+  return {
+    covenant: identity,
+    signer: signerUid,
+    key: { fingerprint: keyFingerprint, epochId },
+  };
+}
+
 // PATH AUTHORITY — a signature's signer IS its doc id. The body fields spread FIRST and the
 // path-derived uid lands LAST, so a malicious body `uid` field can never override the authenticated
 // slot the rules bound the write to. Every signature reader maps through this.
@@ -130,23 +151,30 @@ export function signatureBindsToIdentity(recordedPubkey: string, publishedPubkey
 // a staff-overwritten publicKeyPem no longer silently unbinds every seal a being ever made. A
 // THROWAWAY key still never counts — it was never published to the lineage. Injected (like the
 // verifier) so the counting rule stays pure; production wires services/keys.isKeyInLineage.
-export type LineageCheck = (uid: string, pubkeyB64: string) => Promise<boolean>;
+export type LineageCheck = (
+  uid: string,
+  pubkeyB64: string,
+  signature?: RecordedSignature,
+) => Promise<boolean>;
 
 // THE ONE BINDING GATE both counting rules (covenant + decision) share: a signature binds to the
 // signer's identity iff its recorded pubkey is the CURRENT published key (fast path) OR a key in
 // the signer's append-only lineage. Non-repudiation stands on "a key the being itself published" —
-// current or historical. Known, deliberate residual until the revocation ring: a key once published
-// binds FOREVER (the lineage never deletes), so lineage membership cannot retire a compromised key;
-// the perimeter against abuse is that a signature slot can only ever be WRITTEN by the
-// authenticated being itself (rules: doc id == request.auth.uid).
+// current or historical. Historical v2 records use lineage membership; every v3 record traverses
+// the injected epoch checker even when its key equals today's key, so a retired/forged epoch cannot
+// hide behind the fast path.
 export async function signatureBindsToIdentityOrLineage(
   uid: string,
   recordedPubkey: string,
   publishedPubkey: string,
   lineage?: LineageCheck,
+  signature?: RecordedSignature,
 ): Promise<boolean> {
+  // An epoch-bound signature must ALWAYS traverse the temporal checker. Equality with today's key
+  // proves only which key it is, not whether its claimed epoch existed at its receipt time.
+  if (signature?.version === 3) return lineage ? lineage(uid, recordedPubkey, signature) : false;
   if (signatureBindsToIdentity(recordedPubkey, publishedPubkey)) return true;
-  return lineage ? lineage(uid, recordedPubkey) : false;
+  return lineage ? lineage(uid, recordedPubkey, signature) : false;
 }
 
 // The DETERMINISTIC covenant id for an alignment's cryptographic twin. Derived purely from the
@@ -165,6 +193,13 @@ export interface RecordedSignature {
   uid: string;
   sig: string;
   pubkey: string;
+  version?: 3;
+  keyFingerprint?: string;
+  epochId?: string;
+  recordedAt?: unknown;
+  // Historical v2 records used this client-selectable field. It remains readable for verification,
+  // but no new signature is allowed to write it.
+  signedAt?: unknown;
 }
 
 // An injected Ed25519 verifier (services/signingCrypto.verifyPayload in production) — kept OUT of
@@ -198,8 +233,15 @@ export async function verifiedCovenantSigners(
   for (const s of sigs) {
     if (counted.has(s.uid)) continue;                  // one hand, one signature — never two slots
     if (!partyUids.has(s.uid)) continue;               // a signature from a non-party never counts
-    if (!(await signatureBindsToIdentityOrLineage(s.uid, s.pubkey, publishedKeys.get(s.uid) ?? '', lineage))) continue;
-    if (await verify(s.pubkey, s.sig, covenantSignaturePayload(identity, s.uid), COVENANT_DOMAIN)) {
+    if (!(await signatureBindsToIdentityOrLineage(
+      s.uid, s.pubkey, publishedKeys.get(s.uid) ?? '', lineage, s,
+    ))) continue;
+    const epochBound = s.version === 3 && !!s.keyFingerprint && !!s.epochId;
+    const payload = epochBound
+      ? covenantEpochSignaturePayload(identity, s.uid, s.keyFingerprint!, s.epochId!)
+      : covenantSignaturePayload(identity, s.uid);
+    const domain = epochBound ? COVENANT_EPOCH_DOMAIN : COVENANT_DOMAIN;
+    if (await verify(s.pubkey, s.sig, payload, domain)) {
       counted.add(s.uid);
     }
   }

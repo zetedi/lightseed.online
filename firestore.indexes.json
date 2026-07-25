@@ -16,6 +16,14 @@
       ]
     },
     {
+      "collectionGroup": "lifetrees",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "ownerId", "order": "ASCENDING" },
+        { "fieldPath": "validated", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "visions",
       "queryScope": "COLLECTION",
       "fields": [
