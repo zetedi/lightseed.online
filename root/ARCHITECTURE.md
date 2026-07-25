@@ -53,6 +53,11 @@ provenance, grants nothing; see domain/communityDoor). Doc id MUST equal `from__
 
 Queries must be **provable**: list queries carry the constraints the rules demand
 (visibility filters for the signed-out, `hostUid`/`participantUids` for inboxes).
+Vision lists are a source-level union: public visitors query `public`; signed-in
+viewers query `public` + `node` (until node membership becomes real) and merge
+their own author-scoped records; staff may read the field. The rules deliberately
+keep absent-visibility compatibility for a direct `get`, never for an
+unconstrained `list` that could sweep private records.
 Fine-grained gates live as pure domain functions (`canViewTree`,
 `canViewLightHouse`, `canView` for pulses) mirrored by the rules; overlay updates
 are constrained to exact key sets via `diff().affectedKeys().hasOnly(...)`.
@@ -66,8 +71,15 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
 
 ## Flows worth knowing
 
-- **Domain scoping**: non-hub hostnames filter forest/pulses/events/visions by
-  `domain == hostname`; the hub is unscoped. Custom landings are community DATA.
+- **Domain scoping (current compatibility behavior)**: hardcoded aliases
+  (`lightseed.online`, `lifeseed.online`, and local development hosts) are treated
+  as always-reflecting and therefore unscoped; other hostnames filter
+  forest/pulses/events/visions by `domain == hostname`. A host community's
+  `reflectsPublic` can open reflection on other domains, but the aliases cannot
+  yet close it. This is not the intended identity law: a domain alone is neither
+  a node nor a hub. The target is explicit node sovereignty over its forest
+  database, with **hub = node + community-chosen public reflection**. Custom
+  landings remain community DATA.
 - **The map**: pixel-space clustering (50px) over trees + Light House pseudo-beings;
   Light Houses seed clusters (lighthouse precedence); Seed-of-Life petal expansion;
   popups via Leaflet autoPan (bottom-anchored popups can never flip; don't try).
@@ -84,6 +96,10 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
 
 ## Known debts (kept honestly)
 
+- Node sovereignty is not built yet: domains still share an instance-wide
+  database and the hardcoded `isHubDomain` aliases confuse an address with a
+  role. The domain–DB boundary must become explicit before the UI can truthfully
+  derive `node`, then derive `hub` from that node's community reflection choice.
 - Key revocation/epochs are not built: a key once published binds forever through the
   append-only lineage (signature slots stay auth-gated; see the continuity ring, 2026-07-18).
 - Client-side visibility gates (trees, Light Houses) await full rules parity.

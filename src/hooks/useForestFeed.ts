@@ -139,7 +139,10 @@ export function useForestFeed(params: {
         setHasMore(!!res.lastDoc);
       }
       else if (tab === 'visions') {
-        const res = await fetchVisions(currentLastDoc, currentDomain);
+        const res = await fetchVisions(currentLastDoc, currentDomain, {
+          uid: lightseed?.uid,
+          isStaff: isSuperAdmin || isAdmin,
+        });
         setData(prev => {
           const newItems = res.items;
           if (reset) return newItems;

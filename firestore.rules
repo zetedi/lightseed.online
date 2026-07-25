@@ -143,6 +143,18 @@ service cloud.firestore {
         || (isSignedIn() && resource.data.authorId == request.auth.uid)
         || isStaff();
     }
+    // Lists cannot safely inherit the absent-visibility compatibility branch above: without a
+    // query constraint it makes a collection read broad enough to return private visions. A list
+    // must prove public/node visibility, authorship, or staff standing. Legacy docs remain
+    // directly readable by id and remain listable to their own author.
+    function canListVision() {
+      return resource.data.get('visibility', 'unlisted') == 'public'
+        || (isSignedIn() && (
+             resource.data.get('visibility', 'unlisted') == 'node'
+             || resource.data.authorId == request.auth.uid
+             || isStaff()
+           ));
+    }
     function canReadLightHouse() {
       return resource.data.get('visibility', 'community') == 'public'
         || (isSignedIn() && (
@@ -540,10 +552,12 @@ service cloud.firestore {
       }
     }
 
-    // Visions: visibility-gated reads (protect fragile/early visions). Missing visibility =
-    // public (legacy-safe). 'node' = any signed-in member; 'private' = author or staff only.
+    // Visions: visibility-gated reads (protect fragile/early visions). A direct read keeps the
+    // missing-visibility compatibility path; a LIST must prove public/node/author/staff and may
+    // never use that path to sweep private records into a client. 'private' = author or staff.
     match /visions/{visionId} {
-      allow read: if canReadVision();
+      allow get: if canReadVision();
+      allow list: if canListVision();
       allow create: if isSignedIn();
       // Joining a vision is now a self-serve 'joined' link (see the links collection), NOT a write
       // to the vision doc — so editing the doc itself is restricted to its author or staff.

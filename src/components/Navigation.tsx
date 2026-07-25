@@ -278,9 +278,6 @@ export const Navigation = ({
     const getTabLabel = (tab: string) => {
         // The AI Collab tab reads "Cocreate" (the menu name; renamed 2026-07-23).
         if (tab === 'collab') return 'Cocreate';
-        // The crown destination reads "The Node" (renamed from About, 2026-07-25): it is the
-        // node's own page, its vision, lore, chain and details, not an about-us footnote.
-        if (tab === 'about') return 'The Node';
         // For standard translation fallback, capitalize the first letter
         const fallback = tab.charAt(0).toUpperCase() + tab.slice(1);
         return t(tab as any) || fallback;
@@ -532,7 +529,7 @@ export const Navigation = ({
                         )}
 
                         {/* Two buttons side by side, wearing the tiles' own clothes:
-                            Node Details · Profile page. */}
+                            About · Profile page. “Node” or “Hub” waits for a truthful derived role. */}
                         <div className={`grid gap-2 ${lightseed ? 'grid-cols-2' : 'grid-cols-1'}`}>
                             <button
                                 onClick={() => { setTab('about'); setIsMenuOpen(false); }}
@@ -544,7 +541,7 @@ export const Navigation = ({
                                 style={activeTab === 'about' ? { backgroundColor: getActiveTabColor('about') || navBorder } : undefined}
                             >
                                 <span className="[&>svg]:h-[18px] [&>svg]:w-[18px] sm:hidden"><Icons.Info /></span>
-                                <span>The Node</span>
+                                <span>{getTabLabel('about')}</span>
                             </button>
 
                             {lightseed && (

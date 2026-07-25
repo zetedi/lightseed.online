@@ -23,9 +23,10 @@ export function useResonance(params: {
   data: any[];
   preferredIntelligenceId: string | undefined;
   isStaff: boolean;
+  viewerUid?: string;
   openReach: (tree: Lifetree | null, audience?: ReachAudience) => void;
 }) {
-  const { data, preferredIntelligenceId, isStaff, openReach } = params;
+  const { data, preferredIntelligenceId, isStaff, viewerUid, openReach } = params;
 
   const [synergies, setSynergies] = useState<VisionSynergy[]>(() => {
     const results = readSynergyCache()?.results;
@@ -106,7 +107,9 @@ export function useResonance(params: {
   };
 
   const handleAnalyzeSynergy = () => runResonance(async () => data);
-  const refreshResonanceObservatory = () => runResonance(async () => (await fetchVisions()).items);
+  const refreshResonanceObservatory = () => runResonance(async () => (
+    await fetchVisions(undefined, undefined, { uid: viewerUid, isStaff })
+  ).items);
 
   // Start a conversation with a resonant tree — resolve it, then open the reach thread.
   const reachResonantTree = async (treeId: string) => {

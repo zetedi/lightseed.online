@@ -6,6 +6,50 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-25 · The crown waits for truth; public means public at the source**:
+the full menu may greet a signed-out visitor — a public vision or offering can be
+the invitation — but public is enforced before data crosses the database door,
+not by hiding private records after download. The Visions feed now asks only for
+PUBLIC records when signed out, PUBLIC + NODE when signed in, and separately
+merges the author's own private visions; staff alone may read the whole field.
+The rules split direct vision reads from lists: the old absent-visibility
+compatibility remains addressable by id, but can no longer make an unconstrained
+collection query sweep private visions into a client. An adversarial emulator
+test holds that exact attack. The signed-out Visions face is public visions only:
+Alignments may contain a being's cached reading, so that sub-tab and the AI
+Analyse action both wait behind sign-in instead of leaking an earlier session or
+failing invisibly and planting a false seven-day cooldown.
+
+The crown's NAME also waits for truth. “The Node” returned to **About**: today a
+domain may still be a site on an instance-wide database, while the clarified root
+requires an explicit sovereign data boundary before it may call itself a node.
+When that boundary exists, the label will be derived, never inferred from the
+hostname: **Node** while scoped, **Hub** when its community chooses public
+reflection. This corrects the public-safety and naming parts of commit `45d308a`
+without discarding its good refinements: per-sub-tab reading density, one CTA
+height, short community actions, and the community root speaking plain words.
+*(An open menu is hospitality only when every opened door keeps its covenant.)*
+
+---
+
+**2026-07-25 · A hub is a node with an open canopy**: the domain, node and hub
+are separated by what they actually mean. A DOMAIN is an address; connecting one
+does not itself create sovereignty. A NODE is the stable data and governance
+boundary: a community with its domain and its own governed forest database. A
+HUB is always such a node, never a separate infrastructure class or a rank: it
+is a sovereign portal with its own data whose community has chosen to reflect
+the wider public forest. Therefore every hub is a node, not every node is a hub,
+and closing reflection leaves the node whole. The community decides reflection,
+and may reverse that decision. In code this eventually dissolves hostname
+inference: nodehood must come from an explicit data boundary; hub is derived from
+that node plus its community's `reflectsPublic` choice. Until that boundary
+exists, the hardcoded hub aliases describe compatibility behavior, not ontology.
+This clarifies rather than erases the earlier Indra's-net ring: commons remains
+a mode, and the name of a node in that mode is hub. *(Node is roots and custody;
+hub is the same node with an open canopy.)*
+
+---
+
 **2026-07-25 · The menu ascends root to crown**: the seven primary destinations already stood in
 chakra order without anyone designing it, so the navigation now wears the ladder openly: Forest
 the root (crimson garnet #b3152f), Visions the sacral (vivid sienna #c94b0c), Events the solar

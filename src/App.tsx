@@ -462,7 +462,13 @@ const AppContent = () => {
     const {
         synergies, isAnalyzingSynergy, lastSynergyAt, canRefreshResonance, synergyCooldownLeft, favoriteResonanceIds,
         toggleFavoriteResonance, handleAnalyzeSynergy, refreshResonanceObservatory, reachResonantTree,
-    } = useResonance({ data, preferredIntelligenceId, isStaff: isSuperAdmin || isAdmin, openReach });
+    } = useResonance({
+        data,
+        preferredIntelligenceId,
+        isStaff: isSuperAdmin || isAdmin,
+        viewerUid: lightseed?.uid,
+        openReach,
+    });
 
     // Open the Direct Messages inbox as a large overlay (the envelope in the nav). The
     // profile keeps its own Reaches tab for direct visits; this no longer steers there.

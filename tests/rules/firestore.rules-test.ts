@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import {
   initializeTestEnvironment, assertSucceeds, assertFails, type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { doc, setDoc, updateDoc, getDoc, deleteDoc, deleteField, Timestamp, runTransaction, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { collection, doc, setDoc, updateDoc, getDoc, getDocs, deleteDoc, deleteField, query, where, Timestamp, runTransaction, serverTimestamp, writeBatch } from 'firebase/firestore';
 
 // The security fence around the release's hottest rules. Runs under the Firestore emulator:
 //   npm run test:rules
@@ -709,6 +709,38 @@ describe('visions — the idea-twin grows its own chain; the genesis is frozen',
   it('the lid stays frozen on a vision (the true name is load-bearing)', async () => {
     await seedVisions();
     await assertFails(updateDoc(doc(db(BOB), 'visions', 'v1'), { lid: 'forged' }));
+  });
+
+  it('a broad vision list cannot sweep private records into a client', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const d = ctx.firestore();
+      await setDoc(doc(d, 'visions', 'vNode'), { authorId: ALICE, title: 'Node', visibility: 'node' });
+      await setDoc(doc(d, 'visions', 'vPrivate'), { authorId: ALICE, title: 'Private', visibility: 'private' });
+      await setDoc(doc(d, 'visions', 'vUnlisted'), { authorId: ALICE, title: 'Old unlisted vision' });
+    });
+
+    // The attack the public menu exposed: no visibility constraint. It must fail as a whole.
+    await assertFails(getDocs(query(collection(db(), 'visions'))));
+    await assertFails(getDocs(query(collection(db(MALLORY), 'visions'))));
+
+    const publicSnap = await assertSucceeds(getDocs(query(
+      collection(db(), 'visions'),
+      where('visibility', '==', 'public'),
+    )));
+    expect(publicSnap.docs.every(d => d.data().visibility === 'public')).toBe(true);
+
+    const signedInSnap = await assertSucceeds(getDocs(query(
+      collection(db(MALLORY), 'visions'),
+      where('visibility', 'in', ['public', 'node']),
+    )));
+    expect(signedInSnap.docs.every(d => ['public', 'node'].includes(d.data().visibility))).toBe(true);
+
+    // An author may still list all of their own visions, including private and unlisted ones.
+    const mine = await assertSucceeds(getDocs(query(
+      collection(db(ALICE), 'visions'),
+      where('authorId', '==', ALICE),
+    )));
+    expect(mine.docs.map(d => d.id)).toEqual(expect.arrayContaining(['vPrivate', 'vUnlisted']));
   });
 });
 

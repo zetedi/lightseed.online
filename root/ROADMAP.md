@@ -31,17 +31,23 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
 
 ## Next (after 8/8)
 
-- **Nodes become real (the domain–DB link).** Today a "node" is only skin:
-  `inviteOnly` is a hardcoded global constant (never read from the DB, identical
-  on every domain), accounts are instance-wide, and `node` visibility means
-  merely "signed in." Recognise the node as **the community that owns a domain**;
+- **Nodes become real (the domain–DB link).** Today a "node" is not yet sovereign:
+  domains have community-governed doors and reflection settings, but Auth and
+  the database remain instance-wide, and `node` visibility means merely "signed
+  in." A domain alone makes a community reachable; it does not
+  make it sovereign. Recognise the node as **the community that owns a domain
+  and governs its own forest database**. A **hub is always a node**: a node acting
+  as a portal, with its own data, because its community chose to reflect the
+  wider public forest. Reflection is reversible; closing it leaves a scoped node,
+  not a lesser kind of infrastructure. Thus node is the stable data/governance
+  identity and hub is its community-governed public role;
   principle 11 once more: identity is *portable and open* (anyone may hold one
   account/lid across the whole instance; the door gates membership, never being),
   membership is *local* (a `member` edge to the node's host community; a node IS a
   community, so no new rel). Decided 2026-07-15 (see DECISIONS): identity open,
-  membership local; **commons is a per-node mode, not a place** (every node may
-  reflect the instance's public or stay a scoped pond, Indra's net; no privileged
-  hub, only the node reflecting all public); some parts are *sensitive to light*:
+  membership local; **commons is the hub mode, not a place or rank** (every node
+  may reflect the wider public forest or stay a scoped pond, Indra's net; there
+  is no privileged hub); some parts are *sensitive to light*:
   the ladder protects what is not yet ready for a wide gaze. Three phases, each
   its own ring (**Phases 1–2 shipped 2026-07-15/16**; see DECISIONS):
   1. **The node's door becomes real**: `useConfig` reads the host community's
@@ -49,16 +55,17 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
      keeper can open or close *their* node; **identity is open by default**, and a
      node's door gates membership; only a **closed** node also closes sign-up on its
      domain (see the reconciliation ring); and a per-node **reflect-the-instance-
-     public** toggle replaces the hardcoded `isHubDomain` unscoping, so commons
-     becomes a setting any node can choose. Absent door keeps today's behaviour
+     public** toggle replaces the hardcoded `isHubDomain` unscoping, so the hub
+     role becomes a setting any node's community can choose. Absent door keeps
+     today's behaviour
      (invitation required); mechanical, no meaning-change.
   2. **Invitations carry the node**: stamp the host community on each
      `networkInvite` (**the domain it was sent from**); on accept, mint `member`
      (node) + `invited_by` (provenance), so one personal invitation carries someone
      from no-account to member-of-my-node, names the right node, and **opens that
      domain's OPEN communities** to them (tender ones still ask for their own key).
-     A one-time link of every existing account to the origin node (lightseed, the
-     node reflecting all public) grandfathers all current standing.
+     A one-time link of every existing account to the origin node (lightseed,
+     currently acting as the hub) grandfathers all current standing.
   3. **`node` visibility means "member of THIS node"**: not any signed-in being;
      and **"open" narrows from instance-wide to domain-scoped** (the open door
      shipped 2026-07-15 admits any account today; it becomes open-to-the-domain).

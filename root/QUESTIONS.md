@@ -56,6 +56,10 @@ boundary really is.
   open to all; the door gates membership, not being. Still open: whether a node
   may host account creation under its own name, or identity is minted only at the
   hub.*
+  → *Vocabulary clarified 2026-07-25: a hub is a node in community-chosen public
+  reflection mode, so identity minting is not a hub policy. The remaining
+  question is whether portable identity is issued by any node or by a shared
+  identity service.*
 - When a person is a member of several nodes, what does `node` visibility mean as
   they move between domains: the node they are currently *in*, or every node they
   belong to? (The membership face of "can a lid stand in two constitutions at

@@ -7,21 +7,51 @@ import { firestoreStore } from '../../adapters/firestore';
 import { createBlock } from '../../utils/crypto';
 import { isHubDomain } from './trees';
 
-export const fetchVisions = async (lastD?: QueryDocumentSnapshot, domainFilter?: string) => {
+export interface VisionFetchAccess {
+    uid?: string;
+    isStaff?: boolean;
+}
+
+// A broad vision list must be provable at the database boundary. Public visitors query PUBLIC
+// explicitly; signed-in viewers query PUBLIC + NODE (until node membership becomes real); staff
+// may read the whole field. An author's own query
+// is merged on the first page so their private visions remain visible without exposing anyone
+// else's. The client canViewVision gate remains a belt, never the lock.
+export const fetchVisions = async (
+    lastD?: QueryDocumentSnapshot,
+    domainFilter?: string,
+    access: VisionFetchAccess = {},
+) => {
+    const normalizedDomain = domainFilter?.replace(/^www\./, '');
+    const scoped = !!(normalizedDomain && !isHubDomain(normalizedDomain));
+    const visible = access.isStaff
+        ? []
+        : [access.uid
+            ? where('visibility', 'in', ['public', 'node'])
+            : where('visibility', '==', 'public')];
     let q;
-    if (domainFilter && !isHubDomain(domainFilter)) {
-        q = query(visionsCollection, where('domain', '==', domainFilter.replace(/^www\./, '')), limit(24));
+    if (scoped) {
+        q = query(visionsCollection, where('domain', '==', normalizedDomain!), ...visible, limit(24));
     } else {
-        q = query(visionsCollection, orderBy('createdAt', 'desc'), limit(12));
+        q = query(visionsCollection, ...visible, orderBy('createdAt', 'desc'), limit(12));
     }
     
     if (lastD) q = query(q, startAfter(lastD));
     const snap = await getDocs(q);
-    let items = snap.docs.map(d => (mapDoc(d) as Vision));
-    
-    if (domainFilter && !isHubDomain(domainFilter)) {
-        items = items.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+    const byId = new Map(snap.docs.map(d => [d.id, mapDoc(d) as Vision]));
+
+    // Owner visibility is a separate, rule-provable query. Merge only on page one; subsequent
+    // pages paginate the shared public/node stream and dedupe in useForestFeed.
+    if (!lastD && access.uid && !access.isStaff) {
+        const mine = await getDocs(query(visionsCollection, where('authorId', '==', access.uid)));
+        mine.docs.forEach(d => {
+            const vision = mapDoc(d) as Vision;
+            if (!scoped || vision.domain === normalizedDomain) byId.set(d.id, vision);
+        });
     }
+
+    const items = [...byId.values()]
+        .sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 
     return { items, lastDoc: snap.docs[snap.docs.length-1] || null };
 }

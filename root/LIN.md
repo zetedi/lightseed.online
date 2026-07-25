@@ -36,10 +36,14 @@ additionally grow a **Council**, the organ by which many become one voice.
    a deliberate act; some parts can be harmed by a gaze they are not ready for: a
    play copied before its story is whole. Two dials, kept apart: how far a being's
    own content *reaches out* (community → node → public), and how much of the
-   instance's public a node *reflects in*. Commons is a **mode, not a place**:
-   every node may choose to be a window onto the whole or a scoped pond (Indra's
-   net); there is no privileged hub, only the node currently reflecting all that
-   is public.
+   wider public forest a node *reflects in*. A **node** is the sovereign data and
+   governance boundary: its community holds and governs its own forest database.
+   A **hub** is always a node — a sovereign place with its own data whose
+   community has chosen to act as a portal onto the wider public forest.
+   Reflection is a reversible community decision, not a different infrastructure
+   class or a rank. Every hub is a node; not every node is a hub. Commons is a
+   **mode, not a place**: a node may open that window or remain a scoped pond
+   (Indra's net); there is no privileged hub.
 5. **Data, not code.** Organisations get landings, themes, pages as *data*,
    never per-org source files.
 6. **Paper outlives databases.** Every being carries a QR with its lid
@@ -96,9 +100,13 @@ open / invitation / closed: who may enter, distinct from who may see) ·
 *steward* (a delegated door-keeper: accepts knocks, mints invitations; shares
 the door, not the deed) · *invited by* (append-only provenance: how a
 being arrived; a mark, never a power; the inviter gains nothing through the
-door) · *commons* (a mode, not a place: a node choosing to reflect the instance's
-public, a window onto the whole; every jewel may) · *reflect* (a node showing
-another's public content; Indra's net as a setting) ·
+door) · *node* (a sovereign community with a domain and its own governed forest
+database; the domain is its address, not the source of its sovereignty) ·
+*hub* (always a node: a portal with its own data, opened by its community's
+choice to reflect the wider public forest) · *commons* (the hub mode, not a
+place or rank: reflection may be opened or closed while the node remains) ·
+*reflect* (a node showing another node's public content; Indra's net as a
+community-governed setting) ·
 *offering* (a bed or service today, any honest contribution in the wider pattern: opened by
 trust, never purchased; it may name a **suggested appreciation** in light that follows AFTER
 it is received, an agreement and not a gate) ·

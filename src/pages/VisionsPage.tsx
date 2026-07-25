@@ -43,17 +43,20 @@ export const VisionsPage = ({
   // Two entity lists under one menu item — Visions and Alignments (the resonance field) — so a
   // long visions list doesn't bury the alignments in scroll.
   const [subTab, setSubTab] = React.useState<'visions' | 'alignments'>('visions');
+  // The public face is public visions only. Alignments may be cached from a signed-in being's
+  // prior reading, so neither the tab nor its content may survive into a signed-out session.
+  const activeSubTab = lightseed ? subTab : 'visions';
   // Reading density is remembered PER SUB-TAB (2026-07-25): visions and alignments are different
   // reading moods, so each keeps its own slot; the toggle drives whichever tab is open.
   const [visionsDensity, setVisionsDensity] = useListDensity('visions');
   const [alignmentsDensity, setAlignmentsDensity] = useListDensity('alignments');
-  const density = subTab === 'alignments' ? alignmentsDensity : visionsDensity;
-  const setDensity = subTab === 'alignments' ? setAlignmentsDensity : setVisionsDensity;
+  const density = activeSubTab === 'alignments' ? alignmentsDensity : visionsDensity;
+  const setDensity = activeSubTab === 'alignments' ? setAlignmentsDensity : setVisionsDensity;
   // The two sub-tabs stay in ONE hue family (the sacral): visions wears the parent sienna,
   // alignments its deeper rust (resonance heat reads truest in red-orange). Both tones come
   // from the central spectrum; the band and tinted body follow the active tab.
   const ALIGN_TONE = tabTone('alignments');
-  const activeTone = subTab === 'alignments' ? ALIGN_TONE : tone;
+  const activeTone = activeSubTab === 'alignments' ? ALIGN_TONE : tone;
   // Respect vision visibility (protect fragile/early visions). Rules enforce it server-side.
   const visibleVisions = visions.filter(v => canViewVision(v, viewer));
   return (
@@ -61,9 +64,9 @@ export const VisionsPage = ({
       <SectionHeader
         title={t('visions')}
         tone={activeTone}
-        tabs={
+        tabs={lightseed ? (
           <FullWidthTabs
-            active={subTab}
+            active={activeSubTab}
             onChange={(k) => setSubTab(k as 'visions' | 'alignments')}
             tone={activeTone}
             tabs={[
@@ -71,19 +74,17 @@ export const VisionsPage = ({
               { key: 'alignments', label: t('alignments'), icon: <Icons.Venn />, count: synergies.length, tone: ALIGN_TONE },
             ]}
           />
-        }
+        ) : undefined}
         footer={searchBox}
         toggle={<ViewDensityToggle value={density} onChange={setDensity} />}
-        action={
+        action={lightseed ? (
           <div className="flex items-center gap-2">
-            {lightseed && (
-              <button
-                onClick={onCreateVision}
-                className={`bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}
-              >
-                <Icons.Plus className="text-yellow-300" /> <span className="hidden sm:inline">{t('create_vision')}</span>
-              </button>
-            )}
+            <button
+              onClick={onCreateVision}
+              className={`bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}
+            >
+              <Icons.Plus className="text-yellow-300" /> <span className="hidden sm:inline">{t('create_vision')}</span>
+            </button>
             {/* Emerald like the New Vision button (the old amber melted into the visions-tone
                 header), with the same yellow accent on the icon. */}
             <button
@@ -97,10 +98,10 @@ export const VisionsPage = ({
               <span className="hidden sm:inline">{isAnalyzingSynergy ? t('analyzing') : t('analyze')}</span>
             </button>
           </div>
-        }
+        ) : undefined}
       >
         <ListBox tone={activeTone}>
-          {subTab === 'alignments' ? (
+          {activeSubTab === 'alignments' ? (
             <>
               <ResonancePanel synergies={synergies} favorites={favoriteResonanceIds} onToggleFavorite={onToggleFavorite} onReach={onReach} density={density} />
               {synergies.length === 0 && <p className="py-10 text-center text-slate-500">{t('no_resonances_yet')}</p>}
