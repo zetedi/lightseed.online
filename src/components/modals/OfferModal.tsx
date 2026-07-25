@@ -5,19 +5,19 @@ import { showAlert } from '../ui/Dialog';
 import { ImagePicker } from '../ui/ImagePicker';
 import { useSession } from '../../contexts/SessionContext';
 import { createOffering, uploadImage, getMyBeds } from '../../services/firebase';
-import { offeringProblem, formatLightPrice, type OfferingKind } from '../../domain/offering';
-import { RAY_UNITS } from '../../domain/light';
+import { offeringProblem, type OfferingKind } from '../../domain/offering';
+import { formatLight, RAY_UNITS } from '../../domain/light';
 import type { Lifetree } from '../../types';
 
-// OFFER FOR LIGHT — post a BED or a SERVICE priced in light (domain/offering). Creates an
-// 'offering' pulse that lands on the Offerings tab. The exchange itself (a buyer's light moving
-// to the offerer) is a coming rung; this is the posting side.
+// MAKE AN OFFERING — post a BED or SERVICE through trust, with light named only as the hoped-for
+// appreciation AFTER someone receives it (domain/offering). It creates an offering pulse on the
+// one ledger. The form never makes light an admission price.
 export const OfferModal = ({ onClose, onCreated }: { onClose: () => void; onCreated?: () => void }) => {
     const { lightseed } = useSession();
     const [kind, setKind] = useState<OfferingKind>('service');
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
-    const [price, setPrice] = useState(String(RAY_UNITS));
+    const [appreciation, setAppreciation] = useState(String(RAY_UNITS));
     const [imageUrl, setImageUrl] = useState('');
     const [uploading, setUploading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -39,8 +39,15 @@ export const OfferModal = ({ onClose, onCreated }: { onClose: () => void; onCrea
         }
     };
 
-    const priceLight = Number.parseInt(price, 10);
-    const problem = offeringProblem({ kind, title, description, priceLight: Number.isFinite(priceLight) ? priceLight : NaN });
+    // Preserve fractions/invalid input for the domain validator; parseInt would silently turn
+    // "10.5" into 10 and bypass the whole-light rule.
+    const suggestedAppreciationLight = Number(appreciation);
+    const problem = offeringProblem({
+        kind,
+        title,
+        description,
+        suggestedAppreciationLight: Number.isFinite(suggestedAppreciationLight) ? suggestedAppreciationLight : NaN,
+    });
 
     const pickImage = async (file: File) => {
         if (!lightseed) return;
@@ -62,7 +69,7 @@ export const OfferModal = ({ onClose, onCreated }: { onClose: () => void; onCrea
                 content: description.trim(),
                 imageUrl,
                 offeringKind: kind,
-                offeringPriceLight: priceLight,
+                offeringAppreciationLight: suggestedAppreciationLight,
                 ...(kind === 'bed' && bed ? { offeringBedId: bed.id, offeringBedName: bed.name } : {}),
                 authorId: lightseed.uid,
                 authorName: lightseed.displayName || 'A being',
@@ -74,7 +81,7 @@ export const OfferModal = ({ onClose, onCreated }: { onClose: () => void; onCrea
     };
 
     return (
-        <Modal title="Offer for light" onClose={onClose} wide>
+        <Modal title="Make an offering" onClose={onClose} wide>
             <form onSubmit={submit} className="flex flex-col gap-4">
                 {/* What is offered */}
                 <div className="grid grid-cols-2 gap-2">
@@ -102,18 +109,18 @@ export const OfferModal = ({ onClose, onCreated }: { onClose: () => void; onCrea
                     placeholder="Describe it — what it is, when, any conditions…"
                     className="min-h-24 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
 
-                {/* Price in light */}
+                {/* Suggested appreciation: trust admits first; light may follow afterward. */}
                 <label className="block">
                     <span className="mb-1 flex items-center justify-between text-[10px] font-bold uppercase text-slate-400">
-                        <span>Price in light</span>
-                        <span className="text-amber-500">{formatLightPrice(Number.isFinite(priceLight) ? priceLight : 0)}</span>
+                        <span>Suggested appreciation</span>
+                        <span className="text-amber-500">{formatLight(Number.isFinite(suggestedAppreciationLight) ? suggestedAppreciationLight : 0)}</span>
                     </span>
                     <div className="flex items-center gap-2">
                         <span className="text-amber-500 [&>svg]:h-4 [&>svg]:w-4"><Icons.Sun /></span>
-                        <input type="number" min="1" inputMode="numeric" value={price} onChange={e => setPrice(e.target.value)}
+                        <input type="number" min="1" inputMode="numeric" value={appreciation} onChange={e => setAppreciation(e.target.value)}
                             className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
                     </div>
-                    <span className="mt-1 block text-[10px] text-slate-400">{RAY_UNITS} light = one ray (a night's worth of witnessed care).</span>
+                    <span className="mt-1 block text-[10px] text-slate-400">{RAY_UNITS} light = one ray. This is appreciation after receiving the offering, never a condition for entering.</span>
                 </label>
 
                 <ImagePicker onImageSelect={pickImage} previewUrl={imageUrl} loading={uploading} className="h-40" />
@@ -123,7 +130,7 @@ export const OfferModal = ({ onClose, onCreated }: { onClose: () => void; onCrea
                     className="w-full rounded-2xl bg-amber-500 py-3 text-sm font-bold text-white shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-600 disabled:opacity-50">
                     {saving ? 'Offering…' : 'Post the offering'}
                 </button>
-                <p className="text-center text-[11px] text-slate-400">Others will be able to take it up with light; the exchange itself is coming soon.</p>
+                <p className="text-center text-[11px] text-slate-400">Trust opens the offering. Light may follow afterward to appreciate the contribution.</p>
             </form>
         </Modal>
     );

@@ -480,8 +480,8 @@ export const createEvent = async (data: Partial<Pulse> & { title: string }) => {
     return { id: ref.id, lid, ...eventPayload, loveCount: 0, commentCount: 0, previousHash: 'EVENT', hash } as Pulse;
 };
 
-// An OFFERING — a bed or a service offered for light (domain/offering). A standalone pulse of
-// type 'offering', like createEvent, so it flows into the pulses ledger and the Offerings tab.
+// An OFFERING — a bed or service offered through trust, with optional suggested appreciation
+// after it is received (domain/offering). A standalone pulse, so it flows into the one ledger.
 export const createOffering = async (data: Partial<Pulse> & { title: string }) => {
     const domain = normalizeDomain(data.domain || (typeof window !== 'undefined' ? window.location.hostname : ''));
     const payload = { ...data, type: 'offering', domain, visibility: data.visibility || 'public' };

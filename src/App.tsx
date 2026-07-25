@@ -1093,11 +1093,11 @@ const AppContent = () => {
                                 searchBox={searchBox}
                                 action={lightseed && (
                                     <button onClick={() => setShowOfferModal(true)} className={`bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-full font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}>
-                                        <Icons.Plus /> <span>Offer for light</span>
+                                        <Icons.Plus /> <span>Make an offering</span>
                                     </button>
                                 )}
                                 items={filteredData}
-                                emptyText="No offerings yet. Offer a bed or a service for light."
+                                emptyText="No offerings yet. Offer a bed or a service to the circle."
                                 loadingMore={loadingMore}
                                 lightseed={lightseed}
                                 onMatch={(p: Pulse) => { setSelectedPulse(p); openPulseModal(); }}

@@ -2,7 +2,6 @@ import { query, getDocs, addDoc, serverTimestamp, doc, runTransaction, getDoc, w
 import { type Lifetree, type Alignment } from '../../types';
 import { createBlock } from '../../utils/crypto';
 import { uuidv7 } from '../../utils/id';
-import { isTokenisationEnabled } from '../../domain/tokenisation';
 import { db, toMillis, mapDoc, pulsesCollection, alignmentsCollection } from './core';
 
 // What the initiator supplies; lid/status/createdAt are stamped here, messages grow later.
@@ -176,9 +175,9 @@ export const acceptAlignment = async (proposalId: string): Promise<AlignmentResu
 }
 
 // Loving ANY being: a like on a tree, bed, community or vision, the same gesture as a pulse's
-// like (a loves/{uid} slot + a loveCount tally). The rules allow a signed-in being to write only
-// their own love slot and to change loveCount alone; no other field moves. No token reward here
-// (that stays a pulse-author reward); this is the plain, universal heart.
+// like (a loves/{uid} slot + a loveCount tally). The rules prove BOTH halves move atomically:
+// one own-slot transition and exactly +/- one on the tally. Love is the plain, universal heart:
+// it creates no token, ray, balance or other reward.
 export const isBeingLoved = async (collection: string, id: string, uid: string): Promise<boolean> =>
     (await getDoc(doc(db, collection, id, 'loves', uid))).exists();
 
@@ -187,7 +186,8 @@ export const loveBeing = async (collection: string, id: string, uid: string): Pr
     const loveRef = doc(ref, 'loves', uid);
     await runTransaction(db, async (t) => {
         const snap = await t.get(ref);
-        if (!snap.exists()) return;
+        // A vanished target is a failed gesture, not a successful no-op: let the heart roll back.
+        if (!snap.exists()) throw new Error('Love target not found');
         const love = await t.get(loveRef);
         let count = snap.data()?.loveCount || 0;
         if (love.exists()) { t.delete(loveRef); count--; }
@@ -201,19 +201,10 @@ export const lovePulse = async (id: string, uid: string) => {
     const pulseRef = doc(db, 'pulses', id);
     const loveRef = doc(pulseRef, 'loves', uid);
     return runTransaction(db, async (t) => {
-        // All reads first (Firestore requires reads before writes). The author-tree read is only
-        // needed when ADDING a love (to reward a token), but it must still happen before any write.
         const pulse = await t.get(pulseRef);
-        if (!pulse.exists()) return;
+        if (!pulse.exists()) throw new Error('Love target not found');
         const pulseData = pulse.data();
         const love = await t.get(loveRef);
-
-        // The token reward writes to the author's tree, which the lifetrees rules only allow for
-        // that tree's own circle — so only reward when the node's token economy is enabled. While
-        // off, loving a pulse (or reach) is a pure loveCount/loves write anyone can do.
-        const treeId = pulseData.lifetreeId;
-        const authorTreeRef = (isTokenisationEnabled() && treeId) ? doc(db, 'lifetrees', treeId) : null;
-        const authorTree = (!love.exists() && authorTreeRef) ? await t.get(authorTreeRef) : null;
 
         let count = pulseData.loveCount || pulseData.validationScore || 0;
         if (love.exists()) {
@@ -222,14 +213,12 @@ export const lovePulse = async (id: string, uid: string) => {
         } else {
             t.set(loveRef, { uid, createdAt: serverTimestamp() });
             count++;
-
-            // Reward 1 Token to Pulse Author Tree (Living Intelligence Network economy).
-            if (authorTreeRef && authorTree?.exists()) {
-                const currentBalance = authorTree.data()?.aiTokenBalance || 0;
-                t.update(authorTreeRef, { aiTokenBalance: currentBalance + 1 });
-            }
         }
-        t.update(pulseRef, { loveCount: Math.max(0, count), validationScore: Math.max(0, count) });
+        t.update(pulseRef, {
+            loveCount: Math.max(0, count),
+            validationScore: Math.max(0, count),
+            updatedAt: serverTimestamp(),
+        });
     });
 }
 
@@ -239,7 +228,7 @@ export const spendAiTokens = async (treeId: string, amount: number) => {
         const tree = await t.get(treeRef);
         if (!tree.exists()) throw new Error("Tree not found");
         const balance = tree.data()?.aiTokenBalance || 0;
-        if (balance < amount) throw new Error("Not enough AI tokens (Attention-Energy). Validate pulses or visions to earn more.");
+        if (balance < amount) throw new Error("Not enough AI tokens (Attention-Energy).");
         t.update(treeRef, { aiTokenBalance: balance - amount });
         return balance - amount;
     });

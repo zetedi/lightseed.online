@@ -127,6 +127,128 @@ service cloud.firestore {
            )));
     }
 
+    // Love must never become an existence oracle. Reuse the exact parent visibility gates on
+    // the love-update path so knowing a private document id grants no new way to touch it.
+    function canReadLifetree() {
+      return !('visibility' in resource.data)
+        || resource.data.visibility == 'public'
+        || (isSignedIn() && resource.data.visibility == 'node')
+        || (isSignedIn() && resource.data.ownerId == request.auth.uid)
+        || isStaff();
+    }
+    function canReadVision() {
+      return !('visibility' in resource.data)
+        || resource.data.visibility == 'public'
+        || (isSignedIn() && resource.data.visibility == 'node')
+        || (isSignedIn() && resource.data.authorId == request.auth.uid)
+        || isStaff();
+    }
+    function canReadLightHouse() {
+      return resource.data.get('visibility', 'community') == 'public'
+        || (isSignedIn() && (
+             resource.data.get('visibility', 'community') == 'node'
+             || resource.data.get('ownerId', '') == request.auth.uid
+             || isStaff()
+             || isCommunityMember(resource.data.get('communityId', ''))
+           ));
+    }
+
+    // LOVE IS ONE ATOMIC GESTURE: a private loves/{uid} slot and the public tally move
+    // together, exactly once, in the same transaction. Field-only gates are insufficient:
+    // without the slot transition, any signed-in client could forge an arbitrary tally.
+    function validLoveCountChange(collectionName, beingId) {
+      let before = resource.data.get('loveCount', 0);
+      let after = request.resource.data.get('loveCount', 0);
+      let hadLove = exists(/databases/$(database)/documents/$(collectionName)/$(beingId)/loves/$(request.auth.uid));
+      let hasLove = existsAfter(/databases/$(database)/documents/$(collectionName)/$(beingId)/loves/$(request.auth.uid));
+      return request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['loveCount', 'updatedAt'])
+        && request.resource.data.diff(resource.data).affectedKeys()
+               .hasAll(['loveCount', 'updatedAt'])
+        && request.resource.data.updatedAt == request.time
+        && before is int
+        && after is int
+        && after >= 0
+        && (
+          (!hadLove && hasLove && after == before + 1)
+          || (hadLove && !hasLove && before > 0 && after == before - 1)
+        );
+    }
+
+    // Pulses carry the legacy validationScore mirror as well as loveCount. Both must
+    // remain equal, and the same private-slot transition proves the +/- one.
+    function validPulseLoveCountChange(pulseId) {
+      let oldLoveCount = resource.data.get('loveCount', 0);
+      let before = oldLoveCount > 0 ? oldLoveCount : resource.data.get('validationScore', 0);
+      let after = request.resource.data.get('loveCount', 0);
+      let hadLove = exists(/databases/$(database)/documents/pulses/$(pulseId)/loves/$(request.auth.uid));
+      let hasLove = existsAfter(/databases/$(database)/documents/pulses/$(pulseId)/loves/$(request.auth.uid));
+      return request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['loveCount', 'validationScore', 'updatedAt'])
+        && request.resource.data.diff(resource.data).affectedKeys()
+               .hasAll(['loveCount', 'validationScore', 'updatedAt'])
+        && request.resource.data.updatedAt == request.time
+        && before is int
+        && after is int
+        && after >= 0
+        && request.resource.data.validationScore == after
+        && (
+          (!hadLove && hasLove && after == before + 1)
+          || (hadLove && !hasLove && before > 0 && after == before - 1)
+        );
+    }
+
+    // The other half of the proof: a love slot cannot be created or removed by itself.
+    // Its path is authoritative (loveId == auth uid), its payload is minimal, and the
+    // parent tally after the atomic write must show the corresponding transition.
+    function validLoveSlotCreate(collectionName, beingId, loveId) {
+      let parent = /databases/$(database)/documents/$(collectionName)/$(beingId);
+      let before = get(parent).data.get('loveCount', 0);
+      return isSignedIn()
+        && isOwner(loveId)
+        && request.resource.data.keys().hasOnly(['uid', 'createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && before is int
+        && getAfter(parent).data.get('loveCount', 0) == before + 1;
+    }
+
+    function validLoveSlotDelete(collectionName, beingId, loveId) {
+      let parent = /databases/$(database)/documents/$(collectionName)/$(beingId);
+      let before = get(parent).data.get('loveCount', 0);
+      return isSignedIn()
+        && isOwner(loveId)
+        && before is int
+        && before > 0
+        && getAfter(parent).data.get('loveCount', 0) == before - 1;
+    }
+
+    function validPulseLoveSlotCreate(pulseId, loveId) {
+      let parent = /databases/$(database)/documents/pulses/$(pulseId);
+      let oldLoveCount = get(parent).data.get('loveCount', 0);
+      let before = oldLoveCount > 0 ? oldLoveCount : get(parent).data.get('validationScore', 0);
+      return isSignedIn()
+        && isOwner(loveId)
+        && request.resource.data.keys().hasOnly(['uid', 'createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && before is int
+        && getAfter(parent).data.get('loveCount', 0) == before + 1
+        && getAfter(parent).data.get('validationScore', 0) == before + 1;
+    }
+
+    function validPulseLoveSlotDelete(pulseId, loveId) {
+      let parent = /databases/$(database)/documents/pulses/$(pulseId);
+      let oldLoveCount = get(parent).data.get('loveCount', 0);
+      let before = oldLoveCount > 0 ? oldLoveCount : get(parent).data.get('validationScore', 0);
+      return isSignedIn()
+        && isOwner(loveId)
+        && before is int
+        && before > 0
+        && getAfter(parent).data.get('loveCount', 0) == before - 1
+        && getAfter(parent).data.get('validationScore', 0) == before - 1;
+    }
+
     // Admins collection: read staff, no direct write
     match /admins/{adminId} {
       allow read: if isSignedIn();
@@ -222,11 +344,7 @@ service cloud.firestore {
     match /lifetrees/{treeId} {
       // Visibility-gated reads. Missing visibility = public (legacy-safe). 'node' = any signed-in
       // member; 'private' = owner or staff only. (List queries must filter to the same levels.)
-      allow read: if !('visibility' in resource.data)
-                     || resource.data.visibility == 'public'
-                     || (isSignedIn() && resource.data.visibility == 'node')
-                     || (isSignedIn() && resource.data.ownerId == request.auth.uid)
-                     || isStaff();
+      allow read: if canReadLifetree();
       // Planting is open — except a BED (domain/bed.ts), whose home is optional and SOFT:
       // it is born either HOUSED (lightHouseId set — only that Light House's keeper plants
       // one, in their own name) or LOOSE (no lightHouseId — standing at a real coordinate
@@ -312,7 +430,7 @@ service cloud.firestore {
           (resource.data.ownerId == request.auth.uid || isStaff()
              || hasLink('co_owner', treeId) || hasLink('steward', treeId))
           && !request.resource.data.diff(resource.data).affectedKeys()
-                .hasAny(['validated', 'validatorId', 'ownerId', 'lid'])
+                .hasAny(['validated', 'validatorId', 'ownerId', 'lid', 'loveCount'])
           // ...and a bed never gains or alters a `domain`: the forest-exclusion invariant
           // holds for its whole life, not only at birth.
           && (resource.data.get('treeType', '') != 'BED'
@@ -349,18 +467,17 @@ service cloud.firestore {
           && (resource.data.get('treeType', '') != 'BED'
               || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['domain']))
         )
-        // LOVE (like a pulse): any signed-in being may change loveCount (+ updatedAt) ALONE,
-        // alongside a loves/{uid} write. A public tally, no edit power over the tree.
-        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['loveCount', 'updatedAt'])
+        // LOVE: exactly one own-slot transition and exactly +/- one, atomically proved.
+        || (canReadLifetree() && validLoveCountChange('lifetrees', treeId))
       );
       allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
 
-      // Loves: a like on this being (doc id = the lover's uid). The public tally is loveCount on
-      // the doc; each may read only their OWN slot (a private tree must not leak its lovers) and
-      // write only their own (loveBeing writes it alongside the loveCount overlay above).
+      // Loves: own-slot privacy plus atomic coupling to the public tally above.
       match /loves/{loveId} {
         allow read: if isSignedIn() && isOwner(loveId);
-        allow write: if isSignedIn() && isOwner(loveId);
+        allow create: if validLoveSlotCreate('lifetrees', treeId, loveId);
+        allow delete: if validLoveSlotDelete('lifetrees', treeId, loveId);
+        allow update: if false;
       }
 
       // A bed's occupancy — the accepted date-ranges, and NOTHING else: no guest, no identity.
@@ -426,11 +543,7 @@ service cloud.firestore {
     // Visions: visibility-gated reads (protect fragile/early visions). Missing visibility =
     // public (legacy-safe). 'node' = any signed-in member; 'private' = author or staff only.
     match /visions/{visionId} {
-      allow read: if !('visibility' in resource.data)
-                     || resource.data.visibility == 'public'
-                     || (isSignedIn() && resource.data.visibility == 'node')
-                     || (isSignedIn() && resource.data.authorId == request.auth.uid)
-                     || isStaff();
+      allow read: if canReadVision();
       allow create: if isSignedIn();
       // Joining a vision is now a self-serve 'joined' link (see the links collection), NOT a write
       // to the vision doc — so editing the doc itself is restricted to its author or staff.
@@ -442,21 +555,23 @@ service cloud.firestore {
       allow update: if isSignedIn() && (
         (
           (resource.data.authorId == request.auth.uid || isStaff())
-          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid'])
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid', 'loveCount'])
           && (
             !('genesisHash' in resource.data)
             || request.resource.data.get('genesisHash', '') == resource.data.get('genesisHash', '')
           )
         )
-        // LOVE: any signed-in being may change loveCount (+ updatedAt) alone.
-        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['loveCount', 'updatedAt'])
+        // LOVE: exactly one own-slot transition and exactly +/- one, atomically proved.
+        || (canReadVision() && validLoveCountChange('visions', visionId))
       );
       allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff());
 
-      // Loves: own-slot read/write (see the lifetrees loves note); the tally is loveCount above.
+      // Loves: own-slot privacy plus atomic coupling to the public tally above.
       match /loves/{loveId} {
         allow read: if isSignedIn() && isOwner(loveId);
-        allow write: if isSignedIn() && isOwner(loveId);
+        allow create: if validLoveSlotCreate('visions', visionId, loveId);
+        allow delete: if validLoveSlotDelete('visions', visionId, loveId);
+        allow update: if false;
       }
     }
 
@@ -488,18 +603,20 @@ service cloud.firestore {
       // its own key set via diff().affectedKeys() — so a "voter" or "translator" can never also
       // rewrite content or re-link the chain (the ledger stays tamper-evident and un-defaceable).
       allow update: if isSignedIn() && (
-        // (a) Broad interaction overlays — any signed-in user, but only these keys. loveCount /
-        // validationScore are the like counters (updated by lovePulse alongside a loves/{uid} write).
+        // (a) Non-love interaction overlays — love has its own coupled branch below.
         request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['seenBy', 'aiInterpretation', 'loveCount', 'validationScore', 'updatedAt'])
+          .hasOnly(['seenBy', 'aiInterpretation', 'updatedAt'])
 
-        // (b) Watering confirmation is SERVER-ONLY: a guardian witnesses through the
+        // (b) LOVE: the private slot and both legacy tally fields move together by exactly one.
+        || (canReadPulse() && validPulseLoveCountChange(pulseId))
+
+        // (c) Watering confirmation is SERVER-ONLY: a guardian witnesses through the
         //     functions/witnessWatering callable (admin SDK), which derives the witness from the
         //     authenticated caller and mints the light atomically. No client may write
         //     wateringConfirmedBy / wateringConfirmation, so a witness can never be forged and
         //     aimed at an account (Lumo's review, 2026-07-20). Staff keep the mend-anything escape (g).
 
-        // (c) Governance on a decision — voting and raising a concern (listening false→true) stay
+        // (d) Governance on a decision — voting and raising a concern (listening false→true) stay
         //     open to signed-in members; flipping STATUS or resuming (listening true→false) needs
         //     the proposer, community owner, or staff. Content/chain keys can't ride along — and
         //     the chain MARKS (enactedHash / withdrawnHash) may only move together with a status
@@ -526,7 +643,7 @@ service cloud.firestore {
                 )
            )
 
-        // (d) Decision visibility flip — circle ↔ public square. Proposer, keeper or staff only;
+        // (e) Decision visibility flip — circle ↔ public square. Proposer, keeper or staff only;
         //     nothing else may ride along. Decisions are community-visible by default; showing
         //     one to the public is a deliberate act.
         || (
@@ -541,7 +658,7 @@ service cloud.firestore {
                 )
            )
 
-        // (d) Event content edits — author, community owner, or staff; content keys only.
+        // (f) Event content edits — author, community owner, or staff; content keys only.
         || (
              resource.data.get('type', '') == 'event'
              && (isStaff() || resource.data.authorId == request.auth.uid || isCommunityOwner(resource.data.get('communityId', '')))
@@ -549,7 +666,7 @@ service cloud.firestore {
                   .hasOnly(['title', 'body', 'content', 'imageUrl', 'imageUrls', 'eventDate', 'eventLocation', 'visibility', 'updatedAt'])
            )
 
-        // (e) The guardians' veto — a guardian of the pulse's tree may append exactly their
+        // (g) The guardians' veto — a guardian of the pulse's tree may append exactly their
         //     own uid to `vetoes` on a growth mint, WITHIN the 72h window, and only if their
         //     guardianship PREDATES the mint (tenure — a sock account minted for the occasion
         //     has no voice; mirrors domain/guardianVeto.ts).
@@ -565,7 +682,7 @@ service cloud.firestore {
              && request.auth.uid in request.resource.data.get('vetoes', [])
            )
 
-        // (f) The QR mint — the being remembers its printed link (domain/beingLink).
+        // (h) The QR mint — the being remembers its printed link (domain/beingLink).
         //     Author or staff; only the qr overlay may change.
         || (
              (isStaff() || resource.data.authorId == request.auth.uid)
@@ -573,7 +690,7 @@ service cloud.firestore {
                   .hasOnly(['qr', 'updatedAt'])
            )
 
-        // (g) Staff may mend anything.
+        // (i) Staff may mend anything.
         || isStaff()
       );
       // DRAFT VANISHES, MINTED WITHDRAWS: a decision may be erased only while it is still its
@@ -600,10 +717,13 @@ service cloud.firestore {
            )
       );
 
-      // Loves subcollection
+      // Loves: a pulse may reveal only YOUR mark; the slot and both legacy tally fields
+      // move together in the same transaction.
       match /loves/{loveId} {
-          allow read: if true;
-          allow write: if isSignedIn() && isOwner(loveId);
+          allow read: if isSignedIn() && isOwner(loveId);
+          allow create: if validPulseLoveSlotCreate(pulseId, loveId);
+          allow delete: if validPulseLoveSlotDelete(pulseId, loveId);
+          allow update: if false;
       }
 
       // Decision signatures — a decision seven people SIGN (domain/decision.ts, Covenant phase 3). A
@@ -754,17 +874,19 @@ service cloud.firestore {
       allow update: if isSignedIn() && (
         (
           (resource.data.ownerId == request.auth.uid || isStaff())
-          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid'])
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid', 'loveCount'])
         )
-        // LOVE: any signed-in being may change loveCount (+ updatedAt) alone.
-        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['loveCount', 'updatedAt'])
+        // LOVE: exactly one own-slot transition and exactly +/- one, atomically proved.
+        || validLoveCountChange('communities', communityId)
       );
       allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
 
-      // Loves: own-slot read/write (see the lifetrees loves note); the tally is loveCount above.
+      // Loves: own-slot privacy plus atomic coupling to the public tally above.
       match /loves/{loveId} {
         allow read: if isSignedIn() && isOwner(loveId);
-        allow write: if isSignedIn() && isOwner(loveId);
+        allow create: if validLoveSlotCreate('communities', communityId, loveId);
+        allow delete: if validLoveSlotDelete('communities', communityId, loveId);
+        allow update: if false;
       }
     }
 
@@ -780,32 +902,28 @@ service cloud.firestore {
       //   membership needs an ACL denormalisation on the doc (out of scope; see the DECISIONS ring).
       //   Map/domain reads MUST therefore be a rule-provable UNION (public ∪ node ∪ my-community
       //   houses ∪ my own — services/firebase/trees.ts), or the whole list query is rejected.
-      allow read: if resource.data.get('visibility', 'community') == 'public'
-                     || (isSignedIn() && (
-                          resource.data.get('visibility', 'community') == 'node'
-                          || resource.data.get('ownerId', '') == request.auth.uid
-                          || isStaff()
-                          || isCommunityMember(resource.data.get('communityId', ''))
-                        ));
+      allow read: if canReadLightHouse();
       allow create: if isSignedIn();
       // Belonging is LIN edges now (lightHouse __shelters__ community) — no array clause.
       // The lid (the true name, load-bearing for QR links) is frozen on every update path.
       allow update: if isSignedIn() && (
         (
           (resource.data.ownerId == request.auth.uid || isStaff())
-          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid'])
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid', 'loveCount'])
         )
-        // LOVE: any signed-in being may change loveCount (+ updatedAt) alone.
-        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['loveCount', 'updatedAt'])
+        // LOVE: exactly one own-slot transition and exactly +/- one, atomically proved.
+        || (canReadLightHouse() && validLoveCountChange('lightHouses', lightHouseId))
       );
       allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
 
-      // Loves: own-slot read/write (see the lifetrees loves note); the tally is loveCount above.
+      // Loves: own-slot privacy plus atomic coupling to the public tally above.
       // Own-slot read is why a Light House CAN wear a heart even when its own read is member-gated:
       // each being sees only their own mark, so a guarded house never leaks who loved it.
       match /loves/{loveId} {
         allow read: if isSignedIn() && isOwner(loveId);
-        allow write: if isSignedIn() && isOwner(loveId);
+        allow create: if validLoveSlotCreate('lightHouses', lightHouseId, loveId);
+        allow delete: if validLoveSlotDelete('lightHouses', lightHouseId, loveId);
+        allow update: if false;
       }
     }
 

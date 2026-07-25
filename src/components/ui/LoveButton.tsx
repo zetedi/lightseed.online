@@ -5,9 +5,9 @@ import { isBeingLoved, loveBeing, isPulseLoved, lovePulse } from '../../services
 
 // The ONE heart. Every being wears the same like: a tree, a bed, a community, a vision, an event,
 // a reach, any pulse. A being's love is a plain loves/{uid} slot + loveCount (loveBeing); a
-// PULSE's love routes through lovePulse, the same slot but able to kindle a light token for the
-// author's tree. Icons.Heart already colours itself (red when filled, slate when empty), so a
-// site controls only its layout, size and count text. Optimistic, rolling back if the write fails.
+// PULSE's love routes through lovePulse with the same shape. Neither route creates light, tokens,
+// balances or rewards. Icons.Heart already colours itself (red when filled, slate when empty), so
+// a site controls only its layout, size and count text. Optimistic, rolling back if the write fails.
 //
 // `inline` renders a <span role="button"> instead of a <button>, for the one place a heart nests
 // inside a clickable card that is itself a <button> (EventCard) where a nested <button> is illegal.
@@ -35,31 +35,57 @@ export const LoveButton = ({
     const { lightseed } = useSession();
     const uid = lightseed?.uid;
     const isPulse = collection === 'pulses';
-    const [loved, setLoved] = useState(false);
+    const stateKey = `${collection}/${id}/${uid || 'signed-out'}`;
+    // State is keyed to BOTH the viewed being and the signed-in being. A profile/account switch
+    // therefore reads as a fresh heart immediately; the previous being's private mark and
+    // optimistic delta can never flash while the new own-slot read is in flight.
+    const [loveState, setLoveState] = useState<{
+        key: string;
+        loved: boolean;
+        delta: number;
+        pending: boolean;
+    } | null>(null);
+    const current = loveState?.key === stateKey ? loveState : null;
+    const loved = current?.loved ?? false;
     // `delta` is this session's optimistic change; the shown count is the being's count plus it.
-    const [delta, setDelta] = useState(0);
+    const delta = current?.delta ?? 0;
     const count = Math.max(0, initialCount + delta);
 
     useEffect(() => {
         if (!uid) return;
-        (isPulse ? isPulseLoved(id, uid) : isBeingLoved(collection, id, uid)).then(setLoved).catch(() => {});
-    }, [collection, id, uid, isPulse]);
+        let alive = true;
+        (isPulse ? isPulseLoved(id, uid) : isBeingLoved(collection, id, uid))
+            .then(nextLoved => {
+                if (alive) setLoveState({ key: stateKey, loved: nextLoved, delta: 0, pending: false });
+            })
+            // A failed own-slot read must not preserve another being's state.
+            .catch(() => {
+                if (alive) setLoveState({ key: stateKey, loved: false, delta: 0, pending: false });
+            });
+        return () => { alive = false; };
+    }, [collection, id, uid, isPulse, stateKey]);
 
     const toggle = async (e?: React.SyntheticEvent) => {
         e?.stopPropagation();
-        if (!uid) return;
+        // Wait until this exact being/account pair has resolved its private slot. Otherwise a fast
+        // click could mistake an existing love for an empty heart and invert the wrong intention.
+        if (!uid || !current || current.pending) return;
         const next = !loved;
-        setLoved(next);
-        setDelta(d => next ? d + 1 : d - 1);
+        setLoveState(s => s?.key === stateKey
+            ? { ...s, loved: next, delta: s.delta + (next ? 1 : -1), pending: true }
+            : s);
         try {
             await (isPulse ? lovePulse(id, uid) : loveBeing(collection, id, uid));
+            setLoveState(s => s?.key === stateKey ? { ...s, pending: false } : s);
         } catch {
-            setLoved(!next);                      // the write failed; take the optimism back
-            setDelta(d => next ? d - 1 : d + 1);
+            setLoveState(s => s?.key === stateKey
+                ? { ...s, loved: !next, delta: s.delta + (next ? -1 : 1), pending: false }
+                : s);                             // the write failed; take the optimism back
         }
     };
 
     const title = loved ? 'You love this' : `Love ${noun}`;
+    const waiting = !!uid && (!current || current.pending);
     const cls = `inline-flex items-center gap-1 transition-transform hover:scale-110 active:scale-95 ${count > 0 ? activeClassName : ''} ${className}`;
     const body = (
         <>
@@ -72,20 +98,21 @@ export const LoveButton = ({
         return (
             <span
                 role="button"
-                tabIndex={0}
+                tabIndex={uid && !waiting ? 0 : -1}
+                aria-disabled={!uid || waiting}
                 aria-pressed={loved}
                 title={title}
                 aria-label={title}
                 onClick={toggle}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); void toggle(e); } }}
-                className={cls}
+                className={`${cls} ${!uid || waiting ? 'cursor-default' : ''}`}
             >
                 {body}
             </span>
         );
     }
     return (
-        <button type="button" onClick={toggle} disabled={!uid} aria-pressed={loved} title={title} aria-label={title}
+        <button type="button" onClick={toggle} disabled={!uid || waiting} aria-pressed={loved} title={title} aria-label={title}
             className={`${cls} disabled:cursor-default`}>
             {body}
         </button>

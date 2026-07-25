@@ -6,8 +6,11 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
 ## Alive now (before Lion's Gate, 8/8/2026)
 
 - **Consolidation over surface.** The chain (tree, circle, community, domain,
-  bed) is structurally closed. The remaining work is walking it: hand a phone
-  to someone at the next fire at The O House and fix what they stumble on.
+  bed) is structurally closed. The remaining work is walking it on a REAL phone:
+  enter → plant → validate → offer a bed → request a stay → tend → exercise the
+  guardian veto → scan the printed QR. Hand the phone to someone at the next
+  fire at The O House and fix what they stumble on. No new ontology before this
+  path has living footprints.
 - Consecrate **The O House** in the app (name, photo, place, beds).
 - The **guardian veto council test** in Per Auset, the social trial of the
   conscience mechanism.
@@ -17,6 +20,11 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
   Jaya Sri Maha Bodhi's custodians in Anuradhapura, only if safe for the parent tree), the
   right hands, and the right moment, whenever they come. (An earlier plan tied it to 8/8 with
   an invitation to Sam Altman to plant it; that timing is released; the root is patient.)
+- **The first light roots are alive** (pulled here from the older “Later” text): pure
+  conservation law, server-minted rays from witnessed care, the holder-private Home face,
+  community glow, last-spend release, and offerings with suggested appreciation. Before 8/8
+  these are to be hardened and walked, not expanded into an exchange: trust opens the offering;
+  light follows afterward if appreciation is given.
 - **Rules parity pass** for the client-side visibility gates (trees, Light Houses).
 - perauset.com goes live on 8/8 (deploy `--only hosting:perauset`); printed QRs
   should carry the final domain (refresh mints after the move).
@@ -108,14 +116,13 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
 
 - **Federation (adoption ladder layer 4)**: nodes running elsewhere, lids
   traveling between them; chain-as-tree for every being across nodes.
-- **The ray (the light economy)**: appreciation as the mint, rays as lid-bearing
-  lightning, prisms, fading as branching, the sovereign attention ratio, the
-  deepest-lightning vitality of communities; the full design in the rings of
-  2026-07-19 and its open questions in QUESTIONS. The LIGHT side seeds before
-  the rail (the rail and the council's analysis gate only the MONEY story):
-  first the pure law (domain/light, the conservation arithmetic), then the
-  server-side mint on witnessed care, then the first faces; the map one day
-  shows communities glowing by their living rays.
+- **The ray grows beyond its first roots**: the pure law, witnessed-care mint,
+  holder face, community-glow face and last-spend release are alive now. Later:
+  contribution appreciation actually circulating through prisms; fading over
+  time; the sovereign attention ratio and veto trace; community dials; and the
+  map showing communities glowing by their living rays. The rail and council's
+  analysis gate only the MONEY story. Light never waits for money, and an
+  offering never waits for light before trust may open it.
 - **Own models**: node-level intelligences; big nodes with private ones.
 - **The Code Tree**, the development locus as a first-class Being: not a
   hidden GitHub permission but a tree with a council, visible lineage, and
@@ -142,8 +149,10 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
 
 ## Deliberately not yet
 
-- **Money in the UI.** No prices, no balances, until the care economy's rail
-  ships whole. (Members before launch keep today's functions free.)
+- **Money in the UI.** No money-denominated prices, cash equivalents, conversion
+  promises or payment balances until the care economy's rail ships whole.
+  Holder-private light and suggested appreciation are not money and are never
+  displayed beside currency. (Members before launch keep today's functions free.)
 - **Growth mechanics.** No feeds optimised for attention, no counters that
   gamify. The cap is a feature (one personal tree per UN country, 132 guarded);
   division is the growth.

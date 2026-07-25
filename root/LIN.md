@@ -99,6 +99,9 @@ being arrived; a mark, never a power; the inviter gains nothing through the
 door) · *commons* (a mode, not a place: a node choosing to reflect the instance's
 public, a window onto the whole; every jewel may) · *reflect* (a node showing
 another's public content; Indra's net as a setting) ·
+*offering* (a bed or service today, any honest contribution in the wider pattern: opened by
+trust, never purchased; it may name a **suggested appreciation** in light that follows AFTER
+it is received, an agreement and not a gate) ·
 *appreciation* (taking an offering with care: the mint event of light; an
 offering untaken is a token, and taken it becomes a token of appreciation) ·
 *kindle* (to bring new light into being by tending life: the only origin of

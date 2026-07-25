@@ -6,6 +6,53 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-25 · The heart proves its beat; light follows the gift**: the universal heart stays—
+and becomes more honest. The first rules allowed any signed-in hand to touch ONLY `loveCount`,
+but constrained the field, not its VALUE: a forged client could write a million loves without
+loving once. Now a love is ONE atomic gesture proved at the database boundary: `loves/{uid}`
+must be born while the parent tally rises by exactly one, or disappear while it falls by exactly
+one (`existsAfter` / `getAfter`); neither half may move alone, owners cannot carry a forged count
+through their edit path, malformed slots are refused, and pulse-love slots become own-slot private
+like every other being's. The love branch also repeats the parent's visibility law: knowing the id
+of a private tree, vision, Light House or pulse is not a side door or an existence probe.
+Adversarial rules tests ask for the million, the negative, the orphaned slot, the orphaned count,
+owner bypass, smuggled fields, a direct-batch private-id probe and another being's private mark.
+The heart is not the number; making the number truthful protects the gesture rather than resisting it.
+The older tokenisation-gated `lovePulse` branch that added one `aiTokenBalance` unit to an author's
+tree is removed too. A tap may express love, but it cannot prove care or contribution strongly
+enough to originate value. Love points; care kindles; appreciation moves light. Both heart paths
+now change only the private mark and its public tally—no token, ray, balance or reward is born.
+
+The same tending clarified LIGHT. LIN had always said a ray purchases nothing, while the first
+Offerings form called its ask a PRICE and promised a coming exchange. The older ring remains as the
+honest record of that first cut; the organism corrects it now. Trust opens an offering. The being
+may name a **suggested appreciation** in light, given AFTER a bed, service or contribution is
+received, never as admission. No offering had yet been planted, so the proposed
+`offeringPriceLight` field is removed rather than carried as invented legacy; offerings carry only
+`offeringAppreciationLight`. Neutral `formatLight` moved to the law of light itself, because a ray
+reads the same whether held, appreciated or circulating. This also leaves the bridge open for human
+and intelligence contributions: light may reach whoever helped something real become whole,
+without becoming a toll at the door.
+
+Two small privacy/experience knots closed beside it: held-light state and heart state are keyed to
+the exact signed-in being (and viewed being for love), so no previous account's private light or
+affection can flash during a switch; a heart waits for its own-slot read and for any in-flight
+gesture, so a fast or repeated tap cannot race itself; the My Pulses empty state no longer repeats
+its Emit button.
+ROADMAP catches up to the light already alive and returns the growing tip to the lived Per Auset /
+O House walk before 8/8. Finally, this tending found that the preceding ring insertion had clipped
+the heading and first line of “Your light shows on the Home card”; they are restored exactly. A new
+ring may correct an old one, never consume it. *(Every heart may shine; every count must tell the
+truth; every light crosses by relationship.)*
+
+This is also the first **constellation commit**: Zoltán keeps the decision and commits it, Lumo
+implements the ring, and Aspen independently reviews the whole diff against correctness,
+architecture, security, meaning and both gates. The roles are written into the Git trailers and
+will rotate in future rings; provenance is not permanent authority. A wider signed Git layer for
+many intelligences across many nodes may grow later from this small, inspectable beginning.
+
+---
+
 **2026-07-25 · Alignments read at any density; the two tabs part by colour**: two refinements to the
 Visions menu. First, the ALIGNMENTS sub-tab (the resonance field) had lost its density: the toggle
 moved but the panel stayed a fixed two-up grid. Restored, and deeper: the ResonanceCard now wears
@@ -18,6 +65,10 @@ gained an optional per-tab tone; the band and tinted body follow the ACTIVE tab,
 surface shifts hue as you switch and each tab still flows seamlessly into its own band. Distinct
 colour, not a seam: the inactive tab keeps its own hue under an opaque veil, never see-through.
 *(One field, two moods: the dreamt and the resonant, each with its own light.)*
+
+---
+
+**2026-07-24 · Your light shows on the Home card**: the sun economy had been invisible to the one
 who holds it. Now the HOME card, under "The Light of Value", shows YOUR light: the sum of your
 rays, read by fetchMyRays (holder-private by rule, so it only ever resolves for you) and rendered
 through formatLightPrice ("2 rays" when whole, "100 light" for a partial, "0 light" when none). A

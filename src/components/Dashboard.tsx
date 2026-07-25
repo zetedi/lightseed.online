@@ -15,7 +15,7 @@ import { useScrollEdges } from '../hooks/useScrollEdges';
 import { MiniForestMap, type MapPoint } from './ui/MiniForestMap';
 import { EventCard } from './EventCard';
 import { fetchMyRays } from '../services/firebase/light';
-import { formatLightPrice } from '../domain/offering';
+import { formatLight } from '../domain/light';
 import { Community, Pulse } from '../types';
 
 export interface DashboardProps {
@@ -55,13 +55,22 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
     const firstTreeImage = activeTree?.latestGrowthUrl || activeTree?.imageUrl;
     // The signed-in being's own light, shown on the Home card under "Light of Value". Rays are
     // holder-private (light.ts), so this query only ever resolves for you; the sum is your light.
-    const [lightLabel, setLightLabel] = useState<string | null>(null);
+    // Key the private reading to the account it belongs to. On logout or account-switch the
+    // derived label disappears immediately, before the next request resolves, so one being's
+    // light can never flash on another being's Home card.
+    const [lightReading, setLightReading] = useState<{ uid: string; label: string } | null>(null);
+    const lightLabel = lightReading && lightReading.uid === lightseed?.uid ? lightReading.label : null;
     useEffect(() => {
         const uid = lightseed?.uid;
         if (!uid) return;
         let alive = true;
         fetchMyRays(uid)
-            .then(rays => { if (alive) setLightLabel(formatLightPrice(rays.reduce((sum, r) => sum + r.units, 0))); })
+            .then(rays => {
+                if (alive) setLightReading({
+                    uid,
+                    label: formatLight(rays.reduce((sum, r) => sum + r.units, 0)),
+                });
+            })
             .catch(() => {});
         return () => { alive = false; };
     }, [lightseed?.uid]);

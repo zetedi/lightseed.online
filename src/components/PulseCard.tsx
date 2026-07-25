@@ -3,7 +3,7 @@ import React from 'react';
 import { type Pulse, type Lightseed } from '../types';
 import { Icons } from './ui/Icons';
 import { LoveButton } from './ui/LoveButton';
-import { formatLightPrice } from '../domain/offering';
+import { formatLight } from '../domain/light';
 import type { ListDensity } from '../hooks/useListDensity';
 
 interface PulseCardProps {
@@ -21,6 +21,7 @@ const POP = 'hover:shadow-xl hover:-translate-y-1 active:shadow-xl active:-trans
 export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards' }: PulseCardProps) => {
     const images = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
     const isOffering = pulse.type === 'offering';
+    const appreciationLight = pulse.offeringAppreciationLight;
     const badge = pulse.type === 'event' ? 'EVENT' : pulse.type === 'tree_growth' ? 'GROWTH' : isOffering ? (pulse.offeringKind === 'bed' ? 'BED' : 'OFFERING') : '';
     const isEvent = pulse.type === 'event';
     const meta = isEvent && pulse.eventDate ? `${new Date(pulse.eventDate).toLocaleDateString()} · ${pulse.eventLocation || pulse.body}` : pulse.body;
@@ -43,10 +44,10 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
             {pulse.care === 'watering'
                 ? <span title={pulse.wateringConfirmation?.note || ''} className="bg-sky-100 text-sky-700 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm">💧{typeof pulse.wateringConfirmation?.confidence === 'number' ? ` ${pulse.wateringConfirmation.confidence}%` : ''}{pulse.wateringConfirmedBy === 'guardian' ? ' ✓' : ''}</span>
                 : badge && <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm ${isEvent ? 'bg-sky-100 text-sky-700' : isOffering ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-600'}`}>{badge}</span>}
-            {/* The light price — an offering's ask, in light. */}
-            {isOffering && !!pulse.offeringPriceLight && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 text-[9px] font-black text-amber-950 shadow-sm">
-                    <span className="[&>svg]:h-2.5 [&>svg]:w-2.5"><Icons.Sun /></span> {formatLightPrice(pulse.offeringPriceLight)}
+            {/* Suggested appreciation after the contribution — never its admission price. */}
+            {isOffering && !!appreciationLight && (
+                <span title="Suggested appreciation after receiving this offering" className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 text-[9px] font-black text-amber-950 shadow-sm">
+                    <span className="[&>svg]:h-2.5 [&>svg]:w-2.5"><Icons.Sun /></span> {formatLight(appreciationLight)}
                 </span>
             )}
             {images.length > 1 && <span className="bg-white/90 text-slate-600 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm">{images.length} IMG</span>}

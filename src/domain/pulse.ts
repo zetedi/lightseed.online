@@ -80,10 +80,10 @@ export interface Pulse extends Being {
   eventLocation?: string;
   // The gathering's room: how many trees may stand around this event (unset/null = unbounded).
   eventMaxParticipants?: number | null;
-  // Offerings (type 'offering'): a bed or a service offered for light. The price is in light
-  // units (100 = a ray). A bed offering may name the bed being it stands for.
+  // Offerings (type 'offering'): a bed or service offered through trust. The author may name a
+  // suggested appreciation in light, given AFTER the contribution and never gating access.
   offeringKind?: 'bed' | 'service';
-  offeringPriceLight?: number;
+  offeringAppreciationLight?: number;
   offeringBedId?: string;
   offeringBedName?: string;
   reachTreeId?: string;

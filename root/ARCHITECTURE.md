@@ -36,7 +36,8 @@ them; nothing in `domain/` imports upward.
 
 `persons` `users` `admins` `config`: identity & account.
 `lifetrees`: the seed beings; chain fields frozen; provenance (`plantedAt`+coords).
-`pulses`: one ledger for growth/care/events/decisions/reaches; overlay-key rules.
+`pulses`: one ledger for growth/care/events/decisions/reaches/offerings; an offering may carry
+`offeringAppreciationLight` (suggested after-gift, never admission).
 `links`: the LIN: `from__rel__to`; rels: guardian, co_owner, steward, observer,
 member, joined, participant, join_request, **rooted** (Light House→tree),
 **shelters** (Light House→community), **invited_by** (newcomer→community; append-only
@@ -56,6 +57,12 @@ Fine-grained gates live as pure domain functions (`canViewTree`,
 `canViewLightHouse`, `canView` for pulses) mirrored by the rules; overlay updates
 are constrained to exact key sets via `diff().affectedKeys().hasOnly(...)`.
 Deterministic link ids make ownership checks O(1) (`exists(links/uid__rel__id)`).
+Love is stronger than an overlay-key fence: rules couple the private `loves/{uid}`
+slot to exactly +/- one on the parent's tally with `existsAfter` / `getAfter`, in
+the same transaction. Neither slot nor count may move alone; pulse slots are
+own-slot private too. The love-update branch repeats the parent's visibility gate,
+so a known private id cannot be touched as an existence probe. Love has no economic
+side effect: neither the being nor pulse path mints a token, ray, balance or reward.
 
 ## Flows worth knowing
 

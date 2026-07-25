@@ -1,10 +1,10 @@
-import { describe, it, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, beforeAll, afterAll, beforeEach, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   initializeTestEnvironment, assertSucceeds, assertFails, type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { doc, setDoc, updateDoc, getDoc, deleteDoc, deleteField, Timestamp } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, getDoc, deleteDoc, deleteField, Timestamp, runTransaction, serverTimestamp, writeBatch } from 'firebase/firestore';
 
 // The security fence around the release's hottest rules. Runs under the Firestore emulator:
 //   npm run test:rules
@@ -19,6 +19,29 @@ const STAFF = 'staff-uid';
 
 const db = (uid?: string) => (uid ? env.authenticatedContext(uid).firestore() : env.unauthenticatedContext().firestore());
 
+// The production love gesture: read parent + own slot, then move the slot and tally in ONE
+// transaction. The rules use getAfter/existsAfter to prove these two writes are inseparable.
+const toggleLove = async (uid: string, collectionName: string, id: string) => {
+  const store = db(uid);
+  const parent = doc(store, collectionName, id);
+  const slot = doc(parent, 'loves', uid);
+  await runTransaction(store, async (t) => {
+    const parentSnap = await t.get(parent);
+    if (!parentSnap.exists()) throw new Error('Missing love target');
+    const slotSnap = await t.get(slot);
+    const data = parentSnap.data();
+    const before = collectionName === 'pulses'
+      ? (data.loveCount || data.validationScore || 0)
+      : (data.loveCount || 0);
+    const after = slotSnap.exists() ? Math.max(0, before - 1) : before + 1;
+    if (slotSnap.exists()) t.delete(slot);
+    else t.set(slot, { uid, createdAt: serverTimestamp() });
+    t.update(parent, collectionName === 'pulses'
+      ? { loveCount: after, validationScore: after, updatedAt: serverTimestamp() }
+      : { loveCount: after, updatedAt: serverTimestamp() });
+  });
+};
+
 // Seed data written with rules disabled (as the backend would).
 const seed = async () => {
   await env.withSecurityRulesDisabled(async (ctx) => {
@@ -30,11 +53,13 @@ const seed = async () => {
       initiatorPulseId: 'p1', targetPulseId: 'p2',
       status: 'PENDING', messages: [],
     });
-    await setDoc(doc(d, 'lifetrees', 'treeB'), { ownerId: BOB, name: 'Bobs tree', validated: false, validatorId: null });
+    await setDoc(doc(d, 'lifetrees', 'treeB'), { ownerId: BOB, name: 'Bobs tree', validated: false, validatorId: null, loveCount: 0 });
     await setDoc(doc(d, 'initiates', ALICE), { handle: 'alice', name: 'Alice', lid: 'x', pubkey: 'y', initiatedAt: '2026-07-07' });
-    await setDoc(doc(d, 'communities', 'com1'), { ownerId: ALICE, name: 'Com', domain: 'com.online' });
-    await setDoc(doc(d, 'lightHouses', 'lh1'), { ownerId: ALICE, name: 'The Hearth', lid: 'lh1-lid' });
-    await setDoc(doc(d, 'lifetrees', 'bedStay'), { ownerId: ALICE, name: 'Cedar', treeType: 'BED', lightHouseId: 'lh1', visibility: 'node', validated: false, validatorId: null });
+    await setDoc(doc(d, 'communities', 'com1'), { ownerId: ALICE, name: 'Com', domain: 'com.online', loveCount: 0 });
+    await setDoc(doc(d, 'lightHouses', 'lh1'), { ownerId: ALICE, name: 'The Hearth', lid: 'lh1-lid', visibility: 'public', loveCount: 0 });
+    await setDoc(doc(d, 'lifetrees', 'bedStay'), { ownerId: ALICE, name: 'Cedar', treeType: 'BED', lightHouseId: 'lh1', visibility: 'node', validated: false, validatorId: null, loveCount: 0 });
+    await setDoc(doc(d, 'visions', 'vision1'), { authorId: ALICE, title: 'A clearing', visibility: 'public', loveCount: 0 });
+    await setDoc(doc(d, 'pulses', 'pulseLove'), { authorId: BOB, type: 'standard', title: 'A pulse', visibility: 'public', loveCount: 0, validationScore: 0 });
   });
 };
 
@@ -970,25 +995,118 @@ describe('glow — the commons ledger is server-written, communally read (the la
   });
 });
 
-describe('loves: any being may be loved, the count only, the slot only your own', () => {
-  it('a signed-in being loves ANOTHER\'s tree: their own love slot + a loveCount-only bump', async () => {
-    await assertSucceeds(setDoc(doc(db(ALICE), 'lifetrees', 'treeB', 'loves', ALICE), { uid: ALICE, createdAt: 1 }));
-    await assertSucceeds(updateDoc(doc(db(ALICE), 'lifetrees', 'treeB'), { loveCount: 1, updatedAt: 1 }));
+describe('loves: the private slot and public tally are one atomic gesture', () => {
+  it('loves and un-loves another being with exactly one slot and one count', async () => {
+    await assertSucceeds(toggleLove(ALICE, 'lifetrees', 'treeB'));
+    expect((await getDoc(doc(db(ALICE), 'lifetrees', 'treeB'))).data()?.loveCount).toBe(1);
+    await assertSucceeds(toggleLove(ALICE, 'lifetrees', 'treeB'));
+    expect((await getDoc(doc(db(ALICE), 'lifetrees', 'treeB'))).data()?.loveCount).toBe(0);
   });
 
-  it('the same universal love works on a community, a bed and a Light House', async () => {
-    await assertSucceeds(setDoc(doc(db(BOB), 'communities', 'com1', 'loves', BOB), { uid: BOB, createdAt: 1 }));
-    await assertSucceeds(updateDoc(doc(db(BOB), 'communities', 'com1'), { loveCount: 1, updatedAt: 1 }));
-    await assertSucceeds(setDoc(doc(db(BOB), 'lifetrees', 'bedStay', 'loves', BOB), { uid: BOB, createdAt: 1 }));
-    await assertSucceeds(updateDoc(doc(db(BOB), 'lifetrees', 'bedStay'), { loveCount: 1, updatedAt: 1 }));
-    await assertSucceeds(setDoc(doc(db(BOB), 'lightHouses', 'lh1', 'loves', BOB), { uid: BOB, createdAt: 1 }));
-    await assertSucceeds(updateDoc(doc(db(BOB), 'lightHouses', 'lh1'), { loveCount: 1, updatedAt: 1 }));
+  it('the same coupled heart works on communities, beds, Light Houses, visions and pulses', async () => {
+    await assertSucceeds(toggleLove(BOB, 'communities', 'com1'));
+    await assertSucceeds(toggleLove(BOB, 'lifetrees', 'bedStay'));
+    await assertSucceeds(toggleLove(BOB, 'lightHouses', 'lh1'));
+    await assertSucceeds(toggleLove(BOB, 'visions', 'vision1'));
+    await assertSucceeds(toggleLove(ALICE, 'pulses', 'pulseLove'));
+    const pulse = (await getDoc(doc(db(ALICE), 'pulses', 'pulseLove'))).data();
+    expect(pulse?.loveCount).toBe(1);
+    expect(pulse?.validationScore).toBe(1);
   });
 
-  it('you may write ONLY your own love slot, and the love overlay may touch NOTHING but the count', async () => {
-    await assertFails(setDoc(doc(db(ALICE), 'lifetrees', 'treeB', 'loves', BOB), { uid: BOB, createdAt: 1 })); // not your slot
-    await assertFails(updateDoc(doc(db(ALICE), 'lifetrees', 'treeB'), { loveCount: 1, name: 'stolen', updatedAt: 1 })); // rides a name change
-    await assertFails(updateDoc(doc(db(BOB), 'communities', 'com1'), { loveCount: 1, ownerId: BOB, updatedAt: 1 })); // a stranger cannot seize ownership through a love
+  it('refuses a slot without its tally and a tally without its slot', async () => {
+    await assertFails(setDoc(
+      doc(db(ALICE), 'lifetrees', 'treeB', 'loves', ALICE),
+      { uid: ALICE, createdAt: serverTimestamp() },
+    ));
+    await assertFails(updateDoc(
+      doc(db(ALICE), 'lifetrees', 'treeB'),
+      { loveCount: 1, updatedAt: serverTimestamp() },
+    ));
+  });
+
+  it('refuses an arbitrary or negative tally even when a matching slot is written atomically', async () => {
+    const forge = (loveCount: number) => {
+      const store = db(ALICE);
+      const parent = doc(store, 'lifetrees', 'treeB');
+      const slot = doc(parent, 'loves', ALICE);
+      return runTransaction(store, async (t) => {
+        await t.get(parent);
+        await t.get(slot);
+        t.set(slot, { uid: ALICE, createdAt: serverTimestamp() });
+        t.update(parent, { loveCount, updatedAt: serverTimestamp() });
+      });
+    };
+    await assertFails(forge(1_000_000));
+    await assertFails(forge(-1));
+  });
+
+  it('an owner cannot bypass the heart law or carry another edit beside it', async () => {
+    await assertFails(updateDoc(
+      doc(db(BOB), 'lifetrees', 'treeB'),
+      { name: 'Renamed while forging', loveCount: 999, updatedAt: serverTimestamp() },
+    ));
+    await assertFails(updateDoc(
+      doc(db(ALICE), 'communities', 'com1'),
+      { loveCount: 999, updatedAt: serverTimestamp() },
+    ));
+  });
+
+  it('a known private id is not a side door: only someone allowed to see the being may love it', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const store = ctx.firestore();
+      await setDoc(doc(store, 'lifetrees', 'hiddenTree'), { ownerId: BOB, visibility: 'private', loveCount: 0 });
+      await setDoc(doc(store, 'visions', 'hiddenVision'), { authorId: BOB, visibility: 'private', loveCount: 0 });
+      await setDoc(doc(store, 'lightHouses', 'hiddenHouse'), {
+        ownerId: BOB, communityId: 'com1', visibility: 'community', loveCount: 0,
+      });
+      await setDoc(doc(store, 'pulses', 'hiddenPulse'), {
+        authorId: BOB, type: 'standard', visibility: 'circle', treeId: 'treeB',
+        loveCount: 0, validationScore: 0,
+      });
+    });
+
+    const forgeKnownLove = (collectionName: string, id: string, pulse = false) => {
+      const store = db(MALLORY);
+      const parent = doc(store, collectionName, id);
+      const batch = writeBatch(store);
+      batch.set(doc(parent, 'loves', MALLORY), { uid: MALLORY, createdAt: serverTimestamp() });
+      batch.update(parent, pulse
+        ? { loveCount: 1, validationScore: 1, updatedAt: serverTimestamp() }
+        : { loveCount: 1, updatedAt: serverTimestamp() });
+      return batch.commit();
+    };
+
+    await assertFails(forgeKnownLove('lifetrees', 'hiddenTree'));
+    await assertFails(forgeKnownLove('visions', 'hiddenVision'));
+    await assertFails(forgeKnownLove('lightHouses', 'hiddenHouse'));
+    await assertFails(forgeKnownLove('pulses', 'hiddenPulse', true));
+
+    // Their owner can see the same private beings, so the ordinary coupled gesture still works.
+    await assertSucceeds(toggleLove(BOB, 'lifetrees', 'hiddenTree'));
+    await assertSucceeds(toggleLove(BOB, 'visions', 'hiddenVision'));
+    await assertSucceeds(toggleLove(BOB, 'lightHouses', 'hiddenHouse'));
+    await assertSucceeds(toggleLove(BOB, 'pulses', 'hiddenPulse'));
+  });
+
+  it('the slot is path-authoritative, minimal and immutable', async () => {
+    const malformed = (payload: Record<string, unknown>) => {
+      const store = db(ALICE);
+      const parent = doc(store, 'lifetrees', 'treeB');
+      const slot = doc(parent, 'loves', ALICE);
+      return runTransaction(store, async (t) => {
+        await t.get(parent);
+        await t.get(slot);
+        t.set(slot, payload);
+        t.update(parent, { loveCount: 1, updatedAt: serverTimestamp() });
+      });
+    };
+    await assertFails(malformed({ uid: BOB, createdAt: serverTimestamp() }));
+    await assertFails(malformed({ uid: ALICE, createdAt: serverTimestamp(), applause: 999 }));
+    await assertFails(setDoc(
+      doc(db(ALICE), 'lifetrees', 'treeB', 'loves', BOB),
+      { uid: BOB, createdAt: serverTimestamp() },
+    ));
   });
 
   it('the anonymous cannot love', async () => {
@@ -996,13 +1114,16 @@ describe('loves: any being may be loved, the count only, the slot only your own'
     await assertFails(updateDoc(doc(db(), 'lifetrees', 'treeB'), { loveCount: 1, updatedAt: 1 }));
   });
 
-  it('a love slot is private: you may read your OWN, never another being\'s (a private tree must not leak its lovers)', async () => {
+  it('a love slot is private on beings and pulses: you may read your own, never another\'s', async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(doc(ctx.firestore(), 'lifetrees', 'treeB', 'loves', ALICE), { uid: ALICE, createdAt: 1 });
+      await setDoc(doc(ctx.firestore(), 'pulses', 'pulseLove', 'loves', ALICE), { uid: ALICE, createdAt: 1 });
     });
-    await assertSucceeds(getDoc(doc(db(ALICE), 'lifetrees', 'treeB', 'loves', ALICE))); // my own mark
-    await assertFails(getDoc(doc(db(BOB), 'lifetrees', 'treeB', 'loves', ALICE)));       // not mine to see
-    await assertFails(getDoc(doc(db(), 'lifetrees', 'treeB', 'loves', ALICE)));          // nor the outside's
+    await assertSucceeds(getDoc(doc(db(ALICE), 'lifetrees', 'treeB', 'loves', ALICE)));
+    await assertFails(getDoc(doc(db(BOB), 'lifetrees', 'treeB', 'loves', ALICE)));
+    await assertFails(getDoc(doc(db(), 'lifetrees', 'treeB', 'loves', ALICE)));
+    await assertSucceeds(getDoc(doc(db(ALICE), 'pulses', 'pulseLove', 'loves', ALICE)));
+    await assertFails(getDoc(doc(db(BOB), 'pulses', 'pulseLove', 'loves', ALICE)));
   });
 });
 
