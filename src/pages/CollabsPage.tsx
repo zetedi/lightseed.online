@@ -73,6 +73,10 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
   const tone = tabTone('collab', theme);
   const [density, setDensity] = useListDensity('collabs');
   const [subTab, setSubTab] = useState<'intelligences' | 'organisations'>('intelligences');
+  // Both sub-tabs stay in the throat's lapis family: intelligences the parent tone,
+  // organisations its deeper step. Band and box follow the active tab (one spectrum source).
+  const ORG_TONE = tabTone('organisations');
+  const activeTone = subTab === 'organisations' ? ORG_TONE : tone;
 
   const [list, setList] = useState<Intelligence[] | null>(null);
   const [orgs, setOrgs] = useState<OrgCollab[] | null>(null);
@@ -174,16 +178,16 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
       <SectionHeader
         title="Cocreate"
-        tone={tone}
+        tone={activeTone}
         // The sub-tabs ride the band itself, full width: the same tab grammar as Offerings.
         tabs={
           <FullWidthTabs
             active={subTab}
             onChange={(k) => setSubTab(k as 'intelligences' | 'organisations')}
-            tone={tone}
+            tone={activeTone}
             tabs={[
-              { key: 'intelligences', label: 'Intelligences', icon: <Icons.Intelligence />, count: list?.length ?? undefined },
-              { key: 'organisations', label: 'Organisations', icon: <Icons.Globe />, count: orgs?.length ?? undefined },
+              { key: 'intelligences', label: 'Intelligences', icon: <Icons.Intelligence />, count: list?.length ?? undefined, tone },
+              { key: 'organisations', label: 'Organisations', icon: <Icons.Globe />, count: orgs?.length ?? undefined, tone: ORG_TONE },
             ]}
           />
         }
@@ -207,7 +211,7 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
           </button>
         ) : undefined}
       >
-        <ListBox tone={tone}>
+        <ListBox tone={activeTone}>
         {subTab === 'intelligences' ? (
           <>
             <div className={gridFor(density)}>

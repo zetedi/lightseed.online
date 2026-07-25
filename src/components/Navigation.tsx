@@ -6,7 +6,7 @@ import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
 import { Modal } from './ui/Modal';
 import Logo from './Logo';
-import { tabTone } from '../utils/tabTheme';
+import { tabTone, tabFg } from '../utils/tabTheme';
 
 
 interface NavigationProps {
@@ -84,9 +84,10 @@ const NavTab = ({ tab, activeTab, theme, navIsDark, setTab, t, getTabStyle, getT
             onClick={() => setTab(tab)}
             aria-describedby={tab === 'about' ? 'about-lin-tooltip' : undefined}
             className={`px-3 xl:px-4 py-2 rounded-full text-[10px] xl:text-xs transition-all flex items-center gap-1.5 whitespace-nowrap ${getTabStyle(tab)}`}
-            // Always paint the active pill with the shared tabTone, so the pill and the list
-            // page's header band underneath are literally the same pigment (one surface).
-            style={activeTab === tab && tab !== 'about' ? { backgroundColor: tabTone(tab, theme) } : undefined}
+            // Always paint the active pill with the shared tabTone and tabFg, so the pill and
+            // the list page's header band underneath are literally the same pigment and voice
+            // (the solar gold carries dark text; every other destination carries white).
+            style={activeTab === tab ? { backgroundColor: tabTone(tab, theme), color: tabFg(tab) } : undefined}
         >
             <span>{getTabLabel(tab)}</span>
             {count > 0 && (
@@ -165,9 +166,9 @@ const MobileNavTile = ({ tab, label, activeTab, navBorder, navBackground, navTex
         <button
             onClick={() => { setTab(tab); setIsMenuOpen(false); }}
             className={`relative flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl border px-0.5 py-2 text-center transition-all ${
-                active ? 'border-transparent text-white shadow-lg' : 'border-emerald-200 hover:brightness-95'
+                active ? 'border-transparent shadow-lg' : 'border-emerald-200 hover:brightness-95'
             }`}
-            style={active ? { backgroundColor: getActiveTabColor(tab) || navBorder } : { backgroundColor: navBackground, color: navText }}
+            style={active ? { backgroundColor: getActiveTabColor(tab) || navBorder, color: tabFg(tab) } : { backgroundColor: navBackground, color: navText }}
         >
             <span className="opacity-90 [&>svg]:h-4 [&>svg]:w-4 sm:hidden">{tabIcons[tab]}</span>
             <span className="text-[8px] font-bold uppercase leading-none tracking-tight sm:text-[11px]">{label ?? getTabLabel(tab)}</span>
@@ -221,31 +222,29 @@ export const Navigation = ({
     }, []);
 
     const getTabStyle = (key: string) => {
+        // The About pill keeps its badge-like outlined shape, but in the crown's violet family
+        // (it was amber before the spectrum). Its active fill comes from tabTone like the rest.
         if (key === 'about') {
             if (activeTab === key) {
-                return 'bg-amber-400 text-slate-950 shadow-lg shadow-amber-900/20 font-bold ring-2 ring-amber-200 tracking-wide';
+                return 'shadow-lg shadow-black/20 font-bold ring-2 ring-violet-300/70 tracking-wide';
             }
             return navIsDark
-                ? 'text-amber-100 bg-amber-500/15 border border-amber-300/50 hover:bg-amber-400 hover:text-slate-950 hover:border-amber-200 font-bold'
-                : 'text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 hover:text-amber-900 font-bold';
+                ? 'text-violet-100 bg-violet-500/15 border border-violet-300/50 hover:bg-violet-500/30 hover:border-violet-200 font-bold'
+                : 'text-violet-700 bg-violet-50 border border-violet-200 hover:bg-violet-100 hover:text-violet-900 font-bold';
         }
+        // Colour lives in ONE place (tabTone + tabFg, applied as the pill's inline style); classes
+        // here carry only shape and weight. The old per-tab Tailwind map is gone with the fragmentation.
         if (activeTab === key) {
-            const themes: any = { 
-                dashboard: 'bg-indigo-600', visions: 'bg-amber-500', forest: 'bg-emerald-600', 
-                pulses: 'bg-orange-600', events: 'bg-teal-600', beds: 'bg-indigo-500', observatory: 'bg-rose-600', inspiration: 'bg-indigo-600', about: 'bg-purple-600', communities: 'bg-teal-600', collab: 'bg-violet-600'
-            };
-            return `${themes[key] || 'bg-slate-700'} text-white shadow-lg shadow-black/20 font-bold tracking-wide`;
+            return 'shadow-lg shadow-black/20 font-bold tracking-wide';
         }
         return navIsDark
             ? 'text-slate-300 hover:text-white hover:bg-white/10 font-medium'
             : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100 font-medium';
     }
 
-    const getActiveTabColor = (tab: string) => {
-        if (tab === 'visions' || tab === 'about') return theme?.accent;
-        if (tab === 'pulses' || tab === 'events' || tab === 'inspiration') return theme?.secondary;
-        return theme?.primary;
-    };
+    // The mobile tile's active colour comes from the same single source as the desktop pill
+    // and the page band (it used to read the node theme directly: the third colour system).
+    const getActiveTabColor = (tab: string) => tabTone(tab, theme);
 
     // Signed-out visitors get a slimmer menu: no Visions, Pulses, or Observatory.
     const signedIn = !!lightseed;

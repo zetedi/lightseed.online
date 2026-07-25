@@ -11,7 +11,7 @@ import { ListBox } from '../components/ui/ListBox';
 import { FullWidthTabs } from '../components/ui/FullWidthTabs';
 import { useListDensity, densityGridClass } from '../hooks/useListDensity';
 import { canViewVision } from '../domain/views/forest';
-import { CTA_GLOW } from '../utils/tabTheme';
+import { CTA_GLOW, tabTone } from '../utils/tabTheme';
 import type { Lightseed, Vision, VisionSynergy } from '../types';
 
 // The Visions feed: the resonance panel + a visibility-gated grid of vision cards. Extracted from
@@ -44,10 +44,10 @@ export const VisionsPage = ({
   // Two entity lists under one menu item — Visions and Alignments (the resonance field) — so a
   // long visions list doesn't bury the alignments in scroll.
   const [subTab, setSubTab] = React.useState<'visions' | 'alignments'>('visions');
-  // The two sub-tabs wear DIFFERENT colours: visions its own amber tone, alignments the resonance
-  // rose (the same rose the radiant tier glows). The band and the tinted body follow the active
-  // tab, so the whole surface shifts hue as you switch, and each tab flows into its own band.
-  const ALIGN_TONE = '#e11d48'; // rose-600, the resonance colour
+  // The two sub-tabs stay in ONE hue family (the sacral): visions wears the parent sienna,
+  // alignments its deeper rust (resonance heat reads truest in red-orange). Both tones come
+  // from the central spectrum; the band and tinted body follow the active tab.
+  const ALIGN_TONE = tabTone('alignments');
   const activeTone = subTab === 'alignments' ? ALIGN_TONE : tone;
   // Respect vision visibility (protect fragile/early visions). Rules enforce it server-side.
   const visibleVisions = visions.filter(v => canViewVision(v, viewer));

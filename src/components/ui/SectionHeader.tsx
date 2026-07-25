@@ -11,7 +11,7 @@ import { Icons } from './Icons';
 //
 // On mobile the search collapses to a magnifier; tapping it opens the input FULL WIDTH over the
 // switch and CTA (an overlay on the band), so a phone keeps every control without cramping.
-export const SectionHeader = ({ title, tone = '#059669', action, footer, toggle, children, pattern = false, collapsibleSearch = true, searchOnTablet = false, tabs }: {
+export const SectionHeader = ({ title, tone = '#059669', action, footer, toggle, children, pattern = false, collapsibleSearch = true, searchOnTablet = false, tabs, fg = '#ffffff' }: {
     title: string;               // screen-reader name of the section (not rendered visually)
     tone?: string;               // the active menu item's colour — one pigment, two surfaces
     action?: React.ReactNode;
@@ -24,6 +24,7 @@ export const SectionHeader = ({ title, tone = '#059669', action, footer, toggle,
                                  // light pages (few/no CTAs, like Offerings/Beds) that have the room
     tabs?: React.ReactNode;      // a full-width tab strip above the band (FullWidthTabs); the active
                                  // tab shares the band's tone, so the two read as one surface
+    fg?: string;                 // the band's own text/icon colour (tabFg); dark on the solar gold
 }) => {
     const [searchOpen, setSearchOpen] = useState(false);
     const overlayRef = useRef<HTMLDivElement>(null);
@@ -37,6 +38,13 @@ export const SectionHeader = ({ title, tone = '#059669', action, footer, toggle,
     // literal so Tailwind emits them. The magnifier + overlay hide from the SAME breakpoint.
     const hideBp = searchOnTablet ? 'md:hidden' : 'lg:hidden';
     const showBp = searchOnTablet ? 'md:block' : 'lg:block';
+    // The band's small chrome (magnifier, overlay close) in the band's own voice: a dark chip
+    // on the one bright band, the usual translucent white everywhere else.
+    const darkFg = fg !== '#ffffff';
+    const chipCls = darkFg
+        ? 'bg-black/10 hover:bg-black/20'
+        : 'bg-white/15 hover:bg-white/25 text-white/85 hover:text-white';
+    const chipStyle = darkFg ? { color: fg } : undefined;
 
     return (
         <section aria-label={title} className="-mt-6 mb-5 sm:mb-8">
@@ -56,7 +64,8 @@ export const SectionHeader = ({ title, tone = '#059669', action, footer, toggle,
                                 <button
                                     onClick={() => setSearchOpen(true)}
                                     title="Search" aria-label="Search"
-                                    className={`flex shrink-0 items-center justify-center rounded-full bg-white/15 p-2 text-white/85 backdrop-blur-sm transition-colors hover:bg-white/25 hover:text-white ${hideBp}`}
+                                    className={`flex shrink-0 items-center justify-center rounded-full p-2 backdrop-blur-sm transition-colors ${chipCls} ${hideBp}`}
+                                    style={chipStyle}
                                 >
                                     <Icons.Search />
                                 </button>
@@ -79,7 +88,8 @@ export const SectionHeader = ({ title, tone = '#059669', action, footer, toggle,
                         <button
                             onClick={() => setSearchOpen(false)}
                             title="Close search" aria-label="Close search"
-                            className="flex shrink-0 items-center justify-center rounded-full bg-white/15 p-2 text-white/85 transition-colors hover:bg-white/25 hover:text-white"
+                            className={`flex shrink-0 items-center justify-center rounded-full p-2 transition-colors ${chipCls}`}
+                            style={chipStyle}
                         >
                             <Icons.Close />
                         </button>

@@ -34,7 +34,7 @@ import {
 } from './services/firebase';
 import { setActiveIntelligenceId } from './services/intelligence';
 import { SigningKeyNeedsRestoreError } from './services/keys';
-import { tabTone, CTA_GLOW } from './utils/tabTheme';
+import { tabTone, tabFg, CTA_GLOW } from './utils/tabTheme';
 import { type Pulse, type Lifetree, type Alignment, type Vision, type Community, type ReachAudience } from './types';
 import Logo from './components/Logo';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
@@ -1033,6 +1033,7 @@ const AppContent = () => {
                     <PulseFeedPage
                         title={t('events')}
                         tone={tabTone('events', effectiveTheme)}
+                        fg={tabFg('events')}
                         densityKey="events"
                         searchBox={searchBox}
                         action={lightseed && (

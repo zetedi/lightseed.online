@@ -28,10 +28,11 @@ interface PulseFeedPageProps {
   renderBigCard?: (item: Pulse) => React.ReactNode;
   tabs?: React.ReactNode;   // a full-width tab strip above the band (offerings ⇄ beds)
   searchOnTablet?: boolean; // unfold the full search from tablet (roomy pages)
+  fg?: string;              // the band's text/icon colour (tabFg); dark on the solar gold
 }
 
 export const PulseFeedPage = ({
-  title, tone, densityKey, searchBox, action, items, emptyText, loadingMore, lightseed, onMatch, onView, pattern, renderBigCard, tabs, searchOnTablet,
+  title, tone, densityKey, searchBox, action, items, emptyText, loadingMore, lightseed, onMatch, onView, pattern, renderBigCard, tabs, searchOnTablet, fg,
 }: PulseFeedPageProps) => {
   const [density, setDensity] = useListDensity(densityKey);
   return (
@@ -40,11 +41,12 @@ export const PulseFeedPage = ({
         title={title}
         tone={tone}
         footer={searchBox}
-        toggle={<ViewDensityToggle value={density} onChange={setDensity} />}
+        toggle={<ViewDensityToggle value={density} onChange={setDensity} dark={!!fg && fg !== '#ffffff'} />}
         action={action}
         pattern={pattern}
         tabs={tabs}
         searchOnTablet={searchOnTablet}
+        fg={fg}
       >
         <ListBox tone={tone}>
           <div className={densityGridClass(density)}>

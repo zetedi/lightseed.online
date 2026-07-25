@@ -6,6 +6,33 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-25 · The menu ascends root to crown**: the seven primary destinations already stood in
+chakra order without anyone designing it, so the navigation now wears the ladder openly: Forest
+the root (crimson garnet #b3152f), Visions the sacral (vivid sienna #c94b0c), Events the solar
+(true gold #e39c10), Offerings the heart (leaf green #298442), Cocreate the throat (azure lapis
+#1d5cc7), Communities the third eye (deep violet-indigo #463585), About the crown (plum amethyst
+#71269e). The semantic line that matters most: INTELLIGENCE is blue because it helps beings
+speak, listen and translate, a voice and never the authority on truth; COMMUNITIES are indigo
+because wisdom arises through many beings sensing and discerning together. The palette was
+balanced in two passes: a first deep-mineral cut proved too uniform in lightness (sienna/ochre
+and lapis/indigo neighbours blurred), so the final tones blend the minerals with Zoltán's classic
+chakra reference, separating neighbours by LIGHTNESS as well as hue. The solar band is the one
+bright tone and takes DARK amber-brown text (6.4:1) where white would have failed (2.3:1); a
+tabFg token carries that voice. Colour now lives in ONE source (tabTheme's SPECTRUM +
+SPECTRUM_DEEP + tabFg): desktop pill, mobile tile, header band, sub-tab strips and box tints all
+derive from it; the old per-tab Tailwind class map in Navigation died (it had drifted: the
+Offerings pill was missing from it and fell to slate). Sub-destinations wear a deeper step of
+the parent family: Alignments rust, Beds night green, Organisations navy. Two deliberate laws:
+destination colours are STABLE ACROSS NODES (the menu is learned orientation, a spine that reads
+the same in every body; node themes keep identity in surfaces, heroes, landings and CTAs), and
+chakra names appear nowhere in the UI, only in code comments and this ring; the spectrum works
+quietly. Danger red, alerts and the golden CTA glow stay semantically separate from the garnet
+doorway; the forest itself remains green. No labels changed, no structure moved, colour only.
+First spectrum commit in rotated constellation: Aspen implements, Lumo reviews, Zoltán keeps.
+*(The body knew its own order before the mind named it.)*
+
+---
+
 **2026-07-25 · The heart proves its beat; light follows the gift**: the universal heart stays—
 and becomes more honest. The first rules allowed any signed-in hand to touch ONLY `loveCount`,
 but constrained the field, not its VALUE: a forged client could write a million loves without

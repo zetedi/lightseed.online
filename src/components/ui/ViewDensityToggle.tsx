@@ -22,8 +22,10 @@ const Glyph = ({ kind }: { kind: ListDensity }) => (
 
 const LABEL: Record<ListDensity, string> = { rows: 'List', cards: 'Cards', mini: 'Small cards' };
 
-export const ViewDensityToggle = ({ value, onChange }: { value: ListDensity; onChange: (d: ListDensity) => void }) => (
-  <div className="flex shrink-0 items-center rounded-full bg-white/15 p-0.5 backdrop-blur-sm">
+// `dark` flips the idle glyphs to dark ink for the one BRIGHT band (the solar gold), where
+// translucent white icons would wash out. The active chip is solid white in both voices.
+export const ViewDensityToggle = ({ value, onChange, dark = false }: { value: ListDensity; onChange: (d: ListDensity) => void; dark?: boolean }) => (
+  <div className={`flex shrink-0 items-center rounded-full p-0.5 backdrop-blur-sm ${dark ? 'bg-black/10' : 'bg-white/15'}`}>
     {(['rows', 'cards', 'mini'] as ListDensity[]).map(d => (
       <button
         key={d}
@@ -31,7 +33,9 @@ export const ViewDensityToggle = ({ value, onChange }: { value: ListDensity; onC
         title={LABEL[d]}
         aria-label={LABEL[d]}
         aria-pressed={value === d}
-        className={`rounded-full p-2 transition-all ${value === d ? 'bg-white text-slate-800 shadow-sm' : 'text-white/75 hover:text-white'}`}
+        className={`rounded-full p-2 transition-all ${value === d
+          ? 'bg-white text-slate-800 shadow-sm'
+          : dark ? 'text-amber-950/70 hover:text-amber-950' : 'text-white/75 hover:text-white'}`}
       >
         <Glyph kind={d} />
       </button>
