@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { Community, Lightseed } from '../types';
-import { isHubDomain, useConfig } from './useConfig';
+import { isSeedShellHost, useConfig } from './useConfig';
 import { normalizeTheme } from '../utils/theme';
 
 export type ThemeModePreference = 'light' | 'dark' | null;
@@ -35,7 +35,7 @@ export function useSiteTheme(params: {
   const configuredTheme = !impersonatedCommunity && lightseed && personalSiteTheme
     ? normalizeTheme(personalSiteTheme, config.theme)
     : config.theme;
-  const configuredLogoUrl = !impersonatedCommunity && lightseed && personalSiteLogoUrl && isHubDomain(window.location.hostname)
+  const configuredLogoUrl = !impersonatedCommunity && lightseed && personalSiteLogoUrl && isSeedShellHost(window.location.hostname)
     ? personalSiteLogoUrl
     : config.logoUrl;
   const effectiveThemeMode = themeModePreference || configuredTheme.mode || 'light';

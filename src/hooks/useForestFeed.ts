@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import type { Alignment, Lightseed } from '../types';
 import {
   fetchAllLifetrees, fetchLifetrees, fetchPulses, fetchEventPulses, fetchOfferingPulses, fetchReachPulses, fetchVisions,
-  getPendingAlignments, isHubDomain,
+  getPendingAlignments,
 } from '../services/firebase';
 import { queryableLevels } from '../domain/pulseVisibility';
-import { reflectsInstancePublic } from '../domain/communityDoor';
+import { dataDomainFor, reflectsInstancePublic } from '../domain/communityDoor';
 import { excludeBedTrees } from '../domain/bed';
 
 // The paginated forest / pulse / vision / event / reach feed and its infinite scroll. Owns `data`
@@ -20,12 +20,12 @@ export function useForestFeed(params: {
   isAdmin: boolean;
   setAlignments: (a: Alignment[]) => void;
   // The active node's commons setting: when it reflects the instance's public, the feed is
-  // unscoped (shows every domain's public); otherwise it scopes to this node. Undefined =
-  // fall back to the hub-domain default (zero migration). See domain/communityDoor.
+  // unscoped (shows every domain's public); otherwise it scopes to this place. Undefined =
+  // scoped: opening reflection is always an explicit community decision.
   hostReflectsPublic?: boolean;
   // The active node's CANONICAL domain (impersonated || host community). Scoping keys on this,
-  // not the raw hostname — so impersonation and hub-alias hosts (lifeseed.online) scope by the
-  // node actually being viewed, matching how trees/pulses are tagged (plantLifetree).
+  // not the raw hostname — so impersonation and alternate seed-shell hosts scope by the place
+  // actually being viewed, matching how trees/pulses are tagged (plantLifetree).
   hostDomain?: string;
   // Strict scope: when scoped, hide even the viewer's own off-domain trees (a "this place only"
   // forest). Only meaningful while NOT reflecting. See domain/community.strictScope.
@@ -53,23 +53,28 @@ export function useForestFeed(params: {
     setLoadingMore(true);
     const currentLastDoc = reset ? undefined : lastDoc;
     const isDevHost = /localhost|127\.0\.0\.1|^192\.168\.|\.local$/.test(window.location.hostname);
-    // The node being viewed: its canonical domain (so impersonation and hub aliases scope by the
-    // right node), falling back to the raw hostname. Dev superadmin sees the whole network.
+    // The place being viewed: its canonical community domain (so impersonation scopes by the
+    // right community), falling back to the raw hostname. Dev superadmin sees the whole network.
     const activeDomain = (isDevHost && isSuperAdmin) ? undefined : (hostDomain || window.location.hostname);
     // Commons mode: if this node reflects the instance's public, pass no domain (every feed
     // treats an absent domain as unscoped → the whole instance); otherwise scope to this node.
-    // Unset flag falls back to the hub default, so the hub keeps reflecting and others stay scoped.
-    const reflects = reflectsInstancePublic(hostReflectsPublic, isHubDomain(activeDomain));
-    const currentDomain = reflects ? undefined : activeDomain;
+    // No hostname has an inherited role: absent/false is scoped; true opens the canopy.
+    const reflects = reflectsInstancePublic(hostReflectsPublic);
+    const currentDomain = dataDomainFor(activeDomain, hostReflectsPublic);
     // The tree feeds merge the viewer's OWN trees so a creator is never lost on a custom domain.
     // A strict, scoped node suppresses that merge (pass no ownerUid) for a clean "this place only"
-    // forest. Reflecting shows everything anyway, so strictness only bites while scoped.
+    // forest. Reflection is the public commons plus the existing owner-safe merge, so strictness
+    // only bites while scoped.
     const feedOwnerUid = (!reflects && hostStrictScope) ? undefined : lightseed?.uid;
-    // Broad feeds carry no scope, so this resolves to public (+ node when signed in; all
-    // but private for staff) — keeping the query to docs the rules will allow.
-    const feedLevels = queryableLevels({ uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin });
+    // A reflecting feed requests PUBLIC only. A scoped feed keeps the viewer's ordinary
+    // readable levels; reflection must never carry another place's node-visible records.
+    const feedLevels = reflects
+      ? queryableLevels({})
+      : queryableLevels({ uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin });
     // Tree visibility levels this viewer may query (null = staff, no filter).
-    const treeLevels: string[] | null = (isSuperAdmin || isAdmin) ? null : (lightseed ? ['public', 'node'] : ['public']);
+    const treeLevels: string[] | null = reflects
+      ? ['public']
+      : ((isSuperAdmin || isAdmin) ? null : (lightseed ? ['public', 'node'] : ['public']));
 
     try {
       if (tab === 'forest') {
@@ -142,6 +147,7 @@ export function useForestFeed(params: {
         const res = await fetchVisions(currentLastDoc, currentDomain, {
           uid: lightseed?.uid,
           isStaff: isSuperAdmin || isAdmin,
+          publicOnly: reflects,
         });
         setData(prev => {
           const newItems = res.items;

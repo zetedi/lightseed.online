@@ -64,9 +64,9 @@ export interface Community extends Being {
   // The DOOR — who may join, and how (domain/communityDoor.ts). Distinct from `visibility`
   // (who may see). Absent = 'invite': the pre-door behaviour (knock, a keeper accepts).
   door?: import('./communityDoor').CommunityDoor;
-  // COMMONS mode: whether this node (a community owning a domain) reflects the whole instance's
-  // public forest/feed, or shows only its own domain. Per-node choice (Indra's net). Absent =
-  // the legacy default (the canonical hub domains reflect, others stay scoped) — zero migration.
+  // COMMONS mode: whether this domain community reflects its authority backend's whole PUBLIC
+  // forest/feed, or shows only its own domain. Per-community choice (Indra's net). Absent =
+  // scoped; opening the canopy must be explicit.
   reflectsPublic?: boolean;
   // STRICT scope: when scoped (not reflecting), also hide the viewer's OWN trees from other
   // domains (suppress the creator-sees-their-own-trees merge) — a clean "this place only" view.

@@ -5,12 +5,12 @@ import { getAllLightHouses, getLightHousesByDomain } from '../services/firebase/
 import { canViewLightHouse, type LightHouse } from '../domain/lightHouse';
 import { useRefreshSignal } from './useRefreshSignal';
 
-// The lightHouses THIS viewer may see, scoped like the trees: a community domain shows its
-// own, the hub (domain null) shows them all. One source for the map markers AND the forest
+// The Light Houses THIS viewer may see, scoped like the trees: a community domain shows its
+// own, while a reflecting view (domain null) shows them all. One source for the map markers AND the forest
 // grid cards: fetch what the rules allow (public-only when signed out), then gate per-doc
 // with canViewLightHouse using the viewer's member links.
 
-export const useVisibleLightHouses = (domain: string | null, refreshKey = 0): LightHouse[] => {
+export const useVisibleLightHouses = (domain: string | null, refreshKey = 0, publicOnly = false): LightHouse[] => {
     const { lightseed, isAdmin, isSuperAdmin } = useSession();
     const viewerUid = lightseed?.uid;
     const signal = useRefreshSignal(['lightHouses']);
@@ -33,7 +33,7 @@ export const useVisibleLightHouses = (domain: string | null, refreshKey = 0): Li
         let alive = true;
         // The service reads the rule-provable UNION (public ∪ node ∪ my-community ∪ my-own); we
         // hand it the member communities already derived above so it skips a duplicate links read.
-        const opts = { publicOnly: !viewerUid, viewerUid, memberCommunityIds: [...memberCommunityIds] };
+        const opts = { publicOnly: !viewerUid || publicOnly, viewerUid, memberCommunityIds: [...memberCommunityIds] };
         Promise.all([
             (domain ? getLightHousesByDomain(domain, opts) : getAllLightHouses(opts)),
             viewerUid ? firestoreStore.linksByRel('shelters').catch(() => []) : Promise.resolve([]),
@@ -47,7 +47,7 @@ export const useVisibleLightHouses = (domain: string | null, refreshKey = 0): Li
             })
             .catch(() => {});
         return () => { alive = false; };
-    }, [domain, refreshKey, viewerUid, signal, memberCommunityIds]);
+    }, [domain, refreshKey, viewerUid, signal, memberCommunityIds, publicOnly]);
 
     return useMemo(
         () => all.filter(s => canViewLightHouse(

@@ -12,16 +12,15 @@ import { db, toMillis, mapDoc, mapPulse, pulsesCollection } from './core';
 // vetoes (rules clause (e) enforces the shape; domain/guardianVeto derives consensus).
 export const vetoGrowthPulse = (pulseId: string, uid: string) =>
     updateDoc(doc(db, 'pulses', pulseId), { vetoes: arrayUnion(uid), updatedAt: serverTimestamp() });
-import { isHubDomain } from './trees';
 
 const fetchPulsesRaw = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, levels?: PulseVisibility[], pageSize?: number) => {
     // Visibility-scope the broad feed so a restricted pulse in this domain can't get the
     // whole query rejected. Broad feeds carry no scope context, so `levels` is public + node.
     const visFilter = levels && levels.length ? [where('visibility', 'in', levels)] : [];
-    const nonHub = !!(domainFilter && !isHubDomain(domainFilter));
-    const lim = pageSize ?? (nonHub ? 24 : 12);
+    const scoped = !!domainFilter;
+    const lim = pageSize ?? (scoped ? 24 : 12);
     let q;
-    if (nonHub) {
+    if (scoped) {
         q = query(pulsesCollection, where('domain', '==', domainFilter!.replace(/^www\./, '')), ...visFilter, limit(lim));
     } else {
         q = query(pulsesCollection, ...visFilter, orderBy('createdAt', 'desc'), limit(lim));
@@ -31,7 +30,7 @@ const fetchPulsesRaw = async (lastD?: QueryDocumentSnapshot, domainFilter?: stri
     const snap = await getDocs(q);
     let items = snap.docs.map(mapPulse);
 
-    if (domainFilter && !isHubDomain(domainFilter)) {
+    if (scoped) {
         items = items.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
     }
 
@@ -568,4 +567,3 @@ export const tendTree = async (tree: Pick<Lifetree, 'id' | 'latestHash' | 'genes
         updatedAt: serverTimestamp(),
     });
 };
-

@@ -3,7 +3,7 @@ import { showConfirm } from '../ui/Dialog';
 import { Icons } from '../ui/Icons';
 import { MahameruAvatar } from '../ui/MahameruAvatar';
 import { Community, Lifetree } from '../../types';
-import { getTreesByDomain, getPulsesByTreeId, updateCommunity, isHubDomain } from '../../services/firebase';
+import { getTreesByDomain, getPulsesByTreeId, updateCommunity } from '../../services/firebase';
 import { isCanonicallySealed, verifyBlockSeal, type ChainBlock } from '../../domain/chain';
 import { setTokenisationEnabled } from '../../domain/tokenisation';
 import { VisionSection } from '../sections/VisionSection';
@@ -58,11 +58,11 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
   const [tokenisationOn, setTokenisationOn] = useState(!!community.tokenisationEnabled);
   const [isTogglingTokens, setIsTogglingTokens] = useState(false);
 
-  // The commons toggle — mirrors community.reflectsPublic. Only meaningful for a node that owns
-  // a non-hub domain (the hub reflects by default; inner communities own no domain to reflect).
+  // The commons toggle — mirrors community.reflectsPublic. Every domain community chooses;
+  // no hostname inherits reflection.
   const [reflectsOn, setReflectsOn] = useState(!!community.reflectsPublic);
   const [isTogglingReflect, setIsTogglingReflect] = useState(false);
-  const isDomainNode = !!community.domain && !isHubDomain(community.domain);
+  const hasDomain = !!community.domain;
 
   // The strict-scope toggle — mirrors community.strictScope. Only bites while scoped (reflect off).
   const [strictOn, setStrictOn] = useState(!!community.strictScope);
@@ -259,17 +259,16 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
         </div>
       )}
 
-      {/* Commons toggle — does this node reflect the whole instance's public forest, or show
-          only its own domain? A per-node choice (Indra's net). Shown only where it functions:
-          a node owning a non-hub domain. Reflects PUBLIC content only; sensitive-to-light
-          (node/community) stays local either way. */}
-      {canEdit && isDomainNode && (
+      {/* Commons toggle — does this domain community reflect its authority backend's public
+          forest, or show only its own domain? A community choice (Indra's net), for Nodes and
+          Hosts alike. Reflects PUBLIC content only; sensitive-to-light content stays local. */}
+      {canEdit && hasDomain && (
         <div className="mt-8 border-t border-slate-100 pt-6">
           <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
             <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500"><Icons.Globe /></span>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold text-slate-800">Reflect the commons</p>
-              <p className="mt-0.5 text-sm text-slate-500">Show the whole network's public forest here, a window onto every node. While off, {community.domain} shows only its own trees and pulses. Either way, node- and community-only content stays private.</p>
+              <p className="mt-0.5 text-sm text-slate-500">Show this backend's public forest here, a window onto every community it holds. While off, {community.domain} shows only its own trees and pulses. Either way, node- and community-only content stays private.</p>
             </div>
             <button
               onClick={() => handleToggleReflect(!reflectsOn)}

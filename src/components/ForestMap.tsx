@@ -31,7 +31,7 @@ interface StackLevel {
 // the same clustering, petal expansion and popup plumbing the trees use.
 type MapBeing = Lifetree & { __lightHouse?: LightHouse };
 
-export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = false, onRefresh, primaryTree = null, refreshKey = 0, lightHouseDomain = null, showLightHouses = true, filtersOverlay = null }: { trees: Lifetree[], onView: (tree: Lifetree) => void, onReach?: (tree: Lifetree) => void, onViewLightHouse?: (s: LightHouse) => void, loading?: boolean, onRefresh?: () => void, primaryTree?: Lifetree | null, refreshKey?: number, lightHouseDomain?: string | null, showLightHouses?: boolean, filtersOverlay?: React.ReactNode }) => {
+export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = false, onRefresh, primaryTree = null, refreshKey = 0, lightHouseDomain = null, lightHousesPublicOnly = false, showLightHouses = true, filtersOverlay = null }: { trees: Lifetree[], onView: (tree: Lifetree) => void, onReach?: (tree: Lifetree) => void, onViewLightHouse?: (s: LightHouse) => void, loading?: boolean, onRefresh?: () => void, primaryTree?: Lifetree | null, refreshKey?: number, lightHouseDomain?: string | null, lightHousesPublicOnly?: boolean, showLightHouses?: boolean, filtersOverlay?: React.ReactNode }) => {
     const mapContainer = useRef<HTMLDivElement>(null);
     const mapInstance = useRef<any>(null);
     const leafletRef = useRef<any>(null);
@@ -99,7 +99,7 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
     }, [treeIdsKey, refreshKey]);
     // LightHouses — one shared source with the forest grid (useVisibleLightHouses);
     // the map keeps only the placeable ones.
-    const visibleLightHouses = useVisibleLightHouses(lightHouseDomain, refreshKey);
+    const visibleLightHouses = useVisibleLightHouses(lightHouseDomain, refreshKey, lightHousesPublicOnly);
     const lightHouses = useMemo(
         () => visibleLightHouses.filter(x => Number.isFinite(x.latitude) && Number.isFinite(x.longitude)),
         [visibleLightHouses],

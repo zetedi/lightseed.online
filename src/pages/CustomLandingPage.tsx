@@ -3,6 +3,7 @@ import type { Community, Lightseed, Pulse } from '../types';
 import { EventsSection } from '../components/sections/EventsSection';
 import { createCommunityEvent, fetchEventPulses } from '../services/firebase';
 import { queryableLevels } from '../domain/pulseVisibility';
+import { dataDomainFor } from '../domain/communityDoor';
 import { sanitizeRichText } from '../utils/sanitize';
 import Logo from '../components/Logo';
 
@@ -48,15 +49,21 @@ export const CustomLandingPage: React.FC<CustomLandingPageProps> = ({
 
   // Events of this PLACE = everything stamped with its domain (community-scoped events and
   // node-scope ones created while standing on the domain alike). Visibility-scoped.
-  const levels = queryableLevels(
-    { uid: lightseed?.uid, isStaff: false, communityIds: lightseed ? [community.id] : [] },
-    { communityId: community.id },
-  );
+  const levels = community.reflectsPublic === true
+    ? queryableLevels({})
+    : queryableLevels(
+        { uid: lightseed?.uid, isStaff: false, communityIds: lightseed ? [community.id] : [] },
+        { communityId: community.id },
+      );
   const levelsKey = levels.join(',');
   const loadEvents = useCallback(
-    () => fetchEventPulses(undefined, community.domain, levels).then(r => r.items.filter(p => p.type === 'event')),
+    () => fetchEventPulses(
+      undefined,
+      dataDomainFor(community.domain, community.reflectsPublic),
+      levels,
+    ).then(r => r.items.filter(p => p.type === 'event')),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- levels is re-derived each render; keyed by its content
-    [community.domain, levelsKey],
+    [community.domain, community.reflectsPublic, levelsKey],
   );
   const handleCreate = useCallback(
     (draft: Parameters<typeof createCommunityEvent>[1]) => createCommunityEvent(community, draft),

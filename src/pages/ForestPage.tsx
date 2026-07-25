@@ -36,8 +36,9 @@ interface ForestPageProps {
   onQuickSnap: (id: string, file: File) => Promise<void>;
   onValidate: (id: string, nextValidated: boolean) => void;
   onRefresh: () => void;
-  // LightHouse map scope: a community's domain shows its own, null (the hub) shows all.
+  // LightHouse map scope: a community's domain shows its own, null reflects all.
   lightHouseDomain?: string | null;
+  lightHousesPublicOnly?: boolean;
   onViewLightHouse?: (s: LightHouse) => void;
 }
 
@@ -46,12 +47,12 @@ export const ForestPage = ({
   showValidatedTrees, setShowValidatedTrees, viewMode, filteredData, loadingMore, activeTree,
   mapRefreshKey, isAdmin, isSuperAdmin, isInitiate, currentUserId, guardedTreeIds, sentinelRef,
   onView, onReach, onPlayGrowth, onQuickSnap, onValidate, onRefresh,
-  lightHouseDomain = null, onViewLightHouse,
+  lightHouseDomain = null, lightHousesPublicOnly = false, onViewLightHouse,
 }: ForestPageProps) => {
   const { t } = useLanguage();
   // LightHouses are a layer of their own — the lighthouses. On by default, in both views.
   const [showLightHouses, setShowLightHouses] = useState(true);
-  const lightHouses = useVisibleLightHouses(lightHouseDomain, mapRefreshKey);
+  const lightHouses = useVisibleLightHouses(lightHouseDomain, mapRefreshKey, lightHousesPublicOnly);
   // LightHouses of one community gather as a DECK of cards: one stacked pile with a count,
   // opening into its cards on a tap. Loners stand alone.
   const [openDecks, setOpenDecks] = useState<Set<string>>(new Set());
@@ -121,7 +122,7 @@ export const ForestPage = ({
   return (
     <>
       {viewMode === 'map' ? (
-        <ForestMap trees={filteredData} onView={onView} onReach={onReach} loading={loadingMore && filteredData.length === 0} onRefresh={onRefresh} primaryTree={activeTree} refreshKey={mapRefreshKey} lightHouseDomain={lightHouseDomain} showLightHouses={showLightHouses} onViewLightHouse={onViewLightHouse} filtersOverlay={
+        <ForestMap trees={filteredData} onView={onView} onReach={onReach} loading={loadingMore && filteredData.length === 0} onRefresh={onRefresh} primaryTree={activeTree} refreshKey={mapRefreshKey} lightHouseDomain={lightHouseDomain} lightHousesPublicOnly={lightHousesPublicOnly} showLightHouses={showLightHouses} onViewLightHouse={onViewLightHouse} filtersOverlay={
           <div className="flex flex-col items-start gap-2">
             {filterButton}
             {filtersOpen && filters(false)}

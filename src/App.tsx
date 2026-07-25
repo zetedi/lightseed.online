@@ -40,7 +40,7 @@ import { type Pulse, type Lifetree, type Alignment, type Vision, type Community,
 import Logo from './components/Logo';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { SessionProvider, useSession } from './contexts/SessionContext';
-import { isHubDomain, useConfig } from './hooks/useConfig';
+import { isSeedShellHost, useConfig } from './hooks/useConfig';
 import { useSiteTheme } from './hooks/useSiteTheme';
 import { useReaches } from './hooks/useReaches';
 import { useResonance } from './hooks/useResonance';
@@ -72,7 +72,7 @@ import { announce, onRefresh as onBusRefresh } from './services/refreshBus';
 import { useRefreshSignal } from './hooks/useRefreshSignal';
 import { findBeingByLid } from './services/firebase/beings';
 import { lidFromPath, beingPath } from './domain/beingLink';
-import { inviteIdFromPath } from './domain/communityDoor';
+import { dataDomainFor, inviteIdFromPath } from './domain/communityDoor';
 import { getCommunityInvite, getCommunityById } from './services/firebase';
 import type { CommunityInvite } from './types';
 import type { LightHouse } from './domain/lightHouse';
@@ -190,9 +190,9 @@ const AppContent = () => {
     const [viewingLightHouse, setViewingLightHouse] = useState<LightHouse | null>(null);
     // The Path overview — the Light Path's full ruleset, opened from the card's label.
     const [showPathOverview, setShowPathOverview] = useState(false);
-    // On non-hub domains, hold the shell until we know whether this domain has a custom
+    // Outside the seed shell, hold the shell until we know whether this domain has a custom
     // landing — otherwise the seed flashes first and then jumps to the organisation's page.
-    const [hostResolved, setHostResolved] = useState(() => isHubDomain(window.location.hostname));
+    const [hostResolved, setHostResolved] = useState(() => isSeedShellHost(window.location.hostname));
     // The lightseed community is the default "About" page when this node has none of its own.
     const [defaultCommunity, setDefaultCommunity] = useState<Community | null>(null);
     // Superadmin "switch to community view" — when set, the whole shell (theme, logo,
@@ -242,7 +242,16 @@ const AppContent = () => {
     const { uploading, handleImageUpload } = useImageUpload();
     const { showNatureTrees, setShowNatureTrees, showUserTrees, setShowUserTrees, showValidatedTrees, setShowValidatedTrees } = useForestFilters();
 
-    const config = useConfig(impersonatedCommunity || hostCommunity);
+    const activeCommunity = impersonatedCommunity || hostCommunity;
+    const isDevHost = /localhost|127\.0\.0\.1|^192\.168\.|\.local$/.test(window.location.hostname);
+    // The App-level scope shared by the home carousel, Light Houses and beds. Feed content
+    // derives the same law inside useForestFeed because it also needs the raw domain for strict
+    // owner-tree behavior.
+    const activeDataDomain = (isDevHost && isSuperAdmin)
+        ? undefined
+        : dataDomainFor(activeCommunity?.domain || window.location.hostname, activeCommunity?.reflectsPublic);
+
+    const config = useConfig(activeCommunity);
     const { effectiveTheme, effectiveIsDark, configuredLogoUrl, toggleNightMode, backgroundStyle } =
         useSiteTheme({ config, impersonatedCommunity, lightseed, personalSiteTheme, personalSiteLogoUrl });
 
@@ -398,18 +407,18 @@ const AppContent = () => {
         setTokenisationEnabled(!!(impersonatedCommunity || hostCommunity)?.tokenisationEnabled);
     }, [impersonatedCommunity, hostCommunity]);
 
-    // Events for the logged-in home carousel — visibility-scoped to this viewer + node. Re-fetches
+    // Events for the logged-in home carousel — visibility-scoped to this viewer + place. Re-fetches
     // on the 'events' bus signal, so an edit/create/delete anywhere shows up in the banner too.
     const eventsRefresh = useRefreshSignal(['events']);
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- reset-on-signout before the async fetch below
         if (!lightseed) { setDashboardEvents([]); return; }
-        const isDevHost = /localhost|127\.0\.0\.1|^192\.168\.|\.local$/.test(window.location.hostname);
-        const currentDomain = (isDevHost && isSuperAdmin) ? 'lightseed.online' : window.location.hostname;
-        const levels = queryableLevels({ uid: lightseed.uid, isStaff: isSuperAdmin || isAdmin });
-        fetchEventPulses(undefined, currentDomain, levels).then(r => setDashboardEvents(r.items)).catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on uid + the events bus signal on purpose: the lightseed object changes identity without the uid changing; refetching per object would loop
-    }, [lightseed?.uid, isSuperAdmin, isAdmin, eventsRefresh]);
+        const levels = activeCommunity?.reflectsPublic === true
+            ? queryableLevels({})
+            : queryableLevels({ uid: lightseed.uid, isStaff: isSuperAdmin || isAdmin });
+        fetchEventPulses(undefined, activeDataDomain, levels).then(r => setDashboardEvents(r.items)).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on uid + host scope + bus signal; the lightseed object changes identity without uid changing
+    }, [lightseed?.uid, isSuperAdmin, isAdmin, eventsRefresh, activeDataDomain]);
 
     // Browser back closes overlays LAYER BY LAYER instead of leaving the app. Ordered base-first;
     // the last open layer is topmost (closed first on Back). See useHistoryLayers.
@@ -998,7 +1007,8 @@ const AppContent = () => {
 
                 {tab === 'forest' ? (
                     <ForestPage
-                        lightHouseDomain={(impersonatedCommunity || hostCommunity)?.domain || null}
+                        lightHouseDomain={activeDataDomain || null}
+                        lightHousesPublicOnly={activeCommunity?.reflectsPublic === true}
                         onViewLightHouse={setViewingLightHouse}
                         effectiveIsDark={effectiveIsDark}
                         showNatureTrees={showNatureTrees} setShowNatureTrees={setShowNatureTrees}
@@ -1096,7 +1106,8 @@ const AppContent = () => {
                         return offeringsSub === 'beds' ? (
                             <BedsBrowsePage
                                 onViewTree={setSelectedTree}
-                                lightHouseDomain={(impersonatedCommunity || hostCommunity)?.domain || null}
+                                lightHouseDomain={activeDataDomain || null}
+                                lightHousesPublicOnly={activeCommunity?.reflectsPublic === true}
                                 theme={effectiveTheme}
                                 tabs={offeringsTabs}
                             />
@@ -1308,7 +1319,7 @@ const AppContent = () => {
                         careAlertCount={wateringNeededCount}
                         onOpenReachInbox={openDirectMessages}
                         logoUrl={configuredLogoUrl}
-                        appName={isHubDomain(window.location.hostname) ? '.seed' : config.name}
+                        appName={isSeedShellHost(window.location.hostname) ? '.seed' : config.name}
                         crownRole={deriveCrownRole(impersonatedCommunity || hostCommunity, dataAuthority)}
                         // An open event names itself in the header (mobile label + tablet centre).
                         pageLabel={selectedPulse?.type === 'event' ? 'Event' : undefined}

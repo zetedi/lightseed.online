@@ -77,7 +77,7 @@ export interface PathwayInput {
   circleSize: number;         // co_owner + steward links into their own trees
   sevenSustaining: number;    // planted trees both witnessed and tended (domain/sustainingSeven)
   ownsCommunity: boolean;
-  communityHasCustomDomain: boolean; // their community's domain is not a hub domain
+  communityHasCustomDomain: boolean; // their community's domain is outside the built-in seed shell
   communityHasTheme: boolean;        // their community has a tailored theme
 }
 

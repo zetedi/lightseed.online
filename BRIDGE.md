@@ -78,10 +78,11 @@ What a being LOOKS like: `src/components/BeingProfile.tsx` + `src/components/sec
   Auth, in order, admin rights) so a stale login can't strand a half-deleted account. Shared with
   `deleteUserAsAdmin`. Client `deleteUserAccount` just calls it. Sign-in **self-heals** a missing
   profile (`ensureUserProfile`). Needs a `--only functions` deploy.
-- Still a hardcoded **query-scoping alias**: `isHubDomain`
-  (`services/firebase/trees.ts`) treats lightseed.online + lifeseed.online as
-  always-reflecting; the crown no longer trusts that alias, but dissolving it
-  from data queries is a later step.
+- **Data scope follows the community's decision**: every domain is scoped unless
+  its community explicitly sets `reflectsPublic: true`. Feeds receive either the
+  canonical domain (scoped) or no domain (reflecting); no hostname can grant
+  itself a wider forest. The remaining seed-shell hostname helper governs
+  branding and development behavior only, never custody or data scope.
 
 ## The bed (a place to sleep, as a being)
 

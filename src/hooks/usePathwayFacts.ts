@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { firestoreStore } from '../adapters/firestore';
 import { getMyCommunities } from '../services/firebase';
-import { isHubDomain } from './useConfig';
+import { isSeedShellHost } from './useConfig';
 import type { GuardianEdge } from '../domain/sustainingSeven';
 import type { Lifetree, Lightseed } from '../types';
 
@@ -67,7 +67,7 @@ export const usePathwayFacts = (lightseed: Lightseed | null, myTrees: Lifetree[]
         ownsCommunity: communities.length > 0,
         // With several communities, ANY of them counts — the path asks whether the walker
         // has rooted a domain / tailored a theme somewhere, not on an arbitrary first pick.
-        communityHasCustomDomain: communities.some(c => !isHubDomain(c.domain)),
+        communityHasCustomDomain: communities.some(c => !isSeedShellHost(c.domain)),
         communityHasTheme: communities.some(c => !!c.theme && Object.values(c.theme).some(v => !!v)),
       });
     });

@@ -2,8 +2,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
-import { getNetworkStats, isHubDomain, getLightHousesByDomain, getAllLightHouses, getRootedTrees, getCommunityById } from '../services/firebase';
-import { reflectsInstancePublic } from '../domain/communityDoor';
+import { getNetworkStats, getLightHousesByDomain, getAllLightHouses, getRootedTrees, getCommunityById } from '../services/firebase';
+import { dataDomainFor } from '../domain/communityDoor';
 import { headerSurface } from '../domain/themeSurface';
 import { treeCoordinates } from '../domain/views/forest';
 import { PlantCTA } from './ui/PlantCTA';
@@ -107,15 +107,16 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
     // map isn't empty while developing.
     const [mapPoints, setMapPoints] = useState<MapPoint[]>([]);
     const isDevHost = typeof window !== 'undefined' && /localhost|127\.0\.0\.1|^192\.168\.|\.local$/.test(window.location.hostname);
-    // Scope like the community/forest view: a reflecting hub (or the dev host as superadmin) shows
-    // EVERY public light house; a scoped node shows only its own domain's. Otherwise a signed-out
-    // visitor on the hub would miss public light houses that live on other domains.
+    // Scope like the community/forest view: an explicitly reflecting place (or the dev host as
+    // superadmin) shows every public Light House; a scoped place shows only its own domain's.
     const mapActiveDomain = hostCommunity?.domain || (typeof window !== 'undefined' ? window.location.hostname : '');
-    const mapReflects = reflectsInstancePublic(hostCommunity?.reflectsPublic, isHubDomain(mapActiveDomain));
-    const scopeDomain = (mapReflects || (isDevHost && isSuperAdmin)) ? undefined : mapActiveDomain;
+    const scopeDomain = (isDevHost && isSuperAdmin)
+        ? undefined
+        : dataDomainFor(mapActiveDomain, hostCommunity?.reflectsPublic);
+    const reflectsPublic = hostCommunity?.reflectsPublic === true && !(isDevHost && isSuperAdmin);
     useEffect(() => {
         let alive = true;
-        const publicOnly = !lightseed;
+        const publicOnly = !lightseed || reflectsPublic;
         (scopeDomain ? getLightHousesByDomain(scopeDomain, { publicOnly }) : getAllLightHouses({ publicOnly }))
             .then(async sancts => {
                 const trees = await getRootedTrees(sancts.map(s => s.id));
@@ -130,15 +131,17 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
             .catch((e) => { console.warn('Mini-map lighthouse fetch failed:', e); if (alive) setMapPoints([]); });
         return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on scope + sign-in (lightseed?.uid); lightseed's object identity changes without the uid
-    }, [scopeDomain, lightseed?.uid]);
+    }, [scopeDomain, lightseed?.uid, reflectsPublic]);
 
     useEffect(() => {
         // The Forest card counts THIS place: only its own domain when the node is a scoped pond,
         // or the whole instance when it reflects the commons (getNetworkStats treats an absent
-        // domain as unscoped). The reflect flag falls back to the hub-domain default when unset.
+        // domain as unscoped). Reflection is explicit; an absent flag stays scoped.
         const activeDomain = hostCommunity?.domain || window.location.hostname;
-        const reflects = reflectsInstancePublic(hostCommunity?.reflectsPublic, isHubDomain(activeDomain));
-        getNetworkStats(reflects ? undefined : activeDomain).then(setNetworkStats);
+        getNetworkStats(
+            dataDomainFor(activeDomain, hostCommunity?.reflectsPublic),
+            hostCommunity?.reflectsPublic === true,
+        ).then(setNetworkStats);
     }, [lightseed, hostCommunity?.domain, hostCommunity?.reflectsPublic]);
 
 

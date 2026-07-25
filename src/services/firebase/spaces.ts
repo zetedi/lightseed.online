@@ -5,16 +5,16 @@ import { type PulseVisibility } from '../../domain/pulse';
 import { db, toMillis, mapDoc, lifetreesCollection, visionsCollection, pulsesCollection, communitiesCollection, lightHousesCollection, communityInvitesCollection } from './core';
 import { firestoreStore } from '../../adapters/firestore';
 import { createBlock } from '../../utils/crypto';
-import { isHubDomain } from './trees';
 
 export interface VisionFetchAccess {
     uid?: string;
     isStaff?: boolean;
+    publicOnly?: boolean;
 }
 
-// A broad vision list must be provable at the database boundary. Public visitors query PUBLIC
-// explicitly; signed-in viewers query PUBLIC + NODE (until node membership becomes real); staff
-// may read the whole field. An author's own query
+// A broad vision list must be provable at the database boundary. Public visitors and reflecting
+// commons query PUBLIC explicitly; scoped signed-in viewers query PUBLIC + NODE (until node
+// membership becomes real); scoped staff may read the whole field. An author's own query
 // is merged on the first page so their private visions remain visible without exposing anyone
 // else's. The client canViewVision gate remains a belt, never the lock.
 export const fetchVisions = async (
@@ -23,8 +23,10 @@ export const fetchVisions = async (
     access: VisionFetchAccess = {},
 ) => {
     const normalizedDomain = domainFilter?.replace(/^www\./, '');
-    const scoped = !!(normalizedDomain && !isHubDomain(normalizedDomain));
-    const visible = access.isStaff
+    const scoped = !!normalizedDomain;
+    const visible = access.publicOnly
+        ? [where('visibility', '==', 'public')]
+        : access.isStaff
         ? []
         : [access.uid
             ? where('visibility', 'in', ['public', 'node'])
@@ -41,7 +43,7 @@ export const fetchVisions = async (
     const byId = new Map(snap.docs.map(d => [d.id, mapDoc(d) as Vision]));
 
     // Owner visibility is a separate, rule-provable query. Merge only on page one; subsequent
-    // pages paginate the shared public/node stream and dedupe in useForestFeed.
+    // pages paginate the shared visibility-constrained stream and dedupe in useForestFeed.
     if (!lastD && access.uid && !access.isStaff) {
         const mine = await getDocs(query(visionsCollection, where('authorId', '==', access.uid)));
         mine.docs.forEach(d => {

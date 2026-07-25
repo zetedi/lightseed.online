@@ -165,28 +165,28 @@ export const getGenesisHash = async (): Promise<string | null> => {
     }
 };
 
-// Forest-card counters. On the hub the whole node counts; on a custom domain only that
-// place's life counts (privacy of the place — its numbers are its own).
-export const getNetworkStats = async (domain?: string) => {
-    const scoped = !!(domain && !isHubDomain(domain));
+// Forest-card counters. A missing domain means the reflecting whole; a present domain means
+// this place only. The caller derives that choice from community.reflectsPublic.
+export const getNetworkStats = async (domain?: string, publicOnly = false) => {
+    const scoped = !!domain;
     const d = domain?.replace(/^www\./, '');
     // A count (getCountFromServer) is rejected WHOLESALE unless EVERY matched doc is rule-readable
     // — so one private tree (or node tree, for a signed-out viewer) would otherwise zero the card.
-    // The viewer's provable levels, mirroring the read rules: public only when signed out, public
-    // + node when signed in (staff read all, so their unfiltered attempt just succeeds).
-    const levels = auth.currentUser?.uid ? ['public', 'node'] : ['public'];
-    // Try the true (unfiltered) count first — accurate, and provable while every matched doc is
-    // public/legacy. If the rules reject it (a non-public doc now exists), retry constrained to
-    // the provable levels: an as-permitted count that never zeros. null = even that was rejected
-    // (e.g. a missing composite index) — the caller treats it as an unknown, not a hard zero.
+    // The viewer's provable levels, mirroring the read rules: public only when signed out or
+    // reflecting; public + node when signed in to a scoped place.
+    const levels = publicOnly || !auth.currentUser?.uid ? ['public'] : ['public', 'node'];
+    // In a scoped place, try the true (unfiltered) count first — accurate, and provable while
+    // every matched doc is readable. Reflection skips that attempt and asks PUBLIC at the source.
+    // null = the constrained count was rejected (e.g. a missing composite index).
     const provableCount = async (coll: string, extra: any[] = []): Promise<number | null> => {
-        try {
-            return (await getCountFromServer(query(collection(db, coll), ...extra))).data().count;
-        } catch {
+        if (!publicOnly) {
             try {
-                return (await getCountFromServer(query(collection(db, coll), ...extra, where('visibility', 'in', levels)))).data().count;
-            } catch { return null; }
+                return (await getCountFromServer(query(collection(db, coll), ...extra))).data().count;
+            } catch { /* retry with a provable visibility constraint */ }
         }
+        try {
+            return (await getCountFromServer(query(collection(db, coll), ...extra, where('visibility', 'in', levels)))).data().count;
+        } catch { return null; }
     };
     const domainCons = scoped ? [where('domain', '==', d)] : [];
     // Counts run independently: one collection's rejection must not zero the others.
@@ -229,13 +229,13 @@ export const plantLifetree = async (data: Partial<Lifetree> & { ownerId: string;
 
     const genesisHash = await createBlock("0", { msg: "Birth" }, Date.now());
     const currentHost = window.location.hostname.replace(/^www\./, '');
-    // On a custom domain the tree belongs to that community — its canonical domain wins over
-    // the raw hostname (so per-auset.web.app trees carry the community's domain, and follow it
-    // when the community later moves to its real domain).
+    // A tree belongs to the community at the current address — its canonical domain wins over
+    // the raw hostname (so per-auset.web.app trees follow the community to its real domain).
+    // Local development has no host-community document, so it plants into the default node.
     let domain = data.domain;
     if (!domain) {
-        if (isHubDomain(currentHost)) domain = 'lightseed.online';
-        else domain = (await getCommunityByDomain(currentHost))?.domain || currentHost;
+        const isDevHost = /localhost|127\.0\.0\.1|^192\.168\.|\.local$/.test(currentHost);
+        domain = (await getCommunityByDomain(currentHost))?.domain || (isDevHost ? 'lightseed.online' : currentHost);
     }
 
     // New trees inherit the owner's contact-privacy preference so the mirror stays consistent.
@@ -329,9 +329,9 @@ export const getMyBeds = async (uid: string): Promise<Lifetree[]> => {
         .sort((a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0));
 };
 
-export const getBedsForLightHouse = async (lightHouseId: string): Promise<Lifetree[]> => {
+export const getBedsForLightHouse = async (lightHouseId: string, publicOnly = false): Promise<Lifetree[]> => {
     const uid = auth.currentUser?.uid;
-    const levels = uid ? ['public', 'node'] : ['public'];
+    const levels = uid && !publicOnly ? ['public', 'node'] : ['public'];
     const byId = new Map<string, Lifetree>();
     const add = (d: QueryDocumentSnapshot) => byId.set(d.id, mapDoc(d) as Lifetree);
     (await getDocs(query(lifetreesCollection,
@@ -353,27 +353,23 @@ export const deleteLifetree = (id: string) => deleteDoc(doc(db, 'lifetrees', id)
 export const validateLifetree = (targetId: string, validatorId: string) => updateDoc(doc(db, 'lifetrees', targetId), { validated: true, validatorId });
 export const unvalidateLifetree = (targetId: string) => updateDoc(doc(db, 'lifetrees', targetId), { validated: false, validatorId: null });
 
-export const isHubDomain = (domain?: string) => {
-    if (!domain) return true;
-    const d = domain.toLowerCase().replace(/^www\./, '');
-    return d === 'lightseed.online' || d === 'lifeseed.online' || d === 'localhost' || d === '127.0.0.1' || d.startsWith('192.168.') || d.endsWith('.local');
-};
-
 export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, ownerUid?: string, levels?: string[] | null) => {
-    const communityScoped = !!(domainFilter && !isHubDomain(domainFilter));
+    const scopedDomain = domainFilter?.replace(/^www\./, '');
+    const communityScoped = !!scopedDomain;
     // Only return trees this viewer may read (visibility levels), matching the rules — else the
     // list query is rejected. levels null/empty = no filter (staff / legacy callers).
     const visCons = (levels && levels.length) ? [where('visibility', 'in', levels)] : [];
     let q;
     if (communityScoped) {
         // Community View: narrow to the community's domain (remove orderBy to avoid composite index)
-        q = query(lifetreesCollection, where('domain', '==', domainFilter!.replace(/^www\./, '')), ...visCons, limit(24));
+        q = query(lifetreesCollection, where('domain', '==', scopedDomain), ...visCons, limit(24));
     } else {
         q = query(lifetreesCollection, ...visCons, orderBy('createdAt', 'desc'), limit(12));
     }
 
     if (lastD) q = query(q, startAfter(lastD));
     let snap;
+    let scopedFallback = false;
     try {
         snap = await getDocs(q);
     } catch (e) {
@@ -381,8 +377,11 @@ export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter
         // to a filter-only query (single-field index) so the forest keeps loading; sorted below.
         console.warn('Forest query fell back (visibility index building?)', e);
         snap = await getDocs(visCons.length ? query(lifetreesCollection, ...visCons, limit(60)) : query(lifetreesCollection, limit(60)));
+        scopedFallback = communityScoped;
     }
     let items = snap.docs.map(d => (mapDoc(d) as Lifetree));
+    // A broad index fallback must never become a broad visible forest.
+    if (communityScoped) items = items.filter(tree => (tree.domain || '') === scopedDomain);
     // Always newest-first (covers the unordered fallback).
     items = items.sort((a, b) => ((b.createdAt as any)?.toMillis?.() || 0) - ((a.createdAt as any)?.toMillis?.() || 0));
 
@@ -392,7 +391,7 @@ export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter
     if (!lastD && visCons.length && items.length === 0) {
         try {
             const base = communityScoped
-                ? query(lifetreesCollection, where('domain', '==', domainFilter!.replace(/^www\./, '')), limit(24))
+                ? query(lifetreesCollection, where('domain', '==', scopedDomain), limit(24))
                 : query(lifetreesCollection, orderBy('createdAt', 'desc'), limit(12));
             const s2 = await getDocs(base);
             items = s2.docs.map(d => (mapDoc(d) as Lifetree))
@@ -414,7 +413,7 @@ export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter
         items = items.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
     }
 
-    if (!lastD && isHubDomain(domainFilter)) {
+    if (!lastD && !communityScoped) {
         const genesisSnap = await getDoc(doc(db, 'lifetrees', 'GENESIS_TREE'));
         if (genesisSnap.exists()) {
             const genesisTree = { id: genesisSnap.id, ...genesisSnap.data() } as Lifetree;
@@ -425,26 +424,33 @@ export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter
     }
 
     // Beds are furniture, not forest — never listed among the trees (domain/bed.ts).
-    return { items: excludeBedTrees(items), lastDoc: snap.docs[snap.docs.length-1] || null };
+    // A fallback cursor belongs to a different query shape, so end pagination here.
+    return { items: excludeBedTrees(items), lastDoc: scopedFallback ? null : (snap.docs[snap.docs.length-1] || null) };
 }
 
 // Whole forest at once (no pagination) — used by the map so every tree appears,
-// not just the first page. Includes the creator's own trees and Genesis on the hub.
+// not just the first page. Includes the creator's own trees and Genesis while reflecting.
 export const fetchAllLifetrees = async (domainFilter?: string, ownerUid?: string, levels?: string[] | null): Promise<Lifetree[]> => {
-    const communityScoped = !!(domainFilter && !isHubDomain(domainFilter));
+    const scopedDomain = domainFilter?.replace(/^www\./, '');
+    const communityScoped = !!scopedDomain;
     const visCons = (levels && levels.length) ? [where('visibility', 'in', levels)] : [];
     const byId = new Map<string, Lifetree>();
     const add = (d: any) => byId.set(d.id, mapDoc(d) as Lifetree);
 
     try {
         if (communityScoped) {
-            (await getDocs(query(lifetreesCollection, where('domain', '==', domainFilter!.replace(/^www\./, '')), ...visCons))).docs.forEach(add);
+            (await getDocs(query(lifetreesCollection, where('domain', '==', scopedDomain), ...visCons))).docs.forEach(add);
         } else {
             (await getDocs(query(lifetreesCollection, ...visCons, orderBy('createdAt', 'desc'), limit(1000)))).docs.forEach(add);
         }
     } catch (e) {
         console.warn('Forest map query fell back (visibility index building?)', e);
-        (await getDocs(visCons.length ? query(lifetreesCollection, ...visCons, limit(1000)) : query(lifetreesCollection, limit(1000)))).docs.forEach(add);
+        const fallback = await getDocs(visCons.length
+            ? query(lifetreesCollection, ...visCons, limit(1000))
+            : query(lifetreesCollection, limit(1000)));
+        fallback.docs
+            .filter(d => !communityScoped || (d.data().domain || '') === scopedDomain)
+            .forEach(add);
     }
 
     // Pre-backfill safety: legacy trees lack `visibility`, so a filtered query matches none.
@@ -452,7 +458,7 @@ export const fetchAllLifetrees = async (domainFilter?: string, ownerUid?: string
     if (visCons.length && byId.size === 0) {
         try {
             const base = communityScoped
-                ? query(lifetreesCollection, where('domain', '==', domainFilter!.replace(/^www\./, '')))
+                ? query(lifetreesCollection, where('domain', '==', scopedDomain))
                 : query(lifetreesCollection, orderBy('createdAt', 'desc'), limit(1000));
             (await getDocs(base)).docs.forEach(add);
         } catch { /* rules now block unfiltered (private trees exist) — keep empty */ }
@@ -613,7 +619,7 @@ export const getRootedTrees = async (lightHouseIds: string[]): Promise<Lifetree[
     return trees.filter((t): t is Lifetree => t !== null && !isBedTree(t));
 };
 
-// Every placed lightHouse in the network — the hub map shows what the viewer may see, as the
+// Every placed Light House in the network — a reflecting map shows what the viewer may see, as the
 // rule-provable membership union (fetchVisibleLightHouses). Signed-out sees public only.
 export const getAllLightHouses = (opts?: VisibleLightHouseOpts): Promise<LightHouse[]> =>
     fetchVisibleLightHouses(opts);

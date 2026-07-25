@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   DEFAULT_DOOR, doorOf, joinAffordance, checkInvite, inviteStatus, signupRequiresInvite,
-  reflectsInstancePublic, communityInviteUrl, inviteIdFromPath,
+  dataDomainFor, reflectsInstancePublic, communityInviteUrl, inviteIdFromPath,
   type CommunityInviteCheck,
 } from '../src/domain/communityDoor';
 
@@ -79,14 +79,19 @@ describe('signupRequiresInvite (identity is open; only a closed door gates sign-
 });
 
 describe('reflectsInstancePublic (a node reflects the instance, or stays a scoped pond)', () => {
-  it('an explicit flag wins in both directions', () => {
-    expect(reflectsInstancePublic(true, false)).toBe(true);   // a scoped domain chose to reflect
-    expect(reflectsInstancePublic(false, true)).toBe(false);  // a reflecting domain chose to scope
+  it('opens only through an explicit community decision', () => {
+    expect(reflectsInstancePublic(true)).toBe(true);
+    expect(reflectsInstancePublic(false)).toBe(false);
   });
-  it('unset falls back to the hub default — zero migration', () => {
-    expect(reflectsInstancePublic(undefined, true)).toBe(true);   // hub reflects by default
-    expect(reflectsInstancePublic(undefined, false)).toBe(false); // others stay scoped
-    expect(reflectsInstancePublic(null, true)).toBe(true);
+  it('absent is scoped — no hostname inherits an open canopy', () => {
+    expect(reflectsInstancePublic(undefined)).toBe(false);
+    expect(reflectsInstancePublic(null)).toBe(false);
+  });
+  it('passes the domain only while scoped, including the former hub alias', () => {
+    expect(dataDomainFor('lightseed.online', undefined)).toBe('lightseed.online');
+    expect(dataDomainFor('lightseed.online', false)).toBe('lightseed.online');
+    expect(dataDomainFor('lightseed.online', true)).toBeUndefined();
+    expect(dataDomainFor('perauset.com', true)).toBeUndefined();
   });
 });
 

@@ -6,6 +6,28 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-25 · The canopy opens only by decision**: the last hardcoded hub
+privilege is removed from data queries. Every domain community is scoped unless
+it explicitly holds `reflectsPublic: true`; absent and false mean closed canopy.
+All forest, pulse, event, offering, reach, vision, map and dashboard paths now
+carry the same signal: a canonical domain means scoped, while no domain means
+reflect the authority backend's public commons. `lightseed.online` inherits no
+wider view from its address. Even the forest's index-building fallback narrows
+its broad retrieval back to the chosen domain and ends incompatible pagination,
+so degraded infrastructure cannot quietly change the visible boundary.
+
+The reflection switch is available to the keeper of every domain community,
+Node or Host. A Host may open a window onto its parent backend and remains The
+Host; reflection never upgrades custody. A crowned Node becomes The Hub only
+after its own community opens that canopy, and returns whole to The Node when it
+closes it. The remaining hostname helper is renamed `isSeedShellHost` and is
+confined to branding and local-development behavior: it may dress the house, but
+it cannot govern the forest. This corrects the compatibility debt recorded in
+the preceding authority ring without rewriting its history. *(No address is
+born open. The community opens the canopy.)*
+
+---
+
 **2026-07-25 · The backend names its keeper; the crown follows custody**:
 `dataAuthority` is not a community setting. It is the backend's own public,
 server-owned declaration (`config/dataAuthority`) naming by portable LID the

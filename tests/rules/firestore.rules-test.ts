@@ -212,6 +212,14 @@ describe('community joining — anyone knocks as themselves; only the keeper ope
   });
 });
 
+describe('community reflection — the keeper alone opens the canopy', () => {
+  it('the owner may choose or close reflection; a stranger cannot choose for them', async () => {
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'communities', 'com1'), { reflectsPublic: true }));
+    await assertFails(updateDoc(doc(db(MALLORY), 'communities', 'com1'), { reflectsPublic: false }));
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'communities', 'com1'), { reflectsPublic: false }));
+  });
+});
+
 describe('collabs — staff-curated, world-readable', () => {
   it('anyone reads, only staff write', async () => {
     await env.withSecurityRulesDisabled(async (ctx) => setDoc(doc(ctx.firestore(), 'collabs', 'c1'), { name: 'Anthropic', agreement: 'contract' }));

@@ -87,8 +87,9 @@ const BedCard = ({ bed, onViewTree, density }: { bed: Lifetree; onViewTree: (t: 
 interface BedsBrowsePageProps {
   onViewTree: (t: Lifetree) => void;
   // LightHouse scope, derived exactly like the forest: a community domain shows its own houses,
-  // the hub (null) shows them all.
+  // while a reflecting view (null) shows them all.
   lightHouseDomain?: string | null;
+  lightHousesPublicOnly?: boolean;
   // The active node theme — passed so the header band resolves the SAME pigment the nav's
   // active pill does (both call tabTone('beds', theme)); without it they drift on a themed node.
   theme?: TabTheme | null;
@@ -96,7 +97,7 @@ interface BedsBrowsePageProps {
   tabs?: ReactNode;
 }
 
-export const BedsBrowsePage = ({ onViewTree, lightHouseDomain = null, theme = null, tabs }: BedsBrowsePageProps) => {
+export const BedsBrowsePage = ({ onViewTree, lightHouseDomain = null, lightHousesPublicOnly = false, theme = null, tabs }: BedsBrowsePageProps) => {
   const { t } = useLanguage();
   const { lightseed } = useSession();
   const [density, setDensity] = useListDensity('beds');
@@ -104,7 +105,7 @@ export const BedsBrowsePage = ({ onViewTree, lightHouseDomain = null, theme = nu
 
   // Every Light House the viewer may see (already gated by canViewLightHouse + publicOnly when
   // signed out). Beds stack beneath each — the mirror of Light Houses stacking under communities.
-  const lightHouses = useVisibleLightHouses(lightHouseDomain, 0);
+  const lightHouses = useVisibleLightHouses(lightHouseDomain, 0, lightHousesPublicOnly);
   const bedsSignal = useRefreshSignal(['beds']);
 
   const [groups, setGroups] = useState<BedGroup[]>([]);
@@ -115,7 +116,7 @@ export const BedsBrowsePage = ({ onViewTree, lightHouseDomain = null, theme = nu
     setLoading(true);
     Promise.all(
       lightHouses.map(house =>
-        getBedsForLightHouse(house.id)
+        getBedsForLightHouse(house.id, lightHousesPublicOnly)
           .then(beds => ({ house, beds }))
           .catch(() => ({ house, beds: [] as Lifetree[] })),
       ),
@@ -126,7 +127,7 @@ export const BedsBrowsePage = ({ onViewTree, lightHouseDomain = null, theme = nu
       setLoading(false);
     });
     return () => { alive = false; };
-  }, [lightHouses, bedsSignal]);
+  }, [lightHouses, bedsSignal, lightHousesPublicOnly]);
 
   // Search reads both floors: a house name keeps all its beds; otherwise the bed's own name/body.
   const term = search.trim().toLowerCase();

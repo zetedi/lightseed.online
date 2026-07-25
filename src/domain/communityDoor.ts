@@ -36,16 +36,21 @@ export const joinAffordance = (door: CommunityDoor): JoinAffordance =>
 export const signupRequiresInvite = (community?: { door?: string | null } | null): boolean =>
   doorOf(community) === 'closed';
 
-// COMMONS mode — a node policy sibling to the door. A node (host community) may be a commons,
-// reflecting the whole instance's PUBLIC forest/feed, or a scoped pond showing only its own
-// domain. Per-node choice (Indra's net; there is no privileged hub). The `reflectsPublic` flag
-// decides; when unset it falls back to the caller's legacy default (the canonical hub domains),
-// so nothing changes until a keeper flips it — zero migration. Only PUBLIC content reflects;
-// node/community-visibility ("sensitive to light") stays local either way.
+// COMMONS mode — a community policy sibling to the door. A node or hosted portal may reflect
+// the authority backend's PUBLIC forest/feed, or remain a scoped pond showing only its own
+// domain. Per-community choice (Indra's net; there is no privileged hostname). Reflection must
+// be explicit: absent is scoped. Only PUBLIC content reflects; node/community visibility
+// ("sensitive to light") stays local either way.
 export const reflectsInstancePublic = (
   reflectsPublicFlag: boolean | null | undefined,
-  hubDefault: boolean,
-): boolean => reflectsPublicFlag ?? hubDefault;
+): boolean => reflectsPublicFlag === true;
+
+// The one data-scope switch used by feeds and dashboard surfaces. A domain in the return
+// value means "query this place"; undefined means "reflect the authority backend."
+export const dataDomainFor = (
+  domain: string | undefined,
+  reflectsPublicFlag: boolean | null | undefined,
+): string | undefined => reflectsInstancePublic(reflectsPublicFlag) ? undefined : domain;
 
 // An invitation as the domain sees it — times in ms so the module stays pure of Firestore.
 export interface CommunityInviteCheck {

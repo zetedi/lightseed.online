@@ -81,15 +81,14 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
   reflection. Missing or malformed authority makes no claim and remains
   **About**. The record is public so a signed-out visitor receives the same truth,
   but server-owned so a community cannot click itself into sovereignty.
-- **Domain scoping (current compatibility behavior)**: hardcoded aliases
-  (`lightseed.online`, `lifeseed.online`, and local development hosts) are treated
-  as always-reflecting and therefore unscoped; other hostnames filter
-  forest/pulses/events/visions by `domain == hostname`. A host community's
-  `reflectsPublic` can open reflection on other domains, but the aliases cannot
-  yet close it. This is not the intended identity law: a domain alone is neither
-  a node nor a hub. The target is explicit node sovereignty over its forest
-  database, with **hub = node + community-chosen public reflection**. Custom
-  landings remain community DATA.
+- **Domain scoping**: every domain community begins scoped. Only an explicit
+  `community.reflectsPublic == true` opens its authority backend's public forest;
+  absent and false remain closed. Feeds carry this choice as one query signal:
+  a domain means `domain == community.domain`, while no domain means reflection.
+  No hostname inherits a data role. The seed-shell aliases remain for branding
+  and local-development behavior only. A Host may reflect without becoming a
+  Node; custody, not visibility, governs the crown. Custom landings remain
+  community DATA.
 - **The map**: pixel-space clustering (50px) over trees + Light House pseudo-beings;
   Light Houses seed clusters (lighthouse precedence); Seed-of-Life petal expansion;
   popups via Leaflet autoPan (bottom-anchored popups can never flip; don't try).
@@ -107,10 +106,9 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
 ## Known debts (kept honestly)
 
 - Backend custody is now explicit, but backend division is not: hosted domains
-  still share their authority node's instance-wide Auth and database, and the
-  hardcoded `isHubDomain` aliases still govern query scoping. The next boundary
-  is a self-describing export/import and independent backend bootstrap; only
-  after data actually moves may a former Host declare itself a Node.
+  still share their authority node's instance-wide Auth and database. The next
+  boundary is a self-describing export/import and independent backend bootstrap;
+  only after data actually moves may a former Host declare itself a Node.
 - Key revocation/epochs are not built: a key once published binds forever through the
   append-only lineage (signature slots stay auth-gated; see the continuity ring, 2026-07-18).
 - Client-side visibility gates (trees, Light Houses) await full rules parity.

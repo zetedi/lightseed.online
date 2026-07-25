@@ -435,8 +435,9 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     protection: <Icons.ShieldCheck />,
   };
 
-  // The Yantra (and the network's deeper lore) only belongs to the central nodes.
-  const isNetworkHub = ['lightseed.online', 'lifeseed.online'].includes(bareDomain(community.domain));
+  // The Yantra, code lineage and seed lore belong to the two historical seed communities.
+  // This is content identity only — not a claim about Hub role, custody or data scope.
+  const isSeedLoreCommunity = ['lightseed.online', 'lifeseed.online'].includes(bareDomain(community.domain));
 
   // The community's sections — each `render` closes over this shell's state and handlers.
   const sections: BeingSection[] = [
@@ -565,11 +566,11 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     },
     // The network's founding lore (Genesis, the Path, the Yantra, Protection) stays with the
     // central lightseed / lifeseed nodes — every community will have its own genesis and path.
-    ...loreTabs.filter(() => isNetworkHub).map((tab): BeingSection => ({
+    ...loreTabs.filter(() => isSeedLoreCommunity).map((tab): BeingSection => ({
       key: tab.id, label: tab.label, icon: loreIcons[tab.id], render: () => <LoreSection id={tab.id} />,
     })),
-    // The node's own body — the repo's git history drawn as a growth chain. Hub-only, like the lore.
-    ...(isNetworkHub ? [{ key: 'codechain', label: 'Code chain', icon: <Icons.Hash />, render: () => <CommunityCodeChain /> } satisfies BeingSection] : []),
+    // The seed communities' own body — the repo's git history drawn as a growth chain, like the lore.
+    ...(isSeedLoreCommunity ? [{ key: 'codechain', label: 'Code chain', icon: <Icons.Hash />, render: () => <CommunityCodeChain /> } satisfies BeingSection] : []),
     ...(canEdit ? [
       {
         key: 'intelligence', label: 'Intelligence', icon: <Icons.Intelligence />, render: () => (

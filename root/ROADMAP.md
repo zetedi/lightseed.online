@@ -31,6 +31,10 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
   Host / The Node / The Hub** from that record, the hosting community and its
   reflection decision—never from a hostname. This makes the boundary visible;
   it does not yet split the shared backend.
+- **The canopy opens only by decision**: every domain community is scoped by
+  default; `reflectsPublic: true` alone opens its backend's public commons.
+  Lightseed has no hardcoded query privilege, and the same toggle is available
+  to a Node or a Host (reflection never upgrades custody).
 - perauset.com goes live on 8/8 (deploy `--only hosting:perauset`); printed QRs
   should carry the final domain (refresh mints after the move).
 
@@ -60,9 +64,10 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
      `door` (open/invite/closed, already built) instead of the constant, so a
      keeper can open or close *their* node; **identity is open by default**, and a
      node's door gates membership; only a **closed** node also closes sign-up on its
-     domain (see the reconciliation ring); and a per-node **reflect-the-instance-
-     public** toggle replaces the hardcoded `isHubDomain` unscoping, so the hub
-     role becomes a setting any node's community can choose. Absent door keeps
+     domain (see the reconciliation ring); and a per-community **reflect-the-
+     instance-public** toggle now replaces the hardcoded hostname unscoping, so
+     the commons becomes a setting any Node or Host community can choose
+     (**shipped 2026-07-25**). Absent door keeps
      today's behaviour
      (invitation required); mechanical, no meaning-change.
   2. **Invitations carry the node**: stamp the host community on each
