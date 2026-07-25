@@ -279,12 +279,11 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
             {myTrees.length > 0 && (
               <button
                 onClick={() => setShowCreate(true)}
-                className={`bg-emerald-600 hover:bg-emerald-700 text-white px-3 sm:px-4 py-2 rounded-full text-sm font-bold transition-all flex min-w-0 items-center gap-1.5 active:scale-95 ${CTA_GLOW}`}
+                className={`bg-emerald-600 hover:bg-emerald-700 text-white px-3 sm:px-4 py-1.5 rounded-full text-sm font-bold transition-all flex min-w-0 items-center gap-1.5 active:scale-95 ${CTA_GLOW}`}
               >
                 <Icons.Plus />
-                {/* Mobile keeps it short so the CTA doesn't crowd the header. */}
-                <span className="truncate sm:hidden">{t('register')}</span>
-                <span className="hidden truncate sm:inline">{t('register_community')}</span>
+                {/* Short everywhere (2026-07-25): one word keeps the band CTAs the same size. */}
+                <span className="truncate">{t('register')}</span>
               </button>
             )}
             {/* Match stands RIGHT of Register, wearing the same green: finding a community to
@@ -293,11 +292,10 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
               <button
                 onClick={handleMatch}
                 disabled={isMatching}
-                className={`bg-emerald-600 hover:bg-emerald-700 text-white px-3 sm:px-4 py-2 rounded-full text-sm font-bold transition-all flex min-w-0 items-center gap-1.5 active:scale-95 disabled:opacity-60 ${CTA_GLOW}`}
+                className={`bg-emerald-600 hover:bg-emerald-700 text-white px-3 sm:px-4 py-1.5 rounded-full text-sm font-bold transition-all flex min-w-0 items-center gap-1.5 active:scale-95 disabled:opacity-60 ${CTA_GLOW}`}
               >
                 <Icons.Venn />
-                <span className="truncate sm:hidden">{isMatching ? '…' : 'Match'}</span>
-                <span className="hidden truncate sm:inline">{isMatching ? 'Reading resonance…' : 'Match with a community'}</span>
+                <span className="truncate">{isMatching ? 'Reading…' : 'Match'}</span>
               </button>
             )}
           </div>

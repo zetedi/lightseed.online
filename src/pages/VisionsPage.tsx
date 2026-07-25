@@ -40,10 +40,15 @@ export const VisionsPage = ({
   onAnalyze, canAnalyze, lightseed, onCreateVision, onSelectVision, loadingMore, viewer, searchBox, tone,
 }: VisionsPageProps) => {
   const { t } = useLanguage();
-  const [density, setDensity] = useListDensity('visions');
   // Two entity lists under one menu item — Visions and Alignments (the resonance field) — so a
   // long visions list doesn't bury the alignments in scroll.
   const [subTab, setSubTab] = React.useState<'visions' | 'alignments'>('visions');
+  // Reading density is remembered PER SUB-TAB (2026-07-25): visions and alignments are different
+  // reading moods, so each keeps its own slot; the toggle drives whichever tab is open.
+  const [visionsDensity, setVisionsDensity] = useListDensity('visions');
+  const [alignmentsDensity, setAlignmentsDensity] = useListDensity('alignments');
+  const density = subTab === 'alignments' ? alignmentsDensity : visionsDensity;
+  const setDensity = subTab === 'alignments' ? setAlignmentsDensity : setVisionsDensity;
   // The two sub-tabs stay in ONE hue family (the sacral): visions wears the parent sienna,
   // alignments its deeper rust (resonance heat reads truest in red-orange). Both tones come
   // from the central spectrum; the band and tinted body follow the active tab.
@@ -74,7 +79,7 @@ export const VisionsPage = ({
             {lightseed && (
               <button
                 onClick={onCreateVision}
-                className={`bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-full font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}
+                className={`bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}
               >
                 <Icons.Plus className="text-yellow-300" /> <span className="hidden sm:inline">{t('create_vision')}</span>
               </button>
@@ -84,7 +89,7 @@ export const VisionsPage = ({
             <button
               onClick={onAnalyze}
               disabled={isAnalyzingSynergy || !canAnalyze}
-              className={`bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-full font-bold transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50 whitespace-nowrap ${CTA_GLOW}`}
+              className={`bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50 whitespace-nowrap ${CTA_GLOW}`}
             >
               {isAnalyzingSynergy
                 ? <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />

@@ -936,7 +936,7 @@ const AppContent = () => {
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => openPlant({ type: 'LIFETREE', step: 2 })}
-                                    className={`bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-all active:scale-95 ${CTA_GLOW}`}
+                                    className={`bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-full text-sm font-bold flex items-center gap-2 transition-all active:scale-95 ${CTA_GLOW}`}
                                     style={{ backgroundColor: effectiveTheme.primary }}
                                 >
                                     <Icons.Tree />
@@ -946,7 +946,7 @@ const AppContent = () => {
                                 {myTrees.length > 0 && (
                                     <button
                                         onClick={() => openPlant({ type: 'GUARDED', step: 2 })}
-                                        className={`bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-all active:scale-95 ${CTA_GLOW}`}
+                                        className={`bg-sky-600 hover:bg-sky-700 text-white px-4 py-1.5 rounded-full text-sm font-bold flex items-center gap-2 transition-all active:scale-95 ${CTA_GLOW}`}
                                         style={{ backgroundColor: effectiveTheme.secondary }}
                                     >
                                         <Icons.Shield />
@@ -1037,7 +1037,7 @@ const AppContent = () => {
                         densityKey="events"
                         searchBox={searchBox}
                         action={lightseed && (
-                            <button onClick={() => setShowEventModal(true)} className={`bg-sky-600 hover:bg-sky-700 text-white px-4 py-2.5 rounded-full font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}>
+                            <button onClick={() => setShowEventModal(true)} className={`bg-sky-600 hover:bg-sky-700 text-white px-4 py-1.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}>
                                 <Icons.Plus /> <span>{t('create_event')}</span>
                             </button>
                         )}
@@ -1093,7 +1093,7 @@ const AppContent = () => {
                                 densityKey="offerings"
                                 searchBox={searchBox}
                                 action={lightseed && (
-                                    <button onClick={() => setShowOfferModal(true)} className={`bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-full font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}>
+                                    <button onClick={() => setShowOfferModal(true)} className={`bg-amber-500 hover:bg-amber-600 text-white px-4 py-1.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}>
                                         <Icons.Plus /> <span>Make an offering</span>
                                     </button>
                                 )}
@@ -1116,7 +1116,7 @@ const AppContent = () => {
                         densityKey="pulses"
                         searchBox={searchBox}
                         action={lightseed && (
-                            <button onClick={() => openPulseModal()} className={`bg-orange-600 hover:bg-orange-700 text-white px-4 py-2.5 rounded-full font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}>
+                            <button onClick={() => openPulseModal()} className={`bg-orange-600 hover:bg-orange-700 text-white px-4 py-1.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}>
                                 <Icons.Pulse /> <span>{t('emit_pulse')}</span>
                             </button>
                         )}

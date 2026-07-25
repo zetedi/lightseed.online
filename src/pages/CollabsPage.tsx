@@ -71,8 +71,12 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
   // Orgs may be added by any signed-in member whose being is validated, or who is an initiate.
   const canAddOrg = !!lightseed && (isStaff || isInitiate || isExplicitlyValidatedTree(activeTree));
   const tone = tabTone('collab', theme);
-  const [density, setDensity] = useListDensity('collabs');
   const [subTab, setSubTab] = useState<'intelligences' | 'organisations'>('intelligences');
+  // Reading density is remembered PER SUB-TAB (2026-07-25); the toggle drives the open tab.
+  const [intelDensity, setIntelDensity] = useListDensity('intelligences');
+  const [orgDensity, setOrgDensity] = useListDensity('organisations');
+  const density = subTab === 'organisations' ? orgDensity : intelDensity;
+  const setDensity = subTab === 'organisations' ? setOrgDensity : setIntelDensity;
   // Both sub-tabs stay in the throat's lapis family: intelligences the parent tone,
   // organisations its deeper step. Band and box follow the active tab (one spectrum source).
   const ORG_TONE = tabTone('organisations');
@@ -206,7 +210,7 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
         collapsibleSearch={false}
         toggle={<ViewDensityToggle value={density} onChange={setDensity} />}
         action={canAddOrg && subTab === 'organisations' && !adding ? (
-          <button onClick={() => setAdding(true)} className={`rounded-full bg-white/15 px-4 py-2 text-xs font-bold text-white backdrop-blur transition-all hover:bg-white/25 active:scale-95 ${CTA_GLOW}`}>
+          <button onClick={() => setAdding(true)} className={`rounded-full bg-white/15 px-4 py-1.5 text-sm font-bold text-white backdrop-blur transition-all hover:bg-white/25 active:scale-95 ${CTA_GLOW}`}>
             <span className="flex items-center gap-1.5"><Icons.Plus /> Add organisation</span>
           </button>
         ) : undefined}

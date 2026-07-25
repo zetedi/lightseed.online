@@ -246,12 +246,12 @@ export const Navigation = ({
     // and the page band (it used to read the node theme directly: the third colour system).
     const getActiveTabColor = (tab: string) => tabTone(tab, theme);
 
-    // Signed-out visitors get a slimmer menu: no Visions, Pulses, or Observatory.
-    const signedIn = !!lightseed;
+    // The FULL menu greets the signed-out too (2026-07-25): a public vision or offering may be
+    // exactly what invites someone in; the rules and view gates already show only what is public.
     // Beds moved INSIDE Offerings (2026-07-23); Pulses left the top menu (2026-07-24): emitting a
     // pulse is more natural from a tree/offering/vision, and the manual entry now lives on the
     // profile's My Pulses tab. Pulses still surface everywhere in context (chains, profiles, feeds).
-    const lightEarthTabs = signedIn ? ['forest', 'visions', 'events', 'offerings'] : ['forest', 'events'];
+    const lightEarthTabs = ['forest', 'visions', 'events', 'offerings'];
     // Cocreate (the node's intelligences + organisations) lives in its own group. The Observatory
     // was retired (its resonance is duplicated in Visions and community matches); its oracle quote
     // moved to the Cocreate header.
@@ -278,6 +278,9 @@ export const Navigation = ({
     const getTabLabel = (tab: string) => {
         // The AI Collab tab reads "Cocreate" (the menu name; renamed 2026-07-23).
         if (tab === 'collab') return 'Cocreate';
+        // The crown destination reads "The Node" (renamed from About, 2026-07-25): it is the
+        // node's own page, its vision, lore, chain and details, not an about-us footnote.
+        if (tab === 'about') return 'The Node';
         // For standard translation fallback, capitalize the first letter
         const fallback = tab.charAt(0).toUpperCase() + tab.slice(1);
         return t(tab as any) || fallback;
@@ -501,23 +504,15 @@ export const Navigation = ({
                     >
                         {/* Destinations only, one grammar, one size (4 columns; every tile
                             identical). No creation CTAs here: what exists already invites. */}
-                        {signedIn ? (
-                            <div className="grid grid-cols-4 gap-1.5">
-                                <MobileNavTile tab="forest" {...mobileTileProps} />
-                                <MobileNavTile tab="visions" {...mobileTileProps} />
-                                <MobileNavTile tab="events" {...mobileTileProps} />
-                                <MobileNavTile tab="offerings" label="Offer" {...mobileTileProps} />
-                                <MobileNavTile tab="collab" label="Cocreate" {...mobileTileProps} />
-                                <MobileNavTile tab="communities" label="Commune" {...mobileTileProps} />
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-4 gap-1.5">
-                                <MobileNavTile tab="forest" {...mobileTileProps} />
-                                <MobileNavTile tab="events" {...mobileTileProps} />
-                                <MobileNavTile tab="collab" label="Cocreate" {...mobileTileProps} />
-                                <MobileNavTile tab="communities" label="Commune" {...mobileTileProps} />
-                            </div>
-                        )}
+                        {/* The same destinations for every visitor: what is public already invites. */}
+                        <div className="grid grid-cols-4 gap-1.5">
+                            <MobileNavTile tab="forest" {...mobileTileProps} />
+                            <MobileNavTile tab="visions" {...mobileTileProps} />
+                            <MobileNavTile tab="events" {...mobileTileProps} />
+                            <MobileNavTile tab="offerings" label="Offer" {...mobileTileProps} />
+                            <MobileNavTile tab="collab" label="Cocreate" {...mobileTileProps} />
+                            <MobileNavTile tab="communities" label="Commune" {...mobileTileProps} />
+                        </div>
                     </div>
 
                     {/* BOTTOM PANEL */}
@@ -549,7 +544,7 @@ export const Navigation = ({
                                 style={activeTab === 'about' ? { backgroundColor: getActiveTabColor('about') || navBorder } : undefined}
                             >
                                 <span className="[&>svg]:h-[18px] [&>svg]:w-[18px] sm:hidden"><Icons.Info /></span>
-                                <span>Node Details</span>
+                                <span>The Node</span>
                             </button>
 
                             {lightseed && (
