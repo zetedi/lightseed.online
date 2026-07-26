@@ -63,6 +63,7 @@ const seed = async () => {
     await setDoc(doc(d, 'lifetrees', 'bedStay'), { ownerId: ALICE, name: 'Cedar', treeType: 'BED', lightHouseId: 'lh1', visibility: 'node', validated: false, validatorId: null, loveCount: 0 });
     await setDoc(doc(d, 'visions', 'vision1'), { authorId: ALICE, title: 'A clearing', visibility: 'public', loveCount: 0 });
     await setDoc(doc(d, 'pulses', 'pulseLove'), { authorId: BOB, type: 'standard', title: 'A pulse', visibility: 'public', loveCount: 0, validationScore: 0 });
+    await setDoc(doc(d, 'pulses', 'offer1'), { authorId: ALICE, type: 'offering', offeringKind: 'service', title: 'Herbal walk', visibility: 'public', offeringActive: true });
     for (const uid of [ALICE, BOB]) {
       await setDoc(doc(d, 'persons', uid), {
         lid: `${uid}-lid`,
@@ -1396,6 +1397,24 @@ describe('loves: the private slot and public tally are one atomic gesture', () =
     await assertFails(getDoc(doc(db(), 'lifetrees', 'treeB', 'loves', ALICE)));
     await assertSucceeds(getDoc(doc(db(ALICE), 'pulses', 'pulseLove', 'loves', ALICE)));
     await assertFails(getDoc(doc(db(BOB), 'pulses', 'pulseLove', 'loves', ALICE)));
+  });
+});
+
+describe('offerings: only the author flips the lifecycle switch, and only the switch', () => {
+  it('the author pauses and rewakes their offering', async () => {
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'pulses', 'offer1'), { offeringActive: false, updatedAt: serverTimestamp() }));
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'pulses', 'offer1'), { offeringActive: true, updatedAt: serverTimestamp() }));
+  });
+
+  it('no other hand may flip it, and nothing rides along', async () => {
+    await assertFails(updateDoc(doc(db(MALLORY), 'pulses', 'offer1'), { offeringActive: false, updatedAt: serverTimestamp() }));
+    await assertFails(updateDoc(doc(db(), 'pulses', 'offer1'), { offeringActive: false, updatedAt: serverTimestamp() }));
+    await assertFails(updateDoc(doc(db(ALICE), 'pulses', 'offer1'), { offeringActive: false, title: 'Renamed on the side', updatedAt: serverTimestamp() }));
+    await assertFails(updateDoc(doc(db(ALICE), 'pulses', 'offer1'), { offeringActive: 'yes', updatedAt: serverTimestamp() }));
+  });
+
+  it('the switch belongs to offerings alone: a standard pulse refuses it', async () => {
+    await assertFails(updateDoc(doc(db(BOB), 'pulses', 'pulseLove'), { offeringActive: false, updatedAt: serverTimestamp() }));
   });
 });
 

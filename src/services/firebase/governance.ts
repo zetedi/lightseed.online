@@ -511,6 +511,13 @@ export const createOffering = async (data: Partial<Pulse> & { title: string }) =
     return { id: ref.id, lid, ...payload, loveCount: 0, commentCount: 0, previousHash: 'OFFERING', hash } as Pulse;
 };
 
+// The offering's lifecycle switch: its author pauses or rewakes it. A paused offering leaves the
+// shared feed but stays the author's to see; nothing is deleted (the rules allow exactly this
+// one flip, nothing riding along).
+export const setOfferingActive = async (id: string, active: boolean): Promise<void> => {
+    await updateDoc(doc(pulsesCollection, id), { offeringActive: active, updatedAt: serverTimestamp() });
+};
+
 export const createCommunityEvent = async (community: Community, data: Partial<Pulse> & { title: string }) => {
     const eventPayload = {
         ...data,

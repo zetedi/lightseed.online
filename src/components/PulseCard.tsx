@@ -4,6 +4,7 @@ import { type Pulse, type Lightseed } from '../types';
 import { Icons } from './ui/Icons';
 import { LoveButton } from './ui/LoveButton';
 import { formatLight } from '../domain/light';
+import { tabTone } from '../utils/tabTheme';
 import type { ListDensity } from '../hooks/useListDensity';
 
 interface PulseCardProps {
@@ -43,7 +44,11 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
         <>
             {pulse.care === 'watering'
                 ? <span title={pulse.wateringConfirmation?.note || ''} className="bg-sky-100 text-sky-700 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm">💧{typeof pulse.wateringConfirmation?.confidence === 'number' ? ` ${pulse.wateringConfirmation.confidence}%` : ''}{pulse.wateringConfirmedBy === 'guardian' ? ' ✓' : ''}</span>
-                : badge && <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm ${isEvent ? 'bg-sky-100 text-sky-700' : isOffering ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-600'}`}>{badge}</span>}
+                : badge && <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm ${isEvent ? 'bg-sky-100 text-sky-700' : isOffering ? 'text-white' : 'bg-emerald-100 text-emerald-600'}`} style={isOffering ? { backgroundColor: tabTone('offerings') } : undefined}>{badge}</span>}
+            {/* A paused offering (visible only to its author) says so plainly. */}
+            {isOffering && pulse.offeringActive === false && (
+                <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[9px] font-bold text-slate-600 shadow-sm">PAUSED</span>
+            )}
             {/* Suggested appreciation after the contribution — never its admission price. */}
             {isOffering && !!appreciationLight && (
                 <span title="Suggested appreciation after receiving this offering" className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 text-[9px] font-black text-amber-950 shadow-sm">

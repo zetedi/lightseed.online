@@ -6,6 +6,25 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-26 · The offering gets a face, a switch and a door**: an offering was a card in a feed;
+now it is a BEING in full. It wears the shared BeingProfile (hero, QR, heart) and its tree view is
+its LIFECYCLE: the offering stands as the chain's root, planted with its hash and its author's
+name, and the acts of its life (stays, appreciations, renewals) will grow the chain above it as
+those rungs arrive. Its author holds a SWITCH: pause and rewake, an author-only rules branch that
+may flip exactly `offeringActive` and nothing else; a paused offering leaves the shared feed but
+stays visible to its author wearing a PAUSED chip, history intact, nothing deleted. And it may
+carry a DOOR: an optional detail link (validated whole http(s) address, never javascript:), shown
+as a quiet chip on its profile. The offering chrome turned HEART-GREEN at last, matching its
+destination on the spectrum (modal, feed badge, CTA all draw from tabTone); only the light itself
+keeps its golden voice, because a ray is a ray wherever it is spoken. Smaller trues alongside: the
+global upload progress rose above modals (z-99, it was hiding behind the very form that started
+it); the appearance hero's busy sun now draws OVER the preview gradient that was burying it; an
+edited community announces itself on a new 'communities' bus topic so open lists refresh their
+cards; and the toast speaks more quietly on phones (smaller type, hairline border). *(A gift is
+not a listing; give it a face, let it rest, let it point home.)*
+
+---
+
 **2026-07-25 · The hand may retire; the seal keeps its hour** — verify-at-signing-time
 becomes a complete epoch law. A new covenant or Council signature is v3: its
 signed payload names the signer's key fingerprint and exact epoch, while Firestore

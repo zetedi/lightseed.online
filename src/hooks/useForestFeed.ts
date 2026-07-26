@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Alignment, Lightseed } from '../types';
+import type { Alignment, Lightseed, Pulse } from '../types';
 import {
   fetchAllLifetrees, fetchLifetrees, fetchPulses, fetchEventPulses, fetchOfferingPulses, fetchReachPulses, fetchVisions,
   getPendingAlignments,
@@ -124,7 +124,11 @@ export function useForestFeed(params: {
       else if (tab === 'offerings') {
         const res = await fetchOfferingPulses(currentLastDoc, currentDomain, feedLevels);
         setData(prev => {
-          const newItems = res.items;
+          // A paused offering leaves the shared feed but stays visible to its own author
+          // (who sees it wearing the PAUSED chip and may rewake it from its profile).
+          const newItems = res.items.filter(
+            (p: Pulse) => p.offeringActive !== false || p.authorId === lightseed?.uid,
+          );
           if (reset) return newItems;
           const existingIds = new Set(prev.map(p => p.id));
           return [...prev, ...newItems.filter(i => !existingIds.has(i.id))];

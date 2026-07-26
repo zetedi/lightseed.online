@@ -7,22 +7,27 @@ import { useSession } from '../../contexts/SessionContext';
 import { createOffering, uploadImage, getMyBeds } from '../../services/firebase';
 import { offeringProblem, type OfferingKind } from '../../domain/offering';
 import { formatLight, RAY_UNITS } from '../../domain/light';
+import { tabTone } from '../../utils/tabTheme';
 import type { Lifetree } from '../../types';
 
 // MAKE AN OFFERING — post a BED or SERVICE through trust, with light named only as the hoped-for
 // appreciation AFTER someone receives it (domain/offering). It creates an offering pulse on the
-// one ledger. The form never makes light an admission price.
+// one ledger, born ACTIVE (the author may pause it later from its profile). The form wears the
+// heart's green (the offerings destination tone); only the light itself stays golden.
 export const OfferModal = ({ onClose, onCreated }: { onClose: () => void; onCreated?: () => void }) => {
     const { lightseed } = useSession();
     const [kind, setKind] = useState<OfferingKind>('service');
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [appreciation, setAppreciation] = useState(String(RAY_UNITS));
+    const [url, setUrl] = useState('');
     const [imageUrl, setImageUrl] = useState('');
     const [uploading, setUploading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [beds, setBeds] = useState<Lifetree[]>([]);
     const [bedId, setBedId] = useState('');
+
+    const HEART = tabTone('offerings');
 
     useEffect(() => {
         if (kind === 'bed' && lightseed) getMyBeds(lightseed.uid).then(setBeds).catch(() => {});
@@ -47,6 +52,7 @@ export const OfferModal = ({ onClose, onCreated }: { onClose: () => void; onCrea
         title,
         description,
         suggestedAppreciationLight: Number.isFinite(suggestedAppreciationLight) ? suggestedAppreciationLight : NaN,
+        url,
     });
 
     const pickImage = async (file: File) => {
@@ -63,6 +69,7 @@ export const OfferModal = ({ onClose, onCreated }: { onClose: () => void; onCrea
         setSaving(true);
         try {
             const bed = beds.find(b => b.id === bedId);
+            const detailUrl = url.trim();
             await createOffering({
                 title: title.trim(),
                 body: description.trim(),
@@ -70,6 +77,8 @@ export const OfferModal = ({ onClose, onCreated }: { onClose: () => void; onCrea
                 imageUrl,
                 offeringKind: kind,
                 offeringAppreciationLight: suggestedAppreciationLight,
+                offeringActive: true,
+                ...(detailUrl ? { offeringUrl: detailUrl } : {}),
                 ...(kind === 'bed' && bed ? { offeringBedId: bed.id, offeringBedName: bed.name } : {}),
                 authorId: lightseed.uid,
                 authorName: lightseed.displayName || 'A being',
@@ -80,6 +89,8 @@ export const OfferModal = ({ onClose, onCreated }: { onClose: () => void; onCrea
         } catch (err: any) { showAlert(err?.message || 'Could not create the offering.'); setSaving(false); }
     };
 
+    const field = 'w-full rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600';
+
     return (
         <Modal title="Make an offering" onClose={onClose} wide>
             <form onSubmit={submit} className="flex flex-col gap-4">
@@ -87,7 +98,7 @@ export const OfferModal = ({ onClose, onCreated }: { onClose: () => void; onCrea
                 <div className="grid grid-cols-2 gap-2">
                     {(['service', 'bed'] as OfferingKind[]).map(k => (
                         <button key={k} type="button" onClick={() => setKind(k)}
-                            className={`flex flex-col items-center gap-1.5 rounded-xl border-2 px-3 py-3 text-center transition-all ${kind === k ? 'border-amber-500 bg-amber-50 text-amber-700' : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200'}`}>
+                            className={`flex flex-col items-center gap-1.5 rounded-xl border-2 px-3 py-3 text-center transition-all ${kind === k ? 'border-emerald-600 bg-emerald-50 text-emerald-800' : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200'}`}>
                             <span className="[&>svg]:h-5 [&>svg]:w-5">{k === 'service' ? <Icons.Drop /> : <Icons.Moon />}</span>
                             <span className="text-xs font-bold uppercase tracking-wide">{k === 'service' ? 'A service' : 'A bed'}</span>
                         </button>
@@ -95,7 +106,7 @@ export const OfferModal = ({ onClose, onCreated }: { onClose: () => void; onCrea
                 </div>
 
                 {kind === 'bed' && beds.length > 0 && (
-                    <select value={bedId} onChange={e => chooseBed(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    <select value={bedId} onChange={e => chooseBed(e.target.value)} className={`${field} h-11 px-3`}>
                         <option value="">A bed of yours (or just describe one)</option>
                         {beds.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                     </select>
@@ -103,13 +114,22 @@ export const OfferModal = ({ onClose, onCreated }: { onClose: () => void; onCrea
 
                 <input dir="auto" value={title} onChange={e => setTitle(e.target.value)} required
                     placeholder={kind === 'bed' ? "The bed's name or place" : 'What do you offer?'}
-                    className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                    className={`${field} h-11 px-3 font-medium`} />
 
                 <textarea dir="auto" value={description} onChange={e => setDescription(e.target.value)}
                     placeholder="Describe it — what it is, when, any conditions…"
-                    className="min-h-24 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                    className={`${field} min-h-24 p-3`} />
 
-                {/* Suggested appreciation: trust admits first; light may follow afterward. */}
+                {/* An optional door to more detail: a booking page, a menu, the offerer's site. */}
+                <label className="block">
+                    <span className="mb-1 block text-[10px] font-bold uppercase text-slate-400">Detail link (optional)</span>
+                    <input dir="ltr" type="url" inputMode="url" value={url} onChange={e => setUrl(e.target.value)}
+                        placeholder="https://…"
+                        className={`${field} h-11 px-3`} />
+                </label>
+
+                {/* Suggested appreciation: trust admits first; light may follow afterward.
+                    The light itself keeps its golden voice inside the green form. */}
                 <label className="block">
                     <span className="mb-1 flex items-center justify-between text-[10px] font-bold uppercase text-slate-400">
                         <span>Suggested appreciation</span>
@@ -118,16 +138,17 @@ export const OfferModal = ({ onClose, onCreated }: { onClose: () => void; onCrea
                     <div className="flex items-center gap-2">
                         <span className="text-amber-500 [&>svg]:h-4 [&>svg]:w-4"><Icons.Sun /></span>
                         <input type="number" min="1" inputMode="numeric" value={appreciation} onChange={e => setAppreciation(e.target.value)}
-                            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                            className={`${field} h-11 px-3`} />
                     </div>
                     <span className="mt-1 block text-[10px] text-slate-400">{RAY_UNITS} light = one ray. This is appreciation after receiving the offering, never a condition for entering.</span>
                 </label>
 
                 <ImagePicker onImageSelect={pickImage} previewUrl={imageUrl} loading={uploading} className="h-40" />
 
-                {problem && <p className="text-xs font-medium text-amber-600">{problem}</p>}
+                {problem && <p className="text-xs font-medium text-rose-600">{problem}</p>}
                 <button type="submit" disabled={!!problem || saving || uploading}
-                    className="w-full rounded-2xl bg-amber-500 py-3 text-sm font-bold text-white shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-600 disabled:opacity-50">
+                    className="w-full rounded-2xl py-3 text-sm font-bold text-white shadow-lg transition-all hover:brightness-110 disabled:opacity-50"
+                    style={{ backgroundColor: HEART, boxShadow: '0 10px 15px -3px rgba(41,132,66,0.25)' }}>
                     {saving ? 'Offering…' : 'Post the offering'}
                 </button>
                 <p className="text-center text-[11px] text-slate-400">Trust opens the offering. Light may follow afterward to appreciate the contribution.</p>

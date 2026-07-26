@@ -86,6 +86,12 @@ export interface Pulse extends Being {
   offeringAppreciationLight?: number;
   offeringBedId?: string;
   offeringBedName?: string;
+  // The offering's lifecycle switch: absent/true = standing, false = paused by its author
+  // (hidden from the shared feed, still theirs to see and rewake). Toggled via its own
+  // author-only rules branch; never deleted, the being keeps its history.
+  offeringActive?: boolean;
+  // An optional door to more detail (the offerer's page, a booking form, a menu).
+  offeringUrl?: string;
   reachTreeId?: string;
   reachTreeName?: string;
   reachResponse?: string; // The reached tree's reply, kept so reach threads persist.

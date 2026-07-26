@@ -7,6 +7,7 @@ import { MahameruAvatar } from './ui/MahameruAvatar';
 import { Community, Lifetree } from '../types';
 import { fetchCommunities, createCommunity, getCommunityByDomain, getMyVisions } from '../services/firebase';
 import { matchCommunities, type CommunityMatch } from '../domain/match';
+import { useRefreshSignal } from '../hooks/useRefreshSignal';
 import { firestoreStore } from '../adapters/firestore';
 import { notify } from './ui/Toast';
 import { communityThemePresets } from '../utils/theme';
@@ -204,9 +205,12 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
   const filteredCommunities = communities.filter(matchesSearch);
   const showGenesis = genesisCommunity && matchesSearch(genesisCommunity);
 
+  // Re-fetch when any community is edited elsewhere (profile saves announce 'communities'),
+  // so a card never shows yesterday's face after an appearance change.
+  const communitiesSignal = useRefreshSignal(['communities']);
   useEffect(() => {
     const domain = window.location.hostname;
-    
+
     Promise.all([
         fetchCommunities(),
         getCommunityByDomain(domain)
@@ -225,7 +229,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
       setGenesisCommunity(null);
       setLoading(false);
     });
-  }, []);
+  }, [communitiesSignal]);
 
   const handleCreate = async (e: React.FormEvent) => {
     if (e) e.preventDefault();

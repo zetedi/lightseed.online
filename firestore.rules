@@ -864,7 +864,17 @@ service cloud.firestore {
                   .hasOnly(['qr', 'updatedAt'])
            )
 
-        // (i) Staff may mend anything.
+        // (i) The offering's lifecycle switch: its AUTHOR may pause or rewake it, a boolean and
+        //     nothing else. Pausing hides it from the shared feed; the record itself stays.
+        || (
+             resource.data.get('type', '') == 'offering'
+             && resource.data.authorId == request.auth.uid
+             && request.resource.data.diff(resource.data).affectedKeys()
+                  .hasOnly(['offeringActive', 'updatedAt'])
+             && request.resource.data.get('offeringActive', null) is bool
+           )
+
+        // (j) Staff may mend anything.
         || isStaff()
       );
       // DRAFT VANISHES, MINTED WITHDRAWS: a decision may be erased only while it is still its

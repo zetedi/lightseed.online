@@ -123,6 +123,7 @@ const AuthModal = lazy(() => import('./components/modals/AuthModal').then(m => (
 const EmitPulseModal = lazy(() => import('./components/modals/EmitPulseModal').then(m => ({ default: m.EmitPulseModal })));
 const EventModal = lazy(() => import('./components/modals/EventModal').then(m => ({ default: m.EventModal })));
 const OfferModal = lazy(() => import('./components/modals/OfferModal').then(m => ({ default: m.OfferModal })));
+const OfferingProfile = lazy(() => import('./components/offerings/OfferingProfile').then(m => ({ default: m.OfferingProfile })));
 const CreateVisionModal = lazy(() => import('./components/modals/CreateVisionModal').then(m => ({ default: m.CreateVisionModal })));
 const DataModelCrystal = lazy(() => import('./components/about/DataModelCrystal').then(m => ({ default: m.DataModelCrystal })));
 const AlignmentView = lazy(() => import('./components/sections/AlignmentView').then(m => ({ default: m.AlignmentView })));
@@ -1118,7 +1119,7 @@ const AppContent = () => {
                                 densityKey="offerings"
                                 searchBox={searchBox}
                                 action={lightseed && (
-                                    <button onClick={() => setShowOfferModal(true)} className={`bg-amber-500 hover:bg-amber-600 text-white px-4 py-1.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}>
+                                    <button onClick={() => setShowOfferModal(true)} style={{ backgroundColor: tabTone('offerings') }} className={`hover:brightness-110 text-white px-4 py-1.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}>
                                         <Icons.Plus /> <span>Make an offering</span>
                                     </button>
                                 )}
@@ -1420,6 +1421,15 @@ const AppContent = () => {
                             notify={notify}
                         />
                     </div>
+                ) : (selectedPulse && selectedPulse.type === 'offering') ? (
+                    // An offering has its own being-face; its tree view is its lifecycle.
+                    <div className="animate-in fade-in duration-200">
+                        <OfferingProfile
+                            offering={selectedPulse}
+                            onClose={() => setSelectedPulse(null)}
+                            onUpdate={(u) => setSelectedPulse(prev => prev ? { ...prev, ...u } : prev)}
+                        />
+                    </div>
                 ) : (selectedPulse && selectedPulse.type === 'event') ? (
                     // Events render in-flow (below the sticky nav header), like the tree/vision views.
                     <div className="animate-in fade-in duration-200">
@@ -1457,8 +1467,9 @@ const AppContent = () => {
             <Footer community={impersonatedCommunity || hostCommunity || defaultCommunity} theme={effectiveTheme} isDark={effectiveIsDark} />
 
             <Suspense fallback={null}>
-            {/* Non-event pulses keep the full-screen overlay (they carry their own sticky top bar). */}
-            {selectedPulse && selectedPulse.type !== 'event' && (
+            {/* Non-event pulses keep the full-screen overlay (they carry their own sticky top bar).
+                Offerings are excluded too: they wear their own being-face (OfferingProfile). */}
+            {selectedPulse && selectedPulse.type !== 'event' && selectedPulse.type !== 'offering' && (
                 <DetailWrapper belowHeader>
                     <PulseDetail
                         pulse={selectedPulse}
@@ -1502,6 +1513,9 @@ const AppContent = () => {
                         onClose={() => { setSelectedCommunity(null); setArrivedInvite(null); setMapRefreshKey(k => k + 1); }}
                         onUpdate={(updates) => {
                             setSelectedCommunity(prev => prev ? { ...prev, ...updates } : null);
+                            // Whisper the edit to every open communities list, so its card wears
+                            // the new face (appearance, name, vision) without a reload.
+                            if (selectedCommunity) announce('communities', selectedCommunity.id);
                             // If this is the host (or default/dev) community, refresh the app shell so
                             // settings like showStats/theme apply to the dashboard immediately, not on reload.
                             if (selectedCommunity && hostCommunity && selectedCommunity.id === hostCommunity.id) {

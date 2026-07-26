@@ -31,12 +31,14 @@ export const ToastHost = () => {
     // z-[99]: above modals (98) and the mobile menu (95) so a result is always seen, below
     // dialogs (100). Just below the header, centred.
     <div className="pointer-events-none fixed inset-x-0 top-24 z-[99] flex justify-center px-4">
-      <div className={`flex items-center gap-2 rounded-full border px-5 py-2.5 shadow-xl animate-in fade-in slide-in-from-top-4 ${
+      {/* Quieter on the phone: smaller type, a hairline border and a softer glow; the desktop
+          keeps its fuller voice. */}
+      <div className={`flex items-center gap-2 rounded-full border px-3.5 py-1.5 shadow-lg sm:px-5 sm:py-2.5 sm:shadow-xl animate-in fade-in slide-in-from-top-4 ${
         isError
-          ? 'border-red-300 bg-red-50 text-red-700 shadow-[0_0_26px_rgba(239,68,68,0.55)]'
-          : 'border-emerald-300 bg-emerald-50 text-emerald-800 shadow-[0_0_26px_rgba(16,185,129,0.55)]'
+          ? 'border-red-200 sm:border-red-300 bg-red-50 text-red-700 shadow-[0_0_14px_rgba(239,68,68,0.4)] sm:shadow-[0_0_26px_rgba(239,68,68,0.55)]'
+          : 'border-emerald-200 sm:border-emerald-300 bg-emerald-50 text-emerald-800 shadow-[0_0_14px_rgba(16,185,129,0.4)] sm:shadow-[0_0_26px_rgba(16,185,129,0.55)]'
       }`}>
-        <span className="text-sm font-semibold">{toast.message}</span>
+        <span className="text-xs font-semibold sm:text-sm">{toast.message}</span>
       </div>
     </div>
   );

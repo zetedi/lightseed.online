@@ -32,8 +32,10 @@ export const NetworkStatus = () => {
             )}
             {net.uploadPct !== null && (
                 /* Bottom centre, out of the header's way: a small card with a real progress
-                   bar, one look for every upload in the app (no more stray blue circles). */
-                <div className="pointer-events-none fixed bottom-6 left-1/2 z-[95] -translate-x-1/2">
+                   bar, one look for every upload in the app (no more stray blue circles).
+                   z-[99]: above modals (98), so an upload's progress is never hidden behind the
+                   very form that started it (the offering picker was burying it); below dialogs. */
+                <div className="pointer-events-none fixed bottom-6 left-1/2 z-[99] -translate-x-1/2">
                     <div className="w-60 rounded-2xl border border-amber-200/80 bg-white/95 px-4 py-3 shadow-xl backdrop-blur">
                         <div className="mb-2 flex items-center justify-between text-[11px] font-bold">
                             <span className="text-slate-600">Uploading photo</span>
