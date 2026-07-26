@@ -10,6 +10,7 @@ export const LIGHTSEED_QUOTES: string[] = [
   "An infrastructure for increasing coherence between intelligences that already exist.",
   "Any intelligence is welcome if it can participate in a network whose one unbreakable rule is respect for life.",
   "Before becoming a civilization among the stars, let’s become a civilization that knows how to care for a garden.",
+  "Trees are our axons to the soil—living antennas that sense water, mineral, season, and the lives beneath us. Planting them, we remember where our bodies continue into the Earth.",
   "The Living Intelligence Network helps direct human attention, computation, and resources toward the flourishing of life.",
   "How do we build a network where intelligence naturally flows toward the places where it can do the most good for living systems?",
   "Where are your roots? What principles do you stand on? What memories nourish you? What community invited you? What living place reminds you of reality?",
