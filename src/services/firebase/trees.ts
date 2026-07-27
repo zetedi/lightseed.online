@@ -348,6 +348,21 @@ export const getBedsForLightHouse = async (lightHouseId: string, publicOnly = fa
         .sort((a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0));
 };
 
+// EVERY PUBLIC BED, wherever it sleeps. A bed is an offering, so an UNSCOPED view (a reflecting
+// node, or one whose canopy is open) should find the public ones even when their Light House
+// stands on another domain; the house scopes the house, never the bed's own openness. Strictly
+// rule-provable (visibility == 'public'), so a signed-out visitor may read it too.
+export const fetchPublicBeds = async (max = 48): Promise<Lifetree[]> => {
+    const snap = await getDocs(query(lifetreesCollection,
+        where('treeType', '==', BED_TREE_TYPE),
+        where('visibility', '==', 'public'),
+        limit(max)));
+    return snap.docs
+        .map(d => mapDoc(d) as Lifetree)
+        .filter(isBedTree)
+        .sort((a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0));
+};
+
 export const updateLifetree = (id: string, data: Partial<Lifetree>) => updateDoc(doc(db, 'lifetrees', id), { ...data });
 export const deleteLifetree = (id: string) => deleteDoc(doc(db, 'lifetrees', id));
 export const validateLifetree = (targetId: string, validatorId: string) => updateDoc(doc(db, 'lifetrees', targetId), { validated: true, validatorId });

@@ -4,24 +4,32 @@ import { Icons } from '../ui/Icons';
 import { showAlert } from '../ui/Dialog';
 import { ImagePicker } from '../ui/ImagePicker';
 import { useSession } from '../../contexts/SessionContext';
-import { createOffering, uploadImage, getMyBeds } from '../../services/firebase';
+import { createOffering, updateOffering, uploadImage, getMyBeds } from '../../services/firebase';
 import { offeringProblem, type OfferingKind } from '../../domain/offering';
 import { formatLight, RAY_UNITS } from '../../domain/light';
 import { tabTone } from '../../utils/tabTheme';
-import type { Lifetree } from '../../types';
+import type { Lifetree, Pulse } from '../../types';
 
 // MAKE AN OFFERING — post a BED or SERVICE through trust, with light named only as the hoped-for
 // appreciation AFTER someone receives it (domain/offering). It creates an offering pulse on the
 // one ledger, born ACTIVE (the author may pause it later from its profile). The form wears the
 // heart's green (the offerings destination tone); only the light itself stays golden.
-export const OfferModal = ({ onClose, onCreated }: { onClose: () => void; onCreated?: () => void }) => {
+// `offering` puts the form in EDIT mode: the same words, face, appreciation and door, retold.
+// The kind (and any bed it stands for) is frozen there, in the form and in the rules alike.
+export const OfferModal = ({ onClose, onCreated, offering, onSaved }: {
+    onClose: () => void;
+    onCreated?: () => void;
+    offering?: Pulse | null;
+    onSaved?: (updates: Partial<Pulse>) => void;
+}) => {
     const { lightseed } = useSession();
-    const [kind, setKind] = useState<OfferingKind>('service');
-    const [title, setTitle] = useState('');
-    const [description, setDescription] = useState('');
-    const [appreciation, setAppreciation] = useState(String(RAY_UNITS));
-    const [url, setUrl] = useState('');
-    const [imageUrl, setImageUrl] = useState('');
+    const editing = !!offering;
+    const [kind, setKind] = useState<OfferingKind>(offering?.offeringKind || 'service');
+    const [title, setTitle] = useState(offering?.title || '');
+    const [description, setDescription] = useState(offering?.content || offering?.body || '');
+    const [appreciation, setAppreciation] = useState(String(offering?.offeringAppreciationLight ?? RAY_UNITS));
+    const [url, setUrl] = useState(offering?.offeringUrl || '');
+    const [imageUrl, setImageUrl] = useState(offering?.imageUrl || '');
     const [uploading, setUploading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [beds, setBeds] = useState<Lifetree[]>([]);
@@ -67,9 +75,26 @@ export const OfferModal = ({ onClose, onCreated }: { onClose: () => void; onCrea
         e.preventDefault();
         if (!lightseed || problem || saving) return;
         setSaving(true);
+        const detailUrl = url.trim();
+        if (editing && offering) {
+            // Retell it: only the fields the rules allow, and offeringUrl cleared honestly when emptied.
+            const updates = {
+                title: title.trim(),
+                body: description.trim(),
+                content: description.trim(),
+                imageUrl,
+                offeringAppreciationLight: suggestedAppreciationLight,
+                offeringUrl: detailUrl,
+            };
+            try {
+                await updateOffering(offering.id, updates);
+                onSaved?.(updates);
+                onClose();
+            } catch (err: any) { showAlert(err?.message || 'Could not save the offering.'); setSaving(false); }
+            return;
+        }
         try {
             const bed = beds.find(b => b.id === bedId);
-            const detailUrl = url.trim();
             await createOffering({
                 title: title.trim(),
                 body: description.trim(),
@@ -92,12 +117,12 @@ export const OfferModal = ({ onClose, onCreated }: { onClose: () => void; onCrea
     const field = 'w-full rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600';
 
     return (
-        <Modal title="Make an offering" onClose={onClose} wide>
+        <Modal title={editing ? 'Retell the offering' : 'Make an offering'} onClose={onClose} wide>
             <form onSubmit={submit} className="flex flex-col gap-4">
                 {/* What is offered */}
                 <div className="grid grid-cols-2 gap-2">
                     {(['service', 'bed'] as OfferingKind[]).map(k => (
-                        <button key={k} type="button" onClick={() => setKind(k)}
+                        <button key={k} type="button" onClick={() => !editing && setKind(k)} disabled={editing}
                             className={`flex flex-col items-center gap-1.5 rounded-xl border-2 px-3 py-3 text-center transition-all ${kind === k ? 'border-emerald-600 bg-emerald-50 text-emerald-800' : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200'}`}>
                             <span className="[&>svg]:h-5 [&>svg]:w-5">{k === 'service' ? <Icons.Drop /> : <Icons.Moon />}</span>
                             <span className="text-xs font-bold uppercase tracking-wide">{k === 'service' ? 'A service' : 'A bed'}</span>
@@ -105,7 +130,7 @@ export const OfferModal = ({ onClose, onCreated }: { onClose: () => void; onCrea
                     ))}
                 </div>
 
-                {kind === 'bed' && beds.length > 0 && (
+                {!editing && kind === 'bed' && beds.length > 0 && (
                     <select value={bedId} onChange={e => chooseBed(e.target.value)} className={`${field} h-11 px-3`}>
                         <option value="">A bed of yours (or just describe one)</option>
                         {beds.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
@@ -149,7 +174,7 @@ export const OfferModal = ({ onClose, onCreated }: { onClose: () => void; onCrea
                 <button type="submit" disabled={!!problem || saving || uploading}
                     className="w-full rounded-2xl py-3 text-sm font-bold text-white shadow-lg transition-all hover:brightness-110 disabled:opacity-50"
                     style={{ backgroundColor: HEART, boxShadow: '0 10px 15px -3px rgba(41,132,66,0.25)' }}>
-                    {saving ? 'Offering…' : 'Post the offering'}
+                    {saving ? 'Saving…' : editing ? 'Save the offering' : 'Post the offering'}
                 </button>
                 <p className="text-center text-[11px] text-slate-400">Trust opens the offering. Light may follow afterward to appreciate the contribution.</p>
             </form>

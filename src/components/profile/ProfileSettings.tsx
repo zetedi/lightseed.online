@@ -264,20 +264,22 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
               </div>
             )}
 
-            <div className="flex gap-3">
+            {/* The exit stays easy (GDPR is a promise, not a maze): the red act keeps the room
+                and a clear margin on phones; Cancel is present but modest, never half the sheet. */}
+            <div className="flex items-stretch gap-3 pt-1">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl font-bold transition-colors"
+                className="shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-600 px-5 py-3 rounded-xl text-sm font-bold transition-colors"
               >
                 {t('cancel')}
               </button>
               <button
                 onClick={handleDeleteAccount}
                 disabled={isDeleting}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-red-200 transition-all active:scale-95 flex items-center justify-center space-x-2 disabled:opacity-50"
+                className="flex-1 min-w-0 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-xl text-sm font-bold shadow-lg shadow-red-200 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                {isDeleting ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Icons.Trash />}
-                <span>{t('delete_account')}</span>
+                {isDeleting ? <div className="w-4 h-4 shrink-0 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <span className="shrink-0 [&>svg]:h-4 [&>svg]:w-4"><Icons.Trash /></span>}
+                <span className="truncate">{t('delete_account')}</span>
               </button>
             </div>
           </div>

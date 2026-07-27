@@ -518,6 +518,15 @@ export const setOfferingActive = async (id: string, active: boolean): Promise<vo
     await updateDoc(doc(pulsesCollection, id), { offeringActive: active, updatedAt: serverTimestamp() });
 };
 
+// Retell an offering: its words, face, suggested appreciation and detail door. The KIND and any
+// bed it stands for stay frozen (the rules refuse them), so a service never becomes a bed.
+export const updateOffering = async (
+    id: string,
+    data: Partial<Pick<Pulse, 'title' | 'body' | 'content' | 'imageUrl' | 'offeringAppreciationLight' | 'offeringUrl' | 'visibility'>>,
+): Promise<void> => {
+    await updateDoc(doc(pulsesCollection, id), { ...data, updatedAt: serverTimestamp() });
+};
+
 export const createCommunityEvent = async (community: Community, data: Partial<Pulse> & { title: string }) => {
     const eventPayload = {
         ...data,

@@ -23,9 +23,10 @@ interface OfferingProfileProps {
   offering: Pulse;
   onClose: () => void;
   onUpdate?: (u: Partial<Pulse>) => void;
+  onEdit?: () => void;
 }
 
-export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onClose, onUpdate }) => {
+export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onClose, onUpdate, onEdit }) => {
   const { lightseed } = useSession();
   const isAuthor = !!lightseed && offering.authorId === lightseed.uid;
   const [active, setActive] = useState(offering.offeringActive !== false);
@@ -177,6 +178,12 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
               <span title="Suggested appreciation after receiving this offering" className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-black text-amber-950">
                 <span className="[&>svg]:h-2.5 [&>svg]:w-2.5"><Icons.Sun /></span> {formatLight(offering.offeringAppreciationLight)}
               </span>
+            )}
+            {isAuthor && onEdit && (
+              <button type="button" onClick={onEdit}
+                className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white transition-colors hover:bg-white/25">
+                <span className="[&>svg]:h-3 [&>svg]:w-3"><Icons.Pencil /></span> Edit
+              </button>
             )}
             <BeingQr lid={offering.lid} name={offering.title} savedHref={offering.qr?.href} canMint={isAuthor}
               onMint={(href) => mintBeingQr('pulses', offering.id, href)} className="text-white/70" />

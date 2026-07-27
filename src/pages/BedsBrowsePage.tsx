@@ -9,7 +9,7 @@ import { ViewDensityToggle } from '../components/ui/ViewDensityToggle';
 import { useListDensity, densityGridClass, type ListDensity } from '../hooks/useListDensity';
 import { useVisibleLightHouses } from '../hooks/useVisibleLightHouses';
 import { useRefreshSignal } from '../hooks/useRefreshSignal';
-import { getBedsForLightHouse } from '../services/firebase/trees';
+import { getBedsForLightHouse, fetchPublicBeds, getLightHouseById } from '../services/firebase/trees';
 import { tabTone, type TabTheme } from '../utils/tabTheme';
 import type { LightHouse } from '../domain/lightHouse';
 import type { Lifetree } from '../types';
@@ -114,20 +114,47 @@ export const BedsBrowsePage = ({ onViewTree, lightHouseDomain = null, lightHouse
     let alive = true;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- show the loader while the beds refetch (scope/signal change)
     setLoading(true);
-    Promise.all(
-      lightHouses.map(house =>
-        getBedsForLightHouse(house.id, lightHousesPublicOnly)
-          .then(beds => ({ house, beds }))
-          .catch(() => ({ house, beds: [] as Lifetree[] })),
+    Promise.all([
+      Promise.all(
+        lightHouses.map(house =>
+          getBedsForLightHouse(house.id, lightHousesPublicOnly)
+            .then(beds => ({ house, beds }))
+            .catch(() => ({ house, beds: [] as Lifetree[] })),
+        ),
       ),
-    ).then(all => {
+      // UNSCOPED view: a bed is an offering, so every PUBLIC bed belongs here even when its
+      // Light House stands on another domain. Scoped views keep to their own domain's houses.
+      lightHouseDomain ? Promise.resolve([] as Lifetree[]) : fetchPublicBeds().catch(() => [] as Lifetree[]),
+    ]).then(async ([housed, publicBeds]) => {
+      if (!alive) return;
+      const byHouse = new Map(housed.map(g => [g.house.id, { house: g.house, beds: [...g.beds] }]));
+      // Merge the public beds whose house isn't already on the page (resolve each missing house
+      // once; a house we may not read leaves its bed under a quiet placeholder).
+      const missing = [...new Set(publicBeds
+        .map(b => b.lightHouseId)
+        .filter((id): id is string => !!id && !byHouse.has(id)))];
+      const resolved = await Promise.all(missing.map(id => getLightHouseById(id).catch(() => null)));
+      const houseOf = new Map(missing.map((id, i) => [id, resolved[i]]));
+      const seen = new Set(housed.flatMap(g => g.beds.map(b => b.id)));
+      for (const bed of publicBeds) {
+        if (seen.has(bed.id)) continue;
+        const id = bed.lightHouseId || 'elsewhere';
+        if (!byHouse.has(id)) {
+          const house = (bed.lightHouseId && houseOf.get(bed.lightHouseId)) || null;
+          byHouse.set(id, {
+            house: house || ({ id, name: 'Elsewhere in the network' } as LightHouse),
+            beds: [],
+          });
+        }
+        byHouse.get(id)!.beds.push(bed);
+      }
       if (!alive) return;
       // Houses with no beds drop away — only lit rooms remain.
-      setGroups(all.filter(g => g.beds.length > 0));
+      setGroups([...byHouse.values()].filter(g => g.beds.length > 0));
       setLoading(false);
     });
     return () => { alive = false; };
-  }, [lightHouses, bedsSignal, lightHousesPublicOnly]);
+  }, [lightHouses, bedsSignal, lightHousesPublicOnly, lightHouseDomain]);
 
   // Search reads both floors: a house name keeps all its beds; otherwise the bed's own name/body.
   const term = search.trim().toLowerCase();

@@ -235,6 +235,8 @@ const AppContent = () => {
     const openVisionGrowth = (vision: Vision) => { setPulseTargetVision(vision); setPulseTargetTree(null); setShowPulseModal(true); };
     const [showEventModal, setShowEventModal] = useState(false);
     const [showOfferModal, setShowOfferModal] = useState(false);
+    // The offering being retold (its own modal layer, nested on the offering profile).
+    const [editingOffering, setEditingOffering] = useState<Pulse | null>(null);
     // The Offerings page holds two full-width sub-tabs: the offering pulses, and beds (a bed IS an offering).
     const [offeringsSub, setOfferingsSub] = useState<'offerings' | 'beds'>('offerings');
     const [showVisionModal, setShowVisionModal] = useState(false);
@@ -436,6 +438,7 @@ const AppContent = () => {
         { key: 'pulseModal', open: showPulseModal, close: () => setShowPulseModal(false) },
         { key: 'eventModal', open: showEventModal, close: () => setShowEventModal(false) },
         { key: 'offerModal', open: showOfferModal, close: () => setShowOfferModal(false) },
+        { key: 'editingOffering', open: !!editingOffering, close: () => setEditingOffering(null) }, // nested on an offering
         { key: 'visionModal', open: showVisionModal, close: () => setShowVisionModal(false) },
         { key: 'reachModal', open: showReachModal, close: () => setShowReachModal(false) },
         { key: 'editingEvent', open: !!editingEvent, close: () => setEditingEvent(null) },      // nested on a pulse detail
@@ -1428,6 +1431,7 @@ const AppContent = () => {
                             offering={selectedPulse}
                             onClose={() => setSelectedPulse(null)}
                             onUpdate={(u) => setSelectedPulse(prev => prev ? { ...prev, ...u } : prev)}
+                            onEdit={() => setEditingOffering(selectedPulse)}
                         />
                     </div>
                 ) : (selectedPulse && selectedPulse.type === 'event') ? (
@@ -1632,6 +1636,17 @@ const AppContent = () => {
                 <OfferModal
                     onClose={() => setShowOfferModal(false)}
                     onCreated={() => { if (tab === 'offerings') loadContent(true); }}
+                />
+            )}
+
+            {editingOffering && (
+                <OfferModal
+                    offering={editingOffering}
+                    onClose={() => setEditingOffering(null)}
+                    onSaved={(updates) => {
+                        setSelectedPulse(prev => prev && prev.id === editingOffering.id ? { ...prev, ...updates } : prev);
+                        if (tab === 'offerings') loadContent(true);
+                    }}
                 />
             )}
 

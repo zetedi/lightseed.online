@@ -874,6 +874,18 @@ service cloud.firestore {
              && request.resource.data.get('offeringActive', null) is bool
            )
 
+        // (i2) Offering content edits: the author (or staff) may retell the offering: its words,
+        //      its face, its suggested appreciation, its detail door. The kind and any bed it
+        //      stands for are frozen (a service must never silently become a bed), and the chain
+        //      keys can never ride along.
+        || (
+             resource.data.get('type', '') == 'offering'
+             && (isStaff() || resource.data.authorId == request.auth.uid)
+             && request.resource.data.diff(resource.data).affectedKeys()
+                  .hasOnly(['title', 'body', 'content', 'imageUrl', 'imageUrls',
+                            'offeringAppreciationLight', 'offeringUrl', 'visibility', 'updatedAt'])
+           )
+
         // (j) Staff may mend anything.
         || isStaff()
       );
