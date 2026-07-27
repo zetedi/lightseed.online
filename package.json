@@ -6,6 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite --mode development",
+    "devui": "firebase emulators:exec --only auth,firestore,storage --import ./.emulator-data --export-on-exit ./.emulator-data \"npx vite --mode emulators\"",
+    "devui:seed": "node scripts/seed-emulator.mjs",
     "dev:clean": "vite --mode clean",
     "prod": "vite build --mode production",
     "prebuild": "node scripts/build-initiates.mjs && node scripts/build-commits.mjs",

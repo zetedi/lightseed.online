@@ -6,6 +6,22 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-26 · The forest runs on a laptop**: `npm run devui` raises the whole app against the
+local Firebase Emulator Suite (auth + firestore + storage), no internet, no production reads, not
+one byte of data spend. One switch does it: `VITE_USE_EMULATORS` (set by the vite `emulators`
+mode) binds every SDK to the local ports in core.ts, double-guarded to localhost so a production
+build can never carry it. Sign-in works offline through the Auth emulator's fake account picker;
+images land in the local Storage emulator; the world persists in `.emulator-data` between runs
+(imported on start, exported on exit; gitignored). `npm run devui:seed` plants a small living
+forest (a community, three trees with places, an event, an offering, a vision) so every tab
+breathes; the seed hardcodes the emulator hosts into its own environment before the admin SDK
+loads and pings the emulator first, so it is unable to touch production by construction. The
+seed also honours the fresh canopy law: its feed beings carry `domain: 'localhost'`, because
+localhost is scoped like any other domain now. UI refinement is free from here.
+*(A gardener should be able to tend seedlings in a pot before the field.)*
+
+---
+
 **2026-07-26 · The offering gets a face, a switch and a door**: an offering was a card in a feed;
 now it is a BEING in full. It wears the shared BeingProfile (hero, QR, heart) and its tree view is
 its LIFECYCLE: the offering stands as the chain's root, planted with its hash and its author's
