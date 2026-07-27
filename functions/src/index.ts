@@ -2037,7 +2037,7 @@ export const deleteMyAccount = onCall({ cors: true }, async (request) => {
 // ---------------------------------------------------------------------------
 
 // Node 22 ships global fetch; the functions tsconfig lib (es2022) has no type for it.
-declare const fetch: (url: string) => Promise<{ ok: boolean; text(): Promise<string> }>;
+declare const fetch: (url: string, init?: { headers?: Record<string, string> }) => Promise<{ ok: boolean; text(): Promise<string> }>;
 
 // Mirrors src/domain/beingLink.ts lidFromPath — the lid a /b/ path names.
 const LID_RE = /^\/b\/([0-9a-fA-F-]{8,})\/?$/;
@@ -2057,6 +2057,24 @@ const requestHost = (req: { hostname?: string; headers: Record<string, unknown> 
     const fwd = String(req.headers["x-forwarded-host"] || "").split(",")[0].trim();
     const host = fwd || String(req.hostname || "");
     return /^[a-z0-9][a-z0-9.-]*$/i.test(host) ? host : "lightseed.online";
+};
+
+// THE MIRROR GUARD (the 22M-invocation lesson, 2026-07-27). These functions are also reachable
+// on their raw *.run.app address, where `requestHost` returns the function's OWN host. Fetching
+// the shell from that host called the function again, whose fallback redirect called it again:
+// a self-sustaining loop that one bot knock kept alive for a week. So every public HTTP surface
+// resolves the request to a CANONICAL host it actually serves; anything else (run.app included)
+// collapses to the primary domain. The shell fetch also announces itself and is answered with an
+// empty 204 if it ever reaches this function again, so recursion is impossible twice over.
+const CANONICAL_HOSTS = new Set([
+    "lightseed.online", "lifeseed.online",
+    "lifeseed-75dfe.web.app", "lifeseed-75dfe.firebaseapp.com",
+    "perauset.web.app", "perauset.com",
+]);
+const SHELL_FETCH_UA = "lightseed-shell-fetch";
+const canonicalHost = (req: { hostname?: string; headers: Record<string, unknown> }): string => {
+    const host = requestHost(req).toLowerCase().replace(/^www\./, "");
+    return CANONICAL_HOSTS.has(host) ? host : "lightseed.online";
 };
 
 interface PublicBeingCard {
@@ -2166,17 +2184,22 @@ const swapHeadMeta = (
 };
 
 export const beingPreview = onRequest(async (req, res) => {
-    // The deployed shell, fetched from the CDN (the static file is served before
-    // rewrites, so /index.html can never loop back into this function).
-    const host = requestHost(req);
+    // Belt and braces: if our own shell fetch ever lands here again, answer nothing at all.
+    if (String(req.headers["user-agent"] || "") === SHELL_FETCH_UA) { res.status(204).end(); return; }
+    // The deployed shell, fetched from the CDN at a CANONICAL host only. Through Hosting the
+    // static /index.html is served before rewrites; on the raw run.app address the old
+    // `requestHost` pointed the fetch back at this very function (the mirror guard above).
+    const host = canonicalHost(req);
     let shell = "";
     try {
-        const r = await fetch(`https://${host}/index.html`);
+        const r = await fetch(`https://${host}/index.html`, { headers: { "user-agent": SHELL_FETCH_UA } });
         if (r.ok) shell = await r.text();
     } catch (e) {
         console.error("beingPreview: shell fetch failed:", e);
     }
-    if (!shell) { res.redirect(302, "/"); return; } // no shell to dress — hand the visitor to the CDN
+    // No shell to dress: hand the visitor to the canonical CDN, never to "/" on the
+    // current host (on run.app that relative redirect re-invoked this function).
+    if (!shell) { res.redirect(302, `https://${host}/`); return; }
 
     res.set("Content-Type", "text/html; charset=utf-8");
     res.set("Cache-Control", "public, max-age=300, s-maxage=600");
@@ -2218,7 +2241,9 @@ export const beingPreview = onRequest(async (req, res) => {
 // every absent-legacy doc out of the index (the preview above still serves those;
 // the sitemap is an invitation, not the gate).
 export const sitemap = onRequest(async (req, res) => {
-    const host = requestHost(req);
+    // Canonical host only: a sitemap served on the raw run.app address must still
+    // advertise the real domain's URLs, never run.app ones (the mirror guard above).
+    const host = canonicalHost(req);
     const xmlOf = (urls: string[]): string =>
         `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join("\n")}\n</urlset>\n`;
     const home = `  <url>\n    <loc>https://${host}/</loc>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>`;
