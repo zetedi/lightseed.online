@@ -14,6 +14,8 @@ machine learning, Mother Trees hosting nodes. Its first home, lifeseed.online,
 has since become what the paper called a hub: it runs LIN itself now. The
 original is preserved beside this book:
 **[the Lifetree Network white paper, 2025 (PDF)](/lifetree-network-white-paper-2025.pdf)**.
+Its words are the author's, with one release: the em dashes left it too, so the
+founding vision reads in the same human hand as the documents it grew into.
 This organism grew from it.
 
 Read against the code a year later, the finding is simple: **the dream's soul

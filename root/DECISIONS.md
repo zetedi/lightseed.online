@@ -6,6 +6,36 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-07-31 · The preserved paper reads in a human hand**: the 2025 white paper releases its em
+dashes, and the PDF gains a SOURCE. Ten dashes leave the paper (they become parentheses, commas
+or colons: *"mycorrhizal networks (nature's underground web ...)"*, *"technology: an avatar"*,
+*"an existing tree, one that resonates deeply"*), and the document title loses the eleventh. Every
+other word is the author's, verified word for word against the first print. This REVERSES one line
+of the 2026-07-18 ring, which said the preserved paper keeps its author's own punctuation: the
+author is the keeper, and he asked; the release the root made that day now reaches the paper it
+grew from. *(The 2025 rings keep their dashes, as rings do.)* The deeper change is that the PDF
+was a one-off print with nothing behind it, and now `scripts/white-paper-2025.html` is the source
+`npm run whitepaper:build` prints, with headless Chrome (the same engine the first print used), the
+seal injected from `public/logo.svg` so there is one seal only, and a build guard that refuses to
+print a paper carrying an em dash back in. The running line moved from a fixed footer to a
+repeating table foot, the one box paged media repeats on every page of its table, which is why the
+cover carries none. Rejected: editing the binary (the glyphs would move, the words could not);
+rejected: leaving the paper unregenerable. *(Zoltán, reading the paper on a phone.)*
+
+---
+
+**2026-07-31 · A document a phone can open**: the in-app PDF viewer showed a blank grey frame on
+mobile. An `<iframe>` is how a browser inlines a PDF, and phone engines do not: Chrome for Android
+hands the file to a downloader, iOS Safari paints a first page that cannot be read. The viewer now
+ASKS (`navigator.pdfViewerEnabled`, plus a phone-sized screen counting as no whatever it claims)
+and, when the answer is no, offers the document instead of the frame: open it in the engine's own
+reader, or keep the file. The card, the title and the way out stay identical, so the book behaves
+the same on every screen; the answer is re-asked on resize, so a rotated phone is not left with
+the wrong one. Rejected: bundling a PDF renderer (a megabyte of JavaScript to do what the phone
+already does well, in its own reader); rejected: leaving the frame and hoping.
+
+---
+
 **2026-07-26 · The forest runs on a laptop**: `npm run devui` raises the whole app against the
 local Firebase Emulator Suite (auth + firestore + storage), no internet, no production reads, not
 one byte of data spend. One switch does it: `VITE_USE_EMULATORS` (set by the vite `emulators`

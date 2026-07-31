@@ -14,6 +14,7 @@
     "build": "vite build",
     "initiates:build": "node scripts/build-initiates.mjs",
     "commits:build": "node scripts/build-commits.mjs",
+    "whitepaper:build": "node scripts/build-white-paper.mjs",
     "authority:declare": "node scripts/declare-data-authority.mjs",
     "history:consolidate": "node scripts/consolidate-code-history.mjs",
     "initiates:verify": "node scripts/verify-initiations.mjs",
