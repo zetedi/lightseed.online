@@ -10,7 +10,7 @@ import { PlantCTA } from './ui/PlantCTA';
 import { Icons } from './ui/Icons';
 import { ScrollChevrons } from './ui/ScrollChevrons';
 import { QuoteCarousel } from './ui/QuoteCarousel';
-import { LIGHTSEED_QUOTES } from '../content/quotes';
+import { quotesFor } from '../content/quotes';
 import { useScrollEdges } from '../hooks/useScrollEdges';
 import { MiniForestMap, type MapPoint } from './ui/MiniForestMap';
 import { EventCard } from './EventCard';
@@ -49,7 +49,7 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
     const banner = headerSurface(theme, isDark);
     // Vanity counts stay hidden unless the node opts in from Appearance — the home is not numbers.
     const showStats = hostCommunity?.showStats === true;
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     // Session-derived values read straight from context (no longer prop-drilled from App).
     const { lightseed, activeTree, isSuperAdmin } = useSession();
     const firstTreeImage = activeTree?.latestGrowthUrl || activeTree?.imageUrl;
@@ -152,7 +152,7 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
 
             {/* Signed-out visitors: a full-width carousel of reflections (admin-editable per node)
                 in place of the Home + Observatory cards. */}
-            {!lightseed && <QuoteCarousel quotes={(hostCommunity?.carouselQuotes?.length ? hostCommunity.carouselQuotes : LIGHTSEED_QUOTES)} />}
+            {!lightseed && <QuoteCarousel quotes={(hostCommunity?.carouselQuotes?.length ? hostCommunity.carouselQuotes : quotesFor(language))} />}
 
             {/* Events banner — logged-in only. Full width (home card → plant card), half a card
                 tall. A distorted node/community hero, a living leaf texture, and an oversized
@@ -206,7 +206,7 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
                 <div className="relative h-full p-4 flex flex-col justify-between text-white">
                     <div className="flex items-start justify-between gap-2">
                         <div>
-                            <h2 className="text-sm sm:text-lg font-bold uppercase tracking-widest text-white drop-shadow-md">Home</h2>
+                            <h2 className="text-sm sm:text-lg font-bold uppercase tracking-widest text-white drop-shadow-md">{t('home')}</h2>
                             <div className="text-lg sm:text-xl font-light truncate max-w-[180px]">{lightseed ? lightseed.displayName : t('sign_in')}</div>
                             <div className="text-[10px] text-amber-200 font-mono uppercase tracking-widest mt-1">{t('light_of_value')}</div>
                             {/* How much light you hold: the sum of your rays (private to you). */}
@@ -313,8 +313,8 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
                     {/* A tiny legend for the map marks, then EXPLORE + the minimal T/P/V tally. */}
                     <div className="space-y-1.5">
                         <div className="flex items-center gap-3 text-[10px] font-medium text-white/85 drop-shadow-md">
-                            <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 shrink-0 rounded-full bg-yellow-300 shadow-[0_0_6px_2px_rgba(250,204,21,0.75)]" /> Light Houses</span>
-                            <span className="flex items-center gap-1.5"><span className="h-2 w-2 shrink-0 rounded-full bg-yellow-300 shadow-[0_0_4px_1px_rgba(250,204,21,0.65)]" /> Mother Trees</span>
+                            <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 shrink-0 rounded-full bg-yellow-300 shadow-[0_0_6px_2px_rgba(250,204,21,0.75)]" /> {t('light_houses')}</span>
+                            <span className="flex items-center gap-1.5"><span className="h-2 w-2 shrink-0 rounded-full bg-yellow-300 shadow-[0_0_4px_1px_rgba(250,204,21,0.65)]" /> {t('mother_trees')}</span>
                         </div>
                         <div className="flex items-end justify-between gap-2 border-t border-white/30 pt-2">
                             <span className="text-sm font-medium uppercase tracking-wide">{t('explore')}</span>

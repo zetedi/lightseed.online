@@ -52,6 +52,9 @@ const languages = [
     { code: 'ar', name: 'العربية' },
     { code: 'sw', name: 'Kiswahili' },
     { code: 'zh', name: '中文' },
+    // The seat kept for the Nubian of the Aswan reach. Its words are still being gathered, and the
+    // name says so, so nobody is shown invented Nubian (translations.ts, the Nubian door).
+    { code: 'xnz', name: 'Mattokki · قيد الجمع' },
 ];
 
 const isDarkHex = (hex: string | undefined, fallback: boolean) => {
@@ -281,8 +284,9 @@ export const Navigation = ({
     };
 
     const getTabLabel = (tab: string) => {
-        // The AI Collab tab reads "Cocreate" (the menu name; renamed 2026-07-23).
-        if (tab === 'collab') return 'Cocreate';
+        // The AI Collab tab reads "Cocreate" (the menu name; renamed 2026-07-23) — a key now, so
+        // it speaks the reader's language like every other destination.
+        if (tab === 'collab') return t('cocreate');
         if (tab === 'about') return crownRole === 'about' ? t('about') : crownName(crownRole);
         // For standard translation fallback, capitalize the first letter
         const fallback = tab.charAt(0).toUpperCase() + tab.slice(1);

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Icons } from './Icons';
 import type { Community } from '../../types';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { headerSurface } from '../../domain/themeSurface';
 import { LegalModal, type LegalDoc } from './LegalModal';
 
@@ -19,6 +20,7 @@ const toUrl = (raw: string | undefined, kind: 'instagram' | 'telegram' | 'whatsa
 // community (or the node) curates its own. Renders only the links that are set. Themed to match
 // the navigation header (same surface colours).
 export const Footer = ({ community, theme, isDark = false }: { community?: Community | null; theme?: any; isDark?: boolean }) => {
+  const { t } = useLanguage();
   const surface = headerSurface(theme, isDark);
   const s = community?.socialLinks || {};
   const links: { href: string; label: string; icon: React.ReactNode }[] = [
@@ -33,9 +35,9 @@ export const Footer = ({ community, theme, isDark = false }: { community?: Commu
 
   const [legalDoc, setLegalDoc] = useState<LegalDoc | null>(null);
   const legal: { doc: LegalDoc; label: string }[] = [
-    { doc: 'privacy', label: 'Privacy' },
-    { doc: 'terms', label: 'Terms' },
-    { doc: 'imprint', label: 'Imprint' },
+    { doc: 'privacy', label: t('privacy') },
+    { doc: 'terms', label: t('terms') },
+    { doc: 'imprint', label: t('imprint') },
   ];
 
   return (
@@ -58,7 +60,7 @@ export const Footer = ({ community, theme, isDark = false }: { community?: Commu
 
         {/* The brand line, below the socials, in the middle. */}
         <p className="text-xs leading-relaxed" style={{ color: surface.muted }}>
-          <span className="italic">life recognising life</span>
+          <span className="italic">{t('tagline')}</span>
           <span className="mx-1.5 opacity-40">·</span>
           <span dir="ltr" className="font-bold not-italic" style={{ color: surface.border }}>.seed</span>
           <span className="mx-1.5 opacity-40">·</span>{name}

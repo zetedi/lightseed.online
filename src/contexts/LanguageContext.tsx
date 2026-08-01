@@ -29,7 +29,9 @@ export const LanguageProvider = ({ children }: { children?: ReactNode }) => {
     return translations[language][key] || translations['en'][key];
   };
 
-  const isRTL = language === 'ar';
+  // Mattokki reads right-to-left while its strings are still the Arabic ones underneath; when the
+  // Latin Mattokki words arrive (docs/mattokki-review.md), this becomes 'ar' alone again.
+  const isRTL = language === 'ar' || language === 'xnz';
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t, isRTL }}>

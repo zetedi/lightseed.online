@@ -88,26 +88,29 @@ export interface PathwayState {
   next: PathwayStep | null;         // null only at 'sovereign' — nothing left to prompt
 }
 
+// These words are the trail's English. They are mirrored as `path_<step>_label | _desc | _cta`
+// keys in utils/translations, which is what the UI renders, so the trail can speak every language
+// the node speaks; keep the two in step when a word changes here.
 const STEPS: Record<PathwayStepKey, PathwayStep> = {
   signUp: {
     key: 'signUp',
     label: 'Step into the forest',
-    description: 'Request an invite or sign in — your path starts with a single seed.',
+    description: 'Request an invite or sign in; your path starts with a single seed.',
   },
   plant: {
     key: 'plant',
     label: 'Plant your lifetree',
-    description: 'A living node of your own — plant a tree or adopt one to guard.',
+    description: 'A living node of your own: plant a tree, or adopt one to guard.',
   },
   tend: {
     key: 'tend',
     label: 'Tend your tree',
-    description: 'Water it, snap its growth — a tree stays alive through care.',
+    description: 'Water it, snap its growth; a tree stays alive through care.',
   },
   connect: {
     key: 'connect',
     label: 'Connect with the forest',
-    description: 'Reach another tree, guard one, or align a pulse — roots grow toward each other.',
+    description: 'Reach another tree, guard one, or align a pulse; roots grow toward each other.',
   },
   join: {
     key: 'join',
@@ -132,7 +135,7 @@ const STEPS: Record<PathwayStepKey, PathwayStep> = {
   nameCommunity: {
     key: 'nameCommunity',
     label: 'Your circle is already a community. Name it?',
-    description: 'People already share care of your tree — give the circle a name and a home.',
+    description: 'People already share care of your tree; give the circle a name and a home.',
   },
   rootDomain: {
     key: 'rootDomain',

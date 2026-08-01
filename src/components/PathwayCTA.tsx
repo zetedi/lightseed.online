@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { derivePathway, type PathwayInput, type PathwayStepKey } from '../domain/pathway';
+import { useLanguage } from '../contexts/LanguageContext';
 import { CTA_GLOW } from '../utils/tabTheme';
 import { headerSurface } from '../domain/themeSurface';
 
@@ -41,20 +42,12 @@ const readDismissed = (): PathwayStepKey[] => {
   }
 };
 
-// Short button captions — the step's label is the headline, the button stays a verb.
-const CAPTIONS: Record<PathwayStepKey, string> = {
-  signUp: 'Begin',
-  plant: 'Plant',
-  tend: 'Tend',
-  connect: 'Connect',
-  join: 'Join',
-  followVision: 'Follow',
-  formCircle: 'Invite',
-  plantSeven: 'Seven',
-  nameCommunity: 'Name it',
-  rootDomain: 'Root it',
-  tailorTheme: 'Tailor',
-};
+// Every step speaks the reader's language: its headline, its sentence, and the verb on its button
+// live as `path_<step>_label | _desc | _cta` keys (utils/translations). The trail itself, and its
+// English, stay in domain/pathway.ts.
+type StepPart = 'label' | 'desc' | 'cta';
+const stepKey = (key: PathwayStepKey, part: StepPart) =>
+  `path_${key}_${part}` as Parameters<ReturnType<typeof useLanguage>['t']>[0];
 
 interface ThemeLike {
   primary?: string;
@@ -76,6 +69,7 @@ interface Props {
 }
 
 export const PathwayCTA = ({ input, actions, theme, isDark = false, onOpenOverview }: Props) => {
+  const { t } = useLanguage();
   const [dismissed, setDismissed] = useState<PathwayStepKey[]>(readDismissed);
   // "Not now" farewell — a brief, self-fading note telling the user where to relight the path.
   // (Dismissal is PER STEP, not the global off toggle, so Settings keeps showing "on"; this
@@ -87,7 +81,7 @@ export const PathwayCTA = ({ input, actions, theme, isDark = false, onOpenOvervi
     return (
       <div className="mx-auto max-w-7xl px-4 pt-4 sm:pt-6 animate-in fade-in duration-300">
         <p className="mx-auto max-w-2xl rounded-full border border-emerald-100 bg-emerald-50/80 px-4 py-2 text-center text-xs text-emerald-700">
-          🌙 The Light Path rests for this step; relight it anytime in Profile → Settings.
+          {t('light_path_rests')}
         </p>
       </div>
     );
@@ -121,12 +115,12 @@ export const PathwayCTA = ({ input, actions, theme, isDark = false, onOpenOvervi
           onClick={onOpenOverview}
           className="mb-0.5 block text-[9px] font-bold uppercase tracking-[0.22em] hover:underline"
           style={{ color: primary }}
-          title="See the whole path"
+          title={t('light_path_see_all')}
         >
-          Light Path
+          {t('light_path')}
         </button>
-        <p className="text-sm font-bold" style={{ color: surface.text }}>{next.label}</p>
-        <p className="mt-0.5 text-xs" style={{ color: surface.muted }}>{next.description}</p>
+        <p className="text-sm font-bold" style={{ color: surface.text }}>{t(stepKey(next.key, 'label'))}</p>
+        <p className="mt-0.5 text-xs" style={{ color: surface.muted }}>{t(stepKey(next.key, 'desc'))}</p>
         <div className="mt-2 flex items-center gap-1" title={`Stage ${stageIndex + 1} of ${stageCount}: ${stage}`}>
           {Array.from({ length: stageCount }, (_, i) => (
             <span key={i} className="h-1.5 w-1.5 rounded-full transition-colors"
@@ -140,12 +134,12 @@ export const PathwayCTA = ({ input, actions, theme, isDark = false, onOpenOvervi
       <div className="flex shrink-0 items-center gap-2">
         <button onClick={dismiss} className="rounded-full px-2.5 py-1 text-xs font-medium opacity-70 transition-opacity hover:opacity-100"
                 style={{ color: surface.muted }}>
-          Not now
+          {t('not_now')}
         </button>
         <button onClick={actions[next.key]}
                 className={`rounded-full px-4 py-2 text-sm font-bold text-white transition-all active:scale-95 ${CTA_GLOW}`}
                 style={{ backgroundColor: primary }}>
-          {CAPTIONS[next.key]}
+          {t(stepKey(next.key, 'cta'))}
         </button>
       </div>
     </div>

@@ -6,6 +6,28 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-01 · The node speaks Arabic, and keeps a seat for Nubian**: the front page was English
+under every flag but Chinese, because a language here was a handful of menu words spread over the
+English `baseKeys` and everything else fell through to English in silence. ARABIC is now COMPLETE
+(all 420 strings, and the fourteen reflections of the carousel, which no language but English had),
+so the whole app can be read right-to-left; CHINESE closed its 129 open keys (beds, signing keys,
+covenants, decisions, the home page's own words); and the strings that had no key at all and so
+read English in every tongue — Offerings, Cocreate, Home, Light Houses, Mother Trees, the footer's
+line, the consent banner, and the whole Light Path with its eleven steps — became keys. A test
+holds it: `tests/translations.test.ts` fails if a key is added without Arabic and Chinese, if a
+{placeholder} is dropped in translation, or if any dictionary carries an empty string. The Light
+Path's English stays in `domain/pathway.ts` and is mirrored by `path_*` keys; the domain stays
+pure. **The Nubian door**: Mattokki (Kenzi, `xnz`), the Nubian of the Aswan reach where this node's
+first trees stand, has a SEAT IN THE PICKER BEFORE IT HAS WORDS. Claude can write Arabic and
+Chinese and cannot write Mattokki without guessing, and a guess in front of Nubian speakers is
+worse than an honest gap — so every string under it is the Arabic one, the picker reads
+*Mattokki · قيد الجمع* (being gathered), and `docs/mattokki-review.md` is the sheet a speaker
+fills in, one word at a time, each replacing an Arabic one. Rejected: inventing plausible Nubian
+from a neighbouring language; rejected: leaving the language out until it is complete. *(Zoltán,
+before presenting the node in Nubia.)*
+
+---
+
 **2026-07-31 · The preserved paper reads in a human hand**: the 2025 white paper releases its em
 dashes, and the PDF gains a SOURCE. Ten dashes leave the paper (they become parentheses, commas
 or colons: *"mycorrhizal networks (nature's underground web ...)"*, *"technology: an avatar"*,

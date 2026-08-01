@@ -1,5 +1,6 @@
 import React from 'react';
 import { PATHWAY_RULESET, PATHWAY_STAGES, type PathwayStage } from '../domain/pathway';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // The Path, whole — the Light Path's ruleset laid out as one trail, from first seed to
 // sovereign node. Rendered wherever a being wants to see the road rather than only the next
@@ -13,7 +14,11 @@ interface PathOverviewProps {
 }
 
 export const PathOverview: React.FC<PathOverviewProps> = ({ current }) => {
+  const { t } = useLanguage();
   const currentIndex = current ? PATHWAY_STAGES.indexOf(current) : -1;
+  // Stages and steps speak the reader's language (`stage_<name>`, `path_<step>_label | _desc`);
+  // the trail's shape and its English stay in domain/pathway.ts.
+  type Key = Parameters<typeof t>[0];
 
   return (
     <div className="relative">
@@ -39,9 +44,9 @@ export const PathOverview: React.FC<PathOverviewProps> = ({ current }) => {
                 {done ? '✓' : i + 1}
               </span>
               <div className={`min-w-0 pb-1 ${done ? 'opacity-60' : ''}`}>
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">{stage}{here && <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] text-emerald-700">you are here</span>}</p>
-                <p className="text-sm font-bold text-slate-800">{step.label}</p>
-                <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{step.description}</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">{t(`stage_${stage}` as Key)}{here && <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] text-emerald-700">{t('path_you_are_here')}</span>}</p>
+                <p className="text-sm font-bold text-slate-800">{t(`path_${step.key}_label` as Key)}</p>
+                <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{t(`path_${step.key}_desc` as Key)}</p>
               </div>
             </li>
           );
@@ -51,16 +56,15 @@ export const PathOverview: React.FC<PathOverviewProps> = ({ current }) => {
         <li className="relative flex gap-4">
           <span className={`z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-sm ${current === 'sovereign' ? 'border-amber-400 bg-amber-400 text-white' : 'border-amber-200 bg-white text-amber-400'}`}>☀</span>
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-500">sovereign</p>
-            <p className="text-sm font-bold text-slate-800">The path is walked</p>
-            <p className="mt-0.5 text-xs leading-relaxed text-slate-500">A community on its own domain, in its own colours. Nothing left but the practice: keep tending.</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-500">{t('stage_sovereign')}</p>
+            <p className="text-sm font-bold text-slate-800">{t('path_summit_label')}</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{t('path_summit_desc')}</p>
           </div>
         </li>
       </ol>
 
       <p className="mt-6 rounded-xl bg-slate-50 px-4 py-3 text-[11px] leading-relaxed text-slate-400">
-        This is the node's ruleset: the trail the Light Path walks you along, one step at a time.
-        In time, each community will shape its own path for the beings it welcomes.
+        {t('path_ruleset_note')}
       </p>
     </div>
   );
