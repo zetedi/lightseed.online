@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { RAY_UNITS, WITNESS_SHARE_DENOMINATOR, witnessShareUnits, kindleRays, prismSplit } from '../src/domain/light';
+import {
+  RAY_UNITS, WITNESS_SHARE_DENOMINATOR, witnessShareUnits, kindleRays, prismSplit,
+  DEFAULT_GLOW_SHARE_DENOMINATOR as DOMAIN_GLOW_SHARE_DENOMINATOR,
+} from '../src/domain/light';
 import {
   RAY_UNITS as MINT_RAY_UNITS,
   WITNESS_SHARE_DENOMINATOR as MINT_WITNESS_SHARE_DENOMINATOR,
@@ -37,6 +40,9 @@ describe('the mirror: the server mint speaks the domain law exactly', () => {
     expect(MINT_RAY_UNITS).toBe(RAY_UNITS);
     expect(MINT_WITNESS_SHARE_DENOMINATOR).toBe(WITNESS_SHARE_DENOMINATOR);
     expect(mintWitnessShareUnits()).toBe(witnessShareUnits());
+    // The prism's default dial now lives in the domain (the gift reads it too); the server keeps
+    // its own copy because functions is a separate project, so the mirror must hold here.
+    expect(DEFAULT_GLOW_SHARE_DENOMINATOR).toBe(DOMAIN_GLOW_SHARE_DENOMINATOR);
   });
 
   it('a sound witnessing allocates exactly what kindleRays allocates', () => {

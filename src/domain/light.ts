@@ -123,6 +123,11 @@ export interface PrismSplit {
   spendable: number;
 }
 
+// The dial's default, until per-community dials exist: a seventh, the same seventh the witness
+// of care receives. The server mirrors this constant (functions/src/mint.ts), held true by
+// tests/mint.test.ts.
+export const DEFAULT_GLOW_SHARE_DENOMINATOR = 7;
+
 export const prismSplit = (units: number, glowShareDenominator: number): PrismSplit => {
   if (!Number.isInteger(units) || units < 0) return { glow: 0, spendable: Math.max(0, Math.floor(units) || 0) };
   const d = Number.isInteger(glowShareDenominator) && glowShareDenominator >= 1 ? glowShareDenominator : 1;

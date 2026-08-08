@@ -6,6 +6,39 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-05 · The suspended gift: appreciation travels forward, never back** (`domain/gift.ts`):
+the caffè sospeso, in light, and the answer to the oldest open definition in QUESTIONS — *"Token
+is something not taken… a token is not extracted value, it IS unclaimed offering."* A suspended
+gift **is** an unclaimed offering; the definition the economy stood on finally has a mechanism.
+An offering is received through trust and costs nothing. If the receiver appreciates it, their
+light does NOT return to the offerer: it waits AT THE OFFERING and covers the appreciation of
+whoever comes next. **The offering is the PRISM** the root named a year before it had a body
+("a station where a ray branches onward", LIN) — light arrives, sheds its share into the glow of
+the community it is crossing, and waits to continue. TWO DECISIONS (Zoltán): (1) **the offerer is
+never paid in light.** Light DIRECTS care; the care economy PAYS people (principle 8); the rails
+never touch, so light can never be read as a wage, and an offerer's standing becomes the light
+that has passed THROUGH them, unhoardable and unbuyable. (2) **One gift covers one appreciation,
+one person at a time** — a surplus waits for the people after next, a shortfall is handed over
+whole rather than stranded; the suspended coffee, *because we are humans and a coffee is
+graspable*. The pure law lands first as the root asks (`giftProblem`, `suspendGift`, `claimGift`,
+`giftsWaiting`, and `conserves` — the light economy's `verifyChain`: every unit ever kindled
+stands on a ray, at an offering, or in the glow). The walked-story test follows ONE ray hand to
+hand to exhaustion: **102 of its 108 units become commons glow, and a 6-unit ember remains that
+the prism can never dim further** (below the dial nothing more can be shed) — which is exactly
+what `idleFade` is for, so the two laws complete each other rather than overlapping. The prism's
+default dial moved from the server into the domain (`DEFAULT_GLOW_SHARE_DENOMINATOR`, mirrored in
+`functions/src/mint.ts`, held by the mirror test). Rejected: splitting appreciation between the
+next receiver and the offerer (warmer, but light starts behaving like income and the money
+boundary blurs); rejected: handing the whole suspended balance to the next arrival (fewer people
+touched, and harder to hold in the hand than a coffee). **Not yet built**: the server mint, the
+witnessed receipt (a service has no "I received this" act; it cannot be self-declared, so the
+offerer witnesses it, the same shape as `witnessWatering`), the rules, and the face. Named risk:
+two beings could ping-pong offerings to pump their own community's glow — it creates no light
+(the daily witnessed-care cap is the only source) and glow animates rather than fuels, so the
+harm is cosmetic, but it is the seam an adversary would push.
+
+---
+
 **2026-08-01 · The node speaks Arabic, and keeps a seat for Nubian**: the front page was English
 under every flag but Chinese, because a language here was a handful of menu words spread over the
 English `baseKeys` and everything else fell through to English in silence. ARABIC is now COMPLETE
