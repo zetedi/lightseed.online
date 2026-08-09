@@ -4,6 +4,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { getAdmins, deleteUserAsAdmin, listUsersAsAdmin, triggerSystemEmail, getNodeLimits, setNodeLimits } from '../../services/firebase';
 import { resetLight } from '../../services/firebase/light';
+import { backfillLidIndex } from '../../services/firebase/beings';
 import type { AdminUserRow } from '../../services/firebase';
 import { DEFAULT_NODE_LIMITS } from '../../domain/limits';
 import { SectionTitle } from '../ui/SectionTitle';
@@ -97,6 +98,7 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
   // RESET LIGHT — the testing-phase restart (ring 2026-07-21). Node owner only; the callable
   // enforces it too. Burns every ray and every glow; the care itself stays on the chains.
   const [resettingLight, setResettingLight] = useState(false);
+  const [backfilling, setBackfilling] = useState(false);
   const handleResetLight = async () => {
     const sure = await showConfirm(
       'Remove ALL light from the system? Every ray and every glow burns back to zero. The care itself stays on the chains, and the light already left the trees in better shape, so nothing real is lost. Light re-enters only through witnessed care.',
@@ -135,9 +137,48 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
     }
   };
 
+  // THE LID INDEX BACKFILL — counts first, writes only when asked again. Every being born
+  // before the triggers existed has a true name and no entry; this walks them home. Anything
+  // it will not decide on its own (a disagreeing entry, two lids on one address) it reports.
+  const handleBackfillLidIndex = async (apply: boolean) => {
+    setBackfilling(true);
+    try {
+      const r = await backfillLidIndex(apply);
+      const trouble = [
+        r.disagreements.length ? `${r.disagreements.length} disagree with an entry already written` : '',
+        r.collisions.length ? `${r.collisions.length} address(es) claimed by two lids` : '',
+      ].filter(Boolean).join('; ');
+      notify(
+        (apply ? `Wrote ${r.wrote} entries.` : `${r.wrote} beings are missing an entry (nothing written).`)
+        + (r.nameless ? ` ${r.nameless} documents carry no true name.` : '')
+        + (trouble ? ` Needs a human: ${trouble}. See the function log.` : '')
+      );
+    } catch (e: any) {
+      notify(e?.message || 'Could not walk the index.');
+    }
+    setBackfilling(false);
+  };
+
   return (
     <div>
       <SectionTitle title={t('admin_title')} sub={t('admin_sub')} />
+      {/* The lid index — beings born before the triggers existed (ring 2026-08-09). */}
+      {isSuperAdmin && (
+        <div className="mb-4 flex items-center justify-between gap-4 rounded-2xl border border-slate-100 p-4">
+          <div className="min-w-0">
+            <p className="font-semibold text-slate-800 text-sm">Lid index</p>
+            <p className="text-xs text-slate-500">Write down the true name of every being born before the index existed. Counts first; writes only when asked again. Never re-points a name.</p>
+          </div>
+          <div className="flex shrink-0 gap-2">
+            <button onClick={() => handleBackfillLidIndex(false)} disabled={backfilling} className="rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 text-xs font-bold px-4 py-2 whitespace-nowrap transition-colors disabled:opacity-50">
+              {backfilling ? 'Walking…' : 'Count'}
+            </button>
+            <button onClick={() => handleBackfillLidIndex(true)} disabled={backfilling} className="rounded-full bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2 whitespace-nowrap transition-colors disabled:opacity-50">
+              Write
+            </button>
+          </div>
+        </div>
+      )}
       {/* The testing-phase restart — node owner only (the callable refuses everyone else). */}
       {isSuperAdmin && (
         <div className="mb-4 flex items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50/50 p-4">

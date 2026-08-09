@@ -1,6 +1,8 @@
 import React, { useCallback } from 'react';
 import { Pulse } from '../../types';
 import { createEvent, getMyEvents } from '../../services/firebase';
+import { beingStoragePath } from '../../domain/beingIndex';
+import { useSession } from '../../contexts/SessionContext';
 import { EventsSection, type EventDraft } from '../sections/EventsSection';
 
 interface ProfileEventsProps {
@@ -18,6 +20,7 @@ interface ProfileEventsProps {
 // as CommunityEvents is its community twin; creation goes through createEvent (standalone), so an
 // event planted here belongs to no community until one gathers around it.
 export const ProfileEvents: React.FC<ProfileEventsProps> = ({ uid, name, photo, onViewEvent }) => {
+  const { personLid } = useSession();
   // Both bindings are memoized — EventsSection's refresh effect keys on loadEvents.
   const loadEvents = useCallback(() => getMyEvents(uid), [uid]);
   const handleCreate = useCallback((draft: EventDraft) => createEvent(draft), []);
@@ -33,8 +36,9 @@ export const ProfileEvents: React.FC<ProfileEventsProps> = ({ uid, name, photo, 
       onViewEvent={onViewEvent}
       loadEvents={loadEvents}
       onCreate={handleCreate}
-      // users/{uid}/** is the one folder storage rules let a being write to (storage.rules).
-      uploadPathPrefix={`users/${uid}/events`}
+      // Filed under the being's TRUE NAME, falling back to the uid folder until the lid
+      // resolves — both are writable by their owner (storage.rules).
+      uploadPathPrefix={beingStoragePath(personLid || '', 'events') || `users/${uid}/events`}
       fallbackAuthorName="Soul"
     />
   );

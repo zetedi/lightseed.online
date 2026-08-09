@@ -34,6 +34,10 @@ export const useLifeseed = () => {
     const [superAdminExists, setSuperAdminExists] = useState(true);
     // The initiated layer (git ledger, mirrored to /initiates.json) — null until resolved.
     const [initiate, setInitiate] = useState<Initiate | null>(null);
+    // The signed-in being's TRUE NAME (users/{uid}.lid). The uid is local to this auth provider;
+    // the lid is portable, and it is what lid-addressed things (storage under beings/{lid}) are
+    // named by. ensurePersonEntity already mints or backfills it at sign-in — we simply keep it.
+    const [personLid, setPersonLid] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     // The user's chosen "closest" tree (users/{uid}.defaultTreeId). Drives `activeTree`.
     const [defaultTreeId, setDefaultTreeId] = useState<string | undefined>(undefined);
@@ -71,7 +75,9 @@ export const useLifeseed = () => {
                 }
 
                 // Identity Stage 1: ensure this user has a canonical person entity (idempotent).
-                ensurePersonEntity(user.uid, user.displayName).catch(() => {});
+                ensurePersonEntity(user.uid, user.displayName)
+                    .then(person => setPersonLid(person.lid))
+                    .catch(() => {});
 
                 // The initiated layer: is this account bound to a git-ledger initiate? Best-effort.
                 getInitiateByUid(user.uid).then(setInitiate).catch(() => setInitiate(null));
@@ -107,6 +113,7 @@ export const useLifeseed = () => {
                 setIsAdmin(false);
                 setIsSuperAdmin(false);
                 setInitiate(null);
+                setPersonLid(null);
             }
             setLoading(false);
         });
@@ -155,5 +162,5 @@ export const useLifeseed = () => {
 
     // The "closest" tree: the chosen default if it's still one of mine, else the first.
     const activeTree = myTrees.find(t => t.id === defaultTreeId) || (myTrees.length > 0 ? myTrees[0] : null);
-    return { lightseed, myTrees, guardedTrees, activeTree, defaultTreeId, setDefaultTree, defaultVisionId, setDefaultVision, isAdmin, isSuperAdmin, superAdminExists, initiate, isInitiate: !!initiate, loading, refreshTrees };
+    return { lightseed, personLid, myTrees, guardedTrees, activeTree, defaultTreeId, setDefaultTree, defaultVisionId, setDefaultVision, isAdmin, isSuperAdmin, superAdminExists, initiate, isInitiate: !!initiate, loading, refreshTrees };
 };

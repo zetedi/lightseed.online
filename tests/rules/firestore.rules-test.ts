@@ -206,6 +206,44 @@ describe('config/dataAuthority — public custody, server-owned declaration', ()
   });
 });
 
+describe('beings/{lid} — the lid index: anyone may read a true name, no one may write one', () => {
+  const LID = '019f63a2-f8e5-7f80-bea2-54d7cc8ef01a';
+  const entry = { lid: LID, kind: 'tree', collection: 'lifetrees', docId: 'treeB' };
+  const written = async () => env.withSecurityRulesDisabled(async (ctx) =>
+    setDoc(doc(ctx.firestore(), 'beings', LID), entry));
+
+  it('is readable without an account — the /b/ door opens for a stranger holding the QR', async () => {
+    await written();
+    await assertSucceeds(getDoc(doc(db(), 'beings', LID)));
+  });
+
+  it('but NEVER listable — you may ask about a name you hold, not harvest the names', async () => {
+    await written();
+    await assertFails(getDocs(collection(db(), 'beings')));
+    await assertFails(getDocs(collection(db(MALLORY), 'beings')));
+    await assertFails(getDocs(query(collection(db(MALLORY), 'beings'), where('collection', '==', 'pulses'))));
+  });
+
+  it('CANNOT be written by anyone, including staff — a forgeable identity record is not one', async () => {
+    await assertFails(setDoc(doc(db(ALICE), 'beings', LID), entry));
+    await assertFails(setDoc(doc(db(STAFF), 'beings', LID), entry));
+    await assertFails(setDoc(doc(db(), 'beings', LID), entry));
+  });
+
+  it('cannot be RE-POINTED at another being, which is the whole point of the record', async () => {
+    await written();
+    // Mallory tries to make Alice's true name resolve to a document of theirs.
+    await assertFails(updateDoc(doc(db(MALLORY), 'beings', LID), { docId: 'mallorys-tree' }));
+    await assertFails(setDoc(doc(db(STAFF), 'beings', LID), { ...entry, docId: 'staffs-tree' }));
+    await assertFails(deleteDoc(doc(db(STAFF), 'beings', LID)));
+    let heldDocId: string | undefined;
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      heldDocId = (await getDoc(doc(ctx.firestore(), 'beings', LID))).data()?.docId;
+    });
+    expect(heldDocId).toBe('treeB');
+  });
+});
+
 describe('community joining — anyone knocks as themselves; only the keeper opens', () => {
   const joinReq = (from: string) => ({ lid: 'x', type: 'link', rel: 'join_request', from, to: 'com1', createdAt: 1 });
   const memberLink = { lid: 'x', type: 'link', rel: 'member', from: BOB, to: 'com1', createdAt: 1 };

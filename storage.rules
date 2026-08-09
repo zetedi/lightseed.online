@@ -23,9 +23,21 @@ service firebase.storage {
     }
 
     // Specific rules for user-owned folders
+    // The OLD name, kept: an auth uid is local to this auth provider and dies with it, but
+    // everything filed here still resolves, and nothing has to move (the docs store absolute
+    // download URLs, not paths). New writes go to beings/{lid} below.
     match /users/{userId}/{allPaths=**} {
       // Allow users to write to their own folder
       allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // FILED UNDER THE TRUE NAME (ring 2026-08-09). A lid is portable across nodes and years; a
+    // uid is not, and storage is the part most likely to outlive both the auth provider and the
+    // database. The credential says uid, so proving the lid costs one Firestore read — the price
+    // of a name that survives. A being may write only under its OWN true name.
+    match /beings/{lid}/{allPaths=**} {
+      allow write: if request.auth != null
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.lid == lid;
     }
 
     // Community owners can manage their own white-label assets and event galleries

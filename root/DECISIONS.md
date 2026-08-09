@@ -6,6 +6,39 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-09 · The index is written, and the storage bears the name** (functions triggers,
+`storage.rules`): the wiring of the ring below, in its natural order. WRITTEN BY THE SERVER ALONE —
+six `onDocumentCreated` triggers, one per addressed kind, and `firestore.rules` refuses every
+client write to `/beings`, staff included: an identity record a client could forge is not an
+identity record, since anyone could then claim a lid or re-point someone else's name. The triggers
+use `create()`, never `set()`, so **the frozen half of the law is enforced by construction rather
+than by care** — a lid already written can never be re-pointed by a trigger, and a legitimate move
+belongs to a governed act. `ALREADY_EXISTS` is normally the law working (triggers fire at least
+once), so it is swallowed — but only after one look, because the same refusal would otherwise hide
+ONE TRUE NAME, TWO BEINGS. Read is open: a lid is unguessable and is already what a being's QR
+publishes, the entry carries no name, owner or visibility, and reading the being it points at is
+still gated by that collection's own rules. THE BACKFILL is a staff callable (not a script) so it
+reuses the mirrored law instead of becoming a third copy of it; it counts before it writes, reads
+the index once into memory rather than once per being, `select('lid')`s the sweep so a busy
+collection cannot exhaust it, batches at 400, and REPORTS rather than resolves both faults it can
+find. `findBeingByLid` now asks the index first — one read instead of eight queries — and falls
+through to the old search on every doubt (no entry, a stale address, a document the reader cannot
+prove they may see), so **emptying `beings/` costs speed and nothing else**. THE STORAGE MOVE, the
+question that started this: `beings/{lid}/…`, write-side only, no object moved (the docs store
+absolute download URLs, so everything already filed keeps resolving and `users/{uid}/**` stays
+allowed). The credential says uid, so proving a lid costs one Firestore read per upload — the price
+of a name that survives its auth provider. The session now carries `personLid`, which
+`ensurePersonEntity` had been minting and throwing away since the beginning. And the bug that
+started it is fixed: `EventModal` wrote to `events/{uid}/…`, which fell to storage.rules' catch-all
+granting STAFF ONLY — every other being's event image had been failing silently. NOT DONE, and
+deliberate: media is filed under the AUTHOR being's lid, not the event's own, because an event's
+lid does not exist when its images are uploaded and a rule cannot verify a name nothing answers to
+yet. Named costs: every pulse write now also writes an index entry (uniform, and the type filter is
+the dial if volume ever makes it hurt), and community/tree media still wear the old names — only
+the person's true name is provable from a credential today.
+
+---
+
 **2026-08-09 · A true name, written down** (`domain/beingIndex.ts`): asked whether event media should
 be filed at `being/{lid}/events` rather than `users/{uid}/events`, and walking backwards from that
 path, the answer was that the path is not the change — **the index is**. Storage is the last room

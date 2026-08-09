@@ -376,6 +376,24 @@ service cloud.firestore {
       allow write: if configId == 'limits' && isStaff();
     }
 
+    // THE LID INDEX — beings/{lid} -> { kind, collection, docId }: a true name written down
+    // beside the local address holding it today (ring 2026-08-09, src/domain/beingIndex.ts).
+    // WRITE IS SERVER-ONLY, and not merely staff-only: an identity record a client could forge
+    // is not an identity record — anyone could claim a lid or re-point someone else's name. The
+    // trigger (functions/indexPersonLid …) writes through the admin SDK, which bypasses rules.
+    // Read is open because a lid is unguessable and is already the thing a being's QR PUBLISHES;
+    // the entry carries no name, no owner and no visibility, and reading the being it points at
+    // is still gated by that collection's own rules. Emptying this collection breaks nothing:
+    // every being still resolves by the older search.
+    // GET, never LIST: the openness argument rests on a lid being unguessable, and an open
+    // list query would make every lid enumerable in one sweep — including the addresses of
+    // private records. You may ask about a name you hold; you may not harvest the names.
+    match /beings/{lid} {
+      allow get: if true;
+      allow list: if false;
+      allow write: if false;
+    }
+
     // Users collection: Read self/staff, Write self
     // Self-write covers the onlyValidatedCanReach contact-privacy flag. That flag is
     // mirrored onto the user's (world-readable) lifetrees so the reach gate can read it

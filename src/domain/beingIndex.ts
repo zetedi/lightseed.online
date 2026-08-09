@@ -43,6 +43,16 @@ export const COLLECTION_FOR_KIND: Record<BeingKind, string> = {
 export const isBeingKind = (value: unknown): value is BeingKind =>
   typeof value === 'string' && Object.prototype.hasOwnProperty.call(COLLECTION_FOR_KIND, value);
 
+// The map read the other way. A writer knows which collection it is standing in and nothing else,
+// so this is the door every index write comes through: a collection the index does not address
+// (links, alignments, covenants, invites, the mail queue) simply answers null and is let alone.
+export const kindForCollection = (collection: string): BeingKind | null => {
+  const found = (Object.keys(COLLECTION_FOR_KIND) as BeingKind[])
+    .find(kind => COLLECTION_FOR_KIND[kind] === collection);
+  return found ?? null;
+};
+
+
 // One entry. The document id IS the lid, so "one lid names one being" is not a rule anyone has
 // to enforce — it is the shape of the thing.
 export interface BeingEntry {
@@ -68,6 +78,16 @@ export const beingEntryProblem = (entry: Partial<BeingEntry> | null | undefined)
 
 export const isBeingEntry = (entry: unknown): entry is BeingEntry =>
   beingEntryProblem(entry as Partial<BeingEntry>) === null;
+
+// The entry a document deserves, or null if it deserves none. Everything a writer knows — where
+// it stands, which document, what true name the document carries — judged in ONE place, so the
+// trigger, the backfill and any future importer can never disagree about what is indexable.
+export const entryFor = (collection: string, docId: string, lid: unknown): BeingEntry | null => {
+  const kind = kindForCollection(collection);
+  if (!kind) return null;
+  const entry: BeingEntry = { lid: String(lid ?? ''), kind, collection, docId };
+  return beingEntryProblem(entry) ? null : entry;
+};
 
 // ── Re-pointing: the law that makes the lid portable ──────────────────────────────────────
 // The lid and the kind are FROZEN — a name that could come to mean a different being would not

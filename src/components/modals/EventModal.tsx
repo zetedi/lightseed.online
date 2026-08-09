@@ -5,6 +5,8 @@ import { ImagePicker } from '../ui/ImagePicker';
 import { showAlert } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { visibilitiesForScope, type PulseScope } from '../../domain/pulseVisibility';
+import { beingStoragePath } from '../../domain/beingIndex';
+import { useSession } from '../../contexts/SessionContext';
 import type { Pulse, PulseVisibility } from '../../domain/pulse';
 
 /**
@@ -30,6 +32,7 @@ export const EventModal = ({
   scope?: PulseScope;
 }) => {
   const { t } = useLanguage();
+  const { personLid } = useSession();
   const isEdit = !!event;
   const [title, setTitle] = useState(event?.title || '');
   const [date, setDate] = useState(event?.eventDate || '');
@@ -41,9 +44,14 @@ export const EventModal = ({
   const [imageUrls, setImageUrls] = useState<string[]>(event?.imageUrls?.length ? event.imageUrls : (event?.imageUrl ? [event.imageUrl] : []));
   const [saving, setSaving] = useState(false);
 
+  // Filed under the being who plants it. The old `events/{uid}/…` fell to storage.rules'
+  // catch-all, which grants writes to STAFF ONLY — so every other being's event image failed
+  // silently. It moves to the TRUE NAME (beings/{lid}); until the lid resolves (or for an older
+  // account still being backfilled) the uid folder is the fallback, which the rules still allow.
   const addImage = async (file: File) => {
+    const folder = beingStoragePath(personLid || '', 'events') || `users/${lightseed?.uid || 'anon'}/events`;
     try {
-      const url = await handleImageUpload(file, `events/${lightseed?.uid || 'anon'}/${Date.now()}`);
+      const url = await handleImageUpload(file, `${folder}/${Date.now()}`);
       if (url) setImageUrls(prev => [...prev, url]);
     } catch (e: any) {
       showAlert(e?.message || 'Failed to upload image.');
