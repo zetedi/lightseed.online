@@ -1,7 +1,9 @@
 import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
 import { onDocumentCreated, onDocumentUpdated, onDocumentWritten } from "firebase-functions/v2/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import * as admin from "firebase-admin";
+import { initializeApp } from "firebase-admin/app";
+import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
+import { getAuth } from "firebase-admin/auth";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Anthropic from "@anthropic-ai/sdk";
 import {
@@ -15,9 +17,9 @@ import { entryFor, COLLECTION_FOR_KIND } from "./beingIndex";
 // time-ordered and portable). node:crypto supplies the randomness; mint.ts the pure algorithm.
 const mintLid = () => uuidv7(Date.now(), randomBytes(10));
 
-admin.initializeApp();
+initializeApp();
 
-const db = admin.firestore();
+const db = getFirestore();
 
 // --- Signing-key epochs -----------------------------------------------------------------------
 // The app and this package intentionally share a fixed-field preimage contract rather than an
@@ -178,7 +180,7 @@ export const rotateSigningKey = onCall({ cors: true }, async (request) => {
         }
         if (eventSnap.exists) throw new HttpsError("already-exists", "This rotation event already exists.");
 
-        const recordedAt = admin.firestore.FieldValue.serverTimestamp();
+        const recordedAt = FieldValue.serverTimestamp();
         transaction.create(newKeyRef, { pubkey: toKey, publishedAt: recordedAt });
         transaction.create(eventRef, {
             version: 1,
@@ -198,8 +200,8 @@ export const rotateSigningKey = onCall({ cors: true }, async (request) => {
             signingEpochId: event,
             signingState: "active",
             signingAnchoredAt: recordedAt,
-            signingFrozenAt: admin.firestore.FieldValue.delete(),
-            signingFreezeEventId: admin.firestore.FieldValue.delete(),
+            signingFrozenAt: FieldValue.delete(),
+            signingFreezeEventId: FieldValue.delete(),
         });
     });
     return { epochId: event, fingerprint: toFp };
@@ -261,11 +263,11 @@ export const beginSigningKeyRecovery = onCall({ cors: true }, async request => {
         personRef.collection("keyEvents").doc(person.signingEpochId).get(),
     ]);
     const freeze = freezeSnap.data() || {};
-    const freezeAt = freeze.recordedAt instanceof admin.firestore.Timestamp
+    const freezeAt = freeze.recordedAt instanceof Timestamp
         ? freeze.recordedAt.toMillis() : 0;
-    const suspectedSinceMs = freeze.claimedSuspectedSince instanceof admin.firestore.Timestamp
+    const suspectedSinceMs = freeze.claimedSuspectedSince instanceof Timestamp
         ? freeze.claimedSuspectedSince.toMillis() : freezeAt;
-    const epochAt = epochSnap.data()?.recordedAt instanceof admin.firestore.Timestamp
+    const epochAt = epochSnap.data()?.recordedAt instanceof Timestamp
         ? epochSnap.data()!.recordedAt.toMillis() : 0;
     if (
         !freezeSnap.exists || !epochSnap.exists || !freezeAt || !epochAt
@@ -309,7 +311,7 @@ export const beginSigningKeyRecovery = onCall({ cors: true }, async request => {
             toPubkey,
             suspectedSinceMs,
             newSig,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            createdAt: FieldValue.serverTimestamp(),
         });
     });
     return { eventId, recoveryCode: `${uid}:${eventId}`, suspectedSinceMs };
@@ -378,7 +380,7 @@ export const witnessSigningKeyRecovery = onCall({ cors: true }, async request =>
             pubkey,
             keyFingerprint,
             epochId,
-            recordedAt: admin.firestore.FieldValue.serverTimestamp(),
+            recordedAt: FieldValue.serverTimestamp(),
         });
     });
     return { witnessed: true };
@@ -480,7 +482,7 @@ export const activateSigningKeyRecovery = onCall({ cors: true }, async request =
                 || current.signingEpochId !== witness.data.epochId
             ) throw new HttpsError("aborted", "A witness epoch changed; ask them to witness again.");
         }
-        const recordedAt = admin.firestore.FieldValue.serverTimestamp();
+        const recordedAt = FieldValue.serverTimestamp();
         transaction.create(newKeyRef, { pubkey: proposal.toPubkey, publishedAt: recordedAt });
         transaction.create(eventRef, {
             version: 1,
@@ -490,7 +492,7 @@ export const activateSigningKeyRecovery = onCall({ cors: true }, async request =
             epochId: eventId,
             keyFingerprint: claim.toFingerprint,
             previousFingerprint: claim.fromFingerprint,
-            suspectedSince: admin.firestore.Timestamp.fromMillis(claim.suspectedSinceMs),
+            suspectedSince: Timestamp.fromMillis(claim.suspectedSinceMs),
             recoveryId: eventId,
             recordedAt,
         });
@@ -500,8 +502,8 @@ export const activateSigningKeyRecovery = onCall({ cors: true }, async request =
             signingEpochId: eventId,
             signingState: "active",
             signingAnchoredAt: recordedAt,
-            signingFrozenAt: admin.firestore.FieldValue.delete(),
-            signingFreezeEventId: admin.firestore.FieldValue.delete(),
+            signingFrozenAt: FieldValue.delete(),
+            signingFreezeEventId: FieldValue.delete(),
         });
         transaction.update(proposalRef, {
             status: "activated",
@@ -527,7 +529,7 @@ const writeMail = async (params: { to: string | string[]; subject: string; html:
         to: Array.isArray(params.to) ? params.to : [params.to],
         uid: params.uid || null,
         message,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
     });
 };
 
@@ -801,7 +803,7 @@ export const onReachCreated = onDocumentCreated("pulses/{pulseId}", async (event
 
             // Record the send so the per-thread throttle can skip rapid follow-ups.
             await throttleRef.set({
-                lastSentAt: admin.firestore.FieldValue.serverTimestamp(),
+                lastSentAt: FieldValue.serverTimestamp(),
                 recipientUid,
                 threadId: threadKey,
             });
@@ -1053,7 +1055,7 @@ const mintStayLeaf = async (stayId: string): Promise<void> => {
             mintedAt,
             previousHash: prevHash,
             stayId,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            createdAt: FieldValue.serverTimestamp(),
             hash,
         });
         t.update(bedRef, { latestHash: hash, blockHeight: (bed.blockHeight || 0) + 1 });
@@ -1105,8 +1107,8 @@ const rayDoc = (
     ...(communityId ? { communityId } : {}), // provenance; a solo carer's tree may have none
     units: ray.units,
     pulseId,       // provenance: the watering pulse that occasioned it
-    kindledAt: admin.firestore.FieldValue.serverTimestamp(),
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    kindledAt: FieldValue.serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp(),
 });
 
 // witnessWatering — a GUARDIAN witnesses a watering, kindling the light. Everything is server-derived
@@ -1187,7 +1189,7 @@ export const witnessWatering = onCall({ cors: true }, async (request) => {
         t.update(pulseRef, {
             wateringConfirmedBy: "guardian",
             "wateringConfirmation.confirmedByUid": witnessUid,
-            "wateringConfirmation.confirmedAt": admin.firestore.FieldValue.serverTimestamp(),
+            "wateringConfirmation.confirmedAt": FieldValue.serverTimestamp(),
         });
         if (judgment.carerRay && carerRef) t.set(carerRef, rayDoc(judgment.carerRay, carerUid, treeId, communityId, judgment.dayKey, pulseId));
         if (judgment.witnessRay && witnessRef) t.set(witnessRef, rayDoc(judgment.witnessRay, carerUid, treeId, communityId, judgment.dayKey, pulseId));
@@ -1287,7 +1289,7 @@ export const onNetworkInviteAccepted = onDocumentUpdated("networkInvites/{invite
             const edge = (rel: string) => ({
                 lid: mintLid(), type: "link", rel, from: memberUid, to: nodeCommunityId,
                 inviteId: event.params.inviteId, invitedBy: inviterUid,
-                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                createdAt: FieldValue.serverTimestamp(),
             });
             if (!m.exists) tx.set(memberRef, edge("member"));
             if (!p.exists) tx.set(provRef, edge("invited_by"));
@@ -1346,11 +1348,11 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
                 rel,
                 from,
                 to,
-                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                createdAt: FieldValue.serverTimestamp(),
             });
         };
 
-        const treeUpdate: any = { updatedAt: admin.firestore.FieldValue.serverTimestamp() };
+        const treeUpdate: any = { updatedAt: FieldValue.serverTimestamp() };
         let communityId: string = tree.communityId;
         // A GUARDIAN is a lightweight, no-privilege FOLLOW (domain/policy, the rules) — accepting a
         // guardian invitation mints only the guardian link, never a circle community or membership.
@@ -1370,8 +1372,8 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
                     domain: tree.domain || "",
                     vision: "",
                     imageUrls: [],
-                    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    createdAt: FieldValue.serverTimestamp(),
+                    updatedAt: FieldValue.serverTimestamp(),
                 });
                 setLink(tree.ownerId, "member", communityId); // the founder is a member of the circle
                 treeUpdate.communityId = communityId;
@@ -1385,8 +1387,8 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
         tx.update(treeRef, treeUpdate);
         tx.update(inviteRef, {
             status: "accepted",
-            acceptedAt: admin.firestore.FieldValue.serverTimestamp(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            acceptedAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
         });
 
         return { communityId, lifetreeId: invite.lifetreeId };
@@ -1414,7 +1416,7 @@ export const requestInvite = onCall({ cors: true }, async (request) => {
         email,
         reason,
         status: "pending",
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
     });
     return { status: "created" };
 });
@@ -1495,7 +1497,7 @@ export const saveProviderCredential = onCall({ cors: true }, async (request) => 
         await ref.delete().catch(() => undefined);
         if (intelligenceId) {
             await db.collection("intelligences").doc(intelligenceId)
-                .set({ connected: false, keyHint: admin.firestore.FieldValue.delete() }, { merge: true }).catch(() => undefined);
+                .set({ connected: false, keyHint: FieldValue.delete() }, { merge: true }).catch(() => undefined);
         }
         return { connected: false };
     }
@@ -1505,7 +1507,7 @@ export const saveProviderCredential = onCall({ cors: true }, async (request) => 
         provider, scope, ownerId, key,
         keyHint,
         updatedBy: uid,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
     });
     // Mirror the non-secret connection status onto the intelligence so the UI can show it.
     if (intelligenceId) {
@@ -1713,10 +1715,10 @@ export const checkWateringSchedules = onSchedule({
                         commentCount: 0,
                         previousHash: "WATER_ALERT",   // a notification, not a chain block
                         hash: randomUUID(),
-                        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                        createdAt: FieldValue.serverTimestamp(),
                     });
 
-                    updates["watering.lastAlertAt"] = admin.firestore.FieldValue.serverTimestamp();
+                    updates["watering.lastAlertAt"] = FieldValue.serverTimestamp();
                     updates["watering.alertThreadId"] = threadId;
                 }
             }
@@ -1782,13 +1784,13 @@ export const sendNewsletterEmails = onCall({ timeoutSeconds: 300, memory: "512Mi
                         "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
                     },
                 },
-                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                createdAt: FieldValue.serverTimestamp(),
             });
             sent++;
         }
         await batch.commit();
     }
-    await db.collection("config").doc("newsletter").set({ lastSentAt: admin.firestore.FieldValue.serverTimestamp(), lastSubject: subject, lastSent: sent }, { merge: true });
+    await db.collection("config").doc("newsletter").set({ lastSentAt: FieldValue.serverTimestamp(), lastSubject: subject, lastSent: sent }, { merge: true });
     return { sent, total: subs.length };
 });
 
@@ -1804,7 +1806,7 @@ export const unsubscribe = onRequest({ cors: true }, async (req, res) => {
         const snap = await db.collection("subscriptions").where("unsubToken", "==", token).limit(1).get();
         if (!snap.empty) {
             const doc = snap.docs[0];
-            await doc.ref.set({ active: false, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+            await doc.ref.set({ active: false, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
             // Mirror onto the user profile toggle if this subscriber has an account.
             const uid = (doc.data() as any).uid;
             if (uid) await db.collection("users").doc(uid).set({ newsletterSubscribed: false }, { merge: true }).catch(() => undefined);
@@ -1882,7 +1884,7 @@ async function releaseDepartingLight(uid: string, heirUid?: string): Promise<{ r
             batch.update(d.ref, {
                 holderUid: heirUid,
                 units: release.toHeir,
-                inheritedAt: admin.firestore.FieldValue.serverTimestamp(),
+                inheritedAt: FieldValue.serverTimestamp(),
                 ...(r.sourceUid === uid ? { sourceUid: "departed" } : {}),
             });
         } else {
@@ -1892,8 +1894,8 @@ async function releaseDepartingLight(uid: string, heirUid?: string): Promise<{ r
     }
     for (const [home, units] of glowAdds) {
         batch.set(db.doc(`glow/${home}`), {
-            units: admin.firestore.FieldValue.increment(units),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            units: FieldValue.increment(units),
+            updatedAt: FieldValue.serverTimestamp(),
         }, { merge: true });
         await step();
     }
@@ -1930,7 +1932,7 @@ async function purgeUserData(uid: string, heirUid?: string) {
     await db.collection("persons").doc(uid).delete().catch(() => undefined);
     await db.collection("users").doc(uid).delete().catch(() => undefined);
     try {
-        await admin.auth().deleteUser(uid);
+        await getAuth().deleteUser(uid);
     } catch (e: any) {
         // A missing Auth record is already the goal state (idempotent re-runs land here). Any
         // OTHER failure must surface: reporting success while the sign-in survives would leave
@@ -2014,7 +2016,7 @@ export const deleteMyAccount = onCall({ cors: true }, async (request) => {
     }
     // A farewell before the record is gone (best-effort; never blocks the deletion).
     try {
-        const record = await admin.auth().getUser(uid).catch(() => null);
+        const record = await getAuth().getUser(uid).catch(() => null);
         if (record?.email) {
             const text = "It was wonderful to have you. See you!";
             await writeMail({ to: [record.email], subject: "Goodbye from lightseed", html: composeSystemEmailHtml(text, "https://lightseed.online", "lightseed"), text, uid });
@@ -2306,7 +2308,7 @@ const recordBeing = async (collection: string, docId: string, raw: unknown): Pro
     try {
         await db.collection("beings").doc(entry.lid).create({
             ...entry,
-            recordedAt: admin.firestore.FieldValue.serverTimestamp(),
+            recordedAt: FieldValue.serverTimestamp(),
         });
     } catch (e: unknown) {
         if ((e as { code?: number })?.code !== 6) {
@@ -2399,7 +2401,7 @@ export const backfillLidIndex = onCall({ cors: true }, async (request) => {
             for (const { entry } of missing.slice(i, i + 400)) {
                 batch.set(db.collection("beings").doc(entry!.lid), {
                     ...entry,
-                    recordedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    recordedAt: FieldValue.serverTimestamp(),
                 });
             }
             await batch.commit();
