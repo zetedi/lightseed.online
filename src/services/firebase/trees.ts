@@ -251,6 +251,10 @@ export const plantLifetree = async (data: Partial<Lifetree> & { ownerId: string;
         ...data,
         lid: uuidv7(),
         domain,
+        // Visibility is stamped HERE, not trusted to the caller: a tree born without the field
+        // is invisible to every `visibility in [...]` query — forest, map, and the circle's
+        // invite search alike (how The Aspen vanished; ring 2026-08-09).
+        visibility: data.visibility || 'public',
         onlyValidatedCanReach,
         treeType: data.treeType || (data.isNature ? 'GUARDED' : 'LIFETREE'),
         createdAt: serverTimestamp(), genesisHash, latestHash: genesisHash, blockHeight: 0,

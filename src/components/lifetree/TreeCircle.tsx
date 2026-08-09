@@ -1,12 +1,17 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { showAlert } from '../ui/Dialog';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { firestoreStore } from '../../adapters/firestore';
 import { canTendTree } from '../../domain/policy';
 import { SectionCard } from '../ui/SectionCard';
 import { fetchAllLifetrees, getPersonName, createTreeInvite, getPulsesByTreeId, witnessWatering } from '../../services/firebase';
 import { treeCircle } from '../../domain/views/circle';
-import { treeRelationLabels, type TreeRelationRole, type InvitableRole } from '../../domain/treeCircle';
+import { roleLabelKey, roleDescKey, type TreeRelationRole, type InvitableRole } from '../../domain/treeCircle';
+// `translations.en` feeds only the STORED invite message (data on the invite doc — the
+// invitee's language is unknown at mint time, so the record keeps the canonical English);
+// everything the VIEWER reads goes through t().
+import { translations } from '../../utils/translations';
 import type { Lifetree, Pulse } from '../../types';
 
 // THE CIRCLE — the whole circle of care around a Lifetree, one view (the two old tabs merged). It
@@ -65,6 +70,11 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
     tree, currentUserId, currentUserName, circle, canEdit, canInviteRoles, status, busy, onToggleDanger, onGuardianChange,
 }) => {
     const treeId = tree.id;
+    const { t } = useLanguage();
+    // The circle speaks the reader's language through the domain's typed key references —
+    // a role without words in translations.ts would fail compilation right here.
+    const roleName = (r: TreeRelationRole) => t(roleLabelKey(r));
+    const roleDesc = (r: TreeRelationRole) => t(roleDescKey(r));
     const [forest, setForest] = useState<Lifetree[]>([]);
     const [names, setNames] = useState<Record<string, string>>({});
     const [toggleBusy, setToggleBusy] = useState(false);
@@ -143,12 +153,24 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
     const [invited, setInvited] = useState<Set<string>>(new Set());
 
     const circleSet = useMemo(() => new Set(circleUids), [circleUids]);
+    // Matching trees, each carrying the reason it cannot be invited — or null when it can.
+    // An invitation goes to the tree's KEEPER, so a tree kept by this tree's own keeper, or by
+    // someone already in the circle, is shown DISABLED with its reason instead of silently
+    // omitted (silent omission is how "Phoenix" seemed to not exist: it was the searcher's own).
     const matches = useMemo(() => {
         const q = term.trim().toLowerCase();
         if (q.length < 2) return [];
         return forest
-            .filter(t => t.treeType !== 'BED' && t.id !== treeId && t.ownerId !== tree.ownerId
-                && !circleSet.has(t.ownerId) && (t.name || '').toLowerCase().includes(q))
+            .filter(t => t.treeType !== 'BED' && t.id !== treeId && (t.name || '').toLowerCase().includes(q))
+            .map(t => ({
+                tree: t,
+                reason: t.ownerId === tree.ownerId
+                    ? ('invite_reason_own' as const)
+                    : circleSet.has(t.ownerId)
+                        ? ('invite_reason_in_circle' as const)
+                        : null,
+            }))
+            .sort((a, b) => Number(!!a.reason) - Number(!!b.reason)) // invitable first
             .slice(0, 6);
     }, [term, forest, treeId, tree.ownerId, circleSet]);
 
@@ -162,10 +184,10 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                 role: inviteRole,
                 invitedByUserId: currentUserId,
                 invitedByName: currentUserName || undefined,
-                message: `Would you join the circle of ${tree.name || 'this tree'} as ${treeRelationLabels[inviteRole].toLowerCase()}?`,
+                message: `Would you join the circle of ${tree.name || 'this tree'} as ${translations.en[roleLabelKey(inviteRole)].toLowerCase()}?`,
             });
             setInvited(prev => new Set(prev).add(candidate.ownerId));
-            showAlert(`Invitation sent to ${candidate.name || 'that tree'} — ${treeRelationLabels[inviteRole].toLowerCase()} of ${tree.name || 'this tree'}.`);
+            showAlert(`Invitation sent to ${candidate.name || 'that tree'} — ${roleName(inviteRole).toLowerCase()} of ${tree.name || 'this tree'}.`);
         } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
         setInviting(null);
     };
@@ -187,7 +209,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                     {circle.groups.map(g => (
                         <div key={g.role}>
                             <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
-                                {treeRelationLabels[g.role]}{g.members.length > 1 ? 's' : ''} · {g.members.length}
+                                {roleName(g.role)} · {g.members.length}
                             </p>
                             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                 {g.members.map(uid => {
@@ -197,7 +219,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                                             <Avatar imageUrl={face.imageUrl} seed={labelFor(uid, face)} ring={ROLE_RING[g.role]} />
                                             <div className="min-w-0">
                                                 <p className="truncate text-sm font-bold text-slate-800">{labelFor(uid, face)}</p>
-                                                <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{treeRelationLabels[g.role]}</p>
+                                                <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{roleName(g.role)}</p>
                                             </div>
                                         </div>
                                     );
@@ -268,49 +290,59 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                 guardians (the open layer); the owner may also invite the deeper tending roles. */}
             {canEdit && currentUserId && (
                 <div className="mt-6 border-t border-slate-100 pt-5">
-                    <div className="mb-2 flex items-center justify-between gap-2">
-                        <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Invite into the circle</p>
+                    <div className="mb-1.5 flex items-center justify-between gap-2">
+                        <p className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('invite_into_circle')}</p>
                         {canInviteRoles && (
                             <select value={inviteRole} onChange={e => setInviteRole(e.target.value as InvitableRole)}
                                 className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                                <option value="guardian">as Guardian</option>
-                                <option value="co_owner">as Co-owner</option>
-                                <option value="steward">as Steward</option>
-                                <option value="observer">as Observer</option>
+                                {(['guardian', 'co_owner', 'steward', 'observer'] as InvitableRole[]).map(r => (
+                                    <option key={r} value={r}>{t('invite_as_role').replace('{role}', roleName(r))}</option>
+                                ))}
                             </select>
                         )}
                     </div>
+                    {/* What the chosen role truly is (domain/treeCircle, spoken via role_* keys) — read
+                        before anyone accepts a word they cannot picture. */}
+                    <p className="mb-2 text-xs leading-relaxed text-slate-500">
+                        <span className="font-bold text-slate-600">{roleName(inviteRole)}</span> — {roleDesc(inviteRole)}{' '}
+                        <span className="text-slate-400">{t('invite_goes_to_keeper')}</span>
+                    </p>
                     <div className="relative">
                         <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 [&>svg]:h-4 [&>svg]:w-4"><Icons.Search /></span>
                         <input
                             value={term}
                             onChange={e => setTerm(e.target.value)}
-                            placeholder="Find a tree by name…"
+                            placeholder={t('find_tree_by_name')}
                             className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                         />
                     </div>
                     {matches.length > 0 && (
                         <div className="mt-2 space-y-1.5">
-                            {matches.map(m => {
+                            {matches.map(({ tree: m, reason }) => {
                                 const already = invited.has(m.ownerId);
                                 return (
-                                    <div key={m.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-2 shadow-sm">
-                                        <Avatar imageUrl={m.latestGrowthUrl || m.imageUrl} seed={m.name || '?'} ring="ring-emerald-100" />
-                                        <p className="min-w-0 flex-1 truncate text-sm font-bold text-slate-700">{m.name || 'A tree'}</p>
-                                        <button
-                                            onClick={() => handleInvite(m)}
-                                            disabled={inviting === m.id || already}
-                                            className="shrink-0 rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
-                                        >
-                                            {already ? 'Invited' : inviting === m.id ? '…' : 'Invite'}
-                                        </button>
+                                    <div key={m.id} className={`flex items-center gap-3 rounded-xl border border-slate-100 p-2 shadow-sm ${reason ? 'bg-slate-50/60' : 'bg-white'}`}>
+                                        <Avatar imageUrl={m.latestGrowthUrl || m.imageUrl} seed={m.name || '?'} ring={reason ? 'ring-slate-100' : 'ring-emerald-100'} />
+                                        <div className="min-w-0 flex-1">
+                                            <p className={`truncate text-sm font-bold ${reason ? 'text-slate-400' : 'text-slate-700'}`}>{m.name || 'A tree'}</p>
+                                            {reason && <p className="truncate text-[11px] italic text-slate-400">{t(reason)}</p>}
+                                        </div>
+                                        {!reason && (
+                                            <button
+                                                onClick={() => handleInvite(m)}
+                                                disabled={inviting === m.id || already}
+                                                className="shrink-0 rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+                                            >
+                                                {already ? 'Invited' : inviting === m.id ? '…' : 'Invite'}
+                                            </button>
+                                        )}
                                     </div>
                                 );
                             })}
                         </div>
                     )}
                     {term.trim().length >= 2 && matches.length === 0 && (
-                        <p className="mt-2 text-xs italic text-slate-400">No tree by that name to invite.</p>
+                        <p className="mt-2 text-xs italic text-slate-400">{t('no_tree_to_invite')}</p>
                     )}
                 </div>
             )}

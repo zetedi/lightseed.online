@@ -240,7 +240,22 @@ const baseKeys = {
   type_lifetree: "Lifetree", type_guarded: "Guarded", type_family: "Family",
   communities: "Communities", register_community: "Register Community", register: "Register",
   light_earth: "Living", intelligence: "Intelligence",
-  about_lin_description: "LIN, the Living Intelligence Network, is the intelligence layer of the Light Earth: a distributed system where humans, AI, trees, places, and communities become visible to each other through care, reciprocity, and shared purpose."
+  about_lin_description: "LIN, the Living Intelligence Network, is the intelligence layer of the Light Earth: a distributed system where humans, AI, trees, places, and communities become visible to each other through care, reciprocity, and shared purpose.",
+  // The circle's roles — THIS is the words' one home (domain/treeCircle holds only typed key
+  // references, so a role without words here fails compilation). The descriptions state
+  // exactly what the rules grant (tests/treeCircle.test.ts binds them to the split): tenders
+  // tend, the guardian witnesses and vetoes with no tending power, the observer sees quietly.
+  role_owner: "Owner", role_co_owner: "Co-owner", role_guardian: "Guardian", role_steward: "Steward", role_observer: "Observer",
+  role_owner_desc: "The keeper — plants, tends, and invites every other role.",
+  role_co_owner_desc: "Tends beside the keeper: shapes the tree, confirms its care, and sees the circle's private moments.",
+  role_steward_desc: "A trusted caretaker: tends and confirms care on the keeper's behalf — the tree stays the keeper's.",
+  role_guardian_desc: "Watches over the tree's wellbeing: witnesses care (a witnessed watering kindles light) and holds a seat in the guardians' collective veto. No tending power — and anyone may also step in themselves via \"Guard this tree\".",
+  role_observer_desc: "Invited to watch quietly: sees the circle's private moments, holds no power and no duties.",
+  invite_into_circle: "Invite into the circle", invite_as_role: "as {role}",
+  invite_goes_to_keeper: "The invitation goes to the found tree's keeper.",
+  invite_reason_own: "kept by this tree's own keeper — already home",
+  invite_reason_in_circle: "its keeper already stands in this circle",
+  find_tree_by_name: "Find a tree by name…", no_tree_to_invite: "No tree by that name to invite."
 };
 
 const dictionaries = {
@@ -522,7 +537,18 @@ const dictionaries = {
     type_lifetree: "شجرة حياة", type_guarded: "محروسة", type_family: "عائلة",
     communities: "المجتمعات", register_community: "سجّل مجتمعًا", register: "تسجيل",
     light_earth: "الحياة", intelligence: "الذكاء",
-    about_lin_description: "LIN، شبكة الذكاء الحي، هي طبقة الذكاء في أرض النور: نظام موزّع يصير فيه البشر والذكاء الاصطناعي والأشجار والأماكن والمجتمعات مرئيين بعضهم لبعض، عبر الرعاية والتبادل والغاية المشتركة."
+    about_lin_description: "LIN، شبكة الذكاء الحي، هي طبقة الذكاء في أرض النور: نظام موزّع يصير فيه البشر والذكاء الاصطناعي والأشجار والأماكن والمجتمعات مرئيين بعضهم لبعض، عبر الرعاية والتبادل والغاية المشتركة.",
+    role_owner: "صاحب الشجرة", role_co_owner: "شريك الرعاية", role_guardian: "الحارس", role_steward: "القيّم", role_observer: "المراقب",
+    role_owner_desc: "الراعي الأول: يغرس الشجرة ويرعاها ويدعو كل الأدوار الأخرى.",
+    role_co_owner_desc: "يرعى الشجرة جنبًا إلى جنب مع صاحبها: يشكّلها ويؤكد رعايتها ويرى لحظات الدائرة الخاصة.",
+    role_steward_desc: "قيّم موثوق: يرعى الشجرة ويؤكد العناية بها نيابةً عن صاحبها، وتبقى الشجرة لصاحبها.",
+    role_guardian_desc: "يسهر على عافية الشجرة: يشهد على رعايتها (السقيا المشهودة توقد النور) وله مقعد في حق النقض الجماعي للحرّاس. لا سلطة له في الرعاية، ولكل أحد أن ينضم بنفسه عبر «احرس هذه الشجرة».",
+    role_observer_desc: "مدعو للمشاهدة بهدوء: يرى لحظات الدائرة الخاصة، بلا سلطة وبلا واجبات.",
+    invite_into_circle: "الدعوة إلى الدائرة", invite_as_role: "بدور {role}",
+    invite_goes_to_keeper: "تصل الدعوة إلى صاحب الشجرة التي وجدتها.",
+    invite_reason_own: "يرعاها صاحب هذه الشجرة نفسه، فهي في البيت أصلًا",
+    invite_reason_in_circle: "صاحبها يقف في هذه الدائرة أصلًا",
+    find_tree_by_name: "ابحث عن شجرة باسمها…", no_tree_to_invite: "لا شجرة بهذا الاسم لدعوتها."
   },
   sw: { 
     ...baseKeys, forest: "Msitu", pulses: "Mapigo", visions: "Maono", oracle: "Mtabiri", about: "Kuhusu", explore: "Chunguza", 
@@ -763,7 +789,18 @@ const dictionaries = {
     grow_vision: "培育", rooted_in: "扎根于",
     contributions: "贡献", contributions_sub: "这个愿景如何变得清晰：它自己的成长之链。",
     no_contributions: "还没有贡献。成为第一个培育它的人。",
-    shadow: "树 ↔ 愿景", shadow_sub: "一次诞生，两条链：把这对双生并排放置，比较各自如何生长。"
+    shadow: "树 ↔ 愿景", shadow_sub: "一次诞生，两条链：把这对双生并排放置，比较各自如何生长。",
+    role_owner: "主人", role_co_owner: "共同照料者", role_guardian: "守护者", role_steward: "管护人", role_observer: "观察者",
+    role_owner_desc: "守护这棵树的人：栽种、照料，并邀请其他所有角色。",
+    role_co_owner_desc: "与主人并肩照料：塑造这棵树、确认它的照料，并看见圈子的私密时刻。",
+    role_steward_desc: "受信任的管护人：代主人照料并确认照护，树仍属于主人。",
+    role_guardian_desc: "守望这棵树的安康：见证照料（被见证的浇水会点亮光），并在守护者的集体否决中拥有一席。没有照料权限——任何人也可以通过“守护这棵树”自行加入。",
+    role_observer_desc: "受邀静静观看：能看见圈子的私密时刻，没有权限，也没有义务。",
+    invite_into_circle: "邀请加入圈子", invite_as_role: "作为{role}",
+    invite_goes_to_keeper: "邀请将送达所找到那棵树的主人。",
+    invite_reason_own: "由这棵树的主人亲自照料——已在家中",
+    invite_reason_in_circle: "它的主人已在这个圈子里",
+    find_tree_by_name: "按名字寻找一棵树…", no_tree_to_invite: "没有叫这个名字的树可邀请。"
   }
 };
 

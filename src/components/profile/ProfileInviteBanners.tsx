@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { showAlert } from '../ui/Dialog';
-import { type TreeOwnershipInvite, treeRelationLabels } from '../../types';
+import { type TreeOwnershipInvite, roleLabelKey } from '../../types';
+// This banner still speaks English throughout (pre-existing debt) — the role word reads the
+// canonical English from translations so the sentence stays whole; when the banner is
+// translated, swap translations.en for t() in one move.
+import { translations } from '../../utils/translations';
 import { getPendingTreeInvites, acceptTreeInvite, declineTreeInvite, getMyCommunityTreeInvites, respondCommunityTreeInvite, type CommunityTreeInvite } from '../../services/firebase';
 
 interface ProfileInviteBannersProps {
@@ -46,7 +50,7 @@ export const ProfileInviteBanners: React.FC<ProfileInviteBannersProps> = ({ uid,
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-emerald-900">
                   <span className="font-bold">{inv.invitedByName || 'Someone'}</span> invited you to become a{' '}
-                  <span className="font-bold">{(treeRelationLabels[inv.role] || inv.role).toLowerCase()}</span> of{' '}
+                  <span className="font-bold">{(translations.en[roleLabelKey(inv.role)] || inv.role).toLowerCase()}</span> of{' '}
                   <span className="font-bold">{inv.lifetreeName || 'a Lifetree'}</span>.
                 </p>
                 {inv.message && <p className="mt-1 text-xs italic text-emerald-700/80">“{inv.message}”</p>}

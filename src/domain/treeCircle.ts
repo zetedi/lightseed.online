@@ -30,12 +30,10 @@ export interface TreeOwnershipInvite {
 // per-role arrays (coOwnerIds/guardians/…) are no longer written or read, so the old
 // role→array map has been removed.
 
-export const treeRelationLabels: Record<TreeRelationRole, string> = {
-  owner: 'Owner',
-  // A co_owner TENDS (power) — labelled 'Co-owner' so it never reads as a kind of 'Guardian'
-  // (a no-power witness). Keeper's call on the exact word (Co-owner / Co-keeper).
-  co_owner: 'Co-owner',
-  guardian: 'Guardian',
-  steward: 'Steward',
-  observer: 'Observer',
-};
+// The circle's WORDS live in one home — src/utils/translations.ts (`role_*` keys, every
+// language; the descriptions state exactly what the rules grant: tenders tend, the guardian
+// witnesses and vetoes, the observer sees quietly). The domain holds only the REFERENCES:
+// typed key builders, so a role added here without words there fails COMPILATION — the type
+// system is the mirror test, and there is no copy anywhere to drift.
+export const roleLabelKey = (role: TreeRelationRole) => `role_${role}` as const;
+export const roleDescKey = (role: TreeRelationRole) => `role_${role}_desc` as const;

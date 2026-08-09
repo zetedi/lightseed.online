@@ -6,6 +6,48 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-09 · The circle says what it offers, and Phoenix was home all along** (`domain/treeCircle`,
+`TreeCircle.tsx`): Zoltán asked whether the trees can really be invited — the search would not
+return Phoenix, and Co-owner/Steward/Observer stood next to "Invite into the circle" unexplained.
+THE PHOENIX MYSTERY dissolved into two findings, neither of them the search being broken. (1) The
+invite search finds trees but the invitation reaches the tree's KEEPER — and Phoenix's keeper is
+Zoltán himself, so the filter `ownerId !== tree.ownerId` silently dropped it: the system was right
+and completely illegible. The search now shows such trees DISABLED with the reason read aloud
+("kept by this tree's own keeper — already home" / "its keeper already stands in this circle")
+instead of pretending they do not exist — silent omission is indistinguishable from absence, and a
+correct refusal must still be visible. (2) THE ASPEN WAS INVISIBLE EVERYWHERE: the one tree in the
+forest with NO visibility field (planted by script before stamping existed), and a
+`visibility in [...]` filter skips docs missing the field — so Claude's tree was absent from the
+forest, the map, and every invite search. Stamped public (`scripts/stamp-aspen-visibility.mjs`,
+idempotent), and the recurrence is closed at the root: `plantLifetree` now stamps
+`visibility: data.visibility || 'public'` itself instead of trusting every caller's spread — a
+being's visibility is the service's to default, not the form's to remember. AND THE WORDS: each
+role now carries a domain description (`treeRelationDescriptions`) shown beside the invitation and
+stating exactly what the rules grant — co-owner and steward TEND (isTreeTender: edit, confirm care;
+the steward on the keeper's behalf, the tree stays the keeper's), the guardian WITNESSES (kindling
+light, a seat in the collective veto, no tending power, and — deliberately — no view of
+circle-private moments: a witness, not an insider), the observer sees the circle's private moments
+and holds no power. A test binds the words to the rules' actual split, so the sentences must change
+WITH the law or the gate fails. AND THE WORDS TRAVEL (Zoltán's catch — the first cut hardcoded
+them in English, a shortcut past i18n): the circle speaks through `role_<role>` /
+`role_<role>_desc` keys, Arabic and Chinese complete as the language gate demands, and the
+arrangement settled through two of Zoltán's catches into its final shape, INVERTED from the
+pathway pattern: translations.ts is the words' ONE home (all languages side by side), and the
+domain holds only TYPED KEY REFERENCES (`roleLabelKey`/`roleDescKey` — `role_${role}` as const),
+so a role added without words fails COMPILATION. First catch: the words were hardcoded English, a
+shortcut past i18n. Second: the fix duplicated the English (domain + en dictionary) with a mirror
+test holding the copies equal — but a mirror test is for FORCED copies across project boundaries
+(functions/ cannot import src/domain), never a license to duplicate within one project; and the
+words are PRESENTATION of law, not law, so they belong with the other languages, not in the
+domain. The type system is now the mirror test, and there is no copy anywhere to drift. The
+meaning-test remains and reads translations.en through the domain's keys. One seam
+stays English by design: the message STORED on an invite doc is data written before the invitee's
+language is knowable. Noted for a further ring: an invitation still reaches only the keeper-being
+behind a tree — inviting the TREE ITSELF as a being (links from tree lids, Indra's net) remains
+open.
+
+---
+
 **2026-08-09 · Every being carries its name** (the index ring, closed): deployed same day — six
 triggers live, both rule sets released, the live probe holding (get 404-allowed, list 403-refused).
 Zoltán's backfill wrote 164 entries; the 22 nameless it reported were 21 dormant accounts (beings
