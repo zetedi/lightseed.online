@@ -6,6 +6,38 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-09 · A true name, written down** (`domain/beingIndex.ts`): asked whether event media should
+be filed at `being/{lid}/events` rather than `users/{uid}/events`, and walking backwards from that
+path, the answer was that the path is not the change — **the index is**. Storage is the last room
+still using the old names: `users/{uid}` is an auth uid (dies with its auth provider),
+`communities/{docId}` is a database id (dies with its database), and LIN says a lid is *never
+derived from a database id* — yet the media, the part most likely to outlive both, is filed under
+exactly the names that die first. But a lid today is not ADDRESSED, it is SEARCHED FOR
+(`findBeingByLid` asks collection after collection, up to eight queries). So the first ring is the
+record itself: `beings/{lid} -> { kind, collection, docId }`, the seam of principle 11 made into a
+document — the portable name on the left, the local address on the right. THE LAW: **the lid and
+the kind are frozen, the address is free to move.** A name that could come to mean a different
+being would not be a name; but a being carried to another node, restored from an export, or
+rehoused by a migration is the SAME being at a new local address, and refusing THAT would make the
+index the thing that pins a being to one database — the exact opposite of its purpose
+(`rebindVerdict`: unchanged / moved / refused). The document id IS the lid, so *one lid, one being*
+is not a rule to enforce but the shape of the thing; the mirror fault it cannot get for free —
+two different lids claiming one address, an identity quietly split by an import or a double-write
+— is named by `addressCollisions`, the index's own `verifyChain`. **The index owns nothing**:
+destroy it and every being still stands, still carries its lid, still resolves by the old search.
+That is deliberate — an index beings depended on would have quietly become the authority, and
+identity belongs to beings. Links, alignments and covenants carry lids too and are NOT indexed:
+they name relations, are found through the beings they bind, and indexing them would map the whole
+graph to no one's benefit. `beingStoragePath` is the first use and the reason we came: it refuses
+traversal in both the name and the folder, so a malformed lid can never open a storage prefix.
+**Not yet built**: the write at birth, the rules, the staff backfill, `findBeingByLid` reading the
+index before it searches, and the storage move itself — which stays write-side-only, since
+`uploadImage` returns an absolute download URL and the docs store that, so no object ever has to
+move. Also still open: nothing in this codebase ever calls `deleteObject`, so a path prefix is the
+only handle an erasure would have — one more reason the lid should be the prefix.
+
+---
+
 **2026-08-08 · The hub could not see its own node** (`domain/pulseVisibility.mergeAuthored`): Zoltán
 created an event at NODE visibility on lightseed.online and it appeared nowhere — not in the feed,
 not on the banner, not to its own author. The cause is the seam between two true statements.
