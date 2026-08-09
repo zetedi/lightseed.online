@@ -6,6 +6,31 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-09 · The arrays audit, and the receipt that could be forged** (`firestore.rules` overlay
+(a)): Zoltán asked whether the code is still true to the crystal — relations as links, never
+arrays — and the audit's honest answer is: MOSTLY, and the root itself carves the exception it
+lives by (LIN principle 2: rules-ACL denormalisations). `participantUids` is the sanctioned
+example; `vetoes` is a chain mark whose array does real work (the rules enforce
+append-exactly-your-own-uid, window, tenure); `imageUrls` is content. THE DRIFT: decisions carry
+`votes`/`positions`/`concerns` as arrays while ALREADY growing the truer pattern beside them (the
+`signatures` subcollection, one doc per uid, Ed25519) — convergence is scheduled next; alignment
+`messages` is an embedded conversation from before reaches were pulses; `joinedUserIds` is dead.
+AND ONE HOLE, which is the array-vs-link difference made concrete: overlay (a) allowed ANY
+signed-in account to write `seenBy` / `aiInterpretation` on ANY pulse whose id it knew — no read
+gate, no whose-uid constraint. A link is an entity the rules can bind per-document (`from` == your
+uid); an array is a shared cell, and this one was left unbound, unlike `vetoes` which got the full
+treatment. So receipts could be forged in another being's name, erased wholesale, and the H2H
+reading rewritten on private reaches by outsiders. THE FIX, surgical: overlay (a) now stands
+behind `canReadPulse()` (a pulse you cannot see is a pulse you cannot touch) and `seenBy` moves
+only by append-exactly-your-own-uid — the vetoes arithmetic, reused. No client change: every
+legitimate writer already behaved. DECIDED AND NAMED: `aiInterpretation` remains a shared surface
+any READER may refresh — that is the translation feature's design, not a leak; visibility is its
+gate, authorship is not. Also this ring corrects its sibling below before either shipped: the lid
+index's `allow read` became `allow get` + `allow list: false`, because "a lid is unguessable"
+is only true while the names cannot be harvested in one list query.
+
+---
+
 **2026-08-09 · The index is written, and the storage bears the name** (functions triggers,
 `storage.rules`): the wiring of the ring below, in its natural order. WRITTEN BY THE SERVER ALONE —
 six `onDocumentCreated` triggers, one per addressed kind, and `firestore.rules` refuses every

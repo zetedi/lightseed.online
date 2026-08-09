@@ -311,6 +311,50 @@ describe('the lid is frozen — the true name is load-bearing (QR links stand on
   });
 });
 
+describe('pulse overlays — a pulse you cannot see is a pulse you cannot touch', () => {
+  // The seam the arrays audit found (ring 2026-08-09): overlay (a) had no read gate and no
+  // whose-uid constraint, so any signed-in account could forge or erase read receipts and
+  // rewrite the H2H reading on any pulse whose id it knew. seenBy now moves only by
+  // append-exactly-your-own-uid — the vetoes arithmetic — behind canReadPulse.
+  const DM = 'dm-overlay';
+  const seedDm = (seenBy: string[] = []) => env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'pulses', DM), {
+      authorId: ALICE, type: 'reach', title: 'hello', body: 'hello',
+      participantUids: [ALICE, BOB], seenBy,
+    });
+  });
+
+  it('a reader marks a pulse seen — their own uid, appended, nothing else moved', async () => {
+    await assertSucceeds(updateDoc(doc(db(MALLORY), 'pulses', 'pulseLove'), { seenBy: [MALLORY] }));
+  });
+
+  it('a receipt cannot be forged in another being\'s name', async () => {
+    await assertFails(updateDoc(doc(db(MALLORY), 'pulses', 'pulseLove'), { seenBy: [BOB] }));
+    await assertFails(updateDoc(doc(db(MALLORY), 'pulses', 'pulseLove'), { seenBy: [MALLORY, BOB] }));
+  });
+
+  it('nor erased — what was seen stays seen', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) =>
+      updateDoc(doc(ctx.firestore(), 'pulses', 'pulseLove'), { seenBy: [BOB] }));
+    await assertFails(updateDoc(doc(db(MALLORY), 'pulses', 'pulseLove'), { seenBy: [] }));
+    await assertFails(updateDoc(doc(db(MALLORY), 'pulses', 'pulseLove'), { seenBy: [MALLORY] })); // drops BOB
+    await assertSucceeds(updateDoc(doc(db(MALLORY), 'pulses', 'pulseLove'), { seenBy: [BOB, MALLORY] }));
+  });
+
+  it('an outsider cannot touch a private reach at all — receipt or reading', async () => {
+    await seedDm();
+    await assertFails(updateDoc(doc(db(MALLORY), 'pulses', DM), { seenBy: [MALLORY] }));
+    await assertFails(updateDoc(doc(db(MALLORY), 'pulses', DM), { aiInterpretation: { happened: 'forged' } }));
+  });
+
+  it('a participant marks the reach seen; a reader refreshes the reading', async () => {
+    await seedDm();
+    await assertSucceeds(updateDoc(doc(db(BOB), 'pulses', DM), { seenBy: [BOB] }));
+    // The H2H reading is a shared surface any READER may refresh — design, not leak.
+    await assertSucceeds(updateDoc(doc(db(MALLORY), 'pulses', 'pulseLove'), { aiInterpretation: { happened: 'a reading' } }));
+  });
+});
+
 describe('guardian veto — window and tenure live in the rules, not only the client', () => {
   const mintPulse = async (createdAtMs: number, guardianSinceMs?: number) => {
     await env.withSecurityRulesDisabled(async (ctx) => {

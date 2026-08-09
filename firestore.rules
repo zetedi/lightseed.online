@@ -796,8 +796,25 @@ service cloud.firestore {
       // rewrite content or re-link the chain (the ledger stays tamper-evident and un-defaceable).
       allow update: if isSignedIn() && (
         // (a) Non-love interaction overlays — love has its own coupled branch below.
-        request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['seenBy', 'aiInterpretation', 'updatedAt'])
+        //     Gated by the SAME visibility as reading: a pulse you cannot see is a pulse you
+        //     cannot touch (before this, any signed-in account could write these keys on ANY
+        //     pulse it knew the id of — including private reaches). And seenBy moves by
+        //     append-exactly-your-own-uid, the vetoes arithmetic, so a receipt can be neither
+        //     forged in another being's name nor erased. The H2H reading (aiInterpretation)
+        //     stays a shared surface any READER may refresh — that is its design, not a leak.
+        (
+          canReadPulse()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['seenBy', 'aiInterpretation', 'updatedAt'])
+          && (
+               !request.resource.data.diff(resource.data).affectedKeys().hasAny(['seenBy'])
+               || (
+                    request.resource.data.get('seenBy', []).hasAll(resource.data.get('seenBy', []))
+                    && resource.data.get('seenBy', []).concat([request.auth.uid]).hasAll(request.resource.data.get('seenBy', []))
+                    && request.auth.uid in request.resource.data.get('seenBy', [])
+                  )
+             )
+        )
 
         // (b) LOVE: the private slot and both legacy tally fields move together by exactly one.
         || (canReadPulse() && validPulseLoveCountChange(pulseId))
