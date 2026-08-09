@@ -73,6 +73,24 @@ export function queryableLevels(viewer: Viewer, ctx?: { communityId?: string; tr
   return levels;
 }
 
+// THE AUTHOR CLAUSE, kept in the feed. canView() grants an author their own pulse at EVERY
+// visibility — but a list query can only REQUEST the levels queryableLevels() permits, and those
+// are about the viewer's standing, never their authorship. So an author's own node/private records
+// are simply absent from the feeds they stand in: most sharply on a reflecting hub, which requests
+// 'public' only and therefore shows no one the node's own node-level happenings, their makers
+// included. The forest already solved this for trees with an owner merge (fetchLifetrees); this is
+// the same law for pulses — fold the viewer's own in, newest first, never duplicating what the
+// feed already carried. Pure: the caller says how to read a timestamp, so Firestore stays outside.
+export function mergeAuthored<T extends { id: string }>(
+  feed: T[],
+  own: T[],
+  millisOf: (item: T) => number,
+): T[] {
+  const carried = new Set(feed.map(item => item.id));
+  return [...feed, ...own.filter(item => !carried.has(item.id))]
+    .sort((a, b) => millisOf(b) - millisOf(a));
+}
+
 // Who may edit (or delete) an event: its creator, the admin (owner) of its community when it
 // is a community event, or the owner of the node (host community) when it is a node event.
 // Staff always. `community` is the event's community; `hostCommunity` is the node's.

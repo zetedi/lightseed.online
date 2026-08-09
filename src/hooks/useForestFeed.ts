@@ -111,7 +111,10 @@ export function useForestFeed(params: {
         setHasMore(!!res.lastDoc);
       }
       else if (tab === 'events') {
-        const res = await fetchEventPulses(currentLastDoc, currentDomain, feedLevels);
+        // feedOwnerUid folds the viewer's OWN events in (any visibility, any domain) — the same
+        // owner-safe merge the tree feed does, and the only reason an author's node-visible event
+        // appears on a reflecting hub at all. A strict scoped node suppresses it, like the trees.
+        const res = await fetchEventPulses(currentLastDoc, currentDomain, feedLevels, feedOwnerUid);
         setData(prev => {
           const newItems = res.items;
           if (reset) return newItems;

@@ -6,6 +6,33 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-08 · The hub could not see its own node** (`domain/pulseVisibility.mergeAuthored`): Zoltán
+created an event at NODE visibility on lightseed.online and it appeared nowhere — not in the feed,
+not on the banner, not to its own author. The cause is the seam between two true statements.
+`canView` has always said *the author always sees their own*, at every visibility; `queryableLevels`
+has always spoken about STANDING, never authorship — and a list query can only ask for levels.
+Between them, an author's own node/private records fell out of every feed. The Hub makes it total:
+a REFLECTING node requests `['public']` and nothing else (rightly — reflection must never carry
+another place's node-visible records), so lightseed.online showed no one its own node-level
+happenings, their makers included. Turning the REFLECT dial had silently moved the REACH dial, and
+LIN principle 4 keeps those two dials apart. THE FIX is the one the forest already found: the tree
+feed merges a creator's own trees so *a creator is never lost on a custom domain*; pulses now do
+the same. `mergeAuthored` is the pure law (fold the viewer's own in, newest first, never
+duplicating), `getMyEvents` the query — provable to the rules by the author clause in
+`canReadPulse`, and served by the already-deployed (type, authorId, createdAt) index, so no index
+ships with this. Merged on the FIRST page only, and suppressed on a strict scoped node, exactly as
+the trees are. AND a being's profile grows an **Events** section: every event they have planted, at
+every visibility, on every domain — a thin personal binding over the entity-generic
+`EventsSection`, whose `'personal'` scope was declared a month ago and never bound. The feeds
+answer *what may this viewer ask for*; only this surface answers *what have I made*. NOT fixed
+here, and named so it is not forgotten: the scoped (non-reflecting) pulse feed still takes 80 docs
+with NO `orderBy`, so a domain with more pulses than that shows an arbitrary, stable slice by
+document id — the same blindness by another road, and it wants a (domain, type, visibility,
+createdAt) index rather than a wider window. Also seen: `EventModal` uploads to `events/{uid}/…`,
+which `storage.rules` grants to STAFF only, so a non-staff being's event image fails silently.
+
+---
+
 **2026-08-05 · The suspended gift: appreciation travels forward, never back** (`domain/gift.ts`):
 the caffè sospeso, in light, and the answer to the oldest open definition in QUESTIONS — *"Token
 is something not taken… a token is not extracted value, it IS unclaimed offering."* A suspended

@@ -4,6 +4,7 @@ import { createBlock } from '../../utils/crypto';
 import { uuidv7 } from '../../utils/id';
 import { computeCanonicalHash, isChainLocked, BLOCK_HASH_VERSION } from '../../domain/chain';
 import { normalizePulseType, isTreeGrowth, type PulseVisibility } from '../../domain/pulse';
+import { mergeAuthored } from '../../domain/pulseVisibility';
 import { isExplicitlyValidatedTree } from '../../utils/validation';
 import { buildThreadId, buildGroupThreadId, reachAudienceLabels } from '../../utils/reachPermissions';
 import { db, toMillis, mapDoc, mapPulse, pulsesCollection } from './core';
@@ -64,13 +65,31 @@ export const fetchPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: 
     };
 }
 
-export const fetchEventPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, levels?: PulseVisibility[]) => {
+// Every event a being has authored — at ANY visibility, on any domain, newest first. The author
+// clause in canReadPulse (rules) and canView (domain) both grant this, so a node- or
+// private-visibility event stays reachable by the one who made it. Server-sorted on the existing
+// (type, authorId, createdAt) index.
+export const getMyEvents = async (uid: string): Promise<Pulse[]> =>
+    (await getDocs(query(
+        pulsesCollection,
+        where('type', '==', 'event'),
+        where('authorId', '==', uid),
+        orderBy('createdAt', 'desc'),
+    ))).docs.map(mapPulse);
+
+export const fetchEventPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, levels?: PulseVisibility[], ownerUid?: string) => {
     // Events are sparse among recent pulses, so the shared feed's small page buries them under the
     // newest reaches/growths and drops them. Widen the window (still one indexed read) so events
     // actually surface. (A dedicated (type, createdAt) index would let this filter server-side.)
     const res = await fetchPulsesRaw(lastD, domainFilter, levels, 80);
+    const items = res.items.filter(pulse => pulse.type === 'event');
+    // The author always sees their own (domain/pulseVisibility.canView) — but no feed may REQUEST
+    // the levels that would carry them, so merge the viewer's own in on the first page, exactly as
+    // the forest merges a creator's own trees. Their absence is what hid a node-visible event from
+    // its own maker on a reflecting hub.
+    const mine = (ownerUid && !lastD) ? await getMyEvents(ownerUid).catch(() => []) : [];
     return {
-        items: res.items.filter(pulse => pulse.type === 'event'),
+        items: mergeAuthored(items, mine, p => p.createdAt?.toMillis?.() || 0),
         lastDoc: res.lastDoc
     };
 };

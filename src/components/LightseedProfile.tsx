@@ -17,6 +17,7 @@ import { ProfileInviteBanners } from './profile/ProfileInviteBanners';
 import { ProfileTrees } from './profile/ProfileTrees';
 import { ProfileLight } from './profile/ProfileLight';
 import { ProfilePulses } from './profile/ProfilePulses';
+import { ProfileEvents } from './profile/ProfileEvents';
 import { ProfileVisions } from './profile/ProfileVisions';
 import { ProfileHistory } from './profile/ProfileHistory';
 import { ProfileStays } from './profile/ProfileStays';
@@ -57,7 +58,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
     const { t } = useLanguage();
     // Session state comes from context now (was prop-drilled from App).
     const { lightseed, myTrees, guardedTrees, isAdmin, isSuperAdmin, superAdminExists } = useSession();
-    const [activeTab, setActiveTab] = useState<'trees' | 'light' | 'pulses' | 'visions' | 'stays' | 'history' | 'reaches' | 'invites' | 'appearance' | 'intelligence' | 'settings' | 'admin'>('trees');
+    const [activeTab, setActiveTab] = useState<'trees' | 'light' | 'pulses' | 'events' | 'visions' | 'stays' | 'history' | 'reaches' | 'invites' | 'appearance' | 'intelligence' | 'settings' | 'admin'>('trees');
     const [dialogMessage, setDialogMessage] = useState<string | null>(null);
 
     // Live profile state — written by the listenToUserProfile listener below, read across
@@ -196,6 +197,19 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
         {
             key: 'pulses', label: t('my_pulses'), icon: <Icons.Pulse />, render: () => (
                 <ProfilePulses uid={lightseed.uid} onViewPulse={onViewPulse} onEmit={onEmitPulse} />
+            ),
+        },
+        {
+            // Every event this being has planted, at every visibility — the feeds can only ask for
+            // the levels a VIEWER may query, so a node- or private-visibility event of your own is
+            // certain to be here and nowhere else.
+            key: 'events', label: t('events'), icon: <Icons.Loc />, render: () => (
+                <ProfileEvents
+                    uid={lightseed.uid}
+                    name={lightseed.displayName}
+                    photo={lightseed.photoURL}
+                    onViewEvent={onViewPulse}
+                />
             ),
         },
         {

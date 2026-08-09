@@ -419,7 +419,9 @@ const AppContent = () => {
         const levels = activeCommunity?.reflectsPublic === true
             ? queryableLevels({})
             : queryableLevels({ uid: lightseed.uid, isStaff: isSuperAdmin || isAdmin });
-        fetchEventPulses(undefined, activeDataDomain, levels).then(r => setDashboardEvents(r.items)).catch(() => {});
+        // The last argument folds in the viewer's own events whatever their visibility — without it
+        // a reflecting hub (public-only levels) hides an author's node-visible event from themselves.
+        fetchEventPulses(undefined, activeDataDomain, levels, lightseed.uid).then(r => setDashboardEvents(r.items)).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on uid + host scope + bus signal; the lightseed object changes identity without uid changing
     }, [lightseed?.uid, isSuperAdmin, isAdmin, eventsRefresh, activeDataDomain]);
 
