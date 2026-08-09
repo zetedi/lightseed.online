@@ -6,6 +6,17 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-09 · Every being carries its name** (the index ring, closed): deployed same day — six
+triggers live, both rule sets released, the live probe holding (get 404-allowed, list 403-refused).
+Zoltán's backfill wrote 164 entries; the 22 nameless it reported were 21 dormant accounts (beings
+who had not returned since lids began minting at sign-in) and PER AUSET itself, which without a lid
+could derive no crown and carry no /b/ address. `scripts/name-the-nameless.mjs` (dry by default,
+absent-only, never re-pointing) named and indexed all 22 in one batch — the batch writes the
+`beings/` entries itself, because a lid added to an EXISTING document is an update the
+create-triggers never see. Zero nameless remain; 186 names stand written.
+
+---
+
 **2026-08-09 · Votes converge onto signatures** (`governance.ts`, rules branch (d)): the second half
 of the arrays audit, scheduled by the ring below. The seal was ALREADY the signatures
 (`verifiedDecisionSigners`, Covenant phase 3) — but three trusts in the raw array remained, and each
