@@ -24,12 +24,10 @@ export const createDecision = async (
 ): Promise<Decision> => {
     const mode: DecisionMode = data.mode || 'threshold';
     const required = votesRequired(data.nature);
-    const votes = [data.proposedBy]; // the proposer's voice is the first vote — provenance, not yet a seal
-    // NO decision passes at birth any more (votes→signatures convergence, ring 2026-08-09): the
-    // seal is the signatures, and creation has none — the old auto-pass minted 'passed' flags
-    // that decisionAuthoritative immediately called dishonest. Even a one-voice intention now
-    // waits for its proposer's signed hand (signDecision), which also keeps DRAFT VANISHES true:
-    // an unsigned proposal stays erasable until a signature or another voice stands on it.
+    // votes[] IS RETIRED (ring 2026-08-10): a decision is born with NO votes field. A voice is a
+    // signature doc; even the proposer's own arrives through signDecision, when they choose —
+    // which keeps DRAFT VANISHES true (an unsigned proposal stays erasable). Legacy documents
+    // keep their arrays as read-only history; nothing writes one again.
     const payload = {
         type: 'decision',
         communityId: community.id,
@@ -45,7 +43,6 @@ export const createDecision = async (
         authorId: data.proposedBy, // unified with pulses' author field
         proposedBy: data.proposedBy,
         mode,
-        votes,
         votesRequired: required,
         positions: [] as any[],
         status: 'open' as const,
@@ -198,6 +195,13 @@ export const signDecision = async (
     throw new Error('Only a member of this community may sign this decision.');
   }
 
+  // One hand, one signature: a member's slot is immutable (rules: update false), so re-signing
+  // would throw AFTER the key ceremony. Answer 'already' before asking for a key at all.
+  if ((await getDoc(doc(decisionSignaturesCol(decisionId), uid))).exists()) {
+    const standing = await verifyDecision(fresh, await getDecisionSignatures(decisionId));
+    return { outcome: 'already', verifiedCount: standing.verifiedCount };
+  }
+
   const key = await ensureSigningKey(uid); // idempotent — creates on first use, returns the phrase once
 
   // The count binds to the PUBLISHED identity key: this signature only counts if its pubkey equals
@@ -232,24 +236,20 @@ export const signDecision = async (
     ...(sigPosition ? { position: sigPosition } : {}),
   });
 
-  // Denormalise into the decision doc so existing queries/UI (councilView) keep working: the uid on
-  // `votes` (threshold, the who-signed) or a 'unite' position (consensus). serverTimestamp can't live in
-  // an array element, so a position is client-stamped, exactly like recordPosition.
-  let alreadyVoted = false;
-  await runTransaction(db, async (tx) => {
-    const snap = await tx.get(ref);
-    if (!snap.exists()) return;
-    const d = snap.data() as DocumentData;
-    if (mode === 'consensus') {
+  // CONSENSUS still denormalises the 'unite' position onto the doc (positions are the meeting's
+  // live record — recordPosition's shape; client-stamped, serverTimestamp can't live in an array).
+  // THRESHOLD writes nothing here any more: votes[] is retired, the signature IS the voice, and
+  // councilView reads the signatures directly.
+  if (mode === 'consensus') {
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists()) return;
+      const d = snap.data() as DocumentData;
       const positions = (Array.isArray(d.positions) ? d.positions : []).filter((p: { by: string }) => p.by !== uid);
       positions.push({ by: uid, stance: 'unite', note: '', at: Timestamp.fromMillis(Date.now()) });
       tx.update(ref, { positions });
-    } else {
-      const votes: string[] = Array.isArray(d.votes) ? d.votes : [];
-      alreadyVoted = votes.includes(uid);
-      if (!alreadyVoted) tx.update(ref, { votes: [...votes, uid] });
-    }
-  });
+    });
+  }
 
   // Re-read every signature and verify against the frozen identity — enactment counts VERIFIED
   // signatures, never a raw doc/array count, so the seal can never outrun the crypto.
@@ -280,8 +280,7 @@ export const signDecision = async (
     return { outcome: 'enacted', verifiedCount, ...(key.created && key.recoveryPhrase ? { recoveryPhrase: key.recoveryPhrase } : {}) };
   }
 
-  const outcome: SignDecisionResult['outcome'] = (mode === 'threshold' && alreadyVoted) ? 'already' : 'signed';
-  return { outcome, verifiedCount, ...(key.created && key.recoveryPhrase ? { recoveryPhrase: key.recoveryPhrase } : {}) };
+  return { outcome: 'signed', verifiedCount, ...(key.created && key.recoveryPhrase ? { recoveryPhrase: key.recoveryPhrase } : {}) };
 };
 
 // Community membership for signing: a `member` link, or being the community's owner (implicitly inside

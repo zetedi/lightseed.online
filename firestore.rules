@@ -838,9 +838,11 @@ service cloud.firestore {
              && (isStaff() || isCommunityMember(resource.data.get('communityId', '')))
              && request.resource.data.diff(resource.data).affectedKeys()
                   .hasOnly(['votes', 'concerns', 'positions', 'listening', 'status', 'passedAt', 'enactedHash', 'withdrawnAt', 'rejectedAt', 'withdrawnHash', 'updatedAt'])
-             // votes moves only by append-exactly-your-own-uid (the vetoes arithmetic): a voice
-             // can be neither forged in another's name nor erased. It is never counted for
-             // enactment — the seal is the signatures subcollection — but the record stays true.
+             // votes[] IS RETIRED (ring 2026-08-10): no shipped code writes it. This clause is a
+             // TRANSITION tolerance for stale PWA bundles that still denormalise a signature onto
+             // votes — append-exactly-your-own-uid (the vetoes arithmetic), so even a stale hand
+             // can neither forge nor erase a voice. Remove the whole votes clause (and 'votes'
+             // from hasOnly above) once the service-worker cycle has retired the old bundles.
              && (
                   !request.resource.data.diff(resource.data).affectedKeys().hasAny(['votes'])
                   || (

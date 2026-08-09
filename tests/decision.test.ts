@@ -5,6 +5,7 @@ import {
   countVerifiedDecisionSignatures, verifiedDecisionSigners, decisionDeletable,
   type Decision, type RecordedDecisionSignature, type Position,
 } from '../src/domain/decision';
+import { councilView } from '../src/domain/views/council';
 import { COVENANT_DOMAIN } from '../src/domain/covenant';
 import { canonicalize } from '../src/domain/chain/canonical';
 import { signingPreimage } from '../src/domain/signing';
@@ -286,5 +287,43 @@ describe('decisionDeletable — draft vanishes, minted withdraws', () => {
   });
   it('absent votes read as no other voice (a legacy shape)', () => {
     expect(decisionDeletable({ status: 'open', proposedBy: 'alice' }, 0)).toBe(true);
+  });
+});
+
+describe('councilView — the voice is the signature; the retired votes[] is read-only history', () => {
+  const dec = (over: object = {}) => ({
+    id: 'd1', lid: 'd1-lid', communityId: 'com1', nature: 'charter' as const,
+    title: 'T', proposedBy: 'alice', votesRequired: 7, status: 'open' as const,
+    previousHash: 'DECISION', hash: 'h', createdAt: 0 as never, ...over,
+  }) as never;
+
+  it('reads voice and count from the signatures when the crypto is known', () => {
+    const [v] = councilView([dec()], 'bob', {
+      d1: { signedUids: new Set(['alice', 'bob']), verifiedCount: 2 },
+    });
+    expect(v.voted).toBe(true);
+    expect(v.voiceCount).toBe(2);
+  });
+
+  it('a legacy decision with no signatures still counts its pre-crypto voices', () => {
+    const [v] = councilView([dec({ votes: ['alice', 'carol'] })], 'carol', {
+      d1: { signedUids: new Set<string>(), verifiedCount: 0 },
+    });
+    expect(v.voted).toBe(true);        // carol voiced in the old world — history stands
+    expect(v.voiceCount).toBe(2);      // no crypto exists, so history is the only witness
+  });
+
+  it('where signatures EXIST, they are the truth — an unverifiable slot never inflates the count', () => {
+    const [v] = councilView([dec({ votes: ['alice', 'bob', 'carol'] })], 'dave', {
+      d1: { signedUids: new Set(['alice']), verifiedCount: 0 },
+    });
+    expect(v.voiceCount).toBe(0);      // crypto present and says none verify: the honest zero
+    expect(v.voted).toBe(false);
+  });
+
+  it('with no crypto reading at all (offline), legacy voices are what can be said', () => {
+    const [v] = councilView([dec({ votes: ['alice'] })], 'alice');
+    expect(v.voted).toBe(true);
+    expect(v.voiceCount).toBe(1);
   });
 });

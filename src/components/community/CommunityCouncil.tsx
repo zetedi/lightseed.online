@@ -100,9 +100,9 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
     setProposing(false);
   };
 
-  // A threshold vote is now a SIGNATURE over the decision's frozen identity (Covenant, phase 3): it
-  // signs, denormalises the uid onto votes[], and enacts by the VERIFIED quorum — routing through the
-  // key modal if the being has no device key yet.
+  // A threshold vote IS a signature over the decision's frozen identity (votes[] is retired —
+  // the signature is the voice, and councilView reads the signatures directly). Routes through
+  // the key modal if the being has no device key yet; enacts by the VERIFIED quorum.
   const handleVote = (id: string) => withSigningKey(id, async () => {
     const res = await signDecision({ id });
     if (res.recoveryPhrase) setPhrase(res.recoveryPhrase); // a key was born mid-sign — surface it once
@@ -206,7 +206,7 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
         <p className="py-8 text-center text-sm text-slate-400">{t('no_decisions')}</p>
       ) : (
         <div className="space-y-3">
-          {councilView(decisions, currentUserId).map(d => {
+          {councilView(decisions, currentUserId, sigStates).map(d => {
             const consensus = d.mode === 'consensus';
             const open = !d.passed && !d.closed;
             const clerk = d.isProposer || !!canEdit;

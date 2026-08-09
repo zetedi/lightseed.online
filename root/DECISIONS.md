@@ -6,6 +6,34 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-10 · The engine room is current** (`functions/`): firebase-functions 7.3.2 and
+firebase-admin 12→14 (two majors), done now rather than at the worst time, at Zoltán's word.
+Admin 14 removes the legacy namespace API, so `functions/src/index.ts` moved to modular imports
+(`firebase-admin/app|firestore|auth`) — six mechanical patterns, tsc-proven, no behavior change.
+The root's firebase-admin (the scripts' hands) rode along to 14; the nameless-beings census ran
+against prod read-only as the smoke test. The deploy warning is gone with the cause.
+
+---
+
+**2026-08-10 · votes[] is retired** (`governance.ts`, `views/council.ts`): the full retirement the
+convergence ring scheduled, done at Zoltán's word. A decision is now BORN WITHOUT a votes field;
+the signature IS the voice, and even the proposer's own arrives through signDecision when they
+choose (auto-signing at birth would kill draft-vanishes — decided in the convergence ring, held
+here). signDecision no longer denormalises threshold voices onto the doc (consensus positions
+remain the meeting's live record, unchanged) and answers 'already' from the signature slot itself,
+BEFORE the key ceremony — the slot is immutable, so re-signing would otherwise throw after
+prompting for a key. councilView reads the signatures: `voiceCount` is the VERIFIED count where
+crypto exists; the retired array is read-only history — a legacy decision with no signatures still
+counts its pre-crypto voices (history stands), but where signature docs EXIST they are the truth,
+and an unverifiable slot shows the honest zero rather than inflating. TRANSITION, named: the rules
+still tolerate an append-own votes write for one release cycle, because today's deployed bundles
+denormalise on every sign and a stale PWA hitting a hard refusal would error on votes that landed;
+the clause carries its own removal note. Reads that remain, deliberately: the delete guard (a
+malformed/legacy array holding another's voice still protects the record), the crossover census
+(migrateDecisionsToSignatures), and the view's history fallback.
+
+---
+
 **2026-08-09 · The circle says what it offers, and Phoenix was home all along** (`domain/treeCircle`,
 `TreeCircle.tsx`): Zoltán asked whether the trees can really be invited — the search would not
 return Phoenix, and Co-owner/Steward/Observer stood next to "Invite into the circle" unexplained.
