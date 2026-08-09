@@ -10,6 +10,7 @@ import { checkAndIncrementAiUsage, uploadBase64Image, plantBed } from '../../ser
 import { announce } from '../../services/refreshBus';
 import { bedPlantingProblem } from '../../domain/bed';
 import type { LightHouse } from '../../types';
+import { speak } from '../../utils/translations';
 
 // Offer a bed inside a Light House — the keeper-only door. A bed is a being (plantBed seals its
 // genesis chain), so this is deliberately light: a name, a word of welcome, a face. The house
@@ -89,7 +90,7 @@ export const PlantBedModal: React.FC<{ lightHouse: LightHouse; onClose: () => vo
             onImageSelect={(file) => handleImageUpload(file, `lightHouses/${lightHouse.id}/beds/${Date.now()}`).then(setImageUrl)}
             previewUrl={imageUrl} loading={uploading} />
         </div>
-        {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{err}</p>}
+        {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(err)}</p>}
         <button type="button" onClick={submit} disabled={submitting || !name.trim()}
           className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
           {submitting ? t('planting') : t('offer_a_bed')}

@@ -60,11 +60,11 @@ export const isRealPlace = (latitude?: number, longitude?: number): boolean =>
 export const bedPlantingProblem = (
   draft: { name?: string; lightHouseId?: string; latitude?: number; longitude?: number },
 ): string | null => {
-  if (!draft.name?.trim()) return 'Give the bed a name.';
+  if (!draft.name?.trim()) return 'bed_name';
   const housed = !!draft.lightHouseId;
   const placed = isRealPlace(draft.latitude, draft.longitude);
   if (!housed && !placed) {
-    return 'A bed stands somewhere — inside a Light House, or loose at a place under open stars.';
+    return 'bed_place';
   }
   return null;
 };

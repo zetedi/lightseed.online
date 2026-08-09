@@ -4,6 +4,7 @@ import {
   excludeBedTrees, bedBelongsTo, bedPlantingProblem, isRealPlace,
 } from '../src/domain/bed';
 import { treePlantingGate, DEFAULT_NODE_LIMITS } from '../src/domain/limits';
+import { speak } from '../src/utils/translations';
 
 describe('isBedTree — a bed is a lifetree, housed or loose', () => {
   it('recognises a bed and nothing else', () => {
@@ -70,17 +71,17 @@ describe('bedBelongsTo — a bed stands in exactly one house', () => {
 
 describe('bedPlantingProblem — the courteous refusal before the write', () => {
   it('needs a name, whether housed or loose', () => {
-    expect(bedPlantingProblem({ lightHouseId: 'lh1' })).toMatch(/name/);
-    expect(bedPlantingProblem({ name: '   ', lightHouseId: 'lh1' })).toMatch(/name/);
-    expect(bedPlantingProblem({ latitude: 6.03, longitude: 81.33 })).toMatch(/name/);
+    expect(speak(bedPlantingProblem({ lightHouseId: 'lh1' })!)).toMatch(/name/);
+    expect(speak(bedPlantingProblem({ name: '   ', lightHouseId: 'lh1' })!)).toMatch(/name/);
+    expect(speak(bedPlantingProblem({ latitude: 6.03, longitude: 81.33 })!)).toMatch(/name/);
   });
 
   it('refuses only a bed with NEITHER a house NOR a place', () => {
-    expect(bedPlantingProblem({ name: 'Cedar bed' })).toMatch(/somewhere/);
-    expect(bedPlantingProblem({ name: 'Cedar bed', lightHouseId: '' })).toMatch(/somewhere/);
+    expect(speak(bedPlantingProblem({ name: 'Cedar bed' })!)).toMatch(/somewhere/);
+    expect(speak(bedPlantingProblem({ name: 'Cedar bed', lightHouseId: '' })!)).toMatch(/somewhere/);
     // Half a coordinate is no place.
-    expect(bedPlantingProblem({ name: 'Cedar bed', latitude: 6.03 })).toMatch(/somewhere/);
-    expect(bedPlantingProblem({ name: 'Cedar bed', longitude: 81.33 })).toMatch(/somewhere/);
+    expect(speak(bedPlantingProblem({ name: 'Cedar bed', latitude: 6.03 })!)).toMatch(/somewhere/);
+    expect(speak(bedPlantingProblem({ name: 'Cedar bed', longitude: 81.33 })!)).toMatch(/somewhere/);
   });
 
   it('a named bed in a real house may be planted', () => {
@@ -94,12 +95,12 @@ describe('bedPlantingProblem — the courteous refusal before the write', () => 
   });
 
   it('a NON-place is nowhere: NaN, Infinity, and off-Earth coordinates are refused', () => {
-    expect(bedPlantingProblem({ name: 'Ghost bed', latitude: NaN, longitude: NaN })).toMatch(/somewhere/);
-    expect(bedPlantingProblem({ name: 'Ghost bed', latitude: Infinity, longitude: 81.33 })).toMatch(/somewhere/);
-    expect(bedPlantingProblem({ name: 'Ghost bed', latitude: 6.03, longitude: -Infinity })).toMatch(/somewhere/);
-    expect(bedPlantingProblem({ name: 'Off-map bed', latitude: 91, longitude: 81.33 })).toMatch(/somewhere/);
-    expect(bedPlantingProblem({ name: 'Off-map bed', latitude: 6.03, longitude: 181 })).toMatch(/somewhere/);
-    expect(bedPlantingProblem({ name: 'Off-map bed', latitude: 999, longitude: -999 })).toMatch(/somewhere/);
+    expect(speak(bedPlantingProblem({ name: 'Ghost bed', latitude: NaN, longitude: NaN })!)).toMatch(/somewhere/);
+    expect(speak(bedPlantingProblem({ name: 'Ghost bed', latitude: Infinity, longitude: 81.33 })!)).toMatch(/somewhere/);
+    expect(speak(bedPlantingProblem({ name: 'Ghost bed', latitude: 6.03, longitude: -Infinity })!)).toMatch(/somewhere/);
+    expect(speak(bedPlantingProblem({ name: 'Off-map bed', latitude: 91, longitude: 81.33 })!)).toMatch(/somewhere/);
+    expect(speak(bedPlantingProblem({ name: 'Off-map bed', latitude: 6.03, longitude: 181 })!)).toMatch(/somewhere/);
+    expect(speak(bedPlantingProblem({ name: 'Off-map bed', latitude: 999, longitude: -999 })!)).toMatch(/somewhere/);
   });
 
   it('the edges of the map are still places: the poles and the antimeridian welcome a bed', () => {
@@ -142,7 +143,7 @@ describe('the planting caps ignore beds — furniture is not forest', () => {
 
   it('beds neither hide nor lift a full personal forest', () => {
     const full = [...lifetrees(DEFAULT_NODE_LIMITS.maxLifetrees), ...beds(3)];
-    expect(treePlantingGate(full, 'LIFETREE', DEFAULT_NODE_LIMITS)).toMatch(/quality/);
+    expect(speak(treePlantingGate(full, 'LIFETREE', DEFAULT_NODE_LIMITS)!)).toMatch(/quality/);
     expect(treePlantingGate(full, 'GUARDED', DEFAULT_NODE_LIMITS)).toBeNull();
   });
 });

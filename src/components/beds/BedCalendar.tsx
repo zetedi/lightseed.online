@@ -13,6 +13,7 @@ import {
   placeHold, releaseHold, getBedHolds, getLifetreeById,
 } from '../../services/firebase';
 import type { Lifetree } from '../../types';
+import { speak } from '../../utils/translations';
 
 // The bed's calendar — a month of nights, busy or free, and the door to reserve one. Availability
 // is read from the bed's public occupancy (identity-free), so a prospective guest sees busy/free
@@ -84,7 +85,7 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
     ? t('arrival') + ' → ' + t('departure')
     : !pick.to
     ? 'Pick your departure day'
-    : (stayRequestProblem(pick.from, pick.to, nowMs) || (rangeFree(pick.from, pick.to) ? null : t('booked')));
+    : ((p => p && speak(p))(stayRequestProblem(pick.from, pick.to, nowMs)) || (rangeFree(pick.from, pick.to) ? null : t('booked')));
 
   const request = async () => {
     if (!uid || !pick.from || !pick.to || problem) return;

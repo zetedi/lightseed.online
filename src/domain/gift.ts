@@ -1,4 +1,5 @@
 import { prismSplit, DEFAULT_GLOW_SHARE_DENOMINATOR } from './light';
+import type { TranslationKey } from '../utils/translations';
 
 // THE SUSPENDED GIFT — appreciation that travels FORWARD, never back.
 //
@@ -37,16 +38,17 @@ export interface GiftDraft {
   offeringActive: boolean; // a paused offering has no next person, so light would strand there
 }
 
-// Why this gift cannot stand, or null when it may. The reasons are the law read aloud, so the
-// face can say them without inventing its own words.
-export const giftProblem = (d: GiftDraft): string | null => {
-  if (!Number.isFinite(d.units) || d.units <= 0) return 'A gift is more than nothing.';
-  if (!Number.isInteger(d.units)) return 'Light is given in whole units.';
-  if (!d.giverUid || !d.offererUid) return 'A gift needs both a giver and an offering.';
+// Why this gift cannot stand, or null when it may. The reasons are the law read aloud — as
+// translation KEYS (the words live in translations.ts in every language; speak() says them),
+// so the face can say them without inventing its own words, in the reader's own tongue.
+export const giftProblem = (d: GiftDraft): TranslationKey | null => {
+  if (!Number.isFinite(d.units) || d.units <= 0) return 'gift_nothing';
+  if (!Number.isInteger(d.units)) return 'gift_whole_units';
+  if (!d.giverUid || !d.offererUid) return 'gift_needs_both';
   // Appreciating your own offering would send light in a circle and call it circulation.
-  if (d.giverUid === d.offererUid) return 'You cannot appreciate your own offering.';
-  if (!d.offeringActive) return 'This offering is resting; its light would wait for no one.';
-  if (!Number.isInteger(d.holdingUnits) || d.holdingUnits < d.units) return 'You hold less light than that.';
+  if (d.giverUid === d.offererUid) return 'gift_own_offering';
+  if (!d.offeringActive) return 'gift_resting';
+  if (!Number.isInteger(d.holdingUnits) || d.holdingUnits < d.units) return 'gift_hold_less';
   return null;
 };
 

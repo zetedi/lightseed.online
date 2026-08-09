@@ -1,3 +1,4 @@
+import type { TranslationKey } from '../utils/translations';
 // OFFERINGS — a being offers a BED or a SERVICE and may name the light with which they hope the
 // contribution will be appreciated AFTER it is received. Trust admits; the ray follows the dream.
 // The suggestion is an agreement, never a gate or purchase price. This module is the pure law for
@@ -15,13 +16,13 @@ export interface OfferingDraft {
 }
 
 // Why this offering cannot stand yet, or null when it may. Keeps the form honest before a write.
-export const offeringProblem = (d: OfferingDraft): string | null => {
-    if (d.kind !== 'bed' && d.kind !== 'service') return 'Choose what you are offering.';
-    if (!d.title.trim()) return 'Name your offering.';
-    if (!Number.isFinite(d.suggestedAppreciationLight) || d.suggestedAppreciationLight <= 0) return 'Suggest an appreciation in light (more than zero).';
-    if (!Number.isInteger(d.suggestedAppreciationLight)) return 'Appreciation is expressed in whole light units.';
+export const offeringProblem = (d: OfferingDraft): TranslationKey | null => {
+    if (d.kind !== 'bed' && d.kind !== 'service') return 'offering_choose_kind';
+    if (!d.title.trim()) return 'offering_name';
+    if (!Number.isFinite(d.suggestedAppreciationLight) || d.suggestedAppreciationLight <= 0) return 'offering_appreciation_positive';
+    if (!Number.isInteger(d.suggestedAppreciationLight)) return 'offering_appreciation_whole';
     const url = d.url?.trim();
-    if (url && !/^https?:\/\/\S+$/i.test(url)) return 'The detail link must be a full http(s) address.';
-    if (url && url.length > 300) return 'The detail link is too long.';
+    if (url && !/^https?:\/\/\S+$/i.test(url)) return 'offering_link_http';
+    if (url && url.length > 300) return 'offering_link_long';
     return null;
 };

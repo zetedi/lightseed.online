@@ -1,5 +1,6 @@
 import { canonicalize } from './chain/canonical';
 import { BIP39_WORDLIST } from './bip39Wordlist';
+import { spokenLine } from '../utils/translations';
 
 // The signing crystal (pure part) — everything here is deterministic string/bytes work, with NO
 // WebCrypto and NO storage. Two things live here:
@@ -120,7 +121,7 @@ function checksumBits(seed: Uint8Array): number {
 
 // 32-byte seed (256-bit BIP39 entropy) → 24-word BIP39 mnemonic.
 export function seedToPhrase(seed: Uint8Array): string[] {
-  if (seed.length !== SEED_BYTES) throw new Error(`seed must be ${SEED_BYTES} bytes`);
+  if (seed.length !== SEED_BYTES) throw new Error(spokenLine('signing_seed_bytes', { n: SEED_BYTES }));
   const bits: number[] = [];
   for (const byte of seed) for (let i = 7; i >= 0; i--) bits.push((byte >> i) & 1);
   const check = checksumBits(seed);
@@ -137,11 +138,11 @@ export function seedToPhrase(seed: Uint8Array): string[] {
 // 24-word BIP39 mnemonic → 32-byte seed. Throws on wrong length, an unknown word, or a failed SHA-256
 // checksum (a mistyped word).
 export function phraseToSeed(words: string[]): Uint8Array {
-  if (words.length !== PHRASE_WORDS) throw new Error(`phrase must be ${PHRASE_WORDS} words`);
+  if (words.length !== PHRASE_WORDS) throw new Error(spokenLine('signing_phrase_words', { n: PHRASE_WORDS }));
   const bits: number[] = [];
   for (const raw of words) {
     const idx = WORD_INDEX.get(raw.trim().toLowerCase());
-    if (idx === undefined || idx >= WORDLIST_SIZE) throw new Error(`unknown word in recovery phrase: "${raw}"`);
+    if (idx === undefined || idx >= WORDLIST_SIZE) throw new Error(spokenLine('signing_unknown_word', { word: raw }));
     for (let b = BITS_PER_WORD - 1; b >= 0; b--) bits.push((idx >> b) & 1);
   }
   const seed = new Uint8Array(SEED_BYTES);
@@ -152,7 +153,7 @@ export function phraseToSeed(words: string[]): Uint8Array {
   }
   let check = 0;
   for (let b = 0; b < CHECKSUM_BITS; b++) check = (check << 1) | bits[SEED_BYTES * 8 + b];
-  if (check !== checksumBits(seed)) throw new Error('recovery phrase checksum failed — a word looks mistyped');
+  if (check !== checksumBits(seed)) throw new Error('signing_checksum');
   return seed;
 }
 

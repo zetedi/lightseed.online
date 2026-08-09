@@ -8,6 +8,7 @@
 // message IS the point, so it lives here with the numbers it explains.
 
 import { isBedTree } from './bed';
+import { spokenLine } from '../utils/translations';
 
 // The UN roll as of 2026 (South Sudan joined in 2011, none since). If the roll changes,
 // this constant changes with it, in its own ring.
@@ -56,10 +57,10 @@ export const treePlantingGate = (
   const lifetrees = countable.length - guarded;
 
   if (type === 'LIFETREE' && lifetrees >= limits.maxLifetrees) {
-    return `You already tend ${limits.maxLifetrees} lifetree${limits.maxLifetrees === 1 ? '' : 's'}: a tree for every country of the Earth. We would like quality, not quantity: deepen the trees you have, and let each one truly live.`;
+    return spokenLine('limit_lifetrees', { max: limits.maxLifetrees });
   }
   if (type === 'GUARDED' && guarded >= limits.maxGuardedTrees) {
-    return `You already guard ${limits.maxGuardedTrees} tree${limits.maxGuardedTrees === 1 ? '' : 's'}: a whole grove. We would like quality, not quantity: tend the ones in your care before standing for more.`;
+    return spokenLine('limit_guarded', { max: limits.maxGuardedTrees });
   }
   return null;
 };

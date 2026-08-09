@@ -6,6 +6,28 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-10 · The system speaks — the law learns every tongue** (`speak()`, the domain reasons):
+Zoltán's directive — no more English in the code, not even error messages — begins at the deepest
+layer and moves outward. THE SPEAKING LAYER: `speak(message)` in translations.ts says a
+translation KEY in the reader's language and lets any other string pass untouched, readable
+OUTSIDE React (module-level active language, written by LanguageContext, seeded from localStorage
+before mount) — because the imperative dialog and thrown errors have no hook to call. Dialog now
+speaks everything passing through it, buttons included, so a service that throws a KEY surfaces
+translated with no change at any call site. A SPOKEN LINE, `key::{"n":5}` (spokenLine composes,
+speak parses), lets a PURE domain function return one string that still says "at most 12 nights"
+in any tongue — the domain never touches a dictionary, values survive the border. THE DOMAIN
+CONVERTED: every reason in gift, offering, bed, stay, limits, beingIndex, lid62 and signing now
+returns/throws a key (36 keys, Arabic and Chinese complete), and `giftProblem`-style returns are
+TYPED `TranslationKey | null`, so a reason without words fails compilation. THE TESTS still read
+as English law — they assert through speak(), which proves the key→words pipeline end to end; and
+writing them caught a real fault before it shipped: `'constructor' in translations.en` answers
+yes from the prototype, so isTranslationKey guards with hasOwnProperty (the beingIndex guard,
+reused). The three inline problem-renderers (offer, bed, calendar) speak too — a raw key must
+never reach a reader's eye. STILL AHEAD, same directive: ~90 service error throws, then the
+~430 component literals.
+
+---
+
 **2026-08-10 · The engine room is current** (`functions/`): firebase-functions 7.3.2 and
 firebase-admin 12→14 (two majors), done now rather than at the worst time, at Zoltán's word.
 Admin 14 removes the legacy namespace API, so `functions/src/index.ts` moved to modular imports

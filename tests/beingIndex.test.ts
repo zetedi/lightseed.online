@@ -13,6 +13,7 @@ import {
 } from '../functions/src/beingIndex';
 import { isLid } from '../src/domain/dataAuthority';
 import { uuidv7 } from '../src/utils/id';
+import { speak } from '../src/utils/translations';
 
 // THE LID INDEX. A true name written down beside the local address that happens to hold it
 // today. These tests hold the seam: the lid and the kind are frozen forever, the address is
@@ -39,27 +40,27 @@ describe('an entry the index may keep', () => {
   });
 
   it('refuses a name that is not a true name', () => {
-    expect(beingEntryProblem(entry({ lid: 'lifetree-42' }))).toMatch(/UUIDv7/);
-    expect(beingEntryProblem(entry({ lid: '' }))).toMatch(/UUIDv7/);
+    expect(speak(beingEntryProblem(entry({ lid: 'lifetree-42' }))!)).toMatch(/UUIDv7/);
+    expect(speak(beingEntryProblem(entry({ lid: '' }))!)).toMatch(/UUIDv7/);
     // A UUIDv4 is a fine identifier and still not a lid — birth-time is in a lid's first bits.
-    expect(beingEntryProblem(entry({ lid: '019ea86e-0000-4000-8000-00000000bf17' }))).toMatch(/UUIDv7/);
+    expect(speak(beingEntryProblem(entry({ lid: '019ea86e-0000-4000-8000-00000000bf17' }))!)).toMatch(/UUIDv7/);
   });
 
   it('refuses a kind it cannot address, and relations are not addressed here', () => {
-    expect(beingEntryProblem(entry({ kind: 'link' as never }))).toMatch(/not a kind/);
-    expect(beingEntryProblem(entry({ kind: 'covenant' as never }))).toMatch(/not a kind/);
+    expect(speak(beingEntryProblem(entry({ kind: 'link' as never }))!)).toMatch(/not a kind/);
+    expect(speak(beingEntryProblem(entry({ kind: 'covenant' as never }))!)).toMatch(/not a kind/);
     expect(isBeingKind('constructor')).toBe(false); // not a kind merely because Object has one
   });
 
   it('refuses a map that lies about where a kind lives', () => {
-    expect(beingEntryProblem(entry({ kind: 'tree', collection: 'visions' }))).toMatch(/lifetrees/);
-    expect(beingEntryProblem(entry({ collection: '' }))).toMatch(/lifetrees/);
+    expect(speak(beingEntryProblem(entry({ kind: 'tree', collection: 'visions' }))!)).toMatch(/lifetrees/);
+    expect(speak(beingEntryProblem(entry({ collection: '' }))!)).toMatch(/lifetrees/);
   });
 
   it('refuses an address with no document, and nothing at all', () => {
-    expect(beingEntryProblem(entry({ docId: '   ' }))).toMatch(/needs a document/);
-    expect(beingEntryProblem(null)).toMatch(/not nothing/);
-    expect(beingEntryProblem(undefined)).toMatch(/not nothing/);
+    expect(speak(beingEntryProblem(entry({ docId: '   ' }))!)).toMatch(/needs a document/);
+    expect(speak(beingEntryProblem(null)!)).toMatch(/not nothing/);
+    expect(speak(beingEntryProblem(undefined)!)).toMatch(/not nothing/);
   });
 
   it('accepts a freshly minted lid — the real generator, not a fixture', () => {
@@ -81,19 +82,19 @@ describe('re-pointing: the portable name over the local address', () => {
   it('a lid never comes to mean a different kind of being', () => {
     const v = rebindVerdict(entry(), entry({ kind: 'vision', collection: 'visions' }));
     expect(v.verdict).toBe('refused');
-    if (v.verdict === 'refused') expect(v.reason).toMatch(/does not change what it names/);
+    if (v.verdict === 'refused') expect(speak(v.reason)).toMatch(/does not change what it names/);
   });
 
   it('another true name is another entry entirely', () => {
     const v = rebindVerdict(entry(), entry({ lid: OTHER_LID }));
     expect(v.verdict).toBe('refused');
-    if (v.verdict === 'refused') expect(v.reason).toMatch(/different true name/);
+    if (v.verdict === 'refused') expect(speak(v.reason)).toMatch(/different true name/);
   });
 
   it('a malformed rewrite is refused with the reason read aloud', () => {
     const v = rebindVerdict(entry(), entry({ docId: '' }));
     expect(v.verdict).toBe('refused');
-    if (v.verdict === 'refused') expect(v.reason).toMatch(/needs a document/);
+    if (v.verdict === 'refused') expect(speak(v.reason)).toMatch(/needs a document/);
   });
 });
 

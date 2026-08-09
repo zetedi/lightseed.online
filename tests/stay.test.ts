@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { bedIsFreeFor, bedsFreeFor, MAX_STAY_NIGHTS, nightsBetween, stayRequestProblem, staysOverlap } from '../src/domain/stay';
+import { speak } from '../src/utils/translations';
 
 // Beds in lightHouses — the stay arithmetic, testable without any backend.
 
@@ -18,10 +19,10 @@ describe('stayRequestProblem', () => {
     expect(stayRequestProblem('2026-08-01', '2026-08-05', NOW)).toBeNull();
   });
   it('refuses reversed, endless, past, and empty ranges', () => {
-    expect(stayRequestProblem('2026-08-05', '2026-08-01', NOW)).toContain('after arrival');
-    expect(stayRequestProblem('2026-08-01', '2026-12-01', NOW)).toContain(`${MAX_STAY_NIGHTS}`);
-    expect(stayRequestProblem('2026-07-01', '2026-07-05', NOW)).toContain('past');
-    expect(stayRequestProblem('', '2026-08-01', NOW)).toContain('Choose');
+    expect(speak(stayRequestProblem('2026-08-05', '2026-08-01', NOW)!)).toContain('after arrival');
+    expect(speak(stayRequestProblem('2026-08-01', '2026-12-01', NOW)!)).toContain(`${MAX_STAY_NIGHTS}`);
+    expect(speak(stayRequestProblem('2026-07-01', '2026-07-05', NOW)!)).toContain('past');
+    expect(speak(stayRequestProblem('', '2026-08-01', NOW)!)).toContain('Choose');
   });
 });
 

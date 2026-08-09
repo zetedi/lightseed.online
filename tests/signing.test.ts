@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createHash } from 'node:crypto';
 import { SIGNING_VERSION, signingPreimage, seedToPhrase, phraseToSeed, parsePhrase, keyCustody, restoreConflictsWithPublished } from '../src/domain/signing';
 import { BIP39_WORDLIST } from '../src/domain/bip39Wordlist';
+import { speak } from '../src/utils/translations';
 
 // The pure signing crystal: the preimage (deterministic + domain-separated) and the recovery-phrase
 // codec — now a STANDARD BIP39 mnemonic, asserted against the official Trezor/BIP39 test vectors.
@@ -112,7 +113,8 @@ describe('recovery-phrase codec — standard BIP39', () => {
   it('rejects an unknown (off-list) word', () => {
     const phrase = seedToPhrase(seedFrom(i => i));
     const tampered = phrase.slice(); tampered[0] = 'zzzz';
-    expect(() => phraseToSeed(tampered)).toThrow(/unknown word/);
+    try { phraseToSeed(tampered); expect.unreachable('tampered phrase must throw'); }
+    catch (e) { expect(speak((e as Error).message)).toMatch(/Unknown word/); }
   });
 
   it('rejects a wrong word count', () => {

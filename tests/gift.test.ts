@@ -4,6 +4,7 @@ import {
   conserves, conservationGap, type GiftDraft, type LightLedger,
 } from '../src/domain/gift';
 import { RAY_UNITS, DEFAULT_GLOW_SHARE_DENOMINATOR } from '../src/domain/light';
+import { speak } from '../src/utils/translations';
 
 // The suspended gift: appreciation that travels forward and never back. The tests walk the whole
 // journey of one ray — kindled, given, suspended, claimed, given again — and hold the ledger to
@@ -24,19 +25,19 @@ describe('giving: what may be sent forward', () => {
   });
 
   it('nothing, a fraction, or more light than you hold cannot be given', () => {
-    expect(giftProblem({ ...sound(), units: 0 })).toBe('A gift is more than nothing.');
-    expect(giftProblem({ ...sound(), units: -5 })).toBe('A gift is more than nothing.');
-    expect(giftProblem({ ...sound(), units: 10.5 })).toBe('Light is given in whole units.');
-    expect(giftProblem({ ...sound(), units: NaN })).toBe('A gift is more than nothing.');
-    expect(giftProblem({ ...sound(), holdingUnits: RAY_UNITS - 1 })).toBe('You hold less light than that.');
+    expect(speak(giftProblem({ ...sound(), units: 0 })!)).toBe('A gift is more than nothing.');
+    expect(speak(giftProblem({ ...sound(), units: -5 })!)).toBe('A gift is more than nothing.');
+    expect(speak(giftProblem({ ...sound(), units: 10.5 })!)).toBe('Light is given in whole units.');
+    expect(speak(giftProblem({ ...sound(), units: NaN })!)).toBe('A gift is more than nothing.');
+    expect(speak(giftProblem({ ...sound(), holdingUnits: RAY_UNITS - 1 })!)).toBe('You hold less light than that.');
   });
 
   it('you cannot appreciate your own offering — that is a circle calling itself circulation', () => {
-    expect(giftProblem({ ...sound(), giverUid: 'bob' })).toBe('You cannot appreciate your own offering.');
+    expect(speak(giftProblem({ ...sound(), giverUid: 'bob' })!)).toBe('You cannot appreciate your own offering.');
   });
 
   it('a resting offering takes no gift: its light would wait for no one', () => {
-    expect(giftProblem({ ...sound(), offeringActive: false })).toBe('This offering is resting; its light would wait for no one.');
+    expect(speak(giftProblem({ ...sound(), offeringActive: false })!)).toBe('This offering is resting; its light would wait for no one.');
   });
 
   it('giving exactly what you hold is allowed — light is not a balance to protect', () => {

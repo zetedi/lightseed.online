@@ -4,6 +4,7 @@
 // later with the rest of the care economy (domain/support.ts) — the structure is whole now.
 
 import type { Being } from './being';
+import { spokenLine } from '../utils/translations';
 
 export type StayStatus = 'requested' | 'accepted' | 'declined';
 
@@ -46,13 +47,13 @@ export const nightsBetween = (fromDate: string, toDate: string): number => {
 // Why this request cannot stand — or null when it may. Dates are date-only strings; "today"
 // is derived from nowMs in the caller's clock.
 export const stayRequestProblem = (fromDate: string, toDate: string, nowMs: number): string | null => {
-  if (!fromDate || !toDate) return 'Choose the nights: arrival and departure.';
+  if (!fromDate || !toDate) return 'stay_choose_nights';
   const nights = nightsBetween(fromDate, toDate);
-  if (nights <= 0) return 'Departure must come after arrival.';
-  if (nights > MAX_STAY_NIGHTS) return `A stay is at most ${MAX_STAY_NIGHTS} nights — beyond that, join the community.`;
+  if (nights <= 0) return 'stay_order';
+  if (nights > MAX_STAY_NIGHTS) return spokenLine('stay_max_nights', { max: MAX_STAY_NIGHTS });
   const today = new Date(nowMs);
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-  if (fromDate < todayStr) return 'The arrival night is already in the past.';
+  if (fromDate < todayStr) return 'stay_past';
   return null;
 };
 

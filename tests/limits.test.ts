@@ -3,6 +3,7 @@ import {
   treePlantingGate, normalizeNodeLimits,
   DEFAULT_MAX_LIFETREES, DEFAULT_MAX_GUARDED_TREES, DEFAULT_NODE_LIMITS, UN_MEMBER_STATES,
 } from '../src/domain/limits';
+import { speak } from '../src/utils/translations';
 
 const lifetrees = (n: number) => Array.from({ length: n }, () => ({ treeType: 'LIFETREE' }));
 const guarded = (n: number) => Array.from({ length: n }, () => ({ treeType: 'GUARDED' }));
@@ -21,12 +22,12 @@ describe('treePlantingGate — quality, not quantity', () => {
 
   it('refuses the lifetree beyond the last country with the quality-not-quantity message', () => {
     const refusal = treePlantingGate(lifetrees(DEFAULT_MAX_LIFETREES), 'LIFETREE');
-    expect(refusal).toMatch(/quality, not quantity/);
+    expect(speak(refusal!)).toMatch(/quality, not quantity/);
   });
 
   it('refuses the 133rd guarded tree with the quality-not-quantity message', () => {
     const refusal = treePlantingGate(guarded(DEFAULT_MAX_GUARDED_TREES), 'GUARDED');
-    expect(refusal).toMatch(/quality, not quantity/);
+    expect(speak(refusal!)).toMatch(/quality, not quantity/);
   });
 
   it('counts each kind independently — a full grove does not block a lifetree', () => {
@@ -36,15 +37,15 @@ describe('treePlantingGate — quality, not quantity', () => {
 
   it('treats legacy nature trees (no treeType, isNature) as guarded', () => {
     const legacy = Array.from({ length: DEFAULT_MAX_GUARDED_TREES }, () => ({ isNature: true }));
-    expect(treePlantingGate(legacy, 'GUARDED')).toMatch(/quality, not quantity/);
+    expect(speak(treePlantingGate(legacy, 'GUARDED')!)).toMatch(/quality, not quantity/);
     expect(treePlantingGate(legacy, 'LIFETREE')).toBeNull();
   });
 
   it('honours node-level caps from config and quotes them in the refusal', () => {
     const caps = { maxLifetrees: 3, maxGuardedTrees: 5 };
     expect(treePlantingGate(lifetrees(2), 'LIFETREE', caps)).toBeNull();
-    expect(treePlantingGate(lifetrees(3), 'LIFETREE', caps)).toMatch(/3 lifetrees/);
-    expect(treePlantingGate(guarded(5), 'GUARDED', caps)).toMatch(/5 trees/);
+    expect(speak(treePlantingGate(lifetrees(3), 'LIFETREE', caps)!)).toMatch(/3 lifetrees/);
+    expect(speak(treePlantingGate(guarded(5), 'GUARDED', caps)!)).toMatch(/5 trees/);
   });
 });
 

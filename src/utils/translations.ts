@@ -255,7 +255,43 @@ const baseKeys = {
   invite_goes_to_keeper: "The invitation goes to the found tree's keeper.",
   invite_reason_own: "kept by this tree's own keeper — already home",
   invite_reason_in_circle: "its keeper already stands in this circle",
-  find_tree_by_name: "Find a tree by name…", no_tree_to_invite: "No tree by that name to invite."
+  find_tree_by_name: "Find a tree by name…", no_tree_to_invite: "No tree by that name to invite.",
+  // The law read aloud — the domain returns these KEYS (never English), speak() says them.
+  gift_nothing: "A gift is more than nothing.",
+  gift_whole_units: "Light is given in whole units.",
+  gift_needs_both: "A gift needs both a giver and an offering.",
+  gift_own_offering: "You cannot appreciate your own offering.",
+  gift_resting: "This offering is resting; its light would wait for no one.",
+  gift_hold_less: "You hold less light than that.",
+  offering_choose_kind: "Choose what you are offering.",
+  offering_name: "Name your offering.",
+  offering_appreciation_positive: "Suggest an appreciation in light (more than zero).",
+  offering_appreciation_whole: "Appreciation is expressed in whole light units.",
+  offering_link_http: "The detail link must be a full http(s) address.",
+  offering_link_long: "The detail link is too long.",
+  bed_name: "Give the bed a name.",
+  bed_place: "A bed stands somewhere — inside a Light House, or loose at a place under open stars.",
+  stay_choose_nights: "Choose the nights: arrival and departure.",
+  stay_order: "Departure must come after arrival.",
+  stay_max_nights: "A stay is at most {max} nights — beyond that, join the community.",
+  stay_past: "The arrival night is already in the past.",
+  limit_lifetrees: "You already tend {max} lifetrees: a tree for every country of the Earth. We would like quality, not quantity: deepen the trees you have, and let each one truly live.",
+  limit_guarded: "You already guard {max} trees: a whole grove. We would like quality, not quantity: tend the ones in your care before standing for more.",
+  being_entry_nothing: "An entry is a record, not nothing.",
+  being_entry_lid: "A true name is a UUIDv7, or it is not a true name.",
+  being_entry_kind: "That is not a kind of being this index can address.",
+  being_entry_home: "A {kind} lives in {home}, not in {claimed}.",
+  being_entry_doc: "A local address needs a document.",
+  rebind_different_name: "That is a different true name.",
+  rebind_kind_change: "A lid does not change what it names ({from} → {to}).",
+  lid62_hex: "Not a canonical lid (a UUID has 32 hex digits).",
+  lid62_overflow: "Beyond 128 bits: no lid lives there.",
+  lid62_length: "A compact lid has exactly {n} characters.",
+  lid62_char: "Not a base62 character: \"{ch}\".",
+  signing_seed_bytes: "A signing seed is exactly {n} bytes.",
+  signing_phrase_words: "A recovery phrase has exactly {n} words.",
+  signing_unknown_word: "Unknown word in the recovery phrase: \"{word}\".",
+  signing_checksum: "The recovery phrase checksum failed — a word looks mistyped."
 };
 
 const dictionaries = {
@@ -548,7 +584,42 @@ const dictionaries = {
     invite_goes_to_keeper: "تصل الدعوة إلى صاحب الشجرة التي وجدتها.",
     invite_reason_own: "يرعاها صاحب هذه الشجرة نفسه، فهي في البيت أصلًا",
     invite_reason_in_circle: "صاحبها يقف في هذه الدائرة أصلًا",
-    find_tree_by_name: "ابحث عن شجرة باسمها…", no_tree_to_invite: "لا شجرة بهذا الاسم لدعوتها."
+    find_tree_by_name: "ابحث عن شجرة باسمها…", no_tree_to_invite: "لا شجرة بهذا الاسم لدعوتها.",
+    gift_nothing: "الهدية أكثر من لا شيء.",
+    gift_whole_units: "يُمنح النور بوحدات كاملة.",
+    gift_needs_both: "الهدية تحتاج مانحًا وعرضًا معًا.",
+    gift_own_offering: "لا يمكنك تقدير عرضك أنت.",
+    gift_resting: "هذا العرض يستريح؛ نوره سينتظر بلا أحد.",
+    gift_hold_less: "ما تحمله من نور أقل من ذلك.",
+    offering_choose_kind: "اختر ما تعرضه.",
+    offering_name: "سمِّ عرضك.",
+    offering_appreciation_positive: "اقترح تقديرًا بالنور (أكثر من صفر).",
+    offering_appreciation_whole: "يُعبَّر عن التقدير بوحدات نور كاملة.",
+    offering_link_http: "رابط التفاصيل يجب أن يكون عنوان http(s) كاملًا.",
+    offering_link_long: "رابط التفاصيل طويل جدًا.",
+    bed_name: "أعطِ السرير اسمًا.",
+    bed_place: "السرير يقف في مكان ما: داخل بيت نور، أو طليقًا في مكان تحت النجوم.",
+    stay_choose_nights: "اختر الليالي: الوصول والمغادرة.",
+    stay_order: "المغادرة تأتي بعد الوصول.",
+    stay_max_nights: "الإقامة {max} ليلةً على الأكثر — بعدها انضم إلى المجتمع.",
+    stay_past: "ليلة الوصول مضت بالفعل.",
+    limit_lifetrees: "أنت ترعى {max} شجرة حياة بالفعل: شجرة لكل بلد على الأرض. نريد الجودة لا الكثرة: عمّق أشجارك، ودَع كل واحدة تحيا حقًا.",
+    limit_guarded: "أنت تحرس {max} شجرة بالفعل: غابة كاملة. نريد الجودة لا الكثرة: اعتنِ بما في رعايتك قبل أن تقف لمزيد.",
+    being_entry_nothing: "المدخل سجلّ، لا لا-شيء.",
+    being_entry_lid: "الاسم الحق UUIDv7، وإلا فليس اسمًا حقًا.",
+    being_entry_kind: "هذا ليس نوع كائن يعرفه هذا الفهرس.",
+    being_entry_home: "الـ{kind} يسكن في {home}، لا في {claimed}.",
+    being_entry_doc: "العنوان المحلي يحتاج وثيقة.",
+    rebind_different_name: "هذا اسم حق مختلف.",
+    rebind_kind_change: "الاسم لا يغيّر ما يسمّيه ({from} → {to}).",
+    lid62_hex: "ليس اسمًا قانونيًا (المعرّف UUID فيه 32 خانة سداسية عشرية).",
+    lid62_overflow: "وراء 128 بتًا لا يسكن اسم.",
+    lid62_length: "الاسم المضغوط طوله {n} حرفًا بالضبط.",
+    lid62_char: "ليس حرف base62: «{ch}».",
+    signing_seed_bytes: "بذرة التوقيع {n} بايتًا بالضبط.",
+    signing_phrase_words: "عبارة الاسترداد {n} كلمةً بالضبط.",
+    signing_unknown_word: "كلمة غير معروفة في عبارة الاسترداد: «{word}».",
+    signing_checksum: "فشل تحقق عبارة الاسترداد — يبدو أن كلمة كُتبت خطأ."
   },
   sw: { 
     ...baseKeys, forest: "Msitu", pulses: "Mapigo", visions: "Maono", oracle: "Mtabiri", about: "Kuhusu", explore: "Chunguza", 
@@ -800,7 +871,42 @@ const dictionaries = {
     invite_goes_to_keeper: "邀请将送达所找到那棵树的主人。",
     invite_reason_own: "由这棵树的主人亲自照料——已在家中",
     invite_reason_in_circle: "它的主人已在这个圈子里",
-    find_tree_by_name: "按名字寻找一棵树…", no_tree_to_invite: "没有叫这个名字的树可邀请。"
+    find_tree_by_name: "按名字寻找一棵树…", no_tree_to_invite: "没有叫这个名字的树可邀请。",
+    gift_nothing: "礼物要多于虚无。",
+    gift_whole_units: "光以整数单位相赠。",
+    gift_needs_both: "一份礼物需要赠予者与一个奉献。",
+    gift_own_offering: "你不能感谢自己的奉献。",
+    gift_resting: "这个奉献正在休息；它的光将无人可等。",
+    gift_hold_less: "你持有的光不足。",
+    offering_choose_kind: "选择你要奉献什么。",
+    offering_name: "为你的奉献命名。",
+    offering_appreciation_positive: "请以光提出一个感谢建议（大于零）。",
+    offering_appreciation_whole: "感谢以整数光单位表示。",
+    offering_link_http: "详情链接必须是完整的 http(s) 地址。",
+    offering_link_long: "详情链接过长。",
+    bed_name: "给这张床起个名字。",
+    bed_place: "床要立于某处——在一座光之屋里，或露天星空下的一个地方。",
+    stay_choose_nights: "选择住宿的夜晚：到达与离开。",
+    stay_order: "离开必须在到达之后。",
+    stay_max_nights: "一次住宿最多 {max} 晚——再久就请加入社区。",
+    stay_past: "到达之夜已经过去。",
+    limit_lifetrees: "你已照料 {max} 棵生命树：地球上每个国家一棵。我们要的是质量而非数量：深耕你已有的树，让每一棵都真正活着。",
+    limit_guarded: "你已守护 {max} 棵树：一整片树林。我们要的是质量而非数量：先照料手中的，再为更多的树挺身。",
+    being_entry_nothing: "条目是一条记录，不是虚无。",
+    being_entry_lid: "真名是 UUIDv7，否则就不是真名。",
+    being_entry_kind: "这不是此索引能寻址的存在类型。",
+    being_entry_home: "{kind} 住在 {home}，而不是 {claimed}。",
+    being_entry_doc: "本地地址需要一份文档。",
+    rebind_different_name: "那是另一个真名。",
+    rebind_kind_change: "名字不会改变它所命名之物（{from} → {to}）。",
+    lid62_hex: "不是规范的真名（UUID 有 32 个十六进制位）。",
+    lid62_overflow: "128 位之外没有名字栖居。",
+    lid62_length: "紧凑真名恰好 {n} 个字符。",
+    lid62_char: "不是 base62 字符：“{ch}”。",
+    signing_seed_bytes: "签名种子恰好 {n} 字节。",
+    signing_phrase_words: "恢复短语恰好 {n} 个词。",
+    signing_unknown_word: "恢复短语中有未知的词：“{word}”。",
+    signing_checksum: "恢复短语校验失败——似乎有个词打错了。"
   }
 };
 
@@ -842,9 +948,24 @@ export const isTranslationKey = (value: unknown): value is TranslationKey =>
 // ("no more English in the code") while legacy strings and composed sentences still display.
 // `params` fills {placeholder} holes after translation, so dynamic values survive the border.
 export const speak = (message: string, params?: Record<string, string | number>): string => {
-  let out = isTranslationKey(message)
-    ? (translations[activeLanguage][message] || translations.en[message])
+  // A SPOKEN LINE may carry its own params: `key::{"n":5}` — the compact convention that lets a
+  // pure domain function return one string that still says "at most 12 nights" in any tongue.
+  let key = message;
+  let inlineParams: Record<string, string | number> | undefined;
+  const sep = message.indexOf('::');
+  if (sep > 0) {
+    try {
+      const parsed = JSON.parse(message.slice(sep + 2));
+      if (parsed && typeof parsed === 'object') { key = message.slice(0, sep); inlineParams = parsed; }
+    } catch { /* not a spoken line — leave the message whole */ }
+  }
+  let out = isTranslationKey(key)
+    ? (translations[activeLanguage][key] || translations.en[key])
     : message;
-  for (const [k, v] of Object.entries(params || {})) out = out.split(`{${k}}`).join(String(v));
+  for (const [k, v] of Object.entries({ ...inlineParams, ...params })) out = out.split(`{${k}}`).join(String(v));
   return out;
 };
+
+// The domain's half of the convention: compose a spoken line without knowing any language.
+export const spokenLine = (key: TranslationKey, params: Record<string, string | number>): string =>
+  `${key}::${JSON.stringify(params)}`;

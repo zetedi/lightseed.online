@@ -9,6 +9,7 @@ import { offeringProblem, type OfferingKind } from '../../domain/offering';
 import { formatLight, RAY_UNITS } from '../../domain/light';
 import { tabTone } from '../../utils/tabTheme';
 import type { Lifetree, Pulse } from '../../types';
+import { speak } from '../../utils/translations';
 
 // MAKE AN OFFERING — post a BED or SERVICE through trust, with light named only as the hoped-for
 // appreciation AFTER someone receives it (domain/offering). It creates an offering pulse on the
@@ -170,7 +171,7 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved }: {
 
                 <ImagePicker onImageSelect={pickImage} previewUrl={imageUrl} loading={uploading} className="h-40" />
 
-                {problem && <p className="text-xs font-medium text-rose-600">{problem}</p>}
+                {problem && <p className="text-xs font-medium text-rose-600">{speak(problem)}</p>}
                 <button type="submit" disabled={!!problem || saving || uploading}
                     className="w-full rounded-2xl py-3 text-sm font-bold text-white shadow-lg transition-all hover:brightness-110 disabled:opacity-50"
                     style={{ backgroundColor: HEART, boxShadow: '0 10px 15px -3px rgba(41,132,66,0.25)' }}>

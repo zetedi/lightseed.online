@@ -1,4 +1,5 @@
 import { isLid } from './dataAuthority';
+import { spokenLine } from '../utils/translations';
 
 // THE LID INDEX — where a true name is written down.
 //
@@ -66,13 +67,13 @@ export interface BeingEntry {
 // index is trusted by everything downstream, so a malformed entry is refused at the door rather
 // than resolved later into a wrong being.
 export const beingEntryProblem = (entry: Partial<BeingEntry> | null | undefined): string | null => {
-  if (!entry || typeof entry !== 'object') return 'An entry is a record, not nothing.';
-  if (!isLid(entry.lid)) return 'A true name is a UUIDv7, or it is not a true name.';
-  if (!isBeingKind(entry.kind)) return 'That is not a kind of being this index can address.';
+  if (!entry || typeof entry !== 'object') return 'being_entry_nothing';
+  if (!isLid(entry.lid)) return 'being_entry_lid';
+  if (!isBeingKind(entry.kind)) return 'being_entry_kind';
   if (entry.collection !== COLLECTION_FOR_KIND[entry.kind]) {
-    return `A ${entry.kind} lives in ${COLLECTION_FOR_KIND[entry.kind]}, not in ${entry.collection || 'nowhere'}.`;
+    return spokenLine('being_entry_home', { kind: entry.kind, home: COLLECTION_FOR_KIND[entry.kind], claimed: entry.collection || '—' });
   }
-  if (typeof entry.docId !== 'string' || !entry.docId.trim()) return 'A local address needs a document.';
+  if (typeof entry.docId !== 'string' || !entry.docId.trim()) return 'being_entry_doc';
   return null;
 };
 
@@ -105,10 +106,10 @@ const addressOf = (e: BeingEntry) => `${e.collection}/${e.docId}`;
 export const rebindVerdict = (existing: BeingEntry, next: BeingEntry): RebindVerdict => {
   const problem = beingEntryProblem(next);
   if (problem) return { verdict: 'refused', reason: problem };
-  if (existing.lid !== next.lid) return { verdict: 'refused', reason: 'That is a different true name.' };
+  if (existing.lid !== next.lid) return { verdict: 'refused', reason: 'rebind_different_name' };
   // A lid may never come to mean another kind of being — not by migration, not by repair.
   if (existing.kind !== next.kind) {
-    return { verdict: 'refused', reason: `A lid does not change what it names (${existing.kind} → ${next.kind}).` };
+    return { verdict: 'refused', reason: spokenLine('rebind_kind_change', { from: existing.kind, to: next.kind }) };
   }
   if (addressOf(existing) === addressOf(next)) return { verdict: 'unchanged' };
   return { verdict: 'moved', from: addressOf(existing), to: addressOf(next) };
