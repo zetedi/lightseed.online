@@ -6,6 +6,34 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-09 · Votes converge onto signatures** (`governance.ts`, rules branch (d)): the second half
+of the arrays audit, scheduled by the ring below. The seal was ALREADY the signatures
+(`verifiedDecisionSigners`, Covenant phase 3) — but three trusts in the raw array remained, and each
+is now gone. (1) **`voteOnDecision` is retired**: it appended a bare authenticated uid and enacted
+at `votes.length` — no crypto anywhere in the path. It had no callers left (the council signs), but
+an exported enactment door that trusts an array is a door someone eventually re-wires; deleted, not
+deprecated. (2) **No decision passes at birth**: `createDecision` auto-passed a one-voice intention
+with zero signatures, minting a 'passed' flag that `decisionAuthoritative` immediately called
+dishonest — the flag outran the crypto in the very first write. Every decision now opens; even the
+one-voice intention waits for its proposer's signed hand, which also keeps DRAFT VANISHES true (an
+unsigned proposal stays erasable until a signature or another voice stands on it — auto-signing at
+birth would have made every draft immortal, so the proposer's creation voice stays an UNSIGNED
+provenance mark). (3) **The governance overlay belongs to the circle**: rules branch (d) had no
+membership gate and no whose-uid constraint — any signed-in account could rewrite
+votes/concerns/positions on any decision whose id it knew, the same unbound-shared-cell fault as
+overlay (a). Now member-gated (owner included, staff via the mend), and `votes` moves only by
+append-exactly-your-own-uid — the vetoes arithmetic, third use. WHAT `votes[]` STILL IS: a display
+and delete-guard denormalisation fed by signDecision, plus the proposer's provenance voice — never
+counted for enactment, and no longer forgeable. NAMED, NOT HIDDEN: legacy decisions passed by the
+unsigned path keep their flags, and the council's crypto badge reads them as passed-but-unverified —
+the honest reading of pre-crypto history, marked, never rewritten. Remaining drift, accepted for
+now: `positions`/`concerns` content is member-bounded but not per-element-constrained (rules cannot
+loop over object arrays; `recordPosition` replaces the whole array), and `councilView`'s voiceCount
+still counts unsigned voices as voices. The full retirement of the array — one link/signature per
+voice, the view derived — waits for a UI rework, not for a quiet weekend.
+
+---
+
 **2026-08-09 · The arrays audit, and the receipt that could be forged** (`firestore.rules` overlay
 (a)): Zoltán asked whether the code is still true to the crystal — relations as links, never
 arrays — and the audit's honest answer is: MOSTLY, and the root itself carves the exception it

@@ -1258,18 +1258,58 @@ describe('signing epochs — atomic anchor, immutable authority, one-way emergen
   });
 });
 
+describe('the circle votes in its own name — the governance overlay is member-gated, append-own', () => {
+  // votes→signatures convergence (ring 2026-08-09): the seal was already the signatures, but the
+  // votes ARRAY was an unbound shared cell — any signed-in account, member or not, could rewrite
+  // votes/concerns/positions on any decision whose id it knew. Now the overlay belongs to the
+  // circle, and a voice moves only by append-exactly-your-own-uid.
+  const DEC = 'dec-overlay';
+  const seedDec = (data: object = {}) => env.withSecurityRulesDisabled(async (ctx) => {
+    const d = ctx.firestore();
+    await setDoc(doc(d, 'pulses', DEC), {
+      type: 'decision', lid: `${DEC}-lid`, communityId: 'com1', nature: 'charter',
+      title: 'T', body: '', proposedBy: ALICE, authorId: ALICE, mode: 'threshold',
+      votes: [ALICE], votesRequired: 7, status: 'open',
+      previousHash: 'DECISION', hash: 'h0', createdAt: 1, ...data,
+    });
+    await setDoc(doc(d, 'links', `${BOB}__member__com1`), { lid: 'x', type: 'link', rel: 'member', from: BOB, to: 'com1', createdAt: 1 });
+  });
+
+  it('a member adds their own voice; an outsider cannot touch the overlay at all', async () => {
+    await seedDec();
+    await assertSucceeds(updateDoc(doc(db(BOB), 'pulses', DEC), { votes: [ALICE, BOB] }));
+    await assertFails(updateDoc(doc(db(MALLORY), 'pulses', DEC), { votes: [ALICE, BOB, MALLORY] }));
+    await assertFails(updateDoc(doc(db(MALLORY), 'pulses', DEC), { concerns: [{ by: MALLORY, note: 'noise', at: 1 }] }));
+  });
+
+  it('a voice can be neither forged in another\'s name nor erased — even by a member', async () => {
+    await seedDec();
+    await assertFails(updateDoc(doc(db(BOB), 'pulses', DEC), { votes: [ALICE, MALLORY] })); // forged
+    await assertFails(updateDoc(doc(db(BOB), 'pulses', DEC), { votes: [BOB] }));            // erases ALICE
+    await assertFails(updateDoc(doc(db(BOB), 'pulses', DEC), { votes: [] }));               // erases all
+  });
+
+  it('the keeper stands inside their own circle: listening opens with a concern', async () => {
+    await seedDec();
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'pulses', DEC), { listening: true, concerns: [{ by: ALICE, note: 'wait', at: 1 }] }));
+  });
+});
+
 describe('draft vanishes, minted withdraws — the decision delete rule and the chain marks', () => {
   // A decision still in DRAFT substance (not passed, only the proposer's own voice, no positions)
   // may be deleted by its author; anything shared or enacted may only be WITHDRAWN. Signatures live
   // in a subcollection the rules cannot read — that half of the guard is the service's
   // (deleteDecision / domain decisionDeletable); here the doc-visible half is law.
-  const seedDec = (id: string, data: object) => env.withSecurityRulesDisabled(async (ctx) =>
-    setDoc(doc(ctx.firestore(), 'pulses', id), {
+  const seedDec = (id: string, data: object) => env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'pulses', id), {
       type: 'decision', lid: `${id}-lid`, communityId: 'com1', nature: 'charter',
       title: 'T', body: '', proposedBy: ALICE, authorId: ALICE, mode: 'threshold',
       votes: [ALICE], votesRequired: 7, status: 'open',
       previousHash: 'DECISION', hash: 'h0', createdAt: 1, ...data,
-    }));
+    });
+    // BOB is a member of com1 — the governance overlay is member-gated now.
+    await setDoc(doc(ctx.firestore(), 'links', `${BOB}__member__com1`), { lid: 'x', type: 'link', rel: 'member', from: BOB, to: 'com1', createdAt: 1 });
+  });
 
   it('the author deletes their own unsigned, unshared draft', async () => {
     await seedDec('dr1', {});

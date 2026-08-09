@@ -75,7 +75,10 @@ export interface Decision extends Being {
   subject?: string;     // what it concerns (an item, a person, a use)
   proposedBy: string;   // uid — counts as the first voice / the clerk
   mode?: DecisionMode;  // absent = 'threshold' (legacy decisions)
-  votes: string[];      // uids who have voiced yes (threshold mode)
+  // uids who have voiced yes (threshold mode) — a DENORMALISATION for display and the delete
+  // guard, fed by signDecision (plus legacy unsigned voices). Never counted for enactment:
+  // the seal is the signatures subcollection (verifiedDecisionSigners). Ring 2026-08-09.
+  votes: string[];
   votesRequired: number;
   positions?: Position[]; // consensus mode: each voice's unite / stand-aside / block
   status: DecisionStatus;

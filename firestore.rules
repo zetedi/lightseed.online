@@ -832,8 +832,22 @@ service cloud.firestore {
         //     change, so a plain voter can never scribble a seal or a withdrawal mark on its own.
         || (
              resource.data.get('type', '') == 'decision'
+             // The circle's own business: only a member (owner included) touches a decision's
+             // governance overlay. Before this, ANY signed-in account could rewrite
+             // votes/concerns/positions on any decision whose id it knew (the arrays audit).
+             && (isStaff() || isCommunityMember(resource.data.get('communityId', '')))
              && request.resource.data.diff(resource.data).affectedKeys()
                   .hasOnly(['votes', 'concerns', 'positions', 'listening', 'status', 'passedAt', 'enactedHash', 'withdrawnAt', 'rejectedAt', 'withdrawnHash', 'updatedAt'])
+             // votes moves only by append-exactly-your-own-uid (the vetoes arithmetic): a voice
+             // can be neither forged in another's name nor erased. It is never counted for
+             // enactment — the seal is the signatures subcollection — but the record stays true.
+             && (
+                  !request.resource.data.diff(resource.data).affectedKeys().hasAny(['votes'])
+                  || (
+                       request.resource.data.get('votes', []).hasAll(resource.data.get('votes', []))
+                       && resource.data.get('votes', []).concat([request.auth.uid]).hasAll(request.resource.data.get('votes', []))
+                     )
+                )
              && (
                   request.resource.data.get('status', '') == resource.data.get('status', '')
                   || isStaff()

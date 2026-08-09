@@ -24,10 +24,12 @@ export const createDecision = async (
 ): Promise<Decision> => {
     const mode: DecisionMode = data.mode || 'threshold';
     const required = votesRequired(data.nature);
-    const votes = [data.proposedBy]; // the proposer's voice is the first vote
-    // Threshold can pass on creation (e.g. a 1-voice intention); consensus never does — the clerk
-    // must discern the sense of the meeting, so it always opens.
-    const passed = mode === 'threshold' && votes.length >= required;
+    const votes = [data.proposedBy]; // the proposer's voice is the first vote — provenance, not yet a seal
+    // NO decision passes at birth any more (votes→signatures convergence, ring 2026-08-09): the
+    // seal is the signatures, and creation has none — the old auto-pass minted 'passed' flags
+    // that decisionAuthoritative immediately called dishonest. Even a one-voice intention now
+    // waits for its proposer's signed hand (signDecision), which also keeps DRAFT VANISHES true:
+    // an unsigned proposal stays erasable until a signature or another voice stands on it.
     const payload = {
         type: 'decision',
         communityId: community.id,
@@ -46,7 +48,7 @@ export const createDecision = async (
         votes,
         votesRequired: required,
         positions: [] as any[],
-        status: passed ? 'passed' as const : 'open' as const,
+        status: 'open' as const,
     };
     const hash = await createBlock('DECISION', payload, Date.now());
     const lid = uuidv7();
@@ -55,40 +57,17 @@ export const createDecision = async (
         lid,
         previousHash: 'DECISION',
         hash,
-        ...(passed ? { passedAt: serverTimestamp() } : {}),
         createdAt: serverTimestamp(),
     });
     return { id: ref.id, lid, ...payload, previousHash: 'DECISION', hash } as unknown as Decision;
 };
 
-// Add a voice. When the circle reaches the threshold, the decision passes and an enactment
-// block is written to the chain. Transactional so two votes can't race past it. A decision that
-// is closed (passed/withdrawn/rejected/expired) or in `listening` (a concern was raised) does
-// not accept votes until it is resumed.
-export type VoteOutcome = 'passed' | 'open' | 'already' | 'listening' | 'closed';
-export const voteOnDecision = async (decisionId: string, uid: string): Promise<VoteOutcome> => {
-    const actor = auth.currentUser?.uid || uid; // record the authenticated voice, not a client-supplied id
-    const ref = doc(db, 'pulses', decisionId);
-    return runTransaction(db, async (tx) => {
-        const snap = await tx.get(ref);
-        if (!snap.exists()) throw new Error('Decision not found.');
-        const d = snap.data() as any;
-        if (d.status === 'passed') return 'passed' as const;
-        if (['withdrawn', 'rejected', 'expired'].includes(d.status)) return 'closed' as const;
-        if (d.listening) return 'listening' as const; // paused for reflection until the concern is tended
-        const votes: string[] = Array.isArray(d.votes) ? d.votes : [];
-        if (votes.includes(actor)) return 'already' as const;
-        const next = [...votes, actor];
-        const required = d.votesRequired ?? votesRequired(d.nature);
-        if (next.length >= required) {
-            const enactedHash = await createBlock(d.hash || 'DECISION', { decision: decisionId, votes: next, enacted: true }, Date.now());
-            tx.update(ref, { votes: next, status: 'passed', passedAt: serverTimestamp(), enactedHash });
-            return 'passed' as const;
-        }
-        tx.update(ref, { votes: next });
-        return 'open' as const;
-    });
-};
+// The unsigned vote is RETIRED (votes→signatures convergence, ring 2026-08-09). voteOnDecision
+// appended a bare authenticated uid and enacted at votes.length — no crypto anywhere in the
+// path. It had no callers left (the council signs), but an exported enactment door that trusts
+// an array is a door someone eventually re-wires. Every affirmative now goes through
+// signDecision below; the votes[] array remains only as the display/delete-guard
+// denormalisation those signatures feed.
 
 // ── The signed vote — a decision seven people sign (Covenant, phase 3) ─────────────────────────────
 // A vote becomes an Ed25519 SIGNATURE over the decision's frozen canonical identity (domain/decision.ts).
