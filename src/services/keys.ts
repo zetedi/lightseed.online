@@ -161,7 +161,7 @@ async function publishPublicKey(uid: string, publicKeyB64: string): Promise<Publ
   ]);
   const person = personSnap.exists() ? personSnap.data() as Record<string, unknown> : {};
   const lid = typeof person.lid === 'string' ? person.lid : '';
-  if (!lid) throw new Error('This identity needs a portable LID before publishing a signing key.');
+  if (!lid) throw new Error('err_lid_before_publish');
   const published = typeof person.publicKeyPem === 'string' ? person.publicKeyPem : '';
   if (published && published !== publicKeyB64) {
     throw new SigningKeyNeedsRestoreError(await idbGet(uid) ? 'stale_device' : 'needs_restore');
@@ -175,7 +175,7 @@ async function publishPublicKey(uid: string, publicKeyB64: string): Promise<Publ
   // Already anchored: only repair a missing lineage doc. The current identity fields are untouched.
   if (existingFingerprint && existingEpochId) {
     if (existingFingerprint !== fingerprint || published !== publicKeyB64) {
-      throw new Error('The published signing-key anchor does not match this device.');
+      throw new Error('err_anchor_mismatch');
     }
     if (!keySnap.exists()) {
       const batch = writeBatch(db);
@@ -358,7 +358,7 @@ export async function publishSigningKey(uid: string, publicKeyB64: string): Prom
 
 const currentUid = (uid?: string): string => {
   const resolved = uid ?? auth.currentUser?.uid;
-  if (!resolved) throw new Error('No signing identity — sign in first.');
+  if (!resolved) throw new Error('err_no_identity');
   return resolved;
 };
 
@@ -454,7 +454,7 @@ export async function ensureSigningKey(uid?: string): Promise<EnsureKeyResult> {
   try {
     published = await getPublishedSigningKey(id);
   } catch {
-    if (!existing) throw new Error('Could not check your published signing key. Please try again in a moment.');
+    if (!existing) throw new Error('err_pubkey_check');
     published = existing.publicKeyB64;
   }
   const custody: KeyCustody = keyCustody(existing?.publicKeyB64 ?? null, published);
@@ -482,7 +482,7 @@ export async function ensureSigningKey(uid?: string): Promise<EnsureKeyResult> {
   // published public key is provably the one the seed (and thus the phrase) determines.
   const gen = await crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify']) as CryptoKeyPair;
   const jwk = await crypto.subtle.exportKey('jwk', gen.privateKey);
-  if (!jwk.d) throw new Error('Could not export the new signing seed.');
+  if (!jwk.d) throw new Error('err_seed_export');
   const seed = b64UrlToBytes(jwk.d);
 
   const recoveryPhrase = seedToPhrase(seed);
@@ -535,7 +535,7 @@ export async function rotateSigningKey(uid?: string): Promise<RotateSigningKeyRe
     throw new SigningKeyNeedsRestoreError(published ? 'stale_device' : 'needs_restore');
   }
   if (published.state === 'frozen') throw new SigningKeyFrozenError();
-  if (!published.lid) throw new Error('This identity needs a portable LID before key rotation.');
+  if (!published.lid) throw new Error('err_lid_before_rotation');
 
   const seed = new Uint8Array(32);
   crypto.getRandomValues(seed);
@@ -593,17 +593,17 @@ export async function rotateSigningKey(uid?: string): Promise<RotateSigningKeyRe
 export async function freezeSigningKey(uid?: string, suspectedSinceMs?: number): Promise<void> {
   const id = currentUid(uid);
   const identity = await getPublishedSigningIdentity(id);
-  if (!identity) throw new Error('No anchored signing key exists to freeze.');
+  if (!identity) throw new Error('err_no_anchor_freeze');
   if (identity.state === 'frozen') return;
   if (
     suspectedSinceMs !== undefined
     && (!Number.isFinite(suspectedSinceMs) || suspectedSinceMs > Date.now())
-  ) throw new Error('The suspected-compromise time cannot be in the future.');
+  ) throw new Error('err_compromise_future');
   if (suspectedSinceMs !== undefined) {
     const epoch = await getDoc(doc(db, 'persons', id, 'keyEvents', identity.epochId));
     const anchoredAt = timestampMillis(epoch.data()?.recordedAt);
     if (!anchoredAt || suspectedSinceMs < anchoredAt) {
-      throw new Error('The suspected-compromise time cannot predate this key epoch.');
+      throw new Error('err_compromise_predates');
     }
   }
 
@@ -675,7 +675,7 @@ export interface BeginRecoveryResult extends PendingRecovery {
 export async function beginSigningKeyRecovery(uid?: string): Promise<BeginRecoveryResult> {
   const id = currentUid(uid);
   if (await idbPendingFor(id)) {
-    throw new Error('A recovery is already pending on this device.');
+    throw new Error('err_recovery_pending');
   }
   const personRef = doc(db, 'persons', id);
   const personSnap = await getDoc(personRef);
@@ -686,12 +686,12 @@ export async function beginSigningKeyRecovery(uid?: string): Promise<BeginRecove
     || typeof person.lid !== 'string'
     || typeof person.signingKeyFingerprint !== 'string'
     || typeof person.signingFreezeEventId !== 'string'
-  ) throw new Error('Freeze the current signing key before beginning recovery.');
+  ) throw new Error('err_freeze_before_recovery');
   const freezeSnap = await getDoc(doc(personRef, 'keyEvents', person.signingFreezeEventId));
   const freeze = freezeSnap.data() as Record<string, unknown> | undefined;
   const freezeAt = timestampMillis(freeze?.recordedAt);
   const suspectedSinceMs = timestampMillis(freeze?.claimedSuspectedSince) || freezeAt;
-  if (!freezeAt || suspectedSinceMs > freezeAt) throw new Error('The freeze boundary is incomplete.');
+  if (!freezeAt || suspectedSinceMs > freezeAt) throw new Error('err_freeze_incomplete');
 
   const seed = new Uint8Array(32);
   crypto.getRandomValues(seed);
@@ -735,7 +735,7 @@ export async function beginSigningKeyRecovery(uid?: string): Promise<BeginRecove
 const parseRecoveryCode = (code: string): { targetUid: string; eventId: string } => {
   const split = code.trim().lastIndexOf(':');
   if (split < 1 || split === code.trim().length - 1) {
-    throw new Error('Enter the complete recovery code.');
+    throw new Error('err_recovery_code_incomplete');
   }
   return {
     targetUid: code.trim().slice(0, split),
@@ -759,9 +759,9 @@ export async function getSigningKeyRecoveryPreview(code: string): Promise<Recove
     getDoc(doc(db, 'persons', targetUid)),
     getDoc(doc(db, 'persons', targetUid, 'keyRecoveries', eventId)),
   ]);
-  if (!proposalSnap.exists()) throw new Error('That recovery is not open.');
+  if (!proposalSnap.exists()) throw new Error('err_recovery_not_open');
   const proposal = proposalSnap.data() as RecoveryProposal;
-  if (proposal.status !== 'open') throw new Error('That recovery is no longer open.');
+  if (proposal.status !== 'open') throw new Error('err_recovery_closed');
   const person = personSnap.data() as Record<string, unknown> | undefined;
   return {
     targetUid,
@@ -778,13 +778,13 @@ export async function getSigningKeyRecoveryPreview(code: string): Promise<Recove
 export async function witnessSigningKeyRecovery(code: string, uid?: string): Promise<void> {
   const witnessUid = currentUid(uid);
   const { targetUid, eventId } = parseRecoveryCode(code);
-  if (targetUid === witnessUid) throw new Error('A being cannot witness its own recovery.');
+  if (targetUid === witnessUid) throw new Error('err_own_recovery');
   const proposalSnap = await getDoc(doc(db, 'persons', targetUid, 'keyRecoveries', eventId));
-  if (!proposalSnap.exists()) throw new Error('That recovery is not open.');
+  if (!proposalSnap.exists()) throw new Error('err_recovery_not_open');
   const proposal = proposalSnap.data() as RecoveryProposal;
-  if (proposal.status !== 'open') throw new Error('That recovery is no longer open.');
+  if (proposal.status !== 'open') throw new Error('err_recovery_closed');
   if (!(await idbGet(witnessUid))) {
-    throw new Error('Create or restore your signing key before witnessing a recovery.');
+    throw new Error('err_witness_key_first');
   }
   const key = await ensureSigningKey(witnessUid);
   const claim = {
@@ -813,7 +813,7 @@ export async function witnessSigningKeyRecovery(code: string, uid?: string): Pro
 export async function activateSigningKeyRecovery(uid?: string): Promise<PublishedSigningIdentity> {
   const id = currentUid(uid);
   const pending = await idbPendingFor(id);
-  if (!pending) throw new Error('This device does not hold the pending recovery key.');
+  if (!pending) throw new Error('err_recovery_key_absent');
   const activate = httpsCallable(functions, 'activateSigningKeyRecovery');
   try {
     await activate({ eventId: pending.eventId });
@@ -831,7 +831,7 @@ export async function activateSigningKeyRecovery(uid?: string): Promise<Publishe
   });
   await idbDeletePending(pending.eventId);
   const identity = await getPublishedSigningIdentity(id);
-  if (!identity) throw new Error('The recovered signing identity could not be read.');
+  if (!identity) throw new Error('err_recovered_identity');
   return identity;
 }
 
@@ -839,7 +839,7 @@ export async function activateSigningKeyRecovery(uid?: string): Promise<Publishe
 export async function sign(payload: unknown, domainTag: string, uid?: string): Promise<string> {
   const id = currentUid(uid);
   const record = await idbGet(id);
-  if (!record) throw new Error('No signing key on this device. Create or restore one first.');
+  if (!record) throw new Error('err_no_device_key');
   const identity = await getPublishedSigningIdentity(id);
   if (!identity || identity.publicKeyB64 !== record.publicKeyB64) {
     throw new SigningKeyNeedsRestoreError(identity ? 'stale_device' : 'needs_restore');

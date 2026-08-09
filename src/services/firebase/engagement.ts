@@ -24,10 +24,10 @@ export const postAlignmentNote = async (id: string, uid: string, text: string): 
     const ref = doc(db, 'alignments', id);
     await runTransaction(db, async (t) => {
         const snap = await t.get(ref);
-        if (!snap.exists()) throw new Error('This alignment no longer exists.');
+        if (!snap.exists()) throw new Error('err_alignment_gone');
         const data = snap.data() as Alignment;
-        if (uid !== data.initiatorUid && uid !== data.targetUid) throw new Error('Only the two aligned trees can speak here.');
-        if (data.status !== 'PENDING') throw new Error('This alignment is already settled.');
+        if (uid !== data.initiatorUid && uid !== data.targetUid) throw new Error('err_aligned_only');
+        if (data.status !== 'PENDING') throw new Error('err_alignment_settled');
         const note = { by: uid, text: body.slice(0, 2000), at: Timestamp.fromMillis(Date.now()) };
         t.update(ref, { messages: [...(data.messages || []), note] });
     });
@@ -187,7 +187,7 @@ export const loveBeing = async (collection: string, id: string, uid: string): Pr
     await runTransaction(db, async (t) => {
         const snap = await t.get(ref);
         // A vanished target is a failed gesture, not a successful no-op: let the heart roll back.
-        if (!snap.exists()) throw new Error('Love target not found');
+        if (!snap.exists()) throw new Error('err_love_target');
         const love = await t.get(loveRef);
         let count = snap.data()?.loveCount || 0;
         if (love.exists()) { t.delete(loveRef); count--; }
@@ -202,7 +202,7 @@ export const lovePulse = async (id: string, uid: string) => {
     const loveRef = doc(pulseRef, 'loves', uid);
     return runTransaction(db, async (t) => {
         const pulse = await t.get(pulseRef);
-        if (!pulse.exists()) throw new Error('Love target not found');
+        if (!pulse.exists()) throw new Error('err_love_target');
         const pulseData = pulse.data();
         const love = await t.get(loveRef);
 

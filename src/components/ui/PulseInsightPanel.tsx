@@ -6,6 +6,7 @@ import { getActiveIntelligenceId, getIntelligence, DEFAULT_INTELLIGENCE_ID } fro
 import { spendAiTokens, db } from '../../services/firebase';
 import { isTokenisationEnabled } from '../../domain/tokenisation';
 import { doc, updateDoc } from 'firebase/firestore';
+import { speak } from '../../utils/translations';
 
 // The AI "Translation Depth" + "Network Memory" column that reveals a pulse's deeper intent (spending
 // a tree's AI tokens) and shows its validation standing. Extracted from PulseDetail so the event
@@ -165,7 +166,7 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
                                 </div>
                             )}
 
-                            {error && <div className="text-xs text-red-400 bg-red-900/30 border border-red-500/50 p-3 rounded-lg">{error}</div>}
+                            {error && <div className="text-xs text-red-400 bg-red-900/30 border border-red-500/50 p-3 rounded-lg">{speak(error)}</div>}
 
                             <button
                                 disabled={isTranslating || !activeTree || (tokensOn && (activeTree.aiTokenBalance || 0) < depth)}

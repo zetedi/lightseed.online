@@ -421,7 +421,7 @@ export const getOrgCollabs = async (): Promise<OrgCollab[]> =>
         .sort((a, b) => (toMillis(a.createdAt) || 0) - (toMillis(b.createdAt) || 0)); // oldest first — the order they joined
 
 export const addOrgCollab = async (data: { name: string; url?: string; blurb?: string; agreement: 'founder' | 'contract'; logoUrl?: string; createdBy: string }): Promise<string> => {
-    if (!data.name.trim()) throw new Error('The organisation needs a name.');
+    if (!data.name.trim()) throw new Error('err_org_name');
     const ref = await addDoc(collabsCollection, {
         lid: uuidv7(),
         name: data.name.trim(),
@@ -469,11 +469,11 @@ export const inviteTreeToCommunity = async (params: {
     // One pending invite per tree+community.
     const existing = await getDocs(query(communityTreeInvitesCollection, where('lifetreeId', '==', params.lifetreeId)));
     if (existing.docs.some(d => { const x = d.data() as any; return x.communityId === params.communityId && x.status === 'pending'; })) {
-        throw new Error('That tree already has a pending invite to this community.');
+        throw new Error('err_tree_invite_pending');
     }
     // Already participating? The link is the source of truth.
     if ((await getDoc(doc(db, 'links', `${params.lifetreeId}__participant__${params.communityId}`))).exists()) {
-        throw new Error('That tree already stands with this community.');
+        throw new Error('err_tree_already_community');
     }
     const ref = await addDoc(communityTreeInvitesCollection, {
         communityId: params.communityId, communityName: params.communityName,

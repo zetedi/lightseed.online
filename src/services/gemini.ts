@@ -86,7 +86,7 @@ const runText = async (prompt: string, opts?: { json?: boolean; intelligenceId?:
         }
         const res = await callGemini(prompt, MODEL, opts?.json ? { responseMimeType: 'application/json' } : undefined);
         if (res.text) return res.text;
-        throw new Error('empty primary reply');
+        throw new Error('err_reply_empty');
     } catch (e) {
         // The chosen/default intelligence's key may be missing/rejected for this user — fall back
         // to the node keys so every signed-in user still gets an answer.
@@ -147,7 +147,7 @@ export const generateImage = async (prompt: string): Promise<string | null> => {
         const raw = (e?.message || String(e) || '').trim();
         const msg = raw.toLowerCase();
         if (msg.includes('suspend') || msg.includes('forbidden') || msg.includes('unavailable'))
-            throw new Error('The AI image service is unavailable right now.');
+            throw new Error('err_ai_image_unavailable');
         // Surface the underlying cause (e.g. "model not found", bad modalities, quota) so a broken
         // image model can be diagnosed and fixed via lifeseed.config.json → imageModel.
         throw new Error(raw ? `Image generation failed: ${raw}` : 'Image generation failed — try again, or upload an image instead.');
@@ -247,8 +247,8 @@ export const testIntelligenceConnection = async (intelligenceId?: string): Promi
 
   if (intelligenceId) {
     const intel = await getIntelligence(intelligenceId);
-    if (!intel) throw new Error('That intelligence could not be found. Try re-selecting it.');
-    if (intel.enabled === false) throw new Error('That intelligence is disabled.');
+    if (!intel) throw new Error('err_intelligence_not_found');
+    if (intel.enabled === false) throw new Error('err_intelligence_disabled');
     ref = { provider: intel.provider, model: intel.model, credentialScope: intel.credentialScope, credentialOwnerId: intel.credentialOwnerId };
     if (intel.personaId) {
       const p = await getPersona(intel.personaId);

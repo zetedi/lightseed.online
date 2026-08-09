@@ -118,7 +118,7 @@ export const IntelligencePanel = ({
         } as any);
       }
       const res = await saveProviderCredential({ scope, ownerId: credentialOwnerId, provider: 'anthropic', key: apiKey.trim(), intelligenceId });
-      if (!res.connected) throw new Error('Could not store the key.');
+      if (!res.connected) throw new Error('err_key_store');
       setApiKey(''); setShowConnect(false);
       refresh();
       onSelect(intelligenceId!);

@@ -159,7 +159,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
 
       if (growthKind === 'vision' && selectedVision) {
         // Seal the contribution onto the vision's own chain (growVision), not the rooted tree.
-        if (!onGrowVision) throw new Error('Growing this vision is not available here.');
+        if (!onGrowVision) throw new Error('err_grow_unavailable');
         await onGrowVision(selectedVision, {
           title: pulseTitle.trim() || undefined,
           body: pulseBody,

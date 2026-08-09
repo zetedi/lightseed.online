@@ -6,6 +6,20 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-10 · The services speak** (the thrown reasons): the second movement of the directive.
+Every `throw new Error('English')` across the service layer and the components — seventy
+sentences: signing custody, covenants, decisions, alignments, invites, intelligences, recoveries —
+now throws a KEY, and the dialog that catches it says it in the reader's language with no change
+at any call site (the speaking layer's whole point). One sentinel stays a code by design
+(`INVITE_ONLY` — consumed by logic, never by eyes); the two hook guards
+(`useLanguage must be used within…`) stay English by design — a programmer's error can never
+reach a reader. Six inline error surfaces (covenant panel, growth player, widget, insight panel,
+alignment view, signing modal) speak at render, so a raw key never shows. Arabic and Chinese
+complete for all seventy. STILL AHEAD, the third movement: the ~430 component literals — labels,
+placeholders, alerts, empty states — in grouped passes.
+
+---
+
 **2026-08-10 · The system speaks — the law learns every tongue** (`speak()`, the domain reasons):
 Zoltán's directive — no more English in the code, not even error messages — begins at the deepest
 layer and moves outward. THE SPEAKING LAYER: `speak(message)` in translations.ts says a

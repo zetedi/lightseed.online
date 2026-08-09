@@ -303,7 +303,7 @@ export const sendReach = async ({
     const protectedTarget = target.onlyValidatedCanReach === true;
     const isSelf = !!ownerUid && ownerUid === sender.uid;
     if (protectedTarget && !isSelf && !isAdmin && !isSuperAdmin && !(fromTree && isExplicitlyValidatedTree(fromTree))) {
-        throw new Error('This Lifetree only accepts direct messages from validated trees.');
+        throw new Error('err_dm_validated_only');
     }
 
     // The sender's face: their tree if planted, else themself (the person is the node).
@@ -335,7 +335,7 @@ export const sendReach = async ({
         const circle = await resolveCircleUids(target, audience);
         const participantUids = Array.from(new Set([sender.uid, ...circle].filter(Boolean)));
         if (participantUids.length <= 1) {
-            throw new Error('There is no one in that circle to reach yet.');
+            throw new Error('err_circle_empty');
         }
         return write({
             ...base,
@@ -533,7 +533,7 @@ export const growVision = async (
     return runTransaction(db, async (t) => {
         const visionRef = doc(db, 'visions', vision.id);
         const visionDoc = await t.get(visionRef);
-        if (!visionDoc.exists()) throw new Error('Vision missing');
+        if (!visionDoc.exists()) throw new Error('err_vision_missing');
         const v = visionDoc.data() as Vision;
         const newPulseRef = doc(pulsesCollection);
         const domain = v.domain || window.location.hostname.replace(/^www\./, '');

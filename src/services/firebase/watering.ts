@@ -179,10 +179,10 @@ export const requestStewardship = async (
     tree: Lifetree,
     sender: { uid: string; displayName?: string | null; photoURL?: string | null },
 ): Promise<void> => {
-    if (!tree.ownerId) throw new Error('This tree has no owner to ask.');
+    if (!tree.ownerId) throw new Error('err_tree_no_owner');
     const participantUids = await resolveCircleUids(tree, 'guardians');
     // Only a circle participant (a guardian) can knock — mirrors the thread's own rules.
-    if (!participantUids.includes(sender.uid)) throw new Error('Guard this tree first, then ask to steward it.');
+    if (!participantUids.includes(sender.uid)) throw new Error('err_guard_before_steward');
     await sendThreadMessage({
         thread: {
             threadId: buildGroupThreadId(tree.id, 'guardians', tree.ownerId),

@@ -12,6 +12,7 @@ import {
 } from '../../services/keys';
 import { parsePhrase, keyCustody, type KeyCustody } from '../../domain/signing';
 import { KEY_RECOVERY_QUORUM } from '../../domain/keyEpoch';
+import { speak } from '../../utils/translations';
 
 // The signing-key lifecycle: create/restore, cross-signed rotation, unilateral emergency freeze,
 // and three-witness recovery. The private key never leaves the device; only public proofs land.
@@ -116,7 +117,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
     setBusy(true); setErr(null);
     try {
       const device = await getDeviceKeyInfo(uid);
-      if (!device) throw new Error('No signing key on this device.');
+      if (!device) throw new Error('err_no_device_key_short');
       await publishSigningKey(uid, device.publicKeyB64);
       setPublicKeyB64(device.publicKeyB64);
       setCustody('ready');
@@ -161,7 +162,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
     setBusy(true); setErr(null);
     try {
       const parsed = suspectedSince ? new Date(suspectedSince).getTime() : undefined;
-      if (suspectedSince && !Number.isFinite(parsed)) throw new Error('Choose a valid date and time.');
+      if (suspectedSince && !Number.isFinite(parsed)) throw new Error('err_bad_datetime');
       await freezeSigningKey(uid, parsed);
       setFrozen(true);
       setConfirmedFreeze(false);
@@ -221,7 +222,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
         setBusy(false);
         return;
       }
-      if (!confirmedWitness) throw new Error('Confirm the recovery you are witnessing.');
+      if (!confirmedWitness) throw new Error('err_confirm_witness');
       await witnessSigningKeyRecovery(witnessCode, uid);
       setWitnessCode('');
       setWitnessPreview(null);
@@ -303,7 +304,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
               </div>
             )}
 
-            {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{err}</p>}
+            {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(err)}</p>}
 
             <div className="flex flex-col gap-2">
               {!hasKey && !frozen && (
@@ -423,7 +424,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
               <span className="mt-0.5 text-amber-600 [&>svg]:h-5 [&>svg]:w-5"><Icons.Shield /></span>
               <p className="text-xs text-amber-800">{t('signing_rotate_warn')}</p>
             </div>
-            {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{err}</p>}
+            {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(err)}</p>}
             <label className="flex items-start gap-2 text-sm text-slate-700">
               <input type="checkbox" checked={confirmedRotate} onChange={e => setConfirmedRotate(e.target.checked)} className="mt-0.5 h-4 w-4" />
               <span>{t('signing_rotate_confirm')}</span>
@@ -453,7 +454,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
                 max={new Date().toISOString().slice(0, 16)}
                 className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800" />
             </label>
-            {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{err}</p>}
+            {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(err)}</p>}
             <label className="flex items-start gap-2 text-sm text-slate-700">
               <input type="checkbox" checked={confirmedFreeze} onChange={e => setConfirmedFreeze(e.target.checked)} className="mt-0.5 h-4 w-4" />
               <span>{t('signing_freeze_confirm')}</span>
@@ -479,7 +480,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
             }}
               rows={3} autoFocus placeholder={t('signing_recovery_code')}
               className="w-full rounded-xl border border-slate-200 px-3 py-2 font-mono text-sm text-slate-900 placeholder:text-slate-400" />
-            {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{err}</p>}
+            {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(err)}</p>}
             {witnessPreview && (
               <div className="space-y-2 rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-xs text-indigo-900">
                 <p><span className="font-bold">{t('signing_recovery_for')}:</span> {witnessPreview.targetName}</p>
@@ -511,7 +512,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
               <span className="mt-0.5 text-amber-600 [&>svg]:h-5 [&>svg]:w-5"><Icons.Shield /></span>
               <p className="text-xs text-amber-800">{t('signing_needs_restore_warn')}</p>
             </div>
-            {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{err}</p>}
+            {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(err)}</p>}
             <button type="button" onClick={() => { resetRestoreFlow(); setView('restore'); }}
               className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700">
               {t('signing_key_restore')}
@@ -529,7 +530,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
             <textarea value={restoreInput} onChange={e => { setRestoreInput(e.target.value); setErr(null); }} rows={4} autoFocus
               placeholder={t('signing_restore_placeholder')}
               className="w-full rounded-xl border border-slate-200 px-3 py-2 font-mono text-sm text-slate-900 placeholder:text-slate-400" />
-            {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{err}</p>}
+            {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(err)}</p>}
             <div className="flex gap-3">
               <button type="button" onClick={() => { resetRestoreFlow(); setView('status'); }}
                 className="flex-1 rounded-xl bg-slate-100 py-3 text-sm font-bold text-slate-700 hover:bg-slate-200">

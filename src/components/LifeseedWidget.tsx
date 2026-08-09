@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { getTreesByDomain } from '../services/firebase';
 import { type Lifetree } from '../types';
 import Logo from './Logo';
+import { speak } from '../utils/translations';
 
 interface Props {
     domain: string;
@@ -73,7 +74,7 @@ export const LifeseedWidget: React.FC<Props> = ({ domain, onClose }) => {
                 ) : error ? (
                     <div className="flex flex-col items-center justify-center h-40 gap-2 text-red-400 text-xs text-center px-6">
                         <p className="font-medium">Could not load trees</p>
-                        <p className="text-slate-400">{error}</p>
+                        <p className="text-slate-400">{speak(error)}</p>
                     </div>
                 ) : trees.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-40 gap-3 text-slate-400 text-sm text-center px-6">

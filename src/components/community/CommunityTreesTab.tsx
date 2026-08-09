@@ -43,7 +43,7 @@ export const CommunityTreesTab: React.FC<CommunityTreesTabProps> = ({
   }, [communityTrees, currentUserId]);
 
   const handleInvite = useCallback(async (tree: Lifetree) => {
-    if (!currentUserId) throw new Error('Sign in to invite a tree.');
+    if (!currentUserId) throw new Error('err_signin_invite_tree');
     await inviteTreeToCommunity({
       communityId: community.id, communityName: community.name || community.domain,
       lifetreeId: tree.id, lifetreeName: tree.name || 'A tree', treeOwnerId: tree.ownerId,

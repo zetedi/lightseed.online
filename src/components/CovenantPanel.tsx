@@ -11,6 +11,7 @@ import {
   type CovenantSignature,
 } from '../services/firebase/covenants';
 import type { Covenant, CovenantParty } from '../domain/covenant';
+import { speak } from '../utils/translations';
 
 // THE COVENANT PANEL — the covenant's one living face, wherever it appears: standalone under its
 // own hero (CovenantProfile) or as a section of the alignment it twins (AlignmentView). It shows
@@ -164,7 +165,7 @@ export const CovenantPanel = ({ covenantId, currentUserId, notify, onLoaded }: C
         </ul>
       </div>
 
-      {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{err}</p>}
+      {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(err)}</p>}
 
       {/* Actions — a party signs their own hand; may break (never delete) once bound */}
       {isParty && covenant.status !== 'broken' && (

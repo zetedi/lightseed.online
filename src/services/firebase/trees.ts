@@ -292,13 +292,13 @@ export const plantBed = async (draft: {
     locationName?: string; imageUrl?: string; body?: string;
 }) => {
     const user = auth.currentUser;
-    if (!user) throw new Error('Sign in to offer a bed.');
+    if (!user) throw new Error('err_signin_bed');
     const refusal = bedPlantingProblem(draft);
     if (refusal) throw new Error(refusal);
     if (draft.lightHouseId) {
         // HOUSED: only the Light House's keeper offers its beds.
         const house = await getLightHouseById(draft.lightHouseId);
-        if (!house) throw new Error('That Light House no longer stands.');
+        if (!house) throw new Error('err_lighthouse_gone');
         if (house.ownerId !== user.uid) throw new Error("Only the Light House's keeper may offer its beds.");
     }
 
@@ -763,17 +763,17 @@ export const createTreeInvite = async (params: {
     invitedByName?: string;
 }): Promise<string> => {
     const { lifetree, invitedUserId, role } = params;
-    if (!invitedUserId.trim()) throw new Error('Choose someone to invite.');
-    if (invitedUserId === lifetree.ownerId) throw new Error('That person already owns this tree.');
+    if (!invitedUserId.trim()) throw new Error('err_choose_invitee');
+    if (invitedUserId === lifetree.ownerId) throw new Error('err_owner_already');
     // Already holds this role? Check the LIN link (the single source of truth), not a legacy array.
-    if ((await getDoc(doc(db, 'links', `${invitedUserId}__${role}__${lifetree.id}`))).exists()) throw new Error('That person already holds this role.');
+    if ((await getDoc(doc(db, 'links', `${invitedUserId}__${role}__${lifetree.id}`))).exists()) throw new Error('err_role_already');
     // Single-field query + client filter, to avoid requiring a composite index.
     const existing = await getDocs(query(treeInvitesCollection, where('lifetreeId', '==', lifetree.id)));
     const hasPendingDupe = existing.docs.some(d => {
         const x = d.data() as any;
         return x.invitedUserId === invitedUserId && x.role === role && x.status === 'pending';
     });
-    if (hasPendingDupe) throw new Error('There is already a pending invite for this person and role.');
+    if (hasPendingDupe) throw new Error('err_invite_pending_role');
     const ref = await addDoc(treeInvitesCollection, {
         lifetreeId: lifetree.id,
         lifetreeName: lifetree.name || '',

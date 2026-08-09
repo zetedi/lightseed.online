@@ -36,7 +36,7 @@ export interface CovenantSignature {
 
 const requireUid = (): string => {
   const uid = auth.currentUser?.uid;
-  if (!uid) throw new Error('Sign in to take part in a covenant.');
+  if (!uid) throw new Error('err_signin_covenant');
   return uid;
 };
 
@@ -68,9 +68,9 @@ interface MintCovenantArgs {
 
 const mintCovenant = async (args: MintCovenantArgs): Promise<{ id: string; lid: string }> => {
   const { kind, title, body, parties, quorum, proposedBy, id: chosenId, alignmentId, bornAtMs } = args;
-  if (!parties.length) throw new Error('A covenant needs at least one party.');
-  if (!Number.isInteger(quorum) || quorum < 1) throw new Error('A covenant needs a quorum of at least one signature.');
-  if (quorum > parties.length) throw new Error('The quorum cannot exceed the number of parties.');
+  if (!parties.length) throw new Error('err_covenant_one_party');
+  if (!Number.isInteger(quorum) || quorum < 1) throw new Error('err_covenant_quorum_one');
+  if (quorum > parties.length) throw new Error('err_quorum_exceeds_parties');
 
   // A chosen id (the alignment's deterministic twin) is created-if-absent so two simultaneous openers
   // converge on ONE doc; an auto-id (a general propose) is fresh and always created.
@@ -211,8 +211,8 @@ export const signCovenant = async (covenant: Pick<Covenant, 'id'>): Promise<Sign
 
   // The freshest identity: re-read the doc + parties (the passed covenant can be stale).
   const [fresh, parties] = await Promise.all([getCovenant(covenantId), getCovenantParties(covenantId)]);
-  if (!fresh) throw new Error('This covenant no longer exists.');
-  if (!parties.some(p => p.uid === uid)) throw new Error('Only a party to this covenant may sign it.');
+  if (!fresh) throw new Error('err_covenant_gone');
+  if (!parties.some(p => p.uid === uid)) throw new Error('err_covenant_party_only');
 
   const key = await ensureSigningKey(uid);   // idempotent — creates on first use, returns the phrase once
 
@@ -224,7 +224,7 @@ export const signCovenant = async (covenant: Pick<Covenant, 'id'>): Promise<Sign
   if ((await getPublishedKey(uid)) !== key.publicKeyB64) {
     await publishSigningKey(uid, key.publicKeyB64);
     if ((await getPublishedKey(uid)) !== key.publicKeyB64) {
-      throw new Error('Your published signing key could not be set. Please try again in a moment.');
+      throw new Error('err_pubkey_not_set');
     }
   }
 
@@ -259,7 +259,7 @@ export const signCovenant = async (covenant: Pick<Covenant, 'id'>): Promise<Sign
     await runTransaction(db, async (t) => {
       const ref = doc(covenantsCollection, covenantId);
       const snap = await t.get(ref);
-      if (!snap.exists()) throw new Error('Covenant vanished mid-seal.');
+      if (!snap.exists()) throw new Error('err_covenant_vanished');
       const c = snap.data() as Covenant;
       if (c.status === 'sealed') return;   // another client already sealed — nothing to do
       const prev = c.latestHash || c.genesisHash || '0';
@@ -286,7 +286,7 @@ export const breakCovenant = async (id: string): Promise<void> => {
   await runTransaction(db, async (t) => {
     const ref = doc(covenantsCollection, id);
     const snap = await t.get(ref);
-    if (!snap.exists()) throw new Error('This covenant no longer exists.');
+    if (!snap.exists()) throw new Error('err_covenant_gone');
     const c = snap.data() as Covenant;
     if (c.status === 'broken') return;
     const prev = c.latestHash || c.genesisHash || '0';
@@ -343,7 +343,7 @@ export const ensureAlignmentCovenant = async (alignment: AlignmentForCovenant): 
     bornAtMs: toMillis(alignment.createdAt) || Date.now(),
   });
   const minted = await getCovenant(covenantId);
-  if (!minted) throw new Error('Could not read the covenant just minted for this alignment.');
+  if (!minted) throw new Error('err_covenant_read_failed');
   return minted;
 };
 

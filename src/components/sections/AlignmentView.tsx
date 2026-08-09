@@ -8,6 +8,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { SectionTitle } from '../ui/SectionTitle';
 import { BeingProfile, type BeingSection } from '../BeingProfile';
 import { CovenantPanel } from '../CovenantPanel';
+import { speak } from '../../utils/translations';
 
 // THE alignment view — an alignment is a Being like every other, so it wears the same face
 // (BeingProfile): a hero carrying its NAME (the two trees it binds), and a section menu — The
@@ -233,7 +234,7 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree, n
                 className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 text-sm text-slate-700 outline-none focus:border-emerald-300 focus:bg-white"
               />
               <div className="mt-2 flex items-center justify-between gap-2">
-                {error ? <span className="text-xs text-rose-500">{error}</span> : <span />}
+                {error ? <span className="text-xs text-rose-500">{speak(error)}</span> : <span />}
                 <button
                   onClick={send}
                   disabled={!draft.trim() || posting}

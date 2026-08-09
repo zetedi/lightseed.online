@@ -121,7 +121,7 @@ export const resetPassword = (email: string) => sendPasswordResetEmail(auth, ema
 // skip the per-user counter entirely.
 export const createNetworkInvite = async (email: string, invitedByUserId: string, message = '', opts?: { unlimited?: boolean }): Promise<{ id?: string; link?: string; alreadyMember?: boolean; alreadyInvited?: boolean }> => {
     const cleanEmail = email.trim().toLowerCase();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) throw new Error('Please enter a valid email.');
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) throw new Error('err_email_invalid');
 
     // Already a member? (Readable by staff; for others the query degrades to "unknown".)
     const memberSnap = await getDocs(query(collection(db, 'users'), where('email', '==', cleanEmail), limit(1))).catch(() => null);
@@ -153,9 +153,9 @@ export const createNetworkInvite = async (email: string, invitedByUserId: string
         await runTransaction(db, async (t) => {
             const ref = doc(db, 'users', invitedByUserId);
             const snap = await t.get(ref);
-            if (!snap.exists()) throw new Error('User profile not found.');
+            if (!snap.exists()) throw new Error('err_profile_not_found');
             const remaining = snap.data().invitesRemaining || 0;
-            if (remaining <= 0) throw new Error('No invites remaining.');
+            if (remaining <= 0) throw new Error('err_no_invites');
             t.update(ref, { invitesRemaining: remaining - 1 });
         });
     }
@@ -204,7 +204,7 @@ const inviteRequestsCollection = collection(db, 'inviteRequests');
 
 export const createInviteRequest = async (email: string, reason: string) => {
     const cleanEmail = email.trim().toLowerCase();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) throw new Error('Please enter a valid email.');
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) throw new Error('err_email_invalid');
     await addDoc(inviteRequestsCollection, {
         email: cleanEmail, reason: reason.trim(), status: 'pending', createdAt: serverTimestamp(),
     });
@@ -231,7 +231,7 @@ export const submitInviteRequest = async (email: string, reason: string): Promis
 export const approveInviteRequest = async (requestId: string, adminUid: string) => {
     const reqRef = doc(db, 'inviteRequests', requestId);
     const snap = await getDoc(reqRef);
-    if (!snap.exists()) throw new Error('Request not found.');
+    if (!snap.exists()) throw new Error('err_request_not_found');
     const invite = await createNetworkInvite((snap.data() as any).email, adminUid);
     await updateDoc(reqRef, { status: 'approved', approvedBy: adminUid, approvedAt: serverTimestamp() });
     return invite;
@@ -356,7 +356,7 @@ const normalizeSubscriptionId = (email: string) => encodeURIComponent(email.trim
 // (active === true) and can be unsubscribed by the one-click endpoint (which looks up by id).
 export const subscribeToNewsletter = async (email: string) => {
     const normalizedEmail = email.trim().toLowerCase();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalizedEmail)) throw new Error('Please enter a valid email.');
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalizedEmail)) throw new Error('err_email_invalid');
     return setDoc(doc(db, 'subscriptions', normalizeSubscriptionId(normalizedEmail)), {
         email: normalizedEmail,
         active: true,

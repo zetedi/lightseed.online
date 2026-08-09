@@ -1,4 +1,5 @@
 import { signingPreimage } from '../domain/signing';
+import { spokenLine } from '../utils/translations';
 
 // The WebCrypto half of the signing crystal: Ed25519 primitives ONLY — no IndexedDB, no Firebase,
 // no app state. Kept separate from services/keys.ts (the device keystore) so this layer can be
@@ -78,13 +79,13 @@ export function generateSeed(): Uint8Array {
 // reconstructed as SPKI from those 32 public bytes, so publicKeyB64 is deterministic in the seed —
 // restoring from a phrase reproduces the SAME public key (proven in the tests).
 export async function keypairFromSeed(seed: Uint8Array): Promise<SigningKeypair> {
-  if (seed.length !== 32) throw new Error('seed must be 32 bytes');
+  if (seed.length !== 32) throw new Error(spokenLine('signing_seed_bytes', { n: 32 }));
   const subtle = crypto.subtle;
   const pkcs8 = concat(PKCS8_ED25519_PREFIX, seed);
 
   const probe = await subtle.importKey('pkcs8', pkcs8, { name: ALG }, true, ['sign']);
   const jwk = await subtle.exportKey('jwk', probe);
-  if (!jwk.x) throw new Error('could not derive public key from seed');
+  if (!jwk.x) throw new Error('err_derive_pubkey');
   const pubBytes = fromB64Url(jwk.x);
   const spki = concat(SPKI_ED25519_PREFIX, pubBytes);
 

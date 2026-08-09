@@ -176,12 +176,12 @@ export const signDecision = async (
   position?: ConsensusStance,
 ): Promise<SignDecisionResult> => {
   const uid = auth.currentUser?.uid;
-  if (!uid) throw new Error('Sign in to add your voice.');
+  if (!uid) throw new Error('err_signin_voice');
   const decisionId = decision.id;
   const ref = doc(db, 'pulses', decisionId);
 
   const fresh = await readDecision(decisionId);
-  if (!fresh) throw new Error('Decision not found.');
+  if (!fresh) throw new Error('err_decision_not_found');
   const mode: DecisionMode = fresh.mode || 'threshold';
 
   // Guards mirror voteOnDecision / recordPosition — settle these BEFORE prompting for a key.
@@ -192,7 +192,7 @@ export const signDecision = async (
   // Only a community member may sign — the crypto analogue of the covenant's party check (the rules
   // enforce the same at write time). Owner is implicitly a member of their own circle.
   if (!(await isDecisionMember(fresh.communityId, uid))) {
-    throw new Error('Only a member of this community may sign this decision.');
+    throw new Error('err_decision_member_only');
   }
 
   // One hand, one signature: a member's slot is immutable (rules: update false), so re-signing
@@ -211,7 +211,7 @@ export const signDecision = async (
   if ((await getPublishedKey(uid)) !== key.publicKeyB64) {
     await publishSigningKey(uid, key.publicKeyB64);
     if ((await getPublishedKey(uid)) !== key.publicKeyB64) {
-      throw new Error('Your published signing key could not be set. Please try again in a moment.');
+      throw new Error('err_pubkey_not_set');
     }
   }
 
@@ -268,7 +268,7 @@ export const signDecision = async (
     try {
       await runTransaction(db, async (tx) => {
         const snap = await tx.get(ref);
-        if (!snap.exists()) throw new Error('Decision vanished mid-enact.');
+        if (!snap.exists()) throw new Error('err_decision_vanished');
         const d = snap.data() as DocumentData;
         if (d.status === 'passed') return; // another client already enacted — nothing to do
         // The enactment block records ONLY the cryptographically verified signers — never the raw
@@ -322,7 +322,7 @@ export const raiseConcern = async (decisionId: string, uid: string, note?: strin
     const ref = doc(db, 'pulses', decisionId);
     return runTransaction(db, async (tx) => {
         const snap = await tx.get(ref);
-        if (!snap.exists()) throw new Error('Decision not found.');
+        if (!snap.exists()) throw new Error('err_decision_not_found');
         const d = snap.data() as any;
         if (['passed', 'withdrawn', 'rejected', 'expired'].includes(d.status)) return 'closed' as const;
         // One concern per voice (a re-raise replaces it) — bounds the array, no spam. And
@@ -347,7 +347,7 @@ export const withdrawDecision = async (decisionId: string): Promise<'withdrawn' 
     const ref = doc(db, 'pulses', decisionId);
     return runTransaction(db, async (tx) => {
         const snap = await tx.get(ref);
-        if (!snap.exists()) throw new Error('Decision not found.');
+        if (!snap.exists()) throw new Error('err_decision_not_found');
         const d = snap.data() as DocumentData;
         if (['withdrawn', 'rejected', 'expired'].includes(d.status)) return 'closed' as const;
         const withdrawnHash = await createBlock(d.enactedHash || d.hash || 'DECISION', { decision: decisionId, withdrawn: true, by: uid }, Date.now());
@@ -376,7 +376,7 @@ export const deleteDecision = async (decisionId: string): Promise<void> => {
     if (!fresh) return; // already gone
     const sigs = await getDocs(decisionSignaturesCol(decisionId));
     if (!decisionDeletable(fresh, sigs.size)) {
-        throw new Error('This decision has been signed or enacted — it can be withdrawn, never erased.');
+        throw new Error('err_decision_signed_no_delete');
     }
     await deleteDoc(doc(db, 'pulses', decisionId));
 };
@@ -391,7 +391,7 @@ export const recordPosition = async (decisionId: string, uid: string, stance: Co
     const ref = doc(db, 'pulses', decisionId);
     return runTransaction(db, async (tx) => {
         const snap = await tx.get(ref);
-        if (!snap.exists()) throw new Error('Proposal not found.');
+        if (!snap.exists()) throw new Error('err_proposal_not_found');
         const d = snap.data() as any;
         if (['passed', 'withdrawn', 'rejected', 'expired'].includes(d.status)) return 'closed' as const;
         const positions = (Array.isArray(d.positions) ? d.positions : []).filter((p: { by: string }) => p.by !== actor);
@@ -408,12 +408,12 @@ export const discernDecision = async (decisionId: string, outcome: 'passed' | 'r
     const ref = doc(db, 'pulses', decisionId);
     return runTransaction(db, async (tx) => {
         const snap = await tx.get(ref);
-        if (!snap.exists()) throw new Error('Proposal not found.');
+        if (!snap.exists()) throw new Error('err_proposal_not_found');
         const d = snap.data() as any;
-        if (['passed', 'withdrawn', 'rejected', 'expired'].includes(d.status)) throw new Error('This proposal is already settled.');
+        if (['passed', 'withdrawn', 'rejected', 'expired'].includes(d.status)) throw new Error('err_proposal_settled');
         if (outcome === 'passed') {
             const blocks = (Array.isArray(d.positions) ? d.positions : []).filter((p: { stance: string }) => p.stance === 'block');
-            if (blocks.length) throw new Error('A block still stands — the meeting is not in unity. Tend the block first.');
+            if (blocks.length) throw new Error('err_block_stands');
             const enactedHash = await createBlock(d.hash || 'DECISION', { decision: decisionId, united: true }, Date.now());
             tx.update(ref, { status: 'passed', passedAt: serverTimestamp(), enactedHash });
             return 'passed' as const;
