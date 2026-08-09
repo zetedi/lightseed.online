@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { speak } from '../../utils/translations';
 
 // A tiny global, imperative dialog so any code can replace native alert()/confirm()
 // with a styled modal:
@@ -20,16 +21,19 @@ let listeners: ((d: DialogReq | null) => void)[] = [];
 let counter = 0;
 const emit = (d: DialogReq) => listeners.forEach(l => l(d));
 
+// Every string entering a dialog goes through speak(): a translation KEY says itself in the
+// reader's language (this is how thrown key-errors surface translated), any other string passes
+// through untouched. The default buttons are keys, so OK/Confirm/Cancel speak too.
 export const showConfirm = (
     message: string,
     opts: { title?: string; confirmText?: string; cancelText?: string; danger?: boolean } = {},
 ): Promise<boolean> =>
     new Promise(resolve => emit({
         id: ++counter,
-        message,
-        title: opts.title,
-        confirmText: opts.confirmText || 'Confirm',
-        cancelText: opts.cancelText || 'Cancel',
+        message: speak(message),
+        title: opts.title ? speak(opts.title) : undefined,
+        confirmText: speak(opts.confirmText || 'confirm'),
+        cancelText: speak(opts.cancelText || 'cancel'),
         danger: opts.danger,
         resolve,
     }));
@@ -37,9 +41,9 @@ export const showConfirm = (
 export const showAlert = (message: string, title?: string): Promise<void> =>
     new Promise(resolve => emit({
         id: ++counter,
-        message,
-        title,
-        confirmText: 'OK',
+        message: speak(message),
+        title: title ? speak(title) : undefined,
+        confirmText: speak('ok'),
         cancelText: null,
         resolve: () => resolve(),
     }));

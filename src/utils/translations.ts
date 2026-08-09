@@ -199,7 +199,7 @@ const baseKeys = {
   propose_alignment: "Propose Alignment", alignment_with: "Aligning with", alignment_request_desc: "Send a resonance request.",
   internal_pulse: "Internal (Growth) Pulse", send_request: "Send Request", invite_sent: "Invite sent!",
   invite_email_placeholder: "Friend's email", invite_message_placeholder: "Message (optional)",
-  cancel: "Cancel", back: "Back", subscription_failed: "Failed.", stand_for_trees: "Stand for the Trees",
+  ok: "OK", confirm: "Confirm", cancel: "Cancel", back: "Back", subscription_failed: "Failed.", stand_for_trees: "Stand for the Trees",
   subscribe: "Subscribe", subscription_desc: "Email every 7 weeks.", guard_tree_action: "Guard Tree",
   create_new_world: "Create a New World",
   the_tree: "The Tree", the_forest: "The Forest", plant_or_stand: "Plant or stand for a tree",
@@ -504,7 +504,7 @@ const dictionaries = {
     propose_alignment: "اقترح تناغمًا", alignment_with: "التناغم مع", alignment_request_desc: "أرسل طلب تناغم.",
     internal_pulse: "نبضة داخلية (نمو)", send_request: "أرسل الطلب", invite_sent: "أُرسلت الدعوة!",
     invite_email_placeholder: "بريد صديق", invite_message_placeholder: "رسالة (اختياري)",
-    cancel: "إلغاء", back: "رجوع", subscription_failed: "فشل.", stand_for_trees: "قف مع الأشجار",
+    ok: "حسنًا", confirm: "تأكيد", cancel: "إلغاء", back: "رجوع", subscription_failed: "فشل.", stand_for_trees: "قف مع الأشجار",
     subscribe: "اشترك", subscription_desc: "رسالة كل 7 أسابيع.", guard_tree_action: "احرس الشجرة",
     create_new_world: "اخلق عالمًا جديدًا",
     the_tree: "الشجرة", the_forest: "الغابة", plant_or_stand: "ازرع شجرة أو قف معها",
@@ -665,7 +665,7 @@ const dictionaries = {
     propose_alignment: "提出共鸣", alignment_with: "正在与", alignment_request_desc: "发送共鸣请求。",
     internal_pulse: "内部（成长）脉动", send_request: "发送请求", invite_sent: "邀请已发送！",
     invite_email_placeholder: "朋友的邮箱", invite_message_placeholder: "留言（可选）",
-    cancel: "取消", back: "返回", subscription_failed: "失败。", stand_for_trees: "为树木挺身而出",
+    ok: "好的", confirm: "确认", cancel: "取消", back: "返回", subscription_failed: "失败。", stand_for_trees: "为树木挺身而出",
     subscribe: "订阅", subscription_desc: "每 7 周一封邮件。", guard_tree_action: "守护树",
     create_new_world: "创造新世界",
     the_tree: "生命树", the_forest: "森林", plant_or_stand: "种植或守护一棵树",
@@ -814,4 +814,37 @@ const dictionaries = {
 export const translations: Record<Language, typeof baseKeys> = {
   ...dictionaries,
   xnz: { ...dictionaries.ar },
+};
+
+// ── THE SPEAKING LAYER ─────────────────────────────────────────────────────────────────────
+// The reader's language, readable OUTSIDE React: the imperative dialog (ui/Dialog) and thrown
+// errors have no hook to call. LanguageContext is the WRITER (setActiveLanguage on init and on
+// every change); localStorage seeds it before React mounts, so the first dialog already speaks.
+let activeLanguage: Language = (() => {
+  try {
+    const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('lifeseed_lang') : null;
+    return stored && stored in translations ? (stored as Language) : 'en';
+  } catch { return 'en'; }
+})();
+
+export const setActiveLanguage = (lang: Language): void => { activeLanguage = lang; };
+export const getActiveLanguage = (): Language => activeLanguage;
+
+export type TranslationKey = keyof typeof baseKeys;
+// Own-property, never `in`: the dictionaries are object literals, so `'constructor' in` would
+// answer yes from the prototype and speak() would mangle an innocent word (same guard as
+// domain/beingIndex.isBeingKind).
+export const isTranslationKey = (value: unknown): value is TranslationKey =>
+  typeof value === 'string' && Object.prototype.hasOwnProperty.call(translations.en, value);
+
+// SPEAK — say a message in the reader's language when it is a KEY, and let anything else pass
+// through untouched. This is the one boundary that lets the domain and the services throw KEYS
+// ("no more English in the code") while legacy strings and composed sentences still display.
+// `params` fills {placeholder} holes after translation, so dynamic values survive the border.
+export const speak = (message: string, params?: Record<string, string | number>): string => {
+  let out = isTranslationKey(message)
+    ? (translations[activeLanguage][message] || translations.en[message])
+    : message;
+  for (const [k, v] of Object.entries(params || {})) out = out.split(`{${k}}`).join(String(v));
+  return out;
 };

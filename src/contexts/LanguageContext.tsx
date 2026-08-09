@@ -1,6 +1,6 @@
 
 import { createContext, useContext, useState, ReactNode } from 'react';
-import { translations, Language } from '../utils/translations';
+import { translations, Language, setActiveLanguage } from '../utils/translations';
 
 interface LanguageContextType {
   language: Language;
@@ -17,11 +17,14 @@ export const LanguageProvider = ({ children }: { children?: ReactNode }) => {
   // Lazy initializer: the stored language is readable synchronously, no effect needed.
   const [language, setLanguageState] = useState<Language>(() => {
       const stored = localStorage.getItem('lifeseed_lang');
-      return stored && translations[stored as Language] ? (stored as Language) : 'en';
+      const lang = stored && translations[stored as Language] ? (stored as Language) : 'en';
+      setActiveLanguage(lang); // the speaking layer (imperative dialogs, spoken errors) follows
+      return lang;
   });
 
   const setLanguage = (lang: Language) => {
       setLanguageState(lang);
+      setActiveLanguage(lang);
       localStorage.setItem('lifeseed_lang', lang);
   }
 
