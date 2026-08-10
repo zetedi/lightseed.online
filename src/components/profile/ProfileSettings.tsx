@@ -167,22 +167,22 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
         </div>
         <div className="p-4 flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="font-semibold text-slate-800 text-sm">Newsletter</p>
+            <p className="font-semibold text-slate-800 text-sm">{t('newsletter')}</p>
             <p className="text-xs text-slate-500">A gentle update from the network every few weeks.</p>
           </div>
           <Toggle on={newsletterSubscribed} onClick={handleNewsletterToggle} disabled={togglingNewsletter || !email} />
         </div>
         <div className="p-4 flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="font-semibold text-slate-800 text-sm">Email me when someone sends me a direct message</p>
-            <p className="text-xs text-slate-500">You can turn this off anytime.</p>
+            <p className="font-semibold text-slate-800 text-sm">{t('dm_email_toggle')}</p>
+            <p className="text-xs text-slate-500">{t('toggle_anytime')}</p>
           </div>
           <Toggle on={dmEmailNotifications} onClick={handleDmEmailToggle} disabled={togglingDmEmail || !email} />
         </div>
         <div className="p-4 flex items-center justify-between gap-4">
           <div className="min-w-0">
             <p className="font-semibold text-slate-800 text-sm">Light Path {lightPathOn ? <span className="ml-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-700">on</span> : <span className="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500">off</span>}</p>
-            <p className="text-xs text-slate-500">The glowing next-step card on your home. Turning it on also relights any dismissed steps.</p>
+            <p className="text-xs text-slate-500">{t('lightpath_note')}</p>
           </div>
           <Toggle on={lightPathOn} onClick={handleLightPathToggle} />
         </div>
@@ -203,7 +203,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
       <div className="mt-6 rounded-2xl border border-red-100 bg-red-50/40 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <p className="font-semibold text-red-700 text-sm">{t('delete_account')}</p>
-          <p className="text-xs text-red-500/80">Permanently remove your trees, pulses, visions and profile.</p>
+          <p className="text-xs text-red-500/80">{t('delete_account_note')}</p>
         </div>
         <button onClick={() => { setHeirTree(null); setHeirQuery(''); setLightUnits(null); setShowDeleteConfirm(true); }} className="rounded-full border border-red-200 bg-white text-red-600 hover:bg-red-600 hover:text-white text-xs font-bold px-4 py-2 transition-colors whitespace-nowrap self-start sm:self-auto">{t('delete_account')}</button>
       </div>
@@ -232,14 +232,14 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                     <span className="min-w-0 truncate text-sm text-amber-900">
                       Your light goes to <span className="font-bold">{heirTree.name}</span>&apos;s keeper.
                     </span>
-                    <button type="button" onClick={() => setHeirTree(null)} className="shrink-0 text-xs font-bold text-amber-700 underline">Change</button>
+                    <button type="button" onClick={() => setHeirTree(null)} className="shrink-0 text-xs font-bold text-amber-700 underline">{t('change')}</button>
                   </div>
                 ) : (
                   <div className="mt-3">
                     <input
                       value={heirQuery}
                       onChange={e => setHeirQuery(e.target.value)}
-                      placeholder="Find the heir by their tree's name (optional)"
+                      placeholder={t('heir_ph')}
                       className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-amber-400"
                     />
                     {heirMatches.length > 0 && (

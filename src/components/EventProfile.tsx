@@ -17,6 +17,7 @@ import { SectionTitle } from './ui/SectionTitle';
 import { SectionMenu, SectionItem } from './ui/SectionMenu';
 import { PulseInsightPanel } from './ui/PulseInsightPanel';
 import { TreeParticipants } from './TreeParticipants';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // The event view, rendered through the shared profile scaffold (ProfileHero + ProfileLayout) so an
 // event reads like the community / lifetree / lightseed profiles rather than a generic pulse. Events
@@ -37,6 +38,7 @@ interface EventProfileProps {
 type EventSection = 'about' | 'participants' | 'reflect';
 
 export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, currentUserId, myTrees, theme }: EventProfileProps) => {
+    const { t } = useLanguage();
     const { isAdmin, isSuperAdmin } = useSession();
     // Deletion mirrors the rules: the author may, and staff may. The amber dot marks the
     // latter — power by role, not authorship.
@@ -177,7 +179,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
                         {(whenText || pulse.eventLocation || pulse.eventMaxParticipants) && (
                             <div className="mb-6 grid gap-2 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700">
                                 {whenText && <div><span className="font-bold">When:</span> {whenText}</div>}
-                                {pulse.eventLocation && <div><span className="font-bold">Where:</span> {pulse.eventLocation}</div>}
+                                {pulse.eventLocation && <div><span className="font-bold">{t('where')}:</span> {pulse.eventLocation}</div>}
                                 {!!pulse.eventMaxParticipants && <div><span className="font-bold">Participants:</span> up to {pulse.eventMaxParticipants}</div>}
                             </div>
                         )}

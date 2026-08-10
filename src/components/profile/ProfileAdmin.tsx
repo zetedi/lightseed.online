@@ -89,7 +89,7 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
       await deleteUserAsAdmin(targetUid);
       setDeleteUserUid('');
       setUserList(prev => prev ? prev.filter(u => u.uid !== targetUid) : prev);
-      showAlert('User deleted.');
+      showAlert('user_deleted');
     }
     catch (e: any) { showAlert(e?.message || 'Could not delete the user.'); }
     setDeletingUser(false);
@@ -166,8 +166,8 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
       {isSuperAdmin && (
         <div className="mb-4 flex items-center justify-between gap-4 rounded-2xl border border-slate-100 p-4">
           <div className="min-w-0">
-            <p className="font-semibold text-slate-800 text-sm">Lid index</p>
-            <p className="text-xs text-slate-500">Write down the true name of every being born before the index existed. Counts first; writes only when asked again. Never re-points a name.</p>
+            <p className="font-semibold text-slate-800 text-sm">{t('admin_lid_index')}</p>
+            <p className="text-xs text-slate-500">{t('admin_lid_index_note')}</p>
           </div>
           <div className="flex shrink-0 gap-2">
             <button onClick={() => handleBackfillLidIndex(false)} disabled={backfilling} className="rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 text-xs font-bold px-4 py-2 whitespace-nowrap transition-colors disabled:opacity-50">
@@ -183,8 +183,8 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
       {isSuperAdmin && (
         <div className="mb-4 flex items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50/50 p-4">
           <div className="min-w-0">
-            <p className="font-semibold text-amber-900 text-sm">Reset light</p>
-            <p className="text-xs text-amber-700/80">Burn every ray and every glow back to zero. The care stays on the chains; the trees keep what the light gave them.</p>
+            <p className="font-semibold text-amber-900 text-sm">{t('admin_reset_light')}</p>
+            <p className="text-xs text-amber-700/80">{t('admin_reset_light_note')}</p>
           </div>
           <button onClick={handleResetLight} disabled={resettingLight} className="rounded-full border border-amber-300 bg-white text-amber-700 hover:bg-amber-100 text-xs font-bold px-4 py-2 whitespace-nowrap transition-colors disabled:opacity-50">
             {resettingLight ? 'Resetting…' : 'Reset light'}
@@ -194,8 +194,8 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
 
       <div className="mb-4 flex items-center justify-between gap-4 rounded-2xl border border-slate-100 p-4">
         <div className="min-w-0">
-          <p className="font-semibold text-slate-800 text-sm">Email delivery test</p>
-          <p className="text-xs text-slate-500">Send yourself a test message to verify delivery.</p>
+          <p className="font-semibold text-slate-800 text-sm">{t('admin_email_test')}</p>
+          <p className="text-xs text-slate-500">{t('admin_email_test_note')}</p>
         </div>
         <button onClick={handleTestEmail} className="rounded-full bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-4 py-2 whitespace-nowrap transition-colors">{mailStatus || 'Send test'}</button>
       </div>
@@ -204,7 +204,7 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
       {(isAdmin || isSuperAdmin) && (
         <div className="mb-4 rounded-2xl border border-slate-100 p-5 space-y-3">
           <h4 className="font-bold text-slate-800 flex items-center gap-2 text-sm uppercase tracking-wider"><Icons.Tree /> Planting limits</h4>
-          <p className="text-xs text-slate-500">How many trees one being may tend on this node. We would like quality, not quantity.</p>
+          <p className="text-xs text-slate-500">{t('admin_limits_note')}</p>
           <div className="flex flex-wrap items-end gap-3">
             <label className="flex flex-col gap-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
               Lifetrees
@@ -227,8 +227,8 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
       {!superAdminExists && (
         <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 flex items-center justify-between gap-4">
           <div>
-            <h4 className="font-bold text-amber-800 text-sm">Genesis SuperAdmin unclaimed</h4>
-            <p className="text-xs text-amber-700/80">Be the first to claim the SuperAdmin role.</p>
+            <h4 className="font-bold text-amber-800 text-sm">{t('admin_genesis_unclaimed')}</h4>
+            <p className="text-xs text-amber-700/80">{t('admin_genesis_claim_note')}</p>
           </div>
           <button onClick={onClaimSuperAdmin} className="bg-amber-500 hover:bg-amber-400 text-white text-xs font-bold px-4 py-2 rounded-full shadow whitespace-nowrap">Claim</button>
         </div>
@@ -238,15 +238,15 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
           <div className="rounded-2xl border border-slate-100 p-5 space-y-4">
             <h4 className="font-bold text-slate-800 flex items-center gap-2 text-sm uppercase tracking-wider"><Icons.Shield /> Admin Management</h4>
             <div className="flex gap-2">
-              <input value={newAdminUid} onChange={e => setNewAdminUid(e.target.value)} placeholder="User UID" className="flex-1 bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-3 py-2 font-mono focus:outline-none focus:border-indigo-400" />
+              <input value={newAdminUid} onChange={e => setNewAdminUid(e.target.value)} placeholder={t('user_uid_ph')} className="flex-1 bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg px-3 py-2 font-mono focus:outline-none focus:border-indigo-400" />
               <button disabled={!newAdminUid || adminActionLoading} onClick={async () => { setAdminActionLoading(true); await onGrantAdmin(newAdminUid.trim()); setNewAdminUid(''); const updated = await getAdmins(); setAdmins(updated); setAdminActionLoading(false); }} className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors">Grant</button>
             </div>
             <div className="flex flex-col gap-1.5">
-              {admins.length === 0 && <p className="text-xs text-slate-400">No admins yet.</p>}
+              {admins.length === 0 && <p className="text-xs text-slate-400">{t('no_admins')}</p>}
               {admins.map(a => (
                 <div key={a.uid} className="flex items-center justify-between bg-slate-50 px-3 py-2 rounded-lg">
                   <span className="text-xs font-mono text-slate-600">{a.uid}</span>
-                  <button onClick={async () => { setAdminActionLoading(true); await onRevokeAdmin(a.uid); setAdmins(prev => prev.filter(x => x.uid !== a.uid)); setAdminActionLoading(false); }} className="text-red-500 hover:text-red-600 text-xs font-bold ml-3 transition-colors">Revoke</button>
+                  <button onClick={async () => { setAdminActionLoading(true); await onRevokeAdmin(a.uid); setAdmins(prev => prev.filter(x => x.uid !== a.uid)); setAdminActionLoading(false); }} className="text-red-500 hover:text-red-600 text-xs font-bold ml-3 transition-colors">{t('revoke')}</button>
                 </div>
               ))}
             </div>
@@ -255,9 +255,9 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
           {/* Delete a user — for re-testing onboarding. Removes their data + Auth account. */}
           <div className="mt-4 rounded-2xl border border-red-100 bg-red-50/40 p-5 space-y-3">
             <h4 className="font-bold text-red-700 flex items-center gap-2 text-sm uppercase tracking-wider"><Icons.Trash /> Delete a user</h4>
-            <p className="text-xs text-slate-500">Permanently removes a user's trees, pulses, visions and account. Use for re-testing onboarding.</p>
+            <p className="text-xs text-slate-500">{t('admin_delete_user_note')}</p>
             <div className="flex gap-2">
-              <input value={deleteUserUid} onChange={e => setDeleteUserUid(e.target.value)} placeholder="User UID" className="flex-1 bg-white border border-slate-200 text-slate-800 text-xs rounded-lg px-3 py-2 font-mono focus:outline-none focus:border-red-400" />
+              <input value={deleteUserUid} onChange={e => setDeleteUserUid(e.target.value)} placeholder={t('user_uid_ph')} className="flex-1 bg-white border border-slate-200 text-slate-800 text-xs rounded-lg px-3 py-2 font-mono focus:outline-none focus:border-red-400" />
               <button disabled={!deleteUserUid.trim() || deletingUser} onClick={() => handleDeleteUser()} className="bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors whitespace-nowrap">{deletingUser ? 'Deleting…' : 'Delete user'}</button>
             </div>
 
@@ -273,7 +273,7 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
                   <button onClick={loadUsers} disabled={loadingUsers} className="text-[11px] font-bold text-slate-400 hover:text-slate-600 disabled:opacity-50">{loadingUsers ? 'Refreshing…' : 'Refresh'}</button>
                 </div>
                 <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
-                  {userList.length === 0 && <p className="text-xs text-slate-400">No users found.</p>}
+                  {userList.length === 0 && <p className="text-xs text-slate-400">{t('no_users_found')}</p>}
                   {userList.map(u => (
                     <div key={u.uid} className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 border border-slate-100">
                       <div className="min-w-0">
@@ -302,13 +302,13 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
           <div className="mt-4 rounded-2xl border border-slate-100 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h4 className="font-bold text-slate-800 flex items-center gap-2 text-sm uppercase tracking-wider"><Icons.Send /> Newsletter</h4>
-              <p className="text-xs text-slate-500 mt-1">Send a network update to all subscribers.</p>
+              <p className="text-xs text-slate-500 mt-1">{t('admin_newsletter_note')}</p>
             </div>
-            <button onClick={onOpenNewsletterAdmin} className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap self-start sm:self-auto"><Icons.Send /><span>Send Newsletter</span></button>
+            <button onClick={onOpenNewsletterAdmin} className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap self-start sm:self-auto"><Icons.Send /><span>{t('send_newsletter')}</span></button>
           </div>
         </>
       )}
-      {isAdmin && !isSuperAdmin && <p className="text-sm text-slate-500">You hold admin privileges in this network.</p>}
+      {isAdmin && !isSuperAdmin && <p className="text-sm text-slate-500">{t('admin_you_hold')}</p>}
     </div>
   );
 };

@@ -156,12 +156,12 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
               <div className="bg-slate-100 p-3 rounded-full group-hover:bg-emerald-100 transition-colors">
                 <Icons.Tree />
               </div>
-              <span className="font-bold mt-2 text-sm">Plant New Tree</span>
+              <span className="font-bold mt-2 text-sm">{t('plant_new_tree')}</span>
             </div>
           )}
 
           {myTrees.length === 0 ? (
-            !allValidated && <p className="text-slate-400 text-center py-10 col-span-full">No trees planted yet.</p>
+            !allValidated && <p className="text-slate-400 text-center py-10 col-span-full">{t('no_trees_yet')}</p>
           ) : (
             [...myTrees].sort((a: Lifetree, b: Lifetree) => (b.id === defaultTreeId ? 1 : 0) - (a.id === defaultTreeId ? 1 : 0)).map((tree: Lifetree) => (
               <div key={tree.id} onClick={() => onViewTree(tree)} className={`border rounded-lg p-4 hover:shadow-md cursor-pointer transition-all flex items-center justify-between group bg-white ${defaultTreeId === tree.id ? 'border-amber-300 ring-1 ring-amber-100' : 'border-emerald-100'}`}>
@@ -222,8 +222,8 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
         {guardedOnly.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-slate-400">
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-sky-50 text-sky-500"><Icons.Shield /></div>
-            <p className="text-sm">You are not guarding any trees yet.</p>
-            <p className="mt-1 text-xs">Open a Nature tree on the map and join its guardians to help protect it.</p>
+            <p className="text-sm">{t('not_guarding')}</p>
+            <p className="mt-1 text-xs">{t('guard_hint')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -266,7 +266,7 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
                  className="h-16 w-16 shrink-0 rounded-full border-2 border-amber-300/70 object-cover transition-transform duration-700 group-hover:scale-105" />
             <div className="min-w-0 flex-1">
               <h3 className="truncate text-lg font-light tracking-wide text-amber-100">{originalTree.name || 'Mahameru'}</h3>
-              <p className="mt-0.5 text-[11px] leading-relaxed text-slate-400">The sea of creation. Every chain remembers it.</p>
+              <p className="mt-0.5 text-[11px] leading-relaxed text-slate-400">{t('sea_of_creation')}</p>
             </div>
             <Icons.ArrowRight size={18} className="shrink-0 text-amber-300/70" />
           </div>

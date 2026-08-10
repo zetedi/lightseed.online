@@ -21,6 +21,7 @@ import { communityThemePresets } from '../utils/theme';
 import { tabTone, CTA_GLOW, type TabTheme } from '../utils/tabTheme';
 import type { Intelligence } from '../domain/intelligence';
 import type { Community } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // Per-provider fallback descriptions, used when an intelligence has no description of its own.
 const PROVIDER_BLURB: Record<string, string> = {
@@ -66,6 +67,7 @@ const slugify = (name: string) =>
 // organisations whose founder(s) agreed to stand here or who hold a place by contract. Two entity
 // lists under one menu item, as classic tabs on one coloured box.
 export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCopyQuote }: { theme?: TabTheme | null; onSelectCommunity?: (community: Community) => void; quote?: string; quoteCopied?: boolean; onCopyQuote?: () => void }) => {
+    const { t } = useLanguage();
   const { lightseed, isAdmin, isSuperAdmin, isInitiate, activeTree } = useSession();
   const isStaff = isAdmin || isSuperAdmin;
   // Orgs may be added by any signed-in member whose being is validated, or who is an initiate.
@@ -169,9 +171,9 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
     try {
       const community = await getCommunityById(org.communityId);
       if (community) onSelectCommunity(community);
-      else showAlert('That community is no longer here.');
+      else showAlert('err_community_gone');
     } catch {
-      showAlert('Could not open the community.');
+      showAlert('err_community_open');
     }
   };
 
@@ -200,7 +202,7 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
           <div className="hidden min-w-0 items-center gap-1.5 md:flex">
             <p dir="auto" className="min-w-0 truncate text-sm italic text-white/90">"{quote}"</p>
             {onCopyQuote && (
-              <button onClick={onCopyQuote} title="Copy quote" aria-label="Copy quote"
+              <button onClick={onCopyQuote} title={t('copy_quote')} aria-label={t('copy_quote')}
                 className="inline-flex shrink-0 items-center rounded-full bg-white/15 p-1 text-white/80 backdrop-blur transition-colors hover:bg-white/25 hover:text-white">
                 {quoteCopied ? <span className="px-0.5 text-[10px] font-bold">✓</span> : <Icons.Copy size={13} />}
               </button>
@@ -220,9 +222,9 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
           <>
             <div className={gridFor(density)}>
               {list === null ? (
-                <p className="col-span-full py-10 text-center text-slate-500">Loading…</p>
+                <p className="col-span-full py-10 text-center text-slate-500">{t('loading')}</p>
               ) : list.length === 0 ? (
-                <p className="col-span-full py-10 text-center text-slate-500">No intelligences are configured on this node yet.</p>
+                <p className="col-span-full py-10 text-center text-slate-500">{t('intel_none_node')}</p>
               ) : list.map(intel => {
                 const provider = providerLabel(intel.provider);
                 const isDefault = intel.id === DEFAULT_INTELLIGENCE_ID;
@@ -237,8 +239,8 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
                           {badge && <img src={badge} alt={provider} className="absolute -bottom-1 -right-1 h-4 w-4 rounded-sm bg-white p-0.5 shadow-sm ring-1 ring-slate-200" />}
                         </span>
                         <span className="truncate">{intel.name}</span>
-                        {isDefault && <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">Default voice</span>}
-                        {intel.connected && density !== 'mini' && <span className="shrink-0 rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-700">Connected</span>}
+                        {isDefault && <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">{t('default_voice')}</span>}
+                        {intel.connected && density !== 'mini' && <span className="shrink-0 rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-700">{t('connected')}</span>}
                       </h4>
                       {density !== 'mini' && <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500">powered by {provider}</span>}
                     </div>
@@ -260,13 +262,13 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
                     {draft.logoUrl ? <img src={draft.logoUrl} alt="Logo" className="h-full w-full object-cover" /> : <Icons.Camera />}
                   </ImagePicker>
                   <div className="min-w-0 flex-1 space-y-2.5">
-                    <input dir="auto" value={draft.name} onChange={e => setDraft(d => ({ ...d, name: e.target.value }))} placeholder="Organisation name"
+                    <input dir="auto" value={draft.name} onChange={e => setDraft(d => ({ ...d, name: e.target.value }))} placeholder={t('org_name_ph')}
                       className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-800 outline-none focus:border-violet-300" />
-                    <input dir="auto" value={draft.url} onChange={e => setDraft(d => ({ ...d, url: e.target.value }))} placeholder="Website (optional)"
+                    <input dir="auto" value={draft.url} onChange={e => setDraft(d => ({ ...d, url: e.target.value }))} placeholder={t('website_optional_ph')}
                       className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-800 outline-none focus:border-violet-300" />
                   </div>
                 </div>
-                <textarea dir="auto" value={draft.blurb} onChange={e => setDraft(d => ({ ...d, blurb: e.target.value }))} rows={2} placeholder="What this collaboration is (optional)"
+                <textarea dir="auto" value={draft.blurb} onChange={e => setDraft(d => ({ ...d, blurb: e.target.value }))} rows={2} placeholder={t('collab_blurb_ph')}
                   className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-800 outline-none focus:border-violet-300" />
                 <div className="flex flex-wrap items-center gap-2">
                   {(['founder', 'contract'] as const).map(a => (
@@ -278,7 +280,7 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
                   ))}
                   <span className="flex-1" />
                   {error && <span className="text-xs text-rose-500">{error}</span>}
-                  <button onClick={() => { setAdding(false); setError(null); }} className="rounded-full px-3 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-100">Cancel</button>
+                  <button onClick={() => { setAdding(false); setError(null); }} className="rounded-full px-3 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-100">{t('cancel')}</button>
                   <button onClick={handleAdd} disabled={busy || uploading || !draft.name.trim()} className="rounded-full px-4 py-1.5 text-xs font-bold text-white shadow-md transition-all active:scale-95 disabled:opacity-50" style={{ backgroundColor: tone }}>
                     {busy ? 'Adding…' : 'Add organisation'}
                   </button>
@@ -287,9 +289,9 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
             )}
             <div className={gridFor(density)}>
               {orgs === null ? (
-                <p className="col-span-full py-10 text-center text-slate-500">Loading…</p>
+                <p className="col-span-full py-10 text-center text-slate-500">{t('loading')}</p>
               ) : orgs.length === 0 ? (
-                <p className="col-span-full py-10 text-center text-slate-500">No organisations stand here yet.</p>
+                <p className="col-span-full py-10 text-center text-slate-500">{t('orgs_none')}</p>
               ) : orgs.map(org => {
                 const isTender = isStaff || (!!lightseed && org.createdBy === lightseed.uid);
                 return (
@@ -305,7 +307,7 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
                       <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${org.agreement === 'contract' ? 'bg-violet-100 text-violet-700' : 'bg-emerald-100 text-emerald-700'}`}>{AGREEMENT_LABEL[org.agreement]}</span>
                     </h4>
                     {isTender && (
-                      <button onClick={() => handleRemove(org)} title="Remove" className="relative shrink-0 rounded-full p-1.5 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"><Icons.Trash />{isStaff && org.createdBy !== lightseed?.uid && <SuperDot />}</button>
+                      <button onClick={() => handleRemove(org)} title={t('remove')} className="relative shrink-0 rounded-full p-1.5 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"><Icons.Trash />{isStaff && org.createdBy !== lightseed?.uid && <SuperDot />}</button>
                     )}
                   </div>
                   {org.blurb && <p className={`mt-1 leading-relaxed text-slate-600 ${blurbClamp}`}>{org.blurb}</p>}
@@ -322,13 +324,13 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
                   ) : null}
                   {growingId === org.id && !org.communityId && (
                     <div className="mt-2.5 space-y-2 rounded-lg border border-violet-100 bg-violet-50/40 p-3">
-                      <input dir="auto" value={grow.name} onChange={e => setGrow(g => ({ ...g, name: e.target.value }))} placeholder="Community name"
+                      <input dir="auto" value={grow.name} onChange={e => setGrow(g => ({ ...g, name: e.target.value }))} placeholder={t('community_name_ph')}
                         className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 outline-none focus:border-violet-300" />
-                      <input dir="auto" value={grow.domain} onChange={e => setGrow(g => ({ ...g, domain: e.target.value }))} placeholder="Domain (example.com)"
+                      <input dir="auto" value={grow.domain} onChange={e => setGrow(g => ({ ...g, domain: e.target.value }))} placeholder={t('domain_ph')}
                         className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 outline-none focus:border-violet-300" />
                       <div className="flex items-center gap-2">
                         <span className="flex-1 text-xs text-rose-500">{growError}</span>
-                        <button onClick={() => setGrowingId(null)} className="rounded-full px-3 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-100">Cancel</button>
+                        <button onClick={() => setGrowingId(null)} className="rounded-full px-3 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-100">{t('cancel')}</button>
                         <button onClick={() => handleGrow(org)} disabled={growBusy || !grow.name.trim() || !grow.domain.trim()}
                           className="rounded-full px-3.5 py-1.5 text-xs font-bold text-white shadow transition-all active:scale-95 disabled:opacity-50" style={{ backgroundColor: tone }}>
                           {growBusy ? 'Growing…' : 'Grow'}

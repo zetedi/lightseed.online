@@ -124,12 +124,12 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
         {(!hasTrees && !isSuperAdmin) ? (
           <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400">
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100"><Icons.Tree /></div>
-            <p className="text-sm">Plant your first tree to unlock invitations.</p>
+            <p className="text-sm">{t('invites_plant_first')}</p>
           </div>
         ) : (
           <div className="rounded-2xl border border-slate-100 p-5 space-y-3">
             <p className="text-sm text-slate-500">{t('invites_remaining')}: <span className="font-bold text-emerald-600">{isSuperAdmin ? 'Unlimited' : invitesRemaining}</span></p>
-            <p className="text-xs text-slate-400">Invite someone by email. They'll receive a link that opens the join page with their email locked in.</p>
+            <p className="text-xs text-slate-400">{t('invites_email_note')}</p>
             <button onClick={() => setShowInviteModal(true)} disabled={!isSuperAdmin && invitesRemaining <= 0} className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-emerald-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"><Icons.UserPlus /> <span>{t('send_invite')}</span></button>
           </div>
         )}
@@ -138,9 +138,9 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
       {/* Invitations you've sent */}
       {(hasTrees || isSuperAdmin) && (
         <div>
-          <h4 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-500">Sent Invitations</h4>
+          <h4 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-500">{t('sent_invitations')}</h4>
           {sentInvites.length === 0 ? (
-            <p className="text-xs text-slate-400">You haven't sent any invitations yet.</p>
+            <p className="text-xs text-slate-400">{t('invites_none_sent')}</p>
           ) : (
             <div className="space-y-2">
               {sentInvites.map(inv => (
@@ -152,7 +152,7 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
             </div>
           )}
           {sentHasMore && (
-            <button onClick={loadMoreSentInvites} className="mt-3 w-full rounded-lg border border-slate-200 py-2 text-xs font-bold text-slate-500 hover:bg-slate-50">Load more</button>
+            <button onClick={loadMoreSentInvites} className="mt-3 w-full rounded-lg border border-slate-200 py-2 text-xs font-bold text-slate-500 hover:bg-slate-50">{t('load_more')}</button>
           )}
         </div>
       )}
@@ -161,13 +161,13 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
       {isSuperAdmin && (
         <div>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h4 className="text-sm font-bold uppercase tracking-wider text-slate-500">Invite Requests</h4>
+            <h4 className="text-sm font-bold uppercase tracking-wider text-slate-500">{t('invite_requests')}</h4>
             <div className="flex items-center gap-3">
               <label className="flex items-center gap-1.5 text-xs text-slate-500">
                 <input type="checkbox" checked={showDeclinedRequests} onChange={e => setShowDeclinedRequests(e.target.checked)} className="h-3.5 w-3.5 rounded text-emerald-600 focus:ring-emerald-500" />
                 Show declined
               </label>
-              <button onClick={refreshInviteRequests} className="text-xs font-bold text-slate-400 hover:text-slate-700">Refresh</button>
+              <button onClick={refreshInviteRequests} className="text-xs font-bold text-slate-400 hover:text-slate-700">{t('refresh')}</button>
             </div>
           </div>
           {(() => {
@@ -186,7 +186,7 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
                       {req.status === 'pending' ? (
                         <>
                           <button onClick={() => handleApproveRequest(req.id)} disabled={requestBusyId === req.id} className="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50">{requestBusyId === req.id ? '…' : 'Invite'}</button>
-                          <button onClick={() => handleDeclineRequest(req)} disabled={requestBusyId === req.id} className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50">Decline</button>
+                          <button onClick={() => handleDeclineRequest(req)} disabled={requestBusyId === req.id} className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50">{t('decline')}</button>
                         </>
                       ) : (
                         <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${req.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>{req.status === 'approved' ? 'Invited' : 'Declined'}</span>
@@ -198,7 +198,7 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
             );
           })()}
           {reqHasMore && (
-            <button onClick={loadMoreInviteRequests} className="mt-3 w-full rounded-lg border border-slate-200 py-2 text-xs font-bold text-slate-500 hover:bg-slate-50">Load more</button>
+            <button onClick={loadMoreInviteRequests} className="mt-3 w-full rounded-lg border border-slate-200 py-2 text-xs font-bold text-slate-500 hover:bg-slate-50">{t('load_more')}</button>
           )}
         </div>
       )}

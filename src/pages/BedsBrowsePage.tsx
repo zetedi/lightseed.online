@@ -189,7 +189,7 @@ export const BedsBrowsePage = ({ onViewTree, lightHouseDomain = null, lightHouse
               dir="auto"
               type="text"
               className="block w-full rounded-xl border border-emerald-100 bg-white/80 py-2 pl-10 pr-3 leading-5 text-slate-900 placeholder-slate-400 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 sm:text-sm"
-              placeholder="Search beds and Light Houses..."
+              placeholder={t('search_beds_ph')}
               value={search}
               onChange={e => setSearch(e.target.value)}
             />

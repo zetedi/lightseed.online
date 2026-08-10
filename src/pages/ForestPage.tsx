@@ -84,7 +84,7 @@ export const ForestPage = ({
       className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-white/90 px-4 py-2 text-sm font-medium text-emerald-800 shadow-sm backdrop-blur-sm hover:bg-emerald-50 dark:border-emerald-800/60 dark:bg-emerald-950/70 dark:text-emerald-100"
     >
       <span className="[&>svg]:h-4 [&>svg]:w-4"><Icons.Filter /></span>
-      <span>Filters</span>
+      <span>{t('filters')}</span>
       {filteredOut > 0 && (
         <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">{filteredOut}</span>
       )}
@@ -176,7 +176,7 @@ export const ForestPage = ({
                 <img src="/mahameru.svg" alt="Mahameru, the sea of creation" className="h-80 w-full object-cover sm:h-96" />
                 <div className="absolute inset-x-0 bottom-0 p-6 text-center">
                   <p className="text-sm font-bold uppercase tracking-[0.3em] text-white/90">Mahameru</p>
-                  <p className="mt-1 text-xs text-slate-300">The sea of creation: no trees planted here yet. The field awaits the first seed.</p>
+                  <p className="mt-1 text-xs text-slate-300">{t('sea_creation_empty')}</p>
                 </div>
               </div>
             ) : (

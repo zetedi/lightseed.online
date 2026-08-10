@@ -53,7 +53,7 @@ export const ProfilePulses: React.FC<ProfilePulsesProps> = ({ uid, onViewPulse, 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {pulses.length === 0 ? (
             <div className="col-span-full py-10 text-center text-slate-400">
-              <p>No pulses emitted yet.</p>
+              <p>{t('no_pulses_yet')}</p>
             </div>
           ) : pulses.map((pulse) => (
             <div

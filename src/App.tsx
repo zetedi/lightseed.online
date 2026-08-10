@@ -848,7 +848,7 @@ const AppContent = () => {
                     onClaimSuperAdmin={async () => {
                         const ok = await claimSuperAdmin(lightseed.uid);
                         if (ok) window.location.reload();
-                        else showAlert('SuperAdmin already claimed.');
+                        else showAlert('superadmin_claimed');
                     }}
                     onGrantAdmin={async (uid: string) => { await grantAdmin(uid); }}
                     onRevokeAdmin={async (uid: string) => { await revokeAdmin(uid); }}
@@ -1125,7 +1125,7 @@ const AppContent = () => {
                                 searchBox={searchBox}
                                 action={lightseed && (
                                     <button onClick={() => setShowOfferModal(true)} style={{ backgroundColor: tabTone('offerings') }} className={`hover:brightness-110 text-white px-4 py-1.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}>
-                                        <Icons.Plus /> <span>Make an offering</span>
+                                        <Icons.Plus /> <span>{t('offer_make')}</span>
                                     </button>
                                 )}
                                 items={filteredData}
@@ -1276,7 +1276,7 @@ const AppContent = () => {
             <div className="relative z-20 flex-1">
                 {impersonatedCommunity && (
                     <div className="sticky top-0 z-40 flex items-center justify-center gap-3 bg-amber-500 px-4 py-1.5 text-center text-xs font-bold text-white shadow-md">
-                        <span className="truncate">Viewing as <span className="font-extrabold">{impersonatedCommunity.name}</span> (community view)</span>
+                        <span className="truncate">{t('viewing_as').replace('{name}', impersonatedCommunity.name)}</span>
                         <button
                             onClick={() => { setImpersonatedCommunity(null); setTab('dashboard'); window.scrollTo(0, 0); }}
                             className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/25 px-2.5 py-0.5 font-bold uppercase tracking-wide hover:bg-white/40"
@@ -1289,7 +1289,7 @@ const AppContent = () => {
                     /* Honest provenance banner — mirrors the community-view banner above. The
                        bridge stays visible the whole time: the being's words, the carrier's hands. */
                     <div className="sticky top-0 z-40 flex items-center justify-center gap-3 bg-purple-600 px-4 py-1.5 text-center text-xs font-bold text-white shadow-md">
-                        <span className="truncate">Carrying <span className="font-extrabold">{carryingTree.name}</span>, carried by {lightseed?.displayName || 'you'}</span>
+                        <span className="truncate">{t('carrying_line').replace('{tree}', carryingTree.name).replace('{name}', lightseed?.displayName || t('you'))}</span>
                         <button
                             onClick={() => setCarryingTree(null)}
                             className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/25 px-2.5 py-0.5 font-bold uppercase tracking-wide hover:bg-white/40"

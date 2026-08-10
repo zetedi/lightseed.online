@@ -77,7 +77,7 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
     <div>
       <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
         {/* Non-possessive on purpose: profiles are entity-generic (Indra's net) — the menu is the entity's anatomy, not the viewer's possessions. */}
-        <h3 className="text-lg font-bold">Visions</h3>
+        <h3 className="text-lg font-bold">{t('visions')}</h3>
         <div className="flex items-center gap-2">
           {/* Compact on mobile (smaller text + padding, short label) so both CTAs share one line. */}
           {onCreateVision && (
@@ -97,7 +97,7 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
             <span>
               {analyzing
                 ? 'Analyzing...'
-                : <>Analyze<span className="hidden sm:inline"> Alignments</span></>}
+                : <>{t('analyze_alignments')}</>}
             </span>
           </button>
         </div>
@@ -105,7 +105,7 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
 
       {synergies.length > 0 && (
         <div className="mb-8 bg-indigo-50 border border-indigo-100 rounded-xl p-4">
-          <h4 className="font-bold text-indigo-900 mb-3 flex items-center"><MahameruAvatar size={20} /> <span className="ml-2">Alignment Report</span></h4>
+          <h4 className="font-bold text-indigo-900 mb-3 flex items-center"><MahameruAvatar size={20} /> <span className="ml-2">{t('alignment_report')}</span></h4>
           <div className="space-y-3">
             {synergies.map((s, i) => (
               <div key={i} className="bg-white p-3 rounded-lg shadow-sm border border-indigo-100/50">
@@ -125,7 +125,7 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
       <div className="space-y-8">
         {/* Created Visions */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {visions.length === 0 && joinedVisions.length === 0 ? <p className="col-span-full text-slate-400 text-center py-10">No visions created yet.</p> : visions.map((vision) => (
+          {visions.length === 0 && joinedVisions.length === 0 ? <p className="col-span-full text-slate-400 text-center py-10">{t('no_visions_yet')}</p> : visions.map((vision) => (
             <div key={vision.id} className="relative group">
               <div onClick={() => onViewVision(vision)} className="cursor-pointer h-full">
                 <VisionCard vision={vision} />
@@ -154,7 +154,7 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
         {joinedVisions.length > 0 && (
           <div className="border-t border-slate-100 pt-6">
             <h4 className="text-sm font-bold text-amber-600 uppercase tracking-widest mb-4 flex items-center">
-              <Icons.Globe /> <span className="ml-2">Joined Visions</span>
+              <Icons.Globe /> <span className="ml-2">{t('joined_visions')}</span>
             </h4>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {joinedVisions.map((vision) => (

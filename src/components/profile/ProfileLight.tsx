@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Icons } from '../ui/Icons';
 import { fetchMyRays, fetchTreeNames, type HeldRay } from '../../services/firebase/light';
 import { RAY_UNITS } from '../../domain/light';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // THE LIGHT FACE — where a being sees the light their witnessed care has kindled. Rays are
 // server-minted and holder-private (solitary light is private; ring 2026-07-20), so this face
@@ -19,6 +20,7 @@ const spoken = (units: number): string => {
 };
 
 export const ProfileLight = ({ uid }: { uid: string }) => {
+    const { t } = useLanguage();
     const [rays, setRays] = useState<HeldRay[] | null>(null); // null = still gathering
     const [treeNames, setTreeNames] = useState<Record<string, string>>({});
 
@@ -41,7 +43,7 @@ export const ProfileLight = ({ uid }: { uid: string }) => {
     const total = useMemo(() => (rays || []).reduce((sum, r) => sum + r.units, 0), [rays]);
 
     if (rays === null) {
-        return <div className="p-6 text-center text-sm text-gray-400">The light is gathering…</div>;
+        return <div className="p-6 text-center text-sm text-gray-400">{t('light_gathering')}</div>;
     }
 
     return (
@@ -77,7 +79,7 @@ export const ProfileLight = ({ uid }: { uid: string }) => {
                     <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-amber-50 text-amber-500">
                         <Icons.Sun />
                     </div>
-                    <p className="text-sm text-gray-600">No light yet.</p>
+                    <p className="text-sm text-gray-600">{t('no_light')}</p>
                     <p className="mx-auto mt-1 max-w-sm text-xs text-gray-400">
                         Light kindles when a guardian witnesses your daily care of a living tree:
                         water your tree, then a guardian in its Circle presses Witness.
@@ -86,7 +88,7 @@ export const ProfileLight = ({ uid }: { uid: string }) => {
                 </div>
             ) : (
                 <div>
-                    <h3 className="mb-2 px-1 text-sm font-semibold text-gray-700">Kindled from care</h3>
+                    <h3 className="mb-2 px-1 text-sm font-semibold text-gray-700">{t('kindled_from_care')}</h3>
                     <div className="space-y-2">
                         {rays.map(ray => (
                             <div key={ray.id} className="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-3">

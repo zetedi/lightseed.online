@@ -113,7 +113,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
 
   // Join — a request for the community's keeper(s), surfaced on their Members tab.
   const handleJoin = async () => {
-    if (!currentUserId) { showAlert('Sign in to join this community.'); return; }
+    if (!currentUserId) { showAlert('err_signin_join'); return; }
     setJoining(true);
     try {
       await firestoreStore.link(currentUserId, 'join_request', community.id);
@@ -309,7 +309,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   }, [domainTrees, participatingTrees]);
 
   const handleToggleGuardian = async (tree: Lifetree) => {
-    if (!canTendTree(currentUserId)) { showAlert('Sign in to join a guardianship.'); return; }
+    if (!canTendTree(currentUserId)) { showAlert('err_signin_guard'); return; }
     const join = !guardedTreeIds.has(tree.id);
     setTogglingId(tree.id);
     try {
@@ -321,7 +321,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       });
     } catch (e) {
       console.error(e);
-      showAlert('Failed to update guardianship.');
+      showAlert('err_guardianship');
     }
     setTogglingId(null);
   };
@@ -359,7 +359,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   };
 
   const handleDelete = async () => {
-    if (!(await showConfirm('Are you sure you want to delete this community? This cannot be undone.', { title: 'Delete Community', confirmText: 'Delete', danger: true }))) return;
+    if (!(await showConfirm('community_delete_confirm', { title: 'delete_community', confirmText: 'delete', danger: true }))) return;
     setIsDeleting(true);
     try {
       await deleteCommunity(community.id);
@@ -367,7 +367,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       window.location.reload();
     } catch (e) {
       console.error(e);
-      showAlert('Failed to delete community.');
+      showAlert('err_community_delete');
     }
     setIsDeleting(false);
   };
@@ -671,12 +671,12 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
             )}
             {onEnterCommunityView && (
               <button onClick={() => onEnterCommunityView(community)} className="flex items-center gap-1 rounded-full border border-amber-300/40 bg-amber-400/15 p-2 text-xs font-bold text-amber-200 transition-colors hover:bg-amber-400 hover:text-white sm:px-4 sm:py-2" title="See the whole site as this community">
-                <Icons.Eye /><span className="hidden sm:inline">Switch to community view</span>
+                <Icons.Eye /><span className="hidden sm:inline">{t('switch_community_view')}</span>
               </button>
             )}
             {canDelete && (
               <button onClick={handleDelete} disabled={isDeleting} title="Delete community" aria-label="Delete community" className="relative flex items-center gap-1 rounded-full border border-red-400/30 bg-red-500/15 p-2 text-xs font-bold text-red-300 transition-colors hover:bg-red-500 hover:text-white sm:px-4 sm:py-2">
-                <Icons.Trash /><span className="hidden sm:inline">Delete</span>
+                <Icons.Trash /><span className="hidden sm:inline">{t('delete')}</span>
                 {currentUserId !== community.ownerId && <SuperDot />}
               </button>
             )}

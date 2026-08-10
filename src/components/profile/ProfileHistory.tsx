@@ -40,7 +40,7 @@ export const ProfileHistory: React.FC<ProfileHistoryProps> = ({ uid, onViewAlign
 
   const reachResonantTree = async (treeId: string) => {
     try { const tree = await getLifetreeById(treeId); if (tree && onReachTree) onReachTree(tree); }
-    catch { showAlert('Could not open a conversation with that tree.'); }
+    catch { showAlert('err_open_conversation'); }
   };
 
   // The two trees each alignment binds — fetched once per distinct tree so the cards can show

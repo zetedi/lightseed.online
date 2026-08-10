@@ -350,7 +350,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                     <>
                         <p className="text-slate-400 text-xs font-mono truncate max-w-full">{lightseed.email}</p>
                         {isSuperAdmin && (
-                            <span className="bg-amber-400/20 border border-amber-400/50 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">SuperAdmin</span>
+                            <span className="bg-amber-400/20 border border-amber-400/50 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">{t('superadmin_chip')}</span>
                         )}
                         {isAdmin && !isSuperAdmin && (
                             <span className="flex items-center gap-1 bg-indigo-400/20 border border-indigo-400/50 text-indigo-300 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider"><Icons.Shield /> Admin</span>
@@ -361,7 +361,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                         ) : myTrees.some((t: Lifetree) => lapsedValidated(t)) ? (
                             <ValidationBadge className="border-amber-400/40 bg-amber-400/20" compact lapsed />
                         ) : (!isAdmin && (
-                            <span className="bg-slate-600/50 border border-slate-500/50 text-slate-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Visitor</span>
+                            <span className="bg-slate-600/50 border border-slate-500/50 text-slate-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">{t('visitor')}</span>
                         ))}
                         <span className="inline-flex items-baseline gap-1 text-slate-300">
                             <span className="text-base font-bold text-white">{myTrees.length}</span>
@@ -375,7 +375,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                         {allValidated && (
                             <button onClick={onPlant} className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-full text-[11px] font-bold shadow-lg transition-transform active:scale-95 flex items-center gap-1.5">
                                 <Icons.Tree />
-                                <span>Plant a Tree</span>
+                                <span>{t('plant_a_tree')}</span>
                             </button>
                         )}
                     </>
