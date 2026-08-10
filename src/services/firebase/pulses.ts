@@ -9,6 +9,12 @@ import { isExplicitlyValidatedTree } from '../../utils/validation';
 import { buildThreadId, buildGroupThreadId, reachAudienceLabels } from '../../utils/reachPermissions';
 import { db, toMillis, mapDoc, mapPulse, pulsesCollection } from './core';
 
+// RETRACT a reach message of your own: the mark, never the erasure. A tree-sent reach is a
+// block on the sender's chain, so the doc (and its text, hashed on locked chains) stands
+// forever — but the room stops showing it. Rules overlay (h) binds this to the author.
+export const retractReachMessage = (pulseId: string) =>
+    updateDoc(doc(db, 'pulses', pulseId), { retractedAt: serverTimestamp(), updatedAt: serverTimestamp() });
+
 // The guardians' veto — a guardian appends exactly their own uid to a growth mint's
 // vetoes (rules clause (e) enforces the shape; domain/guardianVeto derives consensus).
 export const vetoGrowthPulse = (pulseId: string, uid: string) =>

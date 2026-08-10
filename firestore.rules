@@ -937,6 +937,19 @@ service cloud.firestore {
                             'offeringAppreciationLight', 'offeringUrl', 'visibility', 'updatedAt'])
            )
 
+        // (h) RETRACTION — a reach's AUTHOR may mark their own message retracted (ring
+        //     2026-08-10). The text is NEVER rewritten (content stays frozen; on locked chains
+        //     it is hashed) and the doc is never deleted (a tree-sent reach is a block on the
+        //     sender's chain — deleting it would sever previousHash for every block after).
+        //     retractedAt rides OUTSIDE the hashed block fields, so the seal stays true while
+        //     the room stops repeating the words. The accidental message, honestly withdrawn.
+        || (
+             resource.data.get('type', '') == 'reach'
+             && resource.data.authorId == request.auth.uid
+             && request.resource.data.diff(resource.data).affectedKeys()
+                  .hasOnly(['retractedAt', 'updatedAt'])
+           )
+
         // (j) Staff may mend anything.
         || isStaff()
       );
@@ -950,6 +963,10 @@ service cloud.firestore {
         isStaff()
         || (
              (resource.data.get('authorId', '') == request.auth.uid || isCommunityOwner(resource.data.get('communityId', '')))
+             // A REACH is never deleted, not even by its author: a tree-sent reach is a block on
+             // the sender's chain, and deleting it would sever previousHash for every block after.
+             // The author's way out is RETRACTION (overlay (h)) — the mark, never the erasure.
+             && resource.data.get('type', '') != 'reach'
              && (
                   resource.data.get('type', '') != 'decision'
                   || (

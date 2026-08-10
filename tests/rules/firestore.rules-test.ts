@@ -355,6 +355,36 @@ describe('pulse overlays — a pulse you cannot see is a pulse you cannot touch'
   });
 });
 
+describe('retraction — the author withdraws the words; the chain keeps the block', () => {
+  // Ring 2026-08-10: a tree-sent reach is a block on the sender's chain, so it can never be
+  // deleted — the author may only MARK it retracted, and only their own, and nothing may ride
+  // along (content is frozen; on locked chains it is hashed).
+  const DM='dm-retract';
+  const seed = () => env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'pulses', DM), {
+      authorId: ALICE, type: 'reach', title: 'r', body: 'oops', content: 'oops',
+      participantUids: [ALICE, BOB], seenBy: [],
+    });
+  });
+
+  it('the author retracts their own message', async () => {
+    await seed();
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'pulses', DM), { retractedAt: 1, updatedAt: 1 }));
+  });
+
+  it('the other participant cannot retract it, nor an outsider', async () => {
+    await seed();
+    await assertFails(updateDoc(doc(db(BOB), 'pulses', DM), { retractedAt: 1, updatedAt: 1 }));
+    await assertFails(updateDoc(doc(db(MALLORY), 'pulses', DM), { retractedAt: 1, updatedAt: 1 }));
+  });
+
+  it('the words can never ride along — retraction marks, it does not rewrite', async () => {
+    await seed();
+    await assertFails(updateDoc(doc(db(ALICE), 'pulses', DM), { retractedAt: 1, content: 'rewritten', updatedAt: 1 }));
+    await assertFails(deleteDoc(doc(db(ALICE), 'pulses', DM))); // a block is never deleted
+  });
+});
+
 describe('guardian veto — window and tenure live in the rules, not only the client', () => {
   const mintPulse = async (createdAtMs: number, guardianSinceMs?: number) => {
     await env.withSecurityRulesDisabled(async (ctx) => {

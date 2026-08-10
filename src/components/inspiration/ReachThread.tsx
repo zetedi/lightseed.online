@@ -4,11 +4,14 @@ import { showAlert, showConfirm } from "../ui/Dialog";
 import { useLanguage } from '../../contexts/LanguageContext';
 import { sendMessageToOracle, generateImage, translatePulse, type TranslationResponse } from '../../services/gemini';
 import { getIntelligence } from '../../services/intelligence';
-import { checkAndIncrementAiUsage, mintPulse, uploadBase64Image, listenToUserProfile, fetchReachThread, fetchThreadById, markReachesSeen, sendReach, sendThreadMessage, fetchGrowthPulses } from '../../services/firebase';
+import { checkAndIncrementAiUsage, mintPulse, uploadBase64Image, listenToUserProfile, fetchReachThread, fetchThreadById, markReachesSeen, sendReach, sendThreadMessage, fetchGrowthPulses, retractReachMessage } from '../../services/firebase';
 import { LoveButton } from '../ui/LoveButton';
 import { reachAudienceLabels } from '../../utils/reachPermissions';
+import { CTA_GLOW } from '../../utils/tabTheme';
 import { useLifeseed } from '../../hooks/useLifeseed';
 import { Icons } from '../ui/Icons';
+import { spokenLine } from '../../utils/translations';
+import { linkifyParts } from '../../utils/sanitize';
 import { Lifetree, Pulse, ReachAudience } from '../../types';
 
 // A group thread chosen from the inbox — carries enough to open it and reply within it.
@@ -34,6 +37,7 @@ interface ChatMessage {
     authorPhoto?: string;
     system?: boolean; // a centered notice (e.g. "X minted this conversation to the chain"), not a bubble
     careAlert?: 'watering'; // a "water me" alert — rendered with a blue border
+    retracted?: boolean;    // the author withdrew it: the mark shows, the words do not
 }
 
 // A small heart to like a single reach message (its underlying reach pulse): the shared heart.
@@ -148,7 +152,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
             if (p.mintNotice) { if (text) history.push({ role: 'model', system: true, text }); return; }
             const mine = (!!myUid && p.authorId === myUid) || myIds.has(p.lifetreeId || '');
             const careAlert = (p as any).careAlert as ChatMessage['careAlert'];
-            const base = { id: p.id, loveCount: p.loveCount || 0, ...(group ? { authorId: p.authorId, authorName: p.authorName, authorPersonName: p.authorPersonName, authorPhoto: p.authorPhoto } : {}), ...(careAlert ? { careAlert } : {}) };
+            const base = { id: p.id, loveCount: p.loveCount || 0, ...((p as { retractedAt?: unknown }).retractedAt ? { retracted: true } : {}), ...(group ? { authorId: p.authorId, authorName: p.authorName, authorPersonName: p.authorPersonName, authorPhoto: p.authorPhoto } : {}), ...(careAlert ? { careAlert } : {}) };
             if (mine) {
                 if (text) history.push({ role: 'user', text, ...base });
                 if (p.reachResponse) history.push({ role: 'model', text: p.reachResponse });
@@ -434,6 +438,16 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
         setIsTyping(false);
     }
 
+    // Retract an accidental message of mine: the chain keeps the sealed block, the room stops
+    // repeating the words (rules overlay (h); the mark rides outside the hashed fields).
+    const handleRetract = async (pulseId: string) => {
+        if (!(await showConfirm('msg_retract_confirm', { title: 'msg_retract_title', confirmText: 'msg_retract_short', danger: true }))) return;
+        try {
+            await retractReachMessage(pulseId);
+            setMessages(prev => prev.map(m => m.id === pulseId ? { ...m, retracted: true } : m));
+        } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
+    };
+
     const handleMint = async () => {
         if (!lightseed || !activeTree) {
             showAlert('mint_need_tree');
@@ -452,8 +466,8 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
         // other party sees who minted it and where.
         if (mode === 'tree') {
             const ok = await showConfirm(
-                `Mint this conversation to “${activeTree.name}”? It will be sealed on the immutable chain (a public record on your tree, like a contract) and everyone here will be told you minted it.`,
-                { title: 'Mint to the chain', confirmText: 'Mint' },
+                spokenLine('mint_confirm', { name: activeTree.name || '' }),
+                { title: 'mint_to_chain', confirmText: 'mint_short' },
             );
             if (!ok) return;
             setIsMinting(true);
@@ -547,7 +561,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                         </div>
                         <div className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-700">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <span>{mode === 'tree' ? (isGroup ? `Group reach${threadMeta?.participantUids?.length ? ` · ${threadMeta.participantUids.length} in circle` : groupThread?.participantCount ? ` · ${groupThread.participantCount} in circle` : ''}` : 'Mycelial reach') : `${aiName} · ${usage}/21`}</span>
+                            <span>{mode === 'tree' ? (isGroup ? `${t('group_reach')}${threadMeta?.participantUids?.length ? ` · ${t('in_circle').replace('{n}', String(threadMeta.participantUids.length))}` : groupThread?.participantCount ? ` · ${t('in_circle').replace('{n}', String(groupThread.participantCount))}` : ''}` : t('mycelial_reach')) : `${aiName} · ${usage}/21`}</span>
                         </div>
                     </div>
 
@@ -557,15 +571,13 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                         <button
                             onClick={handleMint}
                             disabled={isMinting}
-                            title={mode === 'tree'
-                                ? 'Mint the messages so far as a contract on the immutable Lightseed chain.'
-                                : 'Mint this wisdom to your tree on the immutable Lightseed chain.'}
-                            className="ml-auto flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1.5 text-[10px] font-bold text-white shadow-md transition-all hover:bg-emerald-700 active:scale-95 disabled:opacity-50"
+                            title={mode === 'tree' ? t('mint_title_tree') : t('mint_title_oracle')}
+                            className={`ml-auto flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1.5 text-[10px] font-bold text-white transition-all hover:bg-emerald-700 active:scale-95 disabled:opacity-50 ${CTA_GLOW}`}
                         >
                             {isMinting
                                 ? <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
                                 : <Icons.Stamp size={14} />}
-                            <span className="hidden sm:inline">{mode === 'tree' ? 'Mint' : 'Mint Wisdom'}</span>
+                            <span className="hidden sm:inline">{mode === 'tree' ? t('mint_short') : t('mint_wisdom')}</span>
                         </button>
                     )}
                 </div>
@@ -627,16 +639,32 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                                     ? 'bg-emerald-600 text-white rounded-br-sm shadow'
                                     : 'bg-white border border-emerald-50 text-slate-800 rounded-bl-sm shadow-sm font-medium italic'
                             } ${m.careAlert === 'watering' ? 'ring-2 ring-sky-400' : ''}`}>
-                                {m.text.split('\n').map((line, j) => (
+                                {m.retracted
+                                    ? <span className="italic opacity-60">{t('msg_retracted')}</span>
+                                    : m.text.split('\n').map((line, j) => (
                                     <span key={j}>
-                                        {line}
+                                        {linkifyParts(line).map((part, k) => part.type === 'link'
+                                            ? <a key={k} href={part.value} rel="noopener noreferrer nofollow" className={`underline underline-offset-2 break-all ${m.role === 'user' ? 'text-emerald-50 hover:text-white' : 'text-emerald-700 hover:text-emerald-900'}`}>{part.value}</a>
+                                            : <span key={k}>{part.value}</span>)}
                                         {j < m.text.split('\n').length - 1 && <br />}
                                     </span>
                                 ))}
                             </div>
 
-                            {/* Like a reach message. */}
-                            {m.id && !m.system && <MessageLike pulseId={m.id} initialCount={m.loveCount || 0} />}
+                            {/* Like a reach message — and, for my own, the quiet retraction. */}
+                            <div className="flex items-center gap-1">
+                                {m.id && !m.system && <MessageLike pulseId={m.id} initialCount={m.loveCount || 0} />}
+                                {m.id && !m.system && !m.retracted && m.role === 'user' && mode === 'tree' && (
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRetract(m.id!)}
+                                        title={t('msg_retract_title')}
+                                        className="rounded-full p-1 text-slate-300 transition-colors hover:bg-red-50 hover:text-red-400"
+                                    >
+                                        <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Trash /></span>
+                                    </button>
+                                )}
+                            </div>
 
                             {/* Shadow text — what the message means, read through your intelligence. */}
                             {canInterpret && (() => {
@@ -709,16 +737,14 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                 <div className="px-5 pt-2 text-center">
                     {showMintInfo && (
                         <p className="mx-auto mb-1.5 max-w-md rounded-lg border border-slate-100 bg-slate-50/90 px-3 py-2 text-[11px] italic leading-snug text-slate-400 shadow-sm">
-                            {isGroup
-                                ? 'A group reach: everyone in the chosen circle sees and can answer here. Anyone can mint this conversation to their tree, sealing it on the immutable chain.'
-                                : 'Anyone here can mint the conversation to their tree, sealing it on the immutable chain as a shared record, like a contract. A mint shows here and on that tree.'}
+                            {isGroup ? t('mint_info_group') : t('mint_info_direct')}
                         </p>
                     )}
                     <button
                         type="button"
                         onClick={() => setShowMintInfo(v => !v)}
-                        title="About minting this conversation"
-                        aria-label="About minting this conversation"
+                        title={t('about_minting')}
+                        aria-label={t('about_minting')}
                         aria-expanded={showMintInfo}
                         className={`inline-flex items-center justify-center rounded-full p-1 transition-colors ${showMintInfo ? 'text-slate-500' : 'text-slate-300 hover:text-slate-500'}`}
                     >
@@ -730,15 +756,28 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                 honest and quietly invites the planting. */}
             {mode === 'tree' && lightseed && !activeTree && (
                 <div className="border-t border-emerald-100 bg-emerald-50/70 px-4 py-2 text-center text-xs text-emerald-800">
-                    🌱 You speak as yourself. Plant a lifetree to speak as a tree.
+                    🌱 {t('speak_as_self')}
                 </div>
             )}
-            <form onSubmit={handleSend} className="p-4 bg-white border-t border-slate-100 flex space-x-3 items-center sticky bottom-0 z-10">
-                <input
+            <form onSubmit={handleSend} className="p-4 bg-white border-t border-slate-100 flex space-x-3 items-end sticky bottom-0 z-10">
+                {/* The whole message stays visible while writing: the box grows with the text
+                    (up to ~7 lines, then scrolls). Enter sends; Shift+Enter breaks a line. */}
+                <textarea
                     value={input}
+                    rows={1}
                     onChange={e => setInput(e.target.value)}
-                    placeholder={mode === 'tree' ? `Send from ${activeTree?.name || lightseed?.displayName || 'you'} to ${headerName}...` : `Ask ${aiName}...`}
-                    className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-6 py-4 text-[15px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:bg-white transition-all shadow-inner placeholder:text-slate-400 placeholder:italic"
+                    onInput={e => {
+                        const el = e.currentTarget;
+                        el.style.height = '0px';
+                        el.style.height = `${Math.min(el.scrollHeight, 176)}px`;
+                    }}
+                    onKeyDown={e => {
+                        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e as unknown as React.FormEvent); }
+                    }}
+                    placeholder={mode === 'tree'
+                        ? t('reach_send_ph').replace('{from}', activeTree?.name || lightseed?.displayName || t('you')).replace('{to}', headerName)
+                        : t('reach_ask_ph').replace('{name}', aiName)}
+                    className="flex-1 resize-none overflow-y-auto bg-slate-50 border border-slate-200 rounded-3xl px-6 py-4 text-[15px] leading-snug focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:bg-white transition-all shadow-inner placeholder:text-slate-400 placeholder:italic"
                 />
                 <button type="submit" disabled={isTyping || isSending || !input.trim() || (mode === 'tree' && !selectedTree && !groupThread)} title="Send" className="bg-emerald-600 text-white p-4 rounded-full hover:bg-emerald-700 active:scale-95 disabled:opacity-50 transition-all shadow-lg">
                     {isSending ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Icons.Send />}

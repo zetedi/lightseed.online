@@ -6,6 +6,41 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-10 · The appearance page saves itself where it can** (`CommunityAppearance`): the Save
+button now stands at the very top — achieved not by moving a button but by reordering truth: the
+shared AppearanceSection (whose header carries Save) leads, and the landing blocks (custom
+landing, landing pages, home counts) follow BELOW the carousel quotes, where Zoltán wanted them.
+The two TOGGLES SAVE THEMSELVES on flip — via an intent flag and an effect that fires only after
+the new value has round-tripped through the parent, because a save on the same tick would persist
+the stale closure. Text fields still save by hand: a toggle is a decision, a half-typed sentence
+is not.
+
+---
+
+**2026-08-10 · The reach grows hands, and learns to take words back** (six asks of Zoltán's, one
+batch, one STOP for reflection mid-way — honored, and it improved the design): (1) the composer is
+a GROWING TEXTAREA — the whole message visible while writing, Enter sends, Shift+Enter breaks.
+(2) DELETING A CONVERSATION CLEARS ITS UNREAD — closing a real hole: a thread deleted unopened
+kept the envelope glowing forever. (3) THE FOUR KINDS OF REACH, told apart by pills HIGH ABOVE
+EVERYTHING, centered: the Oracle wears the sun and IS its thread (its pinned list row died as a
+duplicate door), the group reach two beings, the direct one, the care reach the drop; the pills
+follow the list's visibility on a phone, where an open conversation owns every pixel. The
+"Direct Messages" header died with its subtitle — the surface holds four kinds, and a heading
+naming only one was a label contradicting the model. (4) LINKS TRAVEL, sanitized by construction
+(`linkifyParts`, tested): only http(s) becomes an anchor; a door, never a trap. (5) THE MINT SEAL:
+inner circle grown to r=5 (wax seals have fat centers), OUTER WAVES GOLD with the light-family
+glow — emerald body, golden aura: life sealed into light; the button wears CTA_GLOW. The outward
+bulge was verified numerically, not eyeballed. (6) AN ACCIDENTAL MESSAGE IS RETRACTED, NEVER
+DELETED — and the reason is structural, found while building: a tree-sent reach goes through
+mintPulse and IS A BLOCK on the sender's chain; deleting it would sever previousHash for every
+block after. So: rules overlay (h) lets only the author mark `retractedAt` (which rides OUTSIDE
+the hashed block fields — a locked seal never notices), the room shows "message retracted" in the
+reader's tongue, the words stay in the block. And the fence found a PRE-EXISTING hazard while
+closing: the general author-delete on pulses included reaches — an author could sever their own
+chain today; reaches are now undeletable by everyone but staff. Mark, never erase — the veto's
+ethic, the third time it has answered a design question.
+---
+
 **2026-08-10 · No English is born in the code** (the sweep closed, `tests/englishGuard.test.ts`):
 the third movement, finished. Every modal, section, page, profile tab, banner, chip, placeholder,
 alert, confirm, toast and staff panel now speaks through the translation file — roughly 330 keys

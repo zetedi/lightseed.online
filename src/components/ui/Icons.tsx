@@ -121,12 +121,18 @@ export const Icons = {
   QrCode: ({ size = 20, className = "" }: { size?: number, className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M21 14v1"/><path d="M14 21h1"/><path d="M18 18h3v3h-3z" strokeWidth={0} fill="currentColor" opacity="0.9"/></svg>,
   // Star — marks a user's default ("closest") lifetree. `filled` paints it solid.
   Star: ({ size = 20, className = "", filled = false }: { size?: number, className?: string, filled?: boolean }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>,
-  // Stamp — sealing / minting a pulse onto the chain.
+  // Stamp — sealing / minting onto the chain: a wax seal, a six-waved flower. The inner circle
+  // is the moment; the six waves are the ripple it leaves (the prism dial's seventh lives here
+  // in spirit: one center, six petals — seven parts).
   Stamp: ({ size = 20, className = "" }: { size?: number, className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M9 13.5v-2.2c0-1 .6-1.5 .9-2.4 .25-.75-.15-1.3-.5-2A2.5 2.5 0 0 1 12 3a2.5 2.5 0 0 1 2.6 3.9c-.35 .7-.75 1.25-.5 2 .3 .9 .9 1.4 .9 2.4v2.2Z" />
-      <rect x="6" y="13.5" width="12" height="3.2" rx="1.2" />
-      <line x1="4.5" y1="20.5" x2="19.5" y2="20.5" />
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      {/* The outer waves are LIGHT (the gold of the Reach beam and the Intelligence vertices):
+          sealing touches the chain, and the chain is the light layer. The center stays flesh
+          (currentColor) — the living thing being sealed. */}
+      <g style={{ filter: 'drop-shadow(0 0 1.4px rgba(250,204,21,0.9))' }}>
+        <path stroke="#facc15" d="M20 12 A4.9 4.9 0 0 1 16 18.93 A4.9 4.9 0 0 1 8 18.93 A4.9 4.9 0 0 1 4 12 A4.9 4.9 0 0 1 8 5.07 A4.9 4.9 0 0 1 16 5.07 A4.9 4.9 0 0 1 20 12 Z" />
+      </g>
+      <circle stroke="currentColor" cx="12" cy="12" r="5" />
     </svg>
   ),
   // Cog — settings gear.

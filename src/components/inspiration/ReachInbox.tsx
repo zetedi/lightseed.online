@@ -26,14 +26,6 @@ const TreeAvatar = ({ name, photo, size = 'md' }: { name: string, photo?: string
     );
 };
 
-const OracleAvatar = ({ size = 'md' }: { size?: 'sm' | 'md' }) => {
-    const dim = size === 'sm' ? 'h-10 w-10' : 'h-12 w-12';
-    return (
-        <div className={`${dim} relative flex shrink-0 items-center justify-center rounded-full border-2 border-amber-200 bg-amber-50 text-amber-500 shadow-sm`}>
-            <Icons.Sun />
-        </div>
-    );
-};
 
 export const ReachInbox = ({
     pulses,
@@ -42,8 +34,6 @@ export const ReachInbox = ({
     requestedPartner,
     requestedAudience,
     onConsumeRequested,
-    title = 'Direct Messages',
-    subtitle = 'Private reaches between your trees and the network.',
 }: {
     pulses: Pulse[];
     myTrees: Lifetree[];
@@ -51,8 +41,6 @@ export const ReachInbox = ({
     requestedPartner: Lifetree | null;
     requestedAudience?: ReachAudience;
     onConsumeRequested?: () => void;
-    title?: string;
-    subtitle?: string;
 }) => {
     const { t } = useLanguage();
     const [selection, setSelection] = useState<Selection>({ kind: 'none' });
@@ -139,52 +127,72 @@ export const ReachInbox = ({
     const deleteThread = async (thread: ThreadSummary, e: React.MouseEvent) => {
         e.stopPropagation();
         const ok = await showConfirm(
-            thread.isGroup
-                ? 'Delete this group conversation from your messages? It stays for the others in the circle.'
-                : 'Delete this conversation from your messages? The other person keeps their copy.',
-            { title: 'Delete conversation', confirmText: 'Delete', danger: true },
+            thread.isGroup ? 'thread_delete_group_confirm' : 'thread_delete_direct_confirm',
+            { title: 'delete_conversation', confirmText: 'delete', danger: true },
         );
         if (!ok) return;
         // eslint-disable-next-line react-hooks/purity -- Date.now runs inside a click handler (after an async confirm), not during render
         const next = { ...hiddenThreads, [thread.key]: Date.now() };
         setHiddenThreads(next);
-        if (lightseed?.uid) updateUserProfile(lightseed.uid, { hiddenThreads: next }).catch(() => {});
+        if (lightseed?.uid) {
+            updateUserProfile(lightseed.uid, { hiddenThreads: next }).catch(() => {});
+            // A deleted conversation must not keep glowing: mark ITS unseen messages seen, so the
+            // unread envelope clears even for a thread deleted without ever being opened.
+            const uid = lightseed.uid;
+            const unseen = pulses
+                .filter(p => (thread.isGroup ? p.threadId === thread.threadId : (!p.threadId || !p.participantUids) && (p.reachTreeId === thread.partnerId || p.lifetreeId === thread.partnerId))
+                    && (p.recipientUid === uid || (p.participantUids || []).includes(uid))
+                    && p.authorId !== uid && !(p.seenBy || []).includes(uid))
+                .map(p => p.id);
+            if (unseen.length) markReachPulsesSeen(unseen, uid);
+        }
         if (selectedKey === thread.key) setSelection({ kind: 'none' });
     };
 
     const rowBase = 'flex w-full items-center gap-3 px-4 py-3 text-left transition-colors';
 
+    // The four kinds of reach, told apart at a glance (ring 2026-08-10): the Oracle (sun), the
+    // group reach (two beings), the direct reach (one being), the care/watering reach (the drop).
+    // A pill filters the list; tapping it again lets everything back in. The Oracle pill opens
+    // the Oracle itself — it is one thread, not a category.
+    type ReachKind = 'group' | 'direct' | 'care';
+    const [kindFilter, setKindFilter] = useState<ReachKind | null>(null);
+    const kindOf = (th: ThreadSummary): ReachKind => th.careAlert === 'watering' ? 'care' : th.isGroup ? 'group' : 'direct';
+    const filteredThreads = kindFilter ? visibleThreads.filter(th => kindOf(th) === kindFilter) : visibleThreads;
+    const pill = (active: boolean) =>
+        `inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-bold transition-colors ${active ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-200 bg-white text-slate-500 hover:border-emerald-300 hover:text-emerald-700'}`;
+
     return (
         <div className="mx-auto max-w-5xl">
+            {/* The four kinds of reach, high above everything (ring 2026-08-10): the Oracle is a
+                door, the other three are lenses. Hidden on a phone while a thread is open — there,
+                every vertical pixel belongs to the conversation. */}
+            <div className={`${hasSelection ? 'hidden md:flex' : 'flex'} flex-wrap items-center justify-center gap-2 pb-3`}>
+                <button type="button" onClick={() => setSelection({ kind: 'oracle' })} title={t('ask_wisdom')} className={pill(isOracle)}>
+                    <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Sun /></span>{aiName}
+                </button>
+                <button type="button" onClick={() => setKindFilter(f => f === 'group' ? null : 'group')} title={t('pill_group')} className={pill(kindFilter === 'group')}>
+                    <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Users /></span>{t('pill_group')}
+                </button>
+                <button type="button" onClick={() => setKindFilter(f => f === 'direct' ? null : 'direct')} title={t('pill_direct')} className={pill(kindFilter === 'direct')}>
+                    <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Profile /></span>{t('pill_direct')}
+                </button>
+                <button type="button" onClick={() => setKindFilter(f => f === 'care' ? null : 'care')} title={t('pill_care')} className={pill(kindFilter === 'care')}>
+                    <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Droplet /></span>{t('pill_care')}
+                </button>
+            </div>
             {/* Mobile: fill the floating card under its top chrome; desktop keeps 70vh. */}
-            <div className="flex h-[calc(100dvh-5.5rem)] gap-4 md:h-[70vh]">
+            <div className="flex h-[calc(100dvh-8rem)] gap-4 md:h-[70vh]">
             {/* Thread list — no card, so it sits lightly on the page and takes less room. */}
             <div className={`${hasSelection ? 'hidden md:flex' : 'flex'} w-full shrink-0 flex-col overflow-hidden md:w-72`}>
-                {/* Sits flush to the top so it lines up with the top of the message card. */}
-                <div className="border-b border-slate-100 px-4 pt-1 pb-3">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{t('threads')}</span>
-                    <h2 className="mt-1 truncate text-base font-semibold text-slate-900">{title}</h2>
-                    <p className="text-xs text-slate-500">{subtitle}</p>
-                </div>
                 <div className="flex-1 overflow-y-auto">
-                    <button
-                        onClick={() => setSelection({ kind: 'oracle' })}
-                        className={`${rowBase} border-b border-slate-100 ${isOracle ? 'bg-amber-50' : 'bg-amber-50/30 hover:bg-amber-50'}`}
-                    >
-                        <OracleAvatar size="sm" />
-                        <div className="min-w-0 flex-1">
-                            <span className="block truncate font-semibold text-slate-800">{aiName}</span>
-                            <span className="block truncate text-xs text-slate-500 italic">{t('ask_wisdom')}</span>
-                        </div>
-                    </button>
-
-                    {visibleThreads.length === 0 ? (
+                    {filteredThreads.length === 0 ? (
                         <div className="px-5 py-12 text-center text-slate-400">
                             <p className="text-sm">{t('no_dms')}</p>
                             <p className="mt-1 text-xs">{t('no_dms_hint')}</p>
                         </div>
                     ) : (
-                        visibleThreads.map(thread => (
+                        filteredThreads.map(thread => (
                             <div
                                 key={thread.key}
                                 role="button"
@@ -211,14 +219,14 @@ export const ReachInbox = ({
                                     <span className="block truncate text-xs text-slate-500">
                                         {thread.careAlert === 'watering' && <span className="font-bold text-sky-600">💧 needs water · </span>}
                                         {thread.isGroup && <span className="text-emerald-600/70">● group · </span>}
-                                        {thread.lastMessage || 'Reached through the mycelial network.'}
+                                        {thread.lastMessage || t('reached_mycelial')}
                                     </span>
                                 </div>
                                 {/* Delete (hide) — always visible on mobile, on hover on desktop. */}
                                 <button
                                     type="button"
                                     onClick={(e) => deleteThread(thread, e)}
-                                    title="Delete conversation"
+                                    title={t('delete_conversation')}
                                     className="shrink-0 rounded-full p-1.5 text-slate-300 transition-colors hover:bg-red-50 hover:text-red-500 opacity-100 md:opacity-0 md:group-hover:opacity-100"
                                 >
                                     <Icons.Trash />

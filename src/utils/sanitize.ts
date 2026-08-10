@@ -42,3 +42,28 @@ export const safeImageUrl = (url?: string | null, fallback = ''): string => {
   if (/^(?:https?:\/\/|\/)/i.test(raw)) return escapeHtml(raw);
   return fallback;
 };
+
+// ── Links inside plain chat text ───────────────────────────────────────────────────────────
+// Split a message into text and link parts. ONLY http(s) URLs become links — a javascript: or
+// data: "URL" stays inert text, so a reach can carry a door but never a trap. Trailing sentence
+// punctuation stays text (…a link https://x.org, and more), matching how people actually write.
+export type LinkPart = { type: 'text' | 'link'; value: string };
+
+const URL_RE = /https?:\/\/[^\s<>"']+/gi;
+
+export const linkifyParts = (text: string): LinkPart[] => {
+  const parts: LinkPart[] = [];
+  let last = 0;
+  for (const m of text.matchAll(URL_RE)) {
+    const start = m.index ?? 0;
+    let url = m[0];
+    // Peel trailing punctuation that belongs to the sentence, not the address.
+    const peeled = url.match(/[.,;:!?)\]]+$/);
+    if (peeled) url = url.slice(0, -peeled[0].length);
+    if (start > last) parts.push({ type: 'text', value: text.slice(last, start) });
+    parts.push({ type: 'link', value: url });
+    last = start + url.length;
+  }
+  if (last < text.length) parts.push({ type: 'text', value: text.slice(last) });
+  return parts.length ? parts : [{ type: 'text', value: text }];
+};

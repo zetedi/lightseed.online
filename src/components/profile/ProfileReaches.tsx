@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useLanguage } from '../../contexts/LanguageContext';
 import { Lifetree, Lightseed, Pulse, ReachAudience } from '../../types';
 import { fetchMyReaches } from '../../services/firebase';
 import { ReachInbox } from '../inspiration/ReachInbox';
@@ -22,7 +21,6 @@ export const ProfileReaches: React.FC<ProfileReachesProps> = ({
   reachAudience,
   onConsumeReach,
 }) => {
-  const { t } = useLanguage();
   const [reaches, setReaches] = useState<Pulse[]>([]);
 
   useEffect(() => {
@@ -38,7 +36,6 @@ export const ProfileReaches: React.FC<ProfileReachesProps> = ({
       pulses={reaches}
       myTrees={myTrees}
       lightseed={lightseed}
-      title={t('direct_messages')}
       requestedPartner={reachPartner || null}
       requestedAudience={reachAudience}
       onConsumeRequested={onConsumeReach}

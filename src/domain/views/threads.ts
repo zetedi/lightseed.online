@@ -39,7 +39,8 @@ export function reachThreads(pulses: Pulse[], viewer: ThreadViewer): ReachThread
   for (const p of pulses) {
     const at = p.createdAt?.toMillis?.() || 0;
     // Newest utterance: the inline reply if present, otherwise the message body.
-    const text = p.reachResponse || p.content || p.body || '';
+    // A retracted message never previews its words — the marker is spoken by the UI (a key).
+    const text = (p as { retractedAt?: unknown }).retractedAt ? '' : (p.reachResponse || p.content || p.body || '');
     // Unread = addressed to me (1:1 recipient or a group participant), authored by someone
     // else, and not yet seen.
     const participantUids = p.participantUids || [];
