@@ -6,6 +6,7 @@ import { markReachPulsesSeen, listenToUserProfile, updateUserProfile } from '../
 import { getIntelligence } from '../../services/intelligence';
 import { reachThreads, type ReachThread as ThreadSummary } from '../../domain/views/threads';
 import { showConfirm } from '../ui/Dialog';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 type Selection =
     | { kind: 'none' }
@@ -53,6 +54,7 @@ export const ReachInbox = ({
     title?: string;
     subtitle?: string;
 }) => {
+    const { t } = useLanguage();
     const [selection, setSelection] = useState<Selection>({ kind: 'none' });
     const [aiName, setAiName] = useState('Osiris');
     // Per-user "deleted" threads: key → hidden-at (ms). A thread is hidden from MY inbox while its
@@ -160,7 +162,7 @@ export const ReachInbox = ({
             <div className={`${hasSelection ? 'hidden md:flex' : 'flex'} w-full shrink-0 flex-col overflow-hidden md:w-72`}>
                 {/* Sits flush to the top so it lines up with the top of the message card. */}
                 <div className="border-b border-slate-100 px-4 pt-1 pb-3">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Threads</span>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{t('threads')}</span>
                     <h2 className="mt-1 truncate text-base font-semibold text-slate-900">{title}</h2>
                     <p className="text-xs text-slate-500">{subtitle}</p>
                 </div>
@@ -172,14 +174,14 @@ export const ReachInbox = ({
                         <OracleAvatar size="sm" />
                         <div className="min-w-0 flex-1">
                             <span className="block truncate font-semibold text-slate-800">{aiName}</span>
-                            <span className="block truncate text-xs text-slate-500 italic">Ask for wisdom & reflection</span>
+                            <span className="block truncate text-xs text-slate-500 italic">{t('ask_wisdom')}</span>
                         </div>
                     </button>
 
                     {visibleThreads.length === 0 ? (
                         <div className="px-5 py-12 text-center text-slate-400">
-                            <p className="text-sm">No direct messages yet.</p>
-                            <p className="mt-1 text-xs">Reach a Lifetree from the map or a tree's page.</p>
+                            <p className="text-sm">{t('no_dms')}</p>
+                            <p className="mt-1 text-xs">{t('no_dms_hint')}</p>
                         </div>
                     ) : (
                         visibleThreads.map(thread => (
@@ -243,7 +245,7 @@ export const ReachInbox = ({
                         <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 text-amber-500">
                             <Icons.Reach />
                         </div>
-                        <p className="font-medium text-slate-500">Select a thread</p>
+                        <p className="font-medium text-slate-500">{t('select_thread')}</p>
                         <p className="mt-1 max-w-xs text-sm">Choose a Lifetree on the left to open your reach, or ask {aiName}.</p>
                     </div>
                 )}

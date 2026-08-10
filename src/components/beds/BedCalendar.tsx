@@ -118,7 +118,7 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
       notify(status === 'accepted' ? '🛏️ Welcomed.' : 'Declined.');
       announce('beds', bed.id);
     } catch {
-      notify('Could not answer the request.', 'error');
+      notify(speak('err_stay_answer'), 'error');
     }
     setBusy(false);
   };
@@ -127,10 +127,10 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
     setBusy(true);
     try {
       await withdrawStay(stay.id);
-      notify('Withdrawn.');
+      notify(speak('withdrawn_toast'));
       announce('beds', bed.id);
     } catch {
-      notify('Could not withdraw.', 'error');
+      notify(speak('err_withdraw'), 'error');
     }
     setBusy(false);
   };
@@ -170,7 +170,7 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
           </button>
         </div>
         {uid && (
-          <p className="mb-2 text-center text-[11px] text-slate-400">Tap your first night, then the morning you leave.</p>
+          <p className="mb-2 text-center text-[11px] text-slate-400">{t('stay_tap_nights')}</p>
         )}
         <div className="mb-1 grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase tracking-wide text-slate-300">
           {WEEKDAYS.map(d => <div key={d}>{d}</div>)}
@@ -218,7 +218,7 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
       {uid && (
         <div className="rounded-2xl border border-slate-100 bg-white p-5">
           {isHost && (
-            <p className="mb-3 rounded-lg bg-indigo-50 px-3 py-2 text-xs text-indigo-700">Reserving your own bed — you approve it yourself below.</p>
+            <p className="mb-3 rounded-lg bg-indigo-50 px-3 py-2 text-xs text-indigo-700">{t('stay_own_bed_note')}</p>
           )}
           {othersChoosing && !isHost && (
             <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">{t('bed_being_viewed')}</p>
@@ -228,7 +228,7 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
             <span className="font-semibold text-slate-700">{pick.from || '—'} → {pick.to || '—'}</span>
           </div>
           <textarea value={note} onChange={e => setNote(e.target.value)} rows={2}
-            placeholder="A word to the keeper (optional)…"
+            placeholder={t('stay_word_keeper_ph')}
             className="mb-3 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400" />
           <button type="button" onClick={request} disabled={!!problem || busy}
             className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50">

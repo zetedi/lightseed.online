@@ -16,6 +16,7 @@ import { firestoreStore } from '../../adapters/firestore';
 import { treeCircle } from '../../domain/views/circle';
 import { isHousedBed } from '../../domain/bed';
 import { type Pulse, type Lifetree } from '../../types';
+import { spokenLine } from '../../utils/translations';
 
 // The bed's own profile — a bed IS a Lifetree, so it wears the same face (BeingProfile) and the
 // same chain (ChainTree, each stay a leaf). What's its own: a HOUSED/LOOSE pill, a calendar of
@@ -94,7 +95,7 @@ export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree
   };
 
   const remove = async () => {
-    if (!(await showConfirm(`Release the bed “${bed.name}”? Its chain remains, but it will no longer be offered.`, { title: 'Release bed', confirmText: 'Release', danger: true }))) return;
+    if (!(await showConfirm(spokenLine('bed_release_confirm', { name: bed.name || '' }), { title: 'bed_release', confirmText: 'release', danger: true }))) return;
     setBusy(true);
     try {
       await deleteLifetree(bed.id);

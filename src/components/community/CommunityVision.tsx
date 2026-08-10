@@ -7,6 +7,7 @@ import { getTreesByDomain, getPulsesByTreeId, updateCommunity } from '../../serv
 import { isCanonicallySealed, verifyBlockSeal, type ChainBlock } from '../../domain/chain';
 import { setTokenisationEnabled } from '../../domain/tokenisation';
 import { VisionSection } from '../sections/VisionSection';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface CommunityVisionProps {
   community: Community;
@@ -47,6 +48,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
   status,
   onUpdate,
 }) => {
+    const { t } = useLanguage();
   // The chain seal ("big red stamp") — mirrors community.chainLocked. Sealing is one-way for owners.
   const [chainSealed, setChainSealed] = useState(!!community.chainLocked);
   const [isSealing, setIsSealing] = useState(false);
@@ -184,8 +186,8 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
             <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
               <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-emerald-300"><Icons.ShieldCheck /></span>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-emerald-900">Chain sealed</p>
-                <p className="mt-0.5 text-sm text-emerald-800/80">Every new block this node mints is sealed with the canonical, reproducible hash, so its content can be verified against its hash.</p>
+                <p className="text-sm font-bold text-emerald-900">{t('chain_sealed')}</p>
+                <p className="mt-0.5 text-sm text-emerald-800/80">{t('chain_sealed_note')}</p>
                 {firstTree?.latestHash && (
                   <p className="mt-1 break-all font-mono text-xs text-emerald-700/60">head {firstTree.latestHash.slice(0, 16)}…</p>
                 )}
@@ -221,8 +223,8 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
             <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
               <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500"><Icons.Stamp /></span>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-slate-800">Seal the chain</p>
-                <p className="mt-0.5 text-sm text-slate-500">Commit this node to a verifiable chain: from now on every new block carries the canonical, reproducible hash, so anyone can check it. Blocks minted before now keep their original hashes. A one-way step.</p>
+                <p className="text-sm font-bold text-slate-800">{t('chain_seal')}</p>
+                <p className="mt-0.5 text-sm text-slate-500">{t('chain_seal_note')}</p>
                 <div className="mt-3 flex items-center gap-3">
                   <button onClick={() => handleToggleSeal(true)} disabled={isSealing} className="inline-flex items-center gap-2 rounded-full bg-red-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-600/20 transition-all hover:bg-red-700 active:scale-95 disabled:opacity-50">
                     <Icons.Stamp /> {isSealing ? 'Sealing…' : 'Seal this chain'}
@@ -243,7 +245,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
             <MahameruAvatar size={36} className="mt-0.5" />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold text-slate-800">AI-token economy</p>
-              <p className="mt-0.5 text-sm text-slate-500">Turn on “Attention-Energy” tokens for this node: trees earn tokens and spend them on deep AI. While off, AI stays free and the token balance/cost UI is hidden.</p>
+              <p className="mt-0.5 text-sm text-slate-500">{t('tokens_note')}</p>
             </div>
             <button
               onClick={() => handleToggleTokenisation(!tokenisationOn)}
@@ -267,7 +269,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
           <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
             <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500"><Icons.Globe /></span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold text-slate-800">Reflect the commons</p>
+              <p className="text-sm font-bold text-slate-800">{t('reflect_commons')}</p>
               <p className="mt-0.5 text-sm text-slate-500">Show this backend's public forest here, a window onto every community it holds. While off, {community.domain} shows only its own trees and pulses. Either way, node- and community-only content stays private.</p>
             </div>
             <button
@@ -288,7 +290,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
             <div className="mt-2 flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
               <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500"><Icons.Eye /></span>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-slate-800">Strict scope</p>
+                <p className="text-sm font-bold text-slate-800">{t('strict_scope')}</p>
                 <p className="mt-0.5 text-sm text-slate-500">Show only {community.domain}'s own trees: hide even your own trees from other domains, for a clean single-place forest. No effect while reflecting the commons.</p>
               </div>
               <button
@@ -320,7 +322,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
       status={status}
       title="Vision"
       sub="What this community is growing towards."
-      placeholder="Share your community's vision..."
+      placeholder={t('community_vision_ph')}
       extras={extras}
     />
   );

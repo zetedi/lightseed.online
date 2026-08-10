@@ -5,6 +5,7 @@ import { SectionTitle } from '../ui/SectionTitle';
 import { tabTone } from '../../utils/tabTheme';
 import { firestoreStore } from '../../adapters/firestore';
 import { GuardianButton } from './GuardianButton';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface CommunityFirstTreeProps {
   community: Community;
@@ -26,6 +27,7 @@ export const CommunityFirstTree: React.FC<CommunityFirstTreeProps> = ({
   togglingId,
   onToggleGuardian,
 }) => {
+    const { t } = useLanguage();
   // Featured tree's guardian count — a prism over its incoming 'guardian' links.
   const [firstTreeGuardians, setFirstTreeGuardians] = useState(0);
   const firstTreeId = firstTree?.id;
@@ -45,7 +47,7 @@ export const CommunityFirstTree: React.FC<CommunityFirstTreeProps> = ({
       {!firstTree ? (
         <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-500"><Icons.Tree /></div>
-          <p className="text-sm">No lifetree has been planted in this community yet.</p>
+          <p className="text-sm">{t('community_no_tree')}</p>
         </div>
       ) : (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -70,7 +72,7 @@ export const CommunityFirstTree: React.FC<CommunityFirstTreeProps> = ({
               <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-slate-600"><Icons.Loc /> {firstTree.locationName}</span>
             )}
             {firstTree.validated && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-bold text-emerald-700">Validated</span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-bold text-emerald-700">{t('validated')}</span>
             )}
             <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-slate-600">
               {firstTreeGuardians} {firstTreeGuardians === 1 ? 'guardian' : 'guardians'}

@@ -3,6 +3,7 @@ import { Timestamp } from 'firebase/firestore';
 import { Pulse } from '../../types';
 import { ChainTree, ChainRoot, ChainStats } from '../sections/ChainTree';
 import { SectionTitle } from '../ui/SectionTitle';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // The node's BODY — its code chain. For the network hub, the repository's git history is the
 // growth chain: code changes are its growth, and every deploy carries its own history (Indra's
@@ -43,6 +44,7 @@ const noop = (): void => {};
 const REPO_URL = 'https://github.com/zetedi/lightseed.online';
 
 export const CommunityCodeChain: React.FC = () => {
+    const { t } = useLanguage();
     const [commits, setCommits] = useState<CommitEntry[] | null>(null);
     const [failed, setFailed] = useState(false);
 
@@ -83,7 +85,7 @@ export const CommunityCodeChain: React.FC = () => {
                 sub="The node's body: code changes are its growth; every deploy carries its own history (Indra's net)."
             />
             {failed ? (
-                <p className="py-10 text-center text-sm text-slate-400">The code chain could not be read.</p>
+                <p className="py-10 text-center text-sm text-slate-400">{t('code_chain_unreadable')}</p>
             ) : (
                 <ChainTree
                     blocks={blocks}

@@ -573,7 +573,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                 {/* Audience picker — only when starting a fresh reach to a tree (not a fixed group thread). */}
                 {mode === 'tree' && selectedTree && !groupThread && (
                     <div className="mt-3 flex items-center gap-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Send to</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{t('send_to')}</span>
                         <div className="flex flex-wrap gap-1.5">
                             {AUDIENCE_OPTIONS.map(opt => {
                                 const active = audience === opt.value;

@@ -7,6 +7,8 @@ import { Community, CommunityInvite } from '../../types';
 import { doorOf, communityInviteUrl, inviteStatus, type CommunityDoor } from '../../domain/communityDoor';
 import { SectionTitle } from '../ui/SectionTitle';
 import { firestoreStore } from '../../adapters/firestore';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { spokenLine } from '../../utils/translations';
 import {
   getPersonName, updateCommunity,
   mintCommunityInvite, listCommunityInvites, revokeCommunityInvite,
@@ -44,6 +46,7 @@ const resolveNames = async (uids: string[]): Promise<Row[]> =>
   Promise.all(uids.map(async (uid) => ({ uid, name: (await getPersonName(uid)) || uid })));
 
 export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, currentUserId, canManage, isOwner, onCommunityUpdate }) => {
+    const { t } = useLanguage();
   const [members, setMembers] = useState<Row[] | null>(null);
   const [requests, setRequests] = useState<Row[]>([]);
   const [stewardUids, setStewardUids] = useState<Set<string>>(new Set());
@@ -121,7 +124,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
   };
 
   const handleRevokeInvite = async (invite: CommunityInvite) => {
-    if (!(await showConfirm('Revoke this invitation link? Anyone still holding it will find the door unmoved by it.', { title: 'Revoke invitation', confirmText: 'Revoke', danger: true }))) return;
+    if (!(await showConfirm('invite_revoke_confirm', { title: 'invite_revoke', confirmText: 'revoke', danger: true }))) return;
     try {
       await revokeCommunityInvite(invite.id);
       setInvites(prev => prev.map(i => i.id === invite.id ? { ...i, revokedAt: Timestamp.now() } : i));
@@ -148,7 +151,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
   };
 
   const handleRemove = async (row: Row) => {
-    if (!(await showConfirm(`Remove ${row.name} from ${community.name}?`, { title: 'Remove member', confirmText: 'Remove', danger: true }))) return;
+    if (!(await showConfirm(spokenLine('member_remove_confirm', { name: row.name, community: community.name }), { title: 'member_remove', confirmText: 'remove', danger: true }))) return;
     setBusyUid(row.uid);
     try {
       await firestoreStore.unlink(row.uid, 'member', community.id);
@@ -191,7 +194,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
       {/* The DOOR — owner-set: who may join, and how. Distinct from visibility (who may see). */}
       {isOwner && (
         <div className="mb-5 rounded-2xl border border-slate-100 bg-white p-4">
-          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">The door</p>
+          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">{t('the_door')}</p>
           <div className="flex flex-wrap gap-1.5">
             {DOORS.map(d => (
               <button key={d.value} onClick={() => handleDoor(d.value)} disabled={doorBusy}
@@ -220,7 +223,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
       {canManage && (
         <div className="mb-5 rounded-2xl border border-slate-100 bg-white p-4">
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Invitations</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('invitations')}</p>
             <button onClick={handleMintInvite} disabled={minting || door === 'closed'}
               title={door === 'closed' ? 'The door is closed; invitations would wait outside.' : 'Mint a shareable invitation link'}
               className="rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50">
@@ -228,7 +231,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
             </button>
           </div>
           {invites.length === 0 ? (
-            <p className="text-[11px] italic text-slate-400">No invitations yet. A minted link opens the door to whoever holds it, and records who invited whom.</p>
+            <p className="text-[11px] italic text-slate-400">{t('invitations_none')}</p>
           ) : (
             <div className="space-y-1.5">
               {invites.map(i => {
@@ -264,7 +267,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
 
       {canManage && requests.length > 0 && (
         <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
-          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-amber-700">Join requests</p>
+          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-amber-700">{t('join_requests')}</p>
           <div className="space-y-1.5">
             {requests.map(r => (
               <div key={r.uid} className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 border border-amber-100">
@@ -289,9 +292,9 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
       )}
 
       {members === null ? (
-        <p className="py-8 text-center text-sm text-slate-400">Gathering the circle…</p>
+        <p className="py-8 text-center text-sm text-slate-400">{t('gathering_circle')}</p>
       ) : members.length === 0 ? (
-        <p className="py-8 text-center text-sm text-slate-400">No members yet.</p>
+        <p className="py-8 text-center text-sm text-slate-400">{t('no_members')}</p>
       ) : (
         <div className="space-y-1.5">
           {members.map(m => (
