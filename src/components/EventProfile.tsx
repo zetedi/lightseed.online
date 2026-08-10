@@ -18,6 +18,7 @@ import { SectionMenu, SectionItem } from './ui/SectionMenu';
 import { PulseInsightPanel } from './ui/PulseInsightPanel';
 import { TreeParticipants } from './TreeParticipants';
 import { useLanguage } from '../contexts/LanguageContext';
+import { spokenLine } from '../utils/translations';
 
 // The event view, rendered through the shared profile scaffold (ProfileHero + ProfileLayout) so an
 // event reads like the community / lifetree / lightseed profiles rather than a generic pulse. Events
@@ -46,7 +47,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
     const canDelete = isAuthor || isAdmin || isSuperAdmin;
     const [isDeleting, setIsDeleting] = useState(false);
     const handleDelete = async () => {
-        if (!(await showConfirm(`Delete the event "${pulse.title}"? This cannot be undone.`, { title: 'Delete event', confirmText: 'Delete', danger: true }))) return;
+        if (!(await showConfirm(spokenLine('event_delete_confirm', { title: pulse.title || '' }), { title: 'delete_event', confirmText: 'delete', danger: true }))) return;
         setIsDeleting(true);
         try {
             await deleteCommunityEvent(pulse.id);

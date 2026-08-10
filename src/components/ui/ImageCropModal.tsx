@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Icons } from './Icons';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // A dependency-free image cropper: pan (drag) + zoom (slider/wheel) over a fixed-aspect
 // window, then draw the visible region to a canvas and hand back a cropped File. Rendered
@@ -20,6 +21,7 @@ export const ImageCropModal = ({
     onCancel: () => void;
     onConfirm: (file: File) => void;
 }) => {
+    const { t } = useLanguage();
     const [url, setUrl] = useState<string>('');
     const [nat, setNat] = useState<{ w: number; h: number } | null>(null);
     const [zoom, setZoom] = useState(1);
@@ -206,7 +208,7 @@ export const ImageCropModal = ({
                         className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-slate-200 accent-emerald-600"
                     />
                 </div>
-                <p className="mt-2 text-center text-[11px] text-slate-400">Drag to reposition · scroll or slide to zoom</p>
+                <p className="mt-2 text-center text-[11px] text-slate-400">{t('crop_hint')}</p>
 
                 <div className="mt-4 flex gap-2">
                     <button type="button" onClick={onCancel} className="flex-1 rounded-full border border-slate-200 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">Cancel</button>

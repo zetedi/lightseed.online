@@ -4,6 +4,7 @@ import { fetchGrowthPulses, getLifetreeById } from '../services/firebase';
 import { Modal } from './ui/Modal';
 import { Icons } from './ui/Icons';
 import { speak } from '../utils/translations';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // One frame of the evolution: the planting/genesis image first, then each growth pulse.
 interface Frame {
@@ -15,6 +16,7 @@ interface Frame {
 }
 
 export const GrowthPlayerModal = ({ treeId, onClose }: { treeId: string, onClose: () => void }) => {
+    const { t } = useLanguage();
     const [frames, setFrames] = useState<Frame[]>([]);
     const [index, setIndex] = useState(0);
     const [done, setDone] = useState(false);
@@ -84,7 +86,7 @@ export const GrowthPlayerModal = ({ treeId, onClose }: { treeId: string, onClose
         <Modal title="Growth Evolution" onClose={onClose}>
             {loading ? <div className="p-10 text-center">Loading Growth...</div> : (
                 error ? <div className="p-10 text-center text-red-500">{speak(error)}</div> :
-                !f ? <div className="p-10 text-center">No growth pictures recorded yet.</div> :
+                !f ? <div className="p-10 text-center">{t('no_growth_pictures')}</div> :
                 <div className="flex flex-col items-center">
                     <div className="relative w-full">
                         <img src={f.imageUrl} className="w-full h-64 object-cover rounded-lg shadow-lg mb-4" />

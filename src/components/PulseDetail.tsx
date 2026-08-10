@@ -9,6 +9,7 @@ import { canVeto, isVetoed, vetoProgress, type VetoInput } from '../domain/guard
 import { showAlert, showConfirm } from './ui/Dialog';
 import { BeingQr } from './ui/BeingQr';
 import { mintBeingQr } from '../services/firebase/beings';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // The generic pulse view — a PROFILE, not a modal: the same ProfileHero + full-page scaffold as
 // VisionProfile / EventProfile / AlignmentView, so every entity (tree, vision, event, alignment,
@@ -25,6 +26,7 @@ interface PulseDetailProps {
 }
 
 export const PulseDetail = ({ pulse, onClose, backLabel = "Back", canEdit, onEdit }: PulseDetailProps) => {
+    const { t } = useLanguage();
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const images = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
 
@@ -59,7 +61,7 @@ export const PulseDetail = ({ pulse, onClose, backLabel = "Back", canEdit, onEdi
     const progress = vetoProgress(vetoInput);
     const handleVeto = async () => {
         if (!viewerUid || isVetoing) return;
-        if (!(await showConfirm('Cast your veto on this mint? It stands only if every guardian agrees.', { title: 'Guardian veto', confirmText: 'Veto', danger: true }))) return;
+        if (!(await showConfirm('veto_confirm', { title: 'guardian_veto', confirmText: 'veto', danger: true }))) return;
         setIsVetoing(true);
         try {
             await vetoGrowthPulse(pulse.id, viewerUid);
@@ -213,7 +215,7 @@ export const PulseDetail = ({ pulse, onClose, backLabel = "Back", canEdit, onEdi
                                     </button>
                                 )}
                                 {!viewerCanVeto && viewerUid && vetoes.includes(viewerUid) && (
-                                    <span className="text-xs font-bold text-red-500">Your veto is cast.</span>
+                                    <span className="text-xs font-bold text-red-500">{t('veto_cast')}</span>
                                 )}
                             </div>
                         )}

@@ -19,6 +19,8 @@ import { announce } from '../services/refreshBus';
 import { notify } from './ui/Toast';
 import { lightHouseVisibility, type LightHouse, type LightHouseVisibility } from '../domain/lightHouse';
 import type { Community, Lifetree } from '../types';
+import { spokenLine } from '../utils/translations';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // The Light House's own page — the shared profile anatomy (ProfileHero + ProfileLayout), so a
 // sacred place opens like every other being: from its map marker, or from a community's
@@ -41,6 +43,7 @@ interface LightHouseProfileProps {
 }
 
 export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', canEdit = false, editIsStaffOnly = false, onSetVisibility, onDelete, onViewCommunity, onViewTree }: LightHouseProfileProps) => {
+    const { t } = useLanguage();
     const visibility = lightHouseVisibility(lightHouse);
     const [section, setSection] = useState<LightHouseSection>('about');
 
@@ -146,7 +149,7 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
 
     const handleDelete = async () => {
         if (!onDelete) return;
-        if (!(await showConfirm(`Release the Light House "${lightHouse.name}"? This cannot be undone.`, { title: 'Release Light House', confirmText: 'Release', danger: true }))) return;
+        if (!(await showConfirm(spokenLine('lh_release_confirm', { name: lightHouse.name || '' }), { title: 'lh_release', confirmText: 'release', danger: true }))) return;
         try { await onDelete(lightHouse.id); } catch (e: any) { showAlert(e?.message || 'Could not release the Light House.'); }
     };
 
@@ -207,7 +210,7 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
                                 <p dir="auto" className="whitespace-pre-line text-justify font-serif text-lg leading-relaxed text-slate-700">{lightHouse.body}</p>
                             </div>
                         ) : (
-                            <p className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">Its story is still unwritten.</p>
+                            <p className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">{t('story_unwritten')}</p>
                         )}
 
                         {/* The 3D door — step into the Light House's Gaussian-splat scene. */}
@@ -222,10 +225,10 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
                         {canEdit && (
                             <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-5 shadow-sm">
                                 <h3 className="mb-2.5 text-xs font-bold uppercase tracking-wider text-amber-600">The place</h3>
-                                <p className="mb-2 text-[11px] text-slate-500">Tap the map to move the Light House. It glows where you place it in the forest.</p>
+                                <p className="mb-2 text-[11px] text-slate-500">{t('lh_map_move')}</p>
                                 <LocationPicker value={coords} onChange={setCoords} className="h-56 w-full overflow-hidden rounded-xl border border-amber-100 shadow-inner" />
                                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                                    <input value={placeName} onChange={e => setPlaceName(e.target.value)} placeholder="Place name (e.g. The Olive Grove, Crete)"
+                                    <input value={placeName} onChange={e => setPlaceName(e.target.value)} placeholder={t('lh_place_ph')}
                                         className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
                                     <button onClick={savePlace} disabled={!placeDirty || isSavingPlace}
                                         className="rounded-full bg-amber-500 px-5 py-2 text-xs font-bold text-white shadow transition-colors hover:bg-amber-600 disabled:opacity-40">
@@ -238,7 +241,7 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
                         {/* Who may see it — keepers can open it wider or draw it back, right here. */}
                         {canEdit && onSetVisibility && (
                             <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-5 shadow-sm">
-                                <h3 className="mb-2.5 text-xs font-bold uppercase tracking-wider text-amber-600">Who may see it</h3>
+                                <h3 className="mb-2.5 text-xs font-bold uppercase tracking-wider text-amber-600">{t('lh_who_sees')}</h3>
                                 <div className="flex flex-wrap gap-2">
                                     {(['community', 'node', 'public'] as const).map(v => (
                                         <button key={v} type="button"
@@ -322,7 +325,7 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
                                 })}
                             </div>
                         ) : (
-                            <p className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">No beds here yet.</p>
+                            <p className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">{t('no_beds_yet')}</p>
                         )}
 
                         {isKeeperViewer && (

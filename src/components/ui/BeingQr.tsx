@@ -4,6 +4,7 @@ import { Modal } from './Modal';
 import { Icons } from './Icons';
 import { beingUrl, isQrStale } from '../../domain/beingLink';
 import { notify } from './Toast';
+import { speak } from '../../utils/translations';
 
 // The being's QR — its offline/online bridge. A small icon on every being's profile opens
 // the code; the URL inside carries the LID (the true name), so paper printed today keeps
@@ -49,7 +50,7 @@ export const BeingQr = ({ lid, name, savedHref, canMint = false, onMint, classNa
             setDataUrl(await QRCode.toDataURL(liveHref, { width: 512, margin: 2, color: { dark: '#0f172a', light: '#ffffff' } }));
             notify('QR link refreshed.');
         } catch {
-            notify('Could not refresh the QR link.', 'error');
+            notify(speak('err_qr_refresh'), 'error');
         }
     };
 

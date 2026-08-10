@@ -3,6 +3,7 @@ import { Modal } from './ui/Modal';
 import { Icons } from './ui/Icons';
 import { markWateredOffChain } from './../services/firebase';
 import type { Lifetree } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // THE TEND SHEET — the tend droplet opens this small, focused modal instead of steering to a
 // whole page: the target tree, a single "watered today" breath of care, a door to the full Care
@@ -17,6 +18,7 @@ export const TendModal = ({ tree, sender, hasVision, onOpenCare, onOpenVision, o
     onOpenVision?: () => void;
     onClose: () => void;
 }) => {
+    const { t } = useLanguage();
     const [busy, setBusy] = useState(false);
     const [done, setDone] = useState(false);
     const img = tree.latestGrowthUrl || tree.imageUrl;
@@ -47,7 +49,7 @@ export const TendModal = ({ tree, sender, hasVision, onOpenCare, onOpenVision, o
                 </div>
 
                 {done ? (
-                    <p className="w-full rounded-2xl bg-sky-50 px-4 py-3 text-sm font-medium text-sky-700">Watered today 💧 Thank you.</p>
+                    <p className="w-full rounded-2xl bg-sky-50 px-4 py-3 text-sm font-medium text-sky-700">{t('watered_today')} 💧</p>
                 ) : (
                     <button onClick={water} disabled={busy} className="w-full rounded-2xl bg-sky-600 py-3.5 text-sm font-bold text-white shadow-lg shadow-sky-600/20 transition-all hover:bg-sky-700 active:scale-95 disabled:opacity-60">
                         {busy ? 'Watering…' : 'I watered today 💧'}

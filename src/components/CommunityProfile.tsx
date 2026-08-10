@@ -36,6 +36,7 @@ import { queryableLevels } from '../domain/pulseVisibility';
 import { firestoreStore } from '../adapters/firestore';
 import { isParticipant } from '../domain/views/participation';
 import { canTendTree } from '../domain/policy';
+import { speak } from '../utils/translations';
 
 interface CommunityProfileProps {
   community: Community;
@@ -353,7 +354,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     } catch (e) {
       console.error(e);
       setStatus('Failed to save. Please try again.');
-      notify('Could not save. Please try again.', 'error');
+      notify(speak('err_save_retry'), 'error');
     }
     setIsSaving(false);
   };

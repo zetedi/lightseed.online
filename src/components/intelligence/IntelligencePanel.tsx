@@ -97,7 +97,7 @@ export const IntelligencePanel = ({
   }, [intelligences, existingClaude]);
 
   const handleConnect = async () => {
-    if (!apiKey.trim()) { showAlert('Paste your Claude API key first.'); return; }
+    if (!apiKey.trim()) { showAlert('intel_key_first'); return; }
     setBusy(true);
     try {
       let intelligenceId = existingClaude?.id;
@@ -278,7 +278,7 @@ export const IntelligencePanel = ({
           <button type="button" onClick={handleAddMemory} disabled={addingMem || !memText.trim()} className="mt-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">{addingMem ? '…' : t('intel_add_memory')}</button>
         </div>
       ) : (
-        <p className="text-sm text-slate-400">Choose an intelligence in the Intelligence tab to add or view its memory.</p>
+        <p className="text-sm text-slate-400">{t('intel_choose_memory')}</p>
       ))}
 
       {panelTab === 'intelligence' && (<div className="space-y-5">

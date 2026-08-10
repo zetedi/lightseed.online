@@ -1,5 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { subscribeNet, getNetSnapshot, initNetworkWatch } from '../../services/network';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // THE NETWORK'S FACE — mounted once at the app root. Three truths, told plainly:
 //   SLOW: when tracked requests stay on the wire past the grace period, the whole container
@@ -13,6 +14,7 @@ import { subscribeNet, getNetSnapshot, initNetworkWatch } from '../../services/n
 const SLOW_AFTER_MS = 700;
 
 export const NetworkStatus = () => {
+    const { t } = useLanguage();
     const net = useSyncExternalStore(subscribeNet, getNetSnapshot);
     useEffect(() => { initNetworkWatch(); }, []);
 
@@ -62,7 +64,7 @@ export const NetworkStatus = () => {
                             <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88" />
                             <line x1="12" y1="20" x2="12.01" y2="20" />
                         </svg>
-                        <span>No internet connection</span>
+                        <span>{t('offline')}</span>
                     </div>
                 </div>
             )}

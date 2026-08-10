@@ -8,6 +8,7 @@ import { backfillLidIndex } from '../../services/firebase/beings';
 import type { AdminUserRow } from '../../services/firebase';
 import { DEFAULT_NODE_LIMITS } from '../../domain/limits';
 import { SectionTitle } from '../ui/SectionTitle';
+import { speak, spokenLine } from '../../utils/translations';
 
 interface ProfileAdminProps {
   uid: string;
@@ -67,7 +68,7 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
     setSavingLimits(true);
     try {
       await setNodeLimits({ maxLifetrees, maxGuardedTrees });
-      notify(`Planting limits saved: ${maxLifetrees} lifetrees + ${maxGuardedTrees} guarded = ${maxLifetrees + maxGuardedTrees} trees per being.`);
+      notify(speak(spokenLine('limits_saved', { l: maxLifetrees, g: maxGuardedTrees, sum: maxLifetrees + maxGuardedTrees })));
     } catch (e: any) { notify(e?.message || 'Could not save the limits.'); }
     setSavingLimits(false);
   };
@@ -83,7 +84,7 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
     const targetUid = (target?.uid || deleteUserUid).trim();
     if (!targetUid) return;
     const who = target ? `${target.displayName || target.email || targetUid}${target.email ? ` (${target.email})` : ''}` : targetUid;
-    if (!(await showConfirm(`Permanently delete ${who} and all their trees, pulses, visions and account? This cannot be undone.`, { title: 'Delete user', confirmText: 'Delete user', danger: true }))) return;
+    if (!(await showConfirm(spokenLine('user_delete_confirm', { who }), { title: 'delete_user', confirmText: 'delete_user', danger: true }))) return;
     setDeletingUser(true);
     try {
       await deleteUserAsAdmin(targetUid);
@@ -108,7 +109,7 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
     setResettingLight(true);
     try {
       const r = await resetLight();
-      notify(`The light is reset: ${r.rays} rays (${r.rayUnits} units) and ${r.glowHomes} glow homes (${r.glowUnits} units) returned to the sun.`);
+      notify(speak(spokenLine('light_reset_report', { rays: r.rays, rayUnits: r.rayUnits, homes: r.glowHomes, glowUnits: r.glowUnits })));
     } catch (e: any) {
       notify(e?.message || 'Could not reset the light.');
     }
@@ -132,7 +133,7 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
       setMailStatus(`SUCCESS! Sent to ${targetEmail}`);
       setTimeout(() => { setMailStatus(null); }, 5000);
     } catch (e: any) {
-      notify('Failed to write to database: ' + e.message);
+      notify(speak(e?.message || 'err_db_write'));
       setMailStatus(null);
     }
   };

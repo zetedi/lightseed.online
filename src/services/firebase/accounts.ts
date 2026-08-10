@@ -273,7 +273,7 @@ export const setOnlyValidatedCanReach = async (userId: string, value: boolean) =
 
 export const deleteUserAccount = async (heirUid?: string) => {
     const user = auth.currentUser;
-    if (!user) throw new Error("No user signed in");
+    if (!user) throw new Error('err_no_identity');
     // Server-side (deleteMyAccount CF): the content, profile and Auth user are removed in order
     // with admin rights — so a stale login can't leave a half-deleted account behind (docs gone,
     // Auth user stranded), the way the old client-first delete did. Then sign out locally.
@@ -291,7 +291,7 @@ export const checkAndIncrementAiUsage = async (type: 'text' | 'image'): Promise<
     try {
         await runTransaction(db, async (t) => {
             const docSnap = await t.get(userRef);
-            if (!docSnap.exists()) throw new Error("User profile missing");
+            if (!docSnap.exists()) throw new Error('err_profile_not_found');
             const data = docSnap.data();
             const now = Date.now();
             // Reset when the calendar day (local) differs. Comparing the full date — not just
@@ -302,10 +302,10 @@ export const checkAndIncrementAiUsage = async (type: 'text' | 'image'): Promise<
             let imageCount = data.dailyAiImage || 0;
             if (!isSameDay) { textCount = 0; imageCount = 0; }
             if (type === 'text') {
-                if (textCount >= 21) throw new Error("Daily Oracle limit reached (21/21).");
+                if (textCount >= 21) throw new Error('err_oracle_limit');
                 textCount++;
             } else {
-                if (imageCount >= 3) throw new Error("Daily Vision limit reached (3/3).");
+                if (imageCount >= 3) throw new Error('err_vision_limit');
                 imageCount++;
             }
             t.update(userRef, { dailyAiText: textCount, dailyAiImage: imageCount, lastAiReset: now });
@@ -316,7 +316,7 @@ export const checkAndIncrementAiUsage = async (type: 'text' | 'image'): Promise<
 
 export const triggerSystemEmail = async (to: string, subject: string, text: string, userId?: string, opts?: { ctaUrl?: string; ctaLabel?: string }) => {
     const effectiveUid = userId || auth.currentUser?.uid;
-    if (!effectiveUid) throw new Error("User ID required for email triggering.");
+    if (!effectiveUid) throw new Error('err_email_uid');
 
     // The branded HTML shell + CTA button are composed server-side (sendSystemEmail) from this
     // plain text and an optional CTA — the client no longer sends raw HTML.
@@ -333,9 +333,9 @@ export const sendInvite = async (targetEmail: string, customMessage: string, use
     const userRef = doc(db, 'users', userId);
     await runTransaction(db, async (t) => {
         const userDoc = await t.get(userRef);
-        if (!userDoc.exists()) throw new Error("User profile not found");
+        if (!userDoc.exists()) throw new Error('err_profile_not_found');
         const currentInvites = userDoc.data().invitesRemaining || 0;
-        if (currentInvites <= 0) throw new Error("No invites remaining.");
+        if (currentInvites <= 0) throw new Error('err_no_invites');
         t.update(userRef, { invitesRemaining: currentInvites - 1 });
     });
     await triggerSystemEmail(targetEmail, "You have been invited to lightseed", `${customMessage ? `"${customMessage}"\n\n` : ""}You have been invited to join the lightseed network. Join here: ${inviteLink}`, userId);

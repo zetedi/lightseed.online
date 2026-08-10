@@ -96,6 +96,7 @@ import { setTokenisationEnabled } from './domain/tokenisation';
 import { LifeseedWidget } from './components/LifeseedWidget';
 import { DialogHost, showAlert, showConfirm } from './components/ui/Dialog';
 import { isExplicitlyValidatedTree } from './utils/validation';
+import { speak, spokenLine } from './utils/translations';
 
 // Route pages, detail overlays, and modals are code-split: each becomes its own chunk that loads
 // only when first shown, so the initial bundle (and Quill, which only the modals use) no longer
@@ -366,7 +367,7 @@ const AppContent = () => {
         // the hosting rewrite serves the shell for it, and this effect re-opens the being.
         window.history.replaceState(window.history.state, '', beingPath(lid));
         findBeingByLid(lid, !!lightseed, { uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin }).then(found => {
-            if (!found) { notify('This link names a being you cannot see from here.'); return; }
+            if (!found) { notify(speak('being_link_unseen')); return; }
             if (found.kind === 'tree') setSelectedTree(found.tree);
             else if (found.kind === 'lightHouse') setViewingLightHouse(found.lightHouse);
             else if (found.kind === 'vision') setSelectedVision(found.vision);
@@ -385,10 +386,10 @@ const AppContent = () => {
         window.history.replaceState({}, '', '/');
         getCommunityInvite(inviteId).then(async invite => {
             const community = invite ? await getCommunityById(invite.communityId) : null;
-            if (!invite || !community) { notify('This invitation could not be found.'); return; }
+            if (!invite || !community) { notify(speak('invite_not_found')); return; }
             setArrivedInvite(invite);
             setSelectedCommunity(community);
-        }).catch(() => notify('This invitation could not be found.'));
+        }).catch(() => notify(speak('invite_not_found')));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot door: runs when auth settles; the path is consumed on first resolution
     }, [authLoading]);
 
@@ -519,7 +520,7 @@ const AppContent = () => {
             loadContent(true); 
         } catch (e: any) {
             console.error("Quick Snap Error:", e);
-            showAlert("Error taking picture: " + e.message);
+            showAlert(e?.message || 'err_picture');
         }
     }
 
@@ -536,14 +537,14 @@ const AppContent = () => {
     };
 
     const handleDeleteTree = async (treeId: string) => {
-        if (!(await showConfirm("Are you sure you want to delete this lifetree? This cannot be undone.", { title: 'Delete Lifetree', confirmText: 'Delete', danger: true }))) return;
+        if (!(await showConfirm('tree_delete_confirm', { title: 'delete_lifetree_title', confirmText: 'delete', danger: true }))) return;
         try {
             await deleteLifetree(treeId);
             await refreshTrees();
             loadContent(true);
         } catch (e: any) {
             console.error("Delete Tree Error:", e);
-            showAlert("Error deleting tree: " + e.message);
+            showAlert(e?.message || 'err_tree_delete');
         }
     }
 
@@ -553,7 +554,7 @@ const AppContent = () => {
             await refreshTrees();
             loadContent(true);
         } catch (e: any) {
-            showAlert("Error deleting tree: " + e.message);
+            showAlert(e?.message || 'err_tree_delete');
         }
     }
 
@@ -577,7 +578,7 @@ const AppContent = () => {
     // its chain + links). Darkens the app, shows the spinner, and confirms in a snackbar when done.
     const [busyLabel, setBusyLabel] = useState<string | null>(null);
     const handleDeleteVisionInApp = async (visionId: string) => {
-        if (!(await showConfirm("Are you sure you want to delete this vision?", { title: 'Delete Vision', confirmText: 'Delete', danger: true }))) return;
+        if (!(await showConfirm('vision_delete_confirm', { title: 'delete_vision', confirmText: 'delete', danger: true }))) return;
         setBusyLabel('Releasing the vision…');
         try {
             await deleteVision(visionId);
@@ -587,7 +588,7 @@ const AppContent = () => {
             notify('🌱 The vision was released.');
         } catch (e: any) {
             setBusyLabel(null);
-            showAlert("Delete failed: " + e.message);
+            showAlert(e?.message || 'err_delete');
         }
     }
 
@@ -595,7 +596,7 @@ const AppContent = () => {
         try {
             const res = await acceptAlignment(id);
             setAlignments(prev => prev.filter(a => a.id !== id)); // drop the accepted request
-            await showAlert("Aligned: a shared sync-block is now on both chains.", 'Alignment');
+            await showAlert('aligned_toast', 'alignment_title');
             // Accepting an alignment also SIGNS its covenant (the canonical 2-party form) — additive:
             // the sync-block above stays, and the alignment gains a cryptographic twin the accepting
             // party signs in their own hand. Best-effort: a missing/unavailable signing key must never
@@ -1560,13 +1561,13 @@ const AppContent = () => {
                             await deleteLightHouse(id);
                             setViewingLightHouse(null);
                             announce('lightHouses', id);
-                            notify('The Light House was released.');
+                            notify(speak('lh_released'));
                         }}
                         onSetVisibility={async (id, v) => {
                             await setLightHouseVisibility(id, v);
                             setViewingLightHouse(prev => prev && prev.id === id ? { ...prev, visibility: v } : prev);
                             announce('lightHouses', id);
-                            notify(`Light House is now ${v === 'community' ? 'community-only' : v}.`);
+                            notify(speak(spokenLine('lh_visibility_now', { v: v === 'community' ? speak('vis_community') : speak(v === 'public' ? 'vis_public' : 'vis_node') })));
                         }}
                     />
                 </DetailWrapper>

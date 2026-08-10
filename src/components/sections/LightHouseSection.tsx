@@ -107,7 +107,7 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
         <ImagePicker
           onImageSelect={async (file) => {
             setIsUploading(true);
-            try { setImageUrl(await onUploadImage(file)); } catch { showAlert('Could not upload the image.'); }
+            try { setImageUrl(await onUploadImage(file)); } catch { showAlert('err_image_upload'); }
             setIsUploading(false);
           }}
           previewUrl={imageUrl}

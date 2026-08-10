@@ -22,6 +22,7 @@ import { tabTone, CTA_GLOW, type TabTheme } from '../utils/tabTheme';
 import type { Intelligence } from '../domain/intelligence';
 import type { Community } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
+import { spokenLine } from '../utils/translations';
 
 // Per-provider fallback descriptions, used when an intelligence has no description of its own.
 const PROVIDER_BLURB: Record<string, string> = {
@@ -130,7 +131,7 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
   };
 
   const handleRemove = async (org: OrgCollab) => {
-    if (!(await showConfirm(`Remove ${org.name} from the collabs?`, { title: 'Collabs' }))) return;
+    if (!(await showConfirm(spokenLine('collab_remove_confirm', { name: org.name }), { title: 'collab' }))) return;
     try { await removeOrgCollab(org.id); setOrgs(prev => (prev || []).filter(o => o.id !== org.id)); } catch { /* creator/staff-only; rules refuse others */ }
   };
 

@@ -3,6 +3,7 @@ import { Icons } from '../ui/Icons';
 import { fetchMyRays, fetchTreeNames, type HeldRay } from '../../services/firebase/light';
 import { RAY_UNITS } from '../../domain/light';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { speak, spokenLine } from '../../utils/translations';
 
 // THE LIGHT FACE — where a being sees the light their witnessed care has kindled. Rays are
 // server-minted and holder-private (solitary light is private; ring 2026-07-20), so this face
@@ -11,12 +12,13 @@ import { useLanguage } from '../../contexts/LanguageContext';
 // spending does not exist yet; this face is the first visible end of the care-to-light loop.
 
 // A ray is spoken as 108, the geometry of light (the nights are covered by the mornings).
+// Spoken through the translation keys so every language counts its own light.
 const spoken = (units: number): string => {
     const whole = Math.floor(units / RAY_UNITS);
     const rest = units % RAY_UNITS;
-    if (whole === 0) return `${rest} unit${rest === 1 ? '' : 's'} of light`;
-    const rays = `${whole} ray${whole === 1 ? '' : 's'}`;
-    return rest ? `${rays} and ${rest} units` : rays;
+    if (whole === 0) return speak(spokenLine('light_units', { n: rest }));
+    const rays = speak(spokenLine('light_rays', { n: whole }));
+    return rest ? speak(spokenLine('light_rays_and_units', { rays, n: rest })) : rays;
 };
 
 export const ProfileLight = ({ uid }: { uid: string }) => {

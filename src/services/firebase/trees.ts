@@ -299,7 +299,7 @@ export const plantBed = async (draft: {
         // HOUSED: only the Light House's keeper offers its beds.
         const house = await getLightHouseById(draft.lightHouseId);
         if (!house) throw new Error('err_lighthouse_gone');
-        if (house.ownerId !== user.uid) throw new Error("Only the Light House's keeper may offer its beds.");
+        if (house.ownerId !== user.uid) throw new Error('err_bed_keeper_only');
     }
 
     // Only a REAL place is written (NaN / Infinity / off-Earth coordinates are nowhere).

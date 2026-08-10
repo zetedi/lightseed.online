@@ -7,11 +7,13 @@ import { spendAiTokens, db } from '../../services/firebase';
 import { isTokenisationEnabled } from '../../domain/tokenisation';
 import { doc, updateDoc } from 'firebase/firestore';
 import { speak } from '../../utils/translations';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // The AI "Translation Depth" + "Network Memory" column that reveals a pulse's deeper intent (spending
 // a tree's AI tokens) and shows its validation standing. Extracted from PulseDetail so the event
 // profile (and any future pulse-like view) can offer the same reflection without duplicating it.
 export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeTree?: Lifetree | null }) => {
+    const { t } = useLanguage();
     const [depth, setDepth] = useState<number>(3);
     const [isTranslating, setIsTranslating] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -114,7 +116,7 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
 
                             {pulse.aiInterpretation.alternatives && pulse.aiInterpretation.alternatives.length > 0 && (
                                 <div className="bg-white/5 p-4 rounded-xl border border-white/10">
-                                    <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold block mb-2">Also possible</span>
+                                    <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold block mb-2">{t('also_possible')}</span>
                                     <ul className="text-xs text-slate-300 space-y-1 list-disc list-inside pl-4">
                                         {pulse.aiInterpretation.alternatives.map((alt, i) => (
                                             <li key={i}>{alt}</li>
@@ -177,8 +179,8 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
                                 {isTranslating ? "Translating..." : "Translate Pulse"}
                             </button>
 
-                            {!activeTree && <p className="text-[10px] text-center text-rose-400">You need an active Lifetree to perform translations.</p>}
-                            {tokensOn && activeTree && (activeTree.aiTokenBalance || 0) < depth && <p className="text-[10px] text-center text-amber-400">Not enough AI tokens.</p>}
+                            {!activeTree && <p className="text-[10px] text-center text-rose-400">{t('translate_need_tree')}</p>}
+                            {tokensOn && activeTree && (activeTree.aiTokenBalance || 0) < depth && <p className="text-[10px] text-center text-amber-400">{t('err_tokens_short')}</p>}
                         </div>
                     )}
                 </div>

@@ -90,7 +90,7 @@ export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree
       await updateLifetree(bed.id, { visibility: next });
       onUpdate?.({ visibility: next });
     } catch {
-      showAlert('Could not change the visibility.');
+      showAlert('err_visibility');
     }
   };
 
@@ -102,7 +102,7 @@ export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree
       onDelete?.();
       onClose();
     } catch {
-      showAlert('Could not release the bed.');
+      showAlert('err_bed_release');
       setBusy(false);
     }
   };

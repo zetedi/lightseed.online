@@ -8,6 +8,7 @@ import { isLightPathOn, setLightPathOn } from '../PathwayCTA';
 import { SectionTitle } from '../ui/SectionTitle';
 import { Modal } from '../ui/Modal';
 import { SigningKeyModal } from '../modals/SigningKeyModal';
+import { speak } from '../../utils/translations';
 
 // Module-scope (not created during render) so React keeps the DOM node between renders.
 const Toggle = ({ on, onClick, disabled }: { on: boolean; onClick: () => void; disabled?: boolean }) => (
@@ -143,7 +144,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
     } catch (e: any) {
       console.error('Delete Account Error:', e);
       if (e.message && (e.message.includes('log out') || e.message.includes('recent-login'))) {
-        notify('Security Check: Please sign in again to confirm deletion.');
+        notify(speak('security_reauth'));
         await logout();
         window.location.reload();
         return;

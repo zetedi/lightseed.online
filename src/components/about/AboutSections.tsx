@@ -379,7 +379,7 @@ export const MembershipPathSection = () => {
                     <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-purple-300 bg-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 text-purple-600 font-bold">1</div>
                     <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-xl shadow-md border border-slate-100">
                         <h3 className="font-bold text-purple-900 mb-2 uppercase tracking-wider text-sm">Resonance</h3>
-                        <p className="text-slate-600 text-sm">Adopt guardianship of an existing tree. Commit to regular visits for meditation, reflection, and quiet observation.</p>
+                        <p className="text-slate-600 text-sm">{t('path_adopt_note')}</p>
                     </div>
                 </div>
 
@@ -387,7 +387,7 @@ export const MembershipPathSection = () => {
                     <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-purple-300 bg-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 text-purple-600 font-bold">2</div>
                     <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-xl shadow-md border border-slate-100">
                         <h3 className="font-bold text-purple-900 mb-2 uppercase tracking-wider text-sm">Selection</h3>
-                        <p className="text-slate-600 text-sm">Receive personalized recommendations for your future lifetree location, considering species, symbolism, and environment.</p>
+                        <p className="text-slate-600 text-sm">{t('path_recommend_note')}</p>
                     </div>
                 </div>
 
@@ -395,7 +395,7 @@ export const MembershipPathSection = () => {
                     <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-purple-300 bg-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 text-purple-600 font-bold">3</div>
                     <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-xl shadow-md border border-slate-100">
                         <h3 className="font-bold text-purple-900 mb-2 uppercase tracking-wider text-sm">Nurturing</h3>
-                        <p className="text-slate-600 text-sm">Plant your lifetree seed or sapling in a pot. For urban dwellers, a bonsai serves as a perfect, resilient avatar.</p>
+                        <p className="text-slate-600 text-sm">{t('path_pot_note')}</p>
                     </div>
                 </div>
 
@@ -403,7 +403,7 @@ export const MembershipPathSection = () => {
                     <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-emerald-500 bg-emerald-600 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 text-white font-bold">4</div>
                     <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-emerald-50 rounded-xl shadow-md border border-emerald-100">
                         <h3 className="font-bold text-emerald-900 mb-2 uppercase tracking-wider text-sm">Initiation</h3>
-                        <p className="text-emerald-800 text-sm">Transplant the tree into soil at a communal Mother Tree hub. A ceremony of rooting, sharing stories, and collective meditation.</p>
+                        <p className="text-emerald-800 text-sm">{t('path_transplant_note')}</p>
                     </div>
                 </div>
             </div>
@@ -414,17 +414,17 @@ export const MembershipPathSection = () => {
                     className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-full font-bold shadow-lg transition-all active:scale-95 flex items-center gap-2 mx-auto"
                 >
                     <Icons.Send />
-                    <span>Join the Path</span>
+                    <span>{t('join_the_path')}</span>
                 </button>
             </div>
 
             {showSubModal && (
                 <Modal title="Stay Connected" onClose={() => setShowSubModal(false)}>
                     <form onSubmit={handleSubscribe} className="space-y-6 p-6">
-                        <p className="text-slate-500 font-serif italic text-center">Receive our transmission every 7 weeks.</p>
+                        <p className="text-slate-500 font-serif italic text-center">{t('transmission_note')}</p>
                         <input
                             type="email"
-                            placeholder="Your Email"
+                            placeholder={t('your_email_ph')}
                             value={email}
                             onChange={e => setEmail(e.target.value)}
                             className="w-full border-b-2 border-slate-200 p-4 text-center text-lg focus:border-purple-500 outline-none transition-colors"
@@ -503,7 +503,9 @@ export const ProtectionSection = () => (
 );
 
 // 04 — The Yantra: the logo / brand and its symbol language.
-export const YantraSection = () => (
+export const YantraSection = () => {
+    const { t } = useLanguage();
+    return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
 
         <div className="mb-10 text-center max-w-2xl mx-auto">
@@ -514,7 +516,7 @@ export const YantraSection = () => (
             <Paragraph className="text-base text-slate-600">
                 A little deeper exploration of the yantra: the symbol families below can be overlapped with the Lifeseed geometry in surprisingly strong alignment. The seven inner circles are half of the main circle, and the seven small inner seeds are one eighth of the main circle.
             </Paragraph>
-            <p className="text-sm text-slate-500 italic">It is a true yantra I believe.</p>
+            <p className="text-sm text-slate-500 italic">{t('yantra_line')}</p>
         </div>
 
         {/* Large Main Yantra */}
@@ -541,6 +543,7 @@ export const YantraSection = () => (
 
     </div>
 );
+};
 
 // Tab metadata shared by both about pages, so the lore tabs read identically everywhere.
 // 'path' retired from the tabs: the membership path now lives in the Light Path itself

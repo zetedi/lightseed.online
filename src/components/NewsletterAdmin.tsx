@@ -1,8 +1,13 @@
+// The newsletter TEMPLATE below is email CONTENT, not UI: the staff author edits it before
+// sending, and a recipient's language is unknown at authoring time — it stays English as data,
+// like the stored invite messages (english-guard exempts nothing here; templates are literals
+// inside strings, not speaking seats).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getNewsletterDraftData, sendNewsletter } from '../services/firebase';
 import { Loading } from './ui/Loading';
 import { Icons } from './ui/Icons';
 import { Modal } from './ui/Modal';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const formatDate = (value: any) => {
     if (!value) return 'the beginning';
@@ -16,6 +21,7 @@ const renderList = (items: string[]) =>
         : `<p>No new entries in this section.</p>`;
 
 export const NewsletterAdmin = ({ senderUid, onBack }: { senderUid: string; onBack: () => void }) => {
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
     const [subject, setSubject] = useState('');
@@ -99,7 +105,7 @@ export const NewsletterAdmin = ({ senderUid, onBack }: { senderUid: string; onBa
                     <div>
                         <button onClick={onBack} className="mb-3 flex items-center gap-2 text-emerald-100 hover:text-white text-sm">
                             <Icons.ArrowLeft />
-                            <span>Back to Profile</span>
+                            <span>{t('back_to_profile')}</span>
                         </button>
                         <h1 className="text-3xl font-light text-white">Send Newsletter</h1>
                         <p className="text-sm text-emerald-100/80">Last newsletter sent: {lastSentLabel}</p>
@@ -155,7 +161,7 @@ export const NewsletterAdmin = ({ senderUid, onBack }: { senderUid: string; onBa
             {showConfirm && (
                 <Modal title="Confirm Newsletter" onClose={() => setShowConfirm(false)}>
                     <div className="space-y-4">
-                        <p className="text-sm text-slate-600">Send this newsletter to all subscribed users?</p>
+                        <p className="text-sm text-slate-600">{t('newsletter_send_confirm')}</p>
                         <div className="flex gap-3">
                             <button onClick={() => setShowConfirm(false)} className="flex-1 rounded-lg bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700">Cancel</button>
                             <button onClick={handleSend} className="flex-1 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white">Send</button>

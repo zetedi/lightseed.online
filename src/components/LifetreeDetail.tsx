@@ -144,7 +144,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
            setIsEditing(false);
        } catch (e) {
            console.error(e);
-           showAlert("Failed to save changes.");
+           showAlert('err_save_changes');
        }
        setIsSaving(false);
    };
@@ -159,7 +159,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const handleToggleDanger = async () => {
        if (!canEdit) return; // reporting danger writes the tree's status — a tender power, not a follow
        const newStatus = localStatus === 'DANGER' ? 'HEALTHY' : 'DANGER';
-       if (newStatus === "DANGER" && !(await showConfirm("Are you sure you want to report this tree is in DANGER? This will alert all guardians.", { title: "Report Danger", confirmText: "Report", danger: true }))) return;
+       if (newStatus === "DANGER" && !(await showConfirm('danger_confirm', { title: 'danger_report', confirmText: 'report', danger: true }))) return;
 
        setIsSaving(true);
        try {
@@ -281,7 +281,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                            onUpdate?.({ visibility });
                        } catch (e) {
                            console.error(e);
-                           showAlert('Could not change the visibility.');
+                           showAlert('err_visibility');
                        }
                    }}
                    // Staff-only kind conversion — rescues trees planted with the wrong kind
@@ -326,7 +326,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                        onUpdate={onUpdate}
                        onChainRefresh={loadChain}
                    />
-                   : <p className="rounded-2xl border border-slate-100 bg-white p-6 text-center text-sm text-slate-400">Only the tree's circle can tend its care. Guard the tree to follow it.</p>
+                   : <p className="rounded-2xl border border-slate-100 bg-white p-6 text-center text-sm text-slate-400">{t('circle_only_care')}</p>
            ),
        },
        {
@@ -430,7 +430,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     <div className="min-w-0 flex-1">
                         {isEditing ? (
                             <div className="max-w-md space-y-2">
-                                <input dir="auto" className="w-full border-b border-white/40 bg-white/10 p-1 text-2xl font-light tracking-wide text-white focus:outline-none md:text-3xl" value={editName} onChange={e => setEditName(e.target.value)} placeholder="Tree Name" />
+                                <input dir="auto" className="w-full border-b border-white/40 bg-white/10 p-1 text-2xl font-light tracking-wide text-white focus:outline-none md:text-3xl" value={editName} onChange={e => setEditName(e.target.value)} placeholder={t('tree_name_ph')} />
                                 <input dir="auto" className="w-full border-b border-white/40 bg-white/10 p-1 text-xs font-bold uppercase tracking-widest text-white focus:outline-none" value={editShortTitle} onChange={e => setEditShortTitle(e.target.value)} placeholder="SHORT TITLE" />
                             </div>
                         ) : (
@@ -500,7 +500,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                         </div>
                         <div>
                             <h3 className="font-bold text-slate-800">Delete Lifetree</h3>
-                            <p className="text-xs text-slate-500">This action cannot be undone.</p>
+                            <p className="text-xs text-slate-500">{t('cannot_undo')}</p>
                         </div>
                     </div>
                     <p className="text-sm text-slate-600 mb-6">

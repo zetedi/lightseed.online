@@ -92,7 +92,7 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
             setEditLng(pos.coords.longitude);
             setIsLocating(false);
         }, (err) => {
-            showAlert("Location failed: " + err.message);
+            showAlert(err?.message || 'err_location');
             setIsLocating(false);
         });
     };

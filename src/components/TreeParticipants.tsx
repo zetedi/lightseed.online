@@ -4,6 +4,7 @@ import { Icons } from './ui/Icons';
 import { showAlert } from './ui/Dialog';
 import { firestoreStore } from '../adapters/firestore';
 import { getParticipatingTrees } from '../services/firebase';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // The trees gathered around an event or vision, plus (for signed-in owners) a picker to enlist their
 // own trees. Participation is a 'participant' link from the TREE to the entity — created/removed here
@@ -15,6 +16,7 @@ export const TreeParticipants = ({ entityId, currentUserId, myTrees = [], maxPar
     // The gathering's room (events may bound it): joining closes when the places are taken.
     maxParticipants?: number;
 }) => {
+    const { t } = useLanguage();
     const [trees, setTrees] = useState<Lifetree[]>([]);
     const [loading, setLoading] = useState(true);
     const [busyId, setBusyId] = useState<string | null>(null);
@@ -43,7 +45,7 @@ export const TreeParticipants = ({ entityId, currentUserId, myTrees = [], maxPar
             else await firestoreStore.unlink(tree.id, 'participant', entityId);
             setNonce(n => n + 1);
         } catch (e: any) {
-            showAlert('Could not update participation: ' + (e?.message || 'unknown error'));
+            showAlert(e?.message || 'err_participation');
         }
         setBusyId(null);
     };
@@ -99,7 +101,7 @@ export const TreeParticipants = ({ entityId, currentUserId, myTrees = [], maxPar
 
             {currentUserId && addable.length > 0 && !full && (
                 <div>
-                    <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">Add one of your trees</p>
+                    <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">{t('add_your_tree')}</p>
                     <div className="flex flex-wrap gap-2">
                         {addable.map(t => (
                             <button

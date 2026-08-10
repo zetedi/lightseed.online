@@ -12,6 +12,7 @@ import { tabTone } from '../../utils/tabTheme';
 import { notify } from '../ui/Toast';
 import { showAlert } from '../ui/Dialog';
 import type { Pulse } from '../../types';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // THE OFFERING'S OWN FACE — an offering is a being (it carries a lid, a QR, a heart), so it
 // wears the shared BeingProfile like a tree or a bed. Its tree view is its LIFECYCLE: the
@@ -27,6 +28,7 @@ interface OfferingProfileProps {
 }
 
 export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onClose, onUpdate, onEdit }) => {
+    const { t } = useLanguage();
   const { lightseed } = useSession();
   const isAuthor = !!lightseed && offering.authorId === lightseed.uid;
   const [active, setActive] = useState(offering.offeringActive !== false);
@@ -46,7 +48,7 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
       onUpdate?.({ offeringActive: next });
       notify(next ? '🌿 The offering stands again.' : 'The offering rests.');
     } catch {
-      showAlert('Could not change the offering.');
+      showAlert('err_offering_change');
     }
     setBusy(false);
   };
@@ -80,13 +82,13 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
         <div className="space-y-4 rounded-2xl border border-slate-100 bg-white p-6">
           {(offering.content || offering.body) && (
             <div>
-              <div className="text-xs font-bold uppercase tracking-wide text-slate-400">The offering</div>
+              <div className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('the_offering')}</div>
               <p dir="auto" className="mt-1 whitespace-pre-wrap text-sm text-slate-600">{offering.content || offering.body}</p>
             </div>
           )}
 
           <div>
-            <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Suggested appreciation</div>
+            <div className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('offer_suggested')}</div>
             <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-700">
               <span className="text-amber-500 [&>svg]:h-4 [&>svg]:w-4"><Icons.Sun /></span>
               {formatLight(offering.offeringAppreciationLight || 0)}

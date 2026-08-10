@@ -458,7 +458,7 @@ export const translatePulse = async (req: TranslationRequest, intelligenceId?: s
         const reply = await runText(prompt, { json: true, intelligenceId });
         const parsed = parseJsonObject<TranslationResponse>(reply);
         if (parsed) return parsed;
-        throw new Error("Empty translation response.");
+        throw new Error('err_translation_empty');
     } catch (e) {
         console.error("Translation error", e);
         throw e;

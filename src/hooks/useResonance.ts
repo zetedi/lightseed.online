@@ -4,6 +4,7 @@ import { fetchVisions, getLifetreeById } from '../services/firebase';
 import { findVisionSynergies } from '../services/gemini';
 import { showAlert } from '../components/ui/Dialog';
 import { resonanceId } from '../components/ResonancePanel';
+import { spokenLine } from '../utils/translations';
 
 // Resonance refreshes once a week for members; admins have no limit. The whole point is
 // to protect the AI bill (each analysis spends the reader's key — or the node's).
@@ -64,13 +65,13 @@ export function useResonance(params: {
   const runResonance = async (getVisions: () => Promise<any[]>) => {
     if (!canRefreshResonance) {
       const days = Math.max(1, Math.ceil(synergyCooldownLeft / (24 * 3600 * 1000)));
-      showAlert(`Resonance refreshes once a week — about ${days} more day${days === 1 ? '' : 's'} to go.`);
+      showAlert(spokenLine('resonance_weekly', { days }));
       return;
     }
     setIsAnalyzingSynergy(true);
     try {
       const visions = await getVisions();
-      if (visions.length < 2) { showAlert('At least two visions are needed to find resonance.'); setIsAnalyzingSynergy(false); return; }
+      if (visions.length < 2) { showAlert('resonance_two_visions'); setIsAnalyzingSynergy(false); return; }
       // Label each vision by its TREE name (visions are often auto-titled "Root Vision"),
       // so resonances read tree-to-tree rather than "Root Vision + Root Vision".
       const treeIds = Array.from(new Set(visions.map((v: any) => v.lifetreeId).filter(Boolean)));
@@ -98,10 +99,10 @@ export function useResonance(params: {
       setLastSynergyAt(at);
       // Cache so the resonances survive reloads (and feed the Observatory) without re-spending.
       try { localStorage.setItem('synergy_cache_v1', JSON.stringify({ key: synergyKey(visions), at, results })); } catch {}
-      if (results.length === 0) showAlert('No clear resonances surfaced this time — try again as more visions grow.');
+      if (results.length === 0) showAlert('resonance_none');
     } catch (e) {
       console.error(e);
-      showAlert('Synergy analysis failed. Try again later.');
+      showAlert('err_synergy');
     }
     setIsAnalyzingSynergy(false);
   };
@@ -114,7 +115,7 @@ export function useResonance(params: {
   // Start a conversation with a resonant tree — resolve it, then open the reach thread.
   const reachResonantTree = async (treeId: string) => {
     try { const tree = await getLifetreeById(treeId); if (tree) openReach(tree); }
-    catch { showAlert('Could not open a conversation with that tree.'); }
+    catch { showAlert('err_open_conversation'); }
   };
 
   return {

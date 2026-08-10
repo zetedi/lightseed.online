@@ -5,6 +5,7 @@ import { Icons } from '../ui/Icons';
 import { createNetworkInvite, getSentInvites, getInviteRequests, approveInviteRequest, declineInviteRequest, triggerSystemEmail } from '../../services/firebase';
 import { SectionTitle } from '../ui/SectionTitle';
 import { Modal } from '../ui/Modal';
+import { speak } from '../../utils/translations';
 
 // The invite documents are schemaless in Firestore; these are the fields this tab reads.
 interface SentInvite {
@@ -75,7 +76,7 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
 
   const handleApproveRequest = async (id: string) => {
     setRequestBusyId(id);
-    try { await approveInviteRequest(id, uid); setRequestStatusLocal(id, 'approved'); notify('Invitation sent.'); }
+    try { await approveInviteRequest(id, uid); setRequestStatusLocal(id, 'approved'); notify(speak('invitation_sent')); }
     catch (e: any) { notify(e?.message || 'Failed to approve.'); }
     setRequestBusyId(null);
   };

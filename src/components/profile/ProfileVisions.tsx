@@ -8,6 +8,7 @@ import { getMyVisions, getJoinedVisions } from '../../services/firebase';
 import { findVisionSynergies } from '../../services/gemini';
 import { VisionCard } from '../VisionCard';
 import { Loading } from '../ui/Loading';
+import { speak } from '../../utils/translations';
 
 interface ProfileVisionsProps {
   uid: string;
@@ -52,7 +53,7 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
       setSynergies(results);
     } catch (e: any) {
       console.error('AI Analysis Error:', e);
-      notify('Analysis failed: ' + e.message);
+      notify(speak(e?.message || 'err_analysis'));
     }
     setAnalyzing(false);
   };
@@ -61,7 +62,7 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
     if (visions.length < 2) {
       const data = await getMyVisions(uid);
       if (data.length < 2) {
-        notify('You need at least 2 visions to find alignments.');
+        notify(speak('resonance_two_visions'));
         return;
       }
       setVisions(data);

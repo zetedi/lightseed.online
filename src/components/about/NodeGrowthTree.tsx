@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Community, Lifetree, LinkRel } from '../../types';
 import { firestoreStore } from '../../adapters/firestore';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // The Node Growth Tree — a living diagram of the node's model *instance*, generated on the fly from
 // the data: each lifetree is a branch radiating from the community seed, sized by its weight. The
@@ -24,6 +25,7 @@ interface NodeGrowthTreeProps {
 }
 
 export const NodeGrowthTree = ({ community, trees, onViewTree }: NodeGrowthTreeProps) => {
+    const { t } = useLanguage();
   const accent = community.theme?.primary || '#10b981';
   const CX = 400, CY = 400;
 
@@ -104,8 +106,8 @@ export const NodeGrowthTree = ({ community, trees, onViewTree }: NodeGrowthTreeP
       {model.n === 0 ? (
         <div className="flex flex-col items-center gap-2 px-6 py-20 text-center">
           <div className="h-16 w-16 rounded-full" style={{ background: `radial-gradient(circle at 40% 35%, ${accent}, transparent 70%)` }} />
-          <p className="text-sm text-slate-300">The seed is set, but no trees have sprouted on this node yet.</p>
-          <p className="text-xs text-slate-500">Plant a lifetree on this domain and the model begins to grow.</p>
+          <p className="text-sm text-slate-300">{t('growth_seed_set')}</p>
+          <p className="text-xs text-slate-500">{t('growth_plant_begin')}</p>
         </div>
       ) : (
         <>

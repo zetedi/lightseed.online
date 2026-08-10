@@ -6,6 +6,26 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-10 · No English is born in the code** (the sweep closed, `tests/englishGuard.test.ts`):
+the third movement, finished. Every modal, section, page, profile tab, banner, chip, placeholder,
+alert, confirm, toast and staff panel now speaks through the translation file — roughly 330 keys
+landed today across the four passes, Arabic and Chinese complete for every one, because the
+completeness gate accepts nothing less. THE GUARD makes it permanent: a test walks all of src and
+fails the gate on any sentence-cased literal in a speaking seat (showAlert / showConfirm / notify /
+throw / placeholder) — a key is lowercase, so any capitalised literal there is a regression by
+construction. Run first against the "finished" sweep, the guard found 29 sites the greps had
+missed; that is what it is for. THE LAWFUL EXCEPTIONS, each named in the guard's allowlist with
+its reason: the dialog/toast doc-comments, the root-mount and hook guards (programmer errors no
+reader can meet), and — as DATA, not UI — the newsletter email template and the stored invite
+messages, written before a recipient's language is knowable. Learned twice during the sweep, held
+by the gate now: a `useLanguage` hook belongs in the component, not the helper the inserter finds
+first, and every new key must survive the duplicate check (`saving`, `refresh`, `collab`,
+`invitations`, `remove` and `invite_sent` all existed already — the compiler refused each one
+before it shipped). The system now speaks four hundred and some sentences in three complete
+languages and refuses, mechanically, ever to fall quiet in two of them.
+
+---
+
 **2026-08-10 · The services speak** (the thrown reasons): the second movement of the directive.
 Every `throw new Error('English')` across the service layer and the components — seventy
 sentences: signing custody, covenants, decisions, alignments, invites, intelligences, recoveries —

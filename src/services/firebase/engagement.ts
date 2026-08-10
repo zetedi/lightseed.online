@@ -129,7 +129,7 @@ export const acceptAlignment = async (proposalId: string): Promise<AlignmentResu
         // Firestore transactions require ALL reads before ANY writes, so read the proposal and
         // both trees up front, then compute hashes, then apply every write.
         const matchDoc = await t.get(matchRef);
-        if (!matchDoc.exists() || matchDoc.data()?.status !== 'PENDING') throw new Error("Invalid alignment");
+        if (!matchDoc.exists() || matchDoc.data()?.status !== 'PENDING') throw new Error('err_alignment_invalid');
         const proposal = matchDoc.data() as Alignment;
 
         const initTreeRef = doc(db, 'lifetrees', proposal.initiatorTreeId);
@@ -226,9 +226,9 @@ export const spendAiTokens = async (treeId: string, amount: number) => {
     const treeRef = doc(db, 'lifetrees', treeId);
     return runTransaction(db, async (t) => {
         const tree = await t.get(treeRef);
-        if (!tree.exists()) throw new Error("Tree not found");
+        if (!tree.exists()) throw new Error('err_tree_missing');
         const balance = tree.data()?.aiTokenBalance || 0;
-        if (balance < amount) throw new Error("Not enough AI tokens (Attention-Energy).");
+        if (balance < amount) throw new Error('err_tokens');
         t.update(treeRef, { aiTokenBalance: balance - amount });
         return balance - amount;
     });

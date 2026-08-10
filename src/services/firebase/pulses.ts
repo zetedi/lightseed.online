@@ -467,7 +467,7 @@ export const mintPulse = async (pulseData: Partial<Pulse> & { lifetreeId: string
     return runTransaction(db, async (t) => {
         const treeRef = doc(db, 'lifetrees', pulseData.lifetreeId);
         const treeDoc = await t.get(treeRef);
-        if (!treeDoc.exists()) throw new Error("Tree missing");
+        if (!treeDoc.exists()) throw new Error('err_tree_missing');
         const tree = treeDoc.data() as Lifetree;
         const newPulseRef = doc(pulsesCollection);
         const domain = tree.domain || window.location.hostname.replace(/^www\./, '');

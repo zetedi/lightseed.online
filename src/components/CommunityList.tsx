@@ -18,6 +18,7 @@ import { ListBox } from './ui/ListBox';
 import { tabTone, CTA_GLOW } from '../utils/tabTheme';
 import { useListDensity, type ListDensity } from '../hooks/useListDensity';
 import { ViewDensityToggle } from './ui/ViewDensityToggle';
+import { speak, spokenLine } from '../utils/translations';
 
 interface CommunityListProps {
   onSelect: (community: Community) => void;
@@ -162,11 +163,11 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
 
   // Join straight from the card — the same request the community profile sends.
   const handleJoin = async (c: Community) => {
-    if (!currentUserId) { showAlert('Sign in to join this community.'); return; }
+    if (!currentUserId) { showAlert('err_signin_join'); return; }
     try {
       await firestoreStore.link(currentUserId, 'join_request', c.id);
       setRequestedIds(prev => new Set([...prev, c.id]));
-      notify(`Your request to join ${c.name} is on its way to its keepers.`);
+      notify(speak(spokenLine('join_request_sent', { name: c.name })));
     } catch (e: any) {
       showAlert(e?.message || 'Could not send the join request.');
     }
@@ -177,19 +178,19 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
   const [matches, setMatches] = useState<CommunityMatch<Community>[] | null>(null);
   const [isMatching, setIsMatching] = useState(false);
   const handleMatch = async () => {
-    if (!currentUserId) { showAlert('Sign in to find your resonant communities.'); return; }
+    if (!currentUserId) { showAlert('err_signin_resonance'); return; }
     if (isMatching) return;
     setIsMatching(true);
     try {
       const visions = await getMyVisions(currentUserId);
       const texts = visions.map(v => `${v.title || ''} ${v.body || ''} ${(v as any).description || ''}`);
       if (texts.length === 0) {
-        showAlert('Create a vision first: matching reads the visions you have planted.');
+        showAlert('resonance_need_vision');
       } else {
         const pool = [...communities, ...(genesisCommunity ? [genesisCommunity] : [])];
         const found = matchCommunities(texts, pool, 3);
         setMatches(found);
-        if (found.length === 0) showAlert('No shared ground found yet: your visions speak a language no community here speaks. Yet.');
+        if (found.length === 0) showAlert('resonance_no_ground');
       }
     } catch (e: any) {
       showAlert(e?.message || 'Could not read the resonance.');
@@ -252,7 +253,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
       setNewDomain('');
     } catch (e) {
       console.error(e);
-      showAlert("Failed to create community.");
+      showAlert('err_community_create');
     }
     setIsCreating(false);
   };
@@ -270,7 +271,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
               dir="auto"
               type="text"
               className="block w-full pl-10 pr-3 py-2 border border-emerald-100 rounded-xl leading-5 bg-white/80 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm shadow-sm"
-              placeholder="Search communities..."
+              placeholder={t('search_communities_ph')}
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
@@ -325,23 +326,23 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
                       className="bg-emerald-600 text-white px-10 py-4 rounded-full font-bold shadow-xl hover:bg-emerald-700 transition-all flex items-center gap-2 active:scale-95"
                   >
                       <Icons.Plus />
-                      <span>Start a Community</span>
+                      <span>{t('start_community')}</span>
                   </button>
               ) : (
                   <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-amber-700 text-sm flex items-center gap-3">
                       <Icons.Tree />
-                      <span>You need to plant a lifetree before you can start a community.</span>
+                      <span>{t('community_need_tree')}</span>
                   </div>
               )}
           </div>
         ) : (filteredCommunities.length === 0 && !showGenesis) ? (
-          <p className="text-center text-slate-500 py-16">No communities match your search.</p>
+          <p className="text-center text-slate-500 py-16">{t('no_communities_match')}</p>
         ) : (
           <>
           {matches && matches.length > 0 && (
             <div className="mb-8 space-y-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 animate-in fade-in slide-in-from-top-2">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-amber-600">Your resonant communities, read from your visions</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-amber-600">{t('resonant_from_visions')}</p>
                 <button onClick={() => setMatches(null)} className="shrink-0 text-xs font-medium text-slate-400 transition-colors hover:text-slate-600">Clear</button>
               </div>
               {matches.map((m, i) => (
@@ -396,7 +397,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
                   value={newName} 
                   onChange={e => setNewName(e.target.value)} 
                   className="w-full h-12 bg-slate-50 border border-slate-100 rounded-2xl px-4 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="Community Name"
+                  placeholder={t('community_name_ph')}
                 />
               </div>
               <div>

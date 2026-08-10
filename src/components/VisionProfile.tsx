@@ -153,7 +153,7 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                 setParticipantCount(prev => prev + 1);
             }
         } catch (e: any) {
-            showAlert('Action failed: ' + e.message);
+            showAlert(e?.message || 'err_action');
         }
         setIsUpdating(false);
     };

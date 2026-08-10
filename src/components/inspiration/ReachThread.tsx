@@ -436,11 +436,11 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
 
     const handleMint = async () => {
         if (!lightseed || !activeTree) {
-            showAlert("You need a planted Lifetree to mint this conversation.");
+            showAlert('mint_need_tree');
             return;
         }
         if (mode === 'tree' && !selectedTree && !groupThread) {
-            showAlert("Open a conversation before minting it.");
+            showAlert('mint_open_first');
             return;
         }
         if (messages.filter(m => !m.system).length <= 1) return; // nothing but the greeting
@@ -486,7 +486,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                 notify("🌿 Conversation minted to the chain.");
             } catch (e: any) {
                 console.error(e);
-                showAlert("Minting failed: " + (e?.message || ''));
+                showAlert(e?.message || 'err_mint');
             }
             setIsMinting(false);
             return;
@@ -517,7 +517,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
             notify("🌿 Conversation minted as a Pulse.");
         } catch (e: any) {
             console.error(e);
-            showAlert("Minting failed: " + e.message);
+            showAlert(e?.message || 'err_mint');
         }
         setIsMinting(false);
     }

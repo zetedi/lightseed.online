@@ -141,7 +141,7 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
   // records the uniting position, routing through the key modal if needed. stand_aside / block are NOT
   // signed (we never force-sign a block): they stay plain positions, recorded as before.
   const handlePosition = async (id: string, stance: ConsensusStance) => {
-    if (!currentUserId) { showAlert('Sign in to take a position.'); return; }
+    if (!currentUserId) { showAlert('err_signin_position'); return; }
     if (stance === 'unite') {
       await withSigningKey(id, async () => {
         const res = await signDecision({ id }, 'unite');
@@ -159,7 +159,7 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
     setVotingId(id);
     try {
       const outcome = await recordPosition(id, currentUserId, stance, note);
-      if (outcome === 'closed') showAlert('This proposal is already settled.');
+      if (outcome === 'closed') showAlert('err_proposal_settled');
       refreshDecisions();
     } catch (e: any) { showAlert(e?.message || 'Could not record your position.'); }
     setVotingId(null);
