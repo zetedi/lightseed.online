@@ -82,10 +82,10 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
   return (
     <div>
       <div className="flex items-start justify-between gap-3">
-        <SectionTitle title={t('appearance')} sub="Brand, logo, imagery and theme." />
+        <SectionTitle title={t('appearance')} sub={t('appearance_sub')} />
         <div className="flex shrink-0 items-center gap-2">
           <button onClick={onSave} disabled={saveDisabled} className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-700 disabled:opacity-50">
-            {isSaving ? 'Saving...' : 'Save Changes'}
+            {isSaving ? t('saving') : t('save_changes')}
           </button>
           {status && <span className="text-xs text-slate-500">{status}</span>}
         </div>
@@ -143,10 +143,10 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
           {carouselQuotes.map((q, i) => (
             <div key={i} className="flex items-start gap-2">
               <textarea value={q} onChange={e => onCarouselQuotesChange(prev => prev.map((x, j) => j === i ? e.target.value : x))} rows={2} placeholder={t('reflection_ph')} className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-              <button type="button" onClick={() => onCarouselQuotesChange(prev => prev.filter((_, j) => j !== i))} className="mt-1 shrink-0 rounded-full p-1.5 text-red-500 transition-colors hover:bg-red-50" title="Remove"><Icons.Close /></button>
+              <button type="button" onClick={() => onCarouselQuotesChange(prev => prev.filter((_, j) => j !== i))} className="mt-1 shrink-0 rounded-full p-1.5 text-red-500 transition-colors hover:bg-red-50" title={t('remove')}><Icons.Close /></button>
             </div>
           ))}
-          <button type="button" onClick={() => onCarouselQuotesChange(prev => [...prev, ''])} className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-50"><Icons.Plus /> Add quote</button>
+          <button type="button" onClick={() => onCarouselQuotesChange(prev => [...prev, ''])} className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-50"><Icons.Plus /> {t('add_quote')}</button>
         </div>
       </div>
     </div>
