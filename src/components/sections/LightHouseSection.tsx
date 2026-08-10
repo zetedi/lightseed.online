@@ -6,6 +6,7 @@ import { ImagePicker } from '../ui/ImagePicker';
 import { LocationPicker } from '../ui/LocationPicker';
 import { showAlert } from '../ui/Dialog';
 import { LightHouseCard } from '../LightHouseCard';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // Being-generic lightHouses section — the sacred places that hold any being's lifetrees
 // (Indra's net), shown as a card garden. Each card opens the Light House's own profile page;
@@ -60,6 +61,7 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
   adoptable = [],
   onAdopt,
 }) => {
+    const { t } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [showAdopt, setShowAdopt] = useState(false);
   const [adoptingId, setAdoptingId] = useState<string | null>(null);
@@ -97,9 +99,9 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
 
   const form = (
     <div className="mt-4 space-y-3 rounded-2xl border border-amber-100 bg-amber-50/40 p-4 text-left animate-in fade-in slide-in-from-bottom-2">
-      <input dir="auto" value={name} onChange={e => setName(e.target.value)} placeholder="Name of the Light House"
+      <input dir="auto" value={name} onChange={e => setName(e.target.value)} placeholder={t('lh_name_ph')}
         className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
-      <textarea dir="auto" value={body} onChange={e => setBody(e.target.value)} placeholder="What this place holds…"
+      <textarea dir="auto" value={body} onChange={e => setBody(e.target.value)} placeholder={t('lh_holds_ph')}
         className="min-h-[90px] w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
       {onUploadImage && (
         <ImagePicker
@@ -113,16 +115,16 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
           className="h-40"
         />
       )}
-      <input value={locationName} onChange={e => setLocationName(e.target.value)} placeholder="Place name (e.g. The Olive Grove, Crete)"
+      <input value={locationName} onChange={e => setLocationName(e.target.value)} placeholder={t('lh_place_ph')}
         className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
       <div className="space-y-1">
-        <p className="ml-1 text-[11px] text-slate-500">Tap the map to place the Light House; it will glow there in the forest.</p>
+        <p className="ml-1 text-[11px] text-slate-500">{t('lh_map_tap')}</p>
         <LocationPicker value={coords} onChange={setCoords} />
       </div>
       <input value={splatUrl} onChange={e => setSplatUrl(e.target.value)} placeholder="3D scene URL (Gaussian splat viewer, optional)"
         className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
       <div>
-        <p className="ml-1 mb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Who may see it</p>
+        <p className="ml-1 mb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('lh_who_sees')}</p>
         <div className="grid grid-cols-3 gap-2">
           {([
             { v: 'community', label: 'Community', hint: 'members only (default)' },
@@ -138,7 +140,7 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
         </div>
       </div>
       <div className="flex gap-2">
-        <button onClick={() => setShowForm(false)} className="flex-1 rounded-xl bg-slate-100 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-200">Cancel</button>
+        <button onClick={() => setShowForm(false)} className="flex-1 rounded-xl bg-slate-100 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-200">{t('cancel')}</button>
         <button onClick={consecrate} disabled={!name.trim() || isSaving}
           className="flex-[2] rounded-xl bg-amber-500 py-2.5 text-sm font-bold text-white shadow transition-colors hover:bg-amber-600 disabled:opacity-50">
           {isSaving ? 'Consecrating…' : 'Consecrate'}
@@ -161,7 +163,7 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
 
   const adoptPanel = (
     <div className="mt-4 space-y-2 rounded-2xl border border-amber-100 bg-amber-50/40 p-4 text-left animate-in fade-in slide-in-from-bottom-2">
-      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Light Houses open to step into</p>
+      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('lh_open_step')}</p>
       {adoptable.map(s => (
         <div key={s.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-2.5">
           <img src={s.imageUrl || '/lighthouse.webp'} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover bg-[#04070f]" />

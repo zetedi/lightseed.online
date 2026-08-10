@@ -157,7 +157,7 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                             className={fieldClassName}
                             value={editLocationName}
                             onChange={e => setEditLocationName(e.target.value)}
-                            placeholder="Location name"
+                            placeholder={t('location_name_ph')}
                         />
                     ) : (
                         <span dir="auto" className="flex-1 text-left text-slate-800 font-mono text-sm">{tree.locationName}</span>
@@ -200,7 +200,7 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                     </div>
                 </div>
                 <div className="flex items-center gap-4 py-2 border-b border-slate-50">
-                    <span className="w-24 shrink-0 text-slate-500 text-sm">Planted</span>
+                    <span className="w-24 shrink-0 text-slate-500 text-sm">{t('planted')}</span>
                     {isEditing ? (
                         <input
                             type="datetime-local"
@@ -215,13 +215,13 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                     )}
                 </div>
                  <div className="flex items-start gap-4 py-2">
-                    <span className="w-24 shrink-0 text-slate-500 text-sm">Validator</span>
+                    <span className="w-24 shrink-0 text-slate-500 text-sm">{t('validator')}</span>
                     <span className="flex-1 text-left text-slate-800 font-mono text-sm">
                         {isNature ? 'Nature' : hasValidationBadge && tree.validatorId ? `${tree.validatorId.substring(0, 8)}...` : t('unvalidated')}
                     </span>
                 </div>
                  <div className="flex items-center gap-4 py-2">
-                    <span className="w-24 shrink-0 text-slate-500 text-sm">Website</span>
+                    <span className="w-24 shrink-0 text-slate-500 text-sm">{t('website')}</span>
                     {isEditing ? (
                         <AutocompleteInput
                             label="Community Hub"
@@ -303,7 +303,7 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                 {isEditing && canDelete && (
                     <button type="button" onClick={onRequestDelete} className="relative mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 py-2 text-sm font-bold text-red-600 transition-colors hover:bg-red-100">
                         <Icons.Trash />
-                        <span>Delete this Lifetree</span>
+                        <span>{t('delete_lifetree')}</span>
                         {deleteIsStaffOnly && <SuperDot />}
                     </button>
                 )}

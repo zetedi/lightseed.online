@@ -4,6 +4,7 @@ import { Intelligence, Persona } from '../../types';
 import { getSelectableIntelligences, listPersonas, type CredentialScope } from '../../services/intelligence';
 import { SectionTitle } from '../ui/SectionTitle';
 import { IntelligencePanel } from '../intelligence/IntelligencePanel';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // Being-generic intelligence section — any being's intelligences (Indra's net). "Which
 // intelligences stand here, and which speaks by default" is the same question for a community,
@@ -81,6 +82,7 @@ export const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
   panelSubtitle,
   accentColor,
 }) => {
+    const { t } = useLanguage();
   const [intelligences, setIntelligences] = useState<Intelligence[]>([]);
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [editDefaultIntelligenceId, setEditDefaultIntelligenceId] = useState(defaultIntelligenceId || '');
@@ -164,11 +166,11 @@ export const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
         />
       </div>
 
-      <h4 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-400">All available intelligences</h4>
+      <h4 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-400">{t('intel_all')}</h4>
       {intelligences.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-500"><Icons.Intelligence /></div>
-          <p className="text-sm">No intelligences are available yet. A super-admin seeds the commons on first load.</p>
+          <p className="text-sm">{t('intel_none')}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -181,7 +183,7 @@ export const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="break-words text-base font-bold text-slate-800">{intel.name}</h3>
-                      {isDefault && <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white" style={accentStyle}>Default</span>}
+                      {isDefault && <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white" style={accentStyle}>{t('default_chip')}</span>}
                     </div>
                     {intel.description && <p className="mt-1 text-sm text-slate-500">{intel.description}</p>}
                     <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">

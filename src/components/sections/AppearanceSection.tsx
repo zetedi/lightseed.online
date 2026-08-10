@@ -114,7 +114,7 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
       {/* Footer links — shown in the site footer. */}
       <div className="mt-8 border-t border-slate-100 pt-6">
         <h4 className="mb-1 text-sm font-bold uppercase tracking-wider text-slate-400">{linksTitle}</h4>
-        <p className="mb-3 text-xs text-slate-500">Shown in the site footer. Paste a full URL or a handle/number.</p>
+        <p className="mb-3 text-xs text-slate-500">{t('footer_links_note')}</p>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block">
             <span className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-slate-600"><Icons.Instagram size={14} /> Instagram</span>
@@ -137,12 +137,12 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
 
       {/* Home carousel quotes — reflections shown to signed-out visitors. */}
       <div className="mt-8 border-t border-slate-100 pt-6">
-        <h4 className="mb-1 text-sm font-bold uppercase tracking-wider text-slate-400">Home carousel quotes</h4>
-        <p className="mb-3 text-xs text-slate-500">Reflections shown in the signed-out home carousel. Leave empty to use the lightseed defaults.</p>
+        <h4 className="mb-1 text-sm font-bold uppercase tracking-wider text-slate-400">{t('carousel_quotes')}</h4>
+        <p className="mb-3 text-xs text-slate-500">{t('carousel_quotes_note')}</p>
         <div className="space-y-2">
           {carouselQuotes.map((q, i) => (
             <div key={i} className="flex items-start gap-2">
-              <textarea value={q} onChange={e => onCarouselQuotesChange(prev => prev.map((x, j) => j === i ? e.target.value : x))} rows={2} placeholder="A reflection…" className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              <textarea value={q} onChange={e => onCarouselQuotesChange(prev => prev.map((x, j) => j === i ? e.target.value : x))} rows={2} placeholder={t('reflection_ph')} className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
               <button type="button" onClick={() => onCarouselQuotesChange(prev => prev.filter((_, j) => j !== i))} className="mt-1 shrink-0 rounded-full p-1.5 text-red-500 transition-colors hover:bg-red-50" title="Remove"><Icons.Close /></button>
             </div>
           ))}

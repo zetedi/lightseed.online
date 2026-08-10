@@ -6,6 +6,7 @@ import { analyzeWateringPhoto } from '../../services/gemini';
 import { Pulse, type Lifetree } from '../../types';
 import { isOnWateringSchedule, isWateringOverdue, daysUntilWatering, daysOverdue, lastWateredMillis, wateringAlertedToday, treeStage, computeNextDueMillis, type TreeStage } from '../../domain/watering';
 import { SectionCard } from '../ui/SectionCard';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // The three growth stages, in growing order — a seed in its pot, in the ground but still
 // tended, and finally self-sustaining. The first two are watered on a schedule.
@@ -51,6 +52,7 @@ export const TreeCare: React.FC<TreeCareProps> = ({
     onUpdate,
     onChainRefresh,
 }) => {
+    const { t } = useLanguage();
     const [waterStage, setWaterStage] = useState<TreeStage>(treeStage(tree));
     const [waterInterval, setWaterInterval] = useState<number>(tree.watering?.intervalDays || 7);
     const [waterBusy, setWaterBusy] = useState(false);
@@ -186,7 +188,7 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                             <p>{stageEmoji} {stage === 'potted' ? 'A seed in its pot: next' : 'Next'} watering in {dueInDays} day{dueInDays !== 1 ? 's' : ''}.</p>
                         )
                     ) : (
-                        <p>No watering schedule yet.</p>
+                        <p>{t('no_schedule')}</p>
                     )}
                     {/* The rhythm, spelled out for readers without the schedule editor. */}
                     {!canManageSchedule && scheduled && !selfSustaining && tree.watering?.intervalDays && (
@@ -226,7 +228,7 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                     <p className="text-center text-xs text-slate-500">{STAGE_META.find(s => s.key === waterStage)?.hint}</p>
                     {waterStage !== 'self_sustaining' && (
                         <div className="flex items-center justify-center gap-2 text-sm text-sky-800">
-                            <span>Water every</span>
+                            <span>{t('water_every')}</span>
                             <div className="inline-flex items-center overflow-hidden rounded-lg border border-sky-200">
                                 <button type="button" aria-label="Fewer days" onClick={() => setWaterInterval(v => Math.max(1, v - 1))} className="px-3 py-1.5 font-bold text-sky-700 hover:bg-sky-50">−</button>
                                 <span className="w-10 text-center font-bold tabular-nums">{waterInterval}</span>
@@ -248,12 +250,12 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                         <label className="flex cursor-pointer items-center gap-2 text-xs leading-tight text-sky-700/80" title="For waterings worth remembering.">
                             <input type="checkbox" checked={waterOnChain} onChange={e => setWaterOnChain(e.target.checked)} className="accent-sky-600" />
                             <span>
-                                <span className="block">Add photo proof:</span>
+                                <span className="block">{t('add_photo_proof')}</span>
                                 <span className="block">mint a growth block on the tree's chain.</span>
                             </span>
                         </label>
                         {isOwner && overdue && !wateringAlertedToday(tree) && (
-                            <button type="button" onClick={handleRemindGuardians} disabled={waterBusy} className="inline-flex items-center gap-1 rounded-full border border-sky-300 bg-white px-3 py-2 text-xs font-bold text-sky-700 hover:bg-sky-100 disabled:opacity-50">Remind guardians 💧</button>
+                            <button type="button" onClick={handleRemindGuardians} disabled={waterBusy} className="inline-flex items-center gap-1 rounded-full border border-sky-300 bg-white px-3 py-2 text-xs font-bold text-sky-700 hover:bg-sky-100 disabled:opacity-50">{t('remind_guardians')} 💧</button>
                         )}
                     </div>
                 </div>
@@ -277,7 +279,7 @@ export const TreeCare: React.FC<TreeCareProps> = ({
 
             {(canWater || canAskStewardship) && pendingWaterings.length > 0 && (
                 <div className="mt-4 border-t border-sky-200 pt-3">
-                    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-sky-600">Awaiting a guardian's witness</p>
+                    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-sky-600">{t('awaiting_witness')}</p>
                     <div className="space-y-2">
                         {pendingWaterings.map((p: Pulse) => (
                             <div key={p.id} className="flex items-center gap-2 rounded-lg bg-white/70 p-2">
@@ -290,7 +292,7 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                     {/* No confirm button here: care is witnessed by a GUARDIAN (not the carer), in the
                         Circle. This just lets the carer see their care is awaiting a witness. */}
                     {canAskStewardship && (
-                        <p className="mt-2 text-[11px] text-sky-600">As a guardian you can witness these in the Circle.</p>
+                        <p className="mt-2 text-[11px] text-sky-600">{t('guardian_witness_note')}</p>
                     )}
                 </div>
             )}

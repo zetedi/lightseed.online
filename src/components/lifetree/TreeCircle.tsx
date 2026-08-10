@@ -11,7 +11,7 @@ import { roleLabelKey, roleDescKey, type TreeRelationRole, type InvitableRole } 
 // `translations.en` feeds only the STORED invite message (data on the invite doc — the
 // invitee's language is unknown at mint time, so the record keeps the canonical English);
 // everything the VIEWER reads goes through t().
-import { translations } from '../../utils/translations';
+import { translations, spokenLine } from '../../utils/translations';
 import type { Lifetree, Pulse } from '../../types';
 
 // THE CIRCLE — the whole circle of care around a Lifetree, one view (the two old tabs merged). It
@@ -104,7 +104,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
         // eslint-disable-next-line react-hooks/exhaustive-deps -- `names` is the accumulator, not a trigger
     }, [circleUids]);
 
-    const labelFor = (uid: string, face: Face) => uid === currentUserId ? 'You' : (face.name || names[uid] || `${uid.slice(0, 8)}…`);
+    const labelFor = (uid: string, face: Face) => uid === currentUserId ? t('you') : (face.name || names[uid] || `${uid.slice(0, 8)}…`);
 
     const handleToggleGuardian = async () => {
         if (!canTendTree(currentUserId)) return;
@@ -140,8 +140,8 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
             setToWitness(prev => prev.filter(x => x.id !== p.id));
             setWitnessNonce(n => n + 1);
             showAlert(res.kindled
-                ? `You witnessed the care of ${tree.name || 'this tree'}. Light kindled 🌱`
-                : `You witnessed it — this tree's light for the day was already lit.`);
+                ? spokenLine('witness_kindled', { tree: tree.name || t('tree') })
+                : 'witness_already_lit');
         } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
         setWitnessing(null);
     };
@@ -187,7 +187,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                 message: `Would you join the circle of ${tree.name || 'this tree'} as ${translations.en[roleLabelKey(inviteRole)].toLowerCase()}?`,
             });
             setInvited(prev => new Set(prev).add(candidate.ownerId));
-            showAlert(`Invitation sent to ${candidate.name || 'that tree'} — ${roleName(inviteRole).toLowerCase()} of ${tree.name || 'this tree'}.`);
+            showAlert(spokenLine('circle_invite_sent', { name: candidate.name || '—', role: roleName(inviteRole).toLowerCase(), tree: tree.name || '—' }));
         } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
         setInviting(null);
     };
@@ -195,13 +195,8 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
     const isBusy = busy || toggleBusy;
 
     return (
-        <SectionCard title="Circle" icon={<Icons.Venn />}>
-            <p className="mb-5 text-sm text-slate-500">
-                The circle of care around this tree. The <span className="text-emerald-700">owner, co-owners and
-                stewards</span> shape and schedule it; <span className="text-sky-600">guardians</span> watch over
-                it, holding no power but the collective veto. Guarding is an open door anyone may enter; the
-                deeper roles are invited.
-            </p>
+        <SectionCard title={t('circle')} icon={<Icons.Venn />}>
+            <p className="mb-5 text-sm text-slate-500">{t('circle_intro')}</p>
 
             {/* Everyone, grouped by role, each shown as their tree. */}
             {circle.groups.length > 0 ? (
@@ -230,7 +225,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                 </div>
             ) : (
                 <p className="mb-5 rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400">
-                    No circle yet. Be the first to watch over this tree.
+                    {t('circle_empty')}
                 </p>
             )}
 
@@ -243,10 +238,10 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                         className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-colors active:scale-95 disabled:opacity-50 ${isGuardian ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-sky-600 text-white hover:bg-sky-700'}`}
                     >
                         <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Shield /></span>
-                        {isGuardian ? 'Leave guardianship' : 'Guard this tree'}
+                        {isGuardian ? t('guard_leave') : t('guard_this_tree')}
                     </button>
                 ) : (
-                    <p className="text-xs italic text-slate-400">Sign in to guard this tree.</p>
+                    <p className="text-xs italic text-slate-400">{t('signin_guard')}</p>
                 )}
 
                 {canEdit && (
@@ -255,7 +250,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                         disabled={isBusy}
                         className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-colors active:scale-95 disabled:opacity-50 ${status === 'DANGER' ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-red-50 text-red-600 hover:bg-red-100'}`}
                     >
-                        {status === 'DANGER' ? <span>Resolve danger</span> : <><span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Siren /></span><span>Report danger</span></>}
+                        {status === 'DANGER' ? <span>{t('danger_resolve')}</span> : <><span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Siren /></span><span>{t('danger_report')}</span></>}
                     </button>
                 )}
             </div>
@@ -263,7 +258,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
             {/* Witnessing — a guardian confirms care they witnessed, kindling its light (the sun ring). */}
             {isGuardian && toWitness.length > 0 && (
                 <div className="mt-6 rounded-2xl border border-sky-100 bg-sky-50/60 p-4">
-                    <p className="mb-2 text-xs font-bold uppercase tracking-wide text-sky-600">Waterings to witness</p>
+                    <p className="mb-2 text-xs font-bold uppercase tracking-wide text-sky-600">{t('witness_waterings')}</p>
                     <div className="space-y-1.5">
                         {toWitness.map(p => (
                             <div key={p.id} className="flex items-center gap-3 rounded-xl border border-sky-100 bg-white p-2 shadow-sm">
@@ -271,14 +266,14 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                                     ? <img src={p.imageUrl} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" />
                                     : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-500 [&>svg]:h-5 [&>svg]:w-5"><Icons.Droplet /></span>}
                                 <span className="min-w-0 flex-1 truncate text-xs text-slate-600">
-                                    {p.createdAt?.toMillis ? new Date(p.createdAt.toMillis()).toLocaleDateString() : 'A watering'} · {p.wateringConfirmation?.note || 'Watering'}
+                                    {p.createdAt?.toMillis ? new Date(p.createdAt.toMillis()).toLocaleDateString() : t('a_watering')} · {p.wateringConfirmation?.note || t('a_watering')}
                                 </span>
                                 <button
                                     onClick={() => handleWitness(p)}
                                     disabled={witnessing === p.id}
                                     className="shrink-0 rounded-full bg-sky-600 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-sky-700 disabled:opacity-50"
                                 >
-                                    {witnessing === p.id ? '…' : 'Witness'}
+                                    {witnessing === p.id ? '…' : t('witness')}
                                 </button>
                             </div>
                         ))}

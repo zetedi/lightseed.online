@@ -66,7 +66,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
     const [chainExpanded, setChainExpanded] = useState(false);
 
     if (loading) {
-        return <p className="py-10 text-center text-sm text-slate-400">Growing the digital tree…</p>;
+        return <p className="py-10 text-center text-sm text-slate-400">{t('chain_growing')}</p>;
     }
     if (blocks.length === 0 && !genesisBlock && !root) {
         return <p className="py-10 text-center text-sm text-slate-400">{emptyText || 'No pulses yet.'}</p>;
@@ -254,7 +254,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                                      <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full border border-amber-500/30 bg-amber-900/50 text-amber-200">
                                          <Logo width={22} height={22} />
                                      </div>
-                                     <h4 className="mb-2 text-xs font-bold uppercase tracking-widest text-amber-200">Root · Planted · Genesis</h4>
+                                     <h4 className="mb-2 text-xs font-bold uppercase tracking-widest text-amber-200">{t('chain_root_genesis')}</h4>
                                      {root.body && <p dir="auto" className="mx-auto mb-2 max-w-xs text-sm italic leading-relaxed text-amber-50/90">"{root.body}"</p>}
                                      <p className="text-[11px] text-amber-200/70">{root.plantedLabel}</p>
                                      <p className="mt-3 break-all px-2 font-mono text-[10px] text-amber-100/50">{genesisBlock?.hash || root.hash}</p>
@@ -270,11 +270,11 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                 <div className="relative mt-4 overflow-hidden rounded-2xl bg-slate-900 p-6 font-mono text-xs text-slate-300 shadow-inner">
                     <div className="absolute top-0 right-0 p-4 opacity-10"><Logo width={100} height={100} /></div>
                     <h3 className="mb-6 flex items-center font-bold uppercase tracking-wider text-emerald-400">
-                        <Icons.Hash /><span className="ml-2">Immutable Chain</span>
+                        <Icons.Hash /><span className="ml-2">{t('chain_immutable')}</span>
                     </h3>
                     <div className="relative z-10 grid gap-4 sm:grid-cols-3">
                         <div>
-                            <p className="mb-1 text-[10px] uppercase text-slate-500">Block Height</p>
+                            <p className="mb-1 text-[10px] uppercase text-slate-500">{t('chain_block_height')}</p>
                             <p className="text-2xl text-white">{stats.blockHeight}</p>
                         </div>
                         <div className="break-all">

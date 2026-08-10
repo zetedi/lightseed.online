@@ -212,13 +212,13 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree, n
             {liveStatus === 'ACCEPTED' && (
               <li className="flex items-start gap-2.5">
                 <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
-                <p className="text-sm font-medium text-emerald-700">Finalised: a shared sync-block sits on both chains.</p>
+                <p className="text-sm font-medium text-emerald-700">{t('align_finalised')}</p>
               </li>
             )}
             {liveStatus === 'REJECTED' && (
               <li className="flex items-start gap-2.5">
                 <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-slate-300" />
-                <p className="text-sm text-slate-500">Declined: this alignment was not taken up.</p>
+                <p className="text-sm text-slate-500">{t('align_declined')}</p>
               </li>
             )}
           </ol>
@@ -230,7 +230,7 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree, n
                 onChange={e => setDraft(e.target.value)}
                 rows={2}
                 maxLength={2000}
-                placeholder="Say something back…"
+                placeholder={t('say_back_ph')}
                 className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 text-sm text-slate-700 outline-none focus:border-emerald-300 focus:bg-white"
               />
               <div className="mt-2 flex items-center justify-between gap-2">
@@ -241,7 +241,7 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree, n
                   className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-emerald-700 active:scale-95 disabled:opacity-50"
                 >{posting ? 'Sending…' : 'Send'}</button>
               </div>
-              <p className="mt-2 text-center text-[11px] text-slate-400">The target accepts from the Observatory to finalise; that seals the sync-block on both chains.</p>
+              <p className="mt-2 text-center text-[11px] text-slate-400">{t('align_target_note')}</p>
             </div>
           )}
         </div>
@@ -257,14 +257,14 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree, n
             <div className="flex justify-center py-16"><Loading /></div>
           ) : liveStatus === 'ACCEPTED' && isParticipant ? (
             <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-6 text-center">
-              <p className="text-sm text-slate-600">This alignment is finalised, but its covenant has not been brought to life yet.</p>
+              <p className="text-sm text-slate-600">{t('align_cov_pending')}</p>
               {mintError && <p className="mt-2 text-xs text-rose-500">{mintError}</p>}
               <button
                 onClick={mintCovenant}
                 disabled={minting}
                 className="mt-4 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
               >{minting ? 'Minting…' : 'Bring the covenant to life'}</button>
-              <p className="mx-auto mt-3 max-w-sm text-xs text-slate-400">Both parties then sign in their own hand; two signatures seal it.</p>
+              <p className="mx-auto mt-3 max-w-sm text-xs text-slate-400">{t('align_cov_sign_note')}</p>
             </div>
           ) : (
             <p className="rounded-2xl border border-slate-100 bg-slate-50/60 p-6 text-center text-sm text-slate-500">

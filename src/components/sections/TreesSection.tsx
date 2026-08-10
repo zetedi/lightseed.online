@@ -7,6 +7,7 @@ import { SectionTitle } from '../ui/SectionTitle';
 // GuardianButton is entity-generic despite its home: a guardianship is a lightweight
 // follow on a tree — the same act wherever the tree is met.
 import { GuardianButton } from '../community/GuardianButton';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // Being-generic trees section — the lifetrees standing with any being (Indra's net).
 // A community, a node or a person gathers trees the same way; only where the gathering is
@@ -55,6 +56,7 @@ export const TreesSection: React.FC<TreesSectionProps> = ({
   emptyMessage = 'No lifetrees linked here yet.',
   placeholderColor,
 }) => {
+    const { t } = useLanguage();
   // Inviting a tree to stand with this entity.
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteSearch, setInviteSearch] = useState('');
@@ -97,9 +99,9 @@ export const TreesSection: React.FC<TreesSectionProps> = ({
         <div className="mb-4 rounded-lg border border-teal-100 bg-teal-50/50 p-4">
           <div className="flex gap-2">
             <input dir="auto" value={inviteSearch} onChange={e => setInviteSearch(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') searchInviteCandidates(); }}
-              placeholder="Search trees by name…"
+              placeholder={t('search_trees_ph')}
               className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-800 outline-none focus:border-teal-300" />
-            <button onClick={searchInviteCandidates} className="shrink-0 rounded-full bg-teal-600 px-4 py-2 text-xs font-bold text-white hover:bg-teal-700">Search</button>
+            <button onClick={searchInviteCandidates} className="shrink-0 rounded-full bg-teal-600 px-4 py-2 text-xs font-bold text-white hover:bg-teal-700">{t('search_btn')}</button>
           </div>
           {inviteCandidates !== null && (
             <div className="mt-3 space-y-2">

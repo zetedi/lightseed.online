@@ -37,11 +37,9 @@ export type DecisionMode = 'threshold' | 'consensus';
 
 export type ConsensusStance = 'unite' | 'stand_aside' | 'block';
 
-export const consensusStanceLabels: Record<ConsensusStance, string> = {
-  unite: 'Unite',
-  stand_aside: 'Stand aside',
-  block: 'Block',
-};
+// The words live in translations.ts (`stance_*` keys, every language); the domain holds only
+// the typed key references — the treeCircle arrangement (ring 2026-08-10).
+export const stanceLabelKey = (s: ConsensusStance) => `stance_${s}` as const;
 
 // A voice's position in a consensus meeting. One per person (a new one replaces the old).
 export interface Position {
@@ -53,14 +51,7 @@ export interface Position {
 
 export type DecisionStatus = 'draft' | 'open' | 'passed' | 'rejected' | 'withdrawn' | 'expired';
 
-export const decisionStatusLabels: Record<DecisionStatus, string> = {
-  draft: 'Draft',
-  open: 'Open',
-  passed: 'Passed',
-  rejected: 'Not adopted',
-  withdrawn: 'Withdrawn',
-  expired: 'Expired',
-};
+export const statusLabelKey = (s: DecisionStatus) => `status_${s}` as const;
 
 export interface Decision extends Being {
   id: string;

@@ -112,7 +112,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
       setEvents(prev => prev.filter(e => e.id !== eventId));
       announce('events', eventId);
     } catch (e: any) {
-      showAlert(e?.message || 'Could not delete the event.');
+      showAlert(e?.message || 'err_event_delete');
     }
   };
 
@@ -123,7 +123,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
       setEventImageUrls(prev => [...prev, url]);
     } catch (e) {
       console.error(e);
-      showAlert('Failed to upload event image.');
+      showAlert('err_event_image');
     }
     setIsUploadingEventImage(false);
   };
@@ -167,7 +167,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
       announce('events', editingEventId || '');
     } catch (error: any) {
       console.error(error);
-      showAlert('Failed to save event: ' + (error.message || 'Unknown error'));
+      showAlert(error?.message || 'err_event_save');
     }
     setIsEventSaving(false);
   };
@@ -212,7 +212,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
           <div className="grid grid-cols-3 gap-2">
             {eventImageUrls.map((url, index) => (
               <div key={url} className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
-                <img src={url} className="h-full w-full object-cover" alt={`Event image ${index + 1}`} />
+                <img src={url} className="h-full w-full object-cover" alt={`${t('events')} ${index + 1}`} />
                 <button type="button" onClick={() => setEventImageUrls(prev => prev.filter((_, i) => i !== index))} className="absolute right-1 top-1 rounded-full bg-white/90 p-1 text-red-500 shadow-sm" title={t('remove')}>
                   <Icons.Close />
                 </button>
