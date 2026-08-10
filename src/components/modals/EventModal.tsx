@@ -104,7 +104,7 @@ export const EventModal = ({
           inputMode="numeric"
           value={maxParticipants}
           onChange={e => setMaxParticipants(e.target.value)}
-          placeholder="Max participants (optional)"
+          placeholder={t('max_participants_ph')}
           className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
         />
         <textarea dir="auto" value={body} onChange={e => setBody(e.target.value)} placeholder={t('event_details_ph')} className="min-h-24 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />

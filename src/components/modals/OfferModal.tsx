@@ -9,7 +9,8 @@ import { offeringProblem, type OfferingKind } from '../../domain/offering';
 import { formatLight, RAY_UNITS } from '../../domain/light';
 import { tabTone } from '../../utils/tabTheme';
 import type { Lifetree, Pulse } from '../../types';
-import { speak } from '../../utils/translations';
+import { speak, spokenLine } from '../../utils/translations';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // MAKE AN OFFERING — post a BED or SERVICE through trust, with light named only as the hoped-for
 // appreciation AFTER someone receives it (domain/offering). It creates an offering pulse on the
@@ -24,6 +25,7 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved }: {
     onSaved?: (updates: Partial<Pulse>) => void;
 }) => {
     const { lightseed } = useSession();
+    const { t } = useLanguage();
     const editing = !!offering;
     const [kind, setKind] = useState<OfferingKind>(offering?.offeringKind || 'service');
     const [title, setTitle] = useState(offering?.title || '');
@@ -68,7 +70,7 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved }: {
         if (!lightseed) return;
         setUploading(true);
         try { setImageUrl(await uploadImage(file, `users/${lightseed.uid}/offerings/${Date.now()}`)); }
-        catch { showAlert('Could not upload the image.'); }
+        catch { showAlert('err_image_upload'); }
         setUploading(false);
     };
 
@@ -91,7 +93,7 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved }: {
                 await updateOffering(offering.id, updates);
                 onSaved?.(updates);
                 onClose();
-            } catch (err: any) { showAlert(err?.message || 'Could not save the offering.'); setSaving(false); }
+            } catch (err: any) { showAlert(err?.message || 'err_offering_save'); setSaving(false); }
             return;
         }
         try {
@@ -112,13 +114,13 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved }: {
             });
             onCreated?.();
             onClose();
-        } catch (err: any) { showAlert(err?.message || 'Could not create the offering.'); setSaving(false); }
+        } catch (err: any) { showAlert(err?.message || 'err_offering_create'); setSaving(false); }
     };
 
     const field = 'w-full rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600';
 
     return (
-        <Modal title={editing ? 'Retell the offering' : 'Make an offering'} onClose={onClose} wide>
+        <Modal title={editing ? t('offer_retell') : t('offer_make')} onClose={onClose} wide>
             <form onSubmit={submit} className="flex flex-col gap-4">
                 {/* What is offered */}
                 <div className="grid grid-cols-2 gap-2">
@@ -126,29 +128,29 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved }: {
                         <button key={k} type="button" onClick={() => !editing && setKind(k)} disabled={editing}
                             className={`flex flex-col items-center gap-1.5 rounded-xl border-2 px-3 py-3 text-center transition-all ${kind === k ? 'border-emerald-600 bg-emerald-50 text-emerald-800' : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200'}`}>
                             <span className="[&>svg]:h-5 [&>svg]:w-5">{k === 'service' ? <Icons.Drop /> : <Icons.Moon />}</span>
-                            <span className="text-xs font-bold uppercase tracking-wide">{k === 'service' ? 'A service' : 'A bed'}</span>
+                            <span className="text-xs font-bold uppercase tracking-wide">{k === 'service' ? t('offer_service') : t('offer_bed')}</span>
                         </button>
                     ))}
                 </div>
 
                 {!editing && kind === 'bed' && beds.length > 0 && (
                     <select value={bedId} onChange={e => chooseBed(e.target.value)} className={`${field} h-11 px-3`}>
-                        <option value="">A bed of yours (or just describe one)</option>
+                        <option value="">{t('offer_bed_pick')}</option>
                         {beds.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                     </select>
                 )}
 
                 <input dir="auto" value={title} onChange={e => setTitle(e.target.value)} required
-                    placeholder={kind === 'bed' ? "The bed's name or place" : 'What do you offer?'}
+                    placeholder={kind === 'bed' ? t('offer_title_bed_ph') : t('offer_title_service_ph')}
                     className={`${field} h-11 px-3 font-medium`} />
 
                 <textarea dir="auto" value={description} onChange={e => setDescription(e.target.value)}
-                    placeholder="Describe it — what it is, when, any conditions…"
+                    placeholder={t('offer_desc_ph')}
                     className={`${field} min-h-24 p-3`} />
 
                 {/* An optional door to more detail: a booking page, a menu, the offerer's site. */}
                 <label className="block">
-                    <span className="mb-1 block text-[10px] font-bold uppercase text-slate-400">Detail link (optional)</span>
+                    <span className="mb-1 block text-[10px] font-bold uppercase text-slate-400">{t('offer_detail_link')}</span>
                     <input dir="ltr" type="url" inputMode="url" value={url} onChange={e => setUrl(e.target.value)}
                         placeholder="https://…"
                         className={`${field} h-11 px-3`} />
@@ -158,7 +160,7 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved }: {
                     The light itself keeps its golden voice inside the green form. */}
                 <label className="block">
                     <span className="mb-1 flex items-center justify-between text-[10px] font-bold uppercase text-slate-400">
-                        <span>Suggested appreciation</span>
+                        <span>{t('offer_suggested')}</span>
                         <span className="text-amber-500">{formatLight(Number.isFinite(suggestedAppreciationLight) ? suggestedAppreciationLight : 0)}</span>
                     </span>
                     <div className="flex items-center gap-2">
@@ -166,7 +168,7 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved }: {
                         <input type="number" min="1" inputMode="numeric" value={appreciation} onChange={e => setAppreciation(e.target.value)}
                             className={`${field} h-11 px-3`} />
                     </div>
-                    <span className="mt-1 block text-[10px] text-slate-400">{RAY_UNITS} light = one ray. This is appreciation after receiving the offering, never a condition for entering.</span>
+                    <span className="mt-1 block text-[10px] text-slate-400">{speak(spokenLine('offer_light_note', { units: RAY_UNITS }))}</span>
                 </label>
 
                 <ImagePicker onImageSelect={pickImage} previewUrl={imageUrl} loading={uploading} className="h-40" />
@@ -175,9 +177,9 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved }: {
                 <button type="submit" disabled={!!problem || saving || uploading}
                     className="w-full rounded-2xl py-3 text-sm font-bold text-white shadow-lg transition-all hover:brightness-110 disabled:opacity-50"
                     style={{ backgroundColor: HEART, boxShadow: '0 10px 15px -3px rgba(41,132,66,0.25)' }}>
-                    {saving ? 'Saving…' : editing ? 'Save the offering' : 'Post the offering'}
+                    {saving ? t('saving') : editing ? t('offer_save') : t('offer_post')}
                 </button>
-                <p className="text-center text-[11px] text-slate-400">Trust opens the offering. Light may follow afterward to appreciate the contribution.</p>
+                <p className="text-center text-[11px] text-slate-400">{t('offer_trust_note')}</p>
             </form>
         </Modal>
     );

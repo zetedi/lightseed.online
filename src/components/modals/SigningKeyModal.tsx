@@ -104,7 +104,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
         // A key is published but not on this device: never mint or republish over it.
         setView('needs_restore');
       } else {
-        setErr(e instanceof Error ? e.message : 'Could not create the signing key.');
+        setErr(e instanceof Error ? e.message : 'err_key_create');
       }
     }
     setBusy(false);
@@ -123,7 +123,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
       setCustody('ready');
       notify(t('signing_key_ready'));
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Could not publish your signing key.');
+      setErr(e instanceof Error ? e.message : 'err_key_publish');
     }
     setBusy(false);
   };
@@ -153,7 +153,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
       setCustody('ready');
       setView('phrase');
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Could not rotate the signing key.');
+      setErr(e instanceof Error ? e.message : 'err_key_rotate');
     }
     setBusy(false);
   };
@@ -169,7 +169,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
       setView('status');
       notify(t('signing_frozen_done'));
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Could not freeze the signing key.');
+      setErr(e instanceof Error ? e.message : 'err_key_freeze');
     }
     setBusy(false);
   };
@@ -184,7 +184,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
       setConfirmedSaved(false);
       setView('phrase');
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Could not begin witnessed recovery.');
+      setErr(e instanceof Error ? e.message : 'err_recovery_begin');
     }
     setBusy(false);
   };
@@ -194,7 +194,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
     try {
       setPendingRecovery(await getPendingSigningKeyRecovery(uid));
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Could not refresh the witnesses.');
+      setErr(e instanceof Error ? e.message : 'err_witness_refresh');
     }
     setBusy(false);
   };
@@ -209,7 +209,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
       setPendingRecovery(null);
       notify(t('signing_recovery_activated'));
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Could not activate the recovered key.');
+      setErr(e instanceof Error ? e.message : 'err_recovery_activate');
     }
     setBusy(false);
   };
@@ -230,7 +230,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
       setView('status');
       notify(t('signing_recovery_witnessed'));
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Could not witness that recovery.');
+      setErr(e instanceof Error ? e.message : 'err_witness_recovery');
     }
     setBusy(false);
   };
@@ -249,7 +249,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
       if (e instanceof RestoreKeyMismatchError) {
         setErr(t('signing_restore_mismatch_warn'));
       } else {
-        setErr(e instanceof Error ? e.message : 'Could not restore from that phrase.');
+        setErr(e instanceof Error ? e.message : 'err_phrase_restore');
       }
     }
     setBusy(false);

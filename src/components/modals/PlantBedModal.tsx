@@ -30,7 +30,7 @@ export const PlantBedModal: React.FC<{ lightHouse: LightHouse; onClose: () => vo
     if (imagining || uploading) return;
     setErr(null);
     const seed = [name, body].map(s => s.trim()).filter(Boolean).join('. ');
-    if (!seed) { setErr('Give the bed a name or a welcome first, so we can imagine its face.'); return; }
+    if (!seed) { setErr('bed_face_seed_first'); return; }
     setImagining(true);
     try {
       await checkAndIncrementAiUsage('image');
@@ -39,10 +39,10 @@ export const PlantBedModal: React.FC<{ lightHouse: LightHouse; onClose: () => vo
       if (dataUrl && dataUrl.startsWith('data:')) {
         setImageUrl(await uploadBase64Image(dataUrl, `lightHouses/${lightHouse.id}/beds/ai/${Date.now()}`));
       } else {
-        setErr('The vision did not take form. Please try again.');
+        setErr('err_vision_no_form');
       }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Could not imagine an image right now.');
+      setErr(e instanceof Error ? e.message : 'err_imagine');
     }
     setImagining(false);
   };
@@ -53,12 +53,12 @@ export const PlantBedModal: React.FC<{ lightHouse: LightHouse; onClose: () => vo
     setSubmitting(true);
     try {
       await plantBed({ name: name.trim(), lightHouseId: lightHouse.id, imageUrl: imageUrl || undefined, body: body.trim() || undefined });
-      notify('🛏️ A bed is offered.');
+      notify(`🛏️ ${speak('bed_offered_toast')}`);
       announce('beds', lightHouse.id);
       onPlanted?.();
       onClose();
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Could not offer the bed.');
+      setErr(e instanceof Error ? e.message : 'err_bed_offer');
       setSubmitting(false);
     }
   };
@@ -69,13 +69,13 @@ export const PlantBedModal: React.FC<{ lightHouse: LightHouse; onClose: () => vo
         <div>
           <label className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-400">{t('title')}</label>
           <input value={name} onChange={e => setName(e.target.value)} autoFocus
-            placeholder="The Cedar Room · a hammock by the river…"
+            placeholder={t('bed_name_ph')}
             className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400" />
         </div>
         <div>
           <label className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-400">{t('body')}</label>
           <textarea value={body} onChange={e => setBody(e.target.value)} rows={3}
-            placeholder="A word of welcome: who this bed is for, what it looks onto…"
+            placeholder={t('bed_welcome_ph')}
             className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400" />
         </div>
         <div>

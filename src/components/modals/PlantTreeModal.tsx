@@ -3,6 +3,7 @@ import React, { useState, useEffect, FormEvent } from 'react';
 import { showAlert } from "../ui/Dialog";
 import { notify } from '../ui/Toast';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { speak } from '../../utils/translations';
 import { Icons } from '../ui/Icons';
 import { Modal } from '../ui/Modal';
 import { ImagePicker } from '../ui/ImagePicker';
@@ -72,7 +73,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
     try {
       setTreeBio(await generateLifetreeBio(treeSeed));
     } catch (e: any) {
-      showAlert(e?.message || 'The AI could not grow a vision right now. Please try again.');
+      showAlert(e?.message || 'err_ai_vision');
     }
     setIsSeedingBio(false);
   };
@@ -82,7 +83,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
     setImagineError(null);
     const seed = [treeName, treeShortTitle, treeBio, treeSeed].map(s => s.trim()).filter(Boolean).join('. ');
     if (!seed) {
-      setImagineError('Add a name or vision first so we can imagine a face for your tree.');
+      setImagineError('tree_face_seed_first');
       return;
     }
     setIsImagining(true);
@@ -94,11 +95,11 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
         const url = await uploadBase64Image(dataUrl, `users/${lightseed?.uid}/trees/ai/${Date.now()}`);
         setTreeImageUrl(url);
       } else {
-        setImagineError('The vision did not take form. Please try again.');
+        setImagineError('err_vision_no_form');
       }
     } catch (e: any) {
       // Inline (a showAlert here appears BEHIND the fullscreen modal, so the reason was invisible).
-      setImagineError(e?.message || 'Could not imagine an image right now.');
+      setImagineError(e?.message || 'err_imagine');
     }
     setIsImagining(false);
   };
@@ -128,10 +129,10 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
             setPlantLocation(coords);
             notify("📍 Location extracted from the image.");
           } else {
-            showAlert("Could not get location from browser or image. Please set it manually if needed.");
+            showAlert('err_location_manual');
           }
         } else {
-          showAlert("Could not get location. Try uploading a photo with GPS first, or allow browser location.");
+          showAlert('err_location');
         }
         setIsLocating(false);
       }
@@ -180,13 +181,13 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
         {plantStep === 1 && (
           <div className={`flex-1 flex flex-col gap-6 ${stepAnim}`}>
             <div className="text-center text-white">
-              <h2 className="text-xl font-bold mb-2">Choose Tree Type</h2>
-              <p className="text-sm opacity-70">What kind of life are you planting today?</p>
+              <h2 className="text-xl font-bold mb-2">{t('plant_step_type')}</h2>
+              <p className="text-sm opacity-70">{t('plant_step_type_sub')}</p>
             </div>
             <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2">
               {[
-                { id: 'LIFETREE', label: t('type_lifetree'), icon: <Icons.Tree />, desc: 'Your personal digital-physical avatar', image: '/seed.webp' },
-                { id: 'GUARDED', label: t('type_guarded'), icon: <Icons.Shield />, desc: 'Protect a physical tree in nature', image: '/phoenix.webp' }
+                { id: 'LIFETREE', label: t('type_lifetree'), icon: <Icons.Tree />, desc: t('type_lifetree_desc'), image: '/seed.webp' },
+                { id: 'GUARDED', label: t('type_guarded'), icon: <Icons.Shield />, desc: t('type_guarded_desc'), image: '/phoenix.webp' }
               ].map((type: any) => (
                 <button
                   key={type.id}
@@ -210,8 +211,8 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
         {plantStep === 2 && (
           <div className={`flex-1 flex flex-col gap-6 ${stepAnim}`}>
             <div className={`text-center ${treeType !== 'GUARDED' ? 'text-white' : 'text-slate-800'}`}>
-              <h2 className="text-xl font-bold mb-2">Identify Your Tree</h2>
-              <p className="text-sm opacity-70">Give your tree a name. You can add a short title later in its profile.</p>
+              <h2 className="text-xl font-bold mb-2">{t('plant_step_name')}</h2>
+              <p className="text-sm opacity-70">{t('plant_step_name_sub')}</p>
             </div>
             <div className="flex flex-col gap-4">
               <input
@@ -219,7 +220,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
                 className={`block w-full border p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-inner ${
                   treeType !== 'GUARDED' ? 'bg-white/10 border-white/20 text-white placeholder:text-white/50' : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400'
                 }`}
-                placeholder={treeType === 'GUARDED' ? 'A tree to stand for' : `Tree Name (Default: ${lightseed?.displayName || 'Anonymous'})`}
+                placeholder={treeType === 'GUARDED' ? t('tree_stand_for_ph') : t('tree_name_ph')}
                 value={treeName}
                 onChange={e=>setTreeName(e.target.value)}
                 autoFocus
@@ -235,8 +236,8 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
         {plantStep === 3 && (
           <div className={`flex-1 flex flex-col gap-6 ${stepAnim}`}>
             <div className={`text-center ${treeType !== 'GUARDED' ? 'text-white' : 'text-slate-800'}`}>
-              <h2 className="text-xl font-bold mb-2">Plant the Vision</h2>
-              <p className="text-sm opacity-70">Describe the intention behind this tree.</p>
+              <h2 className="text-xl font-bold mb-2">{t('plant_step_vision')}</h2>
+              <p className="text-sm opacity-70">{t('plant_step_vision_sub')}</p>
             </div>
             <div className="flex flex-col gap-4">
               {treeType !== 'GUARDED' && (
@@ -244,7 +245,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
                   <input 
                     dir="auto" 
                     className="flex-1 border border-white/20 p-3 rounded-xl bg-white/10 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all" 
-                    placeholder="Seed keywords" 
+                    placeholder={t('seed_keywords_ph')} 
                     value={treeSeed} 
                     onChange={e=>setTreeSeed(e.target.value)} 
                   />
@@ -258,7 +259,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
                 className={`block w-full border p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all min-h-[150px] resize-none ${
                   treeType !== 'GUARDED' ? 'bg-white/10 border-white/20 text-white placeholder:text-white/50' : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400'
                 }`} 
-                placeholder={treeType === 'GUARDED' ? "Description" : "Vision"} 
+                placeholder={treeType === 'GUARDED' ? t('description') : t('vision')} 
                 value={treeBio} 
                 onChange={e=>setTreeBio(e.target.value)} 
                 required 
@@ -295,9 +296,9 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
                 className="flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-50 bg-white/10 text-white hover:bg-white/20 border border-white/20"
               >
                 {isImagining ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div> : <Icons.Intelligence />}
-                <span>{isImagining ? 'Imagining…' : 'Imagine with AI'}</span>
+                <span>{isImagining ? t('imagining') : t('imagine_ai')}</span>
               </button>}
-              {imagineError && <p className={`rounded-lg px-3 py-2 text-xs ${treeType !== 'GUARDED' ? 'bg-red-500/20 text-red-100' : 'bg-red-50 text-red-600'}`}>{imagineError}</p>}
+              {imagineError && <p className={`rounded-lg px-3 py-2 text-xs ${treeType !== 'GUARDED' ? 'bg-red-500/20 text-red-100' : 'bg-red-50 text-red-600'}`}>{speak(imagineError)}</p>}
             </div>
             <div className="flex gap-2 mt-auto pb-4">
               <button onClick={() => setPlantStep(treeType === 'GUARDED' ? 2 : 3)} className={`flex-1 py-3 rounded-xl font-bold uppercase tracking-widest transition-all ${treeType !== 'GUARDED' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Back</button>
@@ -309,8 +310,8 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
         {plantStep === 5 && (
           <form onSubmit={handleSubmit} className={`flex-1 flex flex-col gap-6 ${stepAnim}`}>
             <div className={`text-center ${treeType !== 'GUARDED' ? 'text-white' : 'text-slate-800'}`}>
-              <h2 className="text-xl font-bold mb-2">Ground Your Tree</h2>
-              <p className="text-sm opacity-70">Final details to connect your tree to the world.</p>
+              <h2 className="text-xl font-bold mb-2">{t('plant_step_ground')}</h2>
+              <p className="text-sm opacity-70">{t('plant_step_ground_sub')}</p>
             </div>
             <div className="flex flex-col gap-4">
               <div className={`flex items-center justify-between p-4 rounded-xl border ${treeType === 'GUARDED' ? 'bg-slate-50 border-slate-200 text-slate-800' : 'bg-black/30 border-white/10 text-white'}`}>
@@ -322,7 +323,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
                     {plantLocation ? (
                       <span className="font-mono text-emerald-400 font-bold">{plantLocation.latitude.toFixed(6)}, {plantLocation.longitude.toFixed(6)}</span>
                     ) : (
-                      <span className="opacity-70">Location not set</span>
+                      <span className="opacity-70">{t('location_not_set')}</span>
                     )}
                   </div>
                 </div>
@@ -336,7 +337,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
                       : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm'
                   }`}
                 >
-                  {isLocating ? 'Locating...' : 'Locate'}
+                  {isLocating ? t('locating') : t('locate')}
                 </button>
               </div>
 
@@ -351,8 +352,8 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
                 className={`block w-full border p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-inner ${
                   treeType !== 'GUARDED' ? 'bg-white/10 border-white/20 text-white placeholder:text-white/50' : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400'
                 }`}
-                placeholder="Website domain (e.g. myproject.com)"
-                hint="Link this tree to a community or website domain. Leave blank to use this site."
+                placeholder={t('tree_domain_ph')}
+                hint={t('tree_domain_hint')}
                 value={treeDomain}
                 onChange={setTreeDomain}
               />

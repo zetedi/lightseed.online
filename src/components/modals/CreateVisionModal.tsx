@@ -9,6 +9,7 @@ import { AutocompleteInput } from '../ui/AutocompleteInput';
 import { Lightseed, Lifetree } from '../../types';
 import { generateVisionImage } from '../../services/gemini';
 import { checkAndIncrementAiUsage } from '../../services/firebase';
+import { speak } from '../../utils/translations';
 
 interface CreateVisionModalProps {
   lightseed: Lightseed | null;
@@ -48,7 +49,7 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
 
   const handleGenerateImage = async () => {
     setGenError(null);
-    if (!visionBody) { setGenError("Please enter a vision description first."); return; }
+    if (!visionBody) { setGenError('vision_desc_first'); return; }
     setLocalUploading(true);
     try {
         const allowed = await checkAndIncrementAiUsage('image');
@@ -56,7 +57,7 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
 
         const url = await generateVisionImage(visionBody);
         if (url) setVisionImageUrl(url);
-        else setGenError("No image data returned from the AI service.");
+        else setGenError('err_ai_no_image');
     } catch (e: any) {
          setGenError(e?.message || t('daily_limit_image'));
     } finally { setLocalUploading(false); }
@@ -65,7 +66,7 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!lightseed || isSubmitting) return;
-    if (!groundTreeId) { showAlert('Plant or choose a tree to root this vision in.'); return; }
+    if (!groundTreeId) { showAlert('vision_need_tree'); return; }
     setIsSubmitting(true);
 
     try {
@@ -110,7 +111,7 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
                  <span>{t('generate_image')}</span>
              </button>
         </div>
-        {genError && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{genError}</p>}
+        {genError && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(genError)}</p>}
 
         <input 
             dir="auto" 
@@ -146,19 +147,19 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
 
         {/* Ground the vision — the tree it's rooted in + the community/site it links to. */}
         <div className="space-y-2 rounded-xl border border-emerald-100 bg-emerald-50/40 p-3">
-            <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-700"><Icons.Tree /> Ground this vision</p>
+            <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-700"><Icons.Tree /> {t('ground_vision')}</p>
             <label className="block">
-                <span className="mb-1 block text-[11px] font-semibold text-slate-500">Rooted in tree</span>
+                <span className="mb-1 block text-[11px] font-semibold text-slate-500">{t('vision_rooted_in_tree')}</span>
                 <select value={groundTreeId} onChange={e => setGroundTreeId(e.target.value)} className="block w-full rounded-lg border border-slate-300 bg-white p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                    {groundOptions.length === 0 && <option value="">No tree yet; plant one first</option>}
+                    {groundOptions.length === 0 && <option value="">{t('no_tree_plant_first')}</option>}
                     {groundOptions.map(tr => <option key={tr.id} value={tr.id}>{tr.name}</option>)}
                 </select>
             </label>
             <AutocompleteInput
                 value={visionDomain}
                 onChange={setVisionDomain}
-                placeholder="Community or website domain (optional)"
-                hint="Link this vision to a community/site. Leave blank to use this node."
+                placeholder={t('vision_domain_ph')}
+                hint={t('vision_domain_hint')}
                 className="block w-full rounded-lg border border-slate-300 bg-white p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
         </div>

@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef, FormEvent } from 'react';
 import { showAlert } from "../ui/Dialog";
 import { useLanguage } from '../../contexts/LanguageContext';
+import { speak } from '../../utils/translations';
 import { Icons } from '../ui/Icons';
 import { Modal } from '../ui/Modal';
 import { ImagePicker } from '../ui/ImagePicker';
@@ -130,16 +131,16 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
       const prompt = `${selectedVision.title}. ${pulseBody}`.trim();
       const img = await generateVisionImage(prompt);
       if (img) setPulseImageUrl(img);
-      else setGenError('Could not generate an image right now. Try again, or upload one.');
+      else setGenError('err_image_gen');
     } catch (e: any) {
       // Inline (the old showAlert appeared *behind* the modal).
-      setGenError(e?.message || 'Image generation failed. Try again, or upload one.');
+      setGenError(e?.message || 'err_image_gen');
     } finally {
       setGenerating(false);
     }
   };
 
-  const inviteTree = () => showAlert('Inviting a tree to grow this vision together is coming soon; it will become an on-chain agreement between trees.');
+  const inviteTree = () => showAlert('grow_invite_soon');
 
   const handleMint = async (e?: FormEvent) => {
     e?.preventDefault();
@@ -147,8 +148,8 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
 
     // A tree growth seals onto the tree's chain; a vision growth is a CONTRIBUTION sealed onto
     // the VISION'S OWN chain — the twins diverge, each keeping its own ledger.
-    if (growthKind === 'vision' && !selectedVision) { showAlert('Pick a vision to grow.'); return; }
-    if (growthKind === 'tree' && !growthTree?.id) { showAlert('Plant a lifetree before emitting growth.'); return; }
+    if (growthKind === 'vision' && !selectedVision) { showAlert('pick_vision_first'); return; }
+    if (growthKind === 'tree' && !growthTree?.id) { showAlert('plant_before_growth'); return; }
 
     setIsSubmitting(true);
     try {
@@ -205,7 +206,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
         targetTreeId: matchCandidate.lifetreeId,
         targetUid: matchCandidate.authorId
       });
-      showAlert("Alignment Proposed! Waiting for resonance.");
+      showAlert('alignment_proposed');
       onClose();
     } catch (e: any) {
       showAlert(e.message);
@@ -280,7 +281,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3"><p className="truncate text-sm font-bold text-white drop-shadow">{growthTree?.name}</p></div>
                       </div>
                       <ImagePicker onImageSelect={uploadImage} previewUrl={pulseImageUrl} loading={uploading} />
-                      <p className="text-xs leading-relaxed text-emerald-800/80">Upload a new photo; it becomes the tree's <span className="font-bold">latest image</span> and joins its growth timeline.</p>
+                      <p className="text-xs leading-relaxed text-emerald-800/80">{t('growth_photo_note')}</p>
                     </div>
                   ) : growthKind === 'vision' ? (
                     <div className="space-y-3">
@@ -305,13 +306,13 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
                               <input type="file" accept="image/*" className="hidden" disabled={uploading} onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(f); }} />
                             </label>
                           </div>
-                          {genError && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{genError}</p>}
+                          {genError && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(genError)}</p>}
                         </div>
                       )}
 
                       {/* Filmstrip of visions. */}
                       <div>
-                        <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">Your visions</p>
+                        <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">{t('your_visions')}</p>
                         <div className="flex gap-2 overflow-x-auto pb-1 scroll-hide-bar">
                           {myVisions.map(v => (
                             <button key={v.id} type="button" onClick={() => pickVision(v)} title={v.title}
@@ -331,11 +332,11 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
                         ))}
                       </div>
                       <button type="button" onClick={inviteTree} className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-emerald-300 px-3 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-50">
-                        <Icons.Tree /> <span>Invite a tree to grow this</span>
+                        <Icons.Tree /> <span>{t('grow_invite_tree')}</span>
                       </button>
                     </div>
                   ) : (
-                    <p className="py-12 text-center text-sm text-slate-400">Choose what's growing first.</p>
+                    <p className="py-12 text-center text-sm text-slate-400">{t('choose_growing_first')}</p>
                   )}
                 </Page>
               );
