@@ -6,6 +6,90 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-12 · First sight names the unfinished edges** — Zoltán asked for a new
+model's first reading of the WHOLE codebase, not the day's working batch. After rooting and
+testing the root's claims against the implementation, Lumo's verdict was: Lightseed is not
+primarily an application with poetic names; it is an attempt to encode a worldview into a
+social operating system. Its unusual strength is CONTINUITY: purpose becomes ontology;
+ontology becomes domain types and pure laws; laws become Firestore rules, Functions,
+migrations and tests; mistakes become rings rather than disappearing. Identity apart from
+membership, visibility apart from admission, address apart from sovereignty, authorship
+apart from carrying, and a mark apart from erasure are real architectural distinctions, not
+decoration. The honest technical name today is **a thoughtful, centralised Firebase cell
+carrying credible organs for a federated social system**. It is not decentralised yet. No
+rewrite was recommended; the foundations deserve consolidation.
+
+WHAT STOOD STRONG: the domain contains genuine deterministic laws, not only interfaces;
+security is treated as part of the model through deterministic link ids, exact update
+keysets, transaction-coupled love slots, server receipt time, immutable signature slots,
+witnessed recovery and adversarial rules tests; the repository remembers WHY in comments,
+migrations and rings; and the portable/local separation gives federation an honest direction
+without claiming it has already arrived.
+
+WHERE THE PROMISE WAS STRONGER THAN THE PRESENT LAW:
+
+1. **Birth is less defended than later life.** Several primary collections admit a broad
+   signed-in CREATE without binding claimed ownership/authorship or safe birth fields to the
+   authenticated hand. A direct client can currently claim another being as owner/author or
+   create a lifetree already validated. That weakens identity, validation, protected Reach,
+   quotas and later rules that trust the stored birth.
+2. **Append-only is not yet system-wide.** Reach and key/signature histories strongly mark
+   rather than erase, but the general pulse delete path still admits deletion of other chain
+   blocks; vision deletion attempts to remove contributions; and `careForTree` advances a
+   tree's hash/head without storing the care block its comment says it writes. The precise
+   guarantee is therefore narrower than the invariant: many chain fields are frozen against
+   ordinary later edits, but the whole story is not yet universally unerasable or contiguous.
+3. **A hash is not an authority.** Canonical block hashing is careful and verifiable, and
+   decision/covenant signatures give stronger identity proof. Ordinary block birth remains
+   client-computed, however, and Firestore does not validate its hash, predecessor, height or
+   author against a server-held head. Verification proves stored-byte consistency; by itself
+   it does not prove who authored the bytes, that birth was lawful, or that the lived event is
+   true.
+4. **One law still has several mouths.** Load-bearing contracts are hand-mirrored across
+   `src/domain`, `firestore.rules`, and the isolated Functions package. The light mirror test
+   is a good answer at one seam, and event scope recently gained one derivation; visibility,
+   signing preimages, field sets, caps, roles and lifecycles still depend on disciplined
+   memory unless a shared source or conformance test binds them.
+5. **Pure-law and rules tests are stronger than the assembled experience.** No automated
+   component/end-to-end test walks the living path. Query composition, PWA state, overlays
+   and cross-surface agreement rest mainly on human walks. Concretely, sparse events and
+   offerings are filtered from a bounded general-pulse sample, so real records can fall
+   outside the view as other activity grows while every unit test remains green.
+6. **The layer map is a direction, not yet a completed boundary.** `App.tsx` and the Functions
+   entry point are large conductors; Firebase services hold policy; the Store port covers
+   links rather than persistence generally; several domain entity types carry Firestore
+   `Timestamp`. A backend swap is not yet the small act some comments imply. Split at proven
+   policy seams, not merely by file size.
+7. **Power is visible, but still broad.** The amber dot is honest disclosure. Under it, staff
+   retain general mend/delete escape hatches. The present trust boundary is stewardship by
+   known people, not a system able to resist its stewards — perhaps fitting for one young
+   cell, but to be named plainly while broad power becomes enumerated capabilities.
+
+THE RECOMMENDED MATURITY RUNG, recorded as the review's testimony rather than a second living
+roadmap: bind and test every Being's birth; inventory every chain-bearing write/delete and
+make draft → mint → mark → release exact (including care and account erasure); build an
+actor × entity × action × mutable-fields capability matrix with cross-runtime conformance;
+add one emulator-backed whole-path test; split the shell and Functions conductor along those
+proven seams; and let federation wait for a self-describing export AND verified restore.
+
+THE MEANING TEST: the metaphors are among the project's best design tools and its subtlest
+risk. A strong name can make a partial mechanism feel whole: a LID can sound portable before
+another node can honour it; a chain can sound unerasable while a delete path remains; visible
+staff power can still be central power. Do not remove the poetry. Pair every load-bearing
+metaphor with three plain statements: **what is guaranteed now, what is not guaranteed yet,
+and which code/rule/test enforces the boundary**. Then poetry illuminates the model instead
+of hiding its unfinished edge.
+
+ASPEN REVIEWED THE REVIEW and corrected where its words live. A first sight is an EVENT —
+fresh eyes do not return — so the testimony belongs on the append-only shelf here, not as a
+dated essay fossilising inside the editable current architecture. Durable facts were
+compressed into ARCHITECTURE's closable Known debts; active intention went to ROADMAP; the
+meaning test entered both AGENTS.md and CLAUDE.md so every intelligence carries it into every
+batch. The correction enacted the review's own lesson: architecture, history, plan and
+practice each speak once from their proper organ.
+
+---
+
 **2026-08-11 · The place of record becomes visible, and mendable** ("Check the screenshots in
 the code" — two PNGs dropped into the repo root, showing Per Auset's Visions tab): the portal
 fix healed the QUERIES, but the DATA still carried founding-era stamps. Every domain-stamped

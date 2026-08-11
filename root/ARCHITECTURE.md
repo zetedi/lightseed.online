@@ -12,7 +12,7 @@ dies while every gate remains green. No layer is supreme in isolation.
 
 ## Stack
 
-React 18 + TypeScript (full strict) + Vite + Tailwind, as a PWA
+React 19 + TypeScript (full strict) + Vite + Tailwind, as a PWA
 (`vite-plugin-pwa`, prompt-style updates via `UpdateToast`). Firebase: Firestore
 (`ignoreUndefinedProperties: true`), Auth (dynamic authDomain per hosted domain),
 Storage, Functions, multi-site Hosting (`app` → lifeseed-75dfe, `perauset`).
@@ -129,3 +129,33 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
 - Mother-tree badge lives on the tree page only (no denormalised flag yet).
 - Payments, hosted-AI node credential, and the AI-need chooser are scaffolded,
   not live (see ROADMAP).
+- **Being births are not uniformly bound to their claimed hands.** Broad create
+  paths for lifetrees, visions, pulses, communities, Light Houses, alignments and
+  intelligences do not all bind ownership/authorship or safe birth defaults in the
+  rules. In particular, a direct client can claim another owner/author or create a
+  lifetree already validated. Close at CREATE with schema keysets and emulator tests
+  before new Being kinds grow (first-sight ring, 2026-08-12).
+- **Append-only is not yet system-wide.** The general pulse delete path still admits
+  deletion of some chain blocks; vision deletion attempts to remove contributions;
+  and explicit care advances a tree's head without persisting the described care
+  block. Draft/mint/mark/release lifecycles need one exact law per chain-bearing type
+  (first-sight ring, 2026-08-12).
+- Ordinary block birth is client-computed and not checked by Firestore against a
+  server-held head. Canonical verification proves stored-byte consistency, not by
+  itself authorship, lawful creation or lived truth (first-sight ring, 2026-08-12).
+- Load-bearing contracts remain manually mirrored across domain code, Firestore
+  rules and the isolated Functions package. The light mirror test is one good seam;
+  visibility, signing preimages, field sets, caps and lifecycles need equivalent
+  conformance (first-sight ring, 2026-08-12).
+- Pure-law and rules tests are stronger than the assembled experience: there is no
+  automated component/end-to-end walk, and sparse event/offering feeds filter a
+  bounded general-pulse sample, so real items can fall outside it as activity grows
+  (first-sight ring, 2026-08-12).
+- Layering is directional but incomplete: the Store port covers links, several
+  domain entity types carry Firestore `Timestamp`, and the shell, Functions entry
+  point and Firebase services remain large policy conductors (first-sight ring,
+  2026-08-12).
+- Power is visible but broad: staff retain general mend/delete escape hatches. The
+  present boundary is stewardship by known people, not resistance to stewards;
+  retire broad powers into named capabilities over time (first-sight ring,
+  2026-08-12).

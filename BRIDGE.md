@@ -117,8 +117,8 @@ What a being LOOKS like: `src/components/BeingProfile.tsx` + `src/components/sec
 ## The gate (run before every commit)
 
 ```
-npm run check     # strict typecheck + lint (0/0) + 189 unit tests
-npm run test:rules  # 54 Firestore rules tests (needs the emulator/Java)
+npm run check     # strict typecheck + lint + unit suite
+npm run test:rules  # Firestore rules suite (needs the emulator/Java)
 ```
 
 CI runs all of it on every push (`.github/workflows/quality-gate.yml`).

@@ -34,6 +34,10 @@ Every intelligence entering this project roots first in the same living context.
   ownership, migration risk, failure modes), and MEANING (does the
   implementation still express the concept, or has the metaphor begun hiding a
   weaker data model).
+- **Every metaphor earns a plain contract**: for each load-bearing concept, state
+  what is guaranteed now, what is not guaranteed yet, and which code/rule/test
+  enforces the boundary. Poetry illuminates the model; it must never hide an
+  unfinished edge.
 - **The rhythm**: inspect → understand → test → review → propose → ask →
   commit → record the ring. Never: change → commit → explain afterward.
 - **Agents may propose and prepare commits. A human guardian authorizes

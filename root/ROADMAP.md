@@ -5,12 +5,27 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
 
 ## Alive now (before Lion's Gate, 8/8/2026)
 
+- **Bind every Being's birth before growing new kinds.** Close the broad CREATE
+  paths named by the first-sight ring (2026-08-12): ownership/authorship bound to
+  the authenticated hand, safe validation defaults, exact birth schemas, and
+  emulator tests proving each refusal. Birth must be at least as truthful as later
+  life.
+- **Make append-only one exact lifecycle.** Inventory every chain-bearing create,
+  update, delete and account-erasure path; store explicit care as the block it says
+  it is; and make draft → mint → mark → release explicit for each Being. Ordinary
+  block birth must bind author, predecessor, height and hash at a trustworthy
+  transaction boundary before “unerasable story” is a system-wide guarantee.
+- **Give every load-bearing law one mouth.** Build the actor × entity × action ×
+  mutable-fields capability matrix; then add shared-source or conformance tests for
+  every necessary mirror across domain code, Firestore rules and Functions
+  (visibility, signing preimages, field sets, caps, roles, lifecycles).
 - **Consolidation over surface.** The chain (tree, circle, community, domain,
   bed) is structurally closed. The remaining work is walking it on a REAL phone:
-  enter → plant → validate → offer a bed → request a stay → tend → exercise the
-  guardian veto → scan the printed QR. Hand the phone to someone at the next
-  fire at The O House and fix what they stumble on. No new ontology before this
-  path has living footprints.
+  enter → plant → validate → offer a bed → request a stay → care → exercise the
+  guardian veto → scan the printed QR. Make the same path the first emulator-backed
+  end-to-end test, so human experience and assembled-system regression guard one
+  another. Hand the phone to someone at the next fire at The O House and fix what
+  they stumble on. No new ontology before this path has living footprints.
 - Consecrate **The O House** in the app (name, photo, place, beds).
 - The **guardian veto council test** in Per Auset, the social trial of the
   conscience mechanism.
@@ -93,6 +108,10 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
   requires a separate, explicitly encrypted and access-controlled export.
   Restoring and verifying this package is the step that may truthfully turn a
   Host into a Node.
+- **Split the large conductors only at proven policy seams**: Being birth, chain
+  append, visibility/query planning, identity/key custody, and notification
+  delivery. The aim is not smaller files by itself; it is one enforceable contract
+  per boundary, with Firebase types kept outside the portable domain where possible.
 - **Harden the community Light House gate**: enforce member-only visibility at rest
   (rule via the primary `communityId` + a membership-scoped map query) so the community's
   visibility choice is law, not a client-only veil. Until then the `community` tier is
