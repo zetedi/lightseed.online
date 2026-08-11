@@ -7,6 +7,7 @@ import { getIntelligence } from '../../services/intelligence';
 import { reachThreads, type ReachThread as ThreadSummary } from '../../domain/views/threads';
 import { showConfirm } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { isWateringOverdue } from '../../domain/watering';
 
 type Selection =
     | { kind: 'none' }
@@ -95,9 +96,23 @@ export const ReachInbox = ({
         // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the primitive uid; the lightseed object changes identity on every profile update and would re-run the mark-seen write needlessly
     }, [pulses, lightseed?.uid]);
 
+    // THE SIGNAL DISSOLVES WHEN ANSWERED (ring 2026-08-11): a care ping is a request, not a
+    // record — once the tree is watered, its pings fade from the mycelium (a thread that was
+    // only ever a ping disappears whole). The important conversation persists by MINTING; the
+    // request itself was never meant to outlive its answer.
+    const quenched = useMemo(() => {
+        const q = new Set<string>();
+        for (const t of myTrees) if (!isWateringOverdue(t)) q.add(t.id);
+        return q;
+    }, [myTrees]);
+    const audiblePulses = useMemo(
+        () => pulses.filter(p => !((p as { careAlert?: string }).careAlert === 'watering'
+            && quenched.has((p.reachTreeId || p.lifetreeId || '') as string))),
+        [pulses, quenched],
+    );
     const threads = useMemo(
-        () => reachThreads(pulses, { uid: lightseed?.uid, treeIds: myTrees.map(t => t.id) }),
-        [pulses, myTrees, lightseed?.uid],
+        () => reachThreads(audiblePulses, { uid: lightseed?.uid, treeIds: myTrees.map(t => t.id) }),
+        [audiblePulses, myTrees, lightseed?.uid],
     );
 
     const hasSelection = selection.kind !== 'none';

@@ -478,6 +478,18 @@ const AppContent = () => {
         refreshTrees();
     };
 
+    // THE TWO DOORS TO THE SAME ROOM: the envelope beside the profile and the Messages menu
+    // both mount ProfileReaches → ReachInbox → ReachThread with EXACTLY these handlers — one
+    // definition, so the mycelium behaves identically whichever door a being walks through.
+    const openTreeFromReaches = (id: string, opts?: { closeReachModal?: boolean }) => {
+        if (opts?.closeReachModal) setShowReachModal(false); // the modal must step aside, or it covers the tree it opened
+        getLifetreeById(id).then(tr => { if (tr) setSelectedTree(tr); }).catch(() => {});
+    };
+    const openCareFromReaches = (id: string) => {
+        // Care floats OVER the conversation — after the watering, you are still where the tree asked for you.
+        getLifetreeById(id).then(tr => { if (tr) { setCareOverride(tr); setCareModalOpen(true); } }).catch(() => {});
+    };
+
     const openReach = (tree: Lifetree | null, audience?: ReachAudience) => {
         setSelectedTree(null);
         setReachTree(tree);
@@ -858,8 +870,8 @@ const AppContent = () => {
                     onRevokeAdmin={async (uid: string) => { await revokeAdmin(uid); }}
                     onOpenNewsletterAdmin={() => setTab('newsletter')}
                     onReachTree={(tree: Lifetree) => openReach(tree)}
-                    onOpenTreeById={(id: string) => { getLifetreeById(id).then(tr => { if (tr) setSelectedTree(tr); }).catch(() => {}); }}
-                    onOpenCareById={(id: string) => { getLifetreeById(id).then(tr => { if (tr) { setCareOverride(tr); setCareModalOpen(true); } }).catch(() => {}); }}
+                    onOpenTreeById={openTreeFromReaches}
+                    onOpenCareById={openCareFromReaches}
                     nodeTheme={config.theme}
                 />
             );
@@ -1602,16 +1614,8 @@ const AppContent = () => {
                                 reachPartner={reachTree}
                                 reachAudience={reachAudience}
                                 onConsumeReach={() => { setReachTree(null); setReachAudience(undefined); }}
-                                onOpenTreeById={(id: string) => {
-                                    // The modal must step aside, or it covers the tree it opened.
-                                    setShowReachModal(false);
-                                    getLifetreeById(id).then(tr => { if (tr) setSelectedTree(tr); }).catch(() => {});
-                                }}
-                                onOpenCareById={(id: string) => {
-                                    // Care floats OVER the conversation — after the watering, you are
-                                    // still exactly where the tree asked for you.
-                                    getLifetreeById(id).then(tr => { if (tr) { setCareOverride(tr); setCareModalOpen(true); } }).catch(() => {});
-                                }}
+                                onOpenTreeById={(id: string) => openTreeFromReaches(id, { closeReachModal: true })}
+                                onOpenCareById={openCareFromReaches}
                             />
                         </div>
                     </div>

@@ -11,6 +11,7 @@ import { CTA_GLOW } from '../../utils/tabTheme';
 import { useLifeseed } from '../../hooks/useLifeseed';
 import { Icons } from '../ui/Icons';
 import { spokenLine } from '../../utils/translations';
+import { isWateringOverdue } from '../../domain/watering';
 import { linkifyParts } from '../../utils/sanitize';
 import { Lifetree, Pulse, ReachAudience } from '../../types';
 
@@ -344,6 +345,11 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
     };
 
     const partnerTreeId = selectedTree?.id || groupThread?.partnerId || null;
+    // A quenched tree's care pings dissolve here too — the full tree record (with its watering
+    // rhythm) comes from the session, since a thread row carries only a face and a name.
+    const partnerFullTree = myTrees.find(mt => mt.id === partnerTreeId) || null;
+    const partnerQuenched = !!partnerFullTree && !isWateringOverdue(partnerFullTree);
+    const audibleMessages = partnerQuenched ? messages.filter(m => m.careAlert !== 'watering') : messages;
     const headerName = groupThread ? groupThread.partnerName
         : (mode === 'tree' && selectedTree
             ? (audience ? `${selectedTree.name} · ${reachAudienceLabels[audience]}` : selectedTree.name)
@@ -578,7 +584,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                     {/* THE ONE HEADER ACTION: while the tree is thirsty, CARE stands where MINT
                         stands — the seal can wait until the water is given. When no care is due,
                         the mint returns. One slot, one priority: life before record. */}
-                    {mode === 'tree' && onOpenCareById && partnerTreeId && messages.some(m => m.careAlert === 'watering') ? (
+                    {mode === 'tree' && onOpenCareById && partnerTreeId && audibleMessages.some(m => m.careAlert === 'watering') ? (
                         <button
                             type="button"
                             onClick={() => onOpenCareById(partnerTreeId)}
@@ -627,7 +633,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/50 scroll-smooth">
-                {messages.map((m, i) => {
+                {audibleMessages.map((m, i) => {
                     // Mint notices (and any system line) render centered — not as a chat bubble.
                     if (m.system) {
                         return (

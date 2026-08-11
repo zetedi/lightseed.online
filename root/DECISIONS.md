@@ -6,6 +6,23 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-11 · The mycelium keeps one room, and a signal dissolves when answered**: three of
+Zoltán's asks, one thread of meaning ("Wow means: I'm talking through a living system, a digital
+mycelium"). VERIFIED AND MADE STRUCTURAL: the envelope beside the profile and the profile menu
+open the SAME room — both mount ProfileReaches → ReachInbox → ReachThread, and the two doors now
+share one extracted pair of handlers in the shell, so sameness is a fact the code states rather
+than a coincidence that could drift. THE MENU SAYS "MESSAGES" — with four pill-kinds inside,
+"Direct Messages" named one kind and lied about three; key renamed too (`messages`), no legacy.
+AND THE CARE PING FADES WHEN THE TREE DRINKS: a watering request is a REQUEST, not a record —
+once its tree is no longer thirsty the ping dissolves from the inbox (a ping-only thread
+disappears whole) and from the open conversation, and the header's Care slot hands back to Mint
+in the same breath. Nothing is deleted: the pulses stand (some are chain blocks), the mycelium
+simply stops repeating an answered signal — and a conversation worth keeping persists the way
+everything persists here, by MINTING. Client-derived, zero writes, self-healing: the next thirst
+re-sounds the same pings.
+
+---
+
 **2026-08-11 · Care is the word — in the CODE too — and the reach opens its real doors** (and
 CHRIS PLANTED A TREE): the CTAs say CARE, and at Zoltán's word — asked twice, because the first
 pass was half-hearted — the ENTIRE CODE followed: identifiers (CareModal, careTarget,

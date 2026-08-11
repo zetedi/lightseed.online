@@ -409,8 +409,8 @@ export const Navigation = ({
                                 {/* Direct messages — letter icon that glows green when there are unread messages */}
                                 <button
                                     onClick={() => onOpenReachInbox?.()}
-                                    title={t('direct_messages')}
-                                    aria-label={t('direct_messages')}
+                                    title={t('messages')}
+                                    aria-label={t('messages')}
                                     className={`relative inline-flex rounded-full border p-2 transition-all ${
                                         careAlertCount > 0
                                             ? 'border-sky-300 bg-sky-500/15 text-sky-500 shadow-[0_0_14px_rgba(14,165,233,0.7)] ring-1 ring-sky-300/70 animate-pulse'

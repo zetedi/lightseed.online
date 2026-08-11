@@ -186,7 +186,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
             ),
         },
         {
-            key: 'reaches', label: t('direct_messages'), icon: <Icons.Chat />, render: () => (
+            key: 'reaches', label: t('messages'), icon: <Icons.Chat />, render: () => (
                 <ProfileReaches
                     lightseed={lightseed}
                     myTrees={myTrees}
