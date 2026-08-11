@@ -9,7 +9,7 @@ import { SectionCard } from '../ui/SectionCard';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 // The three growth stages, in growing order — a seed in its pot, in the ground but still
-// tended, and finally self-sustaining. The first two are watered on a schedule.
+// caredFor, and finally self-sustaining. The first two are watered on a schedule.
 const STAGE_META: { key: TreeStage; label: string; hint: string; icon: React.ReactNode }[] = [
     { key: 'potted', label: 'Seed in a pot', hint: 'A seed growing in its pot, the most fragile stage.', icon: <Icons.Pot /> },
     { key: 'planted', label: 'In the ground', hint: 'Planted out, but still needs regular care.', icon: <Icons.Sprout /> },
@@ -30,7 +30,7 @@ interface TreeCareProps {
     isOwner: boolean;
     canWater: boolean;
     canManageSchedule: boolean;
-    // A guardian without tending powers: the card reads as the schedule's read-only face,
+    // A guardian without caring powers: the card reads as the schedule's read-only face,
     // plus a door to ask the circle for stewardship (roles move only by invitation).
     canAskStewardship?: boolean;
     onUpdate?: (updates: Partial<Lifetree>) => void;
@@ -38,7 +38,7 @@ interface TreeCareProps {
     onChainRefresh: () => void;
 }
 
-// Care section — watering: scheduled tending of this (guarded) tree, keyed to its growth stage.
+// Care section — watering: scheduled caring of this (guarded) tree, keyed to its growth stage.
 export const TreeCare: React.FC<TreeCareProps> = ({
     tree,
     growthBlocks,
@@ -69,7 +69,7 @@ export const TreeCare: React.FC<TreeCareProps> = ({
         setWaterOnChain(false);
     }, [tree.id]);
     // Re-seed the schedule editor whenever the watering data itself changes — including a remote
-    // edit by another tender — so Save never silently reverts someone else's schedule.
+    // edit by another carer — so Save never silently reverts someone else's schedule.
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- prop→state re-seed of the schedule editor when watering data changes remotely; deriving would clobber in-flight edits
         setWaterStage(treeStage(tree));
@@ -103,7 +103,7 @@ export const TreeCare: React.FC<TreeCareProps> = ({
 
     const handleWaterPick = () => waterFileRef.current?.click();
 
-    // Off-chain watering (the default): reset the cadence + tending clock, no photo / no growth block.
+    // Off-chain watering (the default): reset the cadence + caring clock, no photo / no growth block.
     const handleWaterBypass = async () => {
         if (!currentUserId) return;
         setWaterBusy(true); setWaterMsg(null);
@@ -264,9 +264,9 @@ export const TreeCare: React.FC<TreeCareProps> = ({
             {canAskStewardship && (
                 <div className="mb-4 rounded-xl border border-sky-100 bg-white/70 p-4">
                     <p className="text-xs leading-relaxed text-sky-800/80">
-                        You guard this tree, so you see its care rhythm here. Tending it (watering,
+                        You guard this tree, so you see its care rhythm here. Caring it (watering,
                         setting the schedule) belongs to its circle: the owner, co-owners and stewards.
-                        If you want to help tend it, ask to become a steward.
+                        If you want to help care it, ask to become a steward.
                     </p>
                     <button
                         type="button"

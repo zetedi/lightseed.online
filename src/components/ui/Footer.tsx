@@ -42,7 +42,7 @@ export const Footer = ({ community, theme, isDark = false }: { community?: Commu
 
   return (
     // Everything centred and stacked: the socials, then the brand line, then the legal links.
-    // pb-24 on mobile keeps this clear of the fixed tend droplet at the bottom-left.
+    // pb-24 on mobile keeps this clear of the fixed care droplet at the bottom-left.
     <footer className="relative z-10 border-t px-6 pb-24 pt-4 sm:pb-4"
             style={{ backgroundColor: surface.background, color: surface.text, borderColor: surface.border }}>
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-2.5 text-center">

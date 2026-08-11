@@ -8,12 +8,12 @@ import { db, functions, pulsesCollection } from './core';
 import { mintPulse, resolveCircleUids, sendThreadMessage } from './pulses';
 import { uploadImage } from './media';
 
-// --- Watering: scheduled tending of a (usually guarded) tree -----------------------------
-// Watering is tending made literal. The owner sets a growth stage (potted/planted are tended on
+// --- Watering: scheduled caring of a (usually guarded) tree -----------------------------
+// Watering is caring made literal. The owner sets a growth stage (potted/planted are cared for on
 // a schedule; self-sustaining is not); the daily Cloud Function (checkWateringSchedules) pings
 // guardians when overdue. The default watering is an off-chain tick (markWateredOffChain); the
 // opt-in photo path (recordWatering) mints a growth block with an AI/guardian witness. Both
-// refresh lastTendedAt, so either keeps the tree's living validation lit.
+// refresh lastCaredAt, so either keeps the tree's living validation lit.
 
 // Set (or change) a tree's growth stage + watering schedule, returning the schedule as written
 // so callers can mirror it locally instead of rebuilding it. A self-sustaining tree clears the
@@ -50,7 +50,7 @@ export const setWateringSchedule = async (
     return watering;
 };
 
-// Tell the guardians' thread the tree was tended. A normal (newest) message is also what clears
+// Tell the guardians' thread the tree was cared for. A normal (newest) message is also what clears
 // the blue 'water me' careAlert border — newest message wins (see domain/views/threads) — so
 // EVERY watering path must post one, or a resolved alert lingers in the inbox. Best-effort.
 const postWateredNotice = async (
@@ -82,7 +82,7 @@ const postWateredNotice = async (
 
 // Off-chain "I Watered Today" — the default: resets the cadence WITHOUT minting a growth block
 // or storing a photo (no chain advance), for routine watering you don't want on the tree's
-// ledger. Still counts as tending (lastTendedAt keeps living validation lit) and still tells
+// ledger. Still counts as caring (lastCaredAt keeps living validation lit) and still tells
 // the guardians' thread, which clears any standing 'water me' alert.
 export const markWateredOffChain = async (
     tree: Lifetree,
@@ -93,7 +93,7 @@ export const markWateredOffChain = async (
     const update: Record<string, any> = {
         'watering.lastWateredAt': Timestamp.fromMillis(now),
         'watering.overdue': false,
-        lastTendedAt: serverTimestamp(),
+        lastCaredAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
     };
     if (intervalDays) update['watering.nextDueAt'] = Timestamp.fromMillis(computeNextDueMillis(now, intervalDays));
@@ -102,7 +102,7 @@ export const markWateredOffChain = async (
 };
 
 // Record a watering: upload proof, mint a GROWTH pulse carrying the `watering` flag + the
-// witness's verdict, reset the schedule clock, and let the guardians' thread know it's tended.
+// witness's verdict, reset the schedule clock, and let the guardians' thread know it's cared for.
 // `analysis` is produced by the caller via gemini.analyzeWateringPhoto (AI), or stood in for by
 // a guardian. AI confidence ≥ 70 auto-confirms; otherwise the pulse waits for a guardian.
 
@@ -123,7 +123,7 @@ export const recordWatering = async ({
 
     // Reset the cadence + clear the overdue flag IN THE SAME transaction that appends the growth
     // block, so the tree can never be left "watered on the chain but still overdue". mintPulse
-    // already sets lastTendedAt (GROWTH), so living validation re-lights automatically.
+    // already sets lastCaredAt (GROWTH), so living validation re-lights automatically.
     const now = Date.now();
     const interval = tree.watering?.mode === 'scheduled' ? tree.watering?.intervalDays : undefined;
     const wateringUpdate: Record<string, any> = {
@@ -195,7 +195,7 @@ export const requestStewardship = async (
         },
         fromTree: tree,
         sender,
-        text: `🌿 ${sender.displayName || 'A guardian'} asks to become a steward of ${tree.name}, to help tend its care. (The owner can invite from the Circle.)`,
+        text: `🌿 ${sender.displayName || 'A guardian'} asks to become a steward of ${tree.name}, to help care its care. (The owner can invite from the Circle.)`,
     });
 };
 
@@ -221,8 +221,8 @@ export const sendWateringAlert = async (
     const now = Date.now();
     const over = daysOverdue(tree, now);
     const text = over <= 0
-        ? `I'm ready for watering 💧 — could a guardian tend me today?`
-        : `I'm thirsty 💧 — ${over} day${over > 1 ? 's' : ''} past my watering. Could a guardian tend me?`;
+        ? `I'm ready for watering 💧 — could a guardian care me today?`
+        : `I'm thirsty 💧 — ${over} day${over > 1 ? 's' : ''} past my watering. Could a guardian care me?`;
     const threadId = buildGroupThreadId(tree.id, 'guardians', tree.ownerId);
 
     // Mark the tree alerted FIRST: this write is gated by the lifetrees rule (owner/guardian/staff),

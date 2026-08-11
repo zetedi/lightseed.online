@@ -57,7 +57,7 @@ export const tabTint = (hex: string, strength = 0.88): string => {
   return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
 };
 
-// The lightseed glow — the same warm ring the Tend button carries. Worn by the create CTAs in the
+// The lightseed glow — the same warm ring the Care button carries. Worn by the create CTAs in the
 // list header bands so the "grow something" action is always the lit one.
 export const CTA_GLOW = 'ring-2 ring-yellow-300/60 shadow-[0_0_18px_rgba(250,204,21,0.45)] hover:shadow-[0_0_28px_rgba(250,204,21,0.7)]';
 

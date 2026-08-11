@@ -316,7 +316,7 @@ export const migrateDecisionsToSignatures = async (): Promise<{ scanned: number;
 
 // Raise a concern (a veto that opens reflection, not just a halt). Records the concern and puts
 // the decision into `listening` — a visible, reflective pause ("A concern was raised. This
-// proposal has entered listening.") that stops it passing until the concern is tended.
+// proposal has entered listening.") that stops it passing until the concern is cared for.
 export const raiseConcern = async (decisionId: string, uid: string, note?: string): Promise<'listening' | 'closed'> => {
     const actor = auth.currentUser?.uid || uid;
     const ref = doc(db, 'pulses', decisionId);
@@ -333,7 +333,7 @@ export const raiseConcern = async (decisionId: string, uid: string, note?: strin
     });
 };
 
-// Tend the concern: lift the listening pause so the circle can continue. (Concerns are kept.)
+// Care the concern: lift the listening pause so the circle can continue. (Concerns are kept.)
 export const resumeDecision = (decisionId: string) =>
     updateDoc(doc(db, 'pulses', decisionId), { listening: false });
 

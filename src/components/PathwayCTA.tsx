@@ -36,7 +36,13 @@ const readDismissed = (): PathwayStepKey[] => {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     const parsed: unknown = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? (parsed.filter(k => typeof k === 'string') as PathwayStepKey[]) : [];
+    if (!Array.isArray(parsed)) return [];
+    // MIGRATION (2026-08-11): the step once named 'tend' is 'care' now. Dismissals live in
+    // localStorage per device, so the rename is honored here at the one read seam — a device
+    // that quieted the old name stays quiet under the new one, with no fleet to migrate.
+    return parsed
+      .filter(k => typeof k === 'string')
+      .map(k => (k === 'tend' ? 'care' : k)) as PathwayStepKey[];
   } catch {
     return [];
   }

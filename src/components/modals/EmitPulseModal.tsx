@@ -23,7 +23,7 @@ interface EmitPulseModalProps {
   onClose: () => void;
   onMint: (data: any) => Promise<void>;
   // Grow a vision — seals a CONTRIBUTION onto the VISION'S OWN chain (not the rooted tree).
-  // The tree grows by tending (onMint → the tree's chain); the vision by contributions.
+  // The tree grows by caring (onMint → the tree's chain); the vision by contributions.
   onGrowVision?: (vision: Vision, data: { title?: string; body?: string; imageUrl?: string; growthCategory?: string }) => Promise<void>;
   onProposeAlignment: (data: any) => Promise<void>;
   // Fired after a tree growth mints, so the caller can refresh the tree's latest image.

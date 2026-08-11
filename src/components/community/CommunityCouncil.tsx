@@ -309,7 +309,7 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                         </div>
                         {d.blocked && (
                           <div className="mt-2 rounded-xl border border-rose-100 bg-rose-50 p-2.5 text-[11px] text-rose-800">
-                            <p className="font-semibold">A block stands; the meeting is not in unity. Tend it before adopting.</p>
+                            <p className="font-semibold">A block stands; the meeting is not in unity. Care it before adopting.</p>
                             {d.positions.filter(p => p.stance === 'block' && p.note).slice(-3).map((p, i) => <p key={i} className="mt-1 italic">“{p.note}”</p>)}
                           </div>
                         )}

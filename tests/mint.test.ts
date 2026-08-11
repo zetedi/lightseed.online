@@ -81,7 +81,7 @@ describe('the judgment: every gate of the witnessing law', () => {
     expect(judgeWitness(f).outcome).toBe('kindle');
   });
   it('a vanished tree kindles nothing', () => rejectsWith(f => { f.tree.exists = false; }, 'not-found'));
-  it('a bed is not tended for light', () => rejectsWith(f => { f.tree.treeType = 'BED'; }, 'failed-precondition'));
+  it('a bed is not cared for for light', () => rejectsWith(f => { f.tree.treeType = 'BED'; }, 'failed-precondition'));
   it('a tree that has died kindles memory, not light (the living gate has one home: diedAt)', () =>
     rejectsWith(f => { f.tree.diedAtMs = Date.UTC(2026, 6, 20); }, 'failed-precondition'));
 

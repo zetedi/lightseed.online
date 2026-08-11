@@ -78,7 +78,7 @@ export function isCanonicallySealed(block: Record<string, unknown>): boolean {
 
 // Per-block tamper check: does a sealed block's stored hash still equal the canonical hash of its
 // stored content, previousHash and mintedAt? Independent of its neighbours — so it holds even where
-// off-chain tends leave gaps in the doc-level chain, and it ignores legacy blocks. This is the
+// off-chain cares leave gaps in the doc-level chain, and it ignores legacy blocks. This is the
 // tamper-evidence the seal actually provides today; verifyChain is the contiguous end-to-end walk.
 export async function verifyBlockSeal(block: ChainBlock): Promise<boolean> {
   return (await canonicalRecompute(block, block.previousHash)) === block.hash;

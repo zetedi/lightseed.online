@@ -61,7 +61,7 @@ import { isBedTree } from './domain/bed';
 import { Loading } from './components/ui/Loading';
 import { NetworkStatus } from './components/ui/NetworkStatus';
 import { EventCard } from './components/EventCard';
-import { TendModal } from './components/TendModal';
+import { CareModal } from './components/CareModal';
 import { SectionHeader } from './components/ui/SectionHeader';
 import { FullWidthTabs } from './components/ui/FullWidthTabs';
 import { ScrollChevrons } from './components/ui/ScrollChevrons';
@@ -186,8 +186,11 @@ const AppContent = () => {
     // Custom-landing domains: false = the organisation's own page fills the screen;
     // true = the visitor stepped through the corner seed-logo into the full app.
     const [seedView, setSeedView] = useState(false);
-    // The tend corner's modal (the small tend sheet), open when the droplet is pressed.
-    const [tendModalOpen, setTendModalOpen] = useState(false);
+    // The care corner's modal (the small care sheet), open when the droplet is pressed.
+    const [careModalOpen, setCareModalOpen] = useState(false);
+    // A care ping in the reaches opens the simple care modal FOR THAT TREE — the same modal the
+    // bead opens, aimed by the message instead of the default-tree cascade.
+    const [careOverride, setCareOverride] = useState<Lifetree | null>(null);
     // A Light House opened into its own profile page (from the map marker or the LightHouse tab).
     const [viewingLightHouse, setViewingLightHouse] = useState<LightHouse | null>(null);
     // The Path overview — the Light Path's full ruleset, opened from the card's label.
@@ -690,16 +693,16 @@ const AppContent = () => {
     // (membership, followed visions, my circle, my community) from usePathwayFacts.
     const pathwayFacts = usePathwayFacts(lightseed, myTrees);
     const pathwayInput = useMemo<PathwayInput>(() => {
-        // Most recent EXPLICIT tend (lastTendedAt) across own + guarded trees. Planting alone
-        // is not tending — no fallback to createdAt here (that's validation's window, not ours).
-        const tendedMillis = [...myTrees, ...guardedTrees]
-            .map(t => (t.lastTendedAt && typeof t.lastTendedAt.toMillis === 'function' ? t.lastTendedAt.toMillis() : 0))
+        // Most recent EXPLICIT care (lastCaredAt) across own + guarded trees. Planting alone
+        // is not caring — no fallback to createdAt here (that's validation's window, not ours).
+        const caredMillis = [...myTrees, ...guardedTrees]
+            .map(t => (t.lastCaredAt && typeof t.lastCaredAt.toMillis === 'function' ? t.lastCaredAt.toMillis() : 0))
             .filter(ms => ms > 0);
         return {
             signedIn: !!lightseed,
             myTreesCount: myTrees.length,
             guardedCount: guardedTrees.length,
-            lastTendedAtMs: tendedMillis.length ? Math.max(...tendedMillis) : null,
+            lastCaredAtMs: caredMillis.length ? Math.max(...caredMillis) : null,
             wateringOverdue: wateringNeededCount > 0,
             connectionsCount: stats.alignments + alignments.length,
             isMember: pathwayFacts.isMember,
@@ -720,7 +723,7 @@ const AppContent = () => {
     const pathwayActions: Record<PathwayStepKey, () => void> = {
         signUp: () => setShowAuthModal(true),
         plant: () => openPlant(),
-        tend: () => openTreeSection(myTrees[0] || guardedTrees[0], 'care'),
+        care: () => openTreeSection(myTrees[0] || guardedTrees[0], 'care'),
         connect: () => setTab('forest'),
         join: () => setTab('communities'),
         followVision: () => setTab('visions'),
@@ -855,6 +858,8 @@ const AppContent = () => {
                     onRevokeAdmin={async (uid: string) => { await revokeAdmin(uid); }}
                     onOpenNewsletterAdmin={() => setTab('newsletter')}
                     onReachTree={(tree: Lifetree) => openReach(tree)}
+                    onOpenTreeById={(id: string) => { getLifetreeById(id).then(tr => { if (tr) setSelectedTree(tr); }).catch(() => {}); }}
+                    onOpenCareById={(id: string) => { getLifetreeById(id).then(tr => { if (tr) { setCareOverride(tr); setCareModalOpen(true); } }).catch(() => {}); }}
                     nodeTheme={config.theme}
                 />
             );
@@ -1181,15 +1186,15 @@ const AppContent = () => {
             {/* Page-level scroll affordance — only on the main page (hidden while a detail/modal is open). */}
             {openKeys.length === 0 && <ScrollChevrons axis="y" fixed />}
 
-            {/* THE TEND CORNER (Zoltán, 2026-07-22) — care, one thumb-tap from anywhere.
+            {/* THE CARE CORNER (Zoltán, 2026-07-22) — care, one thumb-tap from anywhere.
                 Bottom LEFT (the community switcher owns bottom right), mirroring its size.
                 Context-sensitive: an open tree is the target; otherwise the default tree.
                 One tap lands on the target's Care section; the drop pulses sky when the
                 target is thirsty. The daily gesture of the whole economy, given one home. */}
             {lightseed && (() => {
-                const tendTarget = selectedTree || activeTree || myTrees[0] || null;
-                if (!tendTarget) return null;
-                const thirsty = isWateringOverdue(tendTarget) || wateringNeededCount > 0;
+                const careTarget = careOverride || selectedTree || activeTree || myTrees[0] || null;
+                if (!careTarget) return null;
+                const thirsty = isWateringOverdue(careTarget) || wateringNeededCount > 0;
                 return (
                     // A full-width strip that MIRRORS the nav's container (same max-w-7xl mx-auto
                     // and px steps), so the bead sits at the same x as the logo on EVERY screen,
@@ -1201,9 +1206,9 @@ const AppContent = () => {
                                 stay aligned even as the bead grows. */}
                             <div className="relative inline-block" style={{ transform: 'translateX(calc(20px - 50%))' }}>
                                 <button
-                                    onClick={() => setTendModalOpen(true)}
-                                    title={`Tend ${tendTarget.name}`}
-                                    aria-label={`Tend ${tendTarget.name}`}
+                                    onClick={() => setCareModalOpen(true)}
+                                    title={t('care_for_tree').replace('{name}', careTarget.name)}
+                                    aria-label={t('care_for_tree').replace('{name}', careTarget.name)}
                                     className={`pointer-events-auto relative block transition-transform hover:scale-110 active:scale-95 ${
                                         thirsty ? 'animate-pulse' : ''
                                     }`}
@@ -1223,32 +1228,32 @@ const AppContent = () => {
                 );
             })()}
 
-            {/* The tend droplet's modal — a small tend sheet for the target tree. */}
-            {tendModalOpen && lightseed && (() => {
-                const tendTarget = selectedTree || activeTree || myTrees[0] || null;
-                if (!tendTarget) return null;
+            {/* The care droplet's modal — a small care sheet for the target tree. */}
+            {careModalOpen && lightseed && (() => {
+                const careTarget = careOverride || selectedTree || activeTree || myTrees[0] || null;
+                if (!careTarget) return null;
                 return (
-                    <TendModal
-                        tree={tendTarget}
+                    <CareModal
+                        tree={careTarget}
                         sender={{ uid: lightseed.uid, displayName: lightseed.displayName, photoURL: lightseed.photoURL }}
                         hasVision={!!defaultVisionId}
                         onOpenCare={() => {
-                            setTendModalOpen(false);
+                            setCareModalOpen(false);
                             setTreeSectionHint('care');
-                            if (!selectedTree || selectedTree.id !== tendTarget.id) setSelectedTree(tendTarget);
+                            if (!selectedTree || selectedTree.id !== careTarget.id) setSelectedTree(careTarget);
                         }}
                         onOpenVision={defaultVisionId ? async () => {
-                            setTendModalOpen(false);
+                            setCareModalOpen(false);
                             const vision = await getVisionById(defaultVisionId).catch(() => null);
                             if (vision) { setSelectedTree(null); setSelectedVision(vision); }
                         } : undefined}
-                        onClose={() => setTendModalOpen(false)}
+                        onClose={() => { setCareModalOpen(false); setCareOverride(null); }}
                     />
                 );
             })()}
 
             {/* The corner switcher back to the organisation's page — on its own domain, and for
-                staff standing in community view on the hub. It MIRRORS the tend bead: the same
+                staff standing in community view on the hub. It MIRRORS the care bead: the same
                 max-w-7xl content container, but right-anchored, its centre 20px from the container's
                 right edge and on the SAME horizontal line as the bead's centre (bead centre = bottom-4
                 + 29px = 45px; this 48px avatar sits at bottom-[21px] so its centre is 45px too). So the
@@ -1582,7 +1587,7 @@ const AppContent = () => {
                         card visibly floats OVER the app; on desktop it centres vertically, so the
                         top and bottom margins are equal. */}
                     <div className="mx-auto w-full max-w-6xl px-2 py-2 sm:flex sm:min-h-full sm:flex-col sm:justify-center sm:px-6 sm:py-6 lg:py-10">
-                        <div className="relative min-h-[calc(100dvh-1rem)] rounded-2xl bg-white p-3 pt-12 shadow-2xl sm:min-h-0 sm:p-6 sm:pt-12">
+                        <div className="relative min-h-[calc(100dvh-1rem)] rounded-2xl bg-white p-3 pt-3 shadow-2xl sm:min-h-0 sm:p-6 sm:pt-4">
                             <button
                                 onClick={() => setShowReachModal(false)}
                                 title="Close"
@@ -1597,6 +1602,16 @@ const AppContent = () => {
                                 reachPartner={reachTree}
                                 reachAudience={reachAudience}
                                 onConsumeReach={() => { setReachTree(null); setReachAudience(undefined); }}
+                                onOpenTreeById={(id: string) => {
+                                    // The modal must step aside, or it covers the tree it opened.
+                                    setShowReachModal(false);
+                                    getLifetreeById(id).then(tr => { if (tr) setSelectedTree(tr); }).catch(() => {});
+                                }}
+                                onOpenCareById={(id: string) => {
+                                    // Care floats OVER the conversation — after the watering, you are
+                                    // still exactly where the tree asked for you.
+                                    getLifetreeById(id).then(tr => { if (tr) { setCareOverride(tr); setCareModalOpen(true); } }).catch(() => {});
+                                }}
                             />
                         </div>
                     </div>

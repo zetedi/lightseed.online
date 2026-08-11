@@ -56,18 +56,18 @@ export interface Lifetree extends Being {
   // the world-readable tree carries the flag and the reach gate needs no cross-user read.
   onlyValidatedCanReach?: boolean;
 
-  // Validation Logic — validation is LIVING: it stays lit only while the tree is tended
-  // (a growth pulse or an explicit confirm) within a year. Untended, it dims; re-tending re-lights it.
+  // Validation Logic — validation is LIVING: it stays lit only while the tree is cared for
+  // (a growth pulse or an explicit confirm) within a year. Left uncared for, it dims; re-caring re-lights it.
   validated: boolean;
   validatorId?: string | null;
-  lastTendedAt?: Timestamp;
+  lastCaredAt?: Timestamp;
 
   // Nature & Guardian Logic — guardianship is a 'guardian' link in the LIN (no array here).
   isNature?: boolean;
   treeType?: LifetreeType;
   status?: 'HEALTHY' | 'DANGER';
 
-  // Watering — scheduled tending of a (usually guarded) tree. Absent = no schedule.
+  // Watering — scheduled caring of a (usually guarded) tree. Absent = no schedule.
   // The daily sweep flags `watering.overdue`; a confirmed watering clears it and re-lights
   // the tree's living validation. See src/domain/watering.ts.
   watering?: WateringSchedule;

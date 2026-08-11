@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  derivePathway, PATHWAY_STAGES, PATHWAY_TEND_WINDOW_MS,
+  derivePathway, PATHWAY_STAGES, PATHWAY_CARE_WINDOW_MS,
   type PathwayInput, type PathwayStage,
 } from '../src/domain/pathway';
 
@@ -13,7 +13,7 @@ const being = (over: Partial<PathwayInput> = {}): PathwayInput => ({
   signedIn: true,
   myTreesCount: 1,
   guardedCount: 0,
-  lastTendedAtMs: NOW - 1000,
+  lastCaredAtMs: NOW - 1000,
   wateringOverdue: false,
   connectionsCount: 1,
   isMember: true,
@@ -51,26 +51,26 @@ describe('derivePathway — the ladder, stage by stage', () => {
     expect(p.stage).not.toBe('invited');
   });
 
-  it('trees but never tended → rooted (planting alone is not tending)', () => {
-    const p = derivePathway(being({ lastTendedAtMs: null }), NOW);
+  it('trees but never cared for → rooted (planting alone is not caring)', () => {
+    const p = derivePathway(being({ lastCaredAtMs: null }), NOW);
     expect(p.stage).toBe('rooted');
-    expect(p.next?.key).toBe('tend');
+    expect(p.next?.key).toBe('care');
   });
 
-  it('tending is a practice: a tree gone quiet past the window pulls the path back', () => {
-    expect(derivePathway(being({ lastTendedAtMs: NOW - PATHWAY_TEND_WINDOW_MS - 1 }), NOW).stage).toBe('rooted');
-    expect(derivePathway(being({ lastTendedAtMs: NOW - PATHWAY_TEND_WINDOW_MS + 1 }), NOW).stage).not.toBe('rooted');
+  it('caring is a practice: a tree gone quiet past the window pulls the path back', () => {
+    expect(derivePathway(being({ lastCaredAtMs: NOW - PATHWAY_CARE_WINDOW_MS - 1 }), NOW).stage).toBe('rooted');
+    expect(derivePathway(being({ lastCaredAtMs: NOW - PATHWAY_CARE_WINDOW_MS + 1 }), NOW).stage).not.toBe('rooted');
   });
 
-  it('an overdue watering pulls the path back to care even when recently tended', () => {
+  it('an overdue watering pulls the path back to care even when recently cared for', () => {
     const p = derivePathway(being({ wateringOverdue: true }), NOW);
     expect(p.stage).toBe('rooted');
-    expect(p.next?.key).toBe('tend');
+    expect(p.next?.key).toBe('care');
   });
 
-  it('tended but unconnected → connect', () => {
+  it('cared for but unconnected → connect', () => {
     const p = derivePathway(being({ guardedCount: 0, connectionsCount: 0, isMember: false }), NOW);
-    expect(p.stage).toBe('tending');
+    expect(p.stage).toBe('caring');
     expect(p.next?.key).toBe('connect');
   });
 
@@ -137,8 +137,8 @@ describe('derivePathway — shape and progression', () => {
     const cases: [PathwayInput, PathwayStage][] = [
       [being({ signedIn: false }), 'visitor'],
       [being({ myTreesCount: 0, guardedCount: 0 }), 'invited'],
-      [being({ lastTendedAtMs: null }), 'rooted'],
-      [being({ guardedCount: 0, connectionsCount: 0 }), 'tending'],
+      [being({ lastCaredAtMs: null }), 'rooted'],
+      [being({ guardedCount: 0, connectionsCount: 0 }), 'caring'],
       [being({ isMember: false, ownsCommunity: false }), 'connected'],
       [being({ followedVisionsCount: 0 }), 'member'],
       [being({ circleSize: 0 }), 'visionary'],
@@ -158,7 +158,7 @@ describe('derivePathway — shape and progression', () => {
     const inputs: PathwayInput[] = [
       being({ signedIn: false }),
       being({ myTreesCount: 0, guardedCount: 0 }),
-      being({ lastTendedAtMs: null }),
+      being({ lastCaredAtMs: null }),
       being({ guardedCount: 0, connectionsCount: 0 }),
       being({ isMember: false, ownsCommunity: false }),
       being({ followedVisionsCount: 0 }),
@@ -180,7 +180,7 @@ describe('derivePathway — shape and progression', () => {
     const walk: PathwayInput[] = [
       being({ signedIn: false }),
       being({ myTreesCount: 0, guardedCount: 0 }),
-      being({ lastTendedAtMs: null, connectionsCount: 0, isMember: false, followedVisionsCount: 0, circleSize: 0, ownsCommunity: false, communityHasCustomDomain: false, communityHasTheme: false }),
+      being({ lastCaredAtMs: null, connectionsCount: 0, isMember: false, followedVisionsCount: 0, circleSize: 0, ownsCommunity: false, communityHasCustomDomain: false, communityHasTheme: false }),
       being({ connectionsCount: 0, isMember: false, followedVisionsCount: 0, circleSize: 0, ownsCommunity: false, communityHasCustomDomain: false, communityHasTheme: false }),
       being({ isMember: false, followedVisionsCount: 0, circleSize: 0, ownsCommunity: false, communityHasCustomDomain: false, communityHasTheme: false }),
       being({ followedVisionsCount: 0, circleSize: 0, ownsCommunity: false, communityHasCustomDomain: false, communityHasTheme: false }),

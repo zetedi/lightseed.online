@@ -1356,7 +1356,7 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
         let communityId: string = tree.communityId;
         // A GUARDIAN is a lightweight, no-privilege FOLLOW (domain/policy, the rules) — accepting a
         // guardian invitation mints only the guardian link, never a circle community or membership.
-        // The tending roles (co_owner/steward) form the circle; guardianship watches over it.
+        // The caring roles (co_owner/steward) form the circle; guardianship watches over it.
         if (invite.role !== "guardian") {
             if (!communityId) {
                 const communityRef = db.collection("communities").doc();
@@ -1644,9 +1644,9 @@ const resolveGuardianUids = async (treeId: string): Promise<string[]> => {
 const waterMeText = (treeName: string, daysOverdue: number, stage?: string): string => {
     const who = treeName || "This tree";
     const self = stage === "potted" ? "I'm a seed in my pot 🌱" : "I'm thirsty 💧";
-    if (daysOverdue <= 0) return `${stage === "potted" ? "I'm a seed in my pot 🌱 and" : "I'm"} ready for watering 💧 — could a guardian tend me today?`;
-    if (daysOverdue === 1) return `${stage === "potted" ? "I'm a seed in my pot 🌱 getting thirsty" : "I'm getting thirsty 💧"} — it's been a day past my watering. Could a guardian tend me?`;
-    return `${self} — it's been ${daysOverdue} days past my watering. Could a guardian tend me? — ${who}`;
+    if (daysOverdue <= 0) return `${stage === "potted" ? "I'm a seed in my pot 🌱 and" : "I'm"} ready for watering 💧 — could a guardian care me today?`;
+    if (daysOverdue === 1) return `${stage === "potted" ? "I'm a seed in my pot 🌱 getting thirsty" : "I'm getting thirsty 💧"} — it's been a day past my watering. Could a guardian care me?`;
+    return `${self} — it's been ${daysOverdue} days past my watering. Could a guardian care me? — ${who}`;
 };
 
 export const checkWateringSchedules = onSchedule({
@@ -1971,7 +1971,7 @@ export const deleteUserAsAdmin = onCall({ cors: true }, async (request) => {
 // RESET LIGHT (ring 2026-07-21) — the testing-phase restart: empties the WHOLE light economy,
 // every ray and every glow, in one stroke. NODE OWNER ONLY (not staff): this erases value, so
 // only the hand that answers for the instance may pull it. Nothing else is touched; the care
-// was real and remains on the chains and tending records — the deleted light leaves the trees
+// was real and remains on the chains and caring records — the deleted light leaves the trees
 // in better shape, so it is not lost. Light re-enters only through witnessed care.
 export const resetLight = onCall({ cors: true }, async (request) => {
     if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");

@@ -9,6 +9,8 @@ interface ProfileReachesProps {
   reachPartner?: Lifetree | null;
   reachAudience?: ReachAudience;
   onConsumeReach?: () => void;
+  onOpenTreeById?: (treeId: string) => void;
+  onOpenCareById?: (treeId: string) => void;
 }
 
 // Direct Messages tab — the ReachInbox fed with all reaches involving me. The inbox renders
@@ -17,6 +19,8 @@ interface ProfileReachesProps {
 export const ProfileReaches: React.FC<ProfileReachesProps> = ({
   lightseed,
   myTrees,
+  onOpenTreeById,
+  onOpenCareById,
   reachPartner,
   reachAudience,
   onConsumeReach,
@@ -36,6 +40,8 @@ export const ProfileReaches: React.FC<ProfileReachesProps> = ({
       pulses={reaches}
       myTrees={myTrees}
       lightseed={lightseed}
+      onOpenTreeById={onOpenTreeById}
+      onOpenCareById={onOpenCareById}
       requestedPartner={reachPartner || null}
       requestedAudience={reachAudience}
       onConsumeRequested={onConsumeReach}

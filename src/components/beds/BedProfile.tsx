@@ -46,7 +46,7 @@ export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree
   const [vis, setVis] = useState<Lifetree['visibility']>(bed.visibility || 'node');
   const [busy, setBusy] = useState(false);
 
-  // The bed's circle (its tenders/guardians) — a prism over its incoming links, re-read when the
+  // The bed's circle (its carers/guardians) — a prism over its incoming links, re-read when the
   // guardian toggle fires. A bed is a Lifetree, so it wears the same Circle view as a tree.
   const [circleNonce, setCircleNonce] = useState(0);
   const [circle, setCircle] = useState<ReturnType<typeof treeCircle>>({ groups: [], size: 0 });
@@ -120,15 +120,15 @@ export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree
           blocks={blocks}
           loading={loadingChain}
           onViewPulse={onViewPulse ?? (() => {})}
-          canTend={false}
-          onTend={() => {}}
+          canCare={false}
+          onCare={() => {}}
           root={chainRoot}
           stats={{ blockHeight: bed.blockHeight, genesisHash: bed.genesisHash, latestHash: bed.latestHash }}
         />
       ),
     },
     {
-      key: 'tenders', label: 'Circle', icon: <Icons.Venn />, render: () => (
+      key: 'carers', label: 'Circle', icon: <Icons.Venn />, render: () => (
         <TreeCircle
           tree={bed}
           currentUserId={uid}

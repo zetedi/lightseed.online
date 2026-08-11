@@ -12,7 +12,7 @@ export interface ForestMarker {
   kind: 'nature' | 'tree';
   imageUrl: string;
   growthUrl: string;
-  guardianCount: number; // an edge-count: how many guardians tend this tree
+  guardianCount: number; // an edge-count: how many guardians care this tree
   validated: boolean;
 }
 

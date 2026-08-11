@@ -21,7 +21,7 @@ const base: Pick<Decision, 'lid' | 'communityId' | 'nature' | 'title' | 'votesRe
   communityId: 'com-grove',
   nature: 'charter',
   title: 'Adopt the grove charter',
-  body: 'We tend the commons together, and mark the truth of every tending.',
+  body: 'We care the commons together, and mark the truth of every caring.',
   votesRequired: 7,
 };
 

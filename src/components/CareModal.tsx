@@ -5,12 +5,12 @@ import { markWateredOffChain } from './../services/firebase';
 import type { Lifetree } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 
-// THE TEND SHEET — the tend droplet opens this small, focused modal instead of steering to a
+// THE CARE SHEET — the care droplet opens this small, focused modal instead of steering to a
 // whole page: the target tree, a single "watered today" breath of care, a door to the full Care
 // section for more (photo proof, schedule, witnessing), and — when one is starred — the vision.
 // An inner BLUE glow (water, not the emerald of the app) sets it apart; full-screen on mobile so
 // the small content uses the space and the thumb has room.
-export const TendModal = ({ tree, sender, hasVision, onOpenCare, onOpenVision, onClose }: {
+export const CareModal = ({ tree, sender, hasVision, onOpenCare, onOpenVision, onClose }: {
     tree: Lifetree;
     sender: { uid: string; displayName?: string | null; photoURL?: string | null };
     hasVision?: boolean;
@@ -33,7 +33,7 @@ export const TendModal = ({ tree, sender, hasVision, onOpenCare, onOpenVision, o
 
     return (
         // A compact CENTRED modal (not full-screen): the small content fills it, no empty space.
-        <Modal title="Tend" onClose={onClose}>
+        <Modal title={t('care')} onClose={onClose}>
             {/* The inner blue glow — a pool of water light around the content. */}
             <div className="-m-4 flex flex-col items-center gap-4 p-6 text-center shadow-[inset_0_0_70px_rgba(59,130,246,0.3)]">
                 <div className="relative">
@@ -45,24 +45,24 @@ export const TendModal = ({ tree, sender, hasVision, onOpenCare, onOpenVision, o
 
                 <div>
                     <p className="text-lg font-light tracking-wide text-slate-800">{tree.name}</p>
-                    <p className="mt-0.5 text-xs text-slate-400">A breath of care keeps it living.</p>
+                    <p className="mt-0.5 text-xs text-slate-400">{t('care_breath')}</p>
                 </div>
 
                 {done ? (
                     <p className="w-full rounded-2xl bg-sky-50 px-4 py-3 text-sm font-medium text-sky-700">{t('watered_today')} 💧</p>
                 ) : (
                     <button onClick={water} disabled={busy} className="w-full rounded-2xl bg-sky-600 py-3.5 text-sm font-bold text-white shadow-lg shadow-sky-600/20 transition-all hover:bg-sky-700 active:scale-95 disabled:opacity-60">
-                        {busy ? 'Watering…' : 'I watered today 💧'}
+                        {busy ? t('watering_busy') : `${t('i_watered_today')} 💧`}
                     </button>
                 )}
 
                 <div className="flex items-center gap-4">
                     <button onClick={onOpenCare} className="inline-flex items-center gap-1 text-xs font-bold text-sky-600 transition-colors hover:text-sky-700">
-                        Open full care <Icons.ArrowRight size={14} />
+                        {t('open_full_care')} <Icons.ArrowRight size={14} />
                     </button>
                     {hasVision && onOpenVision && (
                         <button onClick={onOpenVision} className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 transition-colors hover:text-amber-700">
-                            <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Eye /></span> Tend your vision
+                            <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Eye /></span> {t('care_your_vision')}
                         </button>
                     )}
                 </div>

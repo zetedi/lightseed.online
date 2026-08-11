@@ -109,7 +109,7 @@ export const ObservatoryPage = ({
 
                     {/* The two trees meeting */}
                     <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 pb-2 pt-5">
-                      <TreeColumn tree={a.theirTree} role={t('reaching_out')} who={a.theirTree.ownerName ? `${t('tended_by')} ${a.theirTree.ownerName}` : undefined} tone="sky" />
+                      <TreeColumn tree={a.theirTree} role={t('reaching_out')} who={a.theirTree.ownerName ? `${t('cared_for_by')} ${a.theirTree.ownerName}` : undefined} tone="sky" />
                       {/* A calm connector — the two trees linked, no colour, no label. */}
                       <svg width="44" height="24" viewBox="0 0 44 24" fill="none" stroke="#cbd5e1" strokeWidth="1.6" aria-hidden="true" className="shrink-0">
                         <circle cx="17" cy="12" r="8" />

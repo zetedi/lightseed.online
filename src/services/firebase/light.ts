@@ -13,7 +13,7 @@ export interface HeldRay {
     lid: string;           // the ray's own UUIDv7 true name
     role: 'carer' | 'witness';
     units: number;
-    treeId: string;        // the living being whose tending kindled it
+    treeId: string;        // the living being whose caring kindled it
     dayKey: string;        // the UTC day of the care
     sourceUid: string;     // whose care kindled it (the carer)
     communityId?: string;  // provenance, when the tree belongs to one

@@ -3,7 +3,7 @@ import { showAlert } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { firestoreStore } from '../../adapters/firestore';
-import { canTendTree } from '../../domain/policy';
+import { canCareForTree } from '../../domain/policy';
 import { SectionCard } from '../ui/SectionCard';
 import { fetchAllLifetrees, getPersonName, createTreeInvite, getPulsesByTreeId, witnessWatering } from '../../services/firebase';
 import { treeCircle } from '../../domain/views/circle';
@@ -17,9 +17,9 @@ import type { Lifetree, Pulse } from '../../types';
 // THE CIRCLE — the whole circle of care around a Lifetree, one view (the two old tabs merged). It
 // is a prism over the tree's incoming links (domain/views/circle), which already groups owner +
 // co_owner + guardian + steward + observer. Two layers of belonging live here, kept legible, never
-// collapsed: TENDING (owner / co-guardian / steward — power to shape and schedule) and WITNESSING
+// collapsed: CARING (owner / co-guardian / steward — power to shape and schedule) and WITNESSING
 // (guardian — a no-privilege, self-serve follow; the seat of the collective veto). Guardianship is
-// the open door anyone may enter; tending is the deeper, invited commitment. Each being is shown AS
+// the open door anyone may enter; caring is the deeper, invited commitment. Each being is shown AS
 // their tree (identity is the tree): the freshest of their public trees lends its face.
 type TreeCircleView = ReturnType<typeof treeCircle>;
 
@@ -28,9 +28,9 @@ interface TreeCircleProps {
     currentUserId?: string;
     currentUserName?: string | null;
     circle: TreeCircleView;
-    // Tender (owner / co-owner / steward / staff): may report danger and invite guardians.
+    // Carer (owner / co-owner / steward / staff): may report danger and invite guardians.
     canEdit: boolean;
-    // Owner / staff: may also invite the deeper TENDING roles (co-guardian / steward).
+    // Owner / staff: may also invite the deeper CARING roles (co-guardian / steward).
     canInviteRoles: boolean;
     status: 'HEALTHY' | 'DANGER';
     busy: boolean;
@@ -60,7 +60,7 @@ const Avatar: React.FC<{ imageUrl?: string; seed: string; ring?: string }> = ({ 
           </span>
 );
 
-// Tending roles read warm (emerald), witnessing cool (sky) — power vs witness, at a glance.
+// Caring roles read warm (emerald), witnessing cool (sky) — power vs witness, at a glance.
 const ROLE_RING: Record<TreeRelationRole, string> = {
     owner: 'ring-amber-200', co_owner: 'ring-emerald-100', steward: 'ring-emerald-100',
     guardian: 'ring-sky-100', observer: 'ring-slate-100',
@@ -107,7 +107,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
     const labelFor = (uid: string, face: Face) => uid === currentUserId ? t('you') : (face.name || names[uid] || `${uid.slice(0, 8)}…`);
 
     const handleToggleGuardian = async () => {
-        if (!canTendTree(currentUserId)) return;
+        if (!canCareForTree(currentUserId)) return;
         setToggleBusy(true);
         try {
             await (isGuardian ? firestoreStore.unlink(currentUserId, 'guardian', treeId) : firestoreStore.link(currentUserId, 'guardian', treeId));
@@ -282,7 +282,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
             )}
 
             {/* Invite a tree into the circle, found by name. Anyone with edit rights invites
-                guardians (the open layer); the owner may also invite the deeper tending roles. */}
+                guardians (the open layer); the owner may also invite the deeper caring roles. */}
             {canEdit && currentUserId && (
                 <div className="mt-6 border-t border-slate-100 pt-5">
                     <div className="mb-1.5 flex items-center justify-between gap-2">

@@ -3,7 +3,7 @@
 // The yearly care price is a GLOBAL PARAMETER of the instance, set by the instance
 // covenant / board (the keeper's decision, 2026-07-19); 21 is its value at birth. A
 // membership at that price protects exactly one tree, split along 15/3/3 proportions:
-// the largest share reaches the person who tends it, one small share the community it
+// the largest share reaches the person who cares it, one small share the community it
 // stands in, one the node (which spends it on intelligence — the hosted AI first,
 // node-level models later). Payments flow to people, like a gofundme with trees, not
 // to a platform.
@@ -18,7 +18,7 @@
 
 export const DEFAULT_YEARLY_TREE_SUPPORT_EUR = 21; // the birth value of the global parameter
 export const YEARLY_TREE_SUPPORT_EUR = DEFAULT_YEARLY_TREE_SUPPORT_EUR; // today's live value
-export const CARER_SHARE_EUR = 15;         // to the one who tends (proportion of 21)
+export const CARER_SHARE_EUR = 15;         // to the one who cares (proportion of 21)
 export const COMMUNITY_SHARE_EUR = 3;      // to the community the tree stands in
 export const NODE_SHARE_EUR = 3;           // to the node — spent on intelligence
 
@@ -38,7 +38,7 @@ export const normalizeCareParams = (raw: any): CareParams => {
   return { yearlyTreeSupportEur: Number.isFinite(n) && n > 0 ? n : DEFAULT_YEARLY_TREE_SUPPORT_EUR };
 };
 
-// The carer-wage cap: how many tended trees one carer may draw support from. Held at the
+// The carer-wage cap: how many cared for trees one carer may draw support from. Held at the
 // first form's 144 (the old 12 + 132) when the planting cap grew to the UN roll; whether
 // the wage cap should follow the new cap is its own coming ring.
 export const FULL_GROVE = 144;
@@ -71,8 +71,8 @@ export const splitSupport = (eur: number = YEARLY_TREE_SUPPORT_EUR): { carer: nu
 };
 
 // A carer's yearly income at full care, capped at the grove.
-export const carerYearlyEur = (tendedTrees: number): number =>
-  Math.max(0, Math.min(tendedTrees, FULL_GROVE)) * CARER_SHARE_EUR;
+export const carerYearlyEur = (caredTrees: number): number =>
+  Math.max(0, Math.min(caredTrees, FULL_GROVE)) * CARER_SHARE_EUR;
 
 // Only validated trees can receive support.
 export const canReceiveSupport = (tree: { validated?: boolean }): boolean => tree.validated === true;
@@ -88,7 +88,7 @@ export const distanceM = (a: { lat: number; lng: number }, b: { lat: number; lng
 };
 
 // May this tree join the carer's grove? True when it stands at least a walk away from
-// every tree the carer already tends. (Unplaced trees are the caller's concern.)
+// every tree the carer already cares. (Unplaced trees are the caller's concern.)
 export const spacingOk = (
   candidate: { lat: number; lng: number },
   grove: { lat: number; lng: number }[],

@@ -10,8 +10,8 @@ import { isWateringOverdue } from '../../domain/watering';
 import { sustainingSeven, SUSTAINING_SEVEN, type GuardianEdge } from '../../domain/sustainingSeven';
 import { isExplicitlyValidatedTree, daysUntilLapse } from '../../utils/validation';
 
-// The tending/validation state lives in the shell — the hero badge derives from the same
-// `tendedIds`, so re-tending a tree here must re-light the badge up there immediately.
+// The caring/validation state lives in the shell — the hero badge derives from the same
+// `caredIds`, so re-caring a tree here must re-light the badge up there immediately.
 interface ProfileTreesProps {
   myTrees: Lifetree[];
   guardedOnly: Lifetree[];
@@ -26,8 +26,8 @@ interface ProfileTreesProps {
   treesNeedingCare: Lifetree[];
   lapsedValidated: (tree: Lifetree) => boolean;
   fadingValidated: (tree: Lifetree) => boolean;
-  tendingId: string | null;
-  onTend: (tree: Lifetree) => void;
+  caringId: string | null;
+  onCare: (tree: Lifetree) => void;
 }
 
 // My Trees tab — planted trees (owned/stewarded) and trees guarded for others.
@@ -44,13 +44,13 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
   treesNeedingCare,
   lapsedValidated,
   fadingValidated,
-  tendingId,
-  onTend,
+  caringId,
+  onCare,
 }) => {
   const { t } = useLanguage();
 
   // THE SUSTAINING SEVEN (domain/sustainingSeven) — the floor's face: seven planted trees,
-  // each witnessed by a guardian besides the planter and tended in its own rhythm. The
+  // each witnessed by a guardian besides the planter and cared for in its own rhythm. The
   // guardian edges load like the map's counts do: one links read, keyed on the tree ID SET
   // so unrelated re-renders don't refetch. Invited, never enforced: it measures, gates nothing.
   const { lightseed } = useSession();
@@ -118,8 +118,8 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
             <div className={`${sevenOpen ? '' : 'hidden'} sm:block`}>
             <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
               {seven.complete
-                ? 'Your seven stand: planted, witnessed, and tended. Roughly what a body asks of the living world.'
-                : 'Seven trees, planted and tended, each witnessed by a guardian: roughly what a body asks of the living world. Invited, never enforced.'}
+                ? 'Your seven stand: planted, witnessed, and cared for. Roughly what a body asks of the living world.'
+                : 'Seven trees, planted and caredFor, each witnessed by a guardian: roughly what a body asks of the living world. Invited, never enforced.'}
             </p>
             {!seven.complete && sevenLacks.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1.5">
@@ -134,7 +134,7 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
                     >
                       <span className="max-w-[9rem] truncate font-bold">{s.name}</span>
                       <span className="text-slate-400">
-                        {!s.witnessed && !s.tended ? 'needs a witness and water' : !s.witnessed ? 'needs a witness' : 'needs water'}
+                        {!s.witnessed && !s.caredFor ? 'needs a witness and water' : !s.witnessed ? 'needs a witness' : 'needs water'}
                       </span>
                     </button>
                   );
@@ -178,8 +178,8 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
                         <ValidationBadge compact lapsed={lapsedValidated(tree)} />
                         {isWateringOverdue(tree) && <button type="button" title="Needs water: open tree care" aria-label="Needs water: open tree care" onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
                         {(lapsedValidated(tree) || fadingValidated(tree)) && (
-                          <button onClick={(e) => { e.stopPropagation(); onTend(tree); }} disabled={tendingId === tree.id} className="rounded-full bg-emerald-600 px-3 py-1 text-[10px] font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
-                            {tendingId === tree.id ? '…' : t('tend')}
+                          <button onClick={(e) => { e.stopPropagation(); onCare(tree); }} disabled={caringId === tree.id} className="rounded-full bg-emerald-600 px-3 py-1 text-[10px] font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
+                            {caringId === tree.id ? '…' : t('care')}
                           </button>
                         )}
                         {fadingValidated(tree) && !lapsedValidated(tree) && (

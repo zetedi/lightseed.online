@@ -8,21 +8,24 @@ import { SUSTAINING_SEVEN } from './sustainingSeven';
 //
 //   visitor   → sign up / request an invite
 //   invited   → plant (or adopt) a tree
-//   rooted    → tend / water it
-//   tending   → connect (reach, guard, participate)
+//   rooted    → care / water it
+//   caring   → connect (reach, guard, participate)
 //   connected → become a community member
 //   member    → follow a vision
 //   visionary → invite a circle into shared care of your tree
-//   sevening  → grow the sustaining seven: planted, witnessed, tended
+//   sevening  → grow the sustaining seven: planted, witnessed, cared for
 //   circling  → your circle is already a community — name it (the keystone)
 //   founding  → root it on its own domain, then tailor its appearance
-//   sovereign → the path is walked; keep tending
+//   sovereign → the path is walked; keep caring
 
+// The step key is 'care' like everything else (migrated 2026-08-11): old 'tend' dismissals
+// in localStorage are mapped at the read seam (PathwayCTA.readDismissed), so no device loses
+// its quiet.
 export type PathwayStage =
   | 'visitor'
   | 'invited'
   | 'rooted'
-  | 'tending'
+  | 'caring'
   | 'connected'
   | 'member'
   | 'visionary'
@@ -33,7 +36,7 @@ export type PathwayStage =
 
 // Ordered ladder — index in this array is the progress shown by the UI's dots.
 export const PATHWAY_STAGES: readonly PathwayStage[] = [
-  'visitor', 'invited', 'rooted', 'tending', 'connected',
+  'visitor', 'invited', 'rooted', 'caring', 'connected',
   'member', 'visionary', 'sevening', 'circling', 'founding', 'sovereign',
 ];
 
@@ -43,7 +46,7 @@ export const PATHWAY_STAGES: readonly PathwayStage[] = [
 export type PathwayStepKey =
   | 'signUp'
   | 'plant'
-  | 'tend'
+  | 'care'
   | 'connect'
   | 'join'
   | 'followVision'
@@ -59,23 +62,23 @@ export interface PathwayStep {
   description: string;
 }
 
-// Tending is a practice, not a checkbox: a tree tended longer ago than this window (or with
+// Caring is a practice, not a checkbox: a tree cared for longer ago than this window (or with
 // an overdue watering) pulls the path back to 'rooted' until it's cared for again.
-export const PATHWAY_TEND_WINDOW_MS = 30 * 24 * 3600 * 1000; // a month
+export const PATHWAY_CARE_WINDOW_MS = 30 * 24 * 3600 * 1000; // a month
 
 export interface PathwayInput {
   signedIn: boolean;
   myTreesCount: number;       // trees the being owns
   guardedCount: number;       // trees the being guards (adopting counts as rooting)
-  // Epoch millis of the most recent explicit tend across own/guarded trees.
-  // null = has trees but none ever explicitly tended (planting alone is not tending).
-  lastTendedAtMs: number | null;
+  // Epoch millis of the most recent explicit care across own/guarded trees.
+  // null = has trees but none ever explicitly cared for (planting alone is not caring).
+  lastCaredAtMs: number | null;
   wateringOverdue: boolean;   // any of their trees past its watering due moment
   connectionsCount: number;   // alignments + reaches — threads to other beings
   isMember: boolean;          // holds a 'member' link to any community
   followedVisionsCount: number; // 'joined' links to visions
   circleSize: number;         // co_owner + steward links into their own trees
-  sevenSustaining: number;    // planted trees both witnessed and tended (domain/sustainingSeven)
+  sevenSustaining: number;    // planted trees both witnessed and cared for (domain/sustainingSeven)
   ownsCommunity: boolean;
   communityHasCustomDomain: boolean; // their community's domain is outside the built-in seed shell
   communityHasTheme: boolean;        // their community has a tailored theme
@@ -102,9 +105,9 @@ const STEPS: Record<PathwayStepKey, PathwayStep> = {
     label: 'Plant your lifetree',
     description: 'A living node of your own: plant a tree, or adopt one to guard.',
   },
-  tend: {
-    key: 'tend',
-    label: 'Tend your tree',
+  care: {
+    key: 'care',
+    label: 'Care your tree',
     description: 'Water it, snap its growth; a tree stays alive through care.',
   },
   connect: {
@@ -130,7 +133,7 @@ const STEPS: Record<PathwayStepKey, PathwayStep> = {
   plantSeven: {
     key: 'plantSeven',
     label: 'Plant your seven',
-    description: 'Seven trees, planted and tended, each witnessed by a guardian: roughly what a body asks of the living world. Invited, never enforced.',
+    description: 'Seven trees, planted and caredFor, each witnessed by a guardian: roughly what a body asks of the living world. Invited, never enforced.',
   },
   nameCommunity: {
     key: 'nameCommunity',
@@ -155,8 +158,8 @@ const STEPS: Record<PathwayStepKey, PathwayStep> = {
 export const PATHWAY_RULESET: readonly { stage: PathwayStage; step: PathwayStep }[] = [
   { stage: 'visitor', step: STEPS.signUp },
   { stage: 'invited', step: STEPS.plant },
-  { stage: 'rooted', step: STEPS.tend },
-  { stage: 'tending', step: STEPS.connect },
+  { stage: 'rooted', step: STEPS.care },
+  { stage: 'caring', step: STEPS.connect },
   { stage: 'connected', step: STEPS.join },
   { stage: 'member', step: STEPS.followVision },
   { stage: 'visionary', step: STEPS.formCircle },
@@ -179,11 +182,11 @@ const state = (stage: PathwayStage, next: PathwayStepKey | null): PathwayState =
 export const derivePathway = (input: PathwayInput, now: number = Date.now()): PathwayState => {
   if (!input.signedIn) return state('visitor', 'signUp');
   if (input.myTreesCount + input.guardedCount === 0) return state('invited', 'plant');
-  // Never tended, gone quiet, or watering overdue — the path returns to care.
-  if (input.lastTendedAtMs === null || now - input.lastTendedAtMs > PATHWAY_TEND_WINDOW_MS || input.wateringOverdue) {
-    return state('rooted', 'tend');
+  // Never caredFor, gone quiet, or watering overdue — the path returns to care.
+  if (input.lastCaredAtMs === null || now - input.lastCaredAtMs > PATHWAY_CARE_WINDOW_MS || input.wateringOverdue) {
+    return state('rooted', 'care');
   }
-  if (input.guardedCount === 0 && input.connectionsCount === 0) return state('tending', 'connect');
+  if (input.guardedCount === 0 && input.connectionsCount === 0) return state('caring', 'connect');
   // Keepers stand with their community by definition — owning one IS membership.
   if (!input.isMember && !input.ownsCommunity) return state('connected', 'join');
   if (input.followedVisionsCount === 0) return state('member', 'followVision');

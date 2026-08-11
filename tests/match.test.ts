@@ -26,7 +26,7 @@ describe('matchCommunities', () => {
   ];
 
   it('ranks by resonance and names the shared ground', () => {
-    const m = matchCommunities(['My dream: a garden where souls tend trees with care.'], communities, 3);
+    const m = matchCommunities(['My dream: a garden where souls care trees with care.'], communities, 3);
     expect(m.length).toBeGreaterThanOrEqual(2);
     expect(m[0].community.name).toBe('Per Auset');
     expect(m[0].shared).toContain('garden');

@@ -450,7 +450,7 @@ describe('the door — open lets beings in, closed closes ALL ways, keepers are 
     await assertSucceeds(setDoc(doc(db(BOB), 'links', `${BOB}__join_request__com1`), link(BOB, 'join_request', 'com1')));
   });
 
-  it('a steward accepts a knock and tends the roster; a mere member cannot', async () => {
+  it('a steward accepts a knock and cares the roster; a mere member cannot', async () => {
     await seedDoors();
     await env.withSecurityRulesDisabled(async (ctx) => {
       const d = ctx.firestore();
@@ -564,7 +564,7 @@ describe('link id-binding — authority resolves by path, so the doc id must equ
   it('a self-serve rel cannot masquerade at a privileged path (no steward/keeper by forgery)', async () => {
     // Mallory tries to land a 'joined' link (self-serve) at the steward path for com1.
     await assertFails(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__steward__com1`), link(MALLORY, 'joined', MALLORY)));
-    // And cannot forge tree-tender power by placing a self-serve rel at a co_owner path.
+    // And cannot forge tree-carer power by placing a self-serve rel at a co_owner path.
     await assertFails(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__co_owner__treeB`), link(MALLORY, 'joined', MALLORY)));
     // The honest self-serve write (id matches data) still succeeds.
     await assertSucceeds(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__joined__vX`), link(MALLORY, 'joined', 'vX')));
@@ -921,7 +921,7 @@ describe('covenants — the two-sided mint: proposer names parties, each signs o
     const d = ctx.firestore();
     await setDoc(doc(d, 'covenants', 'cov1'), {
       lid: 'cov1-lid', genesisHash: 'g0', latestHash: 'g0', blockHeight: 0,
-      kind: 'covenant', title: 'We tend together', body: 'Each waters when able.',
+      kind: 'covenant', title: 'We care together', body: 'Each waters when able.',
       quorum: 2, proposedBy: ALICE, status: 'proposed',
     });
     await setDoc(doc(d, 'links', `${ALICE}__party__cov1`), { lid: 'pa', type: 'link', rel: 'party', from: ALICE, to: 'cov1', role: 'initiator', createdAt: 1 });
@@ -1034,7 +1034,7 @@ describe('decision signatures — a decision the community SIGNS: member-gated, 
     const d = ctx.firestore();
     await setDoc(doc(d, 'pulses', 'dec1'), {
       type: 'decision', lid: 'dec1-lid', communityId: 'com1',
-      nature: 'charter', title: 'Adopt the charter', body: 'We tend together.',
+      nature: 'charter', title: 'Adopt the charter', body: 'We care together.',
       proposedBy: ALICE, mode: 'threshold', votes: [ALICE], votesRequired: 7,
       status: 'open', previousHash: 'DECISION', hash: 'h0', createdAt: 1,
     });
@@ -1571,15 +1571,15 @@ describe('offerings: only the author flips the lifecycle switch, and only the sw
 });
 
 describe('watering pulses — the light-mint trust root (server-mediated; Lumo review 2026-07-20)', () => {
-  // treeB is owned by BOB (a tender). ALICE/MALLORY are not tenders of it.
+  // treeB is owned by BOB (a carer). ALICE/MALLORY are not carers of it.
   const water = (over: Record<string, any> = {}) => ({
     type: 'tree_growth', care: 'watering', lifetreeId: 'treeB', authorId: BOB,
     title: 'W', body: 'w', wateringConfirmedBy: 'pending', createdAt: 1, ...over,
   });
 
-  it('a TENDER authors their OWN watering; a non-tender cannot, and authorId is bound to the author', async () => {
-    await assertSucceeds(setDoc(doc(db(BOB), 'pulses', 'w1'), water()));                       // owner = tender, own author
-    await assertFails(setDoc(doc(db(MALLORY), 'pulses', 'w2'), water({ authorId: MALLORY })));  // not a tender of treeB
+  it('a CARER authors their OWN watering; a non-carer cannot, and authorId is bound to the author', async () => {
+    await assertSucceeds(setDoc(doc(db(BOB), 'pulses', 'w1'), water()));                       // owner = carer, own author
+    await assertFails(setDoc(doc(db(MALLORY), 'pulses', 'w2'), water({ authorId: MALLORY })));  // not a carer of treeB
     await assertFails(setDoc(doc(db(BOB), 'pulses', 'w3'), water({ authorId: ALICE })));        // author must be the writer
   });
 
@@ -1588,7 +1588,7 @@ describe('watering pulses — the light-mint trust root (server-mediated; Lumo r
     await assertSucceeds(setDoc(doc(db(BOB), 'pulses', 'w5'), water({ wateringConfirmedBy: 'ai' }))); // AI hint is validation-only
   });
 
-  it('confirmation is SERVER-ONLY: no client — not even a tender — may write wateringConfirmedBy / wateringConfirmation', async () => {
+  it('confirmation is SERVER-ONLY: no client — not even a carer — may write wateringConfirmedBy / wateringConfirmation', async () => {
     await env.withSecurityRulesDisabled(async (ctx) => setDoc(doc(ctx.firestore(), 'pulses', 'w6'), water()));
     await assertFails(updateDoc(doc(db(BOB), 'pulses', 'w6'), { wateringConfirmedBy: 'guardian', wateringConfirmation: { confirmedByUid: BOB }, updatedAt: 2 }));
     await assertFails(updateDoc(doc(db(MALLORY), 'pulses', 'w6'), { wateringConfirmedBy: 'guardian', updatedAt: 2 }));

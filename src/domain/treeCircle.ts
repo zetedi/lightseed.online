@@ -31,7 +31,7 @@ export interface TreeOwnershipInvite {
 // role→array map has been removed.
 
 // The circle's WORDS live in one home — src/utils/translations.ts (`role_*` keys, every
-// language; the descriptions state exactly what the rules grant: tenders tend, the guardian
+// language; the descriptions state exactly what the rules grant: carers care, the guardian
 // witnesses and vetoes, the observer sees quietly). The domain holds only the REFERENCES:
 // typed key builders, so a role added here without words there fails COMPILATION — the type
 // system is the mirror test, and there is no copy anywhere to drift.

@@ -123,7 +123,7 @@ describe('the ledger: every unit stands in exactly one place', () => {
   });
 
   it('THE WALKED STORY: one ray kindled, given, claimed and given again, balancing at every step', () => {
-    // Alice tends her tree; Bob witnesses. The mint kindles one whole ray for the carer.
+    // Alice cares her tree; Bob witnesses. The mint kindles one whole ray for the carer.
     // (The witness's seventh rides alongside; this story follows the carer's ray alone.)
     let ledger: LightLedger = { kindled: RAY_UNITS, held: RAY_UNITS, suspended: 0, glow: 0 };
     expect(conserves(ledger)).toBe(true);

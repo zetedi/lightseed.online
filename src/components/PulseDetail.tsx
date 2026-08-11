@@ -175,9 +175,9 @@ export const PulseDetail = ({ pulse, onClose, backLabel = "Back", canEdit, onEdi
                                     {pulse.wateringConfirmation?.note && <span className="italic">: “{pulse.wateringConfirmation.note}”</span>}
                                 </div>
                             )}
-                            {/* The human reading — who says "yes, this was tended". */}
+                            {/* The human reading — who says "yes, this was cared for". */}
                             <div className="text-xs text-sky-800/90">
-                                <span className="font-semibold">Tended:</span>{' '}
+                                <span className="font-semibold">Cared for:</span>{' '}
                                 {pulse.wateringConfirmedBy === 'guardian'
                                     ? 'confirmed by a guardian'
                                     : pulse.wateringConfirmedBy === 'ai'

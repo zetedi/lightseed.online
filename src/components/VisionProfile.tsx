@@ -78,7 +78,7 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
 
     // Growing a vision seals a CONTRIBUTION onto the vision's OWN chain — no rooted tree required
     // now (the idea-twin grows independently). The vision belongs to its author, exactly as the
-    // tree belongs to its owner (the twins each tend their own chain); the Firestore rules gate
+    // tree belongs to its owner (the twins each care their own chain); the Firestore rules gate
     // the chain advance to the author (or staff), so the button matches that gate.
     const canGrow = !!currentUserId && isAuthor;
 
@@ -182,7 +182,7 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                                 className="flex items-center gap-1.5 rounded-full bg-emerald-500 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-emerald-600 active:scale-95"
                             >
                                 <Icons.Drop />
-                                <span>{t('tend')}</span>
+                                <span>{t('care')}</span>
                             </button>
                         )}
                         {currentUserId && !isAuthor && (
@@ -317,8 +317,8 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                             blocks={contribBlocks}
                             loading={loadingContrib}
                             onViewPulse={onViewPulse ?? (() => {})}
-                            canTend={!!canGrow && !!onGrow}
-                            onTend={() => onGrow?.(vision)}
+                            canCare={!!canGrow && !!onGrow}
+                            onCare={() => onGrow?.(vision)}
                             root={visionChainRoot}
                             stats={visionChainStats}
                             emptyText={t('no_contributions')}
@@ -331,7 +331,7 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                         <SectionTitle title={t('shadow')} sub={t('shadow_sub')} />
                         {/* One birth, two chains: a labelled toggle lays the twins side by side so the
                             viewer can compare how the idea grew (contributions) against how the tree
-                            grew (tending). */}
+                            grew (caring). */}
                         <div className="flex items-center justify-center gap-2">
                             <button
                                 onClick={() => setShadowSide('vision')}
@@ -352,8 +352,8 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                                 blocks={contribBlocks}
                                 loading={loadingContrib}
                                 onViewPulse={onViewPulse ?? (() => {})}
-                                canTend={false}
-                                onTend={() => {}}
+                                canCare={false}
+                                onCare={() => {}}
                                 root={visionChainRoot}
                                 stats={visionChainStats}
                                 emptyText={t('no_contributions')}
@@ -364,8 +364,8 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                                 blocks={shadowBlocks}
                                 loading={loadingShadow}
                                 onViewPulse={onViewPulse ?? (() => {})}
-                                canTend={false}
-                                onTend={() => {}}
+                                canCare={false}
+                                onCare={() => {}}
                                 root={rootTree ? {
                                     imageUrl: rootTree.latestGrowthUrl || rootTree.imageUrl,
                                     name: rootTree.name,

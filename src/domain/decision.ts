@@ -7,7 +7,7 @@ import { signatureBindsToIdentityOrLineage, type SignatureVerifier, type Lineage
 // sacred geometry — a charter change asks the full circle of seven (odd, so it can decide).
 //
 // These are contracts of USE and CARE, not ownership: ownership stays fluid; what a decision
-// settles is how a thing is used and tended — newer, freer agreements, from the heart.
+// settles is how a thing is used and cared for — newer, freer agreements, from the heart.
 export type DecisionNature = 'intention' | 'purchase' | 'use_grant' | 'admission' | 'stewardship' | 'charter';
 
 export const DECISION_NATURES: { id: DecisionNature; votes: number }[] = [
@@ -74,7 +74,7 @@ export interface Decision extends Being {
   positions?: Position[]; // consensus mode: each voice's unite / stand-aside / block
   status: DecisionStatus;
   // Reflection: a veto doesn't just stop the count — it opens listening. While `listening`,
-  // the proposal pauses (it can't pass) and the raised concerns are shown, until they're tended.
+  // the proposal pauses (it can't pass) and the raised concerns are shown, until they're cared for.
   listening?: boolean;
   concerns?: Concern[];
   // Immutable chain — a decision is an event on the ledger.

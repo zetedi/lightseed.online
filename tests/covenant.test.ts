@@ -16,7 +16,7 @@ import { keypairFromSeed, signPayload, verifyPayload, subtleEd25519Available } f
 const base: Pick<Covenant, 'lid' | 'kind' | 'title' | 'body' | 'quorum' | 'genesisHash'> = {
   lid: '018f-cov-lid',
   kind: 'covenant',
-  title: 'We tend the grove together',
+  title: 'We care the grove together',
   body: 'Each of us waters when we can, and marks the truth of it.',
   quorum: 3,
   genesisHash: 'g0-abc',

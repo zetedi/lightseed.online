@@ -38,9 +38,9 @@ interface ChainTreeProps {
     // When a block lives elsewhere (e.g. a commit on GitHub), its leaf renders as a real link
     // (new tab) instead of an onViewPulse card. Return undefined to keep the in-app behaviour.
     hrefForBlock?: (pulse: Pulse) => string | undefined;
-    // The Tend CTA at the crown — shown only when the viewer may tend this being.
-    canTend?: boolean;
-    onTend?: () => void;
+    // The Care CTA at the crown — shown only when the viewer may care this being.
+    canCare?: boolean;
+    onCare?: () => void;
     emptyText?: string;
     root?: ChainRoot | null;
     stats?: ChainStats | null;
@@ -55,8 +55,8 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
     loading,
     onViewPulse,
     hrefForBlock,
-    canTend,
-    onTend,
+    canCare,
+    onCare,
     emptyText,
     root,
     stats,
@@ -101,15 +101,15 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                 </div>
 
                 <div className="w-full space-y-12 md:space-y-24 pb-24 relative z-10">
-                    {/* Tend CTA — the crown at the top of the trunk, smaller now, with the
-                        expand/collapse control sitting just beneath it. Tending is the care that
+                    {/* Care CTA — the crown at the top of the trunk, smaller now, with the
+                        expand/collapse control sitting just beneath it. Caring is the care that
                         lets it grow. */}
-                    {(canTend && onTend) || chainCollapsible ? (
+                    {(canCare && onCare) || chainCollapsible ? (
                         <div className="flex w-full flex-col items-start gap-2 pl-12 md:items-center md:pl-0">
-                            {canTend && onTend && (
-                                <button onClick={onTend} title="Tend this tree: a pulse of care (we both grow)"
+                            {canCare && onCare && (
+                                <button onClick={onCare} title={t('care_this_tree_title')}
                                     className="relative z-10 inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-white ring-2 ring-yellow-300/60 shadow-[0_0_16px_rgba(250,204,21,0.5)] transition-all hover:bg-emerald-700 hover:shadow-[0_0_24px_rgba(250,204,21,0.8)] active:scale-95">
-                                    <span className="[&>svg]:h-4 [&>svg]:w-4"><Icons.Drop /></span> <span>Tend</span>
+                                    <span className="[&>svg]:h-4 [&>svg]:w-4"><Icons.Drop /></span> <span>{t('care')}</span>
                                 </button>
                             )}
                             {chainCollapsible && (

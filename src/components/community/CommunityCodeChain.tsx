@@ -95,9 +95,9 @@ export const CommunityCodeChain: React.FC = () => {
                     root={root}
                     stats={stats}
                     emptyText="No commits mirrored yet."
-                    // Tending the node's body = contributing code — the crown CTA opens the repo.
-                    canTend
-                    onTend={() => window.open(REPO_URL, '_blank', 'noopener')}
+                    // Caring the node's body = contributing code — the crown CTA opens the repo.
+                    canCare
+                    onCare={() => window.open(REPO_URL, '_blank', 'noopener')}
                 />
             )}
         </div>

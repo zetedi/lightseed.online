@@ -54,7 +54,7 @@ export const CommunityTreesTab: React.FC<CommunityTreesTabProps> = ({
   return (
     <TreesSection
       title="Community Trees"
-      sub="Lifetrees rooted here or standing with this community. Join a guardianship to help tend one."
+      sub="Lifetrees rooted here or standing with this community. Join a guardianship to help care one."
       currentUserId={currentUserId}
       trees={communityTrees}
       onViewTree={onViewTree}

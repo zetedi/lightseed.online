@@ -1,8 +1,8 @@
 import type { Timestamp } from 'firebase/firestore';
 import type { Lifetree } from './lifetree';
 
-// --- Watering: scheduled tending of a (usually guarded) tree ---------------------------
-// Watering is the most literal form of tending. A *confirmed* watering is a growth pulse
+// --- Watering: scheduled caring of a (usually guarded) tree ---------------------------
+// Watering is the most literal form of caring. A *confirmed* watering is a growth pulse
 // (a real block on the tree's chain) that re-lights the tree's living validation; the
 // *need* for watering is a flag on the tree + a reach to its guardians — a message, not a
 // block, so the chain stays meaningful. This module is the pure law shared by the client
@@ -11,12 +11,12 @@ import type { Lifetree } from './lifetree';
 export type WateringMode = 'scheduled' | 'self_sustaining';
 
 // The tree's growth stage — the human story behind the watering mode:
-//   'potted'          — a seed growing in a pot; the most fragile, tended on a schedule.
-//   'planted'         — in the ground but still needs care; tended on a schedule.
+//   'potted'          — a seed growing in a pot; the most fragile, cared for on a schedule.
+//   'planted'         — in the ground but still needs care; cared for on a schedule.
 //   'self_sustaining' — established; no scheduled watering.
 // The stage refines the mode (potted/planted ⇒ 'scheduled', self_sustaining ⇒ 'self_sustaining').
 // MODE stays canonical — the daily sweep queries on it and treeStage() defers to it — so an
-// inconsistent pair can never hide a tended-looking tree from the sweep.
+// inconsistent pair can never hide a cared for-looking tree from the sweep.
 export type TreeStage = 'potted' | 'planted' | 'self_sustaining';
 
 export interface WateringSchedule {
@@ -57,7 +57,7 @@ export const wateringOf = (tree: TreeLike): WateringSchedule | undefined =>
 // The tree's growth stage. Mode is canonical (the sweep queries it), so a self-sustaining
 // mode always reads as self-sustaining regardless of a stray stage; within scheduled care,
 // stage distinguishes the pot from the ground. Legacy docs with only a mode — and trees with
-// no watering record at all — read as 'planted': cared for, just not staged yet.
+// no watering record at all — read as 'planted': caredFor, just not staged yet.
 export const treeStage = (tree: TreeLike): TreeStage => {
   const w = wateringOf(tree);
   if (w?.mode === 'self_sustaining') return 'self_sustaining';

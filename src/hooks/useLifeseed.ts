@@ -42,7 +42,7 @@ export const useLifeseed = () => {
     // The user's chosen "closest" tree (users/{uid}.defaultTreeId). Drives `activeTree`.
     const [defaultTreeId, setDefaultTreeId] = useState<string | undefined>(undefined);
     // The user's chosen default VISION (users/{uid}.defaultVisionId) — the star among visions,
-    // mirroring the default tree; the tend corner offers it beside the tree when set.
+    // mirroring the default tree; the care corner offers it beside the tree when set.
     const [defaultVisionId, setDefaultVisionId] = useState<string | undefined>(undefined);
 
     useEffect(() => {

@@ -27,14 +27,14 @@ describe('the roles say what they are', () => {
     expect(new Set(texts).size).toBe(texts.length);
   });
 
-  it('the descriptions state the real split: tenders tend, the guardian witnesses, the observer holds no power', () => {
-    // Mirrors firestore.rules isTreeTender (owner/co_owner/steward) and functions/witnessWatering
+  it('the descriptions state the real split: carers care, the guardian witnesses, the observer holds no power', () => {
+    // Mirrors firestore.rules isTreeCarer (owner/co_owner/steward) and functions/witnessWatering
     // (guardian-only). If the rules change, these words must change WITH them — that is the point.
-    expect(desc('co_owner')).toMatch(/tends/i);
-    expect(desc('steward')).toMatch(/tends/i);
+    expect(desc('co_owner')).toMatch(/cares/i);
+    expect(desc('steward')).toMatch(/cares/i);
     expect(desc('guardian')).toMatch(/witness/i);
     expect(desc('guardian')).toMatch(/veto/i);
-    expect(desc('guardian')).toMatch(/no tending power/i);
+    expect(desc('guardian')).toMatch(/no caring power/i);
     expect(desc('observer')).toMatch(/no power/i);
   });
 });

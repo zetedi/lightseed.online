@@ -9,7 +9,7 @@ const NOW = 1783382400000; // 2026-07-07
 const ts = (ms: number) => ({ toMillis: () => ms });
 const tree = (over: Record<string, unknown> = {}): Lifetree => ({
   id: 't1', validated: true, validatorId: 'someone', isNature: false,
-  lastTendedAt: ts(NOW - 1000), ...over,
+  lastCaredAt: ts(NOW - 1000), ...over,
 } as any);
 
 describe('validation as living care', () => {
@@ -19,15 +19,15 @@ describe('validation as living care', () => {
     expect(isExplicitlyValidatedTree(tree())).toBe(true);
   });
 
-  it('a tended validated tree is live; an untended one lapses after the window', () => {
+  it('a cared for validated tree is live; an uncared-for one lapses after the window', () => {
     expect(isValidationLive(tree(), NOW)).toBe(true);
-    const quiet = tree({ lastTendedAt: ts(NOW - VALIDATION_WINDOW_MS - 1) });
+    const quiet = tree({ lastCaredAt: ts(NOW - VALIDATION_WINDOW_MS - 1) });
     expect(isValidationLive(quiet, NOW)).toBe(false);
     expect(isValidationLapsed(quiet, NOW)).toBe(true);
   });
 
   it('fading kicks in during the last month only', () => {
-    const fading = tree({ lastTendedAt: ts(NOW - VALIDATION_WINDOW_MS + VALIDATION_FADING_MS / 2) });
+    const fading = tree({ lastCaredAt: ts(NOW - VALIDATION_WINDOW_MS + VALIDATION_FADING_MS / 2) });
     expect(isValidationFading(fading, NOW)).toBe(true);
     expect(isValidationFading(tree(), NOW)).toBe(false);
   });
@@ -42,8 +42,8 @@ describe('who may validate', () => {
     expect(canValidateTree({ tree: target, myActiveTree: tree({ id: 'target' }) })).toBe(false); // self
   });
 
-  it('a lapsed validator must tend before validating', () => {
-    const lapsed = tree({ lastTendedAt: { toMillis: () => Date.now() - VALIDATION_WINDOW_MS - 1 } });
+  it('a lapsed validator must care before validating', () => {
+    const lapsed = tree({ lastCaredAt: { toMillis: () => Date.now() - VALIDATION_WINDOW_MS - 1 } });
     expect(canValidateTree({ tree: target, myActiveTree: lapsed })).toBe(false);
   });
 

@@ -132,19 +132,19 @@ service cloud.firestore {
     }
     // Tree roles split by privilege. A `guardian` link is a LIGHTWEIGHT, self-serve public follow
     // (any signed-in user may add one) and grants NO privileges — it is deliberately excluded from
-    // every check below. Tending and circle access vest only in the invited roles (co_owner /
+    // every check below. Caring and circle access vest only in the invited roles (co_owner /
     // steward / observer), whose links are minted server-side by acceptTreeInvite (never self-serve).
     function isTreeOwner(treeId) {
       return treeId is string && treeId != '' &&
         exists(/databases/$(database)/documents/lifetrees/$(treeId)) &&
         get(/databases/$(database)/documents/lifetrees/$(treeId)).data.ownerId == request.auth.uid;
     }
-    // TENDERS may edit a tree and confirm its watering: owner, co_owner, or steward.
-    function isTreeTender(treeId) {
+    // CARERS may edit a tree and confirm its watering: owner, co_owner, or steward.
+    function isTreeCarer(treeId) {
       return treeId is string && treeId != '' && (
         hasLink('co_owner', treeId) || hasLink('steward', treeId) || isTreeOwner(treeId));
     }
-    // The CIRCLE may read a tree's private (circle-visibility) pulses: tenders plus observers.
+    // The CIRCLE may read a tree's private (circle-visibility) pulses: carers plus observers.
     function isTreeCircle(treeId) {
       return treeId is string && treeId != '' && (
         hasLink('co_owner', treeId) || hasLink('steward', treeId)
@@ -345,7 +345,7 @@ service cloud.firestore {
     // Organisation collabs — the node's collaborators (founder-agreed or by contract).
     // World-readable. Any signed-in member may add an org, naming themselves as creator
     // (the app additionally gates the UI to validated/initiated members). The creator may
-    // tend their own entry's communityId/logoUrl/blurb (field-level diff, like alignments)
+    // care their own entry's communityId/logoUrl/blurb (field-level diff, like alignments)
     // and remove it; everything else stays staff.
     match /collabs/{id} {
       allow read: if true;
@@ -487,7 +487,7 @@ service cloud.firestore {
           )
         )
       );
-      // Tenders (owner/co_owner/steward) or staff may edit a tree — but `validated`/`validatorId`
+      // Carers (owner/co_owner/steward) or staff may edit a tree — but `validated`/`validatorId`
       // and `ownerId` are FROZEN on the edit path, so a tree can neither self-validate (the flag
       // that bypasses onlyValidatedCanReach) nor transfer its own ownership from the client.
       // `lightHouseId` is SOFT, not frozen (a loose bed may one day graduate or join a house) —
@@ -777,12 +777,12 @@ service cloud.firestore {
       allow read: if canReadPulse();
       allow create: if isSignedIn() && (
         // A WATERING pulse is the light mint's trust root (functions/witnessWatering): you author
-        // your OWN, only on a tree you TEND (owner/co_owner/steward/staff), and may never
+        // your OWN, only on a tree you CARE (owner/co_owner/steward/staff), and may never
         // self-declare a guardian witness at creation — the confirmation is server-only. authorId
         // is bound here so the carer the mint pays is real (Lumo's review, 2026-07-20).
         request.resource.data.get('care', '') == 'watering'
           ? (request.resource.data.get('authorId', '') == request.auth.uid
-             && (isStaff() || isTreeTender(request.resource.data.get('lifetreeId', '')))
+             && (isStaff() || isTreeCarer(request.resource.data.get('lifetreeId', '')))
              && request.resource.data.get('wateringConfirmedBy', 'pending') != 'guardian')
           : (request.resource.data.type != 'event'
              || !('communityId' in request.resource.data)   // standalone event — anyone may plant one
@@ -1306,7 +1306,7 @@ service cloud.firestore {
     match /links/{linkId} {
       allow read: if true;
       // The doc id MUST equal `from__rel__to` (domain/link.ts linkId). Authority is resolved
-      // by PATH elsewhere (hasLink/isCommunityKeeper/isTreeTender do exists() on a computed
+      // by PATH elsewhere (hasLink/isCommunityKeeper/isTreeCarer do exists() on a computed
       // path), and exists() is blind to a doc's data — so without this binding a self-serve
       // link (rel 'joined') placed at a privileged path (…__steward__…, …__co_owner__…) would
       // be read as that role. Binding id to data closes the whole forgery class; every real

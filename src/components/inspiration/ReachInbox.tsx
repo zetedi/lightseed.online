@@ -34,6 +34,8 @@ export const ReachInbox = ({
     requestedPartner,
     requestedAudience,
     onConsumeRequested,
+    onOpenTreeById,
+    onOpenCareById,
 }: {
     pulses: Pulse[];
     myTrees: Lifetree[];
@@ -41,6 +43,8 @@ export const ReachInbox = ({
     requestedPartner: Lifetree | null;
     requestedAudience?: ReachAudience;
     onConsumeRequested?: () => void;
+    onOpenTreeById?: (treeId: string) => void;
+    onOpenCareById?: (treeId: string) => void;
 }) => {
     const { t } = useLanguage();
     const [selection, setSelection] = useState<Selection>({ kind: 'none' });
@@ -131,7 +135,6 @@ export const ReachInbox = ({
             { title: 'delete_conversation', confirmText: 'delete', danger: true },
         );
         if (!ok) return;
-        // eslint-disable-next-line react-hooks/purity -- Date.now runs inside a click handler (after an async confirm), not during render
         const next = { ...hiddenThreads, [thread.key]: Date.now() };
         setHiddenThreads(next);
         if (lightseed?.uid) {
@@ -167,7 +170,7 @@ export const ReachInbox = ({
             {/* The four kinds of reach, high above everything (ring 2026-08-10): the Oracle is a
                 door, the other three are lenses. Hidden on a phone while a thread is open — there,
                 every vertical pixel belongs to the conversation. */}
-            <div className={`${hasSelection ? 'hidden md:flex' : 'flex'} flex-wrap items-center justify-center gap-2 pb-3`}>
+            <div className={`${hasSelection ? 'hidden md:flex' : 'flex'} flex-wrap items-center justify-center gap-2 px-12 pb-3 pt-1`}>
                 <button type="button" onClick={() => setSelection({ kind: 'oracle' })} title={t('ask_wisdom')} className={pill(isOracle)}>
                     <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Sun /></span>{aiName}
                 </button>
@@ -201,9 +204,16 @@ export const ReachInbox = ({
                                     : setSelection({ kind: 'tree', tree: { id: thread.partnerId, name: thread.partnerName, imageUrl: thread.partnerPhoto } as Lifetree })}
                                 className={`${rowBase} group cursor-pointer border-b border-slate-50 ${thread.careAlert === 'watering' ? 'border-l-4 border-l-sky-500 bg-sky-50/40' : ''} ${selectedKey === thread.key ? 'bg-emerald-50' : 'hover:bg-slate-50'}`}
                             >
-                                {thread.isGroup
-                                    ? <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-emerald-100 bg-emerald-50 text-emerald-600"><Icons.Users /></div>
-                                    : <TreeAvatar name={thread.partnerName} photo={thread.partnerPhoto} size="sm" />}
+                                <button
+                                    type="button"
+                                    onClick={(e) => { if (onOpenTreeById && thread.partnerId) { e.stopPropagation(); onOpenTreeById(thread.partnerId); } }}
+                                    title={thread.partnerName}
+                                    className="shrink-0 rounded-full transition-transform hover:scale-105"
+                                >
+                                    {thread.isGroup
+                                        ? <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-emerald-100 bg-emerald-50 text-emerald-600"><Icons.Users /></div>
+                                        : <TreeAvatar name={thread.partnerName} photo={thread.partnerPhoto} size="sm" />}
+                                </button>
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-center justify-between gap-2">
                                         <span className="truncate font-semibold text-slate-800">
@@ -222,6 +232,18 @@ export const ReachInbox = ({
                                         {thread.lastMessage || t('reached_mycelial')}
                                     </span>
                                 </div>
+                                {/* A care request answers right here: the drop opens the care
+                                    modal for the thirsty tree — no hunting inside the thread. */}
+                                {thread.careAlert === 'watering' && onOpenCareById && (
+                                    <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); onOpenCareById(thread.partnerId); }}
+                                        title={t('care_now')}
+                                        className="shrink-0 rounded-full bg-sky-600 p-2 text-white shadow-md transition-all hover:bg-sky-700 active:scale-95"
+                                    >
+                                        <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Droplet /></span>
+                                    </button>
+                                )}
                                 {/* Delete (hide) — always visible on mobile, on hover on desktop. */}
                                 <button
                                     type="button"
@@ -246,6 +268,8 @@ export const ReachInbox = ({
                             groupThread={selection.kind === 'group' ? selection.thread : null}
                             initialAudience={selection.kind === 'tree' ? selection.audience : undefined}
                             onBack={() => setSelection({ kind: 'none' })}
+                            onOpenTreeById={onOpenTreeById}
+                            onOpenCareById={onOpenCareById}
                         />
                     </div>
                 ) : (

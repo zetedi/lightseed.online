@@ -35,7 +35,7 @@ import { NodeGrowthTree } from './about/NodeGrowthTree';
 import { queryableLevels } from '../domain/pulseVisibility';
 import { firestoreStore } from '../adapters/firestore';
 import { isParticipant } from '../domain/views/participation';
-import { canTendTree } from '../domain/policy';
+import { canCareForTree } from '../domain/policy';
 import { speak } from '../utils/translations';
 
 interface CommunityProfileProps {
@@ -310,7 +310,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   }, [domainTrees, participatingTrees]);
 
   const handleToggleGuardian = async (tree: Lifetree) => {
-    if (!canTendTree(currentUserId)) { showAlert('err_signin_guard'); return; }
+    if (!canCareForTree(currentUserId)) { showAlert('err_signin_guard'); return; }
     const join = !guardedTreeIds.has(tree.id);
     setTogglingId(tree.id);
     try {

@@ -18,7 +18,7 @@ export const LIGHTSEED_QUOTES: string[] = [
   "Where are your roots? What principles do you stand on? What memories nourish you? What community invited you? What living place reminds you of reality?",
   "Every intelligence shall know a living place, and every living place shall have a voice.",
   "We imagine a day when an intelligence isn’t judged by benchmark scores, token speed, or parameter count, but by whether it helps us listen, helps us understand one another, helps us care for the place we’re rooted in, and leaves the world healthier than it found it.",
-  "Who tends your tree?",
+  "Who cares your tree?",
 ];
 
 // The reflections are the first thing a visitor reads, so they are the first thing to translate.

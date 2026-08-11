@@ -10,7 +10,7 @@
 // Three truths stay separate on purpose: the invitation records HOW YOU ARRIVED (provenance,
 // grants nothing), guardianship is WHO CHOSE TO WATCH OVER YOU (chosen after arrival, never
 // auto-granted through the door — guardians hold veto standing), and validation is ARE YOU
-// ALIVE (earned only by a real tend). The door never substitutes for any of them.
+// ALIVE (earned only by a real care). The door never substitutes for any of them.
 
 export type CommunityDoor = 'open' | 'invite' | 'closed';
 

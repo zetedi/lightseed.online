@@ -94,7 +94,7 @@ const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, message: string
             });
     });
 
-export const ReachThread = ({ targetTree = null, groupThread = null, initialAudience, onBack }: { targetTree?: Lifetree | null, groupThread?: GroupThreadDescriptor | null, initialAudience?: ReachAudience, onBack?: () => void }) => {
+export const ReachThread = ({ targetTree = null, groupThread = null, initialAudience, onBack, onOpenTreeById, onOpenCareById }: { targetTree?: Lifetree | null, groupThread?: GroupThreadDescriptor | null, initialAudience?: ReachAudience, onBack?: () => void, onOpenTreeById?: (treeId: string) => void, onOpenCareById?: (treeId: string) => void }) => {
     const { t } = useLanguage();
     const { lightseed, activeTree, myTrees, isAdmin, isSuperAdmin } = useLifeseed();
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -343,6 +343,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
         return <SunAvatar />;
     };
 
+    const partnerTreeId = selectedTree?.id || groupThread?.partnerId || null;
     const headerName = groupThread ? groupThread.partnerName
         : (mode === 'tree' && selectedTree
             ? (audience ? `${selectedTree.name} · ${reachAudienceLabels[audience]}` : selectedTree.name)
@@ -546,7 +547,14 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                         </button>
                     )}
                     {mode === 'tree' ? (
-                        isGroup ? <GroupAvatar /> : <InitialAvatar name={selectedTree?.name} photo={selectedTree?.latestGrowthUrl || selectedTree?.imageUrl} />
+                        <button
+                            type="button"
+                            onClick={() => { if (onOpenTreeById && partnerTreeId) onOpenTreeById(partnerTreeId); }}
+                            title={headerName}
+                            className="shrink-0 rounded-full transition-transform hover:scale-105"
+                        >
+                            {isGroup ? <GroupAvatar /> : <InitialAvatar name={selectedTree?.name} photo={selectedTree?.latestGrowthUrl || selectedTree?.imageUrl} />}
+                        </button>
                     ) : (
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-amber-200 bg-amber-50 text-amber-500">
                             <Icons.Sun />
@@ -567,7 +575,19 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
 
                     {/* Mint — seal the messages so far onto the immutable chain (a contract). Upper-right,
                         in line with the avatar + name; the tooltip explains what it does. */}
-                    {messages.filter(m => !m.system).length > 1 && lightseed && (mode === 'oracle' || selectedTree || groupThread) && (
+                    {/* THE ONE HEADER ACTION: while the tree is thirsty, CARE stands where MINT
+                        stands — the seal can wait until the water is given. When no care is due,
+                        the mint returns. One slot, one priority: life before record. */}
+                    {mode === 'tree' && onOpenCareById && partnerTreeId && messages.some(m => m.careAlert === 'watering') ? (
+                        <button
+                            type="button"
+                            onClick={() => onOpenCareById(partnerTreeId)}
+                            className={`ml-auto flex shrink-0 items-center gap-1.5 rounded-full bg-sky-600 px-3 py-1.5 text-[10px] font-bold text-white shadow-md transition-all hover:bg-sky-700 active:scale-95 ${CTA_GLOW}`}
+                        >
+                            <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Droplet /></span>
+                            <span className="hidden sm:inline">{t('care_now')}</span>
+                        </button>
+                    ) : messages.filter(m => !m.system).length > 1 && lightseed && (mode === 'oracle' || selectedTree || groupThread) && (
                         <button
                             onClick={handleMint}
                             disabled={isMinting}
@@ -650,6 +670,18 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                                     </span>
                                 ))}
                             </div>
+
+                            {/* A care ping opens the simple care modal for THIS tree — the same
+                                modal the bead opens, aimed by the message. */}
+                            {m.careAlert === 'watering' && onOpenCareById && partnerTreeId && (
+                                <button
+                                    type="button"
+                                    onClick={() => onOpenCareById(partnerTreeId)}
+                                    className="inline-flex items-center gap-1.5 self-start rounded-full bg-sky-600 px-3 py-1.5 text-xs font-bold text-white shadow-md transition-all hover:bg-sky-700 active:scale-95"
+                                >
+                                    <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Droplet /></span>{t('care_now')}
+                                </button>
+                            )}
 
                             {/* Like a reach message — and, for my own, the quiet retraction. */}
                             <div className="flex items-center gap-1">

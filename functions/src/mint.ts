@@ -85,7 +85,7 @@ export interface WitnessFacts {
     guardianSinceMs: number | null;  // witness's guardian-link birth; null = not a guardian
     tree: {
         exists: boolean;
-        treeType?: unknown;          // "BED" is not tended for light
+        treeType?: unknown;          // "BED" is not cared for for light
         // The ONE living-state gate. Death is not yet in the data model (no tree has died on
         // record since Mahameru, who predates it); when it arrives it is a `diedAt` timestamp
         // on the lifetree, and THIS predicate is the single place the mint honors it.
@@ -127,7 +127,7 @@ export function judgeWitness(f: WitnessFacts): WitnessJudgment {
     if (f.guardianSinceMs === null) return reject("permission-denied", "Only a guardian of this tree may witness it.");
     if (f.guardianSinceMs > f.pulse.createdAtMs) return reject("failed-precondition", "Your guardianship began after this watering.");
     if (!f.tree.exists) return reject("not-found", "That tree no longer exists.");
-    if (f.tree.treeType === "BED") return reject("failed-precondition", "A bed is not tended for light.");
+    if (f.tree.treeType === "BED") return reject("failed-precondition", "A bed is not cared for for light.");
     if (f.tree.diedAtMs !== null) return reject("failed-precondition", "A tree that has died kindles memory, not light.");
 
     const dayKey = kindleDayKeyFromMs(f.pulse.createdAtMs);

@@ -4,7 +4,7 @@ import { DAY_MS } from '../src/domain/watering';
 import type { Lifetree } from '../src/domain/lifetree';
 
 // The sustaining seven — the pure floor-reading: which of my planted trees stand
-// witnessed and tended, and what each still lacks. Invited, never enforced.
+// witnessed and caredFor, and what each still lacks. Invited, never enforced.
 
 const NOW = 1_800_000_000_000;
 const ts = (ms: number) => ({ toMillis: () => ms }) as any;
@@ -28,7 +28,7 @@ const freshWatering = {
 const witnessedBy = (uid: string, ...treeIds: string[]): GuardianEdge[] =>
   treeIds.map(to => ({ from: uid, to }));
 
-describe('sustainingSeven — the floor of seven planted, witnessed, tended trees', () => {
+describe('sustainingSeven — the floor of seven planted, witnessed, cared for trees', () => {
   it('counts only trees the being PLANTED: guarded, beds, and others\' trees stay out', () => {
     const trees = [
       tree('mine'),
@@ -55,7 +55,7 @@ describe('sustainingSeven — the floor of seven planted, witnessed, tended tree
     expect(byId['c'].witnessed).toBe(false);
   });
 
-  it('tended follows the tree\'s own rhythm: overdue fails, fresh and unscheduled stand', () => {
+  it('cared for follows the tree\'s own rhythm: overdue fails, fresh and unscheduled stand', () => {
     const trees = [
       tree('thirsty', { watering: overdueWatering } as any),
       tree('fresh', { watering: freshWatering } as any),
@@ -63,13 +63,13 @@ describe('sustainingSeven — the floor of seven planted, witnessed, tended tree
     ];
     const p = sustainingSeven(trees, witnessedBy('bob', 'thirsty', 'fresh', 'unscheduled'), 'alice', NOW);
     const byId = Object.fromEntries(p.standings.map(s => [s.treeId, s]));
-    expect(byId['thirsty'].tended).toBe(false);
+    expect(byId['thirsty'].caredFor).toBe(false);
     expect(byId['thirsty'].sustaining).toBe(false);
     expect(byId['fresh'].sustaining).toBe(true);
     expect(byId['unscheduled'].sustaining).toBe(true);
   });
 
-  it('completes at seven sustaining trees — witnessed AND tended together', () => {
+  it('completes at seven sustaining trees — witnessed AND cared for together', () => {
     const ids = ['t1', 't2', 't3', 't4', 't5', 't6', 't7'];
     const trees = ids.map(id => tree(id));
     const six = sustainingSeven(trees, witnessedBy('bob', ...ids.slice(0, 6)), 'alice', NOW);

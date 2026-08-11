@@ -511,10 +511,10 @@ export const mintPulse = async (pulseData: Partial<Pulse> & { lifetreeId: string
 
         const updateData: any = { latestHash: newHash, blockHeight: (tree.blockHeight || 0) + 1 };
         // A tree growth pulse with an image updates the tree's latest growth view, and counts
-        // as a tend that keeps the tree's living validation alive.
+        // as a care that keeps the tree's living validation alive.
         if (isTreeGrowth(canonicalType)) {
             if (pulseData.imageUrl) updateData.latestGrowthUrl = pulseData.imageUrl;
-            updateData.lastTendedAt = serverTimestamp();
+            updateData.lastCaredAt = serverTimestamp();
         }
         // Caller-supplied tree fields (e.g. a watering's schedule reset) — committed atomically.
         if (extraTreeUpdate) Object.assign(updateData, extraTreeUpdate);
@@ -524,7 +524,7 @@ export const mintPulse = async (pulseData: Partial<Pulse> & { lifetreeId: string
 }
 
 // Grow a VISION — mint a CONTRIBUTION pulse onto the VISION'S OWN chain (not the rooted tree's).
-// The twin of mintPulse, targeting visions/{id}: the tree grows by tending, the vision by
+// The twin of mintPulse, targeting visions/{id}: the tree grows by caring, the vision by
 // contributions, and each keeps its own append-only ledger. Mirrors mintPulse's block shape and
 // hashing (legacy hash for unsealed chains, canonical when the node's stamp is flipped) so a
 // vision's chain is verifiable exactly like a tree's. Does NOT touch mintPulse or any tree doc.
@@ -580,13 +580,15 @@ export const growVision = async (
     });
 };
 
-// An explicit tend — the lightweight "it still lives" confirmation. Writes a small TEND
+// An explicit care — the lightweight "it still lives" confirmation. Writes a small CARE
 // block onto the tree's own chain and refreshes its validation liveness.
-export const tendTree = async (tree: Pick<Lifetree, 'id' | 'latestHash' | 'genesisHash' | 'blockHeight'>): Promise<void> => {
+export const careForTree = async (tree: Pick<Lifetree, 'id' | 'latestHash' | 'genesisHash' | 'blockHeight'>): Promise<void> => {
     const prev = tree.latestHash || tree.genesisHash || '0';
-    const newHash = await createBlock(prev, { tend: true }, Date.now());
+    // New care blocks carry { care: true }; blocks sealed before 2026-08-11 keep their
+        // original { tend: true } content — the chain is append-only and re-hashes what is stored.
+        const newHash = await createBlock(prev, { care: true }, Date.now());
     await updateDoc(doc(db, 'lifetrees', tree.id), {
-        lastTendedAt: serverTimestamp(),
+        lastCaredAt: serverTimestamp(),
         latestHash: newHash,
         blockHeight: (tree.blockHeight || 0) + 1,
         updatedAt: serverTimestamp(),

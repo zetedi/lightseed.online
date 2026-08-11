@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { showAlert } from "./ui/Dialog";
 import { type Lifetree, type Alignment, type Vision, type Pulse, type ReachAudience } from '../types';
-import { getLifetreeById, listenToUserProfile, updateUserProfile, tendTree, auth } from '../services/firebase';
+import { getLifetreeById, listenToUserProfile, updateUserProfile, careForTree, auth } from '../services/firebase';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
@@ -47,6 +47,8 @@ interface LightseedProfileProps {
     reachOpenSignal?: number;
     onConsumeReach?: () => void;
     onReachTree?: (tree: Lifetree) => void;
+    onOpenTreeById?: (treeId: string) => void;
+    onOpenCareById?: (treeId: string) => void;
     nodeTheme?: Partial<CommunityThemePreset>;
 }
 
@@ -54,7 +56,7 @@ interface LightseedProfileProps {
 // being). Session state (the lightseed), the active tab and the live-profile-listener state live
 // here; each tab's own data and handlers live in its component under ./profile (mirroring the
 // CommunityProfile split).
-export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSetDefaultTree, onViewVision, onViewPulse, onViewAlignment, onPlant, onCreateVision, onEmitPulse, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachAudience, reachOpenSignal, onConsumeReach, onReachTree, nodeTheme }: LightseedProfileProps) => {
+export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSetDefaultTree, onViewVision, onViewPulse, onViewAlignment, onPlant, onCreateVision, onEmitPulse, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachAudience, reachOpenSignal, onConsumeReach, onReachTree, onOpenTreeById, onOpenCareById, nodeTheme }: LightseedProfileProps) => {
     const { t } = useLanguage();
     // Session state comes from context now (was prop-drilled from App).
     const { lightseed, myTrees, guardedTrees, isAdmin, isSuperAdmin, superAdminExists } = useSession();
@@ -101,19 +103,19 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
         if (reachPartner) setActiveTab('reaches');
     }, [reachPartner]);
 
-    // Validation is living care: a tree counts only while it's tended (live). `tendedIds`
-    // holds trees just re-tended this session so they re-light immediately. This stays in
+    // Validation is living care: a tree counts only while it's cared for (live). `caredIds`
+    // holds trees just re-cared for this session so they re-light immediately. This stays in
     // the shell because the hero badge derives from the same state as the trees tab.
-    const [tendedIds, setTendedIds] = useState<Set<string>>(new Set());
-    const [tendingId, setTendingId] = useState<string | null>(null);
-    const liveValidated = (tree: Lifetree) => tendedIds.has(tree.id) || isValidationLive(tree);
+    const [caredIds, setCaredIds] = useState<Set<string>>(new Set());
+    const [caringId, setCaringId] = useState<string | null>(null);
+    const liveValidated = (tree: Lifetree) => caredIds.has(tree.id) || isValidationLive(tree);
     const lapsedValidated = (tree: Lifetree) => isExplicitlyValidatedTree(tree) && !liveValidated(tree);
-    const fadingValidated = (tree: Lifetree) => !tendedIds.has(tree.id) && isValidationFading(tree);
-    const handleTend = async (tree: Lifetree) => {
-        setTendingId(tree.id);
-        try { await tendTree(tree); setTendedIds(prev => new Set(prev).add(tree.id)); }
-        catch (e: any) { showAlert(e?.message || 'Could not tend the tree.'); }
-        setTendingId(null);
+    const fadingValidated = (tree: Lifetree) => !caredIds.has(tree.id) && isValidationFading(tree);
+    const handleCare = async (tree: Lifetree) => {
+        setCaringId(tree.id);
+        try { await careForTree(tree); setCaredIds(prev => new Set(prev).add(tree.id)); }
+        catch (e: any) { showAlert(e?.message || 'Could not care the tree.'); }
+        setCaringId(null);
     };
     const treesNeedingCare = myTrees.filter((t: Lifetree) => lapsedValidated(t) || fadingValidated(t));
 
@@ -171,8 +173,8 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                     treesNeedingCare={treesNeedingCare}
                     lapsedValidated={lapsedValidated}
                     fadingValidated={fadingValidated}
-                    tendingId={tendingId}
-                    onTend={handleTend}
+                    caringId={caringId}
+                    onCare={handleCare}
                 />
             ),
         },
@@ -188,6 +190,8 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                 <ProfileReaches
                     lightseed={lightseed}
                     myTrees={myTrees}
+                    onOpenTreeById={onOpenTreeById}
+                    onOpenCareById={onOpenCareById}
                     reachPartner={reachPartner}
                     reachAudience={reachAudience}
                     onConsumeReach={onConsumeReach}

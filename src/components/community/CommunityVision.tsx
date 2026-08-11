@@ -150,7 +150,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
   };
 
   // Verify the node's sealed blocks: recompute each canonically-sealed block's hash and confirm it
-  // still matches. Per-block (tamper-evident) rather than chain-walking, so off-chain tends don't
+  // still matches. Per-block (tamper-evident) rather than chain-walking, so off-chain cares don't
   // cause false failures; legacy blocks predate the scheme and are counted separately, not failed.
   const handleVerify = async () => {
     setIsVerifying(true);

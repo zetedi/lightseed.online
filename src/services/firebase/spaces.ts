@@ -81,7 +81,7 @@ export const createVision = async (data: Partial<Vision> & { authorId: string; t
         try { communityId = (await getCommunityByDomain(domain))?.id; } catch { /* offline / no match */ }
     }
     // The vision is a Being with its OWN chain — born the same moment as any rooted tree, then
-    // diverging: the tree grows by tending, the vision by contributions. Seal its genesis here
+    // diverging: the tree grows by caring, the vision by contributions. Seal its genesis here
     // (mirrors plantBed / plantLifetree) so the twin starts life chain-verifiable, not mute.
     const genesisHash = await createBlock('0', { msg: 'Birth' }, Date.now());
     // Default to public so legacy/unspecified visions stay visible (mirrors tree visibility).
@@ -399,7 +399,7 @@ export const migrateBackfillLids = async (): Promise<Record<string, number>> => 
 // The Collabs page lists this node's collaborators: the AI intelligences (live from the
 // intelligences config) AND organisations whose founder(s) agreed to stand here — or who hold a
 // place by contract (as Claude/Anthropic does). World-readable; added by validated/initiated
-// members (their being stands behind the entry), tended by their creator or staff.
+// members (their being stands behind the entry), cared for by their creator or staff.
 // An org entry is the bridge to another regen org's world: once it grows a community here
 // (`communityId`), information flows through that link and the org's members find the forest.
 export interface OrgCollab extends Being {
@@ -410,7 +410,7 @@ export interface OrgCollab extends Being {
     agreement: 'founder' | 'contract';
     logoUrl?: string;      // square brand mark shown on the org card
     communityId?: string;  // the community this org grew here, once it exists
-    createdBy?: string;    // uid of the member who added the org — may tend/delete it
+    createdBy?: string;    // uid of the member who added the org — may care/delete it
 }
 
 const collabsCollection = collection(db, 'collabs');
@@ -435,7 +435,7 @@ export const addOrgCollab = async (data: { name: string; url?: string; blurb?: s
     return ref.id;
 };
 
-// Tend an org entry. Rules allow staff any change; the org's creator only the
+// Care an org entry. Rules allow staff any change; the org's creator only the
 // communityId/logoUrl/blurb fields (field-level diff, like alignments).
 export const updateOrgCollab = (id: string, data: Partial<Pick<OrgCollab, 'communityId' | 'logoUrl' | 'blurb'>>) =>
     updateDoc(doc(db, 'collabs', id), data);

@@ -3,7 +3,7 @@ import { isWateringOverdue } from './watering';
 import type { Lifetree } from './lifetree';
 
 // THE SUSTAINING SEVEN (the ring of 2026-07-19) — every being's floor within the
-// Earth-horizon: seven trees planted and tended, by their planter or through guardians,
+// Earth-horizon: seven trees planted and caredFor, by their planter or through guardians,
 // roughly what a body asks of the living world. Each of the seven needs a WITNESS: a
 // guardian besides the planter, because unwitnessed care cannot kindle (the sun ring's
 // law), and inviting witnesses is how tree circles begin to weave communities.
@@ -29,15 +29,15 @@ export interface SevenStanding {
   // on nature trees, possible anywhere) is a vow, not a witness: witness means another.
   witnessed: boolean;
   // Watering not overdue. A self-sustaining tree, and one not yet on a schedule, count
-  // as tended — the rhythm belongs to the tree, not to a timer (isWateringOverdue).
-  tended: boolean;
-  sustaining: boolean; // witnessed && tended
+  // as cared for — the rhythm belongs to the tree, not to a timer (isWateringOverdue).
+  caredFor: boolean;
+  sustaining: boolean; // witnessed && caredFor
 }
 
 export interface SustainingSevenProgress {
   target: number;             // SUSTAINING_SEVEN
   planted: number;            // personal lifetrees considered (not guarded, not beds)
-  sustaining: number;         // trees both witnessed and tended
+  sustaining: number;         // trees both witnessed and cared for
   complete: boolean;          // sustaining >= target
   standings: SevenStanding[]; // every planted tree in planting order, with its lacks
 }
@@ -69,8 +69,8 @@ export const sustainingSeven = (
     .sort((a, b) => toMs(a.createdAt) - toMs(b.createdAt))
     .map<SevenStanding>(t => {
       const hasWitness = witnessed.has(t.id);
-      const tended = !isWateringOverdue(t, now);
-      return { treeId: t.id, name: t.name, witnessed: hasWitness, tended, sustaining: hasWitness && tended };
+      const caredFor = !isWateringOverdue(t, now);
+      return { treeId: t.id, name: t.name, witnessed: hasWitness, caredFor, sustaining: hasWitness && caredFor };
     });
 
   const sustaining = standings.filter(s => s.sustaining).length;

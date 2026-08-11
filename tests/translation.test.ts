@@ -7,7 +7,7 @@ import {
 const req = (over: Partial<Parameters<typeof buildTranslationPrompt>[0]> = {}) => ({
   senderTreeName: 'The Aspen',
   receiverTreeName: 'The Willow',
-  message: 'You promised the grove would be tended. It was not.',
+  message: 'You promised the grove would be cared for. It was not.',
   depth: 3,
   ...over,
 });

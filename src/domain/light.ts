@@ -51,7 +51,7 @@ export const KINDLE_UNITS_PER_WITNESSED_CARE = RAY_UNITS;
 // warms the world but mints nothing; that is the forgery-resistance of the whole economy.
 export interface CareAct {
   witnessed: boolean; // a human guardian's authenticated hand (the witnessWatering callable)
-  treeAlive: boolean; // the tended being still lives (a dead tree kindles memory, not light)
+  treeAlive: boolean; // the cared for being still lives (a dead tree kindles memory, not light)
 }
 
 export const kindles = (act: CareAct): boolean => act.witnessed && act.treeAlive;
@@ -105,7 +105,7 @@ export const kindleRays = (input: KindleInput): KindledRay[] => {
 export interface Ray extends Being {
   lid: string;
   sourceUid: string;      // whose witnessed care kindled it
-  treeId: string;         // the living being whose tending brought it into the world
+  treeId: string;         // the living being whose caring brought it into the world
   communityId?: string;   // provenance: the community it was kindled in, if any (a solo carer has none)
   units: number;          // directed light still on this branch
   kindledAtMs: number;

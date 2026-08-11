@@ -5,7 +5,7 @@ import type { Community, Pulse } from '../../types';
 
 // A COMMUNITY IS A BEING, so it has a digital tree too: its own chain of pulses (events,
 // decisions, offerings) drawn by the being-generic ChainTree, with the community itself as the
-// root. No tend crown (a community is not watered); it grows as its members act within it.
+// root. No care crown (a community is not watered); it grows as its members act within it.
 
 // The vision may be stored as rich text (<p>, &nbsp;); the root card speaks it as plain words.
 const plainWords = (html?: string | null): string | null => {

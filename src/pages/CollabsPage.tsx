@@ -294,7 +294,7 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
               ) : orgs.length === 0 ? (
                 <p className="col-span-full py-10 text-center text-slate-500">{t('orgs_none')}</p>
               ) : orgs.map(org => {
-                const isTender = isStaff || (!!lightseed && org.createdBy === lightseed.uid);
+                const isCarer = isStaff || (!!lightseed && org.createdBy === lightseed.uid);
                 return (
                 <div key={org.id} className={`rounded-lg border border-slate-100 bg-white ${pad} ${POP}`}>
                   <div className="flex items-center justify-between gap-2">
@@ -307,7 +307,7 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
                         : <span className="truncate">{org.name}</span>}
                       <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${org.agreement === 'contract' ? 'bg-violet-100 text-violet-700' : 'bg-emerald-100 text-emerald-700'}`}>{AGREEMENT_LABEL[org.agreement]}</span>
                     </h4>
-                    {isTender && (
+                    {isCarer && (
                       <button onClick={() => handleRemove(org)} title={t('remove')} className="relative shrink-0 rounded-full p-1.5 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"><Icons.Trash />{isStaff && org.createdBy !== lightseed?.uid && <SuperDot />}</button>
                     )}
                   </div>
@@ -318,7 +318,7 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
                         Visit community
                       </button>
                     )
-                  ) : isTender && growingId !== org.id ? (
+                  ) : isCarer && growingId !== org.id ? (
                     <button onClick={() => openGrow(org)} className="mt-2.5 rounded-full px-3.5 py-1.5 text-xs font-bold text-white shadow transition-all active:scale-95" style={{ backgroundColor: tone }}>
                       Grow a community
                     </button>

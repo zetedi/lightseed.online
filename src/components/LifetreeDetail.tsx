@@ -77,18 +77,18 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    }, [tree.id]);
    const isMotherTree = holdingLightHouses.length > 0;
    const isNature = tree.isNature;
-   // Guardianship is a lightweight public follow with no powers — tending vests in the invited
-   // roles (co_owner/steward), tracked as `isTender` (see the circle effect below). The guardian
+   // Guardianship is a lightweight public follow with no powers — caring vests in the invited
+   // roles (co_owner/steward), tracked as `isCarer` (see the circle effect below). The guardian
    // list itself lives in the Circle view; the nonce re-reads the circle when it changes there.
    const [guardianNonce, setGuardianNonce] = useState(0);
-   const [isTender, setIsTender] = useState(false);
+   const [isCarer, setIsCarer] = useState(false);
    const [isGuardian, setIsGuardian] = useState(false);
    const canDelete = isOwner || isAdmin || isSuperAdmin;
    // The amber dot: this viewer may delete ONLY through staff privilege, not ownership.
    const deleteIsStaffOnly = !isOwner && (isAdmin || isSuperAdmin);
-   // Tending powers vest in the owner, invited co_owners/stewards, or staff — not lightweight
-   // guardians (mirrors isTreeTender in firestore.rules).
-   const canEdit = isOwner || isTender || isAdmin || isSuperAdmin;
+   // Caring powers vest in the owner, invited co_owners/stewards, or staff — not lightweight
+   // guardians (mirrors isTreeCarer in firestore.rules).
+   const canEdit = isOwner || isCarer || isAdmin || isSuperAdmin;
    const hasValidationBadge = isExplicitlyValidatedTree(tree);
    const showValidateAction = canToggleValidation({ tree, myActiveTree, isAdmin, isSuperAdmin, isInitiate });
    // Owner privacy flag is mirrored onto the (world-readable) tree, so we read it here.
@@ -157,7 +157,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    };
 
    const handleToggleDanger = async () => {
-       if (!canEdit) return; // reporting danger writes the tree's status — a tender power, not a follow
+       if (!canEdit) return; // reporting danger writes the tree's status — a carer power, not a follow
        const newStatus = localStatus === 'DANGER' ? 'HEALTHY' : 'DANGER';
        if (newStatus === "DANGER" && !(await showConfirm('danger_confirm', { title: 'danger_report', confirmText: 'report', danger: true }))) return;
 
@@ -183,8 +183,8 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
            .then(links => {
                if (!alive) return;
                setCircle(treeCircle(tree.ownerId, links));
-               // A tender holds an invited co_owner/steward role link (guardian/observer don't tend).
-               setIsTender(!!currentUserId && links.some(l => l.from === currentUserId && (l.rel === 'co_owner' || l.rel === 'steward')));
+               // A carer holds an invited co_owner/steward role link (guardian/observer don't care).
+               setIsCarer(!!currentUserId && links.some(l => l.from === currentUserId && (l.rel === 'co_owner' || l.rel === 'steward')));
                // A guardian follows the tree's care without powers — Care shows them the
                // schedule read-only, with a door to ask for stewardship.
                setIsGuardian(!!currentUserId && links.some(l => l.from === currentUserId && l.rel === 'guardian'));
@@ -195,7 +195,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
 
    // Watering powers vest in the circle (owner / co-owner / steward / staff — rules allow
    // the same set); the schedule editor is gated exactly like editing.
-   const canWater = !!currentUserId && (isTender || isOwner || isAdmin || isSuperAdmin);
+   const canWater = !!currentUserId && (isCarer || isOwner || isAdmin || isSuperAdmin);
    const canManageSchedule = canEdit;
 
    // The root card of the chain — drawn from the tree itself (normal trees have no genesis
@@ -220,12 +220,12 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                         {canReach
                             ? <ActionBtn onClick={() => onReachTree?.(tree)} title="Reach" color={ACTION_GREEN} icon={<Icons.Reach />} label="Reach" />
                             : <ActionBtn disabled title={t('only_if_validated')} color="bg-white/20 text-white/70" icon={<Icons.Eye />} label={t('only_if_validated')} />}
-                        {isOwner && !isEditing && <ActionBtn onClick={onCreatePulse} title="Tend this tree: a pulse of care (we both grow)" color={ACTION_GREEN} icon={<Icons.Drop />} label="Tend" />}
-                        {/* Carry this being's voice — superadmin voice-bridge, on trees they tend
+                        {isOwner && !isEditing && <ActionBtn onClick={onCreatePulse} title={t('care_this_tree_title')} color={ACTION_GREEN} icon={<Icons.Drop />} label={t('care')} />}
+                        {/* Carry this being's voice — superadmin voice-bridge, on trees they care
                             (owner/co_owner/steward). Impersonation hides the bridge; carrying
                             reveals it: the display author becomes the being, the carrier is named,
                             and the block stays signed by the real uid until beings sign themselves. */}
-                        {isSuperAdmin && (isOwner || isTender) && onCarry && !isEditing && (
+                        {isSuperAdmin && (isOwner || isCarer) && onCarry && !isEditing && (
                             <ActionBtn
                                 onClick={() => onCarry(carrying ? null : tree)}
                                 title={carrying ? 'Stop carrying this being\'s voice' : "Carry this being's voice; pulses name you as the carrier"}
@@ -256,8 +256,8 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                    blocks={growthBlocks}
                    loading={loadingChain}
                    onViewPulse={onViewPulse}
-                   canTend={isOwner}
-                   onTend={onCreatePulse}
+                   canCare={isOwner}
+                   onCare={onCreatePulse}
                    root={chainRoot}
                    stats={{ blockHeight: tree.blockHeight, genesisHash: tree.genesisHash, latestHash: tree.latestHash }}
                />
@@ -310,9 +310,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
        },
        {
            key: 'care', label: 'Care', icon: <Icons.Droplet />, render: () => (
-               // Tenders tend; GUARDIANS see the same card read-only (the schedule, the rhythm,
+               // Carers care; GUARDIANS see the same card read-only (the schedule, the rhythm,
                // the pending witnesses) with a door to ask for stewardship. Outsiders see neither.
-               (isOwner || isTender || isAdmin || isSuperAdmin || isGuardian)
+               (isOwner || isCarer || isAdmin || isSuperAdmin || isGuardian)
                    ? <TreeCare
                        tree={tree}
                        growthBlocks={growthBlocks}
@@ -385,7 +385,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     ),
                 },
                 // The standard top bar (BeingProfile): back on the left; the ACTION ROW (play,
-                // reach, tend, carry) + Edit + Delete on the right, on EVERY size now (the buttons
+                // reach, care, carry) + Edit + Delete on the right, on EVERY size now (the buttons
                 // are icon-only on mobile, so all fit in the top bar). QR and Share ride beside the
                 // name; the shield marks the avatar.
                 actions: !isEditing ? (
