@@ -20,6 +20,12 @@ export const retractReachMessage = (pulseId: string) =>
 export const vetoGrowthPulse = (pulseId: string, uid: string) =>
     updateDoc(doc(db, 'pulses', pulseId), { vetoes: arrayUnion(uid), updatedAt: serverTimestamp() });
 
+// Staff mend: move a pulse to its true place of record. `domain` rides OUTSIDE the hashed
+// block fields (domain/chain BLOCK_CONTENT_FIELDS), so re-homing never breaks a seal; the
+// rules admit this write through the staff mend clause only — no author overlay carries it.
+export const mendPulseDomain = (pulseId: string, domain: string) =>
+    updateDoc(doc(db, 'pulses', pulseId), { domain, updatedAt: serverTimestamp() });
+
 const fetchPulsesRaw = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, levels?: PulseVisibility[], pageSize?: number) => {
     // Visibility-scope the broad feed so a restricted pulse in this domain can't get the
     // whole query rejected. Broad feeds carry no scope context, so `levels` is public + node.

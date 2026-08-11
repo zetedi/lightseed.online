@@ -4,7 +4,7 @@ import {
   fetchAllLifetrees, fetchLifetrees, fetchPulses, fetchEventPulses, fetchOfferingPulses, fetchReachPulses, fetchVisions,
   getPendingAlignments,
 } from '../services/firebase';
-import { queryableLevels } from '../domain/pulseVisibility';
+import { queryableLevels, eventFeedScope } from '../domain/pulseVisibility';
 import { dataDomainFor, reflectsInstancePublic } from '../domain/communityDoor';
 import { excludeBedTrees } from '../domain/bed';
 
@@ -111,10 +111,15 @@ export function useForestFeed(params: {
         setHasMore(!!res.lastDoc);
       }
       else if (tab === 'events') {
-        // feedOwnerUid folds the viewer's OWN events in (any visibility, any domain) — the same
-        // owner-safe merge the tree feed does, and the only reason an author's node-visible event
-        // appears on a reflecting hub at all. A strict scoped node suppresses it, like the trees.
-        const res = await fetchEventPulses(currentLastDoc, currentDomain, feedLevels, feedOwnerUid);
+        // The events tab and the home hero box derive their scope from ONE sentence
+        // (domain/pulseVisibility eventFeedScope) — the banner leak taught us what two
+        // hand-copies of the same law cost. ownerUid folds the viewer's OWN events in;
+        // a strict scoped node suppresses it, like the trees.
+        const { levels, ownerUid } = eventFeedScope(
+          { uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin },
+          { reflectsPublic: hostReflectsPublic, strictScope: hostStrictScope },
+        );
+        const res = await fetchEventPulses(currentLastDoc, currentDomain, levels, ownerUid);
         setData(prev => {
           const newItems = res.items;
           if (reset) return newItems;

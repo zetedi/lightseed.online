@@ -569,6 +569,10 @@ const baseKeys = {
   err_participation: "Could not update participation.",
   lh_release_confirm: "Release the Light House \u201C{name}\u201D? This cannot be undone.", lh_release: "Release Light House",
   event_delete_confirm: "Delete the event \u201C{title}\u201D? This cannot be undone.", delete_event: "Delete event",
+  // The place-of-record stamp (domain/communityDoor showsPlaceOfRecord) \u2014 staff sight only.
+  place_of_record: "Domain", place_of_record_invalid: "That does not read as a domain. The stamp stays as it was.",
+  // The events view \u2014 past gatherings rest behind a toggle (domain/calendar isPastEvent).
+  past_events: "Past", past_events_hint: "Show events whose day has already ended.",
   veto_confirm: "Cast your veto on this mint? It stands only if every guardian agrees.",
   guardian_veto: "Guardian veto", veto: "Veto",
   err_action: "The action failed.",
@@ -1272,6 +1276,8 @@ const dictionaries = {
     err_participation: "تعذّر تحديث المشاركة.",
     lh_release_confirm: "أتُطلق بيت النور «{name}»؟ لا رجوع في هذا.", lh_release: "إطلاق بيت النور",
     event_delete_confirm: "أتحذف الفعالية «{title}»؟ لا رجوع في هذا.", delete_event: "حذف الفعالية",
+    place_of_record: "النطاق", place_of_record_invalid: "هذا لا يُقرأ كنطاق. يبقى الختم كما كان.",
+    past_events: "السابقة", past_events_hint: "أظهر الفعاليات التي انقضى يومها.",
     veto_confirm: "أتلقي بنقضك على هذا السكّ؟ لا يقوم إلا إن اتفق كل الحراس.",
     guardian_veto: "نقض الحارس", veto: "نقض",
     err_action: "فشل الإجراء.",
@@ -1933,6 +1939,8 @@ const dictionaries = {
     err_participation: "无法更新参与。",
     lh_release_confirm: "释放光之屋“{name}”？此操作不可撤销。", lh_release: "释放光之屋",
     event_delete_confirm: "删除活动“{title}”？此操作不可撤销。", delete_event: "删除活动",
+    place_of_record: "域名", place_of_record_invalid: "这不是一个有效的域名。印记保持原样。",
+    past_events: "过往", past_events_hint: "显示已经结束的活动。",
     veto_confirm: "对这次铸造投下否决？唯有全体守护者一致，它才成立。",
     guardian_veto: "守护者否决", veto: "否决",
     err_action: "操作失败。",

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { addMonths, eachNight, isNightBooked, monthGrid, parseYmd, todayStr, ymd } from '../src/domain/calendar';
+import { addMonths, eachNight, isNightBooked, isPastEvent, monthGrid, parseYmd, todayStr, ymd } from '../src/domain/calendar';
 
 // The bed calendar's arithmetic — pure, deterministic, no live clock.
 
@@ -57,5 +57,25 @@ describe('isNightBooked', () => {
     expect(isNightBooked('2026-08-03', ranges)).toBe(true);
     expect(isNightBooked('2026-08-04', ranges)).toBe(false); // departure morning
     expect(isNightBooked('2026-07-31', ranges)).toBe(false);
+  });
+});
+
+describe('isPastEvent — an event ages out only when its day has fully ended', () => {
+  // Noon on 2026-08-11 local time — the injected clock, never the real one.
+  const NOON = new Date(2026, 7, 11, 12, 0).getTime();
+
+  it('yesterday is past; tomorrow is not', () => {
+    expect(isPastEvent(new Date(2026, 7, 10, 18, 0).toISOString(), NOON)).toBe(true);
+    expect(isPastEvent(new Date(2026, 7, 12, 9, 0).toISOString(), NOON)).toBe(false);
+  });
+  it("earlier TODAY is not past — the gathering's day is the unit, not the minute", () => {
+    expect(isPastEvent(new Date(2026, 7, 11, 8, 0).toISOString(), NOON)).toBe(false);
+    expect(isPastEvent(new Date(2026, 7, 11, 23, 59).toISOString(), NOON)).toBe(false);
+  });
+  it('undated or unreadable events never age out', () => {
+    expect(isPastEvent(undefined, NOON)).toBe(false);
+    expect(isPastEvent(null, NOON)).toBe(false);
+    expect(isPastEvent('', NOON)).toBe(false);
+    expect(isPastEvent('not a date', NOON)).toBe(false);
   });
 });

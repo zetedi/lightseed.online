@@ -52,6 +52,34 @@ export const dataDomainFor = (
   reflectsPublicFlag: boolean | null | undefined,
 ): string | undefined => reflectsInstancePublic(reflectsPublicFlag) ? undefined : domain;
 
+// PLACE OF RECORD — every pulse is stamped at birth with the domain it was made on, and that
+// stamp decides which node's surfaces show it. Staff may see and mend it (the founding-era
+// events were stamped `localhost`), but only where the whole forest is visible: on a
+// strict-scoped host everything shown is of that one place already, so the stamp is noise.
+export const showsPlaceOfRecord = (
+  isStaffViewer: boolean,
+  hostStrictScope: boolean | null | undefined,
+): boolean => isStaffViewer && hostStrictScope !== true;
+
+// A hand-typed place of record, made lawful: scheme, www, port and path stripped, lowercased.
+// Null when nothing domain-shaped remains — the caller keeps the old stamp rather than
+// writing junk into the field the whole scoping law keys on. Every DNS label is validated on
+// its own (Lumo's review, 2026-08-11: a whole-string pattern accepted `a..com` / `a-.com` —
+// and a malformed stamp makes a being disappear into a scope no node will ever serve).
+const DNS_LABEL = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/; // no leading/trailing hyphen, ≤63
+export const normalizePlaceOfRecord = (input: string): string | null => {
+  const bare = input.trim().toLowerCase()
+    .replace(/^[a-z][a-z0-9+.-]*:\/\//, '')
+    .replace(/^www\./, '')
+    .replace(/[/?#].*$/, '')
+    .replace(/:\d+$/, '');
+  if (bare === 'localhost') return bare;
+  if (bare.length > 253) return null;
+  const labels = bare.split('.');
+  if (labels.length < 2 || labels[labels.length - 1].length < 2) return null;
+  return labels.every(l => DNS_LABEL.test(l)) ? bare : null;
+};
+
 // An invitation as the domain sees it — times in ms so the module stays pure of Firestore.
 export interface CommunityInviteCheck {
   communityId: string;

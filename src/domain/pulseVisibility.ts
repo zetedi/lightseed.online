@@ -1,5 +1,7 @@
 import type { Pulse, PulseVisibility } from './pulse';
 import type { Community } from './community';
+import { reflectsInstancePublic } from './communityDoor';
+import { isPastEvent } from './calendar';
 
 // The visibility generator — the single source of truth for "who may see a pulse".
 // The Firestore rules (firestore.rules → canReadPulse) mirror canView() exactly, and the
@@ -89,6 +91,34 @@ export function mergeAuthored<T extends { id: string }>(
   const carried = new Set(feed.map(item => item.id));
   return [...feed, ...own.filter(item => !carried.has(item.id))]
     .sort((a, b) => millisOf(b) - millisOf(a));
+}
+
+// THE EVENT SURFACES SPEAK ONE SENTENCE. The home hero box leaked a lightseed event onto Per
+// Auset (ring 2026-08-11) precisely because this derivation lived as two hand-copies — the
+// feed's and the banner's — and only one learned strictScope. Now both derive their query
+// here: reflecting → public-only plus the viewer's own; scoped strict → the place and nothing
+// else; scoped lenient → the place plus the viewer's own (the creator-never-lost courtesy).
+export function eventFeedScope(
+  viewer: Viewer,
+  host: { reflectsPublic?: boolean | null; strictScope?: boolean | null },
+): { levels: PulseVisibility[]; ownerUid: string | undefined } {
+  const reflects = reflectsInstancePublic(host.reflectsPublic);
+  return {
+    levels: reflects ? queryableLevels({}) : queryableLevels(viewer),
+    ownerUid: (!reflects && host.strictScope === true) ? undefined : (viewer.uid || undefined),
+  };
+}
+
+// The viewer-side cut both event surfaces share: signed-out visitors see only the node's own
+// happenings (not every community/tree event), and past gatherings — a day fully ended
+// (domain/calendar isPastEvent) — rest hidden unless deliberately asked for.
+export function eventsOnView<T extends ScopedPulse & { eventDate?: string }>(
+  events: T[],
+  view: { signedIn: boolean; showPast: boolean; nowMs: number },
+): T[] {
+  return events
+    .filter(ev => view.signedIn || pulseScope(ev) === 'node')
+    .filter(ev => view.showPast || !isPastEvent(ev.eventDate, view.nowMs));
 }
 
 // Who may edit (or delete) an event: its creator, the admin (owner) of its community when it

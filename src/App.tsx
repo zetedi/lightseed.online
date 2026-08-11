@@ -54,7 +54,7 @@ import { extractGpsFromImage } from './utils/exif';
 // Components — the always-present shell (nav, footer, loaders, dialogs) stays statically imported.
 import { Icons } from './components/ui/Icons';
 import { Navigation } from './components/Navigation';
-import { queryableLevels, canEditEvent, pulseScope } from './domain/pulseVisibility';
+import { canEditEvent, eventFeedScope, eventsOnView } from './domain/pulseVisibility';
 import { passesForestFilter, canViewTree } from './domain/views/forest';
 import { isWateringOverdue } from './domain/watering';
 import { isBedTree } from './domain/bed';
@@ -418,18 +418,17 @@ const AppContent = () => {
     // on the 'events' bus signal, so an edit/create/delete anywhere shows up in the banner too.
     const eventsRefresh = useRefreshSignal(['events']);
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- reset-on-signout before the async fetch below
-        if (!lightseed) { setDashboardEvents([]); return; }
-        const reflects = activeCommunity?.reflectsPublic === true;
-        const levels = reflects
-            ? queryableLevels({})
-            : queryableLevels({ uid: lightseed.uid, isStaff: isSuperAdmin || isAdmin });
-        // The owner-merge folds in the viewer's own events (a reflecting hub would otherwise hide
-        // an author's node-visible event from themselves) — but a STRICT scoped host suppresses
-        // it, exactly as the feeds do: this banner leaked a lightseed event onto Per Auset's home
-        // until it learned the same law (the portal shows the place, not the visitor's luggage).
-        const strictScoped = !reflects && activeCommunity?.strictScope === true;
-        fetchEventPulses(undefined, activeDataDomain, levels, strictScoped ? undefined : lightseed.uid).then(r => setDashboardEvents(r.items)).catch(() => {});
+        // The hero events box shows THE SAME events as the events menu: one derivation
+        // (domain/pulseVisibility eventFeedScope — the banner once leaked a lightseed event
+        // onto Per Auset because it carried its own hand-copy of this law) and one viewer cut
+        // (eventsOnView: visitors see the node's own happenings; past days rest hidden).
+        const { levels, ownerUid } = eventFeedScope(
+            { uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin },
+            { reflectsPublic: activeCommunity?.reflectsPublic, strictScope: activeCommunity?.strictScope },
+        );
+        fetchEventPulses(undefined, activeDataDomain, levels, ownerUid)
+            .then(r => setDashboardEvents(eventsOnView(r.items, { signedIn: !!lightseed, showPast: false, nowMs: Date.now() })))
+            .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on uid + host scope + bus signal; the lightseed object changes identity without uid changing
     }, [lightseed?.uid, isSuperAdmin, isAdmin, eventsRefresh, activeDataDomain]);
 
@@ -750,11 +749,14 @@ const AppContent = () => {
         tailorTheme: () => setTab('communities'),
     };
 
-    // Signed-out visitors see only node-level events (the node's own happenings), not every
-    // community/tree event. Node-scoped = not rooted in a community or a tree.
+    // The shared viewer cut (domain/pulseVisibility eventsOnView): signed-out visitors see
+    // only the node's own happenings; past events rest behind the toggle. nowMs is a snapshot,
+    // refreshed when the toggle is touched, so the memo stays pure of the live clock.
+    const [showPastEvents, setShowPastEvents] = useState(false);
+    const [eventsNowMs, setEventsNowMs] = useState(() => Date.now());
     const eventsForViewer = useMemo(
-        () => (lightseed ? filteredData : filteredData.filter((ev: any) => pulseScope(ev) === 'node')),
-        [filteredData, lightseed]
+        () => eventsOnView(filteredData as Pulse[], { signedIn: !!lightseed, showPast: showPastEvents, nowMs: eventsNowMs }),
+        [filteredData, lightseed, showPastEvents, eventsNowMs]
     );
 
     const searchSuggestions = useMemo(() => (
@@ -810,6 +812,7 @@ const AppContent = () => {
                                         onClose={() => setSelectedPulse(null)}
                                         currentUserId={lightseed?.uid}
                                         myTrees={myTrees}
+                                        hostStrictScope={(impersonatedCommunity || hostCommunity)?.strictScope}
                                     />
                                 </div>
                             ) : (
@@ -1087,7 +1090,22 @@ const AppContent = () => {
                         tone={tabTone('events', effectiveTheme)}
                         fg={tabFg('events')}
                         densityKey="events"
-                        searchBox={searchBox}
+                        searchBox={
+                            <div className="flex w-full items-center gap-2">
+                                <div className="min-w-0 flex-1">{searchBox}</div>
+                                {/* Past events rest behind this toggle; the clock snapshot refreshes
+                                    on each touch so "today" stays honest in a long-lived session. */}
+                                <button
+                                    onClick={() => { setEventsNowMs(Date.now()); setShowPastEvents(v => !v); }}
+                                    title={t('past_events_hint')}
+                                    className={`whitespace-nowrap rounded-xl border px-3 py-2 text-sm font-medium shadow-sm transition-colors ${showPastEvents
+                                        ? 'border-emerald-600 bg-emerald-600 text-white'
+                                        : 'border-emerald-100 bg-white/80 text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    {t('past_events')}
+                                </button>
+                            </div>
+                        }
                         action={lightseed && (
                             <button onClick={() => setShowEventModal(true)} className={`bg-sky-600 hover:bg-sky-700 text-white px-4 py-1.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}>
                                 <Icons.Plus /> <span>{t('create_event')}</span>
@@ -1427,6 +1445,7 @@ const AppContent = () => {
                             onGrow={(v) => openVisionGrowth(v)}
                             onViewPulse={(p) => setSelectedPulse(p)}
                             onViewTree={(tree) => { setSelectedVision(null); setSelectedTree(tree); }}
+                            hostStrictScope={(impersonatedCommunity || hostCommunity)?.strictScope}
                         />
                     </div>
                 ) : selectedAlignment ? (
@@ -1470,6 +1489,7 @@ const AppContent = () => {
                             onEdit={() => setEditingEvent(selectedPulse)}
                             currentUserId={lightseed?.uid}
                             myTrees={myTrees}
+                            hostStrictScope={(impersonatedCommunity || hostCommunity)?.strictScope}
                         />
                     </div>
                 ) : renderMainContent()}

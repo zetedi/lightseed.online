@@ -950,6 +950,24 @@ service cloud.firestore {
                   .hasOnly(['retractedAt', 'updatedAt'])
            )
 
+        // (i3) THE PLACE-OF-RECORD MEND — staff move a mis-stamped event to its true place
+        //      (ui/PlaceOfRecord; ring 2026-08-11). Exactly {domain, updatedAt, rehomedAt} and
+        //      nothing else; `domain` is outside the hashed block fields, so the seal stays
+        //      true while the being changes address. Authors and community owners deliberately
+        //      have NO overlay carrying `domain`: a being cannot be moved between places by
+        //      the hand that made it, only by the node's stewards. This precise clause stands
+        //      on its own feet even while the general staff escape (j) below still exists —
+        //      retiring (j) into enumerated staff key-sets is a named shelf item, and this is
+        //      its first stone (Lumo's review, 2026-08-11).
+        || (
+             isStaff()
+             && resource.data.get('type', '') == 'event'
+             && request.resource.data.diff(resource.data).affectedKeys()
+                  .hasOnly(['domain', 'updatedAt', 'rehomedAt'])
+             && request.resource.data.get('domain', '') is string
+             && request.resource.data.get('domain', '') != ''
+           )
+
         // (j) Staff may mend anything.
         || isStaff()
       );

@@ -10,7 +10,9 @@ import { mintBeingQr } from '../services/firebase/beings';
 import { MahameruAvatar } from './ui/MahameruAvatar';
 import { useLanguage } from '../contexts/LanguageContext';
 import { canJoinVision } from '../domain/policy';
-import { getLifetreeById, getPulsesByVisionId, getPulsesByTreeId } from '../services/firebase';
+import { showsPlaceOfRecord } from '../domain/communityDoor';
+import { PlaceOfRecord } from './ui/PlaceOfRecord';
+import { getLifetreeById, getPulsesByVisionId, getPulsesByTreeId, mendVisionDomain } from '../services/firebase';
 import { firestoreStore } from '../adapters/firestore';
 import { participants, isParticipant } from '../domain/views/participation';
 import { ProfileHero } from './ui/ProfileHero';
@@ -40,13 +42,16 @@ interface VisionProfileProps {
     onViewTree?: (tree: Lifetree) => void;
     // View a single contribution/leaf.
     onViewPulse?: (pulse: Pulse) => void;
+    // The host's scoping — a strict-scoped host shows one place by definition, so the
+    // place-of-record stamp (staff sight, staff mend) is hidden there entirely.
+    hostStrictScope?: boolean | null;
 }
 
 type VisionSection = 'about' | 'participants' | 'contributions' | 'shadow';
 
-export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTrees, onGrow, onViewTree, onViewPulse }: VisionProfileProps) => {
+export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTrees, onGrow, onViewTree, onViewPulse, hostStrictScope }: VisionProfileProps) => {
     const { t } = useLanguage();
-    const { isSuperAdmin } = useSession();
+    const { isAdmin, isSuperAdmin } = useSession();
     const isAuthor = currentUserId === vision.authorId;
     const isRoot = vision.title.toLowerCase() === 'root vision';
     // A Root Vision on a GUARDED tree is a mistake (a guarded tree is stood-for, not dreamed
@@ -304,6 +309,19 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                                     <Icons.Globe />
                                     <span className="break-all">{vision.link}</span>
                                 </a>
+                            </div>
+                        )}
+                        {/* The place-of-record stamp — staff sight, staff mend; hidden on a strict-
+                            scoped host. The mend re-resolves the community grounding the same way
+                            createVision did at birth (mendVisionDomain). */}
+                        {showsPlaceOfRecord(isAdmin || isSuperAdmin, hostStrictScope) && (
+                            <div className="mt-8 border-t border-slate-100 pt-6 text-sm text-slate-700">
+                                <PlaceOfRecord
+                                    beingId={vision.id}
+                                    domain={vision.domain}
+                                    hostStrictScope={hostStrictScope}
+                                    onMend={(home) => mendVisionDomain(vision.id, home)}
+                                />
                             </div>
                         )}
                     </div>

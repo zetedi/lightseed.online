@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   DEFAULT_DOOR, doorOf, joinAffordance, checkInvite, inviteStatus, signupRequiresInvite,
   dataDomainFor, reflectsInstancePublic, communityInviteUrl, inviteIdFromPath,
+  showsPlaceOfRecord, normalizePlaceOfRecord,
   type CommunityInviteCheck,
 } from '../src/domain/communityDoor';
 
@@ -92,6 +93,45 @@ describe('reflectsInstancePublic (a node reflects the instance, or stays a scope
     expect(dataDomainFor('lightseed.online', false)).toBe('lightseed.online');
     expect(dataDomainFor('lightseed.online', true)).toBeUndefined();
     expect(dataDomainFor('perauset.com', true)).toBeUndefined();
+  });
+});
+
+describe('place of record (the domain stamp — staff sight, staff mend)', () => {
+  it('shows only to staff', () => {
+    expect(showsPlaceOfRecord(true, undefined)).toBe(true);
+    expect(showsPlaceOfRecord(false, undefined)).toBe(false);
+    expect(showsPlaceOfRecord(false, false)).toBe(false);
+  });
+  it('never on a strict-scoped host — one place by definition, so the stamp is noise', () => {
+    expect(showsPlaceOfRecord(true, true)).toBe(false);
+    expect(showsPlaceOfRecord(true, false)).toBe(true);
+    expect(showsPlaceOfRecord(true, null)).toBe(true);
+  });
+  it('normalizes a hand-typed domain: scheme, www, port and path stripped, lowercased', () => {
+    expect(normalizePlaceOfRecord('https://www.TheOHouse.org/events?x=1')).toBe('theohouse.org');
+    expect(normalizePlaceOfRecord(' perauset.web.app ')).toBe('perauset.web.app');
+    expect(normalizePlaceOfRecord('localhost:5173')).toBe('localhost');
+    expect(normalizePlaceOfRecord('hernan-wachuma.com')).toBe('hernan-wachuma.com');
+  });
+  it('returns null for junk — the old stamp survives a bad hand', () => {
+    expect(normalizePlaceOfRecord('')).toBeNull();
+    expect(normalizePlaceOfRecord('   ')).toBeNull();
+    expect(normalizePlaceOfRecord('not a domain')).toBeNull();
+    expect(normalizePlaceOfRecord('nodots')).toBeNull();
+    expect(normalizePlaceOfRecord('https://')).toBeNull();
+  });
+  it('validates each DNS label, not just the overall shape (Lumo, 2026-08-11)', () => {
+    expect(normalizePlaceOfRecord('a..com')).toBeNull();      // empty label
+    expect(normalizePlaceOfRecord('a-.com')).toBeNull();      // trailing hyphen in label
+    expect(normalizePlaceOfRecord('a.-com')).toBeNull();      // leading hyphen in label
+    expect(normalizePlaceOfRecord('a.com-')).toBeNull();      // trailing hyphen in TLD
+    expect(normalizePlaceOfRecord('.a.com')).toBeNull();      // leading dot
+    expect(normalizePlaceOfRecord('a.com.')).toBeNull();      // trailing dot
+    expect(normalizePlaceOfRecord('a.c')).toBeNull();         // one-letter TLD
+    expect(normalizePlaceOfRecord(`${'x'.repeat(64)}.com`)).toBeNull();  // label over 63
+    expect(normalizePlaceOfRecord(`${`${'x'.repeat(63)}.`.repeat(4)}com`)).toBeNull(); // name over 253
+    expect(normalizePlaceOfRecord('xn--nxasmq6b.com')).toBe('xn--nxasmq6b.com'); // punycode lives
+    expect(normalizePlaceOfRecord('a.b.c.example.co.uk')).toBe('a.b.c.example.co.uk');
   });
 });
 

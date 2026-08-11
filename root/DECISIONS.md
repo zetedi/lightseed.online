@@ -6,6 +6,50 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-11 · The place of record becomes visible, and mendable** ("Check the screenshots in
+the code" — two PNGs dropped into the repo root, showing Per Auset's Visions tab): the portal
+fix healed the QUERIES, but the DATA still carried founding-era stamps. Every domain-stamped
+being (event, vision) is born with `domain: window.location.hostname` — so six of the first
+nine events say `localhost`, a place that does not exist, and Zoltán's own Root Vision says
+`perauset.web.app` because he stood on the portal when it was born. The queries were honest;
+the stamps were wrong. Decided: (1) the stamp gets a face — a staff-only "Domain" row
+(`ui/PlaceOfRecord`, amber dot) on event and vision profiles, editable in place, hidden
+entirely on a strict-scoped host where one place is the definition and the stamp is noise
+(`showsPlaceOfRecord`); the hand-typed value passes `normalizePlaceOfRecord` so junk can never
+enter the field the whole scoping law keys on. (2) No rules change: `domain` sits outside
+every non-staff overlay (authors cannot move a being between places) and inside the staff
+mend clause (j); on visions the mend re-resolves the community grounding exactly as
+createVision did at birth. (3) The founding-era events re-home by script
+(`scripts/rehome-events.mjs`, id-bound, chain-safe — `domain` is not in BLOCK_CONTENT_FIELDS):
+the Aswan three to perauset.web.app, the dev three to lightseed.online, The O House to
+theohouse.org and the Espinar harvest to hernan-wachuma.com — two places that have no rooted
+node yet, resting dark until they do: the stamp may name a place before the place exists.
+RAN 2026-08-11: all seven moved, witnesses green.
+
+Lumo's review sharpened all three edges before the mend ran: the validator now judges each
+DNS label on its own (`a..com`/`a-.com` had passed the whole-string pattern — and a malformed
+stamp exiles a being into a scope no node serves); the script's witnesses are CHECKED, not
+decorative (id + title + current domain must all agree with the live record or the whole run
+aborts, and the write carries rehomedAt so the repair has a visible time); and the rules got
+a precise clause (i3) — staff mend exactly {domain, updatedAt, rehomedAt} on an event, proven
+by four emulator tests (author cannot move their own event; nor the community owner; nothing
+rides along on a content edit). Named honestly: while the general staff escape (j) stands,
+"staff touch ONLY these keys" is not yet provable — retiring (j) into enumerated staff
+key-sets is a shelf item, and (i3) is its first stone.
+
+And the events view learned time: past gatherings (a day fully ended — domain/calendar
+isPastEvent, undated events never age out) rest behind a "Past" toggle beside the search bar.
+
+The same day closed the previous ring's shelf item: the home hero box and the events menu now
+SPEAK ONE SENTENCE. The banner's hand-copy of the feed's scope derivation (the exact drift
+that caused the Per Auset leak) is gone — both surfaces derive from
+domain/pulseVisibility.eventFeedScope (reflecting → public + own; scoped strict → the place
+only; scoped lenient → the place + own) and share one viewer cut, eventsOnView (visitors see
+the node's own happenings; past days rest hidden). The hero box also opens to signed-out
+visitors now, exactly as the menu always did — same law, same eyes, same events.
+
+---
+
 **2026-08-11 · The portal shows the place, not the visitor's luggage**: Zoltán saw lightseed
 content on Per Auset (a scoped, strict, non-reflecting HOST) and asked why. The live walk gave a
 clean verdict — Forest, Visions and Events tabs all obey the strict law (one Per Auset marker,

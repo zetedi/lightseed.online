@@ -78,3 +78,15 @@ export const eachNight = (fromDate: string, toDate: string): string[] => {
 // yyyy-mm-dd strings compare correctly with < and >=, so no parsing is needed here.
 export const isNightBooked = (dateStr: string, ranges: { fromDate: string; toDate: string }[]): boolean =>
   ranges.some(r => dateStr >= r.fromDate && dateStr < r.toDate);
+
+// An event is PAST once its day has fully ended in the viewer's local time — an event from
+// earlier today still shows (the gathering's day is the unit of relevance, not the minute).
+// Undated or unreadable dates never age out: hiding what we cannot date would lose beings.
+export const isPastEvent = (eventDateIso: string | null | undefined, nowMs: number): boolean => {
+  if (!eventDateIso) return false;
+  const t = Date.parse(eventDateIso);
+  if (Number.isNaN(t)) return false;
+  const now = new Date(nowMs);
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  return t < startOfToday;
+};

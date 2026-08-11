@@ -385,6 +385,44 @@ describe('retraction — the author withdraws the words; the chain keeps the blo
   });
 });
 
+describe('the place-of-record mend — only the node\'s stewards move a being between places', () => {
+  // Ring 2026-08-11 (clause i3): every event is stamped at birth with the domain it was made
+  // on, and the stamp decides which node's surfaces show it. Staff mend a wrong stamp with
+  // exactly {domain, updatedAt, rehomedAt}; no author or community-owner overlay carries
+  // `domain`, so the hand that made a being cannot move it between places. (While the general
+  // staff escape (j) stands, "staff touch ONLY these keys" is not yet provable — retiring (j)
+  // into enumerated staff key-sets is the named shelf item this clause begins.)
+  const EV = 'ev-rehome';
+  const seedEvent = () => env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'pulses', EV), {
+      authorId: BOB, type: 'event', title: 'Founding', body: 'the seed event',
+      communityId: 'com1', domain: 'localhost', visibility: 'public',
+    });
+  });
+
+  it('staff mend the stamp — domain, updatedAt and the rehomedAt mark, nothing else', async () => {
+    await seedEvent();
+    await assertSucceeds(updateDoc(doc(db(STAFF), 'pulses', EV), { domain: 'perauset.web.app', updatedAt: 1, rehomedAt: 1 }));
+  });
+
+  it('the author cannot move their own event between places', async () => {
+    await seedEvent();
+    await assertFails(updateDoc(doc(db(BOB), 'pulses', EV), { domain: 'perauset.web.app', updatedAt: 1 }));
+  });
+
+  it('nor the community owner, nor an outsider', async () => {
+    await seedEvent();
+    await assertFails(updateDoc(doc(db(ALICE), 'pulses', EV), { domain: 'perauset.web.app', updatedAt: 1 }));
+    await assertFails(updateDoc(doc(db(MALLORY), 'pulses', EV), { domain: 'perauset.web.app', updatedAt: 1 }));
+  });
+
+  it('the domain can never ride along on a content edit — the author edit stays content-only', async () => {
+    await seedEvent();
+    await assertSucceeds(updateDoc(doc(db(BOB), 'pulses', EV), { title: 'Founding Day', updatedAt: 1 }));
+    await assertFails(updateDoc(doc(db(BOB), 'pulses', EV), { title: 'Founding Day', domain: 'perauset.web.app', updatedAt: 1 }));
+  });
+});
+
 describe('guardian veto — window and tenure live in the rules, not only the client', () => {
   const mintPulse = async (createdAtMs: number, guardianSinceMs?: number) => {
     await env.withSecurityRulesDisabled(async (ctx) => {

@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useSession } from '../contexts/SessionContext';
 import { showAlert, showConfirm } from './ui/Dialog';
-import { deleteCommunityEvent } from '../services/firebase';
+import { deleteCommunityEvent, mendPulseDomain } from '../services/firebase';
+import { PlaceOfRecord } from './ui/PlaceOfRecord';
+import { showsPlaceOfRecord } from '../domain/communityDoor';
 import { announce } from '../services/refreshBus';
 import { BeingQr } from './ui/BeingQr';
 import { EditPill, DeletePill } from './ui/HeroPills';
@@ -34,11 +36,14 @@ interface EventProfileProps {
     myTrees?: Lifetree[];
     // The community's colours: the event header links to the theme; the body stays neutral.
     theme?: { primary?: string };
+    // The host's scoping — a strict-scoped host shows one place by definition, so the
+    // place-of-record stamp (staff sight, staff mend) is hidden there entirely.
+    hostStrictScope?: boolean | null;
 }
 
 type EventSection = 'about' | 'participants' | 'reflect';
 
-export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, currentUserId, myTrees, theme }: EventProfileProps) => {
+export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, currentUserId, myTrees, theme, hostStrictScope }: EventProfileProps) => {
     const { t } = useLanguage();
     const { isAdmin, isSuperAdmin } = useSession();
     // Deletion mirrors the rules: the author may, and staff may. The amber dot marks the
@@ -61,6 +66,10 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
     const [section, setSection] = useState<EventSection>('about');
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const images = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
+    // Whether the details grid renders the place-of-record row (the row itself lives in
+    // ui/PlaceOfRecord; the container needs the same law or staff on a strict host would
+    // see an empty box).
+    const showPlace = showsPlaceOfRecord(isAdmin || isSuperAdmin, hostStrictScope);
 
     // Share rides beside the name, exactly like the tree profile. The link is the being door
     // (/b/<lid>) when the event carries its true name; older events fall back to the app root.
@@ -177,11 +186,20 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
                                 )}
                             </div>
                         )}
-                        {(whenText || pulse.eventLocation || pulse.eventMaxParticipants) && (
+                        {(whenText || pulse.eventLocation || pulse.eventMaxParticipants || showPlace) && (
                             <div className="mb-6 grid gap-2 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700">
                                 {whenText && <div><span className="font-bold">When:</span> {whenText}</div>}
                                 {pulse.eventLocation && <div><span className="font-bold">{t('where')}:</span> {pulse.eventLocation}</div>}
                                 {!!pulse.eventMaxParticipants && <div><span className="font-bold">Participants:</span> up to {pulse.eventMaxParticipants}</div>}
+                                {/* The place-of-record stamp — staff sight, staff mend; PlaceOfRecord hides
+                                    itself on a strict-scoped host. `domain` is outside the hashed block
+                                    fields, so moving an event home never breaks its seal. */}
+                                <PlaceOfRecord
+                                    beingId={pulse.id}
+                                    domain={pulse.domain}
+                                    hostStrictScope={hostStrictScope}
+                                    onMend={async (home) => { await mendPulseDomain(pulse.id, home); announce('events', pulse.id); }}
+                                />
                             </div>
                         )}
                         <p dir="auto" className="whitespace-pre-wrap font-serif text-lg leading-relaxed text-slate-600">

@@ -114,6 +114,21 @@ export const deleteVision = async (id: string) => {
     await deleteDoc(doc(db, 'visions', id));
 };
 
+// Staff mend: move a vision to its true place of record. A vision's domain is stamped at
+// birth with whatever hostname its author stood on (createVision), so founding-era stamps
+// are sometimes wrong. Unlike an event's, the vision's community grounding is NOT chain-
+// hashed — it was resolved FROM the domain at birth — so the mend re-resolves it the same
+// way: linked when the new place is a community's, cleared when no community claims it.
+export const mendVisionDomain = async (visionId: string, domain: string) => {
+    let communityId: string | undefined;
+    try { communityId = (await getCommunityByDomain(domain))?.id; } catch { /* offline / no match */ }
+    await updateDoc(doc(db, 'visions', visionId), {
+        domain,
+        communityId: communityId ?? deleteField(),
+        updatedAt: serverTimestamp(),
+    });
+};
+
 // Communities
 export const fetchCommunities = async () => {
     const snap = await getDocs(query(communitiesCollection, orderBy('createdAt', 'desc')));
