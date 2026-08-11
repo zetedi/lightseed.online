@@ -6,6 +6,20 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-11 · The portal shows the place, not the visitor's luggage**: Zoltán saw lightseed
+content on Per Auset (a scoped, strict, non-reflecting HOST) and asked why. The live walk gave a
+clean verdict — Forest, Visions and Events tabs all obey the strict law (one Per Auset marker,
+two visions, one event; no Aspen) — but the HOME EVENTS BANNER leaked: the hub-events owner-merge
+(ring 2026-08-08) was wired into the banner UNCONDITIONALLY, so the keeper's own lightseed events
+("New Domain") rode onto Per Auset's front page. The feeds had learned strictScope; the banner
+never did. Now it speaks the same sentence: reflecting → public-only plus the owner's own; scoped
+strict → the place and nothing else; scoped lenient → the place plus the creator's own (the
+creator-never-lost courtesy). One more instance of the oldest lesson here: a law added in one
+place and mirrored by hand in another WILL drift — the banner and the feed should someday share
+one derivation, not two copies.
+
+---
+
 **2026-08-11 · The mycelium keeps one room, and a signal dissolves when answered**: three of
 Zoltán's asks, one thread of meaning ("Wow means: I'm talking through a living system, a digital
 mycelium"). VERIFIED AND MADE STRUCTURAL: the envelope beside the profile and the profile menu

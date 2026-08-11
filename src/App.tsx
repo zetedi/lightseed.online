@@ -420,12 +420,16 @@ const AppContent = () => {
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- reset-on-signout before the async fetch below
         if (!lightseed) { setDashboardEvents([]); return; }
-        const levels = activeCommunity?.reflectsPublic === true
+        const reflects = activeCommunity?.reflectsPublic === true;
+        const levels = reflects
             ? queryableLevels({})
             : queryableLevels({ uid: lightseed.uid, isStaff: isSuperAdmin || isAdmin });
-        // The last argument folds in the viewer's own events whatever their visibility — without it
-        // a reflecting hub (public-only levels) hides an author's node-visible event from themselves.
-        fetchEventPulses(undefined, activeDataDomain, levels, lightseed.uid).then(r => setDashboardEvents(r.items)).catch(() => {});
+        // The owner-merge folds in the viewer's own events (a reflecting hub would otherwise hide
+        // an author's node-visible event from themselves) — but a STRICT scoped host suppresses
+        // it, exactly as the feeds do: this banner leaked a lightseed event onto Per Auset's home
+        // until it learned the same law (the portal shows the place, not the visitor's luggage).
+        const strictScoped = !reflects && activeCommunity?.strictScope === true;
+        fetchEventPulses(undefined, activeDataDomain, levels, strictScoped ? undefined : lightseed.uid).then(r => setDashboardEvents(r.items)).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on uid + host scope + bus signal; the lightseed object changes identity without uid changing
     }, [lightseed?.uid, isSuperAdmin, isAdmin, eventsRefresh, activeDataDomain]);
 
