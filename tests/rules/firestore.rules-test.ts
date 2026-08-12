@@ -462,6 +462,75 @@ describe('guardian veto — window and tenure live in the rules, not only the cl
   });
 });
 
+describe('the keeper circle — peers by link, minted only by the server, never keeperless', () => {
+  // Ring 2026-08-12 (domain/keeperCircle): `keeper` links make FULL PEERS of the founding
+  // ownerId — but no client may mint one (only the callables do, after the living-tree
+  // proof), the anchor (ownerId) is frozen against client hands, and a peer cannot remove
+  // a peer. Knocks (`keeper_request`) are self-serve and grant nothing.
+  const keeperLink = (uid: string) => ({
+    lid: 'x', type: 'link', rel: 'keeper', from: uid, to: 'com1',
+  });
+
+  it('no client mints a keeper link — not even for themselves, not even the owner', async () => {
+    await assertFails(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__keeper__com1`), keeperLink(MALLORY)));
+    await assertFails(setDoc(doc(db(ALICE), 'links', `${BOB}__keeper__com1`), keeperLink(BOB)));
+  });
+
+  it('a keeper link holder is a full peer: edits the community, appoints stewards', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) =>
+      setDoc(doc(ctx.firestore(), 'links', `${BOB}__keeper__com1`), keeperLink(BOB)));
+    await assertSucceeds(updateDoc(doc(db(BOB), 'communities', 'com1'), { vision: 'shared', updatedAt: 1 }));
+    await assertSucceeds(setDoc(doc(db(BOB), 'links', `${MALLORY}__steward__com1`),
+      { lid: 'x', type: 'link', rel: 'steward', from: MALLORY, to: 'com1' }));
+  });
+
+  it('the anchor is frozen against every client hand — even the owner, even a peer', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) =>
+      setDoc(doc(ctx.firestore(), 'links', `${BOB}__keeper__com1`), keeperLink(BOB)));
+    await assertFails(updateDoc(doc(db(ALICE), 'communities', 'com1'), { ownerId: BOB, updatedAt: 1 }));
+    await assertFails(updateDoc(doc(db(BOB), 'communities', 'com1'), { ownerId: BOB, updatedAt: 1 }));
+  });
+
+  it('a peer cannot remove a peer — a keeper leaves only by their own hand', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) =>
+      setDoc(doc(ctx.firestore(), 'links', `${BOB}__keeper__com1`), keeperLink(BOB)));
+    await assertFails(deleteDoc(doc(db(ALICE), 'links', `${BOB}__keeper__com1`)));
+    await assertSucceeds(deleteDoc(doc(db(BOB), 'links', `${BOB}__keeper__com1`)));
+  });
+
+  it('a keepership knock is self-serve at a community or a tree — and only at something real', async () => {
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__keeper_request__com1`),
+      { lid: 'x', type: 'link', rel: 'keeper_request', from: MALLORY, to: 'com1' }));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__keeper_request__treeB`),
+      { lid: 'x', type: 'link', rel: 'keeper_request', from: MALLORY, to: 'treeB' }));
+    await assertFails(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__keeper_request__ghost`),
+      { lid: 'x', type: 'link', rel: 'keeper_request', from: MALLORY, to: 'ghost' }));
+    await assertFails(setDoc(doc(db(MALLORY), 'links', `${BOB}__keeper_request__com1`),
+      { lid: 'x', type: 'link', rel: 'keeper_request', from: BOB, to: 'com1' }));
+  });
+
+  it('the knock is declined by the community keeper or the tree owner, never a stranger', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'links', `${MALLORY}__keeper_request__com1`),
+        { lid: 'x', type: 'link', rel: 'keeper_request', from: MALLORY, to: 'com1' });
+      await setDoc(doc(ctx.firestore(), 'links', `${MALLORY}__keeper_request__treeB`),
+        { lid: 'x', type: 'link', rel: 'keeper_request', from: MALLORY, to: 'treeB' });
+    });
+    await assertFails(deleteDoc(doc(db(BOB), 'links', `${MALLORY}__keeper_request__com1`)));   // BOB keeps no door at com1
+    await assertSucceeds(deleteDoc(doc(db(ALICE), 'links', `${MALLORY}__keeper_request__com1`))); // ALICE owns com1
+    await assertSucceeds(deleteDoc(doc(db(BOB), 'links', `${MALLORY}__keeper_request__treeB`)));  // BOB owns treeB
+  });
+
+  it('a keeper offer is minted only by a sitting keeper, and its identity is frozen', async () => {
+    await assertFails(setDoc(doc(db(MALLORY), 'communityKeeperInvites', 'ki-forged'),
+      { communityId: 'com1', invitedUserId: MALLORY, invitedByUserId: MALLORY, status: 'pending' }));
+    await assertSucceeds(setDoc(doc(db(ALICE), 'communityKeeperInvites', 'ki-real'),
+      { communityId: 'com1', invitedUserId: BOB, invitedByUserId: ALICE, status: 'pending' }));
+    await assertSucceeds(updateDoc(doc(db(BOB), 'communityKeeperInvites', 'ki-real'), { status: 'declined' }));
+    await assertFails(updateDoc(doc(db(BOB), 'communityKeeperInvites', 'ki-real'), { invitedUserId: MALLORY }));
+  });
+});
+
 describe('the door — open lets beings in, closed closes ALL ways, keepers are delegated', () => {
   const SAM = 'sam-uid'; // steward of com1 — the delegated door-keeper
   const link = (from: string, rel: string, to: string, extra: object = {}) =>

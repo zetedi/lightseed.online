@@ -21,7 +21,14 @@ import type { Being } from './being';
 // power on its own — the crypto lives in the covenants/{id}/signatures subcollection, where each
 // party signs ONLY their own slot. The party link is the immutable statement of who; the signature
 // doc is the proof they signed. (Links are immutable, so a signature can't live on the link.)
-export type LinkRel = 'guardian' | 'co_owner' | 'steward' | 'observer' | 'member' | 'joined' | 'participant' | 'join_request' | 'rooted' | 'shelters' | 'invited_by' | 'party';
+// 'keeper': a community co-keeper — FULL PEER of the founding ownerId (domain/keeperCircle).
+// Never self-serve: minted only server-side (acceptKeeperInvite / acceptKeeperRequest) after
+// proving the newcomer owns a living tree. Holder may step down (own-link delete) because
+// ownerId always remains — the circle is never keeperless.
+// 'keeper_request': a knock for keepership — at a community (a sitting keeper answers,
+// server mints) or at a LIFETREE (the owner answers through the tree-circle invite, choosing
+// the role). Grants nothing; deletable by its author or the target's keeper/owner.
+export type LinkRel = 'guardian' | 'co_owner' | 'steward' | 'observer' | 'member' | 'joined' | 'participant' | 'join_request' | 'rooted' | 'shelters' | 'invited_by' | 'party' | 'keeper' | 'keeper_request';
 
 export interface Link extends Being {
   type: 'link';

@@ -15,10 +15,20 @@ service cloud.firestore {
     function isStaff() {
       return exists(/databases/$(database)/documents/admins/$(request.auth.uid)) || request.auth.token.admin == true || isSuperAdmin();
     }
+    // "Owner" means KEEPER: the founding ownerId or any `keeper` link holder — FULL PEERS
+    // (ring 2026-08-12, domain/keeperCircle). Keeper links are never client-minted: only the
+    // server writes one (acceptKeeperInvite / acceptKeeperRequest), after proving the newcomer
+    // owns a living tree. Extending THIS function is what makes peers peers everywhere at once.
+    function hasKeeperLink(communityId) {
+      return exists(/databases/$(database)/documents/links/$(request.auth.uid + '__keeper__' + communityId));
+    }
     function isCommunityOwner(communityId) {
       return communityId is string &&
-        exists(/databases/$(database)/documents/communities/$(communityId)) &&
-        get(/databases/$(database)/documents/communities/$(communityId)).data.ownerId == request.auth.uid;
+        (
+          (exists(/databases/$(database)/documents/communities/$(communityId)) &&
+           get(/databases/$(database)/documents/communities/$(communityId)).data.ownerId == request.auth.uid)
+          || hasKeeperLink(communityId)
+        );
     }
     // A keeper of the community's DOOR: its owner, or a linked steward — the delegated hands
     // that accept knocks, remove members, and mint/revoke invitations. Delegation is a link.
@@ -339,6 +349,23 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.invitedByUserId == request.auth.uid;
       allow update: if isSignedIn() && (resource.data.invitedUserId == request.auth.uid || resource.data.invitedByUserId == request.auth.uid);
+      allow delete: if isStaff();
+    }
+
+    // Keeper invitations (ring 2026-08-12): a sitting keeper OFFERS shared keepership of a
+    // community; the invitee ACCEPTS through the acceptKeeperInvite callable, which proves
+    // their own living tree and mints the `keeper` link server-side. The doc is the offer,
+    // never the power — and its identity triplet is frozen so an accept mark can never be
+    // steered at a different community or hand.
+    match /communityKeeperInvites/{id} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && request.resource.data.invitedByUserId == request.auth.uid
+        && isCommunityOwner(request.resource.data.communityId);
+      allow update: if isSignedIn()
+        && (resource.data.invitedUserId == request.auth.uid || resource.data.invitedByUserId == request.auth.uid)
+        && !request.resource.data.diff(resource.data).affectedKeys()
+             .hasAny(['communityId', 'invitedUserId', 'invitedByUserId']);
       allow delete: if isStaff();
     }
 
@@ -1159,15 +1186,20 @@ service cloud.firestore {
     match /communities/{communityId} {
       allow read: if true;
       allow create: if isSignedIn();
+      // Keepers are FULL PEERS (ring 2026-08-12): the founding ownerId and every `keeper`
+      // link holder edit alike. The ANCHOR itself (`ownerId`) is frozen against client
+      // hands like `lid` — succession moves only through the resignKeeper transaction,
+      // which refuses to leave a community keeperless. (Before this, an owner could hand
+      // the anchor to any uid — or to nobody — in one client write.)
       allow update: if isSignedIn() && (
         (
-          (resource.data.ownerId == request.auth.uid || isStaff())
-          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid', 'loveCount'])
+          (resource.data.ownerId == request.auth.uid || hasKeeperLink(communityId) || isStaff())
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid', 'loveCount', 'ownerId'])
         )
         // LOVE: exactly one own-slot transition and exactly +/- one, atomically proved.
         || validLoveCountChange('communities', communityId)
       );
-      allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
+      allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || hasKeeperLink(communityId) || isStaff());
 
       // Loves: own-slot privacy plus atomic coupling to the public tally above.
       match /loves/{loveId} {
@@ -1337,6 +1369,15 @@ service cloud.firestore {
         || (isSignedIn() && request.resource.data.from == request.auth.uid
             && request.resource.data.rel == 'join_request'
             && communityDoor(request.resource.data.to) != 'closed')
+        // A knock for KEEPERSHIP (ring 2026-08-12) — at a community or at a lifetree. Grants
+        // nothing: at a community a sitting keeper answers and the SERVER mints the keeper
+        // link (after the living-tree proof); at a lifetree the owner answers through the
+        // tree-circle invite, choosing the role. The target must exist — a knock at nothing
+        // is noise the keeper lists would have to carry forever.
+        || (isSignedIn() && request.resource.data.from == request.auth.uid
+            && request.resource.data.rel == 'keeper_request'
+            && (exists(/databases/$(database)/documents/communities/$(request.resource.data.to))
+                || exists(/databases/$(database)/documents/lifetrees/$(request.resource.data.to))))
         || (isSignedIn() && request.resource.data.rel == 'participant'
             && isTreeOwner(request.resource.data.from))
         // Rooting: a lightHouse's keeper roots THEIR lightHouse in a tree (from = lightHouse id).
@@ -1393,6 +1434,12 @@ service cloud.firestore {
         // A door-keeper (owner or steward) can decline requests and remove members.
         || (resource.data.get('rel', '') in ['member', 'join_request']
             && isCommunityKeeper(resource.data.to))
+        // A keepership knock is declined by the target's keeper (community) or owner (tree).
+        // (Its author withdraws it via the from == uid clause above.) NOTE: `keeper` links
+        // themselves are NOT listed here — a peer cannot remove a peer; a keeper leaves only
+        // by their own hand (from == uid) or by staff mend. Never keeperless: ownerId remains.
+        || (resource.data.get('rel', '') == 'keeper_request'
+            && (isCommunityKeeper(resource.data.to) || isTreeOwner(resource.data.to)))
         // The owner can remove a steward they appointed.
         || (resource.data.get('rel', '') == 'steward'
             && isCommunityOwner(resource.data.to)));

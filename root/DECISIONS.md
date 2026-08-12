@@ -6,6 +6,29 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-12 · Keeping becomes a circle** — three asks of Zoltán's, one law: a community
+keeper may INVITE co-keepers (who have their own tree), may RESIGN when others remain, and
+anyone may ASK to keep a community or a lifetree. Decided: (1) co-keepers are `keeper` links
+and FULL PEERS — the rules' isCommunityOwner itself learned the link, so every owner power
+(appearance, door, stewards, decisions, deletion) extends at one seam; the visible `keeper`
+badge now marks the whole circle. (2) Keepership is offered or asked, never appointed: offers
+(communityKeeperInvites) wait for the invitee's yes; knocks (`keeper_request` links,
+self-serve, granting nothing) wait for a sitting keeper's yes — and in BOTH cases only the
+server mints the link (acceptKeeperInvite / acceptKeeperRequest), after proving the newcomer
+owns a living tree: a keeper is a rooted being, not a bare account. A knock at a LIFETREE is
+answered through the existing circle invitation (the owner chooses the role) — the circle's
+one privileged door stays the invitation. (3) THE INVARIANT: a community is never keeperless.
+ownerId always names a real keeper and is now FROZEN against client hands (before this, an
+owner could hand the anchor to any uid — or nobody — in one write); a link-holder steps down
+freely (the anchor remains), and the anchor resigns only through the resignKeeper transaction,
+which refuses the last keeper and hands ownerId to the longest-standing keeper (oldest link,
+ties by uid — domain/keeperCircle.successorAmong, mirrored exactly in the callable). Peers
+cannot remove peers: a keeper leaves by their own hand or by staff mend, never by a rival's.
+Proven: 15 unit laws (keeperCircle) + 7 emulator rules tests (no client mints a keeper link;
+the anchor is frozen; the knock needs a real target; the offer's identity triplet is frozen).
+
+---
+
 **2026-08-12 · First sight names the unfinished edges** — Zoltán asked for a new
 model's first reading of the WHOLE codebase, not the day's working batch. After rooting and
 testing the root's claims against the implementation, Lumo's verdict was: Lightseed is not

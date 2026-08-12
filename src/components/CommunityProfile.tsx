@@ -7,7 +7,7 @@ import { Icons } from './ui/Icons';
 import { MahameruAvatar } from './ui/MahameruAvatar';
 import { Community, CommunityInvite, Lifetree, Pulse, LightHouse } from '../types';
 import { doorOf, checkInvite } from '../domain/communityDoor';
-import { updateCommunity, uploadImage, getTreesByDomain, getParticipatingTrees, deleteCommunity, getCommunityByDomain, getLightHousesByDomain, getLightHousesByCommunity, getAllLightHouses, createLightHouse, adoptLightHouse, getPersonName, joinCommunityOpen, joinCommunityWithInvite } from '../services/firebase';
+import { updateCommunity, uploadImage, getTreesByDomain, getParticipatingTrees, deleteCommunity, getCommunityByDomain, getLightHousesByDomain, getLightHousesByCommunity, getAllLightHouses, createLightHouse, adoptLightHouse, getPersonName, joinCommunityOpen, joinCommunityWithInvite, requestKeepership, withdrawKeeperRequest } from '../services/firebase';
 import { CommunityVision } from './community/CommunityVision';
 import { CommunityCouncil } from './community/CommunityCouncil';
 import { CommunityEvents } from './community/CommunityEvents';
@@ -36,7 +36,7 @@ import { queryableLevels } from '../domain/pulseVisibility';
 import { firestoreStore } from '../adapters/firestore';
 import { isParticipant } from '../domain/views/participation';
 import { canCareForTree } from '../domain/policy';
-import { speak } from '../utils/translations';
+import { speak, spokenLine } from '../utils/translations';
 
 interface CommunityProfileProps {
   community: Community;
@@ -73,8 +73,11 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const { lightseed, isAdmin, isSuperAdmin } = useSession();
   const currentUser = lightseed;
   const currentUserId = lightseed?.uid;
-  const canEdit = currentUserId === community.ownerId || isSuperAdmin || isAdmin;
-  const canDelete = currentUserId === community.ownerId || isSuperAdmin;
+  // FULL PEERS (domain/keeperCircle, ring 2026-08-12): a `keeper` link holder edits, deletes
+  // and keeps exactly as the founding ownerId does — resolved from the links load below.
+  const [isKeeperByLink, setIsKeeperByLink] = useState(false);
+  const canEdit = currentUserId === community.ownerId || isKeeperByLink || isSuperAdmin || isAdmin;
+  const canDelete = currentUserId === community.ownerId || isKeeperByLink || isSuperAdmin;
 
   // Membership is a prism over the LIN ('member' links), read through the Store port. The owner
   // is implicitly a member (seeded synchronously so first render is correct); everyone else is
@@ -84,6 +87,9 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   // Has this viewer already asked to join? (join_request link — see the Members tab.)
   const [joinRequested, setJoinRequested] = useState(false);
   const [joining, setJoining] = useState(false);
+  // Has this viewer already asked to KEEP? (keeper_request link — answered in the Members tab.)
+  const [keepRequested, setKeepRequested] = useState(false);
+  const [keepAsking, setKeepAsking] = useState(false);
   // Stewardship — the delegated door-keepers (accept knocks, mint invitations).
   const [isSteward, setIsSteward] = useState(false);
   // The active profile section — controlled so a section (e.g. Light) can steer to another
@@ -97,6 +103,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
         setMemberByLink(isParticipant(links.filter(l => l.rel === 'member'), currentUserId));
         setJoinRequested(!!currentUserId && links.some(l => l.rel === 'join_request' && l.from === currentUserId));
         setIsSteward(!!currentUserId && links.some(l => l.rel === 'steward' && l.from === currentUserId));
+        setIsKeeperByLink(!!currentUserId && links.some(l => l.rel === 'keeper' && l.from === currentUserId));
+        setKeepRequested(!!currentUserId && links.some(l => l.rel === 'keeper_request' && l.from === currentUserId));
       })
       .catch(() => {});
     return () => { alive = false; };
@@ -122,6 +130,24 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       notify(`🌱 Your request to join ${community.name} is on its way to its keepers.`);
     } catch (e: any) { showAlert(e?.message || 'Could not send the join request.'); }
     setJoining(false);
+  };
+
+  // Ask to KEEP — a keepership knock (keeper_request link); a sitting keeper answers, and
+  // the server mints only after the living-tree proof (domain/keeperCircle).
+  const handleAskToKeep = async () => {
+    if (!currentUserId) { showAlert('err_signin_join'); return; }
+    setKeepAsking(true);
+    try {
+      if (keepRequested) {
+        await withdrawKeeperRequest(currentUserId, community.id);
+        setKeepRequested(false);
+      } else {
+        await requestKeepership(currentUserId, community.id);
+        setKeepRequested(true);
+        notify(spokenLine('keeper_request_sent', {}));
+      }
+    } catch (e: any) { showAlert(e?.message || 'err_action'); }
+    setKeepAsking(false);
   };
   // Step in through an OPEN door — no knock needed while the founding season lasts.
   const handleStepIn = async () => {
@@ -669,6 +695,15 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
               <span className="flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-1.5 text-[11px] font-bold text-emerald-300 sm:px-4 sm:py-2 sm:text-xs">
                 <Icons.Users size={14} /> Member
               </span>
+            )}
+            {/* Ask to KEEP — a member who isn't a keeper may knock for keepership. */}
+            {isMember && currentUserId && !canEdit && (
+              <button onClick={handleAskToKeep} disabled={keepAsking}
+                className={`flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[11px] font-bold transition-colors disabled:opacity-50 sm:px-4 sm:py-2 sm:text-xs ${keepRequested
+                  ? 'border border-violet-400/40 bg-violet-400/10 text-violet-300 hover:bg-violet-400/20'
+                  : 'border border-violet-300/40 bg-violet-500/15 text-violet-200 hover:bg-violet-500 hover:text-white'}`}>
+                🗝 <span>{keepRequested ? t('withdraw_ask') : t('ask_to_keep')}</span>
+              </button>
             )}
             {onEnterCommunityView && (
               <button onClick={() => onEnterCommunityView(community)} className="flex items-center gap-1 rounded-full border border-amber-300/40 bg-amber-400/15 p-2 text-xs font-bold text-amber-200 transition-colors hover:bg-amber-400 hover:text-white sm:px-4 sm:py-2" title="See the whole site as this community">

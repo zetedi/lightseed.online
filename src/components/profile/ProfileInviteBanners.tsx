@@ -3,7 +3,7 @@ import { showAlert } from '../ui/Dialog';
 import { type TreeOwnershipInvite, roleLabelKey } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { speak, spokenLine } from '../../utils/translations';
-import { getPendingTreeInvites, acceptTreeInvite, declineTreeInvite, getMyCommunityTreeInvites, respondCommunityTreeInvite, type CommunityTreeInvite } from '../../services/firebase';
+import { getPendingTreeInvites, acceptTreeInvite, declineTreeInvite, getMyCommunityTreeInvites, respondCommunityTreeInvite, type CommunityTreeInvite, fetchKeeperInvitesFor, acceptKeeperInvite, declineKeeperInvite, getPersonName, type KeeperInvite } from '../../services/firebase';
 
 interface ProfileInviteBannersProps {
   uid: string;
@@ -17,13 +17,26 @@ export const ProfileInviteBanners: React.FC<ProfileInviteBannersProps> = ({ uid,
   const { t } = useLanguage();
   const [treeInvites, setTreeInvites] = useState<TreeOwnershipInvite[]>([]);
   const [communityInvites, setCommunityInvites] = useState<CommunityTreeInvite[]>([]);
+  // Keeper offers — shared keepership of a community, waiting for THIS being's yes
+  // (domain/keeperCircle; the accept callable proves their living tree before minting).
+  const [keeperInvites, setKeeperInvites] = useState<(KeeperInvite & { inviterName?: string })[]>([]);
   const [inviteBusyId, setInviteBusyId] = useState<string | null>(null);
 
   const refreshTreeInvites = useCallback(() => {
     getPendingTreeInvites(uid).then(setTreeInvites).catch(() => {});
     getMyCommunityTreeInvites(uid).then(setCommunityInvites).catch(() => {});
+    fetchKeeperInvitesFor(uid).then(async invs => setKeeperInvites(
+      await Promise.all(invs.map(async i => ({ ...i, inviterName: (await getPersonName(i.invitedByUserId)) || i.invitedByName })))
+    )).catch(() => {});
   }, [uid]);
   useEffect(() => { refreshTreeInvites(); }, [refreshTreeInvites]);
+
+  const keeperError = (e: any): string => {
+    const m = String(e?.message || '');
+    if (m.includes('no_tree')) return 'keeper_no_tree';
+    if (m.includes('already_keeper')) return 'keeper_already';
+    return m || 'err_accept';
+  };
 
   const handleAcceptInvite = async (id: string) => {
     setInviteBusyId(id);
@@ -79,6 +92,40 @@ export const ProfileInviteBanners: React.FC<ProfileInviteBannersProps> = ({ uid,
               <div className="flex shrink-0 gap-2">
                 <button onClick={async () => { try { await respondCommunityTreeInvite(inv, true); setCommunityInvites(prev => prev.filter(i => i.id !== inv.id)); notify(speak(spokenLine('tree_stands_with', { tree: inv.lifetreeName || '', community: inv.communityName || '' }))); } catch (e: any) { notify(speak(e?.message || 'err_accept')); } }} className="rounded-full bg-teal-600 px-4 py-2 text-xs font-bold text-white shadow hover:bg-teal-700">{t('accept')}</button>
                 <button onClick={async () => { try { await respondCommunityTreeInvite(inv, false); setCommunityInvites(prev => prev.filter(i => i.id !== inv.id)); } catch { /* keep */ } }} className="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">{t('decline')}</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Keeper offers — a community's keeper offers you SHARED KEEPERSHIP (full peer).
+          Accepting runs through the server, which proves your living tree first. */}
+      {keeperInvites.length > 0 && (
+        <div className="mb-6 space-y-3">
+          {keeperInvites.map(inv => (
+            <div key={inv.id} className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-2xl border border-violet-200 bg-violet-50 p-4 shadow-sm">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-violet-900">
+                  🗝 {t('keeper_invite_banner')
+                    .replace('{name}', inv.inviterName || t('someone'))
+                    .replace('{community}', inv.communityName || t('a_community'))}
+                </p>
+              </div>
+              <div className="flex shrink-0 gap-2">
+                <button onClick={async () => {
+                  setInviteBusyId(inv.id);
+                  try { await acceptKeeperInvite(inv.id); setKeeperInvites(prev => prev.filter(i => i.id !== inv.id)); }
+                  catch (e: any) { showAlert(keeperError(e)); }
+                  setInviteBusyId(null);
+                }} disabled={inviteBusyId === inv.id}
+                  className="rounded-full bg-violet-600 px-4 py-2 text-xs font-bold text-white shadow hover:bg-violet-700 disabled:opacity-50">
+                  {inviteBusyId === inv.id ? '…' : t('accept')}
+                </button>
+                <button onClick={async () => {
+                  try { await declineKeeperInvite(inv.id); setKeeperInvites(prev => prev.filter(i => i.id !== inv.id)); } catch { /* keep */ }
+                }} className="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">
+                  {t('decline')}
+                </button>
               </div>
             </div>
           ))}

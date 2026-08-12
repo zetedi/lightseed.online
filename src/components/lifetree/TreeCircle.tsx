@@ -116,6 +116,45 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
         setToggleBusy(false);
     };
 
+    // ── Keepership knocks (domain/keeperCircle, ring 2026-08-12): anyone signed-in may ASK to
+    // help keep this tree; the knock grants nothing. The keeper answers through the invite box
+    // below, choosing the role — the existing circle machinery stays the only privileged door.
+    const [keepAsks, setKeepAsks] = useState<{ uid: string; name: string }[]>([]);
+    const [myAsk, setMyAsk] = useState(false);
+    const [askBusy, setAskBusy] = useState(false);
+    const [askNonce, setAskNonce] = useState(0);
+    useEffect(() => {
+        let alive = true;
+        firestoreStore.linksTo(treeId, 'keeper_request').then(async links => {
+            if (!alive) return;
+            setMyAsk(!!currentUserId && links.some(l => l.from === currentUserId));
+            const rows = await Promise.all(links.map(async l =>
+                ({ uid: l.from, name: (await getPersonName(l.from).catch(() => '')) || `${l.from.slice(0, 8)}…` })));
+            if (alive) setKeepAsks(rows);
+        }).catch(() => {});
+        return () => { alive = false; };
+    }, [treeId, currentUserId, askNonce]);
+
+    const handleAskToKeep = async () => {
+        if (!currentUserId) return;
+        setAskBusy(true);
+        try {
+            await (myAsk
+                ? firestoreStore.unlink(currentUserId, 'keeper_request', treeId)
+                : firestoreStore.link(currentUserId, 'keeper_request', treeId));
+            if (!myAsk) showAlert('keeper_request_sent');
+            setAskNonce(n => n + 1);
+        } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
+        setAskBusy(false);
+    };
+
+    const handleDeclineAsk = async (uid: string) => {
+        try {
+            await firestoreStore.unlink(uid, 'keeper_request', treeId);
+            setAskNonce(n => n + 1);
+        } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
+    };
+
     // ── Witnessing — a guardian's act (the light mint; the sun ring). A guardian sees the tree's
     // waterings that no guardian has witnessed yet (and not their own care) and may witness one:
     // the witnessWatering callable kindles the carer's ray + the guardian's seventh, server-verified.
@@ -253,7 +292,38 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                         {status === 'DANGER' ? <span>{t('danger_resolve')}</span> : <><span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Siren /></span><span>{t('danger_report')}</span></>}
                     </button>
                 )}
+
+                {/* Ask to help KEEP — a knock at the circle (keeper_request). */}
+                {currentUserId && !circleSet.has(currentUserId) && (
+                    <button
+                        onClick={handleAskToKeep}
+                        disabled={askBusy}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-colors active:scale-95 disabled:opacity-50 ${myAsk ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-violet-600 text-white hover:bg-violet-700'}`}
+                    >
+                        🗝 {myAsk ? t('withdraw_ask') : t('ask_to_keep_tree')}
+                    </button>
+                )}
             </div>
+
+            {/* Keepership knocks — answered through the invite box below (the owner chooses the
+                role), so the circle's ONE privileged door stays the invitation. */}
+            {canEdit && keepAsks.length > 0 && (
+                <div className="mt-5 rounded-2xl border border-violet-200 bg-violet-50/60 p-4">
+                    <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-violet-700">{t('keeper_requests')}</p>
+                    <p className="mb-2 text-[11px] italic text-violet-600">{t('keeper_knock_tree_hint')}</p>
+                    <div className="space-y-1.5">
+                        {keepAsks.map(r => (
+                            <div key={r.uid} className="flex items-center justify-between gap-2 rounded-lg border border-violet-100 bg-white px-3 py-2">
+                                <p className="truncate text-sm font-semibold text-slate-700">{r.name}</p>
+                                <button onClick={() => handleDeclineAsk(r.uid)}
+                                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50">
+                                    {t('decline')}
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Witnessing — a guardian confirms care they witnessed, kindling its light (the sun ring). */}
             {isGuardian && toWitness.length > 0 && (

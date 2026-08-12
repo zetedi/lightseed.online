@@ -1,8 +1,9 @@
 import { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, setDoc, runTransaction, getDoc, where, updateDoc, deleteDoc, limit, startAfter, QueryDocumentSnapshot, writeBatch, deleteField, getCountFromServer, Timestamp, type CollectionReference, type DocumentData } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { type Pulse, type Vision, type Community, type Being, type CommunityInvite } from '../../types';
 import { uuidv7 } from '../../utils/id';
 import { type PulseVisibility } from '../../domain/pulse';
-import { db, toMillis, mapDoc, lifetreesCollection, visionsCollection, pulsesCollection, communitiesCollection, lightHousesCollection, communityInvitesCollection } from './core';
+import { db, functions, toMillis, mapDoc, lifetreesCollection, visionsCollection, pulsesCollection, communitiesCollection, lightHousesCollection, communityInvitesCollection } from './core';
 import { firestoreStore } from '../../adapters/firestore';
 import { createBlock } from '../../utils/crypto';
 
@@ -514,3 +515,72 @@ export const respondCommunityTreeInvite = async (invite: CommunityTreeInvite, ac
         status: accept ? 'accepted' : 'declined', respondedAt: serverTimestamp(),
     });
 };
+
+// ── The keeper circle (ring 2026-08-12, domain/keeperCircle) ──────────────────────────────
+// Shared keepership of a community: offers (communityKeeperInvites, accepted server-side),
+// knocks (`keeper_request` links, answered server-side), and resignation (server transaction
+// that never leaves a community keeperless). Keeper links themselves are NEVER written here —
+// only the callables mint them, after the living-tree proof.
+
+export interface KeeperInvite {
+    id: string;
+    communityId: string;
+    communityName?: string;
+    invitedByUserId: string;
+    invitedByName?: string;
+    invitedUserId: string;
+    status: 'pending' | 'accepted' | 'declined';
+    createdAt?: Timestamp;
+}
+
+// The circle as stored: the anchor plus every keeper link, distinct, anchor first
+// (mirrors domain/keeperCircle.keepersOf on live links).
+export const keepersOfCommunity = async (community: Pick<Community, 'id' | 'ownerId'>): Promise<string[]> => {
+    const links = await firestoreStore.linksTo(community.id, 'keeper');
+    const out = [community.ownerId];
+    for (const l of links) if (l.from && !out.includes(l.from)) out.push(l.from);
+    return out;
+};
+
+export const inviteKeeper = async (input: {
+    communityId: string; communityName?: string; invitedUserId: string;
+    invitedByUserId: string; invitedByName?: string;
+}) => {
+    await addDoc(collection(db, 'communityKeeperInvites'), {
+        ...input, status: 'pending', createdAt: serverTimestamp(),
+    });
+};
+
+export const fetchKeeperInvitesFor = async (uid: string): Promise<KeeperInvite[]> => {
+    const snap = await getDocs(query(collection(db, 'communityKeeperInvites'),
+        where('invitedUserId', '==', uid), where('status', '==', 'pending')));
+    return snap.docs.map(d => ({ id: d.id, ...(d.data() as Omit<KeeperInvite, 'id'>) }));
+};
+
+export const fetchKeeperInvitesOf = async (communityId: string): Promise<KeeperInvite[]> => {
+    const snap = await getDocs(query(collection(db, 'communityKeeperInvites'),
+        where('communityId', '==', communityId), where('status', '==', 'pending')));
+    return snap.docs.map(d => ({ id: d.id, ...(d.data() as Omit<KeeperInvite, 'id'>) }));
+};
+
+export const declineKeeperInvite = (inviteId: string) =>
+    updateDoc(doc(db, 'communityKeeperInvites', inviteId), { status: 'declined', respondedAt: serverTimestamp() });
+
+// A knock for keepership — at a community or at a lifetree (the same rel; the rules bind
+// the target's existence, the answerers differ). Withdrawing is deleting your own knock.
+export const requestKeepership = (uid: string, targetId: string) =>
+    firestoreStore.link(uid, 'keeper_request', targetId);
+export const withdrawKeeperRequest = (uid: string, targetId: string) =>
+    firestoreStore.unlink(uid, 'keeper_request', targetId);
+export const fetchKeeperRequests = (targetId: string) =>
+    firestoreStore.linksTo(targetId, 'keeper_request');
+export const declineKeeperRequest = (requesterUid: string, targetId: string) =>
+    firestoreStore.unlink(requesterUid, 'keeper_request', targetId);
+
+// The three server hands — the ONLY writers of keeper links and the ownerId anchor.
+export const acceptKeeperInvite = async (inviteId: string): Promise<{ communityId: string }> =>
+    (await httpsCallable(functions, 'acceptKeeperInvite')({ inviteId })).data as { communityId: string };
+export const acceptKeeperRequest = async (communityId: string, requesterUid: string): Promise<{ keeperUid: string }> =>
+    (await httpsCallable(functions, 'acceptKeeperRequest')({ communityId, requesterUid })).data as { keeperUid: string };
+export const resignKeeper = async (communityId: string): Promise<{ resigned: string; successor: string | null }> =>
+    (await httpsCallable(functions, 'resignKeeper')({ communityId })).data as { resigned: string; successor: string | null };

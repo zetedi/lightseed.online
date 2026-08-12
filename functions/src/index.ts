@@ -1395,6 +1395,119 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
     });
 });
 
+// ── The keeper circle (ring 2026-08-12, domain/keeperCircle) ─────────────────────────────
+// A community is KEPT, and keeping can be shared, handed over, and asked for. The founding
+// ownerId and every `keeper` link holder are FULL PEERS (rules isCommunityOwner). Keeper
+// links are minted ONLY here — after proving the newcomer owns a living tree — and the one
+// invariant these three hands defend together: a community is never keeperless.
+
+// A keeper is a rooted being: at least one living tree of their own (a BED is furniture).
+const ownsLivingTree = async (uid: string): Promise<boolean> => {
+    const snap = await db.collection("lifetrees").where("ownerId", "==", uid).limit(10).get();
+    return snap.docs.some((d) => (d.data() as any).treeType !== "BED");
+};
+
+const keeperLinkRef = (uid: string, communityId: string) =>
+    db.collection("links").doc(`${uid}__keeper__${communityId}`);
+
+const mintKeeperLinks = (tx: FirebaseFirestore.Transaction, uid: string, communityId: string) => {
+    // Keeper implies member — a keeper who cannot stand inside their own community is a
+    // contradiction. Deterministic ids keep both writes idempotent.
+    for (const rel of ["keeper", "member"] as const) {
+        tx.set(db.collection("links").doc(`${uid}__${rel}__${communityId}`), {
+            lid: mintLid(), type: "link", rel, from: uid, to: communityId,
+            createdAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+    }
+};
+
+// The invitee ACCEPTS a keeper offer (communityKeeperInvites) — consent, never appointment.
+export const acceptKeeperInvite = onCall({ cors: true }, async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "You must be signed in.");
+    const uid = request.auth.uid;
+    const inviteId = String(request.data?.inviteId || "");
+    if (!inviteId) throw new HttpsError("invalid-argument", "inviteId is required.");
+    if (!(await ownsLivingTree(uid))) {
+        throw new HttpsError("failed-precondition", "no_tree"); // a keeper is a rooted being
+    }
+    return await db.runTransaction(async (tx) => {
+        const inviteRef = db.collection("communityKeeperInvites").doc(inviteId);
+        const invite = (await tx.get(inviteRef)).data() as any;
+        if (!invite) throw new HttpsError("not-found", "Invite not found.");
+        if (invite.invitedUserId !== uid) throw new HttpsError("permission-denied", "This invite is not for you.");
+        if (invite.status !== "pending") throw new HttpsError("failed-precondition", "This invite is no longer pending.");
+        const community = (await tx.get(db.collection("communities").doc(invite.communityId))).data() as any;
+        if (!community) throw new HttpsError("not-found", "Community not found.");
+        if (community.ownerId === uid || (await tx.get(keeperLinkRef(uid, invite.communityId))).exists) {
+            throw new HttpsError("failed-precondition", "already_keeper");
+        }
+        mintKeeperLinks(tx, uid, invite.communityId);
+        tx.update(inviteRef, { status: "accepted", acceptedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+        return { communityId: invite.communityId };
+    });
+});
+
+// A sitting keeper ANSWERS a keepership knock (a `keeper_request` link) with yes.
+export const acceptKeeperRequest = onCall({ cors: true }, async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "You must be signed in.");
+    const uid = request.auth.uid;
+    const communityId = String(request.data?.communityId || "");
+    const requesterUid = String(request.data?.requesterUid || "");
+    if (!communityId || !requesterUid) throw new HttpsError("invalid-argument", "communityId and requesterUid are required.");
+    if (!(await ownsLivingTree(requesterUid))) {
+        throw new HttpsError("failed-precondition", "no_tree");
+    }
+    return await db.runTransaction(async (tx) => {
+        const community = (await tx.get(db.collection("communities").doc(communityId))).data() as any;
+        if (!community) throw new HttpsError("not-found", "Community not found.");
+        const callerIsKeeper = community.ownerId === uid || (await tx.get(keeperLinkRef(uid, communityId))).exists;
+        if (!callerIsKeeper) throw new HttpsError("permission-denied", "Only a keeper answers a keepership knock.");
+        const requestRef = db.collection("links").doc(`${requesterUid}__keeper_request__${communityId}`);
+        if (!(await tx.get(requestRef)).exists) throw new HttpsError("not-found", "No such request.");
+        if (community.ownerId === requesterUid || (await tx.get(keeperLinkRef(requesterUid, communityId))).exists) {
+            throw new HttpsError("failed-precondition", "already_keeper");
+        }
+        mintKeeperLinks(tx, requesterUid, communityId);
+        tx.delete(requestRef); // the knock is answered — the door opened
+        return { communityId, keeperUid: requesterUid };
+    });
+});
+
+// A keeper RESIGNS — only with company (never keeperless). A keeper-link holder simply
+// loses their link; the ANCHOR (ownerId) hands the anchor to the longest-standing keeper
+// (oldest link, ties by uid — mirrors domain/keeperCircle.successorAmong exactly).
+export const resignKeeper = onCall({ cors: true }, async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "You must be signed in.");
+    const uid = request.auth.uid;
+    const communityId = String(request.data?.communityId || "");
+    if (!communityId) throw new HttpsError("invalid-argument", "communityId is required.");
+    return await db.runTransaction(async (tx) => {
+        const communityRef = db.collection("communities").doc(communityId);
+        const community = (await tx.get(communityRef)).data() as any;
+        if (!community) throw new HttpsError("not-found", "Community not found.");
+        const linksSnap = await tx.get(
+            db.collection("links").where("rel", "==", "keeper").where("to", "==", communityId));
+        const keeperLinks = linksSnap.docs
+            .map((d) => ({ from: (d.data() as any).from as string, createdAtMs: (d.data() as any).createdAt?.toMillis?.() || 0, ref: d.ref }))
+            .filter((l) => l.from !== community.ownerId); // a stray anchor-duplicate is not company
+        const isAnchor = community.ownerId === uid;
+        const ownLink = keeperLinks.find((l) => l.from === uid);
+        if (!isAnchor && !ownLink) throw new HttpsError("permission-denied", "You are not a keeper here.");
+        // A link-holder's resignation always leaves the anchor standing; only the anchor
+        // needs company (a successor) to leave — the invariant lives in these two branches.
+        if (isAnchor) {
+            if (keeperLinks.length === 0) throw new HttpsError("failed-precondition", "last_keeper");
+            const successor = [...keeperLinks].sort((a, b) =>
+                a.createdAtMs - b.createdAtMs || (a.from < b.from ? -1 : a.from > b.from ? 1 : 0))[0];
+            tx.update(communityRef, { ownerId: successor.from, updatedAt: FieldValue.serverTimestamp() });
+            tx.delete(successor.ref); // the successor IS the anchor now; the link would double-count them
+            return { resigned: uid, successor: successor.from };
+        }
+        tx.delete(ownLink!.ref); // ownerId remains — never keeperless by construction
+        return { resigned: uid, successor: null };
+    });
+});
+
 // Request an invitation (callable, may be unauthenticated). With admin rights it checks
 // whether a pending invite or request already exists for the email before creating one.
 // Returns { status: 'created' | 'pending_invite_exists' | 'already_requested' }.
