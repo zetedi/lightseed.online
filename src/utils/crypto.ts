@@ -1,16 +1,3 @@
-export async function sha256(message: string): Promise<string> {
-  const msgBuffer = new TextEncoder().encode(message);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-  return hashHex;
-}
-
-export async function createBlock(
-  previousHash: string,
-  data: object,
-  timestamp: number
-): Promise<string> {
-  const payload = JSON.stringify(data) + previousHash + timestamp;
-  return await sha256(payload);
-}
+// The hash IS chain law — it lives in the domain now (ring 2026-08-14). This module remains
+// as the compatibility door for the many call sites that grew up importing it from utils.
+export { sha256, createBlock } from '../domain/chain/hash';

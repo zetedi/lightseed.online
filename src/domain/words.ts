@@ -1,0 +1,36 @@
+// THE WORDS CONTRACT (ring 2026-08-14) — the domain never carries English, only KEYS; the
+// words live once, in the dictionary (i18n-no-shortcuts). This module makes that seam point
+// the right way for @lightseed/domain: the DOMAIN owns the manifest of every key its laws
+// speak, and the app's dictionary proves coverage — a compile assertion in translations.ts
+// (DomainKey extends TranslationKey) plus a runtime belt in tests. Domain depends on app:
+// never again. A key added here without words there fails COMPILATION.
+export const DOMAIN_KEYS = [
+  // beingIndex — the lid index's refusals and descriptions
+  'being_entry_home', 'rebind_kind_change',
+  // lid62 — the printed short name's arithmetic
+  'lid62_length', 'lid62_char',
+  // limits — the node's planting caps
+  'limit_lifetrees', 'limit_guarded',
+  // signing — the crystal's phrase law
+  'signing_seed_bytes', 'signing_phrase_words', 'signing_unknown_word',
+  // stay — a request to sleep in a bed
+  'stay_choose_nights', 'stay_order', 'stay_max_nights', 'stay_past',
+  // gift — the suspended gift's refusals
+  'gift_nothing', 'gift_whole_units', 'gift_needs_both', 'gift_own_offering',
+  'gift_resting', 'gift_hold_less',
+  // offering — a sound offering draft
+  'offering_choose_kind', 'offering_name', 'offering_appreciation_positive',
+  'offering_appreciation_whole', 'offering_link_http', 'offering_link_long',
+] as const;
+
+export type DomainKey = (typeof DOMAIN_KEYS)[number];
+
+// The ONE owner of the spoken-line format: `key::{json}` — speak() (the app's voice) parses
+// exactly this shape. Both typed doors below and translations.ts's app-side spokenLine call
+// through here, so the format can never fork.
+export const line = (key: string, params: Record<string, string | number>): string =>
+  `${key}::${JSON.stringify(params)}`;
+
+// The domain's typed door — laws speak only manifest keys.
+export const spokenLine = (key: DomainKey, params: Record<string, string | number>): string =>
+  line(key, params);

@@ -1,4 +1,4 @@
-import type { Timestamp } from 'firebase/firestore';
+import type { Stamp } from './time';
 import type { Being } from './being';
 import { signatureBindsToIdentityOrLineage, type SignatureVerifier, type LineageCheck } from './covenant';
 
@@ -26,7 +26,7 @@ export const votesRequired = (nature: DecisionNature): number =>
 export interface Concern {
   by: string;       // uid who raised it
   note?: string;    // what the concern is
-  at: Timestamp;
+  at: Stamp;
 }
 
 // Two ways a circle decides. `threshold` counts voices to a nature-set number (the default,
@@ -46,7 +46,7 @@ export interface Position {
   by: string;              // uid
   stance: ConsensusStance;
   note?: string;           // why — especially load-bearing for a block
-  at: Timestamp;
+  at: Stamp;
 }
 
 export type DecisionStatus = 'draft' | 'open' | 'passed' | 'rejected' | 'withdrawn' | 'expired';
@@ -82,11 +82,11 @@ export interface Decision extends Being {
   hash: string;
   enactedHash?: string; // the block written when the circle reaches the threshold
   withdrawnHash?: string; // the withdrawal mark — minted withdraws, chain-recorded (never erased)
-  createdAt: Timestamp;
-  passedAt?: Timestamp;
-  withdrawnAt?: Timestamp;
-  rejectedAt?: Timestamp;
-  expiresAt?: Timestamp;
+  createdAt: Stamp;
+  passedAt?: Stamp;
+  withdrawnAt?: Stamp;
+  rejectedAt?: Stamp;
+  expiresAt?: Stamp;
 }
 
 // ── The signed vote — a decision seven people sign (Covenant, phase 3) ─────────────────────────────

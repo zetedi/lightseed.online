@@ -1,4 +1,4 @@
-import type { Timestamp } from 'firebase/firestore';
+import type { Stamp } from './time';
 
 // The Being — the concept every entity in the network instantiates. Indra's net: every jewel
 // is different, and every jewel reflects all the others the same way.
@@ -26,7 +26,7 @@ export interface Being {
   // The minted offline link: the exact URL this being's QR was generated with
   // (domain/beingLink). Stale when the home domain moves; a keeper re-mints.
   qr?: { href: string };
-  createdAt?: Timestamp; // the birth time; optional on the base (derived/transient objects),
+  createdAt?: Stamp; // the birth time; optional on the base (derived/transient objects),
                          // required by concrete stored types that always stamp it.
   loveCount?: number;    // likes on this being (loveBeing writes it alongside a loves/{uid} slot).
 }

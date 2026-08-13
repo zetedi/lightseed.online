@@ -4,7 +4,7 @@
 // later with the rest of the care economy (domain/support.ts) — the structure is whole now.
 
 import type { Being } from './being';
-import { spokenLine } from '../utils/translations';
+import { spokenLine } from './words';
 
 export type StayStatus = 'requested' | 'accepted' | 'declined';
 

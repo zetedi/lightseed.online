@@ -1,4 +1,4 @@
-import type { Timestamp } from 'firebase/firestore';
+import type { Stamp } from './time';
 import type { Being } from './being';
 import type { ReachAudience } from './reach';
 
@@ -129,7 +129,7 @@ export interface Pulse extends Being {
     model?: string;        // the model that read it
     provider?: string;     // 'google' | 'anthropic' | …
     confirmedByUid?: string; // the guardian, when confirmed by a human
-    confirmedAt?: Timestamp;
+    confirmedAt?: Stamp;
   };
 
   // Alignment Logic (On Chain) (Legacy)
@@ -149,7 +149,7 @@ export interface Pulse extends Being {
   // NOT part of BLOCK_CONTENT_FIELDS — display provenance, not chain content.
   carriedByName?: string;    // the human carrier's displayName
   disclosure?: string;       // "This pulse was carried by <name> from <being>."
-  createdAt: Timestamp;
+  createdAt: Stamp;
   
   // Interactions (Off Chain)
   loveCount: number;

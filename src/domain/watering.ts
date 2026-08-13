@@ -1,4 +1,4 @@
-import type { Timestamp } from 'firebase/firestore';
+import type { Stamp } from './time';
 import type { Lifetree } from './lifetree';
 
 // --- Watering: scheduled caring of a (usually guarded) tree ---------------------------
@@ -23,10 +23,10 @@ export interface WateringSchedule {
   mode?: WateringMode;        // absent only on partial legacy maps (an off-chain tick on a never-scheduled tree)
   stage?: TreeStage;          // growth stage; legacy docs derive it from mode (see treeStage)
   intervalDays?: number;      // for 'scheduled' — how many days between waterings
-  lastWateredAt?: Timestamp;  // last confirmed watering (or when the schedule was set)
-  nextDueAt?: Timestamp;      // denormalised lastWateredAt + intervalDays (for display)
+  lastWateredAt?: Stamp;  // last confirmed watering (or when the schedule was set)
+  nextDueAt?: Stamp;      // denormalised lastWateredAt + intervalDays (for display)
   overdue?: boolean;          // raised by the daily sweep / client check, cleared on watering
-  lastAlertAt?: Timestamp;    // idempotency: when guardians were last pinged about it
+  lastAlertAt?: Stamp;    // idempotency: when guardians were last pinged about it
   alertThreadId?: string;     // the guardians group thread the "water me" reach lives in
 }
 
@@ -45,7 +45,7 @@ export const AI_CONFIRM_THRESHOLD = 70;
 
 export const DAY_MS = 24 * 60 * 60 * 1000;
 
-// Robustly read milliseconds from a Firestore Timestamp, a JS Date, or a number.
+// Robustly read milliseconds from a Firestore Stamp, a JS Date, or a number.
 const toMs = (t: any): number =>
   t?.toMillis ? t.toMillis() : (t instanceof Date ? t.getTime() : (typeof t === 'number' ? t : 0));
 

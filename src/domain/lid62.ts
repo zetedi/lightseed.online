@@ -1,4 +1,4 @@
-import { spokenLine } from '../utils/translations';
+import { spokenLine } from './words';
 // Base62 compact lids — the SPOKEN-SHORT form of a being's true name, for doors and paper:
 // the canonical lid (UUIDv7, 36 chars with dashes) compresses to a fixed 22 characters, which
 // makes /b/ URLs shorter and their QR codes coarser (fewer modules scan better at leaf-tag

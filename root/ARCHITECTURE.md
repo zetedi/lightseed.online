@@ -151,10 +151,13 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
   automated component/end-to-end walk, and sparse event/offering feeds filter a
   bounded general-pulse sample, so real items can fall outside it as activity grows
   (first-sight ring, 2026-08-12).
-- Layering is directional but incomplete: the Store port covers links, several
-  domain entity types carry Firestore `Timestamp`, and the shell, Functions entry
-  point and Firebase services remain large policy conductors (first-sight ring,
-  2026-08-12).
+- Layering is directional but incomplete: the Store port covers links, and the
+  shell, Functions entry point and Firebase services remain large policy
+  conductors (first-sight ring, 2026-08-12). CLOSED 2026-08-14: the domain layer
+  itself is now import-sealed — zero imports from outside `src/domain/` (the
+  `Stamp` time port replaced Firestore `Timestamp`; `words.ts` owns the key
+  manifest the dictionary proves coverage of; the block hash lives in
+  `chain/hash.ts`) — the `@lightseed/domain` extraction is a folder-move away.
 - Power is visible but broad: staff retain general mend/delete escape hatches. The
   present boundary is stewardship by known people, not resistance to stewards;
   retire broad powers into named capabilities over time (first-sight ring,

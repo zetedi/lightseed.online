@@ -1,4 +1,4 @@
-import type { Timestamp } from 'firebase/firestore';
+import type { Stamp } from './time';
 import type { Being } from './being';
 
 // A lightHouse is a sacred place / platform that holds a community's lifetrees —
@@ -31,7 +31,7 @@ export interface LightHouse extends Being {
   // can seal it); the care economy's rail joins later.
   beds?: number;
   bedNote?: string;
-  createdAt: Timestamp;
+  createdAt: Stamp;
 }
 
 export const lightHouseVisibility = (s: Pick<LightHouse, 'visibility'>): LightHouseVisibility =>

@@ -1,4 +1,4 @@
-import type { Timestamp } from 'firebase/firestore';
+import type { Stamp } from './time';
 import type { Being } from './being';
 import type { WateringSchedule } from './watering';
 
@@ -13,7 +13,7 @@ export type LifetreeType = "LIFETREE" | "GUARDED" | "BED";
 export interface Lifetree extends Being {
   // Provenance — the REAL planting moment (from the birth photo's EXIF): when the being
   // was touched and cut from its parent, and where. createdAt stays the doc's own birth.
-  plantedAt?: Timestamp;
+  plantedAt?: Stamp;
   plantedLatitude?: number;
   plantedLongitude?: number;
   plantedAltitudeM?: number;
@@ -29,7 +29,7 @@ export interface Lifetree extends Being {
   // collection (the LIN) — see src/domain/link.ts. The legacy per-role arrays are gone
   // from both the type and the data (dropLegacyArrays cleared the docs).
   communityId?: string; // The Tree Circle community rooted in this tree, once formed.
-  updatedAt?: Timestamp;
+  updatedAt?: Stamp;
   aiTokenBalance?: number;
   coherenceScore?: number;
 
@@ -46,7 +46,7 @@ export interface Lifetree extends Being {
   // belonging stays LIN links. A bed carries NO `domain`, so domain-scoped forest queries
   // never surface it.
   lightHouseId?: string;
-  createdAt: Timestamp;
+  createdAt: Stamp;
 
   // Who can see this tree. 'public' = the whole world (the forest); 'node' = signed-in members
   // of this node; 'private' = only the owner and its circle. Absent = public (legacy default).
@@ -60,7 +60,7 @@ export interface Lifetree extends Being {
   // (a growth pulse or an explicit confirm) within a year. Left uncared for, it dims; re-caring re-lights it.
   validated: boolean;
   validatorId?: string | null;
-  lastCaredAt?: Timestamp;
+  lastCaredAt?: Stamp;
 
   // Nature & Guardian Logic — guardianship is a 'guardian' link in the LIN (no array here).
   isNature?: boolean;

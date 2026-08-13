@@ -1,4 +1,4 @@
-import type { Timestamp } from 'firebase/firestore';
+import type { Stamp } from './time';
 import type { Being } from './being';
 
 // The canonical PERSON entity — one per user, the human's own node in the LIN. Stage 1 of the
@@ -11,5 +11,5 @@ export interface Person extends Being {
   uid: string;
   displayName?: string;
   publicKeyPem?: string | null; // reserved for Stage 3 (keypair signing) — null until then
-  createdAt: Timestamp;
+  createdAt: Stamp;
 }

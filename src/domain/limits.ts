@@ -8,7 +8,7 @@
 // message IS the point, so it lives here with the numbers it explains.
 
 import { isBedTree } from './bed';
-import { spokenLine } from '../utils/translations';
+import { spokenLine } from './words';
 
 // The UN roll as of 2026 (South Sudan joined in 2011, none since). If the roll changes,
 // this constant changes with it, in its own ring.

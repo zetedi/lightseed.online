@@ -6,6 +6,28 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-14 · The domain seals its skin** — Zoltán is shaping a second face (a domain-
+specific app on the lightseed base), which asked the question the first-sight ring had
+already opened: what would `@lightseed/domain` be? The inventory answered: 57 files,
+~5,000 lines, and only three leaks — all seams, none rot. Closed all three: (1) TIME —
+entity shapes imported Firestore's `Timestamp` type in 12 files (type-only; no law ever
+called it — laws already take plain ms). Now `domain/time.ts` owns `Stamp`
+({ toMillis, toDate }), a structural port Firestore satisfies without knowing us and any
+backend can supply in two lines. (2) WORDS — five files called the app's spokenLine and two
+typed their refusals as the app's TranslationKey: the words seam pointed the wrong way.
+Now `domain/words.ts` owns the MANIFEST of every key the laws speak (24 keys) plus the one
+spoken-line format (`key::{json}`); translations.ts delegates to it and carries a compile
+assertion (DomainKey extends TranslationKey) — the dictionary proves coverage of the domain,
+never the reverse. tests/words.test.ts is the runtime belt across en/ar/zh. (3) HASH —
+sha256/createBlock lived in utils but ARE chain law (every stored genesis reproduces through
+them); they moved home to `chain/hash.ts`, utils re-exports for old call sites, and the
+golden-hash tests (the Aspen's block 000) prove the move changed nothing. The layer is now
+IMPORT-SEALED: zero imports from outside src/domain. The package shape is recorded in the
+conversation and waits, deliberately, for the rule of three — extraction happens when the
+second face exists to prove the surface, not before.
+
+---
+
 **2026-08-12 · Keeping becomes a circle** — three asks of Zoltán's, one law: a community
 keeper may INVITE co-keepers (who have their own tree), may RESIGN when others remain, and
 anyone may ASK to keep a community or a lifetree. Decided: (1) co-keepers are `keeper` links

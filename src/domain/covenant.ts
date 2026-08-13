@@ -1,4 +1,4 @@
-import type { Timestamp } from 'firebase/firestore';
+import type { Stamp } from './time';
 import type { Being } from './being';
 
 // THE COVENANT — the two-sided cryptographic mint (Covenant, phase 2), standing on the signing
@@ -53,8 +53,8 @@ export interface Covenant extends Being {
   quorum: number;         // signatures needed to seal
   proposedBy: string;     // uid of the being who minted it (may itself be a party)
   status: CovenantStatus;
-  createdAt?: Timestamp;
-  sealedAt?: Timestamp;
+  createdAt?: Stamp;
+  sealedAt?: Stamp;
 }
 
 // The CANONICAL COVENANT IDENTITY — the exact value every party signs (under COVENANT_DOMAIN). It is

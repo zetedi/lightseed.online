@@ -1,4 +1,4 @@
-import type { Timestamp } from 'firebase/firestore';
+import type { Stamp } from './time';
 
 // Tree Circle — communities form when people share care of a Lifetree.
 // The tree is the living anchor; the circle (community) grows around shared care.
@@ -19,11 +19,11 @@ export interface TreeOwnershipInvite {
   role: InvitableRole;
   status: TreeRelationStatus;
   message?: string;
-  createdAt: Timestamp;
-  updatedAt?: Timestamp;
-  acceptedAt?: Timestamp;
-  declinedAt?: Timestamp;
-  revokedAt?: Timestamp;
+  createdAt: Stamp;
+  updatedAt?: Stamp;
+  acceptedAt?: Stamp;
+  declinedAt?: Stamp;
+  revokedAt?: Stamp;
 }
 
 // Relations live in the `links` collection (the LIN) — the single source of truth. The legacy

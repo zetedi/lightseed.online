@@ -1,4 +1,4 @@
-import type { Timestamp } from 'firebase/firestore';
+import type { Stamp } from './time';
 import type { Being } from './being';
 
 // The Intelligence Commons.
@@ -44,7 +44,7 @@ export interface Intelligence extends Being {
   keyHint?: string;                                  // e.g. "…aB3z"
   credentialScope?: 'user' | 'community' | 'node';   // which key this intelligence draws on
   credentialOwnerId?: string;                        // uid or communityId for that key
-  createdAt: Timestamp;
+  createdAt: Stamp;
 }
 
 // Behaviour only. A persona carries voice and stance, never memory.
@@ -53,7 +53,7 @@ export interface Persona {
   name: string;
   description: string;
   systemPrompt: string;
-  createdAt: Timestamp;
+  createdAt: Stamp;
 }
 
 // What an intelligence is allowed to recall. Memory is durable and outlives any
@@ -72,7 +72,7 @@ export interface Memory extends Being {
   // Source documents this memory draws from: pulses, reaches, links, visions,
   // community charter, community documents, …
   sourceIds: string[];
-  createdAt: Timestamp;
+  createdAt: Stamp;
 }
 
 // --- Transport shapes used by the provider abstraction ---

@@ -1,5 +1,5 @@
 import { prismSplit, DEFAULT_GLOW_SHARE_DENOMINATOR } from './light';
-import type { TranslationKey } from '../utils/translations';
+import type { DomainKey } from './words';
 
 // THE SUSPENDED GIFT — appreciation that travels FORWARD, never back.
 //
@@ -41,7 +41,7 @@ export interface GiftDraft {
 // Why this gift cannot stand, or null when it may. The reasons are the law read aloud — as
 // translation KEYS (the words live in translations.ts in every language; speak() says them),
 // so the face can say them without inventing its own words, in the reader's own tongue.
-export const giftProblem = (d: GiftDraft): TranslationKey | null => {
+export const giftProblem = (d: GiftDraft): DomainKey | null => {
   if (!Number.isFinite(d.units) || d.units <= 0) return 'gift_nothing';
   if (!Number.isInteger(d.units)) return 'gift_whole_units';
   if (!d.giverUid || !d.offererUid) return 'gift_needs_both';

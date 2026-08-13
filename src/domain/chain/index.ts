@@ -11,3 +11,4 @@ export {
 } from './verify';
 export type { ChainBlock, ChainIssue, ChainIssueCode, ChainVerifyResult } from './verify';
 export { isChainLocked, setChainLocked } from './lock';
+export { sha256, createBlock } from './hash';

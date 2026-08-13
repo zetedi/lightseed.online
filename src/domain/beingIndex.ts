@@ -1,5 +1,5 @@
 import { isLid } from './dataAuthority';
-import { spokenLine } from '../utils/translations';
+import { spokenLine } from './words';
 
 // THE LID INDEX — where a true name is written down.
 //

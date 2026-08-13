@@ -1,4 +1,4 @@
-import type { TranslationKey } from '../utils/translations';
+import type { DomainKey } from './words';
 // OFFERINGS — a being offers a BED or a SERVICE and may name the light with which they hope the
 // contribution will be appreciated AFTER it is received. Trust admits; the ray follows the dream.
 // The suggestion is an agreement, never a gate or purchase price. This module is the pure law for
@@ -16,7 +16,7 @@ export interface OfferingDraft {
 }
 
 // Why this offering cannot stand yet, or null when it may. Keeps the form honest before a write.
-export const offeringProblem = (d: OfferingDraft): TranslationKey | null => {
+export const offeringProblem = (d: OfferingDraft): DomainKey | null => {
     if (d.kind !== 'bed' && d.kind !== 'service') return 'offering_choose_kind';
     if (!d.title.trim()) return 'offering_name';
     if (!Number.isFinite(d.suggestedAppreciationLight) || d.suggestedAppreciationLight <= 0) return 'offering_appreciation_positive';

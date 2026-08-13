@@ -426,7 +426,7 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
         const sortedTrees = ([...visibleTrees, ...(showLightHouses ? lightHouseBeings : [])] as MapBeing[]).sort((a, b) => {
             const pa = (a as MapBeing).__lightHouse ? 0 : 1;
             const pb = (b as MapBeing).__lightHouse ? 0 : 1;
-            return pa - pb || (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0);
+            return pa - pb || (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0);
         });
         // The expansion stack stores snapshots from click time; a data refresh must not
         // leave the open Seed of Life showing yesterday's images and statuses.

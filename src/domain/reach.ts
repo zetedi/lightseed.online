@@ -1,4 +1,4 @@
-import type { Timestamp } from 'firebase/firestore';
+import type { Stamp } from './time';
 
 // Who a reach is addressed to within a tree's circle. Audiences nest: 'guardians'
 // includes the owners, 'everyone' includes the guardians. ('owner' is the implicit
@@ -17,5 +17,5 @@ export interface Reach {
 
   status: "offered" | "accepted" | "declined";
 
-  createdAt: Timestamp;
+  createdAt: Stamp;
 }

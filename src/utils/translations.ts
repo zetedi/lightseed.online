@@ -1,5 +1,7 @@
 
 // 'xnz' is Mattokki (Kenzi), the Nubian of the Aswan reach — see the door at the foot of this file.
+import { line, type DomainKey } from '../domain/words';
+
 export type Language = 'en' | 'es' | 'hu' | 'qu' | 'sa' | 'ja' | 'ar' | 'sw' | 'zh' | 'xnz';
 
 const baseKeys = {
@@ -2137,6 +2139,15 @@ export const speak = (message: string, params?: Record<string, string | number>)
   return out;
 };
 
-// The domain's half of the convention: compose a spoken line without knowing any language.
+// The APP's half of the convention: compose a spoken line without knowing any language. The
+// format itself has ONE owner — domain/words.line — shared with the domain's own spokenLine,
+// so the `key::{json}` shape can never fork between the two layers.
 export const spokenLine = (key: TranslationKey, params: Record<string, string | number>): string =>
-  `${key}::${JSON.stringify(params)}`;
+  line(key, params);
+
+// THE WORDS CONTRACT, held: every key the domain's laws speak (domain/words DOMAIN_KEYS)
+// exists in this dictionary — the compiler is the mirror test. A key added to the manifest
+// without words here turns this line red; tests/words.test.ts is the runtime belt (and holds
+// ar/zh completeness the same way the dictionary tests always have).
+const _domainWordsCovered: DomainKey extends TranslationKey ? true : never = true;
+void _domainWordsCovered;

@@ -115,9 +115,9 @@ export interface CommunityInvite {
   id: string;
   communityId: string;
   createdBy: string;                                   // uid of the keeper/steward who minted it
-  createdAt: import('firebase/firestore').Timestamp;
-  expiresAt?: import('firebase/firestore').Timestamp | null;
-  revokedAt?: import('firebase/firestore').Timestamp | null;
+  createdAt: import('./time').Stamp;
+  expiresAt?: import('./time').Stamp | null;
+  revokedAt?: import('./time').Stamp | null;
   label?: string;                                      // e.g. "market day poster", "Anna's batch"
 }
 

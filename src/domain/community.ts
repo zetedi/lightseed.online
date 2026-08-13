@@ -1,4 +1,4 @@
-import type { Timestamp } from 'firebase/firestore';
+import type { Stamp } from './time';
 import type { Being } from './being';
 
 export interface Community extends Being {
@@ -45,8 +45,8 @@ export interface Community extends Being {
   // Whether this node runs the AI-token ("Attention-Energy") economy. Off by default; the shell
   // syncs it into the tokenisation flag (src/domain/tokenisation.ts) on load.
   tokenisationEnabled?: boolean;
-  createdAt: Timestamp;
-  updatedAt?: Timestamp;
+  createdAt: Stamp;
+  updatedAt?: Stamp;
 
   // Intelligence Commons — which intelligences this community has enabled, which is
   // the default, and which memories they may draw on. Communities remain sovereign.

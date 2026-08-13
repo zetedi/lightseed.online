@@ -1,6 +1,6 @@
 import { canonicalize } from './chain/canonical';
 import { BIP39_WORDLIST } from './bip39Wordlist';
-import { spokenLine } from '../utils/translations';
+import { spokenLine } from './words';
 
 // The signing crystal (pure part) — everything here is deterministic string/bytes work, with NO
 // WebCrypto and NO storage. Two things live here:
