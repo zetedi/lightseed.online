@@ -596,7 +596,7 @@ const baseKeys = {
   // The unmint (domain/unmint, ring 2026-08-15) \u2014 the accidental head mint, taken back whole.
   unmint: "Unmint", unmint_confirm: "Take back this mint? The chain shortens by its newest link; nothing else moves.",
   unmint_not_author: "Only the hand that minted it may take it back.",
-  unmint_not_mint: "Only a tree mint can be unminted.",
+  unmint_not_mint: "Only a block on a tree's chain can be taken back.",
   unmint_not_last: "Only the newest block can be taken back \u2014 below the head, the chain is sealed.",
   unmint_witnessed: "A witnessed watering stands forever: its light is already kindled.",
   // The keeper circle (domain/keeperCircle, ring 2026-08-12) \u2014 shared, resignable, askable keepership.
@@ -1335,7 +1335,7 @@ const dictionaries = {
     community_domain_confirm: "أتنقل «{name}» إلى {domain}؟ ستتقيّد صفحاته بالعنوان الجديد؛ الأشجار والنبضات القائمة تحتفظ بأختامها القديمة حتى يُعاد توطينها.",
     unmint: "إلغاء السكّ", unmint_confirm: "أتسترجع هذا السكّ؟ تقصر السلسلة بحلقتها الأحدث؛ لا شيء آخر يتحرك.",
     unmint_not_author: "لا يسترجعه إلا اليد التي سكّته.",
-    unmint_not_mint: "لا يُلغى إلا سكّ شجرة.",
+    unmint_not_mint: "لا يُسترجع إلا كتلة على سلسلة شجرة.",
     unmint_not_last: "لا يُسترجع إلا أحدث حلقة — تحت الرأس، السلسلة مختومة.",
     unmint_witnessed: "سقيٌ مشهود يبقى إلى الأبد: نوره أُوقد بالفعل.",
     keepers: "الحفظة", keeper_badge: "حافظ",
@@ -2031,7 +2031,7 @@ const dictionaries = {
     community_domain_confirm: "将“{name}”迁至 {domain}？其页面将按新地址取景；现有的树与脉动保留旧印记，直到被重新安家。",
     unmint: "撤回铸造", unmint_confirm: "撤回这次铸造？链条缩短最新一环；其余一切不动。",
     unmint_not_author: "只有铸造它的手才能撤回它。",
-    unmint_not_mint: "只有树的铸造可以撤回。",
+    unmint_not_mint: "只能撤回树链上的区块。",
     unmint_not_last: "只能撤回最新的一环——头部以下，链条已封。",
     unmint_witnessed: "有见证的浇灌永远矗立：它的光已被点燃。",
     keepers: "守护人", keeper_badge: "守护人",

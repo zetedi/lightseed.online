@@ -4,7 +4,7 @@ import { showAlert, showConfirm } from "../ui/Dialog";
 import { useLanguage } from '../../contexts/LanguageContext';
 import { sendMessageToOracle, generateImage, translatePulse, type TranslationResponse } from '../../services/gemini';
 import { getIntelligence } from '../../services/intelligence';
-import { checkAndIncrementAiUsage, mintPulse, uploadBase64Image, listenToUserProfile, fetchReachThread, fetchThreadById, markReachesSeen, sendReach, sendThreadMessage, fetchGrowthPulses, retractReachMessage } from '../../services/firebase';
+import { checkAndIncrementAiUsage, mintPulse, uploadBase64Image, listenToUserProfile, fetchReachThread, fetchThreadById, markReachesSeen, sendReach, sendThreadMessage, fetchGrowthPulses, retractReachMessage, getLifetreeById, unmintLastPulse } from '../../services/firebase';
 import { LoveButton } from '../ui/LoveButton';
 import { reachAudienceLabels } from '../../utils/reachPermissions';
 import { CTA_GLOW } from '../../utils/tabTheme';
@@ -39,6 +39,9 @@ interface ChatMessage {
     system?: boolean; // a centered notice (e.g. "X minted this conversation to the chain"), not a bubble
     careAlert?: 'watering'; // a "water me" alert — rendered with a blue border
     retracted?: boolean;    // the author withdrew it: the mark shows, the words do not
+    lifetreeId?: string;    // the sender tree whose chain carries this block (tree-sent)
+    hash?: string;          // the block's seal — head-ness is judged against the tree's latestHash
+    previousHash?: string;  // where the head rolls back to on an unmint
 }
 
 // A small heart to like a single reach message (its underlying reach pulse): the shared heart.
@@ -153,7 +156,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
             if (p.mintNotice) { if (text) history.push({ role: 'model', system: true, text }); return; }
             const mine = (!!myUid && p.authorId === myUid) || myIds.has(p.lifetreeId || '');
             const careAlert = (p as any).careAlert as ChatMessage['careAlert'];
-            const base = { id: p.id, loveCount: p.loveCount || 0, ...((p as { retractedAt?: unknown }).retractedAt ? { retracted: true } : {}), ...(group ? { authorId: p.authorId, authorName: p.authorName, authorPersonName: p.authorPersonName, authorPhoto: p.authorPhoto } : {}), ...(careAlert ? { careAlert } : {}) };
+            const base = { id: p.id, loveCount: p.loveCount || 0, lifetreeId: p.lifetreeId, hash: (p as { hash?: string }).hash, previousHash: (p as { previousHash?: string }).previousHash, ...((p as { retractedAt?: unknown }).retractedAt ? { retracted: true } : {}), ...(group ? { authorId: p.authorId, authorName: p.authorName, authorPersonName: p.authorPersonName, authorPhoto: p.authorPhoto } : {}), ...(careAlert ? { careAlert } : {}) };
             if (mine) {
                 if (text) history.push({ role: 'user', text, ...base });
                 if (p.reachResponse) history.push({ role: 'model', text: p.reachResponse });
@@ -447,6 +450,29 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
 
     // Retract an accidental message of mine: the chain keeps the sealed block, the room stops
     // repeating the words (rules overlay (h); the mark rides outside the hashed fields).
+    // THE UNMINT DOOR IN THE ROOM (domain/unmint): a tree-sent message that is still its
+    // chain's HEAD can be unsaid whole — deleted with the head rolled back atomically. The
+    // tree page never lists reaches (privacy law), so the thread is the one honest surface.
+    const [headHashes, setHeadHashes] = useState<Record<string, string>>({});
+    useEffect(() => {
+        const mine = [...new Set(messages.filter(m => m.role === 'user' && m.lifetreeId && m.hash && !m.retracted).map(m => m.lifetreeId!))];
+        if (!mine.length) return;
+        let alive = true;
+        Promise.all(mine.map(async id => [id, ((await getLifetreeById(id).catch(() => null)) as { latestHash?: string } | null)?.latestHash || ''] as const))
+            .then(pairs => { if (alive) setHeadHashes(Object.fromEntries(pairs)); });
+        return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the message count; the array identity churns per render
+    }, [messages.length]);
+
+    const handleUnmint = async (m: ChatMessage) => {
+        if (!(await showConfirm('unmint_confirm', { title: 'unmint', confirmText: 'unmint', danger: true }))) return;
+        try {
+            await unmintLastPulse({ id: m.id!, lifetreeId: m.lifetreeId!, hash: m.hash!, previousHash: m.previousHash! } as Parameters<typeof unmintLastPulse>[0]);
+            setMessages(prev => prev.filter(x => x.id !== m.id));
+            setHeadHashes(prev => ({ ...prev, [m.lifetreeId!]: m.previousHash! }));
+        } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
+    };
+
     const handleRetract = async (pulseId: string) => {
         if (!(await showConfirm('msg_retract_confirm', { title: 'msg_retract_title', confirmText: 'msg_retract_short', danger: true }))) return;
         try {
@@ -693,14 +719,26 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                             <div className="flex items-center gap-1">
                                 {m.id && !m.system && <MessageLike pulseId={m.id} initialCount={m.loveCount || 0} />}
                                 {m.id && !m.system && !m.retracted && m.role === 'user' && mode === 'tree' && (
-                                    <button
-                                        type="button"
-                                        onClick={() => handleRetract(m.id!)}
-                                        title={t('msg_retract_title')}
-                                        className="rounded-full p-1 text-slate-300 transition-colors hover:bg-red-50 hover:text-red-400"
-                                    >
-                                        <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Trash /></span>
-                                    </button>
+                                    m.lifetreeId && m.hash && headHashes[m.lifetreeId] === m.hash ? (
+                                        /* Still the chain's head: the word can be unsaid whole. */
+                                        <button
+                                            type="button"
+                                            onClick={() => handleUnmint(m)}
+                                            title={t('unmint_confirm')}
+                                            className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-1 text-[10px] font-bold text-red-500 transition-colors hover:bg-red-500 hover:text-white"
+                                        >
+                                            <span className="[&>svg]:h-3 [&>svg]:w-3"><Icons.Trash /></span>{t('unmint')}
+                                        </button>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRetract(m.id!)}
+                                            title={t('msg_retract_title')}
+                                            className="rounded-full p-1 text-slate-300 transition-colors hover:bg-red-50 hover:text-red-400"
+                                        >
+                                            <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Trash /></span>
+                                        </button>
+                                    )
                                 )}
                             </div>
 

@@ -66,6 +66,7 @@ import { SectionHeader } from './components/ui/SectionHeader';
 import { FullWidthTabs } from './components/ui/FullWidthTabs';
 import { ScrollChevrons } from './components/ui/ScrollChevrons';
 import { UpdateToast } from './components/ui/UpdateToast';
+import { SilentUpdate } from './components/ui/SilentUpdate';
 import { ToastHost, notify } from './components/ui/Toast';
 import { setLightHouseVisibility, deleteLightHouse } from './services/firebase';
 import { announce, onRefresh as onBusRefresh } from './services/refreshBus';
@@ -1762,7 +1763,7 @@ const App = () => {
   // The widget is an early return and must carry its OWN LanguageProvider: the i18n sweep
   // taught LifeseedWidget to speak (useLanguage), and a speaker without a provider throws —
   // the seed button on partner domains rendered blank white until this wrap (2026-08-15).
-  if (route.kind === 'widget') return <LanguageProvider><LifeseedWidget domain={route.domain} /></LanguageProvider>;
+  if (route.kind === 'widget') return <LanguageProvider><SilentUpdate /><LifeseedWidget domain={route.domain} /></LanguageProvider>;
 
   // The data model — a hidden, full-screen /model route. Not linked anywhere (need-to-know);
   // reach it by typing the URL. Logo top-left (the usual place) returns to the app.
@@ -1770,7 +1771,8 @@ const App = () => {
   if (route.kind === 'model') {
     return (
       <div className="min-h-screen bg-[#05080a] p-3 sm:p-6">
-        <a href="/" title="Back to lifeseed" aria-label="Back to lifeseed"
+        <SilentUpdate />
+        <a href="/" title="Back to lightseed" aria-label="Back to lightseed"
            className="fixed left-4 top-4 z-50 rounded-full bg-white/10 p-1.5 shadow-lg backdrop-blur transition-colors hover:bg-white/20">
           <Logo width={38} height={38} />
         </a>

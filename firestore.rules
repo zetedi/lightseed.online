@@ -1008,15 +1008,13 @@ service cloud.firestore {
         isStaff()
         || (
              (resource.data.get('authorId', '') == request.auth.uid || isCommunityOwner(resource.data.get('communityId', '')))
-             // A REACH is never deleted, not even by its author: a tree-sent reach is a block on
-             // the sender's chain, and deleting it would sever previousHash for every block after.
-             // The author's way out is RETRACTION (overlay (h)) — the mark, never the erasure.
+             // A REACH is never plainly deleted, not even by its author (retraction is its
+             // way) — and NO block on a tree's chain is (deleting below the head severs
+             // previousHash for every block after). The ONE exit for any chain block is the
+             // UNMINT branch below: exactly the head, with the rollback riding along. This
+             // closes the mid-chain delete for the whole tree chain (first-sight finding 2).
              && resource.data.get('type', '') != 'reach'
-             // A TREE MINT below the head is likewise sealed history (deleting it would sever
-             // the chain for every block after) — its only exit is the UNMINT branch below,
-             // which admits exactly the head block. This closes the mid-chain delete the
-             // first-sight review named (finding 2), for the tree chain.
-             && !(resource.data.get('type', '') == 'tree_growth' && resource.data.get('lifetreeId', '') != '')
+             && !(resource.data.get('lifetreeId', '') != '' && resource.data.get('hash', '') != '')
              && (
                   resource.data.get('type', '') != 'decision'
                   || (
@@ -1034,12 +1032,16 @@ service cloud.firestore {
         // author: only the HEAD block (the tree's latestHash is this hash), only in the same
         // transaction that rolls the head back to previousHash with the height stepping down
         // one — so the chain is never severed, only shortened by exactly its newest link.
-        // A guardian-WITNESSED watering stands forever: its light is already minted (rays are
-        // append-only), and unminting it would orphan the kindled rays.
+        // ANY block kind at the head may be unsaid this way — a growth, a tree-sent reach,
+        // an alignment — because the severing argument only binds BELOW the head (a head
+        // reach unsaid is the message fully unsent, the room's copy included; below the
+        // head, retraction remains the way). Two stand forever: a guardian-WITNESSED
+        // watering (its light is already minted; rays are append-only) and decisions
+        // (their own lifecycle law governs them).
         || (
              resource.data.get('authorId', '') == request.auth.uid
-             && resource.data.get('type', '') == 'tree_growth'
              && resource.data.get('lifetreeId', '') != ''
+             && resource.data.get('type', '') != 'decision'
              && resource.data.get('wateringConfirmedBy', '') != 'guardian'
              && get(/databases/$(database)/documents/lifetrees/$(resource.data.lifetreeId)).data.get('latestHash', '') == resource.data.get('hash', '')
              && getAfter(/databases/$(database)/documents/lifetrees/$(resource.data.lifetreeId)).data.get('latestHash', '') == resource.data.get('previousHash', '')

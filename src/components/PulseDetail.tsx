@@ -63,17 +63,19 @@ export const PulseDetail = ({ pulse, onClose, backLabel, canEdit, onEdit }: Puls
     const viewerCanVeto = isGrowthMint && canVeto(vetoInput, viewerUid);
     const progress = vetoProgress(vetoInput);
 
-    // THE UNMINT (domain/unmint) — the author of the tree's NEWEST mint may take it back;
-    // the chain shortens by one link, atomically, and only from the head.
+    // THE UNMINT (domain/unmint) — the author of the tree's NEWEST block may take it back;
+    // the chain shortens by one link, atomically, and only from the head. Any block kind
+    // qualifies (growth, tree-sent reach, alignment) — the refusals carry the law.
+    const isChainBlock = !!pulse.lifetreeId && !!pulse.hash && (pulse.type as string) !== 'decision';
     const [treeHead, setTreeHead] = useState<{ latestHash?: string } | null>(null);
     useEffect(() => {
-        if (!isGrowthMint || !viewerUid || pulse.authorId !== viewerUid) return;
+        if (!isChainBlock || !viewerUid || pulse.authorId !== viewerUid) return;
         let alive = true;
         getLifetreeById(pulse.lifetreeId!)
             .then(tr => { if (alive) setTreeHead(tr ? { latestHash: (tr as { latestHash?: string }).latestHash } : null); })
             .catch(() => {});
         return () => { alive = false; };
-    }, [isGrowthMint, pulse.lifetreeId, pulse.authorId, viewerUid]);
+    }, [isChainBlock, pulse.lifetreeId, pulse.authorId, viewerUid]);
     const viewerCanUnmint = !!treeHead && unmintRefusal(
         pulse as { authorId?: string; type?: string; lifetreeId?: string; hash?: string; wateringConfirmedBy?: string },
         treeHead, viewerUid) === null;

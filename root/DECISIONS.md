@@ -15,7 +15,13 @@ clause CLOSES mid-chain author-deletes of tree mints outright — the first ston
 first-sight review's finding 2 in the rules themselves (domain/unmint + 5 emulator tests +
 5 unit laws). An unmint is an erasure of the newest link by the hand that just forged it,
 said plainly in the law's contract; where a record of the mistake matters, retraction
-remains the way. (2) THE ADDRESS: community keepers may now change their community's domain
+remains the way. WIDENED THE SAME DAY, by the living data: Zoltán's own newest mints were
+tree-sent reaches and an alignment, not growths — the law's first cut (tree_growth only)
+never showed him the door. Now ANY block kind at the head may be unsaid — the severing
+argument binds only BELOW the head; until the tree speaks again, the newest word can be
+unsaid whole, room's copy included — and in exchange the mid-chain seal widened from
+growths to EVERY tree-chain block (reaches were already sealed; alignments and the rest now
+are too). Witnessed waterings and decisions stand, as before. (2) THE ADDRESS: community keepers may now change their community's domain
 (the rules always admitted it; the field had no face) — normalizePlaceOfRecord validates,
 and the confirm says honestly that existing beings keep their old stamps until re-homed.
 (3) THE WIDGET: the partner-domain seed button rendered blank white since the i18n sweep —

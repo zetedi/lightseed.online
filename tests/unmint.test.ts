@@ -17,13 +17,17 @@ describe('unmintRefusal', () => {
     expect(unmintRefusal(mint(), { latestHash: 'h9' }, 'bakr')).toBe('unmint_not_author');
     expect(unmintRefusal(mint(), { latestHash: 'h9' }, undefined)).toBe('unmint_not_author');
   });
-  it('only a tree mint', () => {
-    expect(unmintRefusal(mint({ type: 'reach' }), { latestHash: 'h9' }, 'ana')).toBe('unmint_not_mint');
+  it('any chain block at the head qualifies — growth, tree-sent reach, alignment', () => {
+    expect(unmintRefusal(mint({ type: 'reach' }), { latestHash: 'h9' }, 'ana')).toBeNull();
+    expect(unmintRefusal(mint({ type: 'standard' }), { latestHash: 'h9' }, 'ana')).toBeNull();
+  });
+  it('only a block on a tree chain — and never a decision', () => {
     expect(unmintRefusal(mint({ lifetreeId: undefined }), { latestHash: 'h9' }, 'ana')).toBe('unmint_not_mint');
+    expect(unmintRefusal(mint({ hash: undefined }), { latestHash: 'h9' }, 'ana')).toBe('unmint_not_mint');
+    expect(unmintRefusal(mint({ type: 'decision' }), { latestHash: 'h9' }, 'ana')).toBe('unmint_not_mint');
   });
   it('below the head, the chain is sealed', () => {
     expect(unmintRefusal(mint(), { latestHash: 'h10' }, 'ana')).toBe('unmint_not_last');
-    expect(unmintRefusal(mint({ hash: undefined }), { latestHash: 'h9' }, 'ana')).toBe('unmint_not_last');
   });
   it('a witnessed watering stands forever — the refusal outranks head position', () => {
     expect(unmintRefusal(mint({ wateringConfirmedBy: 'guardian' }), { latestHash: 'h9' }, 'ana')).toBe('unmint_witnessed');

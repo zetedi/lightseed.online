@@ -430,6 +430,21 @@ describe('the unmint — only the head block, only its author, only with the rol
     await assertFails(b.commit());
   });
 
+  it('a HEAD tree-sent reach may be unsaid whole — below the head, reaches stay sealed', async () => {
+    await seedChain();
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'pulses', 'r3'), { authorId: ALICE, type: 'reach', lifetreeId: TREE, participantUids: [ALICE, BOB], hash: 'h3', previousHash: 'h2', title: 'oops' });
+      await updateDoc(doc(ctx.firestore(), 'lifetrees', TREE), { latestHash: 'h3', blockHeight: 3 });
+    });
+    const store = db(ALICE);
+    const b = writeBatch(store);
+    b.delete(doc(store, 'pulses', 'r3'));
+    b.update(doc(store, 'lifetrees', TREE), { latestHash: 'h2', blockHeight: 2, updatedAt: 1 });
+    await assertSucceeds(b.commit());
+    // b2 is the head again — but b1, now mid-chain, stays sealed.
+    await assertFails(deleteDoc(doc(db(ALICE), 'pulses', 'b1')));
+  });
+
   it('a guardian-witnessed watering stands forever', async () => {
     await seedChain();
     await env.withSecurityRulesDisabled(async (ctx) => {
