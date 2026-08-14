@@ -6,6 +6,34 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-15 · The bundle law: how a whole node travels** — Zoltán asked for the node to be
+ready to MULTIPLY: parallel living-path simulation, export to another database, data that
+travels node to node with its charter. The foundation landed first as pure law
+(domain/bundle.ts): a node-export bundle whose HEAD is the charter manifest (nodeLid, hashed
+GENESIS/LIN, the genesis-tree constants, a census, one manifest hash — a custodian-signature
+slot waits as a named rung) and whose BODY obeys the TRAVEL PLAN: one explicit rule per
+collection — verbatim (ids byte-for-byte: links from__rel__to ARE the permission model),
+witness (beings and initiates travel for comparison but are REBUILT — the map is never
+imported as the territory), or excluded WITH ITS REASON SAID ALOUD (providerCredentials are
+secrets; mail re-imports re-SEND; custody is re-sworn through the ceremony, never copied).
+Verification law: census digests per collection, per-doc content hashes, chain closure (a
+filtered export that severs previousHash is refused), the beings index recomputed against
+its witness, and a re-anchoring census of every mortal uid (lids are forever; uids die with
+their auth project; 'departed' is a tombstone, not a person). TWO MIRROR TESTS make omission
+mechanical: the plan is held against every match block in firestore.rules (both directions,
+with a vacuity floor — the first parser bug passed green while seeing nothing, and that
+lesson is now an assertion), and the chain-root sentinels against the services that mint
+them. The adversarial pass (run by hand after the subagent quota closed) confirmed six
+findings before commit: rays store holderUid/sourceUid not the domain's input names; stays'
+guest is plain uid; networkInvites accepts acceptedByUserId; personas and memories write NO
+owner field; the census would have counted 'departed' as a person; and the doc-hash preimage
+was separator-ambiguous for ids containing '|' (paths are JSON-quoted now). The survey
+behind the plan: 41 collections, 14 flows, two-database emulator isolation verified
+empirically. Next stones: the Grove (living-path suite), then the Crossing (export→restore→
+verify between demo-node-a and demo-node-b).
+
+---
+
 **2026-08-14 · The domain seals its skin** — Zoltán is shaping a second face (a domain-
 specific app on the lightseed base), which asked the question the first-sight ring had
 already opened: what would `@lightseed/domain` be? The inventory answered: 57 files,
