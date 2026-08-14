@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Pulse, Lifetree } from '../types';
 import { Icons } from './ui/Icons';
+import { SuperDot } from './ui/SuperDot';
 import { ProfileHero } from './ui/ProfileHero';
 import { useSession } from '../contexts/SessionContext';
 import { firestoreStore } from '../adapters/firestore';
@@ -8,7 +9,7 @@ import { vetoGrowthPulse, unmintLastPulse } from '../services/firebase/pulses';
 import { getLifetreeById } from '../services/firebase';
 import { announce } from '../services/refreshBus';
 import { canVeto, isVetoed, vetoProgress, type VetoInput } from '../domain/guardianVeto';
-import { unmintRefusal } from '../domain/unmint';
+import { unmintRefusal, STAFF_OVERRIDABLE_REFUSALS } from '../domain/unmint';
 import { showAlert, showConfirm } from './ui/Dialog';
 import { BeingQr } from './ui/BeingQr';
 import { mintBeingQr } from '../services/firebase/beings';
@@ -35,7 +36,7 @@ export const PulseDetail = ({ pulse, onClose, backLabel, canEdit, onEdit }: Puls
 
     // The guardians' conscience — on a growth mint, the tree's guardians may consensus-veto
     // (domain/guardianVeto). The chain stays append-only: a vetoed mint is marked, not erased.
-    const { lightseed } = useSession();
+    const { lightseed, isAdmin, isSuperAdmin } = useSession();
     const viewerUid = lightseed?.uid;
     const isGrowthMint = pulse.type === 'tree_growth' && !!pulse.lifetreeId;
     const [guardians, setGuardians] = useState<{ uid: string; sinceMs?: number }[]>([]);
@@ -76,9 +77,11 @@ export const PulseDetail = ({ pulse, onClose, backLabel, canEdit, onEdit }: Puls
             .catch(() => {});
         return () => { alive = false; };
     }, [isChainBlock, pulse.lifetreeId, pulse.authorId, viewerUid]);
-    const viewerCanUnmint = !!treeHead && unmintRefusal(
-        pulse as { authorId?: string; type?: string; lifetreeId?: string; hash?: string; wateringConfirmedBy?: string },
-        treeHead, viewerUid) === null;
+    const unmintDenied = treeHead ? unmintRefusal(
+        pulse as { authorId?: string; type?: string; lifetreeId?: string; hash?: string; wateringConfirmedBy?: string; seenBy?: string[]; loveCount?: number; vetoes?: string[]; matchId?: string; matchedLifetreeId?: string },
+        treeHead, viewerUid) : 'unmint_not_last';
+    const staffUnmint = !!unmintDenied && unmintDenied !== 'unmint_not_last' && (isAdmin || isSuperAdmin) && STAFF_OVERRIDABLE_REFUSALS.has(unmintDenied);
+    const viewerCanUnmint = !!treeHead && (unmintDenied === null || staffUnmint);
     const [unminting, setUnminting] = useState(false);
     const handleUnmint = async () => {
         if (unminting || !(await showConfirm('unmint_confirm', { title: 'unmint', confirmText: 'unmint', danger: true }))) return;
@@ -123,8 +126,9 @@ export const PulseDetail = ({ pulse, onClose, backLabel, canEdit, onEdit }: Puls
                         {viewerCanUnmint && (
                             <button onClick={handleUnmint} disabled={unminting}
                                 title={t('unmint_confirm')}
-                                className="flex items-center gap-1.5 rounded-full border border-red-300/40 bg-red-500/15 px-3 py-1.5 text-xs font-bold text-red-200 transition-colors hover:bg-red-500 hover:text-white disabled:opacity-50">
+                                className="relative flex items-center gap-1.5 rounded-full border border-red-300/40 bg-red-500/15 px-3 py-1.5 text-xs font-bold text-red-200 transition-colors hover:bg-red-500 hover:text-white disabled:opacity-50">
                                 <Icons.Trash /> {t('unmint')}
+                                {staffUnmint && <SuperDot />}
                             </button>
                         )}
                         {vetoed && (

@@ -12,7 +12,7 @@ import type { LightHouse } from '../domain/lightHouse';
 import { EditPill, DeletePill } from './ui/HeroPills';
 import { LoveButton } from './ui/LoveButton';
 import { updateLifetree, setTreeStatus, getPulsesByTreeId, getMyHeadBlock, unmintLastPulse } from '../services/firebase';
-import { unmintRefusal } from '../domain/unmint';
+import { unmintRefusal, STAFF_OVERRIDABLE_REFUSALS } from '../domain/unmint';
 import { Pulse, type Lifetree } from '../types';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
 import { canReachTree, type ReachTargetProfile } from '../utils/reachPermissions';
@@ -137,9 +137,13 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
            .catch(() => { if (alive) setHeadBlock(null); });
        return () => { alive = false; };
    }, [tree.id, liveHead.latestHash, isOwner, currentUserId]);
-   const headRefusal = headBlock ? unmintRefusal(
+   // The staff hand may pass the social guards (co-held, not-author) — worn with the amber
+   // dot, never silently — while the structural guards (below-head, witnessed) bind everyone.
+   const headRefusal0 = headBlock ? unmintRefusal(
        headBlock as { authorId?: string; type?: string; lifetreeId?: string; hash?: string; wateringConfirmedBy?: string; seenBy?: string[]; loveCount?: number; vetoes?: string[]; matchId?: string; matchedLifetreeId?: string },
        { latestHash: liveHead.latestHash }, currentUserId) : null;
+   const staffUnmint = !!headRefusal0 && (isAdmin || isSuperAdmin) && STAFF_OVERRIDABLE_REFUSALS.has(headRefusal0);
+   const headRefusal = staffUnmint ? null : headRefusal0;
    const handleUnmintHead = async () => {
        if (!headBlock || unminting) return;
        if (!(await showConfirm('unmint_confirm', { title: 'unmint', confirmText: 'unmint', danger: true }))) return;
@@ -294,11 +298,12 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                        <div className="min-w-0">
                            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-red-400">{t('unmint_head_title')}</p>
                            <p className="truncate text-sm font-semibold text-slate-700">{headBlock.title || headBlock.type}</p>
-                           <p className="text-[11px] italic text-slate-400">{headRefusal ? t(headRefusal) : t('unmint_head_hint')}</p>
+                           <p className="text-[11px] italic text-slate-400">{headRefusal0 ? t(headRefusal0) : t('unmint_head_hint')}</p>
                        </div>
                        <button onClick={handleUnmintHead} disabled={!!headRefusal || unminting}
-                           className="inline-flex items-center gap-1.5 rounded-full bg-red-500 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-red-600 disabled:opacity-40">
+                           className="relative inline-flex items-center gap-1.5 rounded-full bg-red-500 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-red-600 disabled:opacity-40">
                            <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Trash /></span>{unminting ? '…' : t('unmint')}
+                           {staffUnmint && <SuperDot />}
                        </button>
                    </div>
                )}

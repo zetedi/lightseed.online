@@ -42,6 +42,14 @@ export const isCoHeld = (pulse: UnmintPulseFacts, authorUid: string): boolean =>
   || !!pulse.matchId
   || !!pulse.matchedLifetreeId;
 
+// Which refusals the STAFF HAND may pass through (worn with the amber SuperDot — power by
+// role, not authorship): co-holding and authorship are social guards a steward may override
+// for a mend; the structural guards never bend — below the head severs (not_last), a
+// witnessed watering's light is minted (witnessed), and non-blocks/decisions have their own
+// law (not_mint). Mirrors scripts/unwind-head-blocks.mjs, which refuses the same absolutes.
+export const STAFF_OVERRIDABLE_REFUSALS: ReadonlySet<UnmintRefusal> =
+  new Set(['unmint_coheld', 'unmint_not_author'] as const);
+
 export const unmintRefusal = (
   pulse: UnmintPulseFacts,
   tree: { latestHash?: string },

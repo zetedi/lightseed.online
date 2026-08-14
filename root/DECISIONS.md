@@ -31,7 +31,13 @@ moved to the TREE: the tree owns its chain, so the Digital Tree section now carr
 newest link" card — the head block fetched author-constrained (the only rules-provable
 list over a possibly-private head), the unmint button honest in both states: live while
 the word is only its author's, disabled WITH THE REASON once another being holds it. The
-reach room returns to retraction only. (2) THE ADDRESS: community keepers may now change their community's domain
+reach room returns to retraction only. AND THE STAFF HAND WEARS ITS DOT (Zoltán, the same
+night, after his staff-ness sailed a seen block through the rules' escape unannounced): when
+the button is live by ROLE rather than by the law, it carries the amber SuperDot and the
+refusal it is overriding stays written beside it. The overridable set is domain law
+(STAFF_OVERRIDABLE_REFUSALS): the social guards bend to the steward — co-held, not-author —
+and the structural ones bend to no one: below the head severs, a witnessed watering's light
+is minted, decisions keep their own lifecycle. (2) THE ADDRESS: community keepers may now change their community's domain
 (the rules always admitted it; the field had no face) — normalizePlaceOfRecord validates,
 and the confirm says honestly that existing beings keep their old stamps until re-homed.
 (3) THE WIDGET: the partner-domain seed button rendered blank white since the i18n sweep —
