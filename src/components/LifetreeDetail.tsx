@@ -11,7 +11,8 @@ import { getLightHouseById } from '../services/firebase';
 import type { LightHouse } from '../domain/lightHouse';
 import { EditPill, DeletePill } from './ui/HeroPills';
 import { LoveButton } from './ui/LoveButton';
-import { updateLifetree, setTreeStatus, getPulsesByTreeId } from '../services/firebase';
+import { updateLifetree, setTreeStatus, getPulsesByTreeId, getMyHeadBlock, unmintLastPulse } from '../services/firebase';
+import { unmintRefusal } from '../domain/unmint';
 import { Pulse, type Lifetree } from '../types';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
 import { canReachTree, type ReachTargetProfile } from '../utils/reachPermissions';
@@ -117,6 +118,41 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    // eslint-disable-next-line react-hooks/set-state-in-effect -- prop→state sync: re-steers the section when the caller changes initialSection/tree; a lazy initializer only covers first mount
    useEffect(() => { if (initialSection) setSection(initialSection as TreeSection); }, [initialSection, tree?.id]);
 
+   // THE UNMINT DOOR (domain/unmint) — the tree owns its chain, so the tree page is where
+   // the newest link is taken back. liveHead shadows the tree prop (the prop can't roll
+   // back from here); the head BLOCK is fetched author-constrained (rules-provable).
+   const [liveHead, setLiveHead] = useState<{ latestHash?: string; blockHeight?: number }>({ latestHash: tree.latestHash, blockHeight: tree.blockHeight });
+   const [headBlock, setHeadBlock] = useState<Pulse | null>(null);
+   const [unminting, setUnminting] = useState(false);
+   useEffect(() => {
+       // eslint-disable-next-line react-hooks/set-state-in-effect -- prop→state re-key when the viewed tree changes
+       setLiveHead({ latestHash: tree.latestHash, blockHeight: tree.blockHeight });
+   }, [tree.id, tree.latestHash, tree.blockHeight]);
+   useEffect(() => {
+       // eslint-disable-next-line react-hooks/set-state-in-effect -- clears the door for a non-owner before the async head fetch below
+       if (!isOwner || !currentUserId || !liveHead.latestHash) { setHeadBlock(null); return; }
+       let alive = true;
+       getMyHeadBlock(tree.id, liveHead.latestHash, currentUserId)
+           .then(p => { if (alive) setHeadBlock(p); })
+           .catch(() => { if (alive) setHeadBlock(null); });
+       return () => { alive = false; };
+   }, [tree.id, liveHead.latestHash, isOwner, currentUserId]);
+   const headRefusal = headBlock ? unmintRefusal(
+       headBlock as { authorId?: string; type?: string; lifetreeId?: string; hash?: string; wateringConfirmedBy?: string; seenBy?: string[]; loveCount?: number; vetoes?: string[]; matchId?: string; matchedLifetreeId?: string },
+       { latestHash: liveHead.latestHash }, currentUserId) : null;
+   const handleUnmintHead = async () => {
+       if (!headBlock || unminting) return;
+       if (!(await showConfirm('unmint_confirm', { title: 'unmint', confirmText: 'unmint', danger: true }))) return;
+       setUnminting(true);
+       try {
+           await unmintLastPulse(headBlock as Parameters<typeof unmintLastPulse>[0]);
+           setLiveHead(prev => ({ latestHash: headBlock.previousHash, blockHeight: (prev.blockHeight || 1) - 1 }));
+           setHeadBlock(null);
+           loadChain(); // the timeline sheds the unmade link (if it showed it at all)
+       } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
+       setUnminting(false);
+   };
+
    // Note: getPulsesByTreeId returns Descending order (Newest First). Extracted (and kept
    // referentially stable) so a fresh watering can refresh the chain in place.
    const loadChain = useCallback(() => {
@@ -130,7 +166,6 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
             setGrowthBlocks(pulses.filter(p => !isGenesis(p)));
         }).finally(() => setLoadingChain(false));
    }, [tree.id]);
-   // eslint-disable-next-line react-hooks/set-state-in-effect -- async chain fetch kickoff; the sync setLoadingChain(true) marks the fetch in flight and must re-run per tree.id
    useEffect(() => { loadChain(); }, [loadChain]);
 
    const handleSave = async (details: TreeDetailsUpdates) => {
@@ -251,6 +286,22 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
            // chain renderer (ChainTree). Chain loading stays here so Care can see the
            // growth blocks (pending waterings) and refresh them in place.
            key: 'digital', label: 'Digital Tree', icon: <Icons.Tree />, render: () => (
+               <>
+               {/* The newest link — while no other being holds it, the owner-author may take
+                   it back whole; the head rolls back atomically (domain/unmint). */}
+               {isOwner && headBlock && (
+                   <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-red-100 bg-red-50/50 px-4 py-3">
+                       <div className="min-w-0">
+                           <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-red-400">{t('unmint_head_title')}</p>
+                           <p className="truncate text-sm font-semibold text-slate-700">{headBlock.title || headBlock.type}</p>
+                           <p className="text-[11px] italic text-slate-400">{headRefusal ? t(headRefusal) : t('unmint_head_hint')}</p>
+                       </div>
+                       <button onClick={handleUnmintHead} disabled={!!headRefusal || unminting}
+                           className="inline-flex items-center gap-1.5 rounded-full bg-red-500 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-red-600 disabled:opacity-40">
+                           <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Trash /></span>{unminting ? '…' : t('unmint')}
+                       </button>
+                   </div>
+               )}
                <ChainTree
                    genesisBlock={genesisBlock}
                    blocks={growthBlocks}
@@ -259,8 +310,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                    canCare={isOwner}
                    onCare={onCreatePulse}
                    root={chainRoot}
-                   stats={{ blockHeight: tree.blockHeight, genesisHash: tree.genesisHash, latestHash: tree.latestHash }}
+                   stats={{ blockHeight: liveHead.blockHeight, genesisHash: tree.genesisHash, latestHash: liveHead.latestHash }}
                />
+               </>
            ),
        },
        {

@@ -26,6 +26,17 @@ export const vetoGrowthPulse = (pulseId: string, uid: string) =>
 export const mendPulseDomain = (pulseId: string, domain: string) =>
     updateDoc(doc(db, 'pulses', pulseId), { domain, updatedAt: serverTimestamp() });
 
+// The chain's HEAD block, fetched for the unmint door on the tree page. Constrained to the
+// VIEWER's own authorship so the list is rules-provable (a private reach at the head would
+// make an unconstrained lifetreeId+hash query unprovable and refused whole) — which is
+// exactly the unmintable-by-this-viewer set anyway. Equality-only, so no composite index.
+export const getMyHeadBlock = async (treeId: string, latestHash: string, uid: string): Promise<Pulse | null> => {
+    if (!latestHash || !uid) return null;
+    const snap = await getDocs(query(pulsesCollection,
+        where('authorId', '==', uid), where('lifetreeId', '==', treeId), where('hash', '==', latestHash), limit(1)));
+    return snap.empty ? null : mapPulse(snap.docs[0]);
+};
+
 // UNMINT the accidental LAST mint (domain/unmint, ring 2026-08-15): delete the head block
 // and roll the tree's head back to previousHash in ONE transaction — the rules refuse the
 // delete unless the rollback rides with it, so the chain can only ever shorten by its

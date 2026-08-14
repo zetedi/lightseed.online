@@ -445,6 +445,36 @@ describe('the unmint — only the head block, only its author, only with the rol
     await assertFails(deleteDoc(doc(db(ALICE), 'pulses', 'b1')));
   });
 
+  it('nothing co-held can be unsaid: a seen or loved head block stands', async () => {
+    await seedChain();
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await updateDoc(doc(ctx.firestore(), 'pulses', 'b2'), { seenBy: [BOB] });
+    });
+    const store = db(ALICE);
+    const b = writeBatch(store);
+    b.delete(doc(store, 'pulses', 'b2'));
+    b.update(doc(store, 'lifetrees', TREE), { latestHash: 'h1', blockHeight: 1, updatedAt: 1 });
+    await assertFails(b.commit());
+
+    // Loved instead of seen — same refusal.
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await updateDoc(doc(ctx.firestore(), 'pulses', 'b2'), { seenBy: [ALICE], loveCount: 1 });
+    });
+    const b2 = writeBatch(store);
+    b2.delete(doc(store, 'pulses', 'b2'));
+    b2.update(doc(store, 'lifetrees', TREE), { latestHash: 'h1', blockHeight: 1, updatedAt: 1 });
+    await assertFails(b2.commit());
+
+    // The author's own receipt alone does not co-hold.
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await updateDoc(doc(ctx.firestore(), 'pulses', 'b2'), { seenBy: [ALICE], loveCount: 0 });
+    });
+    const b3 = writeBatch(store);
+    b3.delete(doc(store, 'pulses', 'b3'.replace('b3', 'b2')));
+    b3.update(doc(store, 'lifetrees', TREE), { latestHash: 'h1', blockHeight: 1, updatedAt: 1 });
+    await assertSucceeds(b3.commit());
+  });
+
   it('a guardian-witnessed watering stands forever', async () => {
     await seedChain();
     await env.withSecurityRulesDisabled(async (ctx) => {

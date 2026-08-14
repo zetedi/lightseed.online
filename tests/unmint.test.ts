@@ -32,4 +32,14 @@ describe('unmintRefusal', () => {
   it('a witnessed watering stands forever — the refusal outranks head position', () => {
     expect(unmintRefusal(mint({ wateringConfirmedBy: 'guardian' }), { latestHash: 'h9' }, 'ana')).toBe('unmint_witnessed');
   });
+  it('nothing co-held can be unsaid: seen, loved, vetoed, or alignment-paired', () => {
+    expect(unmintRefusal(mint({ seenBy: ['ana', 'bakr'] }), { latestHash: 'h9' }, 'ana')).toBe('unmint_coheld');
+    expect(unmintRefusal(mint({ loveCount: 1 }), { latestHash: 'h9' }, 'ana')).toBe('unmint_coheld');
+    expect(unmintRefusal(mint({ vetoes: ['lumo'] }), { latestHash: 'h9' }, 'ana')).toBe('unmint_coheld');
+    expect(unmintRefusal(mint({ matchId: 'align1' }), { latestHash: 'h9' }, 'ana')).toBe('unmint_coheld');
+  });
+  it("the author's own read receipt does not co-hold their word", () => {
+    expect(unmintRefusal(mint({ seenBy: ['ana'] }), { latestHash: 'h9' }, 'ana')).toBeNull();
+    expect(unmintRefusal(mint({ seenBy: [] }), { latestHash: 'h9' }, 'ana')).toBeNull();
+  });
 });

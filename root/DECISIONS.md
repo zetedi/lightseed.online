@@ -21,7 +21,17 @@ never showed him the door. Now ANY block kind at the head may be unsaid — the 
 argument binds only BELOW the head; until the tree speaks again, the newest word can be
 unsaid whole, room's copy included — and in exchange the mid-chain seal widened from
 growths to EVERY tree-chain block (reaches were already sealed; alignments and the rest now
-are too). Witnessed waterings and decisions stand, as before. (2) THE ADDRESS: community keepers may now change their community's domain
+are too). Witnessed waterings and decisions stand, as before.
+REFINED ONCE MORE the same night, by Zoltán's word: NOTHING CO-HELD CAN BE UNSAID — the
+moment another being's mark lands on the block (a read receipt beyond the author's own, a
+love, a guardian's veto, an alignment's paired mint), it stops being only its author's word
+and stands; witness and decision refusals are this principle at higher stakes
+(domain/unmint.isCoHeld, mirrored in the rules clause, both layers tested). And the door
+moved to the TREE: the tree owns its chain, so the Digital Tree section now carries "The
+newest link" card — the head block fetched author-constrained (the only rules-provable
+list over a possibly-private head), the unmint button honest in both states: live while
+the word is only its author's, disabled WITH THE REASON once another being holds it. The
+reach room returns to retraction only. (2) THE ADDRESS: community keepers may now change their community's domain
 (the rules always admitted it; the field had no face) — normalizePlaceOfRecord validates,
 and the confirm says honestly that existing beings keep their old stamps until re-homed.
 (3) THE WIDGET: the partner-domain seed button rendered blank white since the i18n sweep —

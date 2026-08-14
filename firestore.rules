@@ -1043,6 +1043,14 @@ service cloud.firestore {
              && resource.data.get('lifetreeId', '') != ''
              && resource.data.get('type', '') != 'decision'
              && resource.data.get('wateringConfirmedBy', '') != 'guardian'
+             // NOTHING CO-HELD CAN BE UNSAID: once another being's mark lands on the block
+             // (a read receipt, a love, a guardian's veto, an alignment's paired mint), it
+             // stops being only its author's word and stands. Mirrors domain/unmint.isCoHeld.
+             && resource.data.get('seenBy', []).hasOnly([request.auth.uid])
+             && resource.data.get('loveCount', 0) == 0
+             && resource.data.get('vetoes', []).size() == 0
+             && resource.data.get('matchId', '') == ''
+             && resource.data.get('matchedLifetreeId', '') == ''
              && get(/databases/$(database)/documents/lifetrees/$(resource.data.lifetreeId)).data.get('latestHash', '') == resource.data.get('hash', '')
              && getAfter(/databases/$(database)/documents/lifetrees/$(resource.data.lifetreeId)).data.get('latestHash', '') == resource.data.get('previousHash', '')
              && getAfter(/databases/$(database)/documents/lifetrees/$(resource.data.lifetreeId)).data.get('blockHeight', 0)

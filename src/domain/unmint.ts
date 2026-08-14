@@ -21,10 +21,26 @@ export interface UnmintPulseFacts {
   lifetreeId?: string;
   hash?: string;
   wateringConfirmedBy?: string;
+  seenBy?: string[];          // read receipts — another being's eyes on the block
+  loveCount?: number;         // hearts — another being's mark
+  vetoes?: string[];          // a guardian's conscience already acted
+  matchId?: string;           // alignment sync-blocks are CO-MINTED across two chains
+  matchedLifetreeId?: string;
 }
 
 export type UnmintRefusal = Extract<DomainKey,
-  'unmint_not_author' | 'unmint_not_mint' | 'unmint_not_last' | 'unmint_witnessed'>;
+  'unmint_not_author' | 'unmint_not_mint' | 'unmint_not_last' | 'unmint_witnessed' | 'unmint_coheld'>;
+
+// NOTHING CO-HELD CAN BE UNSAID (Zoltán, 2026-08-15): the moment another being's mark
+// lands on a block — seen, loved, vetoed, or co-minted as an alignment's paired block —
+// it stops being only its author's word and stands. Witness and decision refusals are the
+// same principle at higher stakes; this is its general form.
+export const isCoHeld = (pulse: UnmintPulseFacts, authorUid: string): boolean =>
+  (pulse.seenBy || []).some(uid => uid !== authorUid)
+  || (pulse.loveCount || 0) > 0
+  || (pulse.vetoes || []).length > 0
+  || !!pulse.matchId
+  || !!pulse.matchedLifetreeId;
 
 export const unmintRefusal = (
   pulse: UnmintPulseFacts,
@@ -34,6 +50,7 @@ export const unmintRefusal = (
   if (!viewerUid || pulse.authorId !== viewerUid) return 'unmint_not_author';
   if (!pulse.lifetreeId || !pulse.hash || pulse.type === 'decision') return 'unmint_not_mint';
   if (pulse.wateringConfirmedBy === 'guardian') return 'unmint_witnessed';
+  if (isCoHeld(pulse, viewerUid)) return 'unmint_coheld';
   if (tree.latestHash !== pulse.hash) return 'unmint_not_last';
   return null;
 };
