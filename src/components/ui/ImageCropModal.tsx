@@ -211,7 +211,7 @@ export const ImageCropModal = ({
                 <p className="mt-2 text-center text-[11px] text-slate-400">{t('crop_hint')}</p>
 
                 <div className="mt-4 flex gap-2">
-                    <button type="button" onClick={onCancel} className="flex-1 rounded-full border border-slate-200 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">Cancel</button>
+                    <button type="button" onClick={onCancel} className="flex-1 rounded-full border border-slate-200 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">{t('cancel')}</button>
                     <button type="button" onClick={confirm} disabled={!nat || busy} className="flex-1 rounded-full bg-emerald-600 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
                         {busy ? 'Cropping…' : 'Use photo'}
                     </button>

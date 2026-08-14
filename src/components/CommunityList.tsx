@@ -30,17 +30,20 @@ interface CommunityListProps {
 // image the card wears the community's own colour (or the communities tone) — no placeholder art.
 type CardStanding = 'keeper' | 'member' | 'requested' | 'joinable';
 
-const StandingMark = ({ standing, community, onJoin, small = false }: { standing: CardStanding, community: Community, onJoin?: (community: Community) => void, small?: boolean }) => (
-  standing === 'keeper' ? <span className={`rounded-full bg-amber-400/90 font-black uppercase tracking-wide text-amber-950 shadow ${small ? 'px-2 py-0.5 text-[9px]' : 'px-3 py-1 text-[10px]'}`}>Keeper</span>
-  : standing === 'member' ? <span className={`rounded-full bg-emerald-500/90 font-black uppercase tracking-wide text-white shadow ${small ? 'px-2 py-0.5 text-[9px]' : 'px-3 py-1 text-[10px]'}`}>Member</span>
-  : standing === 'requested' ? <span className={`rounded-full bg-slate-400/60 font-black uppercase tracking-wide text-white shadow backdrop-blur ${small ? 'px-2 py-0.5 text-[9px]' : 'px-3 py-1 text-[10px]'}`}>Requested</span>
+const StandingMark = ({ standing, community, onJoin, small = false }: { standing: CardStanding, community: Community, onJoin?: (community: Community) => void, small?: boolean }) => {
+  const { t } = useLanguage();
+  return (
+  standing === 'keeper' ? <span className={`rounded-full bg-amber-400/90 font-black uppercase tracking-wide text-amber-950 shadow ${small ? 'px-2 py-0.5 text-[9px]' : 'px-3 py-1 text-[10px]'}`}>{t('keeper_badge')}</span>
+  : standing === 'member' ? <span className={`rounded-full bg-emerald-500/90 font-black uppercase tracking-wide text-white shadow ${small ? 'px-2 py-0.5 text-[9px]' : 'px-3 py-1 text-[10px]'}`}>{t('member_badge')}</span>
+  : standing === 'requested' ? <span className={`rounded-full bg-slate-400/60 font-black uppercase tracking-wide text-white shadow backdrop-blur ${small ? 'px-2 py-0.5 text-[9px]' : 'px-3 py-1 text-[10px]'}`}>{t('requested')}</span>
   : onJoin ? (
     <button onClick={(e) => { e.stopPropagation(); onJoin(community); }}
       className={`rounded-full bg-emerald-600 font-bold uppercase tracking-widest text-white shadow-lg transition-all hover:bg-emerald-500 active:scale-95 ${small ? 'px-3 py-1 text-[10px]' : `px-4 py-1.5 text-[11px] ${CTA_GLOW}`}`}>
-      Join
+      {t('join')}
     </button>
   ) : null
-);
+  );
+};
 
 const CommunityCard = ({ community, isGenesis = false, onSelect, standing = 'joinable', onJoin, density = 'cards' }: { community: Community, isGenesis?: boolean, onSelect: (community: Community) => void, standing?: CardStanding, onJoin?: (community: Community) => void, density?: ListDensity }) => {
   const hero = (community as any).heroImageUrl || community.imageUrls?.[0];

@@ -132,7 +132,7 @@ export const TreeCare: React.FC<TreeCareProps> = ({
             setWaterMsg('The witness is looking…');
             const analysis = await analyzeWateringPhoto(img, tree);
             const auto = analysis.watering && (analysis.confidence || 0) >= 70;
-            setWaterMsg(auto ? 'Confirmed by AI; recording 💧' : 'Recording; a guardian can confirm…');
+            setWaterMsg(auto ? t('water_confirmed_ai') : t('water_recording'));
             const { confirmedBy } = await recordWatering({ tree, sender, imageFile: file, analysis });
             const now = Date.now();
             const iv = tree.watering?.intervalDays;

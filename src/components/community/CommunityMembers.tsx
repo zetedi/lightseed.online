@@ -174,7 +174,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
       await updateCommunity(community.id, { door: next });
       setDoor(next);
       onCommunityUpdate?.({ door: next });
-      notify(next === 'open' ? '🚪 The door stands open.' : next === 'invite' ? '🚪 The door now asks for an invitation.' : '🚪 The door is closed.');
+      notify(next === 'open' ? t('door_now_open') : next === 'invite' ? t('door_now_invite') : t('door_now_closed'));
     } catch (e: any) { showAlert(e?.message || 'Could not change the door.'); }
     setDoorBusy(false);
   };
@@ -298,9 +298,9 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
           <div className="mb-2 flex items-center justify-between">
             <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('invitations')}</p>
             <button onClick={handleMintInvite} disabled={minting || door === 'closed'}
-              title={door === 'closed' ? 'The door is closed; invitations would wait outside.' : 'Mint a shareable invitation link'}
+              title={door === 'closed' ? t('invite_waits_closed') : t('invite_mint_hint')}
               className="rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50">
-              {minting ? 'Minting…' : 'Mint invitation link'}
+              {minting ? t('minting') : t('mint_invite_link')}
             </button>
           </div>
           {invites.length === 0 ? (
@@ -322,11 +322,11 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
                       <div className="flex shrink-0 items-center gap-1.5">
                         <button onClick={() => copyInviteUrl(i.id)}
                           className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500 transition-colors hover:bg-slate-50">
-                          Copy
+                          {t('copy')}
                         </button>
                         <button onClick={() => handleRevokeInvite(i)}
                           className="rounded-lg border border-red-100 bg-white px-2.5 py-1 text-[11px] font-bold text-red-500 transition-colors hover:bg-red-50">
-                          Revoke
+                          {t('revoke')}
                         </button>
                       </div>
                     )}
@@ -390,11 +390,11 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
                 <div className="flex shrink-0 items-center gap-1.5">
                   <button onClick={() => handleAccept(r.uid)} disabled={busyUid === r.uid}
                     className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50">
-                    {busyUid === r.uid ? '…' : 'Accept'}
+                    {busyUid === r.uid ? '…' : t('accept')}
                   </button>
                   <button onClick={() => handleDecline(r.uid)} disabled={busyUid === r.uid}
                     className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-50">
-                    Decline
+                    {t('decline')}
                   </button>
                 </div>
               </div>
@@ -439,14 +439,14 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
                   )}
                   {isOwner && (
                     <button onClick={() => handleSteward(m, !stewardUids.has(m.uid))} disabled={busyUid === m.uid}
-                      title={stewardUids.has(m.uid) ? 'No longer keeps the door' : 'Delegate the door: accept knocks, mint invitations'}
+                      title={stewardUids.has(m.uid) ? t('steward_revoke_hint') : t('steward_grant_hint')}
                       className="rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-xs font-bold text-amber-600 transition-colors hover:bg-amber-50 disabled:opacity-50">
-                      {stewardUids.has(m.uid) ? 'Unsteward' : 'Make steward'}
+                      {stewardUids.has(m.uid) ? t('unsteward') : t('make_steward')}
                     </button>
                   )}
                   <button onClick={() => handleRemove(m)} disabled={busyUid === m.uid}
                     className="rounded-lg border border-red-100 bg-white px-3 py-1.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50">
-                    Remove
+                    {t('remove')}
                   </button>
                 </div>
               )}

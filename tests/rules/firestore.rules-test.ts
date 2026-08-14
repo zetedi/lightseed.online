@@ -385,6 +385,65 @@ describe('retraction — the author withdraws the words; the chain keeps the blo
   });
 });
 
+describe('the unmint — only the head block, only its author, only with the rollback riding along', () => {
+  // Ring 2026-08-15: an accidental LAST mint may be taken back; the chain shortens by its
+  // newest link, never severed. Mid-chain author-deletes of tree mints are now refused
+  // outright (the first-sight review's finding 2, closed for the tree chain).
+  const TREE = 'tree-unmint';
+  const seedChain = () => env.withSecurityRulesDisabled(async (ctx) => {
+    const d = ctx.firestore();
+    await setDoc(doc(d, 'lifetrees', TREE), { ownerId: ALICE, name: 'Chain Oak', genesisHash: 'g0', latestHash: 'h2', blockHeight: 2, validated: false, validatorId: null, loveCount: 0 });
+    await setDoc(doc(d, 'pulses', 'b1'), { authorId: ALICE, type: 'tree_growth', lifetreeId: TREE, hash: 'h1', previousHash: 'g0', title: 'g1' });
+    await setDoc(doc(d, 'pulses', 'b2'), { authorId: ALICE, type: 'tree_growth', lifetreeId: TREE, hash: 'h2', previousHash: 'h1', title: 'g2' });
+  });
+
+  it('the author unmints the HEAD when the rollback rides in the same batch', async () => {
+    await seedChain();
+    const store = db(ALICE);
+    const b = writeBatch(store);
+    b.delete(doc(store, 'pulses', 'b2'));
+    b.update(doc(store, 'lifetrees', TREE), { latestHash: 'h1', blockHeight: 1, updatedAt: 1 });
+    await assertSucceeds(b.commit());
+  });
+
+  it('without the rollback, the delete alone is refused', async () => {
+    await seedChain();
+    await assertFails(deleteDoc(doc(db(ALICE), 'pulses', 'b2')));
+  });
+
+  it('a mid-chain mint can never be deleted — not even by its author with a rollback', async () => {
+    await seedChain();
+    await assertFails(deleteDoc(doc(db(ALICE), 'pulses', 'b1')));
+    const store = db(ALICE);
+    const b = writeBatch(store);
+    b.delete(doc(store, 'pulses', 'b1'));
+    b.update(doc(store, 'lifetrees', TREE), { latestHash: 'g0', blockHeight: 1, updatedAt: 1 });
+    await assertFails(b.commit());
+  });
+
+  it('another hand cannot unmint, rollback or not', async () => {
+    await seedChain();
+    const store = db(MALLORY);
+    const b = writeBatch(store);
+    b.delete(doc(store, 'pulses', 'b2'));
+    b.update(doc(store, 'lifetrees', TREE), { latestHash: 'h1', blockHeight: 1, updatedAt: 1 });
+    await assertFails(b.commit());
+  });
+
+  it('a guardian-witnessed watering stands forever', async () => {
+    await seedChain();
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'pulses', 'b3'), { authorId: ALICE, type: 'tree_growth', care: 'watering', wateringConfirmedBy: 'guardian', lifetreeId: TREE, hash: 'h3', previousHash: 'h2', title: 'w' });
+      await updateDoc(doc(ctx.firestore(), 'lifetrees', TREE), { latestHash: 'h3', blockHeight: 3 });
+    });
+    const store = db(ALICE);
+    const b = writeBatch(store);
+    b.delete(doc(store, 'pulses', 'b3'));
+    b.update(doc(store, 'lifetrees', TREE), { latestHash: 'h2', blockHeight: 2, updatedAt: 1 });
+    await assertFails(b.commit());
+  });
+});
+
 describe('the place-of-record mend — only the node\'s stewards move a being between places', () => {
   // Ring 2026-08-11 (clause i3): every event is stamped at birth with the domain it was made
   // on, and the stamp decides which node's surfaces show it. Staff mend a wrong stamp with

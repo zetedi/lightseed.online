@@ -1759,7 +1759,10 @@ const AppContent = () => {
 const App = () => {
   const route = topLevelRoute();
 
-  if (route.kind === 'widget') return <LifeseedWidget domain={route.domain} />;
+  // The widget is an early return and must carry its OWN LanguageProvider: the i18n sweep
+  // taught LifeseedWidget to speak (useLanguage), and a speaker without a provider throws —
+  // the seed button on partner domains rendered blank white until this wrap (2026-08-15).
+  if (route.kind === 'widget') return <LanguageProvider><LifeseedWidget domain={route.domain} /></LanguageProvider>;
 
   // The data model — a hidden, full-screen /model route. Not linked anywhere (need-to-know);
   // reach it by typing the URL. Logo top-left (the usual place) returns to the app.

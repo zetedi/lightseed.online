@@ -4,8 +4,11 @@ import { Icons } from './ui/Icons';
 import { ProfileHero } from './ui/ProfileHero';
 import { useSession } from '../contexts/SessionContext';
 import { firestoreStore } from '../adapters/firestore';
-import { vetoGrowthPulse } from '../services/firebase/pulses';
+import { vetoGrowthPulse, unmintLastPulse } from '../services/firebase/pulses';
+import { getLifetreeById } from '../services/firebase';
+import { announce } from '../services/refreshBus';
 import { canVeto, isVetoed, vetoProgress, type VetoInput } from '../domain/guardianVeto';
+import { unmintRefusal } from '../domain/unmint';
 import { showAlert, showConfirm } from './ui/Dialog';
 import { BeingQr } from './ui/BeingQr';
 import { mintBeingQr } from '../services/firebase/beings';
@@ -25,7 +28,7 @@ interface PulseDetailProps {
     onEdit?: () => void;
 }
 
-export const PulseDetail = ({ pulse, onClose, backLabel = "Back", canEdit, onEdit }: PulseDetailProps) => {
+export const PulseDetail = ({ pulse, onClose, backLabel, canEdit, onEdit }: PulseDetailProps) => {
     const { t } = useLanguage();
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const images = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
@@ -59,6 +62,34 @@ export const PulseDetail = ({ pulse, onClose, backLabel = "Back", canEdit, onEdi
     const vetoed = isGrowthMint && isVetoed(vetoInput);
     const viewerCanVeto = isGrowthMint && canVeto(vetoInput, viewerUid);
     const progress = vetoProgress(vetoInput);
+
+    // THE UNMINT (domain/unmint) — the author of the tree's NEWEST mint may take it back;
+    // the chain shortens by one link, atomically, and only from the head.
+    const [treeHead, setTreeHead] = useState<{ latestHash?: string } | null>(null);
+    useEffect(() => {
+        if (!isGrowthMint || !viewerUid || pulse.authorId !== viewerUid) return;
+        let alive = true;
+        getLifetreeById(pulse.lifetreeId!)
+            .then(tr => { if (alive) setTreeHead(tr ? { latestHash: (tr as { latestHash?: string }).latestHash } : null); })
+            .catch(() => {});
+        return () => { alive = false; };
+    }, [isGrowthMint, pulse.lifetreeId, pulse.authorId, viewerUid]);
+    const viewerCanUnmint = !!treeHead && unmintRefusal(
+        pulse as { authorId?: string; type?: string; lifetreeId?: string; hash?: string; wateringConfirmedBy?: string },
+        treeHead, viewerUid) === null;
+    const [unminting, setUnminting] = useState(false);
+    const handleUnmint = async () => {
+        if (unminting || !(await showConfirm('unmint_confirm', { title: 'unmint', confirmText: 'unmint', danger: true }))) return;
+        setUnminting(true);
+        try {
+            await unmintLastPulse(pulse as Parameters<typeof unmintLastPulse>[0]);
+            announce('pulses', pulse.id);
+            onClose();
+        } catch (e: unknown) {
+            showAlert((e as Error)?.message || 'err_action');
+            setUnminting(false);
+        }
+    };
     const handleVeto = async () => {
         if (!viewerUid || isVetoing) return;
         if (!(await showConfirm('veto_confirm', { title: 'guardian_veto', confirmText: 'veto', danger: true }))) return;
@@ -79,22 +110,29 @@ export const PulseDetail = ({ pulse, onClose, backLabel = "Back", canEdit, onEdi
                 <div className="flex items-center justify-between mb-6">
                     <button onClick={onClose} className="flex items-center gap-2 text-white/70 hover:text-white text-sm font-medium">
                         <Icons.ArrowLeft />
-                        <span>{backLabel}</span>
+                        <span>{backLabel || t('back')}</span>
                     </button>
                     <div className="flex items-center gap-2">
                         {pulse.type === 'event' && canEdit && onEdit && (
                             <button onClick={onEdit} className="flex items-center gap-1.5 rounded-full bg-sky-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-sky-700">
-                                <Icons.Pencil /> Edit
+                                <Icons.Pencil /> {t('edit')}
+                            </button>
+                        )}
+                        {viewerCanUnmint && (
+                            <button onClick={handleUnmint} disabled={unminting}
+                                title={t('unmint_confirm')}
+                                className="flex items-center gap-1.5 rounded-full border border-red-300/40 bg-red-500/15 px-3 py-1.5 text-xs font-bold text-red-200 transition-colors hover:bg-red-500 hover:text-white disabled:opacity-50">
+                                <Icons.Trash /> {t('unmint')}
                             </button>
                         )}
                         {vetoed && (
                             <span className="flex items-center gap-1 rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700">
-                                ⊘ Vetoed by guardians
+                                ⊘ {t('vetoed_by_guardians')}
                             </span>
                         )}
                         {pulse.care === 'watering' && (
                             <span className="flex items-center gap-1 rounded-full bg-sky-100 px-3 py-1 text-xs font-bold text-sky-700">
-                                💧 {pulse.wateringConfirmedBy === 'ai' ? 'Confirmed by AI' : pulse.wateringConfirmedBy === 'guardian' ? 'Confirmed by guardian' : 'Awaiting confirmation'}
+                                💧 {pulse.wateringConfirmedBy === 'ai' ? t('confirmed_by_ai') : pulse.wateringConfirmedBy === 'guardian' ? t('confirmed_by_guardian') : t('awaiting_confirmation')}
                             </span>
                         )}
                         {/* Type badge — the pulse's kind, worn as the status chip. */}
@@ -116,11 +154,11 @@ export const PulseDetail = ({ pulse, onClose, backLabel = "Back", canEdit, onEdi
                     <div className="min-w-0 flex-1">
                         <h1 dir="auto" className="min-w-0 break-words text-2xl font-light tracking-wide">{pulse.title}</h1>
                         <p className="mt-1 text-xs text-slate-300">
-                            By {pulse.authorName}
+                            {t('by_name').replace('{name}', pulse.authorName || '')}
                         </p>
                         {/* Carried pulse — the bridge stays visible: a being's words, a human's hands. */}
                         {pulse.carriedByName && (
-                            <p className="mt-0.5 text-[11px] text-slate-400">carried by {pulse.carriedByName}</p>
+                            <p className="mt-0.5 text-[11px] text-slate-400">{t('carried_by').replace('{name}', pulse.carriedByName)}</p>
                         )}
                         {/* Spacetime — the WHEN (date + time) every pulse carries, and the WHERE when it has one. */}
                         <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -161,7 +199,7 @@ export const PulseDetail = ({ pulse, onClose, backLabel = "Back", canEdit, onEdi
 
                     {pulse.type === 'event' && (
                         <div className="mb-4 grid gap-2 rounded-2xl border border-sky-100 bg-sky-50 p-4 text-sm text-sky-900">
-                            {pulse.eventDate && <div><span className="font-bold">When:</span> {new Date(pulse.eventDate).toLocaleString()}</div>}
+                            {pulse.eventDate && <div><span className="font-bold">{t('when')}:</span> {new Date(pulse.eventDate).toLocaleString()}</div>}
                             {pulse.eventLocation && <div><span className="font-bold">Where:</span> {pulse.eventLocation}</div>}
                         </div>
                     )}

@@ -26,6 +26,24 @@ export const vetoGrowthPulse = (pulseId: string, uid: string) =>
 export const mendPulseDomain = (pulseId: string, domain: string) =>
     updateDoc(doc(db, 'pulses', pulseId), { domain, updatedAt: serverTimestamp() });
 
+// UNMINT the accidental LAST mint (domain/unmint, ring 2026-08-15): delete the head block
+// and roll the tree's head back to previousHash in ONE transaction — the rules refuse the
+// delete unless the rollback rides with it, so the chain can only ever shorten by its
+// newest link. The caller checks unmintRefusal first; the transaction re-checks the head
+// so a mint that stopped being last between click and commit refuses instead of severing.
+export const unmintLastPulse = (pulse: Pick<Pulse, 'id' | 'lifetreeId' | 'hash' | 'previousHash'>) =>
+    runTransaction(db, async (t) => {
+        const treeRef = doc(db, 'lifetrees', pulse.lifetreeId!);
+        const tree = (await t.get(treeRef)).data() as { latestHash?: string; blockHeight?: number } | undefined;
+        if (!tree || tree.latestHash !== pulse.hash) throw new Error('unmint_not_last');
+        t.delete(doc(db, 'pulses', pulse.id));
+        t.update(treeRef, {
+            latestHash: pulse.previousHash,
+            blockHeight: (tree.blockHeight || 1) - 1,
+            updatedAt: serverTimestamp(),
+        });
+    });
+
 const fetchPulsesRaw = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, levels?: PulseVisibility[], pageSize?: number) => {
     // Visibility-scope the broad feed so a restricted pulse in this domain can't get the
     // whole query rejected. Broad feeds carry no scope context, so `levels` is public + node.

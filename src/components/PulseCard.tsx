@@ -2,6 +2,7 @@
 import React from 'react';
 import { type Pulse, type Lightseed } from '../types';
 import { Icons } from './ui/Icons';
+import { useLanguage } from '../contexts/LanguageContext';
 import { LoveButton } from './ui/LoveButton';
 import { formatLight } from '../domain/light';
 import { tabTone } from '../utils/tabTheme';
@@ -20,6 +21,7 @@ interface PulseCardProps {
 const POP = 'hover:shadow-xl hover:-translate-y-1 active:shadow-xl active:-translate-y-1 transition-all duration-300';
 
 export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards' }: PulseCardProps) => {
+    const { t } = useLanguage();
     const images = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
     const isOffering = pulse.type === 'offering';
     const appreciationLight = pulse.offeringAppreciationLight;
@@ -73,7 +75,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
                         <h3 dir="auto" className="truncate text-sm font-semibold text-slate-800">{pulse.title}</h3>
-                        {pulse.carriedByName && <p className="truncate text-[10px] italic text-purple-500">🤲 carried by {pulse.carriedByName}</p>}
+                        {pulse.carriedByName && <p className="truncate text-[10px] italic text-purple-500">🤲 {t('carried_by').replace('{name}', pulse.carriedByName)}</p>}
                         {badges}
                     </div>
                     <p dir="auto" className="mt-0.5 line-clamp-2 text-xs font-light leading-relaxed text-slate-500">{meta}</p>
@@ -98,7 +100,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
                 )}
                 <div className="p-2">
                     <h3 dir="auto" className="truncate text-xs font-semibold text-slate-800">{pulse.title}</h3>
-                        {pulse.carriedByName && <p className="truncate text-[10px] italic text-purple-500">🤲 carried by {pulse.carriedByName}</p>}
+                        {pulse.carriedByName && <p className="truncate text-[10px] italic text-purple-500">🤲 {t('carried_by').replace('{name}', pulse.carriedByName)}</p>}
                     <div className="mt-1 flex items-center justify-between">
                         {love('text-[10px]')}
                         {badge && <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-bold ${isEvent ? 'bg-sky-100 text-sky-700' : 'bg-emerald-100 text-emerald-600'}`}>{badge}</span>}

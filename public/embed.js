@@ -9,7 +9,10 @@
 (function () {
   'use strict';
 
-  var ORIGIN = 'https://lifeseed.online';
+  /* The node renamed lifeseed → lightseed (2026-07-25); the old lifeseed.online embed URL
+     keeps serving from the same hosting, but the widget itself now opens the node's true
+     address. Message names (lifeseed-refresh/-close) stay — they are protocol, not identity. */
+  var ORIGIN = 'https://lightseed.online';
   var domain = window.location.hostname;
   var scriptEl = document.currentScript;
   var seedUrl = scriptEl && scriptEl.getAttribute('data-seed-url');
@@ -17,7 +20,7 @@
   /* ── Floating button ── */
   var btn = document.createElement('button');
   btn.id = 'lifeseed-btn';
-  btn.title = 'Trees growing here · lifeseed.online';
+  btn.title = 'Trees growing here · lightseed.online';
   btn.setAttribute('aria-label', 'Open lifeseed tree widget');
   btn.style.cssText = [
     'position:fixed', 'bottom:20px', 'right:20px',

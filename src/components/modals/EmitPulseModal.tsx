@@ -371,7 +371,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
           <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
             <button type="button" onClick={() => goToStep(step - 1)} disabled={step === 0}
               className="inline-flex items-center gap-1 text-xs font-bold text-slate-500 transition-colors hover:text-slate-800 disabled:opacity-30">
-              <Icons.ArrowLeft /> <span>Back</span>
+              <Icons.ArrowLeft /> <span>{t('back')}</span>
             </button>
             <div className="flex items-center gap-1.5">
               {pageKeys.map((_, n) => (

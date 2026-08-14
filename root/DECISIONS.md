@@ -6,6 +6,29 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-15 · Four mends: the unmint, the keeper's address, the widget's tongue, the
+buttons' tongues** — (1) THE UNMINT: an accidental LAST mint may be taken back by its
+author — only the head block, only in the transaction that rolls the tree's head back to
+previousHash (rules refuse the delete without the rollback riding along), and never a
+guardian-witnessed watering (its light is already kindled; rays are append-only). The same
+clause CLOSES mid-chain author-deletes of tree mints outright — the first stone laid on the
+first-sight review's finding 2 in the rules themselves (domain/unmint + 5 emulator tests +
+5 unit laws). An unmint is an erasure of the newest link by the hand that just forged it,
+said plainly in the law's contract; where a record of the mistake matters, retraction
+remains the way. (2) THE ADDRESS: community keepers may now change their community's domain
+(the rules always admitted it; the field had no face) — normalizePlaceOfRecord validates,
+and the confirm says honestly that existing beings keep their old stamps until re-homed.
+(3) THE WIDGET: the partner-domain seed button rendered blank white since the i18n sweep —
+LifeseedWidget speaks (useLanguage) but rendered on App's early-return branch OUTSIDE the
+LanguageProvider. Exactly the assembled-experience failure class the first-sight review
+named; found live in the console, fixed by wrapping the branch, and embed.js now opens the
+node's true address (lightseed.online — message names stay, they are protocol not identity).
+(4) THE TONGUES: ~35 hardcoded English button/label literals across 16 components (Back,
+Share, Accept, Decline, Step in, Make steward, Mint invitation link, carried by, Hosted
+by, watering chips…) moved to the dictionary in en/ar/zh.
+
+---
+
 **2026-08-15 · The bundle law: how a whole node travels** — Zoltán asked for the node to be
 ready to MULTIPLY: parallel living-path simulation, export to another database, data that
 travels node to node with its charter. The foundation landed first as pure law

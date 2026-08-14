@@ -218,7 +218,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                                                     <h4 dir="auto" className="font-bold text-slate-800 text-base md:text-lg leading-tight mb-1 md:mb-2 break-words">{pulse.title}</h4>
                                                     <p dir="auto" className="text-xs text-slate-500 line-clamp-3 break-words">{pulse.body}</p>
                                                     {/* The bridge stays visible downstream: a being's words, a human's hands. */}
-                                                    {pulse.carriedByName && <p className="mt-1 text-[10px] italic text-purple-500">🤲 carried by {pulse.carriedByName}</p>}
+                                                    {pulse.carriedByName && <p className="mt-1 text-[10px] italic text-purple-500">🤲 {t('carried_by').replace('{name}', pulse.carriedByName)}</p>}
                                                 </div>
                                             </div>
 

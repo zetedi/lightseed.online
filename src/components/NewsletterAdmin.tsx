@@ -163,7 +163,7 @@ export const NewsletterAdmin = ({ senderUid, onBack }: { senderUid: string; onBa
                     <div className="space-y-4">
                         <p className="text-sm text-slate-600">{t('newsletter_send_confirm')}</p>
                         <div className="flex gap-3">
-                            <button onClick={() => setShowConfirm(false)} className="flex-1 rounded-lg bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700">Cancel</button>
+                            <button onClick={() => setShowConfirm(false)} className="flex-1 rounded-lg bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700">{t('cancel')}</button>
                             <button onClick={handleSend} className="flex-1 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white">Send</button>
                         </div>
                     </div>

@@ -1,3 +1,4 @@
+import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from './Icons';
 import { SuperDot } from './SuperDot';
 
@@ -10,16 +11,19 @@ export const EditPill = ({ onClick, themeColor, title = 'Edit' }: {
     /** A community-themed header may tint the pill (EventProfile). */
     themeColor?: string;
     title?: string;
-}) => (
+}) => {
+    const { t } = useLanguage();
+    return (
     <button
         onClick={onClick}
         title={title}
         style={themeColor ? { backgroundColor: themeColor } : undefined}
         className="flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-sm ring-1 ring-white/25 transition-all hover:brightness-110"
     >
-        <Icons.Pencil /> <span className="hidden sm:inline">Edit</span>
+        <Icons.Pencil /> <span className="hidden sm:inline">{t('edit')}</span>
     </button>
-);
+    );
+};
 
 export const DeletePill = ({ onClick, disabled, staffDot, title = 'Delete' }: {
     onClick: () => void;
@@ -27,7 +31,9 @@ export const DeletePill = ({ onClick, disabled, staffDot, title = 'Delete' }: {
     /** The amber dot: this hand acts by staff role, not ownership. */
     staffDot?: boolean;
     title?: string;
-}) => (
+}) => {
+    const { t } = useLanguage();
+    return (
     <button
         onClick={onClick}
         disabled={disabled}
@@ -35,7 +41,8 @@ export const DeletePill = ({ onClick, disabled, staffDot, title = 'Delete' }: {
         aria-label={title}
         className="relative flex items-center gap-1.5 rounded-full border border-red-400/40 bg-red-500/20 px-3 py-2 text-xs font-bold text-red-200 shadow-sm transition-colors hover:bg-red-500 hover:text-white disabled:opacity-50"
     >
-        <Icons.Trash /> <span className="hidden sm:inline">Delete</span>
+        <Icons.Trash /> <span className="hidden sm:inline">{t('delete')}</span>
         {staffDot && <SuperDot />}
     </button>
-);
+    );
+};

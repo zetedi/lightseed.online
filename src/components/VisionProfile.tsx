@@ -223,7 +223,7 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                                 className="flex cursor-not-allowed items-center gap-1 rounded-full border border-red-400/20 bg-red-500/10 px-4 py-2 text-xs font-bold text-red-300/50"
                             >
                                 <Icons.Trash />
-                                <span>Delete</span>
+                                <span>{t('delete')}</span>
                             </button>
                         )}
                     </div>

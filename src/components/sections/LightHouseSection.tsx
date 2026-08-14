@@ -173,7 +173,7 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
           </div>
           <button onClick={() => stepIn(s)} disabled={adoptingId === s.id}
             className="shrink-0 rounded-full bg-amber-500 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-amber-600 disabled:opacity-50">
-            {adoptingId === s.id ? 'Stepping…' : 'Step in'}
+            {adoptingId === s.id ? t('stepping') : t('step_in')}
           </button>
         </div>
       ))}

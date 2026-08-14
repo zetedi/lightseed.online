@@ -105,7 +105,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
                 <div className="flex items-center justify-between mb-6">
                     <button onClick={onClose} className="flex items-center gap-2 text-white/70 hover:text-white text-sm font-medium">
                         <Icons.ArrowLeft />
-                        <span>Back</span>
+                        <span>{t('back')}</span>
                     </button>
                     <div className="flex items-center gap-2">
                         {/* One height for the whole action row (32px): the shared Edit/Delete
@@ -113,7 +113,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
                         {canEdit && onEdit && <EditPill onClick={onEdit} themeColor={theme?.primary} />}
                         {canDelete && <DeletePill onClick={handleDelete} disabled={isDeleting} staffDot={!isAuthor} title="Delete event" />}
                         <EventWeather location={pulse.eventLocation} dateIso={pulse.eventDate} className="rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs text-slate-100" />
-                        <span className="hidden rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-200 sm:inline-flex">Event</span>
+                        <span className="hidden rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-200 sm:inline-flex">{t('event_chip')}</span>
                     </div>
                 </div>
 
@@ -131,7 +131,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
                             <h1 dir="auto" className="min-w-0 break-words text-2xl font-light tracking-wide md:text-3xl">{pulse.title}</h1>
                             {/* Share + QR ride beside the name, exactly like the tree profile. */}
                             <button onClick={handleShare} title="Share this event" className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-bold text-white transition-colors hover:bg-white/25">
-                                <Icons.Link /> <span>{shared ? 'Copied' : 'Share'}</span>
+                                <Icons.Link /> <span>{shared ? t('copied') : t('share')}</span>
                             </button>
                             <BeingQr lid={pulse.lid} name={pulse.title} savedHref={pulse.qr?.href}
                                 canMint={isAuthor || isAdmin || isSuperAdmin}
@@ -156,7 +156,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
                                 <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">{pulse.visibility}</span>
                             )}
                         </div>
-                        {pulse.authorName && <p className="mt-1 text-xs text-slate-300 text-center sm:text-left">Hosted by {pulse.authorName}</p>}
+                        {pulse.authorName && <p className="mt-1 text-xs text-slate-300 text-center sm:text-left">{t('hosted_by').replace('{name}', pulse.authorName)}</p>}
                     </div>
                 </div>
             </ProfileHero>
@@ -188,9 +188,9 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
                         )}
                         {(whenText || pulse.eventLocation || pulse.eventMaxParticipants || showPlace) && (
                             <div className="mb-6 grid gap-2 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700">
-                                {whenText && <div><span className="font-bold">When:</span> {whenText}</div>}
+                                {whenText && <div><span className="font-bold">{t('when')}:</span> {whenText}</div>}
                                 {pulse.eventLocation && <div><span className="font-bold">{t('where')}:</span> {pulse.eventLocation}</div>}
-                                {!!pulse.eventMaxParticipants && <div><span className="font-bold">Participants:</span> up to {pulse.eventMaxParticipants}</div>}
+                                {!!pulse.eventMaxParticipants && <div><span className="font-bold">{t('participants')}:</span> {t('up_to_n').replace('{n}', String(pulse.eventMaxParticipants))}</div>}
                                 {/* The place-of-record stamp — staff sight, staff mend; PlaceOfRecord hides
                                     itself on a strict-scoped host. `domain` is outside the hashed block
                                     fields, so moving an event home never breaks its seal. */}

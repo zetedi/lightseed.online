@@ -21,6 +21,8 @@ export const DOMAIN_KEYS = [
   // offering — a sound offering draft
   'offering_choose_kind', 'offering_name', 'offering_appreciation_positive',
   'offering_appreciation_whole', 'offering_link_http', 'offering_link_long',
+  // unmint — taking back an accidental head mint (domain/unmint)
+  'unmint_not_author', 'unmint_not_mint', 'unmint_not_last', 'unmint_witnessed',
 ] as const;
 
 export type DomainKey = (typeof DOMAIN_KEYS)[number];

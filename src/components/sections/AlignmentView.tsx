@@ -263,7 +263,7 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree, n
                 onClick={mintCovenant}
                 disabled={minting}
                 className="mt-4 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
-              >{minting ? 'Minting…' : 'Bring the covenant to life'}</button>
+              >{minting ? t('minting') : t('covenant_to_life')}</button>
               <p className="mx-auto mt-3 max-w-sm text-xs text-slate-400">{t('align_cov_sign_note')}</p>
             </div>
           ) : (

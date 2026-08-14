@@ -1012,6 +1012,11 @@ service cloud.firestore {
              // the sender's chain, and deleting it would sever previousHash for every block after.
              // The author's way out is RETRACTION (overlay (h)) — the mark, never the erasure.
              && resource.data.get('type', '') != 'reach'
+             // A TREE MINT below the head is likewise sealed history (deleting it would sever
+             // the chain for every block after) — its only exit is the UNMINT branch below,
+             // which admits exactly the head block. This closes the mid-chain delete the
+             // first-sight review named (finding 2), for the tree chain.
+             && !(resource.data.get('type', '') == 'tree_growth' && resource.data.get('lifetreeId', '') != '')
              && (
                   resource.data.get('type', '') != 'decision'
                   || (
@@ -1023,6 +1028,23 @@ service cloud.firestore {
                        && resource.data.get('positions', []).size() == 0
                      )
                 )
+           )
+
+        // THE UNMINT (ring 2026-08-15) — an accidental LAST mint may be taken back by its
+        // author: only the HEAD block (the tree's latestHash is this hash), only in the same
+        // transaction that rolls the head back to previousHash with the height stepping down
+        // one — so the chain is never severed, only shortened by exactly its newest link.
+        // A guardian-WITNESSED watering stands forever: its light is already minted (rays are
+        // append-only), and unminting it would orphan the kindled rays.
+        || (
+             resource.data.get('authorId', '') == request.auth.uid
+             && resource.data.get('type', '') == 'tree_growth'
+             && resource.data.get('lifetreeId', '') != ''
+             && resource.data.get('wateringConfirmedBy', '') != 'guardian'
+             && get(/databases/$(database)/documents/lifetrees/$(resource.data.lifetreeId)).data.get('latestHash', '') == resource.data.get('hash', '')
+             && getAfter(/databases/$(database)/documents/lifetrees/$(resource.data.lifetreeId)).data.get('latestHash', '') == resource.data.get('previousHash', '')
+             && getAfter(/databases/$(database)/documents/lifetrees/$(resource.data.lifetreeId)).data.get('blockHeight', 0)
+                  == get(/databases/$(database)/documents/lifetrees/$(resource.data.lifetreeId)).data.get('blockHeight', 0) - 1
            )
       );
 

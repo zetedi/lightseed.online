@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { showConfirm } from '../ui/Dialog';
+import { showAlert, showConfirm } from '../ui/Dialog';
 import { Icons } from '../ui/Icons';
 import { MahameruAvatar } from '../ui/MahameruAvatar';
 import { Community, Lifetree } from '../../types';
 import { getTreesByDomain, getPulsesByTreeId, updateCommunity } from '../../services/firebase';
 import { isCanonicallySealed, verifyBlockSeal, type ChainBlock } from '../../domain/chain';
+import { normalizePlaceOfRecord } from '../../domain/communityDoor';
 import { setTokenisationEnabled } from '../../domain/tokenisation';
 import { VisionSection } from '../sections/VisionSection';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { spokenLine } from '../../utils/translations';
 
 interface CommunityVisionProps {
   community: Community;
@@ -65,6 +67,25 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
   const [reflectsOn, setReflectsOn] = useState(!!community.reflectsPublic);
   const [isTogglingReflect, setIsTogglingReflect] = useState(false);
   const hasDomain = !!community.domain;
+
+  // The address, as drafted — keyed to the community so switching profiles never carries
+  // one circle's domain onto another.
+  const [domainDraft, setDomainDraft] = useState(community.domain || '');
+  const [domainSaving, setDomainSaving] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- re-keys the draft when the profile switches communities; a render-time derive would fight the user's typing
+  useEffect(() => { setDomainDraft(community.domain || ''); }, [community.id, community.domain]);
+  const handleSaveDomain = async () => {
+    const home = normalizePlaceOfRecord(domainDraft);
+    if (!home) { showAlert('place_of_record_invalid'); return; }
+    if (!(await showConfirm(spokenLine('community_domain_confirm', { name: community.name, domain: home }), { title: 'community_domain', confirmText: 'save' }))) return;
+    setDomainSaving(true);
+    try {
+      await updateCommunity(community.id, { domain: home });
+      onUpdate?.({ domain: home });
+      setDomainDraft(home);
+    } catch (e: unknown) { showAlert((e as Error)?.message || 'err_action'); }
+    setDomainSaving(false);
+  };
 
   // The strict-scope toggle — mirrors community.strictScope. Only bites while scoped (reflect off).
   const [strictOn, setStrictOn] = useState(!!community.strictScope);
@@ -257,6 +278,38 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
             >
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${tokenisationOn ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* THE ADDRESS — the community's domain, keeper-editable (ring 2026-08-15; the rules
+          already admitted keepers to every field but lid/loveCount/ownerId — this gives the
+          field a face). Validated by the same law as the place-of-record mend; and honest
+          about what it does NOT do: beings already stamped with the old domain keep their
+          stamps (their re-homing is the staff mend / a migration, not a side effect). */}
+      {canEdit && (
+        <div className="mt-8 border-t border-slate-100 pt-6">
+          <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500"><Icons.Loc /></span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-slate-800">{t('community_domain')}</p>
+              <p className="mt-0.5 text-sm text-slate-500">{t('community_domain_hint')}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <input
+                  dir="ltr"
+                  value={domainDraft}
+                  onChange={e => setDomainDraft(e.target.value)}
+                  placeholder={t('domain_ph')}
+                  className="w-64 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 font-mono text-sm outline-none focus:border-emerald-400"
+                />
+                <button
+                  onClick={handleSaveDomain}
+                  disabled={domainSaving || normalizePlaceOfRecord(domainDraft) === (community.domain || null)}
+                  className="rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50">
+                  {domainSaving ? t('saving') : t('save')}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

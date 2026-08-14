@@ -664,36 +664,36 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                 Mobile keeps every action compact (icons, tight padding) so nothing overflows. */}
             {!currentUserId && inviteForHere && (
               <button onClick={() => onSignIn?.()} className="flex items-center gap-1 rounded-full border border-amber-300/50 bg-amber-400/15 px-2.5 py-1.5 text-[11px] font-bold text-amber-200 transition-colors hover:bg-amber-400 hover:text-white sm:px-4 sm:py-2 sm:text-xs">
-                🎟 Sign in to use your invitation
+                🎟 {t('signin_use_invitation')}
               </button>
             )}
             {currentUserId && !isMember && inviteForHere && (
               <button onClick={handleEnterWithInvite} disabled={joining} className="flex items-center gap-1 rounded-full bg-amber-500 px-2.5 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-amber-400 disabled:opacity-50 sm:px-4 sm:py-2 sm:text-xs">
-                🎟 <span>{joining ? 'Entering…' : `Enter, invited${inviterName ? ` by ${inviterName}` : ''}`}</span>
+                🎟 <span>{joining ? t('entering') : (inviterName ? t('enter_invited_by').replace('{name}', inviterName) : t('enter_invited'))}</span>
               </button>
             )}
             {currentUserId && !isMember && !inviteForHere && (
               door === 'open' ? (
                 <button onClick={handleStepIn} disabled={joining} className="flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50 sm:px-4 sm:py-2 sm:text-xs">
-                  <Icons.Users size={14} /><span>{joining ? 'Stepping in…' : 'Step in'}</span>
+                  <Icons.Users size={14} /><span>{joining ? t('stepping_in') : t('step_in')}</span>
                 </button>
               ) : door === 'closed' ? (
                 <span className="flex items-center gap-1 rounded-full border border-slate-400/40 bg-slate-400/10 px-2.5 py-1.5 text-[11px] font-bold text-slate-300 sm:px-4 sm:py-2 sm:text-xs">
-                  The door is closed
+                  {t('door_closed_short')}
                 </span>
               ) : joinRequested ? (
                 <span className="flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-1.5 text-[11px] font-bold text-emerald-300 sm:px-4 sm:py-2 sm:text-xs">
-                  <Icons.Users size={14} /> Requested
+                  <Icons.Users size={14} /> {t('requested')}
                 </span>
               ) : (
                 <button onClick={handleJoin} disabled={joining} className="flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50 sm:px-4 sm:py-2 sm:text-xs">
-                  <Icons.Users size={14} /><span>{joining ? 'Asking…' : 'Join'}</span>
+                  <Icons.Users size={14} /><span>{joining ? t('asking') : t('join')}</span>
                 </button>
               )
             )}
             {isMember && currentUserId !== community.ownerId && (
               <span className="flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-1.5 text-[11px] font-bold text-emerald-300 sm:px-4 sm:py-2 sm:text-xs">
-                <Icons.Users size={14} /> Member
+                <Icons.Users size={14} /> {t('member_badge')}
               </span>
             )}
             {/* Ask to KEEP — a member who isn't a keeper may knock for keepership. */}
