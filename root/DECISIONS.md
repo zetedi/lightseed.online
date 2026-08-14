@@ -32,6 +32,31 @@ behind the plan: 41 collections, 14 flows, two-database emulator isolation verif
 empirically. Next stones: the Grove (living-path suite), then the Crossing (export→restore→
 verify between demo-node-a and demo-node-b).
 
+LAID THE SAME DAY — **the Grove and the Crossing are alive** (`npm run test:living`,
+tests/living/): three beings walk the whole living path through the REAL rules, REAL
+callables and REAL triggers in the functions emulator — arrival (index triggers name them),
+parallel planting, the web of trust (staff signs, then a peer signs with their validated
+tree), guardianship before watering (tenure), a REAL witnessed watering minting REAL rays
+through witnessWatering, reach/reply/retraction, a vision growing its own chain, community
+doors (knock, open, step in), the tree circle through acceptTreeInvite, the whole keeper
+trio (offer→consent, knock→answer, resign→succession), a light house rooted in a mother
+tree, a housed bed hosting a stay whose occupancy the onStayWritten trigger publishes, an
+event, and loves whose arithmetic holds. Then the Crossing: the LIVED world (not a synthetic
+one) exports under the bundle law, verifies clean (census, chain closure, beings index,
+uid census exactly the three personas), survives three named attacks (tamper→census_digest,
+filter→chain_break, smuggle→plan_violation), restores into demo-node-b — a genuinely
+separate database with no functions watching — and verifies again: every verbatim digest
+identical, chains closed, index rebuilt not imported, custody re-SWORN via a fresh
+dataAuthority declaration. Two truths the living run taught: trees planted in the same
+millisecond share a genesis hash (createBlock('0',{msg:'Birth'},ms) — true in production;
+cross-chain closure can false-pass on it, noted in the law), and the emulator surfaces
+same-document transaction races as bare denials rather than retries (recorded in the suite).
+The dual-typed validatorId (uid for staff, TREE id for peers) left the automatic uid census
+for hand inspection. What is NOT yet proven here, said plainly: scheduled functions
+(mintStayLeaves, checkWateringSchedules) don't fire in the suite; decision/covenant crypto
+signing stays proven by the rules suite; Storage files and real uid re-anchoring remain the
+bundle law's named debts.
+
 ---
 
 **2026-08-14 · The domain seals its skin** — Zoltán is shaping a second face (a domain-

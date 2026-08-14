@@ -24,6 +24,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:rules": "firebase emulators:exec --only firestore \"vitest run --config vitest.rules.config.ts\"",
+    "test:living": "npm --prefix functions run build && firebase emulators:exec --only auth,firestore,functions --project demo-lifeseed \"vitest run --config vitest.living.config.ts\"",
     "typecheck:functions": "tsc --noEmit -p functions/tsconfig.json",
     "check": "npm run typecheck && npm run lint && npm test",
     "seed:lightseed": "node scripts/seed-lightseed.mjs",

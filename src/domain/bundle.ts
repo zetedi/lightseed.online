@@ -69,7 +69,10 @@ export const TRAVEL_PLAN: readonly TravelRule[] = [
   { path: 'initiates', mode: 'witness', reason: 'git (initiations/) is the source of truth; the mirror is re-synced, and this witness only proves the two agreed at export' },
 
   // The living beings and their chains
-  { path: 'lifetrees', mode: 'verbatim', localUidFields: ['ownerId', 'validatorId'] },
+  // validatorId is DUAL-TYPED (staff/initiates sign as their uid; peers sign as their
+  // validated TREE's id — the Grove proved a tree id lands there), so it stays OUT of the
+  // automatic uid census: re-anchoring inspects it by hand.
+  { path: 'lifetrees', mode: 'verbatim', localUidFields: ['ownerId'] },
   { path: 'lifetrees/*/loves', mode: 'verbatim', idIsLocalUid: true, localUidFields: ['uid'] },
   { path: 'lifetrees/*/occupancy', mode: 'verbatim', deterministicIds: 'the stays/{stayId} doc id it mirrors' },
   { path: 'lifetrees/*/holds', mode: 'excluded', reason: 'ephemeral soft locks (TTL ~2min); a hold has no meaning on a node that did not see the intent' },
