@@ -37,7 +37,15 @@ the button is live by ROLE rather than by the law, it carries the amber SuperDot
 refusal it is overriding stays written beside it. The overridable set is domain law
 (STAFF_OVERRIDABLE_REFUSALS): the social guards bend to the steward — co-held, not-author —
 and the structural ones bend to no one: below the head severs, a witnessed watering's light
-is minted, decisions keep their own lifecycle. (2) THE ADDRESS: community keepers may now change their community's domain
+is minted, decisions keep their own lifecycle.
+AND THE DOOR FOUND ITS LEAF (Zoltán, with a screenshot): the separate red card sat ugly
+under the nav — and worse, it read the tree PROP for the head, which goes stale the moment
+a mint lands from another surface: it offered a below-head block whose lawful refusal wore
+the face of a broken button. Now the head is fetched LIVE, and the pill sits where he asked
+— on the newest leaf's lower OUTSIDE edge, beside the hash (flipping sides with the leaf);
+when the head block has no leaf (tree-sent reaches never enter the public timeline), a slim
+crown fallback keeps the door visible. The night's lesson, rung: a control that reads stale
+state doesn't fail loudly — it tells a lawful lie. (2) THE ADDRESS: community keepers may now change their community's domain
 (the rules always admitted it; the field had no face) — normalizePlaceOfRecord validates,
 and the confirm says honestly that existing beings keep their old stamps until re-homed.
 (3) THE WIDGET: the partner-domain seed button rendered blank white since the i18n sweep —

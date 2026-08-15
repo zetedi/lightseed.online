@@ -11,7 +11,7 @@ import { getLightHouseById } from '../services/firebase';
 import type { LightHouse } from '../domain/lightHouse';
 import { EditPill, DeletePill } from './ui/HeroPills';
 import { LoveButton } from './ui/LoveButton';
-import { updateLifetree, setTreeStatus, getPulsesByTreeId, getMyHeadBlock, unmintLastPulse } from '../services/firebase';
+import { updateLifetree, setTreeStatus, getPulsesByTreeId, getMyHeadBlock, unmintLastPulse, getLifetreeById } from '../services/firebase';
 import { unmintRefusal, STAFF_OVERRIDABLE_REFUSALS } from '../domain/unmint';
 import { Pulse, type Lifetree } from '../types';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
@@ -125,8 +125,16 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const [headBlock, setHeadBlock] = useState<Pulse | null>(null);
    const [unminting, setUnminting] = useState(false);
    useEffect(() => {
-       // eslint-disable-next-line react-hooks/set-state-in-effect -- prop→state re-key when the viewed tree changes
+       // The prop is only the first breath — it goes stale the moment a mint lands from
+       // another surface (the thread), which offered a below-head block and a refusal
+       // dressed as a broken button (2026-08-15). The LIVE tree is the only honest head.
+       // eslint-disable-next-line react-hooks/set-state-in-effect -- prop-seed before the live fetch below
        setLiveHead({ latestHash: tree.latestHash, blockHeight: tree.blockHeight });
+       let alive = true;
+       getLifetreeById(tree.id).then(fresh => {
+           if (alive && fresh) setLiveHead({ latestHash: (fresh as Lifetree).latestHash, blockHeight: (fresh as Lifetree).blockHeight });
+       }).catch(() => {});
+       return () => { alive = false; };
    }, [tree.id, tree.latestHash, tree.blockHeight]);
    useEffect(() => {
        // eslint-disable-next-line react-hooks/set-state-in-effect -- clears the door for a non-owner before the async head fetch below
@@ -290,23 +298,6 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
            // chain renderer (ChainTree). Chain loading stays here so Care can see the
            // growth blocks (pending waterings) and refresh them in place.
            key: 'digital', label: 'Digital Tree', icon: <Icons.Tree />, render: () => (
-               <>
-               {/* The newest link — while no other being holds it, the owner-author may take
-                   it back whole; the head rolls back atomically (domain/unmint). */}
-               {isOwner && headBlock && (
-                   <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-red-100 bg-red-50/50 px-4 py-3">
-                       <div className="min-w-0">
-                           <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-red-400">{t('unmint_head_title')}</p>
-                           <p className="truncate text-sm font-semibold text-slate-700">{headBlock.title || headBlock.type}</p>
-                           <p className="text-[11px] italic text-slate-400">{headRefusal0 ? t(headRefusal0) : t('unmint_head_hint')}</p>
-                       </div>
-                       <button onClick={handleUnmintHead} disabled={!!headRefusal || unminting}
-                           className="relative inline-flex items-center gap-1.5 rounded-full bg-red-500 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-red-600 disabled:opacity-40">
-                           <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Trash /></span>{unminting ? '…' : t('unmint')}
-                           {staffUnmint && <SuperDot />}
-                       </button>
-                   </div>
-               )}
                <ChainTree
                    genesisBlock={genesisBlock}
                    blocks={growthBlocks}
@@ -316,8 +307,16 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                    onCare={onCreatePulse}
                    root={chainRoot}
                    stats={{ blockHeight: liveHead.blockHeight, genesisHash: tree.genesisHash, latestHash: liveHead.latestHash }}
+                   unmint={isOwner && headBlock ? {
+                       pulseId: headBlock.id,
+                       title: headBlock.title || headBlock.type || '',
+                       disabled: !!headRefusal,
+                       reason: headRefusal0 ? t(headRefusal0) : null,
+                       staffDot: staffUnmint,
+                       busy: unminting,
+                       onUnmint: handleUnmintHead,
+                   } : null}
                />
-               </>
            ),
        },
        {
