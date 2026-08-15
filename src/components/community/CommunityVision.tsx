@@ -68,6 +68,22 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
   const [isTogglingReflect, setIsTogglingReflect] = useState(false);
   const hasDomain = !!community.domain;
 
+  // The name, as drafted — the being's own word for itself, keeper-editable like the address.
+  const [nameDraft, setNameDraft] = useState(community.name || '');
+  const [nameSaving, setNameSaving] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- re-keys the draft when the profile switches communities
+  useEffect(() => { setNameDraft(community.name || ''); }, [community.id, community.name]);
+  const handleSaveName = async () => {
+    const name = nameDraft.trim();
+    if (!name || name === community.name) return;
+    setNameSaving(true);
+    try {
+      await updateCommunity(community.id, { name });
+      onUpdate?.({ name });
+    } catch (e: unknown) { showAlert((e as Error)?.message || 'err_action'); }
+    setNameSaving(false);
+  };
+
   // The address, as drafted — keyed to the community so switching profiles never carries
   // one circle's domain onto another.
   const [domainDraft, setDomainDraft] = useState(community.domain || '');
@@ -289,6 +305,30 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
           stamps (their re-homing is the staff mend / a migration, not a side effect). */}
       {canEdit && (
         <div className="mt-8 border-t border-slate-100 pt-6">
+          {/* THE NAME — shown everywhere exactly as this property says it (the tab title
+              included), so the keeper edits it here, at the source. */}
+          <div className="mb-2 flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500"><Icons.Users /></span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-slate-800">{t('community_name')}</p>
+              <p className="mt-0.5 text-sm text-slate-500">{t('community_name_hint')}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <input
+                  dir="auto"
+                  value={nameDraft}
+                  onChange={e => setNameDraft(e.target.value)}
+                  placeholder={t('community_name_ph')}
+                  className="w-64 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm outline-none focus:border-emerald-400"
+                />
+                <button
+                  onClick={handleSaveName}
+                  disabled={nameSaving || !nameDraft.trim() || nameDraft.trim() === community.name}
+                  className="rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50">
+                  {nameSaving ? t('saving') : t('save')}
+                </button>
+              </div>
+            </div>
+          </div>
           <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
             <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500"><Icons.Loc /></span>
             <div className="min-w-0 flex-1">

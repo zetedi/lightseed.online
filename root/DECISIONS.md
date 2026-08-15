@@ -45,7 +45,20 @@ the face of a broken button. Now the head is fetched LIVE, and the pill sits whe
 — on the newest leaf's lower OUTSIDE edge, beside the hash (flipping sides with the leaf);
 when the head block has no leaf (tree-sent reaches never enter the public timeline), a slim
 crown fallback keeps the door visible. The night's lesson, rung: a control that reads stale
-state doesn't fail loudly — it tells a lawful lie. (2) THE ADDRESS: community keepers may now change their community's domain
+state doesn't fail loudly — it tells a lawful lie.
+
+---
+
+**2026-08-15 · The name speaks for itself, and the mint takes only what grew** — two of
+Zoltán's asks. (1) THE NAME: the browser tab now wears the name of the community IN VIEW
+(selected first, then impersonated/host) exactly as its `name` property says it — and that
+property finally has an editing surface: "The name" card beside "The address" in the Vision
+section, keeper-editable (the rules always allowed it; the field had no face, like the
+domain before it). (2) THE INCREMENTAL MINT: minting a reach conversation onto the chain
+now seals only the words since the LAST mint-notice (or the origin when never minted) —
+each mint-notice in the thread is the previous seal's watermark, so repeated mints record
+increments and the chain never holds the same words twice; a mint with nothing new refuses
+with its reason said aloud (mint_nothing_new, three tongues). (2) THE ADDRESS: community keepers may now change their community's domain
 (the rules always admitted it; the field had no face) — normalizePlaceOfRecord validates,
 and the confirm says honestly that existing beings keep their old stamps until re-homed.
 (3) THE WIDGET: the partner-domain seed button rendered blank white since the i18n sweep —

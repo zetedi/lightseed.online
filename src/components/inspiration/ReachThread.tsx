@@ -466,6 +466,13 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
         }
         if (messages.filter(m => !m.system).length <= 1) return; // nothing but the greeting
 
+        // ONLY WHAT GREW SINCE THE LAST MINT (or the origin): each mint-notice in the thread
+        // is the previous seal's watermark — the next mint takes the words after it, so
+        // repeated mints record increments, never the same words twice.
+        const lastMintIdx = messages.reduce((acc, m, i) => (m.system ? i : acc), -1);
+        const freshMessages = messages.slice(lastMintIdx + 1).filter(m => !m.system);
+        if (freshMessages.length === 0) { showAlert('mint_nothing_new'); return; }
+
         const partnerLabel = groupThread?.partnerName || selectedTree?.name || 'this conversation';
 
         // Tree DM: seal the conversation onto the minter's tree as a PUBLIC record on the
@@ -480,8 +487,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
             setIsMinting(true);
             try {
                 const meName = lightseed.displayName || activeTree.name;
-                const conversationText = messages
-                    .filter(m => !m.system)
+                const conversationText = freshMessages
                     .map(m => `${m.role === 'user' ? meName : (m.authorPersonName || m.authorName || partnerLabel)}: ${m.text}`)
                     .join('\n\n');
                 // The record on the tree — a 'standard' pulse shows in the tree's growth chain (and the LIN).

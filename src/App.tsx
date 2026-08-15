@@ -404,11 +404,12 @@ const AppContent = () => {
         setSelectedPulse(null);
     }, [tab]);
 
-    // The browser tab wears the community's name when a community drives the view.
+    // The browser tab wears the community's name AS ITS PROPERTIES SAY IT — the community
+    // being viewed first, then the one driving the whole site (impersonated/host).
     useEffect(() => {
-        const c = impersonatedCommunity || hostCommunity;
+        const c = selectedCommunity || impersonatedCommunity || hostCommunity;
         document.title = c?.name ? c.name : '.seed: Lightseed, life recognising life';
-    }, [impersonatedCommunity, hostCommunity]);
+    }, [selectedCommunity, impersonatedCommunity, hostCommunity]);
 
     // Sync the tokenisation flag (AI-token economy) from the node's community. Off until enabled.
     useEffect(() => {
