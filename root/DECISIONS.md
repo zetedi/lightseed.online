@@ -6,6 +6,31 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-16 · Components in the repo, compositions in the database — and the hearth is
+lit**: Zoltán asked to define custom React components together and save them in the
+database. DECIDED against the literal reading — code loaded from Firestore executes with
+the app's whole authority in every visitor's browser, and the node's skin can hold DATA to
+laws but never arbitrary CODE to any law (a keeper-editable field must not make every
+keeper a code author for all their visitors). REJECTED: eval/remote modules. BUILT instead:
+the SECTION REGISTRY — components live in src/components/landing/ and pass the gate once;
+the database stores only which sections, in what order, with what props
+(community.landingSections). domain/appearance.ts is the law (known kinds, per-kind prop
+validation — https-only images, capped strings, bounded counts; junk is dropped on read,
+never rendered); tests hold the registry and the law mirror-true in both directions;
+scripts/set-landing-sections.mjs is the witnessed authoring hand (name must match, kinds
+checked, dry-run first). The first citizen: THE HEARTH HERO, designed for The O House — the
+fireplace that will stand at the dome's centre held in a circle (the dome's eye), the
+community's VISION breathing live from its own property (one mouth: edit the vision, the
+hero follows), and the place's coming gatherings visible at the door through the same
+eventFeedScope sentence every event surface speaks. The O House (community g3U3Fh…, domain
+theohouse.org, bought for nine years; the first Light House built from scratch, trenches
+half dug, water on its way) becomes the third hosting face — strict-scoped portal,
+theohouse target. This is also the design system's first stone: the registry IS the block
+library, and sections travel in the node bundle as plain data on a doc already in the
+travel plan.
+
+---
+
 **2026-08-15 · Four mends: the unmint, the keeper's address, the widget's tongue, the
 buttons' tongues** — (1) THE UNMINT: an accidental LAST mint may be taken back by its
 author — only the head block, only in the transaction that rolls the tree's head back to

@@ -6,6 +6,8 @@ import { queryableLevels } from '../domain/pulseVisibility';
 import { dataDomainFor } from '../domain/communityDoor';
 import { sanitizeRichText } from '../utils/sanitize';
 import Logo from '../components/Logo';
+import { parseLandingSections } from '../domain/appearance';
+import { SECTION_COMPONENTS } from '../components/landing/registry';
 
 // The custom landing — an organisation's own webpage on its own domain, with the seed behind
 // it. Signed out it is a quiet face: name, hero, vision, one sign-in button. Signed in, a
@@ -69,6 +71,9 @@ export const CustomLandingPage: React.FC<CustomLandingPageProps> = ({
     (draft: Parameters<typeof createCommunityEvent>[1]) => createCommunityEvent(community, draft),
     [community],
   );
+
+  // Sections composed in the database, rendered through the reviewed registry only.
+  const landingSections = parseLandingSections((community as { landingSections?: unknown }).landingSections);
 
   // The vision, rendered like everywhere else on seed — plus &nbsp; flattened to real spaces
   // (the rich editor pastes them in), or the text refuses to wrap and flows out of its box.
@@ -177,6 +182,16 @@ export const CustomLandingPage: React.FC<CustomLandingPageProps> = ({
                 className="prose prose-slate max-w-none break-words leading-relaxed [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-xl"
                 dangerouslySetInnerHTML={{ __html: sanitizeRichText(activePage.html).replace(/&nbsp;| /g, ' ') }}
               />
+            </div>
+          ) : landingSections.length > 0 ? (
+            /* SECTIONS FROM THE DATABASE (domain/appearance + the landing registry): the
+               components live in the repo and passed the gate; the community composed them
+               as data. The white canvas carries them; the hero image stays behind. */
+            <div className="max-h-[80dvh] w-full max-w-4xl overflow-y-auto rounded-3xl bg-white/95 shadow-2xl backdrop-blur-sm">
+              {landingSections.map((section, i) => {
+                const Section = SECTION_COMPONENTS[section.kind];
+                return <Section key={`${section.kind}:${i}`} community={community} props={section.props} lightseed={lightseed} onViewEvent={onViewEvent} />;
+              })}
             </div>
           ) : (
             visionHtml && (

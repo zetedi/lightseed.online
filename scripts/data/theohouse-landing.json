@@ -1,0 +1,11 @@
+[
+  {
+    "kind": "hearth_hero",
+    "props": {
+      "imageUrl": "https://firebasestorage.googleapis.com/v0/b/lifeseed-75dfe.firebasestorage.app/o/events%2FV8qnHzMFBTS9gE5YfYo0K7jSJxX2%2F1784753916863.webp?alt=media&token=f62e2382-9ca4-4c05-ab7b-cfecf77e2c42",
+      "headline": "The Heart Fire",
+      "showEvents": true,
+      "maxEvents": 4
+    }
+  }
+]
