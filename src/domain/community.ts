@@ -6,6 +6,9 @@ export interface Community extends Being {
   ownerId: string;
   name: string;
   domain: string; // The link to Lifetree
+  // Hostnames this community also answers (theohouse.web.app while theohouse.org's DNS
+  // connects). `domain` stays the ONE place-of-record stamp; aliases only open the door.
+  domainAliases?: string[];
   vision: string; // Rich text
   imageUrls: string[]; // For carousel
   logoUrl?: string;       // Square brand mark (avatar) — shown in lists and the hero badge

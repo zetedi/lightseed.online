@@ -140,8 +140,13 @@ export const getCommunityByDomain = async (domain: string): Promise<Community | 
     const normalized = domain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
     const q = query(communitiesCollection, where('domain', '==', normalized), limit(1));
     const snap = await getDocs(q);
-    if (snap.empty) return null;
-    return { id: snap.docs[0].id, ...snap.docs[0].data() } as Community;
+    if (!snap.empty) return { id: snap.docs[0].id, ...snap.docs[0].data() } as Community;
+    // ALIASES — a community whose true address is elsewhere may still answer this hostname
+    // (theohouse.org serving as theohouse.web.app until its DNS connects). The `domain`
+    // stays the ONE place-of-record stamp for scoping; aliases only open the door.
+    const byAlias = await getDocs(query(communitiesCollection, where('domainAliases', 'array-contains', normalized), limit(1)));
+    if (byAlias.empty) return null;
+    return { id: byAlias.docs[0].id, ...byAlias.docs[0].data() } as Community;
 };
 
 export const getCommunityById = async (id: string): Promise<Community | null> => {
