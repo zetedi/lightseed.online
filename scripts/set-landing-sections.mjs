@@ -18,7 +18,7 @@ import { readFileSync } from 'node:fs';
 import { applicationDefault, initializeApp } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
-const SECTION_KINDS = ['hearth_hero']; // mirror of src/domain/appearance.ts — never-drift comment
+const SECTION_KINDS = ['hearth_hero', 'waterline']; // mirror of src/domain/appearance.ts — never-drift comment
 
 const arg = (name) => { const i = process.argv.indexOf(`--${name}`); return i >= 0 ? process.argv[i + 1] : null; };
 const has = (name) => process.argv.includes(`--${name}`);

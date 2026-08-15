@@ -593,6 +593,7 @@ const baseKeys = {
   appearance_unknown_kind: "No such section kind is registered — the landing renders only reviewed components.",
   appearance_bad_props: "A section carried unlawful props; it was left out rather than guessed at.",
   hearth_gatherings: "Gatherings at the hearth",
+  waterline_title: "The water finds its way",
   community_name_hint: "The community\'s own word for itself — shown everywhere exactly as written here, the browser tab included.",
   mint_nothing_new: "Nothing new since the last mint — the chain already holds these words.",
   // The address \u2014 the community's domain, keeper-editable (ring 2026-08-15).
@@ -1341,6 +1342,7 @@ const dictionaries = {
     appearance_unknown_kind: "لا نوع مقاطع بهذا الاسم — الصفحة لا تعرض إلا مكوّنات مُراجَعة.",
     appearance_bad_props: "حمل المقطع خصائص غير قانونية؛ تُرك جانبًا بدلًا من التخمين.",
     hearth_gatherings: "لقاءات عند الموقد",
+    waterline_title: "الماء يجد طريقه",
     community_name_hint: "كلمة المجتمع عن نفسه — تُعرض في كل مكان كما كُتبت هنا، بما في ذلك عنوان المتصفح.",
     mint_nothing_new: "لا جديد منذ آخر سكّ — السلسلة تحمل هذه الكلمات بالفعل.",
     community_domain: "العنوان", community_domain_hint: "النطاق الذي يسكنه هذا المجتمع. تغييره يعيد نطاق ما تعرضه صفحاته؛ الكائنات المختومة بالعنوان القديم تحتفظ بأختامها.",
@@ -2044,6 +2046,7 @@ const dictionaries = {
     appearance_unknown_kind: "没有注册这种区块类型——落地页只渲染经过审阅的组件。",
     appearance_bad_props: "某区块携带不合法的属性；宁可略去也不猜测。",
     hearth_gatherings: "炉边聚会",
+    waterline_title: "水找到自己的路",
     community_name_hint: "社区对自己的称呼——在所有地方按此处所写显示，包括浏览器标签页。",
     mint_nothing_new: "自上次铸造以来没有新内容——链条已持有这些话语。",
     community_domain: "地址", community_domain_hint: "这个社区所在的域名。更改后其页面将按新地址取景；已盖旧地址印记的存在保留其印记。",

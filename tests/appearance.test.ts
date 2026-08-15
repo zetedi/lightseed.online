@@ -39,6 +39,20 @@ describe('sectionProblem — junk never reaches the renderer', () => {
   });
 });
 
+describe('the waterline — stages within banks', () => {
+  it('a lawful waterline passes', () => {
+    expect(sectionProblem({ kind: 'waterline', props: { stages: [{ label: 'The trenches', progress: 50 }] } })).toBeNull();
+  });
+  it('bankless water is refused: no stages, too many, junk labels, spilled progress', () => {
+    expect(sectionProblem({ kind: 'waterline', props: {} })).toBe('appearance_bad_props');
+    expect(sectionProblem({ kind: 'waterline', props: { stages: [] } })).toBe('appearance_bad_props');
+    expect(sectionProblem({ kind: 'waterline', props: { stages: Array(9).fill({ label: 'x', progress: 1 }) } })).toBe('appearance_bad_props');
+    expect(sectionProblem({ kind: 'waterline', props: { stages: [{ label: '', progress: 10 }] } })).toBe('appearance_bad_props');
+    expect(sectionProblem({ kind: 'waterline', props: { stages: [{ label: 'ok', progress: 101 }] } })).toBe('appearance_bad_props');
+    expect(sectionProblem({ kind: 'waterline', props: { stages: [{ label: 'ok', progress: 3.5 }] } })).toBe('appearance_bad_props');
+  });
+});
+
 describe('parseLandingSections — the tolerant read', () => {
   it('keeps order, drops junk, caps the count, survives non-arrays', () => {
     const good = { kind: 'hearth_hero', props: {} };

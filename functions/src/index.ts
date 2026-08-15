@@ -544,7 +544,7 @@ const composeSystemEmailHtml = (text: string, ctaUrl: string, ctaLabel: string):
     const cta = ctaUrl
         ? `<div style="margin:24px 0;"><a href="${ctaUrl}" style="display:inline-block;background:#059669;color:#fff;text-decoration:none;font-weight:bold;padding:12px 26px;border-radius:9999px;font-size:15px;">${escapeHtml(ctaLabel)}</a></div><p style="font-size:12px;color:#9ca3af;">Or paste this link:<br/><a href="${ctaUrl}" style="color:#059669;word-break:break-all;">${escapeHtml(ctaUrl)}</a></p>`
         : "";
-    return `<div style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;"><h2 style="color: #059669; font-weight: 300; letter-spacing: 1px; margin-bottom: 20px;">.seed</h2><div style="font-size: 16px; margin-bottom: 8px;">${body}</div>${cta}<hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" /><p style="font-size: 12px; color: #9ca3af; text-align: center;">Sent from the <a href="https://lightseed.online" style="color: #059669; text-decoration: none;">Lifetree Network</a></p></div>`;
+    return `<div style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;"><h2 style="color: #059669; font-weight: 300; letter-spacing: 1px; margin-bottom: 20px;">.seed</h2><div style="font-size: 16px; margin-bottom: 8px;">${body}</div>${cta}<hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" /><p style="font-size: 12px; color: #9ca3af; text-align: center;">Sent from the <a href="https://lightseed.online" style="color: #059669; text-decoration: none;">Lifetree Network</a><br/>The O House, Bigeh Island, Aswan, Egypt</p></div>`;
 };
 
 // --- Staff check + server-authoritative daily quotas -----------------------------------------
@@ -1850,7 +1850,7 @@ export const checkWateringSchedules = onSchedule({
 
 // Physical postal address for the newsletter footer (CAN-SPAM). TODO: replace with the real
 // registered address before sending at volume.
-const NEWSLETTER_POSTAL_ADDRESS = "TODO: lightseed — add postal address here";
+const NEWSLETTER_POSTAL_ADDRESS = "The O House, Bigeh Island, Aswan, Egypt";
 
 // Newsletter — in-house fan-out. Staff-only. Writes ONE `mail` doc per recipient (never a shared
 // `to:`, which would leak addresses and break per-person unsubscribe), each with that

@@ -7,5 +7,25 @@
       "showEvents": true,
       "maxEvents": 4
     }
+  },
+  {
+    "kind": "waterline",
+    "props": {
+      "note": "Guided by the living web, dug by living hands.",
+      "stages": [
+        {
+          "label": "The trenches",
+          "progress": 50
+        },
+        {
+          "label": "The water, directed to the land",
+          "progress": 25
+        },
+        {
+          "label": "The dome above the hearth",
+          "progress": 5
+        }
+      ]
+    }
   }
 ]

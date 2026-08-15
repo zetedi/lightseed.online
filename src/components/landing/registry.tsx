@@ -2,6 +2,7 @@ import React from 'react';
 import type { Community, Lightseed, Pulse } from '../../types';
 import type { SectionKind } from '../../domain/appearance';
 import { HearthHero } from './HearthHero';
+import { WaterLine } from './WaterLine';
 
 // THE SECTION REGISTRY (ring 2026-08-16) — the one mapping from a stored section KIND to
 // the reviewed component that renders it. Components live here in the repo and pass the
@@ -17,4 +18,5 @@ export interface SectionComponentProps {
 
 export const SECTION_COMPONENTS: Record<SectionKind, React.FC<SectionComponentProps>> = {
   hearth_hero: HearthHero,
+  waterline: WaterLine,
 };
