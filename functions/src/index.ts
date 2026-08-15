@@ -2186,6 +2186,7 @@ const CANONICAL_HOSTS = new Set([
     "lightseed.online", "lifeseed.online",
     "lifeseed-75dfe.web.app", "lifeseed-75dfe.firebaseapp.com",
     "perauset.web.app", "perauset.com",
+    "theohouse.web.app", "theohouse.org",
 ]);
 const SHELL_FETCH_UA = "lightseed-shell-fetch";
 const canonicalHost = (req: { hostname?: string; headers: Record<string, unknown> }): string => {

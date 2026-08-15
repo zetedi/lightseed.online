@@ -32,7 +32,8 @@
     "context": "bash scripts/state.sh",
     "flatten": "bash scripts/flat.sh",
     "test:gemini": "node scripts/test-gemini.mjs",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "deploy:faces": "npm run build && firebase deploy --only hosting:app && node scripts/face-og.mjs perauset && firebase deploy --only hosting:perauset && node scripts/face-og.mjs theohouse && firebase deploy --only hosting:theohouse"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
