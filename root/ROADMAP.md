@@ -15,6 +15,11 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
   it is; and make draft → mint → mark → release explicit for each Being. Ordinary
   block birth must bind author, predecessor, height and hash at a trustworthy
   transaction boundary before “unerasable story” is a system-wide guarantee.
+- **The first real Crossing: lifeseed.online becomes NODE 2.** The fullness law (144
+  hosted, 12 faces — domain/limits) is now the reproductive trigger; lifeseed.online is
+  the appointed test shore. The road there IS the bundle law's named debts: uid
+  re-anchoring, storage migration, the custodian's signature on the manifest. Twelve
+  communities will be invited to be the first faces — the limit is part of the invitation.
 - **Give every load-bearing law one mouth.** Build the actor × entity × action ×
   mutable-fields capability matrix; then add shared-source or conformance tests for
   every necessary mirror across domain code, Firestore rules and Functions

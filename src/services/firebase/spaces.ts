@@ -5,6 +5,8 @@ import { uuidv7 } from '../../utils/id';
 import { type PulseVisibility } from '../../domain/pulse';
 import { db, functions, toMillis, mapDoc, lifetreesCollection, visionsCollection, pulsesCollection, communitiesCollection, lightHousesCollection, communityInvitesCollection } from './core';
 import { firestoreStore } from '../../adapters/firestore';
+import { nodeCapacityGate, DEFAULT_NODE_LIMITS } from '../../domain/limits';
+import { getNodeLimits } from './trees';
 import { createBlock } from '../../utils/crypto';
 
 export interface VisionFetchAccess {
@@ -160,6 +162,17 @@ export const getMyCommunities = async (uid: string) =>
 export const COMMUNITY_INVITE_ALLOTMENT = 144;
 
 export const createCommunity = async (data: Partial<Community> & { ownerId: string; name: string; domain: string }) => {
+    // THE FULLNESS GATE (domain/limits nodeCapacityGate): a node hosts at most 144
+    // communities (auto-born tree circles excluded — they are the planting caps' shadow).
+    // The refusal is not a "no": it says the node is full and it is time to SEED.
+    const [existing, limits] = await Promise.all([
+        getDocs(query(communitiesCollection, limit(200))),
+        getNodeLimits().catch(() => DEFAULT_NODE_LIMITS),
+    ]);
+    const hostedCount = existing.docs.filter(d => (d.data() as { formation?: string }).formation !== 'tree_co_ownership').length;
+    const refusal = nodeCapacityGate({ hostedCount, faceCount: 0 }, 'community', limits);
+    if (refusal) throw new Error(refusal);
+
     const lid = uuidv7();
     const docRef = await addDoc(communitiesCollection, {
         ...data,

@@ -217,7 +217,7 @@ export const getNodeLimits = async (): Promise<NodeLimits> => {
 };
 
 // Staff-only by Firestore rules — the node admin page saves the caps here.
-export const setNodeLimits = (limits: NodeLimits) =>
+export const setNodeLimits = (limits: Partial<NodeLimits>) =>
     setDoc(doc(db, 'config', 'limits'), normalizeNodeLimits(limits) as any, { merge: true });
 
 export const plantLifetree = async (data: Partial<Lifetree> & { ownerId: string; name: string; body?: string }) => {

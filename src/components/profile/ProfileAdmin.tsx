@@ -67,7 +67,7 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
   const handleSaveLimits = async () => {
     setSavingLimits(true);
     try {
-      await setNodeLimits({ maxLifetrees, maxGuardedTrees });
+      await setNodeLimits({ maxLifetrees, maxGuardedTrees }); // fullness dials (maxNodeFaces/Communities) stay law-defaulted until the admin page grows them
       notify(speak(spokenLine('limits_saved', { l: maxLifetrees, g: maxGuardedTrees, sum: maxLifetrees + maxGuardedTrees })));
     } catch (e: any) { notify(e?.message || 'Could not save the limits.'); }
     setSavingLimits(false);

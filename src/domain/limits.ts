@@ -17,14 +17,29 @@ export const UN_MEMBER_STATES = 193;
 export const DEFAULT_MAX_LIFETREES = UN_MEMBER_STATES;
 export const DEFAULT_MAX_GUARDED_TREES = 132;
 
+// NODE FULLNESS (ring 2026-08-17) — a node hosts at most 144 communities, of which at
+// most 12 may be FACES (portals with their own apex domain and hosting site — the twelve
+// that kiss the center; 12 is the kissing number in three dimensions, and it sits inside
+// Firebase's real per-project ceiling with margin). Faces ARE hosted — 12 ⊂ 144, one
+// number for fullness, one for embodiment. THE CAP IS THE REPRODUCTIVE TRIGGER, not a
+// wall: the 145th arrival is the moment the node's duty becomes midwifery — a new node
+// born through the Crossing, the charter at the head of the bundle. Without a fullness
+// law the Crossing is disaster recovery; with one, it is the reproductive system.
+export const DEFAULT_MAX_NODE_FACES = 12;
+export const DEFAULT_MAX_NODE_COMMUNITIES = 144;
+
 export interface NodeLimits {
   maxLifetrees: number;
   maxGuardedTrees: number;
+  maxNodeFaces: number;
+  maxNodeCommunities: number;
 }
 
 export const DEFAULT_NODE_LIMITS: NodeLimits = {
   maxLifetrees: DEFAULT_MAX_LIFETREES,
   maxGuardedTrees: DEFAULT_MAX_GUARDED_TREES,
+  maxNodeFaces: DEFAULT_MAX_NODE_FACES,
+  maxNodeCommunities: DEFAULT_MAX_NODE_COMMUNITIES,
 };
 
 // Coerce whatever the config doc holds into sane caps (missing/invalid → defaults).
@@ -36,7 +51,28 @@ export const normalizeNodeLimits = (raw: any): NodeLimits => {
   return {
     maxLifetrees: num(raw?.maxLifetrees, DEFAULT_MAX_LIFETREES),
     maxGuardedTrees: num(raw?.maxGuardedTrees, DEFAULT_MAX_GUARDED_TREES),
+    maxNodeFaces: num(raw?.maxNodeFaces, DEFAULT_MAX_NODE_FACES),
+    maxNodeCommunities: num(raw?.maxNodeCommunities, DEFAULT_MAX_NODE_COMMUNITIES),
   };
+};
+
+// The node's fullness gate. `hostedCount` counts the node's communities EXCLUDING the
+// auto-born tree circles (formation 'tree_co_ownership') — those are the shadow of the
+// planting caps, not social spaces someone founded; counting them would make one law eat
+// the other. `faceCount` counts communities holding a hosting face. The refusal for
+// fullness is deliberately not a "no": it says it is time to SEED.
+export const nodeCapacityGate = (
+  counts: { hostedCount: number; faceCount: number },
+  next: 'community' | 'face',
+  limits: NodeLimits = DEFAULT_NODE_LIMITS,
+): string | null => {
+  if (next === 'face' && counts.faceCount >= limits.maxNodeFaces) {
+    return spokenLine('node_faces_full', { max: limits.maxNodeFaces });
+  }
+  if (counts.hostedCount >= limits.maxNodeCommunities) {
+    return spokenLine('node_full_seed', { max: limits.maxNodeCommunities });
+  }
+  return null;
 };
 
 type TreeLike = { treeType?: string; isNature?: boolean };

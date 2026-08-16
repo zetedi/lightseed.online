@@ -6,6 +6,27 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-17 · 144 is the node's fullness, and fullness means seed** — Zoltán, watching the
+faces multiply (index.html per portal, hosting sites, deploy steps), named the cap: a node
+hosts at most 144 communities, of which at most 12 are FACES — portals with their own apex
+domain and hosting site, the twelve that kiss the center (12 is the kissing number in three
+dimensions, and it sits inside Firebase's real ~36-sites-per-project ceiling with margin).
+Faces ARE hosted: 12 ⊂ 144, one number for fullness, one for embodiment. THE CAP IS THE
+REPRODUCTIVE TRIGGER, not a wall: the 145th arrival is the moment the node's duty becomes
+midwifery — a new node born through the Crossing, the charter at the head of the bundle.
+Without a fullness law the Crossing is disaster recovery; with one, it is the reproductive
+system. The law lives beside the planting caps (domain/limits nodeCapacityGate; dials in
+config/limits, auto-born tree circles excluded from the count — they are the planting caps'
+shadow, and one law must not eat the other), enforced at createCommunity, refusing in three
+tongues with an invitation, never a no: "it is time to seed." NAMED THE SAME DAY:
+**lifeseed.online is appointed NODE 2** — the Crossing's first real shore and the standing
+test node; and Zoltán will reach out to twelve communities to be the first faces — the
+limit itself part of the invitation's resonance. Known debts on the road to that first real
+crossing, unchanged and now load-bearing: uid re-anchoring, storage migration, the
+custodian's signature on the bundle manifest.
+
+---
+
 **2026-08-16 · Components in the repo, compositions in the database — and the hearth is
 lit**: Zoltán asked to define custom React components together and save them in the
 database. DECIDED against the literal reading — code loaded from Firestore executes with

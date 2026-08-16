@@ -9,8 +9,8 @@ export const DOMAIN_KEYS = [
   'being_entry_home', 'rebind_kind_change',
   // lid62 — the printed short name's arithmetic
   'lid62_length', 'lid62_char',
-  // limits — the node's planting caps
-  'limit_lifetrees', 'limit_guarded',
+  // limits — the node's planting caps and its fullness (the 144)
+  'limit_lifetrees', 'limit_guarded', 'node_faces_full', 'node_full_seed',
   // signing — the crystal's phrase law
   'signing_seed_bytes', 'signing_phrase_words', 'signing_unknown_word',
   // stay — a request to sleep in a bed
