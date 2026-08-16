@@ -119,8 +119,9 @@ export interface Pulse extends Being {
   // Watering / care. A confirmed watering is a growth pulse (type 'growth') carrying the
   // `care: 'watering'` flag, the proof image (imageUrl), and a witness. `careAlert` instead
   // marks a "water me" reach (a DM, not a growth block) so the DM UI can give it a blue
-  // border. See src/domain/watering.ts.
-  care?: 'watering';
+  // border. See src/domain/watering.ts. `care: true` is an explicit lightweight care — a
+  // REAL minted block since ring 2026-08-17 (the same shape the healed ghost blocks carry).
+  care?: 'watering' | boolean;
   careAlert?: 'watering';
   wateringConfirmedBy?: 'ai' | 'guardian' | 'pending';
   wateringConfirmation?: {

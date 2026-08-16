@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   BUNDLE_FORMAT_VERSION, TRAVEL_PLAN, NON_CHAIN_ROOTS, travelRuleFor, collectionSignature,
@@ -87,8 +87,11 @@ describe('the travel plan mirrors the rules — no collection silently forgotten
 
 describe('the chain-root sentinels mirror the services that mint them', () => {
   it('every previousHash sentinel in the services is a known non-chain root', () => {
-    const services = ['governance.ts', 'pulses.ts']
-      .map(f => readFileSync(join(__dirname, '..', 'src', 'services', 'firebase', f), 'utf8'))
+    // EVERY service file — the first version scanned two and missed watering.ts's
+    // WATER_ALERT sentinel (found live by the ghost healer, 2026-08-17).
+    const dir = join(__dirname, '..', 'src', 'services', 'firebase');
+    const services = readdirSync(dir).filter(f => f.endsWith('.ts'))
+      .map(f => readFileSync(join(dir, f), 'utf8'))
       .join('\n');
     const found = new Set<string>();
     for (const m of services.matchAll(/previousHash:\s*'([A-Z_]+)'/g)) found.add(m[1]);

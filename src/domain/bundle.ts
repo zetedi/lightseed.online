@@ -28,7 +28,7 @@ export const BUNDLE_FORMAT_VERSION = 1 as const;
 // Chain roots that are NOT another block's hash — a pulse whose previousHash is one of
 // these is its own beginning (person-reaches and standalone records), never a broken link.
 // Mirrored from the services' sentinels; the bundle test greps them true.
-export const NON_CHAIN_ROOTS = new Set(['0', 'PERSON_REACH', 'DECISION', 'EVENT', 'OFFERING', 'COMMUNITY_EVENT']);
+export const NON_CHAIN_ROOTS = new Set(['0', 'PERSON_REACH', 'DECISION', 'EVENT', 'OFFERING', 'COMMUNITY_EVENT', 'WATER_ALERT']);
 
 // ── The travel plan ─────────────────────────────────────────────────────────────────────
 // One rule per collection signature. `path` uses '*' for id segments ('lifetrees/*/loves');

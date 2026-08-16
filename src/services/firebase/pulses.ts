@@ -7,7 +7,7 @@ import { normalizePulseType, isTreeGrowth, type PulseVisibility } from '../../do
 import { mergeAuthored } from '../../domain/pulseVisibility';
 import { isExplicitlyValidatedTree } from '../../utils/validation';
 import { buildThreadId, buildGroupThreadId, reachAudienceLabels } from '../../utils/reachPermissions';
-import { db, toMillis, mapDoc, mapPulse, pulsesCollection } from './core';
+import { db, auth, toMillis, mapDoc, mapPulse, pulsesCollection } from './core';
 
 // RETRACT a reach message of your own: the mark, never the erasure. A tree-sent reach is a
 // block on the sender's chain, so the doc (and its text, hashed on locked chains) stands
@@ -615,17 +615,22 @@ export const growVision = async (
     });
 };
 
-// An explicit care — the lightweight "it still lives" confirmation. Writes a small CARE
-// block onto the tree's own chain and refreshes its validation liveness.
-export const careForTree = async (tree: Pick<Lifetree, 'id' | 'latestHash' | 'genesisHash' | 'blockHeight'>): Promise<void> => {
-    const prev = tree.latestHash || tree.genesisHash || '0';
-    // New care blocks carry { care: true }; blocks sealed before 2026-08-11 keep their
-        // original { tend: true } content — the chain is append-only and re-hashes what is stored.
-        const newHash = await createBlock(prev, { care: true }, Date.now());
-    await updateDoc(doc(db, 'lifetrees', tree.id), {
-        lastCaredAt: serverTimestamp(),
-        latestHash: newHash,
-        blockHeight: (tree.blockHeight || 0) + 1,
-        updatedAt: serverTimestamp(),
+// An explicit care — the lightweight "it still lives" confirmation. A REAL block now (ring
+// 2026-08-17): mintPulse seals it and advances the head in ONE transaction. Before this,
+// careForTree computed a hash and advanced the head while storing NO block — every cared
+// tree's chain grew a GHOST link no one could ever recompute (the timestamp died with the
+// call), which quietly voided end-to-end verification for the whole forest (first-sight
+// finding 2's sharpest tooth; scripts/heal-ghost-blocks.mjs recovers the ghosts already
+// standing, timestamp brute-forced back from their own successors' previousHash).
+export const careForTree = async (tree: Pick<Lifetree, 'id'>): Promise<void> => {
+    const user = auth.currentUser;
+    await mintPulse({
+        lifetreeId: tree.id,
+        type: 'tree_growth',
+        care: true,
+        title: 'Care',
+        body: '',
+        visibility: 'public',
+        ...(user ? { authorId: user.uid, authorPersonName: user.displayName || undefined } : {}),
     });
 };

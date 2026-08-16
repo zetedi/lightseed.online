@@ -6,6 +6,30 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-17 · Care becomes a real block, and the ghosts are healed with proof** — the
+first debt of the spearhead season. The old careForTree advanced a tree's latestHash and
+blockHeight while storing NO block: the hash was computed, the head moved, and the
+timestamp died with the call — GHOST links nobody could recompute, end-to-end chain
+verification quietly impossible. Two mends, one law. (1) careForTree now mints a REAL
+block through mintPulse (type tree_growth, `care: true`, atomic block+head, author bound
+to the signed-in uid) — the domain type widened to `care?: 'watering' | boolean`. (2)
+scripts/heal-ghost-blocks.mjs walks every tree, finds every hash the chain CLAIMS but
+does not store, and RECONSTRUCTS the lost block by brute-forcing the dead timestamp
+against the ghost's own hash: sha256(content + prev + ts) === ghostHash is proof the
+bytes are the originals — reconstruction, not forgery — and every healed block carries
+`healedGhost: true` so the mend stays visible forever. The search is bounded by physics
+(prev-candidates ranked by temporal closeness, windows anchored on the successor's birth
+or lastCaredAt), not hope. The dry run found the forest nearly whole: ONE real ghost —
+Phoenix's, content `{"tend":true}` from the pre-rename era, its lost millisecond
+recovered exactly (2026-07-14T06:34:47.656Z) — and one false ghost that was really
+WATER_ALERT, a chain-root sentinel minted in watering.ts that the bundle law had never
+met, because its sentinel-mirror test scanned only two service files. The healer audited
+its own law: NON_CHAIN_ROOTS learned WATER_ALERT and the mirror test now reads the WHOLE
+service layer. REJECTED: leaving care as a head-only side effect (a chain that claims
+blocks it cannot show is not append-only, it is amnesia wearing a hash).
+
+---
+
 **2026-08-17 · 144 is the node's fullness, and fullness means seed** — Zoltán, watching the
 faces multiply (index.html per portal, hosting sites, deploy steps), named the cap: a node
 hosts at most 144 communities, of which at most 12 are FACES — portals with their own apex
