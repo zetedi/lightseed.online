@@ -32,7 +32,7 @@ import { announce } from '../services/refreshBus';
 import { useRefreshSignal } from '../hooks/useRefreshSignal';
 import { LoreSection, loreTabs, type LoreTabId } from './about/AboutSections';
 import { NodeGrowthTree } from './about/NodeGrowthTree';
-import { queryableLevels } from '../domain/pulseVisibility';
+import { queryableLevels, ownMergeUid } from '../domain/pulseVisibility';
 import { firestoreStore } from '../adapters/firestore';
 import { isParticipant } from '../domain/views/participation';
 import { canCareForTree } from '../domain/policy';
@@ -249,8 +249,11 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   }, [community.id, community.name, community.vision, community.logoUrl, community.heroImageUrl, community.theme, community.customLanding, community.showStats, imageUrlsKey]);
 
   useEffect(() => {
-    getTreesByDomain(community.domain, currentUserId).then(setLinkedTrees).catch(() => {});
-  }, [community.domain, currentUserId]);
+    // Own-tree merge only where the place allows it (domain ownMergeUid): a STRICT face
+    // shows this place's forest and nothing else — the viewer's off-domain trees stay home.
+    const host = { reflectsPublic: community.reflectsPublic, strictScope: community.strictScope };
+    getTreesByDomain(community.domain, ownMergeUid(currentUserId, host)).then(setLinkedTrees).catch(() => {});
+  }, [community.domain, currentUserId, community.reflectsPublic, community.strictScope]);
 
   useEffect(() => {
     // Rooted here (by domain) PLUS stepped-into (by communityIds), deduped. Signed-out

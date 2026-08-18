@@ -3,6 +3,7 @@ import { showAlert, showConfirm } from '../ui/Dialog';
 import { Icons } from '../ui/Icons';
 import { MahameruAvatar } from '../ui/MahameruAvatar';
 import { Community, Lifetree } from '../../types';
+import { ownMergeUid } from '../../domain/pulseVisibility';
 import { getTreesByDomain, getPulsesByTreeId, updateCommunity } from '../../services/firebase';
 import { isCanonicallySealed, verifyBlockSeal, type ChainBlock } from '../../domain/chain';
 import { normalizePlaceOfRecord } from '../../domain/communityDoor';
@@ -193,7 +194,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
     setIsVerifying(true);
     setVerifyResult(null);
     try {
-      const trees = linkedTrees.length ? linkedTrees : await getTreesByDomain(community.domain, currentUserId);
+      const trees = linkedTrees.length ? linkedTrees : await getTreesByDomain(community.domain, ownMergeUid(currentUserId, community));
       let sealed = 0, intact = 0, legacy = 0;
       for (const tree of trees) {
         let pulses: ChainBlock[] = [];

@@ -6,6 +6,21 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-18 · The creator-never-lost courtesy speaks one sentence** — Nūr walked onto
+strictly-scoped Per Auset. The disease was the SAME one the hero-events leak taught on
+2026-08-11: a law hand-copied across surfaces, where only some copies learn the next
+amendment. The "creator always sees their own trees" merge lived in THREE hands — the
+forest feed (learned strict), the map (learned strict), and getTreesByDomain's callers
+(never did): the community profile's tree grid and the chain verifier merged the viewer's
+off-domain trees onto a strict face. NOW ONE DERIVATION: domain ownMergeUid(viewerUid,
+host) — scoped strict → no merge, scoped lenient → merge, reflecting → merge — and
+eventFeedScope, the forest feed, the profile grid and the verifier all read it. The test
+proves eventFeedScope and ownMergeUid can never drift apart. The standing lesson is now
+twice-taught: WHEN A LAW GAINS A CLAUSE, EVERY HAND-COPY IS A FUTURE LEAK — extract the
+sentence into the domain the first time a second surface needs it.
+
+---
+
 **2026-08-17 · The births are bound, and the hinge is guarded** — the spearhead's second
 debt. Zoltán asked to be SURE about ownerId/authorId, and the honest answer was: they are
 uids (mortal, local, what the rules can check for free), not lids (the true name, forever)

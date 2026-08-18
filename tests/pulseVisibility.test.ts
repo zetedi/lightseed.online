@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { canView, queryableLevels, mergeAuthored, pulseScope, eventFeedScope, eventsOnView } from '../src/domain/pulseVisibility';
+import { canView, queryableLevels, mergeAuthored, pulseScope, eventFeedScope, eventsOnView, ownMergeUid } from '../src/domain/pulseVisibility';
 
 // THE AUTHOR'S OWN. canView has always said an author sees their own pulse at every visibility;
 // queryableLevels has always spoken about STANDING, not authorship. Between those two truths an
@@ -62,6 +62,30 @@ describe('mergeAuthored: folding the author\'s own back in', () => {
     // rather than throwing the whole list away.
     const undated = mergeAuthored([{ id: 'a', ms: 5 }], [{ id: 'mine', ms: 0 }], at);
     expect(undated.map(p => p.id)).toEqual(['a', 'mine']);
+  });
+});
+
+describe('ownMergeUid — the creator-never-lost courtesy speaks one sentence (ring 2026-08-18)', () => {
+  it('a strict, scoped place suppresses the own-tree merge — this place only', () => {
+    expect(ownMergeUid('zoltan', { reflectsPublic: false, strictScope: true })).toBeUndefined();
+  });
+
+  it('a lenient scoped place keeps the courtesy; reflection always does', () => {
+    expect(ownMergeUid('zoltan', { reflectsPublic: false, strictScope: false })).toBe('zoltan');
+    expect(ownMergeUid('zoltan', {})).toBe('zoltan'); // absent flags = scoped lenient
+    expect(ownMergeUid('zoltan', { reflectsPublic: true, strictScope: true })).toBe('zoltan'); // strict only bites while scoped
+  });
+
+  it('no viewer, no merge — and eventFeedScope derives from the SAME sentence', () => {
+    expect(ownMergeUid(undefined, { strictScope: false })).toBeUndefined();
+    for (const host of [
+      { reflectsPublic: false, strictScope: true },
+      { reflectsPublic: false, strictScope: false },
+      { reflectsPublic: true, strictScope: true },
+      {},
+    ]) {
+      expect(eventFeedScope({ uid: 'zoltan' }, host).ownerUid).toBe(ownMergeUid('zoltan', host));
+    }
   });
 });
 

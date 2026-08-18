@@ -4,7 +4,7 @@ import {
   fetchAllLifetrees, fetchLifetrees, fetchPulses, fetchEventPulses, fetchOfferingPulses, fetchReachPulses, fetchVisions,
   getPendingAlignments,
 } from '../services/firebase';
-import { queryableLevels, eventFeedScope } from '../domain/pulseVisibility';
+import { queryableLevels, eventFeedScope, ownMergeUid } from '../domain/pulseVisibility';
 import { dataDomainFor, reflectsInstancePublic } from '../domain/communityDoor';
 import { excludeBedTrees } from '../domain/bed';
 
@@ -61,11 +61,10 @@ export function useForestFeed(params: {
     // No hostname has an inherited role: absent/false is scoped; true opens the canopy.
     const reflects = reflectsInstancePublic(hostReflectsPublic);
     const currentDomain = dataDomainFor(activeDomain, hostReflectsPublic);
-    // The tree feeds merge the viewer's OWN trees so a creator is never lost on a custom domain.
-    // A strict, scoped node suppresses that merge (pass no ownerUid) for a clean "this place only"
-    // forest. Reflection is the public commons plus the existing owner-safe merge, so strictness
-    // only bites while scoped.
-    const feedOwnerUid = (!reflects && hostStrictScope) ? undefined : lightseed?.uid;
+    // The tree feeds merge the viewer's OWN trees so a creator is never lost on a custom
+    // domain; a strict, scoped node suppresses the merge. ONE derivation (domain
+    // ownMergeUid) — the hand-copy era ended with the Nūr-on-Per-Auset leak.
+    const feedOwnerUid = ownMergeUid(lightseed?.uid, { reflectsPublic: hostReflectsPublic, strictScope: hostStrictScope });
     // A reflecting feed requests PUBLIC only. A scoped feed keeps the viewer's ordinary
     // readable levels; reflection must never carry another place's node-visible records.
     const feedLevels = reflects

@@ -105,8 +105,22 @@ export function eventFeedScope(
   const reflects = reflectsInstancePublic(host.reflectsPublic);
   return {
     levels: reflects ? queryableLevels({}) : queryableLevels(viewer),
-    ownerUid: (!reflects && host.strictScope === true) ? undefined : (viewer.uid || undefined),
+    ownerUid: ownMergeUid(viewer.uid, host),
   };
+}
+
+// THE CREATOR-NEVER-LOST COURTESY SPEAKS ONE SENTENCE TOO (ring 2026-08-18). Scoped
+// surfaces merge the viewer's OWN beings in so a creator is never lost on a custom
+// domain — unless the place is STRICT ("this place only"), which suppresses the merge.
+// The forest feed and the event surfaces each learned this; getTreesByDomain's callers
+// kept a hand-copy that never did, and an off-domain tree walked onto a strict face
+// (Nūr on Per Auset). Every own-merge now derives from HERE.
+export function ownMergeUid(
+  viewerUid: string | null | undefined,
+  host: { reflectsPublic?: boolean | null; strictScope?: boolean | null },
+): string | undefined {
+  const reflects = reflectsInstancePublic(host.reflectsPublic);
+  return (!reflects && host.strictScope === true) ? undefined : (viewerUid || undefined);
 }
 
 // The viewer-side cut both event surfaces share: signed-out visitors see only the node's own
