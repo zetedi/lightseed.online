@@ -295,6 +295,89 @@ describe('collabs — staff-curated, world-readable', () => {
   });
 });
 
+describe('the births are bound — every being is born signed by its own hand (ring 2026-08-17)', () => {
+  const LID7 = '019f6381-48fd-7fcc-9382-e99d923f38f4'; // known-valid UUIDv7
+  const CAROL = 'carol-uid';
+
+  it('a lifetree cannot be planted wearing another uid — staff plant for others', async () => {
+    await assertFails(setDoc(doc(db(MALLORY), 'lifetrees', 'forgedTree'), { ownerId: BOB, name: 'Forged', loveCount: 0 }));
+    await assertFails(setDoc(doc(db(MALLORY), 'lifetrees', 'unsignedTree'), { name: 'Unsigned', loveCount: 0 }));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'lifetrees', 'ownTree'), { ownerId: MALLORY, name: 'Mine', loveCount: 0 }));
+    await assertSucceeds(setDoc(doc(db(STAFF), 'lifetrees', 'plantedFor'), { ownerId: BOB, name: 'For Bob', loveCount: 0 }));
+  });
+
+  it('a pulse cannot be minted in another name — nor an unsigned one', async () => {
+    await assertFails(setDoc(doc(db(MALLORY), 'pulses', 'forgedPulse'), { authorId: BOB, type: 'observation', title: 'x', body: '', visibility: 'public', loveCount: 0 }));
+    await assertFails(setDoc(doc(db(MALLORY), 'pulses', 'unsignedPulse'), { type: 'observation', title: 'x', body: '', visibility: 'public', loveCount: 0 }));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'pulses', 'ownPulse'), { authorId: MALLORY, type: 'observation', title: 'x', body: '', visibility: 'public', loveCount: 0 }));
+    await assertSucceeds(setDoc(doc(db(STAFF), 'pulses', 'mendPulse'), { authorId: BOB, type: 'observation', title: 'mend', body: '', visibility: 'public', loveCount: 0 }));
+  });
+
+  it('a vision wears its own author', async () => {
+    await assertFails(setDoc(doc(db(MALLORY), 'visions', 'forgedVision'), { authorId: BOB, title: 'x', visibility: 'public', loveCount: 0 }));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'visions', 'ownVision'), { authorId: MALLORY, title: 'x', visibility: 'public', loveCount: 0 }));
+  });
+
+  it('a community is founded in the founder\'s own name — both identity fields', async () => {
+    await assertFails(setDoc(doc(db(MALLORY), 'communities', 'forgedCom'), { ownerId: BOB, name: 'X', domain: 'x.online', loveCount: 0 }));
+    await assertFails(setDoc(doc(db(MALLORY), 'communities', 'forgedFounder'), { ownerId: MALLORY, founderUserId: BOB, name: 'X', domain: 'x.online', loveCount: 0 }));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'communities', 'ownCom'), { ownerId: MALLORY, name: 'X', domain: 'x.online', loveCount: 0 }));
+  });
+
+  it('a lightHouse is consecrated in the consecrator\'s own name', async () => {
+    await assertFails(setDoc(doc(db(MALLORY), 'lightHouses', 'forgedLh'), { ownerId: BOB, name: 'X', visibility: 'public', loveCount: 0 }));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'lightHouses', 'ownLh'), { ownerId: MALLORY, name: 'X', visibility: 'public', loveCount: 0 }));
+  });
+
+  it('an alignment is proposed in the proposer\'s own name', async () => {
+    await assertFails(setDoc(doc(db(MALLORY), 'alignments', 'forgedAl'), { initiatorUid: BOB, targetUid: ALICE, status: 'PENDING', messages: [] }));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'alignments', 'ownAl'), { initiatorUid: MALLORY, targetUid: BOB, status: 'PENDING', messages: [] }));
+  });
+
+  it('an intelligence: own name, or a real keeper wiring the community\'s — never arbitrary', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'links', `${BOB}__steward__com1`), { from: BOB, rel: 'steward', to: 'com1' });
+    });
+    await assertFails(setDoc(doc(db(MALLORY), 'intelligences', 'forgedInt'), { ownerId: BOB, name: 'X', enabled: true }));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'intelligences', 'ownInt'), { ownerId: MALLORY, name: 'X', enabled: true }));
+    // BOB is com1's steward: he may wire the community intelligence in the OWNER's name…
+    await assertSucceeds(setDoc(doc(db(BOB), 'intelligences', 'comInt'), { ownerId: ALICE, name: 'X', enabled: true, credentialScope: 'community', credentialOwnerId: 'com1' }));
+    // …but a non-keeper may not, and even a keeper may not pick an arbitrary owner.
+    await assertFails(setDoc(doc(db(MALLORY), 'intelligences', 'comIntForged'), { ownerId: ALICE, name: 'X', enabled: true, credentialScope: 'community', credentialOwnerId: 'com1' }));
+    await assertFails(setDoc(doc(db(BOB), 'intelligences', 'comIntWrongOwner'), { ownerId: MALLORY, name: 'X', enabled: true, credentialScope: 'community', credentialOwnerId: 'com1' }));
+  });
+
+  it('a memory is born signed; a community memory needs that community\'s keeper', async () => {
+    await assertFails(setDoc(doc(db(MALLORY), 'memories', 'unsignedMem'), { name: 'x', text: 'x', visibility: 'private' }));
+    await assertFails(setDoc(doc(db(MALLORY), 'memories', 'forgedMem'), { ownerId: BOB, name: 'x', text: 'x', visibility: 'private' }));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'memories', 'ownMem'), { ownerId: MALLORY, name: 'x', text: 'x', visibility: 'private' }));
+    await assertFails(setDoc(doc(db(MALLORY), 'memories', 'comMemForged'), { ownerId: MALLORY, communityId: 'com1', name: 'x', text: 'x', visibility: 'community' }));
+    await assertSucceeds(setDoc(doc(db(ALICE), 'memories', 'comMem'), { ownerId: ALICE, communityId: 'com1', name: 'x', text: 'x', visibility: 'community' }));
+  });
+
+  it('a hold\'s payload cannot dress it in another being\'s name', async () => {
+    const soon = Date.now() + 100000;
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'lifetrees', 'treeB', 'holds', MALLORY), { holderUid: MALLORY, expiresAt: soon }));
+    await assertFails(setDoc(doc(db(MALLORY), 'lifetrees', 'treeB', 'holds', MALLORY), { holderUid: BOB, expiresAt: soon }));
+  });
+
+  it('the hinge: a person\'s body uid may never disagree with its path', async () => {
+    await assertFails(setDoc(doc(db(CAROL), 'persons', CAROL), { uid: BOB, lid: LID7, displayName: 'Carol' }));
+    await assertSucceeds(setDoc(doc(db(CAROL), 'persons', CAROL), { uid: CAROL, lid: LID7, displayName: 'Carol' }));
+    await assertFails(updateDoc(doc(db(ALICE), 'persons', ALICE), { uid: BOB }));
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'persons', ALICE), { uid: ALICE, displayName: 'Alice' }));
+  });
+
+  it('the hinge: a newborn or backfilled lid must be a real UUIDv7', async () => {
+    await assertFails(setDoc(doc(db(CAROL), 'persons', CAROL), { uid: CAROL, lid: 'not-a-lid', displayName: 'Carol' }));
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'persons', 'dora-uid'), { uid: 'dora-uid', displayName: 'Dora' });
+    });
+    await assertFails(updateDoc(doc(db('dora-uid'), 'persons', 'dora-uid'), { lid: 'junk' }));
+    await assertSucceeds(updateDoc(doc(db('dora-uid'), 'persons', 'dora-uid'), { lid: LID7 }));
+  });
+});
+
 describe('the lid is frozen — the true name is load-bearing (QR links stand on it)', () => {
   it('a tree owner may edit their tree but never its lid', async () => {
     await assertSucceeds(updateDoc(doc(db(BOB), 'lifetrees', 'treeB'), { name: 'Renamed' }));
@@ -1365,6 +1448,8 @@ describe('signing epochs — atomic anchor, immutable authority, one-way emergen
   const PUBKEY = 'base64-spki-mallory-key';
   const EPOCH = `anchor_${FP}`;
 
+  // A real UUIDv7: the hinge refuses a junk lid at person birth (ring 2026-08-17).
+  const MALLORY_LID = '019f6381-48fd-7fcc-9382-e99d923f38f7';
   const anchorMallory = async () => {
     const store = db(MALLORY);
     const person = doc(store, 'persons', MALLORY);
@@ -1374,13 +1459,13 @@ describe('signing epochs — atomic anchor, immutable authority, one-way emergen
       version: 1,
       type: 'anchor',
       uid: MALLORY,
-      lid: 'mallory-lid',
+      lid: MALLORY_LID,
       epochId: EPOCH,
       keyFingerprint: FP,
       recordedAt: serverTimestamp(),
     });
     batch.set(person, {
-      lid: 'mallory-lid',
+      lid: MALLORY_LID,
       publicKeyPem: PUBKEY,
       signingKeyFingerprint: FP,
       signingEpochId: EPOCH,
@@ -1393,7 +1478,7 @@ describe('signing epochs — atomic anchor, immutable authority, one-way emergen
   it('ordinary person birth may reserve a null public key without claiming an epoch', async () => {
     await assertSucceeds(setDoc(doc(db(MALLORY), 'persons', MALLORY), {
       uid: MALLORY,
-      lid: 'mallory-lid',
+      lid: MALLORY_LID,
       displayName: 'Mallory',
       publicKeyPem: null,
       createdAt: serverTimestamp(),
@@ -1429,7 +1514,7 @@ describe('signing epochs — atomic anchor, immutable authority, one-way emergen
       version: 1,
       type: 'freeze',
       uid: MALLORY,
-      lid: 'mallory-lid',
+      lid: MALLORY_LID,
       epochId: EPOCH,
       keyFingerprint: FP,
       recordedAt: serverTimestamp(),
@@ -1454,7 +1539,7 @@ describe('signing epochs — atomic anchor, immutable authority, one-way emergen
       version: 1,
       type: 'freeze',
       uid: MALLORY,
-      lid: 'mallory-lid',
+      lid: MALLORY_LID,
       epochId: EPOCH,
       keyFingerprint: FP,
       claimedSuspectedSince: Timestamp.fromMillis(Date.now() + 86_400_000),

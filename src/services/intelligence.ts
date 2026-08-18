@@ -3,7 +3,7 @@ import {
   query, where, serverTimestamp, arrayUnion,
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
-import { db, functions } from './firebase';
+import { db, functions, auth } from './firebase';
 import { uuidv7 } from '../utils/id';
 import config from '../../lifeseed.config.json';
 import type {
@@ -192,6 +192,9 @@ export const createMemory = async (data: { name: string; text: string; visibilit
     lid: uuidv7(),
     name: data.name,
     text: data.text,
+    // The birth is signed (ring 2026-08-17): a memory carries its writer's uid — the
+    // rules refuse an unsigned one.
+    ownerId: auth.currentUser?.uid || '',
     visibility: data.visibility || 'private',
     ...(data.communityId ? { communityId: data.communityId } : {}),
     sourceIds: [],

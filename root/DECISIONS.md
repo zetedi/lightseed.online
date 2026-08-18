@@ -6,6 +6,33 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-17 · The births are bound, and the hinge is guarded** — the spearhead's second
+debt. Zoltán asked to be SURE about ownerId/authorId, and the honest answer was: they are
+uids (mortal, local, what the rules can check for free), not lids (the true name, forever)
+— and nothing bound them at birth. Any signed-in client could plant a tree, mint a pulse,
+found a community WEARING ANY UID IT LIKED; the whole re-anchoring census (the crossing's
+worklist) is only re-anchorable if every stored uid is honest. NOW LAW, on every client
+create: ownerId/authorId/initiatorUid is the writer's own request.auth.uid — trees, pulses,
+visions, communities (founderUserId too), lightHouses, alignments, intelligences, memories
+(which now carry ownerId at all), and holds' payload may not contradict its slot. Staff
+stay exempt only from the ownership check (the bed gate's precedent — they plant the node's
+genesis and beings for others). ONE lawful delegation, made explicit instead of open: a
+community KEEPER may connect the community's intelligence wearing the COMMUNITY OWNER's
+uid — only a real keeper, only that community's true owner. THE HINGE: persons/{uid} is the
+one table binding mortal name to true name (the pivot every crossing re-anchors through) —
+its body uid may never disagree with its path, its lid was already frozen on every update
+branch, and a newborn or backfilled lid must now be UUIDv7-shaped. The inventory came from
+a fanned-out sweep plus a completeness critic reading behind it; the critic found the
+buried body: acceptAlignment mints the COUNTERPART's sync block from the client — a flow
+the rules already refused at the foreign tree-head update, so it gets a ROADMAP rebirth as
+a server callable, NOT a carve-out ("no hole for a door that cannot open"). REJECTED:
+making ownerId a lid now (rules would pay a get() per check or need custom-claims
+infrastructure; the lid stays the identity of record one join away, and lid-native
+ownership remains its own future ring). Proof: 165 rules tests (11 new refusals), 18
+living tests — the Grove grows whole lives under the bindings.
+
+---
+
 **2026-08-17 · Care becomes a real block, and the ghosts are healed with proof** — the
 first debt of the spearhead season. The old careForTree advanced a tree's latestHash and
 blockHeight while storing NO block: the hash was computed, the head moved, and the

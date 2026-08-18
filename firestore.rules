@@ -477,7 +477,13 @@ service cloud.firestore {
       // EVERY bed — housed, loose, staff-planted — is born domainless
       // (domain == '' is the structural forest-exclusion invariant: a domain-scoped query
       // must never surface a bed).
-      allow create: if isSignedIn() && (
+      // THE BIRTH IS SIGNED (ring 2026-08-17): ownerId is the planter's OWN uid, from every
+      // hand but staff's (staff stay exempt only from the ownership check, the bed gate's
+      // precedent — they plant the node's genesis and beings for others). Before this, any
+      // signed-in client could plant a tree wearing any uid it liked.
+      allow create: if isSignedIn()
+        && (isStaff() || request.resource.data.get('ownerId', '') == request.auth.uid)
+        && (
         request.resource.data.get('treeType', '') != 'BED'
         || (
           request.resource.data.get('domain', '') == ''
@@ -626,6 +632,9 @@ service cloud.firestore {
         // clock skew) so no one can mint a far-future hold that keeps the soft "being viewed"
         // advisory alive forever — the domain's self-expiring promise holds.
         allow create, update: if isSignedIn() && holdUid == request.auth.uid
+          // The payload may not contradict the slot: readers prefer holderUid over the doc
+          // id, so an unbound holderUid could dress a hold in another being's name.
+          && request.resource.data.get('holderUid', holdUid) == holdUid
           && request.resource.data.expiresAt is number
           && request.resource.data.expiresAt <= request.time.toMillis() + 600000;
         allow delete: if isSignedIn() && (holdUid == request.auth.uid || isStaff());
@@ -637,7 +646,16 @@ service cloud.firestore {
     // superadmin lid backfill — migrateBackfillLids) but never create-for or delete.
     match /persons/{personId} {
       allow read: if true;
+      // THE HINGE IS GUARDED (ring 2026-08-17): persons/{uid} is the ONE table binding the
+      // mortal name (auth uid) to the true name (lid) — the pivot every node crossing
+      // re-anchors through. The body's uid may never disagree with the path, and a newborn
+      // lid must be a real UUIDv7 (the shape every true name wears).
       allow create: if isSignedIn() && request.auth.uid == personId
+        && request.resource.data.get('uid', personId) == personId
+        && (
+          !('lid' in request.resource.data)
+          || request.resource.data.lid.matches('^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$')
+        )
         && (
           (
             request.resource.data.get('publicKeyPem', null) == null
@@ -655,9 +673,16 @@ service cloud.firestore {
             'publicKeyPem', 'signingKeyFingerprint', 'signingEpochId',
             'signingState', 'signingAnchoredAt', 'signingFrozenAt', 'signingFreezeEventId'
           ])
+          && request.resource.data.get('uid', personId) == personId
           && (
-            !('lid' in resource.data)
-            || request.resource.data.get('lid', '') == resource.data.get('lid', '')
+            ('lid' in resource.data)
+              // the true name never changes...
+              ? request.resource.data.get('lid', '') == resource.data.get('lid', '')
+              // ...and the one-time backfill may only set a well-formed UUIDv7.
+              : (
+                  !('lid' in request.resource.data)
+                  || request.resource.data.lid.matches('^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$')
+                )
           )
         )
         || (
@@ -763,7 +788,10 @@ service cloud.firestore {
     match /visions/{visionId} {
       allow get: if canReadVision();
       allow list: if canListVision();
-      allow create: if isSignedIn();
+      // THE BIRTH IS SIGNED: a vision wears its author's own uid (staff excepted — they
+      // plant Root Visions for beings they plant trees for, and the node genesis).
+      allow create: if isSignedIn()
+        && (isStaff() || request.resource.data.get('authorId', '') == request.auth.uid);
       // Joining a vision is now a self-serve 'joined' link (see the links collection), NOT a write
       // to the vision doc — so editing the doc itself is restricted to its author or staff.
       // The vision grows its OWN chain (growVision): its head — latestHash/blockHeight — advances
@@ -802,7 +830,14 @@ service cloud.firestore {
     // UI (canReachTree). See src/services/firebase.ts -> sendReach.
     match /pulses/{pulseId} {
       allow read: if canReadPulse();
-      allow create: if isSignedIn() && (
+      // THE BIRTH IS SIGNED (ring 2026-08-17): every pulse wears the uid of the hand that
+      // writes it — staff excepted (mend hands, the genesis ceremony). The one client flow
+      // that wrote ANOTHER party's name (acceptAlignment's counterpart sync block) already
+      // failed these rules at the foreign tree-head update, so it gets no carve-out here:
+      // the settlement awaits its server callable (the ROADMAP debt), not a hole.
+      allow create: if isSignedIn()
+        && (isStaff() || request.resource.data.get('authorId', '') == request.auth.uid)
+        && (
         // A WATERING pulse is the light mint's trust root (functions/witnessWatering): you author
         // your OWN, only on a tree you CARE (owner/co_owner/steward/staff), and may never
         // self-declare a guardian witness at creation — the confirmation is server-only. authorId
@@ -1155,7 +1190,9 @@ service cloud.firestore {
 
     match /alignments/{id} {
       allow read: if true;
-      allow create: if isSignedIn();
+      // THE BIRTH IS SIGNED: an alignment is proposed in the proposer's own name.
+      allow create: if isSignedIn()
+        && (isStaff() || request.resource.data.get('initiatorUid', '') == request.auth.uid);
       // Field-level: (a) the discussion — either participant may write `messages` while the
       // alignment is still open; (b) settling — only the TARGET may flip `status` (accept mints the
       // sync-blocks in the same transaction; decline is a plain flip). The initiator can no longer
@@ -1217,7 +1254,12 @@ service cloud.firestore {
     // Communities: Read public, Write staff/owner
     match /communities/{communityId} {
       allow read: if true;
-      allow create: if isSignedIn();
+      // THE BIRTH IS SIGNED: a community is founded in the founder's own name (both the
+      // anchor ownerId and, when carried, the legacy founderUserId).
+      allow create: if isSignedIn() && (isStaff() || (
+        request.resource.data.get('ownerId', '') == request.auth.uid
+        && request.resource.data.get('founderUserId', request.auth.uid) == request.auth.uid
+      ));
       // Keepers are FULL PEERS (ring 2026-08-12): the founding ownerId and every `keeper`
       // link holder edit alike. The ANCHOR itself (`ownerId`) is frozen against client
       // hands like `lid` — succession moves only through the resignKeeper transaction,
@@ -1255,7 +1297,10 @@ service cloud.firestore {
       //   Map/domain reads MUST therefore be a rule-provable UNION (public ∪ node ∪ my-community
       //   houses ∪ my own — services/firebase/trees.ts), or the whole list query is rejected.
       allow read: if canReadLightHouse();
-      allow create: if isSignedIn();
+      // THE BIRTH IS SIGNED: consecrated in the consecrator's own name (a keeper who
+      // consecrates for their community still signs as themself).
+      allow create: if isSignedIn()
+        && (isStaff() || request.resource.data.get('ownerId', '') == request.auth.uid);
       // Belonging is LIN edges now (lightHouse __shelters__ community) — no array clause.
       // The lid (the true name, load-bearing for QR links) is frozen on every update path.
       allow update: if isSignedIn() && (
@@ -1354,7 +1399,20 @@ service cloud.firestore {
     match /intelligences/{intelligenceId} {
       allow read: if resource.data.public == true ||
         (isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff()));
-      allow create: if isSignedIn();
+      // THE BIRTH IS SIGNED — with one lawful delegation: a community KEEPER connects the
+      // community's intelligence, and the doc wears the COMMUNITY OWNER's uid (the section's
+      // management queries key on it). Only a real keeper of THAT community may do so, and
+      // only with that community's true owner — never an arbitrary name.
+      allow create: if isSignedIn() && (
+        isStaff()
+        || request.resource.data.get('ownerId', '') == request.auth.uid
+        || (
+          request.resource.data.get('credentialScope', '') == 'community'
+          && isCommunityKeeper(request.resource.data.get('credentialOwnerId', ''))
+          && request.resource.data.get('ownerId', '')
+               == get(/databases/$(database)/documents/communities/$(request.resource.data.credentialOwnerId)).data.ownerId
+        )
+      );
       allow update, delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
     }
 
@@ -1369,7 +1427,16 @@ service cloud.firestore {
       allow read: if resource.data.visibility == 'public' ||
         isStaff() ||
         (isSignedIn() && resource.data.visibility == 'community');
-      allow create: if isSignedIn();
+      // THE BIRTH IS SIGNED: a memory carries its writer's own uid (createMemory now
+      // stamps ownerId), and a COMMUNITY memory may only be laid down by that community's
+      // keeper — mirroring the update gate below.
+      allow create: if isSignedIn()
+        && (isStaff() || request.resource.data.get('ownerId', '') == request.auth.uid)
+        && (
+          !('communityId' in request.resource.data)
+          || isStaff()
+          || isCommunityOwner(request.resource.data.communityId)
+        );
       allow update, delete: if isSignedIn() &&
         (isStaff() || isCommunityOwner(resource.data.communityId));
     }

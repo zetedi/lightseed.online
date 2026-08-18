@@ -5,11 +5,20 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
 
 ## Alive now (before Lion's Gate, 8/8/2026)
 
-- **Bind every Being's birth before growing new kinds.** Close the broad CREATE
-  paths named by the first-sight ring (2026-08-12): ownership/authorship bound to
-  the authenticated hand, safe validation defaults, exact birth schemas, and
-  emulator tests proving each refusal. Birth must be at least as truthful as later
-  life.
+- **Bind every Being's birth before growing new kinds.** DONE 2026-08-17 (the
+  births-are-bound ring): ownership/authorship bound to the authenticated hand on
+  every client create (trees, pulses, visions, communities, lightHouses,
+  alignments, intelligences, memories, holds), the persons hinge guarded
+  (uid-body = path, UUIDv7-shaped lids), emulator tests proving each refusal.
+  Still open from the first-sight ring: exact birth SCHEMAS (field-shape
+  validation beyond identity) and safe validation defaults as rules, not
+  conventions.
+- **The alignment settlement needs a server hand.** acceptAlignment writes the
+  counterpart's sync block and advances the OTHER tree's head from the client —
+  both already refused by the rules (the accepter is no carer of the initiator's
+  tree), so the flow is dead on its feet. Rebirth it as a callable (admin SDK,
+  like the keeper trio): verify both parties, mint both sync blocks and both
+  head advances in one transaction.
 - **Make append-only one exact lifecycle.** Inventory every chain-bearing create,
   update, delete and account-erasure path; store explicit care as the block it says
   it is; and make draft → mint → mark → release explicit for each Being. Ordinary
