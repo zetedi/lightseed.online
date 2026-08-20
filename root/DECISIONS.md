@@ -6,6 +6,30 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-19 · The hybrid is the leading adoption shape, and the rooms get doors** —
+Zoltán named the shift: stop asking a website to BECOME the living web; let it keep its
+own life and link INTO the seed on a subdomain (theohouse.org keeps its site, the portal
+answers at seed.theohouse.org, the Events menu is a plain <a>). This re-weights the
+adoption ladder, not replaces it: the subdomain door — always the second rung — becomes
+the one we lead with when inviting the twelve faces; full adoption (Per Auset) and own
+node stay rungs. Almost everything already leaned this way: community.domain stays the
+apex (the NAME of the place, scoping every being) while the subdomain joins domainAliases
+(a DOOR, not an identity — no data migration); DNS shrinks from apex A-records to one
+CNAME. THE ONE MISSING PIECE, built today: SECTION DOORS (domain/sectionDoor.ts) — a
+REGISTRY of plain URLs (/events, /forest, /visions, /offerings, /communities, /about)
+consumed at load like the /b/ door, and the address bar keeps naming the open room so
+every copied URL is a working door (useAppRouting grew the "real URL sync" its comment
+promised). A registry, not a pattern: unknown paths stay closed, the being/invitation
+doors keep their own, and the prototype chain cannot mint a door ('/constructor' is the
+test). The link kit for a mother site is now literally a list of <a href>s — lighter than
+embed.js. Witnessed hand scripts/add-domain-alias.mjs opens new doors (--expect-name,
+dry-run first); CANONICAL_HOSTS and face-og learned seed.theohouse.org (shares bake the
+seed URL — the apex belongs to the mother site). REJECTED: keeping full adoption as the
+default ask (most orgs will never hand over their web presence, and the living web should
+not need them to); URL history stacks (replaceState only — back leaves the app, honest).
+
+---
+
 **2026-08-18 · The creator-never-lost courtesy speaks one sentence** — Nūr walked onto
 strictly-scoped Per Auset. The disease was the SAME one the hero-events leak taught on
 2026-08-11: a law hand-copied across surfaces, where only some copies learn the next

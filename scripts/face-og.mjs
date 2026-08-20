@@ -18,7 +18,9 @@ import { getFirestore } from 'firebase-admin/firestore';
 // Face → the community domain whose card it wears (mirror of the hosting targets).
 const FACE_DOMAINS = {
   perauset: 'perauset.web.app',
-  theohouse: 'theohouse.org',
+  // The hybrid shape (ring 2026-08-19): theohouse.org stays the mother site's own; the
+  // portal's canonical door is the seed subdomain, and shares bake its URL.
+  theohouse: 'seed.theohouse.org',
 };
 
 const face = process.argv[2];
