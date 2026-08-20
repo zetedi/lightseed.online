@@ -29,7 +29,10 @@ if (!domain) { console.error(`face-og: unknown face '${face}' — add it to FACE
 
 initializeApp({ credential: applicationDefault(), projectId: 'lifeseed-75dfe' });
 const db = getFirestore();
-const snap = await db.collection('communities').where('domain', '==', domain).limit(1).get();
+let snap = await db.collection('communities').where('domain', '==', domain).limit(1).get();
+// A face may answer at a DOOR (domainAliases) rather than the place's name — the seed
+// subdomain shape. Same fallback as the app's getCommunityByDomain.
+if (snap.empty) snap = await db.collection('communities').where('domainAliases', 'array-contains', domain).limit(1).get();
 if (snap.empty) { console.warn(`face-og: no community at ${domain}; the face keeps the default card.`); process.exit(0); }
 const c = snap.docs[0].data();
 
