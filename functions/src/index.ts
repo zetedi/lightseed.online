@@ -1264,6 +1264,20 @@ export const onNetworkInviteAccepted = onDocumentUpdated("networkInvites/{invite
     const nodeCommunityId = String(after.nodeCommunityId || "");
     const memberUid = String(after.acceptedByUserId || "");
     const inviterUid = String(after.invitedByUserId || "");
+    // The hand that welcomed (ring 2026-08-21): EVERY acceptance — node-bound or plain —
+    // leaves newcomer __welcomed_by__ inviter. Create-if-absent (redelivery-safe), before
+    // the nodeless early-return below so a plain invitation still leaves its thread.
+    if (memberUid && inviterUid && memberUid !== inviterUid) {
+        const welcomeRef = db.collection("links").doc(`${memberUid}__welcomed_by__${inviterUid}`);
+        try {
+            if (!(await welcomeRef.get()).exists) {
+                await welcomeRef.set({
+                    lid: mintLid(), type: "link", rel: "welcomed_by", from: memberUid, to: inviterUid,
+                    inviteId: event.params.inviteId, createdAt: FieldValue.serverTimestamp(),
+                });
+            }
+        } catch (e) { console.warn("welcomed_by mint failed:", e); }
+    }
     if (!nodeCommunityId || !memberUid || !inviterUid) return; // a plain (nodeless) invite: no membership
 
     try {
@@ -1341,6 +1355,15 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
 
         // Role + membership are LINKS now (the LIN). The tree/community docs no longer carry the
         // legacy arrays. Deterministic ids keep these writes idempotent.
+        // The hand that welcomed (ring 2026-08-21): every acceptance leaves
+        // accepter __welcomed_by__ inviter — append-only provenance, granting nothing.
+        const setWelcome = (accepterUid: string, inviterUid: string, inviteId: string) => {
+            if (!inviterUid || inviterUid === accepterUid) return;
+            tx.set(db.collection("links").doc(`${accepterUid}__welcomed_by__${inviterUid}`), {
+                lid: mintLid(), type: "link", rel: "welcomed_by", from: accepterUid, to: inviterUid,
+                inviteId, createdAt: FieldValue.serverTimestamp(),
+            }, { merge: true });
+        };
         const setLink = (from: string, rel: string, to: string) => {
             tx.set(db.collection("links").doc(`${from}__${rel}__${to}`), {
                 lid: mintLid(),
@@ -1381,6 +1404,7 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
             setLink(uid, "member", communityId);      // the invitee joins the circle community
         }
         setLink(uid, invite.role, invite.lifetreeId); // ...and takes their tree-circle role (or guardianship)
+        setWelcome(uid, String(invite.invitedByUserId || ""), inviteId); // the hand that welcomed
         // Relations live ONLY in the links collection (the single source of truth the rules +
         // resolveCircleUids read). No legacy role arrays are written.
 
@@ -1442,6 +1466,14 @@ export const acceptKeeperInvite = onCall({ cors: true }, async (request) => {
             throw new HttpsError("failed-precondition", "already_keeper");
         }
         mintKeeperLinks(tx, uid, invite.communityId);
+        // The hand that welcomed (ring 2026-08-21) — keepership arrived through this invite.
+        const kInviter = String(invite.invitedByUserId || "");
+        if (kInviter && kInviter !== uid) {
+            tx.set(db.collection("links").doc(`${uid}__welcomed_by__${kInviter}`), {
+                lid: mintLid(), type: "link", rel: "welcomed_by", from: uid, to: kInviter,
+                inviteId, createdAt: FieldValue.serverTimestamp(),
+            }, { merge: true });
+        }
         tx.update(inviteRef, { status: "accepted", acceptedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
         return { communityId: invite.communityId };
     });

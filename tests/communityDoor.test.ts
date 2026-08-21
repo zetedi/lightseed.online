@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   DEFAULT_DOOR, doorOf, joinAffordance, checkInvite, inviteStatus, signupRequiresInvite,
+  communitiesOnView,
   dataDomainFor, reflectsInstancePublic, communityInviteUrl, inviteIdFromPath,
   showsPlaceOfRecord, normalizePlaceOfRecord,
   type CommunityInviteCheck,
@@ -164,5 +165,28 @@ describe('invite URLs', () => {
     expect(inviteIdFromPath('/i/')).toBeNull();
     expect(inviteIdFromPath('/')).toBeNull();
     expect(inviteIdFromPath('/i/has spaces here')).toBeNull();
+  });
+});
+
+describe('communitiesOnView — a strict portal lists only its own garden (ring 2026-08-21)', () => {
+  const HERE = 'perauset.web.app';
+  const communities = [
+    { id: 'host', domain: HERE },                                  // the host face itself
+    { id: 'bornHere', domain: 'their-own.org', bornOn: HERE },     // founded on this portal
+    { id: 'elsewhere', domain: 'lightseed.online' },               // the wide network
+    { id: 'bornElsewhere', domain: 'x.org', bornOn: 'lightseed.online' },
+    { id: 'unstamped', domain: 'y.org' },                          // pre-stamp era: no bornOn
+  ];
+
+  it('strict: the host and what was born here — nothing else, unstamped stays home', () => {
+    const seen = communitiesOnView(communities, { domain: HERE, strictScope: true, reflectsPublic: false });
+    expect(seen.map(c => c.id)).toEqual(['host', 'bornHere']);
+  });
+
+  it('lenient and reflecting hosts keep the wide view; strictness needs a domain to bite', () => {
+    expect(communitiesOnView(communities, { domain: HERE, strictScope: false }).length).toBe(5);
+    expect(communitiesOnView(communities, { domain: HERE, strictScope: true, reflectsPublic: true }).length).toBe(5);
+    expect(communitiesOnView(communities, { strictScope: true }).length).toBe(5);
+    expect(communitiesOnView(communities, {}).length).toBe(5);
   });
 });

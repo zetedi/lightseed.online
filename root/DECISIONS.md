@@ -6,6 +6,27 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-21 · A strict portal keeps its own garden, and every welcome leaves a thread** —
+two laws from one afternoon. (1) COMMUNITIES ON A STRICT PORTAL: the communities tab showed
+the whole network everywhere; now a community carries `bornOn` — the portal it was FOUNDED
+on, distinct from `domain` (its own address), stamped at creation and FROZEN by the rules
+like the other identity stones — and domain communitiesOnView (the strict lesson's fourth
+telling, again ONE sentence) shows a strict portal only the host itself and what was born
+there. Pre-stamp communities carry no bornOn and stay home everywhere strict: honest
+scarcity beats a leaky guess; staff can backfill the few that matter. (2) THE HAND THAT
+WELCOMED: acceptance of ANY invitation now leaves `newcomer __welcomed_by__ inviter` in
+the LIN — person to person, append-only (the delete clause refuses even the subject),
+granting nothing, the social thread of how the web actually grew. The inviter is PROVEN,
+never claimed: the client door (community invitations) verifies the link's `to` against
+the invitation's own createdBy in the rules; network invitations mint server-side in the
+acceptance trigger (redelivery-safe, create-if-absent); tree-circle and keeper acceptances
+mint inside their callables' transactions. REJECTED: overloading `invited_by` with a
+person target (one rel, one meaning); trusting a client-named inviter (a sponsor you can
+choose is a provenance you can forge). ALSO: DMARC went live on lightseed.online today
+(p=none, reports to admin@) — the deliverability ratchet begins; DKIM is the next hand.
+
+---
+
 **2026-08-21 · A Light House knows what kind of house it is** — consecration now offers a
 KIND: Temple (devotion at the center), Ashram (shared living and service), Sanctuary
 (shelter and rest) — a REGISTRY in domain/lightHouse.ts (LIGHT_HOUSE_KINDS), extensible by

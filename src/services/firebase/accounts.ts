@@ -196,6 +196,9 @@ export const getSentInvites = async (userId: string, lastDoc?: QueryDocumentSnap
     return { items: snap.docs.map(d => (mapDoc(d))), lastDoc: snap.docs[snap.docs.length - 1] || null, hasMore: snap.docs.length === INVITE_PAGE };
 };
 
+// The welcomed_by mark for a network invitation is minted SERVER-SIDE
+// (onNetworkInviteAccepted) — the acceptance transition is the trigger, so the mark
+// stands even if the client dies mid-signup.
 export const consumeNetworkInvite = (inviteId: string, acceptedByUserId: string) =>
     updateDoc(doc(db, 'networkInvites', inviteId), { status: 'accepted', acceptedByUserId, acceptedAt: serverTimestamp() });
 

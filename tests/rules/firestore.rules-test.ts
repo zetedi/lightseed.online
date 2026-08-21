@@ -295,6 +295,53 @@ describe('collabs — staff-curated, world-readable', () => {
   });
 });
 
+describe('welcomed_by — the hand that welcomed is proven, never claimed (ring 2026-08-21)', () => {
+  const seedInvite = () => env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'communityInvites', 'inv1'), { communityId: 'com1', createdBy: ALICE, createdAt: Timestamp.fromMillis(1) });
+  });
+
+  it('the newcomer marks the REAL inviter — and only the real one', async () => {
+    await seedInvite();
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__welcomed_by__${ALICE}`),
+      { from: MALLORY, rel: 'welcomed_by', to: ALICE, inviteId: 'inv1' }));
+    await assertFails(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__welcomed_by__${BOB}`),
+      { from: MALLORY, rel: 'welcomed_by', to: BOB, inviteId: 'inv1' }));
+    await assertFails(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__welcomed_by__${ALICE}`),
+      { from: MALLORY, rel: 'welcomed_by', to: ALICE }));
+    await assertFails(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__welcomed_by__${ALICE}`),
+      { from: MALLORY, rel: 'welcomed_by', to: ALICE, inviteId: 'ghost-invite' }));
+  });
+
+  it('no one welcomes themself, and no one marks another\'s arrival', async () => {
+    await seedInvite();
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'communityInvites', 'invSelf'), { communityId: 'com1', createdBy: MALLORY, createdAt: Timestamp.fromMillis(1) });
+    });
+    await assertFails(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__welcomed_by__${MALLORY}`),
+      { from: MALLORY, rel: 'welcomed_by', to: MALLORY, inviteId: 'invSelf' }));
+    await assertFails(setDoc(doc(db(BOB), 'links', `${MALLORY}__welcomed_by__${ALICE}`),
+      { from: MALLORY, rel: 'welcomed_by', to: ALICE, inviteId: 'inv1' }));
+  });
+
+  it('the mark is append-only: even its subject may not erase how they arrived', async () => {
+    await seedInvite();
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__welcomed_by__${ALICE}`),
+      { from: MALLORY, rel: 'welcomed_by', to: ALICE, inviteId: 'inv1' }));
+    await assertFails(deleteDoc(doc(db(MALLORY), 'links', `${MALLORY}__welcomed_by__${ALICE}`)));
+    await assertSucceeds(deleteDoc(doc(db(STAFF), 'links', `${MALLORY}__welcomed_by__${ALICE}`)));
+  });
+});
+
+describe('bornOn — the birthplace is frozen (ring 2026-08-21)', () => {
+  it('a founding carries its portal; no later hand may move it', async () => {
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'communities', 'bornCom'),
+      { ownerId: MALLORY, name: 'X', domain: 'x.online', bornOn: 'perauset.web.app', loveCount: 0 }));
+    await assertFails(updateDoc(doc(db(MALLORY), 'communities', 'bornCom'), { bornOn: 'lightseed.online' }));
+    await assertFails(updateDoc(doc(db(STAFF), 'communities', 'bornCom'), { bornOn: 'lightseed.online' }));
+    await assertSucceeds(updateDoc(doc(db(MALLORY), 'communities', 'bornCom'), { vision: 'a clearing' }));
+  });
+});
+
 describe('the births are bound — every being is born signed by its own hand (ring 2026-08-17)', () => {
   const LID7 = '019f6381-48fd-7fcc-9382-e99d923f38f4'; // known-valid UUIDv7
   const CAROL = 'carol-uid';

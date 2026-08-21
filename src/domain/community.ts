@@ -60,6 +60,10 @@ export interface Community extends Being {
   // Tree Circle — communities that emerged from shared care of a Lifetree.
   rootLifetreeId?: string;       // the living anchor this community grew from
   founderUserId?: string;
+  // The PORTAL the community was founded on (ring 2026-08-21) — its birthplace, distinct
+  // from `domain` (its own address). Stamped at creation, frozen by the rules; a strict
+  // portal's communities tab shows only what was born here (communitiesOnView).
+  bornOn?: string;
   // Membership lives in the `links` collection ('member' rel) — the legacy memberIds array
   // is gone from both the type and the data (dropLegacyArrays cleared the docs).
   formation?: 'tree_co_ownership' | 'project' | 'organization' | 'manual';

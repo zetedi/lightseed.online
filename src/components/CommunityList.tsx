@@ -7,6 +7,7 @@ import { MahameruAvatar } from './ui/MahameruAvatar';
 import { Community, Lifetree } from '../types';
 import { fetchCommunities, createCommunity, getCommunityByDomain, getMyVisions } from '../services/firebase';
 import { matchCommunities, type CommunityMatch } from '../domain/match';
+import { communitiesOnView } from '../domain/communityDoor';
 import { useRefreshSignal } from '../hooks/useRefreshSignal';
 import { firestoreStore } from '../adapters/firestore';
 import { notify } from './ui/Toast';
@@ -24,6 +25,9 @@ interface CommunityListProps {
   onSelect: (community: Community) => void;
   myTrees: Lifetree[];
   currentUserId?: string;
+  // The active place (impersonated || host): a STRICT portal lists only communities born
+  // here or standing here (domain communitiesOnView), and stamps foundings with bornOn.
+  host?: { domain?: string; strictScope?: boolean; reflectsPublic?: boolean } | null;
 }
 
 // The community's hero image IS the card's background; the content reads over it. Without an
@@ -130,7 +134,7 @@ const CommunityCard = ({ community, isGenesis = false, onSelect, standing = 'joi
   </div>
 ); };
 
-export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees, currentUserId }) => {
+export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees, currentUserId, host }) => {
   const { t } = useLanguage();
   const [communities, setCommunities] = useState<Community[]>([]);
   const [genesisCommunity, setGenesisCommunity] = useState<Community | null>(null);
@@ -220,11 +224,14 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
         getCommunityByDomain(domain)
     ]).then(([allCommunities, currentDomainCommunity]) => {
       // If we found a community for current domain, mark it as genesis and filter it from the main list
+      // A strict portal's list is its own garden (domain communitiesOnView) — the whole
+      // network's communities stay home; reflecting/lenient hosts keep the wide view.
+      const onView = communitiesOnView(allCommunities, { domain: host?.domain, strictScope: host?.strictScope, reflectsPublic: host?.reflectsPublic });
       if (currentDomainCommunity) {
           setGenesisCommunity(currentDomainCommunity);
-          setCommunities(allCommunities.filter(c => c.id !== currentDomainCommunity.id));
+          setCommunities(onView.filter(c => c.id !== currentDomainCommunity.id));
       } else {
-          setCommunities(allCommunities);
+          setCommunities(onView);
       }
       setLoading(false);
     }).catch((error) => {
@@ -233,7 +240,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
       setGenesisCommunity(null);
       setLoading(false);
     });
-  }, [communitiesSignal]);
+  }, [communitiesSignal, host?.domain, host?.strictScope, host?.reflectsPublic]);
 
   const handleCreate = async (e: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -247,7 +254,9 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
         vision: '',
         imageUrls: [],
         theme: communityThemePresets[0],
-        ownerId: currentUserId
+        ownerId: currentUserId,
+        // The birthplace: the canonical face this founding happened on (frozen by the rules).
+        bornOn: host?.domain || genesisCommunity?.domain || window.location.hostname.toLowerCase().replace(/^www\./, ''),
       };
       const created = await createCommunity(newCommunity);
       setCommunities(prev => [created, ...prev]);

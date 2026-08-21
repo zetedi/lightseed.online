@@ -918,6 +918,7 @@ const AppContent = () => {
                     onSelect={(community) => setSelectedCommunity(community)}
                     myTrees={myTrees}
                     currentUserId={lightseed?.uid}
+                    host={impersonatedCommunity || hostCommunity}
                 />
             );
         }

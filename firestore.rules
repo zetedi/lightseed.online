@@ -1268,7 +1268,7 @@ service cloud.firestore {
       allow update: if isSignedIn() && (
         (
           (resource.data.ownerId == request.auth.uid || hasKeeperLink(communityId) || isStaff())
-          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid', 'loveCount', 'ownerId'])
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid', 'loveCount', 'ownerId', 'bornOn'])
         )
         // LOVE: exactly one own-slot transition and exactly +/- one, atomically proved.
         || validLoveCountChange('communities', communityId)
@@ -1490,6 +1490,18 @@ service cloud.firestore {
                 || (request.resource.data.from == request.auth.uid
                     && (communityDoor(request.resource.data.to) == 'open'
                         || inviteOpensDoor(request.resource.data.get('inviteId', ''), request.resource.data.to)))))
+        // The hand that welcomed (ring 2026-08-21): "I was welcomed by THIS person" —
+        // from = the newcomer (self-asserted arrival), to = the inviter, PROVEN against the
+        // invitation itself (its creator field), so no one can dress their arrival in an
+        // arbitrary sponsor's name. Grants nothing; append-only (the delete clause refuses).
+        || (isSignedIn() && request.resource.data.from == request.auth.uid
+            && request.resource.data.rel == 'welcomed_by'
+            && request.resource.data.from != request.resource.data.to
+            && request.resource.data.get('inviteId', '') != ''
+            // The one client door: a community invitation (network/tree/keeper acceptances
+            // mint their marks server-side through the Admin SDK).
+            && exists(/databases/$(database)/documents/communityInvites/$(request.resource.data.inviteId))
+            && get(/databases/$(database)/documents/communityInvites/$(request.resource.data.inviteId)).data.get('createdBy', '') == request.resource.data.to)
         // Provenance: "I arrived into THIS community through this invitation" — from = newcomer,
         // to = the community, and inviteId names the real (keeper-minted) invitation; the inviter
         // is that invite's createdBy. Per-community, so arriving in two places leaves two marks.
@@ -1524,6 +1536,7 @@ service cloud.firestore {
         // so a party may not delete their own slot. Staff remain the escape hatch for genuine error.
         (resource.data.from == request.auth.uid
           && resource.data.get('rel', '') != 'invited_by'
+          && resource.data.get('rel', '') != 'welcomed_by'
           && resource.data.get('rel', '') != 'party')
         || isStaff()
         || (resource.data.get('rel', '') == 'participant' && isTreeOwner(resource.data.from))

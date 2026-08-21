@@ -176,6 +176,8 @@ export const createCommunity = async (data: Partial<Community> & { ownerId: stri
     const lid = uuidv7();
     const docRef = await addDoc(communitiesCollection, {
         ...data,
+        // The birthplace (frozen by the rules): the portal this founding happened on.
+        bornOn: data.bornOn || (typeof window !== 'undefined' ? window.location.hostname.toLowerCase().replace(/^www\./, '') : ''),
         lid,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -241,9 +243,15 @@ export const joinCommunityOpen = (uid: string, communityId: string) =>
 // mark was written, so the caller never claims remembrance the code did not keep.
 export const joinCommunityWithInvite = async (uid: string, invite: CommunityInvite): Promise<{ remembered: boolean }> => {
     await firestoreStore.link(uid, 'member', invite.communityId, { inviteId: invite.id });
-    // The mark is best-effort: membership must stand even if provenance is somehow refused.
+    // The marks are best-effort: membership must stand even if provenance is somehow refused.
     try {
         await firestoreStore.link(uid, 'invited_by', invite.communityId, { inviteId: invite.id });
+        // …and the HAND that welcomed them (ring 2026-08-21): newcomer __welcomed_by__ the
+        // invite's creator — the person-to-person thread of the growing web, append-only,
+        // granting nothing. The rules verify the inviter against the invitation itself.
+        if (invite.createdBy && invite.createdBy !== uid) {
+            try { await firestoreStore.link(uid, 'welcomed_by', invite.createdBy, { inviteId: invite.id }); } catch { /* provenance, not membership */ }
+        }
         return { remembered: true };
     } catch { return { remembered: false }; }
 };

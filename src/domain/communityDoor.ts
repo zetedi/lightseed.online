@@ -52,6 +52,19 @@ export const dataDomainFor = (
   reflectsPublicFlag: boolean | null | undefined,
 ): string | undefined => reflectsInstancePublic(reflectsPublicFlag) ? undefined : domain;
 
+// WHICH COMMUNITIES A PORTAL SHOWS (ring 2026-08-21) — the strict lesson, once more as
+// ONE sentence: reflecting or lenient, the whole network's communities; STRICT, only this
+// place's own — the host itself (its own address here) and what was BORN here (bornOn,
+// the frozen birth stamp). Communities from before the stamp carry no bornOn and stay
+// home everywhere strict — honest scarcity beats a leaky guess.
+export const communitiesOnView = <T extends { domain?: string; bornOn?: string }>(
+  communities: T[],
+  host: { domain?: string | null; strictScope?: boolean | null; reflectsPublic?: boolean | null },
+): T[] => {
+  if (reflectsInstancePublic(host.reflectsPublic) || host.strictScope !== true || !host.domain) return communities;
+  return communities.filter(c => c.domain === host.domain || c.bornOn === host.domain);
+};
+
 // PLACE OF RECORD — every pulse is stamped at birth with the domain it was made on, and that
 // stamp decides which node's surfaces show it. Staff may see and mend it (the founding-era
 // events were stamped `localhost`), but only where the whole forest is visible: on a
