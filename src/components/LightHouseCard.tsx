@@ -1,5 +1,6 @@
 import { Icons } from './ui/Icons';
-import { lightHouseVisibility, type LightHouse } from '../domain/lightHouse';
+import { lightHouseVisibility, isLightHouseKind, lightHouseKindKey, type LightHouse } from '../domain/lightHouse';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // The Light House's card — the same face in every garden: the community's LightHouses tab
 // and the forest's card view. Golden glow (its map warmth), lighthouse fallback, badges
@@ -10,7 +11,10 @@ export const LightHouseCard = ({ lightHouse, onOpen, placeholderColor, className
     onOpen?: (s: LightHouse) => void;
     placeholderColor?: string;
     className?: string;
-}) => (
+}) => {
+    const { t } = useLanguage();
+    const kindLabel = (k: Parameters<typeof lightHouseKindKey>[0]) => t(lightHouseKindKey(k));
+    return (
     <div
         onClick={onOpen ? () => onOpen(lightHouse) : undefined}
         role={onOpen ? 'button' : undefined}
@@ -32,11 +36,12 @@ export const LightHouseCard = ({ lightHouse, onOpen, placeholderColor, className
             <span className="rounded-full bg-black/40 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-100 backdrop-blur">{lightHouseVisibility(lightHouse)}</span>
         </div>
         <div className="absolute left-3 top-3">
-            <span className="flex items-center gap-1 rounded-full bg-amber-400/90 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-amber-950 shadow"><Icons.Sun /> Light House</span>
+            <span className="flex items-center gap-1 rounded-full bg-amber-400/90 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-amber-950 shadow"><Icons.Sun /> {isLightHouseKind(lightHouse.kind) ? kindLabel(lightHouse.kind) : (lightHouse.kind || 'Light House')}</span>
         </div>
         <div className="absolute bottom-4 left-4 right-4 text-white">
             <h3 className="break-words text-lg font-light tracking-wide">{lightHouse.name}</h3>
             {lightHouse.locationName && <p className="mt-0.5 flex items-center gap-1 text-[11px] text-amber-100/90"><Icons.Loc /> {lightHouse.locationName}</p>}
         </div>
     </div>
-);
+    );
+};

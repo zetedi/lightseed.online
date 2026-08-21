@@ -23,6 +23,9 @@ export const DOMAIN_KEYS = [
   'offering_appreciation_whole', 'offering_link_http', 'offering_link_long',
   // appearance — landing sections composed in the database (domain/appearance)
   'appearance_unknown_kind', 'appearance_bad_props',
+  // lightHouse — the kinds a Light House may be consecrated as (domain/lightHouse)
+  'lh_kind_temple', 'lh_kind_temple_desc', 'lh_kind_ashram', 'lh_kind_ashram_desc',
+  'lh_kind_sanctuary', 'lh_kind_sanctuary_desc',
   // unmint — taking back an accidental head mint (domain/unmint)
   'unmint_not_author', 'unmint_not_mint', 'unmint_not_last', 'unmint_witnessed', 'unmint_coheld',
 ] as const;

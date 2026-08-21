@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Icons } from '../ui/Icons';
 import { LightHouse } from '../../types';
+import { LIGHT_HOUSE_KINDS, isLightHouseKind, lightHouseKindKey, lightHouseKindDescKey } from '../../domain/lightHouse';
 import { SectionTitle } from '../ui/SectionTitle';
 import { ImagePicker } from '../ui/ImagePicker';
 import { LocationPicker } from '../ui/LocationPicker';
@@ -19,6 +20,9 @@ import { useLanguage } from '../../contexts/LanguageContext';
 export interface LightHouseDraft {
   name: string;
   body: string;
+  // temple | ashram | sanctuary (domain LIGHT_HOUSE_KINDS) — optional: a Light House may
+  // simply be a Light House.
+  kind?: string;
   imageUrl?: string;
   locationName?: string;
   latitude?: number;
@@ -71,6 +75,10 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
   const [locationName, setLocationName] = useState('');
   const [splatUrl, setSplatUrl] = useState('');
   const [visibility, setVisibility] = useState<'community' | 'node' | 'public'>('community');
+  const [kind, setKind] = useState<string>('');
+  // The garden's filter pill — '' = all. Unknown kinds (minted after this client shipped)
+  // still earn a pill by their raw name: the registry extends, the filter follows.
+  const [kindFilter, setKindFilter] = useState<string>('');
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -82,6 +90,7 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
       await onCreate({
         name: name.trim(),
         body: body.trim(),
+        kind: kind || undefined,
         imageUrl: imageUrl || undefined,
         locationName: locationName.trim() || undefined,
         latitude: coords?.latitude,
@@ -123,6 +132,20 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
       </div>
       <input value={splatUrl} onChange={e => setSplatUrl(e.target.value)} placeholder="3D scene URL (Gaussian splat viewer, optional)"
         className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+      <div>
+        <p className="ml-1 mb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('lh_kind_label')}</p>
+        <div className="flex flex-wrap gap-2">
+          {LIGHT_HOUSE_KINDS.map(k => (
+            <button key={k} type="button" onClick={() => setKind(kind === k ? '' : k)}
+              className={`rounded-full border px-3 py-1.5 text-xs font-bold transition-all ${kind === k ? 'border-amber-400 bg-amber-100 text-amber-800 ring-1 ring-amber-300' : 'border-slate-200 bg-white text-slate-500 hover:border-amber-200'}`}>
+              {t(lightHouseKindKey(k))}
+            </button>
+          ))}
+        </div>
+        {isLightHouseKind(kind) && (
+          <p className="ml-1 mt-1.5 text-[11px] italic text-slate-500">{t(lightHouseKindDescKey(kind))}</p>
+        )}
+      </div>
       <div>
         <p className="ml-1 mb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('lh_who_sees')}</p>
         <div className="grid grid-cols-3 gap-2">
@@ -196,6 +219,14 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
     </div>
   );
 
+  // The kinds standing in THIS garden: registry order first, then unknown kinds by name.
+  const present = new Set(lightHouses.map(s => s.kind).filter((k): k is string => !!k));
+  const kindsPresent = [
+    ...LIGHT_HOUSE_KINDS.filter(k => present.has(k)),
+    ...[...present].filter(k => !isLightHouseKind(k)).sort(),
+  ];
+  const shownLightHouses = kindFilter ? lightHouses.filter(s => s.kind === kindFilter) : lightHouses;
+
   return (
     <div>
       <SectionTitle title={title} sub={sub} />
@@ -209,8 +240,20 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
         </div>
       ) : (
         <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          {/* Kind pills — shown only once a kind exists in this garden. Known kinds first
+              (registry order), then any kind minted after this client shipped, by raw name. */}
+          {kindsPresent.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {['', ...kindsPresent].map(k => (
+                <button key={k || 'all'} type="button" onClick={() => setKindFilter(k)}
+                  className={`rounded-full border px-3 py-1 text-xs font-bold transition-all ${kindFilter === k ? 'border-amber-400 bg-amber-100 text-amber-800' : 'border-slate-200 bg-white text-slate-500 hover:border-amber-200'}`}>
+                  {k === '' ? t('lh_kind_all') : (isLightHouseKind(k) ? t(lightHouseKindKey(k)) : k)}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {lightHouses.map(s => (
+            {shownLightHouses.map(s => (
               <LightHouseCard key={s.id} lightHouse={s} onOpen={onOpen} placeholderColor={placeholderColor} />
             ))}
           </div>

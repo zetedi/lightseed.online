@@ -6,6 +6,34 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-21 · A Light House knows what kind of house it is** — consecration now offers a
+KIND: Temple (devotion at the center), Ashram (shared living and service), Sanctuary
+(shelter and rest) — a REGISTRY in domain/lightHouse.ts (LIGHT_HOUSE_KINDS), extensible by
+adding one entry there plus its words in translations.ts (the DOMAIN_KEYS manifest holds
+that mirror true at compile time; tests hold the spoken words present in en/ar/zh). `kind`
+stays a PLAIN STRING on the doc so an older client never chokes on a kind minted after it
+shipped: isLightHouseKind narrows, unknown kinds still filter and display by raw name. The
+community's garden filters with pills (All + the kinds actually standing in it), the card's
+generic "Light House" chip becomes the kind's own name, and choosing stays OPTIONAL — a
+Light House may simply be a Light House. REJECTED: a fixed enum in the data model (the
+registry extends; the data must not refuse the future).
+
+---
+
+**2026-08-21 · The reading returns to the pulse page** — Zoltán asked what happened to the
+human-to-human translation: THE ANSWER WAS IN THE RINGS, not in a bug. Commit 89a378b
+("Per Auset.", 2026-07-12) deliberately slimmed the pulse profile, moving the Translation
+Depth panel out ("readings live in the reach shadow text and the event view") — and the
+reach thread's ✦ reveal-meaning and the event view kept working all along. But the pulse
+page's absence was FELT as a loss, which is the real verdict on the slimming: a reading
+that cannot be reached from the being's own page is a reading lost. PulseInsightPanel is
+restored to PulseDetail (it carries both the H2H reading and the Network Memory standing
+the slimming had kept). The lesson for the rings: when a surface loses a faculty
+deliberately, the ring must say so LOUDLY enough that two months later the question "what
+happened???" finds its answer in one search — this one now does.
+
+---
+
 **2026-08-19 · The hybrid is the leading adoption shape, and the rooms get doors** —
 Zoltán named the shift: stop asking a website to BECOME the living web; let it keep its
 own life and link INTO the seed on a subdomain (theohouse.org keeps its site, the portal

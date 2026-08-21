@@ -9,6 +9,21 @@ import type { Being } from './being';
 // until deliberately opened), anyone signed in on the node, or the whole world.
 export type LightHouseVisibility = 'community' | 'node' | 'public';
 
+// THE KINDS a Light House may be consecrated as (ring 2026-08-21) — a REGISTRY, like the
+// section kinds: Temple (devotion at the center), Ashram (shared living and service),
+// Sanctuary (shelter and rest). EXTENSIBLE by adding here + the words in translations.ts
+// (the DOMAIN_KEYS manifest holds the mirror true at compile time). `kind` stays a plain
+// string on the doc so an older client never chokes on a kind minted after it shipped;
+// isLightHouseKind narrows, and unknown kinds still filter/display by their raw name.
+export const LIGHT_HOUSE_KINDS = ['temple', 'ashram', 'sanctuary'] as const;
+export type LightHouseKind = (typeof LIGHT_HOUSE_KINDS)[number];
+export const isLightHouseKind = (k: unknown): k is LightHouseKind =>
+  typeof k === 'string' && (LIGHT_HOUSE_KINDS as readonly string[]).includes(k);
+// The words live in translations.ts — the domain exports only typed key references
+// (the role_* precedent; i18n owns the copy, never the domain).
+export const lightHouseKindKey = (k: LightHouseKind) => `lh_kind_${k}` as const;
+export const lightHouseKindDescKey = (k: LightHouseKind) => `lh_kind_${k}_desc` as const;
+
 export interface LightHouse extends Being {
   id: string;
   name: string;
@@ -16,6 +31,7 @@ export interface LightHouse extends Being {
   body: string;
   imageUrl?: string;
   ownerId?: string;        // who consecrated it (rules: owner or staff may edit)
+  kind?: string;           // temple | ashram | sanctuary | a kind minted later (see LIGHT_HOUSE_KINDS)
   domain?: string;         // the domain it is rooted in (map + tab scoping)
   communityId?: string;    // primary community — a denormalised scalar the rules read.
                            // FURTHER belonging lives in the LIN: lightHouse __shelters__ community.

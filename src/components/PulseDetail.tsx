@@ -3,6 +3,7 @@ import { Pulse, Lifetree } from '../types';
 import { Icons } from './ui/Icons';
 import { SuperDot } from './ui/SuperDot';
 import { ProfileHero } from './ui/ProfileHero';
+import { PulseInsightPanel } from './ui/PulseInsightPanel';
 import { useSession } from '../contexts/SessionContext';
 import { firestoreStore } from '../adapters/firestore';
 import { vetoGrowthPulse, unmintLastPulse } from '../services/firebase/pulses';
@@ -29,7 +30,7 @@ interface PulseDetailProps {
     onEdit?: () => void;
 }
 
-export const PulseDetail = ({ pulse, onClose, backLabel, canEdit, onEdit }: PulseDetailProps) => {
+export const PulseDetail = ({ pulse, activeTree, onClose, backLabel, canEdit, onEdit }: PulseDetailProps) => {
     const { t } = useLanguage();
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const images = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
@@ -266,17 +267,11 @@ export const PulseDetail = ({ pulse, onClose, backLabel, canEdit, onEdit }: Puls
                     </div>
                 )}
 
-                {/* Network Memory — the pulse's standing on the chain, kept slim. The Translation
-                    Depth System moved out of the pulse profile (readings live in the reach shadow
-                    text and the event view). */}
-                <div className="mt-6 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                    <h3 className="mb-3 flex items-center text-xs font-bold uppercase tracking-wider text-slate-400">
-                        <Icons.ShieldCheck /><span className="ml-2">Network Memory</span>
-                    </h3>
-                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-600">
-                        <span>Validation <span className="ml-1 rounded bg-emerald-50 px-2 py-0.5 font-bold text-emerald-600">{pulse.validationScore || pulse.loveCount || 0}</span></span>
-                        {pulse.hash && <span className="font-mono text-xs text-slate-400" title={pulse.hash}>Hash {pulse.hash.substring(0, 16)}…</span>}
-                    </div>
+                {/* H2H Translation + Network Memory — RETURNED (ring 2026-08-21): the Per Auset
+                    slimming (89a378b) moved the reading out of the pulse profile and it was missed.
+                    The panel carries both the Translation Depth reading and the chain standing. */}
+                <div className="mt-6">
+                    <PulseInsightPanel pulse={pulse} activeTree={activeTree} />
                 </div>
             </div>
         </div>
