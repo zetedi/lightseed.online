@@ -81,6 +81,7 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
   const [kindFilter, setKindFilter] = useState<string>('');
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const consecrate = async () => {
@@ -127,7 +128,22 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
       <input value={locationName} onChange={e => setLocationName(e.target.value)} placeholder={t('lh_place_ph')}
         className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
       <div className="space-y-1">
-        <p className="ml-1 text-[11px] text-slate-500">{t('lh_map_tap')}</p>
+        <div className="flex items-center justify-between">
+          <p className="ml-1 text-[11px] text-slate-500">{t('lh_map_tap')}</p>
+          {/* Locate me — the consecrator usually stands where the house stands. */}
+          <button type="button" disabled={isLocating}
+            onClick={() => {
+              setIsLocating(true);
+              navigator.geolocation.getCurrentPosition(
+                (pos) => { setCoords({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }); setIsLocating(false); },
+                () => { showAlert(t('err_location')); setIsLocating(false); },
+                { enableHighAccuracy: true, timeout: 10000 },
+              );
+            }}
+            className="flex items-center gap-1 rounded-full border border-amber-200 bg-white px-3 py-1 text-[11px] font-bold text-amber-700 transition-colors hover:bg-amber-50 disabled:opacity-50">
+            <Icons.Loc /> {isLocating ? t('locating') : t('locate')}
+          </button>
+        </div>
         <LocationPicker value={coords} onChange={setCoords} />
       </div>
       <input value={splatUrl} onChange={e => setSplatUrl(e.target.value)} placeholder="3D scene URL (Gaussian splat viewer, optional)"

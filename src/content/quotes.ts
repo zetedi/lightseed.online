@@ -5,7 +5,7 @@ import type { Language } from '../utils/translations';
 // rule"), the LIN acronym spelled out, and the long "benchmark scores" passage condensed into a
 // single flowing line so it sits well in a carousel.
 export const LIGHTSEED_QUOTES: string[] = [
-  "Lightseed exists to help life recognise itself.",
+  "The Living Web exists to help life recognise itself.",
   "What if intelligence is fundamentally ecological rather than individual?",
   "Move more of humanity’s creativity, attention, and computation from making isolated minds smarter to making relationships wiser.",
   "Can this intelligence help grow basil, regenerate soil, create community, inspire science, and help people listen better?",
@@ -19,12 +19,13 @@ export const LIGHTSEED_QUOTES: string[] = [
   "Every intelligence shall know a living place, and every living place shall have a voice.",
   "We imagine a day when an intelligence isn’t judged by benchmark scores, token speed, or parameter count, but by whether it helps us listen, helps us understand one another, helps us care for the place we’re rooted in, and leaves the world healthier than it found it.",
   "Who cares your tree?",
+  "The Living Web is emerging as a network of living paradigms, of communities making visible how they see, know, value, decide and act, while building bridges between their worlds.",
 ];
 
 // The reflections are the first thing a visitor reads, so they are the first thing to translate.
 // Same order as the English, line for line — the carousel is the same carousel, in another tongue.
 const QUOTES_AR: string[] = [
-  "وُجد Lightseed ليساعد الحياة على أن تتعرّف على نفسها.",
+  "وُجد النسيج الحي ليساعد الحياة على أن تتعرّف على نفسها.",
   "ماذا لو كان الذكاء في جوهره بيئيًّا لا فرديًّا؟",
   "لننقل المزيد من إبداع البشرية وانتباهها وقدرتها الحاسوبية من جعل العقول المنعزلة أذكى إلى جعل العلاقات أحكم.",
   "هل يستطيع هذا الذكاء أن يساعد في زراعة الريحان، وتجديد التربة، وبناء مجتمع، وإلهام العلم، ومساعدة الناس على الإصغاء بشكل أفضل؟",
@@ -38,10 +39,11 @@ const QUOTES_AR: string[] = [
   "ليعرف كل ذكاء مكانًا حيًّا، وليكن لكل مكان حيّ صوت.",
   "نتخيّل يومًا لا يُقاس فيه الذكاء بدرجات الاختبارات ولا بسرعة الرموز ولا بعدد المعاملات، بل بما إذا كان يساعدنا على الإصغاء، وعلى فهم بعضنا بعضًا، وعلى العناية بالمكان الذي تجذّرنا فيه، وأن يترك العالم أصحّ مما وجده.",
   "من يرعى شجرتك؟",
+  "ينبثق النسيج الحي شبكةً من النماذج الحيّة — مجتمعات تجعل مرئيًّا كيف ترى وتعرف وتُقيّم وتقرّر وتتصرّف، وهي تبني الجسور بين عوالمها.",
 ];
 
 const QUOTES_ZH: string[] = [
-  "Lightseed 的存在，是为了帮助生命认出自己。",
+  "生命之网的存在，是为了帮助生命认出自己。",
   "如果智慧在本质上是生态的，而非个体的呢？",
   "把人类更多的创造力、注意力与算力，从让孤立的心智更聪明，转向让关系更有智慧。",
   "这个智慧能否帮忙种出罗勒、复育土壤、创造社区、启发科学，并帮助人们更好地聆听？",
@@ -55,6 +57,7 @@ const QUOTES_ZH: string[] = [
   "愿每一个智慧都认识一个活的地方，愿每一个活的地方都有声音。",
   "我们想象有一天，衡量一个智慧的不再是跑分、生成速度或参数量，而是它是否帮助我们聆听、帮助我们理解彼此、帮助我们照料自己扎根的地方，并让世界比它来时更健康。",
   "谁在照护你的树？",
+  "生命之网正在浮现：一张由活的范式织成的网络——一个个社区让人看见他们如何看、如何知、如何珍视、如何决定、如何行动，同时在彼此的世界之间架起桥梁。",
 ];
 
 const BY_LANGUAGE: Partial<Record<Language, string[]>> = {
