@@ -21,6 +21,7 @@ const FACE_DOMAINS = {
   // The hybrid shape (ring 2026-08-19): theohouse.org stays the mother site's own; the
   // portal's canonical door is the seed subdomain, and shares bake its URL.
   theohouse: 'seed.theohouse.org',
+  enlightenednations: 'enlightenednations.web.app',
 };
 
 const face = process.argv[2];

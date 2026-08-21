@@ -33,7 +33,7 @@
     "flatten": "bash scripts/flat.sh",
     "test:gemini": "node scripts/test-gemini.mjs",
     "lint": "eslint .",
-    "deploy:faces": "npm run build && firebase deploy --only hosting:app && node scripts/face-og.mjs perauset && firebase deploy --only hosting:perauset && node scripts/face-og.mjs theohouse && firebase deploy --only hosting:theohouse"
+    "deploy:faces": "npm run build && firebase deploy --only hosting:app && node scripts/face-og.mjs perauset && firebase deploy --only hosting:perauset && node scripts/face-og.mjs theohouse && firebase deploy --only hosting:theohouse && node scripts/face-og.mjs enlightenednations && firebase deploy --only hosting:enlightenednations"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
