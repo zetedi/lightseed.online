@@ -339,7 +339,9 @@ export const Navigation = ({
                         <div className={`p-1 rounded-full group-hover:scale-110 transition-transform ${navIsDark ? 'bg-white' : 'bg-slate-50 border border-slate-200'}`} style={{ borderColor: navBorder }}>
                              {logoUrl ? <img src={logoUrl} className="w-8 h-8 rounded-full object-cover" alt="Logo" /> : <Logo width={32} height={32} />}
                         </div>
-                        <span dir="ltr" className="hidden max-w-[160px] truncate font-light text-2xl lowercase tracking-wide sm:inline">{appName}</span>
+                        {/* The name renders EXACTLY as the keeper wrote it (the appearance hint promises it) —
+                        no forced case: '.seed' is lowercase because it is WRITTEN lowercase. */}
+                        <span dir="ltr" className="hidden max-w-[160px] truncate font-light text-2xl tracking-wide sm:inline">{appName}</span>
                         {/* Mobile: the current page's name lives up here, next to the logo — the
                             page headers below carry no title, so this is the "where am I". Quiet:
                             small, in the same colour as the hamburger lines. (Tablet gets the
