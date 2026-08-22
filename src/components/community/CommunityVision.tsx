@@ -107,6 +107,9 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
   // The strict-scope toggle — mirrors community.strictScope. Only bites while scoped (reflect off).
   const [strictOn, setStrictOn] = useState(!!community.strictScope);
   const [isTogglingStrict, setIsTogglingStrict] = useState(false);
+  // The seed-cradle toggle — mirrors community.seedCradle (the hybrid shape's flag).
+  const [cradleOn, setCradleOn] = useState(!!community.seedCradle);
+  const [isTogglingCradle, setIsTogglingCradle] = useState(false);
 
   // Keep the mirrors in sync whenever the community prop changes (e.g. after refresh).
   useEffect(() => {
@@ -115,7 +118,8 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
     setTokenisationOn(!!community.tokenisationEnabled);
     setReflectsOn(!!community.reflectsPublic);
     setStrictOn(!!community.strictScope);
-  }, [community.chainLocked, community.tokenisationEnabled, community.reflectsPublic, community.strictScope]);
+    setCradleOn(!!community.seedCradle);
+  }, [community.chainLocked, community.tokenisationEnabled, community.reflectsPublic, community.strictScope, community.seedCradle]);
 
   // The chain seal ("big red stamp", About → Vision). Sealing persists community.chainLocked so new
   // blocks are hashed with the canonical, reproducible scheme (src/domain/chain). When this is the
@@ -172,6 +176,19 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
       setReflectsOn(!next); // revert on failure
     }
     setIsTogglingReflect(false);
+  };
+
+  const handleToggleCradle = async (next: boolean) => {
+    setIsTogglingCradle(true);
+    setCradleOn(next); // optimistic
+    try {
+      await updateCommunity(community.id, { seedCradle: next });
+      onUpdate?.({ seedCradle: next });
+    } catch (e) {
+      console.error(e);
+      setCradleOn(!next); // revert on failure
+    }
+    setIsTogglingCradle(false);
   };
 
   const handleToggleStrict = async (next: boolean) => {
@@ -396,6 +413,27 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                 className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${strictOn ? 'bg-emerald-600' : 'bg-slate-300'}`}
               >
                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${strictOn ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
+          )}
+
+          {/* Seed cradle — the hybrid shape: the living web lives on a subdomain, the domain
+              itself is the community's own site, and the portal wears a corner door home. */}
+          {(
+            <div className="mt-2 flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500"><Icons.Globe /></span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-slate-800">{t('seed_cradle')}</p>
+                <p className="mt-0.5 text-sm text-slate-500">{t('seed_cradle_hint')}</p>
+              </div>
+              <button
+                onClick={() => handleToggleCradle(!cradleOn)}
+                disabled={isTogglingCradle}
+                role="switch"
+                aria-checked={cradleOn}
+                className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${cradleOn ? 'bg-emerald-600' : 'bg-slate-300'}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${cradleOn ? 'translate-x-6' : 'translate-x-1'}`} />
               </button>
             </div>
           )}

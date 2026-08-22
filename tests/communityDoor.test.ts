@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   DEFAULT_DOOR, doorOf, joinAffordance, checkInvite, inviteStatus, signupRequiresInvite,
   communitiesOnView,
+  motherDoorUrl,
   dataDomainFor, reflectsInstancePublic, communityInviteUrl, inviteIdFromPath,
   showsPlaceOfRecord, normalizePlaceOfRecord,
   type CommunityInviteCheck,
@@ -188,5 +189,26 @@ describe('communitiesOnView — a strict portal lists only its own garden (ring 
     expect(communitiesOnView(communities, { domain: HERE, strictScope: true, reflectsPublic: true }).length).toBe(5);
     expect(communitiesOnView(communities, { strictScope: true }).length).toBe(5);
     expect(communitiesOnView(communities, {}).length).toBe(5);
+  });
+});
+
+describe('motherDoorUrl — the seed cradle wears a door home (ring 2026-08-22)', () => {
+  const theo = { domain: 'theohouse.org', seedCradle: true };
+
+  it('a cradle portal at another name points home', () => {
+    expect(motherDoorUrl(theo, 'seed.theohouse.org')).toBe('https://theohouse.org');
+    expect(motherDoorUrl(theo, 'theohouse.web.app')).toBe('https://theohouse.org');
+  });
+
+  it('at the mother name itself, no door — and www is the same name', () => {
+    expect(motherDoorUrl(theo, 'theohouse.org')).toBeNull();
+    expect(motherDoorUrl(theo, 'www.theohouse.org')).toBeNull();
+  });
+
+  it('no cradle, no domain, no community — no door', () => {
+    expect(motherDoorUrl({ domain: 'perauset.web.app' }, 'perauset.web.app')).toBeNull();
+    expect(motherDoorUrl({ domain: 'perauset.web.app', seedCradle: false }, 'x.org')).toBeNull();
+    expect(motherDoorUrl({ seedCradle: true }, 'seed.x.org')).toBeNull();
+    expect(motherDoorUrl(null, 'seed.x.org')).toBeNull();
   });
 });

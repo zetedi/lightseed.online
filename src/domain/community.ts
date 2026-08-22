@@ -64,6 +64,10 @@ export interface Community extends Being {
   // from `domain` (its own address). Stamped at creation, frozen by the rules; a strict
   // portal's communities tab shows only what was born here (communitiesOnView).
   bornOn?: string;
+  // The hybrid shape (ring 2026-08-22): the portal is a seed CRADLE — the living web on a
+  // subdomain, the domain itself the community's own site. The portal then wears a corner
+  // door back to the mother house (motherDoorUrl).
+  seedCradle?: boolean;
   // Membership lives in the `links` collection ('member' rel) — the legacy memberIds array
   // is gone from both the type and the data (dropLegacyArrays cleared the docs).
   formation?: 'tree_co_ownership' | 'project' | 'organization' | 'manual';

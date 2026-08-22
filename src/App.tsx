@@ -73,7 +73,7 @@ import { announce, onRefresh as onBusRefresh } from './services/refreshBus';
 import { useRefreshSignal } from './hooks/useRefreshSignal';
 import { findBeingByLid } from './services/firebase/beings';
 import { lidFromPath, beingPath } from './domain/beingLink';
-import { dataDomainFor, inviteIdFromPath } from './domain/communityDoor';
+import { dataDomainFor, inviteIdFromPath, motherDoorUrl } from './domain/communityDoor';
 import { getCommunityInvite, getCommunityById } from './services/firebase';
 import type { CommunityInvite } from './types';
 import type { LightHouse } from './domain/lightHouse';
@@ -1505,6 +1505,22 @@ const AppContent = () => {
                 ) : renderMainContent()}
                 </Suspense>
                 <GDPRBanner />
+
+                {/* THE MOTHER DOOR (ring 2026-08-22) — a seed-cradle portal wears a corner door
+                    back to the community's own site; the landing's corner seed, mirrored. */}
+                {(() => {
+                    const home = motherDoorUrl(impersonatedCommunity || hostCommunity, window.location.hostname);
+                    if (!home) return null;
+                    const c = impersonatedCommunity || hostCommunity;
+                    return (
+                        <a href={home} title={c?.domain}
+                            className="fixed bottom-5 right-5 z-30 flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-white shadow-2xl transition-transform hover:scale-110 active:scale-95">
+                            {c?.logoUrl
+                                ? <img src={c.logoUrl} alt={c?.name || ''} className="h-full w-full object-cover" />
+                                : <span className="text-slate-600"><Icons.Globe /></span>}
+                        </a>
+                    );
+                })()}
 
                 {showAuthModal && !lightseed && (
                     <AuthModal onClose={() => setShowAuthModal(false)} inviteId={inviteParam} inviteOnly={config.inviteOnly} theme={effectiveTheme}

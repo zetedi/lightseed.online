@@ -65,6 +65,21 @@ export const communitiesOnView = <T extends { domain?: string; bornOn?: string }
   return communities.filter(c => c.domain === host.domain || c.bornOn === host.domain);
 };
 
+// THE MOTHER DOOR (ring 2026-08-22) — the hybrid shape's courtesy in the other direction.
+// A community whose portal is a SEED CRADLE (seedCradle: the living web lives on a
+// subdomain; the domain itself is the community's own site) wears a corner door back to
+// the mother house — but only while standing at another name: at the apex itself there is
+// nothing to go back to, and a community whose domain IS its portal never shows one.
+export const motherDoorUrl = (
+  community: { domain?: string; seedCradle?: boolean } | null | undefined,
+  hostname: string,
+): string | null => {
+  if (!community?.seedCradle || !community.domain) return null;
+  const host = (hostname || '').toLowerCase().replace(/^www\./, '');
+  if (!host || host === community.domain) return null;
+  return `https://${community.domain}`;
+};
+
 // PLACE OF RECORD — every pulse is stamped at birth with the domain it was made on, and that
 // stamp decides which node's surfaces show it. Staff may see and mend it (the founding-era
 // events were stamped `localhost`), but only where the whole forest is visible: on a
