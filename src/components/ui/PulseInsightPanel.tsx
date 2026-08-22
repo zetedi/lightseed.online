@@ -15,6 +15,9 @@ import { useLanguage } from '../../contexts/LanguageContext';
 export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeTree?: Lifetree | null }) => {
     const { t } = useLanguage();
     const [depth, setDepth] = useState<number>(3);
+    // Re-reading: the stored reading is an OVERLAY, not chain content — when the event's
+    // words change, any reader may run a fresh reading over them (ring 2026-08-22).
+    const [rereading, setRereading] = useState(false);
     const [isTranslating, setIsTranslating] = useState(false);
     const [error, setError] = useState<string | null>(null);
     // The AI-token economy is a per-node toggle (About → Vision). While off, translation is free
@@ -71,6 +74,7 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
 
             // eslint-disable-next-line react-hooks/immutability -- intentional optimistic mutation of the parent-owned pulse object so all views of it show the saved interpretation without a refetch
             pulse.aiInterpretation = interpretationData; // optimistic update
+            setRereading(false); // the fresh reading stands; the panel shows it
         } catch (e: any) {
             console.error(e);
             setError(e.message);
@@ -88,7 +92,7 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
                         <span className="ml-2">Translation Depth System</span>
                     </h2>
 
-                    {pulse.aiInterpretation ? (
+                    {pulse.aiInterpretation && !rereading ? (
                         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
                             {/* The five distinctions (NVC) — legacy single-blob readings fall into
                                 the first layer so old pulses keep rendering. */}
@@ -124,6 +128,12 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
                                     </ul>
                                 </div>
                             )}
+                            {/* The words may have moved on since readAt (shown above) — open the
+                                depth controls again and let a fresh reading replace this one. */}
+                            <button type="button" onClick={() => setRereading(true)}
+                                className="inline-flex items-center gap-1.5 rounded-full border border-indigo-400/40 bg-indigo-500/15 px-4 py-1.5 text-xs font-bold text-indigo-200 transition-colors hover:bg-indigo-500/30">
+                                <span aria-hidden>✦</span> {t('read_again')}
+                            </button>
                         </div>
                     ) : (
                         <div className="space-y-6">

@@ -2300,6 +2300,21 @@ const findPublicBeingByLid = async (lid: string): Promise<PublicBeingCard | null
         };
     }
 
+    // Pulses — events, offerings, minted growths (the first version knew only the three
+    // above, so a public event's share link fell to the generic card). PUBLIC only; the
+    // absent-visibility legacy default is public (domain/pulseVisibility), and a private
+    // reach always carries its explicit level, so it can never leak here.
+    const pulseDoc = await one("pulses");
+    if (pulseDoc) {
+        const pu = pulseDoc.data() as any;
+        if (!(pu.visibility === "public" || pu.visibility == null)) return null;
+        return {
+            name: String(pu.title || ""),
+            body: String(pu.body || pu.content || ""),
+            image: ((pu.imageUrls || [])[0] || pu.imageUrl || undefined) as string | undefined,
+        };
+    }
+
     return null;
 };
 
