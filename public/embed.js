@@ -33,7 +33,9 @@
     'transition:transform 0.15s ease,box-shadow 0.15s ease',
     'outline:none'
   ].join(';');
-  btn.innerHTML = '<img src="' + ORIGIN + '/favicon.svg" width="36" height="36" alt="" style="display:block;border-radius:50%;"/>';
+  // The seed button wears the COMPLETE seed of life (logo.svg, 48 circles) — the favicon
+  // is a browser-tab miniature and must never stand for the sacred form at button size.
+  btn.innerHTML = '<img src="' + ORIGIN + '/logo.svg" width="36" height="36" alt="" style="display:block;border-radius:50%;"/>';
   btn.addEventListener('mouseenter', function () {
     btn.style.transform = 'scale(1.08)';
     btn.style.boxShadow = '0 6px 22px rgba(0,0,0,0.24)';

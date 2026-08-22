@@ -186,6 +186,7 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
                                 community={eventCommunityFace(ev)}
                                 onOpenCommunity={onViewCommunity ? () => { void openEventCommunity(ev); } : undefined}
                                 className="w-48 shrink-0 md:w-60"
+                                isDark={isDark}
                             />
                         ))}
                         </div>

@@ -12,7 +12,7 @@ import type { Community, Pulse } from '../types';
 //   bottom-left  — the host community's face (a door to it)
 //   bottom-right — the loves (opposite corner of the countdown, by request)
 // Title + when/where sit beneath; an optional `actions` slot holds edit/delete on the events page.
-export const EventCard = ({ event, onOpen, community, onOpenCommunity, participantCount, actions, className }: {
+export const EventCard = ({ event, onOpen, community, onOpenCommunity, participantCount, actions, className, isDark = false }: {
     event: Pulse;
     onOpen: () => void;
     community?: Community | null;   // the host community's face, resolved by the caller
@@ -20,6 +20,7 @@ export const EventCard = ({ event, onOpen, community, onOpenCommunity, participa
     participantCount?: number;      // supply to skip the card's own read; else it reads once
     actions?: React.ReactNode;      // edit/delete etc. (events page); absent on the hero
     className?: string;             // width/shrink for the context (default w-full)
+    isDark?: boolean;               // the night theme (prop-driven, like Dashboard's isDark)
 }) => {
     // When the caller supplies the count, use it directly; otherwise read the participant links
     // once (the async callback sets state, so no synchronous setState in the effect body).
@@ -45,8 +46,8 @@ export const EventCard = ({ event, onOpen, community, onOpenCommunity, participa
     const showFace = !!(event.communityId || community);
 
     return (
-        <button onClick={onOpen} className={`group relative flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white text-left shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg ${className ?? 'w-full'}`}>
-            <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+        <button onClick={onOpen} className={`group relative flex flex-col overflow-hidden rounded-xl border text-left shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'} ${className ?? 'w-full'}`}>
+            <div className={`relative aspect-[4/3] w-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
                 {(event.imageUrls?.length || event.imageUrl)
                     ? <CardCarousel images={event.imageUrls?.length ? event.imageUrls : [event.imageUrl!]} alt={event.title} />
                     : <div className="flex h-full w-full items-center justify-center text-slate-300"><Icons.Loc /></div>}
@@ -110,14 +111,14 @@ export const EventCard = ({ event, onOpen, community, onOpenCommunity, participa
                     the title/description are short; otherwise the column shrinks to its content and
                     the separator stops short of the right edge. */}
                 <div className="min-w-0 flex-1">
-                    <p className="truncate text-base font-light tracking-wide text-slate-800">{event.title}</p>
-                    <p className="truncate text-[11px] text-slate-500">
+                    <p className={`truncate text-base font-light tracking-wide ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>{event.title}</p>
+                    <p className={`truncate text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                         {event.eventDate ? new Date(event.eventDate).toLocaleDateString() : ''}{event.eventLocation ? ` · ${event.eventLocation}` : ''}{max ? ` · max ${max}` : ''}
                     </p>
                     {/* The event's own words, small, beneath the place; a hairline parts them. */}
                     {(event.content || event.body) && (
                         <>
-                            <div className="mt-1.5 border-t border-slate-100" />
+                            <div className={`mt-1.5 border-t ${isDark ? 'border-slate-800/60' : 'border-slate-100'}`} />
                             <p dir="auto" className="mt-1.5 line-clamp-2 text-[10px] leading-snug text-slate-400">{event.content || event.body}</p>
                         </>
                     )}

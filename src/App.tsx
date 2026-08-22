@@ -1139,6 +1139,7 @@ const AppContent = () => {
                                     onOpen={() => { void onViewPulseOrAlignment(ev); }}
                                     community={face}
                                     onOpenCommunity={face ? () => setSelectedCommunity(face) : undefined}
+                                    isDark={effectiveIsDark}
                                 />
                             );
                         }}
