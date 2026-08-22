@@ -300,7 +300,14 @@ const AppContent = () => {
     // The refresh bus, heard by the live feed: when an event/pulse is deleted anywhere
     // (its profile page, a community tab), prune it from the loaded list — no reload.
     useEffect(() => onBusRefresh(e => {
-        if ((e.topic === 'events' || e.topic === 'pulses') && e.id) {
+        if (!e.id) return;
+        // An edit carries its patch — merge it into the loaded copy, whatever the tab shows
+        // (events, pulses, offerings, trees, visions all ride the same whisper). A patchless
+        // announce with an id stays what it always was: a removal to prune.
+        if (e.patch) {
+            const patch = e.patch;
+            setData(prev => prev.some(item => item.id === e.id) ? prev.map(item => item.id === e.id ? { ...item, ...patch } : item) : prev);
+        } else if (e.topic === 'events' || e.topic === 'pulses') {
             setData(prev => prev.some(item => item.id === e.id) ? prev.filter(item => item.id !== e.id) : prev);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- setData is a stable setter from useForestFeed

@@ -1,4 +1,5 @@
 import { collection, query, orderBy, getDocs, addDoc, setDoc, serverTimestamp, doc, getDoc, where, updateDoc, deleteDoc, limit, startAfter, QueryDocumentSnapshot, getCountFromServer, Timestamp } from 'firebase/firestore';
+import { announce } from '../refreshBus';
 import { httpsCallable } from 'firebase/functions';
 import { type Lifetree, type LightHouse, type TreeOwnershipInvite, type InvitableRole } from '../../types';
 import { createBlock } from '../../utils/crypto';
@@ -367,7 +368,11 @@ export const fetchPublicBeds = async (max = 48): Promise<Lifetree[]> => {
         .sort((a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0));
 };
 
-export const updateLifetree = (id: string, data: Partial<Lifetree>) => updateDoc(doc(db, 'lifetrees', id), { ...data });
+export const updateLifetree = async (id: string, data: Partial<Lifetree>) => {
+    await updateDoc(doc(db, 'lifetrees', id), { ...data });
+    // The edit whispers its patch — every open list merges it (ring 2026-08-22).
+    announce('trees', id, data as Record<string, unknown>);
+};
 export const deleteLifetree = (id: string) => deleteDoc(doc(db, 'lifetrees', id));
 export const validateLifetree = (targetId: string, validatorId: string) => updateDoc(doc(db, 'lifetrees', targetId), { validated: true, validatorId });
 export const unvalidateLifetree = (targetId: string) => updateDoc(doc(db, 'lifetrees', targetId), { validated: false, validatorId: null });

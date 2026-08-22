@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { CardCarousel } from './ui/CardCarousel';
 import { type Pulse, type Lightseed } from '../types';
 import { Icons } from './ui/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -91,7 +92,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
             <div onClick={() => onView && onView(pulse)} className={`cursor-pointer overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm ${POP} ${ringCls}`}>
                 {images.length > 0 ? (
                     <div className="relative h-20 overflow-hidden bg-slate-100">
-                        <img src={images[0]} alt={pulse.title} className="h-full w-full object-cover" />
+                        <CardCarousel images={images} alt={pulse.title} />
                     </div>
                 ) : (
                     <div className={`flex h-20 items-center justify-center px-2 text-center ${isEvent ? 'bg-sky-50' : 'bg-emerald-50/60'}`}>
@@ -123,7 +124,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
                 // With an image: the photo carries the card, title overlaid.
                 <div className="relative h-36 shrink-0 bg-slate-100 overflow-hidden group">
                     <div className="absolute top-2 right-2 z-20 flex gap-1">{badges}</div>
-                    <img src={images[0]} alt={pulse.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <CardCarousel images={images} alt={pulse.title} imgClassName="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent pointer-events-none"></div>
                     <div className="absolute bottom-2 left-3 right-3 text-white pointer-events-none">
                         <h3 dir="auto" className="text-sm font-bold tracking-wide truncate">{pulse.title}</h3>

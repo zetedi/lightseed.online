@@ -2188,7 +2188,25 @@ export const deleteMyAccount = onCall({ cors: true }, async (request) => {
 declare const fetch: (url: string, init?: { headers?: Record<string, string> }) => Promise<{ ok: boolean; text(): Promise<string> }>;
 
 // Mirrors src/domain/beingLink.ts lidFromPath — the lid a /b/ path names.
-const LID_RE = /^\/b\/([0-9a-fA-F-]{8,})\/?$/;
+// Both door shapes (mirror of src/domain/beingLink + lid62): the canonical dashed lid AND
+// the 22-char base62 compact form every printed QR now carries. The first version matched
+// hex only, so a compact share link fell through to the generic face card.
+const LID_RE = /^\/b\/([0-9a-zA-Z-]{8,})\/?$/;
+const LID62_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+const lidFromDoor = (raw: string): string | null => {
+    if (raw.length === 22) {
+        let n = 0n;
+        for (const ch of raw) {
+            const v = LID62_ALPHABET.indexOf(ch);
+            if (v < 0) return null;
+            n = n * 62n + BigInt(v);
+        }
+        if (n >= (1n << 128n)) return null;
+        const hex = n.toString(16).padStart(32, "0");
+        return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+    }
+    return /^[0-9a-fA-F-]{8,}$/.test(raw) ? raw : null;
+};
 
 // Attribute-safe escape for user content entering raw HTML. (The email
 // escapeHtml above leaves ' alone; meta content deserves all five.)
@@ -2295,7 +2313,7 @@ const setBetween = (html: string, re: RegExp, value: string): string =>
 // escaped here, once, at the boundary.
 const swapHeadMeta = (
     shell: string,
-    raw: { title: string; description: string; image: string; url: string },
+    raw: { title: string; description: string; image: string; url: string; card?: "summary" },
     placeLd?: object,
 ): string => {
     const title = escapeHtmlFull(raw.title);
@@ -2315,6 +2333,9 @@ const swapHeadMeta = (
     }
     for (const [name, value] of [
         ["twitter:title", title], ["twitter:description", description], ["twitter:image", image],
+        // A being's share rides the SMALL card (a compact square thumb beside the words),
+        // not the face's full-width banner — pass card: 'summary' to shrink it.
+        ...(raw.card ? ([["twitter:card", raw.card]] as const) : []),
     ] as const) {
         out = setBetween(out, new RegExp(`(<meta name="${name}" content=")[^"]*(")`), value);
     }
@@ -2354,13 +2375,14 @@ export const beingPreview = onRequest(async (req, res) => {
     res.set("Content-Type", "text/html; charset=utf-8");
     res.set("Cache-Control", "public, max-age=300, s-maxage=600");
     try {
-        const lid = ((req.path || "").match(LID_RE) || [])[1];
+        const rawDoor = ((req.path || "").match(LID_RE) || [])[1];
+        const lid = rawDoor ? lidFromDoor(rawDoor) : null;
         const being = lid ? await findPublicBeingByLid(lid) : null;
         if (!being || !being.name) { res.status(200).send(shell); return; } // generic card
 
         const description = truncate160(collapseWhitespace(being.body)) || `${being.name} — a living being on Lightseed.`;
         const image = being.image && /^https?:\/\//.test(being.image) ? being.image : `https://${host}/og.png`;
-        const url = `https://${host}/b/${lid}`;
+        const url = `https://${host}/b/${rawDoor}`;
         const placeLd = being.place ? {
             "@context": "https://schema.org",
             "@type": "Place",
@@ -2377,6 +2399,7 @@ export const beingPreview = onRequest(async (req, res) => {
             description,
             image,
             url,
+            card: "summary",
         }, placeLd));
     } catch (e) {
         console.error("beingPreview failed:", e);

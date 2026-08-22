@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { CardCarousel } from './ui/CardCarousel';
 import { Icons } from './ui/Icons';
 import { LoveButton } from './ui/LoveButton';
 import { firestoreStore } from '../adapters/firestore';
@@ -46,8 +47,8 @@ export const EventCard = ({ event, onOpen, community, onOpenCommunity, participa
     return (
         <button onClick={onOpen} className={`group relative flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white text-left shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg ${className ?? 'w-full'}`}>
             <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
-                {event.imageUrl
-                    ? <img src={event.imageUrl} className="h-full w-full object-cover" alt={event.title} />
+                {(event.imageUrls?.length || event.imageUrl)
+                    ? <CardCarousel images={event.imageUrls?.length ? event.imageUrls : [event.imageUrl!]} alt={event.title} />
                     : <div className="flex h-full w-full items-center justify-center text-slate-300"><Icons.Loc /></div>}
 
                 {/* top-left: how soon */}

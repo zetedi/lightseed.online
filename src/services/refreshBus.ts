@@ -8,13 +8,17 @@ export type RefreshTopic = 'lightHouses' | 'events' | 'pulses' | 'trees' | 'beds
 export interface RefreshEvent {
   topic: RefreshTopic;
   id?: string; // the changed/removed doc, when the announcer knows it
+  // The changed fields (ring 2026-08-22): an EDIT announces what changed, so any open list
+  // merges the patch into its loaded copy — no refetch, no stale card. Absent = removal
+  // (the feed prunes) or a plain refetch signal, exactly as before.
+  patch?: Record<string, unknown>;
 }
 
 type Listener = (e: RefreshEvent) => void;
 const listeners = new Set<Listener>();
 
-export const announce = (topic: RefreshTopic, id?: string): void => {
-  for (const l of [...listeners]) l({ topic, id });
+export const announce = (topic: RefreshTopic, id?: string, patch?: Record<string, unknown>): void => {
+  for (const l of [...listeners]) l({ topic, id, patch });
 };
 
 export const onRefresh = (listener: Listener): (() => void) => {

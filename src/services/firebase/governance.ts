@@ -1,4 +1,5 @@
 import { query, getDocs, getDoc, addDoc, setDoc, collection, serverTimestamp, doc, runTransaction, where, updateDoc, deleteDoc, Timestamp, type DocumentData } from 'firebase/firestore';
+import { announce } from '../refreshBus';
 import { type Pulse, type Community, type Decision, type DecisionNature, type DecisionMode, type ConsensusStance, votesRequired } from '../../types';
 import { createBlock } from '../../utils/crypto';
 import { uuidv7 } from '../../utils/id';
@@ -449,6 +450,8 @@ export const updateEvent = async (
     data: Partial<Pick<Pulse, 'title' | 'body' | 'content' | 'imageUrl' | 'imageUrls' | 'eventDate' | 'eventLocation' | 'eventMaxParticipants' | 'visibility'>>,
 ) => {
     await updateDoc(doc(db, 'pulses', eventId), { ...data });
+    // The edit whispers its patch — every open list merges it (ring 2026-08-22).
+    announce('events', eventId, data as Record<string, unknown>);
 };
 
 // A standalone event — anyone can plant one (no community required). A community can later
@@ -503,6 +506,7 @@ export const updateOffering = async (
     data: Partial<Pick<Pulse, 'title' | 'body' | 'content' | 'imageUrl' | 'offeringAppreciationLight' | 'offeringUrl' | 'visibility'>>,
 ): Promise<void> => {
     await updateDoc(doc(pulsesCollection, id), { ...data, updatedAt: serverTimestamp() });
+    announce('pulses', id, data as Record<string, unknown>);
 };
 
 export const createCommunityEvent = async (community: Community, data: Partial<Pulse> & { title: string }) => {
