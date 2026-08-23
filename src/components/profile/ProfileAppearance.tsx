@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Icons } from '../ui/Icons';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { updateUserSiteTheme, uploadImage } from '../../services/firebase';
 import { normalizeTheme, type CommunityThemePreset } from '../../utils/theme';
@@ -20,6 +21,9 @@ interface ProfileAppearanceProps {
   onSiteHeroUrlChange: (url: string) => void;
   // Surfaces notices via the shell's shared dialog modal.
   notify: (message: string) => void;
+  // Inherit (ring 2026-08-24): the personal palette rests; every garden dresses the site.
+  siteInherit: boolean;
+  onSiteInheritChange: (v: boolean) => void;
 }
 
 // Appearance tab — the personal profile theme (colors, logo, hero image).
@@ -33,9 +37,24 @@ export const ProfileAppearance: React.FC<ProfileAppearanceProps> = ({
   siteHeroUrl,
   onSiteHeroUrlChange,
   notify,
+  siteInherit,
+  onSiteInheritChange,
 }) => {
   const { t } = useLanguage();
   const [savingSiteTheme, setSavingSiteTheme] = useState(false);
+  const [savingInherit, setSavingInherit] = useState(false);
+
+  const handleToggleInherit = async (next: boolean) => {
+    setSavingInherit(true);
+    onSiteInheritChange(next); // optimistic — the live listener confirms
+    try {
+      await updateUserSiteTheme(uid, { siteInherit: next });
+    } catch (e: any) {
+      onSiteInheritChange(!next);
+      notify(e?.message || 'Could not save.');
+    }
+    setSavingInherit(false);
+  };
   const [uploadingSiteLogo, setUploadingSiteLogo] = useState(false);
   const [uploadingSiteHero, setUploadingSiteHero] = useState(false);
 
@@ -102,6 +121,26 @@ export const ProfileAppearance: React.FC<ProfileAppearanceProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* INHERIT FROM THE COMMUNITY (ring 2026-08-24) — the first choice, above every dial:
+          while on, the personal palette rests and each garden dresses the site in its own
+          colors; the settings below step out of sight rather than lie about applying. */}
+      <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500"><Icons.Globe /></span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold text-slate-800">{t('site_inherit')}</p>
+          <p className="mt-0.5 text-sm text-slate-500">{t('site_inherit_hint')}</p>
+        </div>
+        <button
+          onClick={() => handleToggleInherit(!siteInherit)}
+          disabled={savingInherit}
+          role="switch"
+          aria-checked={siteInherit}
+          className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${siteInherit ? 'bg-emerald-600' : 'bg-slate-300'}`}
+        >
+          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${siteInherit ? 'translate-x-6' : 'translate-x-1'}`} />
+        </button>
+      </div>
+      {siteInherit ? null : (<>
       {/* Title + buttons share the row; the explainer sits UNDER them, small — on mobile the
           old side-by-side layout squeezed it into a nine-line sliver. */}
       <div>
@@ -145,6 +184,7 @@ export const ProfileAppearance: React.FC<ProfileAppearanceProps> = ({
           updateUserSiteTheme(uid, { siteTheme: normalizeTheme(siteTheme), siteLogoUrl, siteHeroUrl: '' }).catch(() => {});
         }}
       />
+    </>)}
     </div>
   );
 };

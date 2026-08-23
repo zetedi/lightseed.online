@@ -213,6 +213,7 @@ const AppContent = () => {
     const [personalSiteTheme, setPersonalSiteTheme] = useState<any>(null);
     const [preferredIntelligenceId, setPreferredIntelligenceId] = useState<string | undefined>(undefined);
     const [personalSiteLogoUrl, setPersonalSiteLogoUrl] = useState('');
+    const [personalSiteInherit, setPersonalSiteInherit] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     
     // Stats State for Dashboard
@@ -261,7 +262,7 @@ const AppContent = () => {
 
     const config = useConfig(activeCommunity);
     const { effectiveTheme, effectiveIsDark, configuredLogoUrl, toggleNightMode, backgroundStyle } =
-        useSiteTheme({ config, impersonatedCommunity, lightseed, personalSiteTheme, personalSiteLogoUrl });
+        useSiteTheme({ config, impersonatedCommunity, lightseed, personalSiteTheme, personalSiteLogoUrl, personalSiteInherit });
 
 
     useEffect(() => {
@@ -269,6 +270,7 @@ const AppContent = () => {
             // eslint-disable-next-line react-hooks/set-state-in-effect -- reset-on-signout before (not instead of) subscribing to the profile listener
             setPersonalSiteTheme(null);
             setPersonalSiteLogoUrl('');
+            setPersonalSiteInherit(false);
             setActiveIntelligenceId(undefined);
             return;
         }
@@ -276,6 +278,7 @@ const AppContent = () => {
         return listenToUserProfile(lightseed.uid, (profile) => {
             setPersonalSiteTheme(profile?.siteTheme || null);
             setPersonalSiteLogoUrl(profile?.siteLogoUrl || '');
+            setPersonalSiteInherit(!!profile?.siteInherit);
             setPreferredIntelligenceId(profile?.preferredIntelligenceId || undefined);
             // Mirror the choice so stateless AI helpers route through it everywhere.
             setActiveIntelligenceId(profile?.preferredIntelligenceId || undefined);

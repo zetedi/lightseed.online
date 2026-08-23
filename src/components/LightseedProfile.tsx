@@ -72,6 +72,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
     const [siteTheme, setSiteTheme] = useState(normalizeTheme(undefined));
     const [siteLogoUrl, setSiteLogoUrl] = useState('');
     const [siteHeroUrl, setSiteHeroUrl] = useState('');
+    const [siteInherit, setSiteInherit] = useState(false);
     const [preferredIntelligenceId, setPreferredIntelligenceId] = useState<string>('');
 
     useEffect(() => {
@@ -88,6 +89,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
             setSiteTheme(normalizeTheme(data?.siteTheme));
             setSiteLogoUrl(data?.siteLogoUrl || '');
             setSiteHeroUrl(data?.siteHeroUrl || '');
+            setSiteInherit(!!data?.siteInherit);
             setPreferredIntelligenceId(data?.preferredIntelligenceId || DEFAULT_INTELLIGENCE_ID);
         });
         return () => unsub();
@@ -262,6 +264,8 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                     onSiteLogoUrlChange={setSiteLogoUrl}
                     siteHeroUrl={siteHeroUrl}
                     onSiteHeroUrlChange={setSiteHeroUrl}
+                    siteInherit={siteInherit}
+                    onSiteInheritChange={setSiteInherit}
                     notify={setDialogMessage}
                 />
             ),

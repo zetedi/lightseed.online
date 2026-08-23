@@ -17,8 +17,9 @@ export function useSiteTheme(params: {
   lightseed: Lightseed | null;
   personalSiteTheme: any;
   personalSiteLogoUrl: string;
+  personalSiteInherit?: boolean;
 }) {
-  const { config, impersonatedCommunity, lightseed, personalSiteTheme, personalSiteLogoUrl } = params;
+  const { config, impersonatedCommunity, lightseed, personalSiteTheme, personalSiteLogoUrl, personalSiteInherit } = params;
 
   const [themeModePreference, setThemeModePreference] = useState<ThemeModePreference>(() => {
     const savedMode = localStorage.getItem('lifeseed_theme_mode');
@@ -31,11 +32,14 @@ export function useSiteTheme(params: {
     return null;
   });
   // While viewing as a community, the community's own branding wins over the
-  // signed-in user's personal site theme/logo.
-  const configuredTheme = !impersonatedCommunity && lightseed && personalSiteTheme
+  // signed-in user's personal site theme/logo. And when the user chose to INHERIT
+  // (ring 2026-08-24), the personal palette rests entirely: every garden dresses the
+  // site in its own colors, wherever they stand.
+  const personalActive = !impersonatedCommunity && lightseed && !personalSiteInherit;
+  const configuredTheme = personalActive && personalSiteTheme
     ? normalizeTheme(personalSiteTheme, config.theme)
     : config.theme;
-  const configuredLogoUrl = !impersonatedCommunity && lightseed && personalSiteLogoUrl && isSeedShellHost(window.location.hostname)
+  const configuredLogoUrl = personalActive && personalSiteLogoUrl && isSeedShellHost(window.location.hostname)
     ? personalSiteLogoUrl
     : config.logoUrl;
   const effectiveThemeMode = themeModePreference || configuredTheme.mode || 'light';

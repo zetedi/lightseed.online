@@ -251,7 +251,7 @@ export const listenToUserProfile = (userId: string, callback: (data: any) => voi
     });
 }
 
-export const updateUserSiteTheme = (userId: string, data: { siteTheme?: Record<string, string>; siteLogoUrl?: string; siteHeroUrl?: string }) =>
+export const updateUserSiteTheme = (userId: string, data: { siteTheme?: Record<string, string>; siteLogoUrl?: string; siteHeroUrl?: string; siteInherit?: boolean }) =>
     setDoc(doc(db, 'users', userId), { ...data, updatedAt: serverTimestamp() }, { merge: true });
 
 export const updateUserProfile = (userId: string, data: Record<string, unknown>) =>
