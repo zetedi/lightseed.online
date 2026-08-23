@@ -295,6 +295,7 @@ const AppContent = () => {
         hostReflectsPublic: (impersonatedCommunity || hostCommunity)?.reflectsPublic,
         hostDomain: (impersonatedCommunity || hostCommunity)?.domain,
         hostStrictScope: (impersonatedCommunity || hostCommunity)?.strictScope,
+        hostCommunityId: (impersonatedCommunity || hostCommunity)?.id,
     });
 
     // The refresh bus, heard by the live feed: when an event/pulse is deleted anywhere

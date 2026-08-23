@@ -28,13 +28,19 @@ import type { Being } from './being';
 // 'keeper_request': a knock for keepership — at a community (a sitting keeper answers,
 // server mints) or at a LIFETREE (the owner answers through the tree-circle invite, choosing
 // the role). Grants nothing; deletable by its author or the target's keeper/owner.
+// 'grows_in' (ring 2026-08-24): a LIFETREE stands in ANOTHER community's forest — from =
+// the tree's id (like 'participant'), to = the community. The tree's `domain` stays its
+// one place-of-record; grows_in only widens which gardens SHOW it. Minted through the
+// community's own DOOR (open → the tree's owner steps in self-serve; else the keeper
+// welcomes); either side may delete (the owner withdraws, the keeper curates). Grants
+// NOTHING — no rule reads it for privileges.
 // 'invited_by' vs 'welcomed_by' — two questions, two edges, both append-only provenance:
 //   'invited_by'  newcomer → COMMUNITY: WHERE did you arrive, through which invitation
 //                 (per-community, so arriving in two places leaves two marks);
 //   'welcomed_by' newcomer → PERSON: WHO vouched for you — one direct query answers
 //                 "who did X welcome", and it covers ALL acceptances (community, network,
 //                 tree-circle, keeper), where invited_by exists only for community arrivals.
-export type LinkRel = 'guardian' | 'co_owner' | 'steward' | 'observer' | 'member' | 'joined' | 'participant' | 'join_request' | 'rooted' | 'shelters' | 'invited_by' | 'welcomed_by' | 'party' | 'keeper' | 'keeper_request';
+export type LinkRel = 'guardian' | 'co_owner' | 'steward' | 'observer' | 'member' | 'joined' | 'participant' | 'join_request' | 'rooted' | 'shelters' | 'invited_by' | 'welcomed_by' | 'party' | 'keeper' | 'keeper_request' | 'grows_in';
 
 export interface Link extends Being {
   type: 'link';

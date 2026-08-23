@@ -295,6 +295,37 @@ describe('collabs — staff-curated, world-readable', () => {
   });
 });
 
+describe('grows_in — a tree enters a garden through its door (ring 2026-08-24)', () => {
+  const seedGarden = (door?: string) => env.withSecurityRulesDisabled(async (ctx) => {
+    const d = ctx.firestore();
+    await setDoc(doc(d, 'communities', 'garden1'), { ownerId: ALICE, name: 'Garden', domain: 'garden.online', loveCount: 0, ...(door ? { door } : {}) });
+    await setDoc(doc(d, 'lifetrees', 'bobsTree'), { ownerId: BOB, name: 'Bobs Oak', loveCount: 0 });
+  });
+  const edge = { from: 'bobsTree', rel: 'grows_in', to: 'garden1' };
+
+  it('an OPEN door: the tree\'s owner steps in self-serve; a stranger may not', async () => {
+    await seedGarden('open');
+    await assertFails(setDoc(doc(db(MALLORY), 'links', 'bobsTree__grows_in__garden1'), edge));
+    await assertSucceeds(setDoc(doc(db(BOB), 'links', 'bobsTree__grows_in__garden1'), edge));
+  });
+
+  it('a closed or invite door refuses the owner — the KEEPER welcomes instead', async () => {
+    await seedGarden(); // absent = invite
+    await assertFails(setDoc(doc(db(BOB), 'links', 'bobsTree__grows_in__garden1'), edge));
+    await assertSucceeds(setDoc(doc(db(ALICE), 'links', 'bobsTree__grows_in__garden1'), edge));
+  });
+
+  it('a ghost tree earns no edge, and either side may withdraw — a stranger may not', async () => {
+    await seedGarden('open');
+    await assertFails(setDoc(doc(db(ALICE), 'links', 'ghostTree__grows_in__garden1'), { from: 'ghostTree', rel: 'grows_in', to: 'garden1' }));
+    await assertSucceeds(setDoc(doc(db(BOB), 'links', 'bobsTree__grows_in__garden1'), edge));
+    await assertFails(deleteDoc(doc(db(MALLORY), 'links', 'bobsTree__grows_in__garden1')));
+    await assertSucceeds(deleteDoc(doc(db(ALICE), 'links', 'bobsTree__grows_in__garden1'))); // the keeper curates
+    await assertSucceeds(setDoc(doc(db(BOB), 'links', 'bobsTree__grows_in__garden1'), edge));
+    await assertSucceeds(deleteDoc(doc(db(BOB), 'links', 'bobsTree__grows_in__garden1'))); // the owner withdraws
+  });
+});
+
 describe('welcomed_by — the hand that welcomed is proven, never claimed (ring 2026-08-21)', () => {
   const seedInvite = () => env.withSecurityRulesDisabled(async (ctx) => {
     await setDoc(doc(ctx.firestore(), 'communityInvites', 'inv1'), { communityId: 'com1', createdBy: ALICE, createdAt: Timestamp.fromMillis(1) });

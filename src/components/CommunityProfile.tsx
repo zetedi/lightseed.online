@@ -7,7 +7,7 @@ import { Icons } from './ui/Icons';
 import { MahameruAvatar } from './ui/MahameruAvatar';
 import { Community, CommunityInvite, Lifetree, Pulse, LightHouse } from '../types';
 import { doorOf, checkInvite } from '../domain/communityDoor';
-import { updateCommunity, uploadImage, getTreesByDomain, getParticipatingTrees, deleteCommunity, getCommunityByDomain, getLightHousesByDomain, getLightHousesByCommunity, getAllLightHouses, createLightHouse, adoptLightHouse, getPersonName, joinCommunityOpen, joinCommunityWithInvite, requestKeepership, withdrawKeeperRequest } from '../services/firebase';
+import { updateCommunity, uploadImage, getTreesByDomain, treesStandingIn, getParticipatingTrees, deleteCommunity, getCommunityByDomain, getLightHousesByDomain, getLightHousesByCommunity, getAllLightHouses, createLightHouse, adoptLightHouse, getPersonName, joinCommunityOpen, joinCommunityWithInvite, requestKeepership, withdrawKeeperRequest } from '../services/firebase';
 import { CommunityVision } from './community/CommunityVision';
 import { CommunityCouncil } from './community/CommunityCouncil';
 import { CommunityEvents } from './community/CommunityEvents';
@@ -251,9 +251,17 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   useEffect(() => {
     // Own-tree merge only where the place allows it (domain ownMergeUid): a STRICT face
     // shows this place's forest and nothing else — the viewer's off-domain trees stay home.
+    // PLUS the standing trees (grows_in, ring 2026-08-24): trees from other places that
+    // entered this garden through its door — one tree, many gardens, every edge explicit.
     const host = { reflectsPublic: community.reflectsPublic, strictScope: community.strictScope };
-    getTreesByDomain(community.domain, ownMergeUid(currentUserId, host)).then(setLinkedTrees).catch(() => {});
-  }, [community.domain, currentUserId, community.reflectsPublic, community.strictScope]);
+    Promise.all([
+      getTreesByDomain(community.domain, ownMergeUid(currentUserId, host)).catch(() => [] as Lifetree[]),
+      treesStandingIn(community.id).catch(() => [] as Lifetree[]),
+    ]).then(([byDomain, standing]) => {
+      const seen = new Set(byDomain.map(t => t.id));
+      setLinkedTrees([...byDomain, ...standing.filter(t => !seen.has(t.id))]);
+    }).catch(() => {});
+  }, [community.id, community.domain, currentUserId, community.reflectsPublic, community.strictScope]);
 
   useEffect(() => {
     // Rooted here (by domain) PLUS stepped-into (by communityIds), deduped. Signed-out

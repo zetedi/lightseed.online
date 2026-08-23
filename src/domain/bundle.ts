@@ -92,7 +92,7 @@ export const TRAVEL_PLAN: readonly TravelRule[] = [
   { path: 'lightHouses/*/loves', mode: 'verbatim', idIsLocalUid: true, localUidFields: ['uid'] },
 
   // The graph
-  { path: 'links', mode: 'verbatim', localUidFields: ['from'], deterministicIds: 'from__rel__to — authority resolves by exists() on this exact path; re-keying = everyone silently loses every role. from is a uid EXCEPT rels participant (tree id) and rooted/shelters (lightHouse id) — see linkFromIsUid' },
+  { path: 'links', mode: 'verbatim', localUidFields: ['from'], deterministicIds: 'from__rel__to — authority resolves by exists() on this exact path; re-keying = everyone silently loses every role. from is a uid EXCEPT rels participant/grows_in (tree id) and rooted/shelters (lightHouse id) — see linkFromIsUid' },
   { path: 'alignments', mode: 'verbatim', localUidFields: ['initiatorUid', 'targetUid'] },
 
   // Light & the care economy
@@ -125,7 +125,7 @@ export const TRAVEL_PLAN: readonly TravelRule[] = [
 
 // The rels whose link.from is NOT a person uid (the two non-person edges in the graph).
 export const linkFromIsUid = (rel: string): boolean =>
-  !['participant', 'rooted', 'shelters'].includes(rel);
+  !['participant', 'rooted', 'shelters', 'grows_in'].includes(rel);
 
 // ── Path matching ───────────────────────────────────────────────────────────────────────
 // A doc path alternates collection/id segments: 'lifetrees/abc/loves/u1'. Its collection

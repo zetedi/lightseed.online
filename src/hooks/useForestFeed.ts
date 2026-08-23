@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Alignment, Lightseed, Pulse } from '../types';
 import {
   fetchAllLifetrees, fetchLifetrees, fetchPulses, fetchEventPulses, fetchOfferingPulses, fetchReachPulses, fetchVisions,
-  getPendingAlignments,
+  getPendingAlignments, treesStandingIn,
 } from '../services/firebase';
 import { queryableLevels, eventFeedScope, ownMergeUid } from '../domain/pulseVisibility';
 import { dataDomainFor, reflectsInstancePublic } from '../domain/communityDoor';
@@ -30,8 +30,11 @@ export function useForestFeed(params: {
   // Strict scope: when scoped, hide even the viewer's own off-domain trees (a "this place only"
   // forest). Only meaningful while NOT reflecting. See domain/community.strictScope.
   hostStrictScope?: boolean;
+  // The active community's id: a scoped forest also shows the trees STANDING here through
+  // grows_in edges (ring 2026-08-24) — they entered through the door, so even strict shows them.
+  hostCommunityId?: string;
 }) {
-  const { tab, viewMode, lightseed, isSuperAdmin, isAdmin, setAlignments, hostReflectsPublic, hostDomain, hostStrictScope } = params;
+  const { tab, viewMode, lightseed, isSuperAdmin, isAdmin, setAlignments, hostReflectsPublic, hostDomain, hostStrictScope, hostCommunityId } = params;
 
   const [data, setData] = useState<any[]>([]);
   const [lastDoc, setLastDoc] = useState<any>(null);
@@ -77,18 +80,27 @@ export function useForestFeed(params: {
 
     try {
       if (tab === 'forest') {
+        // Trees standing here through the door (grows_in) join a SCOPED forest — map and
+        // grid alike; the service absorbs per-doc refusals so unseen trees stay unseen.
+        const standing = (currentDomain && hostCommunityId)
+          ? await treesStandingIn(hostCommunityId).catch(() => [])
+          : [];
+        const unionStanding = (items: any[]) => {
+          const seen = new Set(items.map((t: any) => t.id));
+          return [...items, ...standing.filter(t => !seen.has(t.id))];
+        };
         if (viewMode === 'map') {
           // The map shows the whole forest at once (no pagination) so every tree appears.
           // Beds are already excluded at the service layer — the guard here is the belt
           // to that braces (a bed must never reach the forest, whatever the source).
-          const all = excludeBedTrees(await fetchAllLifetrees(currentDomain, feedOwnerUid, treeLevels));
+          const all = unionStanding(excludeBedTrees(await fetchAllLifetrees(currentDomain, feedOwnerUid, treeLevels)));
           setData(all);
           setLastDoc(null);
           setHasMore(false);
         } else {
           const res = await fetchLifetrees(currentLastDoc, currentDomain, feedOwnerUid, treeLevels);
           setData(prev => {
-            const newItems = excludeBedTrees(res.items);
+            const newItems = reset ? unionStanding(excludeBedTrees(res.items)) : excludeBedTrees(res.items);
             if (reset) return newItems;
             // Deduplicate items based on ID to prevent visual duplicates
             const existingIds = new Set(prev.map(p => p.id));

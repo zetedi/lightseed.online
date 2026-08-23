@@ -6,6 +6,28 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-24 · One tree, many gardens — through each garden's own door** — the Bigeh
+planting will spawn communities around trees planted together, and Zoltán asked for
+multiple lifetree–domain links. The root answered before we did: RELATIONSHIPS ARE LINKS,
+never arrays, never a second scalar. `domain` stays the tree's ONE place-of-record (every
+query, card, census and the bundle law untouched); a new rel `grows_in`
+(`<treeId>__grows_in__<communityId>`, joining participant/rooted/shelters in the tree-id
+`from` exceptions) says only "this tree also STANDS in that garden." It grants NOTHING —
+no rule reads it for privileges; the forest queries alone do. THE DOOR DECIDES THE
+GESTURE, reusing the community-door law whole: an OPEN door, the tree's owner steps in
+self-serve; invite/closed, the keeper welcomes. Either side deletes — the owner withdraws
+their tree, the keeper curates their garden — so no garden can be entered uninvited and
+no tree held against its keeper's will. The UI speaks both vocabularies: the Gardens card
+on the tree's Circle tab autocompletes by community NAME and by DOMAIN alike ("add
+lightseed.online" and "add The Node" are the same wish), each suggestion wearing its
+door's color. Scoped forests — the community grid, the face's map and cards, strict faces
+included — UNION domain-stamped trees with standing ones: strict stays honest because
+standing was consented through the door, never smuggled. REJECTED: multiplying the domain
+stamp (two truths about where a being lives is amnesia's cousin); a bare self-serve mint
+regardless of door (a strict garden must not be enterable unasked).
+
+---
+
 **2026-08-24 · The custodian's hand seals the bundle** — the spearhead's third debt.
 verifyBundle proved CONSISTENCY (hashes anyone can recompute); it said nothing of
 PROVENANCE. Now the bundle's manifest hash — the one number binding the charter, the

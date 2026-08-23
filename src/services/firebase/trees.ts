@@ -1,5 +1,6 @@
 import { collection, query, orderBy, getDocs, addDoc, setDoc, serverTimestamp, doc, getDoc, where, updateDoc, deleteDoc, limit, startAfter, QueryDocumentSnapshot, getCountFromServer, Timestamp } from 'firebase/firestore';
 import { announce } from '../refreshBus';
+import { firestoreStore } from '../../adapters/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { type Lifetree, type LightHouse, type TreeOwnershipInvite, type InvitableRole } from '../../types';
 import { createBlock } from '../../utils/crypto';
@@ -505,6 +506,27 @@ export const fetchAllLifetrees = async (domainFilter?: string, ownerUid?: string
 // A being's own trees — the personal forest. Beds the keeper owns are furniture — housed
 // or loose — not trees they wear or guard: excluded here so the session (useLifeseed) and
 // the planting gate never see them; getBedsForLightHouse is the housed beds' own door.
+// ── grows_in (ring 2026-08-24): a tree standing in other gardens ─────────────────────────
+// The tree's `domain` stays its one place-of-record; these edges only widen which
+// community forests SHOW it. The rules hold the door: open → owner self-serve; else keeper.
+export const standTreeInCommunity = (treeId: string, communityId: string) =>
+    firestoreStore.link(treeId, 'grows_in', communityId);
+
+export const withdrawTreeFromCommunity = (treeId: string, communityId: string) =>
+    firestoreStore.unlink(treeId, 'grows_in', communityId);
+
+export const communitiesTreeStandsIn = async (treeId: string): Promise<string[]> =>
+    (await firestoreStore.linksFrom(treeId, 'grows_in')).map(l => l.to);
+
+// Every tree standing in this community through a grows_in edge — fetched one by one so a
+// tree this viewer may not read simply stays unseen (per-doc rules refusals are absorbed).
+export const treesStandingIn = async (communityId: string): Promise<Lifetree[]> => {
+    const links = await firestoreStore.linksTo(communityId, 'grows_in');
+    const docs = await Promise.all(links.map(l =>
+        getDoc(doc(db, 'lifetrees', l.from)).then(d => (d.exists() ? ({ id: d.id, ...d.data() } as Lifetree) : null)).catch(() => null)));
+    return excludeBedTrees(docs.filter((t): t is Lifetree => !!t));
+};
+
 export const getMyLifetrees = async (uid: string) =>
     excludeBedTrees((await getDocs(query(lifetreesCollection, where('ownerId', '==', uid)))).docs.map(d => (mapDoc(d) as Lifetree)));
 

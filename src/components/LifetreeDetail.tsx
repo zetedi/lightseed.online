@@ -22,6 +22,7 @@ import { BeingProfile, type BeingSection } from './BeingProfile';
 import { ChainTree } from './sections/ChainTree';
 import { TreeCare } from './lifetree/TreeCare';
 import { TreeCircle } from './lifetree/TreeCircle';
+import { TreeGardens } from './lifetree/TreeGardens';
 import { TreeDetails, type TreeDetailsUpdates } from './lifetree/TreeDetails';
 
 interface LifetreeDetailProps {
@@ -387,6 +388,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
        },
        {
            key: 'circle', label: 'Circle', icon: <Icons.Venn />, render: () => (
+               <>
                <TreeCircle
                    tree={tree}
                    currentUserId={currentUserId}
@@ -399,6 +401,10 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                    onToggleDanger={handleToggleDanger}
                    onGuardianChange={() => setGuardianNonce(n => n + 1)}
                />
+               {/* The gardens this tree also stands in (grows_in) — the circle is its people,
+                   the gardens its places. */}
+               <TreeGardens tree={tree} isOwner={isOwner} />
+               </>
            ),
        },
    ];
