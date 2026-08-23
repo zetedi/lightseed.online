@@ -3,6 +3,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   BUNDLE_FORMAT_VERSION, TRAVEL_PLAN, NON_CHAIN_ROOTS, travelRuleFor, collectionSignature,
+  BUNDLE_SEAL_TAG, verifyBundleSeal,
   linkFromIsUid, docContentHash, buildCensus, manifestHashOf, verifyBundle,
   chainClosureIssues, beingsIndexIssues, localUidCensus,
   type BundleDoc, type CharterHead, type NodeBundle,
@@ -290,5 +291,37 @@ describe('path matching', () => {
     expect(travelRuleFor('config/dataAuthority')?.mode).toBe('excluded');
     expect(travelRuleFor('config/superadmin')?.path).toBe('config');
     expect(travelRuleFor('nowhere/x')).toBeNull();
+  });
+});
+
+describe('the custodian\'s seal — provenance, anchored outside the bundle (ring 2026-08-24)', () => {
+  const anchor = { fingerprint: 'fp-custodian', publicKeyB64: 'pub-custodian' };
+  // A stub verifier that accepts exactly one (key, sig, payload, tag) tuple — the pure
+  // logic is under test here; the real Ed25519 rail is proven in the Crossing.
+  const verifierAccepting = (sig: string, payload: string) =>
+    async (pub: string, s2: string, p2: unknown, tag: string) =>
+      pub === anchor.publicKeyB64 && s2 === sig && p2 === payload && tag === BUNDLE_SEAL_TAG;
+
+  it('an unsealed bundle is named, not trusted', async () => {
+    expect(await verifyBundleSeal({ manifestHash: 'm1' }, anchor, verifierAccepting('s', 'm1')))
+      .toBe('seal_missing');
+  });
+
+  it('a stranger\'s fingerprint is refused before any cryptography runs', async () => {
+    expect(await verifyBundleSeal(
+      { manifestHash: 'm1', seal: { fingerprint: 'fp-stranger', signature: 'valid-elsewhere' } },
+      anchor, verifierAccepting('valid-elsewhere', 'm1'),
+    )).toBe('seal_key_unanchored');
+  });
+
+  it('a bad signature under the right fingerprint is refused; the true hand passes', async () => {
+    expect(await verifyBundleSeal(
+      { manifestHash: 'm1', seal: { fingerprint: 'fp-custodian', signature: 'forged' } },
+      anchor, verifierAccepting('true-sig', 'm1'),
+    )).toBe('seal_invalid');
+    expect(await verifyBundleSeal(
+      { manifestHash: 'm1', seal: { fingerprint: 'fp-custodian', signature: 'true-sig' } },
+      anchor, verifierAccepting('true-sig', 'm1'),
+    )).toBeNull();
   });
 });

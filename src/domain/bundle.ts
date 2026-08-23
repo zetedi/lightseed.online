@@ -16,11 +16,14 @@ import { COLLECTION_FOR_KIND, entryFor, type BeingEntry } from './beingIndex';
 // census digests, a manifest hash over the head); deterministic ids travel verbatim (the
 // permission model RESOLVES BY PATH: links from__rel__to, rays treeId__dayKey__role, loves
 // and signature slots keyed by uid); local-auth identity is MARKED, never laundered
-// (localUidCensus lists every uid a restore must re-anchor). Not guaranteed yet: Storage
-// files (docs carry absolute bucket URLs — a named debt; new media already files under the
-// portable beings/{lid}/ names); uid re-anchoring itself (the census is the worklist, the
-// ceremony is human); a custodian SIGNATURE over the manifest (the seal slot exists; the
-// signing ceremony is a coming rung). Enforced by: this module's laws, tests/bundle.test.ts
+// (localUidCensus lists every uid a restore must re-anchor); the custodian's SEAL over the
+// manifest verifies against a key anchored OUTSIDE the bundle (verifyBundleSeal — a
+// signature checked only against material inside the thing it seals would be circular).
+// Not guaranteed yet: Storage files (docs carry absolute bucket URLs — a named debt; new
+// media already files under the portable beings/{lid}/ names); uid re-anchoring itself
+// (the census is the worklist, the ceremony is human); the custodian's JUDGMENT (no
+// cryptography signs for trust in the signer — the ledger's sponsorship does that).
+// Enforced by: this module's laws, tests/bundle.test.ts
 // (including the rules-mirror completeness test), and the Crossing suite's live round-trip.
 
 export const BUNDLE_FORMAT_VERSION = 1 as const;
@@ -199,6 +202,46 @@ export interface NodeBundle {
 
 export const manifestHashOf = (head: CharterHead): Promise<string> =>
   sha256(`${HASH_DOMAIN}|manifest|${canonicalize(head)}`);
+
+// ── The custodian's seal (ring 2026-08-24) ──────────────────────────────────────────────
+// One human signature over the manifest hash: the bundle's PROVENANCE, where the hashes
+// alone are only its CONSISTENCY (consistency can be recomputed by anyone holding the
+// data; authorship cannot). The signing hand is services/keys.sign with this tag — the
+// same Ed25519 rail as covenant seals, its own domain tag so a bundle seal can never be
+// replayed as any other signature. Verification takes the custodian's key as an ANCHOR
+// resolved OUTSIDE the bundle (the initiations git ledger first, the living origin node
+// and the receiving node's own pinned config as witnesses) — the key lineage inside the
+// bundle can never vouch for the bundle that carries it.
+export const BUNDLE_SEAL_TAG = 'lightseed.bundle.manifest.v1';
+
+// The key the verifier trusts, resolved out-of-band. fingerprint = sha256(publicKeyB64)
+// (the persons/keys doc-id law).
+export interface BundleSealAnchor { fingerprint: string; publicKeyB64: string }
+
+export type SealIssueCode = 'seal_missing' | 'seal_key_unanchored' | 'seal_invalid';
+
+// Injected Ed25519 verifier (services/signingCrypto.verifyPayload in production) — the
+// covenant law's exact pattern, so this module stays pure and unit-testable.
+export type SealVerifier = (
+  publicKeyB64: string,
+  signatureB64: string,
+  payload: unknown,
+  domainTag: string,
+) => Promise<boolean>;
+
+// The whole seal verdict: null = the custodian's hand, proven against the anchor.
+export async function verifyBundleSeal(
+  bundle: Pick<NodeBundle, 'manifestHash' | 'seal'>,
+  anchor: BundleSealAnchor,
+  verify: SealVerifier,
+): Promise<SealIssueCode | null> {
+  if (!bundle.seal) return 'seal_missing';
+  // The claimed key must BE the anchored key — a stranger shipping their own (valid!)
+  // signature under their own fingerprint is refused before any cryptography runs.
+  if (bundle.seal.fingerprint !== anchor.fingerprint) return 'seal_key_unanchored';
+  return (await verify(anchor.publicKeyB64, bundle.seal.signature, bundle.manifestHash, BUNDLE_SEAL_TAG))
+    ? null : 'seal_invalid';
+}
 
 // ── Verification ────────────────────────────────────────────────────────────────────────
 export type BundleIssueCode =

@@ -26,9 +26,12 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
   transaction boundary before “unerasable story” is a system-wide guarantee.
 - **The first real Crossing: lifeseed.online becomes NODE 2.** The fullness law (144
   hosted, 12 faces — domain/limits) is now the reproductive trigger; lifeseed.online is
-  the appointed test shore. The road there IS the bundle law's named debts: uid
-  re-anchoring, storage migration, the custodian's signature on the manifest. Twelve
-  communities will be invited to be the first faces — the limit is part of the invitation.
+  the appointed test shore. The custodian's manifest signature is LAW since 2026-08-24
+  (verifyBundleSeal, anchored outside the bundle, proven in the Crossing); the remaining
+  named debts on the road: uid re-anchoring, storage migration, and the real export
+  ceremony (the custodian's device key signing a production bundle — the living test's
+  keypair stands in until the crossing day). Twelve communities will be invited to be
+  the first faces — the limit is part of the invitation.
 - **Give every load-bearing law one mouth.** Build the actor × entity × action ×
   mutable-fields capability matrix; then add shared-source or conformance tests for
   every necessary mirror across domain code, Firestore rules and Functions

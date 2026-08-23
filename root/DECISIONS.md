@@ -6,6 +6,29 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-24 · The custodian's hand seals the bundle** — the spearhead's third debt.
+verifyBundle proved CONSISTENCY (hashes anyone can recompute); it said nothing of
+PROVENANCE. Now the bundle's manifest hash — the one number binding the charter, the
+census, and every byte beneath them — carries the custodian's Ed25519 signature
+(BUNDLE_SEAL_TAG, its own domain tag on the covenant rail, so a bundle seal can never be
+replayed as any other kind of signature and vice versa — the Crossing proves a
+covenant-tagged signature over the same hash is refused). THE DEEP LAW: verification
+anchors OUTSIDE the bundle (verifyBundleSeal takes a BundleSealAnchor — the initiations
+git ledger first, the living origin node and the receiving node's pinned config as
+witnesses), because the key lineage inside a bundle can never vouch for the bundle that
+carries it — a seal checked against its own cargo is circular. The Crossing now proves
+the three refusals that matter: an UNSEALED bundle (flawless inside, refused outside), a
+STRANGER's real signature under their own fingerprint (refused at the anchor, before any
+cryptography runs), and a forged claim of the custodian's fingerprint (refused by the
+mathematics). The far shore verifies the hand before one document lands. NOT sealed by
+this ring: the custodian's judgment (no cryptography signs for trust in the signer), a
+stolen key (the freeze/epoch machinery answers — the far shore honors the LATEST epoch),
+replay of an old true bundle (exportedAtMs lives inside the signed head; the succession
+rule is node 2's to enforce). The ceremony stays HUMAN: machines gather and hash; only
+the custodian's device key signs — the same law as our commits.
+
+---
+
 **2026-08-21 · A strict portal keeps its own garden, and every welcome leaves a thread** —
 two laws from one afternoon. (1) COMMUNITIES ON A STRICT PORTAL: the communities tab showed
 the whole network everywhere; now a community carries `bornOn` — the portal it was FOUNDED

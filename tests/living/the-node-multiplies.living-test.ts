@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { generateSeed, keypairFromSeed, signPayload, verifyPayload } from '../../src/services/signingCrypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
@@ -13,6 +14,7 @@ import { linkId } from '../../src/domain/link';
 import { dataAuthorityOf } from '../../src/domain/dataAuthority';
 import {
   TRAVEL_PLAN, travelRuleFor, buildCensus, manifestHashOf, verifyBundle, collectionSignature,
+  BUNDLE_SEAL_TAG, verifyBundleSeal, type BundleSealAnchor,
   chainClosureIssues, beingsIndexIssues, localUidCensus, expectedBeingsIndex, docContentHash,
   BUNDLE_FORMAT_VERSION, type BundleDoc, type CharterHead, type NodeBundle,
 } from '../../src/domain/bundle';
@@ -378,6 +380,11 @@ const gatherNode = async (db: FirebaseFirestore.Firestore): Promise<BundleDoc[]>
 
 describe('the Crossing — the lived world travels to a second database and survives', () => {
   let bundle: NodeBundle;
+  // The custodian's REAL Ed25519 hand (services/signingCrypto — the production rail), and
+  // the anchor as node 2 would hold it: resolved from the initiations ledger / its own
+  // pinned config, NEVER from inside the bundle.
+  let custodian: Awaited<ReturnType<typeof keypairFromSeed>>;
+  let anchor: BundleSealAnchor;
 
   it('the export bundles the Grove under the charter head, and the law verifies it', async () => {
     const docs = await gatherNode(adminDbA());
@@ -398,6 +405,16 @@ describe('the Crossing — the lived world travels to a second database and surv
       census: await buildCensus(docs),
     };
     bundle = { head, manifestHash: await manifestHashOf(head), docs };
+
+    // THE CEREMONY: the custodian signs the manifest hash — one human hand, ~100 bytes,
+    // the only line of the bundle that cannot be recomputed by a stranger.
+    custodian = await keypairFromSeed(generateSeed());
+    anchor = { fingerprint: await sha256(custodian.publicKeyB64), publicKeyB64: custodian.publicKeyB64 };
+    bundle.seal = {
+      fingerprint: anchor.fingerprint,
+      signature: await signPayload(custodian.privateKey, bundle.manifestHash, BUNDLE_SEAL_TAG),
+    };
+    expect(await verifyBundleSeal(bundle, anchor, verifyPayload)).toBeNull();
 
     const verdict = await verifyBundle(bundle);
     expect(verdict.issues).toEqual([]);
@@ -421,7 +438,42 @@ describe('the Crossing — the lived world travels to a second database and surv
     expect((await verifyBundle(smuggled)).issues.map(i => i.code)).toContain('plan_violation');
   });
 
+  it('node 2 refuses the unsealed bundle, and the stranger\'s — however consistent', async () => {
+    // Internally flawless, no seal: consistency is not provenance.
+    expect(await verifyBundleSeal({ ...bundle, seal: undefined }, anchor, verifyPayload)).toBe('seal_missing');
+
+    // A stranger with the WHOLE data set mints a perfectly consistent bundle and signs it
+    // with their own real key — refused at the anchor, before any cryptography runs.
+    const stranger = await keypairFromSeed(generateSeed());
+    const strangers: NodeBundle = {
+      ...bundle,
+      seal: {
+        fingerprint: await sha256(stranger.publicKeyB64),
+        signature: await signPayload(stranger.privateKey, bundle.manifestHash, BUNDLE_SEAL_TAG),
+      },
+    };
+    expect((await verifyBundle(strangers)).issues).toEqual([]); // flawless inside…
+    expect(await verifyBundleSeal(strangers, anchor, verifyPayload)).toBe('seal_key_unanchored'); // …refused outside
+
+    // The stranger claims the custodian's fingerprint over their own signature: the
+    // cryptography itself refuses.
+    expect(await verifyBundleSeal(
+      { ...bundle, seal: { fingerprint: anchor.fingerprint, signature: strangers.seal!.signature } },
+      anchor, verifyPayload,
+    )).toBe('seal_invalid');
+
+    // A covenant-tagged signature over the same hash can never seal a bundle (domain-tag
+    // discipline): sign with the custodian's true key under a FOREIGN tag.
+    expect(await verifyBundleSeal(
+      { ...bundle, seal: { fingerprint: anchor.fingerprint, signature: await signPayload(custodian.privateKey, bundle.manifestHash, 'lightseed.covenant.v2') } },
+      anchor, verifyPayload,
+    )).toBe('seal_invalid');
+  });
+
   it('the restore lands on the far shore; the census, chains, index and custody all hold', async () => {
+    // THE GATE: no seal, no shore. The far side verifies the custodian's hand against its
+    // out-of-band anchor before a single document lands.
+    expect(await verifyBundleSeal(bundle, anchor, verifyPayload)).toBeNull();
     const dbB = adminDbB();
     // Verbatim docs travel byte-for-byte; the beings index is REBUILT, never imported.
     let batch = dbB.batch(); let n = 0;
