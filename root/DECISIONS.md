@@ -6,6 +6,23 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-25 · A place is searched, chosen on a map, or spoken; and the walk waits for later**
+— editing a tree's location was raw Lat/Lng inputs plus a GPS button. Now four ways to the
+same point: SEARCH a place name (new ui/PlaceSearch), TAP it on a map (the existing
+ui/LocationPicker, already used at planting and consecration — in-house, bundled Leaflet),
+type the coordinates, or GPS. The search is the one thing the app cannot do itself, so it
+asks OpenStreetMap's NOMINATIM — a USER-INITIATED call (they type and press search),
+sending only the typed query, attributed in the results (© OpenStreetMap contributors),
+consistent with the ArcGIS tiles the maps already fetch. NAMED as a plain contract: an
+external geocoder is a dependency, chosen deliberately, not hidden. SEPARATELY: the
+CONNECTIONS panel (the longitudinal walk) is hidden from the tree circle — it is for later
+— shown only to SUPERADMINS, and LAZILY: collapsed until opened, so the subgraph load
+(which can touch many docs) never runs on mere mount. The law (domain/subgraph) and the
+depth-4 reading stand; only the surface is held back until it is ready to be walked by more
+hands.
+
+---
+
 **2026-08-25 · A pulse list proves its right to be read from the QUERY, not the document**
 — a report arrived from the other side of the water: an anonymous Firestore query on
 pulses filtered only by type=='event' returned PRIVATE events in full. Confirmed live, and

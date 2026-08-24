@@ -5,6 +5,7 @@ import { subgraphOf, type SubgraphWalk } from '../../domain/subgraph';
 import { beingPath } from '../../domain/beingLink';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Loading } from '../ui/Loading';
+import { Icons } from '../ui/Icons';
 
 // THE CONNECTIONS PANEL (ring 2026-08-25) — knowing a tree by walking its edges. Depth is
 // SOCIAL DISTANCE (domain/subgraph): 0 = this tree's keeper's whole world, 1 = the beings
@@ -17,18 +18,21 @@ const KIND_GLYPH: Record<string, string> = {
 export const TreeConnections = ({ tree }: { tree: Lifetree }) => {
   const { t } = useLanguage();
   const [depth, setDepth] = useState(1);
+  const [revealed, setRevealed] = useState(false); // lazy: no graph load until opened
   const [loaded, setLoaded] = useState<Awaited<ReturnType<typeof loadSubgraphAround>> | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (!revealed) return;
     let alive = true;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- resets the loading veil when the tree changes; the async load follows immediately
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the walk is fetched only once the panel is opened (revealed); resets its veil per tree
     setLoading(true);
     loadSubgraphAround({ id: tree.id, kind: 'tree', ownerUid: tree.ownerId || null, name: tree.name, lid: tree.lid })
       .then(g => { if (alive) { setLoaded(g); setLoading(false); } })
       .catch(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [tree.id, tree.ownerId, tree.name, tree.lid]);
+  }, [revealed, tree.id, tree.ownerId, tree.name, tree.lid]);
+
 
   const walk: SubgraphWalk | null = useMemo(() => {
     if (!loaded) return null;
@@ -48,6 +52,17 @@ export const TreeConnections = ({ tree }: { tree: Lifetree }) => {
   }, [walk, loaded, tree.id]);
 
   const depthLabels = [t('conn_depth_mine'), t('conn_depth_next'), t('conn_depth_theirs')];
+
+  // Collapsed until asked — the walk can touch many docs, so it never runs on mere mount
+  // (and it is superadmin-only for now; see LifetreeDetail).
+  if (!revealed) {
+    return (
+      <button type="button" onClick={() => setRevealed(true)}
+        className="flex w-full items-center gap-2 rounded-2xl border border-slate-100 bg-white px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-400 shadow-sm transition-colors hover:border-emerald-200 hover:text-emerald-600">
+        <Icons.Globe /> {t('tree_connections')}
+      </button>
+    );
+  }
 
   return (
     <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">

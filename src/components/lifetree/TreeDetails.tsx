@@ -4,6 +4,8 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { SuperDot } from '../ui/SuperDot';
 import { AutocompleteInput } from '../ui/AutocompleteInput';
+import { LocationPicker } from '../ui/LocationPicker';
+import { PlaceSearch } from '../ui/PlaceSearch';
 import { type Lifetree } from '../../types';
 import { isExplicitlyValidatedTree } from '../../utils/validation';
 
@@ -167,32 +169,28 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                     <div className="flex items-start gap-4">
                     <span className="w-24 shrink-0 pt-2 text-slate-500 text-sm">GPS</span>
                     {isEditing ? (
-                        <div className="flex w-full max-w-sm space-x-2 items-center">
-                            <div className="flex-1 flex space-x-2">
-                                <input
-                                    type="number" step="any"
-                                    className={fieldClassName}
-                                    value={editLat}
-                                    onChange={e => setEditLat(e.target.value)}
-                                    placeholder="Lat"
-                                />
-                                <input
-                                    type="number" step="any"
-                                    className={fieldClassName}
-                                    value={editLng}
-                                    onChange={e => setEditLng(e.target.value)}
-                                    placeholder="Lng"
-                                />
+                        <div className="w-full max-w-sm space-y-2">
+                            {/* Search a place name (Nominatim), or tap the map, or type coords, or GPS. */}
+                            <PlaceSearch onPick={(r) => {
+                                setEditLat(r.latitude); setEditLng(r.longitude);
+                                if (!editLocationName.trim()) setEditLocationName(r.name);
+                            }} />
+                            <LocationPicker
+                                value={(Number.isFinite(Number(editLat)) && Number.isFinite(Number(editLng)) && (Number(editLat) || Number(editLng)))
+                                    ? { latitude: Number(editLat), longitude: Number(editLng) } : null}
+                                onChange={(c) => { setEditLat(c.latitude); setEditLng(c.longitude); }}
+                                className="h-44 overflow-hidden rounded-xl border border-slate-200"
+                            />
+                            <div className="flex space-x-2 items-center">
+                                <div className="flex-1 flex space-x-2">
+                                    <input type="number" step="any" className={fieldClassName} value={editLat} onChange={e => setEditLat(e.target.value)} placeholder="Lat" />
+                                    <input type="number" step="any" className={fieldClassName} value={editLng} onChange={e => setEditLng(e.target.value)} placeholder="Lng" />
+                                </div>
+                                <button type="button" onClick={handleLocateMe} disabled={isLocating}
+                                    className="bg-emerald-100 text-emerald-600 p-2 rounded hover:bg-emerald-200 disabled:opacity-50" title="Use My Location">
+                                    {isLocating ? <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div> : <Icons.Loc />}
+                                </button>
                             </div>
-                            <button
-                                type="button"
-                                onClick={handleLocateMe}
-                                disabled={isLocating}
-                                className="bg-emerald-100 text-emerald-600 p-2 rounded hover:bg-emerald-200 disabled:opacity-50"
-                                title="Use My Location"
-                            >
-                                {isLocating ? <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div> : <Icons.Loc />}
-                            </button>
                         </div>
                     ) : (
                         <span className="flex-1 pt-2 text-left text-slate-800 font-mono text-sm">{tree.latitude?.toFixed(4)}, {tree.longitude?.toFixed(4)}</span>

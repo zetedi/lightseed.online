@@ -405,8 +405,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                {/* The gardens this tree also stands in (grows_in) — the circle is its people,
                    the gardens its places. */}
                <TreeGardens tree={tree} canManage={isOwner || isCarer} />
-               {/* The longitudinal walk (ring 2026-08-25) — knowing the tree by its edges. */}
-               <div className="mt-4"><TreeConnections tree={tree} /></div>
+               {/* The longitudinal walk (ring 2026-08-25) — SUPERADMIN-ONLY for now (it is
+                   for later); loads lazily, only when opened. */}
+               {isSuperAdmin && <div className="mt-4"><TreeConnections tree={tree} /></div>}
                </>
            ),
        },
