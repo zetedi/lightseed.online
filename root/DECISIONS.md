@@ -6,6 +6,29 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-25 · The longitudinal walk — depth is social distance** — Zoltán named the
+recursive question: to know a tree, see what it is connected to; and the bound is not a
+record count but PERSON-CROSSINGS — "not the same person's trees, but the tree of his
+next person." NOW LAW (domain/subgraph, pure and sealed): a 0-1 BFS over beings where
+moving inside one person's cluster is free and crossing to another person costs one —
+your whole world is distance 0, the next person's 1, their next 2; cycles terminate; two
+routes keep the nearer distance; ownerless beings are conservative (crossing always
+costs, the commons is never a free tunnel). VISIBILITY IS A WALL, NOT A WINDOW: an unseen
+being is opaque — neither shown nor traversed THROUGH — and in the loader this falls out
+of the rules themselves (a refused read fails to resolve, and an unresolved being cannot
+be walked): the permission model IS the walk's geography. TWO CONSUMERS the same day:
+(1) the H2H translation's depth 4 — promised as "the subgraph" since the translation
+ring and cosmetic until now — finally draws on the reader's tree's real neighborhood
+(names only, one crossing, capped: context breadth, never speculation); (2) the
+CONNECTIONS panel on the tree's Circle tab — Mine / Next person / Their next — every
+walked being a chip, every chip with a lid a /b/ door. pathTo() already rebuilds any
+walked route (parent pointers at minimal distance): the provenance a future
+reach-through-connections knock will carry. NOT LAW YET, said out loud: the `points`
+meaning-edge (step 3) and reach-through-connections with confirmation (step 4) — the
+consent rung gets its own ring; a distance ENTITLES no one to anything today.
+
+---
+
 **2026-08-24 · A house is cared for, and the ceremony is observed** — Zoltán asked to
 care for a Light House, and to build/care for a community THROUGH its house: consecrating
 one, or letting the community step in. Now LAW: a care act is a PULSE on the one ledger

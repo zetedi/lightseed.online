@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { loadSubgraphAround } from '../../services/firebase/subgraph';
+import { subgraphOf } from '../../domain/subgraph';
 import { Pulse, Lifetree } from '../../types';
 import { Icons } from './Icons';
 import { translatePulse } from '../../services/gemini';
@@ -43,11 +45,25 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
             // HERE so the provenance we persist below names the lens that actually read.
             const intelligenceId = getActiveIntelligenceId() ?? DEFAULT_INTELLIGENCE_ID;
             const intelligence = await getIntelligence(intelligenceId).catch(() => null);
+            // DEPTH 4 = THE SUBGRAPH, finally true (ring 2026-08-25): the reading draws on
+            // the reader's tree's real neighborhood — one person-crossing of the walk,
+            // names only, capped. Depth stays CONTEXT BREADTH, never speculation.
+            let context: string | undefined;
+            if (depth >= 4) {
+                try {
+                    const g = await loadSubgraphAround({ id: activeTree.id, kind: 'tree', ownerUid: activeTree.ownerId || null, name: activeTree.name, lid: activeTree.lid });
+                    const walk = subgraphOf(activeTree.id, { nodes: g.nodes, edges: g.edges }, { personDepth: 1 });
+                    const names = walk.beings.filter(b => b.id !== activeTree.id)
+                        .map(b => g.display.get(b.id)?.name).filter(Boolean).slice(0, 24);
+                    if (names.length) context = `The reader's tree stands connected to: ${names.join(' · ')}`;
+                } catch { /* the reading works without the wider web */ }
+            }
             const response = await translatePulse({
                 senderTreeName: pulse.authorName,
                 receiverTreeName: activeTree.name,
                 message: pulse.content || pulse.body,
                 depth,
+                ...(context ? { context } : {}),
             }, intelligenceId);
 
             // 3. Update the Pulse doc with the reading — the five distinctions (NVC) plus

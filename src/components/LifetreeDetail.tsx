@@ -23,6 +23,7 @@ import { ChainTree } from './sections/ChainTree';
 import { TreeCare } from './lifetree/TreeCare';
 import { TreeCircle } from './lifetree/TreeCircle';
 import { TreeGardens } from './lifetree/TreeGardens';
+import { TreeConnections } from './lifetree/TreeConnections';
 import { TreeDetails, type TreeDetailsUpdates } from './lifetree/TreeDetails';
 
 interface LifetreeDetailProps {
@@ -404,6 +405,8 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                {/* The gardens this tree also stands in (grows_in) — the circle is its people,
                    the gardens its places. */}
                <TreeGardens tree={tree} isOwner={isOwner} />
+               {/* The longitudinal walk (ring 2026-08-25) — knowing the tree by its edges. */}
+               <div className="mt-4"><TreeConnections tree={tree} /></div>
                </>
            ),
        },
