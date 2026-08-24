@@ -6,6 +6,22 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-25 · The node's AI is a member's benefit** — a node pays for its default AI (the
+node-key path in generateClaudeContent/generateAIContent), so unvalidated visitors could
+burn that budget freely. Now GATED, server-side (unbypassable): when a call spends the
+NODE key (no BYO key, not staff), the caller must be a VALIDATED MEMBER — an initiate (git
+ledger) or the owner of a validated tree. Reversible per node via
+config/limits.nodeAiValidatedOnly (default ON: absent/true restricts). BYO-key users and
+staff are never gated — bring your own key and the node's AI is irrelevant to you; the
+gate protects only what the node pays for. The refusal is SPOKEN, not swallowed:
+nodeFallback detects it and shows "the node's AI is for validated members — validate your
+tree, or connect your own key," never a silent empty answer. The care-economy logic made
+literal: node AI is a benefit of membership, and membership means a validated living tree
+(or an initiate's standing). Admin in-app toggle for the dial is a coming small change;
+the flag is live and reversible through the config doc today.
+
+---
+
 **2026-08-25 · A place is searched, chosen on a map, or spoken; and the walk waits for later**
 — editing a tree's location was raw Lat/Lng inputs plus a GPS button. Now four ways to the
 same point: SEARCH a place name (new ui/PlaceSearch), TAP it on a map (the existing

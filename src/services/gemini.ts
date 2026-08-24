@@ -1,5 +1,6 @@
 
 import { httpsCallable } from "firebase/functions";
+import { speak } from '../utils/translations';
 import { auth, functions } from "./firebase";
 import { Lifetree, Vision, VisionSynergy } from "../types";
 import type { WateringAnalysis } from "../domain/watering";
@@ -37,6 +38,15 @@ const callGemini = async (prompt: string, model: string = MODEL, config?: any): 
 // makes AI work for everyone by default — not only the people who connected their own key, and
 // not only when the chosen/default intelligence's credential happens to resolve.
 const NODE_CLAUDE_MODEL = 'claude-sonnet-5';
+// The server refuses node-paid AI to unvalidated visitors (node_ai_validated_only). Detect
+// it and re-throw a spoken message so the UI shows it, instead of the silent empty fallback.
+const isValidatedOnlyRefusal = (e: unknown): boolean => {
+    const err = e as { code?: string; message?: string; details?: string } | undefined;
+    return !!err && (String(err.message || '').includes('node_ai_validated_only')
+        || String(err.details || '').includes('node_ai_validated_only')
+        || (err.code === 'functions/permission-denied'));
+};
+
 const nodeFallback = async (
     messages: { role: 'user' | 'model'; text: string }[],
     systemInstruction?: string,
@@ -50,7 +60,10 @@ const nodeFallback = async (
         const res = await fn({ messages, systemInstruction: sys, model: NODE_CLAUDE_MODEL });
         const text = (res.data as any)?.text;
         if (text) return text;
-    } catch (e) { console.warn('AI fallback: node Claude failed', e); }
+    } catch (e) {
+        if (isValidatedOnlyRefusal(e)) throw new Error(speak('node_ai_validated_only'));
+        console.warn('AI fallback: node Claude failed', e);
+    }
     // 2) node Gemini (preserve history + system instruction; honour JSON mode for JSON callers)
     try {
         const gfn = httpsCallable(functions, 'generateAIContent');
@@ -60,7 +73,10 @@ const nodeFallback = async (
         if (convo.length === 0) return '';
         const res = await gfn({ contents: convo, systemInstruction, model: MODEL, config: json ? { responseMimeType: 'application/json' } : undefined });
         return (res.data as any)?.text || '';
-    } catch (e) { console.warn('AI fallback: node Gemini failed', e); return ''; }
+    } catch (e) {
+        if (isValidatedOnlyRefusal(e)) throw new Error(speak('node_ai_validated_only'));
+        console.warn('AI fallback: node Gemini failed', e); return '';
+    }
 };
 
 // Route a text prompt through the active intelligence (an explicit id wins, else the

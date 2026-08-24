@@ -563,6 +563,32 @@ const DAILY_EMAIL_LIMIT = 20;
 // Atomically check + increment a per-user daily counter in the server-only `usage/{uid}` doc, the
 // AUTHORITATIVE gate (the mirrored client counter on the user doc is user-writable, so advisory
 // only). Counters reset on the UTC day boundary. Throws resource-exhausted when the cap is hit.
+// NODE-PAID AI IS A MEMBER BENEFIT (ring 2026-08-25): when a call spends the NODE's own key
+// (no BYO key, not staff), the caller must be a VALIDATED MEMBER — an initiate (git ledger)
+// or the owner of a validated tree. Reversible per node via config/limits.nodeAiValidatedOnly
+// (default ON). BYO-key users and staff are never gated here. Throws a clear, client-shown
+// refusal so an unvalidated visitor is told to connect their own key or get their tree
+// validated, never left with a silent empty answer.
+const isValidatedMember = async (uid: string): Promise<boolean> => {
+    const initiate = await db.collection("initiates").doc(uid).get();
+    if (initiate.exists) return true;
+    const vt = await db.collection("lifetrees").where("ownerId", "==", uid).where("validated", "==", true).limit(1).get();
+    return !vt.empty;
+};
+const nodeAiValidatedOnly = async (): Promise<boolean> => {
+    try {
+        const snap = await db.collection("config").doc("limits").get();
+        const v = snap.exists ? (snap.data() as { nodeAiValidatedOnly?: boolean }).nodeAiValidatedOnly : undefined;
+        return v !== false; // default ON: absent or true = restrict
+    } catch { return true; }
+};
+const gateNodeAi = async (uid: string): Promise<void> => {
+    if (await isStaffUid(uid)) return;
+    if (!(await nodeAiValidatedOnly())) return;
+    if (await isValidatedMember(uid)) return;
+    throw new HttpsError("permission-denied", "node_ai_validated_only");
+};
+
 const enforceDailyQuota = async (uid: string, field: string, limit: number): Promise<void> => {
     const ref = db.collection("usage").doc(uid);
     const day = new Date().toISOString().slice(0, 10); // UTC yyyy-mm-dd
@@ -600,6 +626,7 @@ export const generateAIContent = onCall({
     const modalities = Array.isArray(config?.responseModalities)
         ? config.responseModalities.map((m: any) => String(m).toUpperCase()) : [];
     const isImage = /image/i.test(String(model)) || modalities.includes('IMAGE');
+    await gateNodeAi(request.auth.uid); // node-paid AI: validated members only (config-dialed)
     if (!(await isStaffUid(request.auth.uid))) {
         await enforceDailyQuota(
             request.auth.uid,
@@ -1693,8 +1720,11 @@ export const generateClaudeContent = onCall({
         throw new HttpsError("failed-precondition", "No Claude key is connected for this intelligence yet.");
     }
     // The node free-tier quota applies only when spending the node key; BYO keys are unmetered.
-    if (!usedByoKey && !(await isStaffUid(request.auth.uid))) {
-        await enforceDailyQuota(request.auth.uid, "dailyAiText", NODE_AI_TEXT_LIMIT);
+    if (!usedByoKey) {
+        await gateNodeAi(request.auth.uid); // node-paid AI: validated members only (config-dialed)
+        if (!(await isStaffUid(request.auth.uid))) {
+            await enforceDailyQuota(request.auth.uid, "dailyAiText", NODE_AI_TEXT_LIMIT);
+        }
     }
 
     // Map our transcript (user|model) to Anthropic's (user|assistant); it must open on a user
