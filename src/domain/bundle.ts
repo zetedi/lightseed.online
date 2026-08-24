@@ -31,7 +31,7 @@ export const BUNDLE_FORMAT_VERSION = 1 as const;
 // Chain roots that are NOT another block's hash — a pulse whose previousHash is one of
 // these is its own beginning (person-reaches and standalone records), never a broken link.
 // Mirrored from the services' sentinels; the bundle test greps them true.
-export const NON_CHAIN_ROOTS = new Set(['0', 'PERSON_REACH', 'DECISION', 'EVENT', 'OFFERING', 'COMMUNITY_EVENT', 'WATER_ALERT']);
+export const NON_CHAIN_ROOTS = new Set(['0', 'PERSON_REACH', 'DECISION', 'EVENT', 'OFFERING', 'COMMUNITY_EVENT', 'WATER_ALERT', 'LIGHT_HOUSE']);
 
 // ── The travel plan ─────────────────────────────────────────────────────────────────────
 // One rule per collection signature. `path` uses '*' for id segments ('lifetrees/*/loves');
@@ -84,6 +84,7 @@ export const TRAVEL_PLAN: readonly TravelRule[] = [
   { path: 'pulses', mode: 'verbatim', localUidFields: ['authorId', 'recipientUid', 'participantUids', 'seenBy', 'vetoes', 'proposedBy'] },
   { path: 'pulses/*/loves', mode: 'verbatim', idIsLocalUid: true, localUidFields: ['uid'] },
   { path: 'pulses/*/signatures', mode: 'verbatim', idIsLocalUid: true, deterministicIds: 'signer uid — the doc id IS the signer claim' },
+  { path: 'pulses/*/witnesses', mode: 'verbatim', idIsLocalUid: true, localUidFields: ['uid'], deterministicIds: 'witness uid — the body carries the LID, the true name that survives the crossing' },
   { path: 'covenants', mode: 'verbatim', localUidFields: ['proposedBy'] },
   { path: 'covenants/*/signatures', mode: 'verbatim', idIsLocalUid: true, deterministicIds: 'party uid; carries the pinned pubkey for portable verification' },
   { path: 'communities', mode: 'verbatim', localUidFields: ['ownerId', 'founderUserId'] },

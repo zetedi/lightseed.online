@@ -295,6 +295,46 @@ describe('collabs — staff-curated, world-readable', () => {
   });
 });
 
+describe('the keeper\'s observation — a consecration witnessed, never claimed (ring 2026-08-24)', () => {
+  const seedConsecration = () => env.withSecurityRulesDisabled(async (ctx) => {
+    const d = ctx.firestore();
+    await setDoc(doc(d, 'pulses', 'consecr1'), { authorId: BOB, type: 'observation', care: true, lightHouseId: 'lh1', communityId: 'com1', title: 'Consecration', visibility: 'public', loveCount: 0 });
+    await setDoc(doc(d, 'persons', ALICE), { uid: ALICE, lid: 'alice-true-name', displayName: 'Alice' });
+  });
+  const slot = (w: string) => doc(db(w), 'pulses', 'consecr1', 'witnesses', w);
+
+  it('a keeper who is NOT the consecrator takes their own slot, lid pinned to their person', async () => {
+    await seedConsecration();
+    await assertSucceeds(setDoc(slot(ALICE), { uid: ALICE, lid: 'alice-true-name', name: 'Alice', witnessedAt: serverTimestamp() }));
+  });
+
+  it('a borrowed lid, a foreign slot, and a smuggled field are each refused', async () => {
+    await seedConsecration();
+    await assertFails(setDoc(slot(ALICE), { uid: ALICE, lid: 'stolen-name', witnessedAt: serverTimestamp() }));
+    await assertFails(setDoc(doc(db(ALICE), 'pulses', 'consecr1', 'witnesses', MALLORY), { uid: MALLORY, lid: 'alice-true-name', witnessedAt: serverTimestamp() }));
+    await assertFails(setDoc(slot(ALICE), { uid: ALICE, lid: 'alice-true-name', witnessedAt: serverTimestamp(), keeper: true }));
+  });
+
+  it('the consecrator cannot observe their own ceremony; a non-keeper cannot observe at all', async () => {
+    await seedConsecration();
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'persons', BOB), { uid: BOB, lid: 'bob-true-name' });
+      await setDoc(doc(ctx.firestore(), 'persons', MALLORY), { uid: MALLORY, lid: 'mallory-true-name' });
+      // BOB becomes a keeper of com1 — and is still refused, because he consecrated.
+      await setDoc(doc(ctx.firestore(), 'links', `${BOB}__keeper__com1`), { from: BOB, rel: 'keeper', to: 'com1' });
+    });
+    await assertFails(setDoc(slot(BOB), { uid: BOB, lid: 'bob-true-name', witnessedAt: serverTimestamp() }));
+    await assertFails(setDoc(slot(MALLORY), { uid: MALLORY, lid: 'mallory-true-name', witnessedAt: serverTimestamp() }));
+  });
+
+  it('an observation is append-only — not even its own hand may take it back', async () => {
+    await seedConsecration();
+    await assertSucceeds(setDoc(slot(ALICE), { uid: ALICE, lid: 'alice-true-name', witnessedAt: serverTimestamp() }));
+    await assertFails(deleteDoc(slot(ALICE)));
+    await assertFails(setDoc(slot(ALICE), { uid: ALICE, lid: 'another-name', witnessedAt: serverTimestamp() }));
+  });
+});
+
 describe('grows_in — a tree enters a garden through its door (ring 2026-08-24)', () => {
   const seedGarden = (door?: string) => env.withSecurityRulesDisabled(async (ctx) => {
     const d = ctx.firestore();

@@ -24,6 +24,23 @@ export const isLightHouseKind = (k: unknown): k is LightHouseKind =>
 export const lightHouseKindKey = (k: LightHouseKind) => `lh_kind_${k}` as const;
 export const lightHouseKindDescKey = (k: LightHouseKind) => `lh_kind_${k}_desc` as const;
 
+// CARE FOR A LIGHT HOUSE (ring 2026-08-24) — and, through it, for the community it holds.
+// A care act is a PULSE on the one ledger (previousHash sentinel LIGHT_HOUSE_ROOT — a
+// standalone record, the house has no chain): consecration and a community's step-in are
+// the FOUNDING cares, minted automatically by those acts; plain care may follow. One
+// gesture warms two beings: the house's lastCaredAt and the community's move together.
+// A consecration STANDS OBSERVED only when witnessed by ONE KEEPER of that community who
+// is NOT the consecrator (Zoltán's quorum, the watering precedent) — witnesses are
+// own-slot subcollection docs (pulses/{id}/witnesses is the signatures pattern: doc id =
+// the mortal uid the rules verify, body carries the LID, the true name that survives the
+// crossing). Until observed, the record says so honestly: a ceremony awaiting eyes.
+export const LIGHT_HOUSE_ROOT = 'LIGHT_HOUSE';
+export type LightHouseCareAct = 'consecration' | 'step_in' | 'care';
+// Observation is DERIVED, never stored (the guardian-veto ethic): one non-consecrating
+// keeper's witness slot makes the ceremony stand.
+export const consecrationObserved = (witnessUids: string[], consecratorUid: string): boolean =>
+  witnessUids.some(uid => uid !== consecratorUid);
+
 export interface LightHouse extends Being {
   id: string;
   name: string;
@@ -32,6 +49,7 @@ export interface LightHouse extends Being {
   imageUrl?: string;
   ownerId?: string;        // who consecrated it (rules: owner or staff may edit)
   kind?: string;           // temple | ashram | sanctuary | a kind minted later (see LIGHT_HOUSE_KINDS)
+  lastCaredAt?: Stamp;     // refreshed by every care pulse (consecration, step-in, plain care)
   domain?: string;         // the domain it is rooted in (map + tab scoping)
   communityId?: string;    // primary community — a denormalised scalar the rules read.
                            // FURTHER belonging lives in the LIN: lightHouse __shelters__ community.

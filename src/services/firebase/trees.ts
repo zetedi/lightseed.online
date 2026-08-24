@@ -1,5 +1,6 @@
 import { collection, query, orderBy, getDocs, addDoc, setDoc, serverTimestamp, doc, getDoc, where, updateDoc, deleteDoc, limit, startAfter, QueryDocumentSnapshot, getCountFromServer, Timestamp } from 'firebase/firestore';
 import { announce } from '../refreshBus';
+import { LIGHT_HOUSE_ROOT, type LightHouseCareAct } from '../../domain/lightHouse';
 import { firestoreStore } from '../../adapters/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { type Lifetree, type LightHouse, type TreeOwnershipInvite, type InvitableRole } from '../../types';
@@ -9,7 +10,7 @@ import { BED_DEFAULT_VISIBILITY, BED_TREE_TYPE, bedPlantingProblem, excludeBedTr
 import { uuidv7 } from '../../utils/id';
 import { GENESIS_MOMENT_MS, GENESIS_PLACE } from '../../domain/genesis';
 import { oldEmeraldEarthThemeValues } from '../../utils/theme';
-import { auth, db, functions, mapDoc, lifetreesCollection, visionsCollection, lightHousesCollection } from './core';
+import { auth, db, functions, mapDoc, lifetreesCollection, visionsCollection, lightHousesCollection, pulsesCollection } from './core';
 // getCommunityByDomain lives in ./spaces; trees ↔ spaces is a runtime-safe cycle (both use the
 // import only inside function bodies, so ESM resolves the binding lazily on call).
 import { getCommunityByDomain } from './spaces';
@@ -677,6 +678,8 @@ export const createLightHouse = async (data: Partial<LightHouse> & { name: strin
         lid: uuidv7(),
         createdAt: serverTimestamp(),
     });
+    // Consecration IS the founding care (ring 2026-08-24) — awaiting a keeper's eyes.
+    try { await mintLightHouseCare({ id: ref.id, name: data.name, communityId: data.communityId }, 'consecration', { communityId: data.communityId }); } catch { /* the house stands regardless */ }
     return ref.id;
 };
 
@@ -704,6 +707,74 @@ export const getLightHousesByCommunity = async (communityId: string): Promise<Li
 export const adoptLightHouse = async (lightHouseId: string, communityId: string) => {
     await setDoc(doc(db, 'links', `${lightHouseId}__shelters__${communityId}`),
         { lid: uuidv7(), type: 'link', rel: 'shelters', from: lightHouseId, to: communityId, createdAt: serverTimestamp() });
+    // Stepping in IS a founding care — the record is best-effort, the shelter stands regardless.
+    try { await mintLightHouseCare({ id: lightHouseId, name: '', communityId }, 'step_in', { communityId }); } catch { /* the link is the act */ }
+};
+
+// ── Light House care (ring 2026-08-24) ──────────────────────────────────────────────────
+// A care act is a pulse on the one ledger (standalone LIGHT_HOUSE root — the house has no
+// chain). One gesture warms two beings: the house's lastCaredAt and the community's move
+// together. Consecration and step-in call this automatically — the FOUNDING cares.
+export const mintLightHouseCare = async (
+    lightHouse: Pick<LightHouse, 'id' | 'name' | 'communityId'>,
+    act: LightHouseCareAct,
+    opts?: { communityId?: string },
+): Promise<string> => {
+    const user = auth.currentUser;
+    if (!user) throw new Error('err_signin');
+    const communityId = opts?.communityId || lightHouse.communityId || '';
+    const domain = typeof window !== 'undefined' ? window.location.hostname.toLowerCase().replace(/^www\./, '') : '';
+    const title = act === 'consecration' ? 'Consecration' : act === 'step_in' ? 'Step-in' : 'Care';
+    const payload = {
+        type: 'observation' as const,
+        lightHouseId: lightHouse.id,
+        ...(communityId ? { communityId } : {}),
+        care: true,
+        careAct: act,
+        title,
+        body: '',
+        visibility: 'public' as const,
+        domain,
+        authorId: user.uid,
+        authorName: user.displayName || '',
+    };
+    const hash = await createBlock(LIGHT_HOUSE_ROOT, payload, Date.now());
+    const ref = await addDoc(pulsesCollection, {
+        ...payload, lid: uuidv7(), loveCount: 0, commentCount: 0,
+        previousHash: LIGHT_HOUSE_ROOT, hash, createdAt: serverTimestamp(),
+    });
+    // The touch — best-effort on each being; the record above stands regardless.
+    try { await updateDoc(doc(db, 'lightHouses', lightHouse.id), { lastCaredAt: serverTimestamp(), updatedAt: serverTimestamp() }); } catch { /* not this hand's house */ }
+    if (communityId) {
+        try { await updateDoc(doc(db, 'communities', communityId), { lastCaredAt: serverTimestamp(), updatedAt: serverTimestamp() }); } catch { /* not this hand's community */ }
+    }
+    return ref.id;
+};
+
+// The founding record and its observations — for the house's Consecration card.
+export const getLightHouseCareRecord = async (lightHouseId: string) => {
+    const snap = await getDocs(query(pulsesCollection, where('lightHouseId', '==', lightHouseId), where('care', '==', true)));
+    const pulses = snap.docs.map(d => ({ id: d.id, ...(d.data() as Record<string, unknown>) }))
+        .sort((a, b) => ((a as { createdAt?: { toMillis?: () => number } }).createdAt?.toMillis?.() || 0) - ((b as { createdAt?: { toMillis?: () => number } }).createdAt?.toMillis?.() || 0));
+    const founding = pulses[0] as ({ id: string; authorId?: string; authorName?: string; careAct?: string } | undefined);
+    if (!founding) return null;
+    const witnesses = (await getDocs(collection(db, 'pulses', founding.id, 'witnesses'))).docs
+        .map(d => d.data() as { uid: string; lid: string; name?: string });
+    return { founding, witnesses };
+};
+
+// A keeper observes the consecration — their own slot, their mortal uid as the doc id,
+// their LID (the true name that survives the crossing) aboard. The rules refuse every
+// other shape: another's slot, the consecrator's own hand, a borrowed lid.
+export const witnessLightHouseCare = async (pulseId: string) => {
+    const user = auth.currentUser;
+    if (!user) throw new Error('err_signin');
+    const person = await getDoc(doc(db, 'persons', user.uid));
+    const lid = (person.data() as { lid?: string } | undefined)?.lid;
+    if (!lid) throw new Error('err_no_person');
+    await setDoc(doc(db, 'pulses', pulseId, 'witnesses', user.uid), {
+        uid: user.uid, lid, ...(user.displayName ? { name: user.displayName } : {}), witnessedAt: serverTimestamp(),
+    });
 };
 
 // Move / describe a lightHouse — owner or staff, per the rules. Undefined and empty-string

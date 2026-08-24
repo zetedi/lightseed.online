@@ -6,6 +6,29 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-24 · A house is cared for, and the ceremony is observed** — Zoltán asked to
+care for a Light House, and to build/care for a community THROUGH its house: consecrating
+one, or letting the community step in. Now LAW: a care act is a PULSE on the one ledger
+(standalone LIGHT_HOUSE root — the house has no chain; the bundle law's sentinel mirror
+learned it the day it was born), and ONE GESTURE WARMS TWO BEINGS — the house's
+lastCaredAt and the community's move together, which is the request's exact sentence.
+Consecration and step-in are the FOUNDING cares, minted automatically by those acts; plain
+care may follow from the keeper's or owner's hand. THE OBSERVATION: a consecration STANDS
+only when witnessed by ONE keeper of that community who is NOT the consecrator (Zoltán's
+quorum — the watering precedent, one guardian). Witnesses are OWN-SLOT subcollection docs
+(pulses/{id}/witnesses/{uid} — the signatures pattern): the doc id is the mortal uid the
+rules verify, and the body carries the LID — Zoltán's addition, the true name that
+survives the crossing, PINNED against persons/{uid} so no witness can wear another
+being's name. Field-locked, append-only (not even its own hand may take an observation
+back), the consecrator's own eyes refused, a non-keeper's refused. Observation is DERIVED,
+never stored (the guardian-veto ethic); until observed the card says so honestly:
+"awaiting a keeper's eyes." NOT LAW YET: any consequence of standing unobserved — no
+validation gate, no light minted; those are later rungs, as watering's light was.
+REJECTED: witness uids in an array overlay (a bare-uid list would need re-anchoring at
+the crossing; slots with lids aboard are portable provenance).
+
+---
+
 **2026-08-24 · One tree, many gardens — through each garden's own door** — the Bigeh
 planting will spawn communities around trees planted together, and Zoltán asked for
 multiple lifetree–domain links. The root answered before we did: RELATIONSHIPS ARE LINKS,

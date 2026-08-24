@@ -1125,6 +1125,28 @@ service cloud.firestore {
         allow update: if false;
         allow delete: if isStaff();
       }
+
+      // THE KEEPER'S OBSERVATION (ring 2026-08-24) — a consecration/step-in care stands
+      // OBSERVED when ONE keeper of the community, NOT the consecrator, takes their own
+      // witness slot. The signatures pattern: doc id = the mortal uid the rules verify;
+      // the body carries the LID — the true name that survives the crossing — pinned
+      // against persons/{uid} so no witness can wear another being's name. Append-only:
+      // an observation can be neither forged, transferred, nor erased.
+      match /witnesses/{witnessUid} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && witnessUid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['uid', 'lid', 'name', 'witnessedAt'])
+          && request.resource.data.get('uid', '') == request.auth.uid
+          && request.resource.data.get('lid', '')
+               == get(/databases/$(database)/documents/persons/$(request.auth.uid)).data.get('lid', '__none__')
+          && request.resource.data.get('witnessedAt', null) == request.time
+          && get(/databases/$(database)/documents/pulses/$(pulseId)).data.get('care', '') == true
+          && get(/databases/$(database)/documents/pulses/$(pulseId)).data.get('lightHouseId', '') != ''
+          && get(/databases/$(database)/documents/pulses/$(pulseId)).data.get('authorId', '') != request.auth.uid
+          && isCommunityKeeper(get(/databases/$(database)/documents/pulses/$(pulseId)).data.get('communityId', ''));
+        allow update: if false;
+        allow delete: if isStaff();
+      }
     }
 
     // Alignments: Read public, Write signed in
@@ -1301,6 +1323,11 @@ service cloud.firestore {
       // consecrates for their community still signs as themself).
       allow create: if isSignedIn()
         && (isStaff() || request.resource.data.get('ownerId', '') == request.auth.uid);
+      // CARE TOUCH (ring 2026-08-24): the primary community's keeper may refresh
+      // lastCaredAt alone — a step-in care warms a house its keeper does not own.
+      allow update: if isSignedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastCaredAt', 'updatedAt'])
+        && isCommunityKeeper(resource.data.get('communityId', ''));
       // Belonging is LIN edges now (lightHouse __shelters__ community) — no array clause.
       // The lid (the true name, load-bearing for QR links) is frozen on every update path.
       allow update: if isSignedIn() && (

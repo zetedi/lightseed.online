@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { LightHouseCareCard } from './LightHouseCareCard';
 import { Icons } from './ui/Icons';
 import { ProfileHero } from './ui/ProfileHero';
 import { ProfileLayout } from './ui/ProfileLayout';
@@ -205,6 +206,8 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
                 {section === 'about' && (
                     <div className="space-y-6">
                         <SectionTitle title="About this Light House" sub="The place, its story, and its doors." />
+                        {/* The founding care and its observation — the ceremony that makes it stand. */}
+                        <LightHouseCareCard lightHouse={lightHouse} currentUserId={viewerUid} />
                         {lightHouse.body ? (
                             <div className="rounded-2xl border border-slate-100 bg-white p-5 sm:p-6 shadow-lg">
                                 <p dir="auto" className="whitespace-pre-line text-justify font-serif text-lg leading-relaxed text-slate-700">{lightHouse.body}</p>
