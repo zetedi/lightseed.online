@@ -11,7 +11,7 @@ import { Icons } from '../ui/Icons';
 // speaks both vocabularies — a community's name and its domain — because "add
 // lightseed.online to this tree" and "add The Node" are the same wish. The community's
 // own door decides the gesture: open → the owner steps in; else the keeper welcomes.
-export const TreeGardens = ({ tree, isOwner }: { tree: Lifetree; isOwner: boolean }) => {
+export const TreeGardens = ({ tree, canManage }: { tree: Lifetree; canManage: boolean }) => {
   const { t } = useLanguage();
   const [all, setAll] = useState<Community[]>([]);
   const [standingIds, setStandingIds] = useState<string[]>([]);
@@ -58,7 +58,7 @@ export const TreeGardens = ({ tree, isOwner }: { tree: Lifetree; isOwner: boolea
     setBusy(null);
   };
 
-  if (!isOwner && standing.length === 0) return null;
+  if (!canManage && standing.length === 0) return null;
 
   return (
     <div className="mt-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
@@ -72,7 +72,7 @@ export const TreeGardens = ({ tree, isOwner }: { tree: Lifetree; isOwner: boolea
             <span key={c.id} className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800">
               {c.name}
               <span className="font-mono text-[10px] font-normal text-emerald-600/80">{c.domain}</span>
-              {isOwner && (
+              {canManage && (
                 <button type="button" disabled={busy === c.id} onClick={() => withdraw(c)}
                   className="ml-0.5 rounded-full text-emerald-500 transition-colors hover:text-red-500" aria-label={`${t('remove')} ${c.name}`}>
                   ×
@@ -82,7 +82,7 @@ export const TreeGardens = ({ tree, isOwner }: { tree: Lifetree; isOwner: boolea
           ))}
         </div>
       )}
-      {isOwner && (
+      {canManage && (
         <div className="relative mt-3">
           <input dir="auto" value={term} onChange={e => setTerm(e.target.value)} placeholder={t('garden_search_ph')}
             className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400" />

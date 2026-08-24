@@ -1540,7 +1540,9 @@ service cloud.firestore {
         || (isSignedIn() && request.resource.data.rel == 'grows_in'
             && exists(/databases/$(database)/documents/lifetrees/$(request.resource.data.from))
             && (
-              (isTreeOwner(request.resource.data.from) && communityDoor(request.resource.data.to) == 'open')
+              // A tree CARER (owner/co_owner/steward) steps into an open-door garden;
+              // any door, the community's keeper welcomes the tree (ring 2026-08-25).
+              (isTreeCarer(request.resource.data.from) && communityDoor(request.resource.data.to) == 'open')
               || isCommunityKeeper(request.resource.data.to)
             ))
         // Rooting: a lightHouse's keeper roots THEIR lightHouse in a tree (from = lightHouse id).
@@ -1604,9 +1606,9 @@ service cloud.firestore {
           && resource.data.get('rel', '') != 'party')
         || isStaff()
         || (resource.data.get('rel', '') == 'participant' && isTreeOwner(resource.data.from))
-        // grows_in: the owner withdraws their tree, or the keeper curates their garden.
+        // grows_in: a tree carer withdraws their tree, or the keeper curates their garden.
         || (resource.data.get('rel', '') == 'grows_in'
-            && (isTreeOwner(resource.data.from) || isCommunityKeeper(resource.data.to)))
+            && (isTreeCarer(resource.data.from) || isCommunityKeeper(resource.data.to)))
         || (resource.data.get('rel', '') in ['rooted', 'shelters']
             && exists(/databases/$(database)/documents/lightHouses/$(resource.data.from))
             && get(/databases/$(database)/documents/lightHouses/$(resource.data.from)).data.ownerId == request.auth.uid)
