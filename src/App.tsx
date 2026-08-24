@@ -507,6 +507,9 @@ const AppContent = () => {
     };
 
     const openReach = (tree: Lifetree | null, audience?: ReachAudience) => {
+        // You reach FROM your own tree, so reaching needs a signed-in hand. Rather than open
+        // a modal that cannot send, say so and offer the door (ring 2026-08-25).
+        if (!lightseed?.uid) { notify(speak('reach_needs_signin')); setShowAuthModal(true); return; }
         setSelectedTree(null);
         setReachTree(tree);
         setReachAudience(audience);
