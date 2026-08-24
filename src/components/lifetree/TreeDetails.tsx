@@ -221,7 +221,7 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                     </span>
                 </div>
                  <div className="flex items-center gap-4 py-2">
-                    <span className="w-24 shrink-0 text-slate-500 text-sm">{t('website')}</span>
+                    <span className="w-24 shrink-0 text-slate-500 text-sm">{t('tree_domain_label')}</span>
                     {isEditing ? (
                         <AutocompleteInput
                             label="Community Hub"

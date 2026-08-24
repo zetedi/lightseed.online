@@ -355,6 +355,16 @@ describe('grows_in — a tree enters a garden through its door (ring 2026-08-24)
     await assertSucceeds(setDoc(doc(db(ALICE), 'links', 'bobsTree__grows_in__garden1'), edge));
   });
 
+  it('a tree CARER (co_owner/steward), not only the owner, may stand it in an open garden', async () => {
+    await seedGarden('open');
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      // MALLORY is a co_owner (carer) of bobsTree — a keeper, not the owner.
+      await setDoc(doc(ctx.firestore(), 'links', `${MALLORY}__co_owner__bobsTree`), { from: MALLORY, rel: 'co_owner', to: 'bobsTree' });
+    });
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'links', 'bobsTree__grows_in__garden1'), edge));
+    await assertSucceeds(deleteDoc(doc(db(MALLORY), 'links', 'bobsTree__grows_in__garden1'))); // the carer withdraws
+  });
+
   it('a ghost tree earns no edge, and either side may withdraw — a stranger may not', async () => {
     await seedGarden('open');
     await assertFails(setDoc(doc(db(ALICE), 'links', 'ghostTree__grows_in__garden1'), { from: 'ghostTree', rel: 'grows_in', to: 'garden1' }));
