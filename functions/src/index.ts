@@ -12,6 +12,7 @@ import {
 } from "node:crypto";
 import { judgeWitness, kindleDayKeyFromMs, uuidv7, releaseRay } from "./mint";
 import { entryFor, COLLECTION_FOR_KIND } from "./beingIndex";
+import { faceFeedOf, feedDomainOf } from "./faceEvents";
 
 // Every lid a server function mints is a UUIDv7 (the LIN invariant: a Being's true name is
 // time-ordered and portable). node:crypto supplies the randomness; mint.ts the pure algorithm.
@@ -2496,6 +2497,37 @@ export const sitemap = onRequest(async (req, res) => {
     } catch (e) {
         console.error("sitemap failed:", e);
         res.status(200).send(xmlOf([home])); // never a broken sitemap — home alone stands
+    }
+});
+
+// --- FACE EVENTS -------------------------------------------------------------------------
+// /faceEvents(?domain=...) — the node speaking a face's happenings to whoever stands at it.
+// The hybrid shape gave every mother site a plain <a> INTO the seed; this is the seed's
+// voice travelling BACK: a JSON feed of one face's public AND node events, for any domain
+// with a cradle (a community rooted by `domain` or answering at a `domainAliases` door).
+// A visitor at the face IS at the node — so node-visibility gatherings greet them here —
+// while firestore.rules stay strict for raw anonymous queries (the 2026-08-24 tightening).
+// The law of what may ride the feed lives in domain/faceEvents (mirrored in ./faceEvents);
+// this endpoint owns only the plumbing. Cached like beingPreview so bot knocks stay cheap.
+export const faceEvents = onRequest({ cors: true }, async (req, res) => {
+    res.set("Cache-Control", "public, max-age=300, s-maxage=600");
+    const domain = feedDomainOf(req.query.domain, canonicalHost(req));
+    if (!domain) { res.status(400).json({ error: "domain" }); return; }
+    try {
+        // A face answers by its NAME or at a DOOR — the same fallback as getCommunityByDomain.
+        let cradle = await db.collection("communities").where("domain", "==", domain).limit(1).get();
+        if (cradle.empty) cradle = await db.collection("communities").where("domainAliases", "array-contains", domain).limit(1).get();
+        if (cradle.empty) { res.status(404).json({ error: "no cradle at this domain", events: [] }); return; }
+        const home = String(cradle.docs[0].data().domain || domain);
+        const pulses = await db.collection("pulses")
+            .where("domain", "==", home)
+            .where("type", "==", "event")
+            .limit(200)
+            .get();
+        res.status(200).json({ domain: home, events: faceFeedOf(pulses.docs.map((d) => d.data() as Record<string, unknown>)) });
+    } catch (e) {
+        console.error("faceEvents failed:", e);
+        res.status(200).json({ domain, events: [] }); // never a broken feed — silence stands in
     }
 });
 

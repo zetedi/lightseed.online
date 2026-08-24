@@ -6,6 +6,25 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-25 · The cradle feed: a face speaks its happenings to whoever stands at it** —
+the rules tightening proved node events invisible to signed-out visitors of the node's own
+doors: correct at the data layer, wrong at the doorstep. Rather than loosen the rules, the
+node gained a voice: /faceEvents (rewritten on every face, beside the /b/ and /u/ doors)
+serves any domain with a cradle — a community rooted by `domain` or answering at a
+`domainAliases` door — a JSON feed of that face's public AND node events, because a
+visitor standing at the face IS at the node. The law of what may ride the feed lives in
+domain/faceEvents (public and node pass; absence is legacy-public; MALFORMED visibility
+falls sealed — a test caught the first draft treating it as public), mirrored in
+functions/src/faceEvents.ts the beingIndex way and held true by tests/faceEvents.test.ts
+importing both. The visibility tiers now read plainly: public travels anywhere, node
+greets anyone standing at the face's own door, everything narrower stays behind the rules.
+First drinker: the theohouse.org mother site — the hybrid shape's door swings both ways
+now. REJECTED: a rules carve-out letting anonymous queries read node visibility (it would
+collapse public/node into one tier at the data layer for every scraper on earth, not just
+the face's own visitors).
+
+---
+
 **2026-08-25 · The AI dial gets a knob** — the node-AI gate's config flag
 (nodeAiValidatedOnly) is now toggleable in-app: Profile → Admin → Planting limits, a
 switch beside the caps. It writes through a FIELD-SCOPED setter (setNodeAiValidatedOnly)

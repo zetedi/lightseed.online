@@ -46,13 +46,17 @@
           "function": "sitemap"
         },
         {
+          "source": "/faceEvents",
+          "function": "faceEvents"
+        },
+        {
           "source": "**",
           "destination": "/index.html"
         }
       ],
       "headers": [
         {
-          "comment": "Fingerprinted assets never change — cache them forever.",
+          "comment": "Fingerprinted assets never change \u2014 cache them forever.",
           "source": "/assets/**",
           "headers": [
             {
@@ -99,6 +103,10 @@
         {
           "source": "/b/**",
           "function": "beingPreview"
+        },
+        {
+          "source": "/faceEvents",
+          "function": "faceEvents"
         },
         {
           "source": "**",
@@ -153,6 +161,10 @@
           "function": "beingPreview"
         },
         {
+          "source": "/faceEvents",
+          "function": "faceEvents"
+        },
+        {
           "source": "**",
           "destination": "/index.html"
         }
@@ -203,6 +215,10 @@
         {
           "source": "/b/**",
           "function": "beingPreview"
+        },
+        {
+          "source": "/faceEvents",
+          "function": "faceEvents"
         },
         {
           "source": "**",
