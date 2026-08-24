@@ -33,6 +33,9 @@ export interface NodeLimits {
   maxGuardedTrees: number;
   maxNodeFaces: number;
   maxNodeCommunities: number;
+  // The AI dial (ring 2026-08-25): node-paid default AI for validated members only.
+  // Default ON (true); a node opens its AI wider by setting this false.
+  nodeAiValidatedOnly: boolean;
 }
 
 export const DEFAULT_NODE_LIMITS: NodeLimits = {
@@ -40,6 +43,7 @@ export const DEFAULT_NODE_LIMITS: NodeLimits = {
   maxGuardedTrees: DEFAULT_MAX_GUARDED_TREES,
   maxNodeFaces: DEFAULT_MAX_NODE_FACES,
   maxNodeCommunities: DEFAULT_MAX_NODE_COMMUNITIES,
+  nodeAiValidatedOnly: true,
 };
 
 // Coerce whatever the config doc holds into sane caps (missing/invalid → defaults).
@@ -53,6 +57,8 @@ export const normalizeNodeLimits = (raw: any): NodeLimits => {
     maxGuardedTrees: num(raw?.maxGuardedTrees, DEFAULT_MAX_GUARDED_TREES),
     maxNodeFaces: num(raw?.maxNodeFaces, DEFAULT_MAX_NODE_FACES),
     maxNodeCommunities: num(raw?.maxNodeCommunities, DEFAULT_MAX_NODE_COMMUNITIES),
+    // Boolean, default ON: only an explicit false opens the node's AI.
+    nodeAiValidatedOnly: raw?.nodeAiValidatedOnly !== false,
   };
 };
 

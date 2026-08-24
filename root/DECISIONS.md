@@ -6,6 +6,17 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-25 · The AI dial gets a knob** — the node-AI gate's config flag
+(nodeAiValidatedOnly) is now toggleable in-app: Profile → Admin → Planting limits, a
+switch beside the caps. It writes through a FIELD-SCOPED setter (setNodeAiValidatedOnly)
+that merges ONLY that one key, so flipping the AI dial never disturbs the numeric fullness
+caps sitting in the same config/limits doc (setNodeLimits normalizes-and-merges all fields,
+which would have reset unspecified caps — the toggle sidesteps that entirely). Default
+stays ON; the server reads the same field it always did. Nothing about the gate's meaning
+changed — only that a node keeper can now open or close their AI without a script.
+
+---
+
 **2026-08-25 · The node's AI is a member's benefit** — a node pays for its default AI (the
 node-key path in generateClaudeContent/generateAIContent), so unvalidated visitors could
 burn that budget freely. Now GATED, server-side (unbypassable): when a call spends the

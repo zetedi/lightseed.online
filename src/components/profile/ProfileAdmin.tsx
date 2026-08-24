@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { showAlert, showConfirm } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
-import { getAdmins, deleteUserAsAdmin, listUsersAsAdmin, triggerSystemEmail, getNodeLimits, setNodeLimits } from '../../services/firebase';
+import { getAdmins, deleteUserAsAdmin, listUsersAsAdmin, triggerSystemEmail, getNodeLimits, setNodeLimits, setNodeAiValidatedOnly } from '../../services/firebase';
 import { resetLight } from '../../services/firebase/light';
 import { backfillLidIndex } from '../../services/firebase/beings';
 import type { AdminUserRow } from '../../services/firebase';
@@ -54,6 +54,8 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
   const [maxLifetrees, setMaxLifetrees] = useState(DEFAULT_NODE_LIMITS.maxLifetrees);
   const [maxGuardedTrees, setMaxGuardedTrees] = useState(DEFAULT_NODE_LIMITS.maxGuardedTrees);
   const [savingLimits, setSavingLimits] = useState(false);
+  const [aiValidatedOnly, setAiValidatedOnly] = useState(DEFAULT_NODE_LIMITS.nodeAiValidatedOnly);
+  const [savingAiDial, setSavingAiDial] = useState(false);
 
   useEffect(() => {
     if (isSuperAdmin) { getAdmins().then(setAdmins); }
@@ -61,7 +63,7 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
 
   useEffect(() => {
     if (!isAdmin && !isSuperAdmin) return;
-    getNodeLimits().then(l => { setMaxLifetrees(l.maxLifetrees); setMaxGuardedTrees(l.maxGuardedTrees); }).catch(() => undefined);
+    getNodeLimits().then(l => { setMaxLifetrees(l.maxLifetrees); setMaxGuardedTrees(l.maxGuardedTrees); setAiValidatedOnly(l.nodeAiValidatedOnly); }).catch(() => undefined);
   }, [isAdmin, isSuperAdmin]);
 
   const handleSaveLimits = async () => {
@@ -221,6 +223,27 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
             <button onClick={handleSaveLimits} disabled={savingLimits || maxLifetrees < 1 || maxGuardedTrees < 1}
               className="rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold px-4 py-2 transition-colors">
               {savingLimits ? 'Saving…' : 'Save limits'}
+            </button>
+          </div>
+          {/* The AI dial — node-paid default AI for validated members only (ring 2026-08-25).
+              Its own field-scoped save, so it never disturbs the caps above. */}
+          <div className="mt-2 flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500"><Icons.Intelligence /></span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-slate-800">{t('ai_dial_title')}</p>
+              <p className="mt-0.5 text-sm text-slate-500">{t('ai_dial_hint')}</p>
+            </div>
+            <button
+              role="switch" aria-checked={aiValidatedOnly} disabled={savingAiDial}
+              onClick={async () => {
+                const next = !aiValidatedOnly;
+                setSavingAiDial(true); setAiValidatedOnly(next);
+                try { await setNodeAiValidatedOnly(next); }
+                catch (e: any) { setAiValidatedOnly(!next); notify(e?.message || 'Could not save.'); }
+                setSavingAiDial(false);
+              }}
+              className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${aiValidatedOnly ? 'bg-emerald-600' : 'bg-slate-300'}`}>
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${aiValidatedOnly ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
           </div>
         </div>

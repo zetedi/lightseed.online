@@ -223,6 +223,11 @@ export const getNodeLimits = async (): Promise<NodeLimits> => {
 export const setNodeLimits = (limits: Partial<NodeLimits>) =>
     setDoc(doc(db, 'config', 'limits'), normalizeNodeLimits(limits) as any, { merge: true });
 
+// The AI dial alone (ring 2026-08-25) — a targeted merge that writes ONLY nodeAiValidatedOnly,
+// so toggling the node's AI never disturbs the planting/fullness caps beside it in config/limits.
+export const setNodeAiValidatedOnly = (value: boolean) =>
+    setDoc(doc(db, 'config', 'limits'), { nodeAiValidatedOnly: value }, { merge: true });
+
 export const plantLifetree = async (data: Partial<Lifetree> & { ownerId: string; name: string; body?: string }) => {
     // Quality, not quantity: the node's caps (or the 12 + 132 = 144 defaults) per being.
     const plantingType: 'LIFETREE' | 'GUARDED' = (data.treeType as any) || (data.isNature ? 'GUARDED' : 'LIFETREE');
