@@ -198,7 +198,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
             setMessages([]);
             setInterpretations({});
             setIsTyping(true);
-            fetchThreadById(groupThread.threadId)
+            fetchThreadById(groupThread.threadId, lightseed?.uid)
                 .then(pulses => {
                     if (cancelled) return;
                     const latest = pulses[pulses.length - 1];
@@ -232,7 +232,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
 
             const load = audience && lightseed
                 // Group: a deterministic per-initiator thread; sendReach lands every message here.
-                ? fetchThreadById(['grp', partner.id, audience, lightseed.uid].join('__'))
+                ? fetchThreadById(['grp', partner.id, audience, lightseed.uid].join('__'), lightseed.uid)
                 // 1:1: my conversation with the tree's owner.
                 : fetchReachThread(partner.id, { uid: lightseed?.uid, treeIds: myTreeIds });
 

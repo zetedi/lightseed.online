@@ -3,7 +3,7 @@ import { httpsCallable } from 'firebase/functions';
 import { type Pulse, type Vision, type Community, type Being, type CommunityInvite } from '../../types';
 import { uuidv7 } from '../../utils/id';
 import { type PulseVisibility } from '../../domain/pulse';
-import { db, functions, toMillis, mapDoc, lifetreesCollection, visionsCollection, pulsesCollection, communitiesCollection, lightHousesCollection, communityInvitesCollection } from './core';
+import { db, functions, toMillis, mapDoc, lifetreesCollection, visionsCollection, pulsesCollection, communitiesCollection, lightHousesCollection, communityInvitesCollection, auth } from './core';
 import { firestoreStore } from '../../adapters/firestore';
 import { nodeCapacityGate, DEFAULT_NODE_LIMITS } from '../../domain/limits';
 import { getNodeLimits } from './trees';
@@ -107,8 +107,16 @@ export const getVisionById = async (id: string): Promise<Vision | null> => {
 // guarded-tree Root Vision has neither pulses nor links, so for it this is simply a plain delete.
 export const deleteVision = async (id: string) => {
     try {
-        const pulses = await getDocs(query(pulsesCollection, where('visionId', '==', id)));
-        await Promise.all(pulses.docs.map(d => deleteDoc(d.ref).catch(() => { /* not mine to remove */ })));
+        // A non-staff caller may only delete their OWN contribution pulses, so query by
+        // authorId (canListPulse-provable) and match visionId client-side; a visionId-only
+        // list is refused by the hardened rule for non-staff (ring 2026-08-25).
+        const uid = auth.currentUser?.uid;
+        const pulses = uid
+            ? await getDocs(query(pulsesCollection, where('authorId', '==', uid)))
+            : { docs: [] as QueryDocumentSnapshot[] };
+        await Promise.all(pulses.docs
+            .filter(d => (d.data() as { visionId?: string }).visionId === id)
+            .map(d => deleteDoc(d.ref).catch(() => { /* not mine to remove */ })));
     } catch { /* contribution pulses unreadable — leave them */ }
     try {
         const links = await getDocs(query(collection(db, 'links'), where('to', '==', id)));

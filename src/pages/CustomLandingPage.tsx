@@ -51,12 +51,12 @@ export const CustomLandingPage: React.FC<CustomLandingPageProps> = ({
 
   // Events of this PLACE = everything stamped with its domain (community-scoped events and
   // node-scope ones created while standing on the domain alike). Visibility-scoped.
+  // public+node only: a domain-scoped event list pins DOMAIN, not communityId, so
+  // canListPulse cannot prove a community-visibility doc here (ring 2026-08-25). Community-
+  // only events surface through the community's own (communityId-pinned) event reader.
   const levels = community.reflectsPublic === true
     ? queryableLevels({})
-    : queryableLevels(
-        { uid: lightseed?.uid, isStaff: false, communityIds: lightseed ? [community.id] : [] },
-        { communityId: community.id },
-      );
+    : queryableLevels({ uid: lightseed?.uid });
   const levelsKey = levels.join(',');
   const loadEvents = useCallback(
     () => fetchEventPulses(

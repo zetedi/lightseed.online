@@ -9,6 +9,12 @@ import { isExplicitlyValidatedTree } from '../../utils/validation';
 import { buildThreadId, buildGroupThreadId, reachAudienceLabels } from '../../utils/reachPermissions';
 import { db, auth, toMillis, mapDoc, mapPulse, pulsesCollection } from './core';
 
+// The visibility levels a plain (viewer-agnostic) list query may request and PROVE to
+// canListPulse: 'public' always, 'node' once signed in. Timelines that pin a communityId or
+// lifetreeId can widen to community/circle via their own viewer-aware callers; these generic
+// readers stay at the provable floor so no query is ever refused (ring 2026-08-25).
+const listableLevels = (): PulseVisibility[] => (auth.currentUser ? ['public', 'node'] : ['public']);
+
 // RETRACT a reach message of your own: the mark, never the erasure. A tree-sent reach is a
 // block on the sender's chain, so the doc (and its text, hashed on locked chains) stands
 // forever — but the room stops showing it. Rules overlay (h) binds this to the author.
@@ -183,8 +189,9 @@ export const fetchReachThread = async (
     const [outgoing, incoming, legacy] = await Promise.all([
         getDocs(query(pulsesCollection, where('authorId', '==', myUid), where('reachTreeId', '==', partnerId))),
         getDocs(query(pulsesCollection, where('recipientUid', '==', myUid), where('lifetreeId', '==', partnerId))),
-        // Legacy 'tree_chat' pulses (no recipientUid) stayed world-readable; keep showing them.
-        getDocs(query(pulsesCollection, where('chatTreeId', '==', partnerId))),
+        // Legacy 'tree_chat' pulses (no recipientUid, no visibility) are un-provable to the
+        // hardened list rule — isolate so a denial degrades to empty, never poisons the thread.
+        getDocs(query(pulsesCollection, where('chatTreeId', '==', partnerId))).catch(() => ({ docs: [] as QueryDocumentSnapshot[] })),
     ]);
     const byId = new Map<string, Pulse>();
     [...outgoing.docs, ...incoming.docs, ...legacy.docs].forEach(d => {
@@ -197,9 +204,11 @@ export const fetchReachThread = async (
 // Load every message in one thread (1:1 or group) by its threadId, oldest first. Used to
 // open a thread chosen from the inbox. The rules confine reach reads to participants, so a
 // returned thread is only ever one the viewer belongs to.
-export const fetchThreadById = async (threadId: string) => {
-    if (!threadId) return [];
-    const snap = await getDocs(query(pulsesCollection, where('threadId', '==', threadId)));
+export const fetchThreadById = async (threadId: string, viewerUid?: string) => {
+    if (!threadId || !viewerUid) return [];
+    // Pin the viewer: every message in a thread they belong to carries them in
+    // participantUids, so this is lossless and canListPulse-provable. (threadId, participantUids).
+    const snap = await getDocs(query(pulsesCollection, where('threadId', '==', threadId), where('participantUids', 'array-contains', viewerUid)));
     return snap.docs
         .map(d => (mapDoc(d) as Pulse))
         .filter(isReachPulse)
@@ -236,13 +245,9 @@ export const listenToMyReaches = (uid: string, callback: (pulses: Pulse[]) => vo
 // Live stream of reaches addressed to any of my trees. Belt-and-braces alongside
 // listenToMyReaches: catches incoming reaches even when a legacy/edge send did not
 // capture recipientUid, so the recipient still gets notified. Firestore 'in' caps at 10.
-export const listenToReachesForTrees = (treeIds: string[], callback: (pulses: Pulse[]) => void) => {
-    const ids = treeIds.filter(Boolean).slice(0, 10);
-    if (ids.length === 0) { callback([]); return () => {}; }
-    return onSnapshot(query(pulsesCollection, where('reachTreeId', 'in', ids)), (snap) => {
-        callback(snap.docs.map(d => (mapDoc(d) as Pulse)).filter(isReachPulse));
-    });
-};
+// RETIRED (ring 2026-08-25): a reachTreeId-`in` listener is un-provable to canListPulse and
+// redundant — listenToMyReaches already surfaces every reach addressed to me (participantUids).
+// The nav's unread indicator now stands on that one honest listener.
 
 export const markReachesSeen = async (pulseIds: string[], uid: string) => {
     await Promise.all(pulseIds.map(id =>
@@ -471,32 +476,32 @@ export const getMyPulses = async (uid: string) => (await getDocs(query(pulsesCol
 // Tree growth pulses — canonical 'tree_growth' plus legacy 'GROWTH' (until migration runs). Old
 // VISION growths ('growth'/'vision_growth') are deliberately excluded, so there is no transition
 // window where they leak into a tree's growth timeline.
-export const fetchGrowthPulses = async (treeId: string) => (await getDocs(query(pulsesCollection, where('lifetreeId', '==', treeId), where('type', 'in', ['tree_growth', 'GROWTH'])))).docs.map(mapPulse).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+export const fetchGrowthPulses = async (treeId: string) => (await getDocs(query(pulsesCollection, where('lifetreeId', '==', treeId), where('type', 'in', ['tree_growth', 'GROWTH']), where('visibility', '==', 'public')))).docs.map(mapPulse).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 
 // A vision's CONTRIBUTIONS — every pulse tagged with this visionId, newest first. This surfaces
 // BOTH the vision's own chain (new growVision blocks) AND the historical vision_growth pulses that
 // were once sealed onto the rooted tree (they still carry visionId) — so the idea-twin's timeline
 // stays whole across the divergence. Single-field equality + client sort (no composite index).
 export const getPulsesByVisionId = async (visionId: string) => {
-    const snap = await getDocs(query(pulsesCollection, where('visionId', '==', visionId)));
+    const snap = await getDocs(query(pulsesCollection, where('visionId', '==', visionId), where('visibility', 'in', listableLevels())));
     return snap.docs.map(mapPulse).sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 };
 
 // A community's own chain: the pulses scoped to it (events, decisions, offerings), newest first.
 // Reaches never carry a communityId, so the DM exclusion the tree query needs isn't required here.
 export const getPulsesByCommunity = async (communityId: string) => {
-    const snap = await getDocs(query(pulsesCollection, where('communityId', '==', communityId)));
+    const snap = await getDocs(query(pulsesCollection, where('communityId', '==', communityId), where('visibility', 'in', listableLevels())));
     return snap.docs.map(mapPulse).sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 };
 
 export const getPulsesByTreeId = async (treeId: string) => {
-    // Exclude reaches/tree_chat: they are private DMs minted onto the sender tree's chain, so
-    // a tree's public timeline must never surface them — and (since they are now readable only
-    // by their participants) a broad lifetreeId query that returned one would be rejected by the
-    // rules for any other viewer, breaking the whole tree page. Needs the (lifetreeId, type) index.
-    const q = query(pulsesCollection, where('lifetreeId', '==', treeId), where('type', 'not-in', ['reach', 'tree_chat']));
+    // The tree's public timeline. canListPulse proves a list from its constraints, so the
+    // query pins VISIBILITY (public, or +node when signed in); reaches/tree_chat are DMs and
+    // are filtered out CLIENT-side (Firestore forbids `type not-in` beside `visibility in`).
+    // Needs the (lifetreeId, visibility) index.
+    const q = query(pulsesCollection, where('lifetreeId', '==', treeId), where('visibility', 'in', listableLevels()));
     const snap = await getDocs(q);
-    const pulses = snap.docs.map(mapPulse);
+    const pulses = snap.docs.map(mapPulse).filter(p => p.type !== 'reach' && (p as { type?: string }).type !== 'tree_chat');
     // Sort Descending (Newest -> Oldest/Genesis) so the timeline can be rendered top-down
     return pulses.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Lifetree, Lightseed, Pulse } from '../types';
-import { listenToMyReaches, listenToReachesForTrees } from '../services/firebase';
+import { listenToMyReaches } from '../services/firebase';
 
 // The live unread-reach count powering the nav's red envelope indicator. Two Firestore listeners —
 // reaches addressed to me (recipientUid) AND reaches aimed at any of my trees (reachTreeId, a safety
@@ -32,12 +32,7 @@ export function useReaches(lightseed: Lightseed | null, myTrees: Lifetree[]): nu
       pulses.forEach(p => byRecipient.set(p.id, p));
       recompute();
     });
-    const unsubTrees = listenToReachesForTrees(myTreeIdsKey ? myTreeIdsKey.split(',') : [], (pulses) => {
-      byTree.clear();
-      pulses.forEach(p => byTree.set(p.id, p));
-      recompute();
-    });
-    return () => { unsubRecipient(); unsubTrees(); };
+    return () => { unsubRecipient(); };
   }, [uid, myTreeIdsKey]);
 
   return unreadReaches;

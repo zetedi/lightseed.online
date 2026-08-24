@@ -178,6 +178,31 @@ service cloud.firestore {
              resource.data.get('participantUids', null) != null
              || resource.data.get('recipientUid', null) != null);
     }
+    // LIST proves safety from the QUERY'S CONSTRAINTS, never per-document (a list rule
+    // cannot filter — it allows or denies the whole query). Default 'unlisted' (NOT the get
+    // rule's 'public'): an UNCONSTRAINED list proves no readable level and is refused, so a
+    // caller must pin what they may see. THIS closes the leak reported from the other side —
+    // an anonymous `type==event` with no visibility filter returned private events in full,
+    // because canReadPulse's 'public' default made the unconstrained list provably true.
+    // Every branch is satisfiable only when the query pins it: the public feed pins
+    // visibility=='public'; the node feed pins visibility in [public,node]; own pulses pin
+    // authorId==uid; the inbox pins participantUids array-contains uid; a 1:1 reach pins
+    // recipientUid==uid. Staff is a lookup, provable for any query. (After the visibility
+    // backfill every pulse carries the field, so visibility-pinned queries drop nothing.)
+    function canListPulse() {
+      return resource.data.get('visibility', 'unlisted') == 'public'
+        || (isSignedIn() && (
+             isStaff()
+             || resource.data.get('visibility', 'unlisted') == 'node'
+             || resource.data.get('authorId', '') == request.auth.uid
+             || request.auth.uid in resource.data.get('participantUids', [])
+             || resource.data.get('recipientUid', '') == request.auth.uid
+             || (resource.data.get('visibility', 'unlisted') == 'community'
+                 && isCommunityMember(resource.data.get('communityId', '')))
+             || (resource.data.get('visibility', 'unlisted') == 'circle'
+                 && (isTreeCircle(resource.data.get('treeId', '')) || isTreeCircle(resource.data.get('lifetreeId', ''))))
+           ));
+    }
     function canReadPulse() {
       // Private reaches are NEVER public: only the author, the addressed recipient, the
       // people in the thread, and staff may read them — regardless of any visibility field.
@@ -829,7 +854,10 @@ service cloud.firestore {
     // expensive get(), that rule is enforced in the service layer (sendReach) and the
     // UI (canReachTree). See src/services/firebase.ts -> sendReach.
     match /pulses/{pulseId} {
-      allow read: if canReadPulse();
+      // get = one document (per-doc gate, legacy-absent reads as public); list = a query
+      // (constraint-provable, canListPulse). Fusing them let an unconstrained list leak.
+      allow get: if canReadPulse();
+      allow list: if canListPulse();
       // THE BIRTH IS SIGNED (ring 2026-08-17): every pulse wears the uid of the hand that
       // writes it — staff excepted (mend hands, the genesis ceremony). The one client flow
       // that wrote ANOTHER party's name (acceptAlignment's counterpart sync block) already

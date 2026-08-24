@@ -6,6 +6,36 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-25 · A pulse list proves its right to be read from the QUERY, not the document**
+— a report arrived from the other side of the water: an anonymous Firestore query on
+pulses filtered only by type=='event' returned PRIVATE events in full. Confirmed live, and
+the mechanism is exact: `canReadPulse` gates on `resource.data.get('visibility','public')`,
+and for a LIST Firestore proves safety from the query's constraints — substituting that
+'public' DEFAULT when the query doesn't pin visibility. So an unconstrained list resolved
+symbolically to 'public'=='public' → allowed → then returned everything (rules are not
+filters). Visions never leaked because its default is 'unlisted'; one word was the whole
+hole. FIXED as Path B (Zoltán's call — migrate rather than carry legacy): (1) `allow read`
+SPLIT into `allow get` (per-doc, legacy-absent still reads public) and `allow list`
+(canListPulse — default 'unlisted', so an unconstrained list proves nothing and is refused;
+each branch — public / signed+node / authorId==uid / participantUids array-contains /
+recipientUid==uid / community-member / tree-circle — satisfiable only when the query PINS
+it, mirroring canReadPulse). (2) MIGRATION: visibility is HASHED block content
+(BLOCK_CONTENT_FIELDS), so a blind backfill would break sealed hashes — the data was
+checked first: of 122 pulses only 4 lacked the field and all 4 were UNSEALED (public
+alignment blocks), so backfilling 'public' breaks no hash and changes no behavior; the
+script refuses any sealed block by name. (3) Every client list query audited (a fanned-out
+audit + completeness critic): the feeds already pinned visibility and survived; the
+timelines that pinned only lifetreeId/visionId/communityId/threadId/reachTreeId now pin
+visibility or the viewer (participantUids/authorId), the tree timeline moved its reach
+exclusion client-side (Firestore forbids not-in beside visibility-in), the redundant
+tree-keyed reach listener was retired, and the vision-delete cascade queries the caller's
+own pulses. Four new composite indexes. Proven: 182 rules tests including the exact leaked
+query REFUSED and every legitimate shape green, plus a member-lists-community /
+stranger-refused pair. The standing lesson, third telling: a list rule's DEFAULT is a
+security parameter — a permissive default is an open door wearing a closed door's paint.
+
+---
+
 **2026-08-25 · The longitudinal walk — depth is social distance** — Zoltán named the
 recursive question: to know a tree, see what it is connected to; and the bound is not a
 record count but PERSON-CROSSINGS — "not the same person's trees, but the tree of his

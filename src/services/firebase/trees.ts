@@ -753,7 +753,7 @@ export const mintLightHouseCare = async (
 
 // The founding record and its observations — for the house's Consecration card.
 export const getLightHouseCareRecord = async (lightHouseId: string) => {
-    const snap = await getDocs(query(pulsesCollection, where('lightHouseId', '==', lightHouseId), where('care', '==', true)));
+    const snap = await getDocs(query(pulsesCollection, where('lightHouseId', '==', lightHouseId), where('care', '==', true), where('visibility', '==', 'public')));
     const pulses = snap.docs.map(d => ({ id: d.id, ...(d.data() as Record<string, unknown>) }))
         .sort((a, b) => ((a as { createdAt?: { toMillis?: () => number } }).createdAt?.toMillis?.() || 0) - ((b as { createdAt?: { toMillis?: () => number } }).createdAt?.toMillis?.() || 0));
     const founding = pulses[0] as ({ id: string; authorId?: string; authorName?: string; careAct?: string } | undefined);

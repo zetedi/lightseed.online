@@ -512,6 +512,57 @@ describe('the lid is frozen — the true name is load-bearing (QR links stand on
   });
 });
 
+describe('the pulse LIST leak — provenance from the query, never per-doc (ring 2026-08-25)', () => {
+  const seedFeed = () => env.withSecurityRulesDisabled(async (ctx) => {
+    const d = ctx.firestore();
+    await setDoc(doc(d, 'pulses', 'evPub'), { type: 'event', visibility: 'public', title: 'Pub', authorId: MALLORY, domain: 'x', lifetreeId: 'oak', communityId: 'com1', threadId: 't1', participantUids: [ALICE] });
+    await setDoc(doc(d, 'pulses', 'evNode'), { type: 'event', visibility: 'node', title: 'NodeEv', authorId: MALLORY, domain: 'x', lifetreeId: 'oak', communityId: 'com1' });
+    await setDoc(doc(d, 'pulses', 'evPriv'), { type: 'event', visibility: 'private', title: 'PRIVATE', authorId: MALLORY, domain: 'x', lifetreeId: 'oak', communityId: 'com1' });
+    await setDoc(doc(d, 'pulses', 'gGrowth'), { type: 'tree_growth', visibility: 'public', lifetreeId: 'oak', authorId: MALLORY });
+  });
+  beforeEach(seedFeed);
+
+  // THE LEAK, REFUSED — the exact query the other side reported.
+  it('anon: type==event with NO visibility filter is refused (was: returned private)', async () => {
+    await assertFails(getDocs(query(collection(db(), 'pulses'), where('type', '==', 'event'))));
+  });
+  it('anon: any unconstrained scan or visibility-only-node query is refused', async () => {
+    await assertFails(getDocs(query(collection(db(), 'pulses'))));
+    await assertFails(getDocs(query(collection(db(), 'pulses'), where('visibility', 'in', ['public', 'node']))));
+    await assertFails(getDocs(query(collection(db(), 'pulses'), where('lifetreeId', '==', 'oak')))); // unpinned timeline
+  });
+
+  // THE LEGITIMATE SHAPES — each still green.
+  it('anon: the public floor is provable', async () => {
+    await assertSucceeds(getDocs(query(collection(db(), 'pulses'), where('type', '==', 'event'), where('visibility', '==', 'public'))));
+    await assertSucceeds(getDocs(query(collection(db(), 'pulses'), where('domain', '==', 'x'), where('visibility', 'in', ['public']))));
+    await assertSucceeds(getDocs(query(collection(db(), 'pulses'), where('lifetreeId', '==', 'oak'), where('type', 'in', ['tree_growth', 'GROWTH']), where('visibility', '==', 'public'))));
+    await assertSucceeds(getDocs(query(collection(db(), 'pulses'), where('lifetreeId', '==', 'oak'), where('visibility', 'in', ['public']))));
+  });
+  it('signed-in: public+node feeds, own pulses, the inbox, and a threaded fetch', async () => {
+    await assertSucceeds(getDocs(query(collection(db(ALICE), 'pulses'), where('visibility', 'in', ['public', 'node']))));
+    await assertSucceeds(getDocs(query(collection(db(ALICE), 'pulses'), where('authorId', '==', ALICE))));
+    await assertSucceeds(getDocs(query(collection(db(ALICE), 'pulses'), where('participantUids', 'array-contains', ALICE))));
+    await assertSucceeds(getDocs(query(collection(db(ALICE), 'pulses'), where('threadId', '==', 't1'), where('participantUids', 'array-contains', ALICE))));
+    await assertSucceeds(getDocs(query(collection(db(ALICE), 'pulses'), where('recipientUid', '==', ALICE), where('lifetreeId', '==', 'oak'))));
+  });
+  it('a community MEMBER may list community-visibility pulses pinned to their community; a stranger may not', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const d = ctx.firestore();
+      await setDoc(doc(d, 'pulses', 'decCom'), { type: 'decision', visibility: 'community', communityId: 'com1', title: 'Decision', authorId: MALLORY });
+      await setDoc(doc(d, 'links', `${ALICE}__member__com1`), { from: ALICE, rel: 'member', to: 'com1' });
+    });
+    await assertSucceeds(getDocs(query(collection(db(ALICE), 'pulses'), where('communityId', '==', 'com1'), where('visibility', 'in', ['public', 'node', 'community']))));
+    await assertFails(getDocs(query(collection(db(BOB), 'pulses'), where('communityId', '==', 'com1'), where('visibility', 'in', ['public', 'node', 'community']))));
+  });
+  it('a single private event is still gettable by no one but its own hand (the get path holds)', async () => {
+    await assertFails(getDoc(doc(db(), 'pulses', 'evPriv')));
+    await assertFails(getDoc(doc(db(ALICE), 'pulses', 'evPriv')));
+    await assertSucceeds(getDoc(doc(db(MALLORY), 'pulses', 'evPriv'))); // the author
+    await assertSucceeds(getDoc(doc(db(), 'pulses', 'evPub')));         // public, anyone
+  });
+});
+
 describe('pulse overlays — a pulse you cannot see is a pulse you cannot touch', () => {
   // The seam the arrays audit found (ring 2026-08-09): overlay (a) had no read gate and no
   // whose-uid constraint, so any signed-in account could forge or erase read receipts and
