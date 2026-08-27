@@ -22,6 +22,8 @@ const FACE_DOMAINS = {
   // portal's canonical door is the seed subdomain, and shares bake its URL.
   theohouse: 'seed.theohouse.org',
   enlightenednations: 'enlightenednations.web.app',
+  // First portal reaching for Peru (2026-08-27) — a community will wear its name.
+  mamaway: 'mamaway.web.app',
 };
 
 const face = process.argv[2];

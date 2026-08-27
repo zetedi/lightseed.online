@@ -56,7 +56,7 @@
       ],
       "headers": [
         {
-          "comment": "Fingerprinted assets never change \u2014 cache them forever.",
+          "comment": "Fingerprinted assets never change — cache them forever.",
           "source": "/assets/**",
           "headers": [
             {
@@ -201,6 +201,62 @@
     },
     {
       "target": "enlightenednations",
+      "public": "dist",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "/u/**",
+          "function": "unsubscribe"
+        },
+        {
+          "source": "/b/**",
+          "function": "beingPreview"
+        },
+        {
+          "source": "/faceEvents",
+          "function": "faceEvents"
+        },
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ],
+      "headers": [
+        {
+          "source": "/assets/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=31536000, immutable"
+            }
+          ]
+        },
+        {
+          "source": "/index.html",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, max-age=0, must-revalidate"
+            }
+          ]
+        },
+        {
+          "source": "/{sw.js,registerSW.js,manifest.webmanifest}",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, max-age=0, must-revalidate"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "target": "mamaway",
       "public": "dist",
       "ignore": [
         "firebase.json",
