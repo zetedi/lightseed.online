@@ -22,6 +22,9 @@ const REL_ENDPOINTS: Record<string, { from: BeingKind; to: BeingKind }> = {
   rooted: { from: 'lightHouse', to: 'tree' },
   shelters: { from: 'lightHouse', to: 'community' },
   grows_in: { from: 'tree', to: 'community' },
+  collaborates_with: { from: 'community', to: 'community' },
+  recognises: { from: 'community', to: 'community' },
+  shares_resources_with: { from: 'community', to: 'community' },
   welcomed_by: { from: 'person', to: 'person' },
   invited_by: { from: 'person', to: 'community' },
 };

@@ -1545,6 +1545,24 @@ service cloud.firestore {
               (isTreeCarer(request.resource.data.from) && communityDoor(request.resource.data.to) == 'open')
               || isCommunityKeeper(request.resource.data.to)
             ))
+        // INTERBEING MATRIX: a founding owner or keeper-link peer may attest only FROM their
+        // own community. Door stewards are deliberately excluded: they keep admission, not the
+        // community's outward voice.
+        // The edge points TO another real community. The first direction is a proposal; the reverse
+        // can be minted only by the other community's owner/keeper peer, so reciprocity is derived from
+        // two independently authorised statements. These edges grant no privilege anywhere.
+        || (isSignedIn()
+            && request.resource.data.rel in ['collaborates_with', 'recognises', 'shares_resources_with']
+            && request.resource.data.from != request.resource.data.to
+            && exists(/databases/$(database)/documents/communities/$(request.resource.data.from))
+            && exists(/databases/$(database)/documents/communities/$(request.resource.data.to))
+            && isCommunityOwner(request.resource.data.from)
+            && request.resource.data.get('type', '') == 'link'
+            && request.resource.data.get('lid', '') is string
+            && request.resource.data.get('lid', '') != ''
+            && request.resource.data.get('createdAt', null) == request.time
+            && request.resource.data.keys().hasAll(['lid', 'type', 'rel', 'from', 'to', 'createdAt'])
+            && request.resource.data.keys().hasOnly(['lid', 'type', 'rel', 'from', 'to', 'createdAt']))
         // Rooting: a lightHouse's keeper roots THEIR lightHouse in a tree (from = lightHouse id).
         || (isSignedIn() && request.resource.data.rel in ['rooted', 'shelters']
             && get(/databases/$(database)/documents/lightHouses/$(request.resource.data.from)).data.ownerId == request.auth.uid)
@@ -1603,12 +1621,19 @@ service cloud.firestore {
         (resource.data.from == request.auth.uid
           && resource.data.get('rel', '') != 'invited_by'
           && resource.data.get('rel', '') != 'welcomed_by'
-          && resource.data.get('rel', '') != 'party')
+          && resource.data.get('rel', '') != 'party'
+          && resource.data.get('rel', '') != 'collaborates_with'
+          && resource.data.get('rel', '') != 'recognises'
+          && resource.data.get('rel', '') != 'shares_resources_with')
         || isStaff()
         || (resource.data.get('rel', '') == 'participant' && isTreeOwner(resource.data.from))
         // grows_in: a tree carer withdraws their tree, or the keeper curates their garden.
         || (resource.data.get('rel', '') == 'grows_in'
             && (isTreeCarer(resource.data.from) || isCommunityKeeper(resource.data.to)))
+        // Either community's owner/keeper circle may change only its OWN attestation. Removing one direction turns
+        // reciprocal recognition back into a one-sided proposal; it never edits the other hand.
+        || (resource.data.get('rel', '') in ['collaborates_with', 'recognises', 'shares_resources_with']
+            && isCommunityOwner(resource.data.from))
         || (resource.data.get('rel', '') in ['rooted', 'shelters']
             && exists(/databases/$(database)/documents/lightHouses/$(resource.data.from))
             && get(/databases/$(database)/documents/lightHouses/$(resource.data.from)).data.ownerId == request.auth.uid)

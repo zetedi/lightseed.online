@@ -26,6 +26,10 @@ export const DOMAIN_KEYS = [
   // lightHouse — the kinds a Light House may be consecrated as (domain/lightHouse)
   'lh_kind_temple', 'lh_kind_temple_desc', 'lh_kind_ashram', 'lh_kind_ashram_desc',
   'lh_kind_sanctuary', 'lh_kind_sanctuary_desc',
+  // interbeingMatrix — typed community-to-community attestations
+  'interbeing_collaborates_with', 'interbeing_collaborates_with_desc',
+  'interbeing_recognises', 'interbeing_recognises_desc',
+  'interbeing_shares_resources_with', 'interbeing_shares_resources_with_desc',
   // unmint — taking back an accidental head mint (domain/unmint)
   'unmint_not_author', 'unmint_not_mint', 'unmint_not_last', 'unmint_witnessed', 'unmint_coheld',
 ] as const;

@@ -46,7 +46,9 @@ proof, while the person doc names only the current epoch and active/frozen state
 `links`: the LIN: `from__rel__to`; rels: guardian, co_owner, steward, observer,
 member, joined, participant, join_request, **rooted** (Light House→tree),
 **shelters** (Light House→community), **invited_by** (newcomer→community; append-only
-provenance, grants nothing; see domain/communityDoor). Doc id MUST equal `from__rel__to`
+provenance, grants nothing; see domain/communityDoor), and the first **Interbeing Matrix**
+attestations (`collaborates_with`, `recognises`, `shares_resources_with`; community→community).
+Doc id MUST equal `from__rel__to`
 (rules bind it: authority is resolved by path, so an unbound id would be forgeable).
 `visions` `communities` (bearing the **door**: open/invite/closed) `lightHouses`
 `stays` `alignments` `supports` (server-only)
@@ -99,6 +101,13 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
   mounted views re-fetch; the feed prunes deleted ids surgically.
 - **Being links**: `/b/<lid>` resolves permission-aware across collections
   (`findBeingByLid`) and opens the right profile; QRs are minted lazily onto docs.
+- **Interbeing Matrix**: a community's founding owner or `keeper`-link peer proposes a typed
+  relationship by minting its directed LIN edge (door stewards do not carry the outward voice).
+  The other community acknowledges with its own reverse edge;
+  reciprocity is pure derived state, never an ownership or acceptance field. The community
+  profile's Interbeing section is the first end-to-end face. Domains are displayed as honest
+  self-declared external anchors; verification remains a named future boundary. See
+  `INTERBEING_MATRIX.md` for the plain contract.
 - **The signing crystal**: first publication atomically anchors current key,
   lineage and epoch. V3 covenant/decision seals carry fingerprint + epoch and
   receive server time at rest. Routine rotation is old/new cross-signed in a

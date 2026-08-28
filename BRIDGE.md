@@ -84,6 +84,22 @@ What a being LOOKS like: `src/components/BeingProfile.tsx` + `src/components/sec
   itself a wider forest. The remaining seed-shell hostname helper governs
   branding and development behavior only, never custody or data scope.
 
+## The Interbeing Matrix (whole communities relating without ownership)
+
+- **Law:** `src/domain/interbeingMatrix.ts` — the first typed mutual relations and the pure
+  four-state derivation: none / proposed / received / reciprocal. `tests/interbeingMatrix.test.ts`.
+- **Data:** ordinary deterministic LIN links, community→community. The first edge is one
+  community's proposal/attestation; the reverse edge is the other community's independent
+  acknowledgment. No acceptance scalar and no score.
+- **Enforcement:** `firestore.rules` `/links` — both endpoints must be real distinct
+  communities; only the founding owner or a `keeper`-link peer of `from` may mint or withdraw
+  that direction (door stewards cannot speak outward); the edge grants no privilege. The
+  existing staff repair escape remains. Emulator tests live under
+  “Interbeing Matrix”.
+- **Face:** Community profile → **Interbeing** (`CommunityInterbeingMatrix.tsx`). Existing
+  domains are shown as self-declared external anchors, explicitly not verified control.
+- **Plain contract and future boundary:** `INTERBEING_MATRIX.md`.
+
 ## The bed (a place to sleep, as a being)
 
 - **A bed IS a Lifetree** (`treeType: 'BED'`) — a full Being: own chain (each stay a **leaf**),

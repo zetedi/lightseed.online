@@ -6,6 +6,26 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-28 · The Interbeing Matrix: each community speaks with its own hand** — the LIN
+gains its first COMMUNITY→COMMUNITY relations: `collaborates_with`, `recognises`, and
+`shares_resources_with`. One directed edge is one community's attestation and proposal; the
+other community acknowledges by minting the reverse edge with its OWN owner/keeper-peer
+authority; door stewards keep admission and do not carry the community's outward voice.
+Reciprocity is DERIVED from the pair — never an `accepted` field, never ownership, never a
+score, and no rule reads these edges for privilege. The first vocabulary is deliberately
+mutual so reversal does not corrupt meaning. The community profile's Interbeing section walks
+the whole path, and the existing domain appears beside each being as a SELF-DECLARED external
+anchor, plainly not DNS verification yet. Bundle re-anchoring learned that these link sources
+are community ids, not mortal uids. Its face carries domain-owned word KEYS and speaks through
+the completed English, Arabic and Chinese dictionaries; no English is born in the domain or
+component. The wider name is **Interbeing Matrix**; **Intercommunity
+Matrix** is this first organisational view. Full contract, limits and future proof boundary:
+`INTERBEING_MATRIX.md`. REJECTED: relationship arrays; a central acceptance document; universal
+reputation; implied domain proof; tokens or blockchain machinery for a relationship that the
+existing LIN already holds.
+
+---
+
 **2026-08-25 · The cradle feed: a face speaks its happenings to whoever stands at it** —
 the rules tightening proved node events invisible to signed-out visitors of the node's own
 doors: correct at the data layer, wrong at the doorstep. Rather than loosen the rules, the

@@ -285,6 +285,67 @@ describe('community reflection — the keeper alone opens the canopy', () => {
   });
 });
 
+describe('Interbeing Matrix — communities attest independently, reciprocity is derived', () => {
+  const edge = (from: string, rel: string, to: string) => ({
+    lid: 'interbeing-lid', type: 'link', rel, from, to, createdAt: serverTimestamp(),
+  });
+
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) =>
+      setDoc(doc(ctx.firestore(), 'communities', 'com2'), {
+        ownerId: BOB, name: 'Other community', domain: 'other.online', loveCount: 0,
+      }));
+  });
+
+  it('the source keeper proposes and the target keeper acknowledges with their own reverse edge', async () => {
+    await assertSucceeds(setDoc(
+      doc(db(ALICE), 'links', 'com1__collaborates_with__com2'),
+      edge('com1', 'collaborates_with', 'com2'),
+    ));
+    await assertFails(setDoc(
+      doc(db(MALLORY), 'links', 'com2__collaborates_with__com1'),
+      edge('com2', 'collaborates_with', 'com1'),
+    ));
+    await assertSucceeds(setDoc(
+      doc(db(BOB), 'links', 'com2__collaborates_with__com1'),
+      edge('com2', 'collaborates_with', 'com1'),
+    ));
+  });
+
+  it('refuses self-relations, missing communities, unknown relation types and extra claims', async () => {
+    await assertFails(setDoc(doc(db(ALICE), 'links', 'com1__recognises__com1'), edge('com1', 'recognises', 'com1')));
+    await assertFails(setDoc(doc(db(ALICE), 'links', 'com1__recognises__ghost'), edge('com1', 'recognises', 'ghost')));
+    await assertFails(setDoc(doc(db(ALICE), 'links', 'com1__owns__com2'), edge('com1', 'owns', 'com2')));
+    await assertFails(setDoc(doc(db(ALICE), 'links', 'com1__recognises__com2'), {
+      ...edge('com1', 'recognises', 'com2'), reputation: 100,
+    }));
+    await assertFails(setDoc(doc(db(ALICE), 'links', 'com1__recognises__com2'), {
+      type: 'link', rel: 'recognises', from: 'com1', to: 'com2', createdAt: serverTimestamp(),
+    }));
+  });
+
+  it('each keeper may withdraw only their own attestation', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const d = ctx.firestore();
+      await setDoc(doc(d, 'links', 'com1__recognises__com2'), edge('com1', 'recognises', 'com2'));
+      await setDoc(doc(d, 'links', 'com2__recognises__com1'), edge('com2', 'recognises', 'com1'));
+    });
+    await assertFails(deleteDoc(doc(db(BOB), 'links', 'com1__recognises__com2')));
+    await assertSucceeds(deleteDoc(doc(db(ALICE), 'links', 'com1__recognises__com2')));
+    await assertSucceeds(deleteDoc(doc(db(BOB), 'links', 'com2__recognises__com1')));
+  });
+
+  it('a uid that happens to equal a community id still cannot bypass keeper authority', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const d = ctx.firestore();
+      await setDoc(doc(d, 'communities', MALLORY), { ownerId: BOB, name: 'Collision', domain: 'collision.online' });
+      await setDoc(doc(d, 'links', `${MALLORY}__recognises__com1`), edge(MALLORY, 'recognises', 'com1'));
+    });
+    await assertFails(deleteDoc(doc(db(MALLORY), 'links', `${MALLORY}__recognises__com1`)));
+    await assertSucceeds(deleteDoc(doc(db(BOB), 'links', `${MALLORY}__recognises__com1`)));
+  });
+});
+
 describe('collabs — staff-curated, world-readable', () => {
   it('anyone reads, only staff write', async () => {
     await env.withSecurityRulesDisabled(async (ctx) => setDoc(doc(ctx.firestore(), 'collabs', 'c1'), { name: 'Anthropic', agreement: 'contract' }));

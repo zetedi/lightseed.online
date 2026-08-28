@@ -22,6 +22,7 @@ import { CommunityDigitalTree } from './community/CommunityDigitalTree';
 import { LoveButton } from './ui/LoveButton';
 import { CommunityCodeChain } from './community/CommunityCodeChain';
 import { CommunityAppearance } from './community/CommunityAppearance';
+import { CommunityInterbeingMatrix } from './community/CommunityInterbeingMatrix';
 import { BeingProfile, type BeingSection } from './BeingProfile';
 import { SectionTitle } from './ui/SectionTitle';
 import { SuperDot } from './ui/SuperDot';
@@ -590,6 +591,11 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     {
       key: 'members', label: 'Members', icon: <Icons.Users />, render: () => (
         <CommunityMembers community={community} currentUserId={currentUserId} canManage={canEdit || isSteward} isOwner={canEdit} onCommunityUpdate={onUpdate} />
+      ),
+    },
+    {
+      key: 'interbeing', label: t('interbeing'), icon: <Icons.Link />, render: () => (
+        <CommunityInterbeingMatrix community={community} canManage={canEdit} />
       ),
     },
     {

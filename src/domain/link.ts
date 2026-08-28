@@ -3,8 +3,8 @@ import type { Being } from './being';
 // A relationship is itself an Being: a directed edge between two LIDs. The network (LIN) is
 // the living graph these links form, persisted in the `links` collection — the single source
 // of truth for relations (see src/adapters/firestore.ts and memory/lid-lin-entity).
-// 'participant' is the one edge whose `from` is a LIFETREE (not a uid): a tree the owner has
-// enlisted in an event or vision. Every other rel points a person at a target.
+// Some edges begin at a non-person Being: participant/grows_in at a LIFETREE,
+// rooted/shelters at a Light House, and the Interbeing Matrix relations at a community.
 // 'join_request' is a person asking to become a community member — the owner or a steward
 // accepting it replaces the edge with a 'member' link (see domain/communityDoor for the door).
 // 'rooted': a LIGHT HOUSE rooted in a lifetree — the tree that holds it becomes a MOTHER
@@ -40,7 +40,11 @@ import type { Being } from './being';
 //   'welcomed_by' newcomer → PERSON: WHO vouched for you — one direct query answers
 //                 "who did X welcome", and it covers ALL acceptances (community, network,
 //                 tree-circle, keeper), where invited_by exists only for community arrivals.
-export type LinkRel = 'guardian' | 'co_owner' | 'steward' | 'observer' | 'member' | 'joined' | 'participant' | 'join_request' | 'rooted' | 'shelters' | 'invited_by' | 'welcomed_by' | 'party' | 'keeper' | 'keeper_request' | 'grows_in';
+// Interbeing relations are COMMUNITY → COMMUNITY attestations. The first directed edge is a
+// proposal; the matching reverse edge is the other community's own attestation. Reciprocity is
+// derived, never stored as status and never read for authority. The first vocabulary is limited
+// to mutual meanings so reversing an edge cannot silently change the statement.
+export type LinkRel = 'guardian' | 'co_owner' | 'steward' | 'observer' | 'member' | 'joined' | 'participant' | 'join_request' | 'rooted' | 'shelters' | 'invited_by' | 'welcomed_by' | 'party' | 'keeper' | 'keeper_request' | 'grows_in' | 'collaborates_with' | 'recognises' | 'shares_resources_with';
 
 export interface Link extends Being {
   type: 'link';

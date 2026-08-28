@@ -281,6 +281,10 @@ describe('the re-anchoring census — every mortal uid, none twice, no impostors
     expect(linkFromIsUid('participant')).toBe(false);
     expect(linkFromIsUid('rooted')).toBe(false);
     expect(linkFromIsUid('shelters')).toBe(false);
+    expect(linkFromIsUid('grows_in')).toBe(false);
+    expect(linkFromIsUid('collaborates_with')).toBe(false);
+    expect(linkFromIsUid('recognises')).toBe(false);
+    expect(linkFromIsUid('shares_resources_with')).toBe(false);
   });
 });
 
