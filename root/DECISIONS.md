@@ -6,6 +6,20 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-29 · A circle graduates by the hands that carry it** — a tree circle (the
+pre-community) can now FORM a standing community: the keeper circle or a CO-OWNER of the
+root tree chooses the name; the server alone stamps the forming (`formedAt`/`formedBy` —
+rules-frozen like `bornOn`), opens visibility, and stamps `bornOn` = the garden where the
+root tree stands, so the community appears on that face's list WITHOUT claiming its
+domain. Forming grants no keepership — the anchor stays; a co-owner who forms still
+tends, not owns. The law is pure (domain/treeCircle formCircleRefusal); the hand is the
+formCommunityFromCircle callable; the face is a banner on the circle's profile. REJECTED:
+client-side forming (a co-owner cannot write the community doc, and the stamps must not be
+self-claims); minting a domain at forming (an address is claimed later, through the Vision
+tab's own law and its DNS proof).
+
+---
+
 **2026-08-28 · A circle claims no address** — the lazily-born tree-circle community had
 inherited its root tree's `domain`, and the newborn "Tree of life Circle" thereby claimed
 `perauset.web.app` — flipping the face's title, because `getCommunityByDomain` took

@@ -7,7 +7,8 @@ import { Icons } from './ui/Icons';
 import { MahameruAvatar } from './ui/MahameruAvatar';
 import { Community, CommunityInvite, Lifetree, Pulse, LightHouse } from '../types';
 import { doorOf, checkInvite } from '../domain/communityDoor';
-import { updateCommunity, uploadImage, getTreesByDomain, treesStandingIn, getParticipatingTrees, deleteCommunity, getCommunityByDomain, getLightHousesByDomain, getLightHousesByCommunity, getAllLightHouses, createLightHouse, adoptLightHouse, getPersonName, joinCommunityOpen, joinCommunityWithInvite, requestKeepership, withdrawKeeperRequest } from '../services/firebase';
+import { updateCommunity, uploadImage, getTreesByDomain, treesStandingIn, getParticipatingTrees, deleteCommunity, getCommunityByDomain, getLightHousesByDomain, getLightHousesByCommunity, getAllLightHouses, createLightHouse, adoptLightHouse, getPersonName, joinCommunityOpen, joinCommunityWithInvite, requestKeepership, withdrawKeeperRequest, formCommunityFromCircle } from '../services/firebase';
+import { formCircleRefusal } from '../domain/treeCircle';
 import { CommunityVision } from './community/CommunityVision';
 import { CommunityCouncil } from './community/CommunityCouncil';
 import { CommunityEvents } from './community/CommunityEvents';
@@ -466,6 +467,48 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     onUpdate?.({ heroImageUrl: '' });
   };
 
+  // A circle's GRADUATION banner (domain/treeCircle formCircleRefusal): shown to the hands
+  // that may form — the keeper circle, or a co-owner of the root tree. The server is the
+  // one hand that stamps forming; this banner only carries the ask and the chosen name.
+  const isUnformedCircle = community.formation === 'tree_co_ownership' && !community.formedAt;
+  const [treeCoOwner, setTreeCoOwner] = useState(false);
+  const [formName, setFormName] = useState('');
+  const [forming, setForming] = useState(false);
+  const [justFormed, setJustFormed] = useState(false);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- re-keys the draft + formed state when the profile switches communities
+    setFormName((community.name || '').replace(/\s*Circle\s*$/i, '')); setJustFormed(false);
+  }, [community.id, community.name]);
+  useEffect(() => {
+    if (!isUnformedCircle || !currentUserId || !community.rootLifetreeId) { setTreeCoOwner(false); return; }
+    let alive = true;
+    firestoreStore.linksFrom(currentUserId, 'co_owner')
+      .then(links => { if (alive) setTreeCoOwner(links.some(l => l.to === community.rootLifetreeId)); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [isUnformedCircle, currentUserId, community.rootLifetreeId]);
+  const mayFormCommunity = isUnformedCircle && !justFormed && !!currentUserId
+    && formCircleRefusal({
+      formation: community.formation, formedAtMs: null,
+      isCircleKeeper: canEdit, isTreeCoOwner: treeCoOwner,
+    }) === null;
+  const handleFormCommunity = async () => {
+    const name = formName.trim();
+    if (!name || forming) return;
+    setForming(true);
+    try {
+      const res = await formCommunityFromCircle(community.id, name);
+      setJustFormed(true);
+      onUpdate?.({ name: res.name, visibility: 'public', ...(res.bornOn ? { bornOn: res.bornOn } : {}) });
+      announce('communities');
+      notify(spokenLine('circle_formed', { name: res.name }));
+    } catch (e: any) {
+      const m = String(e?.message || '');
+      showAlert(m.includes('not_hand') ? 'circle_form_not_hand' : m.includes('already_formed') ? 'circle_form_already' : m || 'err_action');
+    }
+    setForming(false);
+  };
+
   // Icons for the shared network-lore tabs (Path, Yantra).
   const loreIcons: Record<LoreTabId, React.ReactNode> = {
     genesis: <Icons.Hash />,
@@ -666,6 +709,24 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       sections={sections}
       activeSection={section}
       onSectionChange={setSection}
+      banner={mayFormCommunity ? (
+        <div className="mb-4 rounded-2xl border border-violet-200 bg-violet-50/70 p-4">
+          <p className="text-sm font-bold text-slate-800">{t('circle_form_title')}</p>
+          <p className="mt-1 text-xs leading-relaxed text-slate-500">{t('circle_form_desc')}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <input
+              value={formName}
+              onChange={e => setFormName(e.target.value)}
+              placeholder={t('circle_form_name_ph')}
+              className="w-56 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm outline-none focus:border-violet-400"
+            />
+            <button onClick={handleFormCommunity} disabled={forming || !formName.trim()}
+              className="rounded-full bg-violet-600 px-4 py-1.5 text-xs font-bold text-white transition-colors hover:bg-violet-500 disabled:opacity-50">
+              {forming ? '…' : t('circle_form_button')}
+            </button>
+          </div>
+        </div>
+      ) : undefined}
       hero={{
         // Only the chosen hero — no gallery fallback, so removing the hero actually removes it.
         // The hero wears the USER profile's exact clothes (Zoltán, 2026-07-22): same default

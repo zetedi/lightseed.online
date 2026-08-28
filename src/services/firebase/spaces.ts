@@ -633,6 +633,11 @@ export const acceptKeeperRequest = async (communityId: string, requesterUid: str
 export const resignKeeper = async (communityId: string): Promise<{ resigned: string; successor: string | null }> =>
     (await httpsCallable(functions, 'resignKeeper')({ communityId })).data as { resigned: string; successor: string | null };
 
+// A circle graduates into a standing community (domain/treeCircle formCircleRefusal) —
+// the server is the one hand that stamps forming (bornOn/formedAt/formedBy are rules-frozen).
+export const formCommunityFromCircle = async (communityId: string, name: string): Promise<{ communityId: string; name: string; bornOn: string | null }> =>
+    (await httpsCallable(functions, 'formCommunityFromCircle')({ communityId, name })).data as { communityId: string; name: string; bornOn: string | null };
+
 // Domain verification (root/INTERBEING_MATRIX.md) — the server mints the challenge and
 // observes the TXT record; these hands only carry the keeper's ask.
 export interface DomainChallengeRecord { domain: string; recordName: string; recordValue: string }

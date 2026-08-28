@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { roleLabelKey, roleDescKey, tendedTreeRoles, type TreeRelationRole } from '../src/domain/treeCircle';
+import { roleLabelKey, roleDescKey, tendedTreeRoles, formCircleRefusal, type TreeRelationRole } from '../src/domain/treeCircle';
 import { treeCircle } from '../src/domain/views/circle';
 import { translations } from '../src/utils/translations';
 import type { Link } from '../src/domain/link';
@@ -83,5 +83,27 @@ describe('tendedTreeRoles — the caring layer as a profile prism', () => {
       edge('someone', 'co_owner', 't3'),
     ], 'me');
     expect(roles.size).toBe(0);
+  });
+});
+
+describe('formCircleRefusal — a circle graduates by the hands that carry it', () => {
+  const facts = (over: Partial<Parameters<typeof formCircleRefusal>[0]>) => ({
+    formation: 'tree_co_ownership', formedAtMs: null,
+    isCircleKeeper: false, isTreeCoOwner: false, ...over,
+  });
+
+  it('a circle keeper or a root-tree co-owner may form', () => {
+    expect(formCircleRefusal(facts({ isCircleKeeper: true }))).toBeNull();
+    expect(formCircleRefusal(facts({ isTreeCoOwner: true }))).toBeNull();
+  });
+
+  it('any other hand is refused', () => {
+    expect(formCircleRefusal(facts({}))).toBe('not_hand');
+  });
+
+  it('only a circle can graduate, and only once', () => {
+    expect(formCircleRefusal(facts({ formation: 'manual', isCircleKeeper: true }))).toBe('not_circle');
+    expect(formCircleRefusal(facts({ formation: undefined, isCircleKeeper: true }))).toBe('not_circle');
+    expect(formCircleRefusal(facts({ formedAtMs: 123, isCircleKeeper: true }))).toBe('already_formed');
   });
 });

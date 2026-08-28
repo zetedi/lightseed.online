@@ -1573,6 +1573,42 @@ export const resignKeeper = onCall({ cors: true }, async (request) => {
     });
 });
 
+// ── Circle graduation (domain/treeCircle formCircleRefusal) ─────────────────────────────
+// A tree circle GRADUATES into a standing community by the hands that carry it: the keeper
+// circle, or a co-owner of the root tree. Forming chooses the name, opens visibility, and
+// stamps provenance — bornOn = the garden where the root tree stands (presence on that
+// face's list WITHOUT claiming its domain), formedAt/formedBy by this hand alone (the
+// rules freeze both against clients). Forming grants no keepership: the anchor stays.
+export const formCommunityFromCircle = onCall({ cors: true }, async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "You must be signed in.");
+    const uid = request.auth.uid;
+    const communityId = String(request.data?.communityId || "");
+    const name = String(request.data?.name || "").trim().slice(0, 120);
+    if (!communityId) throw new HttpsError("invalid-argument", "communityId is required.");
+    const communityRef = db.collection("communities").doc(communityId);
+    const community = (await communityRef.get()).data();
+    if (!community) throw new HttpsError("not-found", "Community not found.");
+    if (community.formation !== "tree_co_ownership") throw new HttpsError("failed-precondition", "not_circle");
+    if (community.formedAt) throw new HttpsError("failed-precondition", "already_formed");
+    const rootTreeId = String(community.rootLifetreeId || "");
+    const isKeeper = community.ownerId === uid
+        || (await keeperLinkRef(uid, communityId).get()).exists;
+    const isCoOwner = !!rootTreeId
+        && (await db.collection("links").doc(`${uid}__co_owner__${rootTreeId}`).get()).exists;
+    if (!isKeeper && !isCoOwner) throw new HttpsError("permission-denied", "not_hand");
+    const tree = rootTreeId ? (await db.collection("lifetrees").doc(rootTreeId).get()).data() : null;
+    const bornOn = normalizeAnchorDomain(String(tree?.domain || "")); // the garden, never the claim
+    await communityRef.update({
+        ...(name ? { name } : {}),
+        ...(bornOn ? { bornOn } : {}),
+        visibility: "public",
+        formedAt: FieldValue.serverTimestamp(),
+        formedBy: uid,
+        updatedAt: FieldValue.serverTimestamp(),
+    });
+    return { communityId, name: name || String(community.name || ""), bornOn: bornOn || null };
+});
+
 // ── Domain verification (root/INTERBEING_MATRIX.md) ─────────────────────────────────────
 // A DNS-01-style control proof (RFC 8555 §8.4) in an underscored namespace (RFC 8552):
 // the server mints a single-use >=128-bit token bound to the community and its exact

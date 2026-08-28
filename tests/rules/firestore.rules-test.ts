@@ -2150,3 +2150,12 @@ describe('domain verification — server-observed truth, no client hand', () => 
     await assertFails(getDoc(doc(db(), 'domainChallenges', 'com1')));
   });
 });
+
+describe('circle graduation — the forming stamp is the server\'s alone', () => {
+  it('even the keeper cannot stamp formedAt/formedBy by hand', async () => {
+    await assertFails(updateDoc(doc(db(ALICE), 'communities', 'com1'), {
+      formedAt: serverTimestamp(), formedBy: ALICE,
+    }));
+    await assertFails(updateDoc(doc(db(ALICE), 'communities', 'com1'), { bornOn: 'perauset.web.app' }));
+  });
+});
