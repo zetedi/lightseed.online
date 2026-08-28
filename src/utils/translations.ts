@@ -134,6 +134,7 @@ const baseKeys = {
   admin_title: "Admin", admin_sub: "Network stewardship and roles.",
   planted_trees: "Planted Trees", planted_trees_sub: "Living identities you have planted and steward.",
   guarded_trees: "Guarded Trees", guarded_trees_sub: "Trees you help protect as a guardian.",
+  tended_trees: "Tended Trees", tended_trees_sub: "Trees you help care for as co-owner or steward — each stays its keeper's.",
   my_pulses_sub: "Signals you've emitted into the network.",
   notice: "Notice", delete_tree_title: "Delete Tree", delete_vision_title: "Delete Vision",
   // Appearance tab + theme editor
@@ -941,6 +942,7 @@ const dictionaries = {
     admin_title: "الإدارة", admin_sub: "رعاية الشبكة والأدوار.",
     planted_trees: "الأشجار المزروعة", planted_trees_sub: "هويات حيّة زرعتها وترعاها.",
     guarded_trees: "الأشجار المحروسة", guarded_trees_sub: "أشجار تساعد في حمايتها كحارس.",
+    tended_trees: "الأشجار المرعيّة", tended_trees_sub: "أشجار تشارك في رعايتها كشريك مالك أو وصيّ — وتبقى كل شجرة لحافظها.",
     my_pulses_sub: "إشارات أطلقتها في الشبكة.",
     notice: "تنبيه", delete_tree_title: "حذف الشجرة", delete_vision_title: "حذف الرؤية",
     appearance_theme_title: "سمة ملفك", appearance_theme_desc: "سمتك الشخصية. تعلو على سمة المجتمع، وسمة المجتمع تعلو على سمة العقدة الافتراضية، وتُطبَّق أينما سجّلت الدخول.",
@@ -1599,6 +1601,7 @@ const dictionaries = {
     admin_title: "管理", admin_sub: "网络管理与角色。",
     planted_trees: "已种植的树", planted_trees_sub: "你已种植并守护的鲜活身份。",
     guarded_trees: "守护的树", guarded_trees_sub: "你作为守护者帮助保护的树。",
+    tended_trees: "照料的树", tended_trees_sub: "你以共同所有者或管家身份参与照料的树——每棵树仍属于它的守护者。",
     my_pulses_sub: "你向网络发出的信号。",
     notice: "提示", delete_tree_title: "删除树", delete_vision_title: "删除愿景",
     appearance_theme_title: "你的个人主题", appearance_theme_desc: "你的个人主题。它优先于社区主题，社区主题又优先于节点默认主题，在你登录的任何地方生效。",

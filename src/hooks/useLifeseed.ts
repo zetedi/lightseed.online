@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase/core';
 import { uuidv7 } from '../utils/id';
-import { onAuthChange, getMyLifetrees, getGuardedTrees, checkIsAdmin, checkIsSuperAdmin, getSuperAdminUid, claimSuperAdmin, listenToUserProfile, updateUserProfile, ensurePersonEntity } from '../services/firebase';
+import { onAuthChange, getMyLifetrees, getGuardedTrees, getTendedTrees, checkIsAdmin, checkIsSuperAdmin, getSuperAdminUid, claimSuperAdmin, listenToUserProfile, updateUserProfile, ensurePersonEntity, type TendedTree } from '../services/firebase';
 import { getInitiateByUid, type Initiate } from '../domain/initiation';
 import { type Lightseed, type Lifetree } from '../types';
 
@@ -29,6 +29,9 @@ export const useLifeseed = () => {
     const [lightseed, setLightseed] = useState<Lightseed | null>(null);
     const [myTrees, setMyTrees] = useState<Lifetree[]>([]);
     const [guardedTrees, setGuardedTrees] = useState<Lifetree[]>([]);
+    // Trees tended through the circle's caring layer (co_owner/steward links) — not owned,
+    // not guarded: the third prism, so an accepted invitation shows on the profile.
+    const [tendedTrees, setTendedTrees] = useState<TendedTree[]>([]);
     const [isAdmin, setIsAdmin] = useState(false);
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
     const [superAdminExists, setSuperAdminExists] = useState(true);
@@ -63,13 +66,15 @@ export const useLifeseed = () => {
 
                 // Trees — critical, must not be blocked by admin check errors
                 try {
-                    const [owned, guarded] = await Promise.all([
+                    const [owned, guarded, tended] = await Promise.all([
                         getMyLifetrees(user.uid),
                         getGuardedTrees(user.uid),
+                        getTendedTrees(user.uid),
                     ]);
                     const { personal, guardedAll } = splitTreeLists(user.uid, owned, guarded);
                     setMyTrees(personal);
                     setGuardedTrees(guardedAll);
+                    setTendedTrees(tended);
                 } catch (e) {
                     console.error("Failed to fetch user trees", e);
                 }
@@ -110,6 +115,7 @@ export const useLifeseed = () => {
                 setLightseed(null);
                 setMyTrees([]);
                 setGuardedTrees([]);
+                setTendedTrees([]);
                 setIsAdmin(false);
                 setIsSuperAdmin(false);
                 setInitiate(null);
@@ -136,13 +142,15 @@ export const useLifeseed = () => {
 
     const refreshTrees = async () => {
         if (lightseed) {
-            const [owned, guarded] = await Promise.all([
+            const [owned, guarded, tended] = await Promise.all([
                 getMyLifetrees(lightseed.uid),
-                getGuardedTrees(lightseed.uid)
+                getGuardedTrees(lightseed.uid),
+                getTendedTrees(lightseed.uid),
             ]);
             const { personal, guardedAll } = splitTreeLists(lightseed.uid, owned, guarded);
             setMyTrees(personal);
             setGuardedTrees(guardedAll);
+            setTendedTrees(tended);
         }
     };
 
@@ -162,5 +170,5 @@ export const useLifeseed = () => {
 
     // The "closest" tree: the chosen default if it's still one of mine, else the first.
     const activeTree = myTrees.find(t => t.id === defaultTreeId) || (myTrees.length > 0 ? myTrees[0] : null);
-    return { lightseed, personLid, myTrees, guardedTrees, activeTree, defaultTreeId, setDefaultTree, defaultVisionId, setDefaultVision, isAdmin, isSuperAdmin, superAdminExists, initiate, isInitiate: !!initiate, loading, refreshTrees };
+    return { lightseed, personLid, myTrees, guardedTrees, tendedTrees, activeTree, defaultTreeId, setDefaultTree, defaultVisionId, setDefaultVision, isAdmin, isSuperAdmin, superAdminExists, initiate, isInitiate: !!initiate, loading, refreshTrees };
 };

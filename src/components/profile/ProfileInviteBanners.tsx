@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { showAlert } from '../ui/Dialog';
 import { type TreeOwnershipInvite, roleLabelKey } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useSession } from '../../contexts/SessionContext';
 import { speak, spokenLine } from '../../utils/translations';
 import { getPendingTreeInvites, acceptTreeInvite, declineTreeInvite, getMyCommunityTreeInvites, respondCommunityTreeInvite, type CommunityTreeInvite, fetchKeeperInvitesFor, acceptKeeperInvite, declineKeeperInvite, getPersonName, type KeeperInvite } from '../../services/firebase';
 
@@ -15,6 +16,9 @@ interface ProfileInviteBannersProps {
 // and community invitations (a community asking one of your trees to stand with it).
 export const ProfileInviteBanners: React.FC<ProfileInviteBannersProps> = ({ uid, notify }) => {
   const { t } = useLanguage();
+  // Accepting a circle invitation changes what the profile's tree prisms show (tended /
+  // guarded) — refresh the session's lists so the tree appears without a reload.
+  const { refreshTrees } = useSession();
   const [treeInvites, setTreeInvites] = useState<TreeOwnershipInvite[]>([]);
   const [communityInvites, setCommunityInvites] = useState<CommunityTreeInvite[]>([]);
   // Keeper offers — shared keepership of a community, waiting for THIS being's yes
@@ -40,7 +44,7 @@ export const ProfileInviteBanners: React.FC<ProfileInviteBannersProps> = ({ uid,
 
   const handleAcceptInvite = async (id: string) => {
     setInviteBusyId(id);
-    try { await acceptTreeInvite(id); refreshTreeInvites(); }
+    try { await acceptTreeInvite(id); refreshTreeInvites(); refreshTrees().catch(() => {}); }
     catch (e: any) { showAlert(e?.message || 'err_invite_accept'); }
     setInviteBusyId(null);
   };

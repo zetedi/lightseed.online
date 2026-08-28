@@ -59,7 +59,7 @@ interface LightseedProfileProps {
 export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSetDefaultTree, onViewVision, onViewPulse, onViewAlignment, onPlant, onCreateVision, onEmitPulse, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachAudience, reachOpenSignal, onConsumeReach, onReachTree, onOpenTreeById, onOpenCareById, nodeTheme }: LightseedProfileProps) => {
     const { t } = useLanguage();
     // Session state comes from context now (was prop-drilled from App).
-    const { lightseed, myTrees, guardedTrees, isAdmin, isSuperAdmin, superAdminExists } = useSession();
+    const { lightseed, myTrees, guardedTrees, tendedTrees, isAdmin, isSuperAdmin, superAdminExists } = useSession();
     const [activeTab, setActiveTab] = useState<'trees' | 'light' | 'pulses' | 'events' | 'visions' | 'stays' | 'history' | 'reaches' | 'invites' | 'appearance' | 'intelligence' | 'settings' | 'admin'>('trees');
     const [dialogMessage, setDialogMessage] = useState<string | null>(null);
 
@@ -164,6 +164,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
             key: 'trees', label: t('my_trees'), icon: <Icons.Tree />, render: () => (
                 <ProfileTrees
                     myTrees={myTrees}
+                    tendedTrees={tendedTrees}
                     guardedOnly={guardedOnly}
                     originalTree={originalTree}
                     defaultTreeId={defaultTreeId}

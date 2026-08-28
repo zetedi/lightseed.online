@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { roleLabelKey, roleDescKey, type TreeRelationRole } from '../src/domain/treeCircle';
+import { roleLabelKey, roleDescKey, tendedTreeRoles, type TreeRelationRole } from '../src/domain/treeCircle';
 import { treeCircle } from '../src/domain/views/circle';
 import { translations } from '../src/utils/translations';
 import type { Link } from '../src/domain/link';
@@ -56,5 +56,32 @@ describe('the circle view groups the graph', () => {
   it('a relation the circle does not know is left alone, never mislabelled', () => {
     const { groups } = treeCircle('zoltan', [link('m', 'member', 'com1')]);
     expect(groups).toEqual([{ role: 'owner', members: ['zoltan'] }]);
+  });
+});
+
+describe('tendedTreeRoles — the caring layer as a profile prism', () => {
+  const edge = (from: string, rel: string, to: string) => ({ from, rel, to });
+
+  it('collects co_owner and steward links, one role per tree', () => {
+    const roles = tendedTreeRoles([
+      edge('me', 'co_owner', 't1'),
+      edge('me', 'steward', 't2'),
+    ], 'me');
+    expect(roles.get('t1')).toBe('co_owner');
+    expect(roles.get('t2')).toBe('steward');
+  });
+
+  it('co_owner outranks steward when both stand, in either order', () => {
+    expect(tendedTreeRoles([edge('me', 'steward', 't'), edge('me', 'co_owner', 't')], 'me').get('t')).toBe('co_owner');
+    expect(tendedTreeRoles([edge('me', 'co_owner', 't'), edge('me', 'steward', 't')], 'me').get('t')).toBe('co_owner');
+  });
+
+  it('ignores other rels and other hands', () => {
+    const roles = tendedTreeRoles([
+      edge('me', 'guardian', 't1'),
+      edge('me', 'observer', 't2'),
+      edge('someone', 'co_owner', 't3'),
+    ], 'me');
+    expect(roles.size).toBe(0);
   });
 });

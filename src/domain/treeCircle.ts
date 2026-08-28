@@ -37,3 +37,22 @@ export interface TreeOwnershipInvite {
 // system is the mirror test, and there is no copy anywhere to drift.
 export const roleLabelKey = (role: TreeRelationRole) => `role_${role}` as const;
 export const roleDescKey = (role: TreeRelationRole) => `role_${role}_desc` as const;
+
+// The trees a being TENDS through the circle's caring layer: its co_owner/steward links,
+// one role per tree (co_owner outranks steward when both stand). Guardianship is the
+// witnessing layer and stays its own prism; the founding owner needs no link at all —
+// which is why an accepted invitation must surface HERE, not in the owned list.
+export type TendingRole = 'co_owner' | 'steward';
+
+export const tendedTreeRoles = (
+  links: readonly { from: string; rel: string; to: string }[],
+  uid: string,
+): Map<string, TendingRole> => {
+  const roles = new Map<string, TendingRole>();
+  for (const l of links) {
+    if (l.from !== uid) continue;
+    if (l.rel !== 'co_owner' && l.rel !== 'steward') continue;
+    if (l.rel === 'co_owner' || !roles.has(l.to)) roles.set(l.to, l.rel);
+  }
+  return roles;
+};

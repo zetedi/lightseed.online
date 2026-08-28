@@ -4,6 +4,7 @@ import { LIGHT_HOUSE_ROOT, type LightHouseCareAct } from '../../domain/lightHous
 import { firestoreStore } from '../../adapters/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { type Lifetree, type LightHouse, type TreeOwnershipInvite, type InvitableRole } from '../../types';
+import { tendedTreeRoles, type TendingRole } from '../../domain/treeCircle';
 import { createBlock } from '../../utils/crypto';
 import { treePlantingGate, normalizeNodeLimits, DEFAULT_NODE_LIMITS, type NodeLimits } from '../../domain/limits';
 import { BED_DEFAULT_VISIBILITY, BED_TREE_TYPE, bedPlantingProblem, excludeBedTrees, isBedTree, isRealPlace } from '../../domain/bed';
@@ -837,6 +838,26 @@ export const getGuardedTrees = async (uid: string): Promise<Lifetree[]> => {
     }));
     // Guardian links are self-serve, so one could point at a bed — furniture stays out.
     return trees.filter((t): t is Lifetree => t !== null && !isBedTree(t));
+};
+
+// The trees a being TENDS without owning them — its co_owner/steward links, hydrated, each
+// carrying the role so the profile can name the hand honestly (domain/treeCircle
+// tendedTreeRoles: co_owner outranks steward). Owned trees stay out: ownership needs no link.
+export interface TendedTree { tree: Lifetree; role: TendingRole }
+
+export const getTendedTrees = async (uid: string): Promise<TendedTree[]> => {
+    const links = await getDocs(query(collection(db, 'links'),
+        where('from', '==', uid), where('rel', 'in', ['co_owner', 'steward'])));
+    const roles = tendedTreeRoles(links.docs.map(d => d.data() as { from: string; rel: string; to: string }), uid);
+    const trees = await Promise.all([...roles.keys()].map(async id => {
+        try {
+            const snap = await getDoc(doc(db, 'lifetrees', id));
+            return snap.exists() ? ({ id: snap.id, ...(snap.data() as object) } as Lifetree) : null;
+        } catch { return null; } // a tended tree drawn back beyond this viewer's sight
+    }));
+    return trees
+        .filter((t): t is Lifetree => t !== null && !isBedTree(t) && t.ownerId !== uid)
+        .map(tree => ({ tree, role: roles.get(tree.id)! }));
 };
 
 // Trees participating in an event or vision — a prism over its incoming 'participant' links

@@ -6,6 +6,8 @@ import { Lifetree } from '../../types';
 import { SectionTitle } from '../ui/SectionTitle';
 import { ValidationBadge } from '../ValidationBadge';
 import { firestoreStore } from '../../adapters/firestore';
+import type { TendedTree } from '../../services/firebase';
+import { roleLabelKey } from '../../domain/treeCircle';
 import { isWateringOverdue } from '../../domain/watering';
 import { sustainingSeven, SUSTAINING_SEVEN, type GuardianEdge } from '../../domain/sustainingSeven';
 import { isExplicitlyValidatedTree, daysUntilLapse } from '../../utils/validation';
@@ -14,6 +16,9 @@ import { isExplicitlyValidatedTree, daysUntilLapse } from '../../utils/validatio
 // `caredIds`, so re-caring a tree here must re-light the badge up there immediately.
 interface ProfileTreesProps {
   myTrees: Lifetree[];
+  // Trees tended through the circle's caring layer (co_owner/steward links) — not owned,
+  // so they carry none of the owner's affordances (no delete, no default star, no seven).
+  tendedTrees: TendedTree[];
   guardedOnly: Lifetree[];
   // Mahameru — shown to everyone, last: The Original Tree.
   originalTree?: Lifetree | null;
@@ -33,6 +38,7 @@ interface ProfileTreesProps {
 // My Trees tab — planted trees (owned/stewarded) and trees guarded for others.
 export const ProfileTrees: React.FC<ProfileTreesProps> = ({
   myTrees,
+  tendedTrees,
   guardedOnly,
   originalTree,
   defaultTreeId,
@@ -215,6 +221,34 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
           )}
         </div>
       </div>
+
+      {/* Tended — the circle's caring layer: trees you co-own or steward without owning.
+          The tree stays its keeper's, so no delete, star, or seven stands here. */}
+      {tendedTrees.length > 0 && (
+        <div>
+          <SectionTitle title={t('tended_trees')} sub={t('tended_trees_sub')} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {tendedTrees.map(({ tree, role }) => (
+              <div key={tree.id} onClick={() => onViewTree(tree)} className="border border-emerald-100 rounded-lg p-4 hover:shadow-md cursor-pointer transition-all flex items-center justify-between group bg-emerald-50/30">
+                <div className="flex items-center space-x-4">
+                  <img src={tree.latestGrowthUrl || tree.imageUrl || '/seed.webp'} className="w-16 h-16 rounded object-cover bg-slate-100" />
+                  <div>
+                    <h3 className="font-bold text-slate-800 flex items-center gap-1.5">
+                      {tree.name}
+                      {isWateringOverdue(tree) && <button type="button" title="Needs water: open tree care" aria-label="Needs water: open tree care" onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
+                    </h3>
+                    <p className="text-xs text-slate-500">Block Height: {tree.blockHeight}</p>
+                    <span className="mt-1 inline-flex items-center gap-1 text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold [&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Venn /> {t(roleLabelKey(role))}</span>
+                  </div>
+                </div>
+                {tree.status === 'DANGER' && (
+                  <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-[9px] font-bold">DANGER</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Guarded — trees you protect as a guardian (you don't own these) */}
       <div>
