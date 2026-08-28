@@ -61,17 +61,20 @@ export const unmintLastPulse = (pulse: Pick<Pulse, 'id' | 'lifetreeId' | 'hash' 
         });
     });
 
-const fetchPulsesRaw = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, levels?: PulseVisibility[], pageSize?: number) => {
+const fetchPulsesRaw = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, levels?: PulseVisibility[], pageSize?: number, typeFilter?: string) => {
     // Visibility-scope the broad feed so a restricted pulse in this domain can't get the
     // whole query rejected. Broad feeds carry no scope context, so `levels` is public + node.
     const visFilter = levels && levels.length ? [where('visibility', 'in', levels)] : [];
+    // A typed feed (events) filters server-side, so every page is dense with its own kind —
+    // indexes: (type, visibility, createdAt) unscoped, (domain, type, visibility) scoped.
+    const typeF = typeFilter ? [where('type', '==', typeFilter)] : [];
     const scoped = !!domainFilter;
     const lim = pageSize ?? (scoped ? 24 : 12);
     let q;
     if (scoped) {
-        q = query(pulsesCollection, where('domain', '==', domainFilter!.replace(/^www\./, '')), ...visFilter, limit(lim));
+        q = query(pulsesCollection, where('domain', '==', domainFilter!.replace(/^www\./, '')), ...typeF, ...visFilter, limit(lim));
     } else {
-        q = query(pulsesCollection, ...visFilter, orderBy('createdAt', 'desc'), limit(lim));
+        q = query(pulsesCollection, ...typeF, ...visFilter, orderBy('createdAt', 'desc'), limit(lim));
     }
 
     if (lastD) q = query(q, startAfter(lastD));
@@ -125,10 +128,9 @@ export const getMyEvents = async (uid: string): Promise<Pulse[]> =>
     ))).docs.map(mapPulse);
 
 export const fetchEventPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, levels?: PulseVisibility[], ownerUid?: string) => {
-    // Events are sparse among recent pulses, so the shared feed's small page buries them under the
-    // newest reaches/growths and drops them. Widen the window (still one indexed read) so events
-    // actually surface. (A dedicated (type, createdAt) index would let this filter server-side.)
-    const res = await fetchPulsesRaw(lastD, domainFilter, levels, 80);
+    // Server-side type filter (the composite indexes exist since ring 2026-08-28): every
+    // page is pure events, so pagination is real instead of a widened window's leftovers.
+    const res = await fetchPulsesRaw(lastD, domainFilter, levels, 24, 'event');
     const items = res.items.filter(pulse => pulse.type === 'event');
     // The author always sees their own (domain/pulseVisibility.canView) — but no feed may REQUEST
     // the levels that would carry them, so merge the viewer's own in on the first page, exactly as

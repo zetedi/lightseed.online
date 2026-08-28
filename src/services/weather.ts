@@ -17,7 +17,7 @@ export interface EventWeatherReading {
 
 const cache = new Map<string, Promise<EventWeatherReading | null>>();
 
-const geocode = async (location: string): Promise<{ latitude: number; longitude: number; name: string } | null> => {
+export const geocode = async (location: string): Promise<{ latitude: number; longitude: number; name: string } | null> => {
   // Free-text locations ("The Olive Grove, Crete") rarely geocode whole — try the full
   // string, then each comma-segment from the end (the city usually lives there).
   const candidates = [location, ...location.split(',').map(s => s.trim()).filter(Boolean).reverse()];

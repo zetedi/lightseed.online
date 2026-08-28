@@ -46,6 +46,7 @@ import { useReaches } from './hooks/useReaches';
 import { useResonance } from './hooks/useResonance';
 import { useHistoryLayers } from './hooks/useHistoryLayers';
 import { useForestFeed } from './hooks/useForestFeed';
+import { useOrderedEvents } from './hooks/useOrderedEvents';
 import { useAlignmentCards } from './hooks/useAlignmentCards';
 import { useAppRouting, topLevelRoute } from './hooks/useAppRouting';
 import { GDPRBanner } from './components/GDPRBanner';
@@ -774,6 +775,9 @@ const AppContent = () => {
         () => eventsOnView(filteredData as Pulse[], { signedIn: !!lightseed, showPast: showPastEvents, nowMs: eventsNowMs }),
         [filteredData, lightseed, showPastEvents, eventsNowMs]
     );
+    // From my ground (domain/eventOrder): my domain first, then nearness to my default
+    // tree (free-text places geocoded best-effort), then soonness.
+    const orderedEvents = useOrderedEvents(eventsForViewer, activeTree, (impersonatedCommunity || hostCommunity)?.domain);
 
     const searchSuggestions = useMemo(() => (
         Array.from(new Set(data.map((item: any) => item.title || item.name).filter(Boolean)))
@@ -1128,7 +1132,7 @@ const AppContent = () => {
                                 <Icons.Plus /> <span>{t('create_event')}</span>
                             </button>
                         )}
-                        items={eventsForViewer}
+                        items={orderedEvents}
                         emptyText={t('no_events_found')}
                         loadingMore={loadingMore}
                         lightseed={lightseed}
