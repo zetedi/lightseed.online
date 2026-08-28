@@ -155,6 +155,30 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
         } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
     };
 
+    // Answering a knock stays inside the circle's ONE privileged door: the keeper sends the
+    // asker an invitation in the chosen role, and the knock is withdrawn — keeping begins
+    // only when the asker confirms the role they are offered.
+    const [askRole, setAskRole] = useState<InvitableRole>(canInviteRoles ? 'steward' : 'guardian');
+    const [answering, setAnswering] = useState<string | null>(null);
+    const handleAnswerAsk = async (r: { uid: string; name: string }) => {
+        if (!currentUserId) return;
+        setAnswering(r.uid);
+        try {
+            await createTreeInvite({
+                lifetree: tree as Lifetree,
+                invitedUserId: r.uid,
+                role: askRole,
+                invitedByUserId: currentUserId,
+                invitedByName: currentUserName || undefined,
+                message: `Would you join the circle of ${tree.name || 'this tree'} as ${translations.en[roleLabelKey(askRole)].toLowerCase()}?`,
+            });
+            await firestoreStore.unlink(r.uid, 'keeper_request', treeId);
+            setAskNonce(n => n + 1);
+            showAlert(spokenLine('circle_invite_sent', { name: r.name, role: roleName(askRole).toLowerCase(), tree: tree.name || '—' }));
+        } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
+        setAnswering(null);
+    };
+
     // ── Witnessing — a guardian's act (the light mint; the sun ring). A guardian sees the tree's
     // waterings that no guardian has witnessed yet (and not their own care) and may witness one:
     // the witnessWatering callable kindles the carer's ray + the guardian's seventh, server-verified.
@@ -305,20 +329,40 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                 )}
             </div>
 
-            {/* Keepership knocks — answered through the invite box below (the owner chooses the
-                role), so the circle's ONE privileged door stays the invitation. */}
+            {/* Keepership knocks — answered on the row itself, still through the circle's ONE
+                privileged door: accepting sends the asker an invitation in the chosen role. */}
             {canEdit && keepAsks.length > 0 && (
                 <div className="mt-5 rounded-2xl border border-violet-200 bg-violet-50/60 p-4">
-                    <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-violet-700">{t('keeper_requests')}</p>
+                    <div className="mb-1 flex items-center justify-between gap-2">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-violet-700">{t('keeper_requests')}</p>
+                        {canInviteRoles && (
+                            <select value={askRole} onChange={e => setAskRole(e.target.value as InvitableRole)}
+                                className="h-8 rounded-lg border border-violet-200 bg-white px-2 text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500">
+                                {(['guardian', 'co_owner', 'steward', 'observer'] as InvitableRole[]).map(r => (
+                                    <option key={r} value={r}>{t('invite_as_role').replace('{role}', roleName(r))}</option>
+                                ))}
+                            </select>
+                        )}
+                    </div>
                     <p className="mb-2 text-[11px] italic text-violet-600">{t('keeper_knock_tree_hint')}</p>
+                    {/* What the chosen role truly is — read before anyone offers a word they cannot picture. */}
+                    <p className="mb-2 text-xs leading-relaxed text-slate-500">
+                        <span className="font-bold text-slate-600">{roleName(askRole)}</span> — {roleDesc(askRole)}
+                    </p>
                     <div className="space-y-1.5">
                         {keepAsks.map(r => (
                             <div key={r.uid} className="flex items-center justify-between gap-2 rounded-lg border border-violet-100 bg-white px-3 py-2">
                                 <p className="truncate text-sm font-semibold text-slate-700">{r.name}</p>
-                                <button onClick={() => handleDeclineAsk(r.uid)}
-                                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50">
-                                    {t('decline')}
-                                </button>
+                                <div className="flex shrink-0 items-center gap-1.5">
+                                    <button onClick={() => handleAnswerAsk(r)} disabled={answering === r.uid}
+                                        className="rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-violet-500 disabled:opacity-50">
+                                        {answering === r.uid ? '…' : t('accept')}
+                                    </button>
+                                    <button onClick={() => handleDeclineAsk(r.uid)} disabled={answering === r.uid}
+                                        className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50">
+                                        {t('decline')}
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>
