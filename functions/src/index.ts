@@ -1600,7 +1600,11 @@ const communityKeptBy = async (communityId: string, uid: string) => {
     return community;
 };
 
-// Mint (or remint) the challenge — one live challenge per community, superseding any prior.
+// Get-or-mint the challenge — one live challenge per community. RESUME, never invalidate:
+// a keeper places the TXT record and may return days later; reminting on every ask would
+// orphan the record they already planted. The standing challenge is returned while it
+// lives (unused, unexpired, same domain — mirror of domain/domainVerification
+// challengeIsLive); only a used, expired, or moved-domain challenge is superseded.
 export const startDomainVerification = onCall({ cors: true }, async (request) => {
     if (!request.auth) throw new HttpsError("unauthenticated", "You must be signed in.");
     const communityId = String(request.data?.communityId || "");
@@ -1609,6 +1613,15 @@ export const startDomainVerification = onCall({ cors: true }, async (request) =>
     const domain = normalizeAnchorDomain(String(community.domain || ""));
     if (!domain) throw new HttpsError("failed-precondition", "no_domain");
     const challengeRef = db.collection("domainChallenges").doc(communityId);
+    const standing = (await challengeRef.get()).data();
+    if (standing && !standing.usedAt && standing.domain === domain
+        && Date.now() - (standing.createdAt?.toMillis?.() ?? 0) < DOMAIN_CHALLENGE_TTL_MS) {
+        return {
+            domain,
+            recordName: `${DOMAIN_CHALLENGE_LABEL}.${domain}`,
+            recordValue: `${DOMAIN_CHALLENGE_PREFIX}${standing.token}`,
+        };
+    }
     const token = randomBytes(16).toString("hex"); // 128 bits, opaque, single-use
     await challengeRef.set({
         communityId, lid: community.lid || null, domain, token,
@@ -1658,7 +1671,9 @@ export const checkDomainVerification = onCall({ cors: true }, async (request) =>
         },
         updatedAt: FieldValue.serverTimestamp(),
     });
-    batch.update(challengeRef, { usedAt: FieldValue.serverTimestamp() });
+    // The consumed token is residue — the durable truth (domain, method, verifiedAt) lives
+    // on the community doc; nothing is served by storing spent challenges.
+    batch.delete(challengeRef);
     await batch.commit();
     return { verified: true, domain: challenge.domain };
 });

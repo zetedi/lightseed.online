@@ -4,7 +4,7 @@ import { Icons } from '../ui/Icons';
 import { MahameruAvatar } from '../ui/MahameruAvatar';
 import { Community, Lifetree } from '../../types';
 import { ownMergeUid } from '../../domain/pulseVisibility';
-import { isDomainVerified } from '../../domain/domainVerification';
+import { DOMAIN_CHALLENGE_LABEL, isDomainVerified } from '../../domain/domainVerification';
 import { getTreesByDomain, getPulsesByTreeId, updateCommunity, startDomainVerification, checkDomainVerification, type DomainChallengeRecord } from '../../services/firebase';
 import { isCanonicallySealed, verifyBlockSeal, type ChainBlock } from '../../domain/chain';
 import { normalizePlaceOfRecord } from '../../domain/communityDoor';
@@ -419,16 +419,33 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                 {challenge && (
                   <div className="mt-2 rounded-xl border border-emerald-100 bg-emerald-50/50 p-3">
                     <p className="text-xs leading-relaxed text-slate-600">{t('domain_verify_hint')}</p>
-                    <div className="mt-2 space-y-1.5 font-mono text-[11px] text-slate-700" dir="ltr">
-                      <p className="break-all rounded border border-slate-200 bg-white px-2 py-1">TXT · {challenge.recordName}</p>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="break-all rounded border border-slate-200 bg-white px-2 py-1">{challenge.recordValue}</p>
-                        <button onClick={() => navigator.clipboard.writeText(challenge.recordValue).catch(() => {})}
-                          className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-slate-500 hover:bg-slate-50">
-                          {t('copy')}
-                        </button>
-                      </div>
+                    {/* The four fields as a DNS dashboard asks for them — the Name is the bare
+                        host label; the provider appends the domain itself. */}
+                    <div className="mt-2 space-y-1.5 text-[11px]" dir="ltr">
+                      {([
+                        [t('domain_verify_dns_type'), 'TXT', false],
+                        [t('domain_verify_dns_name'), DOMAIN_CHALLENGE_LABEL, true],
+                        [t('domain_verify_dns_value'), challenge.recordValue, true],
+                        [t('domain_verify_dns_ttl'), '300', false],
+                      ] as const).map(([label, value, copyable]) => (
+                        <div key={label} className="flex flex-wrap items-center gap-2">
+                          <span className="w-24 shrink-0 font-bold uppercase tracking-wide text-slate-400">{label}</span>
+                          <span className="break-all rounded border border-slate-200 bg-white px-2 py-1 font-mono text-slate-700">{value}</span>
+                          {copyable && (
+                            <button onClick={() => navigator.clipboard.writeText(value).catch(() => {})}
+                              className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-slate-500 hover:bg-slate-50">
+                              {t('copy')}
+                            </button>
+                          )}
+                        </div>
+                      ))}
                     </div>
+                    <p className="mt-2 text-[11px] italic leading-relaxed text-slate-500">
+                      {t('domain_verify_name_note').replace('{full}', challenge.recordName)}
+                    </p>
+                    <p className="mt-1 text-[11px] italic leading-relaxed text-slate-500">
+                      {t('domain_verify_resume')}
+                    </p>
                     <button onClick={handleCheckVerification} disabled={verifyBusy}
                       className="mt-2 rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50">
                       {verifyBusy ? '…' : t('domain_verify_check')}

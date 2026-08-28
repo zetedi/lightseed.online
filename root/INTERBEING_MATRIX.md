@@ -117,7 +117,8 @@ The server then OBSERVES the record (`checkDomainVerification`) and writes the m
 (`domainVerification: { domain, method: 'dns_txt', verifiedAt }`) — the one hand the rules
 allow; no client can write the field, so the badge is never a self-claim in a proof's
 clothes. The record may be removed once observed; the challenge expires after a week and
-retires on use; reverification simply mints a fresh one. The badge derives: it speaks only
+is deleted on use — a spent token is residue, the mark alone endures; reverification
+simply mints a fresh one. The badge derives: it speaks only
 while the community's canonical domain still equals the proven domain, so moving address
 silently returns the anchor to self-declared.
 
