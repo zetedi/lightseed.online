@@ -98,24 +98,32 @@ Every community profile now has an **Interbeing** section.
 The UI deliberately says which state is stored and which is inferred. It does not imply that
 silence is rejection, nor that reciprocity creates a parent, owner, federation, or contract.
 
-## Domain and external-anchor scaffold
+## Domain and external anchors — self-declared, or DNS-proven
 
 A community's existing canonical `domain` and `domainAliases` are its first external anchors.
-The Matrix shows the canonical domain beside each community, but labels it **self-declared**.
-This is honest scaffolding, not verification: the current slice does not prove that the
-community controls the domain.
+The Matrix shows the canonical domain beside each community, labeled **self-declared** until
+a control proof is observed.
 
-A future proof can attach through a server-observed DNS TXT challenge or a well-known HTTPS
-document. That proof should:
+The proof (since ring 2026-08-28) is a DNS-01-style control challenge (RFC 8555 §8.4) in an
+underscored namespace (RFC 8552). A keeper asks the server to mint a single-use, ≥128-bit
+random token, bound server-side to the community and its exact normalized domain, and places
+it at their DNS host:
 
-- bind a community LID, canonical domain, challenge, method, and observation time;
-- be written or confirmed by a trusted server hand, never accepted as a client boolean;
-- expire or be re-observed when control may have changed;
-- remain separate from the relationship itself, so losing a domain does not erase the LIN;
-- never turn domain control into ownership of a community.
+```dns
+_lightseed-challenge.example.org.  300  IN  TXT  "lightseed-verification=v1:<random-token>"
+```
 
-Until that exists, the contract is exact: the app displays an address claimed by the
-community and makes no stronger claim.
+The server then OBSERVES the record (`checkDomainVerification`) and writes the mark
+(`domainVerification: { domain, method: 'dns_txt', verifiedAt }`) — the one hand the rules
+allow; no client can write the field, so the badge is never a self-claim in a proof's
+clothes. The record may be removed once observed; the challenge expires after a week and
+retires on use; reverification simply mints a fresh one. The badge derives: it speaks only
+while the community's canonical domain still equals the proven domain, so moving address
+silently returns the anchor to self-declared.
+
+The proof stays exactly what it is: **"this community controls this external anchor."**
+It is never reputation, never ownership of the community, and the Matrix's reciprocal
+relationships remain fully independent of it — losing a domain does not erase a LIN.
 
 ## What is guaranteed now
 
@@ -132,7 +140,8 @@ community and makes no stronger claim.
 
 ## What is not guaranteed yet
 
-- Domain control is not cryptographically or operationally verified.
+- Domain verification is by-hand, not scheduled: control can change after observation and
+  the mark stays until someone reverifies. Aliases are not proven — only the canonical domain.
 - An attestation is authenticated by the current Firestore session and keeper role, not yet
   signed by the community Council or sealed onto a community chain.
 - Withdrawal deletes the current link rather than leaving an append-only superseding mark.

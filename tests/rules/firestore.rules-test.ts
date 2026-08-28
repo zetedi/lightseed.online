@@ -2130,3 +2130,23 @@ describe('watering pulses — the light-mint trust root (server-mediated; Lumo r
     await assertFails(updateDoc(doc(db(MALLORY), 'pulses', 'w6'), { wateringConfirmedBy: 'guardian', updatedAt: 2 }));
   });
 });
+
+describe('domain verification — server-observed truth, no client hand', () => {
+  it('even the keeper cannot write the verification mark', async () => {
+    await assertFails(updateDoc(doc(db(ALICE), 'communities', 'com1'), {
+      domainVerification: { domain: 'lightseed.online', method: 'dns_txt' },
+    }));
+  });
+
+  it('the keeper still edits ordinary fields freely', async () => {
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'communities', 'com1'), {
+      description: 'still ours to tend',
+    }));
+  });
+
+  it('challenges are no one\'s to read or forge', async () => {
+    await assertFails(getDoc(doc(db(ALICE), 'domainChallenges', 'com1')));
+    await assertFails(setDoc(doc(db(ALICE), 'domainChallenges', 'com1'), { token: 'forged' }));
+    await assertFails(getDoc(doc(db(), 'domainChallenges', 'com1')));
+  });
+});

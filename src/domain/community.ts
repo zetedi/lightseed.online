@@ -9,6 +9,10 @@ export interface Community extends Being {
   // Hostnames this community also answers (theohouse.web.app while theohouse.org's DNS
   // connects). `domain` stays the ONE place-of-record stamp; aliases only open the door.
   domainAliases?: string[];
+  // SERVER-OBSERVED proof of anchor control (domain/domainVerification) — written only by
+  // the checkDomainVerification callable; the rules refuse every client hand. Speaks only
+  // while `domain` still equals the proven domain (isDomainVerified).
+  domainVerification?: { domain: string; method: 'dns_txt'; verifiedAt?: Stamp } | null;
   vision: string; // Rich text
   imageUrls: string[]; // For carousel
   logoUrl?: string;       // Square brand mark (avatar) — shown in lists and the hero badge

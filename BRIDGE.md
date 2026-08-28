@@ -96,9 +96,13 @@ What a being LOOKS like: `src/components/BeingProfile.tsx` + `src/components/sec
   that direction (door stewards cannot speak outward); the edge grants no privilege. The
   existing staff repair escape remains. Emulator tests live under
   “Interbeing Matrix”.
-- **Face:** Community profile → **Interbeing** (`CommunityInterbeingMatrix.tsx`). Existing
-  domains are shown as self-declared external anchors, explicitly not verified control.
-- **Plain contract and future boundary:** `INTERBEING_MATRIX.md`.
+- **Face:** Community profile → **Interbeing** (`CommunityInterbeingMatrix.tsx`). Domains are
+  self-declared external anchors until DNS-proven — then they wear the verified badge.
+- **Anchor proof:** `src/domain/domainVerification.ts` (the law) +
+  functions `startDomainVerification`/`checkDomainVerification` (mint & observe; the ONLY
+  writer of `communities.domainVerification` — rules deny-list it) + the Vision tab's
+  domain block (the keeper's verify path). `tests/domainVerification.test.ts`.
+- **Plain contract:** `root/INTERBEING_MATRIX.md`.
 
 ## The bed (a place to sleep, as a being)
 

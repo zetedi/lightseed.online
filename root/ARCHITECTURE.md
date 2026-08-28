@@ -107,7 +107,7 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
   reciprocity is pure derived state, never an ownership or acceptance field. The community
   profile's Interbeing section is the first end-to-end face. Domains are displayed as honest
   self-declared external anchors; verification remains a named future boundary. See
-  `INTERBEING_MATRIX.md` for the plain contract.
+  `root/INTERBEING_MATRIX.md` for the plain contract.
 - **The signing crystal**: first publication atomically anchors current key,
   lineage and epoch. V3 covenant/decision seals carry fingerprint + epoch and
   receive server time at rest. Routine rotation is old/new cross-signed in a

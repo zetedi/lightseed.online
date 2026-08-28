@@ -1315,10 +1315,13 @@ service cloud.firestore {
       // hands like `lid` — succession moves only through the resignKeeper transaction,
       // which refuses to leave a community keeperless. (Before this, an owner could hand
       // the anchor to any uid — or to nobody — in one client write.)
+      // `domainVerification` is SERVER-OBSERVED truth (a DNS control proof, written only by
+      // the checkDomainVerification callable via Admin SDK) — no client hand may write it,
+      // or the badge would be a self-claim wearing a proof's clothes.
       allow update: if isSignedIn() && (
         (
           (resource.data.ownerId == request.auth.uid || hasKeeperLink(communityId) || isStaff())
-          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid', 'loveCount', 'ownerId', 'bornOn'])
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid', 'loveCount', 'ownerId', 'bornOn', 'domainVerification'])
         )
         // LOVE: exactly one own-slot transition and exactly +/- one, atomically proved.
         || validLoveCountChange('communities', communityId)
@@ -1656,6 +1659,13 @@ service cloud.firestore {
     // client — they are managed exclusively by Cloud Functions via the Admin SDK
     // (saveProviderCredential / generateClaudeContent), which bypass these rules.
     match /providerCredentials/{credId} {
+      allow read, write: if false;
+    }
+
+    // Domain-verification challenges (root/INTERBEING_MATRIX.md): the single-use random
+    // token binding a community to its claimed domain. Server-only — the callables return
+    // the record to the keeper's hand; nothing here is for any client to read or forge.
+    match /domainChallenges/{challengeId} {
       allow read, write: if false;
     }
   }

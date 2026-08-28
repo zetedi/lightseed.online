@@ -4,7 +4,8 @@ import { Icons } from '../ui/Icons';
 import { MahameruAvatar } from '../ui/MahameruAvatar';
 import { Community, Lifetree } from '../../types';
 import { ownMergeUid } from '../../domain/pulseVisibility';
-import { getTreesByDomain, getPulsesByTreeId, updateCommunity } from '../../services/firebase';
+import { isDomainVerified } from '../../domain/domainVerification';
+import { getTreesByDomain, getPulsesByTreeId, updateCommunity, startDomainVerification, checkDomainVerification, type DomainChallengeRecord } from '../../services/firebase';
 import { isCanonicallySealed, verifyBlockSeal, type ChainBlock } from '../../domain/chain';
 import { normalizePlaceOfRecord } from '../../domain/communityDoor';
 import { setTokenisationEnabled } from '../../domain/tokenisation';
@@ -102,6 +103,38 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
       setDomainDraft(home);
     } catch (e: unknown) { showAlert((e as Error)?.message || 'err_action'); }
     setDomainSaving(false);
+  };
+
+  // Domain verification (domain/domainVerification): the server mints the challenge, the
+  // keeper plants the TXT record at their DNS host, the server OBSERVES it. The badge is
+  // derived, never stored client-side — it falls silent the moment the domain changes.
+  const domainVerified = isDomainVerified(community);
+  const [challenge, setChallenge] = useState<DomainChallengeRecord | null>(null);
+  const [verifyBusy, setVerifyBusy] = useState(false);
+  const verifyError = (e: unknown): string => {
+    const m = String((e as Error)?.message || '');
+    if (m.includes('no_domain')) return 'domain_verify_no_domain';
+    if (m.includes('no_challenge') || m.includes('challenge_used') || m.includes('challenge_expired')) return 'domain_verify_expired';
+    if (m.includes('domain_changed')) return 'domain_verify_changed';
+    if (m.includes('txt_not_found')) return 'domain_verify_txt_missing';
+    if (m.includes('txt_mismatch')) return 'domain_verify_txt_mismatch';
+    return m || 'err_action';
+  };
+  const handleStartVerification = async () => {
+    setVerifyBusy(true);
+    try { setChallenge(await startDomainVerification(community.id)); }
+    catch (e: unknown) { showAlert(verifyError(e)); }
+    setVerifyBusy(false);
+  };
+  const handleCheckVerification = async () => {
+    setVerifyBusy(true);
+    try {
+      const res = await checkDomainVerification(community.id);
+      onUpdate?.({ domainVerification: { domain: res.domain, method: 'dns_txt' } });
+      setChallenge(null);
+      showAlert(spokenLine('domain_verify_success', { domain: res.domain }));
+    } catch (e: unknown) { showAlert(verifyError(e)); }
+    setVerifyBusy(false);
   };
 
   // The strict-scope toggle — mirrors community.strictScope. Only bites while scoped (reflect off).
@@ -366,6 +399,42 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                   className="rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50">
                   {domainSaving ? t('saving') : t('save')}
                 </button>
+              </div>
+              {/* Verification — server-observed control of the anchor, never reputation. */}
+              <div className="mt-3">
+                {domainVerified ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-700">✓ {t('domain_verified')}</span>
+                    <button onClick={handleStartVerification} disabled={verifyBusy}
+                      className="text-[11px] font-bold text-slate-400 underline-offset-2 hover:text-emerald-700 hover:underline disabled:opacity-50">
+                      {t('domain_reverify')}
+                    </button>
+                  </div>
+                ) : !challenge && (
+                  <button onClick={handleStartVerification} disabled={verifyBusy || !hasDomain}
+                    className="rounded-full border border-emerald-200 bg-white px-3.5 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-50">
+                    {verifyBusy ? '…' : t('domain_verify_start')}
+                  </button>
+                )}
+                {challenge && (
+                  <div className="mt-2 rounded-xl border border-emerald-100 bg-emerald-50/50 p-3">
+                    <p className="text-xs leading-relaxed text-slate-600">{t('domain_verify_hint')}</p>
+                    <div className="mt-2 space-y-1.5 font-mono text-[11px] text-slate-700" dir="ltr">
+                      <p className="break-all rounded border border-slate-200 bg-white px-2 py-1">TXT · {challenge.recordName}</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="break-all rounded border border-slate-200 bg-white px-2 py-1">{challenge.recordValue}</p>
+                        <button onClick={() => navigator.clipboard.writeText(challenge.recordValue).catch(() => {})}
+                          className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-slate-500 hover:bg-slate-50">
+                          {t('copy')}
+                        </button>
+                      </div>
+                    </div>
+                    <button onClick={handleCheckVerification} disabled={verifyBusy}
+                      className="mt-2 rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50">
+                      {verifyBusy ? '…' : t('domain_verify_check')}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>

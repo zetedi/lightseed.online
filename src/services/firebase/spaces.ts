@@ -618,3 +618,11 @@ export const acceptKeeperRequest = async (communityId: string, requesterUid: str
     (await httpsCallable(functions, 'acceptKeeperRequest')({ communityId, requesterUid })).data as { keeperUid: string };
 export const resignKeeper = async (communityId: string): Promise<{ resigned: string; successor: string | null }> =>
     (await httpsCallable(functions, 'resignKeeper')({ communityId })).data as { resigned: string; successor: string | null };
+
+// Domain verification (root/INTERBEING_MATRIX.md) — the server mints the challenge and
+// observes the TXT record; these hands only carry the keeper's ask.
+export interface DomainChallengeRecord { domain: string; recordName: string; recordValue: string }
+export const startDomainVerification = async (communityId: string): Promise<DomainChallengeRecord> =>
+    (await httpsCallable(functions, 'startDomainVerification')({ communityId })).data as DomainChallengeRecord;
+export const checkDomainVerification = async (communityId: string): Promise<{ verified: boolean; domain: string }> =>
+    (await httpsCallable(functions, 'checkDomainVerification')({ communityId })).data as { verified: boolean; domain: string };

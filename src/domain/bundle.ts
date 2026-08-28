@@ -122,6 +122,7 @@ export const TRAVEL_PLAN: readonly TravelRule[] = [
   { path: 'mail', mode: 'excluded', reason: 'server mail queue — re-importing re-SENDS every letter through the mail extension' },
   { path: 'mailThrottle', mode: 'excluded', reason: 'transient send-rate ledger (no rules block — server-only); meaningless off its node' },
   { path: 'usage', mode: 'excluded', reason: 'daily AI/mail counters — quota history is not identity' },
+  { path: 'domainChallenges', mode: 'excluded', reason: 'single-use DNS control tokens — a challenge proves nothing beyond its week, and a new node mints its own; the observed mark travels ON the community doc' },
 ];
 
 // The rels whose link.from is NOT a person uid: tree, Light House, and community edges.

@@ -10,6 +10,7 @@ import {
     randomUUID, randomBytes, createHash, createPublicKey,
     verify as verifySignature,
 } from "node:crypto";
+import { resolveTxt } from "node:dns/promises";
 import { judgeWitness, kindleDayKeyFromMs, uuidv7, releaseRay } from "./mint";
 import { entryFor, COLLECTION_FOR_KIND } from "./beingIndex";
 import { faceFeedOf, feedDomainOf } from "./faceEvents";
@@ -1566,6 +1567,95 @@ export const resignKeeper = onCall({ cors: true }, async (request) => {
         tx.delete(ownLink!.ref); // ownerId remains — never keeperless by construction
         return { resigned: uid, successor: null };
     });
+});
+
+// ── Domain verification (root/INTERBEING_MATRIX.md) ─────────────────────────────────────
+// A DNS-01-style control proof (RFC 8555 §8.4) in an underscored namespace (RFC 8552):
+// the server mints a single-use >=128-bit token bound to the community and its exact
+// normalized domain; a keeper places it as a TXT record; the server OBSERVES it and writes
+// the mark — the one hand the rules allow. DNS proves control of the anchor, never worth.
+// Mirror of src/domain/domainVerification.ts + interbeingMatrix.normalizeAnchorDomain
+// (functions/rootDir is isolated — keep the constants in sync with those laws' tests).
+const DOMAIN_CHALLENGE_LABEL = "_lightseed-challenge";
+const DOMAIN_CHALLENGE_PREFIX = "lightseed-verification=v1:";
+const DOMAIN_CHALLENGE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+const normalizeAnchorDomain = (value: string): string => {
+    const withoutScheme = value.trim().toLowerCase().replace(/^https?:\/\//, "");
+    const authority = withoutScheme.split(/[/?#]/, 1)[0] || "";
+    return authority.replace(/^www\./, "").replace(/:\d+$/, "");
+};
+
+// Caller must keep this community; returns the doc data or throws.
+const communityKeptBy = async (communityId: string, uid: string) => {
+    const community = (await db.collection("communities").doc(communityId).get()).data();
+    if (!community) throw new HttpsError("not-found", "Community not found.");
+    const isKeeper = community.ownerId === uid
+        || (await keeperLinkRef(uid, communityId).get()).exists;
+    if (!isKeeper) throw new HttpsError("permission-denied", "Only a keeper verifies the anchor.");
+    return community;
+};
+
+// Mint (or remint) the challenge — one live challenge per community, superseding any prior.
+export const startDomainVerification = onCall({ cors: true }, async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "You must be signed in.");
+    const communityId = String(request.data?.communityId || "");
+    if (!communityId) throw new HttpsError("invalid-argument", "communityId is required.");
+    const community = await communityKeptBy(communityId, request.auth.uid);
+    const domain = normalizeAnchorDomain(String(community.domain || ""));
+    if (!domain) throw new HttpsError("failed-precondition", "no_domain");
+    const token = randomBytes(16).toString("hex"); // 128 bits, opaque, single-use
+    await db.collection("domainChallenges").doc(communityId).set({
+        communityId, lid: community.lid || null, domain, token,
+        createdBy: request.auth.uid, createdAt: FieldValue.serverTimestamp(), usedAt: null,
+    });
+    return {
+        domain,
+        recordName: `${DOMAIN_CHALLENGE_LABEL}.${domain}`,
+        recordValue: `${DOMAIN_CHALLENGE_PREFIX}${token}`,
+    };
+});
+
+// Observe the TXT record; on proof, write the server-only mark and retire the challenge.
+export const checkDomainVerification = onCall({ cors: true }, async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "You must be signed in.");
+    const communityId = String(request.data?.communityId || "");
+    if (!communityId) throw new HttpsError("invalid-argument", "communityId is required.");
+    const community = await communityKeptBy(communityId, request.auth.uid);
+    const challengeRef = db.collection("domainChallenges").doc(communityId);
+    const challenge = (await challengeRef.get()).data();
+    if (!challenge) throw new HttpsError("failed-precondition", "no_challenge");
+    if (challenge.usedAt) throw new HttpsError("failed-precondition", "challenge_used");
+    const createdAtMs = challenge.createdAt?.toMillis?.() ?? 0;
+    if (Date.now() - createdAtMs >= DOMAIN_CHALLENGE_TTL_MS) {
+        throw new HttpsError("failed-precondition", "challenge_expired");
+    }
+    // The proof binds to the EXACT domain the challenge named — a community that moved
+    // since must start over; nothing verifies an address it no longer claims.
+    if (normalizeAnchorDomain(String(community.domain || "")) !== challenge.domain) {
+        throw new HttpsError("failed-precondition", "domain_changed");
+    }
+    let records: string[][];
+    try {
+        records = await resolveTxt(`${DOMAIN_CHALLENGE_LABEL}.${challenge.domain}`);
+    } catch {
+        throw new HttpsError("failed-precondition", "txt_not_found");
+    }
+    const expected = `${DOMAIN_CHALLENGE_PREFIX}${challenge.token}`;
+    if (!records.some((chunks) => chunks.join("") === expected)) {
+        throw new HttpsError("failed-precondition", "txt_mismatch");
+    }
+    const batch = db.batch();
+    batch.update(db.collection("communities").doc(communityId), {
+        domainVerification: {
+            domain: challenge.domain, method: "dns_txt",
+            verifiedAt: FieldValue.serverTimestamp(),
+        },
+        updatedAt: FieldValue.serverTimestamp(),
+    });
+    batch.update(challengeRef, { usedAt: FieldValue.serverTimestamp() });
+    await batch.commit();
+    return { verified: true, domain: challenge.domain };
 });
 
 // Request an invitation (callable, may be unauthenticated). With admin rights it checks

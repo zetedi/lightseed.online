@@ -37,7 +37,7 @@ export interface CommunityDomainAnchor {
   verification: 'self_declared';
 }
 
-const normalizeAnchorDomain = (value: string): string => {
+export const normalizeAnchorDomain = (value: string): string => {
   const withoutScheme = value.trim().toLowerCase().replace(/^https?:\/\//, '');
   const authority = withoutScheme.split(/[/?#]/, 1)[0] || '';
   return authority.replace(/^www\./, '').replace(/:\d+$/, '');

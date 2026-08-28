@@ -9,6 +9,7 @@ import {
   isInterbeingRelation,
   type InterbeingRelation,
 } from '../../domain/interbeingMatrix';
+import { isDomainVerified } from '../../domain/domainVerification';
 import { firestoreStore } from '../../adapters/firestore';
 import { fetchCommunities } from '../../services/firebase';
 import { SectionTitle } from '../ui/SectionTitle';
@@ -116,9 +117,15 @@ export const CommunityInterbeingMatrix: React.FC<CommunityInterbeingMatrixProps>
               {anchor.canonicalDomain}
             </a>
           </div>
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
-            {t('interbeing_anchor_self_declared')}
-          </span>
+          {isDomainVerified(community) ? (
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+              ✓ {t('domain_verified')} · DNS
+            </span>
+          ) : (
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+              {t('interbeing_anchor_self_declared')}
+            </span>
+          )}
         </div>
         <p className="mt-3 text-sm leading-relaxed text-slate-500">
           {t('interbeing_anchor_desc')}
@@ -164,9 +171,14 @@ export const CommunityInterbeingMatrix: React.FC<CommunityInterbeingMatrixProps>
                     <h3 className="font-semibold text-slate-800">{other.name}</h3>
                     <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${words.tone}`}>{t(words.key)}</span>
                   </div>
-                  <a href={`https://${communityDomainAnchor(other).canonicalDomain}`} target="_blank" rel="noreferrer" className="mt-1 block truncate font-mono text-xs text-slate-500 hover:text-emerald-700">
-                    {communityDomainAnchor(other).canonicalDomain}
-                  </a>
+                  <span className="mt-1 flex items-center gap-1.5">
+                    <a href={`https://${communityDomainAnchor(other).canonicalDomain}`} target="_blank" rel="noreferrer" className="block truncate font-mono text-xs text-slate-500 hover:text-emerald-700">
+                      {communityDomainAnchor(other).canonicalDomain}
+                    </a>
+                    {isDomainVerified(other) && (
+                      <span title={t('domain_verified')} className="shrink-0 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700">✓ DNS</span>
+                    )}
+                  </span>
                   <p className="mt-2 text-sm text-slate-600">{t(interbeingRelationKey(rel))}</p>
                 </div>
                 {canManage && (

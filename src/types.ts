@@ -14,6 +14,7 @@ export * from './domain/community';
 export * from './domain/communityDoor';
 export * from './domain/dataAuthority';
 export * from './domain/interbeingMatrix';
+export * from './domain/domainVerification';
 export * from './domain/decision';
 export * from './domain/intelligence';
 export * from './domain/lightHouse';

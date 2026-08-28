@@ -6,6 +6,22 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-28 · The anchor is proven, the feed stands on my ground** — the Interbeing
+contract moves into the root (`root/INTERBEING_MATRIX.md`), and its named future boundary
+closes: DOMAIN VERIFICATION ships as a DNS-01-style control proof (RFC 8555 §8.4) under
+`_lightseed-challenge.<domain>` (RFC 8552) — server-minted single-use ≥128-bit token, bound
+to community + exact normalized domain, OBSERVED by `checkDomainVerification`, written as
+the server-only `domainVerification` mark (rules refuse every client hand), and the badge
+DERIVES: it falls silent the moment the domain changes. DNS proves control of the anchor,
+never worth. Alongside: the events feed learns to stand on the viewer's own ground
+(domain/eventOrder — my domain first, then banded nearness to my default tree, then
+soonness; free-text places geocoded best-effort) with real server-side event pagination on
+new (type, visibility, createdAt) and (domain, type, visibility) indexes. REJECTED: a
+root-domain TXT (collides with SPF/DKIM); a client-written verified flag; verification as
+reputation; raw-distance ordering that would let nearness nullify time.
+
+---
+
 **2026-08-28 · The Interbeing Matrix: each community speaks with its own hand** — the LIN
 gains its first COMMUNITY→COMMUNITY relations: `collaborates_with`, `recognises`, and
 `shares_resources_with`. One directed edge is one community's attestation and proposal; the
@@ -20,7 +36,7 @@ are community ids, not mortal uids. Its face carries domain-owned word KEYS and 
 the completed English, Arabic and Chinese dictionaries; no English is born in the domain or
 component. The wider name is **Interbeing Matrix**; **Intercommunity
 Matrix** is this first organisational view. Full contract, limits and future proof boundary:
-`INTERBEING_MATRIX.md`. REJECTED: relationship arrays; a central acceptance document; universal
+`root/INTERBEING_MATRIX.md`. REJECTED: relationship arrays; a central acceptance document; universal
 reputation; implied domain proof; tokens or blockchain machinery for a relationship that the
 existing LIN already holds.
 
