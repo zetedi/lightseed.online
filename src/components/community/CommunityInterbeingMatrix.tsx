@@ -10,6 +10,7 @@ import {
   type InterbeingRelation,
 } from '../../domain/interbeingMatrix';
 import { isDomainVerified } from '../../domain/domainVerification';
+import { isTreeCircle } from '../../domain/treeCircle';
 import { firestoreStore } from '../../adapters/firestore';
 import { fetchCommunities } from '../../services/firebase';
 import { SectionTitle } from '../ui/SectionTitle';
@@ -109,6 +110,8 @@ export const CommunityInterbeingMatrix: React.FC<CommunityInterbeingMatrixProps>
         sub={t('interbeing_sub')}
       />
 
+      {/* A circle has no anchor to show — the box waits until an address is claimed. */}
+      {!!anchor.canonicalDomain && (
       <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -131,6 +134,7 @@ export const CommunityInterbeingMatrix: React.FC<CommunityInterbeingMatrixProps>
           {t('interbeing_anchor_desc')}
         </p>
       </div>
+      )}
 
       {canManage && (
         <div className="rounded-2xl border border-violet-100 bg-violet-50/40 p-5">
@@ -139,7 +143,7 @@ export const CommunityInterbeingMatrix: React.FC<CommunityInterbeingMatrixProps>
           <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
             <select value={targetId} onChange={event => setTargetId(event.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
               <option value="">{t('interbeing_choose_community')}</option>
-              {communities.map(item => <option key={item.id} value={item.id}>{item.name} · {item.domain}</option>)}
+              {communities.map(item => <option key={item.id} value={item.id}>{item.name} · {isTreeCircle(item) ? t('tree_circle_badge') : (item.domain || '—')}</option>)}
             </select>
             <select value={relation} onChange={event => setRelation(event.target.value as InterbeingRelation)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
               {INTERBEING_RELATIONS.map(rel => <option key={rel} value={rel}>{t(interbeingRelationKey(rel))}</option>)}
@@ -172,9 +176,13 @@ export const CommunityInterbeingMatrix: React.FC<CommunityInterbeingMatrixProps>
                     <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${words.tone}`}>{t(words.key)}</span>
                   </div>
                   <span className="mt-1 flex items-center gap-1.5">
-                    <a href={`https://${communityDomainAnchor(other).canonicalDomain}`} target="_blank" rel="noreferrer" className="block truncate font-mono text-xs text-slate-500 hover:text-emerald-700">
-                      {communityDomainAnchor(other).canonicalDomain}
-                    </a>
+                    {communityDomainAnchor(other).canonicalDomain ? (
+                      <a href={`https://${communityDomainAnchor(other).canonicalDomain}`} target="_blank" rel="noreferrer" className="block truncate font-mono text-xs text-slate-500 hover:text-emerald-700">
+                        {communityDomainAnchor(other).canonicalDomain}
+                      </a>
+                    ) : isTreeCircle(other) ? (
+                      <span className="text-[10px] font-bold uppercase tracking-wide text-violet-500">{t('tree_circle_badge')}</span>
+                    ) : null}
                     {isDomainVerified(other) && (
                       <span title={t('domain_verified')} className="shrink-0 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700">✓ DNS</span>
                     )}

@@ -8,6 +8,7 @@ import { Community, Lifetree } from '../types';
 import { fetchCommunities, createCommunity, getCommunityByDomain, getMyVisions } from '../services/firebase';
 import { matchCommunities, type CommunityMatch } from '../domain/match';
 import { communitiesOnView } from '../domain/communityDoor';
+import { isTreeCircle } from '../domain/treeCircle';
 import { useRefreshSignal } from '../hooks/useRefreshSignal';
 import { firestoreStore } from '../adapters/firestore';
 import { notify } from './ui/Toast';
@@ -50,7 +51,10 @@ const StandingMark = ({ standing, community, onJoin, small = false }: { standing
 };
 
 const CommunityCard = ({ community, isGenesis = false, onSelect, standing = 'joinable', onJoin, density = 'cards' }: { community: Community, isGenesis?: boolean, onSelect: (community: Community) => void, standing?: CardStanding, onJoin?: (community: Community) => void, density?: ListDensity }) => {
+  const { t } = useLanguage();
   const hero = (community as any).heroImageUrl || community.imageUrls?.[0];
+  // A tree circle (the pre-community) wears its own mark where a community wears its domain.
+  const circle = isTreeCircle(community);
 
   // ROWS — one line: logo, name+domain, standing.
   if (density === 'rows') {
@@ -62,7 +66,9 @@ const CommunityCard = ({ community, isGenesis = false, onSelect, standing = 'joi
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-bold text-slate-800">{community.name}{isGenesis && <span className="ml-2 text-[9px] font-black uppercase tracking-wide text-amber-600">Community 0</span>}</p>
-          <p className="truncate font-mono text-[11px] text-slate-400">{community.domain}</p>
+          {circle
+            ? <p className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-violet-600 [&>svg]:h-3 [&>svg]:w-3"><Icons.Venn /> {t('tree_circle_badge')}</p>
+            : <p className="truncate font-mono text-[11px] text-slate-400">{community.domain}</p>}
         </div>
         <StandingMark standing={standing} community={community} onJoin={onJoin} small />
       </div>
@@ -80,7 +86,9 @@ const CommunityCard = ({ community, isGenesis = false, onSelect, standing = 'joi
         <div className="relative z-10 flex items-end justify-between gap-2 p-3">
           <div className="min-w-0">
             <p className="truncate text-sm font-bold text-white drop-shadow">{community.name}</p>
-            <p className="truncate font-mono text-[10px] text-emerald-200">{community.domain}</p>
+            {circle
+              ? <p className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide text-violet-200 [&>svg]:h-3 [&>svg]:w-3"><Icons.Venn /> {t('tree_circle_badge')}</p>
+              : <p className="truncate font-mono text-[10px] text-emerald-200">{community.domain}</p>}
           </div>
           <StandingMark standing={standing} community={community} onJoin={onJoin} small />
         </div>
@@ -117,7 +125,9 @@ const CommunityCard = ({ community, isGenesis = false, onSelect, standing = 'joi
               </div>
               <div className="min-w-0">
                   <h2 className="line-clamp-2 break-words text-lg font-bold text-white drop-shadow-md">{community.name}</h2>
-                  <p className="truncate font-mono text-xs text-emerald-200 drop-shadow-md">{community.domain}</p>
+                  {circle
+                    ? <p className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-violet-200 drop-shadow-md [&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Venn /> {t('tree_circle_badge')}</p>
+                    : <p className="truncate font-mono text-xs text-emerald-200 drop-shadow-md">{community.domain}</p>}
               </div>
           </div>
           <div

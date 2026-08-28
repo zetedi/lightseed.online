@@ -45,6 +45,11 @@ export const roleDescKey = (role: TreeRelationRole) => `role_${role}_desc` as co
 // alone — the rules freeze both), and never mints a domain: an address is claimed later,
 // through the Vision tab's own law. Forming grants no keepership — the circle's anchor
 // stays who it was; a co-owner who forms still tends, not owns.
+// The UI's one question: is this community still the pre-community stage? A circle wears
+// its own mark (never the domain line it does not have) until the forming stamp lands.
+export const isTreeCircle = (c: { formation?: string; formedAt?: unknown }): boolean =>
+  c.formation === 'tree_co_ownership' && !c.formedAt;
+
 export type FormCircleRefusal = 'not_circle' | 'already_formed' | 'not_hand';
 
 export const formCircleRefusal = (facts: {
