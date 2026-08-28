@@ -4,7 +4,7 @@ import {
   communitiesOnView,
   motherDoorUrl,
   dataDomainFor, reflectsInstancePublic, communityInviteUrl, inviteIdFromPath,
-  showsPlaceOfRecord, normalizePlaceOfRecord, leaveRefusal,
+  showsPlaceOfRecord, normalizePlaceOfRecord, leaveRefusal, chooseDomainClaimant,
   type CommunityInviteCheck,
 } from '../src/domain/communityDoor';
 
@@ -225,5 +225,36 @@ describe('leaving — the door\'s other direction', () => {
 
   it('a keeper-link peer resigns keepership before membership', () => {
     expect(leaveRefusal({ isAnchor: false, holdsKeeperLink: true })).toBe('keeper');
+  });
+});
+
+describe('chooseDomainClaimant — who answers for an address', () => {
+  const c = (id: string, verified: boolean, createdAtMs: number) => ({ id, verified, createdAtMs });
+  const facts = (x: { verified: boolean; createdAtMs: number }) => x;
+
+  it('the DNS-proven claimant answers first, regardless of age', () => {
+    const young = c('proven', true, 2000);
+    const elder = c('unproven', false, 1000);
+    expect(chooseDomainClaimant([elder, young], facts)).toBe(young);
+    expect(chooseDomainClaimant([young, elder], facts)).toBe(young);
+  });
+
+  it('among the unproven, the eldest claim stands', () => {
+    const elder = c('elder', false, 1000);
+    const newborn = c('newborn-circle', false, 2000);
+    expect(chooseDomainClaimant([newborn, elder], facts)).toBe(elder);
+  });
+
+  it('among the proven, the eldest proof-bearer stands', () => {
+    const a = c('a', true, 1000);
+    const b = c('b', true, 2000);
+    expect(chooseDomainClaimant([b, a], facts)).toBe(a);
+  });
+
+  it('ties keep the caller\'s order; nothing yields null', () => {
+    const a = c('a', false, 1000);
+    const b = c('b', false, 1000);
+    expect(chooseDomainClaimant([a, b], facts)).toBe(a);
+    expect(chooseDomainClaimant([], facts)).toBeNull();
   });
 });

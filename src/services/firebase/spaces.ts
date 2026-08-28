@@ -6,6 +6,8 @@ import { type PulseVisibility } from '../../domain/pulse';
 import { db, functions, toMillis, mapDoc, lifetreesCollection, visionsCollection, pulsesCollection, communitiesCollection, lightHousesCollection, communityInvitesCollection, auth } from './core';
 import { firestoreStore } from '../../adapters/firestore';
 import { nodeCapacityGate, DEFAULT_NODE_LIMITS } from '../../domain/limits';
+import { chooseDomainClaimant } from '../../domain/communityDoor';
+import { isDomainVerified } from '../../domain/domainVerification';
 import { getNodeLimits } from './trees';
 import { createBlock } from '../../utils/crypto';
 
@@ -148,15 +150,27 @@ export const fetchCommunities = async () => {
 
 export const getCommunityByDomain = async (domain: string): Promise<Community | null> => {
     const normalized = domain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-    const q = query(communitiesCollection, where('domain', '==', normalized), limit(1));
+    // More than one community can claim a domain (nothing enforces uniqueness at write time —
+    // a stray stamp once handed a face's title to a newborn circle). The choice is a LAW
+    // (domain/communityDoor.chooseDomainClaimant): DNS-proven first, else the eldest claim —
+    // never Firestore's arbitrary first hit.
+    const claimantFacts = (c: Community) => ({
+        verified: isDomainVerified(c),
+        createdAtMs: toMillis((c as { createdAt?: unknown }).createdAt) || Number.MAX_SAFE_INTEGER,
+    });
+    const q = query(communitiesCollection, where('domain', '==', normalized), limit(5));
     const snap = await getDocs(q);
-    if (!snap.empty) return { id: snap.docs[0].id, ...snap.docs[0].data() } as Community;
+    const canonical = chooseDomainClaimant(
+        snap.docs.map(d => ({ id: d.id, ...d.data() } as Community)), claimantFacts);
+    if (canonical) return canonical;
     // ALIASES — a community whose true address is elsewhere may still answer this hostname
     // (theohouse.org serving as theohouse.web.app until its DNS connects). The `domain`
-    // stays the ONE place-of-record stamp for scoping; aliases only open the door.
-    const byAlias = await getDocs(query(communitiesCollection, where('domainAliases', 'array-contains', normalized), limit(1)));
-    if (byAlias.empty) return null;
-    return { id: byAlias.docs[0].id, ...byAlias.docs[0].data() } as Community;
+    // stays the ONE place-of-record stamp for scoping; aliases only open the door. A DNS
+    // proof binds only the canonical domain, so among alias claimants age alone decides.
+    const byAlias = await getDocs(query(communitiesCollection, where('domainAliases', 'array-contains', normalized), limit(5)));
+    return chooseDomainClaimant(
+        byAlias.docs.map(d => ({ id: d.id, ...d.data() } as Community)),
+        c => ({ verified: false, createdAtMs: toMillis((c as { createdAt?: unknown }).createdAt) || Number.MAX_SAFE_INTEGER }));
 };
 
 export const getCommunityById = async (id: string): Promise<Community | null> => {

@@ -1421,7 +1421,11 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
                     ownerId: tree.ownerId,
                     formation: "tree_co_ownership",
                     visibility: "invited",
-                    domain: tree.domain || "",
+                    // A tree circle is a PRE-COMMUNITY: a real community Being with NO address.
+                    // Its locus is rootLifetreeId; the garden stays the TREE's relation (the
+                    // tree's own domain and grows_in links). Inheriting tree.domain here once
+                    // made a newborn circle claim a whole face's domain (ring 2026-08-28).
+                    domain: "",
                     vision: "",
                     imageUrls: [],
                     createdAt: FieldValue.serverTimestamp(),
@@ -1604,8 +1608,9 @@ export const startDomainVerification = onCall({ cors: true }, async (request) =>
     const community = await communityKeptBy(communityId, request.auth.uid);
     const domain = normalizeAnchorDomain(String(community.domain || ""));
     if (!domain) throw new HttpsError("failed-precondition", "no_domain");
+    const challengeRef = db.collection("domainChallenges").doc(communityId);
     const token = randomBytes(16).toString("hex"); // 128 bits, opaque, single-use
-    await db.collection("domainChallenges").doc(communityId).set({
+    await challengeRef.set({
         communityId, lid: community.lid || null, domain, token,
         createdBy: request.auth.uid, createdAt: FieldValue.serverTimestamp(), usedAt: null,
     });

@@ -6,6 +6,21 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-28 · A circle claims no address** — the lazily-born tree-circle community had
+inherited its root tree's `domain`, and the newborn "Tree of life Circle" thereby claimed
+`perauset.web.app` — flipping the face's title, because `getCommunityByDomain` took
+Firestore's arbitrary first hit. THE MODEL: a tree circle is a PRE-COMMUNITY — a real
+community Being with no address; its locus is `rootLifetreeId`, and the garden stays the
+TREE's relation (its own `domain`, its `grows_in` links). Circles are now born with
+`domain: ""` (the one standing circle repaired by staff hand), and WHO ANSWERS FOR AN
+ADDRESS is a law (domain/communityDoor.chooseDomainClaimant): the DNS-proven claimant
+first — the control proof made load-bearing — else the eldest claim; never an arbitrary
+hit. A domainless circle no longer appears in a domain's communities list; it is reached
+through its tree. REJECTED: unique-domain enforcement at write time (a race the client
+cannot referee); resolving by newest (the exact failure); leaving `limit(1)` chance in place.
+
+---
+
 **2026-08-28 · The anchor is proven, the feed stands on my ground** — the Interbeing
 contract moves into the root (`root/INTERBEING_MATRIX.md`), and its named future boundary
 closes: DOMAIN VERIFICATION ships as a DNS-01-style control proof (RFC 8555 §8.4) under

@@ -27,6 +27,28 @@ export type JoinAffordance = 'join' | 'request' | 'none';
 export const joinAffordance = (door: CommunityDoor): JoinAffordance =>
   door === 'open' ? 'join' : door === 'invite' ? 'request' : 'none';
 
+// WHO ANSWERS FOR AN ADDRESS: when more than one community claims the same domain (a stray
+// stamp, a hostile claim — the query cannot promise uniqueness), the face must not flip on
+// Firestore's arbitrary first hit. The DNS-PROVEN claimant answers first (the control proof
+// is load-bearing here, never reputation); among the unproven, the ELDEST claim stands —
+// the face a place has worn longest. Ties keep the caller's order.
+export const chooseDomainClaimant = <T>(
+  candidates: readonly T[],
+  facts: (candidate: T) => { verified: boolean; createdAtMs: number },
+): T | null => {
+  if (candidates.length === 0) return null;
+  let best = candidates[0];
+  let bestF = facts(best);
+  for (const c of candidates.slice(1)) {
+    const f = facts(c);
+    if ((f.verified && !bestF.verified)
+      || (f.verified === bestF.verified && f.createdAtMs < bestF.createdAtMs)) {
+      best = c; bestF = f;
+    }
+  }
+  return best;
+};
+
 // LEAVING is the door's other direction: any member may withdraw their own membership link,
 // and a held steward deed leaves with it (a door-hand without membership would keep the door
 // invisibly — the mirror of removal's rule). Two hands are refused: the ANCHOR (ownerId) and
