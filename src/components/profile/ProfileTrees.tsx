@@ -233,12 +233,12 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
                 <div className="flex items-center space-x-4">
                   <img src={tree.latestGrowthUrl || tree.imageUrl || '/seed.webp'} className="w-16 h-16 rounded object-cover bg-slate-100" />
                   <div>
-                    <h3 className="font-bold text-slate-800 flex items-center gap-1.5">
-                      {tree.name}
-                      {isWateringOverdue(tree) && <button type="button" title="Needs water: open tree care" aria-label="Needs water: open tree care" onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
-                    </h3>
+                    <h3 className="font-bold text-slate-800">{tree.name}</h3>
                     <p className="text-xs text-slate-500">Block Height: {tree.blockHeight}</p>
-                    <span className="mt-1 inline-flex items-center gap-1 text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold [&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Venn /> {t(roleLabelKey(role))}</span>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold [&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Venn /> {t(roleLabelKey(role))}</span>
+                      {isWateringOverdue(tree) && <button type="button" title="Needs water: open tree care" aria-label="Needs water: open tree care" onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
+                    </div>
                   </div>
                 </div>
                 {tree.status === 'DANGER' && (
@@ -266,12 +266,12 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
                 <div className="flex items-center space-x-4">
                   <img src={tree.latestGrowthUrl || tree.imageUrl || '/seed.webp'} className="w-16 h-16 rounded object-cover bg-slate-100" />
                   <div>
-                    <h3 className="font-bold text-slate-800 flex items-center gap-1.5">
-                      {tree.name}
-                      {isWateringOverdue(tree) && <button type="button" title="Needs water: open tree care" aria-label="Needs water: open tree care" onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
-                    </h3>
+                    <h3 className="font-bold text-slate-800">{tree.name}</h3>
                     <p className="text-xs text-slate-500">Block Height: {tree.blockHeight}</p>
-                    <span className="mt-1 inline-flex items-center gap-1 text-[10px] bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-bold"><Icons.Shield /> Guardian</span>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 text-[10px] bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-bold"><Icons.Shield /> Guardian</span>
+                      {isWateringOverdue(tree) && <button type="button" title="Needs water: open tree care" aria-label="Needs water: open tree care" onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
+                    </div>
                   </div>
                 </div>
                 {tree.status === 'DANGER' && (
