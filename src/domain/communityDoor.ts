@@ -27,6 +27,16 @@ export type JoinAffordance = 'join' | 'request' | 'none';
 export const joinAffordance = (door: CommunityDoor): JoinAffordance =>
   door === 'open' ? 'join' : door === 'invite' ? 'request' : 'none';
 
+// LEAVING is the door's other direction: any member may withdraw their own membership link,
+// and a held steward deed leaves with it (a door-hand without membership would keep the door
+// invisibly — the mirror of removal's rule). Two hands are refused: the ANCHOR (ownerId) and
+// a keeper-link peer carry the community — never keeperless — so they resign keepership first
+// (domain/keeperCircle); membership becomes their own to lay down only after that.
+export type LeaveRefusal = 'anchor' | 'keeper';
+
+export const leaveRefusal = (facts: { isAnchor: boolean; holdsKeeperLink: boolean }): LeaveRefusal | null =>
+  facts.isAnchor ? 'anchor' : facts.holdsKeeperLink ? 'keeper' : null;
+
 // Identity is OPEN (the ring "Identity is open"): anyone may create an account, so sign-up on a
 // domain is open by default. The node's door gates MEMBERSHIP, not identity — the one exception
 // is a deliberately CLOSED node, which also closes its front door to new accounts (a resting

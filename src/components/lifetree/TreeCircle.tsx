@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { showAlert } from '../ui/Dialog';
+import { showAlert, showConfirm } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { firestoreStore } from '../../adapters/firestore';
@@ -105,6 +105,20 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
     }, [circleUids]);
 
     const labelFor = (uid: string, face: Face) => uid === currentUserId ? t('you') : (face.name || names[uid] || `${uid.slice(0, 8)}…`);
+
+    // Stepping down is one's own hand: any circle role but the owner's may be laid down
+    // (the rules' from == uid delete clause). The owner is the tree's anchor and stays.
+    const [steppingDown, setSteppingDown] = useState(false);
+    const handleStepDown = async (role: InvitableRole) => {
+        if (!currentUserId) return;
+        if (!(await showConfirm(spokenLine('step_down_confirm', { role: roleName(role).toLowerCase(), tree: tree.name || '—' }), { title: 'step_down', confirmText: 'confirm', danger: true }))) return;
+        setSteppingDown(true);
+        try {
+            await firestoreStore.unlink(currentUserId, role, treeId);
+            onGuardianChange(); // the shell re-reads the circle
+        } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
+        setSteppingDown(false);
+    };
 
     const handleToggleGuardian = async () => {
         if (!canCareForTree(currentUserId)) return;
@@ -279,6 +293,12 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                                                 <p className="truncate text-sm font-bold text-slate-800">{labelFor(uid, face)}</p>
                                                 <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{roleName(g.role)}</p>
                                             </div>
+                                            {uid === currentUserId && g.role !== 'owner' && (
+                                                <button onClick={() => handleStepDown(g.role as InvitableRole)} disabled={steppingDown}
+                                                    className="ml-auto shrink-0 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-50">
+                                                    {t('step_down')}
+                                                </button>
+                                            )}
                                         </div>
                                     );
                                 })}

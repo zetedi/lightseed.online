@@ -4,7 +4,7 @@ import {
   communitiesOnView,
   motherDoorUrl,
   dataDomainFor, reflectsInstancePublic, communityInviteUrl, inviteIdFromPath,
-  showsPlaceOfRecord, normalizePlaceOfRecord,
+  showsPlaceOfRecord, normalizePlaceOfRecord, leaveRefusal,
   type CommunityInviteCheck,
 } from '../src/domain/communityDoor';
 
@@ -210,5 +210,20 @@ describe('motherDoorUrl — the seed cradle wears a door home (ring 2026-08-22)'
     expect(motherDoorUrl({ domain: 'perauset.web.app', seedCradle: false }, 'x.org')).toBeNull();
     expect(motherDoorUrl({ seedCradle: true }, 'seed.x.org')).toBeNull();
     expect(motherDoorUrl(null, 'seed.x.org')).toBeNull();
+  });
+});
+
+describe('leaving — the door\'s other direction', () => {
+  it('a plain member and a steward may lay their membership down', () => {
+    expect(leaveRefusal({ isAnchor: false, holdsKeeperLink: false })).toBeNull();
+  });
+
+  it('the anchor is refused: the community is never keeperless', () => {
+    expect(leaveRefusal({ isAnchor: true, holdsKeeperLink: false })).toBe('anchor');
+    expect(leaveRefusal({ isAnchor: true, holdsKeeperLink: true })).toBe('anchor');
+  });
+
+  it('a keeper-link peer resigns keepership before membership', () => {
+    expect(leaveRefusal({ isAnchor: false, holdsKeeperLink: true })).toBe('keeper');
   });
 });

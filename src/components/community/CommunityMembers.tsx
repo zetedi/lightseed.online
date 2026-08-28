@@ -4,7 +4,7 @@ import { notify } from '../ui/Toast';
 import { Icons } from '../ui/Icons';
 import { Timestamp } from 'firebase/firestore';
 import { Community, CommunityInvite } from '../../types';
-import { doorOf, communityInviteUrl, inviteStatus, type CommunityDoor } from '../../domain/communityDoor';
+import { doorOf, communityInviteUrl, inviteStatus, leaveRefusal, type CommunityDoor } from '../../domain/communityDoor';
 import { SectionTitle } from '../ui/SectionTitle';
 import { firestoreStore } from '../../adapters/firestore';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -239,6 +239,31 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
     setBusyUid(null);
   };
 
+  // Leaving is one's own hand (domain/communityDoor.leaveRefusal): the member link falls,
+  // and a held steward deed falls with it — the mirror of removal's rule above. The anchor
+  // and keeper peers resign keepership first; their button never renders, but the law speaks
+  // even if it is reached another way.
+  const handleLeave = async () => {
+    if (!currentUserId) return;
+    const refusal = leaveRefusal({
+      isAnchor: currentUserId === community.ownerId,
+      holdsKeeperLink: keeperLinks.some(l => l.from === currentUserId),
+    });
+    if (refusal) { showAlert('leave_while_keeping'); return; }
+    if (!(await showConfirm(spokenLine('leave_community_confirm', { community: community.name }), { title: 'leave_community', confirmText: 'confirm', danger: true }))) return;
+    setBusyUid(currentUserId);
+    try {
+      await firestoreStore.unlink(currentUserId, 'member', community.id);
+      if (stewardUids.has(currentUserId)) {
+        await firestoreStore.unlink(currentUserId, 'steward', community.id);
+        setStewardUids(prev => { const next = new Set(prev); next.delete(currentUserId); return next; });
+      }
+      setMembers(prev => prev ? prev.filter(m => m.uid !== currentUserId) : prev);
+      notify(spokenLine('left_community', { community: community.name }));
+    } catch (e: any) { showAlert(e?.message || 'err_action'); }
+    setBusyUid(null);
+  };
+
   // Stewardship is delegation: the owner shares the door, not the deed.
   const handleSteward = async (row: Row, make: boolean) => {
     setBusyUid(row.uid);
@@ -423,7 +448,14 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
                   <p className="truncate font-mono text-[10px] text-slate-400">{m.uid}</p>
                 </div>
               </div>
-              {canManage && !keeperUids.has(m.uid) && (
+              {/* One's own row carries LEAVE, never Remove — leaving is a different verb. */}
+              {m.uid === currentUserId && !keeperUids.has(m.uid) && (
+                <button onClick={handleLeave} disabled={busyUid === m.uid}
+                  className="shrink-0 rounded-lg border border-red-100 bg-white px-3 py-1.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50">
+                  {t('leave')}
+                </button>
+              )}
+              {canManage && !keeperUids.has(m.uid) && m.uid !== currentUserId && (
                 <div className="flex shrink-0 items-center gap-1.5">
                   {/* Keepership is offered, never appointed — the offer waits for their yes,
                       and the server mints only after their living tree is proven. */}
