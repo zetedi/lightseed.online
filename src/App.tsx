@@ -434,8 +434,9 @@ const AppContent = () => {
     useEffect(() => {
         // The hero events box shows THE SAME events as the events menu: one derivation
         // (domain/pulseVisibility eventFeedScope — the banner once leaked a lightseed event
-        // onto Per Auset because it carried its own hand-copy of this law) and one viewer cut
-        // (eventsOnView: visitors see the node's own happenings; past days rest hidden).
+        // onto Per Auset because it carried its own hand-copy of this law), one viewer cut
+        // (eventsOnView: visitors see the node's own happenings; past days rest hidden), and
+        // one ORDER (useOrderedEvents below — the banner is the same list's first reach).
         const { levels, ownerUid } = eventFeedScope(
             { uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin },
             { reflectsPublic: activeCommunity?.reflectsPublic, strictScope: activeCommunity?.strictScope },
@@ -776,8 +777,10 @@ const AppContent = () => {
         [filteredData, lightseed, showPastEvents, eventsNowMs]
     );
     // From my ground (domain/eventOrder): my domain first, then nearness to my default
-    // tree (free-text places geocoded best-effort), then soonness.
+    // tree (free-text places geocoded best-effort), then soonness. The hero banner and the
+    // events page order through the SAME hook (shared geocode cache), so they never diverge.
     const orderedEvents = useOrderedEvents(eventsForViewer, activeTree, (impersonatedCommunity || hostCommunity)?.domain);
+    const orderedDashboardEvents = useOrderedEvents(dashboardEvents, activeTree, (impersonatedCommunity || hostCommunity)?.domain);
 
     const searchSuggestions = useMemo(() => (
         Array.from(new Set(data.map((item: any) => item.title || item.name).filter(Boolean)))
@@ -864,7 +867,7 @@ const AppContent = () => {
                         hostCommunity={impersonatedCommunity || hostCommunity || defaultCommunity}
                         theme={effectiveTheme}
                         isDark={effectiveIsDark}
-                        events={dashboardEvents}
+                        events={orderedDashboardEvents}
                         onViewEvent={(p: Pulse) => { void onViewPulseOrAlignment(p); }}
                         onViewCommunity={setSelectedCommunity}
                         onSetTab={setTab}
