@@ -269,7 +269,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                         {canReach
                             ? <ActionBtn onClick={() => onReachTree?.(tree)} title="Reach" color={ACTION_GREEN} icon={<Icons.Reach />} label="Reach" />
                             : <ActionBtn disabled title={t('only_if_validated')} color="bg-white/20 text-white/70" icon={<Icons.Eye />} label={t('only_if_validated')} />}
-                        {isOwner && !isEditing && <ActionBtn onClick={onCreatePulse} title={t('care_this_tree_title')} color={ACTION_GREEN} icon={<Icons.Drop />} label={t('care')} />}
+                        {/* Care is a CARER's hand (owner/co_owner/steward — mirrors isTreeCarer
+                            in the rules), not the owner's alone: an invited tender tends. */}
+                        {canWater && !isEditing && <ActionBtn onClick={onCreatePulse} title={t('care_this_tree_title')} color={ACTION_GREEN} icon={<Icons.Drop />} label={t('care')} />}
                         {/* Carry this being's voice — superadmin voice-bridge, on trees they care
                             (owner/co_owner/steward). Impersonation hides the bridge; carrying
                             reveals it: the display author becomes the being, the carrier is named,
@@ -305,7 +307,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                    blocks={growthBlocks}
                    loading={loadingChain}
                    onViewPulse={onViewPulse}
-                   canCare={isOwner}
+                   canCare={canWater}
                    onCare={onCreatePulse}
                    root={chainRoot}
                    stats={{ blockHeight: liveHead.blockHeight, genesisHash: tree.genesisHash, latestHash: liveHead.latestHash }}

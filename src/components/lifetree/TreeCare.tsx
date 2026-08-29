@@ -243,7 +243,10 @@ export const TreeCare: React.FC<TreeCareProps> = ({
 
             {canWater && (
                 <div className="space-y-2">
-                    <input ref={waterFileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleWaterFile} />
+                    {/* No `capture` attr: the OS offers its own chooser (camera OR photo library),
+                        so a watering shot taken moments ago uploads as easily as a fresh one.
+                        The proof's trust never lived in the lens — the guardian's witness judges. */}
+                    <input ref={waterFileRef} type="file" accept="image/*" className="hidden" onChange={handleWaterFile} />
                     <div className="flex flex-wrap items-center gap-3">
                         {/* The water action moved up beside the status; its options stay here —
                             off-chain by default; opting in takes a photo + mints a growth block. */}
