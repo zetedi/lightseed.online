@@ -1298,11 +1298,16 @@ const AppContent = () => {
                         hasVision={!!defaultVisionId}
                         onOpenCare={() => {
                             setCareModalOpen(false);
+                            // The care sheet floats OVER a reach conversation, but the FULL care
+                            // view is a whole overlay — the reach modal must step aside, or it
+                            // covers the very care it opened (the openTreeFromReaches lesson).
+                            setShowReachModal(false);
                             setTreeSectionHint('care');
                             if (!selectedTree || selectedTree.id !== careTarget.id) setSelectedTree(careTarget);
                         }}
                         onOpenVision={defaultVisionId ? async () => {
                             setCareModalOpen(false);
+                            setShowReachModal(false); // same step-aside: the vision opens in front
                             const vision = await getVisionById(defaultVisionId).catch(() => null);
                             if (vision) { setSelectedTree(null); setSelectedVision(vision); }
                         } : undefined}
