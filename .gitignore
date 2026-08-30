@@ -143,3 +143,7 @@ initiation-private.pem
 # Build-time mirror of git log (scripts/build-commits.mjs) — regenerated every build, never source
 public/commits.json
 .emulator-data/
+
+# The seed's soil and body backups stay out of history (seed/README.md)
+seed/data/
+seed/backups/

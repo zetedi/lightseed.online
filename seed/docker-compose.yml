@@ -1,0 +1,23 @@
+# The Seed — a whole lightseed node's soil in one file (seed/README.md).
+# Postgres first; the Supabase-shaped organs (auth, storage, realtime, edge functions)
+# join this compose as each is ported. `docker compose up -d` and the soil is ready.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: lightseed-seed-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: lightseed
+      POSTGRES_PASSWORD: ${SEED_DB_PASSWORD:-lightseed-dev-only}
+      POSTGRES_DB: lightseed
+    ports:
+      - '${SEED_DB_PORT:-5433}:5432'
+    volumes:
+      - ./data:/var/lib/postgresql/data
+      # Applied once, on first boot, in filename order (000, 001, 002…).
+      - ./schema:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U lightseed -d lightseed']
+      interval: 5s
+      timeout: 3s
+      retries: 10

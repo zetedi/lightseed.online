@@ -104,6 +104,18 @@ What a being LOOKS like: `src/components/BeingProfile.tsx` + `src/components/sec
   domain block (the keeper's verify path). `tests/domainVerification.test.ts`.
 - **Plain contract:** `root/INTERBEING_MATRIX.md`.
 
+## The seed (the database port — a node on its own soil)
+
+- **Soil:** `seed/docker-compose.yml` — Postgres 16, schema applied at first boot;
+  `seed/backup.sh` (pg_dump, pruned). Data and backups gitignored.
+- **Schema:** `seed/schema/001_collections.sql` — JSONB-first, one table per travelling
+  TRAVEL_PLAN collection, excluded ones absent by law; `002_links.sql` — the LIN as real
+  columns, the id law as generated column + composite PK, RLS enabled with the first
+  policies. `seed.uid()` (000) is the one identity seam.
+- **Guard:** `tests/seedSchema.test.ts` — the schema mirrors the travel plan or the gate
+  fails. The rules→RLS translation proceeds law by law, rules tests leading.
+- **Contract & growth path:** `seed/README.md`; the ring 2026-08-31.
+
 ## The export ceremony (a being's data leaves in its own hands)
 
 - **Law:** `src/domain/export.ts` — plainify (Stamps→ISO), chainExport (oldest-first, seals

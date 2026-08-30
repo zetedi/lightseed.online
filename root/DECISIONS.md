@@ -6,6 +6,27 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-31 · The seed takes its own soil: the database port begins** — the node will run
+whole on POSTGRES, self-hosted in the Supabase open-source shape, one Docker Compose per
+seed. The deciding law: the client-direct-with-law model survives the crossing — the app
+keeps reading with its own sight, and the 1,600-line Firestore rules translate to
+POSTGRES ROW-LEVEL SECURITY, collection by collection, the ~190 rules tests leading as
+the spec. `seed/` is the first breath: JSONB-first tables mirroring the TRAVEL PLAN
+exactly (a guard test fails the gate if either side drifts; excluded collections have NO
+table by law), and the LIN crossing FIRST as real columns — the deterministic-id law
+(`from__rel__to`) becomes a generated column + composite primary key, so the forgery
+class the rules fight dies at the schema. `seed.uid()` is the one identity seam (a
+session setting now, an auth organ later); uids stay mortal, lids remain the true names,
+and the bundle's re-anchoring census is the crossing's map. Backups: pg_dump is the
+body, the export ceremony the story. Sequencing: grow the Store port around the existing
+adapter seam, LIN first, then law by law — lifeseed.online may be BORN on the seed
+rather than ported to it. REJECTED: PocketBase (one beautiful binary, but its rule DSL
+cannot carry the link-authority laws — rules-as-law outranks minimalism); a conventional
+API tier (rewrites every client call and abandons the law-at-the-boundary architecture);
+a big-bang migration (the tree grows ring by ring).
+
+---
+
 **2026-08-30 · The export ceremony: a being's data leaves in its own hands** — every being
 exports the same way: PERSON (profile settings — the privacy words' promise made real,
 GDPR portability included), TREE (the Digital Tree tab — doc, links, and the CHAIN as
