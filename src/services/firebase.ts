@@ -8,6 +8,7 @@ export * from './firebase/authority';
 export * from './firebase/accounts';
 export * from './firebase/media';
 export * from './firebase/trees';
+export * from './firebase/exportBeing';
 export * from './firebase/spaces';
 export * from './firebase/governance';
 export * from './firebase/pulses';

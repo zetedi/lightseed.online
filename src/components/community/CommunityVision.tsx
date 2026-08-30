@@ -5,7 +5,7 @@ import { MahameruAvatar } from '../ui/MahameruAvatar';
 import { Community, Lifetree } from '../../types';
 import { ownMergeUid } from '../../domain/pulseVisibility';
 import { DOMAIN_CHALLENGE_LABEL, isDomainVerified } from '../../domain/domainVerification';
-import { getTreesByDomain, getPulsesByTreeId, updateCommunity, startDomainVerification, checkDomainVerification, type DomainChallengeRecord } from '../../services/firebase';
+import { getTreesByDomain, getPulsesByTreeId, updateCommunity, startDomainVerification, checkDomainVerification, exportCommunity, type DomainChallengeRecord } from '../../services/firebase';
 import { isCanonicallySealed, verifyBlockSeal, type ChainBlock } from '../../domain/chain';
 import { normalizePlaceOfRecord } from '../../domain/communityDoor';
 import { setTokenisationEnabled } from '../../domain/tokenisation';
@@ -111,6 +111,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
   const domainVerified = isDomainVerified(community);
   const [challenge, setChallenge] = useState<DomainChallengeRecord | null>(null);
   const [verifyBusy, setVerifyBusy] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const verifyError = (e: unknown): string => {
     const m = String((e as Error)?.message || '');
     if (m.includes('no_domain')) return 'domain_verify_no_domain';
@@ -455,6 +456,20 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
               </div>
             </div>
           </div>
+          {/* The export ceremony (domain/export): the community, its links and events leave
+              as JSON with images — gathered with the keeper's own sight. */}
+          {canEdit && (
+            <div className="flex justify-end">
+              <button onClick={async () => {
+                if (exporting) return;
+                setExporting(true);
+                try { await exportCommunity(community); } catch { showAlert('err_export'); }
+                setExporting(false);
+              }} disabled={exporting} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-50">
+                {exporting ? t('exporting') : t('export_community')}
+              </button>
+            </div>
+          )}
         </div>
       )}
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
-import { setNewsletterSubscription, updateUserProfile, setOnlyValidatedCanReach, deleteUserAccount, logout, fetchAllLifetrees } from '../../services/firebase';
+import { setNewsletterSubscription, updateUserProfile, setOnlyValidatedCanReach, deleteUserAccount, logout, fetchAllLifetrees, exportPerson } from '../../services/firebase';
 import { fetchMyRays } from '../../services/firebase/light';
 import type { Lifetree } from '../../types';
 import { isLightPathOn, setLightPathOn } from '../PathwayCTA';
@@ -54,6 +54,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   const { t } = useLanguage();
   const [togglingNewsletter, setTogglingNewsletter] = useState(false);
   const [togglingDmEmail, setTogglingDmEmail] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [togglingValidatedReach, setTogglingValidatedReach] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showSigningKey, setShowSigningKey] = useState(false);
@@ -200,6 +201,23 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
             {t('edit')}
           </button>
         </div>
+      </div>
+      {/* The export ceremony (domain/export): what the privacy words promise, made real —
+          a ZIP of this being's records, chains and images, gathered with their own sight. */}
+      <div className="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50/30 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <p className="font-semibold text-emerald-800 text-sm">{t('export_my_data')}</p>
+          <p className="text-xs text-emerald-700/70">{t('export_my_data_note')}</p>
+        </div>
+        <button onClick={async () => {
+          if (exporting) return;
+          setExporting(true);
+          try { await exportPerson(uid); notify(t('export_ready')); }
+          catch { notify(t('err_export')); }
+          setExporting(false);
+        }} disabled={exporting} className="rounded-full border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-600 hover:text-white text-xs font-bold px-4 py-2 transition-colors whitespace-nowrap self-start sm:self-auto disabled:opacity-50">
+          {exporting ? t('exporting') : t('export')}
+        </button>
       </div>
       <div className="mt-6 rounded-2xl border border-red-100 bg-red-50/40 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>

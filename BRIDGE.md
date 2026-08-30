@@ -104,6 +104,17 @@ What a being LOOKS like: `src/components/BeingProfile.tsx` + `src/components/sec
   domain block (the keeper's verify path). `tests/domainVerification.test.ts`.
 - **Plain contract:** `root/INTERBEING_MATRIX.md`.
 
+## The export ceremony (a being's data leaves in its own hands)
+
+- **Law:** `src/domain/export.ts` — plainify (Stamps→ISO), chainExport (oldest-first, seals
+  verbatim, breaks stated), imageEntriesOf, exportFileName. `tests/export.test.ts`.
+- **Gathering:** `src/services/firebase/exportBeing.ts` — exportPerson / exportTree /
+  exportCommunity / exportNode (the travel plan's top-level collections); one ZIP via jszip,
+  images best-effort with the missing named in the manifest. The rules are the only law of
+  sight — an export carries no more than its holder could read.
+- **Faces:** profile Settings (my data), the tree's Digital Tree tab, the community's Vision
+  tab, and the staff admin card (node).
+
 ## The bed (a place to sleep, as a being)
 
 - **A bed IS a Lifetree** (`treeType: 'BED'`) — a full Being: own chain (each stay a **leaf**),

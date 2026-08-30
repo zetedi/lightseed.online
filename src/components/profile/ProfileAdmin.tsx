@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { showAlert, showConfirm } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
-import { getAdmins, deleteUserAsAdmin, listUsersAsAdmin, triggerSystemEmail, getNodeLimits, setNodeLimits, setNodeAiValidatedOnly } from '../../services/firebase';
+import { getAdmins, deleteUserAsAdmin, listUsersAsAdmin, triggerSystemEmail, getNodeLimits, setNodeLimits, setNodeAiValidatedOnly, exportNode } from '../../services/firebase';
 import { resetLight } from '../../services/firebase/light';
 import { backfillLidIndex } from '../../services/firebase/beings';
 import type { AdminUserRow } from '../../services/firebase';
@@ -102,6 +102,7 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
   // enforces it too. Burns every ray and every glow; the care itself stays on the chains.
   const [resettingLight, setResettingLight] = useState(false);
   const [backfilling, setBackfilling] = useState(false);
+  const [exportingNode, setExportingNode] = useState(false);
   const handleResetLight = async () => {
     const sure = await showConfirm(
       'Remove ALL light from the system? Every ray and every glow burns back to zero. The care itself stays on the chains, and the light already left the trees in better shape, so nothing real is lost. Light re-enters only through witnessed care.',
@@ -180,6 +181,25 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
               Write
             </button>
           </div>
+        </div>
+      )}
+      {/* The export ceremony (domain/export): the node leaves by its own travel plan —
+          every top-level collection the plan names, read with the staff hand's sight. */}
+      {isSuperAdmin && (
+        <div className="mb-4 flex items-center justify-between gap-4 rounded-2xl border border-emerald-100 bg-emerald-50/30 p-4">
+          <div className="min-w-0">
+            <p className="font-semibold text-emerald-900 text-sm">{t('export_node')}</p>
+            <p className="text-xs text-emerald-700/80">{t('export_node_note')}</p>
+          </div>
+          <button onClick={async () => {
+            if (exportingNode) return;
+            setExportingNode(true);
+            try { await exportNode(window.location.hostname); notify(t('export_ready')); }
+            catch { notify(t('err_export')); }
+            setExportingNode(false);
+          }} disabled={exportingNode} className="rounded-full border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-100 text-xs font-bold px-4 py-2 whitespace-nowrap transition-colors disabled:opacity-50">
+            {exportingNode ? t('exporting') : t('export')}
+          </button>
         </div>
       )}
       {/* The testing-phase restart — node owner only (the callable refuses everyone else). */}

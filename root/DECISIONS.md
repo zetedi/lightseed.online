@@ -6,6 +6,22 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-08-30 · The export ceremony: a being's data leaves in its own hands** — every being
+exports the same way: PERSON (profile settings — the privacy words' promise made real,
+GDPR portability included), TREE (the Digital Tree tab — doc, links, and the CHAIN as
+JSON, oldest-first, seals verbatim, `linked`/`breaks` stated and never repaired), COMMUNITY
+(the Vision tab), and NODE (staff — every top-level collection the travel plan names, with
+refusals and skips said out loud). One ZIP: manifest, records with Stamps as ISO, and the
+images the records point at — best-effort, the missing NAMED in the manifest. Every
+gatherer reads with the asking hand's own sight: the rules stay the only law of what an
+export may carry. Laws pure in domain/export (plainify, chainExport, imageEntriesOf);
+gathering in services/exportBeing (jszip). NOT YET: subcollections in the node ceremony
+(loves, occupancy, signatures) and unreferenced storage files — the manifest names the
+boundary. REJECTED: a server-side export pipeline (the client's sight IS the permission
+model); base64 images in JSON (a ZIP carries them as files).
+
+---
+
 **2026-08-29 · A circle graduates by the hands that carry it** — a tree circle (the
 pre-community) can now FORM a standing community: the keeper circle or a CO-OWNER of the
 root tree chooses the name; the server alone stamps the forming (`formedAt`/`formedBy` —

@@ -11,7 +11,7 @@ import { getLightHouseById } from '../services/firebase';
 import type { LightHouse } from '../domain/lightHouse';
 import { EditPill, DeletePill } from './ui/HeroPills';
 import { LoveButton } from './ui/LoveButton';
-import { updateLifetree, setTreeStatus, getPulsesByTreeId, getMyHeadBlock, unmintLastPulse, getLifetreeById } from '../services/firebase';
+import { updateLifetree, setTreeStatus, getPulsesByTreeId, getMyHeadBlock, unmintLastPulse, getLifetreeById, exportTree } from '../services/firebase';
 import { unmintRefusal, STAFF_OVERRIDABLE_REFUSALS } from '../domain/unmint';
 import { Pulse, type Lifetree } from '../types';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
@@ -108,6 +108,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const [genesisBlock, setGenesisBlock] = useState<Pulse | null>(null);
    const [growthBlocks, setGrowthBlocks] = useState<Pulse[]>([]);
    const [loadingChain, setLoadingChain] = useState(false);
+   const [exporting, setExporting] = useState(false);
 
    // Local state for immediate UI feedback on actions
    const [localStatus, setLocalStatus] = useState(tree.status || 'HEALTHY');
@@ -302,6 +303,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
            // chain renderer (ChainTree). Chain loading stays here so Care can see the
            // growth blocks (pending waterings) and refresh them in place.
            key: 'digital', label: 'Digital Tree', icon: <Icons.Tree />, render: () => (
+               <>
                <ChainTree
                    genesisBlock={genesisBlock}
                    blocks={growthBlocks}
@@ -321,6 +323,21 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                        onUnmint: handleUnmintHead,
                    } : null}
                />
+               {/* The export ceremony (domain/export): the tree and its chain leave as JSON,
+                   seals verbatim, images included — gathered with this hand's own sight. */}
+               {canWater && (
+                   <div className="mt-4 flex justify-end">
+                       <button onClick={async () => {
+                           if (exporting) return;
+                           setExporting(true);
+                           try { await exportTree(tree); } catch { showAlert('err_export'); }
+                           setExporting(false);
+                       }} disabled={exporting} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-50">
+                           <Icons.ArrowRight size={14} /> {exporting ? t('exporting') : t('export_tree')}
+                       </button>
+                   </div>
+               )}
+               </>
            ),
        },
        {
