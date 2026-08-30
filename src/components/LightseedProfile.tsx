@@ -13,6 +13,7 @@ import { normalizeTheme, type CommunityThemePreset } from '../utils/theme';
 import { IntelligencePanel } from './intelligence/IntelligencePanel';
 import { DEFAULT_INTELLIGENCE_ID } from '../services/intelligence';
 import { BeingProfile, type BeingSection } from './BeingProfile';
+import { SuperDot } from './ui/SuperDot';
 import { ProfileInviteBanners } from './profile/ProfileInviteBanners';
 import { ProfileTrees } from './profile/ProfileTrees';
 import { ProfileLight } from './profile/ProfileLight';
@@ -305,7 +306,9 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
             ),
         },
         ...(showAdmin ? [{
-            key: 'admin', label: t('admin_title'), icon: <Icons.Shield />, render: () => (
+            // The SuperDot names the privilege: this door stands open through the ROLE, not
+            // through ownership — the same amber grammar staff controls wear everywhere.
+            key: 'admin', label: t('admin_title'), icon: <span className="relative inline-flex"><Icons.Shield /><SuperDot /></span>, render: () => (
                 <ProfileAdmin
                     uid={lightseed.uid}
                     email={lightseed.email}

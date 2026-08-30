@@ -9,6 +9,7 @@ import { Community, CommunityInvite, Lifetree, Pulse, LightHouse } from '../type
 import { doorOf, checkInvite } from '../domain/communityDoor';
 import { updateCommunity, uploadImage, getTreesByDomain, treesStandingIn, getParticipatingTrees, deleteCommunity, getCommunityByDomain, getLightHousesByDomain, getLightHousesByCommunity, getAllLightHouses, createLightHouse, adoptLightHouse, getPersonName, joinCommunityOpen, joinCommunityWithInvite, requestKeepership, withdrawKeeperRequest, formCommunityFromCircle } from '../services/firebase';
 import { formCircleRefusal, isTreeCircle } from '../domain/treeCircle';
+import { isDomainVerified } from '../domain/domainVerification';
 import { CommunityVision } from './community/CommunityVision';
 import { CommunityCouncil } from './community/CommunityCouncil';
 import { CommunityEvents } from './community/CommunityEvents';
@@ -821,8 +822,9 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                 <Icons.Venn /> {t('tree_circle_badge')}
               </span>
             ) : community.domain ? (
-              <a href={`https://${community.domain}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-0.5 text-xs font-mono text-emerald-300 hover:bg-emerald-400/20">
+              <a href={`https://${community.domain}`} target="_blank" rel="noreferrer" title={isDomainVerified(community) ? t('domain_verified') : undefined} className="inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-0.5 text-xs font-mono text-emerald-300 hover:bg-emerald-400/20">
                 <Icons.Globe size={12} /> {community.domain}
+                {isDomainVerified(community) && <span className="font-sans font-bold text-emerald-300">✓</span>}
               </a>
             ) : null}
             <LoveButton collection="communities" id={community.id} initialCount={community.loveCount || 0} className="rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-white hover:bg-white/20" />
