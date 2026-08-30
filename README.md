@@ -3,12 +3,26 @@
 <img width="1200" height="630" alt="lightseed — life recognising life" src="public/og.png" />
 </div>
 
-# Lifeseed
+# lightseed
 
 A living network where every Lifetree is an immutable chain of moments — a bridge between the inner Self, real trees, and the digital world.
 
 > Lightseed is not a platform asking humans to feed an algorithm.
 > It is a network in which attention returns to living beings, relationships, and places.
+
+## 🌳 The root system
+
+Every intelligence — human or AI — roots in the same living context before acting:
+
+- [`root/GENESIS.md`](root/GENESIS.md) — the promise (changes only with great care)
+- [`root/LIN.md`](root/LIN.md) — what world we are creating (ontology, principles, invariants)
+- [`root/ARCHITECTURE.md`](root/ARCHITECTURE.md) — how it currently lives
+- [`root/DECISIONS.md`](root/DECISIONS.md) — the rings: every decision, append-only in spirit
+- [`root/ROADMAP.md`](root/ROADMAP.md) & [`root/QUESTIONS.md`](root/QUESTIONS.md) — what we refuse to pretend we already know
+- [`root/INTERBEING_MATRIX.md`](root/INTERBEING_MATRIX.md) — the plain contract for communities relating without ownership
+- [`BRIDGE.md`](BRIDGE.md) — maps the beings to the code
+
+The loop has no sovereign layer: *root ↕ code ↕ experience ↕ living beings and place ↕ reflection ↕ new ring.*
 
 ## 🌱 Clone the Living Tree
 
@@ -27,14 +41,56 @@ git fetch --unshallow
 
 ## 🌟 Core Concepts
 
-- **Lifetree**: A digital–physical being with an immutable chain (genesis → growth). Planted by a person, community, project, or a guarded wild tree. Its standing is **validated** by another live tree.
-- **Pulse**: A block on a Lifetree's chain. Types include `growth` (visual evolution — including 💧 **watering** pulses proven by an AI- or guardian-confirmed photo), `event`, `decision` (governance), and `reach` (messages).
-- **Living validation**: Validation is care, not a permanent stamp — it stays lit only while the tree is **tended** (a growth pulse or explicit tend) within a year, and dims if neglected.
-- **Vision**: A direction of growth for a Lifetree; the network surfaces **resonances** — generative pairings between visions.
-- **Guardian / Tree Circle**: Shared care of a tree. Roles (guardian, co-guardian, steward, observer, member) are edges in the **LIN** — the `links` collection, the single source of truth. People are invited into a tree's circle, and a community grows around the tree.
-- **Watering**: Scheduled tending for guarded trees. A daily routine alerts guardians when a tree is overdue; a confirmed watering re-lights the tree's validation.
-- **Reach**: A private 1:1 or group message between trees (a `reach` pulse), gated to its participants.
-- **Intelligence Commons**: Pluggable AI — the network speaks through a chosen intelligence (Google Gemini or Anthropic Claude), with node-key fallback so AI works for everyone.
+- **Being & the LIN**: Everything is a Being with a portable true name (lid). Relationships are
+  **LIN links** (`from__rel__to` in the `links` collection) — the single source of truth, never
+  arrays. Authority resolves by path; the doc id is bound to its data so links cannot be forged.
+- **Lifetree**: A digital–physical being with an immutable chain (genesis → growth). Planted by a
+  person, community, project, or a guarded wild tree. Its standing is **validated** by another
+  live tree, and validation is care, not a permanent stamp — it dims if the tree is neglected.
+- **Pulse**: A block on a Lifetree's chain. Types include `growth` (visual evolution — including
+  💧 **watering** pulses proven by an AI- or guardian-confirmed photo), `event`, `decision`
+  (governance), and `reach` (private messages, gated to participants).
+- **Tree Circle**: Shared care of a tree. **Guardianship is a no-privilege follow** (the seat of
+  witnessing and the collective veto); *caring* vests in invited **co-owner/steward** roles —
+  an invited tender tends. A circle of carers is itself a **pre-community**: a real community
+  Being with no domain, which can **graduate** into a standing community by the hands that carry
+  it, born on its garden's domain without claiming it.
+- **Community & the door**: Communities bear a **door** (open / invite / closed) governing who
+  joins, distinct from visibility. A **keeper circle** (the anchor plus keeper-link peers, full
+  equals) keeps each community; keepership is offered or asked for, never appointed, and a
+  community is never keeperless. Membership is one's own to lay down.
+- **The Interbeing Matrix**: Whole communities relate without ownership — typed mutual
+  attestations (`collaborates_with`, `recognises`, `shares_resources_with`), each side speaking
+  only for itself; reciprocity is derived from two independent links, never an acceptance flag.
+  See [`root/INTERBEING_MATRIX.md`](root/INTERBEING_MATRIX.md).
+- **Verified anchors**: A community's domain is self-declared until proven by a DNS-01-style
+  control challenge (`_lightseed-challenge.<domain>` TXT record, server-minted single-use
+  token, server-observed). The badge derives and falls silent if the domain moves. DNS proves
+  control of the anchor — never worth.
+- **Light Houses & beds**: Sanctuary beings on the map; a **bed** is a Lifetree (`treeType: BED`)
+  whose chain leaves are stays — a place to sleep, as a being.
+- **The export ceremony**: Every being's data leaves in its own hands — person, tree, community,
+  or node — as one ZIP: records as JSON, **chains oldest-first with seals verbatim** (integrity
+  stated, never repaired), and images. Every gatherer reads with the asking hand's own sight;
+  the security rules stay the only law of what leaves.
+- **Faces**: One repository serves many faces (lightseed.online, perauset, theohouse, …) —
+  landings composed from database data through the section registry; the domain community is the
+  host, and who answers for an address is a law (DNS-proven claimant first, else the eldest).
+- **Intelligence Commons**: Pluggable AI — the network speaks through a chosen intelligence
+  (Google Gemini or Anthropic Claude), node-key fallback gated to validated members, BYO keys
+  server-side only. Any intelligence can log in: the network is built for humans, AIs,
+  communities and nodes alike.
+
+## ✅ Quality gates
+
+```bash
+npm run check       # tsc strict + eslint + vitest — the gate, kept green
+npm run test:rules  # Firestore security rules under the emulator (needs Java)
+```
+
+The rules suite includes a story test that walks the whole light path — plant, water onto the
+chain, found a community, claim and prove a domain — and compares the exported JSON archive
+against the same domain laws the app ships.
 
 ---
 
@@ -57,7 +113,7 @@ Since the application supports Arabic (`ar`) and other RTL languages, specific r
 
 ### 2. Intelligence Commons (AI)
 *   **Providers**: Google Gemini (`@google/generative-ai`) and Anthropic Claude (`@anthropic-ai/sdk`), behind one provider abstraction. A community can connect its own key (BYO) or use the node key.
-*   **Default models**: Gemini `gemini-3.5-flash`; Claude `claude-sonnet-4-6`.
+*   **Default models**: Gemini `gemini-3.5-flash`; Claude `claude-sonnet-5`.
 *   **Keys**: Provider keys live server-side only (in `providerCredentials`, never client-readable). Node keys are the `GEMINI_API_KEY` / `ANTHROPIC_API_KEY` Cloud Function secrets. Calls fall back to the node keys so AI answers for every signed-in user.
 *   **Vision**: Watering proof photos are analysed multimodally (Gemini or Claude vision) to confirm a watering.
 
