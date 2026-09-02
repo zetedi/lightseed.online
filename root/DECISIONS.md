@@ -27,7 +27,12 @@ itself (createCustomToken signs via IAM signBlob). REJECTED: a `.theohouse.org` 
 carrying tokens (JS-readable, an hour stale, an XSS surface); leading with OAuth on the
 mother site itself (console wiring per face, and the seed stays the one place identity
 lives); waiting for the Postgres crossing (the door's protocol survives it — only the
-minting hand changes, `seed.uid()` being the seam the 2026-08-31 ring already named).
+minting hand changes, `seed.uid()` being the seam the 2026-08-31 ring already named). Same day, the door's second leaf: the mother site's header now carries a SIGN-IN
+DOOR — nothing but a link to the seed with `?signin` (SSO_SIGN_IN_PARAM in domain/ssoDoor.ts,
+pinned by test beside the five names). The seed opens its own sign-in dialog for a visitor it
+does not know and consumes the ask from the address, so a copied URL is a door, not a demand;
+once the seed knows the person, the same door on the mother site turns into the way out,
+through the signout message. Identity still lives in one place.
 
 ---
 

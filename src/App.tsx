@@ -75,6 +75,7 @@ import { useRefreshSignal } from './hooks/useRefreshSignal';
 import { findBeingByLid } from './services/firebase/beings';
 import { lidFromPath, beingPath } from './domain/beingLink';
 import { dataDomainFor, inviteIdFromPath, motherDoorUrl } from './domain/communityDoor';
+import { asksSignIn, withoutSignInAsk } from './domain/ssoDoor';
 import { getCommunityInvite, getCommunityById } from './services/firebase';
 import type { CommunityInvite } from './types';
 import type { LightHouse } from './domain/lightHouse';
@@ -407,6 +408,17 @@ const AppContent = () => {
             setSelectedCommunity(community);
         }).catch(() => notify(speak('invite_not_found')));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot door: runs when auth settles; the path is consumed on first resolution
+    }, [authLoading]);
+
+    // The ?signin door (domain/ssoDoor) — a mother site's own "sign in" link (theohouse.org's
+    // header door) lands here. Signed out, the sign-in dialog opens; either way the ask leaves
+    // the address, so a copied URL is a door, not a demand. Consumed like the /b/ door's path.
+    useEffect(() => {
+        if (authLoading || !asksSignIn(window.location.search)) return;
+        window.history.replaceState(window.history.state, '', window.location.pathname + withoutSignInAsk(window.location.search));
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- reacts to the external ?signin ask once auth settles; mirrors the ?invite effect above
+        if (!lightseed) setShowAuthModal(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot door: runs when auth settles; the ask is consumed on first resolution
     }, [authLoading]);
 
     // With the header visible above the community profile, a tab click should land on that

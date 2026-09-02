@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { SSO_DOOR, ssoParentOrigins } from '../src/domain/ssoDoor';
+import { SSO_DOOR, SSO_SIGN_IN_PARAM, asksSignIn, ssoParentOrigins, withoutSignInAsk } from '../src/domain/ssoDoor';
 
 // The SSO door's law: who may stand as a parent, and the names both halves speak.
 // The mother half (theohouse.org src/sso.ts) hand-copies the message names, so the
@@ -55,5 +55,34 @@ describe('the protocol names are pinned: the mother half copies these verbatim',
       token: 'lifeseed-sso-token',
       signout: 'lifeseed-sso-signout',
     });
+  });
+});
+
+describe('the sign-in ask: a mother site links to the seed with ?signin', () => {
+  it('the parameter name is pinned: the mother markup copies it verbatim', () => {
+    expect(SSO_SIGN_IN_PARAM).toBe('signin');
+  });
+
+  it('hears the ask bare, valued, or among other params', () => {
+    expect(asksSignIn('?signin')).toBe(true);
+    expect(asksSignIn('?signin=1')).toBe(true);
+    expect(asksSignIn('?tree=abc&signin')).toBe(true);
+  });
+
+  it('hears nothing in a plain address or a look-alike', () => {
+    expect(asksSignIn('')).toBe(false);
+    expect(asksSignIn('?tree=abc')).toBe(false);
+    expect(asksSignIn('?signing=1')).toBe(false);
+  });
+
+  it('consumes the ask and keeps the rest of the address', () => {
+    expect(withoutSignInAsk('?signin')).toBe('');
+    expect(withoutSignInAsk('?tree=abc&signin')).toBe('?tree=abc');
+    expect(withoutSignInAsk('?signin=1&invite=xyz')).toBe('?invite=xyz');
+  });
+
+  it('leaves an address without the ask as it was', () => {
+    expect(withoutSignInAsk('')).toBe('');
+    expect(withoutSignInAsk('?tree=abc')).toBe('?tree=abc');
   });
 });

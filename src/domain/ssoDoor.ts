@@ -44,3 +44,23 @@ export const ssoParentOrigins = (hostname: string): string[] => {
   const apex = labels.slice(1).join('.');
   return [`https://${apex}`, `https://www.${apex}`];
 };
+
+// THE SIGN-IN ASK. Identity lives in one place — the seed — so a mother site's own "sign
+// in" door (theohouse.org's header) is nothing but a link here with this parameter: the
+// seed opens its sign-in dialog for a visitor it does not know, and consumes the ask from
+// the address so a copied URL is a door, not a demand. Like the message names, the
+// parameter is protocol: the mother site's markup hand-copies `?signin`, never renamed.
+export const SSO_SIGN_IN_PARAM = 'signin';
+
+// Whether a query string carries the ask ('?signin', '?signin=1', '?tree=x&signin').
+export const asksSignIn = (search: string): boolean =>
+  new URLSearchParams(search).has(SSO_SIGN_IN_PARAM);
+
+// The same query string with the ask consumed: '' when nothing else remains, so the
+// address can be rewritten without a dangling '?'.
+export const withoutSignInAsk = (search: string): string => {
+  const params = new URLSearchParams(search);
+  params.delete(SSO_SIGN_IN_PARAM);
+  const rest = params.toString();
+  return rest ? `?${rest}` : '';
+};
