@@ -28,6 +28,18 @@ export default defineConfig(({ mode }) => {
         port: 3000,
         host: '0.0.0.0',
       },
+      build: {
+        rollupOptions: {
+          // Two doors out of one build: the app shell, and the SSO door a mother site
+          // iframes so a seed face can share its sign-in (sso.html → src/sso.ts;
+          // domain/ssoDoor.ts is the law). The door stays its own tiny entry so a
+          // hidden iframe never pays for the whole forest.
+          input: {
+            main: path.resolve(cwd, 'index.html'),
+            sso: path.resolve(cwd, 'sso.html'),
+          },
+        },
+      },
       plugins: [
         react(),
         // PWA: installable app + offline shell. The service worker precaches the built shell
@@ -55,9 +67,9 @@ export default defineConfig(({ mode }) => {
             globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
             // Leave the media library (webp/mp4) to the network — precaching it would bloat installs.
             maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
-            // Never serve the SPA shell for Firebase's reserved paths: /__/* (auth helpers)
-            // and /u/* (the unsubscribe Cloud Function rewrite).
-            navigateFallbackDenylist: [/^\/__\//, /^\/u\//],
+            // Never serve the SPA shell for Firebase's reserved paths: /__/* (auth helpers),
+            // /u/* (the unsubscribe Cloud Function rewrite), or the SSO door (its own page).
+            navigateFallbackDenylist: [/^\/__\//, /^\/u\//, /^\/sso\.html/],
             runtimeCaching: [
               {
                 // Satellite tiles: pan/zoom and repeat visits hit the local copy first;

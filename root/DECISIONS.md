@@ -6,6 +6,31 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-02 · One sign-in, two hearths: the SSO door** — the hybrid shape (ring
+2026-08-19) left the mother site a stranger to its own seed: Firebase Auth remembers per
+ORIGIN, so signing in at seed.theohouse.org told theohouse.org nothing. Now the seed keeps
+a second invisible door, /sso.html (src/sso.ts, its own tiny build entry — a hidden iframe
+never pays for the whole forest). Apex and subdomain are the SAME SITE to a browser, so
+the framed door stands unpartitioned inside the seed's own session. Its law is
+domain/ssoDoor.ts: the door speaks to ONE parent, the first allowed origin to say hello,
+and the allowed parents are a DERIVATION, not a registry — the face's own apex and its
+www, read from the door's hostname, nothing to forget when the thirteenth face arrives.
+The parent may ask the door to MINT: the mintSsoToken callable answers a signed-in caller
+with a custom token for their OWN uid (no privilege moves — the token re-speaks the
+session's name), and the mother page signs in with it: two origins, two self-refreshing
+sessions, one person. Sign-out mirrors through the same door, the seed as the source of
+truth. The mother half lives in the mother site's repo (theohouse.org src/sso.ts),
+hand-copying the five message names — protocol, not identity, pinned by
+tests/ssoDoor.test.ts on this side — and loads Firebase only once the seed says someone
+is home. Deploy hand, once: the functions runtime service account needs Token Creator on
+itself (createCustomToken signs via IAM signBlob). REJECTED: a `.theohouse.org` cookie
+carrying tokens (JS-readable, an hour stale, an XSS surface); leading with OAuth on the
+mother site itself (console wiring per face, and the seed stays the one place identity
+lives); waiting for the Postgres crossing (the door's protocol survives it — only the
+minting hand changes, `seed.uid()` being the seam the 2026-08-31 ring already named).
+
+---
+
 **2026-08-31 · The seed takes its own soil: the database port begins** — the node will run
 whole on POSTGRES, self-hosted in the Supabase open-source shape, one Docker Compose per
 seed. The deciding law: the client-direct-with-law model survives the crossing — the app

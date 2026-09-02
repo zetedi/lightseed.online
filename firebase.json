@@ -66,8 +66,8 @@
           ]
         },
         {
-          "comment": "Always revalidate the HTML shell so a new deploy is picked up immediately.",
-          "source": "/index.html",
+          "comment": "Always revalidate the HTML shell and the SSO door so a new deploy is picked up immediately.",
+          "source": "/{index.html,sso.html}",
           "headers": [
             {
               "key": "Cache-Control",
@@ -124,7 +124,7 @@
           ]
         },
         {
-          "source": "/index.html",
+          "source": "/{index.html,sso.html}",
           "headers": [
             {
               "key": "Cache-Control",
@@ -180,7 +180,7 @@
           ]
         },
         {
-          "source": "/index.html",
+          "source": "/{index.html,sso.html}",
           "headers": [
             {
               "key": "Cache-Control",
@@ -236,7 +236,7 @@
           ]
         },
         {
-          "source": "/index.html",
+          "source": "/{index.html,sso.html}",
           "headers": [
             {
               "key": "Cache-Control",
@@ -292,7 +292,7 @@
           ]
         },
         {
-          "source": "/index.html",
+          "source": "/{index.html,sso.html}",
           "headers": [
             {
               "key": "Cache-Control",

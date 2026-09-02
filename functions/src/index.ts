@@ -2807,3 +2807,17 @@ export const backfillLidIndex = onCall({ cors: true }, async (request) => {
     console.log("lid index backfill:", JSON.stringify(report));
     return report;
 });
+
+// --- The SSO door's mint (ring 2026-09-02) ----------------------------------------------------
+// A signed-in caller receives a custom token for their OWN uid — no privilege moves, the token
+// only re-speaks the session's identity — so a mother page beside a seed face (theohouse.org
+// beside seed.theohouse.org) can sign in as the same person. WHO may ask is the door's law
+// (src/domain/ssoDoor.ts + the /sso.html frame); this hand only ever answers with the asker's
+// own name, so an unexpected caller gains nothing they do not already hold.
+// Deploy hand, once: createCustomToken signs via IAM signBlob, so the functions runtime
+// service account needs roles/iam.serviceAccountTokenCreator on itself.
+export const mintSsoToken = onCall({ cors: true }, async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "The mint answers only the signed-in.");
+    const token = await getAuth().createCustomToken(request.auth.uid);
+    return { token };
+});
