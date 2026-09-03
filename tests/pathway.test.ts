@@ -19,6 +19,7 @@ const being = (over: Partial<PathwayInput> = {}): PathwayInput => ({
   isMember: true,
   followedVisionsCount: 1,
   circleSize: 2,
+  tendedCount: 0,
   sevenSustaining: 7,
   ownsCommunity: true,
   communityHasCustomDomain: true,
@@ -96,6 +97,12 @@ describe('derivePathway — the ladder, stage by stage', () => {
     const p = derivePathway(being({ circleSize: 0 }), NOW);
     expect(p.stage).toBe('visionary');
     expect(p.next?.key).toBe('formCircle');
+  });
+
+  it('a co-owner or steward of another\'s tree already stands in a circle — the trail moves on', () => {
+    const p = derivePathway(being({ circleSize: 0, tendedCount: 1, sevenSustaining: 3 }), NOW);
+    expect(p.stage).toBe('sevening');
+    expect(p.next?.key).toBe('plantSeven');
   });
 
   it('the long rung: a circle formed but the seven not yet standing → plant your seven', () => {

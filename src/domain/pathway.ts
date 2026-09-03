@@ -12,7 +12,7 @@ import { SUSTAINING_SEVEN } from './sustainingSeven';
 //   caring   → connect (reach, guard, participate)
 //   connected → become a community member
 //   member    → follow a vision
-//   visionary → invite a circle into shared care of your tree
+//   visionary → invite a circle into shared care of your tree (or stand in another's)
 //   sevening  → grow the sustaining seven: planted, witnessed, cared for
 //   circling  → your circle is already a community — name it (the keystone)
 //   founding  → root it on its own domain, then tailor its appearance
@@ -78,6 +78,9 @@ export interface PathwayInput {
   isMember: boolean;          // holds a 'member' link to any community
   followedVisionsCount: number; // 'joined' links to visions
   circleSize: number;         // co_owner + steward links into their own trees
+  // co_owner + steward links FROM the being into others' trees: a co-owner already stands in
+  // a tree circle, so the trail does not ask them to form one (ring 2026-09-03).
+  tendedCount: number;
   sevenSustaining: number;    // planted trees both witnessed and cared for (domain/sustainingSeven)
   ownsCommunity: boolean;
   communityHasCustomDomain: boolean; // their community's domain is outside the built-in seed shell
@@ -190,7 +193,7 @@ export const derivePathway = (input: PathwayInput, now: number = Date.now()): Pa
   // Keepers stand with their community by definition — owning one IS membership.
   if (!input.isMember && !input.ownsCommunity) return state('connected', 'join');
   if (input.followedVisionsCount === 0) return state('member', 'followVision');
-  if (input.circleSize === 0) return state('visionary', 'formCircle');
+  if (input.circleSize === 0 && input.tendedCount === 0) return state('visionary', 'formCircle');
   // The long rung: the floor of seven (tree circles become communities by geometry, so the
   // seven comes before naming one). Invited, never enforced — the trail points, it never gates.
   if (input.sevenSustaining < SUSTAINING_SEVEN) return state('sevening', 'plantSeven');

@@ -17,6 +17,7 @@ import { Pulse, type Lifetree } from '../types';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
 import { canReachTree, type ReachTargetProfile } from '../utils/reachPermissions';
 import { treeCircle } from '../domain/views/circle';
+import { beingPath } from '../domain/beingLink';
 import { firestoreStore } from '../adapters/firestore';
 import { BeingProfile, type BeingSection } from './BeingProfile';
 import { ChainTree } from './sections/ChainTree';
@@ -304,8 +305,11 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     </>
    );
 
+   // The link is the being door (/b/<lid>): hosting serves it through beingPreview, whose card
+   // wears the tree's name, words and LATEST face — the static shell's ?tree= link answered
+   // with the site's own card instead. Trees without a lid keep the old door.
    const handleShare = async () => {
-       const url = `${window.location.origin}/?tree=${tree.id}`;
+       const url = tree.lid ? `${window.location.origin}${beingPath(tree.lid)}` : `${window.location.origin}/?tree=${tree.id}`;
        try {
            if (navigator.share) await navigator.share({ title: tree.name, url });
            else { await navigator.clipboard.writeText(url); setShared(true); setTimeout(() => setShared(false), 1500); }

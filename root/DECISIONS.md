@@ -6,6 +6,18 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-03 · Three more, the same evening** — (1) *The hero waits for its ground*: on Per
+Auset (strict, no custom landing) the dashboard hero fetched before the host community had
+answered, so its strictness was unknown and the creator-never-lost merge folded the keeper's
+own events from every domain into the hero for a breath — until the staff role landed and a
+third fetch, now strict, cleared them. The hero now waits for the host community and the auth
+state, keys on strictness and reflection, and only its newest fetch lands. (2) *Standing in a
+circle is standing in a circle*: the Light Path counted only the circle INTO one's own trees,
+so a co-owner of another's tree was told to form one; `tendedCount` (co_owner / steward links
+out) now passes the rung, tested. (3) *A shared tree is its being door*: the tree's share
+link was the static shell's `?tree=` address, which hosting answers with the face's card; it
+is now `/b/<lid>`, served by beingPreview, whose card already wore the tree's latest face.
+
 **2026-09-03 · Seven stumbles from the keeper's walk** — Zoltán walked the app and named
 seven things; each was traced to its cause before a line moved. (1) *Placed from the photo*:
 the plant flow read EXIF only when the device's GPS had FAILED, and by then the crop step had

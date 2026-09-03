@@ -15,6 +15,8 @@ export interface PathwayFacts {
   isMember: boolean;
   followedVisionsCount: number;
   circleSize: number;
+  // The circles the being stands in on OTHERS' trees (their co_owner / steward links out).
+  tendedCount: number;
   // The guardian edges into my trees (rel 'guardian' from the same linksTo sweep) — the
   // sustaining seven's witnesses; App derives sevenSustaining from these + the live trees.
   guardianEdges: GuardianEdge[];
@@ -28,6 +30,7 @@ const EMPTY: PathwayFacts = {
   isMember: false,
   followedVisionsCount: 0,
   circleSize: 0,
+  tendedCount: 0,
   guardianEdges: [],
   ownsCommunity: false,
   communityHasCustomDomain: false,
@@ -54,7 +57,9 @@ export const usePathwayFacts = (lightseed: Lightseed | null, myTrees: Lifetree[]
       firestoreStore.linksFrom(uid, 'joined').catch(() => []),
       Promise.all(treeIds.map(id => firestoreStore.linksTo(id).catch(() => []))),
       getMyCommunities(uid).catch(() => []),
-    ]).then(([memberLinks, joinedLinks, perTreeLinks, communities]) => {
+      firestoreStore.linksFrom(uid, 'co_owner').catch(() => []),
+      firestoreStore.linksFrom(uid, 'steward').catch(() => []),
+    ]).then(([memberLinks, joinedLinks, perTreeLinks, communities, coOwnerLinks, stewardLinks]) => {
       if (!alive) return;
       const flatLinks = perTreeLinks.flat();
       const circleSize = flatLinks.filter(l => l.rel === 'co_owner' || l.rel === 'steward').length;
@@ -63,6 +68,7 @@ export const usePathwayFacts = (lightseed: Lightseed | null, myTrees: Lifetree[]
         isMember: memberLinks.length > 0,
         followedVisionsCount: joinedLinks.length,
         circleSize,
+        tendedCount: coOwnerLinks.length + stewardLinks.length,
         guardianEdges: flatLinks.filter(l => l.rel === 'guardian').map(l => ({ from: l.from, to: l.to })),
         ownsCommunity: communities.length > 0,
         // With several communities, ANY of them counts — the path asks whether the walker
