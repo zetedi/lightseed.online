@@ -7,7 +7,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
 import { ValidationBadge } from './ValidationBadge';
-import { Modal } from './ui/Modal';
+import { Modal, modalButton } from './ui/Modal';
 import { isExplicitlyValidatedTree, isValidationLive, isValidationFading } from '../utils/validation';
 import { normalizeTheme, type CommunityThemePreset } from '../utils/theme';
 import { IntelligencePanel } from './intelligence/IntelligencePanel';
@@ -402,7 +402,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                         <Modal title={t('notice')} onClose={() => setDialogMessage(null)}>
                             <div className="space-y-4">
                                 <p className="text-sm text-slate-600">{dialogMessage}</p>
-                                <button onClick={() => setDialogMessage(null)} className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white">Close</button>
+                                <button type="button" onClick={() => setDialogMessage(null)} className={modalButton('primary')}>{t('close')}</button>
                             </div>
                         </Modal>
                     )}

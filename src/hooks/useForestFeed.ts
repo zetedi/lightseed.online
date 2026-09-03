@@ -41,8 +41,15 @@ export function useForestFeed(params: {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const forestSentinelRef = useRef<HTMLDivElement>(null);
+  // Only the NEWEST load may land. A reset (tab change, re-scope, a sign-in resolving) that
+  // fires while an older query is still in flight used to lose the race: whichever response
+  // arrived last won, so a wider, stale set could replace the fresh narrower one — items
+  // appearing, then vanishing. Every await below checks it is still the newest request.
+  const seqRef = useRef(0);
 
   const loadContent = async (reset = false) => {
+    const seq = ++seqRef.current;
+    const stale = () => seq !== seqRef.current;
     if (reset) {
       setData([]);
       setLastDoc(null);
@@ -85,6 +92,7 @@ export function useForestFeed(params: {
         const standing = (currentDomain && hostCommunityId)
           ? await treesStandingIn(hostCommunityId).catch(() => [])
           : [];
+        if (stale()) return;
         const unionStanding = (items: any[]) => {
           const seen = new Set(items.map((t: any) => t.id));
           return [...items, ...standing.filter(t => !seen.has(t.id))];
@@ -94,11 +102,13 @@ export function useForestFeed(params: {
           // Beds are already excluded at the service layer — the guard here is the belt
           // to that braces (a bed must never reach the forest, whatever the source).
           const all = unionStanding(excludeBedTrees(await fetchAllLifetrees(currentDomain, feedOwnerUid, treeLevels)));
+          if (stale()) return;
           setData(all);
           setLastDoc(null);
           setHasMore(false);
         } else {
           const res = await fetchLifetrees(currentLastDoc, currentDomain, feedOwnerUid, treeLevels);
+          if (stale()) return;
           setData(prev => {
             const newItems = reset ? unionStanding(excludeBedTrees(res.items)) : excludeBedTrees(res.items);
             if (reset) return newItems;
@@ -112,6 +122,7 @@ export function useForestFeed(params: {
       }
       else if (tab === 'pulses') {
         const res = await fetchPulses(currentLastDoc, currentDomain, feedLevels);
+        if (stale()) return;
         setData(prev => {
           const newItems = res.items;
           if (reset) return newItems;
@@ -131,6 +142,7 @@ export function useForestFeed(params: {
           { reflectsPublic: hostReflectsPublic, strictScope: hostStrictScope },
         );
         const res = await fetchEventPulses(currentLastDoc, currentDomain, levels, ownerUid);
+        if (stale()) return;
         setData(prev => {
           const newItems = res.items;
           if (reset) return newItems;
@@ -142,6 +154,7 @@ export function useForestFeed(params: {
       }
       else if (tab === 'offerings') {
         const res = await fetchOfferingPulses(currentLastDoc, currentDomain, feedLevels);
+        if (stale()) return;
         setData(prev => {
           // A paused offering leaves the shared feed but stays visible to its own author
           // (who sees it wearing the PAUSED chip and may rewake it from its profile).
@@ -157,6 +170,7 @@ export function useForestFeed(params: {
       }
       else if (tab === 'inspiration') {
         const res = await fetchReachPulses(currentLastDoc, currentDomain, feedLevels);
+        if (stale()) return;
         setData(prev => {
           const newItems = res.items;
           if (reset) return newItems;
@@ -172,6 +186,7 @@ export function useForestFeed(params: {
           isStaff: isSuperAdmin || isAdmin,
           publicOnly: reflects,
         });
+        if (stale()) return;
         setData(prev => {
           const newItems = res.items;
           if (reset) return newItems;
@@ -183,12 +198,13 @@ export function useForestFeed(params: {
       }
       else if (tab === 'observatory' && lightseed) {
         const res = await getPendingAlignments(lightseed.uid);
+        if (stale()) return;
         setAlignments(res);
       }
     } catch (e) {
       console.error("Load Content Error:", e);
     }
-    setLoadingMore(false);
+    if (!stale()) setLoadingMore(false);
   };
 
   useEffect(() => {

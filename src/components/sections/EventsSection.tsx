@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { showAlert, showConfirm } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useSession } from '../../contexts/SessionContext';
@@ -98,8 +98,12 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
   // scope (yet) — personal events live on the node ledger, so they get node-level audiences.
   const visibilityScope = scope === 'community' ? 'community' : 'node';
 
+  // Only the newest fetch may land: membership (and so the visible levels) resolves a beat
+  // after mount, and the wider second fetch must never be overwritten by the narrower first.
+  const eventsSeq = useRef(0);
   const refreshEvents = useCallback(() => {
-    loadEvents().then(setEvents).catch(() => {});
+    const seq = ++eventsSeq.current;
+    loadEvents().then(list => { if (seq === eventsSeq.current) setEvents(list); }).catch(() => {});
   }, [loadEvents]);
   // Re-fetch when an event changes anywhere else (e.g. deleted on its profile page).
   const eventsSignal = useRefreshSignal(['events']);
@@ -162,9 +166,10 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
       setEditingEventId(null);
       setShowEventForm(false);
       refreshEvents();
-      // Tell every other events view (the dashboard banner, other tabs) to re-fetch too, so an
-      // edit shows up everywhere — not just in this list.
-      announce('events', editingEventId || '');
+      // A NEW event tells every other events view (the dashboard banner, other tabs) to
+      // re-fetch. An EDIT already announced itself from updateEvent, patch and all — a second,
+      // patchless announce with the id would read as a removal and prune the event it just saved.
+      if (!editingEventId) announce('events');
     } catch (error: any) {
       console.error(error);
       showAlert(error?.message || 'err_event_save');

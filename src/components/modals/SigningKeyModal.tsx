@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
-import { Modal } from '../ui/Modal';
+import { Modal, modalButton } from '../ui/Modal';
 import {
   ensureSigningKey, restoreFromPhrase, getDeviceKeyInfo, getPublishedSigningKey, publishSigningKey,
   getPublishedSigningIdentity, rotateSigningKey, freezeSigningKey,
@@ -309,13 +309,13 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
             <div className="flex flex-col gap-2">
               {!hasKey && !frozen && (
                 <button type="button" onClick={create} disabled={busy || available === false}
-                  className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
+                  className={modalButton('primary')}>
                   {busy ? t('signing_key_creating') : t('signing_key_create')}
                 </button>
               )}
               {custody === 'publish_needed' && !frozen && (
                 <button type="button" onClick={publishNow} disabled={busy || available === false}
-                  className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
+                  className={modalButton('primary')}>
                   {busy ? t('signing_key_creating') : t('signing_publish_now')}
                 </button>
               )}
@@ -412,7 +412,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
               <span>{t('signing_phrase_confirm')}</span>
             </label>
             <button type="button" onClick={finishPhrase} disabled={!confirmedSaved}
-              className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
+              className={modalButton('primary')}>
               {t('signing_phrase_done')}
             </button>
           </>
@@ -431,7 +431,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
             </label>
             <div className="flex gap-3">
               <button type="button" onClick={() => setView('status')} disabled={busy}
-                className="flex-1 rounded-xl bg-slate-100 py-3 text-sm font-bold text-slate-700 hover:bg-slate-200 disabled:opacity-50">
+                className={modalButton('secondary', { extra: 'flex-1' })}>
                 {t('back')}
               </button>
               <button type="button" onClick={rotate} disabled={busy || !confirmedRotate}
@@ -461,7 +461,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
             </label>
             <div className="flex gap-3">
               <button type="button" onClick={() => setView('status')} disabled={busy}
-                className="flex-1 rounded-xl bg-slate-100 py-3 text-sm font-bold text-slate-700 hover:bg-slate-200 disabled:opacity-50">
+                className={modalButton('secondary', { extra: 'flex-1' })}>
                 {t('back')}
               </button>
               <button type="button" onClick={freeze} disabled={busy || !confirmedFreeze}
@@ -495,11 +495,11 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
             )}
             <div className="flex gap-3">
               <button type="button" onClick={() => setView('status')} disabled={busy}
-                className="flex-1 rounded-xl bg-slate-100 py-3 text-sm font-bold text-slate-700 hover:bg-slate-200 disabled:opacity-50">
+                className={modalButton('secondary', { extra: 'flex-1' })}>
                 {t('back')}
               </button>
               <button type="button" onClick={witnessRecovery} disabled={busy || !witnessCode.trim() || (!!witnessPreview && !confirmedWitness)}
-                className="flex-1 rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50">
+                className={modalButton('primary', { hue: 'indigo', extra: 'flex-1' })}>
                 {busy ? t('signing_key_creating') : witnessPreview ? t('signing_witness') : t('signing_recovery_read')}
               </button>
             </div>
@@ -514,7 +514,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
             </div>
             {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(err)}</p>}
             <button type="button" onClick={() => { resetRestoreFlow(); setView('restore'); }}
-              className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700">
+              className={modalButton('primary')}>
               {t('signing_key_restore')}
             </button>
             <button type="button" onClick={() => { setErr(null); setConfirmedFreeze(false); setSuspectedSince(''); setView('freeze'); }}
@@ -533,11 +533,11 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
             {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(err)}</p>}
             <div className="flex gap-3">
               <button type="button" onClick={() => { resetRestoreFlow(); setView('status'); }}
-                className="flex-1 rounded-xl bg-slate-100 py-3 text-sm font-bold text-slate-700 hover:bg-slate-200">
+                className={modalButton('secondary', { extra: 'flex-1' })}>
                 {t('back')}
               </button>
               <button type="button" onClick={restore} disabled={busy || parsePhrase(restoreInput).length === 0}
-                className="flex-1 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
+                className={modalButton('primary', { extra: 'flex-1' })}>
                 {busy ? t('signing_key_restoring') : t('signing_key_restore')}
               </button>
             </div>

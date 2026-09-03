@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Icons } from './Icons';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { MODAL_BACKDROP, MODAL_PANEL, MODAL_TITLE, MODAL_CLOSE, modalButton } from './Modal';
 
 // A dependency-free image cropper: pan (drag) + zoom (slider/wheel) over a fixed-aspect
 // window, then draw the visible region to a canvas and hand back a cropped File. Rendered
@@ -168,12 +169,13 @@ export const ImageCropModal = ({
     // Portaled to <body>: `fixed` inside a transformed ancestor (the profile pages'
     // zoom-in animation) positions against the ancestor, flinging the editor out of the
     // viewport on mobile. The body has no transform; the editor stays centred.
+    // z-[120]: above the Modal (98) that opened the picker. The skin is the one modal shell's.
     return createPortal(
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4" onClick={(e) => { e.stopPropagation(); onCancel(); }}>
-            <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className={`${MODAL_BACKDROP} z-[120] p-4`} onClick={(e) => { e.stopPropagation(); onCancel(); }}>
+            <div role="dialog" aria-modal="true" className={`${MODAL_PANEL} max-w-sm p-5`} onClick={e => e.stopPropagation()}>
                 <div className="mb-3 flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-slate-800">{title}</h3>
-                    <button type="button" onClick={onCancel} className="text-slate-400 hover:text-slate-600"><Icons.Close /></button>
+                    <h3 className={`text-sm ${MODAL_TITLE}`}>{title}</h3>
+                    <button type="button" onClick={onCancel} aria-label="Close" className={`${MODAL_CLOSE} [&>svg]:h-5 [&>svg]:w-5`}><Icons.Close /></button>
                 </div>
 
                 <div
@@ -210,10 +212,10 @@ export const ImageCropModal = ({
                 </div>
                 <p className="mt-2 text-center text-[11px] text-slate-400">{t('crop_hint')}</p>
 
-                <div className="mt-4 flex gap-2">
-                    <button type="button" onClick={onCancel} className="flex-1 rounded-full border border-slate-200 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">{t('cancel')}</button>
-                    <button type="button" onClick={confirm} disabled={!nat || busy} className="flex-1 rounded-full bg-emerald-600 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
-                        {busy ? 'Cropping…' : 'Use photo'}
+                <div className="mt-4 flex gap-3">
+                    <button type="button" onClick={onCancel} className={modalButton('secondary', { extra: 'flex-1' })}>{t('cancel')}</button>
+                    <button type="button" onClick={confirm} disabled={!nat || busy} className={modalButton('primary', { extra: 'flex-1' })}>
+                        {busy ? t('cropping') : t('use_photo')}
                     </button>
                 </div>
             </div>

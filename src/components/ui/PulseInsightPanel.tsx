@@ -8,8 +8,9 @@ import { getActiveIntelligenceId, getIntelligence, DEFAULT_INTELLIGENCE_ID } fro
 import { spendAiTokens, db } from '../../services/firebase';
 import { isTokenisationEnabled } from '../../domain/tokenisation';
 import { doc, updateDoc } from 'firebase/firestore';
-import { speak } from '../../utils/translations';
+import { speak, spokenLine } from '../../utils/translations';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { Accordion } from './Accordion';
 
 // The AI "Translation Depth" + "Network Memory" column that reveals a pulse's deeper intent (spending
 // a tree's AI tokens) and shows its validation standing. Extracted from PulseDetail so the event
@@ -101,19 +102,25 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
 
     return (
         <div className="space-y-6">
+            {/* The depth system rests folded (ring 2026-09-03): the header names it, the chip
+                says a reading exists, one tap opens the reading and the controls. */}
             <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-6 rounded-2xl shadow-xl relative overflow-hidden">
                 <div className="relative z-10">
-                    <h2 className="text-lg font-bold text-sky-400 uppercase tracking-wider mb-6 flex items-center">
-                        <Icons.Intelligence />
-                        <span className="ml-2">Translation Depth System</span>
-                    </h2>
-
+                    <Accordion
+                        icon={<Icons.Intelligence />}
+                        title={<span className="text-lg font-bold text-sky-400 uppercase tracking-wider">{t('translation_depth_system')}</span>}
+                        summary={pulse.aiInterpretation
+                            ? <span className="rounded-full border border-indigo-400/40 bg-indigo-500/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-indigo-200">{speak(spokenLine('reading_depth', { depth: pulse.aiInterpretation.depth }))}</span>
+                            : undefined}
+                        headerClassName="text-sky-400"
+                        bodyClassName="mt-6"
+                    >
                     {pulse.aiInterpretation && !rereading ? (
                         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
                             {/* The five distinctions (NVC) — legacy single-blob readings fall into
                                 the first layer so old pulses keep rendering. */}
                             <div className="bg-white/10 p-4 rounded-xl border border-white/20 space-y-2">
-                                <span className="text-xs uppercase tracking-widest text-indigo-300 font-bold">Reading (Depth {pulse.aiInterpretation.depth})</span>
+                                <span className="text-xs uppercase tracking-widest text-indigo-300 font-bold">{speak(spokenLine('reading_depth', { depth: pulse.aiInterpretation.depth }))}</span>
                                 {/* Provenance — a persisted reading names its lens (the Carry honesty law). */}
                                 {(pulse.aiInterpretation.readByTreeName || pulse.aiInterpretation.intelligenceName) && (
                                     <p className="text-[10px] text-indigo-200/70">
@@ -209,6 +216,7 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
                             {tokensOn && activeTree && (activeTree.aiTokenBalance || 0) < depth && <p className="text-[10px] text-center text-amber-400">{t('err_tokens_short')}</p>}
                         </div>
                     )}
+                    </Accordion>
                 </div>
             </div>
 

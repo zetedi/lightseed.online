@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
-import { Modal } from './ui/Modal';
+import { Modal, modalButton } from './ui/Modal';
 import Logo from './Logo';
 import { tabTone, tabFg } from '../utils/tabTheme';
 import { crownName, type CrownRole } from '../domain/dataAuthority';
@@ -577,8 +577,8 @@ export const Navigation = ({
                     <div className="space-y-5">
                         <p className="text-sm text-slate-600">{t('signout_confirm')}</p>
                         <div className="flex gap-3">
-                            <button onClick={() => setShowLogoutConfirm(false)} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl font-bold text-sm transition-colors">{t('cancel')}</button>
-                            <button onClick={() => { setShowLogoutConfirm(false); setIsMenuOpen(false); onLogout(); }} className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-xl font-bold text-sm shadow-lg transition-colors flex items-center justify-center gap-2">
+                            <button type="button" onClick={() => setShowLogoutConfirm(false)} className={modalButton('secondary', { extra: 'flex-1' })}>{t('cancel')}</button>
+                            <button onClick={() => { setShowLogoutConfirm(false); setIsMenuOpen(false); onLogout(); }} className={modalButton('danger', { extra: 'flex-1' })}>
                                 <Icons.Exit />
                                 <span>{t('sign_out')}</span>
                             </button>

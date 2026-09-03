@@ -5,13 +5,15 @@ import { notify } from '../ui/Toast';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { speak } from '../../utils/translations';
 import { Icons } from '../ui/Icons';
-import { Modal } from '../ui/Modal';
+import { Modal, modalButton } from '../ui/Modal';
 import { ImagePicker } from '../ui/ImagePicker';
 import { AutocompleteInput } from '../ui/AutocompleteInput';
 import { LocationPicker } from '../ui/LocationPicker';
 import { Lightseed } from '../../types';
 import { generateLifetreeBio, generateImage } from '../../services/gemini';
 import { checkAndIncrementAiUsage, uploadBase64Image } from '../../services/firebase';
+import { Timestamp } from 'firebase/firestore';
+import { plantedProvenance, type PhotoProvenance } from '../../domain/exif';
 
 interface PlantTreeModalProps {
   lightseed: Lightseed | null;
@@ -19,7 +21,8 @@ interface PlantTreeModalProps {
   onPlant: (data: any) => Promise<void>;
   uploading: boolean;
   handleImageUpload: (file: File, path: string) => Promise<string>;
-  extractGpsFromImage: (file: File) => Promise<{latitude: number, longitude: number} | null>;
+  // Reads the photo's EXIF place + moment (utils/exif → domain/exif) from the ORIGINAL file.
+  readPhotoProvenance: (file: File) => Promise<PhotoProvenance | null>;
   // Optionally open straight into a type's flow (e.g. the "Guard Tree" button skips
   // the type selection and lands on the planting step).
   initialType?: 'LIFETREE' | 'GUARDED';
@@ -34,7 +37,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
   onPlant,
   uploading,
   handleImageUpload,
-  extractGpsFromImage,
+  readPhotoProvenance,
   initialType,
   initialStep
 }) => {
@@ -50,6 +53,10 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
   const [plantLocation, setPlantLocation] = useState<{latitude: number, longitude: number} | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [treeFile, setTreeFile] = useState<File | null>(null);
+  // The photo's own place and moment (EXIF), read the instant a photo is picked: the tree is
+  // placed where the photo was taken, and the planting provenance is sealed from it. Null when
+  // the photo carries none (or the face was imagined, not photographed).
+  const [photoPlace, setPhotoPlace] = useState<PhotoProvenance | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isImagining, setIsImagining] = useState(false);
   const [imagineError, setImagineError] = useState<string | null>(null);
@@ -114,30 +121,43 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
     setPlantLocation(null);
   }, [treeType]);
 
+  // A picked photo places the tree by its own EXIF (the original file — the crop strips it).
+  const handlePhotoPicked = (file: File, original: File) => {
+    setTreeFile(file);
+    handleImageUpload(file, `users/${lightseed?.uid}/trees/${Date.now()}`).then(setTreeImageUrl);
+    readPhotoProvenance(original).then(place => {
+      setPhotoPlace(place);
+      if (place) {
+        setPlantLocation({ latitude: place.latitude, longitude: place.longitude });
+        notify(t('location_from_photo'));
+      }
+    }).catch(() => setPhotoPlace(null));
+  };
+
+  // Locate: the photo's own place first (the truest witness of where the tree stands), the
+  // device's position only when the photo carries none.
   const handleLocate = () => {
+    if (photoPlace) {
+      setPlantLocation({ latitude: photoPlace.latitude, longitude: photoPlace.longitude });
+      notify(t('location_from_photo'));
+      return;
+    }
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setPlantLocation({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
         setIsLocating(false);
       },
-      async (err) => {
+      (err) => {
         console.error(err);
-        if (treeFile) {
-          const coords = await extractGpsFromImage(treeFile);
-          if (coords) {
-            setPlantLocation(coords);
-            notify("📍 Location extracted from the image.");
-          } else {
-            showAlert('err_location_manual');
-          }
-        } else {
-          showAlert('err_location');
-        }
+        showAlert(treeFile ? 'err_location_manual' : 'err_location');
         setIsLocating(false);
       }
     );
   };
+
+  const placedFromPhoto = !!photoPlace && !!plantLocation
+    && plantLocation.latitude === photoPlace.latitude && plantLocation.longitude === photoPlace.longitude;
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -156,6 +176,12 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
             imageUrl: treeImageUrl,
             latitude: plantLocation?.latitude,
             longitude: plantLocation?.longitude,
+            // Provenance (domain/lifetree planted*): the REAL moment and place the photo
+            // witnessed — sealed only when the photo carried them, never guessed.
+            ...(photoPlace ? (() => {
+                const { plantedAtMs, ...place } = plantedProvenance(photoPlace);
+                return { ...place, ...(plantedAtMs !== undefined ? { plantedAt: Timestamp.fromMillis(plantedAtMs) } : {}) };
+            })() : {}),
             isNature: isNature,
             treeType: treeType,
             domain: treeDomain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '')
@@ -227,8 +253,8 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
               />
             </div>
             <div className="flex gap-2 mt-auto pb-4">
-              <button onClick={() => setPlantStep(1)} className={`flex-1 py-3 rounded-xl font-bold uppercase tracking-widest transition-all ${treeType !== 'GUARDED' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{t('back')}</button>
-              <button onClick={() => setPlantStep(treeType === 'GUARDED' ? 4 : 3)} className="flex-[2] py-3 rounded-xl font-bold uppercase tracking-widest bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg transition-all flex items-center justify-center gap-2"><span>Next</span><span className="sm:hidden animate-bounce"><Icons.ChevronRight className="rotate-90" /></span><span className="hidden sm:inline"><Icons.ChevronRight /></span></button>
+              <button onClick={() => setPlantStep(1)} className={modalButton(treeType !== 'GUARDED' ? 'secondary-dark' : 'secondary', { extra: 'flex-1 uppercase tracking-widest' })}>{t('back')}</button>
+              <button onClick={() => setPlantStep(treeType === 'GUARDED' ? 4 : 3)} className={modalButton('primary', { extra: 'flex-[2] uppercase tracking-widest' })}><span>Next</span><span className="sm:hidden animate-bounce"><Icons.ChevronRight className="rotate-90" /></span><span className="hidden sm:inline"><Icons.ChevronRight /></span></button>
             </div>
           </div>
         )}
@@ -266,8 +292,8 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
               />
             </div>
             <div className="flex gap-2 mt-auto pb-4">
-              <button onClick={() => setPlantStep(2)} className={`flex-1 py-3 rounded-xl font-bold uppercase tracking-widest transition-all ${treeType !== 'GUARDED' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{t('back')}</button>
-              <button onClick={() => setPlantStep(4)} className="flex-[2] py-3 rounded-xl font-bold uppercase tracking-widest bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg transition-all flex items-center justify-center gap-2"><span>Next</span><span className="sm:hidden animate-bounce"><Icons.ChevronRight className="rotate-90" /></span><span className="hidden sm:inline"><Icons.ChevronRight /></span></button>
+              <button onClick={() => setPlantStep(2)} className={modalButton(treeType !== 'GUARDED' ? 'secondary-dark' : 'secondary', { extra: 'flex-1 uppercase tracking-widest' })}>{t('back')}</button>
+              <button onClick={() => setPlantStep(4)} className={modalButton('primary', { extra: 'flex-[2] uppercase tracking-widest' })}><span>Next</span><span className="sm:hidden animate-bounce"><Icons.ChevronRight className="rotate-90" /></span><span className="hidden sm:inline"><Icons.ChevronRight /></span></button>
             </div>
           </div>
         )}
@@ -280,10 +306,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
             </div>
             <div className="flex-1 flex flex-col gap-3 min-h-[220px]">
               <ImagePicker
-                onImageSelect={(file) => {
-                  setTreeFile(file);
-                  handleImageUpload(file, `users/${lightseed?.uid}/trees/${Date.now()}`).then(setTreeImageUrl);
-                }}
+                onImageSelect={handlePhotoPicked}
                 previewUrl={treeImageUrl}
                 loading={uploading}
                 isDark={treeType !== 'GUARDED'}
@@ -301,8 +324,8 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
               {imagineError && <p className={`rounded-lg px-3 py-2 text-xs ${treeType !== 'GUARDED' ? 'bg-red-500/20 text-red-100' : 'bg-red-50 text-red-600'}`}>{speak(imagineError)}</p>}
             </div>
             <div className="flex gap-2 mt-auto pb-4">
-              <button onClick={() => setPlantStep(treeType === 'GUARDED' ? 2 : 3)} className={`flex-1 py-3 rounded-xl font-bold uppercase tracking-widest transition-all ${treeType !== 'GUARDED' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{t('back')}</button>
-              <button onClick={() => setPlantStep(5)} className="flex-[2] py-3 rounded-xl font-bold uppercase tracking-widest bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg transition-all flex items-center justify-center gap-2"><span>Next</span><span className="sm:hidden animate-bounce"><Icons.ChevronRight className="rotate-90" /></span><span className="hidden sm:inline"><Icons.ChevronRight /></span></button>
+              <button onClick={() => setPlantStep(treeType === 'GUARDED' ? 2 : 3)} className={modalButton(treeType !== 'GUARDED' ? 'secondary-dark' : 'secondary', { extra: 'flex-1 uppercase tracking-widest' })}>{t('back')}</button>
+              <button onClick={() => setPlantStep(5)} className={modalButton('primary', { extra: 'flex-[2] uppercase tracking-widest' })}><span>Next</span><span className="sm:hidden animate-bounce"><Icons.ChevronRight className="rotate-90" /></span><span className="hidden sm:inline"><Icons.ChevronRight /></span></button>
             </div>
           </div>
         )}
@@ -321,7 +344,10 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
                   </div>
                   <div className="text-xs">
                     {plantLocation ? (
-                      <span className="font-mono text-emerald-400 font-bold">{plantLocation.latitude.toFixed(6)}, {plantLocation.longitude.toFixed(6)}</span>
+                      <>
+                        <span className="font-mono text-emerald-400 font-bold">{plantLocation.latitude.toFixed(6)}, {plantLocation.longitude.toFixed(6)}</span>
+                        {placedFromPhoto && <span className="block opacity-70">{t('location_from_photo')}</span>}
+                      </>
                     ) : (
                       <span className="opacity-70">{t('location_not_set')}</span>
                     )}
@@ -359,8 +385,8 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
               />
             </div>
             <div className="flex gap-2 mt-auto pb-4">
-              <button type="button" onClick={() => setPlantStep(4)} className={`flex-1 py-3 rounded-xl font-bold uppercase tracking-widest transition-all ${treeType !== 'GUARDED' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{t('back')}</button>
-              <button type="submit" disabled={uploading || isSubmitting} className="flex-[2] bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold uppercase tracking-widest shadow-lg active:scale-95 transition-all">
+              <button type="button" onClick={() => setPlantStep(4)} className={modalButton(treeType !== 'GUARDED' ? 'secondary-dark' : 'secondary', { extra: 'flex-1 uppercase tracking-widest' })}>{t('back')}</button>
+              <button type="submit" disabled={uploading || isSubmitting} className={modalButton('primary', { extra: 'flex-[2] uppercase tracking-widest' })}>
                 {isSubmitting ? t('planting') : t('plant_lifetree')}
               </button>
             </div>

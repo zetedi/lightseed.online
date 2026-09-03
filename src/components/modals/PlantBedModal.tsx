@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { notify } from '../ui/Toast';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
-import { Modal } from '../ui/Modal';
+import { Modal, modalButton } from '../ui/Modal';
 import { ImagePicker } from '../ui/ImagePicker';
 import { useImageUpload } from '../../hooks/useImageUpload';
 import { generateImage } from '../../services/gemini';
@@ -92,7 +92,7 @@ export const PlantBedModal: React.FC<{ lightHouse: LightHouse; onClose: () => vo
         </div>
         {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(err)}</p>}
         <button type="button" onClick={submit} disabled={submitting || !name.trim()}
-          className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
+          className={modalButton('primary')}>
           {submitting ? t('planting') : t('offer_a_bed')}
         </button>
       </div>

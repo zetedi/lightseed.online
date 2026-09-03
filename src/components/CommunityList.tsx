@@ -16,6 +16,7 @@ import { notify } from './ui/Toast';
 import { communityThemePresets } from '../utils/theme';
 import { sanitizeRichText } from '../utils/sanitize';
 import { Loading } from './ui/Loading';
+import { Modal, ModalActions, modalButton } from './ui/Modal';
 import { SectionHeader } from './ui/SectionHeader';
 import { ListBox } from './ui/ListBox';
 import { tabTone, CTA_GLOW } from '../utils/tabTheme';
@@ -410,51 +411,38 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
       </SectionHeader>
 
       {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 animate-in zoom-in-95 duration-200">
-            <h2 className="text-2xl font-light mb-6">Register Community</h2>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-slate-400 uppercase ml-1">Name</label>
-                <input 
-                  type="text" 
-                  required 
-                  value={newName} 
-                  onChange={e => setNewName(e.target.value)} 
-                  className="w-full h-12 bg-slate-50 border border-slate-100 rounded-2xl px-4 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder={t('community_name_ph')}
-                />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-slate-400 uppercase ml-1">Domain</label>
-                <input 
-                  type="text" 
-                  required 
-                  value={newDomain} 
-                  onChange={e => setNewDomain(e.target.value)} 
-                  className="w-full h-12 bg-slate-50 border border-slate-100 rounded-2xl px-4 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="example.com"
-                />
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button 
-                  type="button" 
-                  onClick={() => setShowCreate(false)} 
-                  className="flex-1 h-12 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200"
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit" 
-                  disabled={isCreating} 
-                  className="flex-1 h-12 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 disabled:opacity-50"
-                >
-                  {isCreating ? 'Creating...' : 'Create Community'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <Modal title={t('register_community')} onClose={() => setShowCreate(false)}>
+          <form onSubmit={handleCreate} className="space-y-4">
+            <div>
+              <label className="ml-1 text-xs font-bold uppercase text-slate-400">{t('name')}</label>
+              <input
+                type="text"
+                required
+                value={newName}
+                onChange={e => setNewName(e.target.value)}
+                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                placeholder={t('community_name_ph')}
+              />
+            </div>
+            <div>
+              <label className="ml-1 text-xs font-bold uppercase text-slate-400">{t('domain')}</label>
+              <input
+                type="text"
+                required
+                value={newDomain}
+                onChange={e => setNewDomain(e.target.value)}
+                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                placeholder="example.com"
+              />
+            </div>
+            <ModalActions className="pt-2">
+              <button type="button" onClick={() => setShowCreate(false)} className={modalButton('secondary', { extra: 'flex-1' })}>{t('cancel')}</button>
+              <button type="submit" disabled={isCreating} className={modalButton('primary', { extra: 'flex-1' })}>
+                {isCreating ? t('creating') : t('create_community')}
+              </button>
+            </ModalActions>
+          </form>
+        </Modal>
       )}
     </div>
   );

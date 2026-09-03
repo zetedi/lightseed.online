@@ -82,7 +82,9 @@ export interface WitnessFacts {
         treeId: string;              // pulse.lifetreeId
         createdAtMs: number | null;  // the server birth time; null = cannot mint
     };
-    guardianSinceMs: number | null;  // witness's guardian-link birth; null = not a guardian
+    // The birth of the witness's STANDING on the tree: the earliest of their guardian / co_owner /
+    // steward links, or the tree's own birth for its keeper; null = no standing at all.
+    witnessSinceMs: number | null;
     tree: {
         exists: boolean;
         treeType?: unknown;          // "BED" is not cared for for light
@@ -109,23 +111,27 @@ export type WitnessJudgment =
     };
 
 // The complete law of witnessing, in the order the server applies it. Mirrors
-// src/domain/light.kindleRays: light enters ONLY through a human guardian's witnessed care of
-// the living; AI validation lights the tree but holds no light and kindles none (the ring,
-// 2026-07-20); no one witnesses their own care; guardianship must predate the watering (tenure).
+// src/domain/light.kindleRays: light enters ONLY through a human's witnessed care of the living —
+// a human who STANDS in the tree's circle (keeper, co-owner, steward or guardian; ring
+// 2026-09-03 widened it from guardians alone, since the invited carers are the more trusted
+// hands and their role blurb had promised "confirms its care"); AI validation lights the tree
+// but holds no light and kindles none (the ring, 2026-07-20); no one witnesses their own care;
+// the standing must predate the watering (tenure).
 export function judgeWitness(f: WitnessFacts): WitnessJudgment {
     const reject = (code: "not-found" | "failed-precondition" | "permission-denied", message: string): WitnessJudgment =>
         ({ outcome: "reject", code, message });
 
     if (!f.pulse.exists) return reject("not-found", "That watering no longer exists.");
     if (f.pulse.care !== "watering") return reject("failed-precondition", "That is not a watering.");
-    // Already witnessed by a guardian: the first witness holds the record and any light; a second
-    // guardian re-witnessing the same care changes nothing.
+    // Already witnessed by a human: the first witness holds the record and any light; a second
+    // witness of the same care changes nothing. ("guardian" stays the stored marker for a human
+    // witness of any standing — the rules and the unmint law read exactly that value.)
     if (f.pulse.wateringConfirmedBy === "guardian") return { outcome: "already" };
     if (!f.pulse.carerUid || !f.pulse.treeId) return reject("failed-precondition", "That watering is malformed.");
     if (f.pulse.createdAtMs === null) return reject("failed-precondition", "That watering carries no birth time.");
     if (f.witnessUid === f.pulse.carerUid) return reject("failed-precondition", "You cannot witness your own care.");
-    if (f.guardianSinceMs === null) return reject("permission-denied", "Only a guardian of this tree may witness it.");
-    if (f.guardianSinceMs > f.pulse.createdAtMs) return reject("failed-precondition", "Your guardianship began after this watering.");
+    if (f.witnessSinceMs === null) return reject("permission-denied", "Only the tree's circle — its keeper, co-owners, stewards and guardians — may witness it.");
+    if (f.witnessSinceMs > f.pulse.createdAtMs) return reject("failed-precondition", "Your standing on this tree began after this watering.");
     if (!f.tree.exists) return reject("not-found", "That tree no longer exists.");
     if (f.tree.treeType === "BED") return reject("failed-precondition", "A bed is not cared for for light.");
     if (f.tree.diedAtMs !== null) return reject("failed-precondition", "A tree that has died kindles memory, not light.");

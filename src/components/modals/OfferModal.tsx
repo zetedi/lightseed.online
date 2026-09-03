@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Modal } from '../ui/Modal';
+import { Modal, modalButton } from '../ui/Modal';
 import { Icons } from '../ui/Icons';
 import { showAlert } from '../ui/Dialog';
 import { ImagePicker } from '../ui/ImagePicker';
@@ -175,7 +175,7 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved }: {
 
                 {problem && <p className="text-xs font-medium text-rose-600">{speak(problem)}</p>}
                 <button type="submit" disabled={!!problem || saving || uploading}
-                    className="w-full rounded-2xl py-3 text-sm font-bold text-white shadow-lg transition-all hover:brightness-110 disabled:opacity-50"
+                    className={modalButton('primary', { extra: 'hover:brightness-110' })}
                     style={{ backgroundColor: HEART, boxShadow: '0 10px 15px -3px rgba(41,132,66,0.25)' }}>
                     {saving ? t('saving') : editing ? t('offer_save') : t('offer_post')}
                 </button>

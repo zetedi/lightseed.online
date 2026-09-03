@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { showAlert, showConfirm } from "./ui/Dialog";
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
@@ -98,7 +98,11 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const targetProfile = targetUserProfile ?? { onlyValidatedCanReach: tree.onlyValidatedCanReach };
    const canReach = canReachTree({ targetTree: tree, targetUserProfile: targetProfile, myActiveTree, currentUserId, isAdmin, isSuperAdmin });
    const [isEditing, setIsEditing] = useState(false);
-   const [showDeleteModal, setShowDeleteModal] = useState(false);
+   // Deleting asks through the one Dialog (the same confirm every destructive act uses).
+   const handleRequestDelete = async () => {
+       if (!(await showConfirm('tree_delete_confirm', { title: 'delete_lifetree_title', confirmText: 'delete', danger: true }))) return;
+       onDelete?.();
+   };
    // The hero owns the name/title edits; TreeDetails owns the rest and one Save writes both.
    const [editName, setEditName] = useState(tree.name);
    const [editShortTitle, setEditShortTitle] = useState(tree.shortTitle || '');
@@ -169,19 +173,27 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    };
 
    // Note: getPulsesByTreeId returns Descending order (Newest First). Extracted (and kept
-   // referentially stable) so a fresh watering can refresh the chain in place.
+   // referentially stable) so a witnessed watering can refresh the chain in place. Only the
+   // NEWEST load may land: a slower, older fetch never overwrites a fresher chain.
+   const chainSeq = useRef(0);
    const loadChain = useCallback(() => {
+        const seq = ++chainSeq.current;
         setLoadingChain(true);
         getPulsesByTreeId(tree.id).then(pulses => {
+            if (seq !== chainSeq.current) return;
             // A genesis PULSE exists only for special trees (e.g. GENESIS_TREE); normal trees are
             // planted with no pulse. The planting/root card is rendered from the tree itself, so
             // here we only pull any genesis pulse out of the growth leaves.
             const isGenesis = (p: Pulse) => p.previousHash === "0" || p.title === "Genesis Pulse";
             setGenesisBlock(pulses.find(isGenesis) || null);
             setGrowthBlocks(pulses.filter(p => !isGenesis(p)));
-        }).finally(() => setLoadingChain(false));
+        }).finally(() => { if (seq === chainSeq.current) setLoadingChain(false); });
    }, [tree.id]);
-   useEffect(() => { loadChain(); }, [loadChain]);
+   // The chain follows the head: whenever the tree's latestHash moves (a Care minted from the
+   // Digital Tree, a watering, an unmint — announced on the refresh bus and merged into the
+   // tree by the shell), the leaves reload. Keyed on the hash, not a counter, so the same
+   // head never refetches twice.
+   useEffect(() => { loadChain(); }, [loadChain, tree.latestHash]);
 
    const handleSave = async (details: TreeDetailsUpdates) => {
        setIsSaving(true);
@@ -247,6 +259,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    // the same set); the schedule editor is gated exactly like editing.
    const canWater = !!currentUserId && (isCarer || isOwner || isAdmin || isSuperAdmin);
    const canManageSchedule = canEdit;
+   // Witnessing is the circle's act — keeper, co-owner, steward or guardian (never one's own
+   // care; the server judges standing + tenure). Staff privilege alone is not a standing.
+   const canWitness = !!currentUserId && (isOwner || isCarer || isGuardian);
 
    // The root card of the chain — drawn from the tree itself (normal trees have no genesis
    // pulse), pre-formatted for the entity-generic ChainTree renderer.
@@ -351,7 +366,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                    isSaving={isSaving}
                    onSave={handleSave}
                    onCancelEdit={handleCancelEdit}
-                   onRequestDelete={() => setShowDeleteModal(true)}
+                   onRequestDelete={handleRequestDelete}
                    onVisibilityChange={async (visibility) => {
                        try {
                            await updateLifetree(tree.id, { visibility });
@@ -400,6 +415,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                        canWater={canWater}
                        canManageSchedule={canManageSchedule}
                        canAskStewardship={isGuardian && !canWater}
+                       canWitness={canWitness}
                        onUpdate={onUpdate}
                        onChainRefresh={loadChain}
                    />
@@ -414,8 +430,11 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                    currentUserId={currentUserId}
                    currentUserName={currentUser?.displayName}
                    circle={circle}
+                   growthBlocks={growthBlocks}
                    canEdit={canEdit}
                    canInviteRoles={canInviteToCircle}
+                   canWitness={canWitness}
+                   onChainRefresh={loadChain}
                    status={localStatus}
                    busy={isSaving}
                    onToggleDanger={handleToggleDanger}
@@ -477,7 +496,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     <div className="flex flex-wrap items-center justify-end gap-2">
                         {actionRow}
                         {canEdit && <EditPill onClick={() => { setIsEditing(true); setSection('details'); }} />}
-                        {canDelete && <DeletePill onClick={() => setShowDeleteModal(true)} staffDot={deleteIsStaffOnly} title="Delete tree" />}
+                        {canDelete && <DeletePill onClick={handleRequestDelete} staffDot={deleteIsStaffOnly} title="Delete tree" />}
                     </div>
                 ) : undefined,
                 body: (
@@ -575,40 +594,6 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
             }}
         />
 
-        {/* Delete confirmation modal */}
-        {showDeleteModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 animate-in fade-in zoom-in-95 duration-200">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 shrink-0">
-                            <Icons.Trash />
-                        </div>
-                        <div>
-                            <h3 className="font-bold text-slate-800">Delete Lifetree</h3>
-                            <p className="text-xs text-slate-500">{t('cannot_undo')}</p>
-                        </div>
-                    </div>
-                    <p className="text-sm text-slate-600 mb-6">
-                        You are about to permanently delete <span className="font-semibold text-slate-800">"{tree.name}"</span>.
-                        All associated data will be lost.
-                    </p>
-                    <div className="flex gap-3">
-                        <button
-                            onClick={() => setShowDeleteModal(false)}
-                            className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-medium hover:bg-slate-50 transition-colors text-sm"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={() => { setShowDeleteModal(false); onDelete?.(); }}
-                            className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold transition-colors text-sm"
-                        >
-                            Delete
-                        </button>
-                    </div>
-                </div>
-            </div>
-        )}
         </>
     )
 };

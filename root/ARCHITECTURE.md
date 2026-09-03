@@ -97,8 +97,11 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
 - **The map**: pixel-space clustering (50px) over trees + Light House pseudo-beings;
   Light Houses seed clusters (lighthouse precedence); Seed-of-Life petal expansion;
   popups via Leaflet autoPan (bottom-anchored popups can never flip; don't try).
-- **Refresh bus** (`services/refreshBus.ts`): mutation sites `announce(topic, id?)`;
-  mounted views re-fetch; the feed prunes deleted ids surgically.
+- **Refresh bus** (`services/refreshBus.ts`): mutation sites `announce(topic, id?, patch?)`;
+  mounted views re-fetch, an edit's patch merges into loaded copies, and a patchless id
+  prunes (so an edit must never announce twice). `mintPulse` announces the tree's new head;
+  the shell merges it into the open tree and the profile's chain reloads when `latestHash`
+  moves (the chain follows the head, ring 2026-09-03).
 - **Being links**: `/b/<lid>` resolves permission-aware across collections
   (`findBeingByLid`) and opens the right profile; QRs are minted lazily onto docs.
 - **Interbeing Matrix**: a community's founding owner or `keeper`-link peer proposes a typed
@@ -167,6 +170,15 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
   `Stamp` time port replaced Firestore `Timestamp`; `words.ts` owns the key
   manifest the dictionary proves coverage of; the block hash lives in
   `chain/hash.ts`) — the `@lightseed/domain` extraction is a folder-move away.
+- Scoped feeds paginated in document-id order (no createdAt composite for domain-scoped
+  queries). CLOSED 2026-09-03: the `domain[, type][, visibility] + createdAt DESC` composites
+  exist for pulses, trees and visions; every feed orders on the server, with an
+  index-building fallback that ends pagination rather than continuing in the wrong order
+  (`tests/indexes.test.ts` holds the index file to the queried shapes).
+- **A reflecting node's own node-level items are absent from its feed.** Reflection queries
+  PUBLIC only across the instance, so items at `node` visibility on the reflecting node itself
+  are not shown there; a union (public anywhere + node here) needs two queries merged
+  (ring 2026-09-03).
 - Power is visible but broad: staff retain general mend/delete escape hatches. The
   present boundary is stewardship by known people, not resistance to stewards;
   retire broad powers into named capabilities over time (first-sight ring,

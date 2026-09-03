@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { notify } from '../ui/Toast';
-import { Modal } from '../ui/Modal';
+import { Modal, modalButton } from '../ui/Modal';
 import { Icons } from '../ui/Icons';
 import { showAlert } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -122,7 +122,7 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly, theme, startMode, gre
             <p className="text-sm text-slate-500">{t('auth_request_intro')}</p>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder={t('auth_your_email')} className={field} />
             <textarea value={reason} onChange={e => setReason(e.target.value)} placeholder={t('auth_reason_placeholder')} className="min-h-28 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-            <button type="submit" disabled={busy} style={{ backgroundColor: primary }} className="w-full rounded-xl py-2.5 text-sm font-bold text-white shadow-md transition-opacity hover:opacity-90 disabled:opacity-50">
+            <button type="submit" disabled={busy} style={{ backgroundColor: primary }} className={modalButton('primary', { extra: 'hover:opacity-90' })}>
               {busy ? '…' : t('auth_request_invitation')}
             </button>
             <button type="button" onClick={() => setMode('signin')} className="w-full text-center text-xs text-slate-500 hover:text-slate-700">{t('auth_back_to_signin')}</button>
@@ -173,7 +173,7 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly, theme, startMode, gre
                 <button type="button" onClick={() => { setMode('request'); }} className="font-bold" style={{ color: primary }}>{t('auth_request_arrow')}</button>
               </div>
             ) : (
-              <button type="submit" disabled={busy || (mode === 'signup' && !agreed)} style={{ backgroundColor: primary }} className="w-full rounded-xl py-2.5 text-sm font-bold text-white shadow-md transition-opacity hover:opacity-90 disabled:opacity-50">
+              <button type="submit" disabled={busy || (mode === 'signup' && !agreed)} style={{ backgroundColor: primary }} className={modalButton('primary', { extra: 'hover:opacity-90' })}>
                 {busy ? '…' : (mode === 'signup' ? t('auth_create_account') : t('sign_in'))}
               </button>
             )}

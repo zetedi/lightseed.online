@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { speak } from '../../utils/translations';
+import { MODAL_BACKDROP, MODAL_PANEL, MODAL_TITLE, modalButton } from './Modal';
 
 // A tiny global, imperative dialog so any code can replace native alert()/confirm()
 // with a styled modal:
@@ -60,19 +61,21 @@ export const DialogHost = () => {
     if (!dialog) return null;
     const close = (v: boolean) => { dialog.resolve(v); setDialog(null); };
 
+    // z-[100]: above an open Modal (98), so a confirm asked from inside one still layers up.
+    // The skin is the one modal shell's (ui/Modal); only the stacking is its own.
     return (
         <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+            className={`${MODAL_BACKDROP} z-[100] p-4`}
             onClick={() => { if (dialog.cancelText !== null) close(false); }}
         >
-            <div onClick={e => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150">
-                {dialog.title && <h3 className="mb-2 text-lg font-bold text-slate-900">{dialog.title}</h3>}
+            <div role="alertdialog" aria-modal="true" onClick={e => e.stopPropagation()} className={`${MODAL_PANEL} max-w-sm p-6`}>
+                {dialog.title && <h3 className={`mb-2 text-base ${MODAL_TITLE}`}>{dialog.title}</h3>}
                 <p className="whitespace-pre-line text-sm leading-relaxed text-slate-600">{dialog.message}</p>
                 <div className="mt-6 flex justify-end gap-3">
                     {dialog.cancelText !== null && (
-                        <button onClick={() => close(false)} className="rounded-xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-200">{dialog.cancelText}</button>
+                        <button type="button" onClick={() => close(false)} className={modalButton('secondary', { full: false })}>{dialog.cancelText}</button>
                     )}
-                    <button onClick={() => close(true)} className={`rounded-xl px-4 py-2 text-sm font-bold text-white shadow transition-colors ${dialog.danger ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}>{dialog.confirmText}</button>
+                    <button type="button" onClick={() => close(true)} className={modalButton(dialog.danger ? 'danger' : 'primary', { full: false })}>{dialog.confirmText}</button>
                 </div>
             </div>
         </div>

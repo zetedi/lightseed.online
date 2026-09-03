@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { getNewsletterDraftData, sendNewsletter } from '../services/firebase';
 import { Loading } from './ui/Loading';
 import { Icons } from './ui/Icons';
-import { Modal } from './ui/Modal';
+import { Modal, modalButton } from './ui/Modal';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const formatDate = (value: any) => {
@@ -163,8 +163,8 @@ export const NewsletterAdmin = ({ senderUid, onBack }: { senderUid: string; onBa
                     <div className="space-y-4">
                         <p className="text-sm text-slate-600">{t('newsletter_send_confirm')}</p>
                         <div className="flex gap-3">
-                            <button onClick={() => setShowConfirm(false)} className="flex-1 rounded-lg bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700">{t('cancel')}</button>
-                            <button onClick={handleSend} className="flex-1 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white">Send</button>
+                            <button type="button" onClick={() => setShowConfirm(false)} className={modalButton('secondary', { extra: 'flex-1' })}>{t('cancel')}</button>
+                            <button type="button" onClick={handleSend} className={modalButton('primary', { extra: 'flex-1' })}>{t('send')}</button>
                         </div>
                     </div>
                 </Modal>
@@ -173,7 +173,7 @@ export const NewsletterAdmin = ({ senderUid, onBack }: { senderUid: string; onBa
                 <Modal title="Newsletter" onClose={() => setDialogMessage(null)}>
                     <div className="space-y-4">
                         <p className="text-sm text-slate-600">{dialogMessage}</p>
-                        <button onClick={() => setDialogMessage(null)} className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white">Close</button>
+                        <button type="button" onClick={() => setDialogMessage(null)} className={modalButton('primary')}>{t('close')}</button>
                     </div>
                 </Modal>
             )}

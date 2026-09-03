@@ -29,7 +29,7 @@ const sound = (): WitnessFacts => ({
     treeId: 'nur',
     createdAtMs: Date.UTC(2026, 6, 21, 9, 30), // 2026-07-21 09:30 UTC
   },
-  guardianSinceMs: Date.UTC(2026, 6, 1),
+  witnessSinceMs: Date.UTC(2026, 6, 1),
   tree: { exists: true, treeType: 'LIGHTTREE', diedAtMs: null },
   carerRayExists: false,
   witnessRayExists: false,
@@ -72,12 +72,13 @@ describe('the judgment: every gate of the witnessing law', () => {
   it('a watering without a server birth time cannot mint (no client picks the day)', () =>
     rejectsWith(f => { f.pulse.createdAtMs = null; }, 'failed-precondition'));
   it('no one witnesses their own care', () => rejectsWith(f => { f.witnessUid = 'alice'; }, 'failed-precondition'));
-  it('only a guardian of the tree may witness', () => rejectsWith(f => { f.guardianSinceMs = null; }, 'permission-denied'));
-  it('guardianship must PREDATE the watering (tenure; a sock minted for the occasion has no voice)', () =>
-    rejectsWith(f => { f.guardianSinceMs = f.pulse.createdAtMs! + 1; }, 'failed-precondition'));
-  it('guardianship born in the same instant still counts (tenure is not-after, not strictly-before)', () => {
+  it('only the circle — keeper, co-owner, steward or guardian — may witness (no standing, no voice)', () =>
+    rejectsWith(f => { f.witnessSinceMs = null; }, 'permission-denied'));
+  it('the standing must PREDATE the watering (tenure; a sock minted for the occasion has no voice)', () =>
+    rejectsWith(f => { f.witnessSinceMs = f.pulse.createdAtMs! + 1; }, 'failed-precondition'));
+  it('a standing born in the same instant still counts (tenure is not-after, not strictly-before)', () => {
     const f = sound();
-    f.guardianSinceMs = f.pulse.createdAtMs!;
+    f.witnessSinceMs = f.pulse.createdAtMs!;
     expect(judgeWitness(f).outcome).toBe('kindle');
   });
   it('a vanished tree kindles nothing', () => rejectsWith(f => { f.tree.exists = false; }, 'not-found'));

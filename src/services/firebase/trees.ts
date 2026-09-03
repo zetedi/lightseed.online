@@ -393,8 +393,11 @@ export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter
     const visCons = (levels && levels.length) ? [where('visibility', 'in', levels)] : [];
     let q;
     if (communityScoped) {
-        // Community View: narrow to the community's domain (remove orderBy to avoid composite index)
-        q = query(lifetreesCollection, where('domain', '==', scopedDomain), ...visCons, limit(24));
+        // Community view: this domain's trees, newest first ON THE SERVER — the composite
+        // (domain, visibility, createdAt DESC) exists since ring 2026-09-03, so the cursor pages
+        // the real stream (an unordered query paged in id order and showed a different sample
+        // on every reload). The catch below keeps the forest loading while an index builds.
+        q = query(lifetreesCollection, where('domain', '==', scopedDomain), ...visCons, orderBy('createdAt', 'desc'), limit(24));
     } else {
         q = query(lifetreesCollection, ...visCons, orderBy('createdAt', 'desc'), limit(12));
     }
@@ -405,10 +408,12 @@ export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter
     try {
         snap = await getDocs(q);
     } catch (e) {
-        // The composite (visibility + createdAt/domain) index may still be building — fall back
-        // to a filter-only query (single-field index) so the forest keeps loading; sorted below.
-        console.warn('Forest query fell back (visibility index building?)', e);
-        snap = await getDocs(visCons.length ? query(lifetreesCollection, ...visCons, limit(60)) : query(lifetreesCollection, limit(60)));
+        // The composite (domain / visibility + createdAt) index may still be building — fall back
+        // to a filter-only query so the forest keeps loading; sorted below.
+        console.warn('Forest query fell back (composite index building?)', e);
+        snap = await getDocs(communityScoped
+            ? query(lifetreesCollection, where('domain', '==', scopedDomain), ...visCons, limit(60))
+            : (visCons.length ? query(lifetreesCollection, ...visCons, limit(60)) : query(lifetreesCollection, limit(60))));
         scopedFallback = communityScoped;
     }
     let items = snap.docs.map(d => (mapDoc(d) as Lifetree));
@@ -423,7 +428,7 @@ export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter
     if (!lastD && visCons.length && items.length === 0) {
         try {
             const base = communityScoped
-                ? query(lifetreesCollection, where('domain', '==', scopedDomain), limit(24))
+                ? query(lifetreesCollection, where('domain', '==', scopedDomain), orderBy('createdAt', 'desc'), limit(24))
                 : query(lifetreesCollection, orderBy('createdAt', 'desc'), limit(12));
             const s2 = await getDocs(base);
             items = s2.docs.map(d => (mapDoc(d) as Lifetree))
@@ -441,7 +446,7 @@ export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter
                 if (!seen.has(d.id)) items.push(mapDoc(d) as Lifetree);
             });
         }
-        // Sort client-side since we removed server-side sorting
+        // The merged own trees need placing among the page (the page itself came ordered).
         items = items.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
     }
 
@@ -919,9 +924,12 @@ export const getPendingTreeInvites = async (userId: string): Promise<TreeOwnersh
     return snap.docs.map(d => (mapDoc(d) as TreeOwnershipInvite)).filter(i => i.status === 'pending');
 };
 
+// Every invitation ever sent for a tree, newest first — the circle's own ledger (rules: the
+// tree's carers may list by lifetreeId). Callers pick the pending ones to show and withdraw.
 export const getSentTreeInvites = async (lifetreeId: string): Promise<TreeOwnershipInvite[]> => {
     const snap = await getDocs(query(treeInvitesCollection, where('lifetreeId', '==', lifetreeId)));
-    return snap.docs.map(d => (mapDoc(d) as TreeOwnershipInvite));
+    return snap.docs.map(d => (mapDoc(d) as TreeOwnershipInvite))
+        .sort((a, b) => ((b.createdAt as any)?.toMillis?.() || 0) - ((a.createdAt as any)?.toMillis?.() || 0));
 };
 
 export const declineTreeInvite = (inviteId: string) =>

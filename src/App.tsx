@@ -50,7 +50,7 @@ import { useOrderedEvents } from './hooks/useOrderedEvents';
 import { useAlignmentCards } from './hooks/useAlignmentCards';
 import { useAppRouting, topLevelRoute } from './hooks/useAppRouting';
 import { GDPRBanner } from './components/GDPRBanner';
-import { extractGpsFromImage } from './utils/exif';
+import { readPhotoProvenance } from './utils/exif';
 
 // Components — the always-present shell (nav, footer, loaders, dialogs) stays statically imported.
 import { Icons } from './components/ui/Icons';
@@ -201,6 +201,9 @@ const AppContent = () => {
     // Outside the seed shell, hold the shell until we know whether this domain has a custom
     // landing — otherwise the seed flashes first and then jumps to the organisation's page.
     const [hostResolved, setHostResolved] = useState(() => isSeedShellHost(window.location.hostname));
+    // The host community's answer has arrived (found or not) — the feed scopes only after this,
+    // on every host (hostResolved above is the seed shell's paint gate, true from the start there).
+    const [hostCommunityResolved, setHostCommunityResolved] = useState(false);
     // The lightseed community is the default "About" page when this node has none of its own.
     const [defaultCommunity, setDefaultCommunity] = useState<Community | null>(null);
     // Superadmin "switch to community view" — when set, the whole shell (theme, logo,
@@ -313,6 +316,9 @@ const AppContent = () => {
         if (e.patch) {
             const patch = e.patch;
             setData(prev => prev.some(item => item.id === e.id) ? prev.map(item => item.id === e.id ? { ...item, ...patch } : item) : prev);
+            // The open tree page follows the same whisper: a mint moves the head (latestHash,
+            // blockHeight, the latest face) and the profile's chain reloads from it.
+            if (e.topic === 'trees') setSelectedTree(prev => (prev && prev.id === e.id ? { ...prev, ...patch } : prev));
         } else if (e.topic === 'events' || e.topic === 'pulses') {
             setData(prev => prev.some(item => item.id === e.id) ? prev.filter(item => item.id !== e.id) : prev);
         }
@@ -321,10 +327,14 @@ const AppContent = () => {
 
     // Load the tab's content when the view changes — or when the active node's commons/domain
     // changes (flipping "reflect the commons" re-scopes the feed live, no refresh needed).
+    // The first load waits until the feed knows WHERE it stands and WHO is looking: the host
+    // community (its domain, its reflection choice) and the auth state. Loading earlier meant
+    // three passes on every mount — signed-out, then signed-in, then re-scoped — each showing
+    // a different set, items appearing and vanishing as the narrower pass landed.
     useEffect(() => {
-        if (tab !== 'dashboard') loadContent(true);
+        if (tab !== 'dashboard' && hostCommunityResolved && !authLoading) loadContent(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- loadContent is recreated per render; adding it would refetch the feed on every render (loop). It already closes over tab/viewMode/lightseed.
-    }, [tab, lightseed, viewMode, (impersonatedCommunity || hostCommunity)?.reflectsPublic, (impersonatedCommunity || hostCommunity)?.domain, (impersonatedCommunity || hostCommunity)?.strictScope]);
+    }, [tab, lightseed?.uid, isSuperAdmin, isAdmin, viewMode, hostCommunityResolved, authLoading, (impersonatedCommunity || hostCommunity)?.reflectsPublic, (impersonatedCommunity || hostCommunity)?.domain, (impersonatedCommunity || hostCommunity)?.strictScope]);
 
     // Genesis + the host community depend only on the signed-in user, not the tab — so run them
     // once per session (and on login), not on every tab/view switch as they used to.
@@ -337,7 +347,7 @@ const AppContent = () => {
         ]).then(([community, authority]) => {
             setHostCommunity(community);
             setDataAuthority(authority);
-        }).finally(() => setHostResolved(true));
+        }).finally(() => { setHostResolved(true); setHostCommunityResolved(true); });
     }, [lightseed?.uid]);
 
     // Load the lightseed community once as the default About page fallback.
@@ -572,14 +582,10 @@ const AppContent = () => {
         }
     }
 
-    // After a tree growth mints, reflect the new latest image immediately (the open tree
-    // page + the forest), without waiting for a full reload round-trip.
-    const handleTreeGrown = (treeId: string, imageUrl?: string) => {
-        if (imageUrl) {
-            setSelectedTree(prev => (prev && prev.id === treeId
-                ? { ...prev, latestGrowthUrl: imageUrl, blockHeight: (prev.blockHeight || 0) + 1 }
-                : prev));
-        }
+    // After a tree growth mints: the open tree page and its forest card already followed the
+    // head through the refresh bus (mintPulse announces the exact latestHash / blockHeight /
+    // latest face); here only the session's tree lists and the feed catch up.
+    const handleTreeGrown = () => {
         refreshTrees();
         loadContent(true);
     };
@@ -1597,11 +1603,11 @@ const AppContent = () => {
                     uploading={uploading}
                     handleImageUpload={handleImageUpload}
                     onCreate={async (data: any) => {
+                        // updateEvent itself announces the edit WITH its patch, which every
+                        // open list merges (a second, patchless announce read as a removal
+                        // and made the edited event vanish from the feed).
                         await updateEvent(editingEvent.id, data);
-                        // Reflect the edit immediately in the open detail view AND the dashboard
-                        // events banner (which re-fetches on the 'events' bus signal).
                         setSelectedPulse(prev => prev && prev.id === editingEvent.id ? { ...prev, ...data } : prev);
-                        announce('events', editingEvent.id);
                         setEditingEvent(null);
                     }}
                 />
@@ -1719,7 +1725,7 @@ const AppContent = () => {
                     }}
                     uploading={uploading}
                     handleImageUpload={handleImageUpload}
-                    extractGpsFromImage={extractGpsFromImage}
+                    readPhotoProvenance={readPhotoProvenance}
                 />
             )}
 

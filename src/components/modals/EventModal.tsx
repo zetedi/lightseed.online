@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal } from '../ui/Modal';
+import { Modal, modalButton } from '../ui/Modal';
 import { Icons } from '../ui/Icons';
 import { ImagePicker } from '../ui/ImagePicker';
 import { showAlert } from '../ui/Dialog';
@@ -127,7 +127,7 @@ export const EventModal = ({
             <Icons.Plus />
           </ImagePicker>
         </div>
-        <button type="submit" disabled={saving || uploading || !title.trim()} className="w-full rounded-2xl bg-sky-600 py-3 text-sm font-bold text-white shadow-lg shadow-sky-600/20 transition-all hover:bg-sky-700 disabled:opacity-50">
+        <button type="submit" disabled={saving || uploading || !title.trim()} className={modalButton('primary', { hue: 'sky' })}>
           {saving ? t('creating') : (isEdit ? t('save_changes') : t('create_event'))}
         </button>
       </form>

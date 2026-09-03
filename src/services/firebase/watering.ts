@@ -92,6 +92,8 @@ export const markWateredOffChain = async (
     const intervalDays = tree.watering?.mode === 'scheduled' ? tree.watering?.intervalDays : undefined;
     const update: Record<string, any> = {
         'watering.lastWateredAt': Timestamp.fromMillis(now),
+        'watering.lastWateredBy': sender.uid,
+        'watering.lastWateredByName': sender.displayName || '',
         'watering.overdue': false,
         lastCaredAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -128,6 +130,8 @@ export const recordWatering = async ({
     const interval = tree.watering?.mode === 'scheduled' ? tree.watering?.intervalDays : undefined;
     const wateringUpdate: Record<string, any> = {
         'watering.lastWateredAt': Timestamp.fromMillis(now),
+        'watering.lastWateredBy': sender.uid,
+        'watering.lastWateredByName': sender.displayName || '',
         'watering.overdue': false,
     };
     if (interval) wateringUpdate['watering.nextDueAt'] = Timestamp.fromMillis(computeNextDueMillis(now, interval));
@@ -160,9 +164,10 @@ export const recordWatering = async ({
     return { imageUrl, confirmedBy };
 };
 
-// A guardian WITNESSES a watering — the light mint (the sun ring). SERVER-MEDIATED: the
-// witnessWatering callable derives the witness from the authenticated caller, verifies guardianship
-// + tenure, and kindles the carer's ray + the witness's seventh atomically. The witness is never a
+// The circle WITNESSES a watering — the light mint (the sun ring). SERVER-MEDIATED: the
+// witnessWatering callable derives the witness from the authenticated caller, verifies their
+// standing on the tree (keeper, co-owner, steward or guardian — never the carer) + tenure, and
+// kindles the carer's ray + the witness's seventh atomically. The witness is never a
 // client-passed field, so it can't be forged or aimed (Lumo's review, 2026-07-20). Also stamps the
 // pulse confirmed for the validation display.
 export const witnessWatering = async (pulseId: string): Promise<{ kindled: boolean; witnessUnits: number }> => {

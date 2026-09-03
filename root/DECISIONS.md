@@ -6,6 +6,50 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-03 · Seven stumbles from the keeper's walk** — Zoltán walked the app and named
+seven things; each was traced to its cause before a line moved. (1) *Placed from the photo*:
+the plant flow read EXIF only when the device's GPS had FAILED, and by then the crop step had
+re-encoded the photo through a canvas, stripping every tag — no tree was ever placed by its
+photo. Now the picker hands the ORIGINAL beside the cropped file, the pure law `domain/exif`
+(tested against the Moment itself) reads place, altitude and moment, the tree lands where the
+photo was taken, and the declared `planted*` provenance is finally written — only when the
+photo carries it, never guessed. (2) *The circle witnesses*: the sun ring's mint accepted only
+a `guardian` link, while the co-owner's own blurb promised "confirms its care", and a tree
+kept by two carers could confirm nothing — the words and the law had parted. Widened: the
+witness's STANDING is the earliest of their guardian / co_owner / steward links, or
+keepership from the tree's birth; tenure and never-one's-own stand unchanged; the stored
+marker stays `guardian` (the rules and the unmint law read exactly it). No new Sybil surface:
+a guardian link was already self-serve, so the invited carers only raise the bar. The Care
+card now says WHO watered last, and the witness face (one component) sits where care is read,
+on Care and on the Circle alike. **A product decision, Zoltán's call at review** — the
+2026-07-20 ring chose guardians alone; this ring proposes the circle. (3) *The feed loads once
+it knows where it stands*: three loads on every mount (signed-out → signed-in → re-scoped to
+the host community), no request sequencing (an older, wider answer could land after the fresh
+narrower one), and two patchless `announce('events', id)` after an edit — which the feed reads
+as a removal and prunes. Now the first load waits for the host community and the auth state,
+only the newest request may land (feed, events, chain), and an edit announces itself once,
+with its patch. (4) *The invitation ledger*: a tree's sent invitations existed as dead code;
+the rules split get from list (the carers read their tree's ledger), a carer may open the OPEN
+layer (guardian / observer) — closing the silent permission-denied a co-owner met at the
+invite box — the owner withdraws any invitation on their tree, and the marks are one-way,
+pending-only, status-and-stamp-only; emulator tests prove each door. (5) *The chain follows
+the head*: mintPulse whispers the tree's exact new head on the refresh bus, the shell merges it
+into the open tree, and the profile reloads its leaves when latestHash moves — Care from the
+Digital Tree now shows the leaf it minted. (6) The Translation Depth System folds under the one
+Accordion (ui/Accordion), everywhere it renders. (7) One modal shell: Escape closes, the dialog
+role is declared, `modalButton` / `ModalActions` give every modal the same buttons; the two
+hand-rolled overlays (delete tree, register community) and the dialog and crop skins join it.
+Also mended at Zoltán's ask the same day: scoped feeds paginated in document-id order (no
+createdAt composite for domain-scoped queries, so a reload showed a different sample) — the
+(domain[, type][, visibility], createdAt DESC) composites now exist for pulses, trees and
+visions, every feed orders on the server and pages the real stream (index-building
+fallbacks keep the old page shape while a composite builds), offerings are typed server-side
+like events, and tests/indexes.test.ts holds the index file to the shapes queried. Named, not
+fixed: a reflecting node's own node-level items never reach its feed — written into
+ARCHITECTURE's debts. Rejected: making the default watering on-chain (a
+photo at every routine watering would flood the chain); keeping the keeper out of witnessing
+(the two-carer tree would stay unverifiable). Gates: `check` 633 · `test:rules` (see the batch).
+
 **2026-09-02 · One sign-in, two hearths: the SSO door** — the hybrid shape (ring
 2026-08-19) left the mother site a stranger to its own seed: Firebase Auth remembers per
 ORIGIN, so signing in at seed.theohouse.org told theohouse.org nothing. Now the seed keeps

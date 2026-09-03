@@ -2159,3 +2159,67 @@ describe('circle graduation — the forming stamp is the server\'s alone', () =>
     await assertFails(updateDoc(doc(db(ALICE), 'communities', 'com1'), { bornOn: 'perauset.web.app' }));
   });
 });
+
+describe('tree circle invitations — the circle reads its ledger, carers open the open layer, marks are one-way', () => {
+  const CAROL = 'carol-uid';
+  const link = (from: string, rel: string, to: string, extra: object = {}) =>
+    ({ lid: 'x', type: 'link', rel, from, to, ...extra, createdAt: 1 });
+  const invite = (extra: object) => ({
+    lifetreeId: 'treeB', lifetreeName: 'Bobs tree', invitedByUserId: BOB, invitedByName: 'Bob',
+    invitedUserId: MALLORY, role: 'guardian', status: 'pending', message: '', createdAt: 1, updatedAt: 1, ...extra,
+  });
+
+  // treeB is BOB's (seeded above); ALICE cares beside him as a co_owner.
+  const seedTreeInvites = () => env.withSecurityRulesDisabled(async (ctx) => {
+    const d = ctx.firestore();
+    await setDoc(doc(d, 'links', `${ALICE}__co_owner__treeB`), link(ALICE, 'co_owner', 'treeB'));
+    await setDoc(doc(d, 'treeOwnershipInvites', 'tinv-owner-1'), invite({}));
+    await setDoc(doc(d, 'treeOwnershipInvites', 'tinv-staff-1'), invite({ invitedByUserId: STAFF, invitedByName: 'Staff', invitedUserId: CAROL, role: 'co_owner' }));
+    await setDoc(doc(d, 'treeOwnershipInvites', 'tinv-done-1'), invite({ invitedUserId: 'dan-uid', status: 'accepted' }));
+  });
+  const byTree = (uid: string) => getDocs(query(collection(db(uid), 'treeOwnershipInvites'), where('lifetreeId', '==', 'treeB')));
+
+  it('the ledger (list by tree) belongs to the carers — owner and co_owner alike, staff-sent invitations included', async () => {
+    await seedTreeInvites();
+    await assertSucceeds(byTree(BOB));
+    await assertSucceeds(byTree(ALICE));
+    await assertSucceeds(byTree(STAFF));
+    await assertFails(byTree(MALLORY));   // an invitee is not a carer: no ledger
+    await assertFails(byTree(CAROL));
+  });
+
+  it('an invitee lists and reads their own; a carer reads a single invitation of the tree; a stranger reads nothing', async () => {
+    await seedTreeInvites();
+    await assertSucceeds(getDocs(query(collection(db(MALLORY), 'treeOwnershipInvites'), where('invitedUserId', '==', MALLORY))));
+    await assertSucceeds(getDoc(doc(db(MALLORY), 'treeOwnershipInvites', 'tinv-owner-1')));
+    await assertSucceeds(getDoc(doc(db(ALICE), 'treeOwnershipInvites', 'tinv-staff-1')));   // co_owner, neither inviter nor invitee
+    await assertFails(getDoc(doc(db(MALLORY), 'treeOwnershipInvites', 'tinv-staff-1')));   // someone else's invitation
+    await assertFails(getDoc(doc(db(), 'treeOwnershipInvites', 'tinv-owner-1')));           // signed out
+  });
+
+  it('the owner invites any role; a co_owner opens only the open layer; a stranger, a forged inviter or a non-pending birth are refused', async () => {
+    await seedTreeInvites();
+    await assertSucceeds(setDoc(doc(db(BOB), 'treeOwnershipInvites', 'tinv-new-owner'), invite({ invitedUserId: CAROL, role: 'co_owner' })));
+    await assertSucceeds(setDoc(doc(db(ALICE), 'treeOwnershipInvites', 'tinv-new-guard'), invite({ invitedByUserId: ALICE, invitedUserId: CAROL, role: 'guardian' })));
+    await assertSucceeds(setDoc(doc(db(ALICE), 'treeOwnershipInvites', 'tinv-new-obsrv'), invite({ invitedByUserId: ALICE, invitedUserId: CAROL, role: 'observer' })));
+    await assertFails(setDoc(doc(db(ALICE), 'treeOwnershipInvites', 'tinv-new-coown'), invite({ invitedByUserId: ALICE, invitedUserId: CAROL, role: 'co_owner' })));
+    await assertFails(setDoc(doc(db(ALICE), 'treeOwnershipInvites', 'tinv-new-stewd'), invite({ invitedByUserId: ALICE, invitedUserId: CAROL, role: 'steward' })));
+    await assertFails(setDoc(doc(db(MALLORY), 'treeOwnershipInvites', 'tinv-new-mally'), invite({ invitedByUserId: MALLORY, invitedUserId: CAROL })));
+    await assertFails(setDoc(doc(db(BOB), 'treeOwnershipInvites', 'tinv-new-forge'), invite({ invitedByUserId: ALICE, invitedUserId: CAROL })));
+    await assertFails(setDoc(doc(db(BOB), 'treeOwnershipInvites', 'tinv-new-accpt'), invite({ invitedUserId: CAROL, status: 'accepted' })));
+  });
+
+  it('the invitee declines (never revokes); the inviter or the owner withdraws (never declines); only pending moves, and only its marks', async () => {
+    await seedTreeInvites();
+    const decline = { status: 'declined', declinedAt: serverTimestamp(), updatedAt: serverTimestamp() };
+    const revoke = { status: 'revoked', revokedAt: serverTimestamp(), updatedAt: serverTimestamp() };
+    await assertFails(updateDoc(doc(db(MALLORY), 'treeOwnershipInvites', 'tinv-owner-1'), revoke));    // the invitee cannot revoke
+    await assertFails(updateDoc(doc(db(BOB), 'treeOwnershipInvites', 'tinv-owner-1'), decline));       // the inviter cannot decline
+    await assertFails(updateDoc(doc(db(ALICE), 'treeOwnershipInvites', 'tinv-owner-1'), revoke));      // a co_owner who did not invite
+    await assertFails(updateDoc(doc(db(BOB), 'treeOwnershipInvites', 'tinv-owner-1'), { ...revoke, role: 'co_owner' })); // touching more than the marks
+    await assertFails(updateDoc(doc(db(BOB), 'treeOwnershipInvites', 'tinv-done-1'), revoke));         // accepted: settled, immovable
+    await assertSucceeds(updateDoc(doc(db(BOB), 'treeOwnershipInvites', 'tinv-staff-1'), revoke));     // the owner withdraws any invitation on their tree
+    await assertSucceeds(updateDoc(doc(db(MALLORY), 'treeOwnershipInvites', 'tinv-owner-1'), decline));
+    await assertFails(updateDoc(doc(db(BOB), 'treeOwnershipInvites', 'tinv-owner-1'), { status: 'pending', updatedAt: serverTimestamp() })); // one-way
+  });
+});

@@ -7,6 +7,8 @@ import { Pulse, type Lifetree } from '../../types';
 import { isOnWateringSchedule, isWateringOverdue, daysUntilWatering, daysOverdue, lastWateredMillis, wateringAlertedToday, treeStage, computeNextDueMillis, type TreeStage } from '../../domain/watering';
 import { SectionCard } from '../ui/SectionCard';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { speak, spokenLine } from '../../utils/translations';
+import { WitnessWaterings, awaitingWitness } from './WitnessWaterings';
 
 // The three growth stages, in growing order — a seed in its pot, in the ground but still
 // caredFor, and finally self-sustaining. The first two are watered on a schedule.
@@ -33,6 +35,9 @@ interface TreeCareProps {
     // A guardian without caring powers: the card reads as the schedule's read-only face,
     // plus a door to ask the circle for stewardship (roles move only by invitation).
     canAskStewardship?: boolean;
+    // The viewer stands in the circle (keeper / co-owner / steward / guardian) and may witness
+    // another's watering — the sun ring's mint, judged on server ground.
+    canWitness?: boolean;
     onUpdate?: (updates: Partial<Lifetree>) => void;
     // Reload the shell's chain after a watering minted (or confirmed) a growth block.
     onChainRefresh: () => void;
@@ -49,6 +54,7 @@ export const TreeCare: React.FC<TreeCareProps> = ({
     canWater,
     canManageSchedule,
     canAskStewardship,
+    canWitness = false,
     onUpdate,
     onChainRefresh,
 }) => {
@@ -85,7 +91,16 @@ export const TreeCare: React.FC<TreeCareProps> = ({
     const dueInDays = daysUntilWatering(tree);
     const overByDays = daysOverdue(tree);
     const lastWateredMs = tree.watering?.lastWateredAt ? lastWateredMillis(tree) : 0;
-    const pendingWaterings = growthBlocks.filter((p: Pulse) => p.care === 'watering' && p.wateringConfirmedBy === 'pending');
+    // WHO watered last, so a co-carer reads the fact and not only the date: the stored name,
+    // or "you" when it was this viewer's own hand.
+    const lastWateredByName = tree.watering?.lastWateredBy
+        ? (tree.watering.lastWateredBy === currentUserId ? t('you') : (tree.watering.lastWateredByName || ''))
+        : '';
+    const lastWateredLine = lastWateredMs > 0
+        ? speak(spokenLine(lastWateredByName ? 'last_watered_by' : 'last_watered',
+            { date: new Date(lastWateredMs).toLocaleDateString(), name: lastWateredByName }))
+        : '';
+    const pendingWaterings = awaitingWitness(growthBlocks);
 
     const handleSaveSchedule = async () => {
         setWaterBusy(true); setWaterMsg(null);
@@ -115,6 +130,8 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                 ...(tree.watering || {}),
                 overdue: false,
                 lastWateredAt: Timestamp.fromMillis(now),
+                lastWateredBy: currentUserId,
+                lastWateredByName: currentUserName || '',
                 ...(iv ? { nextDueAt: Timestamp.fromMillis(computeNextDueMillis(now, iv)) } : {}),
             } });
             setWaterMsg('Watered today 💧 (kept off the chain).');
@@ -140,6 +157,8 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                 ...(tree.watering || {}),
                 overdue: false,
                 lastWateredAt: Timestamp.fromMillis(now),
+                lastWateredBy: currentUserId,
+                lastWateredByName: currentUserName || '',
                 ...(iv ? { nextDueAt: Timestamp.fromMillis(computeNextDueMillis(now, iv)) } : {}),
             } });
             onChainRefresh();
@@ -194,7 +213,7 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                     {!canManageSchedule && scheduled && !selfSustaining && tree.watering?.intervalDays && (
                         <p className="mt-1 text-xs text-sky-700/70">Watered every {tree.watering.intervalDays} day{tree.watering.intervalDays !== 1 ? 's' : ''}.</p>
                     )}
-                    {lastWateredMs > 0 && <p className="mt-1 text-xs text-sky-700/70">Last watered {new Date(lastWateredMs).toLocaleDateString()}.</p>}
+                    {lastWateredLine && <p className="mt-1 text-xs text-sky-700/70">{lastWateredLine}</p>}
                 </div>
                 {/* The primary action sits right beside the status — water this tree now. */}
                 {canWater && !selfSustaining && (
@@ -280,24 +299,17 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                 </div>
             )}
 
-            {(canWater || canAskStewardship) && pendingWaterings.length > 0 && (
-                <div className="mt-4 border-t border-sky-200 pt-3">
-                    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-sky-600">{t('awaiting_witness')}</p>
-                    <div className="space-y-2">
-                        {pendingWaterings.map((p: Pulse) => (
-                            <div key={p.id} className="flex items-center gap-2 rounded-lg bg-white/70 p-2">
-                                {p.imageUrl && <img src={p.imageUrl} className="h-10 w-10 rounded object-cover" alt="watering" />}
-                                {/* eslint-disable-next-line react-hooks/purity -- Date.now() is only the display fallback for a block still missing its server timestamp; it intentionally reads as "today" */}
-                                <span className="flex-1 truncate text-xs text-sky-800">{new Date(p.createdAt?.toMillis?.() || Date.now()).toLocaleDateString()} · {p.wateringConfirmation?.note || 'Watering'}</span>
-                            </div>
-                        ))}
-                    </div>
-                    {/* No confirm button here: care is witnessed by a GUARDIAN (not the carer), in the
-                        Circle. This just lets the carer see their care is awaiting a witness. */}
-                    {canAskStewardship && (
-                        <p className="mt-2 text-[11px] text-sky-600">{t('guardian_witness_note')}</p>
-                    )}
-                </div>
+            {/* The waterings still awaiting a human witness — and, for the circle, the hand to
+                witness them right here where the care is read (one face with the Circle tab). */}
+            {(canWater || canAskStewardship || canWitness) && pendingWaterings.length > 0 && (
+                <WitnessWaterings
+                    className="mt-4"
+                    treeName={tree.name}
+                    pulses={growthBlocks}
+                    currentUserId={currentUserId}
+                    canWitness={canWitness}
+                    onWitnessed={onChainRefresh}
+                />
             )}
 
             {waterMsg && <p className="mt-3 text-xs text-sky-700">{waterMsg}</p>}

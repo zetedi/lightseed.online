@@ -36,15 +36,23 @@ export const fetchVisions = async (
         : [access.uid
             ? where('visibility', 'in', ['public', 'node'])
             : where('visibility', '==', 'public')];
-    let q;
-    if (scoped) {
-        q = query(visionsCollection, where('domain', '==', normalizedDomain!), ...visible, limit(24));
-    } else {
-        q = query(visionsCollection, ...visible, orderBy('createdAt', 'desc'), limit(12));
-    }
-    
+    // Newest first on the server, scoped or not (the composites (domain[, visibility],
+    // createdAt DESC) exist since ring 2026-09-03), so the cursor pages the real stream.
+    const scopeF = scoped ? [where('domain', '==', normalizedDomain!)] : [];
+    let q = query(visionsCollection, ...scopeF, ...visible, orderBy('createdAt', 'desc'), limit(scoped ? 24 : 12));
     if (lastD) q = query(q, startAfter(lastD));
-    const snap = await getDocs(q);
+    let snap;
+    let scopedFallback = false;
+    try {
+        snap = await getDocs(q);
+    } catch (e) {
+        if (!scoped) throw e;
+        // The scoped composite may still be building right after a deploy — the old filter-only
+        // page keeps the visions loading; its cursor is another shape, so paging ends here.
+        console.warn('Visions query fell back (composite index building?)', e);
+        snap = await getDocs(query(visionsCollection, ...scopeF, ...visible, limit(24)));
+        scopedFallback = true;
+    }
     const byId = new Map(snap.docs.map(d => [d.id, mapDoc(d) as Vision]));
 
     // Owner visibility is a separate, rule-provable query. Merge only on page one; subsequent
@@ -60,7 +68,7 @@ export const fetchVisions = async (
     const items = [...byId.values()]
         .sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 
-    return { items, lastDoc: snap.docs[snap.docs.length-1] || null };
+    return { items, lastDoc: scopedFallback ? null : (snap.docs[snap.docs.length-1] || null) };
 }
 
 export const getMyVisions = async (uid: string) => (await getDocs(query(visionsCollection, where('authorId', '==', uid)))).docs.map(d => (mapDoc(d) as Vision));

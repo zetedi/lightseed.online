@@ -8,6 +8,7 @@ import { mergeAuthored } from '../../domain/pulseVisibility';
 import { isExplicitlyValidatedTree } from '../../utils/validation';
 import { buildThreadId, buildGroupThreadId, reachAudienceLabels } from '../../utils/reachPermissions';
 import { db, auth, toMillis, mapDoc, mapPulse, pulsesCollection } from './core';
+import { announce } from '../refreshBus';
 
 // The visibility levels a plain (viewer-agnostic) list query may request and PROVE to
 // canListPulse: 'public' always, 'node' once signed in. Timelines that pin a communityId or
@@ -61,31 +62,38 @@ export const unmintLastPulse = (pulse: Pick<Pulse, 'id' | 'lifetreeId' | 'hash' 
         });
     });
 
+// Newest first, on the server, scoped or not: the composite indexes (domain[, type]
+// [, visibility], createdAt DESC) exist since ring 2026-09-03, so a scoped page is a real
+// page of the stream and the cursor continues it — not an id-ordered sample re-sorted on
+// the client, which is why a reload used to show a different set (tests/indexes.test.ts
+// holds the index file to the shapes queried here).
+const newestFirst = (a: Pulse, b: Pulse) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0);
+
 const fetchPulsesRaw = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, levels?: PulseVisibility[], pageSize?: number, typeFilter?: string) => {
     // Visibility-scope the broad feed so a restricted pulse in this domain can't get the
     // whole query rejected. Broad feeds carry no scope context, so `levels` is public + node.
     const visFilter = levels && levels.length ? [where('visibility', 'in', levels)] : [];
-    // A typed feed (events) filters server-side, so every page is dense with its own kind —
-    // indexes: (type, visibility, createdAt) unscoped, (domain, type, visibility) scoped.
+    // A typed feed (events, offerings) filters server-side, so every page is dense with its
+    // own kind.
     const typeF = typeFilter ? [where('type', '==', typeFilter)] : [];
     const scoped = !!domainFilter;
     const lim = pageSize ?? (scoped ? 24 : 12);
-    let q;
-    if (scoped) {
-        q = query(pulsesCollection, where('domain', '==', domainFilter!.replace(/^www\./, '')), ...typeF, ...visFilter, limit(lim));
-    } else {
-        q = query(pulsesCollection, ...typeF, ...visFilter, orderBy('createdAt', 'desc'), limit(lim));
-    }
-
+    const scopeF = scoped ? [where('domain', '==', domainFilter!.replace(/^www\./, ''))] : [];
+    let q = query(pulsesCollection, ...scopeF, ...typeF, ...visFilter, orderBy('createdAt', 'desc'), limit(lim));
     if (lastD) q = query(q, startAfter(lastD));
-    const snap = await getDocs(q);
-    let items = snap.docs.map(mapPulse);
 
-    if (scoped) {
-        items = items.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+    try {
+        const snap = await getDocs(q);
+        return { items: snap.docs.map(mapPulse), lastDoc: snap.docs[snap.docs.length-1] || null };
+    } catch (e) {
+        if (!scoped) throw e;
+        // The scoped composite may still be building right after a deploy — fall back to the
+        // old filter-only page, sorted here. Its cursor belongs to another query shape, so
+        // pagination ends on this page rather than continuing in the wrong order.
+        console.warn('Pulse feed query fell back (composite index building?)', e);
+        const snap = await getDocs(query(pulsesCollection, ...scopeF, ...typeF, ...visFilter, limit(lim)));
+        return { items: snap.docs.map(mapPulse).sort(newestFirst), lastDoc: null };
     }
-
-    return { items, lastDoc: snap.docs[snap.docs.length-1] || null };
 }
 
 // The main Pulses feed shows offerings, dreams and other content pulses.
@@ -143,10 +151,10 @@ export const fetchEventPulses = async (lastD?: QueryDocumentSnapshot, domainFilt
     };
 };
 
-// Offerings (beds / services for light) — sparse among recent pulses, so widen the window like
-// events do, and keep only type 'offering'.
+// Offerings (beds / services for light) — typed server-side like events, so every page is
+// dense with offerings instead of the leftovers of an 80-pulse window (ring 2026-09-03).
 export const fetchOfferingPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, levels?: PulseVisibility[]) => {
-    const res = await fetchPulsesRaw(lastD, domainFilter, levels, 80);
+    const res = await fetchPulsesRaw(lastD, domainFilter, levels, 24, 'offering');
     return {
         items: res.items.filter(pulse => pulse.type === 'offering'),
         lastDoc: res.lastDoc,
@@ -512,7 +520,11 @@ export const getPulsesByTreeId = async (treeId: string) => {
 // the SAME transaction that appends the block — so e.g. a watering's schedule reset commits
 // atomically with its growth pulse (no window where the chain advanced but the tree is stale).
 export const mintPulse = async (pulseData: Partial<Pulse> & { lifetreeId: string }, extraTreeUpdate?: Record<string, unknown>) => {
-    return runTransaction(db, async (t) => {
+    // The head after the mint — whispered on the refresh bus once the transaction commits, so
+    // every open view of this tree (its profile's chain, its forest card) follows the head
+    // without a reload (the Digital Tree's Care used to mint a leaf it never showed).
+    let head: { latestHash: string; blockHeight: number; latestGrowthUrl?: string } | null = null;
+    await runTransaction(db, async (t) => {
         const treeRef = doc(db, 'lifetrees', pulseData.lifetreeId);
         const treeDoc = await t.get(treeRef);
         if (!treeDoc.exists()) throw new Error('err_tree_missing');
@@ -562,7 +574,13 @@ export const mintPulse = async (pulseData: Partial<Pulse> & { lifetreeId: string
         if (extraTreeUpdate) Object.assign(updateData, extraTreeUpdate);
 
         t.update(treeRef, updateData);
+        head = {
+            latestHash: newHash,
+            blockHeight: updateData.blockHeight,
+            ...(updateData.latestGrowthUrl ? { latestGrowthUrl: updateData.latestGrowthUrl } : {}),
+        };
     });
+    if (head) announce('trees', pulseData.lifetreeId, head);
 }
 
 // Grow a VISION — mint a CONTRIBUTION pulse onto the VISION'S OWN chain (not the rooted tree's).

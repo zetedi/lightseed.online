@@ -3,7 +3,7 @@ import React, { useState, FormEvent } from 'react';
 import { showAlert } from "../ui/Dialog";
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
-import { Modal } from '../ui/Modal';
+import { Modal, modalButton } from '../ui/Modal';
 import { ImagePicker } from '../ui/ImagePicker';
 import { AutocompleteInput } from '../ui/AutocompleteInput';
 import { Lightseed, Lifetree } from '../../types';
@@ -181,7 +181,7 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
         <button
             type="submit"
             disabled={uploading || localUploading || isSubmitting} 
-            className="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-bold shadow-md disabled:opacity-50"
+            className={modalButton('primary', { hue: 'amber' })}
         >
             {isSubmitting ? t('creating') : t('create_vision')}
         </button>

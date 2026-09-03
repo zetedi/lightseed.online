@@ -5,13 +5,14 @@ import { Icons } from '../ui/Icons';
 import { firestoreStore } from '../../adapters/firestore';
 import { canCareForTree } from '../../domain/policy';
 import { SectionCard } from '../ui/SectionCard';
-import { fetchAllLifetrees, getPersonName, createTreeInvite, getPulsesByTreeId, witnessWatering } from '../../services/firebase';
+import { fetchAllLifetrees, getPersonName, createTreeInvite, getSentTreeInvites, revokeTreeInvite } from '../../services/firebase';
 import { treeCircle } from '../../domain/views/circle';
-import { roleLabelKey, roleDescKey, type TreeRelationRole, type InvitableRole } from '../../domain/treeCircle';
+import { roleLabelKey, roleDescKey, type TreeRelationRole, type InvitableRole, type TreeOwnershipInvite } from '../../domain/treeCircle';
 // `translations.en` feeds only the STORED invite message (data on the invite doc — the
 // invitee's language is unknown at mint time, so the record keeps the canonical English);
 // everything the VIEWER reads goes through t().
-import { translations, spokenLine } from '../../utils/translations';
+import { translations, spokenLine, speak } from '../../utils/translations';
+import { WitnessWaterings } from './WitnessWaterings';
 import type { Lifetree, Pulse } from '../../types';
 
 // THE CIRCLE — the whole circle of care around a Lifetree, one view (the two old tabs merged). It
@@ -28,15 +29,22 @@ interface TreeCircleProps {
     currentUserId?: string;
     currentUserName?: string | null;
     circle: TreeCircleView;
+    // The tree's growth blocks (newest first), loaded by the shell and shared with the Digital
+    // Tree and Care: the waterings awaiting a witness are read from them.
+    growthBlocks: Pulse[];
     // Carer (owner / co-owner / steward / staff): may report danger and invite guardians.
     canEdit: boolean;
     // Owner / staff: may also invite the deeper CARING roles (co-guardian / steward).
     canInviteRoles: boolean;
+    // The viewer stands in the circle (keeper / co-owner / steward / guardian) and may witness.
+    canWitness: boolean;
     status: 'HEALTHY' | 'DANGER';
     busy: boolean;
     onToggleDanger: () => void;
     // Re-reads the circle in the shell so this view stays in step after a guardian join/leave.
     onGuardianChange: () => void;
+    // Reload the shell's chain after a witness landed on a watering.
+    onChainRefresh: () => void;
 }
 
 interface Face { name?: string; imageUrl?: string }
@@ -67,7 +75,7 @@ const ROLE_RING: Record<TreeRelationRole, string> = {
 };
 
 export const TreeCircle: React.FC<TreeCircleProps> = ({
-    tree, currentUserId, currentUserName, circle, canEdit, canInviteRoles, status, busy, onToggleDanger, onGuardianChange,
+    tree, currentUserId, currentUserName, circle, growthBlocks, canEdit, canInviteRoles, canWitness, status, busy, onToggleDanger, onGuardianChange, onChainRefresh,
 }) => {
     const treeId = tree.id;
     const { t } = useLanguage();
@@ -86,6 +94,22 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
         [circle, currentUserId],
     );
 
+    // ── The invitation ledger: who was invited into this circle, as what — and the hand to
+    // withdraw an invitation still waiting. Read by the circle's carers (rules: list by
+    // lifetreeId is theirs); revocation is a mark on the record, never a delete.
+    const [sentInvites, setSentInvites] = useState<TreeOwnershipInvite[]>([]);
+    const [inviteNonce, setInviteNonce] = useState(0);
+    const [revoking, setRevoking] = useState<string | null>(null);
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- clears the ledger for a viewer outside the circle before the async read below
+        if (!canEdit || !currentUserId) { setSentInvites([]); return; }
+        let alive = true;
+        getSentTreeInvites(treeId)
+            .then(list => { if (alive) setSentInvites(list.filter(i => i.status === 'pending')); })
+            .catch(() => { if (alive) setSentInvites([]); });
+        return () => { alive = false; };
+    }, [treeId, canEdit, currentUserId, inviteNonce]);
+
     // The visible forest, once — lends both the faces and the invite search. Rules-safe (public/node).
     useEffect(() => {
         let alive = true;
@@ -93,16 +117,21 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
         return () => { alive = false; };
     }, []);
 
-    // Person names as a fallback label for beings whose tree has no face yet. Batched, best-effort.
+    // Person names as a fallback label for beings whose tree has no face yet — the circle's
+    // members and the invited alike. Batched, best-effort.
+    const nameUids = useMemo(
+        () => [...new Set([...circleUids, ...sentInvites.map(i => i.invitedUserId)])],
+        [circleUids, sentInvites],
+    );
     useEffect(() => {
         let alive = true;
-        const missing = circleUids.filter(uid => !(uid in names));
+        const missing = nameUids.filter(uid => !(uid in names));
         if (!missing.length) return;
         Promise.all(missing.map(async uid => [uid, (await getPersonName(uid).catch(() => '')) || ''] as const))
             .then(pairs => { if (alive) setNames(prev => ({ ...prev, ...Object.fromEntries(pairs) })); });
         return () => { alive = false; };
         // eslint-disable-next-line react-hooks/exhaustive-deps -- `names` is the accumulator, not a trigger
-    }, [circleUids]);
+    }, [nameUids]);
 
     const labelFor = (uid: string, face: Face) => uid === currentUserId ? t('you') : (face.name || names[uid] || `${uid.slice(0, 8)}…`);
 
@@ -188,39 +217,23 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
             });
             await firestoreStore.unlink(r.uid, 'keeper_request', treeId);
             setAskNonce(n => n + 1);
+            setInviteNonce(n => n + 1);
             showAlert(spokenLine('circle_invite_sent', { name: r.name, role: roleName(askRole).toLowerCase(), tree: tree.name || '—' }));
         } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
         setAnswering(null);
     };
 
-    // ── Witnessing — a guardian's act (the light mint; the sun ring). A guardian sees the tree's
-    // waterings that no guardian has witnessed yet (and not their own care) and may witness one:
-    // the witnessWatering callable kindles the carer's ray + the guardian's seventh, server-verified.
-    const [toWitness, setToWitness] = useState<Pulse[]>([]);
-    const [witnessing, setWitnessing] = useState<string | null>(null);
-    const [witnessNonce, setWitnessNonce] = useState(0);
-    useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- clears the list for a non-guardian before the async fetch below
-        if (!isGuardian || !currentUserId) { setToWitness([]); return; }
-        let alive = true;
-        getPulsesByTreeId(treeId).then(ps => {
-            if (!alive) return;
-            setToWitness(ps.filter(p => p.care === 'watering' && p.wateringConfirmedBy !== 'guardian' && p.authorId !== currentUserId).slice(0, 5));
-        }).catch(() => {});
-        return () => { alive = false; };
-    }, [treeId, isGuardian, currentUserId, witnessNonce]);
-
-    const handleWitness = async (p: Pulse) => {
-        setWitnessing(p.id);
+    // Withdrawing an invitation that still waits: the inviter's own hand, or the keeper's for
+    // any invitation on their tree (rules). The record stays, marked revoked.
+    const handleRevokeInvite = async (inv: TreeOwnershipInvite) => {
+        const who = names[inv.invitedUserId] || faceFromForest(inv.invitedUserId, forest).name || `${inv.invitedUserId.slice(0, 8)}…`;
+        if (!(await showConfirm(spokenLine('circle_invite_revoke_confirm', { name: who }), { title: 'invite_revoke', confirmText: 'revoke', danger: true }))) return;
+        setRevoking(inv.id);
         try {
-            const res = await witnessWatering(p.id);
-            setToWitness(prev => prev.filter(x => x.id !== p.id));
-            setWitnessNonce(n => n + 1);
-            showAlert(res.kindled
-                ? spokenLine('witness_kindled', { tree: tree.name || t('tree') })
-                : 'witness_already_lit');
+            await revokeTreeInvite(inv.id);
+            setSentInvites(prev => prev.filter(i => i.id !== inv.id));
         } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
-        setWitnessing(null);
+        setRevoking(null);
     };
 
     // ── Invite by tree name ─────────────────────────────────────────────────────────────────────
@@ -264,12 +277,14 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                 message: `Would you join the circle of ${tree.name || 'this tree'} as ${translations.en[roleLabelKey(inviteRole)].toLowerCase()}?`,
             });
             setInvited(prev => new Set(prev).add(candidate.ownerId));
+            setInviteNonce(n => n + 1); // the ledger below shows it at once
             showAlert(spokenLine('circle_invite_sent', { name: candidate.name || '—', role: roleName(inviteRole).toLowerCase(), tree: tree.name || '—' }));
         } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
         setInviting(null);
     };
 
     const isBusy = busy || toggleBusy;
+    const isOwner = !!currentUserId && currentUserId === tree.ownerId;
 
     return (
         <SectionCard title={t('circle')} icon={<Icons.Venn />}>
@@ -389,30 +404,54 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                 </div>
             )}
 
-            {/* Witnessing — a guardian confirms care they witnessed, kindling its light (the sun ring). */}
-            {isGuardian && toWitness.length > 0 && (
-                <div className="mt-6 rounded-2xl border border-sky-100 bg-sky-50/60 p-4">
-                    <p className="mb-2 text-xs font-bold uppercase tracking-wide text-sky-600">{t('witness_waterings')}</p>
-                    <div className="space-y-1.5">
-                        {toWitness.map(p => (
-                            <div key={p.id} className="flex items-center gap-3 rounded-xl border border-sky-100 bg-white p-2 shadow-sm">
-                                {p.imageUrl
-                                    ? <img src={p.imageUrl} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" />
-                                    : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-500 [&>svg]:h-5 [&>svg]:w-5"><Icons.Droplet /></span>}
-                                <span className="min-w-0 flex-1 truncate text-xs text-slate-600">
-                                    {p.createdAt?.toMillis ? new Date(p.createdAt.toMillis()).toLocaleDateString() : t('a_watering')} · {p.wateringConfirmation?.note || t('a_watering')}
-                                </span>
-                                <button
-                                    onClick={() => handleWitness(p)}
-                                    disabled={witnessing === p.id}
-                                    className="shrink-0 rounded-full bg-sky-600 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-sky-700 disabled:opacity-50"
-                                >
-                                    {witnessing === p.id ? '…' : t('witness')}
-                                </button>
-                            </div>
-                        ))}
-                    </div>
+            {/* The invitation ledger — who was invited, as what, since when; withdrawable while it waits. */}
+            {canEdit && currentUserId && (
+                <div className="mt-5 rounded-2xl border border-slate-100 bg-white p-4">
+                    <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">{t('circle_invitations_pending')}</p>
+                    {sentInvites.length === 0 ? (
+                        <p className="text-[11px] italic text-slate-400">{t('circle_invitations_none')}</p>
+                    ) : (
+                        <div className="space-y-1.5">
+                            {sentInvites.map(inv => {
+                                const face = faceFromForest(inv.invitedUserId, forest);
+                                const mayRevoke = canInviteRoles || isOwner || inv.invitedByUserId === currentUserId;
+                                return (
+                                    <div key={inv.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/50 p-2">
+                                        <Avatar imageUrl={face.imageUrl} seed={labelFor(inv.invitedUserId, face)} ring={ROLE_RING[inv.role]} />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="truncate text-sm font-bold text-slate-700">{labelFor(inv.invitedUserId, face)}</p>
+                                            <p className="truncate text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                                                {roleName(inv.role)}
+                                                <span className="ml-1.5 normal-case tracking-normal font-normal">
+                                                    · {inv.createdAt?.toMillis ? speak(spokenLine('invited_on', { date: new Date(inv.createdAt.toMillis()).toLocaleDateString() })) : t('pending')}
+                                                </span>
+                                            </p>
+                                        </div>
+                                        {mayRevoke && (
+                                            <button onClick={() => handleRevokeInvite(inv)} disabled={revoking === inv.id}
+                                                className="shrink-0 rounded-lg border border-red-100 bg-white px-2.5 py-1 text-[11px] font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50">
+                                                {revoking === inv.id ? '…' : t('revoke')}
+                                            </button>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
+            )}
+
+            {/* Witnessing — the circle confirms care it witnessed, kindling its light (the sun ring).
+                The same face as on the Care tab; it reads the shell's chain. */}
+            {canWitness && (
+                <WitnessWaterings
+                    className="mt-6"
+                    treeName={tree.name}
+                    pulses={growthBlocks}
+                    currentUserId={currentUserId}
+                    canWitness={canWitness}
+                    onWitnessed={onChainRefresh}
+                />
             )}
 
             {/* Invite a tree into the circle, found by name. Anyone with edit rights invites
@@ -448,7 +487,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                     {matches.length > 0 && (
                         <div className="mt-2 space-y-1.5">
                             {matches.map(({ tree: m, reason }) => {
-                                const already = invited.has(m.ownerId);
+                                const already = invited.has(m.ownerId) || sentInvites.some(i => i.invitedUserId === m.ownerId && i.role === inviteRole);
                                 return (
                                     <div key={m.id} className={`flex items-center gap-3 rounded-xl border border-slate-100 p-2 shadow-sm ${reason ? 'bg-slate-50/60' : 'bg-white'}`}>
                                         <Avatar imageUrl={m.latestGrowthUrl || m.imageUrl} seed={m.name || '?'} ring={reason ? 'ring-slate-100' : 'ring-emerald-100'} />
@@ -462,7 +501,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                                                 disabled={inviting === m.id || already}
                                                 className="shrink-0 rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
                                             >
-                                                {already ? 'Invited' : inviting === m.id ? '…' : 'Invite'}
+                                                {already ? t('invited') : inviting === m.id ? '…' : t('invite')}
                                             </button>
                                         )}
                                     </div>

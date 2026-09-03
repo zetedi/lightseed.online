@@ -4,7 +4,7 @@ import { showAlert } from "../ui/Dialog";
 import { useLanguage } from '../../contexts/LanguageContext';
 import { speak } from '../../utils/translations';
 import { Icons } from '../ui/Icons';
-import { Modal } from '../ui/Modal';
+import { Modal, modalButton } from '../ui/Modal';
 import { ImagePicker } from '../ui/ImagePicker';
 import { Pulse, Lightseed, Lifetree, Vision } from '../../types';
 import { getMyVisions } from '../../services/firebase';
@@ -232,7 +232,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
             {t('alignment_with')} <strong>{matchCandidate.title}</strong>.
             <br /><span className="text-xs">{t('alignment_request_desc')}</span>
           </div>
-          <button type="submit" disabled={isSubmitting} className="w-full bg-emerald-600 text-white py-2 rounded disabled:opacity-50 font-bold uppercase tracking-wider shadow-md">
+          <button type="submit" disabled={isSubmitting} className={modalButton('primary', { extra: 'uppercase tracking-wider' })}>
             {isSubmitting ? t('minting') : t('send_request')}
           </button>
         </form>
@@ -356,7 +356,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
                       type="button"
                       onClick={() => handleMint()}
                       disabled={uploading || isSubmitting || (growthKind === 'tree' && !pulseImageUrl && !treeImage) || (growthKind === 'vision' && !selectedVision)}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 font-bold uppercase tracking-wider text-white shadow-md transition-colors hover:bg-emerald-700 disabled:opacity-50"
+                      className={modalButton('primary', { extra: 'uppercase tracking-wider' })}
                     >
                       <Icons.Stamp />
                       <span>{isSubmitting ? t('minting') : t('mint')}</span>

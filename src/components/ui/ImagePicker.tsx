@@ -6,7 +6,10 @@ import { Loading } from './Loading';
 
 interface ImagePickerProps {
     onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
-    onImageSelect?: (file: File) => void;
+    // The file to upload (cropped unless noCrop) — and beside it the ORIGINAL as picked, whose
+    // EXIF the crop's canvas re-encode strips; a caller that needs the photo's own place and
+    // moment (planting a tree) reads them from the original.
+    onImageSelect?: (file: File, original: File) => void;
     previewUrl?: string;
     loading?: boolean;
     isDark?: boolean;
@@ -30,7 +33,7 @@ export const ImagePicker = ({ onChange, onImageSelect, previewUrl, loading = fal
         if (onChange) onChange(e);
         const file = e.target.files?.[0];
         if (file && onImageSelect) {
-            if (noCrop) onImageSelect(file);
+            if (noCrop) onImageSelect(file, file);
             else setPendingFile(file);
         }
         // Reset so picking the same file again still fires onChange.
@@ -43,7 +46,7 @@ export const ImagePicker = ({ onChange, onImageSelect, previewUrl, loading = fal
             aspect={aspect}
             title={cropTitle}
             onCancel={() => setPendingFile(null)}
-            onConfirm={(f) => { onImageSelect?.(f); setPendingFile(null); }}
+            onConfirm={(f) => { onImageSelect?.(f, pendingFile); setPendingFile(null); }}
         />
     ) : null;
 

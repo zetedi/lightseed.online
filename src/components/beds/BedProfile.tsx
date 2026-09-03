@@ -133,12 +133,15 @@ export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree
           tree={bed}
           currentUserId={uid}
           circle={circle}
+          growthBlocks={blocks}
           canEdit={false}
           canInviteRoles={false}
+          canWitness={false}
           status={bed.status || 'HEALTHY'}
           busy={false}
           onToggleDanger={() => {}}
           onGuardianChange={() => setCircleNonce(n => n + 1)}
+          onChainRefresh={loadChain}
         />
       ),
     },

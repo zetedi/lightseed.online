@@ -1436,18 +1436,40 @@ service cloud.firestore {
     // also writes the tree's role arrays + the rooted community) goes through the
     // acceptTreeInvite Cloud Function with admin rights — never a direct client write.
     match /treeOwnershipInvites/{inviteId} {
-      allow read: if isSignedIn() && (
+      // A single invitation: its invitee and its inviter (and staff). The LEDGER of a tree's
+      // invitations (list by lifetreeId) belongs to the tree's CARERS — owner, co_owner, steward —
+      // so the circle can see who was invited, as what, and withdraw; the invitee lists their own.
+      allow get: if isSignedIn() && (
         resource.data.invitedUserId == request.auth.uid ||
         resource.data.invitedByUserId == request.auth.uid ||
-        isStaff()
+        isStaff() ||
+        isTreeCarer(resource.data.lifetreeId)
       );
+      allow list: if isSignedIn() && (
+        isStaff() ||
+        resource.data.invitedUserId == request.auth.uid ||
+        resource.data.invitedByUserId == request.auth.uid ||
+        isTreeCarer(resource.data.lifetreeId)
+      );
+      // The owner (or staff) invites any role; a carer (co_owner / steward) may open only the
+      // OPEN layer — guardian / observer — never the deeper caring roles. Every invitation is
+      // born pending and self-attributed.
       allow create: if isSignedIn() &&
         request.resource.data.invitedByUserId == request.auth.uid &&
-        (isStaff() || get(/databases/$(database)/documents/lifetrees/$(request.resource.data.lifetreeId)).data.ownerId == request.auth.uid);
-      // Decline (invitee) / revoke (inviter). Acceptance is server-only (admin SDK).
+        request.resource.data.get('status', '') == 'pending' &&
+        (isStaff() || isTreeOwner(request.resource.data.lifetreeId) ||
+          (isTreeCarer(request.resource.data.lifetreeId) && request.resource.data.get('role', '') in ['guardian', 'observer']));
+      // Decline (the invitee) / revoke (the inviter, or the tree's owner for any invitation on
+      // their tree). One-way marks on a PENDING invitation, touching only the status and its
+      // stamp. Acceptance is server-only (acceptTreeInvite, admin SDK).
       allow update: if isSignedIn() &&
-        (resource.data.invitedUserId == request.auth.uid || resource.data.invitedByUserId == request.auth.uid || isStaff()) &&
-        request.resource.data.status in ['declined', 'revoked'];
+        resource.data.get('status', '') == 'pending' &&
+        (
+          (resource.data.invitedUserId == request.auth.uid && request.resource.data.status == 'declined') ||
+          ((resource.data.invitedByUserId == request.auth.uid || isTreeOwner(resource.data.lifetreeId) || isStaff())
+            && request.resource.data.status == 'revoked')
+        ) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'declinedAt', 'revokedAt', 'updatedAt']);
       allow delete: if isStaff();
     }
 

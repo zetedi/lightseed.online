@@ -1140,10 +1140,11 @@ const rayDoc = (
     createdAt: FieldValue.serverTimestamp(),
 });
 
-// witnessWatering — a GUARDIAN witnesses a watering, kindling the light. Everything is server-derived
+// witnessWatering — the CIRCLE witnesses a watering, kindling the light. Everything is server-derived
 // or server-verified: the witness is the authenticated caller; the carer is the pulse's (create-time
-// auth-bound) author; the guardian's link must exist AND predate the watering (tenure — a sock
-// account minted for the occasion has no voice, mirroring the guardian veto); the day is the
+// auth-bound) author; the witness's standing (a guardian / co_owner / steward link, or keepership)
+// must exist AND predate the watering (tenure — a sock account minted for the occasion has no voice,
+// mirroring the guardian veto); the day is the
 // watering's own; and the carer's ray, the witness's seventh, and the pulse's confirmation all ride
 // ONE transaction. No client field decides who is paid, how much, or when — the facts gathered here
 // go through judgeWitness (./mint.ts), the pure law the tests hold to the domain.
@@ -1163,7 +1164,7 @@ export const witnessWatering = onCall({ cors: true }, async (request) => {
         const createdAtMs: number | null =
             (pulse.createdAt && typeof pulse.createdAt.toMillis === "function") ? pulse.createdAt.toMillis() : null;
 
-        let guardianSinceMs: number | null = null;
+        let witnessSinceMs: number | null = null;
         let treeFacts: { exists: boolean; treeType?: unknown; diedAtMs: number | null } = { exists: false, diedAtMs: null };
         let communityId: string | undefined;
         let carerRef: FirebaseFirestore.DocumentReference | null = null;
@@ -1172,15 +1173,18 @@ export const witnessWatering = onCall({ cors: true }, async (request) => {
         let witnessRayExists = false;
 
         if (pulseSnap.exists && treeId) {
-            const gLinkSnap = await t.get(db.doc(`links/${witnessUid}__guardian__${treeId}`));
-            if (gLinkSnap.exists) {
-                const gAt = (gLinkSnap.data() as any)?.createdAt;
-                // A link without a birth time predates the pulse by convention (old links).
-                guardianSinceMs = (gAt && typeof gAt.toMillis === "function") ? gAt.toMillis() : 0;
-            }
+            // Standing = the earliest circle link the witness holds on this tree. A link without a
+            // birth time predates the pulse by convention (old links).
+            const msOf = (v: any): number => (v && typeof v.toMillis === "function") ? v.toMillis() : 0;
+            const standing = (since: number) => { witnessSinceMs = witnessSinceMs === null ? since : Math.min(witnessSinceMs, since); };
+            const linkSnaps = await Promise.all(["guardian", "co_owner", "steward"].map((rel) =>
+                t.get(db.doc(`links/${witnessUid}__${rel}__${treeId}`))));
+            for (const snap of linkSnaps) if (snap.exists) standing(msOf((snap.data() as any)?.createdAt));
             const treeSnap = await t.get(db.doc(`lifetrees/${treeId}`));
             if (treeSnap.exists) {
                 const tree = treeSnap.data() as Record<string, any>;
+                // The keeper stands in the circle from the tree's birth.
+                if (tree.ownerId === witnessUid) standing(msOf(tree.createdAt));
                 treeFacts = {
                     exists: true,
                     treeType: tree.treeType,
@@ -1205,7 +1209,7 @@ export const witnessWatering = onCall({ cors: true }, async (request) => {
                 wateringConfirmedBy: pulse.wateringConfirmedBy,
                 carerUid, treeId, createdAtMs,
             },
-            guardianSinceMs,
+            witnessSinceMs,
             tree: treeFacts,
             carerRayExists,
             witnessRayExists,

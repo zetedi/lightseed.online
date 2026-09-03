@@ -24,6 +24,8 @@ export interface WateringSchedule {
   stage?: TreeStage;          // growth stage; legacy docs derive it from mode (see treeStage)
   intervalDays?: number;      // for 'scheduled' — how many days between waterings
   lastWateredAt?: Stamp;  // last confirmed watering (or when the schedule was set)
+  lastWateredBy?: string;     // the hand that watered last (uid) — so a co-carer can see WHO, not only when
+  lastWateredByName?: string; // their display name at the time (denormalised for the card)
   nextDueAt?: Stamp;      // denormalised lastWateredAt + intervalDays (for display)
   overdue?: boolean;          // raised by the daily sweep / client check, cleared on watering
   lastAlertAt?: Stamp;    // idempotency: when guardians were last pinged about it
