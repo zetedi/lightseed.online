@@ -103,7 +103,7 @@ const sound = (): OfferingAcceptFacts => ({
   acceptorUid: 'bob',
   offering: { exists: true, type: 'offering', status: undefined, active: true, authorId: 'ana', toKind: 'tree', toId: 'treeB', fromTreeId: 'treeA' },
   receiver: { exists: true, standing: true, diedAtMs: null },
-  fromTree: { exists: true },
+  fromTree: { exists: true, standing: true },
 });
 const broken = (over: (f: OfferingAcceptFacts) => void): OfferingAcceptFacts => { const f = sound(); over(f); return f; };
 
@@ -143,6 +143,10 @@ describe('judgeOfferingAccept — the whole law of acceptance', () => {
     rejects(f => { f.receiver.exists = false; }, 'not-found', /offered to no longer exists/);
     rejects(f => { f.receiver.diedAtMs = 1; }, 'failed-precondition', /died/);
     rejects(f => { f.fromTree.exists = false; }, 'not-found', /offerer's tree/);
+    // Lumo's review (2026-09-07): the offerer must hold the tree the twin block lands on…
+    rejects(f => { f.fromTree.standing = false; }, 'permission-denied', /does not care for the tree/);
+    // …and a tree cannot receive from itself (two blocks from one head would fork the chain).
+    rejects(f => { f.offering.toId = 'treeA'; }, 'failed-precondition', /to itself/);
   });
 });
 

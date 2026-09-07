@@ -590,6 +590,72 @@ describe('the lid is frozen — the true name is load-bearing (QR links stand on
   });
 });
 
+describe("the lifetree LIST leak — the pulse lesson, heard for trees (Lumo's review, 2026-09-07)", () => {
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const d = ctx.firestore();
+      await setDoc(doc(d, 'lifetrees', 'treePublic'), { ownerId: BOB, name: 'Open oak', visibility: 'public', validated: false, validatorId: null, loveCount: 0 });
+      await setDoc(doc(d, 'lifetrees', 'treePrivate'), { ownerId: ALICE, name: 'Hidden fig', visibility: 'private', validated: false, validatorId: null, loveCount: 0 });
+    });
+  });
+  it('an unconstrained or over-wide anonymous list is refused whole', async () => {
+    await assertFails(getDocs(query(collection(db(), 'lifetrees'))));
+    await assertFails(getDocs(query(collection(db(), 'lifetrees'), where('visibility', 'in', ['public', 'node'])))); // node needs a name
+    await assertFails(getDocs(query(collection(db(MALLORY), 'lifetrees'), where('ownerId', '==', ALICE)))); // another's trees, unpinned
+    await assertFails(getDocs(query(collection(db(MALLORY), 'lifetrees'), where('visibility', 'in', ['public', 'private']))));
+  });
+  it('a pinned list is allowed: public to anyone, node to the signed-in, one\'s own to oneself, all to staff', async () => {
+    await assertSucceeds(getDocs(query(collection(db(), 'lifetrees'), where('visibility', '==', 'public'))));
+    await assertSucceeds(getDocs(query(collection(db(MALLORY), 'lifetrees'), where('visibility', 'in', ['public', 'node']))));
+    await assertSucceeds(getDocs(query(collection(db(ALICE), 'lifetrees'), where('ownerId', '==', ALICE))));
+    await assertSucceeds(getDocs(query(collection(db(STAFF), 'lifetrees'))));
+  });
+  it('a single GET keeps its own gate — a legacy tree without visibility still reads as public', async () => {
+    await assertSucceeds(getDoc(doc(db(), 'lifetrees', 'treeA')));
+    await assertFails(getDoc(doc(db(MALLORY), 'lifetrees', 'treePrivate')));
+    await assertSucceeds(getDoc(doc(db(ALICE), 'lifetrees', 'treePrivate')));
+  });
+});
+
+describe("a tree is born unvalidated — validation is witnessed, never claimed (Lumo's review, 2026-09-07)", () => {
+  it('a client cannot plant a tree already wearing validated:true or a witness', async () => {
+    await assertFails(setDoc(doc(db(MALLORY), 'lifetrees', 'selfValidated'), { ownerId: MALLORY, name: 'Mine', validated: true, validatorId: 'someone', loveCount: 0 }));
+    await assertFails(setDoc(doc(db(MALLORY), 'lifetrees', 'selfWitnessed'), { ownerId: MALLORY, name: 'Mine', validated: false, validatorId: 'someone', loveCount: 0 }));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'lifetrees', 'bornPlain'), { ownerId: MALLORY, name: 'Mine', validated: false, validatorId: null, loveCount: 0 }));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'lifetrees', 'bornBare'), { ownerId: MALLORY, name: 'Mine', loveCount: 0 }));
+  });
+  it('staff alone may plant a tree that stands validated (the genesis ceremony, nature trees)', async () => {
+    await assertSucceeds(setDoc(doc(db(STAFF), 'lifetrees', 'natureTree'), { ownerId: BOB, name: 'Old yew', validated: true, validatorId: 'SYSTEM', loveCount: 0 }));
+  });
+});
+
+describe("an offering is made FROM a tree the offerer holds (Lumo's review, 2026-09-07)", () => {
+  const offer = (fromTreeId: string) => ({ authorId: MALLORY, type: 'offering', offeringKind: 'service', title: 'A night of song', visibility: 'public', offeringActive: true,
+    offeredToKind: 'tree', offeredToId: 'treeB', offeredToKeeperUid: BOB, offeringFromTreeId: fromTreeId, offeringStatus: 'open' });
+  it("naming a stranger's tree as the source is refused — its chain is not the offerer's to move", async () => {
+    await assertFails(setDoc(doc(db(MALLORY), 'pulses', 'offerFromStranger'), offer('treeA')));
+  });
+  it('naming one\'s own tree, or a tree one co-owns, is allowed', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const d = ctx.firestore();
+      await setDoc(doc(d, 'lifetrees', 'treeM'), { ownerId: MALLORY, name: 'Mallory pine', validated: false, validatorId: null, loveCount: 0 });
+      await setDoc(doc(d, 'links', `${MALLORY}__co_owner__treeA`), { type: 'link', rel: 'co_owner', from: MALLORY, to: 'treeA' });
+    });
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'pulses', 'offerFromOwn'), offer('treeM')));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'pulses', 'offerFromCoOwned'), offer('treeA')));
+  });
+});
+
+describe("an addressed reach is born private (Lumo's review, 2026-09-07)", () => {
+  it('a reach with a recipient or a thread cannot wear a public label', async () => {
+    await assertFails(setDoc(doc(db(MALLORY), 'pulses', 'loudReach'), { authorId: MALLORY, type: 'reach', recipientUid: BOB, visibility: 'public', body: 'hi', loveCount: 0 }));
+    await assertFails(setDoc(doc(db(MALLORY), 'pulses', 'loudThread'), { authorId: MALLORY, type: 'reach', participantUids: [MALLORY, BOB], visibility: 'node', body: 'hi', loveCount: 0 }));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'pulses', 'quietReach'), { authorId: MALLORY, type: 'reach', recipientUid: BOB, participantUids: [MALLORY, BOB], visibility: 'private', body: 'hi', loveCount: 0 }));
+    // A reach addressed to no one — a public reflection — may still be public.
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'pulses', 'openReach'), { authorId: MALLORY, type: 'reach', visibility: 'public', body: 'a thought', loveCount: 0 }));
+  });
+});
+
 describe('the pulse LIST leak — provenance from the query, never per-doc (ring 2026-08-25)', () => {
   const seedFeed = () => env.withSecurityRulesDisabled(async (ctx) => {
     const d = ctx.firestore();

@@ -111,7 +111,7 @@ export interface OfferingAcceptFacts {
         standing: boolean;       // the acceptor stands for the receiver (carer / author)
         diedAtMs: number | null; // a tree that died accepts memory, not offerings
     };
-    fromTree: { exists: boolean };
+    fromTree: { exists: boolean; standing: boolean }; // standing: the OFFERER cares for it (keeper / co_owner / steward)
 }
 
 export type OfferingAcceptJudgment =
@@ -133,5 +133,10 @@ export const judgeOfferingAccept = (f: OfferingAcceptFacts): OfferingAcceptJudgm
     if (!f.receiver.standing) return reject('permission-denied', "Only the receiver's keeper, co-owners or stewards may accept it.");
     if (f.receiver.diedAtMs !== null) return reject('failed-precondition', 'A tree that has died keeps memory, not offerings.');
     if (!f.fromTree.exists) return reject('not-found', "The offerer's tree no longer exists.");
+    // Lumo's review (2026-09-07): the twin block lands on the offerer's tree and moves its head,
+    // so the offerer must hold that tree — else two hands could rewrite a third being's chain.
+    if (!f.fromTree.standing) return reject('permission-denied', 'The offerer does not care for the tree this was offered from.');
+    // A tree cannot receive from itself: twin blocks on one chain from one head would fork it.
+    if (f.offering.toKind === 'tree' && f.offering.toId === f.offering.fromTreeId) return reject('failed-precondition', 'An offering cannot be made from a tree to itself.');
     return { outcome: 'accept' };
 };

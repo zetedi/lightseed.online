@@ -234,6 +234,17 @@ service cloud.firestore {
         || (isSignedIn() && resource.data.ownerId == request.auth.uid)
         || isStaff();
     }
+    // LIST proves safety from the QUERY (the pulse lesson of ring 2026-08-25, heard for trees
+    // on 2026-09-07 — Lumo's review): default 'unlisted', so an unconstrained query is refused
+    // whole and a node- or private tree never rides an anonymous list. The get default stays
+    // public (legacy-safe); every list pins visibility, or its own ownerId, or is staff's.
+    function canListLifetree() {
+      return resource.data.get('visibility', 'unlisted') == 'public'
+        || (isSignedIn() && (
+             isStaff()
+             || resource.data.get('visibility', 'unlisted') == 'node'
+             || resource.data.get('ownerId', '') == request.auth.uid));
+    }
     function canReadVision() {
       return !('visibility' in resource.data)
         || resource.data.visibility == 'public'
@@ -496,8 +507,11 @@ service cloud.firestore {
     // Lifetrees: Read public, Write owner/staff
     match /lifetrees/{treeId} {
       // Visibility-gated reads. Missing visibility = public (legacy-safe). 'node' = any signed-in
-      // member; 'private' = owner or staff only. (List queries must filter to the same levels.)
-      allow read: if canReadLifetree();
+      // member; 'private' = owner or staff only. get = one document (legacy-absent reads as
+      // public); list = a query, proven from its constraints (canListLifetree) — fused, an
+      // anonymous unconstrained list carried node trees (Lumo's review, 2026-09-07).
+      allow get: if canReadLifetree();
+      allow list: if canListLifetree();
       // Planting is open — except a BED (domain/bed.ts), whose home is optional and SOFT:
       // it is born either HOUSED (lightHouseId set — only that Light House's keeper plants
       // one, in their own name) or LOOSE (no lightHouseId — standing at a real coordinate
@@ -513,6 +527,13 @@ service cloud.firestore {
       // signed-in client could plant a tree wearing any uid it liked.
       allow create: if isSignedIn()
         && (isStaff() || request.resource.data.get('ownerId', '') == request.auth.uid)
+        // Born UNVALIDATED (Lumo's review, 2026-09-07): validation is witnessed, never claimed
+        // at birth. Freezing `validated`/`validatorId` on update never closed the birth path —
+        // a client could plant a tree already wearing `validated: true` and an invented
+        // witness, and pass the server's validated-member checks. Staff alone (the genesis
+        // ceremony, nature trees) may plant a tree that stands validated.
+        && (isStaff() || (request.resource.data.get('validated', false) == false
+                          && request.resource.data.get('validatorId', null) == null))
         && (
         request.resource.data.get('treeType', '') != 'BED'
         || (
@@ -887,7 +908,18 @@ service cloud.firestore {
              // birth. Acceptance is the server's (functions/acceptOffering); withdraw and decline
              // are the flips below.
              && (request.resource.data.get('type', '') != 'offering'
-                 || request.resource.data.get('offeringStatus', 'open') == 'open'))
+                 || (request.resource.data.get('offeringStatus', 'open') == 'open'
+                     // …and FROM a tree the offerer CARES for (Lumo's review, 2026-09-07):
+                     // acceptance appends a block to that tree's chain and moves its head, so
+                     // the hand that names it must hold it — never a stranger's tree.
+                     && (isStaff() || !('offeringFromTreeId' in request.resource.data)
+                         || isTreeCarer(request.resource.data.offeringFromTreeId))))
+             // An ADDRESSED reach (a recipient, a thread) is born PRIVATE (Lumo's review,
+             // 2026-09-07): the get path refuses it to strangers whatever its label, but the
+             // list path proves from the label — so the label may never lie at birth.
+             && (request.resource.data.get('type', '') != 'reach'
+                 || (!('recipientUid' in request.resource.data) && !('participantUids' in request.resource.data))
+                 || request.resource.data.get('visibility', '') == 'private'))
       );
       // The append-only ledger: a pulse's identity and chain fields (hash, previousHash, authorId,
       // type, createdAt, lifetreeId, treeId, communityId, participantUids, …) are FROZEN after

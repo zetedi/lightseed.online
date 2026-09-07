@@ -1049,31 +1049,40 @@ const stayRangesOverlap = (a: { fromDate: string; toDate: string }, b: { fromDat
 // remove and rests — convergent. (In the rare case a keeper accepts two overlapping requests in
 // the very same instant, both may be declined; that is safe — a bed is never double-booked — and
 // the keeper simply re-accepts one.)
+// The event's snapshot says only that SOMETHING changed; Firebase does not order events, so a
+// withdrawal handled before a delayed acceptance would have re-published occupancy for a stay
+// that no longer stands (Lumo's review, 2026-09-07). So the handler RECONCILES: it reads the
+// stay as it is NOW and the occupancy as it is NOW, in one transaction, and makes the second
+// match the first — accepted ⇒ occupancy stands (refusing a double-booking), anything else
+// (declined, withdrawn, deleted) ⇒ occupancy is gone. Convergent whatever the order.
 export const onStayWritten = onDocumentWritten("stays/{stayId}", async (event) => {
     const before = event.data?.before?.data() as Record<string, unknown> | undefined;
     const after = event.data?.after?.data() as Record<string, unknown> | undefined;
     const stayId = event.params.stayId;
-    const wasAccepted = before?.status === "accepted";
-    const isAccepted = after?.status === "accepted";
+    const bedId = String(after?.bedId || before?.bedId || "");
+    if (!bedId) return;
     try {
-        if (isAccepted && !wasAccepted && after) {
-            const bedId = String(after.bedId || "");
-            if (!bedId) return;
-            const range = { fromDate: String(after.fromDate || ""), toDate: String(after.toDate || "") };
-            const others = await db.collection("stays")
-                .where("bedId", "==", bedId).where("status", "==", "accepted").get();
+        await db.runTransaction(async (t) => {
+            const stayRef = db.doc(`stays/${stayId}`);
+            const occRef = db.doc(`lifetrees/${bedId}/occupancy/${stayId}`);
+            const [staySnap, occSnap] = await Promise.all([t.get(stayRef), t.get(occRef)]);
+            const stay = staySnap.exists ? (staySnap.data() as Record<string, unknown>) : null;
+            if (stay?.status !== "accepted") {
+                if (occSnap.exists) t.delete(occRef);
+                return;
+            }
+            if (occSnap.exists) return; // already published for this very stay
+            const range = { fromDate: String(stay.fromDate || ""), toDate: String(stay.toDate || "") };
+            const others = await t.get(db.collection("stays").where("bedId", "==", bedId).where("status", "==", "accepted"));
             const conflict = others.docs.some(d =>
                 d.id !== stayId && stayRangesOverlap(d.data() as { fromDate: string; toDate: string }, range));
             if (conflict) {
-                await event.data!.after!.ref.update({ status: "declined" });
+                t.update(stayRef, { status: "declined" });
                 console.warn(`Bed double-booking refused: stay ${stayId} on bed ${bedId} overlaps an accepted stay — declined.`);
                 return;
             }
-            await db.doc(`lifetrees/${bedId}/occupancy/${stayId}`).set(range);
-        } else if (wasAccepted && !isAccepted && before) {
-            const bedId = String(before.bedId || "");
-            if (bedId) await db.doc(`lifetrees/${bedId}/occupancy/${stayId}`).delete().catch(() => { /* already gone */ });
-        }
+            t.set(occRef, range);
+        });
     } catch (e) {
         console.error(`onStayWritten failed for ${stayId}:`, e);
     }
@@ -2854,6 +2863,14 @@ export const acceptOffering = onCall({ cors: true }, async (request) => {
         }
         const fromTreeSnap = fromTreeId ? await t.get(db.doc(`lifetrees/${fromTreeId}`)) : null;
         const fromTree = fromTreeSnap?.exists ? (fromTreeSnap.data() as Record<string, any>) : null;
+        // The OFFERER's standing over the source tree (Lumo's review, 2026-09-07): the twin block
+        // lands on that chain and moves its head, so the offerer must be its keeper, co-owner or
+        // steward — read here, inside the transaction, never trusted from the offering's words.
+        let fromStanding = false;
+        if (fromTree && authorId) {
+            const fromLinks = await Promise.all(["co_owner", "steward"].map((rel) => t.get(db.doc(`links/${authorId}__${rel}__${fromTreeId}`))));
+            fromStanding = fromTree.ownerId === authorId || fromLinks.some((l) => l.exists);
+        }
 
         const judgment = judgeOfferingAccept({
             acceptorUid,
@@ -2863,7 +2880,7 @@ export const acceptOffering = onCall({ cors: true }, async (request) => {
                 standing,
                 diedAtMs: receiver?.diedAt && typeof receiver.diedAt.toMillis === "function" ? receiver.diedAt.toMillis() : null,
             },
-            fromTree: { exists: !!fromTree },
+            fromTree: { exists: !!fromTree, standing: fromStanding },
         });
         if (judgment.outcome === "reject") throw new HttpsError(judgment.code, judgment.message);
         if (!receiver || !fromTree || !toKind) throw new HttpsError("failed-precondition", "The sides of this offering could not be read.");

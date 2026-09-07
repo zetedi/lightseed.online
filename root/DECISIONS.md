@@ -6,6 +6,29 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-07 · Lumo's review at 0bb7d58: the invariants were stronger than the rules** — six
+findings, each verified against the real code before it was believed, four reproduced by Lumo
+under the emulator and one confirmed by Aspen against production (an anonymous unconstrained
+list of `lifetrees` answered 33 trees, two of them node-visible). (1) HIGH, trees: the fused
+`allow read` let a list ride the get's legacy-public default — now get/list are split like the
+pulses' (canListLifetree, default 'unlisted'; every client list already pins visibility or its
+own ownerId). (2) HIGH, offerings: acceptance checked only that the source tree EXISTS, so two
+ordinary hands could append a block to a third being's chain and move its head — now the law
+(domain/offering + the functions mirror) demands the offerer's standing over the source tree,
+read inside the transaction, and the birth rule demands the same (isTreeCarer). (3) HIGH,
+planting: `validated`/`validatorId` were frozen on update but free at birth — now a tree is
+born unvalidated from every hand but staff's. (4) MEDIUM: an offering from a tree to itself
+would have minted twin blocks from one head — refused. (5) MEDIUM, stays: the occupancy handler
+trusted the event's snapshot in a system that does not order events — now it reconciles the
+occupancy against the stay as it IS, in one transaction, convergent whatever the order.
+(6) MEDIUM, reaches: an addressed reach is born private, so the list path (which proves from
+the label) can never contradict the get path; legacy mislabelled records, if any, still want a
+backfill. Eight new rules tests (212), the offering law's tests extended. The lesson, in Lumo's
+words: enforcement consistency — a creation rule, a list rule and a server handler must each
+carry the whole invariant, not lean on a sibling that carries it.
+
+---
+
 **2026-09-07 · The host's events are the place's, and the stamp is the place of record** —
 the keeper of Enlightened Nations saw no events on the crown's Events tab. Two roots. The
 community's name is `seed.enlightenednations.org` (not yet served) while the face's door is
