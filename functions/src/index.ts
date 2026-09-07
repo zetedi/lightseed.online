@@ -1558,6 +1558,13 @@ const mintKeeperLinks = (tx: FirebaseFirestore.Transaction, uid: string, communi
             createdAt: FieldValue.serverTimestamp(),
         }, { merge: true });
     }
+    // THE KEEPER MIRROR (ring 2026-09-07): `keeperUids` on the community document is a
+    // server-kept INDEX of the keeper links — never the relationship itself (the LIN link is)
+    // — written here and unwritten in resignKeeper, frozen against client hands in
+    // firestore.rules. It exists for storage.rules alone: a Storage evaluation may read at most
+    // two Firestore documents, and the staff lookup already spends one, so the keeper's proof
+    // must ride on the community document it reads anyway.
+    tx.set(db.collection("communities").doc(communityId), { keeperUids: FieldValue.arrayUnion(uid) }, { merge: true });
 };
 
 // The invitee ACCEPTS a keeper offer (communityKeeperInvites) — consent, never appointment.
@@ -1646,11 +1653,12 @@ export const resignKeeper = onCall({ cors: true }, async (request) => {
             if (keeperLinks.length === 0) throw new HttpsError("failed-precondition", "last_keeper");
             const successor = [...keeperLinks].sort((a, b) =>
                 a.createdAtMs - b.createdAtMs || (a.from < b.from ? -1 : a.from > b.from ? 1 : 0))[0];
-            tx.update(communityRef, { ownerId: successor.from, updatedAt: FieldValue.serverTimestamp() });
+            tx.update(communityRef, { ownerId: successor.from, keeperUids: FieldValue.arrayRemove(successor.from), updatedAt: FieldValue.serverTimestamp() });
             tx.delete(successor.ref); // the successor IS the anchor now; the link would double-count them
             return { resigned: uid, successor: successor.from };
         }
         tx.delete(ownLink!.ref); // ownerId remains — never keeperless by construction
+        tx.update(communityRef, { keeperUids: FieldValue.arrayRemove(uid), updatedAt: FieldValue.serverTimestamp() });
         return { resigned: uid, successor: null };
     });
 });

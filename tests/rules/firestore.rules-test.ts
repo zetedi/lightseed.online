@@ -284,6 +284,16 @@ describe('community joining — anyone knocks as themselves; only the keeper ope
   });
 });
 
+describe("the keeper mirror is the server's alone (ring 2026-09-07)", () => {
+  it('no client hand writes keeperUids — not at birth, not after, not even staff; the server alone', async () => {
+    await assertFails(setDoc(doc(db(MALLORY), 'communities', 'bornWithKeepers'), { ownerId: MALLORY, name: 'Mine', domain: 'm.org', keeperUids: [MALLORY], loveCount: 0 }));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'communities', 'bornPlain'), { ownerId: MALLORY, name: 'Mine', domain: 'm.org', loveCount: 0 }));
+    await assertFails(updateDoc(doc(db(MALLORY), 'communities', 'bornPlain'), { keeperUids: [MALLORY, BOB] }));
+    await assertSucceeds(updateDoc(doc(db(MALLORY), 'communities', 'bornPlain'), { name: 'Renamed' }));
+    await assertFails(updateDoc(doc(db(STAFF), 'communities', 'bornPlain'), { keeperUids: [BOB] })); // frozen like ownerId — the Admin SDK's hand only
+  });
+});
+
 describe('community reflection — the keeper alone opens the canopy', () => {
   it('the owner may choose or close reflection; a stranger cannot choose for them', async () => {
     await assertSucceeds(updateDoc(doc(db(ALICE), 'communities', 'com1'), { reflectsPublic: true }));

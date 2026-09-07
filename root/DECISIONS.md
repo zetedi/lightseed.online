@@ -6,6 +6,28 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-07 · The two-document budget: why no keeper could ever upload** — the keeper of a
+new face was refused a logo upload (storage/unauthorized) hours after the storage rule had
+been widened to keeper links. The emulator allowed the very same shape. A production probe
+(a throwaway password user, a keeper link, a real upload, all cleaned up) showed even a
+community's OWNER refused — while a write to the user's own folder passed. The cause is a
+documented limit the emulator does not enforce: a Storage rules evaluation may read at most
+TWO Firestore documents across every matching rule, and a third denies the whole request.
+Our staff lookup alone spent two (config/superadmin, admins/{uid}) before the owner's or
+keeper's proof was read — so since the day storage rules first asked Firestore, only staff
+had ever written under communities/. Now: staff is the `admin` token claim (free) or the one
+superadmin document; each match names what it spends; and the keeper's proof rides on the
+community document itself — `keeperUids`, a server-kept MIRROR of the keeper links (written
+in mintKeeperLinks, unwritten in resignKeeper, frozen against every client hand including
+staff in firestore.rules, backfilled for the two keepers that stood). This is a derived index
+for a budget, never the relationship: the LIN link remains the truth, as the beings index is
+to the lid. Probed after deploy: own folder, owner, keeper — all allowed; a stranger refused.
+REJECTED: a custom admin claim as the only staff channel (a token refresh away from locking
+the keeper out); testing storage rules only in the emulator (it cannot see this limit — a
+production probe with cleanup is the honest test).
+
+---
+
 **2026-09-07 · The letter carries its sender's name where the courier reads it** — every mail
 had reached its reader as a bare "admin@lightseed.online", whatever name the charter, the
 Workspace directory or Gmail's send-as carried. Not Gmail's doing: the Trigger Email extension

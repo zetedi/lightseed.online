@@ -1,59 +1,59 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Helper to check if user is a staff member
+    // THE TWO-DOCUMENT BUDGET (ring 2026-09-07). A Storage rules evaluation may touch at most
+    // TWO Firestore documents (firestore.get / firestore.exists; repeat calls on one document
+    // are cached and free) — a third denies the whole request. The emulator does not enforce
+    // it. The old rules spent two on the staff lookup alone (config/superadmin, admins/{uid}),
+    // so every non-staff write under communities/ — an owner's logo, a keeper's hero — was
+    // refused in production while passing in the emulator. Now each match names the documents
+    // it spends, and staff is read first from the ID token (custom claim `admin`, the same
+    // claim firestore.rules isStaff honours), which costs none.
+
+    // Staff: the `admin` claim (free), else the node's one superadmin (one document).
     function isStaff() {
-      return request.auth != null && 
-        ((firestore.exists(/databases/(default)/documents/config/superadmin) &&
-          firestore.get(/databases/(default)/documents/config/superadmin).data.uid == request.auth.uid) || 
-         firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid)));
-    }
-
-    // "Owns" means KEEPS (ring 2026-08-12, mirrored here 2026-09-07): the founding ownerId or
-    // any `keeper` link holder — the same peers firestore.rules lets edit the community. Until
-    // this mirror, a keeper who had not founded the community could change its hero or logo
-    // in the document but never upload the picture: the write under communities/ was refused.
-    function ownsCommunity(communityId) {
       return request.auth != null && (
-        (firestore.exists(/databases/(default)/documents/communities/$(communityId)) &&
-         firestore.get(/databases/(default)/documents/communities/$(communityId)).data.ownerId == request.auth.uid)
-        || firestore.exists(/databases/(default)/documents/links/$(request.auth.uid + '__keeper__' + communityId))
-      );
+        request.auth.token.admin == true
+        || firestore.get(/databases/(default)/documents/config/superadmin).data.uid == request.auth.uid);
     }
 
-    // Global rules for reading and staff writing
+    // Everyone may read every picture; staff may write anywhere.
     match /{allPaths=**} {
-      // Allow public reading of all images
       allow read: if true;
-      // Allow staff to write anywhere (for administrative tasks)
       allow write: if isStaff();
     }
 
-    // Specific rules for user-owned folders
     // The OLD name, kept: an auth uid is local to this auth provider and dies with it, but
     // everything filed here still resolves, and nothing has to move (the docs store absolute
-    // download URLs, not paths). New writes go to beings/{lid} below.
+    // download URLs, not paths). New writes go to beings/{lid} below. (No documents spent.)
     match /users/{userId}/{allPaths=**} {
-      // Allow users to write to their own folder
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
     // FILED UNDER THE TRUE NAME (ring 2026-08-09). A lid is portable across nodes and years; a
     // uid is not, and storage is the part most likely to outlive both the auth provider and the
     // database. The credential says uid, so proving the lid costs one Firestore read — the price
-    // of a name that survives. A being may write only under its OWN true name.
+    // of a name that survives. A being may write only under its OWN true name. (One document.)
     match /beings/{lid}/{allPaths=**} {
       allow write: if request.auth != null
         && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.lid == lid;
     }
 
-    // Community owners can manage their own white-label assets and event galleries
+    // A community's assets — logo, hero, gallery, events, pages — are written by the hands that
+    // KEEP it: the founding ownerId, or any `keeper` link holder (ring 2026-08-12, the same peers
+    // firestore.rules lets edit the community document). ONE document: the community, whose
+    // `keeperUids` is the server-kept mirror of its keeper links (functions mintKeeperLinks /
+    // resignKeeper; frozen against clients in firestore.rules) — with the staff lookup above,
+    // exactly the two the budget allows. Reading the link itself was a third, and denied.
     match /communities/{communityId}/{allPaths=**} {
-      allow write: if isStaff() || ownsCommunity(communityId);
+      allow write: if request.auth != null && (
+        firestore.get(/databases/(default)/documents/communities/$(communityId)).data.ownerId == request.auth.uid
+        || request.auth.uid in firestore.get(/databases/(default)/documents/communities/$(communityId)).data.get('keeperUids', [])
+      );
     }
 
     // Org-collab logos — adding an org is member-wide (see firestore collabs rules), so any
-    // signed-in member may upload a logo for one.
+    // signed-in member may upload a logo for one. (No documents spent.)
     match /collabs/{allPaths=**} {
       allow write: if request.auth != null;
     }
