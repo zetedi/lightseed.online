@@ -9,10 +9,16 @@ service firebase.storage {
          firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid)));
     }
 
+    // "Owns" means KEEPS (ring 2026-08-12, mirrored here 2026-09-07): the founding ownerId or
+    // any `keeper` link holder — the same peers firestore.rules lets edit the community. Until
+    // this mirror, a keeper who had not founded the community could change its hero or logo
+    // in the document but never upload the picture: the write under communities/ was refused.
     function ownsCommunity(communityId) {
-      return request.auth != null &&
-        firestore.exists(/databases/(default)/documents/communities/$(communityId)) &&
-        firestore.get(/databases/(default)/documents/communities/$(communityId)).data.ownerId == request.auth.uid;
+      return request.auth != null && (
+        (firestore.exists(/databases/(default)/documents/communities/$(communityId)) &&
+         firestore.get(/databases/(default)/documents/communities/$(communityId)).data.ownerId == request.auth.uid)
+        || firestore.exists(/databases/(default)/documents/links/$(request.auth.uid + '__keeper__' + communityId))
+      );
     }
 
     // Global rules for reading and staff writing

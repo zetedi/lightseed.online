@@ -6,6 +6,23 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-07 · The keeper's hand reaches the bucket, and a colour has two mouths** — a keeper
+who had not founded her community changed its hero in Appearance and nothing changed: the
+document's rule had made keepers full peers on 2026-08-12, but `storage.rules` still let only
+the founding `ownerId` write under `communities/<id>/`, so the picture's upload was refused
+before the document was ever touched — and the refusal spoke only in the small status line
+beside Save. Now the storage rule mirrors the document's (`ownerId` OR a `keeper` link), and a
+refused upload speaks through the toast. The lesson is the Firestore rule's own comment, heard
+late: extending ONE function is what makes peers peers everywhere — and storage.rules is one
+of the everywheres; it has no rule tests yet (test:rules runs Firestore alone), which is how
+the mirror stayed unheld for a month. The same evening the palette got a second mouth: a hex
+field beside every picker (domain/color.normalizeHex — #abc, ABC, #AABBCC settle to #rrggbb;
+a half-typed code stays in the field, never in the theme), the picker and the hand following
+each other. REJECTED: a wider storage rule (any signed-in member) — the bucket's write law
+must be exactly the document's, no looser.
+
+---
+
 **2026-09-06 · The charter: a node says what it is, and a second node is an afternoon** —
 the keeper asked what the code needs to live on thousands of nodes, and the first answer was
 that it could not yet live on TWO: eleven canonical hosts, a bucket, a push key, a keeper's

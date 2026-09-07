@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { communityThemePresets, normalizeTheme, themeEquals, type CommunityThemePreset } from '../../utils/theme';
+import { normalizeHex } from '../../domain/color';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 export type ThemeValue = ReturnType<typeof normalizeTheme>;
@@ -29,6 +30,14 @@ export const ThemeEditor = ({ value, onChange, defaultTheme }: { value: ThemeVal
   // The per-colour pickers reveal once the value is custom, or as soon as the user opens the editor
   // by clicking a preset / Custom — so picking a preset brings up its colours, prefilled, to tweak.
   const [expanded, setExpanded] = useState(isCustom);
+  // The hex field beside each picker (ring 2026-09-07): what the hand is typing, per colour,
+  // until it settles. A lawful code reaches the theme at once (so the picker follows the hand);
+  // a half-typed one stays in the field, never in the theme; blur snaps the field back to the
+  // theme's own spelling. A picker change or a preset clears the drafts, so the hand follows
+  // the eye in turn.
+  const [drafts, setDrafts] = useState<Partial<Record<string, string>>>({});
+  const setColor = (key: keyof CommunityThemePreset, hex: string) => onChange(normalizeTheme({ ...value, [key]: hex }));
+  const pick = (theme: ThemeValue) => { setDrafts({}); onChange(theme); };
 
   return (
     <div className="space-y-4">
@@ -36,7 +45,7 @@ export const ThemeEditor = ({ value, onChange, defaultTheme }: { value: ThemeVal
         {communityThemePresets.map((preset) => {
           const active = activePreset?.id === preset.id;
           return (
-            <button key={preset.id} type="button" onClick={() => { onChange(normalizeTheme(preset)); setExpanded(true); }} className={`w-full rounded-2xl border p-3 text-left transition-all ${active ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}>
+            <button key={preset.id} type="button" onClick={() => { pick(normalizeTheme(preset)); setExpanded(true); }} className={`w-full rounded-2xl border p-3 text-left transition-all ${active ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}>
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="text-sm font-bold text-slate-800">{preset.name}</div>
@@ -71,7 +80,7 @@ export const ThemeEditor = ({ value, onChange, defaultTheme }: { value: ThemeVal
       {/* Reset to this node's default theme — the theme this profile/community inherits when it
           isn't overridden. Only shown when a default is supplied and the value has drifted from it. */}
       {defaultTheme && !themeEquals(value, defaultTheme) && (
-        <button type="button" onClick={() => onChange(normalizeTheme(defaultTheme))} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:border-emerald-300 hover:text-emerald-700">
+        <button type="button" onClick={() => pick(normalizeTheme(defaultTheme))} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:border-emerald-300 hover:text-emerald-700">
           <span aria-hidden>↺</span> {t('theme_reset_default')}
         </button>
       )}
@@ -89,10 +98,29 @@ export const ThemeEditor = ({ value, onChange, defaultTheme }: { value: ThemeVal
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {CUSTOM_FIELDS.map(([key, label]) => (
-              <label key={key} className="space-y-1">
-                <span className="text-[10px] font-bold uppercase text-slate-400">{t(label as any)}</span>
-                <input type="color" value={(value as any)[key]} onChange={e => onChange(normalizeTheme({ ...value, [key]: e.target.value }))} className="block h-10 w-full cursor-pointer rounded-lg border border-slate-200 bg-white p-1" />
-              </label>
+              <div key={key} className="space-y-1">
+                <label className="block space-y-1">
+                  <span className="text-[10px] font-bold uppercase text-slate-400">{t(label as any)}</span>
+                  <input type="color" value={(value as any)[key]} onChange={e => { setDrafts(d => ({ ...d, [key]: undefined })); setColor(key, e.target.value); }} className="block h-10 w-full cursor-pointer rounded-lg border border-slate-200 bg-white p-1" />
+                </label>
+                <input
+                  type="text"
+                  inputMode="text"
+                  spellCheck={false}
+                  maxLength={7}
+                  aria-label={`${t(label as any)} — ${t('color_hex')}`}
+                  placeholder="#rrggbb"
+                  value={drafts[key] ?? (value as any)[key]}
+                  onChange={e => {
+                    const typed = e.target.value;
+                    setDrafts(d => ({ ...d, [key]: typed }));
+                    const hex = normalizeHex(typed);
+                    if (hex && hex !== (value as any)[key]) setColor(key, hex);
+                  }}
+                  onBlur={() => setDrafts(d => ({ ...d, [key]: undefined }))}
+                  className={`block h-8 w-full rounded-lg border bg-white px-2 font-mono text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 ${drafts[key] !== undefined && !normalizeHex(drafts[key]) ? 'border-red-300' : 'border-slate-200'}`}
+                />
+              </div>
             ))}
           </div>
         </div>

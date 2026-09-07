@@ -427,6 +427,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     } catch (e: any) {
       console.error(e);
       setStatus(e?.message || 'Failed to upload logo.');
+      notify(speak('err_upload'), 'error');
     }
     setIsUploadingLogo(false);
   };
@@ -442,6 +443,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     } catch (e: any) {
       console.error(e);
       setStatus(e?.message || 'Failed to upload hero image.');
+      notify(speak('err_upload'), 'error');
     }
     setIsUploadingHero(false);
   };
@@ -454,6 +456,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     } catch (e: any) {
       console.error(e);
       setStatus(e?.message || 'Failed to upload image.');
+      notify(speak('err_upload'), 'error');
     }
     setIsUploadingImage(false);
   };
