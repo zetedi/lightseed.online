@@ -364,7 +364,7 @@ export const MembershipPathSection = () => {
         e.preventDefault();
         setSubmitting(true);
         try {
-            await subscribeToNewsletter(email);
+            await subscribeToNewsletter(email, window.location.hostname);
             notify(`🌱 ${t('subscribed_success')} ${email}`);
             setShowSubModal(false);
         } catch (e) { showAlert(t('subscription_failed')); }

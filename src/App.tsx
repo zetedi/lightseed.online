@@ -912,6 +912,7 @@ const AppContent = () => {
             return (
                 <LightseedProfile
                     placeDomain={placeOfRecordDomain(impersonatedCommunity || hostCommunity, window.location.hostname)}
+                    placeName={(impersonatedCommunity || hostCommunity)?.name}
                     onViewTree={(tree: Lifetree, section?: string) => { setTreeSectionHint(section || null); setSelectedTree(tree); }}
                     onDeleteTree={handleDeleteTree}
                     defaultTreeId={defaultTreeId}
@@ -939,7 +940,10 @@ const AppContent = () => {
         }
 
         if (tab === 'newsletter' && lightseed && isSuperAdmin) {
-            return <NewsletterAdmin senderUid={lightseed.uid} onBack={() => setTab('profile')} />;
+            // The node's own letter from the profile's admin door; a face's letter is written on its community page.
+            const letterPlace = impersonatedCommunity || hostCommunity || defaultCommunity;
+            if (!letterPlace) return <div className="min-h-screen flex items-center justify-center"><Loading /></div>;
+            return <NewsletterAdmin community={letterPlace} onBack={() => setTab('profile')} />;
         }
         
         if (tab === 'about') {

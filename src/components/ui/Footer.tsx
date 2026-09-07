@@ -4,6 +4,10 @@ import type { Community } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { headerSurface } from '../../domain/themeSurface';
 import { LegalModal, type LegalDoc } from './LegalModal';
+import { subscribeToNewsletter } from '../../services/firebase';
+import { isSubscriberEmail } from '../../domain/newsletter';
+import { notify } from './Toast';
+import { speak } from '../../utils/translations';
 
 // Normalise a stored value (a full URL, a @handle, or a phone number) into a link.
 const toUrl = (raw: string | undefined, kind: 'instagram' | 'telegram' | 'whatsapp' | 'website'): string => {
@@ -34,6 +38,26 @@ export const Footer = ({ community, theme, isDark = false }: { community?: Commu
   const year = `2019–${new Date().getFullYear()}`;
 
   const [legalDoc, setLegalDoc] = useState<LegalDoc | null>(null);
+
+  // THE LETTER OF A PLACE (ring 2026-09-08): the footer is where a visitor subscribes — to the
+  // letter of the place they stand on (the host community's canonical domain), never to a
+  // node-wide list. Unsubscribing lives in each letter (one click) and in the profile.
+  const place = community?.domain || (typeof window !== 'undefined' ? window.location.hostname : '');
+  const [email, setEmail] = useState('');
+  const [subscribing, setSubscribing] = useState(false);
+  const subscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isSubscriberEmail(email)) { notify(speak('invalid_email'), 'error'); return; }
+    setSubscribing(true);
+    try {
+      await subscribeToNewsletter(email, place);
+      notify(`🌱 ${speak('subscribed_success')} ${email.trim()}`);
+      setEmail('');
+    } catch {
+      notify(speak('subscription_failed'), 'error');
+    }
+    setSubscribing(false);
+  };
   const legal: { doc: LegalDoc; label: string }[] = [
     { doc: 'privacy', label: t('privacy') },
     { doc: 'terms', label: t('terms') },
@@ -56,6 +80,19 @@ export const Footer = ({ community, theme, isDark = false }: { community?: Commu
               </a>
             ))}
           </div>
+        )}
+
+        {/* The letter of this place — subscribe here; unsubscribe in the letter or the profile. */}
+        {place && (
+          <form onSubmit={subscribe} className="flex w-full max-w-sm flex-col items-center gap-1.5">
+            <label htmlFor="footer-subscribe" className="text-[11px]" style={{ color: surface.muted }}>{t('footer_subscribe_label').replace('{place}', name)}</label>
+            <div className="flex w-full items-center gap-2">
+              <input id="footer-subscribe" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t('footer_subscribe_ph')} autoComplete="email" disabled={subscribing}
+                     className={`h-9 min-w-0 flex-1 rounded-full border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 ${surface.isDark ? 'bg-white/10 text-white placeholder-white/50' : 'bg-white text-slate-800 placeholder-slate-400'}`}
+                     style={{ borderColor: surface.border }} />
+              <button type="submit" disabled={subscribing || !email} className="h-9 shrink-0 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50">{t('footer_subscribe_cta')}</button>
+            </div>
+          </form>
         )}
 
         {/* The brand line, below the socials, in the middle. */}

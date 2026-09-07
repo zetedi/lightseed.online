@@ -45,6 +45,7 @@ import { Picture } from './ui/Picture';
 import { nodeDomains } from '../config/charter';
 import { useAutosave } from '../hooks/useAutosave';
 import { COMMUNITY_APPEARANCE_FIELDS, reconcile } from '../domain/autosave';
+import { NewsletterAdmin } from './NewsletterAdmin';
 interface CommunityProfileProps {
   community: Community;
   // An invitation the viewer arrived holding (/i/<id>) — the door greets them by it.
@@ -731,6 +732,12 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       {
         key: 'intelligence', label: 'Intelligence', icon: <Icons.Intelligence />, render: () => (
           <CommunityIntelligence community={community} canEdit={canEdit} currentUserId={currentUserId} onUpdate={onUpdate} />
+        ),
+      },
+      {
+        // The letter of this place — its keepers write it here, to those who subscribed at the place.
+        key: 'letter', label: t('newsletter'), icon: <Icons.Send />, render: () => (
+          <NewsletterAdmin community={community} embedded onBack={() => setSection('vision')} />
         ),
       },
       {

@@ -20,6 +20,7 @@ import { ProfileLight } from './profile/ProfileLight';
 import { ProfilePulses } from './profile/ProfilePulses';
 import { ProfileEvents } from './profile/ProfileEvents';
 import { ProfileName } from './profile/ProfileName';
+import { charter } from '../config/charter';
 import { ProfileVisions } from './profile/ProfileVisions';
 import { ProfileHistory } from './profile/ProfileHistory';
 import { ProfileStays } from './profile/ProfileStays';
@@ -52,15 +53,16 @@ interface LightseedProfileProps {
     onOpenTreeById?: (treeId: string) => void;
     onOpenCareById?: (treeId: string) => void;
     nodeTheme?: Partial<CommunityThemePreset>;
-    // The place of record for an event planted from here (the host's canonical domain).
+    // The place of record for an event planted from here (the host's canonical domain), and its name.
     placeDomain?: string;
+    placeName?: string;
 }
 
 // The profile shell: hero + section menu, rendered through BeingProfile (the one face for every
 // being). Session state (the lightseed), the active tab and the live-profile-listener state live
 // here; each tab's own data and handlers live in its component under ./profile (mirroring the
 // CommunityProfile split).
-export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSetDefaultTree, onViewVision, onViewPulse, onViewAlignment, onPlant, onCreateVision, onEmitPulse, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachAudience, reachOpenSignal, onConsumeReach, onReachTree, onOpenTreeById, onOpenCareById, nodeTheme, placeDomain }: LightseedProfileProps) => {
+export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSetDefaultTree, onViewVision, onViewPulse, onViewAlignment, onPlant, onCreateVision, onEmitPulse, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachAudience, reachOpenSignal, onConsumeReach, onReachTree, onOpenTreeById, onOpenCareById, nodeTheme, placeDomain, placeName }: LightseedProfileProps) => {
     const { t } = useLanguage();
     // Session state comes from context now (was prop-drilled from App).
     const { lightseed, myTrees, guardedTrees, tendedTrees, isAdmin, isSuperAdmin, superAdminExists } = useSession();
@@ -86,7 +88,10 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
             if (data && typeof data.invitesRemaining === 'number') {
                 setInvitesRemaining(data.invitesRemaining);
             }
-            setNewsletterSubscribed(Boolean(data?.newsletterSubscribed));
+            // The letter of the PLACE the profile stands on: newsletterPlaces[domain], the legacy
+            // boolean standing in for the node's own letter.
+            const places = (data?.newsletterPlaces || {}) as Record<string, boolean>;
+            setNewsletterSubscribed(placeDomain && placeDomain in places ? Boolean(places[placeDomain]) : Boolean(data?.newsletterSubscribed) && (!placeDomain || placeDomain === charter.domain));
             // Direct-message email notifications are enabled unless explicitly turned off.
             setDmEmailNotifications(data?.emailNotifications?.directMessages !== false);
             setOnlyValidatedCanReachState(Boolean(data?.onlyValidatedCanReach));
@@ -97,7 +102,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
             setPreferredIntelligenceId(data?.preferredIntelligenceId || DEFAULT_INTELLIGENCE_ID);
         });
         return () => unsub();
-    }, [lightseed]);
+    }, [lightseed, placeDomain]);
 
     // Opening the inbox (red envelope) or a specific reach jumps to the Reaches tab.
     useEffect(() => {
@@ -303,6 +308,8 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                     onOnlyValidatedChange={setOnlyValidatedCanReachState}
                     newsletterSubscribed={newsletterSubscribed}
                     onNewsletterChange={setNewsletterSubscribed}
+                    placeDomain={placeDomain || charter.domain}
+                    placeName={placeName || charter.name}
                     dmEmailNotifications={dmEmailNotifications}
                     onDmEmailChange={setDmEmailNotifications}
                     notify={setDialogMessage}

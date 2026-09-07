@@ -284,6 +284,32 @@ describe('community joining — anyone knocks as themselves; only the keeper ope
   });
 });
 
+describe('the letter of a place — a subscription names its place (ring 2026-09-08)', () => {
+  const ANA = 'ana-uid';
+  const anaDb = () => env.authenticatedContext(ANA, { email: 'ana@x.org' }).firestore();
+  it('anyone may subscribe an address at a place; a row without a place or address is refused; no client mints a token', async () => {
+    await assertSucceeds(setDoc(doc(db(), 'subscriptions', 'theohouse.org__ana%40x.org'), { email: 'ana@x.org', domain: 'theohouse.org', active: true }));
+    await assertFails(setDoc(doc(db(), 'subscriptions', 'nowhere__ana'), { email: 'ana@x.org', active: true }));
+    await assertFails(setDoc(doc(db(), 'subscriptions', 'theohouse.org__nobody'), { domain: 'theohouse.org', active: true }));
+    await assertFails(setDoc(doc(db(), 'subscriptions', 'theohouse.org__forged'), { email: 'x@x.org', domain: 'theohouse.org', active: true, unsubToken: 'mine' }));
+  });
+  it('a being reads and rests the rows carrying its own address, never another\'s; the stamps stay', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'subscriptions', 'theohouse.org__ana%40x.org'), { email: 'ana@x.org', domain: 'theohouse.org', active: true, unsubToken: 'tok' });
+    });
+    await assertSucceeds(getDoc(doc(anaDb(), 'subscriptions', 'theohouse.org__ana%40x.org')));
+    await assertFails(getDoc(doc(db(MALLORY), 'subscriptions', 'theohouse.org__ana%40x.org')));
+    await assertSucceeds(updateDoc(doc(anaDb(), 'subscriptions', 'theohouse.org__ana%40x.org'), { active: false }));
+    await assertFails(updateDoc(doc(anaDb(), 'subscriptions', 'theohouse.org__ana%40x.org'), { domain: 'lightseed.online' }));
+    await assertFails(updateDoc(doc(anaDb(), 'subscriptions', 'theohouse.org__ana%40x.org'), { unsubToken: 'forged' }));
+    await assertFails(updateDoc(doc(db(MALLORY), 'subscriptions', 'theohouse.org__ana%40x.org'), { active: false }));
+    await assertSucceeds(getDocs(query(collection(db(STAFF), 'subscriptions'))));
+  });
+  it('the letter\'s stamps on a community are the server\'s', async () => {
+    await assertFails(updateDoc(doc(db(ALICE), 'communities', 'com1'), { newsletterLastSentAt: Timestamp.now() }));
+  });
+});
+
 describe("the keeper mirror is the server's alone (ring 2026-09-07)", () => {
   it('no client hand writes keeperUids — not at birth, not after, not even staff; the server alone', async () => {
     await assertFails(setDoc(doc(db(MALLORY), 'communities', 'bornWithKeepers'), { ownerId: MALLORY, name: 'Mine', domain: 'm.org', keeperUids: [MALLORY], loveCount: 0 }));

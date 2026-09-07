@@ -15,6 +15,7 @@ import { judgeWitness, kindleDayKeyFromMs, uuidv7, releaseRay } from "./mint";
 import { entryFor, COLLECTION_FOR_KIND } from "./beingIndex";
 import { faceFeedOf, feedDomainOf } from "./faceEvents";
 import { charter, charterHosts, NODE_ORIGIN, mailFromOf, charterOwnDomains } from "./charter";
+import { audienceOf, newsletterSendRefusal } from "./newsletter";
 import { notificationOf } from "./push";
 import { defineSecret } from "firebase-functions/params";
 import webpush from "web-push";
@@ -534,7 +535,6 @@ export const activateSigningKeyRecovery = onCall({ cors: true }, async request =
 // html / attachments from `message`. For months these rode inside `message`, so every mail
 // fell back to the extension's bare default sender — recipients saw "admin@lightseed.online"
 // with no name — and the newsletter's List-Unsubscribe headers never left the queue.
-const EMAIL_FROM = charter.mail.from;
 
 // The PLACE a mail is triggered at — the community rooted at a domain, or answering at one of
 // its doors (the getCommunityByDomain fallback) — so the sender may wear its name
@@ -2157,38 +2157,55 @@ const NEWSLETTER_POSTAL_ADDRESS = "The O House, Bigeh Island, Aswan, Egypt";
 // Writes are committed in throttled batches so a large list doesn't hammer Firestore at once.
 export const sendNewsletterEmails = onCall({ timeoutSeconds: 300, memory: "512MiB", cors: true }, async (request) => {
     if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
-    if (!(await isStaffUid(request.auth.uid))) throw new HttpsError("permission-denied", "Staff only.");
+    const uid = request.auth.uid;
     const subject = String(request.data?.subject || "").trim();
     const html = String(request.data?.html || "").trim();
+    const communityId = String(request.data?.communityId || "").trim();
     if (!subject || !html) throw new HttpsError("invalid-argument", "Subject and content are required.");
+    if (!communityId) throw new HttpsError("invalid-argument", "A place is required.");
 
-    // Authoritative send list: the `subscriptions` collection where active === true.
-    const subsSnap = await db.collection("subscriptions").get();
-    const subs = subsSnap.docs.filter(d => { const s = d.data() as any; return s.email && s.active === true; });
-    if (subs.length === 0) throw new HttpsError("failed-precondition", "No active subscribers.");
+    // THE LETTER OF A PLACE (ring 2026-09-08, domain/newsletter mirrored in ./newsletter): the
+    // letter is the community's; its keepers (the founding ownerId or a keeper link) send it,
+    // the node's staff send the node's own; the audience is those who SUBSCRIBED at the place.
+    const communitySnap = await db.collection("communities").doc(communityId).get();
+    if (!communitySnap.exists) throw new HttpsError("not-found", "That place does not exist.");
+    const community = communitySnap.data() as Record<string, any>;
+    const home = String(community.domain || "").toLowerCase();
+    const keeperLink = await db.collection("links").doc(`${uid}__keeper__${communityId}`).get();
+    const isKeeper = community.ownerId === uid || keeperLink.exists;
+    const isStaff = await isStaffUid(uid);
+    const isNodePlace = charterOwnDomains(charter).includes(home);
 
+    const subsSnap = await db.collection("subscriptions").where("domain", "==", home).get();
+    type SubRow = { ref: FirebaseFirestore.DocumentReference; email?: unknown; active?: unknown; domain?: unknown; unsubToken?: unknown; uid?: unknown };
+    const subs = audienceOf(subsSnap.docs.map((d): SubRow => ({ ref: d.ref, ...(d.data() as Record<string, unknown>) })), home);
+    const refusal = newsletterSendRefusal({ isKeeper, isStaff, isNodePlace, audience: subs.length });
+    if (refusal === "newsletter_not_keeper") throw new HttpsError("permission-denied", refusal);
+    if (refusal) throw new HttpsError("failed-precondition", refusal);
+
+    const place = { name: String(community.name || home), domain: home };
+    const from = mailFromOf(charter, place);
     let sent = 0;
     const CHUNK = 100; // commit mail writes (and any token backfills) in throttled batches
     for (let i = 0; i < subs.length; i += CHUNK) {
         const slice = subs.slice(i, i + CHUNK);
         const batch = db.batch();
-        for (const doc of slice) {
-            const data = doc.data() as any;
-            const email = String(data.email);
+        for (const sub of slice) {
+            const email = String(sub.email);
             // Lazy-generate + persist an opaque unsubscribe token for subscribers without one.
-            let token = data.unsubToken as string | undefined;
-            if (!token) { token = randomUUID(); batch.set(doc.ref, { unsubToken: token }, { merge: true }); }
+            let token = sub.unsubToken as string | undefined;
+            if (!token) { token = randomUUID(); batch.set(sub.ref, { unsubToken: token }, { merge: true }); }
 
             const unsub = `${NODE_ORIGIN}/u/${token}`;
             const footer = `<hr style="border:0;border-top:1px solid #eee;margin:28px 0;"/>`
-                + `<p style="font-size:12px;color:#9ca3af;line-height:1.6;">You're receiving this because you subscribed to the lightseed newsletter.<br/>`
+                + `<p style="font-size:12px;color:#9ca3af;line-height:1.6;">You're receiving this because you subscribed to the letter of ${escapeHtml(place.name)}.<br/>`
                 + `<a href="${unsub}" style="color:#059669;">Unsubscribe</a> · ${NEWSLETTER_POSTAL_ADDRESS}</p>`;
             const mailRef = db.collection("mail").doc();
             // `from` and `headers` at the TOP level — where the extension reads them (see writeMail).
             batch.set(mailRef, {
                 to: [email],
-                uid: data.uid || null,
-                from: EMAIL_FROM,
+                uid: (sub.uid as string | undefined) || null,
+                from,
                 headers: {
                     "List-Unsubscribe": `<${unsub}>`,
                     "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
@@ -2203,8 +2220,11 @@ export const sendNewsletterEmails = onCall({ timeoutSeconds: 300, memory: "512Mi
         }
         await batch.commit();
     }
-    await db.collection("config").doc("newsletter").set({ lastSentAt: FieldValue.serverTimestamp(), lastSubject: subject, lastSent: sent }, { merge: true });
-    return { sent, total: subs.length };
+
+    // The place's own stamp; the node's legacy stamp keeps moving for the node.
+    await communitySnap.ref.set({ newsletterLastSentAt: FieldValue.serverTimestamp(), newsletterLastSubject: subject, newsletterLastSent: sent }, { merge: true });
+    if (isNodePlace) await db.collection("config").doc("newsletter").set({ lastSentAt: FieldValue.serverTimestamp(), lastSubject: subject, lastSent: sent }, { merge: true });
+    return { sent };
 });
 
 // One-click unsubscribe endpoint (the List-Unsubscribe target), rewritten in firebase.json as
@@ -2220,13 +2240,15 @@ export const unsubscribe = onRequest({ cors: true }, async (req, res) => {
         if (!snap.empty) {
             const doc = snap.docs[0];
             await doc.ref.set({ active: false, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-            // Mirror onto the user profile toggle if this subscriber has an account.
-            const uid = (doc.data() as any).uid;
-            if (uid) await db.collection("users").doc(uid).set({ newsletterSubscribed: false }, { merge: true }).catch(() => undefined);
+            // Mirror onto the profile toggle if this subscriber has an account — the place's own
+            // switch (newsletterPlaces[domain]), and the legacy boolean for the node's letter.
+            const data = doc.data() as any;
+            const uid = data.uid; const domain = String(data.domain || charter.domain);
+            if (uid) await db.collection("users").doc(uid).set({ newsletterPlaces: { [domain]: false }, ...(charterOwnDomains(charter).includes(domain) ? { newsletterSubscribed: false } : {}) }, { merge: true }).catch(() => undefined);
         }
         if (req.method === "POST") { res.status(200).end(); return; } // one-click: no body needed
         res.set("Content-Type", "text/html").status(200).send(
-            `<html><body style="font-family:sans-serif;text-align:center;padding:48px;color:#334155;"><h2 style="color:#059669;font-weight:300;letter-spacing:1px;">.seed</h2><p>You have been unsubscribed from the lightseed newsletter.</p><p style="color:#9ca3af;font-size:13px;">You can resubscribe anytime from your profile.</p></body></html>`,
+            `<html><body style="font-family:sans-serif;text-align:center;padding:48px;color:#334155;"><h2 style="color:#059669;font-weight:300;letter-spacing:1px;">.seed</h2><p>You have been unsubscribed from this letter.</p><p style="color:#9ca3af;font-size:13px;">You can resubscribe anytime from your profile.</p></body></html>`,
         );
     } catch (e) {
         console.error("Unsubscribe failed", e);

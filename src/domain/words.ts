@@ -39,6 +39,8 @@ export const DOMAIN_KEYS = [
   'unmint_not_author', 'unmint_not_mint', 'unmint_not_last', 'unmint_witnessed', 'unmint_coheld',
   // personName — the name a being wears is theirs to change; the law keeps it a name
   'name_empty', 'name_long', 'name_chars',
+  // newsletter — the letter of a place: its keepers send it, to those who subscribed there
+  'newsletter_not_keeper', 'newsletter_no_subscribers',
 ] as const;
 
 export type DomainKey = (typeof DOMAIN_KEYS)[number];

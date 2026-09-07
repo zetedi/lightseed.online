@@ -8,6 +8,8 @@ import { Loading } from './ui/Loading';
 import { Icons } from './ui/Icons';
 import { Modal, modalButton } from './ui/Modal';
 import { useLanguage } from '../contexts/LanguageContext';
+import type { Community } from '../types';
+import { speak } from '../utils/translations';
 
 const formatDate = (value: any) => {
     if (!value) return 'the beginning';
@@ -20,7 +22,9 @@ const renderList = (items: string[]) =>
         ? `<ul>${items.map(item => `<li>${item}</li>`).join('')}</ul>`
         : `<p>No new entries in this section.</p>`;
 
-export const NewsletterAdmin = ({ senderUid, onBack }: { senderUid: string; onBack: () => void }) => {
+// THE LETTER OF A PLACE (ring 2026-09-08): bound to ONE community — its keepers write and send
+// it to those who subscribed at that place; the node's staff send the node's own the same way.
+export const NewsletterAdmin = ({ community, onBack, embedded = false }: { community: Community; onBack: () => void; embedded?: boolean }) => {
     const { t } = useLanguage();
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
@@ -35,20 +39,21 @@ export const NewsletterAdmin = ({ senderUid, onBack }: { senderUid: string; onBa
         const loadDraft = async () => {
             setLoading(true);
             try {
-                const draft = await getNewsletterDraftData();
+                const draft = await getNewsletterDraftData({ id: community.id, domain: community.domain, newsletterLastSentAt: (community as any).newsletterLastSentAt });
                 const today = new Date().toLocaleDateString();
+                const placeName = community.name || 'lightseed';
                 const treeItems = draft.trees.map(tree => `${tree.name}${tree.locationName ? `, ${tree.locationName}` : ''}`);
                 const visionItems = draft.visions.map(vision => `${vision.title} by ${vision.authorId.slice(0, 6)}...`);
                 const pulseItems = draft.pulses.map(pulse => `${pulse.title} by ${pulse.authorName}`);
 
                 setLastSentLabel(formatDate(draft.lastSentAt));
-                setSubject(`lightseed newsletter: ${today}`);
+                setSubject(`${placeName} — ${today}`);
                 setHtml(`
 <div style="font-family: Georgia, serif; color: #1f2937; line-height: 1.7; max-width: 760px; margin: 0 auto; padding: 32px;">
-  <h1 style="font-weight: 400; color: #065f46; margin-bottom: 8px;">lightseed newsletter</h1>
+  <h1 style="font-weight: 400; color: #065f46; margin-bottom: 8px;">${placeName}</h1>
   <p style="margin-top: 0; color: #64748b;">Updates since ${formatDate(draft.lastSentAt)}</p>
-  <p>Hello from the network,</p>
-  <p>Here is the latest letter from lightseed. You can edit any section before sending.</p>
+  <p>Hello from ${placeName},</p>
+  <p>Here is the latest letter. You can edit any section before sending.</p>
   <h2 style="margin-top: 32px; color: #7c2d12;">New Trees</h2>
   ${renderList(treeItems)}
   <h2 style="margin-top: 32px; color: #7c2d12;">New Visions</h2>
@@ -57,7 +62,7 @@ export const NewsletterAdmin = ({ senderUid, onBack }: { senderUid: string; onBa
   ${renderList(pulseItems)}
   <h2 style="margin-top: 32px; color: #7c2d12;">Letter</h2>
   <p>Add your reflection here.</p>
-  <p style="margin-top: 40px;">With gratitude,<br/>lightseed</p>
+  <p style="margin-top: 40px;">With gratitude,<br/>${placeName}</p>
 </div>`.trim());
             } finally {
                 setLoading(false);
@@ -65,7 +70,8 @@ export const NewsletterAdmin = ({ senderUid, onBack }: { senderUid: string; onBa
         };
 
         loadDraft();
-    }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the place's primitives: the community object's identity churns with every autosave, and reloading the draft would clobber the letter being written
+    }, [community.id, community.domain, community.name]);
 
     useEffect(() => {
         if (editorRef.current && editorRef.current.innerHTML !== html) {
@@ -85,10 +91,12 @@ export const NewsletterAdmin = ({ senderUid, onBack }: { senderUid: string; onBa
         if (!subject.trim() || !html.trim()) return;
         setSending(true);
         try {
-            const count = await sendNewsletter({ subject: subject.trim(), html, senderUid });
-            setDialogMessage(`Newsletter sent to ${count} subscribers.`);
+            const count = await sendNewsletter({ subject: subject.trim(), html, communityId: community.id });
+            setDialogMessage(speak('newsletter_sent_count', { count }));
         } catch (e: any) {
-            setDialogMessage(e.message || 'Failed to send newsletter.');
+            // The server refuses with a domain key (newsletter_not_keeper, newsletter_no_subscribers) — spoken in the reader's tongue.
+            const key = String(e?.message || '').replace(/^.*?(newsletter_[a-z_]+).*$/, '$1');
+            setDialogMessage(key.startsWith('newsletter_') ? speak(key) : (e?.message || speak('err_save_retry')));
         }
         setSending(false);
         setShowConfirm(false);
@@ -100,15 +108,17 @@ export const NewsletterAdmin = ({ senderUid, onBack }: { senderUid: string; onBa
 
     return (
         <>
-            <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
+            <div className={embedded ? 'space-y-6' : 'max-w-6xl mx-auto px-4 py-8 space-y-6'}>
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div>
-                        <button onClick={onBack} className="mb-3 flex items-center gap-2 text-emerald-100 hover:text-white text-sm">
-                            <Icons.ArrowLeft />
-                            <span>{t('back_to_profile')}</span>
-                        </button>
-                        <h1 className="text-3xl font-light text-white">Send Newsletter</h1>
-                        <p className="text-sm text-emerald-100/80">Last newsletter sent: {lastSentLabel}</p>
+                        {!embedded && (
+                            <button onClick={onBack} className="mb-3 flex items-center gap-2 text-emerald-100 hover:text-white text-sm">
+                                <Icons.ArrowLeft />
+                                <span>{t('back_to_profile')}</span>
+                            </button>
+                        )}
+                        <h1 className={`text-3xl font-light ${embedded ? 'text-slate-800' : 'text-white'}`}>{t('newsletter_of_place').replace('{place}', community.name || 'lightseed')}</h1>
+                        <p className={`text-sm ${embedded ? 'text-slate-500' : 'text-emerald-100/80'}`}>Last letter sent: {lastSentLabel}</p>
                     </div>
                     <button
                         onClick={() => setShowConfirm(true)}

@@ -36,6 +36,9 @@ interface ProfileSettingsProps {
   onOnlyValidatedChange: (value: boolean) => void;
   newsletterSubscribed: boolean;
   onNewsletterChange: (value: boolean) => void;
+  // The place whose letter the toggle subscribes to (the host community's canonical domain and name).
+  placeDomain: string;
+  placeName: string;
   dmEmailNotifications: boolean;
   onDmEmailChange: (value: boolean) => void;
   // Surfaces notices via the shell's shared dialog modal.
@@ -50,6 +53,8 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   onOnlyValidatedChange,
   newsletterSubscribed,
   onNewsletterChange,
+  placeDomain,
+  placeName,
   dmEmailNotifications,
   onDmEmailChange,
   notify,
@@ -109,7 +114,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
     setTogglingNewsletter(true);
     try {
       const nextValue = !newsletterSubscribed;
-      await setNewsletterSubscription(uid, email, nextValue);
+      await setNewsletterSubscription(uid, email, nextValue, placeDomain);
       onNewsletterChange(nextValue);
       notify(nextValue ? 'Newsletter subscribed.' : 'Newsletter unsubscribed.');
     } catch (e: any) {
@@ -184,7 +189,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
         </div>
         <div className="p-4 flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="font-semibold text-slate-800 text-sm">{t('newsletter')}</p>
+            <p className="font-semibold text-slate-800 text-sm">{t('newsletter_of_place').replace('{place}', placeName)}</p>
             <p className="text-xs text-slate-500">A gentle update from the network every few weeks.</p>
           </div>
           <Toggle on={newsletterSubscribed} onClick={handleNewsletterToggle} disabled={togglingNewsletter || !email} />

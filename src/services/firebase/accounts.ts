@@ -3,6 +3,8 @@ import { signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPass
 import { httpsCallable } from 'firebase/functions';
 import { type Pulse, type Lifetree, type Vision } from '../../types';
 import { excludeBedTrees } from '../../domain/bed';
+import { charter } from '../../config/charter';
+import { subscriptionIdOf, isSubscriberEmail, normalizeSubscriberEmail, normalizePlaceDomain } from '../../domain/newsletter';
 import { uuidv7 } from '../../utils/id';
 import { auth, db, functions, googleProvider, mapDoc, lifetreesCollection, visionsCollection, pulsesCollection, networkInvitesCollection, newsletterConfigRef } from './core';
 
@@ -365,33 +367,38 @@ export const monitorMailStatus = (docId: string, onChange: (status: any) => void
     });
 }
 
-const normalizeSubscriptionId = (email: string) => encodeURIComponent(email.trim().toLowerCase());
-
-// Public newsletter signup. Uses the SAME deterministic id + normalized email + active flag as
-// setNewsletterSubscription, so these subscribers are included by the newsletter send filter
-// (active === true) and can be unsubscribed by the one-click endpoint (which looks up by id).
-export const subscribeToNewsletter = async (email: string) => {
-    const normalizedEmail = email.trim().toLowerCase();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalizedEmail)) throw new Error('err_email_invalid');
-    return setDoc(doc(db, 'subscriptions', normalizeSubscriptionId(normalizedEmail)), {
-        email: normalizedEmail,
+// THE LETTER OF A PLACE (ring 2026-09-08, domain/newsletter): a subscription is stamped with
+// the place it was made at — the host community's canonical domain — under one document per
+// (place, address). Public signup (the footer) and the profile toggle write the same shape, so
+// the send filter (active, domain) and the one-click unsubscribe (by token) find them alike.
+export const subscribeToNewsletter = async (email: string, place: string) => {
+    if (!isSubscriberEmail(email)) throw new Error('err_email_invalid');
+    const domain = normalizePlaceDomain(place);
+    if (!domain) throw new Error('err_email_invalid');
+    return setDoc(doc(db, 'subscriptions', subscriptionIdOf(domain, email)), {
+        email: normalizeSubscriberEmail(email),
+        domain,
         active: true,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
     }, { merge: true });
 };
 
-export const setNewsletterSubscription = async (uid: string, email: string, subscribe: boolean) => {
+export const setNewsletterSubscription = async (uid: string, email: string, subscribe: boolean, place: string) => {
     const userRef = doc(db, 'users', uid);
-    const subRef = doc(db, 'subscriptions', normalizeSubscriptionId(email));
-    const normalizedEmail = email.trim().toLowerCase();
+    const domain = normalizePlaceDomain(place);
+    const subRef = doc(db, 'subscriptions', subscriptionIdOf(domain, email));
+    const normalizedEmail = normalizeSubscriberEmail(email);
 
-    await setDoc(userRef, { newsletterSubscribed: subscribe }, { merge: true });
+    // The profile mirrors its places: newsletterPlaces[domain]. The legacy boolean stays for
+    // the node's own letter, which is what it always meant.
+    await setDoc(userRef, { newsletterPlaces: { [domain]: subscribe }, ...(domain === charter.domain ? { newsletterSubscribed: subscribe } : {}) }, { merge: true });
 
     if (subscribe) {
         await setDoc(subRef, {
             uid,
             email: normalizedEmail,
+            domain,
             active: true,
             updatedAt: serverTimestamp(),
             createdAt: serverTimestamp(),
@@ -424,36 +431,42 @@ const NEWSLETTER_DIGEST_SIZE = 8;
 
 const fetchNewsletterChanges = async <T>(
     collectionRef: any, lastSentAt: Timestamp | null, mapper: (doc: any) => T,
-    sieve?: (items: T[]) => T[],
+    sieve?: (items: T[]) => T[], domain?: string,
 ) => {
     // A sieve (excludeBedTrees) runs BEFORE the newest-N slice: over-fetch head-room so the
     // rows it removes never occupy digest slots — a burst of new beds must not displace
-    // real trees from the digest.
+    // real trees from the digest. A PLACE's letter digests the place's own beings (domain).
     const fetchLimit = sieve ? NEWSLETTER_DIGEST_SIZE * 6 : NEWSLETTER_DIGEST_SIZE;
+    const scope = domain ? [where('domain', '==', domain)] : [];
     const q = lastSentAt
-        ? query(collectionRef, where('createdAt', '>', lastSentAt), orderBy('createdAt', 'desc'), limit(fetchLimit))
-        : query(collectionRef, orderBy('createdAt', 'desc'), limit(fetchLimit));
+        ? query(collectionRef, ...scope, where('createdAt', '>', lastSentAt), orderBy('createdAt', 'desc'), limit(fetchLimit))
+        : query(collectionRef, ...scope, orderBy('createdAt', 'desc'), limit(fetchLimit));
 
     const snap = await getDocs(q);
     const items = snap.docs.map(mapper);
     return (sieve ? sieve(items) : items).slice(0, NEWSLETTER_DIGEST_SIZE);
 };
 
-export const getNewsletterDraftData = async () => {
-    let lastSentAt = null;
-    try {
-        const configSnap = await getDoc(newsletterConfigRef);
-        lastSentAt = (configSnap.exists() ? (configSnap.data() as any).lastSentAt : null) || null;
-    } catch (e) {
-        console.warn('Newsletter config read skipped', e);
+export const getNewsletterDraftData = async (place: { id: string; domain?: string; newsletterLastSentAt?: unknown } | null) => {
+    // The place's own last letter (communities/{id}.newsletterLastSentAt, server-stamped); the
+    // node's legacy stamp (config/newsletter) stands in for the node until its next letter.
+    let lastSentAt: Timestamp | null = ((place?.newsletterLastSentAt as Timestamp | undefined) ?? null);
+    if (!lastSentAt && (!place?.domain || place.domain === charter.domain)) {
+        try {
+            const configSnap = await getDoc(newsletterConfigRef);
+            lastSentAt = (configSnap.exists() ? (configSnap.data() as any).lastSentAt : null) || null;
+        } catch (e) {
+            console.warn('Newsletter config read skipped', e);
+        }
     }
+    const domain = place?.domain;
 
     const [trees, visions, pulses] = await Promise.all([
         // Beds are furniture, not forest — the digest of new trees never names one, and the
         // sieve runs before the slice so beds cannot displace real trees (domain/bed.ts).
-        fetchNewsletterChanges(lifetreesCollection, lastSentAt, (d) => (mapDoc(d) as Lifetree), excludeBedTrees),
-        fetchNewsletterChanges(visionsCollection, lastSentAt, (d) => (mapDoc(d) as Vision)),
-        fetchNewsletterChanges(pulsesCollection, lastSentAt, (d) => (mapDoc(d) as Pulse)),
+        fetchNewsletterChanges(lifetreesCollection, lastSentAt, (d) => (mapDoc(d) as Lifetree), excludeBedTrees, domain),
+        fetchNewsletterChanges(visionsCollection, lastSentAt, (d) => (mapDoc(d) as Vision), undefined, domain),
+        fetchNewsletterChanges(pulsesCollection, lastSentAt, (d) => (mapDoc(d) as Pulse), undefined, domain),
     ]);
 
     return { lastSentAt, trees, visions, pulses };
@@ -461,9 +474,9 @@ export const getNewsletterDraftData = async () => {
 
 // Newsletter — sent server-side through Resend (batched, with one-click unsubscribe + footer),
 // so it scales and is compliant. The Cloud Function gates to staff and stamps config/newsletter.
-export const sendNewsletter = async ({ subject, html }: { subject: string; html: string; senderUid?: string }) => {
+export const sendNewsletter = async ({ subject, html, communityId }: { subject: string; html: string; communityId: string }) => {
     const fn = httpsCallable(functions, 'sendNewsletterEmails');
-    const res = await fn({ subject, html });
+    const res = await fn({ subject, html, communityId });
     return (res.data as any)?.sent ?? 0;
 };
 

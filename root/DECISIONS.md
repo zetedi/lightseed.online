@@ -6,6 +6,29 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-08 · The letter of a place** — "a hub should only send the newsletter to the members
+of its own community, right?" Right, and it did not: one node-wide list (7 rows, no place on
+any), one sender (staff), one audience (everyone). Now every place — a community hosting a
+domain — has its own letter. domain/newsletter is the law (mirrored in functions): a
+subscription is stamped with the place it was made at, one document per (place, address)
+under `<place>__<address>`; the audience is exactly the active subscriptions stamped with the
+place; a keeper of the place (the founding ownerId or a keeper link, the server's fact) may
+send it, the node's staff the node's own, no one else's. A MEMBER LINK IS NOT CONSENT: the
+audience is those who subscribed, at the footer or in their profile — never the member list.
+The footer is the door to subscribe (to the letter of the place you stand on); unsubscribing
+lives in each letter (one click, RFC 8058) and in the profile toggle, which now names its place
+and mirrors into users.newsletterPlaces[domain] (the legacy boolean standing in for the node's
+own). A keeper writes the letter on the community page (a Letter section); the node's from the
+profile's admin door. The digest draws the place's own beings since the place's own last letter
+(communities.newsletterLastSentAt, server-stamped and frozen for clients; a (domain, createdAt)
+composite for pulses). The sender wears the place's name (mailFromOf). Rules: anyone may
+subscribe an address at a place, a being reads and rests rows carrying its own address, tokens
+are the server's. The 7 legacy rows fold into 3 at lightseed.online (scripts/rehome-subscriptions).
+REJECTED: mailing members by link (consent is opt-in); staff sending any place's letter (a place's
+voice is its keepers'); a place field the client could move a subscription with (frozen).
+
+---
+
 **2026-09-07 · A name is the being's to change** — the profile hero's title gains a pencil at
 its corner; a tap turns the name into a field, Enter or the check saves, Escape lets go.
 domain/personName is the law (a name is written, fits sixty characters, carries no control

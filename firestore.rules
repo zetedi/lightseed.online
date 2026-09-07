@@ -481,11 +481,19 @@ service cloud.firestore {
            ));
     }
 
-    // Subscriptions: Create public, Read staff
+    // Subscriptions — THE LETTER OF A PLACE (ring 2026-09-08). Anyone may subscribe an address
+    // at a place (the footer): the row must name its place (`domain`) and an address. A signed-in
+    // being may read and re-set the rows that carry its own address (the profile toggle); staff
+    // see all. The unsubscribe token is the server's (functions), never a client's to write.
     match /subscriptions/{subId} {
-      allow read: if isStaff();
-      allow create: if true;
-      allow update, delete: if isStaff();
+      allow read: if isStaff() || (isSignedIn() && resource.data.get('email', '') == request.auth.token.email);
+      allow create: if request.resource.data.domain is string && request.resource.data.domain != ''
+        && request.resource.data.email is string && request.resource.data.email != ''
+        && !('unsubToken' in request.resource.data);
+      allow update: if isStaff() || (isSignedIn()
+        && resource.data.get('email', '') == request.auth.token.email
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['unsubToken', 'email', 'domain']));
+      allow delete: if isStaff();
     }
 
     // Mail: read your own / staff. Creation is SERVER-ONLY — every outbound email is composed and
@@ -1405,7 +1413,7 @@ service cloud.firestore {
       allow update: if isSignedIn() && (
         (
           (resource.data.ownerId == request.auth.uid || hasKeeperLink(communityId) || isStaff())
-          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid', 'loveCount', 'ownerId', 'bornOn', 'domainVerification', 'formedAt', 'formedBy', 'keeperUids'])
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid', 'loveCount', 'ownerId', 'bornOn', 'domainVerification', 'formedAt', 'formedBy', 'keeperUids', 'newsletterLastSentAt', 'newsletterLastSubject', 'newsletterLastSent'])
         )
         // LOVE: exactly one own-slot transition and exactly +/- one, atomically proved.
         || validLoveCountChange('communities', communityId)
