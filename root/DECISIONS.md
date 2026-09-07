@@ -6,6 +6,14 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-08 · Light and night are every visitor's** — the light/night switch had stood to the
+right of the profile and only for the signed-in; a visitor at a face's door could not turn the
+night down. It now stands to the LEFT of the profile avatar (and before Sign in for a
+visitor), on desktop and in the mobile menu alike, for anyone — the preference was always
+the browser's (localStorage), never the account's, so nothing about sign-in ever belonged to it.
+
+---
+
 **2026-09-08 · The letter of a place** — "a hub should only send the newsletter to the members
 of its own community, right?" Right, and it did not: one node-wide list (7 rows, no place on
 any), one sender (staff), one audience (everyone). Now every place — a community hosting a

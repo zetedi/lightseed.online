@@ -352,17 +352,19 @@ export const Navigation = ({
                         )}
                     </div>
 
-                    {/* Mobile: night-mode + sign-out as circular icons next to the logo (only while the menu is open) */}
-                    {lightseed && isMenuOpen && (
+                    {/* Mobile: night-mode (every visitor's) + sign-out (the signed-in's) as circular icons next to the logo, while the menu is open */}
+                    {isMenuOpen && (onToggleNightMode || lightseed) && (
                         <div className="flex items-center gap-2 xl:hidden">
                             {onToggleNightMode && (
-                                <button onClick={onToggleNightMode} title={isNightMode ? 'Light mode' : 'Night mode'} className={`rounded-full border p-2 transition-colors ${navIsDark ? 'bg-black/20 text-amber-300 hover:bg-black/30' : 'bg-white/70 text-slate-600 hover:bg-white'}`} style={{ borderColor: navBorder }}>
+                                <button onClick={onToggleNightMode} title={isNightMode ? t('switch_to_light') : t('switch_to_night')} aria-label={isNightMode ? t('switch_to_light') : t('switch_to_night')} className={`rounded-full border p-2 transition-colors ${navIsDark ? 'bg-black/20 text-amber-300 hover:bg-black/30' : 'bg-white/70 text-slate-600 hover:bg-white'}`} style={{ borderColor: navBorder }}>
                                     {isNightMode ? <Icons.Sun /> : <Icons.Moon />}
                                 </button>
                             )}
-                            <button onClick={() => setShowLogoutConfirm(true)} title={t('sign_out')} className="rounded-full border border-red-400/50 bg-red-500/10 p-2 text-red-500 transition-colors hover:bg-red-500 hover:text-white">
-                                <Icons.Exit />
-                            </button>
+                            {lightseed && (
+                                <button onClick={() => setShowLogoutConfirm(true)} title={t('sign_out')} className="rounded-full border border-red-400/50 bg-red-500/10 p-2 text-red-500 transition-colors hover:bg-red-500 hover:text-white">
+                                    <Icons.Exit />
+                                </button>
+                            )}
                         </div>
                     )}
 
@@ -406,6 +408,19 @@ export const Navigation = ({
                                 </div>
                             )}
                          </div>
+
+                         {/* Light / night — every visitor's to switch, signed in or not, standing left of the profile. */}
+                         {onToggleNightMode && (
+                            <button
+                                onClick={onToggleNightMode}
+                                title={isNightMode ? t('switch_to_light') : t('switch_to_night')}
+                                aria-label={isNightMode ? t('switch_to_light') : t('switch_to_night')}
+                                className={`hidden xl:inline-flex rounded-full border p-2 transition-colors ${navIsDark ? 'bg-black/20 text-amber-300 hover:bg-black/30' : 'bg-white/70 text-slate-600 hover:bg-white'}`}
+                                style={{ borderColor: navBorder }}
+                            >
+                                {isNightMode ? <Icons.Sun /> : <Icons.Moon />}
+                            </button>
+                         )}
 
                          {lightseed ? (
                             <>
@@ -459,18 +474,6 @@ export const Navigation = ({
                                     </span>
                                     <span className="mt-1 text-[9px] font-bold uppercase tracking-wider transition-opacity group-hover:opacity-70" style={{ color: navMuted }}>{t('profile')}</span>
                                 </button>
-
-                                {/* Theme toggle */}
-                                {onToggleNightMode && (
-                                    <button
-                                        onClick={onToggleNightMode}
-                                        title={isNightMode ? 'Switch to light mode' : 'Switch to night mode'}
-                                        className={`hidden xl:inline-flex rounded-full border p-2 transition-colors ${navIsDark ? 'bg-black/20 text-amber-300 hover:bg-black/30' : 'bg-white/70 text-slate-600 hover:bg-white'}`}
-                                        style={{ borderColor: navBorder }}
-                                    >
-                                        {isNightMode ? <Icons.Sun /> : <Icons.Moon />}
-                                    </button>
-                                )}
 
                                 {/* Exit — far right, with confirmation (desktop) */}
                                 <button
