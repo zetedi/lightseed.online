@@ -19,6 +19,7 @@ import { ProfileTrees } from './profile/ProfileTrees';
 import { ProfileLight } from './profile/ProfileLight';
 import { ProfilePulses } from './profile/ProfilePulses';
 import { ProfileEvents } from './profile/ProfileEvents';
+import { ProfileName } from './profile/ProfileName';
 import { ProfileVisions } from './profile/ProfileVisions';
 import { ProfileHistory } from './profile/ProfileHistory';
 import { ProfileStays } from './profile/ProfileStays';
@@ -360,7 +361,8 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                         )}
                     </div>
                 ),
-                title: lightseed.displayName,
+                // The name is the being's to change — a pencil at its corner (ProfileName).
+                title: <ProfileName name={lightseed.displayName} />,
                 chips: (
                     <>
                         <p className="text-slate-400 text-xs font-mono truncate max-w-full">{lightseed.email}</p>

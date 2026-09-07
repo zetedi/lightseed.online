@@ -124,9 +124,7 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
             </button>
             <div className={`${sevenOpen ? '' : 'hidden'} sm:block`}>
             <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
-              {seven.complete
-                ? 'Your seven stand: planted, witnessed, and cared for. Roughly what a body asks of the living world.'
-                : 'Seven trees, planted and caredFor, each witnessed by a guardian: roughly what a body asks of the living world. Invited, never enforced.'}
+              {seven.complete ? t('path_plantSeven_done') : t('path_plantSeven_desc')}
             </p>
             {!seven.complete && sevenLacks.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1.5">

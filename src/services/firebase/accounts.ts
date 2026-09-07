@@ -257,6 +257,18 @@ export const updateUserSiteTheme = (userId: string, data: { siteTheme?: Record<s
 export const updateUserProfile = (userId: string, data: Record<string, unknown>) =>
     setDoc(doc(db, 'users', userId), { ...data, updatedAt: serverTimestamp() }, { merge: true });
 
+// A being renames itself (ring 2026-09-07): the auth profile (what the session reads at sign-in)
+// and the users document (what the server and the letters read) move together. The caller has
+// already passed the name through domain/personName; pulses already minted keep the authorName
+// they were signed with — the chain remembers what was said, by whom, as they were then called.
+export const renamePerson = async (name: string): Promise<string> => {
+    const user = auth.currentUser;
+    if (!user) throw new Error('err_email_uid');
+    await updateProfile(user, { displayName: name });
+    await updateUserProfile(user.uid, { displayName: name });
+    return name;
+};
+
 // Contact privacy. The canonical flag lives on users/{uid}, but we mirror it onto every
 // tree the user owns because lifetrees are world-readable and the reach gate reads the
 // flag straight off the target tree (no cross-user profile read required).

@@ -172,5 +172,8 @@ export const useLifeseed = () => {
 
     // The "closest" tree: the chosen default if it's still one of mine, else the first.
     const activeTree = myTrees.find(t => t.id === defaultTreeId) || (myTrees.length > 0 ? myTrees[0] : null);
-    return { lightseed, personLid, myTrees, guardedTrees, tendedTrees, activeTree, defaultTreeId, setDefaultTree, defaultVisionId, setDefaultVision, isAdmin, isSuperAdmin, superAdminExists, initiate, isInitiate: !!initiate, loading, refreshTrees };
+    // A rename lands in the session at once (onAuthStateChanged does not fire for a profile edit).
+    const setDisplayName = (displayName: string) => setLightseed(prev => prev ? { ...prev, displayName } : prev);
+
+    return { lightseed, personLid, myTrees, guardedTrees, tendedTrees, activeTree, defaultTreeId, setDefaultTree, defaultVisionId, setDefaultVision, isAdmin, isSuperAdmin, superAdminExists, initiate, isInitiate: !!initiate, loading, refreshTrees, setDisplayName };
 };

@@ -37,6 +37,8 @@ export const DOMAIN_KEYS = [
   'interbeing_shares_resources_with', 'interbeing_shares_resources_with_desc',
   // unmint — taking back an accidental head mint (domain/unmint)
   'unmint_not_author', 'unmint_not_mint', 'unmint_not_last', 'unmint_witnessed', 'unmint_coheld',
+  // personName — the name a being wears is theirs to change; the law keeps it a name
+  'name_empty', 'name_long', 'name_chars',
 ] as const;
 
 export type DomainKey = (typeof DOMAIN_KEYS)[number];

@@ -6,6 +6,17 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-07 · A name is the being's to change** — the profile hero's title gains a pencil at
+its corner; a tap turns the name into a field, Enter or the check saves, Escape lets go.
+domain/personName is the law (a name is written, fits sixty characters, carries no control
+character, its whitespace one breath wide — nothing about uniqueness, which is the lid's, nor
+propriety, which is the community's); renamePerson moves the auth profile and the users
+document together; the session wears the new name at once (onAuthStateChanged does not fire
+for a profile edit, so the session hook gained setDisplayName). Pulses already minted keep the
+authorName they were signed with — the chain remembers who spoke as they were then called.
+
+---
+
 **2026-09-07 · The two-document budget: why no keeper could ever upload** — the keeper of a
 new face was refused a logo upload (storage/unauthorized) hours after the storage rule had
 been widened to keeper links. The emulator allowed the very same shape. A production probe
