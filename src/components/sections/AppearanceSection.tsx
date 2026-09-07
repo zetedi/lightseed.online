@@ -5,6 +5,8 @@ import { Community } from '../../types';
 import { SectionTitle } from '../ui/SectionTitle';
 import { normalizeTheme } from '../../utils/theme';
 import { AppearanceEditor } from '../ui/AppearanceEditor';
+import { AutosaveMark } from '../ui/AutosaveMark';
+import type { AutosaveState } from '../../domain/autosave';
 
 // Being-generic appearance section — how any being presents itself (Indra's net): name,
 // logo, hero, gallery, theme, footer links and carousel quotes. The section is purely
@@ -42,10 +44,13 @@ interface AppearanceSectionProps {
   onCarouselQuotesChange: React.Dispatch<React.SetStateAction<string[]>>;
   // Heading over the footer links (the owner names its own anatomy, e.g. "Community links").
   linksTitle?: string;
-  onSave: () => void;
-  isSaving: boolean;
-  saveDisabled: boolean;
-  status: string | null;
+  // Two ways to persist: a Save button (onSave), or LIVE — every change applies and saves on
+  // its own (ring 2026-09-07), the mark beside the title saying where the last one stands.
+  onSave?: () => void;
+  isSaving?: boolean;
+  saveDisabled?: boolean;
+  status?: string | null;
+  autosave?: AutosaveState;
 }
 
 // Appearance section — brand, logo, imagery, theme, footer links and carousel quotes.
@@ -76,17 +81,20 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
   isSaving,
   saveDisabled,
   status,
+  autosave = 'idle',
 }) => {
   const { t } = useLanguage();
 
   return (
     <div>
       <div className="flex items-start justify-between gap-3">
-        <SectionTitle title={t('appearance')} sub={t('appearance_sub')} />
+        <SectionTitle title={t('appearance')} sub={onSave ? t('appearance_sub') : t('autosave_hint')} />
         <div className="flex shrink-0 items-center gap-2">
-          <button onClick={onSave} disabled={saveDisabled} className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-700 disabled:opacity-50">
-            {isSaving ? t('saving') : t('save_changes')}
-          </button>
+          {onSave ? (
+            <button onClick={onSave} disabled={saveDisabled} className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-700 disabled:opacity-50">
+              {isSaving ? t('saving') : t('save_changes')}
+            </button>
+          ) : <AutosaveMark state={autosave} />}
           {status && <span className="text-xs text-slate-500">{status}</span>}
         </div>
       </div>

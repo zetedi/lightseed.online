@@ -6,6 +6,24 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-07 · The appearance is live** — the keeper asked for the Appearance tab to save
+itself and to apply as it changes, what you see being what is. Two laws in domain/autosave:
+`patchOf` (a write carries exactly the fields that differ from the store, by value — no write
+of nothing, two edits in a breath ride one write) and `reconcile` (when the store speaks anew,
+a field the hand has not touched follows it, a field still under the hand keeps its draft — so
+a save landing mid-word, or landing while the Vision tab holds unsaved writing, drops nothing).
+hooks/useAutosave is the WHEN: one breath (600 ms) after the last change, writes never
+overlapping, a failed write leaving the draft whole for the next edit, an unmount flushing what
+waits. The community's Appearance tab lost its Save button and its toggles' self-save effect
+(the autosave covers them); the header wears the draft name as it is typed; each landed patch
+rides onUpdate so the shell and every open list wear it. The personal palette saves itself the
+same way (Reset stays). The Vision tab keeps its Save — long-form writing wants a deliberate
+hand. Verified by tests and review, not yet by a browser session. REJECTED: previewing through
+the parent before the write lands (the prop→state sync would have had to tell a preview from a
+truth); a longer breath (a colour drag should land before the eye wanders).
+
+---
+
 **2026-09-07 · The keeper's hand reaches the bucket, and a colour has two mouths** — a keeper
 who had not founded her community changed its hero in Appearance and nothing changed: the
 document's rule had made keepers full peers on 2026-08-12, but `storage.rules` still let only

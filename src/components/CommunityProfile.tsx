@@ -43,6 +43,8 @@ import { speak, spokenLine } from '../utils/translations';
 
 import { Picture } from './ui/Picture';
 import { nodeDomains } from '../config/charter';
+import { useAutosave } from '../hooks/useAutosave';
+import { COMMUNITY_APPEARANCE_FIELDS, reconcile } from '../domain/autosave';
 interface CommunityProfileProps {
   community: Community;
   // An invitation the viewer arrived holding (/i/<id>) — the door greets them by it.
@@ -236,21 +238,76 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
-  // Keep editable copies in sync whenever the community prop changes (e.g. after refresh).
+  // THE APPEARANCE IS LIVE (ring 2026-09-07): what the hand shapes on the Appearance tab is
+  // the draft below; the law (domain/autosave) names what differs from the community as
+  // persisted, and the hook writes exactly that a breath after the last change, then hands
+  // the patch up (onUpdate) so the shell, the header and every open list wear it. The Vision
+  // tab keeps its Save (long-form writing wants a deliberate hand) — handleSave still carries
+  // these fields too, harmlessly.
+  const appearanceDraft = useMemo(() => ({
+    name: editName,
+    theme: normalizeTheme(editTheme),
+    logoUrl,
+    heroImageUrl,
+    imageUrls,
+    socialLinks: editSocial,
+    carouselQuotes: editCarouselQuotes.map(q => q.trim()).filter(Boolean),
+    customLanding: editCustomLanding,
+    showStats: editShowStats,
+    landingPages: editLandingPages.filter(p => p.label.trim()),
+  }), [editName, editTheme, logoUrl, heroImageUrl, imageUrls, editSocial, editCarouselQuotes, editCustomLanding, editShowStats, editLandingPages]);
+  const appearancePersisted = useMemo(() => ({
+    name: community.name,
+    theme: normalizeTheme(community.theme),
+    logoUrl: community.logoUrl || '',
+    heroImageUrl: community.heroImageUrl || '',
+    imageUrls: community.imageUrls || [],
+    socialLinks: community.socialLinks || {},
+    carouselQuotes: community.carouselQuotes || [],
+    customLanding: community.customLanding === true,
+    showStats: community.showStats === true,
+    landingPages: community.landingPages || [],
+  }), [community]);
+  const appearanceSave = useAutosave({
+    persisted: appearancePersisted,
+    draft: appearanceDraft,
+    keys: COMMUNITY_APPEARANCE_FIELDS,
+    resetKey: community.id,
+    save: async (patch) => {
+      await updateCommunity(community.id, patch);
+      onUpdate?.(patch);
+    },
+  });
+  useEffect(() => {
+    if (appearanceSave.state === 'error') notify(speak('err_autosave'), 'error');
+  }, [appearanceSave.state]);
+
+  // Keep editable copies in step with the community prop — a RECONCILE, not a reset (ring
+  // 2026-09-07): a field this hand has not touched since it last adopted the store follows the
+  // fresh value; a field still under the hand keeps its draft (an autosave landing mid-word,
+  // or landing while the Vision tab holds unsaved writing, drops nothing). A new community
+  // adopts everything.
+  const adoptedRef = React.useRef<{ id: string; fields: typeof appearancePersisted & { vision: string } } | null>(null);
   const imageUrlsKey = (community.imageUrls || []).join(',');
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- prop→state sync of the editable copies; deriving instead would clobber in-flight edits
-    setEditName(community.name);
-    setEditVision(community.vision);
-    setEditSocial(community.socialLinks || {});
-    setEditTheme(normalizeTheme(community.theme));
-    setLogoUrl(community.logoUrl || '');
-    setHeroImageUrl(community.heroImageUrl || '');
-    setImageUrls(community.imageUrls || []);
-    setEditCustomLanding(community.customLanding === true);
-    setEditShowStats(community.showStats === true);
-    setEditLandingPages(community.landingPages || []);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on primitive fields (arrays via imageUrlsKey); socialLinks/imageUrls object identities change per fetch and would re-run this, clobbering in-flight edits
+    const fresh = { ...appearancePersisted, vision: community.vision };
+    const keys = [...COMMUNITY_APPEARANCE_FIELDS, 'vision'] as const;
+    const adopted = adoptedRef.current?.id === community.id ? adoptedRef.current.fields : null;
+    const draft = { ...appearanceDraft, vision: editVision };
+    const next = adopted ? reconcile(adopted, fresh, draft, keys) : fresh;
+    adoptedRef.current = { id: community.id, fields: fresh };
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- prop→state reconcile of the editable copies; deriving instead would clobber in-flight edits
+    setEditName(next.name);
+    setEditVision(next.vision);
+    setEditSocial(next.socialLinks);
+    setEditTheme(normalizeTheme(next.theme));
+    setLogoUrl(next.logoUrl);
+    setHeroImageUrl(next.heroImageUrl);
+    setImageUrls(next.imageUrls);
+    setEditCustomLanding(next.customLanding);
+    setEditShowStats(next.showStats);
+    setEditLandingPages(next.landingPages);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on primitive fields (arrays via imageUrlsKey); object identities change per fetch and would re-run this needlessly; the draft is read, not depended on
   }, [community.id, community.name, community.vision, community.logoUrl, community.heroImageUrl, community.theme, community.customLanding, community.showStats, imageUrlsKey]);
 
   useEffect(() => {
@@ -699,9 +756,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
             onShowStatsChange={setEditShowStats}
             editLandingPages={editLandingPages}
             onLandingPagesChange={setEditLandingPages}
-            onSave={handleSave}
-            isSaving={isSaving}
-            saveDisabled={isSaving || isUploadingLogo || isUploadingImage}
+            autosave={appearanceSave.state}
             status={status}
           />
         ),
@@ -811,7 +866,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
             )}
           </div>
         ),
-        title: community.name,
+        // The header wears the draft name as it is typed — what you see is what is being saved.
+        title: editName || community.name,
         chips: (
           <>
             <span className="inline-flex items-baseline gap-1 text-slate-300">

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Community } from '../../types';
 import RichTextEditor from '../ui/RichTextEditor';
@@ -8,12 +8,14 @@ import { useCallback } from 'react';
 import { normalizeTheme } from '../../utils/theme';
 import { nodeDefaultTheme } from '../../hooks/useConfig';
 import { AppearanceSection } from '../sections/AppearanceSection';
+import type { AutosaveState } from '../../domain/autosave';
 
 type SocialLinks = NonNullable<Community['socialLinks']>;
 type EditableTheme = ReturnType<typeof normalizeTheme>;
 
-// The appearance tab is presentational: every edited field is part of the shared Save
-// (also triggered from the Vision tab), so all draft state stays in the shell.
+// The appearance tab is presentational and LIVE (ring 2026-09-07): every edited field is
+// applied and saved by the shell's autosave the breath after it changes, so all draft state
+// stays in the shell and no Save button lives here — only the mark saying where it stands.
 interface CommunityAppearanceProps {
   community: Community;
   editName: string;
@@ -44,9 +46,7 @@ interface CommunityAppearanceProps {
   // The landing's authored pages (menu panels) — rich text blocks, data not code.
   editLandingPages: { id: string; label: string; html: string }[];
   onLandingPagesChange: React.Dispatch<React.SetStateAction<{ id: string; label: string; html: string }[]>>;
-  onSave: () => void;
-  isSaving: boolean;
-  saveDisabled: boolean;
+  autosave: AutosaveState;
   status: string | null;
 }
 
@@ -79,22 +79,10 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
   onShowStatsChange,
   editLandingPages,
   onLandingPagesChange,
-  onSave,
-  isSaving,
-  saveDisabled,
+  autosave,
   status,
 }) => {
   const { t } = useLanguage();
-  // A flipped toggle saves itself: the flag notes the intent, and the effect fires onSave only
-  // AFTER the new value has round-tripped through the parent — a save on the same tick would
-  // persist the stale state (React batches; onSave closes over the parent's current props).
-  const autoSave = useRef(false);
-  useEffect(() => {
-    if (!autoSave.current) return;
-    autoSave.current = false;
-    onSave();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- fires only when a toggle flagged intent; onSave identity churns per render
-  }, [editCustomLanding, editShowStats]);
   // Page images go to Storage and embed by URL (stable per community, so the memoized
   // editor toolbar isn't rebuilt each render).
   const handlePageImageUpload = useCallback(
@@ -127,16 +115,13 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
       carouselQuotes={editCarouselQuotes}
       onCarouselQuotesChange={onCarouselQuotesChange}
       linksTitle="Community links"
-      onSave={onSave}
-      isSaving={isSaving}
-      saveDisabled={saveDisabled}
+      autosave={autosave}
       status={status}
     />
 
     {/* Custom landing — data, not code: flipping this makes the community's hero image the
-        domain's front page (sign-in + events), with the seed behind the corner logo. The
-        toggles SAVE THEMSELVES the moment they flip (the effect below); text fields still
-        save with the Save button at the top of the page. */}
+        domain's front page (sign-in + events), with the seed behind the corner logo. Like
+        every dial on this tab, it applies and saves on its own. */}
     <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-white p-4">
       <div className="min-w-0">
         <p className="text-sm font-semibold text-slate-800">{t('landing_custom')}</p>
@@ -146,7 +131,7 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
         type="button"
         role="switch"
         aria-checked={editCustomLanding}
-        onClick={() => { autoSave.current = true; onCustomLandingChange(!editCustomLanding); }}
+        onClick={() => onCustomLandingChange(!editCustomLanding)}
         className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors ${editCustomLanding ? 'bg-emerald-500' : 'bg-slate-300'}`}
       >
         <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${editCustomLanding ? 'translate-x-5' : 'translate-x-0'}`} />
@@ -211,7 +196,7 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
         type="button"
         role="switch"
         aria-checked={editShowStats}
-        onClick={() => { autoSave.current = true; onShowStatsChange(!editShowStats); }}
+        onClick={() => onShowStatsChange(!editShowStats)}
         className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors ${editShowStats ? 'bg-emerald-500' : 'bg-slate-300'}`}
       >
         <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${editShowStats ? 'translate-x-5' : 'translate-x-0'}`} />

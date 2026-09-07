@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Icons } from '../ui/Icons';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { updateUserSiteTheme, uploadImage } from '../../services/firebase';
 import { normalizeTheme, type CommunityThemePreset } from '../../utils/theme';
 import { AppearanceEditor } from '../ui/AppearanceEditor';
 import { notify as toast } from '../ui/Toast';
+import { AutosaveMark } from '../ui/AutosaveMark';
+import { useAutosave } from '../../hooks/useAutosave';
+import { PERSONAL_APPEARANCE_FIELDS } from '../../domain/autosave';
 
 type EditableTheme = ReturnType<typeof normalizeTheme>;
 
@@ -26,7 +29,9 @@ interface ProfileAppearanceProps {
   onSiteInheritChange: (v: boolean) => void;
 }
 
-// Appearance tab — the personal profile theme (colors, logo, hero image).
+// Appearance tab — the personal profile theme (colors, logo, hero image). LIVE since ring
+// 2026-09-07: the palette saves itself a breath after each change, and the shell's listener
+// dresses the site in it; the pictures persisted at once already.
 export const ProfileAppearance: React.FC<ProfileAppearanceProps> = ({
   uid,
   nodeTheme,
@@ -43,6 +48,18 @@ export const ProfileAppearance: React.FC<ProfileAppearanceProps> = ({
   const { t } = useLanguage();
   const [savingSiteTheme, setSavingSiteTheme] = useState(false);
   const [savingInherit, setSavingInherit] = useState(false);
+  // The palette as persisted when this tab opened: the draft is the shell's live state (the
+  // listener writes it back after every save, an echo the law reads as no change). Another
+  // device's edit arriving mid-session reads as a change and is written back once — harmless.
+  const openedWith = useRef({ siteTheme: normalizeTheme(siteTheme) });
+  const themeDraft = useMemo(() => ({ siteTheme: normalizeTheme(siteTheme) }), [siteTheme]);
+  const themeSave = useAutosave({
+    persisted: openedWith.current,
+    draft: themeDraft,
+    keys: PERSONAL_APPEARANCE_FIELDS,
+    resetKey: uid,
+    save: (patch) => updateUserSiteTheme(uid, patch),
+  });
 
   const handleToggleInherit = async (next: boolean) => {
     setSavingInherit(true);
@@ -81,21 +98,6 @@ export const ProfileAppearance: React.FC<ProfileAppearanceProps> = ({
       notify(e.message || 'Failed to upload hero image.');
     }
     setUploadingSiteHero(false);
-  };
-
-  const handleSaveSiteTheme = async () => {
-    setSavingSiteTheme(true);
-    try {
-      await updateUserSiteTheme(uid, {
-        siteTheme: normalizeTheme(siteTheme),
-        siteLogoUrl,
-        siteHeroUrl,
-      });
-      toast('🌱 Your profile theme has been saved.');
-    } catch (e: any) {
-      notify(e.message || 'Failed to save theme.');
-    }
-    setSavingSiteTheme(false);
   };
 
   const handleResetSiteTheme = async () => {
@@ -141,19 +143,13 @@ export const ProfileAppearance: React.FC<ProfileAppearanceProps> = ({
         </button>
       </div>
       {siteInherit ? null : (<>
-      {/* Title + buttons share the row; the explainer sits UNDER them, small — on mobile the
-          old side-by-side layout squeezed it into a nine-line sliver. */}
+      {/* Title + the mark + Reset share the row; the explainer sits UNDER them, small — on mobile
+          the old side-by-side layout squeezed it into a nine-line sliver. */}
       <div>
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-lg font-bold text-slate-800">{t('appearance_theme_title')}</h3>
-          <div className="flex shrink-0 gap-2">
-            <button
-              onClick={handleSaveSiteTheme}
-              disabled={savingSiteTheme || uploadingSiteLogo || uploadingSiteHero}
-              className="rounded-xl bg-teal-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-teal-600/20 transition-colors hover:bg-teal-700 disabled:opacity-50"
-            >
-              {savingSiteTheme ? t('saving') : t('save_theme')}
-            </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <AutosaveMark state={themeSave.state} />
             <button
               onClick={handleResetSiteTheme}
               disabled={savingSiteTheme || uploadingSiteLogo || uploadingSiteHero}
@@ -163,7 +159,7 @@ export const ProfileAppearance: React.FC<ProfileAppearanceProps> = ({
             </button>
           </div>
         </div>
-        <p className="mt-1.5 text-xs text-slate-500">{t('appearance_theme_desc')}</p>
+        <p className="mt-1.5 text-xs text-slate-500">{t('appearance_theme_desc')} {t('autosave_hint')}</p>
       </div>
 
       <AppearanceEditor
