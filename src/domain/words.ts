@@ -41,6 +41,8 @@ export const DOMAIN_KEYS = [
   'name_empty', 'name_long', 'name_chars',
   // newsletter — the letter of a place: its keepers send it, to those who subscribed there
   'newsletter_not_keeper', 'newsletter_no_subscribers',
+  // intelligenceDuty — the kinds of work an intelligence may be ordered to
+  'duty_whisper', 'duty_tree_talk', 'duty_watering', 'duty_translation', 'duty_resonance', 'duty_insight', 'duty_writing',
 ] as const;
 
 export type DomainKey = (typeof DOMAIN_KEYS)[number];

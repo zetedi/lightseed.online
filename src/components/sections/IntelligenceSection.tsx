@@ -4,6 +4,7 @@ import { Intelligence, Persona } from '../../types';
 import { getSelectableIntelligences, listPersonas, type CredentialScope } from '../../services/intelligence';
 import { SectionTitle } from '../ui/SectionTitle';
 import { IntelligencePanel } from '../intelligence/IntelligencePanel';
+import type { DutyAssignment, IntelligenceDuty } from '../../domain/intelligenceDuty';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 // Being-generic intelligence section — any being's intelligences (Indra's net). "Which
@@ -53,6 +54,9 @@ interface IntelligenceSectionProps {
   onSave: (selection: IntelligenceSelection) => Promise<unknown>;
   // Notify the owner after an explicit save (e.g. to mirror the updates into parent state).
   onSaved?: (selection: IntelligenceSelection) => void;
+  // Which intelligence is ordered to which kind of work for this entity, and the hand that changes it.
+  duties?: DutyAssignment | null;
+  onAssignDuty?: (duty: IntelligenceDuty, intelligenceId: string | null) => void;
   // Section heading (the owner names its own anatomy).
   title: string;
   sub?: string;
@@ -76,6 +80,8 @@ export const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
   availableIntelligenceIds,
   onSave,
   onSaved,
+  duties,
+  onAssignDuty,
   title,
   sub,
   panelTitle,
@@ -157,6 +163,8 @@ export const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
           selectedIntelligenceId={editDefaultIntelligenceId}
           title={panelTitle}
           subtitle={panelSubtitle}
+          duties={duties}
+          onAssignDuty={onAssignDuty}
           onSelect={(id) => {
             setEditDefaultIntelligenceId(id);
             const nextAvailable = Array.from(new Set([...editAvailableIntelligenceIds, id]));

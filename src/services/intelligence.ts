@@ -1,3 +1,4 @@
+import { intelligenceForDuty, type DutyAssignment, type IntelligenceDuty } from '../domain/intelligenceDuty';
 import {
   collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
   query, where, serverTimestamp, arrayUnion,
@@ -124,8 +125,12 @@ export const getProvider = (id: IntelligenceProviderId): IntelligenceProvider =>
 // (gemini.ts) can route through it without threading the id through every caller. Set
 // from App's profile listener; cleared on sign-out.
 let activeIntelligenceId: string | undefined;
+let activeDuties: DutyAssignment | undefined;
 export const setActiveIntelligenceId = (id?: string) => { activeIntelligenceId = id || undefined; };
-export const getActiveIntelligenceId = (): string | undefined => activeIntelligenceId;
+// The signed-in being's duty orders (users.intelligenceByDuty), mirrored from the profile listener.
+export const setActiveIntelligenceDuties = (byDuty?: DutyAssignment | null) => { activeDuties = byDuty || undefined; };
+// The intelligence for a kind of work: ordered to it → listening → none (domain/intelligenceDuty).
+export const getActiveIntelligenceId = (duty?: IntelligenceDuty): string | undefined => intelligenceForDuty(activeDuties, duty, activeIntelligenceId);
 
 // Resolve which AI allowance source powers a call right now — for DISPLAY (the AIAccessCard).
 // Precedence: user BYO key → community BYO key → sponsored → node compute (free tier with a

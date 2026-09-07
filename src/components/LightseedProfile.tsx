@@ -12,6 +12,7 @@ import { isExplicitlyValidatedTree, isValidationLive, isValidationFading } from 
 import { normalizeTheme, type CommunityThemePreset } from '../utils/theme';
 import { IntelligencePanel } from './intelligence/IntelligencePanel';
 import { DEFAULT_INTELLIGENCE_ID } from '../services/intelligence';
+import { assignDuty, type DutyAssignment } from '../domain/intelligenceDuty';
 import { BeingProfile, type BeingSection } from './BeingProfile';
 import { SuperDot } from './ui/SuperDot';
 import { ProfileInviteBanners } from './profile/ProfileInviteBanners';
@@ -80,6 +81,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
     const [siteHeroUrl, setSiteHeroUrl] = useState('');
     const [siteInherit, setSiteInherit] = useState(false);
     const [preferredIntelligenceId, setPreferredIntelligenceId] = useState<string>('');
+    const [intelligenceByDuty, setIntelligenceByDuty] = useState<DutyAssignment>({});
 
     useEffect(() => {
         if (!lightseed) return;
@@ -100,6 +102,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
             setSiteHeroUrl(data?.siteHeroUrl || '');
             setSiteInherit(!!data?.siteInherit);
             setPreferredIntelligenceId(data?.preferredIntelligenceId || DEFAULT_INTELLIGENCE_ID);
+            setIntelligenceByDuty((data?.intelligenceByDuty || {}) as DutyAssignment);
         });
         return () => unsub();
     }, [lightseed, placeDomain]);
@@ -294,6 +297,12 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                         onSelect={(id) => {
                             setPreferredIntelligenceId(id);
                             updateUserProfile(lightseed.uid, { preferredIntelligenceId: id }).catch(() => {});
+                        }}
+                        duties={intelligenceByDuty}
+                        onAssignDuty={(duty, id) => {
+                            const next = assignDuty(intelligenceByDuty, duty, id);
+                            setIntelligenceByDuty(next);
+                            updateUserProfile(lightseed.uid, { intelligenceByDuty: next }).catch(() => {});
                         }}
                     />
                 ) : null

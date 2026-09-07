@@ -3,6 +3,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { Community } from '../../types';
 import { updateCommunity } from '../../services/firebase';
 import { IntelligenceSection, type IntelligenceSelection } from '../sections/IntelligenceSection';
+import { assignDuty, type DutyAssignment } from '../../domain/intelligenceDuty';
 
 interface CommunityIntelligenceProps {
   community: Community;
@@ -36,6 +37,11 @@ export const CommunityIntelligence: React.FC<CommunityIntelligenceProps> = ({ co
       availableIntelligenceIds={community.availableIntelligenceIds}
       onSave={saveSelection}
       onSaved={onUpdate}
+      duties={community.intelligenceByDuty as DutyAssignment | undefined}
+      onAssignDuty={(duty, id) => {
+        const next = assignDuty(community.intelligenceByDuty as DutyAssignment | undefined, duty, id);
+        updateCommunity(community.id, { intelligenceByDuty: next }).then(() => onUpdate?.({ intelligenceByDuty: next })).catch(() => {});
+      }}
       title="Community Intelligence"
       sub="Choose which intelligences serve this community and which is the default. An intelligence is a participant, never an authority, and always replaceable."
       panelTitle={t('intel_community_title')}

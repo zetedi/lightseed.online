@@ -10,6 +10,8 @@ import {
 import { testIntelligenceConnection } from '../../services/gemini';
 import { AIAccessCard } from './AIAccessCard';
 import { SectionMenu } from '../ui/SectionMenu';
+import { INTELLIGENCE_DUTIES, DUTY_LABEL_KEY, dutiesOf, type DutyAssignment, type IntelligenceDuty } from '../../domain/intelligenceDuty';
+import { spokenLine } from '../../utils/translations';
 
 const CLAUDE_MODELS = [
   { id: 'claude-opus-4-8', label: 'Claude Opus 4.8 (deepest)' },
@@ -38,6 +40,8 @@ export const IntelligencePanel = ({
   canManageAll = false,
   title,
   subtitle,
+  duties,
+  onAssignDuty,
 }: {
   scope: CredentialScope;
   credentialOwnerId: string;       // uid (user) or communityId (community) — owner of the key
@@ -48,6 +52,10 @@ export const IntelligencePanel = ({
   canManageAll?: boolean;          // staff/superadmin — may enable/disable shared intelligences too
   title?: string;
   subtitle?: string;
+  // Which intelligence is ordered to which kind of work (domain/intelligenceDuty), and the hand
+  // that changes it — the owner persists it (users.intelligenceByDuty / communities.intelligenceByDuty).
+  duties?: DutyAssignment | null;
+  onAssignDuty?: (duty: IntelligenceDuty, intelligenceId: string | null) => void;
 }) => {
   const { t } = useLanguage();
   const [intelligences, setIntelligences] = useState<Intelligence[]>([]);
@@ -180,11 +188,14 @@ export const IntelligencePanel = ({
     setBusy(false);
   };
 
-  const [panelTab, setPanelTab] = useState<'intelligence' | 'memory'>('intelligence');
+  // TWO TABS (ring 2026-09-08): the entity's own SETTINGS — what listens, its Claude and key,
+  // its memory — and the AVAILABLE intelligences, pre-configured on the node, each of which may
+  // be ORDERED to a kind of work (domain/intelligenceDuty): the watering witness to one, the
+  // heart-to-heart translation to another. Work not ordered goes to the one listening.
+  const [panelTab, setPanelTab] = useState<'settings' | 'available'>('settings');
 
-  // THE KEY LIVES IN THE CARD (ring 2026-09-08): Claude's name, model and key are set inside
-  // its own card — a small gear at the corner opens the drawer — instead of a separate block
-  // below the grid. A Claude not yet connected is a dashed card in the same grid.
+  // THE KEY LIVES IN THE CARD: Claude's name, model and key are set inside its own card — a
+  // small gear at the corner opens the drawer. A Claude not yet connected is a dashed card.
   const claudeSettings = (
     <div className="mt-3 space-y-3 border-t border-slate-200 pt-3 dark:border-slate-700" onClick={e => e.stopPropagation()}>
       <details className="rounded-lg border border-slate-200 bg-white p-3 text-[11px] leading-relaxed text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
@@ -229,6 +240,78 @@ export const IntelligencePanel = ({
     </div>
   );
 
+  // One card, on either tab. `withDuties` adds the row of duty chips (the Available tab).
+  const renderCard = (intel: Intelligence, withDuties: boolean) => {
+    const isListening = selectedIntelligenceId === intel.id;
+    const isEnabled = intel.enabled !== false;
+    const manageable = canManage(intel);
+    const hasSettings = manageable && existingClaude?.id === intel.id;
+    const settingsOpen = openSettings === intel.id;
+    const served = dutiesOf(duties, intel.id);
+    return (
+      <div key={intel.id}
+        onClick={() => { if (isEnabled) onSelect(intel.id); }}
+        className={`rounded-2xl border p-3 transition-all ${settingsOpen ? 'sm:col-span-2' : ''} ${
+          isListening ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100 dark:bg-emerald-950/40 dark:ring-emerald-900/50'
+          : !isEnabled ? 'border-slate-100 bg-slate-50/50 opacity-70 dark:border-slate-800 dark:bg-slate-900/40'
+          : 'cursor-pointer border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900/60 dark:hover:border-slate-600 dark:hover:bg-slate-800/60'}`}>
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-sm font-bold text-slate-800 dark:text-slate-100">{intel.name}</span>
+              {isListening ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white"><span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />{t('intel_listening')}</span>
+              ) : !isEnabled ? (
+                <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500 dark:bg-slate-700 dark:text-slate-300">{t('intel_disabled_badge')}</span>
+              ) : (
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500 dark:bg-slate-800 dark:text-slate-400">{t('intel_enabled_badge')}</span>
+              )}
+            </div>
+            <div className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">{PROVIDER_LABEL[intel.provider] || intel.provider}{intel.connected ? ` · key ${intel.keyHint || 'set'}` : ''}</div>
+            {intel.description && <div className="mt-1 line-clamp-2 text-xs text-slate-400">{intel.description}</div>}
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            {hasSettings && (
+              <button type="button" title={t('intel_settings')} aria-label={t('intel_settings')} aria-expanded={settingsOpen}
+                onClick={(e) => { e.stopPropagation(); setOpenSettings(settingsOpen ? null : intel.id); }}
+                className={`rounded-full p-1.5 transition-colors ${settingsOpen ? 'bg-slate-900 text-amber-300 dark:bg-amber-400 dark:text-slate-900' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200'}`}>
+                <Icons.Cog size={16} />
+              </button>
+            )}
+            {manageable && (
+              <button type="button" disabled={togglingId === intel.id}
+                onClick={(e) => { e.stopPropagation(); toggleEnabled(intel); }}
+                className={`rounded-full px-2.5 py-1 text-[10px] font-bold transition-colors disabled:opacity-50 ${isEnabled ? 'bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-red-950/40 dark:hover:text-red-400' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}>
+                {togglingId === intel.id ? '…' : isEnabled ? t('intel_disable') : t('intel_enable')}
+              </button>
+            )}
+          </div>
+        </div>
+        {/* The duties this intelligence is ordered to — a chip per kind of work; tap to order or release. */}
+        {withDuties && onAssignDuty && isEnabled && (
+          <div className="mt-2 flex flex-wrap items-center gap-1" onClick={e => e.stopPropagation()}>
+            <span className="mr-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">{t('intel_serving')}</span>
+            {INTELLIGENCE_DUTIES.map(d => {
+              const mine = served.includes(d);
+              const other = !mine && !!duties?.[d];
+              return (
+                <button key={d} type="button" aria-pressed={mine}
+                  title={other ? `${spokenLine(DUTY_LABEL_KEY[d], {})} → ${intelligences.find(i => i.id === duties?.[d])?.name || '…'}` : spokenLine(DUTY_LABEL_KEY[d], {})}
+                  onClick={() => onAssignDuty(d, mine ? null : intel.id)}
+                  className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold transition-colors ${mine ? 'border-emerald-600 bg-emerald-600 text-white' : other ? 'border-slate-200 text-slate-400 hover:border-emerald-300 hover:text-emerald-700 dark:border-slate-700 dark:hover:text-emerald-300' : 'border-slate-200 bg-white text-slate-600 hover:border-emerald-400 hover:text-emerald-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:text-emerald-300'}`}>
+                  {spokenLine(DUTY_LABEL_KEY[d], {})}
+                </button>
+              );
+            })}
+          </div>
+        )}
+        {hasSettings && settingsOpen && claudeSettings}
+      </div>
+    );
+  };
+
+  const own = intelligences.filter(i => canManage(i));
+
   return (
     <div className="space-y-5">
       <div>
@@ -238,69 +321,18 @@ export const IntelligencePanel = ({
 
       <SectionMenu
         orientation="horizontal"
-        items={[{ key: 'intelligence', label: t('intel_all'), icon: <Icons.Intelligence /> }, { key: 'memory', label: t('intel_memory_title'), icon: <Icons.Leaf /> }]}
+        items={[{ key: 'settings', label: t('intel_tab_settings'), icon: <Icons.Cog size={16} /> }, { key: 'available', label: t('intel_tab_available'), icon: <Icons.Intelligence /> }]}
         active={panelTab}
-        onSelect={(k) => setPanelTab(k as 'intelligence' | 'memory')}
+        onSelect={(k) => setPanelTab(k as 'settings' | 'available')}
       />
 
-      {panelTab === 'intelligence' && (<div className="space-y-5">
+      {panelTab === 'settings' && (<div className="space-y-5">
       {/* What's powering AI right now (your key / community / sponsored / network). */}
       <AIAccessCard intelligenceId={selectedIntelligenceId} />
 
-      {/* Choose the listening intelligence; enable/disable to control consumption; a manageable
-          Claude carries its own settings — name, model, key — behind the gear at its corner. */}
+      {/* The entity's own intelligences — its Claude with its key behind the gear; a Claude not yet connected as a dashed card. */}
       <div className="grid gap-2 sm:grid-cols-2">
-        {intelligences.map(intel => {
-          const isListening = selectedIntelligenceId === intel.id;
-          const isEnabled = intel.enabled !== false;
-          const manageable = canManage(intel);
-          const hasSettings = manageable && existingClaude?.id === intel.id;
-          const settingsOpen = openSettings === intel.id;
-          return (
-            <div key={intel.id}
-              onClick={() => { if (isEnabled) onSelect(intel.id); }}
-              className={`rounded-2xl border p-3 transition-all ${settingsOpen ? 'sm:col-span-2' : ''} ${
-                isListening ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100 dark:bg-emerald-950/40 dark:ring-emerald-900/50'
-                : !isEnabled ? 'border-slate-100 bg-slate-50/50 opacity-70 dark:border-slate-800 dark:bg-slate-900/40'
-                : 'cursor-pointer border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900/60 dark:hover:border-slate-600 dark:hover:bg-slate-800/60'}`}>
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-sm font-bold text-slate-800 dark:text-slate-100">{intel.name}</span>
-                    {isListening ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white"><span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />{t('intel_listening')}</span>
-                    ) : !isEnabled ? (
-                      <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500 dark:bg-slate-700 dark:text-slate-300">{t('intel_disabled_badge')}</span>
-                    ) : (
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500 dark:bg-slate-800 dark:text-slate-400">{t('intel_enabled_badge')}</span>
-                    )}
-                  </div>
-                  <div className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">{PROVIDER_LABEL[intel.provider] || intel.provider}{intel.connected ? ` · key ${intel.keyHint || 'set'}` : ''}</div>
-                  {intel.description && <div className="mt-1 line-clamp-2 text-xs text-slate-400">{intel.description}</div>}
-                </div>
-                <div className="flex shrink-0 items-center gap-1">
-                  {hasSettings && (
-                    <button type="button" title={t('intel_settings')} aria-label={t('intel_settings')} aria-expanded={settingsOpen}
-                      onClick={(e) => { e.stopPropagation(); setOpenSettings(settingsOpen ? null : intel.id); }}
-                      className={`rounded-full p-1.5 transition-colors ${settingsOpen ? 'bg-slate-900 text-amber-300 dark:bg-amber-400 dark:text-slate-900' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200'}`}>
-                      <Icons.Cog size={16} />
-                    </button>
-                  )}
-                  {manageable && (
-                    <button type="button" disabled={togglingId === intel.id}
-                      onClick={(e) => { e.stopPropagation(); toggleEnabled(intel); }}
-                      className={`rounded-full px-2.5 py-1 text-[10px] font-bold transition-colors disabled:opacity-50 ${isEnabled ? 'bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-red-950/40 dark:hover:text-red-400' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}>
-                      {togglingId === intel.id ? '…' : isEnabled ? t('intel_disable') : t('intel_enable')}
-                    </button>
-                  )}
-                </div>
-              </div>
-              {hasSettings && settingsOpen && claudeSettings}
-            </div>
-          );
-        })}
-
-        {/* A Claude not yet connected: a dashed card in the same grid, its settings inside. */}
+        {own.map(intel => renderCard(intel, false))}
         {!existingClaude && (
           <div className={`rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 p-3 dark:border-slate-600 dark:bg-slate-900/40 ${openSettings === 'new' ? 'sm:col-span-2' : ''}`}>
             <div className="flex items-start justify-between gap-2">
@@ -319,8 +351,6 @@ export const IntelligencePanel = ({
           </div>
         )}
       </div>
-
-      <p className="text-[11px] leading-snug text-slate-400">{t('intel_note')}</p>
 
       {/* Test the listening intelligence with a real, genesis-grounded question */}
       <div className="space-y-2">
@@ -344,6 +374,21 @@ export const IntelligencePanel = ({
         )}
       </div>
 
+      {/* Memory — for the listening intelligence. */}
+      {selected ? (
+        <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-700 dark:bg-slate-900/60">
+          <div className="flex items-center justify-between gap-2">
+            <h4 className="flex items-center gap-1.5 text-sm font-bold text-slate-800 dark:text-slate-100"><Icons.Leaf /> {t('intel_memory_title')} · {selected.name}</h4>
+            <span className="text-[11px] text-slate-400">{(selected.memoryIds || []).length} {t('intel_memories')}</span>
+          </div>
+          <p className="mt-1 text-[11px] leading-snug text-slate-500 dark:text-slate-400">{t('intel_memory_desc')}</p>
+          <textarea value={memText} onChange={e => setMemText(e.target.value)} placeholder={t('intel_memory_ph')} className="mt-2 min-h-24 w-full rounded-lg border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
+          <button type="button" onClick={handleAddMemory} disabled={addingMem || !memText.trim()} className="mt-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">{addingMem ? '…' : t('intel_add_memory')}</button>
+        </div>
+      ) : (
+        <p className="text-sm text-slate-400">{t('intel_choose_memory')}</p>
+      )}
+
       {/* Staff: make this connected Claude the voice every member hears by default. */}
       {canManageAll && existingClaude?.connected && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/50 dark:bg-amber-950/30">
@@ -357,6 +402,16 @@ export const IntelligencePanel = ({
           </button>
         </div>
       )}
+      </div>)}
+
+      {panelTab === 'available' && (<div className="space-y-5">
+      <div>
+        <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100">{t('intel_duties_title')}</h4>
+        <p className="mt-0.5 text-[11px] leading-snug text-slate-500 dark:text-slate-400">{t('intel_duties_note')} {t('intel_note')}</p>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {intelligences.map(intel => renderCard(intel, true))}
+      </div>
 
       {/* Future: a way to keep the whispers flowing when a key's quota runs high. */}
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-dashed border-rose-200 bg-rose-50/50 p-3 dark:border-rose-900/50 dark:bg-rose-950/20">
@@ -369,21 +424,6 @@ export const IntelligencePanel = ({
         </button>
       </div>
       </div>)}
-
-      {/* Memory tab — for the selected intelligence. */}
-      {panelTab === 'memory' && (selected ? (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-700 dark:bg-slate-900/60">
-          <div className="flex items-center justify-between gap-2">
-            <h4 className="flex items-center gap-1.5 text-sm font-bold text-slate-800 dark:text-slate-100"><Icons.Leaf /> {t('intel_memory_title')}</h4>
-            <span className="text-[11px] text-slate-400">{(selected.memoryIds || []).length} {t('intel_memories')}</span>
-          </div>
-          <p className="mt-1 text-[11px] leading-snug text-slate-500 dark:text-slate-400">{t('intel_memory_desc')}</p>
-          <textarea value={memText} onChange={e => setMemText(e.target.value)} placeholder={t('intel_memory_ph')} className="mt-2 min-h-24 w-full rounded-lg border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
-          <button type="button" onClick={handleAddMemory} disabled={addingMem || !memText.trim()} className="mt-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">{addingMem ? '…' : t('intel_add_memory')}</button>
-        </div>
-      ) : (
-        <p className="text-sm text-slate-400">{t('intel_choose_memory')}</p>
-      ))}
     </div>
   );
 };

@@ -7,6 +7,7 @@ import type { WateringAnalysis } from "../domain/watering";
 import { buildTranslationPrompt, type TranslationRequest, type TranslationResponse } from "../domain/translation";
 import config from "../../lifeseed.config.json";
 import { sendIntelligenceMessage, getIntelligence, getPersona, getActiveIntelligenceId, resolveIntelligenceMemoryText, DEFAULT_INTELLIGENCE_ID } from "./intelligence";
+import type { IntelligenceDuty } from "../domain/intelligenceDuty";
 import type { IntelligenceRef, Persona } from "../domain/intelligence";
 
 // Default model as requested: gemini-3.5-flash
@@ -83,10 +84,11 @@ const nodeFallback = async (
 // signed-in user's chosen one). Non-Google providers go through the provider abstraction;
 // Google — and the unconfigured default — fall back to the Gemini callable. Image
 // generation deliberately does NOT use this: only Gemini makes images.
-const runText = async (prompt: string, opts?: { json?: boolean; intelligenceId?: string; persona?: Persona | null }): Promise<string> => {
-    // No explicit/chosen intelligence → fall back to the network default ('osiris'), which a
-    // steward may have rebound to Claude. Keeps Gemini as the final safety net below.
-    const id = opts?.intelligenceId ?? getActiveIntelligenceId() ?? DEFAULT_INTELLIGENCE_ID;
+const runText = async (prompt: string, opts?: { json?: boolean; intelligenceId?: string; persona?: Persona | null; duty?: IntelligenceDuty }): Promise<string> => {
+    // No explicit/chosen intelligence → the one ordered to this DUTY, else the one listening,
+    // else the network default ('osiris'), which a steward may have rebound to Claude. Keeps
+    // Gemini as the final safety net below.
+    const id = opts?.intelligenceId ?? getActiveIntelligenceId(opts?.duty) ?? DEFAULT_INTELLIGENCE_ID;
     try {
         if (id) {
             const intel = await getIntelligence(id).catch(() => null);
@@ -115,7 +117,7 @@ export const generatePostTitle = async (body: string): Promise<string> => {
   if (!body.trim()) return "";
   try {
     const prompt = `Generate a short, engaging title (maximum 10 words) for the following post body. Do not use quotation marks in the title:\n\n---\n${body}\n---`;
-    const text = await runText(prompt);
+    const text = await runText(prompt, { duty: 'writing' });
     return text ? text.trim().replace(/["']/g, '') : "";
   } catch (error) {
     console.error("Gemini Title Error:", error);
@@ -132,7 +134,7 @@ export const generateLifetreeBio = async (seed: string): Promise<string> => {
       They provided this seed thought: "${seed}".
       Write a short (max 40 words), mystical, and nature-inspired bio/description.
     `;
-    const text = await runText(prompt);
+    const text = await runText(prompt, { duty: 'writing' });
     return text || "A soul taking root in the digital forest.";
   } catch (error: any) {
     console.error("Gemini Bio Error:", error);
@@ -183,7 +185,7 @@ export const generateOracleQuote = async (): Promise<string> => {
         }
 
         const prompt = `Based on the following vision: "${GENESIS_VISION}", select a short, profound quote from classic literature, philosophy, or poetry that resonates with these themes. Return ONLY the quote and the author in this format: "Quote" - Author.`;
-        const text = await runText(prompt);
+        const text = await runText(prompt, { duty: 'writing' });
         return text || '"Nature is not a place to visit. It is home." - Gary Snyder';
     } catch (e) {
         return '"The clearest way into the Universe is through a forest wilderness." - John Muir';
@@ -218,7 +220,7 @@ export const sendMessageToOracle = async (
 
     // With no explicit choice, fall back to the network default ('osiris') — which a steward
     // may have rebound to Claude — so every member speaks through the configured voice.
-    const idToUse = intelligenceId || DEFAULT_INTELLIGENCE_ID;
+    const idToUse = intelligenceId || getActiveIntelligenceId('whisper') || DEFAULT_INTELLIGENCE_ID;
     {
       const intel = await getIntelligence(idToUse).catch(() => null);
       if (intel && intel.enabled !== false) {
@@ -293,8 +295,8 @@ export const sendMessageToTree = async (message: string, history: {role: 'user' 
     Keep replies concise, sensory, practical, and poetic without pretending to know private facts.
     If the seeker asks for action, suggest one clear next step they can take with or for this tree.`;
 
-    // Route the tree's voice through the seeker's chosen intelligence when it isn't Google.
-    const id = getActiveIntelligenceId();
+    // Route the tree's voice through the intelligence ordered to tree talk (else the listening one) when it isn't Google.
+    const id = getActiveIntelligenceId('tree_talk');
     if (id) {
         const intel = await getIntelligence(id);
         if (intel && intel.enabled !== false && intel.provider !== 'google') {
@@ -362,7 +364,7 @@ Return ONLY a JSON object, no prose, no markdown:
     };
 
     try {
-        const id = intelligenceId ?? getActiveIntelligenceId() ?? DEFAULT_INTELLIGENCE_ID;
+        const id = intelligenceId ?? getActiveIntelligenceId('watering') ?? DEFAULT_INTELLIGENCE_ID;
         const intel = id ? await getIntelligence(id).catch(() => null) : null;
 
         // Non-Google connected intelligence (e.g. a community's Claude) → Claude vision.
@@ -452,7 +454,7 @@ The field:
 ${visionsList}`;
 
     try {
-        const reply = await runText(prompt, { json: true, intelligenceId });
+        const reply = await runText(prompt, { json: true, intelligenceId, duty: 'resonance' });
         return parseJsonArray<VisionSynergy>(reply);
     } catch (e) {
         console.error("Matchmaking error", e);
@@ -471,7 +473,7 @@ export const translatePulse = async (req: TranslationRequest, intelligenceId?: s
     try {
         // Route the interpretation through the reader's chosen intelligence (their Claude),
         // else the default Gemini path.
-        const reply = await runText(prompt, { json: true, intelligenceId });
+        const reply = await runText(prompt, { json: true, intelligenceId, duty: 'translation' });
         const parsed = parseJsonObject<TranslationResponse>(reply);
         if (parsed) return parsed;
         throw new Error('err_translation_empty');

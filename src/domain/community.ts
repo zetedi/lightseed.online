@@ -59,6 +59,8 @@ export interface Community extends Being {
   // the default, and which memories they may draw on. Communities remain sovereign.
   defaultIntelligenceId?: string;
   availableIntelligenceIds?: string[];
+  // Which intelligence serves which kind of work for this community (domain/intelligenceDuty).
+  intelligenceByDuty?: Partial<Record<string, string>>;
   memoryIds?: string[];
 
   // Tree Circle — communities that emerged from shared care of a Lifetree.

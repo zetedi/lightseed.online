@@ -6,6 +6,25 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-08 · The duties: work of several kinds, each orderable to a different intelligence**
+— the keeper asked for two tabs on the Intelligence menu: the entity's own settings, and the
+intelligences available pre-configured, "which can be ordered to different pulses". An entity
+had ONE intelligence (preferredIntelligenceId, the one listening); now it has DUTIES —
+domain/intelligenceDuty names the closed list of kinds of work the shell asks an intelligence
+to do (whisper · tree_talk · watering · translation · resonance · insight · writing) and the
+law intelligenceForDuty answers ordered → listening → node default, so an entity that orders
+none is unchanged. Every AI call site names its duty (gemini.ts, PulseInsightPanel); the
+runtime mirror (services/intelligence getActiveIntelligenceId(duty)) reads the signed-in
+being's orders from users.intelligenceByDuty; a community keeps its own in
+communities.intelligenceByDuty for its surfaces to read when they learn to. The panel's two
+tabs: SETTINGS — what listens, the entity's own Claude with its key behind the gear, the test,
+the memory, the staff default; AVAILABLE — every pre-configured intelligence, each card with a
+chip per duty: tap to order it, tap again to release it; a chip another intelligence holds is
+shown faint with that name in its title. REJECTED: ordering by pulse TYPE (observation, dream…)
+— the work the shell does with an intelligence is what differs, not the pulse's genre.
+
+---
+
 **2026-09-08 · Night reaches the reflections and the intelligences, and the key lives in the
 card** — the quote carousel and the Intelligences section had stayed white under the night
 switch, because the shell's night was only CSS variables and hand-swapped classes, and

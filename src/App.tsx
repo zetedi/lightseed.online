@@ -33,7 +33,7 @@ import {
   listenToUserProfile,
   getPendingTreeInvites
 } from './services/firebase';
-import { setActiveIntelligenceId } from './services/intelligence';
+import { setActiveIntelligenceId, setActiveIntelligenceDuties } from './services/intelligence';
 import { SigningKeyNeedsRestoreError } from './services/keys';
 import { tabTone, tabFg, CTA_GLOW } from './utils/tabTheme';
 import { type Pulse, type Lifetree, type Alignment, type Vision, type Community, type DataAuthority, type ReachAudience } from './types';
@@ -281,6 +281,7 @@ const AppContent = () => {
             setPersonalSiteLogoUrl('');
             setPersonalSiteInherit(false);
             setActiveIntelligenceId(undefined);
+            setActiveIntelligenceDuties(undefined);
             return;
         }
 
@@ -291,6 +292,7 @@ const AppContent = () => {
             setPreferredIntelligenceId(profile?.preferredIntelligenceId || undefined);
             // Mirror the choice so stateless AI helpers route through it everywhere.
             setActiveIntelligenceId(profile?.preferredIntelligenceId || undefined);
+            setActiveIntelligenceDuties(profile?.intelligenceByDuty || undefined);
         });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on uid on purpose: the lightseed object changes identity without the uid changing, and re-subscribing per object would churn the listener
     }, [lightseed?.uid]);

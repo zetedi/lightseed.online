@@ -44,7 +44,7 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
 
             // 2. Call the Translation engine through the reader's chosen intelligence — resolved
             // HERE so the provenance we persist below names the lens that actually read.
-            const intelligenceId = getActiveIntelligenceId() ?? DEFAULT_INTELLIGENCE_ID;
+            const intelligenceId = getActiveIntelligenceId('insight') ?? DEFAULT_INTELLIGENCE_ID;
             const intelligence = await getIntelligence(intelligenceId).catch(() => null);
             // DEPTH 4 = THE SUBGRAPH, finally true (ring 2026-08-25): the reading draws on
             // the reader's tree's real neighborhood — one person-crossing of the walk,
