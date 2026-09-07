@@ -654,6 +654,17 @@ describe("an addressed reach is born private (Lumo's review, 2026-09-07)", () =>
     // A reach addressed to no one — a public reflection — may still be public.
     await assertSucceeds(setDoc(doc(db(MALLORY), 'pulses', 'openReach'), { authorId: MALLORY, type: 'reach', visibility: 'public', body: 'a thought', loveCount: 0 }));
   });
+  it("the watering fork is no side door (Lumo's second look): the birth laws hold for care: 'watering' too", async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'lifetrees', 'treeMw'), { ownerId: MALLORY, name: 'Mallory fir', validated: false, validatorId: null, loveCount: 0 });
+    });
+    const watering = { authorId: MALLORY, care: 'watering', lifetreeId: 'treeMw', wateringConfirmedBy: 'pending', body: 'watered', loveCount: 0 };
+    await assertFails(setDoc(doc(db(MALLORY), 'pulses', 'wateringLoudReach'), { ...watering, type: 'reach', recipientUid: BOB, visibility: 'public' }));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'pulses', 'wateringQuietReach'), { ...watering, type: 'reach', recipientUid: BOB, participantUids: [MALLORY, BOB], visibility: 'private' }));
+    await assertFails(setDoc(doc(db(MALLORY), 'pulses', 'wateringStrangerOffer'), { ...watering, type: 'offering', offeringKind: 'service', title: 'x', visibility: 'public', offeringActive: true,
+      offeredToKind: 'tree', offeredToId: 'treeB', offeringFromTreeId: 'treeA', offeringStatus: 'open' }));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'pulses', 'wateringPlain'), { ...watering, type: 'standard', visibility: 'public' }));
+  });
 });
 
 describe('the pulse LIST leak — provenance from the query, never per-doc (ring 2026-08-25)', () => {

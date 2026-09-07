@@ -15,7 +15,14 @@
  * Minted, PUBLIC "reach" reflections (type 'reach' with NO recipientUid) are left untouched
  * — they are meant to stay world-readable.
  *
- * Idempotent: a reach that already has participantUids is skipped.
+ * Idempotent: a reach that already has participantUids is skipped by the first pass.
+ *
+ * SECOND PASS (Lumo's second look, 2026-09-07): every ADDRESSED reach — a recipientUid or a
+ * participantUids list — whose visibility is anything but 'private' is relabelled 'private',
+ * whatever it wore and whether or not the first pass touched it. The get path already refused
+ * such a record to strangers; the list path proves from the label, so a public label on an
+ * addressed reach was readable through an anonymous list. The rules now refuse that label at
+ * birth; this repairs what was born before.
  *
  * Auth (Admin SDK — bypasses Firestore rules):
  *   Option A: export GOOGLE_APPLICATION_CREDENTIALS=/path/to/serviceAccount.json
@@ -30,25 +37,21 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-let admin;
-try {
-  admin = (await import('firebase-admin')).default;
-} catch {
-  console.error('✗ firebase-admin is not installed.\n  Run:  npm i firebase-admin   (it is already a dependency of ./functions)');
-  process.exit(1);
-}
+import { applicationDefault, cert, initializeApp } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 
 const PROJECT_ID = 'lifeseed-75dfe';
 const DRY_RUN = process.argv.includes('--dry-run');
 
+// The modular Admin SDK (the default import's `credential` namespace is gone in v12+ ESM).
 function initAdmin() {
   const localKey = resolve(process.cwd(), 'serviceAccount.json');
   if (!process.env.GOOGLE_APPLICATION_CREDENTIALS && existsSync(localKey)) {
     const sa = JSON.parse(readFileSync(localKey, 'utf8'));
-    admin.initializeApp({ credential: admin.credential.cert(sa), projectId: sa.project_id || PROJECT_ID });
+    initializeApp({ credential: cert(sa), projectId: sa.project_id || PROJECT_ID });
     return sa.project_id || PROJECT_ID;
   }
-  admin.initializeApp({ credential: admin.credential.applicationDefault(), projectId: PROJECT_ID });
+  initializeApp({ credential: applicationDefault(), projectId: PROJECT_ID });
   return PROJECT_ID;
 }
 
@@ -56,7 +59,7 @@ const buildThreadId = (a, b) => [a || '', b || ''].sort().join('__');
 
 async function run() {
   const projectId = initAdmin();
-  const db = admin.firestore();
+  const db = getFirestore();
   console.log(`Project: ${projectId}`);
   console.log(`${DRY_RUN ? '[DRY RUN] ' : ''}Backfilling reach privacy fields…\n`);
 
@@ -78,7 +81,7 @@ async function run() {
     const participantUids = Array.from(new Set([p.authorId, p.recipientUid].filter(Boolean)));
     const update = {
       participantUids,
-      visibility: p.visibility || 'private',
+      visibility: 'private', // addressed — whatever it wore (Lumo's second look, 2026-09-07)
       threadId: p.threadId || buildThreadId(p.lifetreeId, p.reachTreeId),
     };
 
@@ -93,9 +96,28 @@ async function run() {
     if (pending >= 400) { await batch.commit(); batch = db.batch(); pending = 0; }
   }
 
+  if (!DRY_RUN && pending > 0) { await batch.commit(); batch = db.batch(); pending = 0; }
+
+  // SECOND PASS — every addressed reach wears 'private', whatever the first pass did or skipped.
+  let relabelled = 0;
+  for (const doc of snap.docs) {
+    const p = doc.data();
+    const addressed = !!p.recipientUid || (Array.isArray(p.participantUids) && p.participantUids.length > 0);
+    if (!addressed || p.visibility === 'private') continue;
+    const update = { visibility: 'private' };
+    if (!Array.isArray(p.participantUids) || !p.participantUids.length) {
+      update.participantUids = Array.from(new Set([p.authorId, p.recipientUid].filter(Boolean)));
+    }
+    relabelled++;
+    if (DRY_RUN) { if (relabelled <= 10) console.log(`  would relabel ${doc.id}: ${p.visibility || '<absent>'} → private`); continue; }
+    batch.set(doc.ref, update, { merge: true });
+    pending++;
+    if (pending >= 400) { await batch.commit(); batch = db.batch(); pending = 0; }
+  }
   if (!DRY_RUN && pending > 0) await batch.commit();
 
   console.log(`\nScanned ${scanned} reach pulses.`);
+  console.log(`  ${DRY_RUN ? 'would relabel' : 'relabelled'} addressed reaches wearing a non-private label: ${relabelled}`);
   console.log(`  ${DRY_RUN ? 'would update' : 'updated'}: ${updated}`);
   console.log(`  skipped (already migrated): ${skippedDone}`);
   console.log(`  skipped (public minted reach, no recipient): ${skippedPublic}`);

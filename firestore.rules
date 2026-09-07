@@ -900,27 +900,29 @@ service cloud.firestore {
           ? (request.resource.data.get('authorId', '') == request.auth.uid
              && (isStaff() || isTreeCarer(request.resource.data.get('lifetreeId', '')))
              && request.resource.data.get('wateringConfirmedBy', 'pending') != 'guardian')
-          : ((request.resource.data.type != 'event'
+          : (request.resource.data.type != 'event'
               || !('communityId' in request.resource.data)   // standalone event — anyone may plant one
               || isStaff()
               || isCommunityOwner(request.resource.data.communityId))
-             // An OFFERING OF CARE (ring 2026-09-06) is born OPEN: no client writes an answer at
-             // birth. Acceptance is the server's (functions/acceptOffering); withdraw and decline
-             // are the flips below.
-             && (request.resource.data.get('type', '') != 'offering'
-                 || (request.resource.data.get('offeringStatus', 'open') == 'open'
-                     // …and FROM a tree the offerer CARES for (Lumo's review, 2026-09-07):
-                     // acceptance appends a block to that tree's chain and moves its head, so
-                     // the hand that names it must hold it — never a stranger's tree.
-                     && (isStaff() || !('offeringFromTreeId' in request.resource.data)
-                         || isTreeCarer(request.resource.data.offeringFromTreeId))))
-             // An ADDRESSED reach (a recipient, a thread) is born PRIVATE (Lumo's review,
-             // 2026-09-07): the get path refuses it to strangers whatever its label, but the
-             // list path proves from the label — so the label may never lie at birth.
-             && (request.resource.data.get('type', '') != 'reach'
-                 || (!('recipientUid' in request.resource.data) && !('participantUids' in request.resource.data))
-                 || request.resource.data.get('visibility', '') == 'private'))
-      );
+        )
+        // The two birth laws below stand OUTSIDE the watering fork (Lumo's second look,
+        // 2026-09-07): placed inside its else-branch, a pulse wearing care: 'watering' walked
+        // past both — an addressed reach labelled public, an offering from a stranger's tree.
+        // An OFFERING OF CARE (ring 2026-09-06) is born OPEN: no client writes an answer at
+        // birth. Acceptance is the server's (functions/acceptOffering); withdraw and decline
+        // are the flips below. And it is made FROM a tree the offerer CARES for: acceptance
+        // appends a block to that tree's chain and moves its head, so the hand that names it
+        // must hold it — never a stranger's tree.
+        && (request.resource.data.get('type', '') != 'offering'
+            || (request.resource.data.get('offeringStatus', 'open') == 'open'
+                && (isStaff() || !('offeringFromTreeId' in request.resource.data)
+                    || isTreeCarer(request.resource.data.offeringFromTreeId))))
+        // An ADDRESSED reach (a recipient, a thread) is born PRIVATE: the get path refuses it
+        // to strangers whatever its label, but the list path proves from the label — so the
+        // label may never lie at birth.
+        && (request.resource.data.get('type', '') != 'reach'
+            || (!('recipientUid' in request.resource.data) && !('participantUids' in request.resource.data))
+            || request.resource.data.get('visibility', '') == 'private');
       // The append-only ledger: a pulse's identity and chain fields (hash, previousHash, authorId,
       // type, createdAt, lifetreeId, treeId, communityId, participantUids, …) are FROZEN after
       // creation. Only the interaction/governance overlays below may change, and EACH is scoped to

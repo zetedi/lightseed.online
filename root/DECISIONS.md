@@ -6,6 +6,21 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-07 · Lumo's second look: the watering fork was a side door, and the old labels
+still lied** — two remaining gaps. The two birth laws added at the first look (an offering
+FROM a tree the offerer holds; an addressed reach born private) had been placed inside the
+else-branch of the `care: 'watering'` fork, so a pulse wearing that word walked past both —
+Lumo disclosed a public-labelled addressed reach through an anonymous list. Both laws now
+stand as top-level conjuncts of the create rule, and a rules test drives the watering path
+through them (213). And the backfill: scripts/backfill-reach-privacy.mjs skipped every reach
+that already carried participants and kept a public label it found — so 25 addressed reaches
+in production still wore 'public', listable by anyone. The script gained a SECOND PASS that
+relabels every addressed reach 'private' whatever it wore (the get path already refused them
+to strangers; only the list path trusted the label), and moved to the modular Admin SDK.
+Lesson: a constraint placed inside a fork guards one branch; an invariant belongs at the top.
+
+---
+
 **2026-09-07 · The proof stands in the zone, not at the address** — the address panel told
 every keeper to enter the bare `_lightseed-challenge` label "and your provider appends the
 domain itself" — true only when the community's domain IS a zone apex. For a subdomain
