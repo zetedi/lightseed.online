@@ -43,12 +43,17 @@ export function useSiteTheme(params: {
     ? personalSiteLogoUrl
     : config.logoUrl;
   const effectiveThemeMode = themeModePreference || configuredTheme.mode || 'light';
+  // A theme authored DARK keeps its own night (ring 2026-09-07): its background, surface and
+  // text are what its keeper chose. The slate night is only for a LIGHT theme the viewer
+  // turned down — before this, every dark view wore slate and a dark theme's background dial
+  // changed nothing anyone could see.
+  const authoredDark = configuredTheme.mode === 'dark';
   const effectiveTheme = effectiveThemeMode === 'dark' ? {
     ...configuredTheme,
-    background: '#020617',
-    surface: '#0f172a',
-    text: '#e2e8f0',
-    neutral: '#cbd5e1',
+    background: authoredDark ? configuredTheme.background : '#020617',
+    surface: authoredDark ? (configuredTheme.surface || '#0f172a') : '#0f172a',
+    text: authoredDark ? (configuredTheme.text || '#e2e8f0') : '#e2e8f0',
+    neutral: authoredDark ? (configuredTheme.neutral || '#cbd5e1') : '#cbd5e1',
     mode: 'dark' as const,
   } : {
     ...configuredTheme,

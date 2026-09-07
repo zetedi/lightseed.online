@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Icons } from '../ui/Icons';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { updateUserSiteTheme, uploadImage } from '../../services/firebase';
@@ -60,6 +60,10 @@ export const ProfileAppearance: React.FC<ProfileAppearanceProps> = ({
     resetKey: uid,
     save: (patch) => updateUserSiteTheme(uid, patch),
   });
+  useEffect(() => {
+    if (themeSave.state === 'saved') toast(`🌱 ${t('autosaved')}`);
+    if (themeSave.state === 'error') toast(t('err_autosave'), 'error');
+  }, [themeSave.state, t]);
 
   const handleToggleInherit = async (next: boolean) => {
     setSavingInherit(true);

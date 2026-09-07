@@ -70,10 +70,15 @@ describe('ownMergeUid — the creator-never-lost courtesy speaks one sentence (r
     expect(ownMergeUid('zoltan', { reflectsPublic: false, strictScope: true })).toBeUndefined();
   });
 
-  it('a lenient scoped place keeps the courtesy; reflection always does', () => {
+  it('a lenient place keeps the courtesy, scoped or reflecting', () => {
     expect(ownMergeUid('zoltan', { reflectsPublic: false, strictScope: false })).toBe('zoltan');
     expect(ownMergeUid('zoltan', {})).toBe('zoltan'); // absent flags = scoped lenient
-    expect(ownMergeUid('zoltan', { reflectsPublic: true, strictScope: true })).toBe('zoltan'); // strict only bites while scoped
+    expect(ownMergeUid('zoltan', { reflectsPublic: true, strictScope: false })).toBe('zoltan');
+  });
+
+  it('strict wins over reflection (ring 2026-09-07): my own items live in my profile, nowhere else', () => {
+    expect(ownMergeUid('zoltan', { reflectsPublic: true, strictScope: true })).toBeUndefined();
+    expect(eventFeedScope({ uid: 'zoltan' }, { reflectsPublic: true, strictScope: true })).toEqual({ levels: ['public'], ownerUid: undefined });
   });
 
   it('no viewer, no merge — and eventFeedScope derives from the SAME sentence', () => {

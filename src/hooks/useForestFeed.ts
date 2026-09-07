@@ -27,8 +27,8 @@ export function useForestFeed(params: {
   // not the raw hostname — so impersonation and alternate seed-shell hosts scope by the place
   // actually being viewed, matching how trees/pulses are tagged (plantLifetree).
   hostDomain?: string;
-  // Strict scope: when scoped, hide even the viewer's own off-domain trees (a "this place only"
-  // forest). Only meaningful while NOT reflecting. See domain/community.strictScope.
+  // Strict scope: hide even the viewer's own off-domain trees (a "this place only" forest),
+  // scoped or reflecting. See domain/community.strictScope and domain ownMergeUid.
   hostStrictScope?: boolean;
   // The active community's id: a scoped forest also shows the trees STANDING here through
   // grows_in edges (ring 2026-08-24) — they entered through the door, so even strict shows them.

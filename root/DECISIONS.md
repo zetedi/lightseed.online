@@ -6,6 +6,23 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-07 · Strict wins, and a dark theme keeps its own night** — two sentences from the
+keeper after the live appearance shipped. First: on a strict place, "my items live in my
+profile and nowhere else." Strict had bitten only while scoped (ring 2026-08-18: "no effect
+while reflecting"), so a reflecting strict face still folded the viewer's own private and
+off-domain happenings into its Events and forest through the creator-never-lost merge. Now
+domain ownMergeUid answers undefined on any strict place, scoped or reflecting; reflection
+keeps deciding what of the commons a place shows, strict decides that the viewer's own is not
+merged on top. Second: "the background did not change." The shell's dark view had worn one
+slate night for every theme, so a theme authored dark (The O House's #0a0f1e) could turn its
+background dial and nothing moved. hooks/useSiteTheme now keeps a dark theme's own background,
+surface and text in dark view; the slate night stays only for a light theme the viewer turned
+down. And a landed autosave now says so in the toast, not only in the mark. Still true: only
+the HOST community's theme dresses the shell — a community opened from a list wears its theme
+on its own cards, not on the whole site.
+
+---
+
 **2026-09-07 · The appearance is live** — the keeper asked for the Appearance tab to save
 itself and to apply as it changes, what you see being what is. Two laws in domain/autosave:
 `patchOf` (a write carries exactly the fields that differ from the store, by value — no write

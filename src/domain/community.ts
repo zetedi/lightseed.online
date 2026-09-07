@@ -88,7 +88,8 @@ export interface Community extends Being {
   // scoped; opening the canopy must be explicit.
   reflectsPublic?: boolean;
   // STRICT scope: when scoped (not reflecting), also hide the viewer's OWN trees from other
-  // domains (suppress the creator-sees-their-own-trees merge) — a clean "this place only" view.
-  // No effect while reflecting. Absent = the owner-merge stays (today's behaviour).
+  // domains (suppress the creator-sees-their-own-trees merge) — a clean "this place only" view,
+  // whether the place is scoped or reflecting (ring 2026-09-07: strict wins; the viewer's own
+  // live in their profile). Absent = the owner-merge stays (today's behaviour).
   strictScope?: boolean;
 }

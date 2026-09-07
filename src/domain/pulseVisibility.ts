@@ -96,8 +96,8 @@ export function mergeAuthored<T extends { id: string }>(
 // THE EVENT SURFACES SPEAK ONE SENTENCE. The home hero box leaked a lightseed event onto Per
 // Auset (ring 2026-08-11) precisely because this derivation lived as two hand-copies — the
 // feed's and the banner's — and only one learned strictScope. Now both derive their query
-// here: reflecting → public-only plus the viewer's own; scoped strict → the place and nothing
-// else; scoped lenient → the place plus the viewer's own (the creator-never-lost courtesy).
+// here: reflecting → public-only (plus the viewer's own unless strict); scoped strict → the
+// place and nothing else; scoped lenient → the place plus the viewer's own (the courtesy).
 export function eventFeedScope(
   viewer: Viewer,
   host: { reflectsPublic?: boolean | null; strictScope?: boolean | null },
@@ -115,12 +115,16 @@ export function eventFeedScope(
 // The forest feed and the event surfaces each learned this; getTreesByDomain's callers
 // kept a hand-copy that never did, and an off-domain tree walked onto a strict face
 // (Nūr on Per Auset). Every own-merge now derives from HERE.
+// STRICT WINS (ring 2026-09-07): strict used to bite only while scoped, so a reflecting
+// strict face still folded the viewer's own private and off-domain happenings into its
+// Events. The keeper's sentence: on a strict place, my own items live in my profile and
+// nowhere else. Reflection still decides WHAT the place shows of the commons; strict
+// decides that the viewer's own is not merged in on top.
 export function ownMergeUid(
   viewerUid: string | null | undefined,
   host: { reflectsPublic?: boolean | null; strictScope?: boolean | null },
 ): string | undefined {
-  const reflects = reflectsInstancePublic(host.reflectsPublic);
-  return (!reflects && host.strictScope === true) ? undefined : (viewerUid || undefined);
+  return host.strictScope === true ? undefined : (viewerUid || undefined);
 }
 
 // The viewer-side cut both event surfaces share: signed-out visitors see only the node's own

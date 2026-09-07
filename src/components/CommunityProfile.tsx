@@ -279,6 +279,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     },
   });
   useEffect(() => {
+    if (appearanceSave.state === 'saved') notify(`🌱 ${speak('autosaved')}`);
     if (appearanceSave.state === 'error') notify(speak('err_autosave'), 'error');
   }, [appearanceSave.state]);
 
