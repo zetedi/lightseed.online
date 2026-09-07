@@ -6,6 +6,18 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-07 · The proof stands in the zone, not at the address** — the address panel told
+every keeper to enter the bare `_lightseed-challenge` label "and your provider appends the
+domain itself" — true only when the community's domain IS a zone apex. For a subdomain
+community (seed.enlightenednations.org) the dashboard appends the ZONE (enlightenednations.org),
+so the bare label planted the proof at the apex, where checkDomainVerification never looks.
+domain/domainVerification now derives challengeZone (last two labels, three under the common
+two-part public suffixes) and challengeHostLabel (`_lightseed-challenge.seed`); the panel shows
+that label and names the zone; the fully-qualified name beside it stays exact whatever the
+heuristic misses.
+
+---
+
 **2026-09-07 · Lumo's review at 0bb7d58: the invariants were stronger than the rules** — six
 findings, each verified against the real code before it was believed, four reproduced by Lumo
 under the emulator and one confirmed by Aspen against production (an anonymous unconstrained

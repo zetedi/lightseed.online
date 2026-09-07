@@ -1,14 +1,35 @@
 import { describe, expect, it } from 'vitest';
 import {
   DOMAIN_CHALLENGE_TTL_MS,
+  challengeHostLabel,
   challengeIsLive,
   challengeRecordName,
+  challengeZone,
   challengeRecordValue,
   isDomainVerified,
   txtProvesChallenge,
 } from '../src/domain/domainVerification';
 
 const NOW = 1783382400000;
+
+describe('the host label is relative to the ZONE the dashboard appends (ring 2026-09-07)', () => {
+  it('an apex community keeps the bare label', () => {
+    expect(challengeZone('theohouse.org')).toBe('theohouse.org');
+    expect(challengeHostLabel('theohouse.org')).toBe('_lightseed-challenge');
+    expect(challengeHostLabel('https://www.Theohouse.org/')).toBe('_lightseed-challenge');
+  });
+  it('a subdomain community carries its sub-labels — the bare label would land at the apex', () => {
+    expect(challengeZone('seed.enlightenednations.org')).toBe('enlightenednations.org');
+    expect(challengeHostLabel('seed.enlightenednations.org')).toBe('_lightseed-challenge.seed');
+    expect(challengeHostLabel('a.b.example.com')).toBe('_lightseed-challenge.a.b');
+    expect(challengeRecordName('seed.enlightenednations.org')).toBe('_lightseed-challenge.seed.enlightenednations.org');
+  });
+  it('knows the common two-part public suffixes', () => {
+    expect(challengeZone('example.co.uk')).toBe('example.co.uk');
+    expect(challengeHostLabel('example.co.uk')).toBe('_lightseed-challenge');
+    expect(challengeHostLabel('seed.example.co.uk')).toBe('_lightseed-challenge.seed');
+  });
+});
 
 describe('domain verification — proof of control, nothing more', () => {
   it('names the challenge in the underscored namespace on the normalized domain', () => {

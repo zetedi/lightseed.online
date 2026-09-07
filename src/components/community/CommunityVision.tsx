@@ -4,7 +4,7 @@ import { Icons } from '../ui/Icons';
 import { MahameruAvatar } from '../ui/MahameruAvatar';
 import { Community, Lifetree } from '../../types';
 import { ownMergeUid } from '../../domain/pulseVisibility';
-import { DOMAIN_CHALLENGE_LABEL, isDomainVerified } from '../../domain/domainVerification';
+import { challengeHostLabel, challengeZone, isDomainVerified } from '../../domain/domainVerification';
 import { getTreesByDomain, getPulsesByTreeId, updateCommunity, startDomainVerification, checkDomainVerification, exportCommunity, type DomainChallengeRecord } from '../../services/firebase';
 import { isCanonicallySealed, verifyBlockSeal, type ChainBlock } from '../../domain/chain';
 import { normalizePlaceOfRecord } from '../../domain/communityDoor';
@@ -425,7 +425,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                     <div className="mt-2 space-y-1.5 text-[11px]" dir="ltr">
                       {([
                         [t('domain_verify_dns_type'), 'TXT', false],
-                        [t('domain_verify_dns_name'), DOMAIN_CHALLENGE_LABEL, true],
+                        [t('domain_verify_dns_name'), challengeHostLabel(community.domain), true],
                         [t('domain_verify_dns_value'), challenge.recordValue, true],
                         [t('domain_verify_dns_ttl'), '300', false],
                       ] as const).map(([label, value, copyable]) => (
@@ -442,7 +442,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                       ))}
                     </div>
                     <p className="mt-2 text-[11px] italic leading-relaxed text-slate-500">
-                      {t('domain_verify_name_note').replace('{full}', challenge.recordName)}
+                      {t('domain_verify_name_note').replace('{zone}', challengeZone(community.domain)).replace('{full}', challenge.recordName)}
                     </p>
                     <p className="mt-1 text-[11px] italic leading-relaxed text-slate-500">
                       {t('domain_verify_resume')}

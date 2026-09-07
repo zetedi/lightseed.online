@@ -26,6 +26,28 @@ export const DOMAIN_CHALLENGE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export const challengeRecordName = (domain: string): string =>
   `${DOMAIN_CHALLENGE_LABEL}.${normalizeAnchorDomain(domain)}`;
 
+// THE ZONE the record is entered in, and the HOST LABEL relative to it (ring 2026-09-07). A DNS
+// dashboard appends the ZONE — the registrable domain — not the community's whole address. For
+// an apex (theohouse.org) the label is bare; for a subdomain community (seed.enlightenednations.org)
+// the label must carry the sub-labels: _lightseed-challenge.seed — the bare label there would
+// plant the proof at the apex, where the verifier never looks. The zone is the last two labels,
+// or three under the common two-part public suffixes (co.uk, com.au, …) — a heuristic honest
+// enough for a hint; the fully-qualified name beside it is always exact.
+const TWO_PART_SUFFIX_SECONDS = new Set(['co', 'com', 'org', 'net', 'gov', 'edu', 'ac', 'or', 'ne']);
+export const challengeZone = (domain: string): string => {
+  const labels = normalizeAnchorDomain(domain).split('.').filter(Boolean);
+  if (labels.length <= 2) return labels.join('.');
+  const [second, tld] = labels.slice(-2);
+  const zoneLabels = tld.length === 2 && TWO_PART_SUFFIX_SECONDS.has(second) && labels.length >= 3 ? 3 : 2;
+  return labels.slice(-zoneLabels).join('.');
+};
+export const challengeHostLabel = (domain: string): string => {
+  const d = normalizeAnchorDomain(domain);
+  const zone = challengeZone(d);
+  const sub = d === zone ? '' : d.slice(0, d.length - zone.length - 1);
+  return sub ? `${DOMAIN_CHALLENGE_LABEL}.${sub}` : DOMAIN_CHALLENGE_LABEL;
+};
+
 // What the TXT record says: lightseed-verification=v1:<token>.
 export const challengeRecordValue = (token: string): string =>
   `${DOMAIN_CHALLENGE_PREFIX}${token}`;
