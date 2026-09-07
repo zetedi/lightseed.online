@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* Night is the app's own switch (useSiteTheme writes data-mode on <html>), never the OS's:
+   every `dark:` utility follows it (ring 2026-09-08). */
+@custom-variant dark (&:where([data-mode="dark"], [data-mode="dark"] *));
+
 @theme {
   --color-primary-theme: var(--color-primary);
   --color-secondary-theme: var(--color-secondary);

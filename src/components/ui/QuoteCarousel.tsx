@@ -27,7 +27,7 @@ export const QuoteCarousel = ({ quotes, intervalMs = 8000 }: { quotes: string[];
     <section
       aria-roledescription="carousel"
       aria-label="Lightseed reflections"
-      className="relative w-full rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-sky-50 px-8 py-5 shadow-sm sm:px-10 sm:py-16"
+      className="relative w-full rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-sky-50 px-8 py-5 shadow-sm sm:px-10 sm:py-16 dark:border-emerald-900/40 dark:from-slate-900 dark:via-slate-900 dark:to-sky-950/60 dark:shadow-none"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocusCapture={() => setPaused(true)}
@@ -46,7 +46,7 @@ export const QuoteCarousel = ({ quotes, intervalMs = 8000 }: { quotes: string[];
         <p
           key={i}
           dir="auto"
-          className="animate-in fade-in duration-700 text-center font-serif italic leading-relaxed text-slate-700"
+          className="animate-in fade-in duration-700 text-center font-serif italic leading-relaxed text-slate-700 dark:text-slate-200"
           style={{ fontSize: long ? 'clamp(0.8rem, 1.6vw + 0.55rem, 1.25rem)' : 'clamp(1rem, 2vw + 0.6rem, 1.5rem)' }}
         >
           {q}
@@ -61,7 +61,7 @@ export const QuoteCarousel = ({ quotes, intervalMs = 8000 }: { quotes: string[];
           <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:mt-5">
             {quotes.map((_, n) => (
               <button key={n} onClick={() => go(n)} aria-label={`Reflection ${n + 1}`} aria-current={n === i}
-                className={`h-2 rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${n === i ? 'w-6 bg-emerald-600' : 'w-2 bg-emerald-200 hover:bg-emerald-300'}`} />
+                className={`h-2 rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${n === i ? 'w-6 bg-emerald-600 dark:bg-emerald-400' : 'w-2 bg-emerald-200 hover:bg-emerald-300 dark:bg-emerald-800 dark:hover:bg-emerald-700'}`} />
             ))}
           </div>
         </>

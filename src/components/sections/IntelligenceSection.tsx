@@ -168,7 +168,7 @@ export const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
 
       <h4 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-400">{t('intel_all')}</h4>
       {intelligences.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400">
+        <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400 dark:border-slate-700">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-500"><Icons.Intelligence /></div>
           <p className="text-sm">{t('intel_none')}</p>
         </div>
@@ -178,19 +178,19 @@ export const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
             const available = editAvailableIntelligenceIds.includes(intel.id);
             const isDefault = editDefaultIntelligenceId === intel.id;
             return (
-              <div key={intel.id} className={`rounded-2xl border p-4 transition-all ${available ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-white'}`}>
+              <div key={intel.id} className={`rounded-2xl border p-4 transition-all ${available ? 'border-emerald-200 bg-emerald-50/40 dark:border-emerald-900/50 dark:bg-emerald-950/30' : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900/60'}`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="break-words text-base font-bold text-slate-800">{intel.name}</h3>
+                      <h3 className="break-words text-base font-bold text-slate-800 dark:text-slate-100">{intel.name}</h3>
                       {isDefault && <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white" style={accentStyle}>{t('default_chip')}</span>}
                     </div>
-                    {intel.description && <p className="mt-1 text-sm text-slate-500">{intel.description}</p>}
+                    {intel.description && <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{intel.description}</p>}
                     <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
-                      <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-600">{PROVIDER_LABELS[intel.provider] || intel.provider}</span>
-                      <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 font-mono text-slate-500">{intel.model}</span>
+                      <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">{PROVIDER_LABELS[intel.provider] || intel.provider}</span>
+                      <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 font-mono text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">{intel.model}</span>
                       {personaName(intel.personaId) && <span className="rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-purple-700">Persona · {personaName(intel.personaId)}</span>}
-                      <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-500">{(intel.memoryIds || []).length} memory {(intel.memoryIds || []).length === 1 ? 'source' : 'sources'}</span>
+                      <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">{(intel.memoryIds || []).length} memory {(intel.memoryIds || []).length === 1 ? 'source' : 'sources'}</span>
                     </div>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-2">
@@ -205,7 +205,7 @@ export const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
                       type="button"
                       onClick={() => setDefaultIntelligence(intel.id)}
                       disabled={isDefault}
-                      className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${isDefault ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-700'}`}
+                      className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${isDefault ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
                     >
                       {isDefault ? '★ Default' : 'Set default'}
                     </button>
@@ -221,7 +221,7 @@ export const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
         <button onClick={handleSaveIntelligence} disabled={isSavingIntel} className="rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-700 disabled:opacity-50" style={accentStyle}>
           {isSavingIntel ? 'Saving...' : 'Save Intelligence'}
         </button>
-        {status && <span className="text-sm text-slate-500">{status}</span>}
+        {status && <span className="text-sm text-slate-500 dark:text-slate-400">{status}</span>}
       </div>
     </div>
   );

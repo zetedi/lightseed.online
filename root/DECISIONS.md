@@ -6,6 +6,26 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-08 · Night reaches the reflections and the intelligences, and the key lives in the
+card** — the quote carousel and the Intelligences section had stayed white under the night
+switch, because the shell's night was only CSS variables and hand-swapped classes, and
+Tailwind's `dark:` utilities followed the OS, not the app. Now `@custom-variant dark` binds
+every `dark:` utility to the app's own `data-mode` on <html> (147 selectors in the first
+build), and the carousel, the access card, the intelligence cards, drawers and memory tab
+wear it. And Claude's settings — name, model, key — moved INTO its card behind a gear at the
+corner (a Claude not yet connected is a dashed card in the same grid), replacing the block that
+stood below the grid; the connect steps and billing links fold into a details drawer. ON THE
+KEY'S SAFETY, asked the same evening: a BYO key is posted over the encrypted callable channel
+to functions/saveProviderCredential, stored in `providerCredentials`, which the rules make
+unreadable and unwritable for every client, and read back only by the Admin SDK at call time;
+the browser sees only its last four characters. It is encrypted at rest by Google like all of
+Firestore, but it is PLAINTEXT to any hand with project-level Firestore access — the keeper,
+a service account, a compromised function. The next rung, when keys multiply: envelope
+encryption with a Cloud KMS key held by the functions' service account alone, so a Firestore
+export or console read yields ciphertext. Not tonight; recorded so the edge is not hidden.
+
+---
+
 **2026-09-08 · Light and night are every visitor's** — the light/night switch had stood to the
 right of the profile and only for the signed-in; a visitor at a face's door could not turn the
 night down. It now stands to the LEFT of the profile avatar (and before Sign in for a
