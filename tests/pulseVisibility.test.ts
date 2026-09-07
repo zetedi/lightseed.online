@@ -1,5 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { canView, queryableLevels, mergeAuthored, pulseScope, eventFeedScope, eventsOnView, ownMergeUid } from '../src/domain/pulseVisibility';
+import { canView, queryableLevels, mergeAuthored, pulseScope, eventFeedScope, eventsOnView, ownMergeUid, domainWideLevels, placeOfRecordDomain } from '../src/domain/pulseVisibility';
+
+describe('the host\'s events are the place\'s (ring 2026-09-07)', () => {
+  it('a domain-wide query carries only what is provable for every document on the domain', () => {
+    expect(domainWideLevels(['public', 'node', 'community', 'circle'])).toEqual(['public', 'node']);
+    expect(domainWideLevels(['public'])).toEqual(['public']);
+  });
+  it('the stamp is the host\'s canonical domain, else the hostname, never www', () => {
+    expect(placeOfRecordDomain({ domain: 'theohouse.org' }, 'seed.theohouse.org')).toBe('theohouse.org');
+    expect(placeOfRecordDomain(null, 'www.enlightenednations.web.app')).toBe('enlightenednations.web.app');
+    expect(placeOfRecordDomain({ domain: '' }, 'Lightseed.Online')).toBe('lightseed.online');
+  });
+});
 
 // THE AUTHOR'S OWN. canView has always said an author sees their own pulse at every visibility;
 // queryableLevels has always spoken about STANDING, not authorship. Between those two truths an

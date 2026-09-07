@@ -55,7 +55,7 @@ import { readPhotoProvenance } from './utils/exif';
 // Components — the always-present shell (nav, footer, loaders, dialogs) stays statically imported.
 import { Icons } from './components/ui/Icons';
 import { Navigation } from './components/Navigation';
-import { canEditEvent, eventFeedScope, eventsOnView } from './domain/pulseVisibility';
+import { canEditEvent, eventFeedScope, eventsOnView, placeOfRecordDomain } from './domain/pulseVisibility';
 import { passesForestFilter, canViewTree } from './domain/views/forest';
 import { isWateringOverdue } from './domain/watering';
 import { isBedTree } from './domain/bed';
@@ -911,6 +911,7 @@ const AppContent = () => {
         if (tab === 'profile' && lightseed) {
             return (
                 <LightseedProfile
+                    placeDomain={placeOfRecordDomain(impersonatedCommunity || hostCommunity, window.location.hostname)}
                     onViewTree={(tree: Lifetree, section?: string) => { setTreeSectionHint(section || null); setSelectedTree(tree); }}
                     onDeleteTree={handleDeleteTree}
                     defaultTreeId={defaultTreeId}
@@ -952,6 +953,7 @@ const AppContent = () => {
                 <CommunityProfile
                     onViewLightHouse={setViewingLightHouse}
                     community={aboutCommunity}
+                    isHost={aboutCommunity.id === (impersonatedCommunity || hostCommunity)?.id}
                     onViewTree={(tree: Lifetree) => setSelectedTree(tree)}
                     onClose={() => setTab('dashboard')}
                     onUpdate={(updates) => {
@@ -1637,6 +1639,7 @@ const AppContent = () => {
                     <CommunityProfile
                     onViewLightHouse={setViewingLightHouse}
                         community={selectedCommunity}
+                        isHost={selectedCommunity.id === (impersonatedCommunity || hostCommunity)?.id}
                         arrivedInvite={arrivedInvite}
                         onSignIn={() => setShowAuthModal(true)}
                         onViewTree={(tree: Lifetree) => { setSelectedCommunity(null); setSelectedTree(tree); }}
@@ -1755,7 +1758,9 @@ const AppContent = () => {
                     uploading={uploading}
                     handleImageUpload={handleImageUpload}
                     onCreate={async (data: any) => {
-                        await createEvent(data);
+                        // Stamped with the place of record — the host's canonical domain, not the
+                        // hostname of whichever door the hand stood at (domain/pulseVisibility).
+                        await createEvent({ ...data, domain: placeOfRecordDomain(impersonatedCommunity || hostCommunity, window.location.hostname) });
                         if (tab === 'events') loadContent(true);
                     }}
                 />

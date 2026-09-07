@@ -51,13 +51,15 @@ interface LightseedProfileProps {
     onOpenTreeById?: (treeId: string) => void;
     onOpenCareById?: (treeId: string) => void;
     nodeTheme?: Partial<CommunityThemePreset>;
+    // The place of record for an event planted from here (the host's canonical domain).
+    placeDomain?: string;
 }
 
 // The profile shell: hero + section menu, rendered through BeingProfile (the one face for every
 // being). Session state (the lightseed), the active tab and the live-profile-listener state live
 // here; each tab's own data and handlers live in its component under ./profile (mirroring the
 // CommunityProfile split).
-export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSetDefaultTree, onViewVision, onViewPulse, onViewAlignment, onPlant, onCreateVision, onEmitPulse, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachAudience, reachOpenSignal, onConsumeReach, onReachTree, onOpenTreeById, onOpenCareById, nodeTheme }: LightseedProfileProps) => {
+export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSetDefaultTree, onViewVision, onViewPulse, onViewAlignment, onPlant, onCreateVision, onEmitPulse, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachAudience, reachOpenSignal, onConsumeReach, onReachTree, onOpenTreeById, onOpenCareById, nodeTheme, placeDomain }: LightseedProfileProps) => {
     const { t } = useLanguage();
     // Session state comes from context now (was prop-drilled from App).
     const { lightseed, myTrees, guardedTrees, tendedTrees, isAdmin, isSuperAdmin, superAdminExists } = useSession();
@@ -214,6 +216,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
             key: 'events', label: t('events'), icon: <Icons.Loc />, render: () => (
                 <ProfileEvents
                     uid={lightseed.uid}
+                    placeDomain={placeDomain}
                     name={lightseed.displayName}
                     photo={lightseed.photoURL}
                     onViewEvent={onViewPulse}

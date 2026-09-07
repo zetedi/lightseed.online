@@ -32,7 +32,9 @@
     },
     {
       "door": "enlightenednations.web.app",
-      "domains": []
+      "domains": [
+        "seed.enlightenednations.org"
+      ]
     },
     {
       "door": "mamaway.web.app",

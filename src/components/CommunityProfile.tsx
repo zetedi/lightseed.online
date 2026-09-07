@@ -52,6 +52,9 @@ interface CommunityProfileProps {
   // Open the auth modal — the signed-out invitee's door out of the greeting.
   onSignIn?: () => void;
   onUpdate?: (updates: Partial<Community>) => void;
+  // This community is the place the viewer stands in (the host of the domain, or the one
+  // being viewed as): its Events tab shows the domain's happenings too.
+  isHost?: boolean;
   onClose: () => void;
   onViewTree?: (tree: Lifetree) => void;
   onViewLightHouse?: (s: LightHouseType) => void;
@@ -69,6 +72,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   arrivedInvite,
   onSignIn,
   onUpdate,
+  isHost = false,
   onClose,
   onViewTree,
   onViewEvent,
@@ -681,6 +685,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
           currentUserName={currentUser?.displayName}
           currentUserPhoto={currentUser?.photoURL}
           communityLevels={communityLevels}
+          isHost={isHost}
           onViewEvent={onViewEvent}
         />
       ),

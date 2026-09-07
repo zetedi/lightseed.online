@@ -67,7 +67,7 @@
       "target": "enlightenednations",
       "site": "enlightenednations",
       "door": "enlightenednations.web.app",
-      "domains": []
+      "domains": ["seed.enlightenednations.org"]
     },
     {
       "target": "mamaway",

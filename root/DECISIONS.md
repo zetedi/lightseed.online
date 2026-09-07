@@ -6,6 +6,24 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-07 · The host's events are the place's, and the stamp is the place of record** —
+the keeper of Enlightened Nations saw no events on the crown's Events tab. Two roots. The
+community's name is `seed.enlightenednations.org` (not yet served) while the face's door is
+`enlightenednations.web.app`, unclaimed — so on the door there was no host: the About page was
+lightseed's, everything planted there (one tree, three pulses, the Ancestral Wisdom Summit
+among them) was stamped with the door's hostname and belonged to no community. And the crown's
+Events tab asked only `communityId ==`, so a domain's node-level events — the ones planted at
+the door — were nobody's. Now a community that IS the host (`isHost`, the shell's word) folds
+its domain's events into its tab (domainWideLevels: public, and node for the signed-in —
+the only levels provable for every document on a domain), deduplicated by mergeAuthored; and
+an event planted from a door is stamped with placeOfRecordDomain — the host's canonical
+domain, never the alias hostname (an alias door stamping itself would hide its events from
+the canonical scope; The O House's seed door had that latent). The charter's face now names
+seed.enlightenednations.org so the DNS cutover can land. Data still to mend by hand: alias
+the web.app door to the community and re-home its four door-stamped beings.
+
+---
+
 **2026-09-07 · Strict wins, and a dark theme keeps its own night** — two sentences from the
 keeper after the live appearance shipped. First: on a strict place, "my items live in my
 profile and nowhere else." Strict had bitten only while scoped (ring 2026-08-18: "no effect

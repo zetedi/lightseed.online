@@ -109,6 +109,21 @@ export function eventFeedScope(
   };
 }
 
+// THE HOST'S EVENTS ARE THE PLACE'S (ring 2026-09-07). A community that IS a domain's host
+// shows, on its own Events tab, the happenings of its domain too — the node-level events
+// planted at the door belong to the place, not to nobody. A domain-wide query can carry only
+// the levels provable for EVERY document on the domain: public, and node for the signed-in;
+// 'community'/'circle' are provable only inside their own scope and would have the whole
+// query refused. The place-of-record stamp is the host's canonical domain, never the raw
+// hostname a door happens to wear (an alias door stamping itself made its events invisible
+// on the canonical scope).
+export function domainWideLevels(levels: PulseVisibility[]): PulseVisibility[] {
+  return levels.filter(l => l === 'public' || l === 'node');
+}
+export function placeOfRecordDomain(host: { domain?: string | null } | null | undefined, hostname: string): string {
+  return (host?.domain || hostname).toLowerCase().replace(/^www\./, '');
+}
+
 // THE CREATOR-NEVER-LOST COURTESY SPEAKS ONE SENTENCE TOO (ring 2026-08-18). Scoped
 // surfaces merge the viewer's OWN beings in so a creator is never lost on a custom
 // domain — unless the place is STRICT ("this place only"), which suppresses the merge.

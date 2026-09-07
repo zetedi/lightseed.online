@@ -10,6 +10,8 @@ interface ProfileEventsProps {
   // Author identity stamped onto events created here.
   name?: string | null;
   photo?: string | null;
+  // The place of record stamped on an event planted here (the host's canonical domain).
+  placeDomain?: string;
   onViewEvent?: (event: Pulse) => void;
 }
 
@@ -19,11 +21,11 @@ interface ProfileEventsProps {
 // event is certain to be. A thin personal binding over the entity-generic EventsSection, exactly
 // as CommunityEvents is its community twin; creation goes through createEvent (standalone), so an
 // event planted here belongs to no community until one gathers around it.
-export const ProfileEvents: React.FC<ProfileEventsProps> = ({ uid, name, photo, onViewEvent }) => {
+export const ProfileEvents: React.FC<ProfileEventsProps> = ({ uid, name, photo, placeDomain, onViewEvent }) => {
   const { personLid } = useSession();
   // Both bindings are memoized — EventsSection's refresh effect keys on loadEvents.
   const loadEvents = useCallback(() => getMyEvents(uid), [uid]);
-  const handleCreate = useCallback((draft: EventDraft) => createEvent(draft), []);
+  const handleCreate = useCallback((draft: EventDraft) => createEvent(placeDomain ? { ...draft, domain: placeDomain } : draft), [placeDomain]);
 
   return (
     <EventsSection

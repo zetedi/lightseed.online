@@ -49,7 +49,7 @@ describe('what the charter derives', () => {
     if (node.firebase.projectId !== 'lifeseed-75dfe') return; // the origin's list; another node has its own
     expect(charterHosts(node)).toEqual([
       'enlightenednations.web.app', 'lifeseed-75dfe.firebaseapp.com', 'lifeseed-75dfe.web.app', 'lifeseed.online',
-      'lightseed.online', 'mamaway.web.app', 'perauset.com', 'perauset.web.app', 'seed.theohouse.org', 'theohouse.org',
+      'lightseed.online', 'mamaway.web.app', 'perauset.com', 'perauset.web.app', 'seed.enlightenednations.org', 'seed.theohouse.org', 'theohouse.org',
       'theohouse.web.app',
     ]);
   });
