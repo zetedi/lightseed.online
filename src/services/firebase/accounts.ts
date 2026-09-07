@@ -325,7 +325,8 @@ export const triggerSystemEmail = async (to: string, subject: string, text: stri
     // plain text and an optional CTA — the client no longer sends raw HTML.
     try {
         const sendEmailFn = httpsCallable(functions, 'sendSystemEmail');
-        return await sendEmailFn({ to: [to], subject, text, ctaUrl: opts?.ctaUrl, ctaLabel: opts?.ctaLabel });
+        // The door this hand stands at, so the sender may speak for the place (charter mailFromOf).
+        return await sendEmailFn({ to: [to], subject, text, ctaUrl: opts?.ctaUrl, ctaLabel: opts?.ctaLabel, domain: window.location.hostname });
     } catch (e) {
         console.error("Email trigger failed:", e);
         throw e;

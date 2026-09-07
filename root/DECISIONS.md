@@ -6,6 +6,29 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-07 · The letter carries its sender's name where the courier reads it** — every mail
+had reached its reader as a bare "admin@lightseed.online", whatever name the charter, the
+Workspace directory or Gmail's send-as carried. Not Gmail's doing: the Trigger Email extension
+reads `from`, `replyTo` and `headers` from the TOP LEVEL of the mail document and only subject /
+text / html / attachments from `message` — ours had ridden inside `message` since the queue was
+built, so the extension fell back to its bare default sender, and the newsletter's
+List-Unsubscribe headers (the one-click law) never left the queue at all. Verified against
+the extension's source and by two live mails, one of each shape. Both writers now place them
+at the top level. THE SENDER A MAIL WEARS is a law now (charter mailFromOf, mirrored in
+functions): the charter's `The Living Web - Lightseed <admin@lightseed.online>` for the node,
+and for a mail triggered at a PLACE — a keeper's knock on a face, a message spoken there, a
+system mail sent from its door — the same web and address with the place's name in the seat,
+`The Living Web - The O House <admin@…>` (its domain when it has no name; the node's own
+domains speak as the node). The address never moves: it is the one account the courier
+authenticates. The keeper asked for "the domain it was triggered from" in the seat; the
+place's NAME was chosen as the human form of the same fact, the domain standing in only
+where no name is known. The avatar beside it is Gmail's to grant: the
+sending Google account's own profile photo, once the domain's DKIM (added this evening) is
+active and the photo stands on the account itself — or BIMI, which wants DMARC at quarantine
+and a verified-mark certificate, a later rung.
+
+---
+
 **2026-09-07 · Lumo's second look: the watering fork was a side door, and the old labels
 still lied** — two remaining gaps. The two birth laws added at the first look (an offering
 FROM a tree the offerer holds; an addressed reach born private) had been placed inside the

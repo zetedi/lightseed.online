@@ -90,6 +90,29 @@ export const charterOrigin = (c: Charter): string => `https://${c.domain}`;
 // the faces of other places it hosts.
 export const charterOwnDomains = (c: Charter): string[] => [c.domain, ...c.aliases];
 
+// THE SENDER A MAIL WEARS (ring 2026-09-07). The charter's `mail.from` is the node's own:
+// `The Living Web - Lightseed <admin@…>` — one web, and the seat of the place that speaks. A
+// mail triggered at a PLACE (a face's community: a keeper's knock on The O House, a message on
+// Per Auset) keeps the web and the address but takes the place's name in the seat:
+// `The Living Web - The O House <admin@…>`. The address never changes — it is the one account
+// the courier authenticates — only the name. A place that IS the node (its own domain or an
+// alias of it), or no place at all, speaks as the node.
+//
+// Plain contract: the display name is `<web> - <place>` where <web> is the charter name's part
+// before ` - <node name>` (the whole name when it carries no seat); the place's name is
+// preferred, its domain the fallback; the address is the charter's, angle brackets and all.
+export const mailFromOf = (c: Pick<Charter, 'name' | 'domain' | 'aliases' | 'mail'>, place?: { name?: string | null; domain?: string | null } | null): string => {
+    const m = /^\s*(?:"?([^"<]*?)"?\s*)?<([^>]+)>\s*$/.exec(c.mail.from);
+    if (!m) return c.mail.from;
+    const [, nodeName = '', address] = m;
+    const placeDomain = (place?.domain || '').trim().toLowerCase().replace(/^www\./, '');
+    const label = (place?.name || '').trim() || placeDomain;
+    if (!label || (placeDomain && [c.domain, ...c.aliases].includes(placeDomain))) return c.mail.from;
+    const seat = ` - ${c.name}`;
+    const web = nodeName.trim().endsWith(seat) ? nodeName.trim().slice(0, -seat.length).trim() : nodeName.trim();
+    return `${web ? `${web} - ${label}` : label} <${address}>`;
+};
+
 // The door a face wears, by hosting target — what face-og bakes into that face's card.
 export const charterFaceDoor = (c: Charter, target: string): string | null =>
     c.faces.find((f) => f.target === target)?.door ?? null;

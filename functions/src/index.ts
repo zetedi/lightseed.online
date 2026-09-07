@@ -14,7 +14,7 @@ import { resolveTxt } from "node:dns/promises";
 import { judgeWitness, kindleDayKeyFromMs, uuidv7, releaseRay } from "./mint";
 import { entryFor, COLLECTION_FOR_KIND } from "./beingIndex";
 import { faceFeedOf, feedDomainOf } from "./faceEvents";
-import { charter, charterHosts, NODE_ORIGIN } from "./charter";
+import { charter, charterHosts, NODE_ORIGIN, mailFromOf, charterOwnDomains } from "./charter";
 import { notificationOf } from "./push";
 import { defineSecret } from "firebase-functions/params";
 import webpush from "web-push";
@@ -528,22 +528,44 @@ export const activateSigningKeyRecovery = onCall({ cors: true }, async request =
 
 // --- Email via the Firestore `mail` collection (Firebase Trigger Email extension) -------------
 // All outbound email stays in-house: writing a doc to `mail` queues it through the installed
-// firestore-send-email extension (Nodemailer under the hood, so `message.headers` are forwarded —
-// that's how the newsletter's List-Unsubscribe headers reach the recipient).
+// firestore-send-email extension (Nodemailer under the hood). THE DOCUMENT'S SHAPE (ring
+// 2026-09-07): the extension reads `from`, `replyTo` and `headers` from the TOP LEVEL of the
+// mail document (mailOptions.from = payload.from || DEFAULT_FROM) and only subject / text /
+// html / attachments from `message`. For months these rode inside `message`, so every mail
+// fell back to the extension's bare default sender — recipients saw "admin@lightseed.online"
+// with no name — and the newsletter's List-Unsubscribe headers never left the queue.
 const EMAIL_FROM = charter.mail.from;
 
-const writeMail = async (params: { to: string | string[]; subject: string; html: string; text?: string; headers?: Record<string, string>; uid?: string }) => {
+// The PLACE a mail is triggered at — the community rooted at a domain, or answering at one of
+// its doors (the getCommunityByDomain fallback) — so the sender may wear its name
+// (charter mailFromOf: "The Living Web - The O House"). A node domain, or no cradle, is the node.
+type MailPlace = { name?: string | null; domain?: string | null } | null;
+const placeOfDomain = async (domainRaw: unknown): Promise<MailPlace> => {
+    const domain = String(domainRaw || "").trim().toLowerCase().replace(/^www\./, "");
+    if (!domain || charterOwnDomains(charter).includes(domain)) return null;
+    try {
+        let cradle = await db.collection("communities").where("domain", "==", domain).limit(1).get();
+        if (cradle.empty) cradle = await db.collection("communities").where("domainAliases", "array-contains", domain).limit(1).get();
+        if (cradle.empty) return { domain };
+        const c = cradle.docs[0].data() as Record<string, unknown>;
+        return { name: String(c.name || ""), domain: String(c.domain || domain) };
+    } catch { return { domain }; }
+};
+
+const writeMail = async (params: { to: string | string[]; subject: string; html: string; text?: string; headers?: Record<string, string>; uid?: string; place?: MailPlace }) => {
     // Firestore rejects any document containing `undefined` (the extension doc write would fail
     // with "Cannot use undefined as a Firestore value"), so optional fields are only set when present.
-    const message: any = { from: EMAIL_FROM, subject: params.subject, html: params.html || "" };
+    const message: any = { subject: params.subject, html: params.html || "" };
     if (params.text) message.text = params.text;
-    if (params.headers) message.headers = params.headers;
-    await db.collection("mail").add({
+    const mail: Record<string, unknown> = {
         to: Array.isArray(params.to) ? params.to : [params.to],
         uid: params.uid || null,
+        from: mailFromOf(charter, params.place),
         message,
         createdAt: FieldValue.serverTimestamp(),
-    });
+    };
+    if (params.headers) mail.headers = params.headers;
+    await db.collection("mail").add(mail);
 };
 
 // The branded system-email shell, composed SERVER-SIDE so a client can never inject arbitrary
@@ -761,8 +783,11 @@ export const sendSystemEmail = onCall({ cors: true }, async (request) => {
 
     const html = composeSystemEmailHtml(text, ctaUrl, ctaLabel);
     const plain = ctaUrl ? `${text}\n\n${ctaUrl}` : text;
+    // The door the hand stood at (the client's hostname) names the place the sender speaks for.
+    const doorRaw = String(request.data?.domain || "").slice(0, 253);
+    const place = /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(doorRaw) ? await placeOfDomain(doorRaw) : null;
     try {
-        await writeMail({ to: recipients, subject, html, text: plain, uid });
+        await writeMail({ to: recipients, subject, html, text: plain, uid, place });
         return { success: true };
     } catch (error: any) {
         console.error("Email Error:", error);
@@ -871,7 +896,7 @@ export const onReachCreated = onDocumentCreated({ document: "pulses/{pulseId}", 
                 `<p style="font-size: 12px; color: #9ca3af;">You receive this because direct-message email notifications are on in your <a href=NODE_ORIGIN style="color: #059669; text-decoration: none;">lightseed profile</a>. You can turn this off anytime.</p>` +
                 `</div>`;
 
-            await writeMail({ to: [email], subject, html, text, uid: recipientUid });
+            await writeMail({ to: [email], subject, html, text, uid: recipientUid, place: await placeOfDomain(pulse.domain) });
 
             // Record the send so the per-thread throttle can skip rapid follow-ups.
             await throttleRef.set({
@@ -1323,6 +1348,7 @@ export const onJoinRequestCreated = onDocumentCreated("links/{linkId}", async (e
             await writeMail({
                 to: [email],
                 subject: `${requester} asked to join ${communityName}`,
+                place: { name: community.name, domain: community.domain },
                 html,
                 text: `${text}\n\n${NODE_ORIGIN}`,
                 uid,
@@ -2150,17 +2176,18 @@ export const sendNewsletterEmails = onCall({ timeoutSeconds: 300, memory: "512Mi
                 + `<p style="font-size:12px;color:#9ca3af;line-height:1.6;">You're receiving this because you subscribed to the lightseed newsletter.<br/>`
                 + `<a href="${unsub}" style="color:#059669;">Unsubscribe</a> · ${NEWSLETTER_POSTAL_ADDRESS}</p>`;
             const mailRef = db.collection("mail").doc();
+            // `from` and `headers` at the TOP level — where the extension reads them (see writeMail).
             batch.set(mailRef, {
                 to: [email],
                 uid: data.uid || null,
+                from: EMAIL_FROM,
+                headers: {
+                    "List-Unsubscribe": `<${unsub}>`,
+                    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+                },
                 message: {
-                    from: EMAIL_FROM,
                     subject,
                     html: `${html}${footer}`,
-                    headers: {
-                        "List-Unsubscribe": `<${unsub}>`,
-                        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-                    },
                 },
                 createdAt: FieldValue.serverTimestamp(),
             });

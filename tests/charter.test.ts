@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import {
-  charterProblem, charterHosts, charterOrigin, charterOwnDomains, charterFaceDoor, charterPublicOf, firebasercOf, hostingOf,
+  charterProblem, charterHosts, charterOrigin, charterOwnDomains, charterFaceDoor, charterPublicOf, firebasercOf, hostingOf, mailFromOf,
   type Charter,
 } from '../src/domain/charter';
 import {
   charterProblem as sCharterProblem, charterHosts as sCharterHosts, charterOrigin as sCharterOrigin,
   charterOwnDomains as sCharterOwnDomains, charterFaceDoor as sCharterFaceDoor, charterPublicOf as sCharterPublicOf,
+  mailFromOf as sMailFromOf,
 } from '../functions/src/charter';
 import { speak } from '../src/utils/translations';
 
@@ -104,6 +105,29 @@ describe('the files that must agree with node.json (scripts/charter-sync.mjs)', 
   });
 });
 
+describe('the sender a mail wears (ring 2026-09-07)', () => {
+  const c = { name: 'Lightseed', domain: 'lightseed.online', aliases: ['lifeseed.online'], mail: { from: 'The Living Web - Lightseed <admin@lightseed.online>' } };
+  it('the node speaks as itself — no place, or a place that is the node', () => {
+    expect(mailFromOf(c)).toBe('The Living Web - Lightseed <admin@lightseed.online>');
+    expect(mailFromOf(c, null)).toBe(c.mail.from);
+    expect(mailFromOf(c, { name: 'lightseed', domain: 'lightseed.online' })).toBe(c.mail.from);
+    expect(mailFromOf(c, { name: 'lifeseed', domain: 'www.lifeseed.online' })).toBe(c.mail.from);
+    expect(mailFromOf(c, { name: '  ', domain: '' })).toBe(c.mail.from);
+  });
+  it('a place takes the seat — its name first, its domain when it has none; the address never moves', () => {
+    expect(mailFromOf(c, { name: 'The O House', domain: 'theohouse.org' })).toBe('The Living Web - The O House <admin@lightseed.online>');
+    expect(mailFromOf(c, { domain: 'seed.enlightenednations.org' })).toBe('The Living Web - seed.enlightenednations.org <admin@lightseed.online>');
+  });
+  it('a charter name without the node\'s seat gains one; a bare address stays bare', () => {
+    expect(mailFromOf({ ...c, mail: { from: 'lightseed <admin@lightseed.online>' } }, { name: 'Per Auset' })).toBe('lightseed - Per Auset <admin@lightseed.online>');
+    expect(mailFromOf({ ...c, mail: { from: '<admin@lightseed.online>' } }, { name: 'Per Auset' })).toBe('Per Auset <admin@lightseed.online>');
+    expect(mailFromOf({ ...c, mail: { from: 'admin@lightseed.online' } }, { name: 'Per Auset' })).toBe('admin@lightseed.online');
+  });
+  it('the node\'s own charter names The Living Web with the node in the seat', () => {
+    expect(node.mail.from).toMatch(/^The Living Web - .+ <[^>]+>$/);
+  });
+});
+
 describe('the functions mirror stays true', () => {
   it('judges and derives identically', () => {
     for (const c of [node, broken(c => { c.faces = []; }), broken(c => { c.keeper.email = 'x'; }), broken(c => { c.push.publicKey = ''; })]) {
@@ -114,5 +138,8 @@ describe('the functions mirror stays true', () => {
     expect(sCharterOwnDomains(node)).toEqual(charterOwnDomains(node));
     expect(sCharterFaceDoor(node, 'perauset')).toBe(charterFaceDoor(node, 'perauset'));
     expect(sCharterPublicOf(node)).toEqual(charterPublicOf(node));
+    for (const place of [undefined, null, { name: 'The O House', domain: 'theohouse.org' }, { domain: node.domain }, { name: '' }]) {
+      expect(sMailFromOf(node, place)).toBe(mailFromOf(node, place));
+    }
   });
 });
