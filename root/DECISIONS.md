@@ -19,8 +19,12 @@ the only levels provable for every document on a domain), deduplicated by mergeA
 an event planted from a door is stamped with placeOfRecordDomain — the host's canonical
 domain, never the alias hostname (an alias door stamping itself would hide its events from
 the canonical scope; The O House's seed door had that latent). The charter's face now names
-seed.enlightenednations.org so the DNS cutover can land. Data still to mend by hand: alias
-the web.app door to the community and re-home its four door-stamped beings.
+seed.enlightenednations.org so the DNS cutover can land. The mend is one witnessed hand,
+`scripts/rehome-door.mjs <communityId> <door> --expect-name … [--apply]`: it aliases the door
+to the community and brings every being stamped with it (pulses, lifetrees, visions — a
+vision re-linked to the community, as mendVisionDomain does) home to the canonical domain;
+`domain` rides outside the hashed block fields, so no seal breaks. Its dry run for Enlightened
+Nations found five beings, not four: the anonymous count had missed a vision.
 
 ---
 
