@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "nodeLid": "01a0769e-508b-75e1-be8a-5e72b782948e",
+  "name": "The O House",
+  "shortName": "O House",
+  "tagline": "the seed is one with the river",
+  "description": "A place on a rock between stars, elements, cultures, languages, religions and Self, emerging from Bigeh, Aswan. Sacred space since antiquity, with the blessing of the Nubian community. Theo, a gift of God.",
+  "domain": "the-o-house.web.app",
+  "aliases": [],
+  "repo": "https://github.com/zetedi/lightseed.online",
+  "keeper": {
+    "email": "admin@theohouse.org"
+  },
+  "mail": {
+    "from": "The O House <admin@theohouse.org>"
+  },
+  "push": {
+    "subject": "mailto:admin@theohouse.org",
+    "publicKey": ""
+  },
+  "theme": {
+    "color": "#0a0f1e",
+    "background": "#0a0f1e"
+  },
+  "firebase": {
+    "projectId": "the-o-house",
+    "region": "us-central1",
+    "bucket": "the-o-house.firebasestorage.app",
+    "web": {
+      "apiKey": "",
+      "authDomain": "the-o-house.firebaseapp.com",
+      "messagingSenderId": "",
+      "appId": ""
+    }
+  },
+  "faces": [
+    {
+      "target": "app",
+      "site": "the-o-house",
+      "door": "the-o-house.web.app",
+      "domains": []
+    }
+  ]
+}

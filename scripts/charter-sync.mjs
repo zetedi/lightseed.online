@@ -2,6 +2,7 @@
 /**
  * Charter sync (ring 2026-09-06): node.json is what a node IS; this derives every file that
  * must agree with it and writes them only when they differ —
+ *   src/config/charter.json             the shell's copy (the checkout builds AS this charter)
  *   functions/src/charter.json          the server's copy (functions cannot import the repo)
  *   public/.well-known/lightseed.json   the node's public envelope (what a stranger may know)
  *   .firebaserc                         the project and the hosting targets
@@ -18,7 +19,8 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const CHECK = process.argv.includes('--check');
-const charterPath = process.argv.find((a) => a.endsWith('.json') && !a.startsWith('--')) || resolve(ROOT, 'node.json');
+// The charter the checkout builds AS: a positional path, else NODE_CHARTER, else the origin's node.json.
+const charterPath = resolve(ROOT, process.argv.find((a) => a.endsWith('.json') && !a.startsWith('--')) || process.env.NODE_CHARTER || 'node.json');
 const charter = JSON.parse(readFileSync(charterPath, 'utf8'));
 
 // A minimal echo of charterProblem — the domain law is the truth; this refuses only what
@@ -58,6 +60,7 @@ const put = (rel, content) => {
 };
 
 console.log(`charter: ${charter.name} · ${charter.domain} · ${charter.faces.length} faces · ${charter.firebase.projectId}`);
+put('src/config/charter.json', pretty(charter));
 put('functions/src/charter.json', pretty(charter));
 put('public/.well-known/lightseed.json', pretty(publicOf(charter)));
 put('.firebaserc', pretty(firebasercOf(charter)).trimEnd());

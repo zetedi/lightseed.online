@@ -35,7 +35,13 @@ ledger in git is still this repo's, not a node's. REJECTED: env files as the cha
 charter must be readable by tests, by the server and by strangers — env is none of those);
 templating firestore.rules per node (rules stay one text, reading the keeper's seat from the
 database); a predeploy build on every face (face-og dresses the other faces between deploys;
-the sync keeps the build on the first face alone).
+the sync keeps the build on the first face alone). The same evening the SECOND charter was
+minted: `nodes/theohouse/node.json` — The O House, keeper admin@theohouse.org, project
+`the-o-house` (the hosting site id `theohouse` already belongs to lightseed's face of it), its
+domain the project's own web.app door until the cutover moves seed.theohouse.org to it. The
+shell now reads a generated `src/config/charter.json`, so `NODE_CHARTER=` builds a checkout AS
+any charter it knows, and `FIREBASE_ACCOUNT=` lets the CLI act as the node's own account — a
+node owned by its place, not a tenant of the origin's.
 
 ---
 

@@ -13,7 +13,8 @@ import { speak } from '../src/utils/translations';
 // THE CHARTER. One file says what a node is; the law derives everything else, the server
 // mirrors the law, and the sync writes the files that must agree. These tests hold all three.
 
-const node = JSON.parse(readFileSync(new URL('../node.json', import.meta.url), 'utf8')) as Charter;
+// The charter the checkout is synced to: NODE_CHARTER, else the origin's node.json.
+const node = JSON.parse(readFileSync(new URL(`../${process.env.NODE_CHARTER || 'node.json'}`, import.meta.url), 'utf8')) as Charter;
 const sound = (): Charter => JSON.parse(JSON.stringify(node));
 const broken = (f: (c: Charter) => void) => { const c = sound(); f(c); return c; };
 
@@ -45,6 +46,7 @@ describe('charterProblem — what a sound charter is', () => {
 
 describe('what the charter derives', () => {
   it('answers at exactly the hosts the seed answered at by heart before the charter', () => {
+    if (node.firebase.projectId !== 'lifeseed-75dfe') return; // the origin's list; another node has its own
     expect(charterHosts(node)).toEqual([
       'enlightenednations.web.app', 'lifeseed-75dfe.firebaseapp.com', 'lifeseed-75dfe.web.app', 'lifeseed.online',
       'lightseed.online', 'mamaway.web.app', 'perauset.com', 'perauset.web.app', 'seed.theohouse.org', 'theohouse.org',
@@ -53,6 +55,7 @@ describe('what the charter derives', () => {
   });
 
   it('speaks from its own origin, knows its own domains and each face\'s door', () => {
+    if (node.firebase.projectId !== 'lifeseed-75dfe') return;
     expect(charterOrigin(node)).toBe('https://lightseed.online');
     expect(charterOwnDomains(node)).toEqual(['lightseed.online', 'lifeseed.online']);
     expect(charterFaceDoor(node, 'theohouse')).toBe('seed.theohouse.org');
@@ -61,13 +64,14 @@ describe('what the charter derives', () => {
 
   it('tells a stranger only what a stranger may know', () => {
     const pub = charterPublicOf(node) as Record<string, unknown>;
-    expect(pub).toMatchObject({ nodeLid: node.nodeLid, domain: 'lightseed.online', push: { publicKey: node.push.publicKey } });
+    expect(pub).toMatchObject({ nodeLid: node.nodeLid, domain: node.domain, push: { publicKey: node.push.publicKey } });
     expect(JSON.stringify(pub)).not.toContain(node.keeper.email);
     expect(JSON.stringify(pub)).not.toContain(node.firebase.web.apiKey);
     expect('firebase' in pub).toBe(false);
   });
 
   it('implies the hosting targets and one hosting entry per face', () => {
+    if (node.firebase.projectId !== 'lifeseed-75dfe') return;
     expect(firebasercOf(node)).toEqual({
       projects: { default: 'lifeseed-75dfe' },
       targets: { 'lifeseed-75dfe': { hosting: { app: ['lifeseed-75dfe'], perauset: ['perauset'], theohouse: ['theohouse'], enlightenednations: ['enlightenednations'], mamaway: ['mamaway'] } } },
@@ -83,7 +87,8 @@ describe('what the charter derives', () => {
 
 describe('the files that must agree with node.json (scripts/charter-sync.mjs)', () => {
   const read = (rel: string) => JSON.parse(readFileSync(new URL(`../${rel}`, import.meta.url), 'utf8'));
-  it('the server\'s copy is the charter itself', () => {
+  it('the shell\'s and the server\'s copies are the charter itself', () => {
+    expect(read('src/config/charter.json')).toEqual(node);
     expect(read('functions/src/charter.json')).toEqual(node);
   });
   it('the public envelope is what the law says a stranger may know', () => {

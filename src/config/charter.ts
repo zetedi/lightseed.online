@@ -1,7 +1,8 @@
-import raw from '../../node.json';
+import raw from './charter.json';
 import { charterProblem, charterHosts, charterOrigin, charterOwnDomains, type Charter } from '../domain/charter';
 
-// THE NODE THIS SHELL RUNS AS (ring 2026-09-06) — node.json, read once. Every place the code
+// THE NODE THIS SHELL RUNS AS (ring 2026-09-06) — the charter the checkout was synced to
+// (scripts/charter-sync.mjs writes ./charter.json from node.json, or from NODE_CHARTER), read once. Every place the code
 // used to name lightseed.online, its bucket, its keeper or its push key reads from here.
 export const charter: Charter = raw as Charter;
 const problem = charterProblem(charter);

@@ -28,7 +28,11 @@ of `firebase.json`; `tests/charter.test.ts` holds mirror and copies true, and `n
 refuses a tree out of step. Nothing in `src/` or `functions/` names the node by heart any
 more. `scripts/create-node.mjs <charter> [--apply]` walks a charter to a living node — project,
 web app, database, sites, secrets, sync, three deploys, custody — and says out loud the steps
-only a console can take.
+only a console can take. Other nodes the same code runs as keep their charters under `nodes/<id>/node.json`;
+`NODE_CHARTER=nodes/<id>/node.json` makes the sync, the build and create-node act AS that node,
+and `FIREBASE_ACCOUNT=<email>` makes the CLI act as the node's own account (after
+`firebase login:add`). The shell reads the generated `src/config/charter.json`, never the root
+file directly, so a checkout can be built for any charter it knows.
 Leaflet is bundled from npm, lazy-loaded on first map render (`services/leaflet.ts`).
 
 ## Layers: the dependency direction

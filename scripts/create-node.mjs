@@ -34,7 +34,9 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const APPLY = process.argv.includes('--apply');
-const charterPath = resolve(process.argv.find((a) => a.endsWith('.json') && !a.startsWith('--')) || resolve(ROOT, 'node.json'));
+// The Firebase account to act as (firebase login:add <email> first) — the node's own, not the origin's.
+const ACCOUNT = process.env.FIREBASE_ACCOUNT ? ` --account ${process.env.FIREBASE_ACCOUNT}` : '';
+const charterPath = resolve(ROOT, process.argv.find((a) => a.endsWith('.json') && !a.startsWith('--')) || process.env.NODE_CHARTER || 'node.json');
 const secretsPath = charterPath.replace(/\.json$/, '.secrets.json');
 const charter = JSON.parse(readFileSync(charterPath, 'utf8'));
 const secrets = existsSync(secretsPath) ? JSON.parse(readFileSync(secretsPath, 'utf8')) : {};
@@ -44,13 +46,14 @@ const say = (s) => console.log(s);
 const run = (cmd, opts = {}) => {
   say(`    $ ${cmd}`);
   if (!APPLY && !opts.always) return '';
-  return execSync(cmd, { cwd: ROOT, encoding: 'utf8', stdio: opts.quiet ? 'pipe' : ['inherit', 'pipe', 'inherit'] });
+  return execSync(cmd, { cwd: ROOT, encoding: 'utf8', env: { ...process.env, NODE_CHARTER: charterPath }, stdio: opts.quiet ? 'pipe' : ['inherit', 'pipe', 'inherit'] });
 };
 const tryRun = (cmd, opts = {}) => { try { return run(cmd, opts); } catch (e) { say(`      (failed: ${String(e.message).split('\n')[0]})`); return null; } };
-const json = (cmd) => { try { return JSON.parse(execSync(cmd, { cwd: ROOT, encoding: 'utf8', stdio: 'pipe' })); } catch { return null; } };
+const json = (cmd) => { try { return JSON.parse(execSync(cmd + ACCOUNT, { cwd: ROOT, encoding: 'utf8', env: { ...process.env, NODE_CHARTER: charterPath }, stdio: 'pipe' })); } catch { return null; } };
 const manual = [];
 
-say(`\n${APPLY ? 'CREATING' : 'PLAN FOR'} node "${charter.name}" (${charter.domain}) — project ${P}\n`);
+say(`\n${APPLY ? 'CREATING' : 'PLAN FOR'} node "${charter.name}" (${charter.domain}) — project ${P}${process.env.FIREBASE_ACCOUNT ? ` as ${process.env.FIREBASE_ACCOUNT}` : ''}\n`);
+if (!process.env.FIREBASE_ACCOUNT) say('    (acting as the current firebase login — set FIREBASE_ACCOUNT=<email> after `firebase login:add` to act as the node\'s own account)');
 
 // 1 · the charter is sound (the domain law's echo; the full law runs in tests/charter.test.ts)
 say('1 · the charter');
@@ -73,7 +76,7 @@ const projects = json('npx firebase projects:list --json');
 const exists = !!projects?.result?.find?.((p) => p.projectId === P);
 if (exists) say(`    = ${P} exists`);
 else {
-  tryRun(`npx firebase projects:create ${P} --display-name "${charter.name}"`);
+  tryRun(`npx firebase projects:create ${P} --display-name "${charter.name}"${ACCOUNT}`);
   manual.push(`Upgrade project ${P} to the Blaze plan (functions need it): https://console.firebase.google.com/project/${P}/usage/details`);
 }
 
@@ -82,9 +85,9 @@ say('3 · the web app');
 let web = charter.firebase.web || {};
 if (web.apiKey && web.appId) say('    = web config present in the charter');
 else {
-  const apps = json(`npx firebase apps:list WEB --project ${P} --json`);
-  if (!apps?.result?.length) tryRun(`npx firebase apps:create WEB "${charter.name}" --project ${P}`);
-  const cfg = APPLY ? json(`npx firebase apps:sdkconfig WEB --project ${P} --json`) : null;
+  const apps = json(`npx firebase apps:list WEB --project ${P} --json${ACCOUNT}`);
+  if (!apps?.result?.length) tryRun(`npx firebase apps:create WEB "${charter.name}" --project ${P}${ACCOUNT}`);
+  const cfg = APPLY ? json(`npx firebase apps:sdkconfig WEB --project ${P} --json${ACCOUNT}`) : null;
   const sdk = cfg?.result?.sdkConfig;
   if (sdk) {
     web = { apiKey: sdk.apiKey, authDomain: sdk.authDomain, messagingSenderId: sdk.messagingSenderId, appId: sdk.appId, ...(sdk.measurementId ? { measurementId: sdk.measurementId } : {}) };
@@ -104,11 +107,11 @@ else manual.push(`Create the Firestore database (Native mode): https://console.f
 
 // 5 · a site per face
 say('5 · the hosting sites');
-const sites = json(`npx firebase hosting:sites:list --project ${P} --json`);
+const sites = json(`npx firebase hosting:sites:list --project ${P} --json${ACCOUNT}`);
 const have = new Set((sites?.result?.sites || []).map((s) => String(s.name || '').split('/').pop()));
 for (const f of charter.faces) {
   if (have.has(f.site)) say(`    = ${f.site}`);
-  else tryRun(`npx firebase hosting:sites:create ${f.site} --project ${P}`);
+  else tryRun(`npx firebase hosting:sites:create ${f.site} --project ${P}${ACCOUNT}`);
   if (f.domains.length) manual.push(`Connect ${f.domains.join(', ')} to site ${f.site}: https://console.firebase.google.com/project/${P}/hosting/sites/${f.site}`);
 }
 
@@ -132,20 +135,25 @@ if (!charter.push?.publicKey) {
 for (const [name, value] of Object.entries(secrets)) {
   const tmp = resolve(ROOT, `.secret.${name}.tmp`);
   if (APPLY) writeFileSync(tmp, String(value));
-  tryRun(`npx firebase functions:secrets:set ${name} --data-file ${tmp} --project ${P} --non-interactive`);
+  tryRun(`npx firebase functions:secrets:set ${name} --data-file ${tmp} --project ${P} --non-interactive${ACCOUNT}`);
   if (APPLY) try { execSync(`rm -f ${tmp}`); } catch { /* fine */ }
 }
 if (!secrets.GEMINI_API_KEY && !secrets.ANTHROPIC_API_KEY) manual.push(`Add an AI key to ${basename(secretsPath)} (GEMINI_API_KEY or ANTHROPIC_API_KEY) and re-run, or the node's intelligences stay silent`);
 
 // 7 · the derived files
 say('7 · the derived files');
-run(`node scripts/charter-sync.mjs ${charterPath}`, { always: true });
+// The plan only LOOKS (--check): a plan must never switch the checkout to another node's charter.
+if (APPLY) run(`node scripts/charter-sync.mjs ${charterPath}`, { always: true });
+else {
+  const inStep = spawnSync('node', ['scripts/charter-sync.mjs', charterPath, '--check'], { cwd: ROOT, stdio: 'pipe' }).status === 0;
+  say(inStep ? '    = the derived files already agree with this charter' : '    · the derived files would switch to this charter on --apply');
+}
 
 // 8 · the deploys — three, each within the ten-minute reach of a hand
 say('8 · the deploys');
-tryRun(`npx firebase deploy --only firestore:rules,storage --project ${P} --non-interactive`);
-tryRun(`npx firebase deploy --only functions --project ${P} --non-interactive`);
-tryRun(`npx firebase deploy --only hosting --project ${P} --non-interactive`);
+tryRun(`npx firebase deploy --only firestore:rules,storage --project ${P} --non-interactive${ACCOUNT}`);
+tryRun(`npx firebase deploy --only functions --project ${P} --non-interactive${ACCOUNT}`);
+tryRun(`npx firebase deploy --only hosting --project ${P} --non-interactive${ACCOUNT}`);
 
 // 9 · custody
 say('9 · custody');
