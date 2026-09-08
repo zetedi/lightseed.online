@@ -1439,7 +1439,10 @@ const AppContent = () => {
                         careAlertCount={wateringNeededCount}
                         onOpenReachInbox={openDirectMessages}
                         logoUrl={configuredLogoUrl}
-                        appName={isSeedShellHost(window.location.hostname) ? '.seed' : config.name}
+                        // The header's name follows the community being viewed AS, like its logo does:
+                        // in community view the community's name; else .seed on the node's own hosts,
+                        // the face's name elsewhere.
+                        appName={impersonatedCommunity?.name || (isSeedShellHost(window.location.hostname) ? '.seed' : config.name)}
                         crownRole={deriveCrownRole(impersonatedCommunity || hostCommunity, dataAuthority)}
                         // An open event names itself in the header (mobile label + tablet centre).
                         pageLabel={selectedPulse?.type === 'event' ? 'Event' : undefined}

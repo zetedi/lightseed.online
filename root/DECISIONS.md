@@ -6,6 +6,13 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-08 · In community view the header wears the community's name** — the logo already
+followed the community being viewed as (useConfig reads the active community); the name beside
+it stayed ".seed" on the node's own hosts. Now the header's name follows the same hand: the
+impersonated community's name, else .seed on the node's hosts, else the face's name.
+
+---
+
 **2026-09-08 · The duties: work of several kinds, each orderable to a different intelligence**
 — the keeper asked for two tabs on the Intelligence menu: the entity's own settings, and the
 intelligences available pre-configured, "which can be ordered to different pulses". An entity
