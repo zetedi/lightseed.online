@@ -23,7 +23,7 @@ import { BeingProfile, type BeingSection } from './BeingProfile';
 import { ChainTree } from './sections/ChainTree';
 import { TreeCare } from './lifetree/TreeCare';
 import { TreeCircle } from './lifetree/TreeCircle';
-import { TreeGardens } from './lifetree/TreeGardens';
+import { TreeGardens, type GardenHost } from './lifetree/TreeGardens';
 import { TreeConnections } from './lifetree/TreeConnections';
 import { TreeDetails, type TreeDetailsUpdates } from './lifetree/TreeDetails';
 
@@ -36,6 +36,8 @@ interface LifetreeDetailProps {
     onValidate: (treeId: string, nextValidated: boolean) => void;
     onUpdate?: (updates: Partial<Lifetree>) => void;
     onDelete?: () => void;
+    // The place being viewed — the gardens search honours its scope.
+    host?: GardenHost;
     onCreatePulse: () => void;
     onReachTree?: (tree: Lifetree) => void;
     onViewPulse: (pulse: Pulse) => void;
@@ -61,7 +63,7 @@ const ActionBtn = ({ onClick, disabled, title, color, icon, label }: { onClick?:
     </button>
 );
 
-export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, onAlertGuardians, isDefaultTree, onSetDefault, targetUserProfile, initialSection, carrying, onCarry }: LifetreeDetailProps) => {
+export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, onAlertGuardians, isDefaultTree, onSetDefault, targetUserProfile, initialSection, carrying, onCarry, host }: LifetreeDetailProps) => {
    const { t } = useLanguage();
    // Session-derived values from context (were prop-drilled from App).
    const { lightseed, activeTree, isAdmin, isSuperAdmin, isInitiate } = useSession();
@@ -451,7 +453,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                />
                {/* The gardens this tree also stands in (grows_in) — the circle is its people,
                    the gardens its places. */}
-               <TreeGardens tree={tree} canManage={isOwner || isCarer} />
+               <TreeGardens tree={tree} canManage={isOwner || isCarer} host={host} />
                {/* The longitudinal walk (ring 2026-08-25) — SUPERADMIN-ONLY for now (it is
                    for later); loads lazily, only when opened. */}
                {isSuperAdmin && <div className="mt-4"><TreeConnections tree={tree} /></div>}

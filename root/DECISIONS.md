@@ -6,6 +6,16 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-08 · The garden search keeps the place's scope** — the keeper asked that search boxes
+honour the scope too, the garden search first. The communities list already did (domain
+communitiesOnView), the beds browse already scopes by the active data domain, and the events
+and forest searches sieve lists that arrive scoped; the tree page's GARDENS search alone drew
+from every community on the network. It now receives the place being viewed (App →
+LifetreeDetail → TreeGardens) and offers, on a strict portal, only what was born or stands
+there — one sentence, spoken once more.
+
+---
+
 **2026-09-08 · In community view the header wears the community's name** — the logo already
 followed the community being viewed as (useConfig reads the active community); the name beside
 it stayed ".seed" on the node's own hosts. Now the header's name follows the same hand: the

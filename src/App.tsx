@@ -1481,6 +1481,7 @@ const AppContent = () => {
                         ) : (
                         <LifetreeDetail
                             tree={selectedTree}
+                            host={impersonatedCommunity || hostCommunity}
                             onClose={() => { setSelectedTree(null); setMapRefreshKey(k => k + 1); }}
                             onPlayGrowth={setShowGrowthPlayer}
                             onValidate={(id: string, nextValidated: boolean) => (nextValidated

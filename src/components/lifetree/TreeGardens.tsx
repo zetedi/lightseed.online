@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Community, Lifetree } from '../../types';
 import { fetchCommunities, standTreeInCommunity, withdrawTreeFromCommunity, communitiesTreeStandsIn } from '../../services/firebase';
-import { doorOf } from '../../domain/communityDoor';
+import { doorOf, communitiesOnView } from '../../domain/communityDoor';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { showAlert } from '../ui/Dialog';
 import { Icons } from '../ui/Icons';
@@ -11,7 +11,10 @@ import { Icons } from '../ui/Icons';
 // speaks both vocabularies — a community's name and its domain — because "add
 // lightseed.online to this tree" and "add The Node" are the same wish. The community's
 // own door decides the gesture: open → the owner steps in; else the keeper welcomes.
-export const TreeGardens = ({ tree, canManage }: { tree: Lifetree; canManage: boolean }) => {
+// The place being viewed (impersonated || host): a STRICT portal's garden search offers only the
+// communities born or standing here (domain communitiesOnView) — the same scope every list keeps.
+export type GardenHost = { domain?: string; strictScope?: boolean; reflectsPublic?: boolean } | null;
+export const TreeGardens = ({ tree, canManage, host }: { tree: Lifetree; canManage: boolean; host?: GardenHost }) => {
   const { t } = useLanguage();
   const [all, setAll] = useState<Community[]>([]);
   const [standingIds, setStandingIds] = useState<string[]>([]);
@@ -29,12 +32,12 @@ export const TreeGardens = ({ tree, canManage }: { tree: Lifetree; canManage: bo
   const suggestions = useMemo(() => {
     const q = term.trim().toLowerCase();
     if (!q) return [];
-    return all
+    return communitiesOnView(all, { domain: host?.domain, strictScope: host?.strictScope, reflectsPublic: host?.reflectsPublic })
       .filter(c => !standingIds.includes(c.id))
       .filter(c => (c.domain || '') !== (tree.domain || '__none__')) // its own home needs no edge
       .filter(c => `${c.name || ''} ${c.domain || ''}`.toLowerCase().includes(q))
       .slice(0, 6);
-  }, [all, standingIds, term, tree.domain]);
+  }, [all, standingIds, term, tree.domain, host?.domain, host?.strictScope, host?.reflectsPublic]);
 
   const stand = async (c: Community) => {
     setBusy(c.id);
