@@ -7,7 +7,7 @@ import { Icons } from './ui/Icons';
 import { MahameruAvatar } from './ui/MahameruAvatar';
 import { Community, CommunityInvite, Lifetree, Pulse, LightHouse } from '../types';
 import { doorOf, checkInvite } from '../domain/communityDoor';
-import { updateCommunity, uploadImage, getTreesByDomain, treesStandingIn, getParticipatingTrees, deleteCommunity, getCommunityByDomain, getLightHousesByDomain, getLightHousesByCommunity, getAllLightHouses, createLightHouse, adoptLightHouse, getPersonName, joinCommunityOpen, joinCommunityWithInvite, requestKeepership, withdrawKeeperRequest, formCommunityFromCircle } from '../services/firebase';
+import { updateCommunity, uploadImage, releasePicture, getTreesByDomain, treesStandingIn, getParticipatingTrees, deleteCommunity, getCommunityByDomain, getLightHousesByDomain, getLightHousesByCommunity, getAllLightHouses, createLightHouse, adoptLightHouse, getPersonName, joinCommunityOpen, joinCommunityWithInvite, requestKeepership, withdrawKeeperRequest, formCommunityFromCircle } from '../services/firebase';
 import { formCircleRefusal, isTreeCircle } from '../domain/treeCircle';
 import { isDomainVerified } from '../domain/domainVerification';
 import { CommunityVision } from './community/CommunityVision';
@@ -281,6 +281,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     save: async (patch) => {
       await updateCommunity(community.id, patch);
       onUpdate?.(patch);
+      // A gallery image dropped from the draft leaves the bucket once the document no longer shows it.
+      if (patch.imageUrls) for (const gone of appearancePersisted.imageUrls.filter(u => !patch.imageUrls!.includes(u))) releasePicture(gone);
     },
   });
   useEffect(() => {
@@ -482,10 +484,12 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     setIsUploadingLogo(true);
     try {
       const url = await uploadImage(file, `communities/${community.id}/logo_${Date.now()}`);
+      const previous = logoUrl;
       setLogoUrl(url);
       // Persist immediately so the change can't get lost before the next Save.
       await updateCommunity(community.id, { logoUrl: url });
       onUpdate?.({ logoUrl: url });
+      if (previous && previous !== url) releasePicture(previous);
       setStatus('Saved');
     } catch (e: any) {
       console.error(e);
@@ -499,9 +503,11 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     setIsUploadingHero(true);
     try {
       const url = await uploadImage(file, `communities/${community.id}/hero_${Date.now()}`);
+      const previous = heroImageUrl;
       setHeroImageUrl(url);
       await updateCommunity(community.id, { heroImageUrl: url });
       onUpdate?.({ heroImageUrl: url });
+      if (previous && previous !== url) releasePicture(previous);
       setStatus('Saved');
     } catch (e: any) {
       console.error(e);
@@ -531,8 +537,9 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const handleRemoveHero = () => {
     // Persist immediately (like upload does) — otherwise the old photo returns
     // unless the user also remembers to hit Save.
+    const previous = heroImageUrl;
     setHeroImageUrl('');
-    updateCommunity(community.id, { heroImageUrl: '' }).catch(() => {});
+    updateCommunity(community.id, { heroImageUrl: '' }).then(() => releasePicture(previous)).catch(() => {});
     onUpdate?.({ heroImageUrl: '' });
   };
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Icons } from '../ui/Icons';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { updateUserSiteTheme, uploadImage } from '../../services/firebase';
+import { updateUserSiteTheme, uploadImage, releasePicture } from '../../services/firebase';
 import { normalizeTheme, type CommunityThemePreset } from '../../utils/theme';
 import { AppearanceEditor } from '../ui/AppearanceEditor';
 import { notify as toast } from '../ui/Toast';
@@ -83,9 +83,11 @@ export const ProfileAppearance: React.FC<ProfileAppearanceProps> = ({
     setUploadingSiteLogo(true);
     try {
       const url = await uploadImage(file, `users/${uid}/site-theme/logo_${Date.now()}`);
+      const previous = siteLogoUrl;
       onSiteLogoUrlChange(url);
       // Persist immediately so an upload can't be lost before the next Save.
       await updateUserSiteTheme(uid, { siteTheme: normalizeTheme(siteTheme), siteLogoUrl: url, siteHeroUrl });
+      if (previous && previous !== url) releasePicture(previous);
     } catch (e: any) {
       notify(e.message || 'Failed to upload site logo.');
     }
@@ -96,8 +98,10 @@ export const ProfileAppearance: React.FC<ProfileAppearanceProps> = ({
     setUploadingSiteHero(true);
     try {
       const url = await uploadImage(file, `users/${uid}/site-theme/hero_${Date.now()}`);
+      const previous = siteHeroUrl;
       onSiteHeroUrlChange(url);
       await updateUserSiteTheme(uid, { siteTheme: normalizeTheme(siteTheme), siteLogoUrl, siteHeroUrl: url });
+      if (previous && previous !== url) releasePicture(previous);
     } catch (e: any) {
       notify(e.message || 'Failed to upload hero image.');
     }
@@ -113,11 +117,13 @@ export const ProfileAppearance: React.FC<ProfileAppearanceProps> = ({
       onSiteThemeChange(resetTheme);
       onSiteLogoUrlChange('');
       onSiteHeroUrlChange('');
+      const previousLogo = siteLogoUrl; const previousHero = siteHeroUrl;
       await updateUserSiteTheme(uid, {
         siteTheme: resetTheme,
         siteLogoUrl: '',
         siteHeroUrl: '',
       });
+      releasePicture(previousLogo); releasePicture(previousHero);
       toast('Your profile theme has been reset to the node default.');
     } catch (e: any) {
       notify(e.message || 'Failed to reset theme.');
@@ -180,8 +186,9 @@ export const ProfileAppearance: React.FC<ProfileAppearanceProps> = ({
         uploadingHero={uploadingSiteHero}
         onRemoveHero={() => {
           // Persist immediately (like upload does) — no silent revert on reload.
+          const previous = siteHeroUrl;
           onSiteHeroUrlChange('');
-          updateUserSiteTheme(uid, { siteTheme: normalizeTheme(siteTheme), siteLogoUrl, siteHeroUrl: '' }).catch(() => {});
+          updateUserSiteTheme(uid, { siteTheme: normalizeTheme(siteTheme), siteLogoUrl, siteHeroUrl: '' }).then(() => releasePicture(previous)).catch(() => {});
         }}
       />
     </>)}

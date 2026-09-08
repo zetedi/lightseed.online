@@ -6,6 +6,25 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-08 · A picture is released when nothing shows it** — "uploading always saves them,
+right? And they are deleted properly when the links to them are deleted?" Saved, yes; deleted,
+never: no hand in the code had ever removed a Storage object, so every replaced logo, removed
+hero and dropped gallery image left its file, two variants and original copy in the bucket for
+good. domain/pictureRelease (mirrored in functions) names the seats that MAY be released —
+a community's logo, hero, gallery and landing pages, a person's site logo and hero: pictures
+bound to nothing but the document that shows them — and, for each, its holder and the four
+objects that go together (primary, @480, @1200, originals/). Everything a CHAIN binds — a
+pulse's, an event's, a tree's, a watering's picture — is never released: the chain remembers,
+and its referent must stand. functions/releasePicture is the one hand: it proves the caller
+holds the seat (owner, keeper link, the person, staff), reads the holder's document and REFUSES
+while any string in it still names the path, then deletes what the law listed. The client
+calls it fire-and-forget only AFTER the document has been written without the picture — on
+replace, on remove, on reset, and, for the gallery, from the autosave's own write. REJECTED:
+deleting client-side (a browser cannot prove the document no longer shows it); a scheduled
+sweep of orphans (it would have to know every seat's semantics; the law does, per seat).
+
+---
+
 **2026-09-08 · The garden search keeps the place's scope** — the keeper asked that search boxes
 honour the scope too, the garden search first. The communities list already did (domain
 communitiesOnView), the beds browse already scopes by the active data domain, and the events

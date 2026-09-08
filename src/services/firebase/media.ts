@@ -1,5 +1,7 @@
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { storage } from './core';
+import { httpsCallable } from 'firebase/functions';
+import { storage, functions } from './core';
+import { pictureReleaseOfUrl } from '../../domain/pictureRelease';
 import { beginNetwork, endNetwork, setUploadProgress } from '../network';
 import { IMAGE_MIME, imageKindOfMime, withImageExtension, type ImageKind } from '../../domain/imageBytes';
 import { IMAGE_PRIMARY_MAX_EDGE, IMAGE_PRIMARY_QUALITY } from '../../domain/imageVariant';
@@ -100,3 +102,14 @@ export const fileToWebpBase64 = async (file: File, maxDim = 1024): Promise<{ dat
     return { data: comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl, mimeType: IMAGE_MIME[kind] };
 };
 
+
+// RELEASING A PICTURE (ring 2026-09-08): after a seat's picture is replaced or removed and the
+// holder's document has been written, the old picture leaves the bucket with its variants and
+// its original — through the server (functions/releasePicture), which proves the hand and
+// that nothing shows it any more. Fire-and-forget: a refusal (still in use, not a releasable
+// seat, not ours) is logged, never surfaced — the document is already right.
+export const releasePicture = (url: string | null | undefined): void => {
+    if (!url || !pictureReleaseOfUrl(url)) return;
+    const fn = httpsCallable(functions, 'releasePicture');
+    fn({ url }).catch((e) => console.warn('releasePicture:', e?.message || e));
+};

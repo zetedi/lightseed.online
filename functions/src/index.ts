@@ -24,7 +24,8 @@ import { createBlock, computeCanonicalHash, BLOCK_HASH_VERSION } from "./chain";
 import { FACE_PREVIEW_MAX_BYTES, facePreviewAttempts, facePreviewDoorOf, facePreviewKeyOf, facePreviewUrlOf } from "./facePreview";
 import { getStorage } from "firebase-admin/storage";
 import { onObjectFinalized } from "firebase-functions/v2/storage";
-import { IMAGE_VARIANT_SIZES, IMAGE_VARIANT_QUALITY, imageVariantKeyOf, isDerivedImagePath } from "./imageVariant";
+import { IMAGE_VARIANT_SIZES, IMAGE_VARIANT_QUALITY, imageVariantKeyOf, isDerivedImagePath, storageObjectOf } from "./imageVariant";
+import { pictureReleaseOf, docReferencesPicture } from "./pictureRelease";
 import sharp from "sharp";
 
 // Every lid a server function mints is a UUIDv7 (the LIN invariant: a Being's true name is
@@ -2828,6 +2829,43 @@ export const deriveImageVariants = onObjectFinalized({ bucket: FACE_BUCKET, memo
     } catch (e) {
         console.error(`deriveImageVariants failed for ${name}:`, e);
     }
+});
+
+// --- RELEASING A PICTURE (ring 2026-09-08) --------------------------------------------------
+// A replaced logo, a removed hero, a dropped gallery image: the picture leaves the bucket with
+// its variants and its original copy — but only from the APPEARANCE seats the law names
+// (./pictureRelease, mirrored from domain), only by a hand that holds the seat (the community's
+// owner or keeper, the person themself, staff), and only once the holder's document no longer
+// shows it. A chain-bound picture is never released; a still-shown one is refused.
+export const releasePicture = onCall({ cors: true }, async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
+    const uid = request.auth.uid;
+    const url = String(request.data?.url || "");
+    const obj = storageObjectOf(url);
+    if (!obj || obj.bucket !== FACE_BUCKET) throw new HttpsError("invalid-argument", "picture_not_ours");
+    const release = pictureReleaseOf(obj.path);
+    if (!release) throw new HttpsError("failed-precondition", "picture_not_releasable");
+
+    let holderDoc: Record<string, unknown> | null = null;
+    if (release.holder.kind === "community") {
+        const snap = await db.collection("communities").doc(release.holder.id).get();
+        holderDoc = snap.exists ? (snap.data() as Record<string, unknown>) : null;
+        const keeperLink = await db.collection("links").doc(`${uid}__keeper__${release.holder.id}`).get();
+        const may = (holderDoc?.ownerId === uid) || keeperLink.exists || (await isStaffUid(uid));
+        if (!may) throw new HttpsError("permission-denied", "picture_not_yours");
+    } else {
+        if (release.holder.uid !== uid && !(await isStaffUid(uid))) throw new HttpsError("permission-denied", "picture_not_yours");
+        const snap = await db.collection("users").doc(release.holder.uid).get();
+        holderDoc = snap.exists ? (snap.data() as Record<string, unknown>) : null;
+    }
+    if (holderDoc && docReferencesPicture(holderDoc, obj.path)) throw new HttpsError("failed-precondition", "picture_in_use");
+
+    const bucket = getStorage().bucket(FACE_BUCKET);
+    let released = 0;
+    for (const name of release.objects) {
+        try { await bucket.file(name).delete(); released++; } catch (e: any) { if (e?.code !== 404) console.warn(`releasePicture: ${name}:`, e?.message || e); }
+    }
+    return { released };
 });
 
 // --- The living sitemap ------------------------------------------------------
