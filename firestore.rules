@@ -19,6 +19,13 @@ service cloud.firestore {
     // (ring 2026-08-12, domain/keeperCircle). Keeper links are never client-minted: only the
     // server writes one (acceptKeeperInvite / acceptKeeperRequest), after proving the newcomer
     // owns a living tree. Extending THIS function is what makes peers peers everywhere at once.
+    // A STAFF HAND lent by name (ring 2026-09-09, domain/staffHands — the one record of every
+    // such hand): staff, and the switch in config/staffHands not turned off (absent = lent).
+    function staffHand(name) {
+      return isStaff() && (
+        !exists(/databases/$(database)/documents/config/staffHands)
+        || get(/databases/$(database)/documents/config/staffHands).data.get(name, true) == true);
+    }
     function hasKeeperLink(communityId) {
       return exists(/databases/$(database)/documents/links/$(request.auth.uid + '__keeper__' + communityId));
     }
@@ -436,7 +443,9 @@ service cloud.firestore {
     // crown a community by rewriting the custody declaration.
     match /config/{configId} {
       allow read: if configId in ['superadmin', 'limits', 'dataAuthority'] || isStaff();
-      allow write: if configId == 'limits' && isStaff();
+      // limits: staff. staffHands (the switches of the staff hands, domain/staffHands): the
+      // SUPERADMIN alone — a hand's switch must not be a hand staff can flip for themselves.
+      allow write: if (configId == 'limits' && isStaff()) || (configId == 'staffHands' && isSuperAdmin());
     }
 
     // THE LID INDEX — beings/{lid} -> { kind, collection, docId }: a true name written down
@@ -563,7 +572,7 @@ service cloud.firestore {
             )
           )
           && (
-            isStaff()
+            staffHand('tree_edit')
             || (
               request.resource.data.ownerId == request.auth.uid
               && (
@@ -651,7 +660,7 @@ service cloud.firestore {
         // domain-freeze binds even them, exactly as at birth: a bed never carries a domain,
         // at create or edit, staff or not.
         || (
-          isStaff()
+          staffHand('tree_edit')
           && (resource.data.get('treeType', '') != 'BED'
               || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['domain']))
         )
@@ -906,7 +915,7 @@ service cloud.firestore {
         // is bound here so the carer the mint pays is real (Lumo's review, 2026-07-20).
         request.resource.data.get('care', '') == 'watering'
           ? (request.resource.data.get('authorId', '') == request.auth.uid
-             && (isStaff() || isTreeCarer(request.resource.data.get('lifetreeId', '')))
+             && (staffHand('tree_water') || isTreeCarer(request.resource.data.get('lifetreeId', '')))
              && request.resource.data.get('wateringConfirmedBy', 'pending') != 'guardian')
           : (request.resource.data.type != 'event'
               || !('communityId' in request.resource.data)   // standalone event — anyone may plant one
@@ -1412,7 +1421,7 @@ service cloud.firestore {
       // or the badge would be a self-claim wearing a proof's clothes.
       allow update: if isSignedIn() && (
         (
-          (resource.data.ownerId == request.auth.uid || hasKeeperLink(communityId) || isStaff())
+          (resource.data.ownerId == request.auth.uid || hasKeeperLink(communityId) || staffHand('community_edit'))
           && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid', 'loveCount', 'ownerId', 'bornOn', 'domainVerification', 'formedAt', 'formedBy', 'keeperUids', 'newsletterLastSentAt', 'newsletterLastSubject', 'newsletterLastSent'])
         )
         // LOVE: exactly one own-slot transition and exactly +/- one, atomically proved.
@@ -1633,7 +1642,9 @@ service cloud.firestore {
       // be read as that role. Binding id to data closes the whole forgery class; every real
       // writer already uses linkId(), so nothing legitimate breaks.
       allow create: if linkId == request.resource.data.from + '__' + request.resource.data.rel + '__' + request.resource.data.to
-        && (isStaff()
+        // Staff may mint any link (a named hand, domain/staffHands) — except grows_in, which has
+        // its own hand below so the garden switch can bite on its own.
+        && ((staffHand('link_mint') && request.resource.data.rel != 'grows_in')
         || (isSignedIn() && request.resource.data.from == request.auth.uid
             && request.resource.data.rel in ['guardian', 'joined'])
         // A knock at the door — possible unless the community's door is closed.
@@ -1658,9 +1669,12 @@ service cloud.firestore {
             && exists(/databases/$(database)/documents/lifetrees/$(request.resource.data.from))
             && (
               // A tree CARER (owner/co_owner/steward) steps into an open-door garden;
-              // any door, the community's keeper welcomes the tree (ring 2026-08-25).
+              // any door, the community's keeper welcomes the tree (ring 2026-08-25); and the
+              // node's STAFF may stand any tree in any garden (2026-09-08) — the stewards'
+              // hand while places move between domains, as staff may already withdraw one.
               (isTreeCarer(request.resource.data.from) && communityDoor(request.resource.data.to) == 'open')
               || isCommunityKeeper(request.resource.data.to)
+              || staffHand('garden_stand')
             ))
         // INTERBEING MATRIX: a founding owner or keeper-link peer may attest only FROM their
         // own community. Door stewards are deliberately excluded: they keep admission, not the

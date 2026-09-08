@@ -43,6 +43,9 @@ export const DOMAIN_KEYS = [
   'newsletter_not_keeper', 'newsletter_no_subscribers',
   // intelligenceDuty — the kinds of work an intelligence may be ordered to
   'duty_whisper', 'duty_tree_talk', 'duty_watering', 'duty_translation', 'duty_resonance', 'duty_insight', 'duty_writing',
+  // staffHands — the sentence each staff hand allows (domain/staffHands)
+  'hand_link_mint', 'hand_garden_stand', 'hand_tree_edit', 'hand_tree_water', 'hand_community_edit', 'hand_community_assets',
+  'hand_being_delete', 'hand_pulse_mend', 'hand_letters', 'hand_people_read', 'hand_node_config',
 ] as const;
 
 export type DomainKey = (typeof DOMAIN_KEYS)[number];

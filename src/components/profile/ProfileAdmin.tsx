@@ -7,6 +7,8 @@ import { resetLight } from '../../services/firebase/light';
 import { backfillLidIndex } from '../../services/firebase/beings';
 import type { AdminUserRow } from '../../services/firebase';
 import { DEFAULT_NODE_LIMITS } from '../../domain/limits';
+import { STAFF_HANDS, staffHandOn, type StaffHandSwitches } from '../../domain/staffHands';
+import { listenStaffHands, setStaffHand } from '../../services/firebase/staffHands';
 import { SectionTitle } from '../ui/SectionTitle';
 import { speak, spokenLine } from '../../utils/translations';
 
@@ -38,6 +40,10 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
   onOpenNewsletterAdmin,
   notify,
 }) => {
+  // THE STAFF HANDS (domain/staffHands): the one record, and the switches the superadmin flips.
+  const [hands, setHands] = useState<StaffHandSwitches>({});
+  useEffect(() => (isSuperAdmin ? listenStaffHands(setHands) : undefined), [isSuperAdmin]);
+
   const { t } = useLanguage();
   const [mailStatus, setMailStatus] = useState<string | null>(null);
 
@@ -166,6 +172,34 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
   return (
     <div>
       <SectionTitle title={t('admin_title')} sub={t('admin_sub')} />
+      {/* THE STAFF HANDS (ring 2026-09-09, domain/staffHands) — the one record, with the switches. */}
+      {isSuperAdmin && (
+        <div className="mb-4 rounded-2xl border border-violet-200 bg-violet-50/40 p-4 dark:border-violet-900/50 dark:bg-violet-950/20">
+          <p className="font-semibold text-slate-800 text-sm dark:text-slate-100">{t('admin_hands_title')}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{t('admin_hands_note')}</p>
+          <ul className="mt-3 space-y-2">
+            {STAFF_HANDS.map(h => {
+              const on = staffHandOn(hands, h.id);
+              return (
+                <li key={h.id} className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm text-slate-700 dark:text-slate-200">{spokenLine(h.key, {})}</p>
+                    <p className="truncate text-[10px] font-mono text-slate-400" title={h.enforcedBy.join(' · ')}>{h.id} · {h.since} · {h.enforcedBy[0]}</p>
+                  </div>
+                  {h.switchable ? (
+                    <button type="button" role="switch" aria-checked={on} onClick={() => setStaffHand(h.id, !on).catch(() => showAlert('err_save_retry'))}
+                      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors ${on ? 'bg-violet-600' : 'bg-slate-300 dark:bg-slate-700'}`}>
+                      <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${on ? 'translate-x-5' : 'translate-x-0'}`} />
+                    </button>
+                  ) : (
+                    <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500 dark:bg-slate-800 dark:text-slate-400">{t('admin_hands_fixed')}</span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
       {/* The lid index — beings born before the triggers existed (ring 2026-08-09). */}
       {isSuperAdmin && (
         <div className="mb-4 flex items-center justify-between gap-4 rounded-2xl border border-slate-100 p-4">

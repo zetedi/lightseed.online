@@ -6,6 +6,28 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-09 · The staff hands, recorded once and switched** — the superadmin could not add a
+tree to a garden. The rule had in fact allowed it all along (a generic `isStaff()` branch let
+staff mint ANY link); the tree page's Gardens hand was gated to the tree's carers, so the
+door was hidden, not locked. Reading that branch raised the keeper's real question: "I'm not
+sure we should allow the superadmin to care for every tree and keep every garden — but we
+need a hand while the paths are ironed out. Keep a switch, and a place where these rights are
+recorded, not scattered." Staff hands had been granted in ninety-odd `isStaff()` sites across
+the rules, the storage rules and the functions, recorded nowhere. Now domain/staffHands is THE
+RECORD: every hand named once with the sentence it allows, where it is enforced, since when,
+and whether it is switchable. Five are switchable today, wired through the rules' new
+`staffHand('id')`, which reads `config/staffHands` (absent = lent): link_mint (any link but
+grows_in), garden_stand, tree_edit, tree_water, community_edit. The superadmin alone flips a
+switch (staff may not lend themselves a hand), from a Staff hands card on the admin panel that
+lists every hand — the fixed ones too, so nothing stays in the dark. tests/staffHands.test.ts
+holds the record and the rules to the same names in both directions; a rules test withdraws
+the garden hand by the switch and sees the refusal. The tree page offers the Gardens hand to
+whoever may edit the tree. Not yet switchable, and said so: the storage write-anywhere (the
+two-document budget), deletions, mends, letters, reading people, node config — each recorded,
+each to be narrowed by editing its rule when its season comes.
+
+---
+
 **2026-09-08 · A picture is released when nothing shows it** — "uploading always saves them,
 right? And they are deleted properly when the links to them are deleted?" Saved, yes; deleted,
 never: no hand in the code had ever removed a Storage object, so every replaced logo, removed

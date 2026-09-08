@@ -469,6 +469,20 @@ describe('grows_in — a tree enters a garden through its door (ring 2026-08-24)
     await assertSucceeds(deleteDoc(doc(db(MALLORY), 'links', 'bobsTree__grows_in__garden1'))); // the carer withdraws
   });
 
+  it("the node's staff may stand any tree in any garden, closed door or not (2026-09-08) — while the hand is lent", async () => {
+    await seedGarden('closed');
+    await assertSucceeds(setDoc(doc(db(STAFF), 'links', 'bobsTree__grows_in__garden1'), edge));
+    await assertSucceeds(deleteDoc(doc(db(STAFF), 'links', 'bobsTree__grows_in__garden1')));
+    // The switch (domain/staffHands, config/staffHands) withdraws the hand without a deploy.
+    await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), 'config', 'staffHands'), { garden_stand: false }); });
+    await assertFails(setDoc(doc(db(STAFF), 'links', 'bobsTree__grows_in__garden1'), edge));
+    await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), 'config', 'staffHands'), { garden_stand: true }); });
+    await assertSucceeds(setDoc(doc(db(STAFF), 'links', 'bobsTree__grows_in__garden1'), edge));
+    // Only the superadmin flips a switch — staff may not lend themselves a hand.
+    await assertFails(setDoc(doc(db(STAFF), 'config', 'staffHands'), { garden_stand: true }, { merge: true }));
+    await env.withSecurityRulesDisabled(async (ctx) => { await deleteDoc(doc(ctx.firestore(), 'config', 'staffHands')); });
+  });
+
   it('a ghost tree earns no edge, and either side may withdraw — a stranger may not', async () => {
     await seedGarden('open');
     await assertFails(setDoc(doc(db(ALICE), 'links', 'ghostTree__grows_in__garden1'), { from: 'ghostTree', rel: 'grows_in', to: 'garden1' }));
