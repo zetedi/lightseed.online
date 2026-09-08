@@ -19,9 +19,14 @@ and its referent must stand. functions/releasePicture is the one hand: it proves
 holds the seat (owner, keeper link, the person, staff), reads the holder's document and REFUSES
 while any string in it still names the path, then deletes what the law listed. The client
 calls it fire-and-forget only AFTER the document has been written without the picture — on
-replace, on remove, on reset, and, for the gallery, from the autosave's own write. REJECTED:
-deleting client-side (a browser cannot prove the document no longer shows it); a scheduled
-sweep of orphans (it would have to know every seat's semantics; the law does, per seat).
+replace, on remove, on reset, and, for the gallery, from the autosave's own write. What was
+orphaned BEFORE the release existed is swept once by hand: scripts/sweep-orphan-pictures.mjs
+walks the bucket with the same law (the compiled functions mirror), reads each holder's
+document, and lists a releasable primary with its variants and original when nothing shows it,
+plus derived objects whose primary is gone; dry run by default. Its first walk: 546 objects,
+35 releasable primaries of which 19 still shown, 115 outside the law, 55 orphans (4.1 MB).
+REJECTED: deleting client-side (a browser cannot prove the document no longer shows it); a
+SCHEDULED sweep (the one-time walk is enough once every seat releases as it goes).
 
 ---
 
