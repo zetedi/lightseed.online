@@ -75,7 +75,8 @@ export const ForestPage = ({
   // badge counts what is currently filtered OUT, so a narrowed view is never mistaken for the
   // whole forest.
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const filteredOut = [showNatureTrees, showUserTrees, showValidatedTrees, showLightHouses].filter(v => !v).length;
+  // The badge counts NARROWINGS: a hidden kind, or the validated-only sieve turned on — not the sieve resting.
+  const filteredOut = [!showNatureTrees, !showUserTrees, showValidatedTrees, !showLightHouses].filter(Boolean).length;
   const filterButton = (
     <button
       type="button"

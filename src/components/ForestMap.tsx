@@ -272,7 +272,12 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
             .filter(Boolean) as { lat: number; lng: number }[];
         if (located.length === 0) return; // trees not loaded yet — retry when they arrive
 
-        const center = primaryTree ? getTreeCoordinates(primaryTree) : null;
+        // The walker's own tree centres the view ONLY when it stands in this forest: on a strict
+        // place whose forest does not hold it, the place's trees win — before this the map opened
+        // on the walker's neighbourhood (Aswan) while the place's one tree stood in Austria,
+        // unseen (2026-09-09).
+        const primaryOnMap = !!primaryTree && visibleTrees.some(t => t.id === primaryTree.id);
+        const center = primaryOnMap ? getTreeCoordinates(primaryTree!) : null;
         didInitialFocusRef.current = true;
 
         if (!center) {

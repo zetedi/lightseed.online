@@ -6,6 +6,18 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-09 · The place's trees win the map's first view** — the keeper could not see
+Enlightened Nations' one tree on the map of seed.enlightenednations.org (live at last — the
+DNS landed). The tree was there: public, placed in Austria, in the list view. The map's
+first view centred on the WALKER's active tree and its seven nearest neighbours — Aswan —
+because it assumed the walker's tree stands in every forest; on a strict place that does not
+hold it, the view opened on empty desert. Now the walker's tree centres the view only when it
+stands in the forest shown; otherwise the map fits the place's trees. And the Filters badge
+counted the validated-only sieve at REST as a narrowing ("1" on every fresh map) — it counts
+narrowings now: a hidden kind, or the sieve turned on.
+
+---
+
 **2026-09-09 · The staff hands, recorded once and switched** — the superadmin could not add a
 tree to a garden. The rule had in fact allowed it all along (a generic `isStaff()` branch let
 staff mint ANY link); the tree page's Gardens hand was gated to the tree's carers, so the
