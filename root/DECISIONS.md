@@ -6,6 +6,17 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-09 · An unclaimed door wears its own name, never the node's** — on seed.perauset.org
+the footer offered "the letter of lightseed" and About opened lightseed's page: the door was
+live (a CNAME to the face) but no community claimed it, so the shell fell back to the node,
+exactly as Enlightened Nations' door had. Per Auset now answers at seed.perauset.org (an
+alias, no beings to re-home), the charter's face names the domain, and the footer, with no
+community at a door, names the DOOR — its hostname — rather than another place. What stays
+true: a door only becomes a place by a community claiming it; the fallback now says so plainly
+instead of borrowing lightseed's face.
+
+---
+
 **2026-09-09 · Guardians of light: validation becomes a relationship** — the keeper: "validation
 of trees can be so that it's a lifetree and someone else owns it, so it starts with a question:
 would you like to guard my lifetree? Guarding brings light. Guardians of light." And: "this is

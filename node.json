@@ -51,7 +51,8 @@
       "site": "perauset",
       "door": "perauset.web.app",
       "domains": [
-        "perauset.com"
+        "perauset.com",
+        "seed.perauset.org"
       ]
     },
     {
@@ -67,7 +68,9 @@
       "target": "enlightenednations",
       "site": "enlightenednations",
       "door": "enlightenednations.web.app",
-      "domains": ["seed.enlightenednations.org"]
+      "domains": [
+        "seed.enlightenednations.org"
+      ]
     },
     {
       "target": "mamaway",

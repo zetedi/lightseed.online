@@ -20,7 +20,8 @@
     {
       "door": "perauset.web.app",
       "domains": [
-        "perauset.com"
+        "perauset.com",
+        "seed.perauset.org"
       ]
     },
     {

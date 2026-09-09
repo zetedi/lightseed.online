@@ -34,7 +34,9 @@ export const Footer = ({ community, theme, isDark = false }: { community?: Commu
     { href: toUrl(s.website, 'website'), label: 'Website', icon: <Icons.Globe /> },
   ].filter(l => l.href);
 
-  const name = community?.name || 'lightseed';
+  // With no community at this door, the footer names the DOOR (its hostname), never the node —
+  // an unclaimed door must not wear another place's name (2026-09-09).
+  const name = community?.name || (typeof window !== 'undefined' ? window.location.hostname.replace(/^www\./, '') : 'lightseed');
   const year = `2019–${new Date().getFullYear()}`;
 
   const [legalDoc, setLegalDoc] = useState<LegalDoc | null>(null);
