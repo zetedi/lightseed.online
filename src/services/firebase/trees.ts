@@ -941,10 +941,10 @@ export const revokeTreeInvite = (inviteId: string) =>
 
 // Accepting writes the tree's role arrays AND the rooted community — a protected,
 // multi-document mutation, so it runs server-side (Cloud Function) with admin rights.
-export const acceptTreeInvite = async (inviteId: string): Promise<{ communityId: string; lifetreeId: string }> => {
+export const acceptTreeInvite = async (inviteId: string): Promise<{ communityId: string; lifetreeId: string; validated?: boolean; guardiansNeeded?: number }> => {
     const callable = httpsCallable(functions, 'acceptTreeInvite');
     const res = await callable({ inviteId });
-    return res.data as { communityId: string; lifetreeId: string };
+    return res.data as { communityId: string; lifetreeId: string; validated?: boolean; guardiansNeeded?: number };
 };
 
 export const setTreeStatus = (id: string, status: string) => updateDoc(doc(db, 'lifetrees', id), { status });

@@ -39,6 +39,8 @@ export interface TreeFacts {
 
 const isLifetree = (t: Pick<TreeFacts, 'treeType' | 'isNature'>) => !t.isNature && (!t.treeType || t.treeType === 'LIFETREE');
 const isAlive = (t: Pick<TreeFacts, 'diedAtMs'>) => t.diedAtMs == null;
+// A LIVING LIFETREE — what a guardian must own, and what may be guarded this way.
+export const isLivingLifetree = (t: Pick<TreeFacts, 'treeType' | 'isNature' | 'diedAtMs'>): boolean => isLifetree(t) && isAlive(t);
 
 export interface GuardianRequestFacts {
   askerUid: string;

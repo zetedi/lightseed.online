@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { guardianRequestRefusal, guardianAnswerOutcome, validationStanding, VALIDATION_WINDOW_MS, GUARDIANS_TO_VALIDATE_DEFAULT, stampMs } from '../src/domain/guardianship';
 import { DOMAIN_KEYS } from '../src/domain/words';
 import { DEFAULT_NODE_LIMITS, normalizeNodeLimits } from '../src/domain/limits';
+import { isLivingLifetree } from '../src/domain/guardianship';
+import { guardianAnswerOutcome as sGuardianAnswerOutcome, isLivingLifetree as sIsLivingLifetree } from '../functions/src/guardianship';
 
 // Guardians of light (ring 2026-09-09): validation as a relationship, light through a human hand.
 const DAY = 24 * 3600 * 1000;
@@ -36,6 +38,13 @@ describe('guardianAnswerOutcome — a yes mints the link; the dial says when the
   });
   it('a no mints nothing and is a mark', () => {
     expect(guardianAnswerOutcome('decline', 0, 1)).toEqual({ mintsGuardianLink: false, requestMark: 'declined', validates: false });
+  });
+});
+
+describe('the functions mirror stays true', () => {
+  it('answers and the living-lifetree fact agree', () => {
+    for (const [a, n, d] of [['accept', 1, 1], ['accept', 2, 3], ['decline', 0, 1], ['accept', 1, 0]] as const) expect(sGuardianAnswerOutcome(a, n, d)).toEqual(guardianAnswerOutcome(a, n, d));
+    for (const t of [{ treeType: 'LIFETREE', diedAtMs: null }, { treeType: 'BED', diedAtMs: null }, { isNature: true, diedAtMs: null }, { diedAtMs: 5 }, {}]) expect(sIsLivingLifetree(t)).toBe(isLivingLifetree(t));
   });
 });
 

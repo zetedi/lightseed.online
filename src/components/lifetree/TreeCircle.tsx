@@ -214,7 +214,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                 role: askRole,
                 invitedByUserId: currentUserId,
                 invitedByName: currentUserName || undefined,
-                message: `Would you join the circle of ${tree.name || 'this tree'} as ${translations.en[roleLabelKey(askRole)].toLowerCase()}?`,
+                message: askRole === 'guardian' ? translations.en.guard_ask : `Would you join the circle of ${tree.name || 'this tree'} as ${translations.en[roleLabelKey(askRole)].toLowerCase()}?`,
             });
             await firestoreStore.unlink(r.uid, 'keeper_request', treeId);
             setAskNonce(n => n + 1);
@@ -275,7 +275,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                 role: inviteRole,
                 invitedByUserId: currentUserId,
                 invitedByName: currentUserName || undefined,
-                message: `Would you join the circle of ${tree.name || 'this tree'} as ${translations.en[roleLabelKey(inviteRole)].toLowerCase()}?`,
+                message: inviteRole === 'guardian' ? translations.en.guard_ask : `Would you join the circle of ${tree.name || 'this tree'} as ${translations.en[roleLabelKey(inviteRole)].toLowerCase()}?`,
             });
             setInvited(prev => new Set(prev).add(candidate.ownerId));
             setInviteNonce(n => n + 1); // the ledger below shows it at once

@@ -44,7 +44,16 @@ export const ProfileInviteBanners: React.FC<ProfileInviteBannersProps> = ({ uid,
 
   const handleAcceptInvite = async (id: string) => {
     setInviteBusyId(id);
-    try { await acceptTreeInvite(id); refreshTreeInvites(); refreshTrees().catch(() => {}); }
+    try {
+      const res = await acceptTreeInvite(id);
+      refreshTreeInvites(); refreshTrees().catch(() => {});
+      // Guardians of light: a yes that validates the tree is said so; one that waits for the circle names how many more.
+      const inv = treeInvites.find(i => i.id === id);
+      if (inv?.role === 'guardian') {
+        const tree = inv.lifetreeName || '—';
+        notify(res.validated ? speak('guard_thanks').replace('{tree}', tree) : speak('guard_thanks_more').replace('{tree}', tree).replace('{n}', String(res.guardiansNeeded ?? 1)));
+      }
+    }
     catch (e: any) { showAlert(e?.message || 'err_invite_accept'); }
     setInviteBusyId(null);
   };

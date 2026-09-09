@@ -27,6 +27,7 @@ import { onObjectFinalized } from "firebase-functions/v2/storage";
 import { IMAGE_VARIANT_SIZES, IMAGE_VARIANT_QUALITY, imageVariantKeyOf, isDerivedImagePath, storageObjectOf } from "./imageVariant";
 import { pictureReleaseOf, docReferencesPicture } from "./pictureRelease";
 import { sealSecret, openSecret } from "./credentialCipher";
+import { guardianAnswerOutcome, isLivingLifetree } from "./guardianship";
 import sharp from "sharp";
 
 // Every lid a server function mints is a UUIDv7 (the LIN invariant: a Being's true name is
@@ -1466,6 +1467,30 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
             throw new HttpsError("invalid-argument", "Unknown role.");
         }
 
+        // GUARDIANS OF LIGHT (ring 2026-09-09, domain/guardianship mirrored in ./guardianship): a
+        // guardian's YES is the tree's validation — when the guardian owns a LIVING lifetree of
+        // their own, and when the tree's guardians reach the Light Path's dial
+        // (config/limits.guardiansToValidate, one by default). All reads before any write.
+        let validatedNow = false;
+        let guardiansNeeded = 0;
+        if (invite.role === "guardian") {
+            const asMs = (v: any): number | null => (v && typeof v.toMillis === "function" ? v.toMillis() : (typeof v === "number" ? v : null));
+            const treeFacts = { treeType: tree.treeType, isNature: tree.isNature, diedAtMs: asMs(tree.diedAt) };
+            const mine = await tx.get(db.collection("lifetrees").where("ownerId", "==", uid).limit(30));
+            const ownsLiving = mine.docs.some((d) => { const x = d.data() as any; return isLivingLifetree({ treeType: x.treeType, isNature: x.isNature, diedAtMs: asMs(x.diedAt) }); });
+            if (!ownsLiving) throw new HttpsError("failed-precondition", "guard_no_living_tree");
+            if (isLivingLifetree(treeFacts)) {
+                const standing = await tx.get(db.collection("links").where("rel", "==", "guardian").where("to", "==", invite.lifetreeId));
+                const after = standing.docs.filter((d) => (d.data() as any).from !== uid).length + 1;
+                const limitsSnap = await tx.get(db.collection("config").doc("limits"));
+                const rawDial = Number(limitsSnap.exists ? (limitsSnap.data() as any)?.guardiansToValidate : NaN);
+                const dial = Number.isFinite(rawDial) && rawDial >= 1 ? Math.floor(rawDial) : 1;
+                const outcome = guardianAnswerOutcome("accept", after, dial);
+                guardiansNeeded = Math.max(0, dial - after);
+                validatedNow = outcome.validates && !(tree.validated && tree.validatorId);
+            }
+        }
+
         // Role + membership are LINKS now (the LIN). The tree/community docs no longer carry the
         // legacy arrays. Deterministic ids keep these writes idempotent.
         // The hand that welcomed (ring 2026-08-21): every acceptance leaves
@@ -1522,6 +1547,14 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
         }
         setLink(uid, invite.role, invite.lifetreeId); // ...and takes their tree-circle role (or guardianship)
         setWelcome(uid, String(invite.invitedByUserId || ""), inviteId); // the hand that welcomed
+        if (validatedNow) {
+            // The stamp the shell already reads (validated + validatorId), set by the guardian's yes —
+            // the validatorId names the guardian, so the old badge and the new law say one thing.
+            treeUpdate.validated = true;
+            treeUpdate.validatorId = uid;
+            treeUpdate.validatedAt = FieldValue.serverTimestamp();
+            treeUpdate.validatedBy = "guardian";
+        }
         // Relations live ONLY in the links collection (the single source of truth the rules +
         // resolveCircleUids read). No legacy role arrays are written.
 
@@ -1532,7 +1565,7 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
             updatedAt: FieldValue.serverTimestamp(),
         });
 
-        return { communityId, lifetreeId: invite.lifetreeId };
+        return { communityId, lifetreeId: invite.lifetreeId, validated: validatedNow, guardiansNeeded };
     });
 });
 

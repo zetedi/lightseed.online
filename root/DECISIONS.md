@@ -20,12 +20,18 @@ through a human hand that holds a living tree; an intelligence may hint, never g
 guardians validate is a dial of the Light Path (nodeLimits.guardiansToValidate, ONE by
 default): planting is a ceremony, and a planter who wishes a larger circle asks many — each
 yes is support, the dial says when the tree stands. The seam is stated: the old stamp
-(validated + validatorId) is honoured until a tree gains a guardian. Next rungs, in order: the
-request link in the rules (the owner asks; the asked one answers); the server callable that
-mints link and validation together (a client never marks a tree valid); the asking on the tree
-page and the answering in the profile; the planting ceremony as an event that gathers the
-circle. REJECTED: AI as a validator or witness (it holds no light and kindles none);
-validation as a permanent stamp (a relationship can lapse, and should).
+(validated + validatorId) is honoured until a tree gains a guardian. THE ASKING ALREADY EXISTED: the tree circle's invitation
+(treeOwnershipInvites, role guardian) is the question, so no new link kind was minted — the
+guardian invitation now carries the ceremony's words ("Would you like to guard my lifetree?"),
+and its acceptance (functions/acceptTreeInvite, the one hand that mints the guardian link)
+proves the guardian owns a living lifetree, counts the tree's guardians against the dial and,
+at the dial, stamps the validation the shell already reads (validated + validatorId = the
+guardian, validatedBy 'guardian') — one transaction, all reads before writes. The yes is
+thanked with what it did: validated the tree, or how many more the circle waits for. Still to
+come: the badge derived from validationStanding (today the stamp still lights it, dimming by
+care as before); the planting ceremony as an event that gathers the circle. REJECTED: a new
+guardian_request link (the circle's invitation already asks); AI as a validator or witness (it
+holds no light and kindles none); validation as a permanent stamp (a relationship can lapse).
 
 ---
 
