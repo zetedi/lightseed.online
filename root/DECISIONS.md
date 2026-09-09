@@ -6,6 +6,29 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-09 · Guardians of light: validation becomes a relationship** — the keeper: "validation
+of trees can be so that it's a lifetree and someone else owns it, so it starts with a question:
+would you like to guard my lifetree? Guarding brings light. Guardians of light." And: "this is
+needed for trusting, with our AI, a system." The law lands first, domain/guardianship: a
+lifetree is validated when another being who owns a LIVING lifetree of their own was asked
+(tree __guardian_request__ person) and said yes — the yes mints the guardian link the circle
+already knows, and the tree's standing is derived, never stored: LIVE while enough guardians
+hold living, cared-for trees and the tree is cared for within the year; LAPSED when care rests;
+NONE when the guardians are gone. Guarding means witnessing care, and each witnessed care
+kindles a ray for the tree and the witness's seventh (domain/light) — light enters only
+through a human hand that holds a living tree; an intelligence may hint, never guard. HOW MANY
+guardians validate is a dial of the Light Path (nodeLimits.guardiansToValidate, ONE by
+default): planting is a ceremony, and a planter who wishes a larger circle asks many — each
+yes is support, the dial says when the tree stands. The seam is stated: the old stamp
+(validated + validatorId) is honoured until a tree gains a guardian. Next rungs, in order: the
+request link in the rules (the owner asks; the asked one answers); the server callable that
+mints link and validation together (a client never marks a tree valid); the asking on the tree
+page and the answering in the profile; the planting ceremony as an event that gathers the
+circle. REJECTED: AI as a validator or witness (it holds no light and kindles none);
+validation as a permanent stamp (a relationship can lapse, and should).
+
+---
+
 **2026-09-09 · A stored key rests as ciphertext, and a community has a link and a code** — two
 asks. The KEY: a BYO provider key had rested in `providerCredentials` as plaintext, unreadable
 by every client but open to any hand with project-level Firestore access. Now the node has a

@@ -36,6 +36,10 @@ export interface NodeLimits {
   // The AI dial (ring 2026-08-25): node-paid default AI for validated members only.
   // Default ON (true); a node opens its AI wider by setting this false.
   nodeAiValidatedOnly: boolean;
+  // The Light Path's dial (ring 2026-09-09, domain/guardianship): how many guardians who own
+  // living lifetrees must have said yes for a tree to stand validated. One by default; a node
+  // that wants larger circles raises it.
+  guardiansToValidate: number;
 }
 
 export const DEFAULT_NODE_LIMITS: NodeLimits = {
@@ -44,6 +48,7 @@ export const DEFAULT_NODE_LIMITS: NodeLimits = {
   maxNodeFaces: DEFAULT_MAX_NODE_FACES,
   maxNodeCommunities: DEFAULT_MAX_NODE_COMMUNITIES,
   nodeAiValidatedOnly: true,
+  guardiansToValidate: 1,
 };
 
 // Coerce whatever the config doc holds into sane caps (missing/invalid → defaults).
@@ -57,6 +62,7 @@ export const normalizeNodeLimits = (raw: any): NodeLimits => {
     maxGuardedTrees: num(raw?.maxGuardedTrees, DEFAULT_MAX_GUARDED_TREES),
     maxNodeFaces: num(raw?.maxNodeFaces, DEFAULT_MAX_NODE_FACES),
     maxNodeCommunities: num(raw?.maxNodeCommunities, DEFAULT_MAX_NODE_COMMUNITIES),
+    guardiansToValidate: num(raw?.guardiansToValidate, 1),
     // Boolean, default ON: only an explicit false opens the node's AI.
     nodeAiValidatedOnly: raw?.nodeAiValidatedOnly !== false,
   };
