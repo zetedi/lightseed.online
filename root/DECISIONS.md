@@ -6,6 +6,26 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-09 · A stored key rests as ciphertext, and a community has a link and a code** — two
+asks. The KEY: a BYO provider key had rested in `providerCredentials` as plaintext, unreadable
+by every client but open to any hand with project-level Firestore access. Now the node has a
+Cloud KMS key by convention (`…/keyRings/seed/cryptoKeys/provider-credentials`, in the
+charter's project and region; created for lightseed this evening, a step added to create-node
+for every next node), the functions' service account alone may seal and open with it, and
+functions/credentialCipher seals a key on save and opens it only inside the call that spends
+it; a row still carrying plaintext from before is sealed the first time it is read, and
+scripts/seal-credentials.mjs walks the rest (there were none: no key had yet been connected).
+A secret this small is encrypted by the KMS key directly — Google's own counsel for short
+secrets — so the "envelope" asked for is honoured in effect, not in ceremony. What remains
+open: a console read yields ciphertext, but a compromised FUNCTION still holds the plaintext
+for the length of a call; that edge is the runtime's, not the store's. THE LINK: a keeper asked
+to invite people to a community through a link and a code. The community's being door
+(/b/<lid>) was always that link; it now stands on the Members tab with Copy and a QR, and every
+minted invitation (/i/<id>) carries a QR beside its Copy (ui/LinkQr — a code for any URL,
+unlike BeingQr, which mints the being's own bridge). The door decides what the visitor may do.
+
+---
+
 **2026-09-09 · The place's trees win the map's first view** — the keeper could not see
 Enlightened Nations' one tree on the map of seed.enlightenednations.org (live at last — the
 DNS landed). The tree was there: public, placed in Austria, in the list view. The map's

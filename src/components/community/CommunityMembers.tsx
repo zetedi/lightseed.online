@@ -1,4 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { LinkQr } from '../ui/LinkQr';
+import { beingUrl } from '../../domain/beingLink';
 import { showAlert, showConfirm } from '../ui/Dialog';
 import { notify } from '../ui/Toast';
 import { Icons } from '../ui/Icons';
@@ -317,6 +319,25 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
         </div>
       )}
 
+      {/* THE COMMUNITY'S LINK (ring 2026-09-09) — its being door, /b/<lid>, with a code to print or
+          send: the one link to invite people through. The door decides what a visitor may do there. */}
+      {canManage && community.lid && (
+        <div className="mb-5 rounded-2xl border border-slate-100 bg-white p-4">
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('community_link')}</p>
+          <p className="mt-1 text-[11px] text-slate-500">{t('community_link_note')}</p>
+          <div className="mt-2 flex items-center justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-2">
+            <p className="min-w-0 truncate font-mono text-[11px] text-slate-600">{beingUrl(community.lid, window.location.origin)}</p>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <button onClick={() => { navigator.clipboard?.writeText(beingUrl(community.lid!, window.location.origin)).then(() => notify(t('copied'))).catch(() => {}); }}
+                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500 transition-colors hover:bg-slate-50">
+                {t('copy')}
+              </button>
+              <LinkQr url={beingUrl(community.lid, window.location.origin)} title={community.name} />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Invitations — the shareable keys. Keepers mint and revoke; revocation is a mark. */}
       {canManage && (
         <div className="mb-5 rounded-2xl border border-slate-100 bg-white p-4">
@@ -349,6 +370,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
                           className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500 transition-colors hover:bg-slate-50">
                           {t('copy')}
                         </button>
+                        <LinkQr url={communityInviteUrl(window.location.origin, i.id)} title={`${community.name} · ${t('invitations')}`} />
                         <button onClick={() => handleRevokeInvite(i)}
                           className="rounded-lg border border-red-100 bg-white px-2.5 py-1 text-[11px] font-bold text-red-500 transition-colors hover:bg-red-50">
                           {t('revoke')}

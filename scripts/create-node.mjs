@@ -140,6 +140,14 @@ for (const [name, value] of Object.entries(secrets)) {
 }
 if (!secrets.GEMINI_API_KEY && !secrets.ANTHROPIC_API_KEY) manual.push(`Add an AI key to ${basename(secretsPath)} (GEMINI_API_KEY or ANTHROPIC_API_KEY) and re-run, or the node's intelligences stay silent`);
 
+// 6b · the cipher over stored provider keys (functions/credentialCipher): the node's own KMS key,
+//      and the functions' service account allowed to seal and open with it.
+say('6b · the key that seals stored provider keys');
+tryRun(`gcloud services enable cloudkms.googleapis.com --project ${P}`);
+tryRun(`gcloud kms keyrings create seed --location ${charter.firebase.region} --project ${P}`);
+tryRun(`gcloud kms keys create provider-credentials --keyring seed --location ${charter.firebase.region} --purpose encryption --project ${P}`);
+manual.push(`Grant the functions' service account (<project-number>-compute@developer.gserviceaccount.com) roles/cloudkms.cryptoKeyEncrypterDecrypter on projects/${P}/locations/${charter.firebase.region}/keyRings/seed/cryptoKeys/provider-credentials`);
+
 // 7 · the derived files
 say('7 · the derived files');
 // The plan only LOOKS (--check): a plan must never switch the checkout to another node's charter.

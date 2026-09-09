@@ -26,6 +26,7 @@ import { getStorage } from "firebase-admin/storage";
 import { onObjectFinalized } from "firebase-functions/v2/storage";
 import { IMAGE_VARIANT_SIZES, IMAGE_VARIANT_QUALITY, imageVariantKeyOf, isDerivedImagePath, storageObjectOf } from "./imageVariant";
 import { pictureReleaseOf, docReferencesPicture } from "./pictureRelease";
+import { sealSecret, openSecret } from "./credentialCipher";
 import sharp from "sharp";
 
 // Every lid a server function mints is a UUIDv7 (the LIN invariant: a Being's true name is
@@ -1837,7 +1838,10 @@ export const requestInvite = onCall({ cors: true }, async (request) => {
 // SECURITY: provider API keys live ONLY in the `providerCredentials` collection,
 // which Firestore rules make completely unreadable/unwritable by clients. Keys
 // reach the server over the encrypted callable channel and are read back only
-// here, with the Admin SDK. They never touch a browser.
+// here, with the Admin SDK. They never touch a browser. And since ring 2026-09-09
+// they rest as CIPHERTEXT under the node's Cloud KMS key (./credentialCipher):
+// a console read or an export yields nothing usable; a row still carrying a
+// plaintext `key` from before is sealed the first time it is read.
 // ---------------------------------------------------------------------------
 
 const credentialDocId = (scope: string, ownerId: string, provider: string) =>
@@ -1913,12 +1917,15 @@ export const saveProviderCredential = onCall({ cors: true }, async (request) => 
     }
 
     const keyHint = key.length > 4 ? `…${key.slice(-4)}` : "set";
+    const sealed = await sealSecret(key);
     await ref.set({
-        provider, scope, ownerId, key,
+        provider, scope, ownerId,
+        ...sealed,
+        key: FieldValue.delete(), // never plaintext again, even over an old row
         keyHint,
         updatedBy: uid,
         updatedAt: FieldValue.serverTimestamp(),
-    });
+    }, { merge: true });
     // Mirror the non-secret connection status onto the intelligence so the UI can show it.
     if (intelligenceId) {
         await db.collection("intelligences").doc(intelligenceId)
@@ -1951,7 +1958,17 @@ export const generateClaudeContent = onCall({
         && await canUseCredential(request.auth.uid, credential.scope, credential.ownerId)) {
         const snap = await db.collection("providerCredentials")
             .doc(credentialDocId(credential.scope, credential.ownerId, "anthropic")).get();
-        if (snap.exists) { apiKey = snap.data()?.key; usedByoKey = !!apiKey; }
+        if (snap.exists) {
+            const row = snap.data() as Record<string, unknown>;
+            if (typeof row.keyCiphertext === "string" && row.keyCiphertext) {
+                apiKey = await openSecret(row.keyCiphertext);
+            } else if (typeof row.key === "string" && row.key) {
+                // A row from before the cipher: use it this once, and seal it in passing.
+                apiKey = row.key;
+                sealSecret(row.key).then((sealed) => snap.ref.set({ ...sealed, key: FieldValue.delete() }, { merge: true })).catch((e) => console.warn("sealing a legacy key failed:", e?.message || e));
+            }
+            usedByoKey = !!apiKey;
+        }
     }
     if (!apiKey) apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
