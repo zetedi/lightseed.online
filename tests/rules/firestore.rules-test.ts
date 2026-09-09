@@ -308,6 +308,10 @@ describe('the letter of a place — a subscription names its place (ring 2026-09
   it('the letter\'s stamps on a community are the server\'s', async () => {
     await assertFails(updateDoc(doc(db(ALICE), 'communities', 'com1'), { newsletterLastSentAt: Timestamp.now() }));
   });
+  it('the doors (domainAliases) are claimed by proof or granted — never typed by a keeper (ring 2026-09-09)', async () => {
+    await assertFails(updateDoc(doc(db(ALICE), 'communities', 'com1'), { domainAliases: ['stolen.door.org'] }));
+    await assertFails(setDoc(doc(db(MALLORY), 'communities', 'bornWithDoors'), { ownerId: MALLORY, name: 'Mine', domain: 'm.org', domainAliases: ['x.org'], loveCount: 0 }));
+  });
 });
 
 describe("the keeper mirror is the server's alone (ring 2026-09-07)", () => {

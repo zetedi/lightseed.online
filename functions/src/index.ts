@@ -28,6 +28,8 @@ import { IMAGE_VARIANT_SIZES, IMAGE_VARIANT_QUALITY, imageVariantKeyOf, isDerive
 import { pictureReleaseOf, docReferencesPicture } from "./pictureRelease";
 import { sealSecret, openSecret } from "./credentialCipher";
 import { guardianAnswerOutcome, isLivingLifetree } from "./guardianship";
+import { doorKind, doorClaimRefusal, doorChallengeId, normalizeDoor } from "./doors";
+import { staffHandOn } from "./staffHands";
 import sharp from "sharp";
 
 // Every lid a server function mints is a UUIDv7 (the LIN invariant: a Being's true name is
@@ -1837,6 +1839,123 @@ export const checkDomainVerification = onCall({ cors: true }, async (request) =>
     batch.delete(challengeRef);
     await batch.commit();
     return { verified: true, domain: challenge.domain };
+});
+
+// --- THE DOORS OF A PLACE (ring 2026-09-09, domain/doors mirrored in ./doors) ---------------
+// A keeper claims a door (an alias hostname) by PROOF — a TXT record at the door's own name —
+// or, for a face door of this node, the node's steward GRANTS it (staff hand door_grant).
+// On claim the alias is written and every being stamped with the door comes home to the
+// community's canonical domain (the rehome-door script's law, now a server hand).
+const otherClaimantOf = async (door: string, communityId: string): Promise<{ id: string } | null> => {
+    const byDomain = await db.collection("communities").where("domain", "==", door).limit(2).get();
+    for (const d of byDomain.docs) if (d.id !== communityId) return { id: d.id };
+    const byAlias = await db.collection("communities").where("domainAliases", "array-contains", door).limit(2).get();
+    for (const d of byAlias.docs) if (d.id !== communityId) return { id: d.id };
+    return null;
+};
+const rehomeDoorBeings = async (door: string, home: string, communityId: string): Promise<number> => {
+    let moved = 0;
+    const batch = db.batch();
+    for (const col of ["pulses", "lifetrees", "visions"]) {
+        const snap = await db.collection(col).where("domain", "==", door).get();
+        for (const d of snap.docs) {
+            batch.set(d.ref, { domain: home, ...(col === "visions" ? { communityId } : {}), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+            moved++;
+        }
+    }
+    if (moved) await batch.commit();
+    return moved;
+};
+const claimDoorFor = async (communityId: string, door: string): Promise<{ moved: number }> => {
+    const ref = db.collection("communities").doc(communityId);
+    const community = (await ref.get()).data() as Record<string, any>;
+    await ref.set({ domainAliases: FieldValue.arrayUnion(door), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    const moved = await rehomeDoorBeings(door, String(community.domain || ""), communityId);
+    await db.collection("doorChallenges").doc(doorChallengeId(communityId, door)).delete().catch(() => undefined);
+    return { moved };
+};
+
+// The keeper asks for a door: a custom one gets a challenge (TXT to place), a face one a
+// standing request for the steward's grant.
+export const startDoorClaim = onCall({ cors: true }, async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "You must be signed in.");
+    const communityId = String(request.data?.communityId || "");
+    const door = normalizeDoor(String(request.data?.door || ""));
+    if (!communityId || !door) throw new HttpsError("invalid-argument", "communityId and door are required.");
+    const community = await communityKeptBy(communityId, request.auth.uid);
+    const kind = doorKind(door);
+    const refusal = doorClaimRefusal({ door, kind, community: { id: communityId, domain: community.domain, domainAliases: community.domainAliases }, claimedBy: await otherClaimantOf(door, communityId) });
+    if (refusal) throw new HttpsError("failed-precondition", refusal);
+    const challengeRef = db.collection("doorChallenges").doc(doorChallengeId(communityId, door));
+    const standing = (await challengeRef.get()).data();
+    if (kind === "face") {
+        if (!standing) await challengeRef.set({ communityId, door, kind, createdBy: request.auth.uid, createdAt: FieldValue.serverTimestamp() });
+        return { door, kind };
+    }
+    const fresh = standing && standing.token && Date.now() - (standing.createdAt?.toMillis?.() ?? 0) < DOMAIN_CHALLENGE_TTL_MS;
+    const token = fresh ? standing.token : randomBytes(16).toString("hex");
+    if (!fresh) await challengeRef.set({ communityId, door, kind, token, createdBy: request.auth.uid, createdAt: FieldValue.serverTimestamp() });
+    return { door, kind, recordName: `${DOMAIN_CHALLENGE_LABEL}.${door}`, recordValue: `${DOMAIN_CHALLENGE_PREFIX}${token}` };
+});
+
+// The keeper asks the server to observe the TXT; on proof the door is claimed.
+export const checkDoorClaim = onCall({ cors: true }, async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "You must be signed in.");
+    const communityId = String(request.data?.communityId || "");
+    const door = normalizeDoor(String(request.data?.door || ""));
+    if (!communityId || !door) throw new HttpsError("invalid-argument", "communityId and door are required.");
+    await communityKeptBy(communityId, request.auth.uid);
+    const challenge = (await db.collection("doorChallenges").doc(doorChallengeId(communityId, door)).get()).data();
+    if (!challenge || !challenge.token) throw new HttpsError("failed-precondition", "no_challenge");
+    if (Date.now() - (challenge.createdAt?.toMillis?.() ?? 0) >= DOMAIN_CHALLENGE_TTL_MS) throw new HttpsError("failed-precondition", "challenge_expired");
+    let records: string[][];
+    try { records = await resolveTxt(`${DOMAIN_CHALLENGE_LABEL}.${door}`); } catch { throw new HttpsError("failed-precondition", "txt_not_found"); }
+    if (!records.some((chunks) => chunks.join("") === `${DOMAIN_CHALLENGE_PREFIX}${challenge.token}`)) throw new HttpsError("failed-precondition", "txt_mismatch");
+    if (await otherClaimantOf(door, communityId)) throw new HttpsError("failed-precondition", "door_taken");
+    const { moved } = await claimDoorFor(communityId, door);
+    return { claimed: true, door, moved };
+});
+
+// The node's steward grants a face door (staff hand door_grant, switchable in config/staffHands).
+export const grantDoor = onCall({ cors: true }, async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "You must be signed in.");
+    const communityId = String(request.data?.communityId || "");
+    const door = normalizeDoor(String(request.data?.door || ""));
+    if (!communityId || !door) throw new HttpsError("invalid-argument", "communityId and door are required.");
+    if (!(await isStaffUid(request.auth.uid))) throw new HttpsError("permission-denied", "Staff only.");
+    const switches = (await db.collection("config").doc("staffHands").get()).data();
+    if (!staffHandOn(switches, "door_grant")) throw new HttpsError("permission-denied", "hand_withdrawn");
+    const snap = await db.collection("communities").doc(communityId).get();
+    if (!snap.exists) throw new HttpsError("not-found", "That community does not exist.");
+    const community = snap.data() as Record<string, any>;
+    const kind = doorKind(door);
+    if (kind !== "face") throw new HttpsError("failed-precondition", "door_not_face");
+    const refusal = doorClaimRefusal({ door, kind, community: { id: communityId, domain: community.domain, domainAliases: community.domainAliases }, claimedBy: await otherClaimantOf(door, communityId) });
+    if (refusal) throw new HttpsError("failed-precondition", refusal);
+    const { moved } = await claimDoorFor(communityId, door);
+    return { claimed: true, door, moved };
+});
+
+// The keeper withdraws a door; beings stamped with the canonical domain stay where they are.
+export const withdrawDoor = onCall({ cors: true }, async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "You must be signed in.");
+    const communityId = String(request.data?.communityId || "");
+    const door = normalizeDoor(String(request.data?.door || ""));
+    if (!communityId || !door) throw new HttpsError("invalid-argument", "communityId and door are required.");
+    await communityKeptBy(communityId, request.auth.uid);
+    await db.collection("communities").doc(communityId).set({ domainAliases: FieldValue.arrayRemove(door), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    await db.collection("doorChallenges").doc(doorChallengeId(communityId, door)).delete().catch(() => undefined);
+    return { withdrawn: true, door };
+});
+
+// The claims in flight for a community — what the panel shows beside the open doors.
+export const listDoorClaims = onCall({ cors: true }, async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "You must be signed in.");
+    const communityId = String(request.data?.communityId || "");
+    if (!communityId) throw new HttpsError("invalid-argument", "communityId is required.");
+    await communityKeptBy(communityId, request.auth.uid);
+    const snap = await db.collection("doorChallenges").where("communityId", "==", communityId).get();
+    return { claims: snap.docs.map((d) => { const x = d.data(); return { door: x.door, kind: x.kind, ...(x.token ? { recordName: `${DOMAIN_CHALLENGE_LABEL}.${x.door}`, recordValue: `${DOMAIN_CHALLENGE_PREFIX}${x.token}` } : {}) }; }) };
 });
 
 // Request an invitation (callable, may be unauthenticated). With admin rights it checks

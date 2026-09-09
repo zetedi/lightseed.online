@@ -1410,6 +1410,8 @@ service cloud.firestore {
         // `keeperUids` is the server's mirror of the keeper links (storage.rules reads it) —
         // no client hand writes it, at birth or after (ring 2026-09-07).
         && !('keeperUids' in request.resource.data)
+        // `domainAliases` — the doors — are claimed by proof or granted (functions), never typed.
+        && !('domainAliases' in request.resource.data)
       ));
       // Keepers are FULL PEERS (ring 2026-08-12): the founding ownerId and every `keeper`
       // link holder edit alike. The ANCHOR itself (`ownerId`) is frozen against client
@@ -1422,7 +1424,7 @@ service cloud.firestore {
       allow update: if isSignedIn() && (
         (
           (resource.data.ownerId == request.auth.uid || hasKeeperLink(communityId) || staffHand('community_edit'))
-          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid', 'loveCount', 'ownerId', 'bornOn', 'domainVerification', 'formedAt', 'formedBy', 'keeperUids', 'newsletterLastSentAt', 'newsletterLastSubject', 'newsletterLastSent'])
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid', 'loveCount', 'ownerId', 'bornOn', 'domainVerification', 'formedAt', 'formedBy', 'keeperUids', 'newsletterLastSentAt', 'newsletterLastSubject', 'newsletterLastSent', 'domainAliases'])
         )
         // LOVE: exactly one own-slot transition and exactly +/- one, atomically proved.
         || validLoveCountChange('communities', communityId)

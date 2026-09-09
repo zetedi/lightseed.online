@@ -5,13 +5,14 @@ import { MahameruAvatar } from '../ui/MahameruAvatar';
 import { Community, Lifetree } from '../../types';
 import { ownMergeUid } from '../../domain/pulseVisibility';
 import { challengeHostLabel, challengeZone, isDomainVerified } from '../../domain/domainVerification';
-import { getTreesByDomain, getPulsesByTreeId, updateCommunity, startDomainVerification, checkDomainVerification, exportCommunity, type DomainChallengeRecord } from '../../services/firebase';
+import { getTreesByDomain, getPulsesByTreeId, updateCommunity, startDomainVerification, checkDomainVerification, exportCommunity, startDoorClaim, checkDoorClaim, grantDoor, withdrawDoor, listDoorClaims, type DomainChallengeRecord, type DoorClaim } from '../../services/firebase';
+import { doorRows, normalizeDoor } from '../../domain/doors';
 import { isCanonicallySealed, verifyBlockSeal, type ChainBlock } from '../../domain/chain';
 import { normalizePlaceOfRecord } from '../../domain/communityDoor';
 import { setTokenisationEnabled } from '../../domain/tokenisation';
 import { VisionSection } from '../sections/VisionSection';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { spokenLine } from '../../utils/translations';
+import { spokenLine, speak } from '../../utils/translations';
 
 interface CommunityVisionProps {
   community: Community;
@@ -110,6 +111,67 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
   // derived, never stored client-side — it falls silent the moment the domain changes.
   const domainVerified = isDomainVerified(community);
   const [challenge, setChallenge] = useState<DomainChallengeRecord | null>(null);
+
+  // The doors (domain/doors): the claims in flight, the draft, and the four hands.
+  const [doorClaims, setDoorClaims] = useState<DoorClaim[]>([]);
+  const [doorDraft, setDoorDraft] = useState('');
+  const [doorBusy, setDoorBusy] = useState<string | null>(null);
+  useEffect(() => {
+    if (!canEdit) return;
+    let alive = true;
+    listDoorClaims(community.id).then(c => { if (alive) setDoorClaims(c); }).catch(() => {});
+    return () => { alive = false; };
+  }, [community.id, canEdit]);
+  const doorErrorKey = (e: unknown): string => {
+    const m = e instanceof Error ? e.message : String(e);
+    const key = m.replace(/^.*?(door_[a-z_]+|txt_not_found|txt_mismatch|no_challenge|challenge_expired|hand_withdrawn).*$/, '$1');
+    if (key === 'txt_not_found') return 'domain_verify_txt_missing';
+    if (key === 'txt_mismatch') return 'domain_verify_txt_mismatch';
+    if (key === 'no_challenge' || key === 'challenge_expired') return 'domain_verify_expired';
+    return key.startsWith('door_') ? key : 'err_save_retry';
+  };
+  const handleAddDoor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const door = normalizeDoor(doorDraft);
+    if (!door) return;
+    setDoorBusy('+');
+    try {
+      const claim = await startDoorClaim(community.id, door);
+      setDoorClaims(prev => [...prev.filter(c => c.door !== claim.door), claim]);
+      setDoorDraft('');
+    } catch (err) { showAlert(doorErrorKey(err)); }
+    setDoorBusy(null);
+  };
+  const handleCheckDoor = async (door: string) => {
+    setDoorBusy(door);
+    try {
+      await checkDoorClaim(community.id, door);
+      setDoorClaims(prev => prev.filter(c => c.door !== door));
+      onUpdate?.({ domainAliases: [...(community.domainAliases || []), door] });
+      showAlert(speak('door_claimed').replace('{door}', door).replace('{name}', community.name));
+    } catch (err) { showAlert(doorErrorKey(err)); }
+    setDoorBusy(null);
+  };
+  const handleGrantDoor = async (door: string) => {
+    setDoorBusy(door);
+    try {
+      await grantDoor(community.id, door);
+      setDoorClaims(prev => prev.filter(c => c.door !== door));
+      onUpdate?.({ domainAliases: [...(community.domainAliases || []), door] });
+      showAlert(speak('door_claimed').replace('{door}', door).replace('{name}', community.name));
+    } catch (err) { showAlert(doorErrorKey(err)); }
+    setDoorBusy(null);
+  };
+  const handleWithdrawDoor = async (door: string) => {
+    setDoorBusy(door);
+    try {
+      await withdrawDoor(community.id, door);
+      setDoorClaims(prev => prev.filter(c => c.door !== door));
+      onUpdate?.({ domainAliases: (community.domainAliases || []).filter(d => d !== door) });
+      showAlert(speak('door_withdrawn').replace('{door}', door));
+    } catch (err) { showAlert(doorErrorKey(err)); }
+    setDoorBusy(null);
+  };
   const [verifyBusy, setVerifyBusy] = useState(false);
   const [exporting, setExporting] = useState(false);
   const verifyError = (e: unknown): string => {
@@ -453,6 +515,64 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                     </button>
                   </div>
                 )}
+              </div>
+
+              {/* THE DOORS (ring 2026-09-09, domain/doors) — the hostnames this place also answers
+                  at. A keeper claims one by a DNS proof at the door's own name; a face door of this
+                  node waits for the steward's grant. The server writes the alias; a client never. */}
+              <div className="mt-5 border-t border-slate-100 pt-4">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('doors_title')}</p>
+                <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{t('doors_note')}</p>
+                <div className="mt-2 space-y-1.5">
+                  {doorRows(community, doorClaims).map(row => (
+                    <div key={row.door} className="rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate font-mono text-[11px] text-slate-700">{row.door}</p>
+                          <p className="text-[10px] text-slate-400">{row.state === 'open' ? t('door_state_open') : row.state === 'waiting_grant' ? t('door_state_grant') : t('door_state_waiting')}</p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          {row.state === 'waiting_proof' && (
+                            <button onClick={() => handleCheckDoor(row.door)} disabled={doorBusy === row.door}
+                              className="rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50">{doorBusy === row.door ? '…' : t('door_check')}</button>
+                          )}
+                          {row.state === 'waiting_grant' && isSuperAdmin && (
+                            <button onClick={() => handleGrantDoor(row.door)} disabled={doorBusy === row.door}
+                              className="rounded-full bg-violet-600 px-3 py-1 text-[11px] font-bold text-white transition-colors hover:bg-violet-500 disabled:opacity-50">{doorBusy === row.door ? '…' : t('door_grant')}</button>
+                          )}
+                          <button onClick={() => handleWithdrawDoor(row.door)} disabled={doorBusy === row.door}
+                            className="rounded-lg border border-red-100 bg-white px-2.5 py-1 text-[11px] font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50">{t('door_withdraw')}</button>
+                        </div>
+                      </div>
+                      {row.state === 'waiting_proof' && row.recordValue && (
+                        <div className="mt-2 space-y-1 text-[11px]" dir="ltr">
+                          {([
+                            [t('domain_verify_dns_type'), 'TXT', false],
+                            [t('domain_verify_dns_name'), challengeHostLabel(row.door), true],
+                            [t('domain_verify_dns_value'), row.recordValue, true],
+                            [t('domain_verify_dns_ttl'), '300', false],
+                          ] as const).map(([label, value, copyable]) => (
+                            <div key={label} className="flex flex-wrap items-center gap-2">
+                              <span className="w-24 shrink-0 font-bold uppercase tracking-wide text-slate-400">{label}</span>
+                              <span className="break-all rounded border border-slate-200 bg-white px-2 py-1 font-mono text-slate-700">{value}</span>
+                              {copyable && (
+                                <button onClick={() => navigator.clipboard.writeText(value).catch(() => {})}
+                                  className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-slate-500 hover:bg-slate-50">{t('copy')}</button>
+                              )}
+                            </div>
+                          ))}
+                          <p className="text-[11px] italic leading-relaxed text-slate-500">{t('domain_verify_name_note').replace('{zone}', challengeZone(row.door)).replace('{full}', row.recordName || '')}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <form onSubmit={handleAddDoor} className="mt-2 flex items-center gap-2">
+                  <input value={doorDraft} onChange={e => setDoorDraft(e.target.value)} placeholder="seed.example.org" dir="ltr"
+                    className="h-9 min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                  <button type="submit" disabled={doorBusy === '+' || !normalizeDoor(doorDraft)}
+                    className="h-9 shrink-0 rounded-full border border-emerald-200 bg-white px-3.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-50">{doorBusy === '+' ? '…' : t('door_add')}</button>
+                </form>
               </div>
             </div>
           </div>

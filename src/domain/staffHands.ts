@@ -24,8 +24,10 @@ export interface StaffHand {
   key: DomainKey;
   // Where the hand is enforced (a rule, a storage rule, a function, a client gate).
   enforcedBy: string[];
-  // Wired through staffHand('id') in firestore.rules and config/staffHands.
+  // Wired through config/staffHands — by staffHand('id') in firestore.rules, or staffHandOn('id')
+  // in functions (the mirror) — so the superadmin's switch bites wherever the hand is held.
   switchable: boolean;
+  enforcedIn?: 'rules' | 'functions';
   defaultOn: boolean;
   since: string;
 }
@@ -35,6 +37,7 @@ export const STAFF_HANDS: readonly StaffHand[] = [
   { id: 'garden_stand', key: 'hand_garden_stand', enforcedBy: ['firestore.rules links create grows_in', 'LifetreeDetail canEdit → TreeGardens'], switchable: true, defaultOn: true, since: '2026-09-08' },
   { id: 'tree_edit', key: 'hand_tree_edit', enforcedBy: ['firestore.rules lifetrees update (both staff branches)'], switchable: true, defaultOn: true, since: '2026-06' },
   { id: 'tree_water', key: 'hand_tree_water', enforcedBy: ['firestore.rules pulses create care:watering'], switchable: true, defaultOn: true, since: '2026-07-20' },
+  { id: 'door_grant', key: 'hand_door_grant', enforcedBy: ['functions grantDoor (staffHandOn)'], switchable: true, enforcedIn: 'functions', defaultOn: true, since: '2026-09-09' },
   { id: 'community_edit', key: 'hand_community_edit', enforcedBy: ['firestore.rules communities update'], switchable: true, defaultOn: true, since: '2026-05' },
   { id: 'community_assets', key: 'hand_community_assets', enforcedBy: ['storage.rules /{allPaths=**} write (the two-document budget forbids a switch there)'], switchable: false, defaultOn: true, since: '2026-05' },
   { id: 'being_delete', key: 'hand_being_delete', enforcedBy: ['firestore.rules lifetrees/visions/communities/users delete', 'functions deleteUserAsAdmin'], switchable: false, defaultOn: true, since: '2026-05' },

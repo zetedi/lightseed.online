@@ -653,3 +653,17 @@ export const startDomainVerification = async (communityId: string): Promise<Doma
     (await httpsCallable(functions, 'startDomainVerification')({ communityId })).data as DomainChallengeRecord;
 export const checkDomainVerification = async (communityId: string): Promise<{ verified: boolean; domain: string }> =>
     (await httpsCallable(functions, 'checkDomainVerification')({ communityId })).data as { verified: boolean; domain: string };
+
+// THE DOORS (ring 2026-09-09, domain/doors): a keeper claims a door by proof or asks for a face
+// door's grant; the server writes the alias and re-homes what was stamped with the door.
+export interface DoorClaim { door: string; kind: 'node' | 'face' | 'custom'; recordName?: string; recordValue?: string }
+export const startDoorClaim = async (communityId: string, door: string): Promise<DoorClaim> =>
+    (await httpsCallable(functions, 'startDoorClaim')({ communityId, door })).data as DoorClaim;
+export const checkDoorClaim = async (communityId: string, door: string): Promise<{ claimed: boolean; door: string; moved: number }> =>
+    (await httpsCallable(functions, 'checkDoorClaim')({ communityId, door })).data as { claimed: boolean; door: string; moved: number };
+export const grantDoor = async (communityId: string, door: string): Promise<{ claimed: boolean; door: string; moved: number }> =>
+    (await httpsCallable(functions, 'grantDoor')({ communityId, door })).data as { claimed: boolean; door: string; moved: number };
+export const withdrawDoor = async (communityId: string, door: string): Promise<{ withdrawn: boolean; door: string }> =>
+    (await httpsCallable(functions, 'withdrawDoor')({ communityId, door })).data as { withdrawn: boolean; door: string };
+export const listDoorClaims = async (communityId: string): Promise<DoorClaim[]> =>
+    ((await httpsCallable(functions, 'listDoorClaims')({ communityId })).data as { claims: DoorClaim[] }).claims;

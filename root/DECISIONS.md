@@ -6,6 +6,27 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-09 · A keeper claims a door by proof; a face door is granted** — "how do we claim the
+door as a keeper?" Until now, only a steward's script could. domain/doors (mirrored in
+functions) names a hostname's KIND from the charter alone — the node's own, a FACE door of
+this node (a face's door, its site's web.app / firebaseapp.com), or CUSTOM — and why a claim
+may not be made: not a hostname, the node's address, the community's own domain, already a
+door, another place's. The danger kept out: an alias is a claim the shell resolves to a
+community, so a keeper typing another place's door would capture it; hence a CUSTOM door is
+claimed by the same DNS proof as the canonical domain — a TXT at `_lightseed-challenge.<door>`
+the server observes (startDoorClaim mints the token, checkDoorClaim reads the record), and a
+FACE door, which no keeper's DNS can prove, is GRANTED by the node's steward (grantDoor — the
+staff hand door_grant, switchable, the first hand enforced in functions rather than rules; the
+record and its test learned that difference). On claim the server writes the alias and brings
+home every being stamped with the door (the rehome-door script's law, now a server hand);
+withdrawDoor is the keeper's own. `domainAliases` is frozen against every client hand, at
+birth and after (a rules test). The panel: a Doors list under the address with each door's
+state — answers here · waiting for the DNS proof · a face door, waits for the steward — the
+TXT fields for a claim in flight, Check DNS, Withdraw, and Grant for staff. REJECTED: letting a
+keeper type an alias (capture); a face door proven by DNS (there is no DNS the keeper holds).
+
+---
+
 **2026-09-09 · An unclaimed door wears its own name, never the node's** — on seed.perauset.org
 the footer offered "the letter of lightseed" and About opened lightseed's page: the door was
 live (a CNAME to the face) but no community claimed it, so the shell fell back to the node,

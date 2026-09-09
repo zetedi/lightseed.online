@@ -49,6 +49,8 @@ export const DOMAIN_KEYS = [
   // guardianship — guardians of light: the asking, the answering, the refusals (domain/guardianship)
   'guard_ask', 'guard_accept', 'guard_decline',
   'guard_not_owner', 'guard_not_lifetree', 'guard_tree_dead', 'guard_self', 'guard_no_living_tree', 'guard_already', 'guard_pending',
+  // doors — a keeper claims a door by proof; a face door is granted (domain/doors)
+  'door_not_hostname', 'door_is_node', 'door_is_domain', 'door_already', 'door_taken', 'hand_door_grant',
 ] as const;
 
 export type DomainKey = (typeof DOMAIN_KEYS)[number];
