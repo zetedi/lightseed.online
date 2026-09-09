@@ -6,6 +6,18 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-10 · The map fills its box, and the seven nearest return** — two things on the hub's
+map. A grey band below it: Leaflet sizes itself once at creation and paints only that box, and
+the box grew after (fonts, the header, a list→map toggle); a ResizeObserver now tells the map
+its size whenever the box changes. And the world view where the walker's seven nearest trees
+used to be: yesterday's fix made the walker's tree centre the view only when it stood in the
+loaded forest — but the hub's feed pages by time, and the walker's own tree is often not on
+the first page, so the hub fell to a world fit. The test is now NEARNESS, not presence: the
+walker's tree centres the view when any located tree stands within ~2000 km of it (Aswan's
+six, the seven nearest); a forest that lies wholly elsewhere (Austria's one tree) still wins.
+
+---
+
 **2026-09-09 · A keeper claims a door by proof; a face door is granted** — "how do we claim the
 door as a keeper?" Until now, only a steward's script could. domain/doors (mirrored in
 functions) names a hostname's KIND from the charter alone — the node's own, a FACE door of

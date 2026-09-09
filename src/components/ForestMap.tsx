@@ -70,6 +70,7 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
     const lastMarkerRenderKeyRef = useRef('');
     // Ensures we only auto-frame the primary lifetree once (not on every data refresh,
     // so we never yank the view back while the user is panning around).
+    const resizeObserverRef = useRef<ResizeObserver | null>(null);
     const didInitialFocusRef = useRef(false);
 
     const [expansionStack, setExpansionStack] = useState<StackLevel[]>([]);
@@ -174,6 +175,14 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
             attributionControl: false
         }).setView([20, 0], 2);
         mapInstance.current.whenReady(() => setIsMapReady(true));
+        // Leaflet sizes itself ONCE, at creation, and paints only that box; when the container
+        // settles later (fonts, the header, a list→map toggle, a resize) the new strip stays grey.
+        // Watch the box and tell the map (2026-09-10).
+        if (typeof ResizeObserver !== 'undefined') {
+            const ro = new ResizeObserver(() => { try { mapInstance.current?.invalidateSize(); } catch { /* torn down */ } });
+            ro.observe(mapContainer.current);
+            resizeObserverRef.current = ro;
+        }
 
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
@@ -272,12 +281,15 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
             .filter(Boolean) as { lat: number; lng: number }[];
         if (located.length === 0) return; // trees not loaded yet — retry when they arrive
 
-        // The walker's own tree centres the view ONLY when it stands in this forest: on a strict
-        // place whose forest does not hold it, the place's trees win — before this the map opened
-        // on the walker's neighbourhood (Aswan) while the place's one tree stood in Austria,
-        // unseen (2026-09-09).
-        const primaryOnMap = !!primaryTree && visibleTrees.some(t => t.id === primaryTree.id);
-        const center = primaryOnMap ? getTreeCoordinates(primaryTree!) : null;
+        // The walker's own tree centres the view — its seven nearest neighbours, the forest at
+        // hand — when the forest shown stands NEAR it: any located tree within ~2000 km. On a
+        // strict place whose whole forest lies elsewhere (Aswan's walker, Austria's one tree,
+        // 2026-09-09) the place's trees win instead. Presence on the first page is not the test:
+        // the hub's feed pages by time and the walker's own tree is often not on it (2026-09-10).
+        const own = primaryTree ? getTreeCoordinates(primaryTree) : null;
+        const NEAR_DEG = 18; // ≈ 2000 km
+        const near = !!own && located.some(x => Math.abs(x.lat - own.lat) < NEAR_DEG && Math.abs(x.lng - own.lng) < NEAR_DEG);
+        const center = near ? own : null;
         didInitialFocusRef.current = true;
 
         if (!center) {
@@ -730,6 +742,8 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
             containerObserverRef.current?.disconnect();
             containerObserverRef.current = null;
             if (mapInstance.current) {
+                resizeObserverRef.current?.disconnect();
+                resizeObserverRef.current = null;
                 mapInstance.current.remove();
                 mapInstance.current = null;
             }
