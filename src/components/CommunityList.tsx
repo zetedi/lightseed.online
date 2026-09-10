@@ -65,7 +65,7 @@ const CommunityCard = ({ community, isGenesis = false, onSelect, standing = 'joi
   if (density === 'rows') {
     return (
       <div onClick={() => onSelect(community)}
-        className={`flex cursor-pointer items-center gap-3 rounded-xl border bg-white p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${isGenesis ? 'border-amber-300 ring-2 ring-amber-300/30' : 'border-slate-100 dark:border-slate-800'}`}>
+        className={`flex cursor-pointer items-center gap-3 rounded-xl border bg-white p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:bg-slate-900 ${isGenesis ? 'border-amber-300 ring-2 ring-amber-300/30' : 'border-slate-100 dark:border-slate-800'}`}>
         <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-100 bg-slate-50 text-slate-400 dark:bg-slate-900 dark:border-slate-800">
           {community.logoUrl ? <Picture size={480} src={community.logoUrl} className="h-full w-full object-cover" alt="" /> : <Icons.Globe />}
         </div>

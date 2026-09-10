@@ -68,7 +68,7 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, isInit
     return (
         <div 
             onClick={() => onView(tree)}
-            className={`bg-white rounded-lg overflow-hidden shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 active:shadow-xl active:-translate-y-1 transition-all duration-300 group relative cursor-pointer ${tree.isNature ? 'ring-1 ring-sky-100' : (hasValidationBadge ? 'ring-1 ring-emerald-100' : '')}`}
+            className={`bg-white rounded-lg overflow-hidden shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 active:shadow-xl active:-translate-y-1 transition-all duration-300 group relative cursor-pointer dark:bg-slate-900 dark:border-slate-700 ${tree.isNature ? 'ring-1 ring-sky-100' : (hasValidationBadge ? 'ring-1 ring-emerald-100' : '')}`}
         >
              <div className="absolute top-2 right-2 z-20 flex flex-col items-end gap-1">
                 {tree.isNature ? (

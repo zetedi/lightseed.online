@@ -259,7 +259,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                                                 </div>
                                             </div>
 
-                                            <div className={`mt-4 pt-2 border-t border-slate-50 flex items-center gap-2 ${isRightSide ? '' : 'md:flex-row-reverse'}`}>
+                                            <div className={`mt-4 pt-2 border-t border-slate-50 dark:border-slate-700/40 flex items-center gap-2 ${isRightSide ? '' : 'md:flex-row-reverse'}`}>
                                                 <span className={`min-w-0 flex-1 text-[9px] font-mono text-slate-300 truncate ${isRightSide ? 'md:text-left' : 'md:text-right'} text-left`}>
                                                     {t('hash_label')}: {pulse.hash.substring(0, 16)}...
                                                 </span>

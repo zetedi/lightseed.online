@@ -62,7 +62,7 @@ export const VisionsPage = ({
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
       <SectionHeader
-        title={t('visions')}
+        title={t('visions_endeavours')}
         tone={activeTone}
         tabs={lightseed ? (
           <FullWidthTabs
@@ -70,7 +70,7 @@ export const VisionsPage = ({
             onChange={(k) => setSubTab(k as 'visions' | 'alignments')}
             tone={activeTone}
             tabs={[
-              { key: 'visions', label: t('visions'), icon: <Icons.Eye />, count: visibleVisions.length, tone },
+              { key: 'visions', label: t('visions_endeavours'), icon: <Icons.Eye />, count: visibleVisions.length, tone },
               { key: 'alignments', label: t('alignments'), icon: <Icons.Venn />, count: synergies.length, tone: ALIGN_TONE },
             ]}
           />

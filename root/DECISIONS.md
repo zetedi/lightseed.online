@@ -6,6 +6,30 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-11 · The guard that skipped the forest, and six surfaces the eye found** — the night
+pass had one more silent failure, and it was its own guard: "skip a toggle knob" was written as
+"skip any class list with a translate", so every card that LIFTS on hover was passed over whole —
+the entire forest kept white bodies under pale text. The knob test now reads the whole attribute
+and asks for the knob's actual shape (a round white disc that rides a track), so a card that
+lifts is answered and a disc stays white. Then the eye's own list: the white paper styles each
+element by arbitrary variant, so each needed its own night answer (a heading in slate-900 is
+simply ABSENT on a dark page, bold text vanished, and inline code kept white chips); a hovered
+thread and a hovered tongue in the language menu painted themselves white under white letters;
+the leaf's inner rule was a bar rather than a hairline. Two surfaces are painted from JavaScript
+rather than classes: a list box is tinted with its destination's own pigment, and a tint mixes
+toward the ground it lies on — white by day, the night's own ground after dark (that is how the
+communities page became a lavender slab). useNightMode reads what the document already knows
+(data-mode) so nothing needs threading through five components.
+
+**2026-09-11 · A page reads its own records; a strip names, it does not count** — the footer
+asked every reader to subscribe to the letter, including readers already on the list. One law
+(domain/newsletter.subscribedToPlace: the map of places wins wherever it speaks, the older
+boolean answers only for the node's own letter) and the footer simply says "you receive the
+letter of this place" instead. And the sub-tab tallies are gone: they counted what the reader
+could already see, and two counted tabs read as a score. The visions page is Visions &
+Endeavours — a vision here is not only something seen, it is something being carried out; the
+menu word stays short, as menu words do.
+
 **2026-09-11 · A class list that lives in a name; and the messages room** — the last blind spot
 of the night pass was a class list that is not written at a className at all: a `const` holding
 one, a helper returning one, a lookup table of status chips (open · accepted · declined). 44 of

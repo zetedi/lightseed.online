@@ -10,7 +10,10 @@ export interface FullWidthTab {
     key: string;
     label: string;
     icon?: React.ReactNode;
-    count?: number;   // a small tally pill after the label (visions 12, alignments 6)
+    // NO TALLY (ring 2026-09-11): a count here counted what the reader could already see, and
+    // two counted tabs read as a score. The strip NAMES what is behind each tab; callers may
+    // still pass a count (they compute it for their own headers) and it is simply not drawn.
+    count?: number;
     tone?: string;    // an OWN colour for this tab; falls back to the strip tone when absent
 }
 
@@ -36,9 +39,6 @@ export const FullWidthTabs = ({ tabs, active, onChange, tone }: {
                     <span className={`relative flex items-center gap-2 ${on ? '' : 'opacity-80'}`}>
                         {tb.icon && <span className="[&>svg]:h-4 [&>svg]:w-4">{tb.icon}</span>}
                         <span>{tb.label}</span>
-                        {typeof tb.count === 'number' && tb.count > 0 && (
-                            <span className="rounded-full bg-white/20 px-1.5 text-[10px] tabular-nums dark:bg-slate-900/20">{tb.count}</span>
-                        )}
                     </span>
                 </button>
             );

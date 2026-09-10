@@ -382,7 +382,7 @@ export const MembershipPathSection = () => {
             <div className="space-y-12 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-purple-200 before:to-transparent">
 
                 <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-purple-300 bg-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 text-purple-600 font-bold">1</div>
+                    <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-purple-300 bg-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 text-purple-600 font-bold dark:bg-slate-900 dark:text-purple-300">1</div>
                     <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-xl shadow-md border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
                         <h3 className="font-bold text-purple-900 mb-2 uppercase tracking-wider text-sm dark:text-purple-200">{t('path_phase_resonance')}</h3>
                         <p className="text-slate-600 text-sm dark:text-slate-300">{t('path_adopt_note')}</p>
@@ -390,7 +390,7 @@ export const MembershipPathSection = () => {
                 </div>
 
                 <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-purple-300 bg-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 text-purple-600 font-bold">2</div>
+                    <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-purple-300 bg-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 text-purple-600 font-bold dark:bg-slate-900 dark:text-purple-300">2</div>
                     <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-xl shadow-md border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
                         <h3 className="font-bold text-purple-900 mb-2 uppercase tracking-wider text-sm dark:text-purple-200">{t('path_phase_selection')}</h3>
                         <p className="text-slate-600 text-sm dark:text-slate-300">{t('path_recommend_note')}</p>
@@ -398,7 +398,7 @@ export const MembershipPathSection = () => {
                 </div>
 
                 <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-purple-300 bg-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 text-purple-600 font-bold">3</div>
+                    <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-purple-300 bg-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 text-purple-600 font-bold dark:bg-slate-900 dark:text-purple-300">3</div>
                     <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-xl shadow-md border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
                         <h3 className="font-bold text-purple-900 mb-2 uppercase tracking-wider text-sm dark:text-purple-200">{t('path_phase_nurturing')}</h3>
                         <p className="text-slate-600 text-sm dark:text-slate-300">{t('path_pot_note')}</p>

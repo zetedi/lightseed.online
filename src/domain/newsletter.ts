@@ -48,3 +48,29 @@ export const newsletterSendRefusal = (f: { isKeeper: boolean; isStaff: boolean; 
   if (f.audience === 0) return 'newsletter_no_subscribers';
   return null;
 };
+
+// IS THIS BEING ALREADY ON THIS PLACE'S LIST? (ring 2026-09-11) The profile keeps a map of the
+// places whose letter a being receives; the older boolean stands for the NODE's own letter and
+// nothing else. One law, so the footer and the profile can never disagree about what a person is
+// already told — a page that asks someone to subscribe to a letter they already receive is a page
+// that has not read its own records.
+//
+// Plain contract — guaranteed: the map wins wherever it speaks (present key, true or false); the
+// legacy boolean answers only for the node's own domain; an unknown place is not subscribed.
+// Enforced by tests/newsletter.test.ts.
+export interface SubscriberProfileLike {
+  newsletterPlaces?: Record<string, boolean> | null;
+  newsletterSubscribed?: boolean | null;
+}
+
+export const subscribedToPlace = (
+  profile: SubscriberProfileLike | null | undefined,
+  place: string,
+  nodeDomain: string,
+): boolean => {
+  const here = normalizePlaceDomain(place || '');
+  if (!here) return false;
+  const places = profile?.newsletterPlaces || {};
+  if (here in places) return !!places[here];
+  return !!profile?.newsletterSubscribed && here === normalizePlaceDomain(nodeDomain || '');
+};

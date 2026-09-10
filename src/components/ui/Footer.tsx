@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Icons } from './Icons';
 import type { Community } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { headerSurface } from '../../domain/themeSurface';
 import { LegalModal, type LegalDoc } from './LegalModal';
-import { subscribeToNewsletter } from '../../services/firebase';
-import { isSubscriberEmail } from '../../domain/newsletter';
+import { subscribeToNewsletter, listenToUserProfile } from '../../services/firebase';
+import { useSession } from '../../contexts/SessionContext';
+import { charter } from '../../config/charter';
+import { isSubscriberEmail, subscribedToPlace } from '../../domain/newsletter';
 import { notify } from './Toast';
 import { speak } from '../../utils/translations';
 
@@ -47,6 +49,16 @@ export const Footer = ({ community, theme, isDark = false }: { community?: Commu
   const place = community?.domain || (typeof window !== 'undefined' ? window.location.hostname : '');
   const [email, setEmail] = useState('');
   const [subscribing, setSubscribing] = useState(false);
+  // ALREADY ON THE LIST (domain/newsletter): a page that asks someone to subscribe to a letter
+  // they already receive has not read its own records. Signed out, we cannot know — so we ask.
+  const { lightseed } = useSession();
+  const [alreadyHere, setAlreadyHere] = useState(false);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- clears the standing when signing out or moving to another door
+    setAlreadyHere(false);
+    if (!lightseed?.uid || !place) return;
+    return listenToUserProfile(lightseed.uid, data => setAlreadyHere(subscribedToPlace(data, place, charter.domain)));
+  }, [lightseed?.uid, place]);
   const subscribe = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isSubscriberEmail(email)) { notify(speak('invalid_email'), 'error'); return; }
@@ -84,8 +96,12 @@ export const Footer = ({ community, theme, isDark = false }: { community?: Commu
           </div>
         )}
 
-        {/* The letter of this place — subscribe here; unsubscribe in the letter or the profile. */}
-        {place && (
+        {/* The letter of this place — subscribe here; unsubscribe in the letter or the profile.
+            A being already on the list is simply told so, in one quiet line. */}
+        {place && alreadyHere && (
+          <p className="text-[11px]" style={{ color: surface.muted }}>{t('footer_already_subscribed').replace('{place}', name)}</p>
+        )}
+        {place && !alreadyHere && (
           <form onSubmit={subscribe} className="flex w-full max-w-sm flex-col items-center gap-1.5">
             <label htmlFor="footer-subscribe" className="text-[11px]" style={{ color: surface.muted }}>{t('footer_subscribe_label').replace('{place}', name)}</label>
             <div className="flex w-full items-center gap-2">

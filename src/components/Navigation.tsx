@@ -401,7 +401,7 @@ export const Navigation = ({
                             {isLangOpen && (
                                 <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-xl border py-2 z-50 text-slate-700 dark:bg-slate-900 dark:text-slate-200">
                                     {languages.map(l => (
-                                        <button key={l.code} onClick={() => { setLanguage(l.code as any); setIsLangOpen(false); }} className={`w-full text-left px-4 py-2 text-sm ${language === l.code ? 'bg-emerald-50 text-emerald-600 font-bold dark:bg-emerald-950/40 dark:text-emerald-300' : 'hover:bg-slate-50'}`}>
+                                        <button key={l.code} onClick={() => { setLanguage(l.code as any); setIsLangOpen(false); }} className={`w-full text-left px-4 py-2 text-sm ${language === l.code ? 'bg-emerald-50 text-emerald-600 font-bold dark:bg-emerald-950/40 dark:text-emerald-300' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                                             {l.name}
                                         </button>
                                     ))}

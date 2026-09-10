@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { subscriptionIdOf, audienceOf, newsletterSendRefusal, normalizePlaceDomain, isSubscriberEmail } from '../src/domain/newsletter';
+import { subscriptionIdOf, audienceOf, newsletterSendRefusal, normalizePlaceDomain, isSubscriberEmail, subscribedToPlace} from '../src/domain/newsletter';
 import { DOMAIN_KEYS } from '../src/domain/words';
 import { audienceOf as sAudienceOf, newsletterSendRefusal as sNewsletterSendRefusal, normalizePlaceDomain as sNormalizePlaceDomain } from '../functions/src/newsletter';
 
@@ -52,5 +52,25 @@ describe('newsletterSendRefusal — keepers send their place\'s letter; staff th
     expect(newsletterSendRefusal({ isKeeper: false, isStaff: false, isNodePlace: true, audience: 3 })).toBe('newsletter_not_keeper');
     expect(newsletterSendRefusal({ isKeeper: true, isStaff: false, isNodePlace: false, audience: 0 })).toBe('newsletter_no_subscribers');
     for (const k of ['newsletter_not_keeper', 'newsletter_no_subscribers'] as const) expect(DOMAIN_KEYS).toContain(k);
+  });
+});
+
+// ALREADY ON THE LIST (ring 2026-09-11): the footer must not ask for what a being already has.
+describe('subscribedToPlace — the map speaks, the old boolean only for the node', () => {
+  it('the map wins wherever it speaks', () => {
+    expect(subscribedToPlace({ newsletterPlaces: { 'a.org': true } }, 'a.org', 'node.org')).toBe(true);
+    expect(subscribedToPlace({ newsletterPlaces: { 'a.org': false }, newsletterSubscribed: true }, 'a.org', 'a.org')).toBe(false);
+  });
+  it('the legacy boolean answers for the node\'s own letter, and nowhere else', () => {
+    expect(subscribedToPlace({ newsletterSubscribed: true }, 'node.org', 'node.org')).toBe(true);
+    expect(subscribedToPlace({ newsletterSubscribed: true }, 'a.org', 'node.org')).toBe(false);
+  });
+  it('no records, no place, no claim', () => {
+    expect(subscribedToPlace(null, 'a.org', 'node.org')).toBe(false);
+    expect(subscribedToPlace({ newsletterPlaces: { 'a.org': true } }, '', 'node.org')).toBe(false);
+    expect(subscribedToPlace({}, 'a.org', 'node.org')).toBe(false);
+  });
+  it('reads a place the way every other door does (case and www folded)', () => {
+    expect(subscribedToPlace({ newsletterPlaces: { 'a.org': true } }, 'WWW.A.ORG', 'node.org')).toBe(true);
   });
 });

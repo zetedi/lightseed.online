@@ -150,7 +150,7 @@ export const ForestPage = ({
                     className="relative h-56 cursor-pointer transition-transform hover:-translate-y-1"
                   >
                     <div className="absolute inset-0 translate-x-2.5 translate-y-2.5 rotate-[2.5deg] rounded-2xl bg-amber-200/60 ring-1 ring-amber-300/50" />
-                    <div className="absolute inset-0 translate-x-1 translate-y-1 rotate-[1deg] rounded-2xl bg-amber-100/80 ring-1 ring-amber-200/60" />
+                    <div className="absolute inset-0 translate-x-1 translate-y-1 rotate-[1deg] rounded-2xl bg-amber-100/80 ring-1 ring-amber-200/60 dark:bg-amber-950/80" />
                     <LightHouseCard lightHouse={group[0]} className="absolute inset-0 h-full" />
                     <span className="absolute -right-1.5 -top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-amber-500 text-xs font-black text-white shadow">{group.length}</span>
                   </div>

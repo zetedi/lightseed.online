@@ -308,7 +308,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                         <ActionBtn onClick={() => onPlayGrowth(tree.id)} title={t('play_growth')} color={ACTION_GREEN} icon={<Icons.Play />} label={t('play')} />
                         {canReach
                             ? <ActionBtn onClick={() => onReachTree?.(tree)} title={t('reach')} color={ACTION_GREEN} icon={<Icons.Reach />} label={t('reach')} />
-                            : <ActionBtn disabled title={t('only_if_validated')} color="bg-white/20 text-white/70" icon={<Icons.Eye />} label={t('only_if_validated')} />}
+                            : <ActionBtn disabled title={t('only_if_validated')} color="bg-white/20 text-white/70 dark:bg-slate-900/20" icon={<Icons.Eye />} label={t('only_if_validated')} />}
                         {/* Care is a CARER's hand (owner/co_owner/steward — mirrors isTreeCarer
                             in the rules), not the owner's alone: an invited tender tends. */}
                         {canWater && !isEditing && <ActionBtn onClick={onCreatePulse} title={t('care_this_tree_title')} color={ACTION_GREEN} icon={<Icons.Drop />} label={t('care')} />}

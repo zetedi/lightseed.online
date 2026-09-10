@@ -100,7 +100,7 @@ export const ObservatoryPage = ({
           <ListBox tone={tone} className="mb-6">
             <div className={density === 'rows' ? 'space-y-2.5' : density === 'mini' ? 'grid gap-3 md:grid-cols-2' : 'space-y-4'}>
                 {alignments.map(a => (
-                  <div key={a.id} className="overflow-hidden rounded-lg border border-slate-200 bg-white text-slate-800 shadow-sm animate-in fade-in slide-in-from-bottom-2 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
+                  <div key={a.id} className="overflow-hidden rounded-lg border border-slate-200 bg-white text-slate-800 shadow-sm animate-in fade-in slide-in-from-bottom-2 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                     {/* Header — who's asking, and that it's on you */}
                     <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
                       <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t('alignment_request')}</span>

@@ -1314,7 +1314,7 @@ const AppContent = () => {
                                         over ~half the bead's radius. Bead-sized (not larger) so the solid
                                         core hides behind the bead and only the wisp shows; the blur, not a
                                         gradient stop, does the fading, so there is no band and no hard circle. */}
-                                    <span aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 h-[58px] w-[58px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white blur-[6px]" />
+                                    <span aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 h-[58px] w-[58px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white blur-[6px] dark:bg-slate-900" />
                                     {/* The droplet itself, drawn by Lumo — the bead IS the button, 58px. */}
                                     <img src="/droplet.svg" alt="" draggable={false} className="relative h-[58px] w-[58px] object-contain" />
                                 </button>

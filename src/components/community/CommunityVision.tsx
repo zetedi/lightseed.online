@@ -407,7 +407,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
               title={tokenisationOn ? t('tokens_on_title') : t('tokens_off_title')}
               className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${tokenisationOn ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'}`}
             >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform dark:bg-slate-900 ${tokenisationOn ? 'translate-x-6' : 'translate-x-1'}`} />
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${tokenisationOn ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
           </div>
         </div>
@@ -613,7 +613,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
               title={reflectsOn ? t('reflect_on_title') : t('reflect_off_title')}
               className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${reflectsOn ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'}`}
             >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform dark:bg-slate-900 ${reflectsOn ? 'translate-x-6' : 'translate-x-1'}`} />
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${reflectsOn ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
           </div>
 
@@ -634,7 +634,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                 title={strictOn ? t('strict_on_title') : t('strict_off_title')}
                 className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${strictOn ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'}`}
               >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform dark:bg-slate-900 ${strictOn ? 'translate-x-6' : 'translate-x-1'}`} />
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${strictOn ? 'translate-x-6' : 'translate-x-1'}`} />
               </button>
             </div>
           )}
@@ -655,7 +655,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                 aria-checked={cradleOn}
                 className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${cradleOn ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'}`}
               >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform dark:bg-slate-900 ${cradleOn ? 'translate-x-6' : 'translate-x-1'}`} />
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${cradleOn ? 'translate-x-6' : 'translate-x-1'}`} />
               </button>
             </div>
           )}

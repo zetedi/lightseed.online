@@ -39,7 +39,7 @@ const BedCard = ({ bed, onViewTree, density }: { bed: Lifetree; onViewTree: (t: 
   if (density === 'rows') {
     return (
       <button type="button" onClick={() => onViewTree(bed)}
-        className="group flex w-full items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+        className="group flex w-full items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
         {img
           ? <img src={img} alt={bed.name} className="h-11 w-11 flex-none rounded-lg object-cover" />
           : moonTile('h-11 w-11')}
@@ -55,7 +55,7 @@ const BedCard = ({ bed, onViewTree, density }: { bed: Lifetree; onViewTree: (t: 
   if (density === 'mini') {
     return (
       <button type="button" onClick={() => onViewTree(bed)}
-        className="group flex min-h-[8.5rem] w-full cursor-pointer flex-col overflow-hidden rounded-xl border border-slate-100 bg-white text-left shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl">
+        className="group flex min-h-[8.5rem] w-full cursor-pointer flex-col overflow-hidden rounded-xl border border-slate-100 bg-white text-left shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900">
         <div className="relative h-20 w-full flex-none">
           {img
             ? <img src={img} alt={bed.name} className="absolute inset-0 h-full w-full object-cover" />
@@ -72,7 +72,7 @@ const BedCard = ({ bed, onViewTree, density }: { bed: Lifetree; onViewTree: (t: 
   // CARDS — the full bed card (mirrors LightHouseProfile's beds tab).
   return (
     <button type="button" onClick={() => onViewTree(bed)}
-      className="group flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-3 text-left shadow-sm transition-all hover:-translate-y-1 hover:border-slate-200 hover:shadow-xl">
+      className="group flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-3 text-left shadow-sm transition-all hover:-translate-y-1 hover:border-slate-200 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900">
       {img
         ? <img src={img} alt={bed.name} className="h-14 w-14 flex-none rounded-xl object-cover" />
         : moonTile('h-14 w-14')}

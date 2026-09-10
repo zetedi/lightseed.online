@@ -1630,7 +1630,9 @@ const baseKeys = {
   my_offerings: "My offerings",
   my_offerings_sub: "Everything you have offered: what stands, what was taken up, what you withdrew.",
   no_offerings_yet: "You have offered nothing yet.",
-  offered_to: "Offered to {name}"
+  offered_to: "Offered to {name}",
+  footer_already_subscribed: "You receive the letter of {place}.",
+  visions_endeavours: "Visions & Endeavours"
 };
 
 const dictionaries = {
@@ -3283,7 +3285,9 @@ const dictionaries = {
     my_offerings: "عطاءاتي",
     my_offerings_sub: "كل ما عرضتَه: ما هو قائم، وما قُبل، وما سحبتَه.",
     no_offerings_yet: "لم تعرض شيئًا بعد.",
-    offered_to: "مُقدَّم إلى {name}"
+    offered_to: "مُقدَّم إلى {name}",
+    footer_already_subscribed: "أنت تتلقّى رسالة {place}.",
+    visions_endeavours: "الرؤى والمساعي"
   },
   sw: { 
     ...baseKeys, forest: "Msitu", pulses: "Mapigo", visions: "Maono", oracle: "Mtabiri", about: "Kuhusu", explore: "Chunguza", 
@@ -4895,7 +4899,9 @@ const dictionaries = {
     my_offerings: "我的供献",
     my_offerings_sub: "你供献过的一切：仍然成立的、已被接受的、你已撤回的。",
     no_offerings_yet: "你还没有供献过什么。",
-    offered_to: "供献给 {name}"
+    offered_to: "供献给 {name}",
+    footer_already_subscribed: "你正在接收 {place} 的来信。",
+    visions_endeavours: "愿景与志业"
   }
 };
 

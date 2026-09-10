@@ -48,12 +48,15 @@ const FALLBACK: Record<string, string> = {
 
 // A light tint of a tab's colour — the list BOX wears this (the band keeps full saturation), so
 // the surface stays one hue without shouting. `strength` = how far toward white (0..1).
-export const tabTint = (hex: string, strength = 0.88): string => {
+export const tabTint = (hex: string, strength = 0.88, night = false): string => {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
   if (!m) return hex;
   const n = parseInt(m[1], 16);
-  const mix = (c: number) => Math.round(c + (255 - c) * strength);
-  const [r, g, b] = [mix(n >> 16 & 255), mix(n >> 8 & 255), mix(n & 255)];
+  // The ground a tint lies on: white by day, the shell's own night ground after dark (slate-950
+  // territory), so the box reads as a whisper of its destination's pigment either way.
+  const [gr, gg, gb] = night ? [9, 14, 26] : [255, 255, 255];
+  const mixTo = (c: number, g: number) => Math.round(c + (g - c) * strength);
+  const [r, g, b] = [mixTo(n >> 16 & 255, gr), mixTo(n >> 8 & 255, gg), mixTo(n & 255, gb)];
   return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
 };
 

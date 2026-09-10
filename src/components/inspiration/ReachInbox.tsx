@@ -224,7 +224,7 @@ export const ReachInbox = ({
                                 onClick={() => thread.isGroup && thread.threadId
                                     ? setSelection({ kind: 'group', thread: { threadId: thread.threadId, partnerId: thread.partnerId, partnerName: thread.partnerName, partnerPhoto: thread.partnerPhoto, audience: thread.audience, participantCount: thread.participantCount } })
                                     : setSelection({ kind: 'tree', tree: { id: thread.partnerId, name: thread.partnerName, imageUrl: thread.partnerPhoto } as Lifetree })}
-                                className={`${rowBase} group cursor-pointer border-b border-slate-50 dark:border-slate-800/40 ${thread.careAlert === 'watering' ? 'border-l-4 border-l-sky-500 bg-sky-50/40 dark:bg-sky-950/40' : ''} ${selectedKey === thread.key ? 'bg-emerald-50 dark:bg-emerald-950/40' : 'hover:bg-slate-50'}`}
+                                className={`${rowBase} group cursor-pointer border-b border-slate-50 dark:border-slate-800/40 ${thread.careAlert === 'watering' ? 'border-l-4 border-l-sky-500 bg-sky-50/40 dark:bg-sky-950/40' : ''} ${selectedKey === thread.key ? 'bg-emerald-50 dark:bg-emerald-950/40' : 'hover:bg-slate-50 dark:hover:bg-slate-800/70'}`}
                             >
                                 <button
                                     type="button"
