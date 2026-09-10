@@ -14,9 +14,9 @@ interface ProfileStaysProps {
 }
 
 const statusTone: Record<string, string> = {
-  requested: 'bg-amber-100 text-amber-700',
-  accepted: 'bg-emerald-100 text-emerald-700',
-  declined: 'bg-slate-100 text-slate-400',
+  requested: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
+  accepted: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
+  declined: 'bg-slate-100 text-slate-400 dark:bg-slate-800',
 };
 
 // The stay's standing, spoken: the stored value is an identifier, the chip is a word.

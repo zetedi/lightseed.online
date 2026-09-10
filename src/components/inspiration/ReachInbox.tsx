@@ -37,6 +37,7 @@ export const ReachInbox = ({
     onConsumeRequested,
     onOpenTreeById,
     onOpenCareById,
+    tall = false,
 }: {
     pulses: Pulse[];
     myTrees: Lifetree[];
@@ -46,6 +47,8 @@ export const ReachInbox = ({
     onConsumeRequested?: () => void;
     onOpenTreeById?: (treeId: string) => void;
     onOpenCareById?: (treeId: string) => void;
+    // The inbox is the whole room (the messages overlay), not one tab in a profile.
+    tall?: boolean;
 }) => {
     const { t } = useLanguage();
     const [selection, setSelection] = useState<Selection>({ kind: 'none' });
@@ -178,7 +181,9 @@ export const ReachInbox = ({
     const kindOf = (th: ThreadSummary): ReachKind => th.careAlert === 'watering' ? 'care' : th.isGroup ? 'group' : 'direct';
     const filteredThreads = kindFilter ? visibleThreads.filter(th => kindOf(th) === kindFilter) : visibleThreads;
     const pill = (active: boolean) =>
-        `inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-bold transition-colors ${active ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-200 bg-white text-slate-500 hover:border-emerald-300 hover:text-emerald-700'}`;
+        `inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-bold transition-colors ${active
+            ? 'border-emerald-600 bg-emerald-600 text-white'
+            : 'border-slate-200 bg-white text-slate-500 hover:border-emerald-300 hover:text-emerald-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-emerald-700 dark:hover:text-emerald-300'}`;
 
     return (
         <div className="mx-auto max-w-5xl">
@@ -199,8 +204,10 @@ export const ReachInbox = ({
                     <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Droplet /></span>{t('pill_care')}
                 </button>
             </div>
-            {/* Mobile: fill the floating card under its top chrome; desktop keeps 70vh. */}
-            <div className="flex h-[calc(100dvh-8rem)] gap-4 md:h-[70vh]">
+            {/* Mobile: fill the floating card under its top chrome. On the desktop the inbox is
+                one tab among many (70vh keeps the page's shape), unless it IS the room — the
+                messages overlay — where it takes the height it was given. */}
+            <div className={`flex h-[calc(100dvh-8rem)] gap-4 ${tall ? 'md:h-[calc(100dvh-11rem)]' : 'md:h-[70vh]'}`}>
             {/* Thread list — no card, so it sits lightly on the page and takes less room. */}
             <div className={`${hasSelection ? 'hidden md:flex' : 'flex'} w-full shrink-0 flex-col overflow-hidden md:w-72`}>
                 <div className="flex-1 overflow-y-auto">
@@ -217,7 +224,7 @@ export const ReachInbox = ({
                                 onClick={() => thread.isGroup && thread.threadId
                                     ? setSelection({ kind: 'group', thread: { threadId: thread.threadId, partnerId: thread.partnerId, partnerName: thread.partnerName, partnerPhoto: thread.partnerPhoto, audience: thread.audience, participantCount: thread.participantCount } })
                                     : setSelection({ kind: 'tree', tree: { id: thread.partnerId, name: thread.partnerName, imageUrl: thread.partnerPhoto } as Lifetree })}
-                                className={`${rowBase} group cursor-pointer border-b border-slate-50 ${thread.careAlert === 'watering' ? 'border-l-4 border-l-sky-500 bg-sky-50/40 dark:bg-sky-950/40' : ''} ${selectedKey === thread.key ? 'bg-emerald-50 dark:bg-emerald-950/40' : 'hover:bg-slate-50'}`}
+                                className={`${rowBase} group cursor-pointer border-b border-slate-50 dark:border-slate-800/40 ${thread.careAlert === 'watering' ? 'border-l-4 border-l-sky-500 bg-sky-50/40 dark:bg-sky-950/40' : ''} ${selectedKey === thread.key ? 'bg-emerald-50 dark:bg-emerald-950/40' : 'hover:bg-slate-50'}`}
                             >
                                 <button
                                     type="button"

@@ -821,7 +821,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                     placeholder={mode === 'tree'
                         ? t('reach_send_ph').replace('{from}', activeTree?.name || nameAs() || t('you')).replace('{to}', headerName)
                         : t('reach_ask_ph').replace('{name}', aiName)}
-                    className="flex-1 resize-none overflow-y-auto bg-slate-50 border border-slate-200 rounded-3xl px-6 py-4 text-[15px] leading-snug focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:bg-white transition-all shadow-inner placeholder:text-slate-400 placeholder:italic dark:bg-slate-900 dark:border-slate-700"
+                    className="flex-1 resize-none overflow-y-auto bg-slate-50 border border-slate-200 rounded-3xl px-6 py-4 text-[15px] leading-snug focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:bg-white dark:focus:bg-slate-800 transition-all shadow-inner placeholder:text-slate-400 placeholder:italic dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500"
                 />
                 <button type="submit" disabled={isTyping || isSending || !input.trim() || (mode === 'tree' && !selectedTree && !groupThread)} title={t('send')} className="bg-emerald-600 text-white p-4 rounded-full hover:bg-emerald-700 active:scale-95 disabled:opacity-50 transition-all shadow-lg">
                     {isSending ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Icons.Send />}

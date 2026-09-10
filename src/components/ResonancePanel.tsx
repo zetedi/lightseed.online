@@ -8,8 +8,8 @@ import type { VisionSynergy } from '../types';
 // middling is amber, gentle kinship is emerald.
 export const resonanceTier = (score: number): { labelKey: 'tier_radiant' | 'tier_resonant' | 'tier_kindred'; badge: string } => {
   if (score >= 80) return { labelKey: 'tier_radiant', badge: 'bg-rose-100 text-rose-700 ring-1 ring-rose-300/60 shadow-[0_0_10px_rgba(244,63,94,0.35)]' };
-  if (score >= 55) return { labelKey: 'tier_resonant', badge: 'bg-amber-100 text-amber-700' };
-  return { labelKey: 'tier_kindred', badge: 'bg-emerald-100 text-emerald-700' };
+  if (score >= 55) return { labelKey: 'tier_resonant', badge: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300' };
+  return { labelKey: 'tier_kindred', badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' };
 };
 
 // A stable, order-insensitive id for a resonance pair (used to track favourites).

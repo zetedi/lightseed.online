@@ -64,7 +64,7 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
     setBusy(false);
   };
 
-  const statusTone = { open: 'bg-amber-50 text-amber-700', accepted: 'bg-emerald-50 text-emerald-700', withdrawn: 'bg-slate-100 text-slate-500', declined: 'bg-slate-100 text-slate-500' } as const;
+  const statusTone = { open: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300', accepted: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300', withdrawn: 'bg-slate-100 text-slate-500 dark:bg-slate-800', declined: 'bg-slate-100 text-slate-500 dark:bg-slate-800' } as const;
   // The offered-to card: visible in every section (BeingProfile's banner seat).
   const careBanner = status ? (
     <div className="mx-auto mb-4 max-w-2xl rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm dark:bg-slate-900 dark:border-emerald-900">

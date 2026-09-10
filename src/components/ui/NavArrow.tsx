@@ -15,7 +15,7 @@ const PATH: Record<NavDir, string> = {
 // The shared button skin (no position, no size) — for the few callers that place it themselves
 // (the fixed page-scroll button). Most callers use <NavArrow>.
 export const NAV_ARROW_CLS =
-    'pointer-events-auto flex items-center justify-center rounded-full bg-white/90 text-slate-500 shadow ring-1 ring-emerald-100 transition-all duration-300 hover:bg-white hover:text-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500';
+    'pointer-events-auto flex items-center justify-center rounded-full bg-white/90 text-slate-500 shadow ring-1 ring-emerald-100 transition-all duration-300 hover:bg-white hover:text-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:bg-slate-900/90';
 
 // Standard edge placement: the button sits centred on the axis and hangs ~2/5 of itself over the
 // border on mobile, a touch more on sm+ — the same overhang for every arrow, so they read as one.

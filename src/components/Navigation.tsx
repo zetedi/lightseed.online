@@ -239,7 +239,7 @@ export const Navigation = ({
             }
             return navIsDark
                 ? 'text-violet-100 bg-violet-500/15 border border-violet-300/50 hover:bg-violet-500/30 hover:border-violet-200 font-bold'
-                : 'text-violet-700 bg-violet-50 border border-violet-200 hover:bg-violet-100 hover:text-violet-900 font-bold';
+                : 'text-violet-700 bg-violet-50 border border-violet-200 hover:bg-violet-100 hover:text-violet-900 font-bold dark:text-violet-300 dark:bg-violet-950/40 dark:border-violet-900';
         }
         // Colour lives in ONE place (tabTone + tabFg, applied as the pill's inline style); classes
         // here carry only shape and weight. The old per-tab Tailwind map is gone with the fragmentation.
@@ -248,7 +248,7 @@ export const Navigation = ({
         }
         return navIsDark
             ? 'text-slate-300 hover:text-white hover:bg-white/10 font-medium'
-            : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100 font-medium';
+            : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100 font-medium dark:text-slate-300';
     }
 
     // The mobile tile's active colour comes from the same single source as the desktop pill

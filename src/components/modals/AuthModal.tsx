@@ -9,7 +9,7 @@ import { getTerms } from '../../utils/terms';
 import { signInWithGoogle, signUpWithEmail, signInWithEmail, resetPassword, getNetworkInvite, submitInviteRequest } from '../../services/firebase';
 import { friendlyAuthError, isUserCancelledAuth } from '../../utils/authErrors';
 
-const field = "h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-slate-100 disabled:text-slate-500";
+const field = "h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-slate-100 disabled:text-slate-500 dark:border-slate-700 dark:bg-slate-900";
 
 type Mode = 'signin' | 'signup' | 'request';
 

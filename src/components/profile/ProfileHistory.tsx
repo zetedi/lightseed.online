@@ -86,10 +86,10 @@ export const ProfileHistory: React.FC<ProfileHistoryProps> = ({ uid, onViewAlign
             const a = treesById[h.initiatorTreeId];
             const b = treesById[h.targetTreeId];
             const status = h.status === 'ACCEPTED'
-              ? { label: t('align_status_finalised'), cls: 'bg-emerald-100 text-emerald-700' }
+              ? { label: t('align_status_finalised'), cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' }
               : h.status === 'REJECTED'
-                ? { label: t('offering_status_declined'), cls: 'bg-slate-100 text-slate-500' }
-                : { label: t('align_status_open'), cls: 'bg-amber-100 text-amber-700' };
+                ? { label: t('offering_status_declined'), cls: 'bg-slate-100 text-slate-500 dark:bg-slate-800' }
+                : { label: t('align_status_open'), cls: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300' };
             const notes = h.messages?.length || 0;
             const face = (tree: Lifetree | null, ring: string, z: string) => {
               const img = tree?.latestGrowthUrl || tree?.imageUrl;

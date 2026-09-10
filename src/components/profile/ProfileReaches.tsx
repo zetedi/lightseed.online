@@ -12,6 +12,8 @@ interface ProfileReachesProps {
   onConsumeReach?: () => void;
   onOpenTreeById?: (treeId: string) => void;
   onOpenCareById?: (treeId: string) => void;
+  // True when the inbox IS the screen (the messages overlay), not one tab of a profile.
+  tall?: boolean;
 }
 
 // Direct Messages tab — the ReachInbox fed with all reaches involving me. The inbox renders
@@ -25,6 +27,7 @@ export const ProfileReaches: React.FC<ProfileReachesProps> = ({
   reachPartner,
   reachAudience,
   onConsumeReach,
+  tall,
 }) => {
   const [reaches, setReaches] = useState<Pulse[]>([]);
   // A watering posts into the guardians' thread from another screen entirely; the bus is how an
@@ -49,6 +52,7 @@ export const ProfileReaches: React.FC<ProfileReachesProps> = ({
       requestedPartner={reachPartner || null}
       requestedAudience={reachAudience}
       onConsumeRequested={onConsumeReach}
+      tall={tall}
     />
   );
 };

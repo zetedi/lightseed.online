@@ -26,7 +26,7 @@ const TreeAvatar = ({ name, imageUrl, tone }: { name: string; imageUrl?: string;
 };
 
 const TreeColumn = ({ tree, role, who, tone }: { tree: { name: string; imageUrl?: string }; role: string; who?: string; tone: 'sky' | 'emerald' }) => {
-  const roleClass = tone === 'sky' ? 'text-sky-600 bg-sky-50' : 'text-emerald-700 bg-emerald-50';
+  const roleClass = tone === 'sky' ? 'text-sky-600 bg-sky-50 dark:text-sky-300 dark:bg-sky-950/40' : 'text-emerald-700 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-950/40';
   return (
     <div className="flex min-w-0 flex-col items-center gap-1.5 text-center">
       <TreeAvatar name={tree.name} imageUrl={tree.imageUrl} tone={tone} />

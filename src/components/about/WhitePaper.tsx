@@ -33,7 +33,7 @@ const PAPERS = [
 
 // Markdown prose styling via arbitrary variants — no typography plugin needed.
 const PROSE =
-    'font-serif leading-relaxed text-slate-700 ' +
+    'font-serif leading-relaxed text-slate-700 dark:text-slate-200 ' +
     '[&_h1]:mb-4 [&_h1]:font-sans [&_h1]:text-2xl [&_h1]:font-light [&_h1]:tracking-wide [&_h1]:text-slate-900 ' +
     '[&_h2]:mb-2 [&_h2]:mt-8 [&_h2]:font-sans [&_h2]:text-xs [&_h2]:font-bold [&_h2]:uppercase [&_h2]:tracking-[0.18em] [&_h2]:text-emerald-700 ' +
     '[&_p]:mb-4 [&_p]:text-[15px] ' +

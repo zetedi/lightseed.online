@@ -1718,12 +1718,12 @@ const AppContent = () => {
                         card visibly floats OVER the app; on desktop it centres vertically, so the
                         top and bottom margins are equal. */}
                     <div className="mx-auto w-full max-w-6xl px-2 py-2 sm:flex sm:min-h-full sm:flex-col sm:justify-center sm:px-6 sm:py-6 lg:py-10">
-                        <div className="relative min-h-[calc(100dvh-1rem)] rounded-2xl bg-white p-3 pt-3 shadow-2xl sm:min-h-0 sm:p-6 sm:pt-4 dark:bg-slate-900">
+                        <div className="relative min-h-[calc(100dvh-1rem)] rounded-2xl border border-slate-200/70 bg-white p-3 pt-3 shadow-2xl sm:min-h-0 sm:p-6 sm:pt-4 dark:border-slate-700/70 dark:bg-slate-900">
                             <button
                                 onClick={() => setShowReachModal(false)}
                                 title={t('close')}
                                 aria-label={t('close_messages')}
-                                className="absolute right-3 top-3 z-10 rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                                className="absolute right-3 top-3 z-10 rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                             >
                                 <Icons.Close />
                             </button>
@@ -1735,6 +1735,8 @@ const AppContent = () => {
                                 onConsumeReach={() => { setReachTree(null); setReachAudience(undefined); }}
                                 onOpenTreeById={(id: string) => openTreeFromReaches(id, { closeReachModal: true })}
                                 onOpenCareById={openCareFromReaches}
+                                // Here the inbox IS the screen: it takes the room, not a 70vh slot.
+                                tall
                             />
                         </div>
                     </div>

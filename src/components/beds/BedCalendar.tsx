@@ -150,9 +150,9 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
 
   const statusPill = (s: Stay['status']) => {
     const map: Record<string, string> = {
-      requested: 'bg-amber-100 text-amber-700',
-      accepted: 'bg-emerald-100 text-emerald-700',
-      declined: 'bg-slate-100 text-slate-400',
+      requested: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
+      accepted: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
+      declined: 'bg-slate-100 text-slate-400 dark:bg-slate-800',
     };
     const face = s === 'requested' ? t('requested') : s === 'accepted' ? t('accepted') : t('offering_status_declined');
     return <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${map[s]}`}>{face}</span>;
@@ -196,10 +196,10 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
             const base = 'aspect-square rounded-lg text-xs flex items-center justify-center transition-colors';
             // A booked night always reads as booked, even inside a picked span (taken wins).
             const tone = !cell.inMonth ? 'text-slate-200'
-              : taken ? 'bg-rose-50 text-rose-300 line-through'
+              : taken ? 'bg-rose-50 text-rose-300 line-through dark:bg-rose-950/40'
               : inRange ? 'bg-emerald-600 text-white font-semibold'
               : past ? 'text-slate-300'
-              : 'text-slate-600 hover:bg-emerald-50';
+              : 'text-slate-600 hover:bg-emerald-50 dark:text-slate-300';
             // The chosen check-out morning gets a distinct ring so the second tap plainly registers.
             const ring = isDeparture ? 'ring-2 ring-emerald-500 ring-offset-1' : '';
             return (

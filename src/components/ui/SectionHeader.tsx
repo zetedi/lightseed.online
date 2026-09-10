@@ -45,7 +45,7 @@ export const SectionHeader = ({ title, tone = '#059669', action, footer, toggle,
     const darkFg = fg !== '#ffffff';
     const chipCls = darkFg
         ? 'bg-black/10 hover:bg-black/20'
-        : 'bg-white/15 hover:bg-white/25 text-white/85 hover:text-white';
+        : 'bg-white/15 hover:bg-white/25 text-white/85 hover:text-white dark:bg-slate-900/15';
     const chipStyle = darkFg ? { color: fg } : undefined;
 
     return (

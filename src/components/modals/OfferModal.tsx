@@ -135,7 +135,7 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved, to }: {
         } catch (err: any) { showAlert(err?.message || 'err_offering_create'); setSaving(false); }
     };
 
-    const field = 'w-full rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600';
+    const field = 'w-full rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 dark:border-slate-700 dark:bg-slate-900';
 
     return (
         <Modal title={editing ? t('offer_retell') : to ? `${t('offer_to')} ${to.name || ''}`.trim() : t('offer_make')} onClose={onClose} wide>

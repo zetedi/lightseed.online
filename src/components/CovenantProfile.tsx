@@ -23,10 +23,10 @@ export const CovenantProfile = ({ covenantId, currentUserId, onClose, notify }: 
   const [covenant, setCovenant] = useState<Covenant | null>(null);
 
   const status = covenant?.status === 'sealed'
-    ? { label: t('covenant_status_sealed'), cls: 'bg-emerald-100 text-emerald-700' }
+    ? { label: t('covenant_status_sealed'), cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' }
     : covenant?.status === 'broken'
-      ? { label: t('covenant_status_broken'), cls: 'bg-rose-100 text-rose-600' }
-      : { label: t('covenant_status_proposed'), cls: 'bg-amber-100 text-amber-700' };
+      ? { label: t('covenant_status_broken'), cls: 'bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300' }
+      : { label: t('covenant_status_proposed'), cls: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300' };
 
   return (
     <div className="min-h-screen animate-in fade-in zoom-in-95 duration-300 pb-20 bg-slate-50 dark:bg-slate-900">

@@ -8,8 +8,8 @@ import { speak } from '../../utils/translations';
 // crop editor render their own panels because they must STACK above an open Modal, but they
 // dress from these very classes; nothing else hand-rolls an overlay.
 export const MODAL_BACKDROP = 'fixed inset-0 flex items-center justify-center bg-slate-900/90 backdrop-blur-md';
-export const MODAL_PANEL = 'w-full rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in-95';
-export const MODAL_TITLE = 'font-semibold text-slate-800';
+export const MODAL_PANEL = 'w-full rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in-95 dark:bg-slate-900';
+export const MODAL_TITLE = 'font-semibold text-slate-800 dark:text-slate-100';
 export const MODAL_CLOSE = 'p-1 rounded-full transition-colors text-slate-400 hover:bg-slate-100 hover:text-slate-600';
 
 // The modal's buttons: one shape (rounded-xl, the same padding and weight), a hue per meaning.
@@ -33,8 +33,8 @@ export const modalButton = (
     const base = 'inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100';
     const look = kind === 'primary' ? HUES[opts.hue || 'emerald']
         : kind === 'danger' ? HUES.red
-        : kind === 'secondary' ? 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-        : kind === 'secondary-dark' ? 'border border-white/20 bg-white/10 text-white hover:bg-white/20'
+        : kind === 'secondary' ? 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
+        : kind === 'secondary-dark' ? 'border border-white/20 bg-white/10 text-white hover:bg-white/20 dark:bg-slate-900/10'
         : 'text-slate-500 hover:bg-slate-100';
     return [base, look, opts.full === false ? '' : 'w-full', opts.extra || ''].filter(Boolean).join(' ');
 };

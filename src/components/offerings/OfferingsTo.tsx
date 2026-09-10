@@ -20,7 +20,7 @@ export const OfferingsTo = ({ kind, id, onView }: { kind: 'tree' | 'vision'; id:
     if (!offerings || offerings.length === 0) return null;
     const rank = (p: Pulse) => (offeringStatusOf(p) === 'open' ? 0 : 1);
     const statusKey = (p: Pulse) => `offering_status_${offeringStatusOf(p) || 'open'}` as const;
-    const tone = (p: Pulse) => ({ open: 'bg-amber-50 text-amber-700', accepted: 'bg-emerald-50 text-emerald-700', withdrawn: 'bg-slate-100 text-slate-500', declined: 'bg-slate-100 text-slate-500' })[offeringStatusOf(p) || 'open'];
+    const tone = (p: Pulse) => ({ open: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300', accepted: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300', withdrawn: 'bg-slate-100 text-slate-500 dark:bg-slate-800', declined: 'bg-slate-100 text-slate-500 dark:bg-slate-800' })[offeringStatusOf(p) || 'open'];
     return (
         <div className="rounded-2xl border border-slate-100 bg-white p-4 dark:bg-slate-900 dark:border-slate-800">
             <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-400">

@@ -34,9 +34,9 @@ interface AlignmentViewProps {
 
 // The status chip's words are KEYS — this table lives at module scope, where no hook speaks.
 const STATUS: Record<string, { labelKey: 'status_open' | 'status_finalised' | 'offering_status_declined'; cls: string }> = {
-  PENDING: { labelKey: 'status_open', cls: 'bg-amber-100 text-amber-700' },
-  ACCEPTED: { labelKey: 'status_finalised', cls: 'bg-emerald-100 text-emerald-700' },
-  REJECTED: { labelKey: 'offering_status_declined', cls: 'bg-slate-100 text-slate-500' },
+  PENDING: { labelKey: 'status_open', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300' },
+  ACCEPTED: { labelKey: 'status_finalised', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' },
+  REJECTED: { labelKey: 'offering_status_declined', cls: 'bg-slate-100 text-slate-500 dark:bg-slate-800' },
 };
 
 // One party of the alignment — rendered as its tree today; the card stays side-shaped so other

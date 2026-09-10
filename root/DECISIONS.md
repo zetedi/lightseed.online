@@ -6,6 +6,18 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-11 · A class list that lives in a name; and the messages room** — the last blind spot
+of the night pass was a class list that is not written at a className at all: a `const` holding
+one, a helper returning one, a lookup table of status chips (open · accepted · declined). 44 of
+them, answered by the same rule and reviewed one by one — the hero's disabled pill kept its day
+veil, because frosted glass over a picture is what it is. Two more mends the eye found: a
+`focus:bg-white` outran every night ground the moment someone typed in the message box, and a
+separator drawn in slate-50 stayed bright in the dark — a line between two voices is a whisper at
+night, not a rule. And the messages OVERLAY is a room, not a card: the inbox wore the 70vh it
+wears as one tab inside a profile, so half the room stood empty while the conversation scrolled
+in a slot. `tall` lets the caller say the room is the inbox's own; the overlay itself gains a
+hairline edge so it reads as a thing lifted above the page.
+
 **2026-09-11 · The night pass learns to read a class list** — the shell was still white in
 places after two passes, and each miss had the same root: the tool could only read a class list
 written as a plain string. Most of them are not. `className={`… ${cond ? 'a' : 'b'}`}` — the
