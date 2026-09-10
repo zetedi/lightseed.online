@@ -363,7 +363,7 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
             <div class="relative ${sizeClass} rounded-full ${borderClass} border-white shadow-xl overflow-hidden bg-white dark:bg-slate-900">
                 <img ${displayImage} style="${imgStyle}" class="w-full h-full object-cover" />
             </div>
-            ${isExplicitlyValidatedTree(tree) ? '<div class="absolute -top-2 -right-2 rounded-full border border-emerald-200 bg-white/95 px-1.5 py-0.5 text-[8px] font-black tracking-[0.2em] text-yellow-400 shadow-sm dark:bg-slate-900/95">V<span class="ml-0.5 text-[6px] font-bold tracking-[0.12em] text-emerald-700">' + escapeHtml(t('forest_validated_badge')) + '</span></div>' : ''}
+            ${isExplicitlyValidatedTree(tree) ? '<div class="absolute -top-2 -right-2 rounded-full border border-emerald-200 bg-white/95 px-1.5 py-0.5 text-[8px] font-black tracking-[0.2em] text-yellow-400 shadow-sm dark:bg-slate-900/95 dark:border-emerald-900">V<span class="ml-0.5 text-[6px] font-bold tracking-[0.12em] text-emerald-700 dark:text-emerald-300">' + escapeHtml(t('forest_validated_badge')) + '</span></div>' : ''}
             ${isDanger ? `<div class="absolute -top-1 -left-1 z-20 w-3 h-3 bg-red-500 border border-white rounded-full animate-bounce"></div>` : ''}
         </div>`;
     }
@@ -819,7 +819,7 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
                     <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-slate-950/30 backdrop-blur-[2px]">
                         <div className="flex flex-col items-center gap-3 rounded-2xl bg-white/90 px-6 py-5 shadow-lg dark:bg-slate-900/90">
                             <Loading />
-                            <span className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">{loading ? t('forest_loading') : t('forest_rendering')}</span>
+                            <span className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-300">{loading ? t('forest_loading') : t('forest_rendering')}</span>
                         </div>
                     </div>
                 )}

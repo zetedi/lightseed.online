@@ -112,16 +112,16 @@ export const CommunityInterbeingMatrix: React.FC<CommunityInterbeingMatrixProps>
 
       {/* A circle has no anchor to show — the box waits until an address is claimed. */}
       {!!anchor.canonicalDomain && (
-      <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm dark:bg-slate-900">
+      <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm dark:bg-slate-900 dark:border-emerald-900">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-emerald-700">{t('interbeing_external_anchor')}</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-300">{t('interbeing_external_anchor')}</p>
             <a href={`https://${anchor.canonicalDomain}`} target="_blank" rel="noreferrer" className="mt-1 block font-mono text-sm text-slate-700 hover:text-emerald-700 dark:text-slate-200">
               {anchor.canonicalDomain}
             </a>
           </div>
           {isDomainVerified(community) ? (
-            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300">
               ✓ {t('domain_verified')} · DNS
             </span>
           ) : (
@@ -137,7 +137,7 @@ export const CommunityInterbeingMatrix: React.FC<CommunityInterbeingMatrixProps>
       )}
 
       {canManage && (
-        <div className="rounded-2xl border border-violet-100 bg-violet-50/40 p-5">
+        <div className="rounded-2xl border border-violet-100 bg-violet-50/40 p-5 dark:border-violet-900 dark:bg-violet-950/40">
           <h3 className="font-semibold text-slate-800 dark:text-slate-100">{t('interbeing_propose_title')}</h3>
           <p className="mt-1 text-sm text-slate-500">{t('interbeing_propose_desc').replace('{name}', community.name)}</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
@@ -184,7 +184,7 @@ export const CommunityInterbeingMatrix: React.FC<CommunityInterbeingMatrixProps>
                       <span className="text-[10px] font-bold uppercase tracking-wide text-violet-500">{t('tree_circle_badge')}</span>
                     ) : null}
                     {isDomainVerified(other) && (
-                      <span title={t('domain_verified')} className="shrink-0 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700">✓ DNS</span>
+                      <span title={t('domain_verified')} className="shrink-0 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">✓ DNS</span>
                     )}
                   </span>
                   <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{t(interbeingRelationKey(rel))}</p>

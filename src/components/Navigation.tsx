@@ -117,12 +117,12 @@ const NavTab = ({ tab, activeTab, theme, navIsDark, setTab, t, getTabStyle, getT
                 className={`pointer-events-none absolute right-0 top-[calc(100%+0.75rem)] z-50 w-80 max-w-[calc(100vw-2rem)] translate-y-1 rounded-xl border px-4 py-3 text-left text-xs leading-relaxed opacity-0 shadow-xl transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 ${
                     navIsDark
                         ? 'border-amber-200/30 bg-slate-950/95 text-amber-50 shadow-black/40 backdrop-blur'
-                        : 'border-amber-200 bg-white/95 text-slate-700 shadow-amber-900/10 backdrop-blur'
+                        : 'border-amber-200 bg-white/95 text-slate-700 shadow-amber-900/10 backdrop-blur dark:border-amber-900 dark:bg-slate-900/95 dark:text-slate-200'
                 }`}
             >
                 <span
                     className={`absolute -top-1.5 right-5 h-3 w-3 rotate-45 border-l border-t ${
-                        navIsDark ? 'border-amber-200/30 bg-slate-950' : 'border-amber-200 bg-white'
+                        navIsDark ? 'border-amber-200/30 bg-slate-950' : 'border-amber-200 bg-white dark:border-amber-900 dark:bg-slate-900'
                     }`}
                 />
                 {t('about_lin_description')}
@@ -174,7 +174,7 @@ const MobileNavTile = ({ tab, label, activeTab, navBorder, navBackground, navTex
         <button
             onClick={() => { setTab(tab); setIsMenuOpen(false); }}
             className={`relative flex min-h-[50px] flex-col items-center justify-center gap-1 rounded-xl border px-0.5 py-2 text-center transition-all ${
-                active ? 'border-transparent shadow-lg' : 'border-emerald-200 hover:brightness-95'
+                active ? 'border-transparent shadow-lg' : 'border-emerald-200 hover:brightness-95 dark:border-emerald-900'
             }`}
             style={active ? { backgroundColor: getActiveTabColor(tab) || navBorder, color: tabFg(tab) } : { backgroundColor: navBackground, color: navText }}
         >
@@ -337,7 +337,7 @@ export const Navigation = ({
                         );
                     })()}
                     <div className="flex items-center gap-3 cursor-pointer group shrink-0" onClick={() => setTab('dashboard')}>
-                        <div className={`p-1 rounded-full group-hover:scale-110 transition-transform ${navIsDark ? 'bg-white' : 'bg-slate-50 border border-slate-200'}`} style={{ borderColor: navBorder }}>
+                        <div className={`p-1 rounded-full group-hover:scale-110 transition-transform ${navIsDark ? 'bg-white dark:bg-slate-900' : 'bg-slate-50 border border-slate-200 dark:bg-slate-900 dark:border-slate-700'}`} style={{ borderColor: navBorder }}>
                              {logoUrl ? <Picture size={480} src={logoUrl} className="w-8 h-8 rounded-full object-cover" alt={t('logo')} /> : <Logo width={32} height={32} />}
                         </div>
                         {/* The name renders EXACTLY as the keeper wrote it (the appearance hint promises it) —
@@ -356,7 +356,7 @@ export const Navigation = ({
                     {isMenuOpen && (onToggleNightMode || lightseed) && (
                         <div className="flex items-center gap-2 xl:hidden">
                             {onToggleNightMode && (
-                                <button onClick={onToggleNightMode} title={isNightMode ? t('switch_to_light') : t('switch_to_night')} aria-label={isNightMode ? t('switch_to_light') : t('switch_to_night')} className={`rounded-full border p-2 transition-colors ${navIsDark ? 'bg-black/20 text-amber-300 hover:bg-black/30' : 'bg-white/70 text-slate-600 hover:bg-white'}`} style={{ borderColor: navBorder }}>
+                                <button onClick={onToggleNightMode} title={isNightMode ? t('switch_to_light') : t('switch_to_night')} aria-label={isNightMode ? t('switch_to_light') : t('switch_to_night')} className={`rounded-full border p-2 transition-colors ${navIsDark ? 'bg-black/20 text-amber-300 hover:bg-black/30' : 'bg-white/70 text-slate-600 hover:bg-white dark:bg-slate-900/70 dark:text-slate-300'}`} style={{ borderColor: navBorder }}>
                                     {isNightMode ? <Icons.Sun /> : <Icons.Moon />}
                                 </button>
                             )}
@@ -392,7 +392,7 @@ export const Navigation = ({
                          <div className="relative" ref={langRef}>
                             <button
                                 onClick={() => setIsLangOpen(!isLangOpen)}
-                                className={`h-9 text-[10px] border rounded-full px-2.5 uppercase font-bold transition-colors flex items-center gap-1 ${navIsDark ? 'bg-black/20 hover:bg-black/30' : 'bg-white/70 hover:bg-white'}`}
+                                className={`h-9 text-[10px] border rounded-full px-2.5 uppercase font-bold transition-colors flex items-center gap-1 ${navIsDark ? 'bg-black/20 hover:bg-black/30' : 'bg-white/70 hover:bg-white dark:bg-slate-900/70'}`}
                                 style={{ borderColor: navBorder, color: navText }}
                             >
                                 <Icons.Globe size={14} />
@@ -401,7 +401,7 @@ export const Navigation = ({
                             {isLangOpen && (
                                 <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-xl border py-2 z-50 text-slate-700 dark:bg-slate-900 dark:text-slate-200">
                                     {languages.map(l => (
-                                        <button key={l.code} onClick={() => { setLanguage(l.code as any); setIsLangOpen(false); }} className={`w-full text-left px-4 py-2 text-sm ${language === l.code ? 'bg-emerald-50 text-emerald-600 font-bold' : 'hover:bg-slate-50'}`}>
+                                        <button key={l.code} onClick={() => { setLanguage(l.code as any); setIsLangOpen(false); }} className={`w-full text-left px-4 py-2 text-sm ${language === l.code ? 'bg-emerald-50 text-emerald-600 font-bold dark:bg-emerald-950/40 dark:text-emerald-300' : 'hover:bg-slate-50'}`}>
                                             {l.name}
                                         </button>
                                     ))}
@@ -415,7 +415,7 @@ export const Navigation = ({
                                 onClick={onToggleNightMode}
                                 title={isNightMode ? t('switch_to_light') : t('switch_to_night')}
                                 aria-label={isNightMode ? t('switch_to_light') : t('switch_to_night')}
-                                className={`hidden xl:inline-flex rounded-full border p-2 transition-colors ${navIsDark ? 'bg-black/20 text-amber-300 hover:bg-black/30' : 'bg-white/70 text-slate-600 hover:bg-white'}`}
+                                className={`hidden xl:inline-flex rounded-full border p-2 transition-colors ${navIsDark ? 'bg-black/20 text-amber-300 hover:bg-black/30' : 'bg-white/70 text-slate-600 hover:bg-white dark:bg-slate-900/70 dark:text-slate-300'}`}
                                 style={{ borderColor: navBorder }}
                             >
                                 {isNightMode ? <Icons.Sun /> : <Icons.Moon />}
@@ -434,7 +434,7 @@ export const Navigation = ({
                                             ? 'border-sky-300 bg-sky-500/15 text-sky-500 shadow-[0_0_14px_rgba(14,165,233,0.7)] ring-1 ring-sky-300/70 animate-pulse'
                                             : (reachNotificationsCount > 0 || treeInviteCount > 0)
                                                 ? 'border-emerald-300 bg-emerald-500/15 text-emerald-500 shadow-[0_0_14px_rgba(16,185,129,0.7)] ring-2 ring-emerald-300/70 animate-pulse'
-                                                : (navIsDark ? 'bg-black/20 text-slate-200 hover:bg-black/30' : 'bg-white/70 text-slate-600 hover:bg-white')
+                                                : (navIsDark ? 'bg-black/20 text-slate-200 hover:bg-black/30' : 'bg-white/70 text-slate-600 hover:bg-white dark:bg-slate-900/70 dark:text-slate-300')
                                     }`}
                                     style={(careAlertCount > 0 || reachNotificationsCount > 0 || treeInviteCount > 0) ? undefined : { borderColor: navBorder }}
                                 >
@@ -490,7 +490,7 @@ export const Navigation = ({
                             </button>
                          )}
 
-                         <button onClick={() => setIsMenuOpen(!isMenuOpen)} className={`xl:hidden rounded-full p-2 transition-all ${isMenuOpen ? 'border-2 border-amber-300 text-amber-500 shadow-[0_0_12px_rgba(251,191,36,0.55)]' : (navIsDark ? 'text-white hover:text-emerald-200' : 'text-slate-700 hover:text-slate-950')}`}>
+                         <button onClick={() => setIsMenuOpen(!isMenuOpen)} className={`xl:hidden rounded-full p-2 transition-all ${isMenuOpen ? 'border-2 border-amber-300 text-amber-500 shadow-[0_0_12px_rgba(251,191,36,0.55)]' : (navIsDark ? 'text-white hover:text-emerald-200' : 'text-slate-700 hover:text-slate-950 dark:text-slate-200')}`}>
                             {isMenuOpen ? <Icons.Close /> : <Icons.Menu />}
                          </button>
                     </div>
@@ -537,7 +537,7 @@ export const Navigation = ({
                         {lightseed && reachNotificationsCount > 0 && (
                             <button
                                 onClick={() => { onOpenReachInbox?.(); setIsMenuOpen(false); }}
-                                className="mb-1.5 flex w-full items-center justify-center gap-2 rounded-xl border border-red-300 bg-red-50 py-2 text-xs font-bold text-red-600"
+                                className="mb-1.5 flex w-full items-center justify-center gap-2 rounded-xl border border-red-300 bg-red-50 py-2 text-xs font-bold text-red-600 dark:bg-red-950/40 dark:text-red-300"
                             >
                                 <span className="[&>svg]:h-4 [&>svg]:w-4"><Icons.Mail /></span>
                                 <span>{t('nav_new_reaches').replace('{n}', String(reachNotificationsCount))}</span>
@@ -552,7 +552,7 @@ export const Navigation = ({
                                 className={`flex w-full items-center justify-center gap-2 rounded-xl border py-3 text-sm font-bold transition-all ${
                                     activeTab === 'about'
                                         ? 'border-transparent text-white shadow-lg'
-                                        : 'border-emerald-200 bg-white/95 text-slate-700 hover:bg-white'
+                                        : 'border-emerald-200 bg-white/95 text-slate-700 hover:bg-white dark:border-emerald-900 dark:bg-slate-900/95 dark:text-slate-200'
                                 }`}
                                 style={activeTab === 'about' ? { backgroundColor: getActiveTabColor('about') || navBorder } : undefined}
                             >
@@ -561,8 +561,8 @@ export const Navigation = ({
                             </button>
 
                             {lightseed && (
-                                <button onClick={() => { onProfile(); setIsMenuOpen(false); }} className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white/95 px-3 py-2.5 text-sm font-bold text-slate-700 transition-all hover:bg-white dark:bg-slate-900/95 dark:text-slate-200">
-                                    <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-emerald-200 bg-white dark:bg-slate-900">
+                                <button onClick={() => { onProfile(); setIsMenuOpen(false); }} className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white/95 px-3 py-2.5 text-sm font-bold text-slate-700 transition-all hover:bg-white dark:bg-slate-900/95 dark:text-slate-200 dark:border-emerald-900">
+                                    <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-emerald-200 bg-white dark:bg-slate-900 dark:border-emerald-900">
                                         {activeTreeImage
                                             ? <Picture size={480} src={activeTreeImage} className="h-full w-full object-cover" alt="" referrerPolicy="no-referrer" />
                                             : <span className="text-emerald-500 [&>svg]:h-4 [&>svg]:w-4"><Icons.Tree /></span>}

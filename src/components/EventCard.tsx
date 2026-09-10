@@ -50,8 +50,8 @@ export const EventCard = ({ event, onOpen, community, onOpenCommunity, participa
     const showFace = !!(event.communityId || community);
 
     return (
-        <button onClick={onOpen} className={`group relative flex h-full flex-col self-stretch overflow-hidden rounded-xl border text-left shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'} ${className ?? 'w-full'}`}>
-            <div className={`relative aspect-[4/3] w-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+        <button onClick={onOpen} className={`group relative flex h-full flex-col self-stretch overflow-hidden rounded-xl border text-left shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900'} ${className ?? 'w-full'}`}>
+            <div className={`relative aspect-[4/3] w-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-100 dark:bg-slate-800'}`}>
                 {(event.imageUrls?.length || event.imageUrl)
                     ? <CardCarousel images={event.imageUrls?.length ? event.imageUrls : [event.imageUrl!]} alt={event.title} />
                     : <div className="flex h-full w-full items-center justify-center text-slate-300"><Icons.Loc /></div>}
@@ -118,14 +118,14 @@ export const EventCard = ({ event, onOpen, community, onOpenCommunity, participa
                     the title/description are short; otherwise the column shrinks to its content and
                     the separator stops short of the right edge. */}
                 <div className="min-w-0 flex-1">
-                    <p className={`truncate text-base font-light tracking-wide ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>{event.title}</p>
+                    <p className={`truncate text-base font-light tracking-wide ${isDark ? 'text-slate-100' : 'text-slate-800 dark:text-slate-100'}`}>{event.title}</p>
                     <p className={`truncate text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                         {event.eventDate ? new Date(event.eventDate).toLocaleDateString() : ''}{event.eventLocation ? ` · ${event.eventLocation}` : ''}{max ? ` · ${t('max_n').replace('{n}', String(max))}` : ''}
                     </p>
                     {/* The event's own words, small, beneath the place; a hairline parts them. */}
                     {(event.content || event.body) && (
                         <>
-                            <div className={`mt-1.5 border-t ${isDark ? 'border-slate-800/60' : 'border-slate-100'}`} />
+                            <div className={`mt-1.5 border-t ${isDark ? 'border-slate-800/60' : 'border-slate-100 dark:border-slate-800'}`} />
                             <p dir="auto" className="mt-1.5 line-clamp-2 text-[10px] leading-snug text-slate-400">{event.content || event.body}</p>
                         </>
                     )}

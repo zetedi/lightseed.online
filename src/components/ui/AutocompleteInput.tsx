@@ -35,7 +35,7 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({ label, val
         value={value}
         onChange={e => { onChange(e.target.value); setShow(true); }}
         onFocus={() => setShow(true)}
-        className={className || "w-full h-12 bg-slate-50 border border-slate-100 rounded-2xl px-4 font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"}
+        className={className || "w-full h-12 bg-slate-50 border border-slate-100 rounded-2xl px-4 font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-50"}
         placeholder={placeholder}
       />
       {hint && <p className="mt-1.5 ml-1 text-[11px] leading-snug opacity-70">{hint}</p>}

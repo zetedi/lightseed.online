@@ -201,7 +201,7 @@ export const BedsBrowsePage = ({ onViewTree, lightHouseDomain = null, lightHouse
       >
         <ListBox tone={tone}>
           {!lightseed && (
-            <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-center text-sm text-amber-700">
+            <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-center text-sm text-amber-700 dark:border-amber-900 dark:bg-amber-950/70 dark:text-amber-300">
               {t('beds_signin_note')}
             </p>
           )}
@@ -215,7 +215,7 @@ export const BedsBrowsePage = ({ onViewTree, lightHouseDomain = null, lightHouse
                 <section key={house.id}>
                   {/* The Light House header — its small face and name, the beds stacked beneath. */}
                   <div className="mb-3 flex items-center gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-amber-200 bg-[#04070f]">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-amber-200 bg-[#04070f] dark:border-amber-900">
                       <img src={house.imageUrl || '/lighthouse.webp'} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
                     </span>
                     <div className="min-w-0 flex-1">
@@ -224,7 +224,7 @@ export const BedsBrowsePage = ({ onViewTree, lightHouseDomain = null, lightHouse
                         <p className="truncate text-[11px] text-slate-400">{house.locationName || house.domain}</p>
                       )}
                     </div>
-                    <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-700">
+                    <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
                       {t('beds_count').replace('{n}', String(beds.length))}
                     </span>
                   </div>

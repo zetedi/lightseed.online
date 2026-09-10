@@ -18,10 +18,10 @@ type Selection =
 const TreeAvatar = ({ name, photo, size = 'md' }: { name: string, photo?: string, size?: 'sm' | 'md' }) => {
     const dim = size === 'sm' ? 'h-10 w-10 text-sm' : 'h-12 w-12 text-base';
     if (photo) {
-        return <img src={photo} alt={name} className={`${dim} shrink-0 rounded-full object-cover border-2 border-emerald-100 shadow-sm`} />;
+        return <img src={photo} alt={name} className={`${dim} shrink-0 rounded-full object-cover border-2 border-emerald-100 shadow-sm dark:border-emerald-900`} />;
     }
     return (
-        <div className={`${dim} flex shrink-0 items-center justify-center rounded-full border-2 border-emerald-100 bg-emerald-50 font-bold uppercase text-emerald-600 shadow-sm`}>
+        <div className={`${dim} flex shrink-0 items-center justify-center rounded-full border-2 border-emerald-100 bg-emerald-50 font-bold uppercase text-emerald-600 shadow-sm dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300`}>
             {name?.trim()?.charAt(0) || <Icons.Tree />}
         </div>
     );
@@ -217,7 +217,7 @@ export const ReachInbox = ({
                                 onClick={() => thread.isGroup && thread.threadId
                                     ? setSelection({ kind: 'group', thread: { threadId: thread.threadId, partnerId: thread.partnerId, partnerName: thread.partnerName, partnerPhoto: thread.partnerPhoto, audience: thread.audience, participantCount: thread.participantCount } })
                                     : setSelection({ kind: 'tree', tree: { id: thread.partnerId, name: thread.partnerName, imageUrl: thread.partnerPhoto } as Lifetree })}
-                                className={`${rowBase} group cursor-pointer border-b border-slate-50 ${thread.careAlert === 'watering' ? 'border-l-4 border-l-sky-500 bg-sky-50/40' : ''} ${selectedKey === thread.key ? 'bg-emerald-50' : 'hover:bg-slate-50'}`}
+                                className={`${rowBase} group cursor-pointer border-b border-slate-50 ${thread.careAlert === 'watering' ? 'border-l-4 border-l-sky-500 bg-sky-50/40 dark:bg-sky-950/40' : ''} ${selectedKey === thread.key ? 'bg-emerald-50 dark:bg-emerald-950/40' : 'hover:bg-slate-50'}`}
                             >
                                 <button
                                     type="button"
@@ -226,7 +226,7 @@ export const ReachInbox = ({
                                     className="shrink-0 rounded-full transition-transform hover:scale-105"
                                 >
                                     {thread.isGroup
-                                        ? <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-emerald-100 bg-emerald-50 text-emerald-600"><Icons.Users /></div>
+                                        ? <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-emerald-100 bg-emerald-50 text-emerald-600 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"><Icons.Users /></div>
                                         : <TreeAvatar name={thread.partnerName} photo={thread.partnerPhoto} size="sm" />}
                                 </button>
                                 <div className="min-w-0 flex-1">
@@ -238,11 +238,11 @@ export const ReachInbox = ({
                                             )}
                                         </span>
                                         {thread.unread > 0 && (
-                                            <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">{thread.unread}</span>
+                                            <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">{thread.unread}</span>
                                         )}
                                     </div>
                                     <span className="block truncate text-xs text-slate-500">
-                                        {thread.careAlert === 'watering' && <span className="font-bold text-sky-600">💧 needs water · </span>}
+                                        {thread.careAlert === 'watering' && <span className="font-bold text-sky-600 dark:text-sky-300">💧 needs water · </span>}
                                         {thread.isGroup && <span className="text-emerald-600/70">● group · </span>}
                                         {thread.lastMessage || t('reached_mycelial')}
                                     </span>
@@ -275,7 +275,7 @@ export const ReachInbox = ({
             </div>
 
             {/* Thread pane — the card that holds the messages. */}
-            <div className={`${hasSelection ? 'flex' : 'hidden md:flex'} min-w-0 flex-1 flex-col overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-xl`}>
+            <div className={`${hasSelection ? 'flex' : 'hidden md:flex'} min-w-0 flex-1 flex-col overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-xl dark:border-emerald-900 dark:bg-slate-900`}>
                 {hasSelection ? (
                     <div key={isOracle ? 'oracle' : selectedKey || 'none'} className="flex min-h-0 flex-1 flex-col">
                         <ReachThread
@@ -289,7 +289,7 @@ export const ReachInbox = ({
                     </div>
                 ) : (
                     <div className="flex flex-1 flex-col items-center justify-start px-8 pt-10 text-center text-slate-400">
-                        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 text-amber-500">
+                        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 text-amber-500 dark:bg-amber-950/40">
                             <Icons.Reach />
                         </div>
                         <p className="font-medium text-slate-500">{t('select_thread')}</p>

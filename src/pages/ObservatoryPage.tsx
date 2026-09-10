@@ -38,7 +38,7 @@ const TreeColumn = ({ tree, role, who, tone }: { tree: { name: string; imageUrl?
 };
 
 const PulseChip = ({ cap, text, tone }: { cap: string; text?: string; tone: 'sky' | 'emerald' }) => (
-  <div className={`min-w-0 rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2.5 ${tone === 'sky' ? 'border-l-[3px] border-l-sky-400' : 'border-l-[3px] border-l-emerald-400'}`}>
+  <div className={`min-w-0 rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-900/70 ${tone === 'sky' ? 'border-l-[3px] border-l-sky-400' : 'border-l-[3px] border-l-emerald-400'}`}>
     <span className="mb-1 block font-mono text-[9.5px] uppercase tracking-[0.12em] text-slate-400">{cap}</span>
     <q className="line-clamp-2 font-serif text-[13px] italic text-slate-700 dark:text-slate-200">{text || '—'}</q>
   </div>
@@ -104,7 +104,7 @@ export const ObservatoryPage = ({
                     {/* Header — who's asking, and that it's on you */}
                     <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
                       <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t('alignment_request')}</span>
-                      <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">{t('awaiting_you')}</span>
+                      <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">{t('awaiting_you')}</span>
                     </div>
 
                     {/* The two trees meeting */}
@@ -127,7 +127,7 @@ export const ObservatoryPage = ({
                     )}
 
                     {/* What accepting does — the ledger consequence, in plain words */}
-                    <div className="mx-4 mt-3 flex items-start gap-2 rounded-xl bg-emerald-50 px-3.5 py-3 text-[13px] leading-snug text-emerald-800">
+                    <div className="mx-4 mt-3 flex items-start gap-2 rounded-xl bg-emerald-50 px-3.5 py-3 text-[13px] leading-snug text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 shrink-0"><path d="M12 3v18M5 10l7-7 7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
                       <span>{t('alignment_meaning')}</span>
                     </div>
@@ -137,7 +137,7 @@ export const ObservatoryPage = ({
                       <button onClick={() => onAcceptAlignment(a.id)} className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-emerald-700 active:scale-95">{t('accept_sync')}</button>
                       <button onClick={() => onRejectAlignment(a.id)} className="rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-500 transition-all hover:bg-slate-50 dark:border-slate-700">{t('decline_alignment')}</button>
                       <span className="flex-1"></span>
-                      <button onClick={() => onViewAlignmentTree(a.theirTree.id)} className="truncate text-xs font-bold text-sky-600 transition-colors hover:text-sky-700">{t('visit_tree')} {a.theirTree.name} →</button>
+                      <button onClick={() => onViewAlignmentTree(a.theirTree.id)} className="truncate text-xs font-bold text-sky-600 transition-colors hover:text-sky-700 dark:text-sky-300">{t('visit_tree')} {a.theirTree.name} →</button>
                     </div>
                   </div>
                 ))}

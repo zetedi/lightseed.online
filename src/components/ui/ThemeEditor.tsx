@@ -45,7 +45,7 @@ export const ThemeEditor = ({ value, onChange, defaultTheme }: { value: ThemeVal
         {communityThemePresets.map((preset) => {
           const active = activePreset?.id === preset.id;
           return (
-            <button key={preset.id} type="button" onClick={() => { pick(normalizeTheme(preset)); setExpanded(true); }} className={`w-full rounded-2xl border p-3 text-left transition-all ${active ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}>
+            <button key={preset.id} type="button" onClick={() => { pick(normalizeTheme(preset)); setExpanded(true); }} className={`w-full rounded-2xl border p-3 text-left transition-all ${active ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100 dark:bg-emerald-950/40' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700'}`}>
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="text-sm font-bold text-slate-800 dark:text-slate-100">{preset.name}</div>
@@ -62,7 +62,7 @@ export const ThemeEditor = ({ value, onChange, defaultTheme }: { value: ThemeVal
         })}
 
         {/* Custom theme — pick each colour separately. */}
-        <button type="button" onClick={() => setExpanded(true)} className={`w-full rounded-2xl border p-3 text-left transition-all ${isCustom ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}>
+        <button type="button" onClick={() => setExpanded(true)} className={`w-full rounded-2xl border p-3 text-left transition-all ${isCustom ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100 dark:bg-emerald-950/40' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700'}`}>
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="text-sm font-bold text-slate-800 dark:text-slate-100">{t('theme_custom')}</div>
@@ -91,7 +91,7 @@ export const ThemeEditor = ({ value, onChange, defaultTheme }: { value: ThemeVal
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-bold uppercase text-slate-400">{t('theme_mode')}</span>
             {(['light', 'dark'] as const).map(m => (
-              <button key={m} type="button" onClick={() => onChange(normalizeTheme({ ...value, mode: m }))} className={`rounded-full px-3 py-1 text-xs font-bold capitalize transition-colors ${value.mode === m ? 'bg-emerald-600 text-white' : 'bg-white text-slate-500 border border-slate-200 hover:text-slate-800'}`}>
+              <button key={m} type="button" onClick={() => onChange(normalizeTheme({ ...value, mode: m }))} className={`rounded-full px-3 py-1 text-xs font-bold capitalize transition-colors ${value.mode === m ? 'bg-emerald-600 text-white' : 'bg-white text-slate-500 border border-slate-200 hover:text-slate-800 dark:bg-slate-900 dark:border-slate-700'}`}>
                 {m}
               </button>
             ))}
@@ -118,7 +118,7 @@ export const ThemeEditor = ({ value, onChange, defaultTheme }: { value: ThemeVal
                     if (hex && hex !== (value as any)[key]) setColor(key, hex);
                   }}
                   onBlur={() => setDrafts(d => ({ ...d, [key]: undefined }))}
-                  className={`block h-8 w-full rounded-lg border bg-white px-2 font-mono text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 ${drafts[key] !== undefined && !normalizeHex(drafts[key]) ? 'border-red-300' : 'border-slate-200'}`}
+                  className={`block h-8 w-full rounded-lg border bg-white px-2 font-mono text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:text-slate-200 ${drafts[key] !== undefined && !normalizeHex(drafts[key]) ? 'border-red-300' : 'border-slate-200 dark:border-slate-700'}`}
                 />
               </div>
             ))}

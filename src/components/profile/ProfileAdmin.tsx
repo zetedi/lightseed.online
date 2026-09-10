@@ -190,7 +190,7 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
                   {h.switchable ? (
                     <button type="button" role="switch" aria-checked={on} onClick={() => setStaffHand(h.id, !on).catch(() => showAlert('err_save_retry'))}
                       className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors ${on ? 'bg-violet-600' : 'bg-slate-300 dark:bg-slate-700'}`}>
-                      <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${on ? 'translate-x-5' : 'translate-x-0'}`} />
+                      <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform dark:bg-slate-900 ${on ? 'translate-x-5' : 'translate-x-0'}`} />
                     </button>
                   ) : (
                     <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500 dark:bg-slate-800 dark:text-slate-400">{t('admin_hands_fixed')}</span>
@@ -221,9 +221,9 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
       {/* The export ceremony (domain/export): the node leaves by its own travel plan —
           every top-level collection the plan names, read with the staff hand's sight. */}
       {isSuperAdmin && (
-        <div className="mb-4 flex items-center justify-between gap-4 rounded-2xl border border-emerald-100 bg-emerald-50/30 p-4">
+        <div className="mb-4 flex items-center justify-between gap-4 rounded-2xl border border-emerald-100 bg-emerald-50/30 p-4 dark:border-emerald-900 dark:bg-emerald-950/30">
           <div className="min-w-0">
-            <p className="font-semibold text-emerald-900 text-sm">{t('export_node')}</p>
+            <p className="font-semibold text-emerald-900 text-sm dark:text-emerald-200">{t('export_node')}</p>
             <p className="text-xs text-emerald-700/80">{t('export_node_note')}</p>
           </div>
           <button onClick={async () => {
@@ -232,19 +232,19 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
             try { await exportNode(window.location.hostname); notify(t('export_ready')); }
             catch { notify(t('err_export'), 'error'); }
             setExportingNode(false);
-          }} disabled={exportingNode} className="rounded-full border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-100 text-xs font-bold px-4 py-2 whitespace-nowrap transition-colors disabled:opacity-50 dark:bg-slate-900">
+          }} disabled={exportingNode} className="rounded-full border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-100 text-xs font-bold px-4 py-2 whitespace-nowrap transition-colors disabled:opacity-50 dark:bg-slate-900 dark:border-emerald-900 dark:text-emerald-300">
             {exportingNode ? t('exporting') : t('export')}
           </button>
         </div>
       )}
       {/* The testing-phase restart — node owner only (the callable refuses everyone else). */}
       {isSuperAdmin && (
-        <div className="mb-4 flex items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50/50 p-4">
+        <div className="mb-4 flex items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50/50 p-4 dark:border-amber-900 dark:bg-amber-950/50">
           <div className="min-w-0">
-            <p className="font-semibold text-amber-900 text-sm">{t('admin_reset_light')}</p>
+            <p className="font-semibold text-amber-900 text-sm dark:text-amber-200">{t('admin_reset_light')}</p>
             <p className="text-xs text-amber-700/80">{t('admin_reset_light_note')}</p>
           </div>
-          <button onClick={handleResetLight} disabled={resettingLight} className="rounded-full border border-amber-300 bg-white text-amber-700 hover:bg-amber-100 text-xs font-bold px-4 py-2 whitespace-nowrap transition-colors disabled:opacity-50 dark:bg-slate-900">
+          <button onClick={handleResetLight} disabled={resettingLight} className="rounded-full border border-amber-300 bg-white text-amber-700 hover:bg-amber-100 text-xs font-bold px-4 py-2 whitespace-nowrap transition-colors disabled:opacity-50 dark:bg-slate-900 dark:text-amber-300">
             {resettingLight ? t('admin_resetting') : t('admin_reset_light')}
           </button>
         </div>
@@ -297,16 +297,16 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
                 catch (e: any) { setAiValidatedOnly(!next); notify(e?.message || t('err_save_retry'), 'error'); }
                 setSavingAiDial(false);
               }}
-              className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${aiValidatedOnly ? 'bg-emerald-600' : 'bg-slate-300'}`}>
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${aiValidatedOnly ? 'translate-x-6' : 'translate-x-1'}`} />
+              className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${aiValidatedOnly ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'}`}>
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform dark:bg-slate-900 ${aiValidatedOnly ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
           </div>
         </div>
       )}
       {!superAdminExists && (
-        <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 flex items-center justify-between gap-4">
+        <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 flex items-center justify-between gap-4 dark:border-amber-900 dark:bg-amber-950/40">
           <div>
-            <h4 className="font-bold text-amber-800 text-sm">{t('admin_genesis_unclaimed')}</h4>
+            <h4 className="font-bold text-amber-800 text-sm dark:text-amber-200">{t('admin_genesis_unclaimed')}</h4>
             <p className="text-xs text-amber-700/80">{t('admin_genesis_claim_note')}</p>
           </div>
           <button onClick={onClaimSuperAdmin} className="bg-amber-500 hover:bg-amber-400 text-white text-xs font-bold px-4 py-2 rounded-full shadow whitespace-nowrap">{t('admin_claim')}</button>
@@ -332,8 +332,8 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
           </div>
 
           {/* Delete a user — for re-testing onboarding. Removes their data + Auth account. */}
-          <div className="mt-4 rounded-2xl border border-red-100 bg-red-50/40 p-5 space-y-3">
-            <h4 className="font-bold text-red-700 flex items-center gap-2 text-sm uppercase tracking-wider"><Icons.Trash /> {t('admin_delete_a_user')}</h4>
+          <div className="mt-4 rounded-2xl border border-red-100 bg-red-50/40 p-5 space-y-3 dark:border-red-900 dark:bg-red-950/40">
+            <h4 className="font-bold text-red-700 flex items-center gap-2 text-sm uppercase tracking-wider dark:text-red-300"><Icons.Trash /> {t('admin_delete_a_user')}</h4>
             <p className="text-xs text-slate-500">{t('admin_delete_user_note')}</p>
             <div className="flex gap-2">
               <input value={deleteUserUid} onChange={e => setDeleteUserUid(e.target.value)} placeholder={t('user_uid_ph')} className="flex-1 bg-white border border-slate-200 text-slate-800 text-xs rounded-lg px-3 py-2 font-mono focus:outline-none focus:border-red-400 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700" />
@@ -342,7 +342,7 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
 
             {/* Browse the network's users instead of pasting uids by hand. */}
             {userList === null ? (
-              <button onClick={loadUsers} disabled={loadingUsers} className="w-full rounded-lg border border-red-200 bg-white py-2 text-xs font-bold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50 dark:bg-slate-900">
+              <button onClick={loadUsers} disabled={loadingUsers} className="w-full rounded-lg border border-red-200 bg-white py-2 text-xs font-bold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50 dark:bg-slate-900 dark:border-red-900 dark:text-red-300">
                 {loadingUsers ? t('admin_loading_users') : t('admin_browse_users')}
               </button>
             ) : (
@@ -358,7 +358,7 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
                       <div className="min-w-0">
                         <p className="truncate text-xs font-semibold text-slate-700 dark:text-slate-200">
                           {u.displayName || u.email || u.uid}
-                          {u.isSuperAdmin && <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-amber-700">{t('admin_node_owner_chip')}</span>}
+                          {u.isSuperAdmin && <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">{t('admin_node_owner_chip')}</span>}
                         </p>
                         <p className="truncate text-[10px] text-slate-400">{u.email || t('admin_no_email')} · <span className="font-mono">{u.uid}</span>{u.createdAt ? ` · ${new Date(u.createdAt).toLocaleDateString()}` : ''}</p>
                       </div>

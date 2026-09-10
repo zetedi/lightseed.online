@@ -186,7 +186,7 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel, canEdit = fa
                     </div>
                 </div>
                 <div className="flex items-center gap-4 sm:gap-5">
-                    <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-amber-200 bg-[#04070f] shadow-xl">
+                    <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-amber-200 bg-[#04070f] shadow-xl dark:border-amber-900">
                         <Picture size={1200} src={lightHouse.imageUrl || '/lighthouse.webp'} className="h-full w-full object-cover" alt={lightHouse.name} referrerPolicy="no-referrer" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -227,10 +227,10 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel, canEdit = fa
 
                         {/* The place — keepers move the Light House with the map's help. */}
                         {canEdit && (
-                            <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-5 shadow-sm">
-                                <h3 className="mb-2.5 text-xs font-bold uppercase tracking-wider text-amber-600">{t('lh_the_place')}</h3>
+                            <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-5 shadow-sm dark:border-amber-900 dark:bg-amber-950/50">
+                                <h3 className="mb-2.5 text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-300">{t('lh_the_place')}</h3>
                                 <p className="mb-2 text-[11px] text-slate-500">{t('lh_map_move')}</p>
-                                <LocationPicker value={coords} onChange={setCoords} className="h-56 w-full overflow-hidden rounded-xl border border-amber-100 shadow-inner" />
+                                <LocationPicker value={coords} onChange={setCoords} className="h-56 w-full overflow-hidden rounded-xl border border-amber-100 shadow-inner dark:border-amber-900" />
                                 <div className="mt-3 flex flex-wrap items-center gap-2">
                                     <input value={placeName} onChange={e => setPlaceName(e.target.value)} placeholder={t('lh_place_ph')}
                                         className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-slate-900 dark:border-slate-700" />
@@ -244,13 +244,13 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel, canEdit = fa
 
                         {/* Who may see it — keepers can open it wider or draw it back, right here. */}
                         {canEdit && onSetVisibility && (
-                            <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-5 shadow-sm">
-                                <h3 className="mb-2.5 text-xs font-bold uppercase tracking-wider text-amber-600">{t('lh_who_sees')}</h3>
+                            <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-5 shadow-sm dark:border-amber-900 dark:bg-amber-950/50">
+                                <h3 className="mb-2.5 text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-300">{t('lh_who_sees')}</h3>
                                 <div className="flex flex-wrap gap-2">
                                     {(['community', 'node', 'public'] as const).map(v => (
                                         <button key={v} type="button"
                                             onClick={() => { if (v !== visibility) onSetVisibility(lightHouse.id, v); }}
-                                            className={`rounded-full border px-4 py-1.5 text-xs font-bold capitalize transition-all ${visibility === v ? 'border-amber-400 bg-amber-100 text-amber-800' : 'border-slate-200 bg-white text-slate-500 hover:border-amber-200'}`}>
+                                            className={`rounded-full border px-4 py-1.5 text-xs font-bold capitalize transition-all ${visibility === v ? 'border-amber-400 bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200' : 'border-slate-200 bg-white text-slate-500 hover:border-amber-200 dark:border-slate-700 dark:bg-slate-900'}`}>
                                             {v}
                                         </button>
                                     ))}
@@ -269,12 +269,12 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel, canEdit = fa
                             <div
                                 onClick={onViewTree ? () => onViewTree(rootTree) : undefined}
                                 role={onViewTree ? 'button' : undefined}
-                                className={`flex items-center gap-4 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-white p-4 shadow-sm ${onViewTree ? 'cursor-pointer transition-shadow hover:shadow-md' : ''}`}
+                                className={`flex items-center gap-4 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-white p-4 shadow-sm dark:border-amber-900 ${onViewTree ? 'cursor-pointer transition-shadow hover:shadow-md' : ''}`}
                             >
                                 <Picture size={480} src={rootTree.latestGrowthUrl || rootTree.imageUrl || '/mahameru.svg'} alt="" className="h-16 w-16 shrink-0 rounded-full border-4 border-amber-300 object-cover bg-[#04070f] shadow" />
                                 <div className="min-w-0 flex-1">
                                     <p className="truncate text-lg font-light tracking-wide text-slate-800 dark:text-slate-100">{rootTree.name}</p>
-                                    <p className="text-[10px] font-black uppercase tracking-wide text-amber-600">{t('lh_mother_tree_here')}</p>
+                                    <p className="text-[10px] font-black uppercase tracking-wide text-amber-600 dark:text-amber-300">{t('lh_mother_tree_here')}</p>
                                 </div>
                                 <Icons.ArrowRight size={18} className="shrink-0 text-amber-300" />
                             </div>
@@ -286,11 +286,11 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel, canEdit = fa
 
                         {/* The keeper roots (or re-roots) the Light House in one of the domain's trees. */}
                         {canEdit && rootCandidates.length > 0 && (
-                            <div className="mt-6 rounded-2xl border border-amber-100 bg-amber-50/50 p-4">
-                                <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-amber-600">{rootTree ? t('lh_reroot') : t('lh_root_in_tree')}</p>
+                            <div className="mt-6 rounded-2xl border border-amber-100 bg-amber-50/50 p-4 dark:border-amber-900 dark:bg-amber-950/50">
+                                <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-300">{rootTree ? t('lh_reroot') : t('lh_root_in_tree')}</p>
                                 <div className="space-y-2">
                                     {rootCandidates.filter(tree => tree.id !== rootTree?.id).map(tree => (
-                                        <div key={tree.id} className="flex items-center gap-3 rounded-xl border border-amber-100 bg-white p-2.5 dark:bg-slate-900">
+                                        <div key={tree.id} className="flex items-center gap-3 rounded-xl border border-amber-100 bg-white p-2.5 dark:bg-slate-900 dark:border-amber-900">
                                             <Picture size={480} src={tree.latestGrowthUrl || tree.imageUrl || '/mahameru.svg'} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover bg-[#04070f]" />
                                             <p className="min-w-0 flex-1 truncate text-sm font-medium text-slate-700 dark:text-slate-200">{tree.name}</p>
                                             <button onClick={() => rootIn(tree)} disabled={isRooting}

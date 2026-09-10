@@ -40,7 +40,7 @@ export const PlaceSearch = ({ onPick }: { onPick: (r: { latitude: number; longit
           className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700"
         />
         <button type="button" onClick={() => void search()} disabled={busy || !term.trim()}
-          className="flex shrink-0 items-center gap-1 rounded-xl bg-emerald-100 px-3 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-200 disabled:opacity-50">
+          className="flex shrink-0 items-center gap-1 rounded-xl bg-emerald-100 px-3 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-200 disabled:opacity-50 dark:bg-emerald-950/40 dark:text-emerald-300">
           {busy ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" /> : <Icons.Loc />}
         </button>
       </div>

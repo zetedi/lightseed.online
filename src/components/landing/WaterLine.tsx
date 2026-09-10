@@ -30,10 +30,10 @@ export const WaterLine: React.FC<WaterLineProps> = ({ props }) => {
           <div key={`${stage.label}:${i}`}>
             <div className="mb-1 flex items-baseline justify-between gap-2">
               <span dir="auto" className="text-sm font-semibold text-slate-700 dark:text-slate-200">{stage.label}</span>
-              <span className="font-mono text-xs text-sky-600">{stage.progress}%</span>
+              <span className="font-mono text-xs text-sky-600 dark:text-sky-300">{stage.progress}%</span>
             </div>
             {/* The channel — earth-walled, water filling it as the work advances. */}
-            <div className="h-3 w-full overflow-hidden rounded-full border border-amber-200/70 bg-amber-50">
+            <div className="h-3 w-full overflow-hidden rounded-full border border-amber-200/70 bg-amber-50 dark:bg-amber-950/40">
               <div
                 className="h-full rounded-full transition-all duration-700"
                 style={{

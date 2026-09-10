@@ -76,7 +76,7 @@ export const Footer = ({ community, theme, isDark = false }: { community?: Commu
           <div className="flex items-center gap-2">
             {links.map(l => (
               <a key={l.label} href={l.href} target="_blank" rel="noreferrer" title={l.label} aria-label={l.label}
-                 className={`flex h-8 w-8 items-center justify-center rounded-full border transition-colors hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${surface.isDark ? 'bg-white/10 hover:bg-white/20' : 'bg-black/5 hover:bg-black/10'}`}
+                 className={`flex h-8 w-8 items-center justify-center rounded-full border transition-colors hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${surface.isDark ? 'bg-white/10 hover:bg-white/20 dark:bg-slate-900/10' : 'bg-black/5 hover:bg-black/10'}`}
                  style={{ borderColor: surface.border }}>
                 {l.icon}
               </a>
@@ -90,7 +90,7 @@ export const Footer = ({ community, theme, isDark = false }: { community?: Commu
             <label htmlFor="footer-subscribe" className="text-[11px]" style={{ color: surface.muted }}>{t('footer_subscribe_label').replace('{place}', name)}</label>
             <div className="flex w-full items-center gap-2">
               <input id="footer-subscribe" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t('footer_subscribe_ph')} autoComplete="email" disabled={subscribing}
-                     className={`h-9 min-w-0 flex-1 rounded-full border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 ${surface.isDark ? 'bg-white/10 text-white placeholder-white/50' : 'bg-white text-slate-800 placeholder-slate-400'}`}
+                     className={`h-9 min-w-0 flex-1 rounded-full border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 ${surface.isDark ? 'bg-white/10 text-white placeholder-white/50 dark:bg-slate-900/10' : 'bg-white text-slate-800 placeholder-slate-400 dark:bg-slate-900 dark:text-slate-100'}`}
                      style={{ borderColor: surface.border }} />
               <button type="submit" disabled={subscribing || !email} className="h-9 shrink-0 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50">{t('footer_subscribe_cta')}</button>
             </div>

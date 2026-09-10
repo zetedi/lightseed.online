@@ -105,13 +105,13 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
                 type="button" 
                 onClick={handleGenerateImage}
                 disabled={uploading || localUploading || !visionBody}
-                className="text-xs bg-amber-100 text-amber-700 px-3 py-1 rounded-full font-bold hover:bg-amber-200 disabled:opacity-50 flex items-center gap-1"
+                className="text-xs bg-amber-100 text-amber-700 px-3 py-1 rounded-full font-bold hover:bg-amber-200 disabled:opacity-50 flex items-center gap-1 dark:bg-amber-950/40 dark:text-amber-300"
              >
                  <Icons.Intelligence />
                  <span>{t('generate_image')}</span>
              </button>
         </div>
-        {genError && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(genError)}</p>}
+        {genError && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-300">{speak(genError)}</p>}
 
         <input 
             dir="auto" 
@@ -146,8 +146,8 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
         />
 
         {/* Ground the vision — the tree it's rooted in + the community/site it links to. */}
-        <div className="space-y-2 rounded-xl border border-emerald-100 bg-emerald-50/40 p-3">
-            <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-700"><Icons.Tree /> {t('ground_vision')}</p>
+        <div className="space-y-2 rounded-xl border border-emerald-100 bg-emerald-50/40 p-3 dark:border-emerald-900 dark:bg-emerald-950/40">
+            <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300"><Icons.Tree /> {t('ground_vision')}</p>
             <label className="block">
                 <span className="mb-1 block text-[11px] font-semibold text-slate-500">{t('vision_rooted_in_tree')}</span>
                 <select value={groundTreeId} onChange={e => setGroundTreeId(e.target.value)} className="block w-full rounded-lg border border-slate-300 bg-white p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700">

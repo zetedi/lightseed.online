@@ -38,7 +38,7 @@ export const CovenantProfile = ({ covenantId, currentUserId, onClose, notify }: 
           {covenant && <span className={`rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide ${status.cls}`}>{status.label}</span>}
         </div>
         <div className="flex items-center gap-4 sm:gap-5">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-4 border-white bg-emerald-50 text-emerald-500 shadow-xl md:h-20 md:w-20">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-4 border-white bg-emerald-50 text-emerald-500 shadow-xl md:h-20 md:w-20 dark:bg-emerald-950/40">
             <Icons.Venn />
           </div>
           <div className="min-w-0 flex-1">

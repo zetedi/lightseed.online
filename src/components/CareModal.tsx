@@ -53,7 +53,7 @@ export const CareModal = ({ tree, sender, hasVision, onOpenCare, onOpenVision, o
                 </div>
 
                 {done ? (
-                    <p className="w-full rounded-2xl bg-sky-50 px-4 py-3 text-sm font-medium text-sky-700">{t('watered_today')} 💧</p>
+                    <p className="w-full rounded-2xl bg-sky-50 px-4 py-3 text-sm font-medium text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">{t('watered_today')} 💧</p>
                 ) : (
                     <button onClick={water} disabled={busy} className={modalButton('primary', { hue: 'sky' })}>
                         {busy ? t('watering_busy') : `${t('i_watered_today')} 💧`}
@@ -69,11 +69,11 @@ export const CareModal = ({ tree, sender, hasVision, onOpenCare, onOpenVision, o
                 )}
 
                 <div className="flex items-center gap-4">
-                    <button onClick={onOpenCare} className="inline-flex items-center gap-1 text-xs font-bold text-sky-600 transition-colors hover:text-sky-700">
+                    <button onClick={onOpenCare} className="inline-flex items-center gap-1 text-xs font-bold text-sky-600 transition-colors hover:text-sky-700 dark:text-sky-300">
                         {t('open_full_care')} <Icons.ArrowRight size={14} />
                     </button>
                     {hasVision && onOpenVision && (
-                        <button onClick={onOpenVision} className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 transition-colors hover:text-amber-700">
+                        <button onClick={onOpenVision} className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 transition-colors hover:text-amber-700 dark:text-amber-300">
                             <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Eye /></span> {t('care_your_vision')}
                         </button>
                     )}

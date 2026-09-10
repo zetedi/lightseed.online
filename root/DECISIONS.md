@@ -6,6 +6,20 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-11 · The night pass learns to read a class list** — the shell was still white in
+places after two passes, and each miss had the same root: the tool could only read a class list
+written as a plain string. Most of them are not. `className={`… ${cond ? 'a' : 'b'}`}` — the
+common shape — was invisible, so a card kept its white ground while its ink turned pale and the
+name of a tree vanished into its own card. The pass is now a small scanner rather than a regex:
+it walks every className/class, plain string or braced expression, and inside it every template
+literal, every conditional branch, every nested template (a regex for backticks had spliced two
+class strings together and broken two files — nested backticks are exactly what a regex cannot
+count). And a COLOURED tint is a ground too: `bg-emerald-50` under `text-emerald-800` is a card,
+and at night both must turn or the admin page reads as grey slabs with ink the same weight as
+its ground. 495 class lists answered, held by three audits (no glued interpolation, no light
+ground under night ink, no night ground under day ink). The two visions CTAs also stop shouting:
+the phone's compact size is the right size on every screen.
+
 **2026-09-11 · A thirsty tree asks once** — a tree left unwatered for a week wrote a week of
 identical "water me" lines into its guardians' thread: one nudge a day, each one true, together a
 wall. domain/watering.standingAlertId names the ONE ask that still stands (raised, and no watering

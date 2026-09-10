@@ -129,7 +129,7 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
           </div>
         ) : (
           <div className="rounded-2xl border border-slate-100 p-5 space-y-3 dark:border-slate-800">
-            <p className="text-sm text-slate-500">{t('invites_remaining')}: <span className="font-bold text-emerald-600">{isSuperAdmin ? t('unlimited') : invitesRemaining}</span></p>
+            <p className="text-sm text-slate-500">{t('invites_remaining')}: <span className="font-bold text-emerald-600 dark:text-emerald-300">{isSuperAdmin ? t('unlimited') : invitesRemaining}</span></p>
             <p className="text-xs text-slate-400">{t('invites_email_note')}</p>
             <button onClick={() => setShowInviteModal(true)} disabled={!isSuperAdmin && invitesRemaining <= 0} className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-emerald-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"><Icons.UserPlus /> <span>{t('send_invite')}</span></button>
           </div>
@@ -147,7 +147,7 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
               {sentInvites.map(inv => (
                 <div key={inv.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/60">
                   <span className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">{inv.email}</span>
-                  <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${inv.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{inv.status === 'accepted' ? t('joined') : t('pending')}</span>
+                  <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${inv.status === 'accepted' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'}`}>{inv.status === 'accepted' ? t('joined') : t('pending')}</span>
                 </div>
               ))}
             </div>
@@ -165,7 +165,7 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
             <h4 className="text-sm font-bold uppercase tracking-wider text-slate-500">{t('invite_requests')}</h4>
             <div className="flex items-center gap-3">
               <label className="flex items-center gap-1.5 text-xs text-slate-500">
-                <input type="checkbox" checked={showDeclinedRequests} onChange={e => setShowDeclinedRequests(e.target.checked)} className="h-3.5 w-3.5 rounded text-emerald-600 focus:ring-emerald-500" />
+                <input type="checkbox" checked={showDeclinedRequests} onChange={e => setShowDeclinedRequests(e.target.checked)} className="h-3.5 w-3.5 rounded text-emerald-600 focus:ring-emerald-500 dark:text-emerald-300" />
                 {t('show_declined')}
               </label>
               <button onClick={refreshInviteRequests} className="text-xs font-bold text-slate-400 hover:text-slate-700">{t('refresh')}</button>
@@ -190,7 +190,7 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
                           <button onClick={() => handleDeclineRequest(req)} disabled={requestBusyId === req.id} className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700">{t('decline')}</button>
                         </>
                       ) : (
-                        <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${req.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>{req.status === 'approved' ? t('invited') : t('offering_status_declined')}</span>
+                        <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${req.status === 'approved' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-slate-200 text-slate-500 dark:bg-slate-800'}`}>{req.status === 'approved' ? t('invited') : t('offering_status_declined')}</span>
                       )}
                     </div>
                   </div>

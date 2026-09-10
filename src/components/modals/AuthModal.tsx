@@ -98,7 +98,7 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly, theme, startMode, gre
     <Modal title={title} onClose={onClose}>
       {mode === 'request' ? (
         requestResult ? (
-          <div className={`space-y-3 rounded-xl border p-5 text-center text-sm ${requestResult === 'pending_invite_exists' ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-emerald-200 bg-emerald-50 text-emerald-800'}`}>
+          <div className={`space-y-3 rounded-xl border p-5 text-center text-sm ${requestResult === 'pending_invite_exists' ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200' : 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200'}`}>
             {requestResult === 'pending_invite_exists' ? (
               <>
                 <p className="text-base font-bold">{t('auth_invite_waiting_title')}</p>
@@ -115,7 +115,7 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly, theme, startMode, gre
                 <p>{t('auth_request_received_body')}</p>
               </>
             )}
-            <button onClick={() => { setRequestResult(null); setMode('signin'); }} className="font-bold text-emerald-700">{t('auth_back_to_signin')}</button>
+            <button onClick={() => { setRequestResult(null); setMode('signin'); }} className="font-bold text-emerald-700 dark:text-emerald-300">{t('auth_back_to_signin')}</button>
           </div>
         ) : (
           <form onSubmit={handleRequest} className="space-y-3">
@@ -131,15 +131,15 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly, theme, startMode, gre
       ) : (
         <div className="space-y-4">
           {greetName && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
               {t('auth_greet_invited')} <span className="font-bold">{greetName}</span>. {t('auth_greet_create')}
             </div>
           )}
           {inviteId && inviteValid === false && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{t('auth_invite_invalid')}</div>
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">{t('auth_invite_invalid')}</div>
           )}
           {lockedEmail && inviteValid && (
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{t('auth_invited_as')} <span className="font-bold">{lockedEmail}</span>.</div>
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">{t('auth_invited_as')} <span className="font-bold">{lockedEmail}</span>.</div>
           )}
 
           <button onClick={handleGoogle} disabled={busy} className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-50 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700">
@@ -159,10 +159,10 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly, theme, startMode, gre
 
             {mode === 'signup' && (
               <label className="flex items-start gap-2 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-                <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 rounded text-emerald-600 focus:ring-emerald-500" />
+                <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 rounded text-emerald-600 focus:ring-emerald-500 dark:text-emerald-300" />
                 <span>
                   {terms.checkbox}{' '}
-                  <button type="button" onClick={() => setShowTerms(true)} className="font-bold text-emerald-600 underline">{terms.title}</button>
+                  <button type="button" onClick={() => setShowTerms(true)} className="font-bold text-emerald-600 underline dark:text-emerald-300">{terms.title}</button>
                 </span>
               </label>
             )}

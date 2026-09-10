@@ -82,7 +82,7 @@ export const ImagePicker = ({ onChange, onImageSelect, previewUrl, loading = fal
                     <img src={previewUrl} className="w-full h-full object-cover rounded-xl" />
                 ) : (
                     <div className={`text-center ${textColor} flex flex-col items-center gap-2`}>
-                        <div className={`p-3 rounded-full ${isDark ? 'bg-white/10' : 'bg-slate-100'}`}>
+                        <div className={`p-3 rounded-full ${isDark ? 'bg-white/10 dark:bg-slate-900/10' : 'bg-slate-100 dark:bg-slate-800'}`}>
                             <Icons.Camera />
                         </div>
                         <span className="text-xs font-bold uppercase tracking-wide">{t('upload_photo')}</span>

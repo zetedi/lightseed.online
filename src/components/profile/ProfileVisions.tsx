@@ -85,7 +85,7 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
           {onCreateVision && (
             <button
               onClick={onCreateVision}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 text-sm sm:px-5 sm:py-2.5 sm:text-base rounded-full font-bold shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-1.5 sm:gap-2 active:scale-95 whitespace-nowrap"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 text-sm rounded-full font-bold shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-1.5 active:scale-95 whitespace-nowrap"
             >
               <Icons.Plus /> <span>{t('create_vision')}</span>
             </button>
@@ -93,12 +93,12 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
           <button
             onClick={handleAlignmentAnalysis}
             disabled={analyzing}
-            className="bg-amber-500 hover:bg-amber-600 text-white px-3.5 py-2 text-sm sm:px-6 sm:py-2.5 sm:text-base rounded-full font-bold shadow-lg shadow-amber-500/20 transition-all flex items-center gap-1.5 sm:gap-2 border border-amber-400/30 active:scale-95 disabled:opacity-50 whitespace-nowrap"
+            className="bg-amber-500 hover:bg-amber-600 text-white px-3.5 py-2 text-sm rounded-full font-bold shadow-lg shadow-amber-500/20 transition-all flex items-center gap-1.5 border border-amber-400/30 active:scale-95 disabled:opacity-50 whitespace-nowrap"
           >
             {analyzing ? <Loading /> : <Icons.Venn />}
             <span>
               {analyzing
-                ? 'Analyzing...'
+                ? t('analyzing')
                 : <>{t('analyze_alignments')}</>}
             </span>
           </button>
@@ -106,16 +106,16 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
       </div>
 
       {synergies.length > 0 && (
-        <div className="mb-8 bg-indigo-50 border border-indigo-100 rounded-xl p-4">
-          <h4 className="font-bold text-indigo-900 mb-3 flex items-center"><MahameruAvatar size={20} /> <span className="ml-2">{t('alignment_report')}</span></h4>
+        <div className="mb-8 bg-indigo-50 border border-indigo-100 rounded-xl p-4 dark:bg-indigo-950/40 dark:border-indigo-900">
+          <h4 className="font-bold text-indigo-900 mb-3 flex items-center dark:text-indigo-200"><MahameruAvatar size={20} /> <span className="ml-2">{t('alignment_report')}</span></h4>
           <div className="space-y-3">
             {synergies.map((s, i) => (
               <div key={i} className="bg-white p-3 rounded-lg shadow-sm border border-indigo-100/50 dark:bg-slate-900">
                 <div className="flex justify-between items-start">
                   <div className="font-medium text-slate-800 text-sm dark:text-slate-100">
-                    <span className="text-indigo-600">{s.vision1Title}</span> + <span className="text-indigo-600">{s.vision2Title}</span>
+                    <span className="text-indigo-600 dark:text-indigo-300">{s.vision1Title}</span> + <span className="text-indigo-600 dark:text-indigo-300">{s.vision2Title}</span>
                   </div>
-                  <span className="bg-emerald-100 text-emerald-700 text-xs px-2 py-0.5 rounded-full font-bold">{s.score}%</span>
+                  <span className="bg-emerald-100 text-emerald-700 text-xs px-2 py-0.5 rounded-full font-bold dark:bg-emerald-950/40 dark:text-emerald-300">{s.score}%</span>
                 </div>
                 <p className="text-xs text-slate-600 mt-2 leading-relaxed dark:text-slate-300">{s.reasoning}</p>
               </div>
@@ -143,7 +143,7 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
                 className={`absolute top-2 right-2 z-20 flex h-8 w-8 items-center justify-center rounded-full border shadow-lg transition-all hover:scale-110 ${
                   defaultVisionId === vision.id
                     ? 'border-amber-300 bg-amber-400 text-white opacity-100'
-                    : 'border-slate-200 bg-white/95 text-amber-500 opacity-0 group-hover:opacity-100'
+                    : 'border-slate-200 bg-white/95 text-amber-500 opacity-0 group-hover:opacity-100 dark:border-slate-700 dark:bg-slate-900/95'
                 }`}
               >
                 <Icons.Star filled={defaultVisionId === vision.id} size={16} />
@@ -155,7 +155,7 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
         {/* Joined Visions Section */}
         {joinedVisions.length > 0 && (
           <div className="border-t border-slate-100 pt-6 dark:border-slate-800">
-            <h4 className="text-sm font-bold text-amber-600 uppercase tracking-widest mb-4 flex items-center">
+            <h4 className="text-sm font-bold text-amber-600 uppercase tracking-widest mb-4 flex items-center dark:text-amber-300">
               <Icons.Globe /> <span className="ml-2">{t('joined_visions')}</span>
             </h4>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">

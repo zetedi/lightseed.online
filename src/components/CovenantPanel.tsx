@@ -129,7 +129,7 @@ export const CovenantPanel = ({ covenantId, currentUserId, notify, onLoaded }: C
 
       {/* Verification — the seal PROVEN, not asserted */}
       <div className={`flex items-start gap-2.5 rounded-xl px-4 py-3.5 text-sm leading-snug ${
-        check?.sealed ? 'bg-emerald-50 text-emerald-800' : check && !check.valid ? 'bg-rose-50 text-rose-700' : 'bg-slate-50 text-slate-600'
+        check?.sealed ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200' : check && !check.valid ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300' : 'bg-slate-50 text-slate-600 dark:bg-slate-900 dark:text-slate-300'
       }`}>
         <span className="mt-0.5 shrink-0 [&>svg]:h-4 [&>svg]:w-4">{check?.sealed ? <Icons.ShieldCheck /> : <Icons.Shield />}</span>
         <span>
@@ -154,7 +154,7 @@ export const CovenantPanel = ({ covenantId, currentUserId, notify, onLoaded }: C
                   {p.role && <span className="text-[11px] uppercase tracking-wide text-slate-400">{p.role}</span>}
                 </div>
                 <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                  signed ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-50 text-amber-600'
+                  signed ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300'
                 }`}>
                   <span className="[&>svg]:h-3.5 [&>svg]:w-3.5">{signed ? <Icons.ShieldCheck /> : <Icons.Shield />}</span>
                   {signed ? t('covenant_signed') : t('covenant_awaiting')}
@@ -165,7 +165,7 @@ export const CovenantPanel = ({ covenantId, currentUserId, notify, onLoaded }: C
         </ul>
       </div>
 
-      {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(err)}</p>}
+      {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-300">{speak(err)}</p>}
 
       {/* Actions — a party signs their own hand; may break (never delete) once bound */}
       {isParty && covenant.status !== 'broken' && (
@@ -177,11 +177,11 @@ export const CovenantPanel = ({ covenantId, currentUserId, notify, onLoaded }: C
             </button>
           )}
           {hasSigned && covenant.status !== 'sealed' && (
-            <p className="rounded-xl bg-emerald-50 px-3 py-2.5 text-center text-xs font-medium text-emerald-700">{t('covenant_you_signed')}</p>
+            <p className="rounded-xl bg-emerald-50 px-3 py-2.5 text-center text-xs font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">{t('covenant_you_signed')}</p>
           )}
           {(covenant.status === 'sealed' || hasSigned) && (
             <button type="button" onClick={onBreak} disabled={busy}
-              className="w-full rounded-xl border border-rose-200 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 disabled:opacity-50">
+              className="w-full rounded-xl border border-rose-200 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 disabled:opacity-50 dark:border-rose-900 dark:text-rose-300">
               {t('covenant_break')}
             </button>
           )}
@@ -197,17 +197,17 @@ export const CovenantPanel = ({ covenantId, currentUserId, notify, onLoaded }: C
 
       {/* The freshly-born recovery phrase (only if a key was created mid-sign) */}
       {phrase && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
-          <p className="mb-2 text-xs font-semibold text-amber-800">{t('signing_phrase_warn')}</p>
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/40">
+          <p className="mb-2 text-xs font-semibold text-amber-800 dark:text-amber-200">{t('signing_phrase_warn')}</p>
           <ol className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
             {phrase.map((w, i) => (
-              <li key={i} className="flex items-baseline gap-2 rounded-lg border border-amber-100 bg-white px-2.5 py-1.5 dark:bg-slate-900">
+              <li key={i} className="flex items-baseline gap-2 rounded-lg border border-amber-100 bg-white px-2.5 py-1.5 dark:bg-slate-900 dark:border-amber-900">
                 <span className="w-5 shrink-0 text-right text-[10px] font-bold text-slate-400">{i + 1}</span>
                 <span className="font-mono text-sm text-slate-800 dark:text-slate-100">{w}</span>
               </li>
             ))}
           </ol>
-          <button type="button" onClick={() => setPhrase(null)} className="mt-2 text-xs font-bold text-amber-700 underline">{t('signing_phrase_done')}</button>
+          <button type="button" onClick={() => setPhrase(null)} className="mt-2 text-xs font-bold text-amber-700 underline dark:text-amber-300">{t('signing_phrase_done')}</button>
         </div>
       )}
 

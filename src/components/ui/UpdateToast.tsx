@@ -30,7 +30,7 @@ export const UpdateToast = () => {
 
   return (
     <div className="fixed inset-x-0 bottom-4 z-[70] flex justify-center px-4">
-      <div className="flex items-center gap-3 rounded-full border border-emerald-200 bg-white px-4 py-2.5 shadow-xl animate-in fade-in slide-in-from-bottom-4 dark:bg-slate-900">
+      <div className="flex items-center gap-3 rounded-full border border-emerald-200 bg-white px-4 py-2.5 shadow-xl animate-in fade-in slide-in-from-bottom-4 dark:bg-slate-900 dark:border-emerald-900">
         <span className="text-sm text-slate-700 dark:text-slate-200">🌱 {t('update_ready')}</span>
         <button
           onClick={refresh}

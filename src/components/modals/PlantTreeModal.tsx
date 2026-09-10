@@ -236,7 +236,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
 
         {plantStep === 2 && (
           <div className={`flex-1 flex flex-col gap-6 ${stepAnim}`}>
-            <div className={`text-center ${treeType !== 'GUARDED' ? 'text-white' : 'text-slate-800'}`}>
+            <div className={`text-center ${treeType !== 'GUARDED' ? 'text-white' : 'text-slate-800 dark:text-slate-100'}`}>
               <h2 className="text-xl font-bold mb-2">{t('plant_step_name')}</h2>
               <p className="text-sm opacity-70">{t('plant_step_name_sub')}</p>
             </div>
@@ -244,7 +244,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
               <input
                 dir="auto"
                 className={`block w-full border p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-inner ${
-                  treeType !== 'GUARDED' ? 'bg-white/10 border-white/20 text-white placeholder:text-white/50' : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400'
+                  treeType !== 'GUARDED' ? 'bg-white/10 border-white/20 text-white placeholder:text-white/50 dark:bg-slate-900/10' : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-50'
                 }`}
                 placeholder={treeType === 'GUARDED' ? t('tree_stand_for_ph') : t('tree_name_ph')}
                 value={treeName}
@@ -261,7 +261,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
 
         {plantStep === 3 && (
           <div className={`flex-1 flex flex-col gap-6 ${stepAnim}`}>
-            <div className={`text-center ${treeType !== 'GUARDED' ? 'text-white' : 'text-slate-800'}`}>
+            <div className={`text-center ${treeType !== 'GUARDED' ? 'text-white' : 'text-slate-800 dark:text-slate-100'}`}>
               <h2 className="text-xl font-bold mb-2">{t('plant_step_vision')}</h2>
               <p className="text-sm opacity-70">{t('plant_step_vision_sub')}</p>
             </div>
@@ -283,7 +283,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
               <textarea 
                 dir="auto"
                 className={`block w-full border p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all min-h-[150px] resize-none ${
-                  treeType !== 'GUARDED' ? 'bg-white/10 border-white/20 text-white placeholder:text-white/50' : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400'
+                  treeType !== 'GUARDED' ? 'bg-white/10 border-white/20 text-white placeholder:text-white/50 dark:bg-slate-900/10' : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-50'
                 }`} 
                 placeholder={treeType === 'GUARDED' ? t('description') : t('vision')} 
                 value={treeBio} 
@@ -300,7 +300,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
 
         {plantStep === 4 && (
           <div className={`flex-1 flex flex-col gap-6 ${stepAnim}`}>
-            <div className={`text-center ${treeType !== 'GUARDED' ? 'text-white' : 'text-slate-800'}`}>
+            <div className={`text-center ${treeType !== 'GUARDED' ? 'text-white' : 'text-slate-800 dark:text-slate-100'}`}>
               <h2 className="text-xl font-bold mb-2">{treeType === 'GUARDED' ? t('plant_step_photo') : t('plant_step_imagine')}</h2>
               <p className="text-sm opacity-70">{treeType === 'GUARDED' ? t('plant_step_photo_sub') : t('plant_step_imagine_sub')}</p>
             </div>
@@ -321,7 +321,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
                 {isImagining ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div> : <Icons.Intelligence />}
                 <span>{isImagining ? t('imagining') : t('imagine_ai')}</span>
               </button>}
-              {imagineError && <p className={`rounded-lg px-3 py-2 text-xs ${treeType !== 'GUARDED' ? 'bg-red-500/20 text-red-100' : 'bg-red-50 text-red-600'}`}>{speak(imagineError)}</p>}
+              {imagineError && <p className={`rounded-lg px-3 py-2 text-xs ${treeType !== 'GUARDED' ? 'bg-red-500/20 text-red-100' : 'bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-300'}`}>{speak(imagineError)}</p>}
             </div>
             <div className="flex gap-2 mt-auto pb-4">
               <button onClick={() => setPlantStep(treeType === 'GUARDED' ? 2 : 3)} className={modalButton(treeType !== 'GUARDED' ? 'secondary-dark' : 'secondary', { extra: 'flex-1 uppercase tracking-widest' })}>{t('back')}</button>
@@ -332,14 +332,14 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
 
         {plantStep === 5 && (
           <form onSubmit={handleSubmit} className={`flex-1 flex flex-col gap-6 ${stepAnim}`}>
-            <div className={`text-center ${treeType !== 'GUARDED' ? 'text-white' : 'text-slate-800'}`}>
+            <div className={`text-center ${treeType !== 'GUARDED' ? 'text-white' : 'text-slate-800 dark:text-slate-100'}`}>
               <h2 className="text-xl font-bold mb-2">{t('plant_step_ground')}</h2>
               <p className="text-sm opacity-70">{t('plant_step_ground_sub')}</p>
             </div>
             <div className="flex flex-col gap-4">
-              <div className={`flex items-center justify-between p-4 rounded-xl border ${treeType === 'GUARDED' ? 'bg-slate-50 border-slate-200 text-slate-800' : 'bg-black/30 border-white/10 text-white'}`}>
+              <div className={`flex items-center justify-between p-4 rounded-xl border ${treeType === 'GUARDED' ? 'bg-slate-50 border-slate-200 text-slate-800 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100' : 'bg-black/30 border-white/10 text-white'}`}>
                 <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-full ${plantLocation ? 'bg-emerald-500 text-white' : (treeType === 'GUARDED' ? 'bg-slate-200 text-slate-500' : 'bg-white/10 text-white/50')}`}>
+                  <div className={`p-2 rounded-full ${plantLocation ? 'bg-emerald-500 text-white' : (treeType === 'GUARDED' ? 'bg-slate-200 text-slate-500 dark:bg-slate-800' : 'bg-white/10 text-white/50 dark:bg-slate-900/10')}`}>
                     <Icons.Loc />
                   </div>
                   <div className="text-xs">
@@ -359,7 +359,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
                   disabled={isLocating} 
                   className={`text-xs px-4 py-2 rounded-lg font-bold uppercase tracking-wider transition-colors ${
                     isLocating 
-                      ? 'bg-slate-300 text-slate-500 cursor-not-allowed' 
+                      ? 'bg-slate-300 text-slate-500 cursor-not-allowed dark:bg-slate-700' 
                       : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm'
                   }`}
                 >
@@ -376,7 +376,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
 
               <AutocompleteInput
                 className={`block w-full border p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-inner ${
-                  treeType !== 'GUARDED' ? 'bg-white/10 border-white/20 text-white placeholder:text-white/50' : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400'
+                  treeType !== 'GUARDED' ? 'bg-white/10 border-white/20 text-white placeholder:text-white/50 dark:bg-slate-900/10' : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-50'
                 }`}
                 placeholder={t('tree_domain_ph')}
                 hint={t('tree_domain_hint')}

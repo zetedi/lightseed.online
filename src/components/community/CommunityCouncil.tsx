@@ -211,7 +211,7 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
             const open = !d.passed && !d.closed;
             const clerk = d.isProposer || !!canEdit;
             return (
-              <div key={d.id} className={`rounded-2xl border p-4 ${d.passed ? 'border-emerald-200 bg-emerald-50/40' : (consensus && d.blocked) ? 'border-rose-200 bg-rose-50/40' : d.listening ? 'border-indigo-200 bg-indigo-50/40' : d.closed ? 'border-slate-200 bg-slate-50' : 'border-slate-200 bg-white'}`}>
+              <div key={d.id} className={`rounded-2xl border p-4 ${d.passed ? 'border-emerald-200 bg-emerald-50/40 dark:border-emerald-900 dark:bg-emerald-950/40' : (consensus && d.blocked) ? 'border-rose-200 bg-rose-50/40 dark:border-rose-900 dark:bg-rose-950/40' : d.listening ? 'border-indigo-200 bg-indigo-50/40 dark:border-indigo-900 dark:bg-indigo-950/40' : d.closed ? 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900' : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900'}`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
@@ -233,12 +233,12 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                               <button
                                 onClick={() => handleFlipVisibility(d.id, isPublic)}
                                 title={isPublic ? t('council_vis_public_title') : t('council_vis_circle_title')}
-                                className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase transition-colors ${isPublic ? 'bg-sky-600 text-white hover:bg-sky-500' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'}`}
+                                className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase transition-colors ${isPublic ? 'bg-sky-600 text-white hover:bg-sky-500' : 'bg-slate-200 text-slate-600 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-300'}`}
                               >
                                 {isPublic ? t('vis_public_chip') : t('circle')}
                               </button>
                             ) : isPublic && (
-                              <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase text-sky-700">{t('vis_public_chip')}</span>
+                              <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">{t('vis_public_chip')}</span>
                             )}
                             {/* The proposer may vanish their OWN draft (the rules allow the author),
                                 not only keepers/staff — the door the feature exists for. */}
@@ -257,18 +257,18 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                         );
                       })()}
                       <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-500 dark:bg-slate-900 dark:border-slate-700">{t(('nature_' + d.nature) as any)}</span>
-                      {consensus && <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase text-sky-700">{t('council_consensus_chip')}</span>}
+                      {consensus && <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">{t('council_consensus_chip')}</span>}
                       {d.passed
                         ? <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">{t('passed')}</span>
                         : d.closed
                           ? <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600 dark:bg-slate-800 dark:text-slate-300">{t(statusLabelKey(d.status))}</span>
                           : consensus
                             ? (d.blocked
-                                ? <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase text-rose-700">{t('council_blocked_chip')}</span>
-                                : <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">{t('council_discernment_chip')}</span>)
+                                ? <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">{t('council_blocked_chip')}</span>
+                                : <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">{t('council_discernment_chip')}</span>)
                             : d.listening
-                              ? <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold uppercase text-indigo-700">{t('council_listening_chip')}</span>
-                              : <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">{t('decision_open')}</span>}
+                              ? <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold uppercase text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300">{t('council_listening_chip')}</span>
+                              : <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">{t('decision_open')}</span>}
                     </div>
                     {d.body && <p className="mt-1 text-xs italic text-slate-500">{d.body}</p>}
 
@@ -286,7 +286,7 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                       if (sig.verifiedCount === 0 && !forged) return null; // nothing signed yet (legacy/voices only)
                       return (
                         <div className={`mt-2 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-medium ${
-                          forged ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-800'
+                          forged ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300' : 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200'
                         }`}>
                           <span className="[&>svg]:h-3.5 [&>svg]:w-3.5">{forged ? <Icons.Shield /> : <Icons.ShieldCheck />}</span>
                           <span>{forged
@@ -299,15 +299,15 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                     {consensus ? (
                       <>
                         <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-bold">
-                          <span className="text-emerald-600">{t('council_unites_count').replace('{n}', String(d.unites))}</span>
+                          <span className="text-emerald-600 dark:text-emerald-300">{t('council_unites_count').replace('{n}', String(d.unites))}</span>
                           <span className="text-slate-300">·</span>
                           <span className="text-slate-500">{t('council_stand_asides_count').replace('{n}', String(d.standAsides))}</span>
                           <span className="text-slate-300">·</span>
-                          <span className={d.blocks ? 'text-rose-600' : 'text-slate-400'}>{t('council_blocks_count').replace('{n}', String(d.blocks))}</span>
+                          <span className={d.blocks ? 'text-rose-600 dark:text-rose-300' : 'text-slate-400'}>{t('council_blocks_count').replace('{n}', String(d.blocks))}</span>
                           {d.myStance && <span className="ml-1 rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-500 dark:bg-slate-800">{t('you').toLowerCase()}: {t(stanceLabelKey(d.myStance)).toLowerCase()}</span>}
                         </div>
                         {d.blocked && (
-                          <div className="mt-2 rounded-xl border border-rose-100 bg-rose-50 p-2.5 text-[11px] text-rose-800">
+                          <div className="mt-2 rounded-xl border border-rose-100 bg-rose-50 p-2.5 text-[11px] text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">
                             <p className="font-semibold">{t('council_block_stands_note')}</p>
                             {d.positions.filter(p => p.stance === 'block' && p.note).slice(-3).map((p, i) => <p key={i} className="mt-1 italic">“{p.note}”</p>)}
                           </div>
@@ -317,7 +317,7 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                       <>
                         <div className="mt-2 text-[11px] font-bold text-slate-400">{d.voiceCount} / {d.voicesRequired} {t('voices')}</div>
                         {d.listening && (
-                          <div className="mt-2 rounded-xl border border-indigo-100 bg-indigo-50 p-2.5 text-[11px] text-indigo-800">
+                          <div className="mt-2 rounded-xl border border-indigo-100 bg-indigo-50 p-2.5 text-[11px] text-indigo-800 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-200">
                             <p className="font-semibold">{t('council_concern_raised_note')}</p>
                             {d.concerns.filter(c => c.note).slice(-3).map((c, i) => <p key={i} className="mt-1 italic">“{c.note}”</p>)}
                           </div>
@@ -330,9 +330,9 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                       <>
                         {open && currentUserId && (
                           <div className="flex flex-wrap justify-end gap-1.5">
-                            <button onClick={() => handlePosition(d.id, 'unite')} disabled={votingId === d.id} className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${d.myStance === 'unite' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}>{t('stance_unite')}</button>
-                            <button onClick={() => handlePosition(d.id, 'stand_aside')} disabled={votingId === d.id} className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${d.myStance === 'stand_aside' ? 'bg-slate-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{t('stance_stand_aside')}</button>
-                            <button onClick={() => handlePosition(d.id, 'block')} disabled={votingId === d.id} className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${d.myStance === 'block' ? 'bg-rose-600 text-white' : 'bg-rose-50 text-rose-600 hover:bg-rose-100'}`}>{t('stance_block')}</button>
+                            <button onClick={() => handlePosition(d.id, 'unite')} disabled={votingId === d.id} className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${d.myStance === 'unite' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300'}`}>{t('stance_unite')}</button>
+                            <button onClick={() => handlePosition(d.id, 'stand_aside')} disabled={votingId === d.id} className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${d.myStance === 'stand_aside' ? 'bg-slate-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'}`}>{t('stance_stand_aside')}</button>
+                            <button onClick={() => handlePosition(d.id, 'block')} disabled={votingId === d.id} className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${d.myStance === 'block' ? 'bg-rose-600 text-white' : 'bg-rose-50 text-rose-600 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-300'}`}>{t('stance_block')}</button>
                           </div>
                         )}
                         {open && clerk && (
@@ -345,12 +345,12 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                     ) : (
                       <>
                         {open && !d.listening && (
-                          <button onClick={() => handleVote(d.id)} disabled={votingId === d.id || d.voted} className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${d.voted ? 'bg-slate-100 text-slate-400' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}>
+                          <button onClick={() => handleVote(d.id)} disabled={votingId === d.id || d.voted} className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${d.voted ? 'bg-slate-100 text-slate-400 dark:bg-slate-800' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}>
                             {d.voted ? t('voted') : (votingId === d.id ? '…' : t('vote'))}
                           </button>
                         )}
                         {open && !d.listening && currentUserId && (
-                          <button onClick={() => handleRaiseConcern(d.id)} disabled={votingId === d.id} className="rounded-full px-3 py-1 text-[11px] font-bold text-indigo-600 hover:bg-indigo-50 disabled:opacity-50">{t('raise_concern')}</button>
+                          <button onClick={() => handleRaiseConcern(d.id)} disabled={votingId === d.id} className="rounded-full px-3 py-1 text-[11px] font-bold text-indigo-600 hover:bg-indigo-50 disabled:opacity-50 dark:text-indigo-300">{t('raise_concern')}</button>
                         )}
                         {d.listening && clerk && (
                           <button onClick={() => handleResume(d.id)} disabled={votingId === d.id} className="rounded-full bg-indigo-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-indigo-700 disabled:opacity-50">{t('council_resume')}</button>
@@ -393,17 +393,17 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
 
       {/* A freshly-born recovery phrase (only if a device key was created mid-sign) — shown once. */}
       {phrase && (
-        <div className="fixed inset-x-0 bottom-4 z-50 mx-auto max-w-md rounded-xl border border-amber-200 bg-amber-50 p-3 shadow-lg">
-          <p className="mb-2 text-xs font-semibold text-amber-800">{t('signing_phrase_warn')}</p>
+        <div className="fixed inset-x-0 bottom-4 z-50 mx-auto max-w-md rounded-xl border border-amber-200 bg-amber-50 p-3 shadow-lg dark:border-amber-900 dark:bg-amber-950/40">
+          <p className="mb-2 text-xs font-semibold text-amber-800 dark:text-amber-200">{t('signing_phrase_warn')}</p>
           <ol className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
             {phrase.map((w, i) => (
-              <li key={i} className="flex items-baseline gap-2 rounded-lg border border-amber-100 bg-white px-2.5 py-1.5 dark:bg-slate-900">
+              <li key={i} className="flex items-baseline gap-2 rounded-lg border border-amber-100 bg-white px-2.5 py-1.5 dark:bg-slate-900 dark:border-amber-900">
                 <span className="w-5 shrink-0 text-right text-[10px] font-bold text-slate-400">{i + 1}</span>
                 <span className="font-mono text-sm text-slate-800 dark:text-slate-100">{w}</span>
               </li>
             ))}
           </ol>
-          <button type="button" onClick={() => setPhrase(null)} className="mt-2 text-xs font-bold text-amber-700 underline">{t('signing_phrase_done')}</button>
+          <button type="button" onClick={() => setPhrase(null)} className="mt-2 text-xs font-bold text-amber-700 underline dark:text-amber-300">{t('signing_phrase_done')}</button>
         </div>
       )}
     </div>

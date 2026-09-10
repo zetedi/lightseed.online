@@ -33,7 +33,7 @@ export const CardCarousel = ({ images, alt = '', className = '', imgClassName = 
           </button>
           <div className="pointer-events-none absolute bottom-1.5 left-1/2 flex -translate-x-1/2 gap-1">
             {images.map((_, d) => (
-              <span key={d} className={`h-1.5 w-1.5 rounded-full transition-colors ${d === i ? 'bg-white' : 'bg-white/45'}`} />
+              <span key={d} className={`h-1.5 w-1.5 rounded-full transition-colors ${d === i ? 'bg-white dark:bg-slate-900' : 'bg-white/45 dark:bg-slate-900/45'}`} />
             ))}
           </div>
         </>

@@ -86,7 +86,7 @@ export const PathwayCTA = ({ input, actions, theme, isDark = false, onOpenOvervi
   if (farewell) {
     return (
       <div className="mx-auto max-w-7xl px-4 pt-4 sm:pt-6 animate-in fade-in duration-300">
-        <p className="mx-auto max-w-2xl rounded-full border border-emerald-100 bg-emerald-50/80 px-4 py-2 text-center text-xs text-emerald-700">
+        <p className="mx-auto max-w-2xl rounded-full border border-emerald-100 bg-emerald-50/80 px-4 py-2 text-center text-xs text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/80 dark:text-emerald-300">
           {t('light_path_rests')}
         </p>
       </div>

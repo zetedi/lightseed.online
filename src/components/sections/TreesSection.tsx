@@ -100,7 +100,7 @@ export const TreesSection: React.FC<TreesSectionProps> = ({
         )}
       </div>
       {inviteOpen && (
-        <div className="mb-4 rounded-lg border border-teal-100 bg-teal-50/50 p-4">
+        <div className="mb-4 rounded-lg border border-teal-100 bg-teal-50/50 p-4 dark:border-teal-900 dark:bg-teal-950/50">
           <div className="flex gap-2">
             <input dir="auto" value={inviteSearch} onChange={e => setInviteSearch(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') searchInviteCandidates(); }}
               placeholder={t('search_trees_ph')}
@@ -117,7 +117,7 @@ export const TreesSection: React.FC<TreesSectionProps> = ({
                     {tr.latestGrowthUrl || tr.imageUrl ? <Picture size={480} src={tr.latestGrowthUrl || tr.imageUrl} className="h-full w-full object-cover" alt="" /> : <div className="h-full w-full" style={{ backgroundColor: placeholderColor }} />}
                   </div>
                   <span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-800 dark:text-slate-100">{tr.name}</span>
-                  <button onClick={() => handleInviteTree(tr)} disabled={inviteBusyId === tr.id} className="shrink-0 rounded-full border border-teal-200 bg-white px-3 py-1.5 text-xs font-bold text-teal-700 hover:bg-teal-50 disabled:opacity-50 dark:bg-slate-900">
+                  <button onClick={() => handleInviteTree(tr)} disabled={inviteBusyId === tr.id} className="shrink-0 rounded-full border border-teal-200 bg-white px-3 py-1.5 text-xs font-bold text-teal-700 hover:bg-teal-50 disabled:opacity-50 dark:bg-slate-900 dark:border-teal-900 dark:text-teal-300">
                     {inviteBusyId === tr.id ? '…' : t('invite')}
                   </button>
                 </div>
@@ -128,7 +128,7 @@ export const TreesSection: React.FC<TreesSectionProps> = ({
       )}
       {trees.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400 dark:border-slate-700">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-500"><Icons.Tree /></div>
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-500 dark:bg-emerald-950/40"><Icons.Tree /></div>
           <p className="text-sm">{emptyLine}</p>
         </div>
       ) : (
@@ -136,7 +136,7 @@ export const TreesSection: React.FC<TreesSectionProps> = ({
           {trees.map(tree => (
             <div
               key={tree.id}
-              className={`flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm ${onViewTree ? 'cursor-pointer transition-shadow hover:shadow-md' : ''}`}
+              className={`flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900 ${onViewTree ? 'cursor-pointer transition-shadow hover:shadow-md' : ''}`}
               onClick={() => onViewTree?.(tree)}
             >
               <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
@@ -144,7 +144,7 @@ export const TreesSection: React.FC<TreesSectionProps> = ({
               </div>
               <div className="min-w-0 flex-1">
                 <p className="break-words text-sm font-bold text-slate-800 dark:text-slate-100">{tree.name}</p>
-                <p className="truncate text-[11px] uppercase tracking-wide text-emerald-600">{tree.locationName || '—'}</p>
+                <p className="truncate text-[11px] uppercase tracking-wide text-emerald-600 dark:text-emerald-300">{tree.locationName || '—'}</p>
               </div>
               <GuardianButton tree={tree} guardian={guardedTreeIds.has(tree.id)} busy={togglingId === tree.id} onToggle={onToggleGuardian} />
             </div>

@@ -82,7 +82,7 @@ export const PlantBedModal: React.FC<{ lightHouse: LightHouse; onClose: () => vo
           <div className="mb-1 flex items-center justify-between">
             <label className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('upload_photo')}</label>
             <button type="button" onClick={imagine} disabled={imagining || uploading}
-              className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2.5 py-1 text-[11px] font-bold text-violet-700 hover:bg-violet-200 disabled:opacity-50">
+              className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2.5 py-1 text-[11px] font-bold text-violet-700 hover:bg-violet-200 disabled:opacity-50 dark:bg-violet-950/40 dark:text-violet-300">
               <span className="[&>svg]:h-3 [&>svg]:w-3"><Icons.Intelligence /></span>{imagining ? '…' : t('generate_image')}
             </button>
           </div>
@@ -90,7 +90,7 @@ export const PlantBedModal: React.FC<{ lightHouse: LightHouse; onClose: () => vo
             onImageSelect={(file) => handleImageUpload(file, `lightHouses/${lightHouse.id}/beds/${Date.now()}`).then(setImageUrl)}
             previewUrl={imageUrl} loading={uploading} />
         </div>
-        {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(err)}</p>}
+        {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-300">{speak(err)}</p>}
         <button type="button" onClick={submit} disabled={submitting || !name.trim()}
           className={modalButton('primary')}>
           {submitting ? t('planting') : t('offer_a_bed')}

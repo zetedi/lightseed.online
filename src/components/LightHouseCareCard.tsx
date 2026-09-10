@@ -63,12 +63,12 @@ export const LightHouseCareCard = ({ lightHouse, currentUserId }: { lightHouse: 
   };
 
   return (
-    <div className="rounded-2xl border border-amber-100 bg-amber-50/40 p-5">
+    <div className="rounded-2xl border border-amber-100 bg-amber-50/40 p-5 dark:border-amber-900 dark:bg-amber-950/40">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="flex items-center text-xs font-bold uppercase tracking-wider text-amber-700">
+        <h3 className="flex items-center text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">
           <Icons.Sun /><span className="ml-2">{actLabel}</span>
         </h3>
-        <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${observed ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+        <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${observed ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'}`}>
           {observed ? t('lh_observed') : t('lh_awaiting_eyes')}
         </span>
       </div>
@@ -78,7 +78,7 @@ export const LightHouseCareCard = ({ lightHouse, currentUserId }: { lightHouse: 
           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{t('lh_observed_by')}</p>
           <div className="mt-1 flex flex-wrap gap-1.5">
             {witnesses.map(w => (
-              <span key={w.uid} title={w.lid} className="rounded-full border border-emerald-200 bg-white px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 dark:bg-slate-900">
+              <span key={w.uid} title={w.lid} className="rounded-full border border-emerald-200 bg-white px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 dark:bg-slate-900 dark:border-emerald-900 dark:text-emerald-300">
                 {w.name || w.lid.slice(0, 8)}
               </span>
             ))}
@@ -95,7 +95,7 @@ export const LightHouseCareCard = ({ lightHouse, currentUserId }: { lightHouse: 
           )}
           {currentUserId && (isKeeper || lightHouse.ownerId === currentUserId) && (
             <button type="button" disabled={busy} onClick={careAgain}
-              className="rounded-full border border-amber-300 bg-white px-4 py-1.5 text-xs font-bold text-amber-700 transition-colors hover:bg-amber-100 disabled:opacity-50 dark:bg-slate-900">
+              className="rounded-full border border-amber-300 bg-white px-4 py-1.5 text-xs font-bold text-amber-700 transition-colors hover:bg-amber-100 disabled:opacity-50 dark:bg-slate-900 dark:text-amber-300">
               🌞 {t('lh_care_act')}
             </button>
           )}

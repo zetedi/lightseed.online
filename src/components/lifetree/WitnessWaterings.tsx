@@ -47,17 +47,17 @@ export const WitnessWaterings: React.FC<WitnessWateringsProps> = ({ treeName, pu
     };
 
     return (
-        <div className={`rounded-2xl border border-sky-100 bg-sky-50/60 p-4 ${className}`}>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-sky-600">{t('witness_waterings')}</p>
+        <div className={`rounded-2xl border border-sky-100 bg-sky-50/60 p-4 dark:border-sky-900 dark:bg-sky-950/60 ${className}`}>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-sky-600 dark:text-sky-300">{t('witness_waterings')}</p>
             <div className="space-y-1.5">
                 {waiting.map(p => {
                     const mine = !!currentUserId && p.authorId === currentUserId;
                     const when = p.createdAt?.toMillis ? new Date(p.createdAt.toMillis()).toLocaleDateString() : t('a_watering');
                     return (
-                        <div key={p.id} className="flex items-center gap-3 rounded-xl border border-sky-100 bg-white p-2 shadow-sm dark:bg-slate-900">
+                        <div key={p.id} className="flex items-center gap-3 rounded-xl border border-sky-100 bg-white p-2 shadow-sm dark:bg-slate-900 dark:border-sky-900">
                             {p.imageUrl
                                 ? <Picture size={480} src={p.imageUrl} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" />
-                                : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-500 [&>svg]:h-5 [&>svg]:w-5"><Icons.Droplet /></span>}
+                                : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-500 [&>svg]:h-5 [&>svg]:w-5 dark:bg-sky-950/40"><Icons.Droplet /></span>}
                             <span className="min-w-0 flex-1 text-xs text-slate-600 dark:text-slate-300">
                                 <span className="block truncate">{when}{p.authorPersonName ? ` · ${p.authorPersonName}` : ''}{p.wateringConfirmation?.note ? ` · ${p.wateringConfirmation.note}` : ''}</span>
                                 <span className="block text-[10px] font-bold uppercase tracking-wide text-sky-500">

@@ -204,7 +204,7 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                         <p>{t('water_self_note')}</p>
                     ) : scheduled ? (
                         overdue ? (
-                            <p className="font-semibold text-sky-700">{stageEmoji} {t('water_thirsty').replace('{when}', overByDays > 0 ? t('water_days_overdue').replace('{n}', String(overByDays)) : t('water_due_today'))}</p>
+                            <p className="font-semibold text-sky-700 dark:text-sky-300">{stageEmoji} {t('water_thirsty').replace('{when}', overByDays > 0 ? t('water_days_overdue').replace('{n}', String(overByDays)) : t('water_due_today'))}</p>
                         ) : (
                             <p>{stageEmoji} {t(stage === 'potted' ? 'water_next_potted' : 'water_next').replace('{n}', String(dueInDays))}</p>
                         )
@@ -226,7 +226,7 @@ export const TreeCare: React.FC<TreeCareProps> = ({
             </div>
 
             {canManageSchedule && (
-                <div className="mb-4 space-y-3 rounded-xl border border-sky-200 bg-white p-4 dark:bg-slate-900">
+                <div className="mb-4 space-y-3 rounded-xl border border-sky-200 bg-white p-4 dark:bg-slate-900 dark:border-sky-900">
                     {/* The growth journey: pot → ground → self-sustaining. Pick where the tree is. */}
                     <div role="radiogroup" aria-label={t('growth_stage')} className="grid grid-cols-3 gap-2">
                         {STAGE_META.map(s => (
@@ -238,8 +238,8 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                                 title={t(s.hintKey)}
                                 onClick={() => setWaterStage(s.key)}
                                 className={`flex flex-col items-center gap-1.5 rounded-xl border-2 px-2 py-3 text-center transition-all ${waterStage === s.key
-                                    ? (s.key === 'self_sustaining' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-sky-500 bg-sky-50 text-sky-700')
-                                    : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200 hover:text-slate-500'}`}
+                                    ? (s.key === 'self_sustaining' ? 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'border-sky-500 bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300')
+                                    : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200 hover:text-slate-500 dark:border-slate-800 dark:bg-slate-900'}`}
                             >
                                 {s.icon}
                                 <span className="text-[10px] font-bold uppercase tracking-wide leading-tight">{t(s.labelKey)}</span>
@@ -248,12 +248,12 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                     </div>
                     <p className="text-center text-xs text-slate-500">{(() => { const h = STAGE_META.find(s => s.key === waterStage)?.hintKey; return h ? t(h) : ''; })()}</p>
                     {waterStage !== 'self_sustaining' && (
-                        <div className="flex items-center justify-center gap-2 text-sm text-sky-800">
+                        <div className="flex items-center justify-center gap-2 text-sm text-sky-800 dark:text-sky-200">
                             <span>{t('water_every')}</span>
-                            <div className="inline-flex items-center overflow-hidden rounded-lg border border-sky-200">
-                                <button type="button" aria-label={t('fewer_days')} onClick={() => setWaterInterval(v => Math.max(1, v - 1))} className="px-3 py-1.5 font-bold text-sky-700 hover:bg-sky-50">−</button>
+                            <div className="inline-flex items-center overflow-hidden rounded-lg border border-sky-200 dark:border-sky-900">
+                                <button type="button" aria-label={t('fewer_days')} onClick={() => setWaterInterval(v => Math.max(1, v - 1))} className="px-3 py-1.5 font-bold text-sky-700 hover:bg-sky-50 dark:text-sky-300">−</button>
                                 <span className="w-10 text-center font-bold tabular-nums">{waterInterval}</span>
-                                <button type="button" aria-label={t('more_days')} onClick={() => setWaterInterval(v => Math.min(365, v + 1))} className="px-3 py-1.5 font-bold text-sky-700 hover:bg-sky-50">+</button>
+                                <button type="button" aria-label={t('more_days')} onClick={() => setWaterInterval(v => Math.min(365, v + 1))} className="px-3 py-1.5 font-bold text-sky-700 hover:bg-sky-50 dark:text-sky-300">+</button>
                             </div>
                             <span>{t('days_unit')}</span>
                         </div>
@@ -279,14 +279,14 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                             </span>
                         </label>
                         {isOwner && overdue && !wateringAlertedToday(tree) && (
-                            <button type="button" onClick={handleRemindGuardians} disabled={waterBusy} className="inline-flex items-center gap-1 rounded-full border border-sky-300 bg-white px-3 py-2 text-xs font-bold text-sky-700 hover:bg-sky-100 disabled:opacity-50 dark:bg-slate-900">{t('remind_guardians')} 💧</button>
+                            <button type="button" onClick={handleRemindGuardians} disabled={waterBusy} className="inline-flex items-center gap-1 rounded-full border border-sky-300 bg-white px-3 py-2 text-xs font-bold text-sky-700 hover:bg-sky-100 disabled:opacity-50 dark:bg-slate-900 dark:text-sky-300">{t('remind_guardians')} 💧</button>
                         )}
                     </div>
                 </div>
             )}
 
             {canAskStewardship && (
-                <div className="mb-4 rounded-xl border border-sky-100 bg-white/70 p-4 dark:bg-slate-900/70">
+                <div className="mb-4 rounded-xl border border-sky-100 bg-white/70 p-4 dark:bg-slate-900/70 dark:border-sky-900">
                     <p className="text-xs leading-relaxed text-sky-800/80">
                         {t('guard_care_note')}
                     </p>
@@ -294,7 +294,7 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                         type="button"
                         onClick={handleAskStewardship}
                         disabled={waterBusy}
-                        className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-sky-300 bg-white px-4 py-2 text-xs font-bold text-sky-700 hover:bg-sky-50 disabled:opacity-50 dark:bg-slate-900"
+                        className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-sky-300 bg-white px-4 py-2 text-xs font-bold text-sky-700 hover:bg-sky-50 disabled:opacity-50 dark:bg-slate-900 dark:text-sky-300"
                     >🌿 {t('ask_be_steward')}</button>
                 </div>
             )}
@@ -314,7 +314,7 @@ export const TreeCare: React.FC<TreeCareProps> = ({
 
             {/* speak(): a message may be a thrown KEY (the services throw keys) or an already-
                 spoken sentence — the boundary says the first and passes the second through. */}
-            {waterMsg && <p className="mt-3 text-xs text-sky-700">{speak(waterMsg)}</p>}
+            {waterMsg && <p className="mt-3 text-xs text-sky-700 dark:text-sky-300">{speak(waterMsg)}</p>}
         </SectionCard>
     );
 };

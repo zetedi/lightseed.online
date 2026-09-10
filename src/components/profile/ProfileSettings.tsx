@@ -21,9 +21,9 @@ const Toggle = ({ on, onClick, disabled }: { on: boolean; onClick: () => void; d
     aria-checked={on}
     onClick={onClick}
     disabled={disabled}
-    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors disabled:opacity-50 ${on ? 'bg-emerald-500' : 'bg-slate-300'}`}
+    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors disabled:opacity-50 ${on ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}
   >
-    <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${on ? 'translate-x-5' : 'translate-x-0'}`} />
+    <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 dark:bg-slate-900 ${on ? 'translate-x-5' : 'translate-x-0'}`} />
   </button>
 );
 
@@ -278,21 +278,21 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
       {showDeleteConfirm && (
         <Modal title={t('delete_confirm_title')} onClose={() => setShowDeleteConfirm(false)}>
           <div className="space-y-6">
-            <div className="bg-red-50 border border-red-100 p-4 rounded-xl text-red-800 text-sm">
+            <div className="bg-red-50 border border-red-100 p-4 rounded-xl text-red-800 text-sm dark:bg-red-950/40 dark:border-red-900 dark:text-red-200">
               <p className="font-bold mb-1">{t('delete_confirm_desc')}</p>
             </div>
 
             {/* The last spend — shown only when there is light to pass on. */}
             {lightUnits !== null && lightUnits > 0 && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                <p className="text-sm font-bold text-amber-900">{t('heir_you_hold').replace('{n}', String(lightUnits))}</p>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/40">
+                <p className="text-sm font-bold text-amber-900 dark:text-amber-200">{t('heir_you_hold').replace('{n}', String(lightUnits))}</p>
                 <p className="mt-1 text-xs leading-relaxed text-amber-800/90">{t('heir_last_spend')}</p>
                 {heirTree ? (
                   <div className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-amber-300 bg-white px-3 py-2 dark:bg-slate-900">
-                    <span className="min-w-0 truncate text-sm text-amber-900">
+                    <span className="min-w-0 truncate text-sm text-amber-900 dark:text-amber-200">
                       {t('heir_light_goes_to').split('{name}')[0]}<span className="font-bold">{heirTree.name}</span>{t('heir_light_goes_to').split('{name}')[1]}
                     </span>
-                    <button type="button" onClick={() => setHeirTree(null)} className="shrink-0 text-xs font-bold text-amber-700 underline">{t('change')}</button>
+                    <button type="button" onClick={() => setHeirTree(null)} className="shrink-0 text-xs font-bold text-amber-700 underline dark:text-amber-300">{t('change')}</button>
                   </div>
                 ) : (
                   <div className="mt-3">
@@ -300,10 +300,10 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                       value={heirQuery}
                       onChange={e => setHeirQuery(e.target.value)}
                       placeholder={t('heir_ph')}
-                      className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-amber-400 dark:bg-slate-900 dark:text-slate-200"
+                      className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-amber-400 dark:bg-slate-900 dark:text-slate-200 dark:border-amber-900"
                     />
                     {heirMatches.length > 0 && (
-                      <div className="mt-1 overflow-hidden rounded-lg border border-amber-100 bg-white dark:bg-slate-900">
+                      <div className="mt-1 overflow-hidden rounded-lg border border-amber-100 bg-white dark:bg-slate-900 dark:border-amber-900">
                         {heirMatches.map(tr => (
                           <button
                             key={tr.id}
@@ -313,7 +313,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                           >
                             {(tr.latestGrowthUrl || tr.imageUrl)
                               ? <Picture size={480} src={tr.latestGrowthUrl || tr.imageUrl} alt="" className="h-6 w-6 rounded-full object-cover" />
-                              : <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-600"><Icons.Tree /></span>}
+                              : <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300"><Icons.Tree /></span>}
                             <span className="truncate">{tr.name}</span>
                           </button>
                         ))}

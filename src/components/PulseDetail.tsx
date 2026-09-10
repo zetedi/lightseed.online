@@ -134,12 +134,12 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel, canEdit, on
                             </button>
                         )}
                         {vetoed && (
-                            <span className="flex items-center gap-1 rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700">
+                            <span className="flex items-center gap-1 rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700 dark:bg-red-950/40 dark:text-red-300">
                                 ⊘ {t('vetoed_by_guardians')}
                             </span>
                         )}
                         {pulse.care === 'watering' && (
-                            <span className="flex items-center gap-1 rounded-full bg-sky-100 px-3 py-1 text-xs font-bold text-sky-700">
+                            <span className="flex items-center gap-1 rounded-full bg-sky-100 px-3 py-1 text-xs font-bold text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
                                 💧 {pulse.wateringConfirmedBy === 'ai' ? t('confirmed_by_ai') : pulse.wateringConfirmedBy === 'guardian' ? t('confirmed_by_guardian') : t('awaiting_confirmation')}
                             </span>
                         )}
@@ -154,7 +154,7 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel, canEdit, on
                     </div>
                 </div>
                 <div className="flex items-center gap-4 sm:gap-5">
-                    <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-emerald-50 text-emerald-500 shadow-xl">
+                    <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-emerald-50 text-emerald-500 shadow-xl dark:bg-emerald-950/40">
                         {images[0]
                             ? <Picture size={1200} src={images[0]} className="h-full w-full object-cover" alt={pulse.title} referrerPolicy="no-referrer" />
                             : <Icons.Lightning />}
@@ -206,13 +206,13 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel, canEdit, on
                     )}
 
                     {pulse.type === 'event' && (
-                        <div className="mb-4 grid gap-2 rounded-2xl border border-sky-100 bg-sky-50 p-4 text-sm text-sky-900">
+                        <div className="mb-4 grid gap-2 rounded-2xl border border-sky-100 bg-sky-50 p-4 text-sm text-sky-900 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-200">
                             {pulse.eventDate && <div><span className="font-bold">{t('when')}:</span> {new Date(pulse.eventDate).toLocaleString()}</div>}
                             {pulse.eventLocation && <div><span className="font-bold">{t('where')}:</span> {pulse.eventLocation}</div>}
                         </div>
                     )}
                     {pulse.care === 'watering' && (
-                        <div className="mb-4 grid gap-1.5 rounded-2xl border border-sky-100 bg-sky-50 p-4 text-sm text-sky-900">
+                        <div className="mb-4 grid gap-1.5 rounded-2xl border border-sky-100 bg-sky-50 p-4 text-sm text-sky-900 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-200">
                             <div className="flex items-center gap-2 font-bold"><Icons.Droplet size={16} /> <span>{t('watering')}</span></div>
                             {/* The AI's reading — a witness, not the authority. */}
                             {typeof pulse.wateringConfirmation?.confidence === 'number' && (
@@ -239,24 +239,24 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel, canEdit, on
 
                 {/* The guardians' conscience — consensus veto on a growth mint. */}
                 {isGrowthMint && guardians.length > 0 && (
-                    <div className={`mt-6 rounded-2xl border p-5 shadow-sm ${vetoed ? 'border-red-200 bg-red-50' : 'border-amber-100 bg-amber-50/50'}`}>
-                        <h3 className={`mb-2 flex items-center text-xs font-bold uppercase tracking-wider ${vetoed ? 'text-red-500' : 'text-amber-600'}`}>
+                    <div className={`mt-6 rounded-2xl border p-5 shadow-sm ${vetoed ? 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/40' : 'border-amber-100 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/50'}`}>
+                        <h3 className={`mb-2 flex items-center text-xs font-bold uppercase tracking-wider ${vetoed ? 'text-red-500' : 'text-amber-600 dark:text-amber-300'}`}>
                             <Icons.Shield /><span className="ml-2">{t('guardians_conscience')}</span>
                         </h3>
                         {vetoed ? (
-                            <p className="text-sm text-red-700">
+                            <p className="text-sm text-red-700 dark:text-red-300">
                                 {t('veto_stands_note')}
                             </p>
                         ) : (
                             <div className="flex flex-wrap items-center gap-3">
-                                <p className="text-sm text-amber-800">
+                                <p className="text-sm text-amber-800 dark:text-amber-200">
                                     {progress.cast === 0
                                         ? t('veto_may_note')
                                         : t('veto_progress').replace('{cast}', String(progress.cast)).replace('{needed}', String(progress.needed))}
                                 </p>
                                 {viewerCanVeto && (
                                     <button onClick={handleVeto} disabled={isVetoing}
-                                        className="rounded-full border border-red-300 bg-white px-4 py-1.5 text-xs font-bold text-red-600 transition-colors hover:bg-red-600 hover:text-white disabled:opacity-50 dark:bg-slate-900">
+                                        className="rounded-full border border-red-300 bg-white px-4 py-1.5 text-xs font-bold text-red-600 transition-colors hover:bg-red-600 hover:text-white disabled:opacity-50 dark:bg-slate-900 dark:text-red-300">
                                         {isVetoing ? t('veto_casting') : t('veto_this_mint')}
                                     </button>
                                 )}

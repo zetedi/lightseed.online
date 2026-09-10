@@ -132,9 +132,9 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
         role="switch"
         aria-checked={editCustomLanding}
         onClick={() => onCustomLandingChange(!editCustomLanding)}
-        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors ${editCustomLanding ? 'bg-emerald-500' : 'bg-slate-300'}`}
+        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors ${editCustomLanding ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}
       >
-        <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${editCustomLanding ? 'translate-x-5' : 'translate-x-0'}`} />
+        <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 dark:bg-slate-900 ${editCustomLanding ? 'translate-x-5' : 'translate-x-0'}`} />
       </button>
     </div>
 
@@ -170,7 +170,7 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
               <button
                 type="button"
                 onClick={() => onLandingPagesChange(prev => prev.filter((_, j) => j !== i))}
-                className="shrink-0 rounded-lg border border-red-100 bg-white px-2.5 py-1.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50 dark:bg-slate-900"
+                className="shrink-0 rounded-lg border border-red-100 bg-white px-2.5 py-1.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50 dark:bg-slate-900 dark:border-red-900"
               >
                 {t('remove')}
               </button>
@@ -197,9 +197,9 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
         role="switch"
         aria-checked={editShowStats}
         onClick={() => onShowStatsChange(!editShowStats)}
-        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors ${editShowStats ? 'bg-emerald-500' : 'bg-slate-300'}`}
+        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors ${editShowStats ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}
       >
-        <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${editShowStats ? 'translate-x-5' : 'translate-x-0'}`} />
+        <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 dark:bg-slate-900 ${editShowStats ? 'translate-x-5' : 'translate-x-0'}`} />
       </button>
     </div>
 

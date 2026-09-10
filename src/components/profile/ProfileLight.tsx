@@ -51,7 +51,7 @@ export const ProfileLight = ({ uid }: { uid: string }) => {
     return (
         <div className="space-y-6">
             {/* The glow: brightens with the light held, from a quiet disc to a full shine. */}
-            <div className="rounded-2xl border border-amber-100 bg-amber-50/40 p-6">
+            <div className="rounded-2xl border border-amber-100 bg-amber-50/40 p-6 dark:border-amber-900 dark:bg-amber-950/40">
                 <div className="relative flex items-center justify-center py-4">
                     {total > 0 && (
                         <>
@@ -65,18 +65,18 @@ export const ProfileLight = ({ uid }: { uid: string }) => {
                             />
                         </>
                     )}
-                    <div className="relative flex h-28 w-28 flex-col items-center justify-center rounded-full border border-amber-200 bg-gradient-to-br from-amber-100 to-amber-50">
-                        <span className="text-3xl font-semibold text-amber-600">{total}</span>
+                    <div className="relative flex h-28 w-28 flex-col items-center justify-center rounded-full border border-amber-200 bg-gradient-to-br from-amber-100 to-amber-50 dark:border-amber-900">
+                        <span className="text-3xl font-semibold text-amber-600 dark:text-amber-300">{total}</span>
                         <span className="text-[10px] uppercase tracking-wider text-amber-500">{t('units')}</span>
                     </div>
                 </div>
-                <p className="mt-2 text-center text-sm font-medium text-amber-700">{spoken(total)}</p>
+                <p className="mt-2 text-center text-sm font-medium text-amber-700 dark:text-amber-300">{spoken(total)}</p>
                 <p className="mt-1 text-center text-xs text-amber-600/70">{t('light_private_note')}</p>
             </div>
 
             {total === 0 ? (
                 <div className="rounded-2xl border border-gray-100 p-6 text-center dark:border-slate-800">
-                    <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-amber-50 text-amber-500">
+                    <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-amber-50 text-amber-500 dark:bg-amber-950/40">
                         <Icons.Sun />
                     </div>
                     <p className="text-sm text-gray-600">{t('no_light')}</p>
@@ -97,12 +97,12 @@ export const ProfileLight = ({ uid }: { uid: string }) => {
                                 <div className="ml-3 flex shrink-0 items-center gap-2">
                                     <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
                                         ray.role === 'carer'
-                                            ? 'bg-amber-50 text-amber-600'
-                                            : 'bg-sky-50 text-sky-600'
+                                            ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300'
+                                            : 'bg-sky-50 text-sky-600 dark:bg-sky-950/40 dark:text-sky-300'
                                     }`}>
                                         {ray.role === 'carer' ? t('ray_your_care') : t('ray_your_witness')}
                                     </span>
-                                    <span className="text-sm font-semibold text-amber-600">+{ray.units}</span>
+                                    <span className="text-sm font-semibold text-amber-600 dark:text-amber-300">+{ray.units}</span>
                                 </div>
                             </div>
                         ))}

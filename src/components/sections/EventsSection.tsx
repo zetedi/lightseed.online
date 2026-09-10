@@ -242,7 +242,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
             <div
               key={ev.id}
               onClick={() => onViewEvent?.(ev)}
-              className={`group flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm ${onViewEvent ? 'cursor-pointer transition-shadow hover:shadow-md' : ''}`}
+              className={`group flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900 ${onViewEvent ? 'cursor-pointer transition-shadow hover:shadow-md' : ''}`}
             >
               <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
                 {ev.imageUrl ? <Picture size={480} src={ev.imageUrl} className="h-full w-full object-cover" alt={ev.title} /> : <div className="h-full w-full" style={{ backgroundColor: placeholderColor }} />}
@@ -253,7 +253,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                   {ev.eventDate ? new Date(ev.eventDate).toLocaleString() : ''}{ev.eventLocation ? ` · ${ev.eventLocation}` : ''}
                 </p>
               </div>
-              <EventWeather location={ev.eventLocation} dateIso={ev.eventDate} className="shrink-0 rounded-full bg-sky-50 px-2 py-1 text-sky-800" />
+              <EventWeather location={ev.eventLocation} dateIso={ev.eventDate} className="shrink-0 rounded-full bg-sky-50 px-2 py-1 text-sky-800 dark:bg-sky-950/40 dark:text-sky-200" />
               {(canEdit || ev.authorId === currentUserId) && (
                 <button onClick={(e) => { e.stopPropagation(); startEditEvent(ev); }} title={t('edit')} className="shrink-0 rounded-full p-2 text-slate-400 transition-colors hover:bg-sky-50 hover:text-sky-600 sm:opacity-0 sm:group-hover:opacity-100">
                   <Icons.Pencil />

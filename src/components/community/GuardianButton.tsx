@@ -15,7 +15,7 @@ export const GuardianButton: React.FC<GuardianButtonProps> = ({ tree, guardian, 
     type="button"
     onClick={(e) => { e.stopPropagation(); onToggle(tree); }}
     disabled={busy}
-    className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold transition-colors disabled:opacity-50 ${guardian ? 'bg-emerald-100 text-emerald-700 hover:bg-red-50 hover:text-red-600' : 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700'}`}
+    className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold transition-colors disabled:opacity-50 ${guardian ? 'bg-emerald-100 text-emerald-700 hover:bg-red-50 hover:text-red-600 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700'}`}
     title={guardian ? 'Leave guardianship' : 'Join guardianship'}
   >
     <Icons.Tree />

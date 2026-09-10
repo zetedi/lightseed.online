@@ -10,7 +10,7 @@ export const SectionCard = ({ title, icon, dark = false, className = '', bodyCla
   bodyClassName?: string;
   children: React.ReactNode;
 }) => (
-  <section className={`overflow-hidden rounded-2xl border shadow-sm ${dark ? 'border-slate-800 bg-slate-900 text-slate-200' : 'border-slate-100 bg-white'} ${className}`}>
+  <section className={`overflow-hidden rounded-2xl border shadow-sm ${dark ? 'border-slate-800 bg-slate-900 text-slate-200' : 'border-slate-100 bg-white dark:border-slate-800 dark:bg-slate-900'} ${className}`}>
     {title && (
       <h3 className={`flex items-center gap-2 px-5 pt-5 text-sm font-bold uppercase tracking-wider ${dark ? 'text-emerald-300' : 'text-slate-500'}`}>
         {icon && <span className="[&>svg]:h-4 [&>svg]:w-4">{icon}</span>}<span>{title}</span>

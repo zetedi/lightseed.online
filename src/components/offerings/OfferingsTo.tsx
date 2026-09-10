@@ -32,7 +32,7 @@ export const OfferingsTo = ({ kind, id, onView }: { kind: 'tree' | 'vision'; id:
                         <button type="button" onClick={() => onView(p)} className="flex w-full items-center gap-3 rounded-xl border border-slate-100 px-3 py-2 text-left transition-colors hover:bg-slate-50 dark:border-slate-800">
                             {p.imageUrl
                                 ? <Picture size={480} src={p.imageUrl} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" />
-                                : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 [&>svg]:h-4 [&>svg]:w-4"><Icons.Sun /></span>}
+                                : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 [&>svg]:h-4 [&>svg]:w-4 dark:bg-emerald-950/40 dark:text-emerald-300"><Icons.Sun /></span>}
                             <span className="min-w-0 flex-1">
                                 <span dir="auto" className="block truncate text-sm font-medium text-slate-800 dark:text-slate-100">{p.title}</span>
                                 <span className="block truncate text-xs text-slate-400">{p.authorName || ''}{p.offeringAppreciationLight ? ` · ${formatLight(p.offeringAppreciationLight)}` : ''}</span>

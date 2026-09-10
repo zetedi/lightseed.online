@@ -335,7 +335,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                     <button
                         onClick={handleToggleGuardian}
                         disabled={isBusy}
-                        className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-colors active:scale-95 disabled:opacity-50 ${isGuardian ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-sky-600 text-white hover:bg-sky-700'}`}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-colors active:scale-95 disabled:opacity-50 ${isGuardian ? 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300' : 'bg-sky-600 text-white hover:bg-sky-700'}`}
                     >
                         <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Shield /></span>
                         {isGuardian ? t('guard_leave') : t('guard_this_tree')}
@@ -348,7 +348,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                     <button
                         onClick={onToggleDanger}
                         disabled={isBusy}
-                        className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-colors active:scale-95 disabled:opacity-50 ${status === 'DANGER' ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-red-50 text-red-600 hover:bg-red-100'}`}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-colors active:scale-95 disabled:opacity-50 ${status === 'DANGER' ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-950/40 dark:text-red-300'}`}
                     >
                         {status === 'DANGER' ? <span>{t('danger_resolve')}</span> : <><span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Siren /></span><span>{t('danger_report')}</span></>}
                     </button>
@@ -359,7 +359,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                     <button
                         onClick={handleAskToKeep}
                         disabled={askBusy}
-                        className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-colors active:scale-95 disabled:opacity-50 ${myAsk ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-violet-600 text-white hover:bg-violet-700'}`}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-colors active:scale-95 disabled:opacity-50 ${myAsk ? 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300' : 'bg-violet-600 text-white hover:bg-violet-700'}`}
                     >
                         🗝 {myAsk ? t('withdraw_ask') : t('ask_to_keep_tree')}
                     </button>
@@ -369,26 +369,26 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
             {/* Keepership knocks — answered on the row itself, still through the circle's ONE
                 privileged door: accepting sends the asker an invitation in the chosen role. */}
             {canEdit && keepAsks.length > 0 && (
-                <div className="mt-5 rounded-2xl border border-violet-200 bg-violet-50/60 p-4">
+                <div className="mt-5 rounded-2xl border border-violet-200 bg-violet-50/60 p-4 dark:border-violet-900 dark:bg-violet-950/60">
                     <div className="mb-1 flex items-center justify-between gap-2">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-violet-700">{t('keeper_requests')}</p>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-violet-700 dark:text-violet-300">{t('keeper_requests')}</p>
                         {canInviteRoles && (
                             <select value={askRole} onChange={e => setAskRole(e.target.value as InvitableRole)}
-                                className="h-8 rounded-lg border border-violet-200 bg-white px-2 text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500 dark:bg-slate-900 dark:text-slate-300">
+                                className="h-8 rounded-lg border border-violet-200 bg-white px-2 text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500 dark:bg-slate-900 dark:text-slate-300 dark:border-violet-900">
                                 {(['guardian', 'co_owner', 'steward', 'observer'] as InvitableRole[]).map(r => (
                                     <option key={r} value={r}>{t('invite_as_role').replace('{role}', roleName(r))}</option>
                                 ))}
                             </select>
                         )}
                     </div>
-                    <p className="mb-2 text-[11px] italic text-violet-600">{t('keeper_knock_tree_hint')}</p>
+                    <p className="mb-2 text-[11px] italic text-violet-600 dark:text-violet-300">{t('keeper_knock_tree_hint')}</p>
                     {/* What the chosen role truly is — read before anyone offers a word they cannot picture. */}
                     <p className="mb-2 text-xs leading-relaxed text-slate-500">
                         <span className="font-bold text-slate-600 dark:text-slate-300">{roleName(askRole)}</span> — {roleDesc(askRole)}
                     </p>
                     <div className="space-y-1.5">
                         {keepAsks.map(r => (
-                            <div key={r.uid} className="flex items-center justify-between gap-2 rounded-lg border border-violet-100 bg-white px-3 py-2 dark:bg-slate-900">
+                            <div key={r.uid} className="flex items-center justify-between gap-2 rounded-lg border border-violet-100 bg-white px-3 py-2 dark:bg-slate-900 dark:border-violet-900">
                                 <p className="truncate text-sm font-semibold text-slate-700 dark:text-slate-200">{r.name}</p>
                                 <div className="flex shrink-0 items-center gap-1.5">
                                     <button onClick={() => handleAnswerAsk(r)} disabled={answering === r.uid}
@@ -431,7 +431,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                                         </div>
                                         {mayRevoke && (
                                             <button onClick={() => handleRevokeInvite(inv)} disabled={revoking === inv.id}
-                                                className="shrink-0 rounded-lg border border-red-100 bg-white px-2.5 py-1 text-[11px] font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50 dark:bg-slate-900">
+                                                className="shrink-0 rounded-lg border border-red-100 bg-white px-2.5 py-1 text-[11px] font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50 dark:bg-slate-900 dark:border-red-900">
                                                 {revoking === inv.id ? '…' : t('revoke')}
                                             </button>
                                         )}
@@ -491,10 +491,10 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                             {matches.map(({ tree: m, reason }) => {
                                 const already = invited.has(m.ownerId) || sentInvites.some(i => i.invitedUserId === m.ownerId && i.role === inviteRole);
                                 return (
-                                    <div key={m.id} className={`flex items-center gap-3 rounded-xl border border-slate-100 p-2 shadow-sm ${reason ? 'bg-slate-50/60' : 'bg-white'}`}>
+                                    <div key={m.id} className={`flex items-center gap-3 rounded-xl border border-slate-100 p-2 shadow-sm dark:border-slate-800 ${reason ? 'bg-slate-50/60 dark:bg-slate-900/60' : 'bg-white dark:bg-slate-900'}`}>
                                         <Avatar imageUrl={m.latestGrowthUrl || m.imageUrl} seed={m.name || '?'} ring={reason ? 'ring-slate-100' : 'ring-emerald-100'} />
                                         <div className="min-w-0 flex-1">
-                                            <p className={`truncate text-sm font-bold ${reason ? 'text-slate-400' : 'text-slate-700'}`}>{m.name || t('a_tree')}</p>
+                                            <p className={`truncate text-sm font-bold ${reason ? 'text-slate-400' : 'text-slate-700 dark:text-slate-200'}`}>{m.name || t('a_tree')}</p>
                                             {reason && <p className="truncate text-[11px] italic text-slate-400">{t(reason)}</p>}
                                         </div>
                                         {!reason && (

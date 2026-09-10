@@ -85,7 +85,7 @@ export const ProfilePulses: React.FC<ProfilePulsesProps> = ({ uid, onViewPulse, 
               key={pulse.id}
               role={onViewPulse ? 'button' : undefined}
               onClick={() => onViewPulse?.(pulse)}
-              className={`border border-slate-100 rounded-lg overflow-hidden group ${onViewPulse ? 'cursor-pointer transition-shadow hover:shadow-md hover:border-emerald-200' : ''}`}
+              className={`border border-slate-100 rounded-lg overflow-hidden group dark:border-slate-800 ${onViewPulse ? 'cursor-pointer transition-shadow hover:shadow-md hover:border-emerald-200' : ''}`}
             >
               <div className="h-24 bg-slate-100 relative dark:bg-slate-800">
                 {pulse.imageUrl ? (

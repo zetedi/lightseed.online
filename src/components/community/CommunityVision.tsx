@@ -335,17 +335,17 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
       {(chainSealed || canEdit) && (
         <div className="mt-8 border-t border-slate-100 pt-6 dark:border-slate-800">
           {chainSealed ? (
-            <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
+            <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 dark:border-emerald-900 dark:bg-emerald-950/70">
               <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-emerald-300 dark:bg-slate-900"><Icons.ShieldCheck /></span>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-emerald-900">{t('chain_sealed')}</p>
+                <p className="text-sm font-bold text-emerald-900 dark:text-emerald-200">{t('chain_sealed')}</p>
                 <p className="mt-0.5 text-sm text-emerald-800/80">{t('chain_sealed_note')}</p>
                 {firstTree?.latestHash && (
                   <p className="mt-1 break-all font-mono text-xs text-emerald-700/60">head {firstTree.latestHash.slice(0, 16)}…</p>
                 )}
                 {canEdit && (
                   <div className="mt-3">
-                    <button onClick={handleVerify} disabled={isVerifying} className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-white px-4 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100 disabled:opacity-50 dark:bg-slate-900">
+                    <button onClick={handleVerify} disabled={isVerifying} className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-white px-4 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100 disabled:opacity-50 dark:bg-slate-900 dark:text-emerald-300">
                       <Icons.ShieldCheck /> {isVerifying ? t('verifying') : t('chain_verify_sealed')}
                     </button>
                     {verifyResult && (
@@ -353,9 +353,9 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                         {verifyResult.sealed === 0 ? (
                           <span className="text-emerald-800/70">{t('chain_no_sealed_yet')}{verifyResult.legacy > 0 ? ` ${t('chain_legacy_predate').replace('{n}', String(verifyResult.legacy))}` : ''}</span>
                         ) : verifyResult.intact === verifyResult.sealed ? (
-                          <span className="font-semibold text-emerald-700">✓ {t('chain_sealed_intact').replace('{n}', String(verifyResult.sealed)).replace('{trees}', String(verifyResult.trees))}{verifyResult.legacy > 0 ? ` ${t('chain_legacy_count').replace('{n}', String(verifyResult.legacy))}` : ''}</span>
+                          <span className="font-semibold text-emerald-700 dark:text-emerald-300">✓ {t('chain_sealed_intact').replace('{n}', String(verifyResult.sealed)).replace('{trees}', String(verifyResult.trees))}{verifyResult.legacy > 0 ? ` ${t('chain_legacy_count').replace('{n}', String(verifyResult.legacy))}` : ''}</span>
                         ) : (
-                          <span className="font-bold text-red-600">⚠ {t('chain_seal_failed').replace('{bad}', String(verifyResult.sealed - verifyResult.intact)).replace('{n}', String(verifyResult.sealed))}</span>
+                          <span className="font-bold text-red-600 dark:text-red-300">⚠ {t('chain_seal_failed').replace('{bad}', String(verifyResult.sealed - verifyResult.intact)).replace('{n}', String(verifyResult.sealed))}</span>
                         )}
                       </p>
                     )}
@@ -405,9 +405,9 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
               role="switch"
               aria-checked={tokenisationOn}
               title={tokenisationOn ? t('tokens_on_title') : t('tokens_off_title')}
-              className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${tokenisationOn ? 'bg-emerald-600' : 'bg-slate-300'}`}
+              className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${tokenisationOn ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'}`}
             >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${tokenisationOn ? 'translate-x-6' : 'translate-x-1'}`} />
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform dark:bg-slate-900 ${tokenisationOn ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
           </div>
         </div>
@@ -468,7 +468,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
               <div className="mt-3">
                 {domainVerified ? (
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-700">✓ {t('domain_verified')}</span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">✓ {t('domain_verified')}</span>
                     <button onClick={handleStartVerification} disabled={verifyBusy}
                       className="text-[11px] font-bold text-slate-400 underline-offset-2 hover:text-emerald-700 hover:underline disabled:opacity-50">
                       {t('domain_reverify')}
@@ -476,12 +476,12 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                   </div>
                 ) : !challenge && (
                   <button onClick={handleStartVerification} disabled={verifyBusy || !hasDomain}
-                    className="rounded-full border border-emerald-200 bg-white px-3.5 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-50 dark:bg-slate-900">
+                    className="rounded-full border border-emerald-200 bg-white px-3.5 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-50 dark:bg-slate-900 dark:border-emerald-900 dark:text-emerald-300">
                     {verifyBusy ? '…' : t('domain_verify_start')}
                   </button>
                 )}
                 {challenge && (
-                  <div className="mt-2 rounded-xl border border-emerald-100 bg-emerald-50/50 p-3">
+                  <div className="mt-2 rounded-xl border border-emerald-100 bg-emerald-50/50 p-3 dark:border-emerald-900 dark:bg-emerald-950/50">
                     <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">{t('domain_verify_hint')}</p>
                     {/* The four fields as a DNS dashboard asks for them — the Name is the bare
                         host label; the provider appends the domain itself. */}
@@ -542,7 +542,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                               className="rounded-full bg-violet-600 px-3 py-1 text-[11px] font-bold text-white transition-colors hover:bg-violet-500 disabled:opacity-50">{doorBusy === row.door ? '…' : t('door_grant')}</button>
                           )}
                           <button onClick={() => handleWithdrawDoor(row.door)} disabled={doorBusy === row.door}
-                            className="rounded-lg border border-red-100 bg-white px-2.5 py-1 text-[11px] font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50 dark:bg-slate-900">{t('door_withdraw')}</button>
+                            className="rounded-lg border border-red-100 bg-white px-2.5 py-1 text-[11px] font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50 dark:bg-slate-900 dark:border-red-900">{t('door_withdraw')}</button>
                         </div>
                       </div>
                       {row.state === 'waiting_proof' && row.recordValue && (
@@ -572,7 +572,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                   <input value={doorDraft} onChange={e => setDoorDraft(e.target.value)} placeholder="seed.example.org" dir="ltr"
                     className="h-9 min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
                   <button type="submit" disabled={doorBusy === '+' || !normalizeDoor(doorDraft)}
-                    className="h-9 shrink-0 rounded-full border border-emerald-200 bg-white px-3.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-50 dark:bg-slate-900">{doorBusy === '+' ? '…' : t('door_add')}</button>
+                    className="h-9 shrink-0 rounded-full border border-emerald-200 bg-white px-3.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-50 dark:bg-slate-900 dark:border-emerald-900 dark:text-emerald-300">{doorBusy === '+' ? '…' : t('door_add')}</button>
                 </form>
               </div>
             </div>
@@ -611,9 +611,9 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
               role="switch"
               aria-checked={reflectsOn}
               title={reflectsOn ? t('reflect_on_title') : t('reflect_off_title')}
-              className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${reflectsOn ? 'bg-emerald-600' : 'bg-slate-300'}`}
+              className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${reflectsOn ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'}`}
             >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${reflectsOn ? 'translate-x-6' : 'translate-x-1'}`} />
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform dark:bg-slate-900 ${reflectsOn ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
           </div>
 
@@ -632,9 +632,9 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                 role="switch"
                 aria-checked={strictOn}
                 title={strictOn ? t('strict_on_title') : t('strict_off_title')}
-                className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${strictOn ? 'bg-emerald-600' : 'bg-slate-300'}`}
+                className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${strictOn ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'}`}
               >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${strictOn ? 'translate-x-6' : 'translate-x-1'}`} />
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform dark:bg-slate-900 ${strictOn ? 'translate-x-6' : 'translate-x-1'}`} />
               </button>
             </div>
           )}
@@ -653,9 +653,9 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                 disabled={isTogglingCradle}
                 role="switch"
                 aria-checked={cradleOn}
-                className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${cradleOn ? 'bg-emerald-600' : 'bg-slate-300'}`}
+                className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${cradleOn ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'}`}
               >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${cradleOn ? 'translate-x-6' : 'translate-x-1'}`} />
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform dark:bg-slate-900 ${cradleOn ? 'translate-x-6' : 'translate-x-1'}`} />
               </button>
             </div>
           )}

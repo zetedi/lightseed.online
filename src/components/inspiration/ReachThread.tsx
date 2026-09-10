@@ -63,7 +63,7 @@ const AUDIENCE_OPTIONS: { value: ReachAudience | undefined; labelKey: 'role_owne
 ];
 
 const SunAvatar = () => (
-    <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-amber-200 bg-amber-50 text-amber-500 shadow-inner">
+    <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-amber-200 bg-amber-50 text-amber-500 shadow-inner dark:border-amber-900 dark:bg-amber-950/40">
         <div className="pointer-events-none absolute -inset-1 rounded-full bg-amber-300/20 blur-sm"></div>
         <span className="relative z-10"><Icons.Sun /></span>
     </div>
@@ -71,12 +71,12 @@ const SunAvatar = () => (
 
 const InitialAvatar = ({ name, photo }: { name?: string, photo?: string }) => (
     photo
-        ? <img src={photo} alt={name || ''} className="h-10 w-10 shrink-0 rounded-full border-2 border-emerald-100 object-cover" />
-        : <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-emerald-100 bg-emerald-50 font-bold uppercase text-emerald-600">{name?.trim()?.charAt(0) || <Icons.Tree />}</div>
+        ? <img src={photo} alt={name || ''} className="h-10 w-10 shrink-0 rounded-full border-2 border-emerald-100 object-cover dark:border-emerald-900" />
+        : <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-emerald-100 bg-emerald-50 font-bold uppercase text-emerald-600 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300">{name?.trim()?.charAt(0) || <Icons.Tree />}</div>
 );
 
 const GroupAvatar = () => (
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-emerald-100 bg-emerald-50 text-emerald-600">
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-emerald-100 bg-emerald-50 text-emerald-600 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300">
         <Icons.Users />
     </div>
 );
@@ -568,7 +568,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                             {isGroup ? <GroupAvatar /> : <InitialAvatar name={selectedTree?.name} photo={selectedTree?.latestGrowthUrl || selectedTree?.imageUrl} />}
                         </button>
                     ) : (
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-amber-200 bg-amber-50 text-amber-500">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-amber-200 bg-amber-50 text-amber-500 dark:border-amber-900 dark:bg-amber-950/40">
                             <Icons.Sun />
                         </div>
                     )}
@@ -579,7 +579,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                                 <span className="ml-1.5 text-xs font-normal text-slate-400">({partnerPersonName})</span>
                             )}
                         </div>
-                        <div className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-700">
+                        <div className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-300">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                             <span>{mode === 'tree' ? (isGroup ? `${t('group_reach')}${threadMeta?.participantUids?.length ? ` · ${t('in_circle').replace('{n}', String(threadMeta.participantUids.length))}` : groupThread?.participantCount ? ` · ${t('in_circle').replace('{n}', String(groupThread.participantCount))}` : ''}` : t('mycelial_reach')) : `${aiName} · ${usage}/21`}</span>
                         </div>
@@ -626,7 +626,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                                         key={opt.labelKey}
                                         type="button"
                                         onClick={() => setAudience(opt.value)}
-                                        className={`rounded-full px-3 py-1 text-[11px] font-bold transition-colors ${active ? 'bg-emerald-600 text-white shadow' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                                        className={`rounded-full px-3 py-1 text-[11px] font-bold transition-colors ${active ? 'bg-emerald-600 text-white shadow' : 'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800'}`}
                                     >
                                         {t(opt.labelKey)}
                                     </button>
@@ -644,7 +644,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                     if (m.system) {
                         return (
                             <div key={i} className="flex justify-center px-4">
-                                <span dir="auto" className="rounded-full bg-amber-50 px-3 py-1 text-center text-[11px] font-medium leading-snug text-amber-700/90 ring-1 ring-amber-100">
+                                <span dir="auto" className="rounded-full bg-amber-50 px-3 py-1 text-center text-[11px] font-medium leading-snug text-amber-700/90 ring-1 ring-amber-100 dark:bg-amber-950/40">
                                     ⛓️ {m.text}
                                 </span>
                             </div>
@@ -669,14 +669,14 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                             <div dir="auto" className={`w-fit rounded-2xl px-4 py-2 text-[13.5px] leading-snug ${
                                 m.role === 'user'
                                     ? 'bg-emerald-600 text-white rounded-br-sm shadow'
-                                    : 'bg-white border border-emerald-50 text-slate-800 rounded-bl-sm shadow-sm font-medium italic'
+                                    : 'bg-white border border-emerald-50 text-slate-800 rounded-bl-sm shadow-sm font-medium italic dark:bg-slate-900 dark:text-slate-100'
                             } ${m.careAlert === 'watering' ? 'ring-2 ring-sky-400' : ''}`}>
                                 {m.retracted
                                     ? <span className="italic opacity-60">{t('msg_retracted')}</span>
                                     : m.text.split('\n').map((line, j) => (
                                     <span key={j}>
                                         {linkifyParts(line).map((part, k) => part.type === 'link'
-                                            ? <a key={k} href={part.value} rel="noopener noreferrer nofollow" className={`underline underline-offset-2 break-all ${m.role === 'user' ? 'text-emerald-50 hover:text-white' : 'text-emerald-700 hover:text-emerald-900'}`}>{part.value}</a>
+                                            ? <a key={k} href={part.value} rel="noopener noreferrer nofollow" className={`underline underline-offset-2 break-all ${m.role === 'user' ? 'text-emerald-50 hover:text-white' : 'text-emerald-700 hover:text-emerald-900 dark:text-emerald-300'}`}>{part.value}</a>
                                             : <span key={k}>{part.value}</span>)}
                                         {j < m.text.split('\n').length - 1 && <br />}
                                     </span>
@@ -799,7 +799,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
             {/* A sender without a tree still speaks — as themself. The line keeps provenance
                 honest and quietly invites the planting. */}
             {mode === 'tree' && lightseed && !activeTree && (
-                <div className="border-t border-emerald-100 bg-emerald-50/70 px-4 py-2 text-center text-xs text-emerald-800">
+                <div className="border-t border-emerald-100 bg-emerald-50/70 px-4 py-2 text-center text-xs text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/70 dark:text-emerald-200">
                     🌱 {t('speak_as_self')}
                 </div>
             )}

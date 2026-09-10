@@ -256,7 +256,7 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                         />
                     ) : (
                         tree.domain
-                            ? <a href={`https://${tree.domain}`} target="_blank" rel="noreferrer" className="flex-1 text-left text-emerald-600 text-sm hover:underline font-mono">{tree.domain}</a>
+                            ? <a href={`https://${tree.domain}`} target="_blank" rel="noreferrer" className="flex-1 text-left text-emerald-600 text-sm hover:underline font-mono dark:text-emerald-300">{tree.domain}</a>
                             : <span className="flex-1 text-left text-slate-400 text-sm">—</span>
                     )}
                 </div>
@@ -284,7 +284,7 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                                         onClick={() => onVisibilityChange(v)}
                                         className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-sm font-bold transition-colors sm:w-auto sm:justify-center sm:rounded-full sm:border-transparent sm:px-3 sm:py-1 sm:text-xs ${on
                                             ? (v === 'private' ? 'border-slate-700 bg-slate-700 text-white' : 'border-emerald-600 bg-emerald-600 text-white')
-                                            : 'border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 sm:bg-slate-100'}`}
+                                            : 'border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 sm:bg-slate-100 dark:border-slate-700 dark:bg-slate-900'}`}
                                     >
                                         <span>{label}</span>
                                         <span className={`sm:hidden ${on ? 'opacity-100' : 'opacity-0'}`} aria-hidden>✓</span>
@@ -307,7 +307,7 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                         <button
                             type="button"
                             onClick={onConvertType}
-                            className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-bold text-sky-700 transition-colors hover:bg-sky-100"
+                            className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-bold text-sky-700 transition-colors hover:bg-sky-100 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-300"
                         >
                             {(tree.treeType === 'GUARDED' || isNature) ? t('convert_to_lifetree') : t('convert_to_guarded')}
                         </button>
@@ -325,7 +325,7 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                     </div>
                 )}
                 {isEditing && canDelete && (
-                    <button type="button" onClick={onRequestDelete} className="relative mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 py-2 text-sm font-bold text-red-600 transition-colors hover:bg-red-100">
+                    <button type="button" onClick={onRequestDelete} className="relative mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 py-2 text-sm font-bold text-red-600 transition-colors hover:bg-red-100 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
                         <Icons.Trash />
                         <span>{t('delete_lifetree')}</span>
                         {deleteIsStaffOnly && <SuperDot />}
@@ -338,7 +338,7 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                 <div className="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                     <div className="mb-2 flex items-center justify-between">
                         <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">{t('map')}</h4>
-                        {tree.locationName && <span dir="auto" className="text-xs text-emerald-700">{tree.locationName}</span>}
+                        {tree.locationName && <span dir="auto" className="text-xs text-emerald-700 dark:text-emerald-300">{tree.locationName}</span>}
                     </div>
                     <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
                         <iframe

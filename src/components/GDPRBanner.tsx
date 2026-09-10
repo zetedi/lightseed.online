@@ -29,7 +29,7 @@ export const GDPRBanner = () => {
                             type="checkbox"
                             checked={checked}
                             onChange={e => setChecked(e.target.checked)}
-                            className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
+                            className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer dark:text-emerald-300"
                         />
                         <span className="font-medium">{t('gdpr_accept')}</span>
                     </label>

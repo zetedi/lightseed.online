@@ -144,7 +144,7 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved, to }: {
                 <div className="grid grid-cols-3 gap-2">
                     {(['service', 'bed', 'code'] as OfferingKind[]).map(k => (
                         <button key={k} type="button" onClick={() => !editing && setKind(k)} disabled={editing}
-                            className={`flex flex-col items-center gap-1.5 rounded-xl border-2 px-3 py-3 text-center transition-all ${kind === k ? 'border-emerald-600 bg-emerald-50 text-emerald-800' : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200'}`}>
+                            className={`flex flex-col items-center gap-1.5 rounded-xl border-2 px-3 py-3 text-center transition-all ${kind === k ? 'border-emerald-600 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200' : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200 dark:border-slate-800 dark:bg-slate-900'}`}>
                             <span className="[&>svg]:h-5 [&>svg]:w-5">{k === 'service' ? <Icons.Drop /> : k === 'bed' ? <Icons.Moon /> : <Icons.Globe />}</span>
                             <span className="text-xs font-bold uppercase tracking-wide">{k === 'service' ? t('offer_service') : k === 'bed' ? t('offer_bed') : t('offer_code')}</span>
                         </button>
@@ -201,7 +201,7 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved, to }: {
 
                 <ImagePicker onImageSelect={pickImage} previewUrl={imageUrl} loading={uploading} className="h-40" />
 
-                {problem && <p className="text-xs font-medium text-rose-600">{speak(problem)}</p>}
+                {problem && <p className="text-xs font-medium text-rose-600 dark:text-rose-300">{speak(problem)}</p>}
                 <button type="submit" disabled={!!problem || saving || uploading}
                     className={modalButton('primary', { extra: 'hover:brightness-110' })}
                     style={{ backgroundColor: HEART, boxShadow: '0 10px 15px -3px rgba(41,132,66,0.25)' }}>

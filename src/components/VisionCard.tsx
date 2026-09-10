@@ -25,7 +25,7 @@ export const VisionCard = ({ vision, density = 'cards' }: { vision: Vision; dens
     // ROWS — avatar, heading + subtext on one line of the list.
     if (density === 'rows') {
         return (
-            <div className={`flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm ${POP} hover:-translate-y-0.5 active:-translate-y-0.5`}>
+            <div className={`flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900 ${POP} hover:-translate-y-0.5 active:-translate-y-0.5`}>
                 {avatar('h-14 w-14')}
                 <div className="min-w-0 flex-1">
                     <h3 dir="auto" className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{heading}</h3>
@@ -39,7 +39,7 @@ export const VisionCard = ({ vision, density = 'cards' }: { vision: Vision; dens
     // MINI — a half-size card.
     if (density === 'mini') {
         return (
-            <div className={`overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm ${POP}`}>
+            <div className={`overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900 ${POP}`}>
                 <div className="h-20 overflow-hidden bg-[#04070f]">
                     <img src={visionImage} alt={heading} className="h-full w-full object-cover" />
                 </div>
@@ -53,7 +53,7 @@ export const VisionCard = ({ vision, density = 'cards' }: { vision: Vision; dens
     // CARDS — the full card. Fixed height (matching PulseCard) so every vision in the grid is the
     // same size; the galaxy/image block stays h-36 and the quote fills the rest of the card.
     return (
-        <div className={`flex h-60 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm ${POP} group`}>
+        <div className={`flex h-60 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900 ${POP} group`}>
             {/* The image (or the galaxy) carries the card, heading overlaid. */}
             <div className="relative h-36 shrink-0 bg-[#04070f] overflow-hidden">
                     <img src={visionImage} alt={heading} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
@@ -73,7 +73,7 @@ export const VisionCard = ({ vision, density = 'cards' }: { vision: Vision; dens
                     </div>
 
                     {vision.link && (
-                        <a href={vision.link} target="_blank" rel="noopener noreferrer" className="absolute top-2 right-2 bg-white/90 p-1.5 rounded-full text-amber-600 hover:text-amber-800 hover:scale-110 transition-all shadow-sm z-10 dark:bg-slate-900/90">
+                        <a href={vision.link} target="_blank" rel="noopener noreferrer" className="absolute top-2 right-2 bg-white/90 p-1.5 rounded-full text-amber-600 hover:text-amber-800 hover:scale-110 transition-all shadow-sm z-10 dark:bg-slate-900/90 dark:text-amber-300">
                             <Icons.Globe />
                         </a>
                     )}

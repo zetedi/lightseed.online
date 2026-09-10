@@ -212,8 +212,8 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
           })}
         </div>
         <div className="mt-3 flex items-center justify-center gap-4 text-[10px] text-slate-400">
-          <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-rose-100" />{t('booked')}</span>
-          <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-emerald-100" />{t('available')}</span>
+          <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-rose-100 dark:bg-rose-950/40" />{t('booked')}</span>
+          <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-emerald-100 dark:bg-emerald-950/40" />{t('available')}</span>
         </div>
       </div>
 
@@ -222,10 +222,10 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
       {uid && (
         <div className="rounded-2xl border border-slate-100 bg-white p-5 dark:bg-slate-900 dark:border-slate-800">
           {isHost && (
-            <p className="mb-3 rounded-lg bg-indigo-50 px-3 py-2 text-xs text-indigo-700">{t('stay_own_bed_note')}</p>
+            <p className="mb-3 rounded-lg bg-indigo-50 px-3 py-2 text-xs text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300">{t('stay_own_bed_note')}</p>
           )}
           {othersChoosing && !isHost && (
-            <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">{t('bed_being_viewed')}</p>
+            <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">{t('bed_being_viewed')}</p>
           )}
           <div className="mb-3 flex items-center justify-between text-sm">
             <span className="text-slate-500">{t('arrival')} → {t('departure')}</span>

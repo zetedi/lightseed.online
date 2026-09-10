@@ -41,9 +41,9 @@ export const NetworkStatus = () => {
                     <div className="w-60 rounded-2xl border border-amber-200/80 bg-white/95 px-4 py-3 shadow-xl backdrop-blur dark:bg-slate-900/95">
                         <div className="mb-2 flex items-center justify-between text-[11px] font-bold">
                             <span className="text-slate-600 dark:text-slate-300">{t('uploading_photo')}</span>
-                            <span className="tabular-nums text-amber-600">{net.uploadPct}%</span>
+                            <span className="tabular-nums text-amber-600 dark:text-amber-300">{net.uploadPct}%</span>
                         </div>
-                        <div className="h-1.5 overflow-hidden rounded-full bg-amber-100">
+                        <div className="h-1.5 overflow-hidden rounded-full bg-amber-100 dark:bg-amber-950/40">
                             <div
                                 className="h-full rounded-full bg-gradient-to-r from-amber-300 to-amber-500 transition-[width] duration-300"
                                 style={{ width: `${net.uploadPct}%` }}

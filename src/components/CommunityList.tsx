@@ -65,14 +65,14 @@ const CommunityCard = ({ community, isGenesis = false, onSelect, standing = 'joi
   if (density === 'rows') {
     return (
       <div onClick={() => onSelect(community)}
-        className={`flex cursor-pointer items-center gap-3 rounded-xl border bg-white p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${isGenesis ? 'border-amber-300 ring-2 ring-amber-300/30' : 'border-slate-100'}`}>
+        className={`flex cursor-pointer items-center gap-3 rounded-xl border bg-white p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${isGenesis ? 'border-amber-300 ring-2 ring-amber-300/30' : 'border-slate-100 dark:border-slate-800'}`}>
         <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-100 bg-slate-50 text-slate-400 dark:bg-slate-900 dark:border-slate-800">
           {community.logoUrl ? <Picture size={480} src={community.logoUrl} className="h-full w-full object-cover" alt="" /> : <Icons.Globe />}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-bold text-slate-800 dark:text-slate-100">{community.name}{isGenesis && <span className="ml-2 text-[9px] font-black uppercase tracking-wide text-amber-600">{t('community_zero')}</span>}</p>
+          <p className="truncate text-sm font-bold text-slate-800 dark:text-slate-100">{community.name}{isGenesis && <span className="ml-2 text-[9px] font-black uppercase tracking-wide text-amber-600 dark:text-amber-300">{t('community_zero')}</span>}</p>
           {circle
-            ? <p className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-violet-600 [&>svg]:h-3 [&>svg]:w-3"><Icons.Venn /> {t('tree_circle_badge')}</p>
+            ? <p className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-violet-600 [&>svg]:h-3 [&>svg]:w-3 dark:text-violet-300"><Icons.Venn /> {t('tree_circle_badge')}</p>
             : <p className="truncate font-mono text-[11px] text-slate-400">{community.domain}{verified && <span title={t('domain_verified')} className="ml-1 font-sans font-bold text-emerald-500">✓</span>}</p>}
         </div>
         <StandingMark standing={standing} community={community} onJoin={onJoin} small />
@@ -84,7 +84,7 @@ const CommunityCard = ({ community, isGenesis = false, onSelect, standing = 'joi
   if (density === 'mini') {
     return (
       <div onClick={() => onSelect(community)}
-        className={`group relative flex min-h-[8.5rem] cursor-pointer flex-col justify-end overflow-hidden rounded-xl border shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl ${isGenesis ? 'border-amber-400 ring-2 ring-amber-400/25' : 'border-slate-100'}`}
+        className={`group relative flex min-h-[8.5rem] cursor-pointer flex-col justify-end overflow-hidden rounded-xl border shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl ${isGenesis ? 'border-amber-400 ring-2 ring-amber-400/25' : 'border-slate-100 dark:border-slate-800'}`}
         style={!hero ? { backgroundColor: (community as any).theme?.primary || tabTone('communities') } : undefined}>
         {hero && (<><Picture size={1200} src={hero} className="absolute inset-0 h-full w-full object-cover" alt={community.name} /><div className="absolute inset-0 bg-gradient-to-t from-black/75 to-black/10" /></>)}
         {!hero && <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent" />}
@@ -104,7 +104,7 @@ const CommunityCard = ({ community, isGenesis = false, onSelect, standing = 'joi
   return (
   <div
       onClick={() => onSelect(community)}
-      className={`group rounded-xl overflow-hidden shadow-sm hover:shadow-2xl active:shadow-2xl border transition-all cursor-pointer hover:-translate-y-1 active:-translate-y-1 relative min-h-[15rem] flex flex-col justify-end ${isGenesis ? 'border-amber-400 ring-4 ring-amber-400/20 md:col-span-2 lg:col-span-1' : 'border-slate-100'}`}
+      className={`group rounded-xl overflow-hidden shadow-sm hover:shadow-2xl active:shadow-2xl border transition-all cursor-pointer hover:-translate-y-1 active:-translate-y-1 relative min-h-[15rem] flex flex-col justify-end ${isGenesis ? 'border-amber-400 ring-4 ring-amber-400/20 md:col-span-2 lg:col-span-1' : 'border-slate-100 dark:border-slate-800'}`}
       style={!hero ? { backgroundColor: (community as any).theme?.primary || tabTone('communities') } : undefined}
   >
       {hero && (
@@ -359,7 +359,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
                       <span>{t('start_community')}</span>
                   </button>
               ) : (
-                  <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-amber-700 text-sm flex items-center gap-3">
+                  <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-amber-700 text-sm flex items-center gap-3 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-300">
                       <Icons.Tree />
                       <span>{t('community_need_tree')}</span>
                   </div>
@@ -370,13 +370,13 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
         ) : (
           <>
           {matches && matches.length > 0 && (
-            <div className="mb-8 space-y-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 animate-in fade-in slide-in-from-top-2">
+            <div className="mb-8 space-y-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 animate-in fade-in slide-in-from-top-2 dark:border-amber-900 dark:bg-amber-950/60">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-amber-600">{t('resonant_from_visions')}</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-300">{t('resonant_from_visions')}</p>
                 <button onClick={() => setMatches(null)} className="shrink-0 text-xs font-medium text-slate-400 transition-colors hover:text-slate-600">{t('clear')}</button>
               </div>
               {matches.map((m, i) => (
-                <div key={m.community.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-100 bg-white p-3 shadow-sm dark:bg-slate-900">
+                <div key={m.community.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-100 bg-white p-3 shadow-sm dark:bg-slate-900 dark:border-amber-900">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500 text-sm font-black text-white">{i + 1}</span>
                   <button onClick={() => onSelect(m.community)} className="min-w-0 flex-1 text-left">
                     <span className="block truncate text-sm font-bold text-slate-800 hover:text-amber-700 dark:text-slate-100">{m.community.name}</span>

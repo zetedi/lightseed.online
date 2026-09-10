@@ -67,7 +67,7 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
   const statusTone = { open: 'bg-amber-50 text-amber-700', accepted: 'bg-emerald-50 text-emerald-700', withdrawn: 'bg-slate-100 text-slate-500', declined: 'bg-slate-100 text-slate-500' } as const;
   // The offered-to card: visible in every section (BeingProfile's banner seat).
   const careBanner = status ? (
-    <div className="mx-auto mb-4 max-w-2xl rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm dark:bg-slate-900">
+    <div className="mx-auto mb-4 max-w-2xl rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm dark:bg-slate-900 dark:border-emerald-900">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{t('offering_offered_to')}</div>
@@ -192,7 +192,7 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
             <div>
               <div className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('more_detail')}</div>
               <a href={offering.offeringUrl} target="_blank" rel="noopener noreferrer"
-                className="mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100">
+                className="mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300">
                 <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Globe /></span>
                 <span className="truncate">{offering.offeringUrl.replace(/^https?:\/\//, '')}</span>
               </a>
@@ -205,7 +205,7 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
               <p className="mt-1 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
                 {offering.authorPhoto
                   ? <img src={offering.authorPhoto} alt="" className="h-6 w-6 rounded-full object-cover" referrerPolicy="no-referrer" />
-                  : <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 [&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Tree /></span>}
+                  : <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 [&>svg]:h-3.5 [&>svg]:w-3.5 dark:bg-emerald-950/40 dark:text-emerald-300"><Icons.Tree /></span>}
                 {offering.authorName}
               </p>
             </div>
@@ -223,9 +223,9 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
                 aria-checked={active}
                 disabled={busy}
                 onClick={toggleActive}
-                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors disabled:opacity-50 ${active ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors disabled:opacity-50 ${active ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}
               >
-                <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${active ? 'translate-x-5' : 'translate-x-0'}`} />
+                <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 dark:bg-slate-900 ${active ? 'translate-x-5' : 'translate-x-0'}`} />
               </button>
             </div>
           )}

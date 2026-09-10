@@ -77,7 +77,7 @@ export const BeingQr = ({ lid, name, savedHref, canMint = false, onMint, classNa
                         <p className="break-all font-mono text-[11px] text-slate-400">{href || liveHref}</p>
                         <p className="max-w-xs text-xs text-slate-500">{t('qr_scan_note')}</p>
                         {stale && (
-                            <div className="w-full rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                            <div className="w-full rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
                                 {t('qr_stale_note')} {canMint ? t('qr_stale_refresh') : t('qr_stale_keeper')}
                             </div>
                         )}
@@ -89,7 +89,7 @@ export const BeingQr = ({ lid, name, savedHref, canMint = false, onMint, classNa
                                 </a>
                             )}
                             {stale && canMint && (
-                                <button onClick={refresh} className="rounded-full border border-amber-300 bg-amber-100 px-4 py-2 text-xs font-bold text-amber-800 transition-colors hover:bg-amber-200">
+                                <button onClick={refresh} className="rounded-full border border-amber-300 bg-amber-100 px-4 py-2 text-xs font-bold text-amber-800 transition-colors hover:bg-amber-200 dark:bg-amber-950/40 dark:text-amber-200">
                                     {t('qr_refresh_link')}
                                 </button>
                             )}

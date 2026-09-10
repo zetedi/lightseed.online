@@ -229,7 +229,7 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
                 <div className="space-y-4">
                     <div className="flex justify-between items-center border-b border-slate-100 pb-3 dark:border-slate-800">
                         <span className="text-sm text-slate-600 dark:text-slate-300">{t('validation_score')}</span>
-                        <span className="font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">{pulse.validationScore || pulse.loveCount || 0}</span>
+                        <span className="font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded dark:text-emerald-300 dark:bg-emerald-950/40">{pulse.validationScore || pulse.loveCount || 0}</span>
                     </div>
                     <p className="text-xs text-slate-500 italic">
                         {tokensOn ? t('memory_note_tokens') : t('memory_note')}

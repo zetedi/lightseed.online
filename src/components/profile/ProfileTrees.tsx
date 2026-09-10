@@ -90,7 +90,7 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
         <SectionTitle title={t('planted_trees')} sub={t('planted_trees_sub')} />
 
         {seven && (
-          <div className="mb-4 rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4">
+          <div className="mb-4 rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 dark:border-emerald-900 dark:bg-emerald-950/50">
             {/* On MOBILE the seven folds to one line (dots + name), an accordion handle, so the
                 first tree stays visible right under it; on sm+ it is always open (the handle
                 stops being a button). */}
@@ -108,15 +108,15 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
                       i < seven.sustaining
                         ? 'bg-emerald-500'
                         : i < seven.planted
-                          ? 'border-2 border-emerald-300 bg-white'
-                          : 'border border-dashed border-slate-300 bg-transparent'
+                          ? 'border-2 border-emerald-300 bg-white dark:bg-slate-900'
+                          : 'border border-dashed border-slate-300 bg-transparent dark:border-slate-700'
                     }`}
                   />
                 ))}
               </div>
               <p className="text-sm font-bold text-slate-800 dark:text-slate-100">
                 {t('seven_title')}
-                <span className="ml-2 text-emerald-700">{Math.min(seven.sustaining, seven.target)} / {seven.target}</span>
+                <span className="ml-2 text-emerald-700 dark:text-emerald-300">{Math.min(seven.sustaining, seven.target)} / {seven.target}</span>
               </p>
               <span className={`ml-auto text-slate-400 transition-transform sm:hidden ${sevenOpen ? '-rotate-90' : 'rotate-90'}`}>
                 <Icons.ChevronRight />
@@ -135,7 +135,7 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
                       key={s.treeId}
                       type="button"
                       onClick={() => lackTree && onViewTree(lackTree, s.witnessed ? 'care' : 'circle')}
-                      className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 transition-colors hover:bg-emerald-100 dark:bg-slate-900 dark:text-slate-300"
+                      className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 transition-colors hover:bg-emerald-100 dark:bg-slate-900 dark:text-slate-300 dark:border-emerald-900"
                     >
                       <span className="max-w-[9rem] truncate font-bold">{s.name}</span>
                       <span className="text-slate-400">
@@ -150,9 +150,9 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
           </div>
         )}
         {treesNeedingCare.length > 0 && (
-          <div className="mb-4 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+          <div className="mb-4 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/40">
             <span className="mt-0.5 text-amber-500"><Icons.Eye /></span>
-            <p className="text-xs leading-relaxed text-amber-800">{t('care_nudge')}</p>
+            <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-200">{t('care_nudge')}</p>
           </div>
         )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -169,13 +169,13 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
             !allValidated && <p className="text-slate-400 text-center py-10 col-span-full">{t('no_trees_yet')}</p>
           ) : (
             [...myTrees].sort((a: Lifetree, b: Lifetree) => (b.id === defaultTreeId ? 1 : 0) - (a.id === defaultTreeId ? 1 : 0)).map((tree: Lifetree) => (
-              <div key={tree.id} onClick={() => onViewTree(tree)} className={`border rounded-lg p-4 hover:shadow-md cursor-pointer transition-all flex items-center justify-between group bg-white ${defaultTreeId === tree.id ? 'border-amber-300 ring-1 ring-amber-100' : 'border-emerald-100'}`}>
+              <div key={tree.id} onClick={() => onViewTree(tree)} className={`border rounded-lg p-4 hover:shadow-md cursor-pointer transition-all flex items-center justify-between group bg-white dark:bg-slate-900 ${defaultTreeId === tree.id ? 'border-amber-300 ring-1 ring-amber-100' : 'border-emerald-100 dark:border-emerald-900'}`}>
                 <div className="flex items-center space-x-4">
                   <Picture size={480} src={tree.latestGrowthUrl || tree.imageUrl || '/seed.webp'} className="w-16 h-16 rounded object-cover bg-slate-100 dark:bg-slate-800" />
                   <div>
                     <h3 className="font-bold text-slate-800 flex items-center gap-1.5 dark:text-slate-100">
                       {tree.name}
-                      {defaultTreeId === tree.id && <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-700"><Icons.Star filled size={10} /> {t('default_chip')}</span>}
+                      {defaultTreeId === tree.id && <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"><Icons.Star filled size={10} /> {t('default_chip')}</span>}
                     </h3>
                     <p className="text-xs text-slate-500">{t('chain_block_height')}: {tree.blockHeight}</p>
                     {isExplicitlyValidatedTree(tree) ? (
@@ -188,7 +188,7 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
                           </button>
                         )}
                         {fadingValidated(tree) && !lapsedValidated(tree) && (
-                          <span className="text-[10px] font-bold text-amber-600">{daysUntilLapse(tree)}d</span>
+                          <span className="text-[10px] font-bold text-amber-600 dark:text-amber-300">{daysUntilLapse(tree)}d</span>
                         )}
                       </div>
                     ) : (
@@ -228,14 +228,14 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
           <SectionTitle title={t('tended_trees')} sub={t('tended_trees_sub')} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {tendedTrees.map(({ tree, role }) => (
-              <div key={tree.id} onClick={() => onViewTree(tree)} className="border border-emerald-100 rounded-lg p-4 hover:shadow-md cursor-pointer transition-all flex items-center justify-between group bg-emerald-50/30">
+              <div key={tree.id} onClick={() => onViewTree(tree)} className="border border-emerald-100 rounded-lg p-4 hover:shadow-md cursor-pointer transition-all flex items-center justify-between group bg-emerald-50/30 dark:border-emerald-900 dark:bg-emerald-950/30">
                 <div className="flex items-center space-x-4">
                   <Picture size={480} src={tree.latestGrowthUrl || tree.imageUrl || '/seed.webp'} className="w-16 h-16 rounded object-cover bg-slate-100 dark:bg-slate-800" />
                   <div>
                     <h3 className="font-bold text-slate-800 dark:text-slate-100">{tree.name}</h3>
                     <p className="text-xs text-slate-500">{t('chain_block_height')}: {tree.blockHeight}</p>
                     <div className="mt-1 flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold [&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Venn /> {t(roleLabelKey(role))}</span>
+                      <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold [&>svg]:h-3.5 [&>svg]:w-3.5 dark:bg-emerald-950/40 dark:text-emerald-300"><Icons.Venn /> {t(roleLabelKey(role))}</span>
                       {isWateringOverdue(tree) && <button type="button" title={t('needs_water_open_care')} aria-label={t('needs_water_open_care')} onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
                     </div>
                   </div>
@@ -254,21 +254,21 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
         <SectionTitle title={t('guarded_trees')} sub={t('guarded_trees_sub')} />
         {guardedOnly.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-slate-400 dark:border-slate-700">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-sky-50 text-sky-500"><Icons.Shield /></div>
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-sky-50 text-sky-500 dark:bg-sky-950/40"><Icons.Shield /></div>
             <p className="text-sm">{t('not_guarding')}</p>
             <p className="mt-1 text-xs">{t('guard_hint')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {guardedOnly.map((tree: Lifetree) => (
-              <div key={tree.id} onClick={() => onViewTree(tree)} className="border border-sky-100 rounded-lg p-4 hover:shadow-md cursor-pointer transition-all flex items-center justify-between group bg-sky-50/40">
+              <div key={tree.id} onClick={() => onViewTree(tree)} className="border border-sky-100 rounded-lg p-4 hover:shadow-md cursor-pointer transition-all flex items-center justify-between group bg-sky-50/40 dark:border-sky-900 dark:bg-sky-950/40">
                 <div className="flex items-center space-x-4">
                   <Picture size={480} src={tree.latestGrowthUrl || tree.imageUrl || '/seed.webp'} className="w-16 h-16 rounded object-cover bg-slate-100 dark:bg-slate-800" />
                   <div>
                     <h3 className="font-bold text-slate-800 dark:text-slate-100">{tree.name}</h3>
                     <p className="text-xs text-slate-500">{t('chain_block_height')}: {tree.blockHeight}</p>
                     <div className="mt-1 flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1 text-[10px] bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-bold"><Icons.Shield /> {t('role_guardian')}</span>
+                      <span className="inline-flex items-center gap-1 text-[10px] bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-bold dark:bg-sky-950/40 dark:text-sky-300"><Icons.Shield /> {t('role_guardian')}</span>
                       {isWateringOverdue(tree) && <button type="button" title={t('needs_water_open_care')} aria-label={t('needs_water_open_care')} onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
                     </div>
                   </div>

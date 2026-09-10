@@ -59,7 +59,7 @@ export const LifeseedWidget: React.FC<Props> = ({ domain, onClose }) => {
                     <Logo width={28} height={28} />
                     <div>
                         <p className="text-xs text-slate-400 leading-none">{t('widget_trees_at')}</p>
-                        <p className="text-sm font-semibold text-emerald-700 leading-tight truncate max-w-[200px]">{domain || t('widget_unknown_domain')}</p>
+                        <p className="text-sm font-semibold text-emerald-700 leading-tight truncate max-w-[200px] dark:text-emerald-300">{domain || t('widget_unknown_domain')}</p>
                     </div>
                 </div>
                 <button
@@ -88,7 +88,7 @@ export const LifeseedWidget: React.FC<Props> = ({ domain, onClose }) => {
                             href={nodeOrigin}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-emerald-600 hover:underline text-xs font-medium"
+                            className="text-emerald-600 hover:underline text-xs font-medium dark:text-emerald-300"
                         >
                             {t('widget_plant_one_on').replace('{domain}', charter.domain)}
                         </a>
@@ -122,7 +122,7 @@ export const LifeseedWidget: React.FC<Props> = ({ domain, onClose }) => {
                                             )}
                                         </div>
                                         {tree.shortTitle && <p className="text-xs text-slate-500 truncate mt-0.5">{tree.shortTitle}</p>}
-                                        {tree.locationName && <p className="text-xs text-emerald-600 truncate mt-0.5">{tree.locationName}</p>}
+                                        {tree.locationName && <p className="text-xs text-emerald-600 truncate mt-0.5 dark:text-emerald-300">{tree.locationName}</p>}
                                     </div>
                                 </a>
                             </li>

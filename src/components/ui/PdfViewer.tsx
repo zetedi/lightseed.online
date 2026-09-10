@@ -29,14 +29,14 @@ export const PdfViewer = ({ src, title, onClose }: { src: string; title: string;
         <div className="fixed inset-x-0 bottom-0 top-0 z-50 bg-slate-900/90 backdrop-blur-sm sm:top-20">
             <div className="mx-auto h-full w-full max-w-6xl px-2 py-2 sm:px-6 sm:py-6 lg:py-10">
                 <div className="relative flex h-full flex-col rounded-2xl bg-white p-3 pt-12 shadow-2xl sm:p-6 sm:pt-14 dark:bg-slate-900">
-                    <p className="absolute left-4 right-40 top-4 truncate text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 sm:left-6 sm:top-5">
+                    <p className="absolute left-4 right-40 top-4 truncate text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 sm:left-6 sm:top-5 dark:text-emerald-300">
                         {title}
                     </p>
                     {inline && (
                         <a
                             href={src}
                             download
-                            className="absolute right-14 top-3 z-10 inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] font-bold text-emerald-700 transition-colors hover:bg-emerald-100"
+                            className="absolute right-14 top-3 z-10 inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] font-bold text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"
                         >
                             <Icons.Download size={14} /> {t('download')}
                         </a>
@@ -68,7 +68,7 @@ export const PdfViewer = ({ src, title, onClose }: { src: string; title: string;
                                 <a
                                     href={src}
                                     download
-                                    className="inline-flex items-center justify-center gap-2 rounded-full border border-emerald-200 bg-white px-6 py-3 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-50 dark:bg-slate-900"
+                                    className="inline-flex items-center justify-center gap-2 rounded-full border border-emerald-200 bg-white px-6 py-3 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-50 dark:bg-slate-900 dark:border-emerald-900 dark:text-emerald-300"
                                 >
                                     <Icons.Download size={16} /> {t('download')}
                                 </a>

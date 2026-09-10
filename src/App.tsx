@@ -1038,11 +1038,11 @@ const AppContent = () => {
                         toggle={
                             <div className="flex shrink-0 items-center rounded-full bg-white/15 p-0.5 backdrop-blur-sm dark:bg-slate-900/15">
                                 <button onClick={() => setViewMode('grid')} title={t('list_view')} aria-pressed={viewMode === 'grid'}
-                                    className={`rounded-full p-2 transition-all ${viewMode === 'grid' ? 'bg-white text-slate-800 shadow-sm' : 'text-white/75 hover:text-white'}`}>
+                                    className={`rounded-full p-2 transition-all ${viewMode === 'grid' ? 'bg-white text-slate-800 shadow-sm dark:bg-slate-900 dark:text-slate-100' : 'text-white/75 hover:text-white'}`}>
                                     <Icons.List />
                                 </button>
                                 <button onClick={() => setViewMode('map')} title={t('map_view')} aria-pressed={viewMode === 'map'}
-                                    className={`rounded-full p-2 transition-all ${viewMode === 'map' ? 'bg-white text-slate-800 shadow-sm' : 'text-white/75 hover:text-white'}`}>
+                                    className={`rounded-full p-2 transition-all ${viewMode === 'map' ? 'bg-white text-slate-800 shadow-sm dark:bg-slate-900 dark:text-slate-100' : 'text-white/75 hover:text-white'}`}>
                                     <Icons.Map />
                                 </button>
                             </div>
@@ -1161,7 +1161,7 @@ const AppContent = () => {
                                     title={t('past_events_hint')}
                                     className={`whitespace-nowrap rounded-xl border px-3 py-2 text-sm font-medium shadow-sm transition-colors ${showPastEvents
                                         ? 'border-emerald-600 bg-emerald-600 text-white'
-                                        : 'border-emerald-100 bg-white/80 text-slate-500 hover:text-slate-700'}`}
+                                        : 'border-emerald-100 bg-white/80 text-slate-500 hover:text-slate-700 dark:border-emerald-900 dark:bg-slate-900/80'}`}
                                 >
                                     {t('past_events')}
                                 </button>
@@ -1266,7 +1266,7 @@ const AppContent = () => {
     };
 
     return (
-        <div className={`min-h-screen relative font-sans flex flex-col ${effectiveIsDark ? 'text-slate-100' : 'text-slate-800'}`}>
+        <div className={`min-h-screen relative font-sans flex flex-col ${effectiveIsDark ? 'text-slate-100' : 'text-slate-800 dark:text-slate-100'}`}>
             <div className="fixed inset-0 z-0 pointer-events-none" style={backgroundStyle}></div>
             {/* New-deploy prompt — the service worker waits for consent instead of silent swap. */}
             <UpdateToast />
@@ -1870,7 +1870,7 @@ const App = () => {
       <div className="min-h-screen bg-[#05080a] p-3 sm:p-6">
         <SilentUpdate />
         <a href="/" title="Back to lightseed" aria-label="Back to lightseed"
-           className="fixed left-4 top-4 z-50 rounded-full bg-white/10 p-1.5 shadow-lg backdrop-blur transition-colors hover:bg-white/20">
+           className="fixed left-4 top-4 z-50 rounded-full bg-white/10 p-1.5 shadow-lg backdrop-blur transition-colors hover:bg-white/20 dark:bg-slate-900/10">
           <Logo width={38} height={38} />
         </a>
         <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><Loading /></div>}>

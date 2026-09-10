@@ -59,7 +59,7 @@ const PartySide = ({ side, tone, onView }: { side: Side; tone: 'sky' | 'emerald'
 };
 
 const PulseChip = ({ cap, text, tone }: { cap: string; text?: string; tone: 'sky' | 'emerald' }) => (
-  <div className={`min-w-0 rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-3 ${tone === 'sky' ? 'border-l-[3px] border-l-sky-400' : 'border-l-[3px] border-l-emerald-400'}`}>
+  <div className={`min-w-0 rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-3 dark:border-slate-700 dark:bg-slate-900/70 ${tone === 'sky' ? 'border-l-[3px] border-l-sky-400' : 'border-l-[3px] border-l-emerald-400'}`}>
     <span className="mb-1 block font-mono text-[10px] uppercase tracking-[0.12em] text-slate-400">{cap}</span>
     <q className="font-serif text-sm italic text-slate-700 dark:text-slate-200">{text || '—'}</q>
   </div>
@@ -177,7 +177,7 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree, n
                 </div>
               )}
 
-              <div className="mt-6 flex items-start gap-2 rounded-xl bg-emerald-50 px-4 py-3.5 text-sm leading-snug text-emerald-800">
+              <div className="mt-6 flex items-start gap-2 rounded-xl bg-emerald-50 px-4 py-3.5 text-sm leading-snug text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 shrink-0"><path d="M12 3v18M5 10l7-7 7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 <span>{liveStatus === 'ACCEPTED'
                   ? t('align_accepted_note')
@@ -204,7 +204,7 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree, n
               const mine = m.by === currentUserId;
               return (
                 <li key={i} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm ${mine ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                  <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm ${mine ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200'}`}>
                     <span className={`mb-0.5 block text-[10px] font-semibold uppercase tracking-wide ${mine ? 'text-white/70' : 'text-slate-400'}`}>{nameFor(m.by)}</span>
                     <span className="whitespace-pre-wrap break-words">{m.text}</span>
                   </div>
@@ -214,7 +214,7 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree, n
             {liveStatus === 'ACCEPTED' && (
               <li className="flex items-start gap-2.5">
                 <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
-                <p className="text-sm font-medium text-emerald-700">{t('align_finalised')}</p>
+                <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">{t('align_finalised')}</p>
               </li>
             )}
             {liveStatus === 'REJECTED' && (
@@ -288,7 +288,7 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree, n
       hero={{
         imageUrl: initiator.tree?.latestGrowthUrl || initiator.tree?.imageUrl,
         avatar: (
-          <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center rounded-full border-4 border-white bg-sky-50 text-sky-500 shadow-xl">
+          <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center rounded-full border-4 border-white bg-sky-50 text-sky-500 shadow-xl dark:bg-sky-950/40">
             <Icons.Venn />
           </div>
         ),

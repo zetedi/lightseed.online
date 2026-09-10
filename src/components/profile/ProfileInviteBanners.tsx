@@ -71,9 +71,9 @@ export const ProfileInviteBanners: React.FC<ProfileInviteBannersProps> = ({ uid,
       {treeInvites.length > 0 && (
         <div className="mb-6 space-y-3">
           {treeInvites.map(inv => (
-            <div key={inv.id} className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
+            <div key={inv.id} className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm dark:border-emerald-900 dark:bg-emerald-950/40">
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-emerald-900">
+                <p className="text-sm text-emerald-900 dark:text-emerald-200">
                   {t('invite_banner_tree')
                     .replace('{name}', inv.invitedByName || t('someone'))
                     .replace('{role}', t(roleLabelKey(inv.role)).toLowerCase())
@@ -94,9 +94,9 @@ export const ProfileInviteBanners: React.FC<ProfileInviteBannersProps> = ({ uid,
       {communityInvites.length > 0 && (
         <div className="mb-6 space-y-3">
           {communityInvites.map(inv => (
-            <div key={inv.id} className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-lg border border-teal-200 bg-teal-50 p-4 shadow-sm">
+            <div key={inv.id} className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-lg border border-teal-200 bg-teal-50 p-4 shadow-sm dark:border-teal-900 dark:bg-teal-950/40">
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-teal-900">
+                <p className="text-sm text-teal-900 dark:text-teal-200">
                   {t('invite_banner_community')
                     .replace('{community}', inv.communityName || t('a_community'))
                     .replace('{tree}', inv.lifetreeName || t('a_lifetree'))}
@@ -116,9 +116,9 @@ export const ProfileInviteBanners: React.FC<ProfileInviteBannersProps> = ({ uid,
       {keeperInvites.length > 0 && (
         <div className="mb-6 space-y-3">
           {keeperInvites.map(inv => (
-            <div key={inv.id} className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-2xl border border-violet-200 bg-violet-50 p-4 shadow-sm">
+            <div key={inv.id} className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-2xl border border-violet-200 bg-violet-50 p-4 shadow-sm dark:border-violet-900 dark:bg-violet-950/40">
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-violet-900">
+                <p className="text-sm text-violet-900 dark:text-violet-200">
                   🗝 {t('keeper_invite_banner')
                     .replace('{name}', inv.inviterName || t('someone'))
                     .replace('{community}', inv.communityName || t('a_community'))}

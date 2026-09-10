@@ -72,7 +72,7 @@ export const TreeGardens = ({ tree, canManage, host }: { tree: Lifetree; canMana
       {standing.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2">
           {standing.map(c => (
-            <span key={c.id} className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800">
+            <span key={c.id} className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
               {c.name}
               <span className="font-mono text-[10px] font-normal text-emerald-600/80">{c.domain}</span>
               {canManage && (
@@ -98,7 +98,7 @@ export const TreeGardens = ({ tree, canManage, host }: { tree: Lifetree; canMana
                     <span className="font-bold text-slate-700 dark:text-slate-200">{c.name}</span>
                     <span className="ml-2 font-mono text-[11px] text-slate-400">{c.domain}</span>
                   </span>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${doorOf(c) === 'open' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${doorOf(c) === 'open' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'}`}>
                     {doorOf(c) === 'open' ? t('door_open') : t('door_keeper')}
                   </span>
                 </button>

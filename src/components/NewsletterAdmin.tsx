@@ -117,7 +117,7 @@ export const NewsletterAdmin = ({ community, onBack, embedded = false }: { commu
                                 <span>{t('back_to_profile')}</span>
                             </button>
                         )}
-                        <h1 className={`text-3xl font-light ${embedded ? 'text-slate-800' : 'text-white'}`}>{t('newsletter_of_place').replace('{place}', community.name || 'lightseed')}</h1>
+                        <h1 className={`text-3xl font-light ${embedded ? 'text-slate-800 dark:text-slate-100' : 'text-white'}`}>{t('newsletter_of_place').replace('{place}', community.name || 'lightseed')}</h1>
                         <p className={`text-sm ${embedded ? 'text-slate-500' : 'text-emerald-100/80'}`}>{t('letter_last_sent').replace('{when}', lastSentLabel ?? t('letter_never'))}</p>
                     </div>
                     <button

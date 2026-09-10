@@ -35,8 +35,8 @@ export const ToastHost = () => {
           keeps its fuller voice. */}
       <div className={`flex items-center gap-2 rounded-full border px-3.5 py-1.5 shadow-lg sm:px-5 sm:py-2.5 sm:shadow-xl animate-in fade-in slide-in-from-top-4 ${
         isError
-          ? 'border-red-200 sm:border-red-300 bg-red-50 text-red-700 shadow-[0_0_14px_rgba(239,68,68,0.4)] sm:shadow-[0_0_26px_rgba(239,68,68,0.55)]'
-          : 'border-emerald-200 sm:border-emerald-300 bg-emerald-50 text-emerald-800 shadow-[0_0_14px_rgba(16,185,129,0.4)] sm:shadow-[0_0_26px_rgba(16,185,129,0.55)]'
+          ? 'border-red-200 sm:border-red-300 bg-red-50 text-red-700 shadow-[0_0_14px_rgba(239,68,68,0.4)] sm:shadow-[0_0_26px_rgba(239,68,68,0.55)] dark:border-red-900 dark:bg-red-950/40 dark:text-red-300'
+          : 'border-emerald-200 sm:border-emerald-300 bg-emerald-50 text-emerald-800 shadow-[0_0_14px_rgba(16,185,129,0.4)] sm:shadow-[0_0_26px_rgba(16,185,129,0.55)] dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200'
       }`}>
         <span className="text-xs font-semibold sm:text-sm">{toast.message}</span>
       </div>

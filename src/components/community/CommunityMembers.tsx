@@ -302,7 +302,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
                 title={t(d.hint)}
                 className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${door === d.value
                   ? 'bg-emerald-600 text-white'
-                  : 'border border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}`}>
+                  : 'border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900'}`}>
                 {t(d.label)}
               </button>
             ))}
@@ -311,7 +311,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
           {/* When this community owns the current domain (it is the node here), its door also
               governs SIGN-UP — opening it delegates the front gate to the keeper. */}
           {isThisDomainsNode && (
-            <p className="mt-1 text-[11px] italic text-emerald-600">
+            <p className="mt-1 text-[11px] italic text-emerald-600 dark:text-emerald-300">
               {t('node_here_note').replace('{domain}', community.domain || '')}{' '}
               {door === 'closed' ? t('node_signup_closed') : t('node_signup_open')}
             </p>
@@ -372,7 +372,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
                         </button>
                         <LinkQr url={communityInviteUrl(window.location.origin, i.id)} title={`${community.name} · ${t('invitations')}`} />
                         <button onClick={() => handleRevokeInvite(i)}
-                          className="rounded-lg border border-red-100 bg-white px-2.5 py-1 text-[11px] font-bold text-red-500 transition-colors hover:bg-red-50 dark:bg-slate-900">
+                          className="rounded-lg border border-red-100 bg-white px-2.5 py-1 text-[11px] font-bold text-red-500 transition-colors hover:bg-red-50 dark:bg-slate-900 dark:border-red-900">
                           {t('revoke')}
                         </button>
                       </div>
@@ -391,7 +391,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
           <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('keepers')} · {keeperUids.size}</p>
           <button onClick={handleResign} disabled={!viewerCanResign}
             title={viewerCanResign ? undefined : t('keeper_last')}
-            className="rounded-full border border-red-100 bg-white px-3.5 py-1.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-40 dark:bg-slate-900">
+            className="rounded-full border border-red-100 bg-white px-3.5 py-1.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-40 dark:bg-slate-900 dark:border-red-900">
             {t('resign_keeper')}
           </button>
         </div>
@@ -399,11 +399,11 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
 
       {/* Keepership asks — answered only by sitting keepers; the SERVER mints the link. */}
       {viewerIsKeeper && keeperAsks.length > 0 && (
-        <div className="mb-5 rounded-2xl border border-violet-200 bg-violet-50/60 p-4">
-          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-violet-700">{t('keeper_requests')}</p>
+        <div className="mb-5 rounded-2xl border border-violet-200 bg-violet-50/60 p-4 dark:border-violet-900 dark:bg-violet-950/60">
+          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-violet-700 dark:text-violet-300">{t('keeper_requests')}</p>
           <div className="space-y-1.5">
             {keeperAsks.map(r => (
-              <div key={r.uid} className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 border border-violet-100 dark:bg-slate-900">
+              <div key={r.uid} className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 border border-violet-100 dark:bg-slate-900 dark:border-violet-900">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-slate-700 dark:text-slate-200">{r.name}</p>
                   <p className="truncate font-mono text-[10px] text-slate-400">{r.uid}</p>
@@ -425,11 +425,11 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
       )}
 
       {canManage && requests.length > 0 && (
-        <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
-          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-amber-700">{t('join_requests')}</p>
+        <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900 dark:bg-amber-950/60">
+          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">{t('join_requests')}</p>
           <div className="space-y-1.5">
             {requests.map(r => (
-              <div key={r.uid} className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 border border-amber-100 dark:bg-slate-900">
+              <div key={r.uid} className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 border border-amber-100 dark:bg-slate-900 dark:border-amber-900">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-slate-700 dark:text-slate-200">{r.name}</p>
                   <p className="truncate font-mono text-[10px] text-slate-400">{r.uid}</p>
@@ -459,13 +459,13 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
           {members.map(m => (
             <div key={m.uid} className="flex items-center justify-between gap-2 rounded-xl border border-slate-100 bg-white px-4 py-2.5 dark:bg-slate-900 dark:border-slate-800">
               <div className="flex min-w-0 items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600"><Icons.Users size={16} /></span>
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300"><Icons.Users size={16} /></span>
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-slate-700 dark:text-slate-200">
                     {m.name}
-                    {keeperUids.has(m.uid) && <span className="ml-1.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-emerald-700">{t('keeper_badge')}</span>}
-                    {stewardUids.has(m.uid) && <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-amber-700">{t('steward')}</span>}
-                    {m.uid === currentUserId && !keeperUids.has(m.uid) && <span className="ml-1.5 rounded-full bg-sky-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-sky-700">{t('you')}</span>}
+                    {keeperUids.has(m.uid) && <span className="ml-1.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">{t('keeper_badge')}</span>}
+                    {stewardUids.has(m.uid) && <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">{t('steward')}</span>}
+                    {m.uid === currentUserId && !keeperUids.has(m.uid) && <span className="ml-1.5 rounded-full bg-sky-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">{t('you')}</span>}
                   </p>
                   <p className="truncate font-mono text-[10px] text-slate-400">{m.uid}</p>
                 </div>
@@ -473,7 +473,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
               {/* One's own row carries LEAVE, never Remove — leaving is a different verb. */}
               {m.uid === currentUserId && !keeperUids.has(m.uid) && (
                 <button onClick={handleLeave} disabled={busyUid === m.uid}
-                  className="shrink-0 rounded-lg border border-red-100 bg-white px-3 py-1.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50 dark:bg-slate-900">
+                  className="shrink-0 rounded-lg border border-red-100 bg-white px-3 py-1.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50 dark:bg-slate-900 dark:border-red-900">
                   {t('leave')}
                 </button>
               )}
@@ -483,10 +483,10 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
                       and the server mints only after their living tree is proven. */}
                   {viewerIsKeeper && (
                     keeperOffers.some(o => o.invitedUserId === m.uid) ? (
-                      <span className="rounded-lg border border-emerald-100 bg-emerald-50/50 px-3 py-1.5 text-[10px] font-bold uppercase text-emerald-500">{t('keeper_offer_pending')}</span>
+                      <span className="rounded-lg border border-emerald-100 bg-emerald-50/50 px-3 py-1.5 text-[10px] font-bold uppercase text-emerald-500 dark:border-emerald-900 dark:bg-emerald-950/50">{t('keeper_offer_pending')}</span>
                     ) : (
                       <button onClick={() => handleOfferKeepership(m)} disabled={busyUid === m.uid}
-                        className="rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-xs font-bold text-emerald-600 transition-colors hover:bg-emerald-50 disabled:opacity-50 dark:bg-slate-900">
+                        className="rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-xs font-bold text-emerald-600 transition-colors hover:bg-emerald-50 disabled:opacity-50 dark:bg-slate-900 dark:border-emerald-900 dark:text-emerald-300">
                         {t('offer_keepership')}
                       </button>
                     )
@@ -494,12 +494,12 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
                   {isOwner && (
                     <button onClick={() => handleSteward(m, !stewardUids.has(m.uid))} disabled={busyUid === m.uid}
                       title={stewardUids.has(m.uid) ? t('steward_revoke_hint') : t('steward_grant_hint')}
-                      className="rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-xs font-bold text-amber-600 transition-colors hover:bg-amber-50 disabled:opacity-50 dark:bg-slate-900">
+                      className="rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-xs font-bold text-amber-600 transition-colors hover:bg-amber-50 disabled:opacity-50 dark:bg-slate-900 dark:border-amber-900 dark:text-amber-300">
                       {stewardUids.has(m.uid) ? t('unsteward') : t('make_steward')}
                     </button>
                   )}
                   <button onClick={() => handleRemove(m)} disabled={busyUid === m.uid}
-                    className="rounded-lg border border-red-100 bg-white px-3 py-1.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50 dark:bg-slate-900">
+                    className="rounded-lg border border-red-100 bg-white px-3 py-1.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50 dark:bg-slate-900 dark:border-red-900">
                     {t('remove')}
                   </button>
                 </div>

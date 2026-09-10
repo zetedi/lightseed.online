@@ -110,13 +110,13 @@ export const yantraSymbols: Array<{
 ];
 
 export const SectionHeader = ({ children }: { children?: React.ReactNode }) => (
-    <h2 className="text-2xl font-light text-purple-900 mb-6 mt-12 tracking-wide flex items-center gap-3">
+    <h2 className="text-2xl font-light text-purple-900 mb-6 mt-12 tracking-wide flex items-center gap-3 dark:text-purple-200">
         {children}
     </h2>
 );
 
 export const Paragraph = ({ children, className = "" }: { children?: React.ReactNode, className?: string }) => (
-    <p className={`text-slate-700 leading-relaxed font-serif mb-6 text-justify text-lg ${className}`}>
+    <p className={`text-slate-700 leading-relaxed font-serif mb-6 text-justify text-lg dark:text-slate-200 ${className}`}>
         {children}
     </p>
 );
@@ -302,13 +302,13 @@ const SymbolCard = ({ titleKey, descKey, type, link }: { titleKey: TranslationKe
     const { t } = useLanguage();
     return (
     <div className="flex flex-col md:flex-row gap-6 items-center bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow dark:bg-slate-900 dark:border-slate-800">
-        <div className="relative w-40 h-40 shrink-0 rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 via-white to-purple-50 shadow-inner overflow-hidden">
+        <div className="relative w-40 h-40 shrink-0 rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 via-white to-purple-50 shadow-inner overflow-hidden dark:border-amber-900">
              <div className="absolute inset-4">
                 <SymbolOverlay type={type} />
              </div>
         </div>
         <div>
-            <h3 className="text-amber-600 font-bold uppercase tracking-wider mb-2">{t(titleKey)}</h3>
+            <h3 className="text-amber-600 font-bold uppercase tracking-wider mb-2 dark:text-amber-300">{t(titleKey)}</h3>
             <p className="text-slate-600 text-sm mb-3 dark:text-slate-300">{t(descKey)}</p>
             <a href={link} target="_blank" rel="noopener noreferrer" className="text-xs text-slate-400 hover:text-amber-500 flex items-center gap-1 transition-colors">
                 <Icons.Link />
@@ -384,7 +384,7 @@ export const MembershipPathSection = () => {
                 <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
                     <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-purple-300 bg-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 text-purple-600 font-bold">1</div>
                     <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-xl shadow-md border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
-                        <h3 className="font-bold text-purple-900 mb-2 uppercase tracking-wider text-sm">{t('path_phase_resonance')}</h3>
+                        <h3 className="font-bold text-purple-900 mb-2 uppercase tracking-wider text-sm dark:text-purple-200">{t('path_phase_resonance')}</h3>
                         <p className="text-slate-600 text-sm dark:text-slate-300">{t('path_adopt_note')}</p>
                     </div>
                 </div>
@@ -392,7 +392,7 @@ export const MembershipPathSection = () => {
                 <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
                     <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-purple-300 bg-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 text-purple-600 font-bold">2</div>
                     <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-xl shadow-md border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
-                        <h3 className="font-bold text-purple-900 mb-2 uppercase tracking-wider text-sm">{t('path_phase_selection')}</h3>
+                        <h3 className="font-bold text-purple-900 mb-2 uppercase tracking-wider text-sm dark:text-purple-200">{t('path_phase_selection')}</h3>
                         <p className="text-slate-600 text-sm dark:text-slate-300">{t('path_recommend_note')}</p>
                     </div>
                 </div>
@@ -400,16 +400,16 @@ export const MembershipPathSection = () => {
                 <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
                     <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-purple-300 bg-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 text-purple-600 font-bold">3</div>
                     <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-xl shadow-md border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
-                        <h3 className="font-bold text-purple-900 mb-2 uppercase tracking-wider text-sm">{t('path_phase_nurturing')}</h3>
+                        <h3 className="font-bold text-purple-900 mb-2 uppercase tracking-wider text-sm dark:text-purple-200">{t('path_phase_nurturing')}</h3>
                         <p className="text-slate-600 text-sm dark:text-slate-300">{t('path_pot_note')}</p>
                     </div>
                 </div>
 
                 <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
                     <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-emerald-500 bg-emerald-600 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 text-white font-bold">4</div>
-                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-emerald-50 rounded-xl shadow-md border border-emerald-100">
-                        <h3 className="font-bold text-emerald-900 mb-2 uppercase tracking-wider text-sm">{t('path_phase_initiation')}</h3>
-                        <p className="text-emerald-800 text-sm">{t('path_transplant_note')}</p>
+                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-emerald-50 rounded-xl shadow-md border border-emerald-100 dark:bg-emerald-950/40 dark:border-emerald-900">
+                        <h3 className="font-bold text-emerald-900 mb-2 uppercase tracking-wider text-sm dark:text-emerald-200">{t('path_phase_initiation')}</h3>
+                        <p className="text-emerald-800 text-sm dark:text-emerald-200">{t('path_transplant_note')}</p>
                     </div>
                 </div>
             </div>
@@ -484,17 +484,17 @@ export const ProtectionNote = ({ compact = false }: { compact?: boolean }) => {
     // note is one key with a {mark} slot rather than two half-sentences.
     const [before, after] = t('protection_note').split('{mark}');
     return (
-    <div className="flex items-start gap-4 rounded-2xl border border-blue-100 bg-blue-50/50 p-5">
+    <div className="flex items-start gap-4 rounded-2xl border border-blue-100 bg-blue-50/50 p-5 dark:border-blue-900 dark:bg-blue-950/50">
         <EuipoMark size={compact ? 44 : 56} />
         <div className="min-w-0">
-            <h3 className="font-bold text-blue-900">{compact ? t('protected') : t('protection')}</h3>
+            <h3 className="font-bold text-blue-900 dark:text-blue-200">{compact ? t('protected') : t('protection')}</h3>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                 {before}<span dir="ltr" className="font-semibold">.seed</span>{after}
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
                 {TRADEMARKS.map(tm => (
                     <a key={tm.no} href={tm.url} target="_blank" rel="noopener noreferrer"
-                       className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-white px-3 py-1 text-xs font-mono font-bold text-blue-800 transition-colors hover:bg-blue-100 dark:bg-slate-900">
+                       className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-white px-3 py-1 text-xs font-mono font-bold text-blue-800 transition-colors hover:bg-blue-100 dark:bg-slate-900 dark:border-blue-900 dark:text-blue-200">
                         <Icons.ShieldCheck /> {tm.no}
                     </a>
                 ))}

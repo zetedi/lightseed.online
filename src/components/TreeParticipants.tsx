@@ -64,7 +64,7 @@ export const TreeParticipants = ({ entityId, currentUserId, myTrees = [], maxPar
                             {treeImg(tree) ? (
                                 <Picture size={480} src={treeImg(tree)} className="h-10 w-10 shrink-0 rounded-full object-cover" alt="" referrerPolicy="no-referrer" />
                             ) : (
-                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-500"><Icons.Tree /></div>
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-500 dark:bg-emerald-950/40"><Icons.Tree /></div>
                             )}
                             <div className="min-w-0 flex-1">
                                 <p className="truncate text-sm font-bold text-slate-800 dark:text-slate-100">{tree.name}</p>
@@ -95,7 +95,7 @@ export const TreeParticipants = ({ entityId, currentUserId, myTrees = [], maxPar
             )}
 
             {currentUserId && addable.length > 0 && full && (
-                <p className="rounded-xl border border-dashed border-amber-200 bg-amber-50/60 p-3 text-xs text-amber-700">
+                <p className="rounded-xl border border-dashed border-amber-200 bg-amber-50/60 p-3 text-xs text-amber-700 dark:border-amber-900 dark:bg-amber-950/60 dark:text-amber-300">
                     {t('gathering_full')}
                 </p>
             )}
@@ -109,7 +109,7 @@ export const TreeParticipants = ({ entityId, currentUserId, myTrees = [], maxPar
                                 key={tree.id}
                                 onClick={() => toggle(tree, true)}
                                 disabled={busyId === tree.id}
-                                className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100 disabled:opacity-50"
+                                className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"
                             >
                                 <Icons.Tree /> {busyId === tree.id ? '…' : tree.name}
                             </button>

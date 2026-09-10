@@ -279,13 +279,13 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
     <Modal title={title} onClose={onClose}>
       <div className="space-y-4">
         {available === false && (
-          <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">{t('signing_unavailable')}</p>
+          <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">{t('signing_unavailable')}</p>
         )}
 
         {view === 'status' && (
           <>
             <div className="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 dark:bg-slate-900 dark:border-slate-800">
-              <span className={`mt-0.5 ${custody === 'stale_device' || custody === 'publish_needed' ? 'text-amber-600' : 'text-emerald-600'} [&>svg]:h-5 [&>svg]:w-5`}><Icons.Key /></span>
+              <span className={`mt-0.5 ${custody === 'stale_device' || custody === 'publish_needed' ? 'text-amber-600 dark:text-amber-300' : 'text-emerald-600 dark:text-emerald-300'} [&>svg]:h-5 [&>svg]:w-5`}><Icons.Key /></span>
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                   {frozen ? t('signing_frozen')
@@ -304,7 +304,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
               </div>
             )}
 
-            {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(err)}</p>}
+            {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-300">{speak(err)}</p>}
 
             <div className="flex flex-col gap-2">
               {!hasKey && !frozen && (
@@ -333,37 +333,37 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
                 <button type="button" onClick={() => {
                   setErr(null); setWitnessCode(''); setWitnessPreview(null); setConfirmedWitness(false); setView('witness');
                 }}
-                  className="w-full rounded-xl border border-indigo-200 py-3 text-sm font-bold text-indigo-700 hover:bg-indigo-50">
+                  className="w-full rounded-xl border border-indigo-200 py-3 text-sm font-bold text-indigo-700 hover:bg-indigo-50 dark:border-indigo-900 dark:text-indigo-300">
                   {t('signing_witness')}
                 </button>
               )}
               {!frozen && publicKeyB64 && (
                 <button type="button" onClick={() => { setErr(null); setConfirmedFreeze(false); setSuspectedSince(''); setView('freeze'); }}
-                  className="w-full rounded-xl border border-red-200 py-3 text-sm font-bold text-red-700 hover:bg-red-50">
+                  className="w-full rounded-xl border border-red-200 py-3 text-sm font-bold text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-300">
                   {t('signing_freeze')}
                 </button>
               )}
             </div>
 
             {frozen && (
-              <div className="space-y-3 rounded-xl border border-red-200 bg-red-50 px-3 py-3">
-                <p className="text-xs text-red-700">{t('signing_frozen_help')}</p>
+              <div className="space-y-3 rounded-xl border border-red-200 bg-red-50 px-3 py-3 dark:border-red-900 dark:bg-red-950/40">
+                <p className="text-xs text-red-700 dark:text-red-300">{t('signing_frozen_help')}</p>
                 {pendingRecovery ? (
                   <>
                     <div>
                       <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-red-500">{t('signing_recovery_code')}</p>
                       <p className="break-all rounded-lg bg-white px-2 py-2 font-mono text-[11px] text-slate-700 dark:bg-slate-900 dark:text-slate-200">{pendingRecovery.recoveryCode}</p>
                       <button type="button" onClick={copyRecoveryCode}
-                        className="mt-1 text-[11px] font-bold text-red-700 hover:text-red-900">
+                        className="mt-1 text-[11px] font-bold text-red-700 hover:text-red-900 dark:text-red-300">
                         {copied ? t('copied') : t('copy')}
                       </button>
                     </div>
-                    <p className="text-xs font-semibold text-red-800">
+                    <p className="text-xs font-semibold text-red-800 dark:text-red-200">
                       {t('signing_witness_count')}: {pendingRecovery.witnessCount} / {KEY_RECOVERY_QUORUM}
                     </p>
                     <div className="flex gap-2">
                       <button type="button" onClick={refreshRecovery} disabled={busy}
-                        className="flex-1 rounded-lg border border-red-200 bg-white py-2 text-xs font-bold text-red-700 disabled:opacity-50 dark:bg-slate-900">
+                        className="flex-1 rounded-lg border border-red-200 bg-white py-2 text-xs font-bold text-red-700 disabled:opacity-50 dark:bg-slate-900 dark:border-red-900 dark:text-red-300">
                         {t('refresh')}
                       </button>
                       <button type="button" onClick={activateRecovery} disabled={busy || pendingRecovery.witnessCount < KEY_RECOVERY_QUORUM}
@@ -382,8 +382,8 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
             )}
 
             {custody === 'stale_device' && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
-                <p className="text-xs text-amber-800">{t('signing_stale_warn')}</p>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/40">
+                <p className="text-xs text-amber-800 dark:text-amber-200">{t('signing_stale_warn')}</p>
               </div>
             )}
           </>
@@ -391,9 +391,9 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
 
         {view === 'phrase' && (
           <>
-            <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
-              <span className="mt-0.5 text-amber-600 [&>svg]:h-5 [&>svg]:w-5"><Icons.Shield /></span>
-              <p className="text-xs text-amber-800">{t('signing_phrase_warn')}</p>
+            <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/40">
+              <span className="mt-0.5 text-amber-600 [&>svg]:h-5 [&>svg]:w-5 dark:text-amber-300"><Icons.Shield /></span>
+              <p className="text-xs text-amber-800 dark:text-amber-200">{t('signing_phrase_warn')}</p>
             </div>
             <ol className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
               {phrase.map((w, i) => (
@@ -420,11 +420,11 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
 
         {view === 'rotate' && (
           <>
-            <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
-              <span className="mt-0.5 text-amber-600 [&>svg]:h-5 [&>svg]:w-5"><Icons.Shield /></span>
-              <p className="text-xs text-amber-800">{t('signing_rotate_warn')}</p>
+            <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/40">
+              <span className="mt-0.5 text-amber-600 [&>svg]:h-5 [&>svg]:w-5 dark:text-amber-300"><Icons.Shield /></span>
+              <p className="text-xs text-amber-800 dark:text-amber-200">{t('signing_rotate_warn')}</p>
             </div>
-            {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(err)}</p>}
+            {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-300">{speak(err)}</p>}
             <label className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200">
               <input type="checkbox" checked={confirmedRotate} onChange={e => setConfirmedRotate(e.target.checked)} className="mt-0.5 h-4 w-4" />
               <span>{t('signing_rotate_confirm')}</span>
@@ -444,9 +444,9 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
 
         {view === 'freeze' && (
           <>
-            <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3">
-              <span className="mt-0.5 text-red-600 [&>svg]:h-5 [&>svg]:w-5"><Icons.Shield /></span>
-              <p className="text-xs text-red-700">{t('signing_freeze_warn')}</p>
+            <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950/40">
+              <span className="mt-0.5 text-red-600 [&>svg]:h-5 [&>svg]:w-5 dark:text-red-300"><Icons.Shield /></span>
+              <p className="text-xs text-red-700 dark:text-red-300">{t('signing_freeze_warn')}</p>
             </div>
             <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300">
               {t('signing_suspected_since')}
@@ -454,7 +454,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
                 max={new Date().toISOString().slice(0, 16)}
                 className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 dark:border-slate-700" />
             </label>
-            {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(err)}</p>}
+            {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-300">{speak(err)}</p>}
             <label className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200">
               <input type="checkbox" checked={confirmedFreeze} onChange={e => setConfirmedFreeze(e.target.checked)} className="mt-0.5 h-4 w-4" />
               <span>{t('signing_freeze_confirm')}</span>
@@ -480,9 +480,9 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
             }}
               rows={3} autoFocus placeholder={t('signing_recovery_code')}
               className="w-full rounded-xl border border-slate-200 px-3 py-2 font-mono text-sm text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:text-slate-50" />
-            {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(err)}</p>}
+            {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-300">{speak(err)}</p>}
             {witnessPreview && (
-              <div className="space-y-2 rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-xs text-indigo-900">
+              <div className="space-y-2 rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-xs text-indigo-900 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-200">
                 <p><span className="font-bold">{t('signing_recovery_for')}:</span> {witnessPreview.targetName}</p>
                 <p className="break-all font-mono text-[10px]">{witnessPreview.targetLid}</p>
                 <p><span className="font-bold">{t('signing_suspected_since')}:</span> {new Date(witnessPreview.suspectedSinceMs).toLocaleString()}</p>
@@ -508,17 +508,17 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
 
         {view === 'needs_restore' && (
           <>
-            <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
-              <span className="mt-0.5 text-amber-600 [&>svg]:h-5 [&>svg]:w-5"><Icons.Shield /></span>
-              <p className="text-xs text-amber-800">{t('signing_needs_restore_warn')}</p>
+            <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/40">
+              <span className="mt-0.5 text-amber-600 [&>svg]:h-5 [&>svg]:w-5 dark:text-amber-300"><Icons.Shield /></span>
+              <p className="text-xs text-amber-800 dark:text-amber-200">{t('signing_needs_restore_warn')}</p>
             </div>
-            {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(err)}</p>}
+            {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-300">{speak(err)}</p>}
             <button type="button" onClick={() => { resetRestoreFlow(); setView('restore'); }}
               className={modalButton('primary')}>
               {t('signing_key_restore')}
             </button>
             <button type="button" onClick={() => { setErr(null); setConfirmedFreeze(false); setSuspectedSince(''); setView('freeze'); }}
-              className="w-full rounded-xl border border-red-200 py-3 text-sm font-bold text-red-700 hover:bg-red-50">
+              className="w-full rounded-xl border border-red-200 py-3 text-sm font-bold text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-300">
               {t('signing_freeze')}
             </button>
           </>
@@ -530,7 +530,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
             <textarea value={restoreInput} onChange={e => { setRestoreInput(e.target.value); setErr(null); }} rows={4} autoFocus
               placeholder={t('signing_restore_placeholder')}
               className="w-full rounded-xl border border-slate-200 px-3 py-2 font-mono text-sm text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:text-slate-50" />
-            {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(err)}</p>}
+            {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-300">{speak(err)}</p>}
             <div className="flex gap-3">
               <button type="button" onClick={() => { resetRestoreFlow(); setView('status'); }}
                 className={modalButton('secondary', { extra: 'flex-1' })}>

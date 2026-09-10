@@ -163,7 +163,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                             return (
                                 <div key="chain-collapsed" className="flex w-full justify-start pl-12 md:justify-center md:pl-0">
                                     <button onClick={() => setChainExpanded(true)}
-                                        className="relative z-10 flex w-full items-center justify-center gap-2 rounded-full border-2 border-dashed border-emerald-300 bg-emerald-50/80 py-2.5 text-xs font-bold text-emerald-700 backdrop-blur-sm transition-colors hover:bg-emerald-100 md:max-w-md">
+                                        className="relative z-10 flex w-full items-center justify-center gap-2 rounded-full border-2 border-dashed border-emerald-300 bg-emerald-50/80 py-2.5 text-xs font-bold text-emerald-700 backdrop-blur-sm transition-colors hover:bg-emerald-100 md:max-w-md dark:bg-emerald-950/80 dark:text-emerald-300">
                                         <Icons.List />
                                         <span>{t('chain_more_hidden').replace('{n}', String(hiddenChainCount))}</span>
                                     </button>
@@ -212,11 +212,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                                     <CardTag
                                         {...cardProps}
                                         className={`
-                                            block relative bg-white border-2 border-emerald-700/80 hover:border-emerald-700
-                                            shadow-[inset_0_3px_14px_rgba(4,90,55,0.28),0_4px_12px_rgba(4,120,87,0.2)]
-                                            hover:shadow-[inset_0_3px_14px_rgba(4,90,55,0.28),0_0_26px_rgba(250,204,21,0.55)]
-                                            transition-all cursor-pointer group w-full min-w-0 overflow-hidden md:max-w-sm
-                                            rounded-[2rem] rounded-tr-none md:rounded-bl-[3rem]
+                                            block relative bg-white border-2 border-emerald-700/80 hover:border-emerald-700 shadow-[inset_0_3px_14px_rgba(4,90,55,0.28),0_4px_12px_rgba(4,120,87,0.2)] hover:shadow-[inset_0_3px_14px_rgba(4,90,55,0.28),0_0_26px_rgba(250,204,21,0.55)] transition-all cursor-pointer group w-full min-w-0 overflow-hidden md:max-w-sm rounded-[2rem] rounded-tr-none md:rounded-bl-[3rem] dark:bg-slate-900
                                             ${isRightSide
                                                 ? 'md:text-left'
                                                 : 'md:rounded-tr-[2rem] md:rounded-tl-none md:rounded-br-[3rem] md:rounded-bl-[2rem] md:text-right'}
@@ -227,17 +223,17 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                                         <div className="p-4 md:p-6 relative z-10">
                                             <div className={`flex items-center gap-2 mb-3 ${isRightSide ? '' : 'md:flex-row-reverse'} flex-row`}>
                                                 {pulseBadge === 'GROWTH' ? (
-                                                    <span className="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold">{t('badge_growth')}</span>
+                                                    <span className="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold dark:bg-emerald-950/40 dark:text-emerald-300">{t('badge_growth')}</span>
                                                 ) : pulseBadge === 'EVENT' ? (
-                                                    <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 rounded-full font-bold">{t('badge_event')}</span>
+                                                    <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 rounded-full font-bold dark:bg-sky-950/40 dark:text-sky-300">{t('badge_event')}</span>
                                                 ) : (
-                                                    <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 rounded-full font-bold">{t('badge_pulse')}</span>
+                                                    <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 rounded-full font-bold dark:bg-sky-950/40 dark:text-sky-300">{t('badge_pulse')}</span>
                                                 )}
                                                 {pulse.offeringId && (
-                                                    <span className="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold" title={pulse.offeringRole === 'from' ? t('offering_from_chain') : t('offering_on_chain')}>{t('badge_offering_done')}</span>
+                                                    <span className="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold dark:bg-emerald-950/40 dark:text-emerald-300" title={pulse.offeringRole === 'from' ? t('offering_from_chain') : t('offering_on_chain')}>{t('badge_offering_done')}</span>
                                                 )}
                                                 {pulse.care === 'watering' && (
-                                                    <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-1" title={pulse.wateringConfirmation?.note || ''}>💧 {typeof pulse.wateringConfirmation?.confidence === 'number' ? `${pulse.wateringConfirmation.confidence}%` : ''}{pulse.wateringConfirmedBy === 'guardian' ? ' ✓' : ''}</span>
+                                                    <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-1 dark:bg-sky-950/40 dark:text-sky-300" title={pulse.wateringConfirmation?.note || ''}>💧 {typeof pulse.wateringConfirmation?.confidence === 'number' ? `${pulse.wateringConfirmation.confidence}%` : ''}{pulse.wateringConfirmedBy === 'guardian' ? ' ✓' : ''}</span>
                                                 )}
                                                 {/* Spacetime — the WHEN every block carries, and the WHERE when the pulse has one. */}
                                                 <span className="text-xs text-slate-400 font-mono">
@@ -303,7 +299,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                                      <div className="relative h-40 w-full">
                                          <Picture size={1200} src={root.imageUrl} alt={root.name} className="h-full w-full object-cover opacity-90" />
                                          <div className="absolute inset-0 bg-gradient-to-t from-[#5D4037] via-[#5D4037]/40 to-transparent" />
-                                         <span className="absolute left-3 top-3 rounded-full bg-amber-100/90 px-2 py-0.5 text-[10px] font-bold text-amber-900 shadow">🌱 {t('badge_planting')}</span>
+                                         <span className="absolute left-3 top-3 rounded-full bg-amber-100/90 px-2 py-0.5 text-[10px] font-bold text-amber-900 shadow dark:bg-amber-950/90 dark:text-amber-200">🌱 {t('badge_planting')}</span>
                                      </div>
                                  )}
                                  <div className="p-6 text-center">

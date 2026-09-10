@@ -174,7 +174,7 @@ export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree
                 {VIS.map(v => <option key={v} value={v}>{t(VIS_CHIP_KEY[v as keyof typeof VIS_CHIP_KEY])}</option>)}
               </select>
               <button type="button" onClick={remove} disabled={busy}
-                className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-100 disabled:opacity-50">
+                className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-100 disabled:opacity-50 dark:bg-rose-950/40 dark:text-rose-300">
                 <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Trash /></span>{t('release')}
               </button>
             </div>

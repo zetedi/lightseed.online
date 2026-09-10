@@ -15,7 +15,7 @@ export const TermsModal = ({ onClose }: { onClose: () => void }) => {
             <p className="mt-1 whitespace-pre-line">{s.body}</p>
           </div>
         ))}
-        <p className="whitespace-pre-line font-bold text-emerald-700">{terms.agree}</p>
+        <p className="whitespace-pre-line font-bold text-emerald-700 dark:text-emerald-300">{terms.agree}</p>
       </div>
     </Modal>
   );

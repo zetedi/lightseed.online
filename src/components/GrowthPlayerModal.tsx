@@ -92,7 +92,7 @@ export const GrowthPlayerModal = ({ treeId, onClose }: { treeId: string, onClose
                     <div className="relative w-full">
                         <Picture size={1200} src={f.imageUrl} className="w-full h-64 object-cover rounded-lg shadow-lg mb-4" />
                         {f.isGenesis && (
-                            <span className="absolute left-2 top-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800 shadow">🌱 {t('badge_planting')}</span>
+                            <span className="absolute left-2 top-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800 shadow dark:bg-amber-950/40 dark:text-amber-200">🌱 {t('badge_planting')}</span>
                         )}
                         {/* Replay — appears once the evolution has played through. Same green-on-yellow
                             treatment as the hero Play Growth button. */}
@@ -117,7 +117,7 @@ export const GrowthPlayerModal = ({ treeId, onClose }: { treeId: string, onClose
                     )}
                     <p className="mt-1 text-xs text-slate-400">{frameDate(f.createdAt)}</p>
                     <div className="mt-4 flex flex-wrap justify-center gap-1">
-                        {frames.map((fr, i) => <div key={i} className={`h-1 w-4 rounded ${i === index ? (fr.isGenesis ? 'bg-amber-400' : 'bg-emerald-500') : 'bg-slate-200'}`} />)}
+                        {frames.map((fr, i) => <div key={i} className={`h-1 w-4 rounded ${i === index ? (fr.isGenesis ? 'bg-amber-400' : 'bg-emerald-500') : 'bg-slate-200 dark:bg-slate-800'}`} />)}
                     </div>
                 </div>
             )}

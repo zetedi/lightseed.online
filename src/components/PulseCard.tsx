@@ -47,8 +47,8 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
     const badges = (
         <>
             {pulse.care === 'watering'
-                ? <span title={pulse.wateringConfirmation?.note || ''} className="bg-sky-100 text-sky-700 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm">💧{typeof pulse.wateringConfirmation?.confidence === 'number' ? ` ${pulse.wateringConfirmation.confidence}%` : ''}{pulse.wateringConfirmedBy === 'guardian' ? ' ✓' : ''}</span>
-                : badge && <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm ${isEvent ? 'bg-sky-100 text-sky-700' : isOffering ? 'text-white' : 'bg-emerald-100 text-emerald-600'}`} style={isOffering ? { backgroundColor: tabTone('offerings') } : undefined}>{badge}</span>}
+                ? <span title={pulse.wateringConfirmation?.note || ''} className="bg-sky-100 text-sky-700 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm dark:bg-sky-950/40 dark:text-sky-300">💧{typeof pulse.wateringConfirmation?.confidence === 'number' ? ` ${pulse.wateringConfirmation.confidence}%` : ''}{pulse.wateringConfirmedBy === 'guardian' ? ' ✓' : ''}</span>
+                : badge && <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm ${isEvent ? 'bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300' : isOffering ? 'text-white' : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300'}`} style={isOffering ? { backgroundColor: tabTone('offerings') } : undefined}>{badge}</span>}
             {/* A paused offering (visible only to its author) says so plainly. */}
             {isOffering && pulse.offeringActive === false && (
                 <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[9px] font-bold text-slate-600 shadow-sm dark:bg-slate-800 dark:text-slate-300">{t('badge_paused')}</span>
@@ -60,20 +60,20 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
                 </span>
             )}
             {images.length > 1 && <span className="bg-white/90 text-slate-600 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm dark:bg-slate-900/90 dark:text-slate-300">{images.length} {t('badge_img')}</span>}
-            {pulse.isMatch && <span className="bg-sky-100 text-sky-600 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm">{t('badge_match')}</span>}
-            {pulse.offeringId && <span className="bg-emerald-100 text-emerald-700 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm">{t('badge_offering_done')}</span>}
+            {pulse.isMatch && <span className="bg-sky-100 text-sky-600 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm dark:bg-sky-950/40 dark:text-sky-300">{t('badge_match')}</span>}
+            {pulse.offeringId && <span className="bg-emerald-100 text-emerald-700 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm dark:bg-emerald-950/40 dark:text-emerald-300">{t('badge_offering_done')}</span>}
         </>
     );
 
     // A small square avatar: the first image, or the initial on a soft tone (never fake artwork).
     const avatar = (size: string, text: string) => images.length > 0
-        ? <Picture size={480} src={images[0]} alt="" className={`${size} shrink-0 rounded-lg object-cover bg-slate-100`} />
-        : <div className={`${size} flex shrink-0 items-center justify-center rounded-lg ${text} ${isEvent ? 'bg-sky-50 text-sky-600' : 'bg-emerald-50 text-emerald-600'}`}>{(pulse.title || '·').charAt(0).toUpperCase()}</div>;
+        ? <Picture size={480} src={images[0]} alt="" className={`${size} shrink-0 rounded-lg object-cover bg-slate-100 dark:bg-slate-800`} />
+        : <div className={`${size} flex shrink-0 items-center justify-center rounded-lg ${text} ${isEvent ? 'bg-sky-50 text-sky-600 dark:bg-sky-950/40 dark:text-sky-300' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300'}`}>{(pulse.title || '·').charAt(0).toUpperCase()}</div>;
 
     // ROWS — one line of the list: avatar, title + description, love at the right.
     if (density === 'rows') {
         return (
-            <div onClick={() => onView && onView(pulse)} className={`flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm ${POP} hover:-translate-y-0.5 active:-translate-y-0.5 ${ringCls}`}>
+            <div onClick={() => onView && onView(pulse)} className={`flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900 ${POP} hover:-translate-y-0.5 active:-translate-y-0.5 ${ringCls}`}>
                 {avatar('h-14 w-14', 'text-xl')}
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
@@ -91,13 +91,13 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
     // MINI — a half-size card: small image (or initial), title, love.
     if (density === 'mini') {
         return (
-            <div onClick={() => onView && onView(pulse)} className={`cursor-pointer overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm ${POP} ${ringCls}`}>
+            <div onClick={() => onView && onView(pulse)} className={`cursor-pointer overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900 ${POP} ${ringCls}`}>
                 {images.length > 0 ? (
                     <div className="relative h-20 overflow-hidden bg-slate-100 dark:bg-slate-800">
                         <CardCarousel images={images} alt={pulse.title} />
                     </div>
                 ) : (
-                    <div className={`flex h-20 items-center justify-center px-2 text-center ${isEvent ? 'bg-sky-50' : 'bg-emerald-50/60'}`}>
+                    <div className={`flex h-20 items-center justify-center px-2 text-center ${isEvent ? 'bg-sky-50 dark:bg-sky-950/40' : 'bg-emerald-50/60 dark:bg-emerald-950/60'}`}>
                         <p dir="auto" className="line-clamp-3 font-serif text-[11px] italic leading-snug text-slate-500">{pulse.body}</p>
                     </div>
                 )}
@@ -106,7 +106,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
                         {pulse.carriedByName && <p className="truncate text-[10px] italic text-purple-500">🤲 {t('carried_by').replace('{name}', pulse.carriedByName)}</p>}
                     <div className="mt-1 flex items-center justify-between">
                         {love('text-[10px]')}
-                        {badge && <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-bold ${isEvent ? 'bg-sky-100 text-sky-700' : 'bg-emerald-100 text-emerald-600'}`}>{badge}</span>}
+                        {badge && <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-bold ${isEvent ? 'bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300' : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300'}`}>{badge}</span>}
                     </div>
                 </div>
             </div>
@@ -120,7 +120,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
     return (
         <div
             onClick={() => onView && onView(pulse)}
-            className={`flex h-60 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm ${POP} group cursor-pointer ${ringCls}`}
+            className={`flex h-60 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900 ${POP} group cursor-pointer ${ringCls}`}
         >
             {images.length > 0 ? (
                 // With an image: the photo carries the card, title overlaid.
@@ -148,7 +148,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
                 {(images.length > 0 || (isEvent && pulse.eventDate)) && (
                     <p dir="auto" className="text-slate-600 text-xs font-light leading-relaxed truncate dark:text-slate-300">{meta}</p>
                 )}
-                <div className={`mt-auto flex items-center justify-between ${images.length > 0 || (isEvent && pulse.eventDate) ? 'pt-2 border-t border-slate-100' : ''}`}>
+                <div className={`mt-auto flex items-center justify-between ${images.length > 0 || (isEvent && pulse.eventDate) ? 'pt-2 border-t border-slate-100 dark:border-slate-800' : ''}`}>
                     {love('text-xs', 'text-slate-500')}
 
                     {lightseed && lightseed.uid !== pulse.authorId && !pulse.isMatch && (

@@ -33,7 +33,7 @@ export const ResonanceCard = ({ s, isFavorite, onToggleFavorite, onReach, densit
   // ROWS: one line, the pair, the resonance badge, the star.
   if (density === 'rows') {
     return (
-      <div className="flex items-center gap-3 rounded-xl border border-amber-100 bg-white/90 px-3 py-2 shadow-sm dark:bg-slate-900/90">
+      <div className="flex items-center gap-3 rounded-xl border border-amber-100 bg-white/90 px-3 py-2 shadow-sm dark:bg-slate-900/90 dark:border-amber-900">
         <div className="min-w-0 flex-1 truncate text-sm font-bold text-slate-800 dark:text-slate-100">{s.vision1Title} + {s.vision2Title}</div>
         {badge}
         {star}
@@ -44,7 +44,7 @@ export const ResonanceCard = ({ s, isFavorite, onToggleFavorite, onReach, densit
   // MINI: a small card, the pair, the badge, a clamped reasoning; no tree chips or reach buttons.
   if (density === 'mini') {
     return (
-      <div className="flex flex-col gap-1.5 overflow-hidden rounded-xl border border-amber-100 bg-white/90 p-3 shadow-sm dark:bg-slate-900/90">
+      <div className="flex flex-col gap-1.5 overflow-hidden rounded-xl border border-amber-100 bg-white/90 p-3 shadow-sm dark:bg-slate-900/90 dark:border-amber-900">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 break-words text-xs font-bold text-slate-800 dark:text-slate-100">{s.vision1Title} + {s.vision2Title}</div>
           {star}
@@ -57,7 +57,7 @@ export const ResonanceCard = ({ s, isFavorite, onToggleFavorite, onReach, densit
 
   // CARDS: the full pair card (the original).
   return (
-    <div className="overflow-hidden rounded-xl border border-amber-100 bg-white/90 p-4 shadow-sm dark:bg-slate-900/90">
+    <div className="overflow-hidden rounded-xl border border-amber-100 bg-white/90 p-4 shadow-sm dark:bg-slate-900/90 dark:border-amber-900">
       <div className="mb-2 flex items-start justify-between gap-2">
         <div className="min-w-0 break-words text-sm font-bold text-slate-800 dark:text-slate-100">{s.vision1Title} + {s.vision2Title}</div>
         <div className="flex shrink-0 items-center gap-1.5">
@@ -81,14 +81,14 @@ export const ResonanceCard = ({ s, isFavorite, onToggleFavorite, onReach, densit
         <div className="mb-2 flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
           {s.tree1Id && (
             <div className="flex w-full min-w-0 items-center gap-1.5 rounded-lg bg-slate-50 px-2 py-1 sm:flex-1 dark:bg-slate-900">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 [&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Tree /></span>
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 [&>svg]:h-3.5 [&>svg]:w-3.5 dark:bg-emerald-950/40 dark:text-emerald-300"><Icons.Tree /></span>
               <span className="truncate text-[11px] font-medium text-slate-700 dark:text-slate-200">{s.vision1Title}</span>
             </div>
           )}
           <span className="hidden shrink-0 text-xs font-bold text-slate-300 sm:inline">+</span>
           {s.tree2Id && (
             <div className="flex w-full min-w-0 items-center gap-1.5 rounded-lg bg-slate-50 px-2 py-1 sm:flex-1 dark:bg-slate-900">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 [&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Tree /></span>
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 [&>svg]:h-3.5 [&>svg]:w-3.5 dark:bg-emerald-950/40 dark:text-emerald-300"><Icons.Tree /></span>
               <span className="truncate text-[11px] font-medium text-slate-700 dark:text-slate-200">{s.vision2Title}</span>
             </div>
           )}
@@ -98,15 +98,15 @@ export const ResonanceCard = ({ s, isFavorite, onToggleFavorite, onReach, densit
       <p className="text-xs italic text-slate-600 dark:text-slate-300">"{s.reasoning}"</p>
 
       {reachable && (
-        <div className="mt-2.5 flex flex-col items-stretch gap-1.5 border-t border-amber-100 pt-2.5 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="mt-2.5 flex flex-col items-stretch gap-1.5 border-t border-amber-100 pt-2.5 sm:flex-row sm:flex-wrap sm:items-center dark:border-amber-900">
           <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{t('start_conversation')}</span>
           {s.tree1Id && (
-            <button type="button" onClick={() => onReach!(s.tree1Id!, s.vision1Title)} className="inline-flex min-w-0 max-w-full items-center justify-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 transition-colors hover:bg-emerald-100 sm:justify-start">
+            <button type="button" onClick={() => onReach!(s.tree1Id!, s.vision1Title)} className="inline-flex min-w-0 max-w-full items-center justify-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 transition-colors hover:bg-emerald-100 sm:justify-start dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300">
               <span className="shrink-0 [&>svg]:h-3 [&>svg]:w-3"><Icons.Chat /></span> <span className="truncate">{s.vision1Title}</span>
             </button>
           )}
           {s.tree2Id && (
-            <button type="button" onClick={() => onReach!(s.tree2Id!, s.vision2Title)} className="inline-flex min-w-0 max-w-full items-center justify-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 transition-colors hover:bg-emerald-100 sm:justify-start">
+            <button type="button" onClick={() => onReach!(s.tree2Id!, s.vision2Title)} className="inline-flex min-w-0 max-w-full items-center justify-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 transition-colors hover:bg-emerald-100 sm:justify-start dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300">
               <span className="shrink-0 [&>svg]:h-3 [&>svg]:w-3"><Icons.Chat /></span> <span className="truncate">{s.vision2Title}</span>
             </button>
           )}

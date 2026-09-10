@@ -72,13 +72,13 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, isInit
         >
              <div className="absolute top-2 right-2 z-20 flex flex-col items-end gap-1">
                 {tree.isNature ? (
-                    <span className="bg-sky-100 text-sky-800 text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center shadow-sm">
+                    <span className="bg-sky-100 text-sky-800 text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center shadow-sm dark:bg-sky-950/40 dark:text-sky-200">
                         <Icons.Shield />
                         <span className="ml-1 text-[9px]">{t('badge_nature')}</span>
                     </span>
                 ) : null}
                 {isGuardian && (
-                    <span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center shadow-sm w-fit">
+                    <span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center shadow-sm w-fit dark:bg-amber-950/40 dark:text-amber-200">
                         <Icons.Shield />
                         <span className="ml-1 text-[9px]">{t('role_guardian')}</span>
                     </span>
@@ -163,7 +163,7 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, isInit
                     </button>
                     {onReach && (
                         canReach ? (
-                            <button onClick={(e) => { e.stopPropagation(); onReach(tree); }} className="flex items-center gap-1 text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-700 px-2 py-1 rounded transition-colors uppercase tracking-wider font-semibold">
+                            <button onClick={(e) => { e.stopPropagation(); onReach(tree); }} className="flex items-center gap-1 text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-700 px-2 py-1 rounded transition-colors uppercase tracking-wider font-semibold dark:bg-amber-950/40 dark:text-amber-300">
                                 <Icons.Reach />
                                 <span>{t('reach')}</span>
                             </button>

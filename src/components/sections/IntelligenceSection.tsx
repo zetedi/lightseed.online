@@ -177,7 +177,7 @@ export const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
       <h4 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-400">{t('intel_all')}</h4>
       {intelligences.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400 dark:border-slate-700">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-500"><Icons.Intelligence /></div>
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-500 dark:bg-amber-950/40"><Icons.Intelligence /></div>
           <p className="text-sm">{t('intel_none')}</p>
         </div>
       ) : (
@@ -197,7 +197,7 @@ export const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
                     <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
                       <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">{PROVIDER_LABELS[intel.provider] || intel.provider}</span>
                       <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 font-mono text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">{intel.model}</span>
-                      {personaName(intel.personaId) && <span className="rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-purple-700">Persona · {personaName(intel.personaId)}</span>}
+                      {personaName(intel.personaId) && <span className="rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-purple-700 dark:border-purple-900 dark:bg-purple-950/40 dark:text-purple-300">Persona · {personaName(intel.personaId)}</span>}
                       <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">{(intel.memoryIds || []).length} memory {(intel.memoryIds || []).length === 1 ? 'source' : 'sources'}</span>
                     </div>
                   </div>
@@ -205,7 +205,7 @@ export const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
                     <button
                       type="button"
                       onClick={() => toggleAvailable(intel.id)}
-                      className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${available ? 'bg-emerald-100 text-emerald-700 hover:bg-red-50 hover:text-red-600' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+                      className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${available ? 'bg-emerald-100 text-emerald-700 hover:bg-red-50 hover:text-red-600 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
                     >
                       {available ? 'Enabled' : 'Enable'}
                     </button>

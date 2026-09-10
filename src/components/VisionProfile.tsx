@@ -210,7 +210,7 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                             <button
                                 onClick={handleJoinToggle}
                                 disabled={isUpdating}
-                                className={`flex items-center gap-1 rounded-full px-4 py-2 text-xs font-bold shadow-sm transition-all active:scale-95 ${isJoined ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-amber-500 text-white hover:bg-amber-600'}`}
+                                className={`flex items-center gap-1 rounded-full px-4 py-2 text-xs font-bold shadow-sm transition-all active:scale-95 ${isJoined ? 'bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-900' : 'bg-amber-500 text-white hover:bg-amber-600'}`}
                             >
                                 <MahameruAvatar size={16} />
                                 <span>{isJoined ? t('joined') : t('join_vision')}</span>
@@ -247,7 +247,7 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
 
                 {/* Avatar + title + meta */}
                 <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5">
-                    <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-amber-50 shadow-xl">
+                    <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-amber-50 shadow-xl dark:bg-amber-950/40">
                         <Picture size={1200} src={vision.imageUrl || '/mahameru.svg'} className="h-full w-full object-cover" alt={vision.title} referrerPolicy="no-referrer" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -299,23 +299,23 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                         {rootTree && (
                             <button
                                 onClick={() => onViewTree?.(rootTree)}
-                                className="mb-6 flex w-full items-center gap-4 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4 text-left transition-colors hover:bg-emerald-50"
+                                className="mb-6 flex w-full items-center gap-4 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4 text-left transition-colors hover:bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/60"
                             >
-                                <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-white bg-emerald-100 shadow">
+                                <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-white bg-emerald-100 shadow dark:bg-emerald-950/40">
                                     {rootTree.latestGrowthUrl || rootTree.imageUrl
                                         ? <Picture size={480} src={rootTree.latestGrowthUrl || rootTree.imageUrl} alt="" referrerPolicy="no-referrer" className="h-full w-full object-cover" />
                                         : <span className="flex h-full w-full items-center justify-center text-emerald-500"><Icons.Tree /></span>}
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">{isRoot ? t('root_vision_of') : t('rooted_in')}</p>
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-300">{isRoot ? t('root_vision_of') : t('rooted_in')}</p>
                                     <p className="truncate text-lg font-light tracking-wide text-slate-800 dark:text-slate-100">{rootTree.name}</p>
                                     <p className="truncate text-xs text-slate-500">{isRoot ? t('vision_is_foundation') : t('vision_connects_root')}</p>
                                 </div>
-                                <span className="shrink-0 text-emerald-600"><Icons.ArrowRight /></span>
+                                <span className="shrink-0 text-emerald-600 dark:text-emerald-300"><Icons.ArrowRight /></span>
                             </button>
                         )}
                         {vision.imageUrl && (
-                            <div className="mb-6 h-64 w-full overflow-hidden rounded-2xl border border-slate-100 bg-amber-50 shadow-sm dark:border-slate-800">
+                            <div className="mb-6 h-64 w-full overflow-hidden rounded-2xl border border-slate-100 bg-amber-50 shadow-sm dark:border-slate-800 dark:bg-amber-950/40">
                                 <Picture size={1200} src={vision.imageUrl} alt={vision.title} className="h-full w-full object-cover" />
                             </div>
                         )}
@@ -324,7 +324,7 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                         </p>
                         {vision.link && (
                             <div className="mt-8 border-t border-slate-100 pt-6 dark:border-slate-800">
-                                <a href={vision.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 font-medium text-amber-600 transition-colors hover:text-amber-800">
+                                <a href={vision.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 font-medium text-amber-600 transition-colors hover:text-amber-800 dark:text-amber-300">
                                     <Icons.Globe />
                                     <span className="break-all">{vision.link}</span>
                                 </a>
@@ -372,13 +372,13 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                         <div className="flex items-center justify-center gap-2">
                             <button
                                 onClick={() => setShadowSide('vision')}
-                                className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-colors ${shadowSide === 'vision' ? 'bg-amber-500 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                                className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-colors ${shadowSide === 'vision' ? 'bg-amber-500 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'}`}
                             >
                                 <Icons.Eye /> {t('vision')}
                             </button>
                             <button
                                 onClick={() => setShadowSide('tree')}
-                                className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-colors ${shadowSide === 'tree' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                                className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-colors ${shadowSide === 'tree' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'}`}
                             >
                                 <Icons.Tree /> {rootTree?.name || t('tree')}
                             </button>
@@ -420,7 +420,7 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                     <div className="space-y-6">
                         <SectionTitle title={t('participants')} sub={t('vision_participants_sub')} />
                         {participantCount > 0 && (
-                            <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-900">
+                            <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
                                 {t('vision_joined_count').replace('{n}', String(participantCount))}
                             </div>
                         )}

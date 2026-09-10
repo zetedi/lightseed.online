@@ -230,7 +230,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
     <Modal title={matchCandidate ? t('propose_alignment') : (targetTree ? t('grow_name').replace('{name}', (targetTree as Lifetree).name) : (targetVision ? t('grow_name').replace('{name}', targetVision.title) : t('emit_pulse')))} onClose={onClose}>
       {matchCandidate ? (
         <form onSubmit={handleAlignment} className="flex flex-col gap-4">
-          <div className="bg-sky-50 p-4 rounded text-sky-800">
+          <div className="bg-sky-50 p-4 rounded text-sky-800 dark:bg-sky-950/40 dark:text-sky-200">
             {t('alignment_with')} <strong>{matchCandidate.title}</strong>.
             <br /><span className="text-xs">{t('alignment_request_desc')}</span>
           </div>
@@ -276,7 +276,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
                 <Page key="subject">
                   {growthKind === 'tree' || (!growthKind && targetTree) ? (
                     <div className="space-y-3">
-                      <div className="relative h-44 w-full overflow-hidden rounded-2xl border border-emerald-200 bg-slate-100 dark:bg-slate-800">
+                      <div className="relative h-44 w-full overflow-hidden rounded-2xl border border-emerald-200 bg-slate-100 dark:bg-slate-800 dark:border-emerald-900">
                         {(pulseImageUrl || treeImage)
                           ? <img src={pulseImageUrl || treeImage} alt={growthTree?.name} className="h-full w-full object-cover" />
                           : <div className="flex h-full items-center justify-center text-slate-300"><Icons.Tree /></div>}
@@ -308,7 +308,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
                               <input type="file" accept="image/*" className="hidden" disabled={uploading} onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(f); }} />
                             </label>
                           </div>
-                          {genError && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(genError)}</p>}
+                          {genError && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-300">{speak(genError)}</p>}
                         </div>
                       )}
 
@@ -331,10 +331,10 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
                       <div className="flex flex-wrap gap-2">
                         {/* The stored category stays the English word (a data value); only its face speaks. */}
                         {([['Inspiration', 'inspiration'], ['Funding', 'funding'], ['Collaboration', 'collaboration'], ['Other', 'other']] as const).map(([c, label]) => (
-                          <button key={c} type="button" onClick={() => setGrowthCategory(c)} className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${growthCategory === c ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{t(label)}</button>
+                          <button key={c} type="button" onClick={() => setGrowthCategory(c)} className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${growthCategory === c ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'}`}>{t(label)}</button>
                         ))}
                       </div>
-                      <button type="button" onClick={inviteTree} className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-emerald-300 px-3 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-50">
+                      <button type="button" onClick={inviteTree} className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-emerald-300 px-3 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-50 dark:text-emerald-300">
                         <Icons.Tree /> <span>{t('grow_invite_tree')}</span>
                       </button>
                     </div>
@@ -378,14 +378,14 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
             </button>
             <div className="flex items-center gap-1.5">
               {pageKeys.map((_, n) => (
-                <span key={n} className={`h-1.5 rounded-full transition-all ${n === step ? 'w-5 bg-emerald-600' : 'w-1.5 bg-slate-200'}`} />
+                <span key={n} className={`h-1.5 rounded-full transition-all ${n === step ? 'w-5 bg-emerald-600' : 'w-1.5 bg-slate-200 dark:bg-slate-800'}`} />
               ))}
             </div>
             {isLast ? (
               <span className="w-12" />
             ) : (
               <button type="button" onClick={() => goToStep(step + 1)} disabled={!canAdvance}
-                className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 transition-colors hover:text-emerald-900 disabled:opacity-30">
+                className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 transition-colors hover:text-emerald-900 disabled:opacity-30 dark:text-emerald-300">
                 <span>{t('next')}</span> <Icons.ArrowRight size={16} />
               </button>
             )}

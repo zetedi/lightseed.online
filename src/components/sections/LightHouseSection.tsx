@@ -109,7 +109,7 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
   };
 
   const form = (
-    <div className="mt-4 space-y-3 rounded-2xl border border-amber-100 bg-amber-50/40 p-4 text-left animate-in fade-in slide-in-from-bottom-2">
+    <div className="mt-4 space-y-3 rounded-2xl border border-amber-100 bg-amber-50/40 p-4 text-left animate-in fade-in slide-in-from-bottom-2 dark:border-amber-900 dark:bg-amber-950/40">
       <input dir="auto" value={name} onChange={e => setName(e.target.value)} placeholder={t('lh_name_ph')}
         className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-slate-900 dark:border-slate-700" />
       <textarea dir="auto" value={body} onChange={e => setBody(e.target.value)} placeholder={t('lh_holds_ph')}
@@ -141,7 +141,7 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
                 { enableHighAccuracy: true, timeout: 10000 },
               );
             }}
-            className="flex items-center gap-1 rounded-full border border-amber-200 bg-white px-3 py-1 text-[11px] font-bold text-amber-700 transition-colors hover:bg-amber-50 disabled:opacity-50 dark:bg-slate-900">
+            className="flex items-center gap-1 rounded-full border border-amber-200 bg-white px-3 py-1 text-[11px] font-bold text-amber-700 transition-colors hover:bg-amber-50 disabled:opacity-50 dark:bg-slate-900 dark:border-amber-900 dark:text-amber-300">
             <Icons.Loc /> {isLocating ? t('locating') : t('locate')}
           </button>
         </div>
@@ -154,7 +154,7 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
         <div className="flex flex-wrap gap-2">
           {LIGHT_HOUSE_KINDS.map(k => (
             <button key={k} type="button" onClick={() => setKind(kind === k ? '' : k)}
-              className={`rounded-full border px-3 py-1.5 text-xs font-bold transition-all ${kind === k ? 'border-amber-400 bg-amber-100 text-amber-800 ring-1 ring-amber-300' : 'border-slate-200 bg-white text-slate-500 hover:border-amber-200'}`}>
+              className={`rounded-full border px-3 py-1.5 text-xs font-bold transition-all ${kind === k ? 'border-amber-400 bg-amber-100 text-amber-800 ring-1 ring-amber-300 dark:bg-amber-950/40 dark:text-amber-200' : 'border-slate-200 bg-white text-slate-500 hover:border-amber-200 dark:border-slate-700 dark:bg-slate-900'}`}>
               {t(lightHouseKindKey(k))}
             </button>
           ))}
@@ -172,7 +172,7 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
             { v: 'public', label: t('vis_public_chip'), hint: t('vis_public_hint') },
           ] as const).map(o => (
             <button key={o.v} type="button" onClick={() => setVisibility(o.v)}
-              className={`rounded-xl border px-2 py-2 text-center transition-all ${visibility === o.v ? 'border-amber-400 bg-amber-100 text-amber-800 ring-1 ring-amber-300' : 'border-slate-200 bg-white text-slate-500 hover:border-amber-200'}`}>
+              className={`rounded-xl border px-2 py-2 text-center transition-all ${visibility === o.v ? 'border-amber-400 bg-amber-100 text-amber-800 ring-1 ring-amber-300 dark:bg-amber-950/40 dark:text-amber-200' : 'border-slate-200 bg-white text-slate-500 hover:border-amber-200 dark:border-slate-700 dark:bg-slate-900'}`}>
               <span className="block text-xs font-bold">{o.label}</span>
               <span className="block text-[9px] opacity-70">{o.hint}</span>
             </button>
@@ -202,7 +202,7 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
   };
 
   const adoptPanel = (
-    <div className="mt-4 space-y-2 rounded-2xl border border-amber-100 bg-amber-50/40 p-4 text-left animate-in fade-in slide-in-from-bottom-2">
+    <div className="mt-4 space-y-2 rounded-2xl border border-amber-100 bg-amber-50/40 p-4 text-left animate-in fade-in slide-in-from-bottom-2 dark:border-amber-900 dark:bg-amber-950/40">
       <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('lh_open_step')}</p>
       {adoptable.map(s => (
         <div key={s.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-2.5 dark:bg-slate-900 dark:border-slate-800">
@@ -224,12 +224,12 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
   const keeperActions = canCreate && (
     <div className="flex flex-wrap justify-center gap-2">
       {onCreate && !showForm && (
-        <button onClick={() => { setShowForm(true); setShowAdopt(false); }} className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-amber-700 transition-colors hover:bg-amber-100">
+        <button onClick={() => { setShowForm(true); setShowAdopt(false); }} className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-amber-700 transition-colors hover:bg-amber-100 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
           {lightHouses.length === 0 ? t('lh_consecrate_first') : t('lh_consecrate_another')}
         </button>
       )}
       {onAdopt && adoptable.length > 0 && !showAdopt && (
-        <button onClick={() => { setShowAdopt(true); setShowForm(false); }} className="rounded-full border border-amber-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-widest text-amber-700 transition-colors hover:bg-amber-50 dark:bg-slate-900">
+        <button onClick={() => { setShowAdopt(true); setShowForm(false); }} className="rounded-full border border-amber-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-widest text-amber-700 transition-colors hover:bg-amber-50 dark:bg-slate-900 dark:border-amber-900 dark:text-amber-300">
           {t('lh_step_into')}
         </button>
       )}
@@ -249,7 +249,7 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
       <SectionTitle title={title} sub={sub} />
       {lightHouses.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400 dark:border-slate-700">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-500"><Icons.Sun /></div>
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-500 dark:bg-amber-950/40"><Icons.Sun /></div>
           <p className="text-sm">{emptyMessage || t('lh_none_yet')}</p>
           <div className="mt-4">{keeperActions}</div>
           {canCreate && onCreate && showForm && form}
@@ -263,7 +263,7 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
             <div className="flex flex-wrap gap-2">
               {['', ...kindsPresent].map(k => (
                 <button key={k || 'all'} type="button" onClick={() => setKindFilter(k)}
-                  className={`rounded-full border px-3 py-1 text-xs font-bold transition-all ${kindFilter === k ? 'border-amber-400 bg-amber-100 text-amber-800' : 'border-slate-200 bg-white text-slate-500 hover:border-amber-200'}`}>
+                  className={`rounded-full border px-3 py-1 text-xs font-bold transition-all ${kindFilter === k ? 'border-amber-400 bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200' : 'border-slate-200 bg-white text-slate-500 hover:border-amber-200 dark:border-slate-700 dark:bg-slate-900'}`}>
                   {k === '' ? t('lh_kind_all') : (isLightHouseKind(k) ? t(lightHouseKindKey(k)) : k)}
                 </button>
               ))}

@@ -75,14 +75,14 @@ export const Modal = ({ children, onClose, title, backgroundImage, fullScreenOnM
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
-            className={`shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 ${backgroundImage ? 'text-white' : 'bg-white'} ${
+            className={`shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 ${backgroundImage ? 'text-white' : 'bg-white dark:bg-slate-900'} ${
                 fullScreenOnMobile
                     ? `w-full h-full max-h-full rounded-none sm:h-auto sm:max-h-[90vh] sm:w-full ${desktopWidth} sm:rounded-2xl`
                     : `w-full ${wide ? 'max-w-2xl' : 'max-w-md'} max-h-[90vh] rounded-2xl`
             }`}
             style={backgroundImage ? { backgroundImage: `url("${backgroundImage}")`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
         >
-            <div className={`shrink-0 px-4 py-3 border-b flex justify-between items-center ${backgroundImage ? 'bg-slate-900/90 border-white/10 backdrop-blur-md' : 'bg-slate-50 border-slate-100'}`}>
+            <div className={`shrink-0 px-4 py-3 border-b flex justify-between items-center ${backgroundImage ? 'bg-slate-900/90 border-white/10 backdrop-blur-md' : 'bg-slate-50 border-slate-100 dark:bg-slate-900 dark:border-slate-800'}`}>
                 <h3 id={titleId} className={backgroundImage ? 'font-semibold text-emerald-100 drop-shadow-md' : MODAL_TITLE}>{title}</h3>
                 <button type="button" onClick={onClose} aria-label={speak('close')} className={backgroundImage ? 'p-1 rounded-full transition-colors text-white/80 hover:bg-white/20 hover:text-white' : MODAL_CLOSE}>&times;</button>
             </div>

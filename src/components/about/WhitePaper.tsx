@@ -75,7 +75,7 @@ export const WhitePaperSection = () => {
         <>
             {/* In-page card — the book's cover; the reader opens over it. */}
             <div className="rounded-2xl border border-slate-100 bg-white p-8 text-center shadow-sm dark:bg-slate-900 dark:border-slate-800">
-                <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">{t('white_paper')}</p>
+                <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-300">{t('white_paper')}</p>
                 <p className="mx-auto mt-2 max-w-md font-serif text-sm italic text-slate-500">{t('white_paper_note')}</p>
                 <button onClick={() => setOpen(true)}
                     className="mt-4 rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-bold uppercase tracking-widest text-white shadow transition-colors hover:bg-emerald-700">
@@ -90,7 +90,7 @@ export const WhitePaperSection = () => {
                     <div className="mx-auto flex h-full max-w-6xl flex-col gap-3 px-3 py-3 sm:px-4 sm:py-4 lg:flex-row lg:gap-6">
                         <div className="shrink-0 lg:w-60">
                             <div className="mb-2 flex items-center justify-between lg:mb-4">
-                                <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">{t('white_paper')}</p>
+                                <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-300">{t('white_paper')}</p>
                                 <button onClick={() => setOpen(false)} title={t('close_the_book')} aria-label={t('close_the_book')}
                                     className="rounded-full bg-white p-2 text-slate-400 shadow-sm ring-1 ring-slate-200 transition-colors hover:text-slate-700 dark:bg-slate-900">
                                     <Icons.Close />
