@@ -27,7 +27,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
     const images = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
     const isOffering = pulse.type === 'offering';
     const appreciationLight = pulse.offeringAppreciationLight;
-    const badge = pulse.type === 'event' ? 'EVENT' : pulse.type === 'tree_growth' ? 'GROWTH' : isOffering ? (pulse.offeringKind === 'bed' ? 'BED' : 'OFFERING') : '';
+    const badge = pulse.type === 'event' ? t('badge_event') : pulse.type === 'tree_growth' ? t('badge_growth') : isOffering ? (pulse.offeringKind === 'bed' ? t('badge_bed') : t('badge_offering')) : '';
     const isEvent = pulse.type === 'event';
     const meta = isEvent && pulse.eventDate ? `${new Date(pulse.eventDate).toLocaleDateString()} · ${pulse.eventLocation || pulse.body}` : pulse.body;
 
@@ -51,17 +51,17 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
                 : badge && <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm ${isEvent ? 'bg-sky-100 text-sky-700' : isOffering ? 'text-white' : 'bg-emerald-100 text-emerald-600'}`} style={isOffering ? { backgroundColor: tabTone('offerings') } : undefined}>{badge}</span>}
             {/* A paused offering (visible only to its author) says so plainly. */}
             {isOffering && pulse.offeringActive === false && (
-                <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[9px] font-bold text-slate-600 shadow-sm">PAUSED</span>
+                <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[9px] font-bold text-slate-600 shadow-sm dark:bg-slate-800 dark:text-slate-300">{t('badge_paused')}</span>
             )}
             {/* Suggested appreciation after the contribution — never its admission price. */}
             {isOffering && !!appreciationLight && (
-                <span title="Suggested appreciation after receiving this offering" className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 text-[9px] font-black text-amber-950 shadow-sm">
+                <span title={t('offer_appreciation_title')} className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 text-[9px] font-black text-amber-950 shadow-sm">
                     <span className="[&>svg]:h-2.5 [&>svg]:w-2.5"><Icons.Sun /></span> {formatLight(appreciationLight)}
                 </span>
             )}
-            {images.length > 1 && <span className="bg-white/90 text-slate-600 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm">{images.length} IMG</span>}
-            {pulse.isMatch && <span className="bg-sky-100 text-sky-600 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm">MATCH</span>}
-            {pulse.offeringId && <span className="bg-emerald-100 text-emerald-700 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm">OFFERING ✓</span>}
+            {images.length > 1 && <span className="bg-white/90 text-slate-600 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm dark:bg-slate-900/90 dark:text-slate-300">{images.length} {t('badge_img')}</span>}
+            {pulse.isMatch && <span className="bg-sky-100 text-sky-600 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm">{t('badge_match')}</span>}
+            {pulse.offeringId && <span className="bg-emerald-100 text-emerald-700 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm">{t('badge_offering_done')}</span>}
         </>
     );
 
@@ -77,7 +77,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
                 {avatar('h-14 w-14', 'text-xl')}
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                        <h3 dir="auto" className="truncate text-sm font-semibold text-slate-800">{pulse.title}</h3>
+                        <h3 dir="auto" className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{pulse.title}</h3>
                         {pulse.carriedByName && <p className="truncate text-[10px] italic text-purple-500">🤲 {t('carried_by').replace('{name}', pulse.carriedByName)}</p>}
                         {badges}
                     </div>
@@ -93,7 +93,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
         return (
             <div onClick={() => onView && onView(pulse)} className={`cursor-pointer overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm ${POP} ${ringCls}`}>
                 {images.length > 0 ? (
-                    <div className="relative h-20 overflow-hidden bg-slate-100">
+                    <div className="relative h-20 overflow-hidden bg-slate-100 dark:bg-slate-800">
                         <CardCarousel images={images} alt={pulse.title} />
                     </div>
                 ) : (
@@ -102,7 +102,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
                     </div>
                 )}
                 <div className="p-2">
-                    <h3 dir="auto" className="truncate text-xs font-semibold text-slate-800">{pulse.title}</h3>
+                    <h3 dir="auto" className="truncate text-xs font-semibold text-slate-800 dark:text-slate-100">{pulse.title}</h3>
                         {pulse.carriedByName && <p className="truncate text-[10px] italic text-purple-500">🤲 {t('carried_by').replace('{name}', pulse.carriedByName)}</p>}
                     <div className="mt-1 flex items-center justify-between">
                         {love('text-[10px]')}
@@ -124,7 +124,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
         >
             {images.length > 0 ? (
                 // With an image: the photo carries the card, title overlaid.
-                <div className="relative h-36 shrink-0 bg-slate-100 overflow-hidden group">
+                <div className="relative h-36 shrink-0 bg-slate-100 overflow-hidden group dark:bg-slate-800">
                     <div className="absolute top-2 right-2 z-20 flex gap-1">{badges}</div>
                     <CardCarousel images={images} alt={pulse.title} imgClassName="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent pointer-events-none"></div>
@@ -136,7 +136,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
                 // No image: let the words carry it — no placeholder artwork.
                 <div className="flex h-36 shrink-0 flex-col justify-between p-3">
                     <div className="flex items-start justify-between gap-2">
-                        <h3 dir="auto" className="line-clamp-2 text-base font-semibold tracking-wide text-slate-800">{pulse.title}</h3>
+                        <h3 dir="auto" className="line-clamp-2 text-base font-semibold tracking-wide text-slate-800 dark:text-slate-100">{pulse.title}</h3>
                         <div className="flex shrink-0 gap-1">{badges}</div>
                     </div>
                     <p dir="auto" className="line-clamp-3 font-serif text-sm italic leading-relaxed text-slate-500">{pulse.body}</p>
@@ -146,14 +146,14 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
             <div className="flex flex-1 flex-col p-3">
                 {/* Text-only cards already show the body above — don't repeat it here. */}
                 {(images.length > 0 || (isEvent && pulse.eventDate)) && (
-                    <p dir="auto" className="text-slate-600 text-xs font-light leading-relaxed truncate">{meta}</p>
+                    <p dir="auto" className="text-slate-600 text-xs font-light leading-relaxed truncate dark:text-slate-300">{meta}</p>
                 )}
                 <div className={`mt-auto flex items-center justify-between ${images.length > 0 || (isEvent && pulse.eventDate) ? 'pt-2 border-t border-slate-100' : ''}`}>
                     {love('text-xs', 'text-slate-500')}
 
                     {lightseed && lightseed.uid !== pulse.authorId && !pulse.isMatch && (
-                        <button onClick={handleMatchClick} className="text-[10px] bg-slate-50 text-slate-500 hover:bg-sky-50 hover:text-sky-600 px-2 py-1 rounded transition-colors flex items-center gap-1">
-                            <Icons.Link /> <span>Match</span>
+                        <button onClick={handleMatchClick} className="text-[10px] bg-slate-50 text-slate-500 hover:bg-sky-50 hover:text-sky-600 px-2 py-1 rounded transition-colors flex items-center gap-1 dark:bg-slate-900">
+                            <Icons.Link /> <span>{t('match')}</span>
                         </button>
                     )}
                 </div>

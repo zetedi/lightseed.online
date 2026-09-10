@@ -122,9 +122,9 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
     {/* Custom landing — data, not code: flipping this makes the community's hero image the
         domain's front page (sign-in + events), with the seed behind the corner logo. Like
         every dial on this tab, it applies and saves on its own. */}
-    <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-white p-4">
+    <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-white p-4 dark:bg-slate-900 dark:border-slate-800">
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-slate-800">{t('landing_custom')}</p>
+        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t('landing_custom')}</p>
         <p className="text-xs text-slate-500">{t('landing_custom_note')}</p>
       </div>
       <button
@@ -141,10 +141,10 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
     {/* Landing pages — the organisation authors its own menu panels (a food menu, an About…)
         as rich text. One generic renderer serves them all; adding a page is data, not code. */}
     {editCustomLanding && (
-      <div className="space-y-4 rounded-2xl border border-slate-100 bg-white p-4">
+      <div className="space-y-4 rounded-2xl border border-slate-100 bg-white p-4 dark:bg-slate-900 dark:border-slate-800">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-slate-800">{t('landing_pages')}</p>
+            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t('landing_pages')}</p>
             <p className="text-xs text-slate-500">{t('landing_pages_note')}</p>
           </div>
           <button
@@ -159,18 +159,18 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
           <p className="text-xs text-slate-400">{t('landing_no_pages')}</p>
         )}
         {editLandingPages.map((page, i) => (
-          <div key={page.id} className="space-y-2 rounded-xl border border-slate-100 p-3">
+          <div key={page.id} className="space-y-2 rounded-xl border border-slate-100 p-3 dark:border-slate-800">
             <div className="flex items-center gap-2">
               <input
                 value={page.label}
                 onChange={e => onLandingPagesChange(prev => prev.map((p, j) => j === i ? { ...p, label: e.target.value } : p))}
                 placeholder={t('menu_label_ph')}
-                className="h-9 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="h-9 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700"
               />
               <button
                 type="button"
                 onClick={() => onLandingPagesChange(prev => prev.filter((_, j) => j !== i))}
-                className="shrink-0 rounded-lg border border-red-100 bg-white px-2.5 py-1.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50"
+                className="shrink-0 rounded-lg border border-red-100 bg-white px-2.5 py-1.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50 dark:bg-slate-900"
               >
                 {t('remove')}
               </button>
@@ -187,9 +187,9 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
     )}
     {/* Show counts — the trees/pulses/visions tallies on the home cards. Off by default: the home
         stays about the living, not the numbers. */}
-    <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-white p-4">
+    <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-white p-4 dark:bg-slate-900 dark:border-slate-800">
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-slate-800">{t('home_counts')}</p>
+        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t('home_counts')}</p>
         <p className="text-xs text-slate-500">{t('home_counts_note')}</p>
       </div>
       <button

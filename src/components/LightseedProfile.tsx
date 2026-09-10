@@ -7,7 +7,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
 import { ValidationBadge } from './ValidationBadge';
-import { Modal, modalButton } from './ui/Modal';
+import { notify } from './ui/Toast';
 import { isExplicitlyValidatedTree, isValidationLive, isValidationFading } from '../utils/validation';
 import { normalizeTheme, type CommunityThemePreset } from '../utils/theme';
 import { IntelligencePanel } from './intelligence/IntelligencePanel';
@@ -23,6 +23,7 @@ import { ProfileEvents } from './profile/ProfileEvents';
 import { ProfileName } from './profile/ProfileName';
 import { charter } from '../config/charter';
 import { ProfileVisions } from './profile/ProfileVisions';
+import { ProfileOfferings } from './profile/ProfileOfferings';
 import { ProfileHistory } from './profile/ProfileHistory';
 import { ProfileStays } from './profile/ProfileStays';
 import { ProfileReaches } from './profile/ProfileReaches';
@@ -68,7 +69,6 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
     // Session state comes from context now (was prop-drilled from App).
     const { lightseed, myTrees, guardedTrees, tendedTrees, isAdmin, isSuperAdmin, superAdminExists } = useSession();
     const [activeTab, setActiveTab] = useState<'trees' | 'light' | 'pulses' | 'events' | 'visions' | 'stays' | 'history' | 'reaches' | 'invites' | 'appearance' | 'intelligence' | 'settings' | 'admin'>('trees');
-    const [dialogMessage, setDialogMessage] = useState<string | null>(null);
 
     // Live profile state — written by the listenToUserProfile listener below, read across
     // tabs (invites allotment, settings toggles, the appearance draft, intelligence choice).
@@ -76,6 +76,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
     const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
     const [dmEmailNotifications, setDmEmailNotifications] = useState(true);
     const [onlyValidatedCanReach, setOnlyValidatedCanReachState] = useState(false);
+    const [anonymous, setAnonymous] = useState(false);
     const [siteTheme, setSiteTheme] = useState(normalizeTheme(undefined));
     const [siteLogoUrl, setSiteLogoUrl] = useState('');
     const [siteHeroUrl, setSiteHeroUrl] = useState('');
@@ -97,6 +98,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
             // Direct-message email notifications are enabled unless explicitly turned off.
             setDmEmailNotifications(data?.emailNotifications?.directMessages !== false);
             setOnlyValidatedCanReachState(Boolean(data?.onlyValidatedCanReach));
+            setAnonymous(Boolean(data?.anonymous));
             setSiteTheme(normalizeTheme(data?.siteTheme));
             setSiteLogoUrl(data?.siteLogoUrl || '');
             setSiteHeroUrl(data?.siteHeroUrl || '');
@@ -128,7 +130,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
     const handleCare = async (tree: Lifetree) => {
         setCaringId(tree.id);
         try { await careForTree(tree); setCaredIds(prev => new Set(prev).add(tree.id)); }
-        catch (e: any) { showAlert(e?.message || 'Could not care the tree.'); }
+        catch (e: any) { showAlert(e?.message || 'err_care_tree'); }
         setCaringId(null);
     };
     const treesNeedingCare = myTrees.filter((t: Lifetree) => lapsedValidated(t) || fadingValidated(t));
@@ -196,7 +198,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
         {
             // The light face: what witnessed care has kindled. Holder-private by rule, so it
             // lives only on the OWN profile shell (there is no public balance to show anyone).
-            key: 'light', label: 'Light', icon: <Icons.Sun />, render: () => (
+            key: 'light', label: t('light_word'), icon: <Icons.Sun />, render: () => (
                 <ProfileLight uid={lightseed.uid} />
             ),
         },
@@ -219,6 +221,16 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
             ),
         },
         {
+            key: 'visions', label: t('visions'), icon: <Icons.Eye />, render: () => (
+                <ProfileVisions
+                    uid={lightseed.uid}
+                    onViewVision={onViewVision}
+                    onCreateVision={onCreateVision}
+                    notify={notify}
+                />
+            ),
+        },
+        {
             // Every event this being has planted, at every visibility — the feeds can only ask for
             // the levels a VIEWER may query, so a node- or private-visibility event of your own is
             // certain to be here and nowhere else.
@@ -233,13 +245,10 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
             ),
         },
         {
-            key: 'visions', label: t('visions'), icon: <Icons.Eye />, render: () => (
-                <ProfileVisions
-                    uid={lightseed.uid}
-                    onViewVision={onViewVision}
-                    onCreateVision={onCreateVision}
-                    notify={setDialogMessage}
-                />
+            // What this being has offered — a bed, a service, code, or a care laid at another
+            // being's leaf — beside the visions and events it has made. One order everywhere.
+            key: 'offerings', label: t('offerings'), icon: <Icons.Handshake />, render: () => (
+                <ProfileOfferings uid={lightseed.uid} onViewOffering={onViewPulse} />
             ),
         },
         {
@@ -263,7 +272,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                     isSuperAdmin={isSuperAdmin}
                     hasTrees={myTrees.length > 0}
                     invitesRemaining={invitesRemaining}
-                    notify={setDialogMessage}
+                    notify={notify}
                 />
             ),
         },
@@ -280,7 +289,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                     onSiteHeroUrlChange={setSiteHeroUrl}
                     siteInherit={siteInherit}
                     onSiteInheritChange={setSiteInherit}
-                    notify={setDialogMessage}
+                    notify={notify}
                 />
             ),
         },
@@ -315,13 +324,15 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                     email={lightseed.email}
                     onlyValidatedCanReach={onlyValidatedCanReach}
                     onOnlyValidatedChange={setOnlyValidatedCanReachState}
+                    anonymous={anonymous}
+                    onAnonymousChange={setAnonymous}
                     newsletterSubscribed={newsletterSubscribed}
                     onNewsletterChange={setNewsletterSubscribed}
                     placeDomain={placeDomain || charter.domain}
                     placeName={placeName || charter.name}
                     dmEmailNotifications={dmEmailNotifications}
                     onDmEmailChange={setDmEmailNotifications}
-                    notify={setDialogMessage}
+                    notify={notify}
                 />
             ),
         },
@@ -339,7 +350,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                     onGrantAdmin={onGrantAdmin}
                     onRevokeAdmin={onRevokeAdmin}
                     onOpenNewsletterAdmin={onOpenNewsletterAdmin}
-                    notify={setDialogMessage}
+                    notify={notify}
                 />
             ),
         } satisfies BeingSection] : []),
@@ -359,19 +370,19 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                     <div className="relative shrink-0">
                         <img
                             src={lightseed.photoURL || `https://ui-avatars.com/api/?name=${lightseed.displayName}`}
-                            className="w-14 h-14 md:w-20 md:h-20 rounded-full border-4 border-white shadow-xl bg-white object-cover"
+                            className="w-14 h-14 md:w-20 md:h-20 rounded-full border-4 border-white shadow-xl bg-white object-cover dark:bg-slate-900"
                             referrerPolicy="no-referrer"
                             onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.onerror = null;
-                                target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(lightseed.displayName || 'Visitor')}&background=random&color=fff`;
+                                target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(lightseed.displayName || t('visitor'))}&background=random&color=fff`;
                             }}
                         />
                         <div className="absolute bottom-0.5 right-0.5 bg-emerald-500 w-4 h-4 rounded-full border-[3px] border-slate-900"></div>
                         {/* The validation shield — top-left of the avatar when this being keeps a
                             live validated tree (or is the node's own trusted validator). */}
                         {(hasValidatedTree || isSuperAdmin) && (
-                            <span className="absolute -top-1 -left-1 flex h-5 w-5 md:h-6 md:w-6 items-center justify-center rounded-full border-2 border-white bg-emerald-500 text-white shadow-md" title="Validated">
+                            <span className="absolute -top-1 -left-1 flex h-5 w-5 md:h-6 md:w-6 items-center justify-center rounded-full border-2 border-white bg-emerald-500 text-white shadow-md" title={t('validated_trees')}>
                                 <Icons.ShieldCheck className="h-3 w-3 md:h-3.5 md:w-3.5" />
                             </span>
                         )}
@@ -386,7 +397,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                             <span className="bg-amber-400/20 border border-amber-400/50 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">{t('superadmin_chip')}</span>
                         )}
                         {isAdmin && !isSuperAdmin && (
-                            <span className="flex items-center gap-1 bg-indigo-400/20 border border-indigo-400/50 text-indigo-300 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider"><Icons.Shield /> Admin</span>
+                            <span className="flex items-center gap-1 bg-indigo-400/20 border border-indigo-400/50 text-indigo-300 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider"><Icons.Shield /> {t('admin_title')}</span>
                         )}
                         {/* The domain owner / super admin is a trusted validator, so always carry the badge. */}
                         {(hasValidatedTree || isSuperAdmin) ? (
@@ -401,8 +412,8 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                             <span className="text-xs text-slate-400">{myTrees.length === 1 ? t('tree') : t('trees')}</span>
                         </span>
                         {joinedMs !== null && (
-                            <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-xs text-slate-300">
-                                Since {new Date(joinedMs).toLocaleDateString()}
+                            <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-xs text-slate-300 dark:bg-slate-900/10">
+                                {t('since_date').replace('{date}', new Date(joinedMs).toLocaleDateString())}
                             </span>
                         )}
                         {allValidated && (
@@ -417,16 +428,8 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
             banner={
                 <>
                     {/* Pending invitations (tree circle + community) shown above the tabs */}
-                    <ProfileInviteBanners uid={lightseed.uid} notify={setDialogMessage} />
+                    <ProfileInviteBanners uid={lightseed.uid} notify={notify} />
 
-                    {dialogMessage && (
-                        <Modal title={t('notice')} onClose={() => setDialogMessage(null)}>
-                            <div className="space-y-4">
-                                <p className="text-sm text-slate-600">{dialogMessage}</p>
-                                <button type="button" onClick={() => setDialogMessage(null)} className={modalButton('primary')}>{t('close')}</button>
-                            </div>
-                        </Modal>
-                    )}
                 </>
             }
             // The menu + content boxes sit ON the hero — the blue extends behind them.

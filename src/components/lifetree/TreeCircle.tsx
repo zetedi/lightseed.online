@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { notify } from '../ui/Toast';
 import { showAlert, showConfirm } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
@@ -186,7 +187,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
             await (myAsk
                 ? firestoreStore.unlink(currentUserId, 'keeper_request', treeId)
                 : firestoreStore.link(currentUserId, 'keeper_request', treeId));
-            if (!myAsk) showAlert('keeper_request_sent');
+            if (!myAsk) notify(speak('keeper_request_sent'));
             setAskNonce(n => n + 1);
         } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
         setAskBusy(false);
@@ -219,7 +220,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
             await firestoreStore.unlink(r.uid, 'keeper_request', treeId);
             setAskNonce(n => n + 1);
             setInviteNonce(n => n + 1);
-            showAlert(spokenLine('circle_invite_sent', { name: r.name, role: roleName(askRole).toLowerCase(), tree: tree.name || '—' }));
+            notify(speak(spokenLine('circle_invite_sent', { name: r.name, role: roleName(askRole).toLowerCase(), tree: tree.name || '—' })));
         } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
         setAnswering(null);
     };
@@ -279,7 +280,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
             });
             setInvited(prev => new Set(prev).add(candidate.ownerId));
             setInviteNonce(n => n + 1); // the ledger below shows it at once
-            showAlert(spokenLine('circle_invite_sent', { name: candidate.name || '—', role: roleName(inviteRole).toLowerCase(), tree: tree.name || '—' }));
+            notify(speak(spokenLine('circle_invite_sent', { name: candidate.name || '—', role: roleName(inviteRole).toLowerCase(), tree: tree.name || '—' })));
         } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
         setInviting(null);
     };
@@ -303,15 +304,15 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                                 {g.members.map(uid => {
                                     const face = faceFromForest(uid, forest);
                                     return (
-                                        <div key={`${g.role}:${uid}`} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-2.5 shadow-sm">
+                                        <div key={`${g.role}:${uid}`} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-2.5 shadow-sm dark:bg-slate-900 dark:border-slate-800">
                                             <Avatar imageUrl={face.imageUrl} seed={labelFor(uid, face)} ring={ROLE_RING[g.role]} />
                                             <div className="min-w-0">
-                                                <p className="truncate text-sm font-bold text-slate-800">{labelFor(uid, face)}</p>
+                                                <p className="truncate text-sm font-bold text-slate-800 dark:text-slate-100">{labelFor(uid, face)}</p>
                                                 <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{roleName(g.role)}</p>
                                             </div>
                                             {uid === currentUserId && g.role !== 'owner' && (
                                                 <button onClick={() => handleStepDown(g.role as InvitableRole)} disabled={steppingDown}
-                                                    className="ml-auto shrink-0 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-50">
+                                                    className="ml-auto shrink-0 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:bg-slate-900 dark:border-slate-700">
                                                     {t('step_down')}
                                                 </button>
                                             )}
@@ -323,7 +324,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                     ))}
                 </div>
             ) : (
-                <p className="mb-5 rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400">
+                <p className="mb-5 rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400 dark:border-slate-700">
                     {t('circle_empty')}
                 </p>
             )}
@@ -373,7 +374,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                         <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-violet-700">{t('keeper_requests')}</p>
                         {canInviteRoles && (
                             <select value={askRole} onChange={e => setAskRole(e.target.value as InvitableRole)}
-                                className="h-8 rounded-lg border border-violet-200 bg-white px-2 text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500">
+                                className="h-8 rounded-lg border border-violet-200 bg-white px-2 text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500 dark:bg-slate-900 dark:text-slate-300">
                                 {(['guardian', 'co_owner', 'steward', 'observer'] as InvitableRole[]).map(r => (
                                     <option key={r} value={r}>{t('invite_as_role').replace('{role}', roleName(r))}</option>
                                 ))}
@@ -383,19 +384,19 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                     <p className="mb-2 text-[11px] italic text-violet-600">{t('keeper_knock_tree_hint')}</p>
                     {/* What the chosen role truly is — read before anyone offers a word they cannot picture. */}
                     <p className="mb-2 text-xs leading-relaxed text-slate-500">
-                        <span className="font-bold text-slate-600">{roleName(askRole)}</span> — {roleDesc(askRole)}
+                        <span className="font-bold text-slate-600 dark:text-slate-300">{roleName(askRole)}</span> — {roleDesc(askRole)}
                     </p>
                     <div className="space-y-1.5">
                         {keepAsks.map(r => (
-                            <div key={r.uid} className="flex items-center justify-between gap-2 rounded-lg border border-violet-100 bg-white px-3 py-2">
-                                <p className="truncate text-sm font-semibold text-slate-700">{r.name}</p>
+                            <div key={r.uid} className="flex items-center justify-between gap-2 rounded-lg border border-violet-100 bg-white px-3 py-2 dark:bg-slate-900">
+                                <p className="truncate text-sm font-semibold text-slate-700 dark:text-slate-200">{r.name}</p>
                                 <div className="flex shrink-0 items-center gap-1.5">
                                     <button onClick={() => handleAnswerAsk(r)} disabled={answering === r.uid}
                                         className="rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-violet-500 disabled:opacity-50">
                                         {answering === r.uid ? '…' : t('accept')}
                                     </button>
                                     <button onClick={() => handleDeclineAsk(r.uid)} disabled={answering === r.uid}
-                                        className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50">
+                                        className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-700">
                                         {t('decline')}
                                     </button>
                                 </div>
@@ -407,7 +408,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
 
             {/* The invitation ledger — who was invited, as what, since when; withdrawable while it waits. */}
             {canEdit && currentUserId && (
-                <div className="mt-5 rounded-2xl border border-slate-100 bg-white p-4">
+                <div className="mt-5 rounded-2xl border border-slate-100 bg-white p-4 dark:bg-slate-900 dark:border-slate-800">
                     <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">{t('circle_invitations_pending')}</p>
                     {sentInvites.length === 0 ? (
                         <p className="text-[11px] italic text-slate-400">{t('circle_invitations_none')}</p>
@@ -417,10 +418,10 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                                 const face = faceFromForest(inv.invitedUserId, forest);
                                 const mayRevoke = canInviteRoles || isOwner || inv.invitedByUserId === currentUserId;
                                 return (
-                                    <div key={inv.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/50 p-2">
+                                    <div key={inv.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/50 p-2 dark:bg-slate-900/50 dark:border-slate-800">
                                         <Avatar imageUrl={face.imageUrl} seed={labelFor(inv.invitedUserId, face)} ring={ROLE_RING[inv.role]} />
                                         <div className="min-w-0 flex-1">
-                                            <p className="truncate text-sm font-bold text-slate-700">{labelFor(inv.invitedUserId, face)}</p>
+                                            <p className="truncate text-sm font-bold text-slate-700 dark:text-slate-200">{labelFor(inv.invitedUserId, face)}</p>
                                             <p className="truncate text-[10px] font-bold uppercase tracking-wide text-slate-400">
                                                 {roleName(inv.role)}
                                                 <span className="ml-1.5 normal-case tracking-normal font-normal">
@@ -430,7 +431,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                                         </div>
                                         {mayRevoke && (
                                             <button onClick={() => handleRevokeInvite(inv)} disabled={revoking === inv.id}
-                                                className="shrink-0 rounded-lg border border-red-100 bg-white px-2.5 py-1 text-[11px] font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50">
+                                                className="shrink-0 rounded-lg border border-red-100 bg-white px-2.5 py-1 text-[11px] font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50 dark:bg-slate-900">
                                                 {revoking === inv.id ? '…' : t('revoke')}
                                             </button>
                                         )}
@@ -458,12 +459,12 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
             {/* Invite a tree into the circle, found by name. Anyone with edit rights invites
                 guardians (the open layer); the owner may also invite the deeper caring roles. */}
             {canEdit && currentUserId && (
-                <div className="mt-6 border-t border-slate-100 pt-5">
+                <div className="mt-6 border-t border-slate-100 pt-5 dark:border-slate-800">
                     <div className="mb-1.5 flex items-center justify-between gap-2">
                         <p className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('invite_into_circle')}</p>
                         {canInviteRoles && (
                             <select value={inviteRole} onChange={e => setInviteRole(e.target.value as InvitableRole)}
-                                className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                                className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700">
                                 {(['guardian', 'co_owner', 'steward', 'observer'] as InvitableRole[]).map(r => (
                                     <option key={r} value={r}>{t('invite_as_role').replace('{role}', roleName(r))}</option>
                                 ))}
@@ -473,7 +474,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                     {/* What the chosen role truly is (domain/treeCircle, spoken via role_* keys) — read
                         before anyone accepts a word they cannot picture. */}
                     <p className="mb-2 text-xs leading-relaxed text-slate-500">
-                        <span className="font-bold text-slate-600">{roleName(inviteRole)}</span> — {roleDesc(inviteRole)}{' '}
+                        <span className="font-bold text-slate-600 dark:text-slate-300">{roleName(inviteRole)}</span> — {roleDesc(inviteRole)}{' '}
                         <span className="text-slate-400">{t('invite_goes_to_keeper')}</span>
                     </p>
                     <div className="relative">
@@ -482,7 +483,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                             value={term}
                             onChange={e => setTerm(e.target.value)}
                             placeholder={t('find_tree_by_name')}
-                            className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                            className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 dark:bg-slate-900 dark:border-slate-700"
                         />
                     </div>
                     {matches.length > 0 && (
@@ -493,7 +494,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                                     <div key={m.id} className={`flex items-center gap-3 rounded-xl border border-slate-100 p-2 shadow-sm ${reason ? 'bg-slate-50/60' : 'bg-white'}`}>
                                         <Avatar imageUrl={m.latestGrowthUrl || m.imageUrl} seed={m.name || '?'} ring={reason ? 'ring-slate-100' : 'ring-emerald-100'} />
                                         <div className="min-w-0 flex-1">
-                                            <p className={`truncate text-sm font-bold ${reason ? 'text-slate-400' : 'text-slate-700'}`}>{m.name || 'A tree'}</p>
+                                            <p className={`truncate text-sm font-bold ${reason ? 'text-slate-400' : 'text-slate-700'}`}>{m.name || t('a_tree')}</p>
                                             {reason && <p className="truncate text-[11px] italic text-slate-400">{t(reason)}</p>}
                                         </div>
                                         {!reason && (

@@ -202,29 +202,29 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
       </div>
 
       {canEdit && showEventForm && (
-        <form onSubmit={handleCreateEvent} className="mb-8 space-y-3 rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
-          <input dir="auto" value={eventTitle} onChange={e => setEventTitle(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder={t('event_title_ph')} required />
+        <form onSubmit={handleCreateEvent} className="mb-8 space-y-3 rounded-2xl border border-slate-100 bg-slate-50/50 p-5 dark:bg-slate-900/50 dark:border-slate-800">
+          <input dir="auto" value={eventTitle} onChange={e => setEventTitle(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" placeholder={t('event_title_ph')} required />
           <div className="grid gap-3 sm:grid-cols-2">
-            <input type="datetime-local" value={eventDate} onChange={e => setEventDate(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-            <input dir="auto" value={eventLocation} onChange={e => setEventLocation(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder={t('location')} />
+            <input type="datetime-local" value={eventDate} onChange={e => setEventDate(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
+            <input dir="auto" value={eventLocation} onChange={e => setEventLocation(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" placeholder={t('location')} />
           </div>
-          <textarea dir="auto" value={eventBody} onChange={e => setEventBody(e.target.value)} className="min-h-24 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder={t('event_details_ph')} />
+          <textarea dir="auto" value={eventBody} onChange={e => setEventBody(e.target.value)} className="min-h-24 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" placeholder={t('event_details_ph')} />
           <label className="block">
             <span className="mb-1 block text-[10px] font-bold uppercase text-slate-400">{t('visibility')}</span>
-            <select value={eventVisibility} onChange={e => setEventVisibility(e.target.value as PulseVisibility)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <select value={eventVisibility} onChange={e => setEventVisibility(e.target.value as PulseVisibility)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700">
               {visibilitiesForScope(visibilityScope).map(v => <option key={v} value={v}>{t(`vis_${v}` as any)}</option>)}
             </select>
           </label>
           <div className="grid grid-cols-3 gap-2">
             {eventImageUrls.map((url, index) => (
-              <div key={url} className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+              <div key={url} className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:bg-slate-900 dark:border-slate-700">
                 <img src={url} className="h-full w-full object-cover" alt={`${t('events')} ${index + 1}`} />
-                <button type="button" onClick={() => setEventImageUrls(prev => prev.filter((_, i) => i !== index))} className="absolute right-1 top-1 rounded-full bg-white/90 p-1 text-red-500 shadow-sm" title={t('remove')}>
+                <button type="button" onClick={() => setEventImageUrls(prev => prev.filter((_, i) => i !== index))} className="absolute right-1 top-1 rounded-full bg-white/90 p-1 text-red-500 shadow-sm dark:bg-slate-900/90" title={t('remove')}>
                   <Icons.Close />
                 </button>
               </div>
             ))}
-            <ImagePicker onImageSelect={handleAddEventImage} loading={isUploadingEventImage} className="flex aspect-square cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-white text-slate-400 hover:border-emerald-400 hover:text-emerald-600">
+            <ImagePicker onImageSelect={handleAddEventImage} loading={isUploadingEventImage} className="flex aspect-square cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-white text-slate-400 hover:border-emerald-400 hover:text-emerald-600 dark:bg-slate-900 dark:border-slate-700">
               <Icons.Plus />
             </ImagePicker>
           </div>
@@ -244,11 +244,11 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
               onClick={() => onViewEvent?.(ev)}
               className={`group flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm ${onViewEvent ? 'cursor-pointer transition-shadow hover:shadow-md' : ''}`}
             >
-              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
                 {ev.imageUrl ? <Picture size={480} src={ev.imageUrl} className="h-full w-full object-cover" alt={ev.title} /> : <div className="h-full w-full" style={{ backgroundColor: placeholderColor }} />}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="break-words text-sm font-bold text-slate-800">{ev.title}</p>
+                <p className="break-words text-sm font-bold text-slate-800 dark:text-slate-100">{ev.title}</p>
                 <p className="truncate text-xs text-slate-500">
                   {ev.eventDate ? new Date(ev.eventDate).toLocaleString() : ''}{ev.eventLocation ? ` · ${ev.eventLocation}` : ''}
                 </p>

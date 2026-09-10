@@ -48,7 +48,7 @@ export const CareModal = ({ tree, sender, hasVision, onOpenCare, onOpenVision, o
                 </div>
 
                 <div>
-                    <p className="text-lg font-light tracking-wide text-slate-800">{tree.name}</p>
+                    <p className="text-lg font-light tracking-wide text-slate-800 dark:text-slate-100">{tree.name}</p>
                     <p className="mt-0.5 text-xs text-slate-400">{t('care_breath')}</p>
                 </div>
 

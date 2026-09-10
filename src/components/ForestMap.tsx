@@ -12,6 +12,7 @@ import { firestoreStore } from '../adapters/firestore';
 import { loadLeaflet } from '../services/leaflet';
 import type { LightHouse } from '../domain/lightHouse';
 import { useVisibleLightHouses } from '../hooks/useVisibleLightHouses';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // A seat in marker HTML: the 480 variant in src, the primary a step behind it in data-primary.
 // The map container's capture-phase error listener (below) swaps the primary in when the
@@ -42,6 +43,7 @@ interface StackLevel {
 type MapBeing = Lifetree & { __lightHouse?: LightHouse };
 
 export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = false, onRefresh, primaryTree = null, refreshKey = 0, lightHouseDomain = null, lightHousesPublicOnly = false, showLightHouses = true, filtersOverlay = null }: { trees: Lifetree[], onView: (tree: Lifetree) => void, onReach?: (tree: Lifetree) => void, onViewLightHouse?: (s: LightHouse) => void, loading?: boolean, onRefresh?: () => void, primaryTree?: Lifetree | null, refreshKey?: number, lightHouseDomain?: string | null, lightHousesPublicOnly?: boolean, showLightHouses?: boolean, filtersOverlay?: React.ReactNode }) => {
+    const { t } = useLanguage();
     const mapContainer = useRef<HTMLDivElement>(null);
     const mapInstance = useRef<any>(null);
     const leafletRef = useRef<any>(null);
@@ -319,7 +321,7 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
             const size = isSmall ? 'w-10 h-10' : 'w-12 h-12';
             const img = seatAttrs(sanct.imageUrl || '/lighthouse.webp', DARK_IMAGE_FALLBACK);
             return `
-            <div class="marker-pop relative ${size} hover:scale-110 transition-transform duration-300" style="animation-delay: ${delay}ms;" role="button" aria-label="${escapeHtml(sanct.name)}, Light House">
+            <div class="marker-pop relative ${size} hover:scale-110 transition-transform duration-300" style="animation-delay: ${delay}ms;" role="button" aria-label="${escapeHtml(sanct.name)}, ${escapeHtml(t('light_house'))}">
                 <div class="lightHouse-glow absolute -inset-4 rounded-full"></div>
                 <div class="absolute -inset-1 rounded-full border-2 border-yellow-300/90"></div>
                 <div class="relative ${size} rounded-full border-2 border-amber-400 overflow-hidden bg-[#04070f] shadow-xl z-10">
@@ -337,14 +339,14 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
         const imgStyle = "width: 100%; height: 100%; object-fit: cover; display: block;";
         const animStyle = `animation-delay: ${delay}ms;`;
 
-        const ariaName = escapeHtml(tree.name || 'lifetree');
+        const ariaName = escapeHtml(tree.name || t('type_lifetree'));
 
         if (isNature) {
             return `
             <div class="marker-pop relative ${sizeClass} hover:scale-110 transition-transform duration-300 group" style="${animStyle}" role="button" aria-label="${ariaName}">
                 ${isWateringOverdue(tree) ? '<div class="absolute -inset-1 rounded-full border-2 border-sky-400 animate-pulse z-20"></div>' : ''}
                 <div class="absolute inset-0 bg-sky-500 rounded-full animate-pulse opacity-20"></div>
-                <div class="relative ${sizeClass} rounded-full ${borderClass} border-white shadow-xl overflow-hidden bg-white z-10">
+                <div class="relative ${sizeClass} rounded-full ${borderClass} border-white shadow-xl overflow-hidden bg-white z-10 dark:bg-slate-900">
                     <img ${displayImage} style="${imgStyle}" class="w-full h-full object-cover" />
                 </div>
                 <div class="absolute -top-1 -right-1 z-20 w-4 h-4 bg-sky-500 border border-white rounded-full flex items-center justify-center text-[8px] text-white font-bold shadow-md">
@@ -358,10 +360,10 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
         <div class="marker-pop relative ${sizeClass} hover:scale-110 transition-transform duration-300" style="${animStyle}" role="button" aria-label="${ariaName}">
             ${isWateringOverdue(tree) ? '<div class="absolute -inset-1 rounded-full border-2 border-sky-400 animate-pulse z-20"></div>' : ''}
             <div class="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-20"></div>
-            <div class="relative ${sizeClass} rounded-full ${borderClass} border-white shadow-xl overflow-hidden bg-white">
+            <div class="relative ${sizeClass} rounded-full ${borderClass} border-white shadow-xl overflow-hidden bg-white dark:bg-slate-900">
                 <img ${displayImage} style="${imgStyle}" class="w-full h-full object-cover" />
             </div>
-            ${isExplicitlyValidatedTree(tree) ? '<div class="absolute -top-2 -right-2 rounded-full border border-emerald-200 bg-white/95 px-1.5 py-0.5 text-[8px] font-black tracking-[0.2em] text-yellow-400 shadow-sm">V<span class="ml-0.5 text-[6px] font-bold tracking-[0.12em] text-emerald-700">validated</span></div>' : ''}
+            ${isExplicitlyValidatedTree(tree) ? '<div class="absolute -top-2 -right-2 rounded-full border border-emerald-200 bg-white/95 px-1.5 py-0.5 text-[8px] font-black tracking-[0.2em] text-yellow-400 shadow-sm dark:bg-slate-900/95">V<span class="ml-0.5 text-[6px] font-bold tracking-[0.12em] text-emerald-700">' + escapeHtml(t('forest_validated_badge')) + '</span></div>' : ''}
             ${isDanger ? `<div class="absolute -top-1 -left-1 z-20 w-3 h-3 bg-red-500 border border-white rounded-full animate-bounce"></div>` : ''}
         </div>`;
     }
@@ -408,11 +410,11 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
             <div class="text-center min-w-[160px]">
                 ${displayImage ? `<img ${displayImage} style="width:100%;height:120px;object-fit:cover;display:block;" class="rounded-t-lg" />` : ''}
                 <div class="p-2">
-                    <h3 class="font-bold text-sm text-slate-800 mb-1">${escapeHtml(tree.name)}</h3>
+                    <h3 class="font-bold text-sm text-slate-800 mb-1 dark:text-slate-100">${escapeHtml(tree.name)}</h3>
                     <p class="text-xs text-slate-500 line-clamp-2 italic mb-2">"${escapeHtml(tree.body)}"</p>
                     <div class="grid grid-cols-2 gap-2">
-                        <button class="view-btn bg-emerald-600 text-white text-xs font-bold px-3 py-2.5 rounded-full w-full">View</button>
-                        <button class="reach-btn bg-amber-500 text-white text-xs font-bold px-3 py-2.5 rounded-full w-full">Reach</button>
+                        <button class="view-btn bg-emerald-600 text-white text-xs font-bold px-3 py-2.5 rounded-full w-full">${escapeHtml(t('view'))}</button>
+                        <button class="reach-btn bg-amber-500 text-white text-xs font-bold px-3 py-2.5 rounded-full w-full">${escapeHtml(t('reach'))}</button>
                     </div>
                 </div>
             </div>
@@ -434,13 +436,13 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
             <div class="text-center min-w-[170px]">
                 ${s.imageUrl ? `<img ${seatAttrs(s.imageUrl)} style="width:100%;height:110px;object-fit:cover;display:block;" class="rounded-t-lg" />` : ''}
                 <div class="p-2.5">
-                    <p class="text-[9px] font-bold uppercase tracking-[0.22em] text-amber-500">Light House</p>
-                    <h3 class="font-bold text-sm text-slate-800 mt-0.5">${escapeHtml(s.name)}</h3>
+                    <p class="text-[9px] font-bold uppercase tracking-[0.22em] text-amber-500">${escapeHtml(t('light_house'))}</p>
+                    <h3 class="font-bold text-sm text-slate-800 mt-0.5 dark:text-slate-100">${escapeHtml(s.name)}</h3>
                     ${s.locationName ? `<p class="text-[10px] text-slate-400 mt-0.5">${escapeHtml(s.locationName)}</p>` : ''}
                     ${s.body ? `<p class="text-xs text-slate-500 line-clamp-2 italic mt-1">${escapeHtml(s.body)}</p>` : ''}
                     <div class="mt-2 grid ${s.splatUrl ? 'grid-cols-2' : 'grid-cols-1'} gap-2">
-                        <button class="lightHouse-view-btn bg-emerald-600 text-white text-xs font-bold px-3 py-2.5 rounded-full w-full">View</button>
-                        ${s.splatUrl ? `<a href="${safeImageUrl(s.splatUrl)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-full bg-amber-500 px-3 py-2.5 text-xs font-bold text-white">In 3D ✦</a>` : ''}
+                        <button class="lightHouse-view-btn bg-emerald-600 text-white text-xs font-bold px-3 py-2.5 rounded-full w-full">${escapeHtml(t('view'))}</button>
+                        ${s.splatUrl ? `<a href="${safeImageUrl(s.splatUrl)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-full bg-amber-500 px-3 py-2.5 text-xs font-bold text-white">${escapeHtml(t('forest_in_3d'))}</a>` : ''}
                     </div>
                 </div>
             </div>`;
@@ -562,7 +564,7 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
                 const isDeep = expansionStack.length > 1;
                 const xHtml = `
                 <div class="marker-pop flex items-center justify-center w-10 h-10 rounded-full border-2 border-white shadow-lg cursor-pointer hover:scale-110 transition-transform"
-                     style="background:${isDeep ? '#f59e0b' : '#ef4444'};animation-delay:0ms;" role="button" aria-label="Close">
+                     style="background:${isDeep ? '#f59e0b' : '#ef4444'};animation-delay:0ms;" role="button" aria-label="${escapeHtml(t('close'))}">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" style="width:14px;height:14px;">
                         <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                     </svg>
@@ -631,7 +633,7 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
                     }).addTo(nextLayer);
 
                     const moreHtml = `
-                    <div class="marker-pop relative w-10 h-10 cursor-pointer hover:scale-110 transition-transform duration-300" style="animation-delay:${6 * 50}ms;" role="button" aria-label="${remainingTrees.length} more lifetrees">
+                    <div class="marker-pop relative w-10 h-10 cursor-pointer hover:scale-110 transition-transform duration-300" style="animation-delay:${6 * 50}ms;" role="button" aria-label="${escapeHtml(t('forest_more_lifetrees').replace('{n}', String(remainingTrees.length)))}">
                         <div class="absolute inset-0 drop-shadow-lg">
                             <img src="/logo.svg" alt="" style="width:100%;height:100%;display:block;" />
                         </div>
@@ -665,7 +667,7 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
                 const clusterTrees = [cluster.center, ...cluster.children];
                 const hasDanger = clusterTrees.some(t => t.status === 'DANGER');
                 const html = `
-                <div class="relative w-12 h-12 group cursor-pointer transition-transform duration-300 hover:scale-125" style="transform-origin:center;" role="button" aria-label="${escapeHtml(cluster.center.name || 'Light House')}, ${count} beings">
+                <div class="relative w-12 h-12 group cursor-pointer transition-transform duration-300 hover:scale-125" style="transform-origin:center;" role="button" aria-label="${escapeHtml(t('forest_beings_gather').replace('{name}', cluster.center.name || t('light_house')).replace('{n}', String(count)))}">
                     ${getHtmlForTree(cluster.center)}
                     <div class="absolute -top-1.5 -right-1.5 w-6 h-6 bg-amber-500 border-2 border-white text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-md z-20">
                         ${count}
@@ -694,7 +696,7 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
                 const clusterTrees = [cluster.center, ...cluster.children];
                 const hasDanger = clusterTrees.some(t => t.status === 'DANGER');
                 const html = `
-                <div class="relative w-16 h-16 group cursor-pointer transition-transform duration-300 hover:scale-150 hover:z-[400]" style="transform-origin:center;" role="button" aria-label="${count} lifetrees here">
+                <div class="relative w-16 h-16 group cursor-pointer transition-transform duration-300 hover:scale-150 hover:z-[400]" style="transform-origin:center;" role="button" aria-label="${escapeHtml(t('forest_lifetrees_here').replace('{n}', String(count)))}">
                     <div class="absolute inset-0 drop-shadow-xl">
                         ${getClusterPieHtml(clusterTrees, cluster.id)}
                     </div>
@@ -806,18 +808,18 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
                             onRefresh();
                         }}
                         disabled={loading}
-                        title="Refresh forest"
-                        aria-label="Refresh forest"
-                        className="absolute top-3 right-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-lg ring-1 ring-slate-200 transition-all hover:bg-white hover:text-emerald-600 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={t('forest_refresh')}
+                        aria-label={t('forest_refresh')}
+                        className="absolute top-3 right-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-lg ring-1 ring-slate-200 transition-all hover:bg-white hover:text-emerald-600 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-slate-900/90 dark:text-slate-200"
                     >
                         <Icons.Refresh />
                     </button>
                 )}
                 {(loading || (isMapReady && visibleTreeCount > 0 && markerCount === 0)) && (
                     <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-slate-950/30 backdrop-blur-[2px]">
-                        <div className="flex flex-col items-center gap-3 rounded-2xl bg-white/90 px-6 py-5 shadow-lg">
+                        <div className="flex flex-col items-center gap-3 rounded-2xl bg-white/90 px-6 py-5 shadow-lg dark:bg-slate-900/90">
                             <Loading />
-                            <span className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">{loading ? 'Loading Forest' : 'Rendering Trees'}</span>
+                            <span className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">{loading ? t('forest_loading') : t('forest_rendering')}</span>
                         </div>
                     </div>
                 )}

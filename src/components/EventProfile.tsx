@@ -60,7 +60,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
             announce('events', pulse.id);
             onClose();
         } catch (e: any) {
-            showAlert(e?.message || 'Could not delete the event.');
+            showAlert(e?.message || 'err_event_delete');
             setIsDeleting(false);
         }
     };
@@ -84,12 +84,20 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
     };
 
     const sections: SectionItem[] = [
-        { key: 'about', label: 'Event details', icon: <Icons.Info /> },
-        { key: 'participants', label: 'Participants', icon: <Icons.Users /> },
-        { key: 'reflect', label: 'Reflect', icon: <Icons.Intelligence /> },
+        { key: 'about', label: t('event_details'), icon: <Icons.Info /> },
+        { key: 'participants', label: t('participants'), icon: <Icons.Users /> },
+        { key: 'reflect', label: t('reflect'), icon: <Icons.Intelligence /> },
     ];
 
     const whenText = pulse.eventDate ? new Date(pulse.eventDate).toLocaleString() : null;
+
+    // The visibility chip — a level is an enum in the data and a word on the screen.
+    const visibilityChip = (level?: string): string =>
+        level === 'node' ? t('vis_node_chip')
+            : level === 'community' ? t('vis_community_chip')
+            : level === 'circle' ? t('vis_circle_chip')
+            : level === 'private' ? t('vis_private_chip')
+            : t('vis_public_chip');
 
     return (
         <div className="min-h-screen animate-in fade-in zoom-in-95 duration-300 pb-20">
@@ -112,15 +120,15 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
                         {/* One height for the whole action row (32px): the shared Edit/Delete
                             pills and the chips. The QR lives beside the name, like the tree's. */}
                         {canEdit && onEdit && <EditPill onClick={onEdit} themeColor={theme?.primary} />}
-                        {canDelete && <DeletePill onClick={handleDelete} disabled={isDeleting} staffDot={!isAuthor} title="Delete event" />}
-                        <EventWeather location={pulse.eventLocation} dateIso={pulse.eventDate} className="rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs text-slate-100" />
-                        <span className="hidden rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-200 sm:inline-flex">{t('event_chip')}</span>
+                        {canDelete && <DeletePill onClick={handleDelete} disabled={isDeleting} staffDot={!isAuthor} title={t('delete_event')} />}
+                        <EventWeather location={pulse.eventLocation} dateIso={pulse.eventDate} className="rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs text-slate-100 dark:bg-slate-900/10" />
+                        <span className="hidden rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-200 sm:inline-flex dark:bg-slate-900/10">{t('event_chip')}</span>
                     </div>
                 </div>
 
                 {/* Avatar + name + meta on one wrapping row */}
                 <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5">
-                    <div className="flex h-16 w-16 md:h-24 md:w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-xl">
+                    <div className="flex h-16 w-16 md:h-24 md:w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-xl dark:bg-slate-900">
                         {images[0] ? (
                             <Picture size={1200} src={images[0]} className="h-full w-full object-cover" alt={pulse.title} referrerPolicy="no-referrer" />
                         ) : (
@@ -131,20 +139,20 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 justify-center sm:justify-start">
                             <h1 dir="auto" className="min-w-0 break-words text-2xl font-light tracking-wide md:text-3xl">{pulse.title}</h1>
                             {/* Share + QR ride beside the name, exactly like the tree profile. */}
-                            <button onClick={handleShare} title="Share this event" className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-bold text-white transition-colors hover:bg-white/25">
+                            <button onClick={handleShare} title={t('share_this_event')} className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-bold text-white transition-colors hover:bg-white/25 dark:bg-slate-900/15">
                                 <Icons.Link /> <span>{shared ? t('copied') : t('share')}</span>
                             </button>
                             <BeingQr lid={pulse.lid} name={pulse.title} savedHref={pulse.qr?.href}
                                 canMint={isAuthor || isAdmin || isSuperAdmin}
                                 onMint={(href) => mintBeingQr('pulses', pulse.id, href)}
-                                className="h-7 w-7 bg-white/15 text-white hover:bg-white/25" />
+                                className="h-7 w-7 bg-white/15 text-white hover:bg-white/25 dark:bg-slate-900/15" />
                             {whenText && (
-                                <span className="inline-flex items-center gap-1 rounded-full border border-white/25 bg-white/10 px-2.5 py-0.5 text-xs font-medium text-white/90">
+                                <span className="inline-flex items-center gap-1 rounded-full border border-white/25 bg-white/10 px-2.5 py-0.5 text-xs font-medium text-white/90 dark:bg-slate-900/10">
                                     {whenText}
                                 </span>
                             )}
                             {pulse.eventLocation && (
-                                <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-xs text-slate-200">
+                                <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-xs text-slate-200 dark:bg-slate-900/10">
                                     <Icons.Map size={12} /> {pulse.eventLocation}
                                 </span>
                             )}
@@ -154,7 +162,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
                                 </span>
                             )}
                             {pulse.visibility && pulse.visibility !== 'public' && (
-                                <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">{pulse.visibility}</span>
+                                <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide dark:bg-slate-900/15">{visibilityChip(pulse.visibility)}</span>
                             )}
                         </div>
                         {pulse.authorName && <p className="mt-1 text-xs text-slate-300 text-center sm:text-left">{t('hosted_by').replace('{name}', pulse.authorName)}</p>}
@@ -168,9 +176,9 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
             >
                 {section === 'about' && (
                     <div>
-                        <SectionTitle title="Event details" sub="When and where it gathers, and why." />
+                        <SectionTitle title={t('event_details')} sub={t('event_details_sub')} />
                         {images.length > 0 && (
-                            <div className="relative mb-6 h-72 w-full overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+                            <div className="relative mb-6 h-72 w-full overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm dark:bg-slate-900 dark:border-slate-800">
                                 <img src={images[activeImageIndex]} alt={pulse.title} className="h-full w-full object-cover" />
                                 {images.length > 1 && (
                                     <div className="absolute bottom-3 left-3 right-3 flex gap-2 overflow-x-auto rounded-2xl bg-black/30 p-2 backdrop-blur-md">
@@ -188,7 +196,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
                             </div>
                         )}
                         {(whenText || pulse.eventLocation || pulse.eventMaxParticipants || showPlace) && (
-                            <div className="mb-6 grid gap-2 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700">
+                            <div className="mb-6 grid gap-2 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-800">
                                 {whenText && <div><span className="font-bold">{t('when')}:</span> {whenText}</div>}
                                 {pulse.eventLocation && <div><span className="font-bold">{t('where')}:</span> {pulse.eventLocation}</div>}
                                 {!!pulse.eventMaxParticipants && <div><span className="font-bold">{t('participants')}:</span> {t('up_to_n').replace('{n}', String(pulse.eventMaxParticipants))}</div>}
@@ -203,7 +211,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
                                 />
                             </div>
                         )}
-                        <p dir="auto" className="whitespace-pre-wrap font-serif text-lg leading-relaxed text-slate-600">
+                        <p dir="auto" className="whitespace-pre-wrap font-serif text-lg leading-relaxed text-slate-600 dark:text-slate-300">
                             {pulse.content || pulse.body}
                         </p>
                     </div>
@@ -211,14 +219,14 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
 
                 {section === 'participants' && (
                     <div>
-                        <SectionTitle title="Participants" sub="The trees gathering around this event." />
+                        <SectionTitle title={t('participants')} sub={t('event_participants_sub')} />
                         <TreeParticipants entityId={pulse.id} currentUserId={currentUserId} myTrees={myTrees} maxParticipants={pulse.eventMaxParticipants ?? undefined} />
                     </div>
                 )}
 
                 {section === 'reflect' && (
                     <div>
-                        <SectionTitle title="Reflect" sub="Translate the event's intent and see its standing in the network." />
+                        <SectionTitle title={t('reflect')} sub={t('reflect_event_sub')} />
                         <PulseInsightPanel pulse={pulse} activeTree={activeTree} />
                     </div>
                 )}

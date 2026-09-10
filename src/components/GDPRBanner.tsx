@@ -18,13 +18,13 @@ export const GDPRBanner = () => {
     if (!visible) return null;
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 animate-in slide-in-from-bottom-full duration-500">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 animate-in slide-in-from-bottom-full duration-500 dark:bg-slate-900 dark:border-slate-700">
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-                <p className="text-xs text-slate-600 text-center md:text-left max-w-2xl">
+                <p className="text-xs text-slate-600 text-center md:text-left max-w-2xl dark:text-slate-300">
                     {t('gdpr_text')}
                 </p>
                 <div className="flex flex-col sm:flex-row items-center gap-4">
-                    <label className="flex items-center gap-2 text-sm text-slate-800 cursor-pointer select-none">
+                    <label className="flex items-center gap-2 text-sm text-slate-800 cursor-pointer select-none dark:text-slate-100">
                         <input
                             type="checkbox"
                             checked={checked}

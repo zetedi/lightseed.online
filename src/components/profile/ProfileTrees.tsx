@@ -100,7 +100,7 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
               aria-expanded={sevenOpen}
               className="flex w-full flex-wrap items-center gap-3 text-left sm:pointer-events-none sm:cursor-default"
             >
-              <div className="flex items-center gap-1.5" aria-label={`Sustaining seven: ${Math.min(seven.sustaining, seven.target)} of ${seven.target}`}>
+              <div className="flex items-center gap-1.5" aria-label={t('seven_aria').replace('{n}', String(Math.min(seven.sustaining, seven.target))).replace('{target}', String(seven.target))}>
                 {Array.from({ length: seven.target }, (_, i) => (
                   <span
                     key={i}
@@ -114,8 +114,8 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
                   />
                 ))}
               </div>
-              <p className="text-sm font-bold text-slate-800">
-                The sustaining seven
+              <p className="text-sm font-bold text-slate-800 dark:text-slate-100">
+                {t('seven_title')}
                 <span className="ml-2 text-emerald-700">{Math.min(seven.sustaining, seven.target)} / {seven.target}</span>
               </p>
               <span className={`ml-auto text-slate-400 transition-transform sm:hidden ${sevenOpen ? '-rotate-90' : 'rotate-90'}`}>
@@ -135,11 +135,11 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
                       key={s.treeId}
                       type="button"
                       onClick={() => lackTree && onViewTree(lackTree, s.witnessed ? 'care' : 'circle')}
-                      className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 transition-colors hover:bg-emerald-100"
+                      className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 transition-colors hover:bg-emerald-100 dark:bg-slate-900 dark:text-slate-300"
                     >
                       <span className="max-w-[9rem] truncate font-bold">{s.name}</span>
                       <span className="text-slate-400">
-                        {!s.witnessed && !s.caredFor ? 'needs a witness and water' : !s.witnessed ? 'needs a witness' : 'needs water'}
+                        {!s.witnessed && !s.caredFor ? t('seven_lack_both') : !s.witnessed ? t('seven_lack_witness') : t('seven_lack_water')}
                       </span>
                     </button>
                   );
@@ -157,8 +157,8 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
         )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {allValidated && (
-            <div onClick={onPlant} className="border-2 border-dashed border-slate-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 hover:bg-slate-50 min-h-[100px] text-slate-400 hover:text-emerald-600 transition-all group">
-              <div className="bg-slate-100 p-3 rounded-full group-hover:bg-emerald-100 transition-colors">
+            <div onClick={onPlant} className="border-2 border-dashed border-slate-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 hover:bg-slate-50 min-h-[100px] text-slate-400 hover:text-emerald-600 transition-all group dark:border-slate-700">
+              <div className="bg-slate-100 p-3 rounded-full group-hover:bg-emerald-100 transition-colors dark:bg-slate-800">
                 <Icons.Tree />
               </div>
               <span className="font-bold mt-2 text-sm">{t('plant_new_tree')}</span>
@@ -171,17 +171,17 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
             [...myTrees].sort((a: Lifetree, b: Lifetree) => (b.id === defaultTreeId ? 1 : 0) - (a.id === defaultTreeId ? 1 : 0)).map((tree: Lifetree) => (
               <div key={tree.id} onClick={() => onViewTree(tree)} className={`border rounded-lg p-4 hover:shadow-md cursor-pointer transition-all flex items-center justify-between group bg-white ${defaultTreeId === tree.id ? 'border-amber-300 ring-1 ring-amber-100' : 'border-emerald-100'}`}>
                 <div className="flex items-center space-x-4">
-                  <Picture size={480} src={tree.latestGrowthUrl || tree.imageUrl || '/seed.webp'} className="w-16 h-16 rounded object-cover bg-slate-100" />
+                  <Picture size={480} src={tree.latestGrowthUrl || tree.imageUrl || '/seed.webp'} className="w-16 h-16 rounded object-cover bg-slate-100 dark:bg-slate-800" />
                   <div>
-                    <h3 className="font-bold text-slate-800 flex items-center gap-1.5">
+                    <h3 className="font-bold text-slate-800 flex items-center gap-1.5 dark:text-slate-100">
                       {tree.name}
-                      {defaultTreeId === tree.id && <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-700"><Icons.Star filled size={10} /> Default</span>}
+                      {defaultTreeId === tree.id && <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-700"><Icons.Star filled size={10} /> {t('default_chip')}</span>}
                     </h3>
-                    <p className="text-xs text-slate-500">Block Height: {tree.blockHeight}</p>
+                    <p className="text-xs text-slate-500">{t('chain_block_height')}: {tree.blockHeight}</p>
                     {isExplicitlyValidatedTree(tree) ? (
                       <div className="mt-1 flex items-center gap-2">
                         <ValidationBadge compact lapsed={lapsedValidated(tree)} />
-                        {isWateringOverdue(tree) && <button type="button" title="Needs water: open tree care" aria-label="Needs water: open tree care" onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
+                        {isWateringOverdue(tree) && <button type="button" title={t('needs_water_open_care')} aria-label={t('needs_water_open_care')} onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
                         {(lapsedValidated(tree) || fadingValidated(tree)) && (
                           <button onClick={(e) => { e.stopPropagation(); onCare(tree); }} disabled={caringId === tree.id} className="rounded-full bg-emerald-600 px-3 py-1 text-[10px] font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
                             {caringId === tree.id ? '…' : t('care')}
@@ -192,7 +192,7 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
                         )}
                       </div>
                     ) : (
-                      <span className="inline-flex items-center gap-2"><span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">{t('pending')}</span>{isWateringOverdue(tree) && <button type="button" title="Needs water: open tree care" aria-label="Needs water: open tree care" onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}</span>
+                      <span className="inline-flex items-center gap-2"><span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full dark:bg-slate-800">{t('pending')}</span>{isWateringOverdue(tree) && <button type="button" title={t('needs_water_open_care')} aria-label={t('needs_water_open_care')} onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}</span>
                     )}
                   </div>
                 </div>
@@ -202,7 +202,7 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
                       onClick={(e) => { e.stopPropagation(); if (defaultTreeId !== tree.id) onSetDefaultTree(tree.id); }}
                       disabled={defaultTreeId === tree.id}
                       className={`p-2 rounded-full transition-colors ${defaultTreeId === tree.id ? 'text-amber-500 cursor-default' : 'text-slate-300 hover:text-amber-500 hover:bg-amber-50 opacity-0 group-hover:opacity-100'}`}
-                      title={defaultTreeId === tree.id ? 'Your default tree' : 'Set as my default tree'}
+                      title={defaultTreeId === tree.id ? t('default_tree_title') : t('set_default_tree')}
                     >
                       <Icons.Star filled={defaultTreeId === tree.id} />
                     </button>
@@ -230,18 +230,18 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
             {tendedTrees.map(({ tree, role }) => (
               <div key={tree.id} onClick={() => onViewTree(tree)} className="border border-emerald-100 rounded-lg p-4 hover:shadow-md cursor-pointer transition-all flex items-center justify-between group bg-emerald-50/30">
                 <div className="flex items-center space-x-4">
-                  <Picture size={480} src={tree.latestGrowthUrl || tree.imageUrl || '/seed.webp'} className="w-16 h-16 rounded object-cover bg-slate-100" />
+                  <Picture size={480} src={tree.latestGrowthUrl || tree.imageUrl || '/seed.webp'} className="w-16 h-16 rounded object-cover bg-slate-100 dark:bg-slate-800" />
                   <div>
-                    <h3 className="font-bold text-slate-800">{tree.name}</h3>
-                    <p className="text-xs text-slate-500">Block Height: {tree.blockHeight}</p>
+                    <h3 className="font-bold text-slate-800 dark:text-slate-100">{tree.name}</h3>
+                    <p className="text-xs text-slate-500">{t('chain_block_height')}: {tree.blockHeight}</p>
                     <div className="mt-1 flex items-center gap-2">
                       <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold [&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Venn /> {t(roleLabelKey(role))}</span>
-                      {isWateringOverdue(tree) && <button type="button" title="Needs water: open tree care" aria-label="Needs water: open tree care" onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
+                      {isWateringOverdue(tree) && <button type="button" title={t('needs_water_open_care')} aria-label={t('needs_water_open_care')} onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
                     </div>
                   </div>
                 </div>
                 {tree.status === 'DANGER' && (
-                  <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-[9px] font-bold">DANGER</span>
+                  <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-[9px] font-bold">{t('danger_badge')}</span>
                 )}
               </div>
             ))}
@@ -253,7 +253,7 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
       <div>
         <SectionTitle title={t('guarded_trees')} sub={t('guarded_trees_sub')} />
         {guardedOnly.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-slate-400">
+          <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-slate-400 dark:border-slate-700">
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-sky-50 text-sky-500"><Icons.Shield /></div>
             <p className="text-sm">{t('not_guarding')}</p>
             <p className="mt-1 text-xs">{t('guard_hint')}</p>
@@ -263,18 +263,18 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
             {guardedOnly.map((tree: Lifetree) => (
               <div key={tree.id} onClick={() => onViewTree(tree)} className="border border-sky-100 rounded-lg p-4 hover:shadow-md cursor-pointer transition-all flex items-center justify-between group bg-sky-50/40">
                 <div className="flex items-center space-x-4">
-                  <Picture size={480} src={tree.latestGrowthUrl || tree.imageUrl || '/seed.webp'} className="w-16 h-16 rounded object-cover bg-slate-100" />
+                  <Picture size={480} src={tree.latestGrowthUrl || tree.imageUrl || '/seed.webp'} className="w-16 h-16 rounded object-cover bg-slate-100 dark:bg-slate-800" />
                   <div>
-                    <h3 className="font-bold text-slate-800">{tree.name}</h3>
-                    <p className="text-xs text-slate-500">Block Height: {tree.blockHeight}</p>
+                    <h3 className="font-bold text-slate-800 dark:text-slate-100">{tree.name}</h3>
+                    <p className="text-xs text-slate-500">{t('chain_block_height')}: {tree.blockHeight}</p>
                     <div className="mt-1 flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1 text-[10px] bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-bold"><Icons.Shield /> Guardian</span>
-                      {isWateringOverdue(tree) && <button type="button" title="Needs water: open tree care" aria-label="Needs water: open tree care" onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
+                      <span className="inline-flex items-center gap-1 text-[10px] bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-bold"><Icons.Shield /> {t('role_guardian')}</span>
+                      {isWateringOverdue(tree) && <button type="button" title={t('needs_water_open_care')} aria-label={t('needs_water_open_care')} onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
                     </div>
                   </div>
                 </div>
                 {tree.status === 'DANGER' && (
-                  <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-[9px] font-bold">DANGER</span>
+                  <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-[9px] font-bold">{t('danger_badge')}</span>
                 )}
               </div>
             ))}
@@ -286,13 +286,13 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
       {originalTree && (
         <div>
           <SectionTitle
-            title="The Original Tree"
-            sub="Indestructible. It has dissolved into Nature, and became part of Phoenix, and of every tree planted since."
+            title={t('original_tree_title')}
+            sub={t('original_tree_sub')}
           />
           <div
             onClick={() => onViewTree(originalTree)}
             role="button"
-            aria-label="Open Mahameru: The Original Tree"
+            aria-label={t('original_tree_open')}
             className="group flex cursor-pointer items-center gap-4 overflow-hidden rounded-2xl border border-amber-200/60 bg-[#04070f] p-4 shadow-lg transition-shadow hover:shadow-xl"
           >
             <Picture size={480} src={originalTree.latestGrowthUrl || originalTree.imageUrl || '/mahameru.svg'} alt="Mahameru"

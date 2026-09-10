@@ -169,15 +169,15 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
     };
 
     const sections: SectionItem[] = [
-        { key: 'about', label: 'About', icon: <Icons.Eye /> },
+        { key: 'about', label: t('about'), icon: <Icons.Eye /> },
         { key: 'contributions', label: t('contributions'), icon: <Icons.Drop /> },
         // The shadow-compare only appears when the vision keeps a tree twin.
         ...(vision.lifetreeId ? [{ key: 'shadow', label: t('shadow'), icon: <Icons.Tree /> }] as SectionItem[] : []),
-        { key: 'participants', label: 'Participants', icon: <Icons.Users /> },
+        { key: 'participants', label: t('participants'), icon: <Icons.Users /> },
     ];
 
     return (
-        <div className="min-h-screen animate-in fade-in zoom-in-95 duration-300 pb-20 bg-slate-50">
+        <div className="min-h-screen animate-in fade-in zoom-in-95 duration-300 pb-20 bg-slate-50 dark:bg-slate-900">
             <ProfileHero heroImageUrl={vision.imageUrl || '/mahameru.svg'}>
                 {/* Top bar — back + join / delete / root badge */}
                 <div className="flex items-center justify-between mb-6">
@@ -213,18 +213,18 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                                 className={`flex items-center gap-1 rounded-full px-4 py-2 text-xs font-bold shadow-sm transition-all active:scale-95 ${isJoined ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-amber-500 text-white hover:bg-amber-600'}`}
                             >
                                 <MahameruAvatar size={16} />
-                                <span>{isJoined ? 'Joined' : 'Join Vision'}</span>
+                                <span>{isJoined ? t('joined') : t('join_vision')}</span>
                             </button>
                         )}
                         {onDelete && (canDeleteAsAuthor || canDeleteAsStaff) && (
                             <button
                                 onClick={() => onDelete(vision.id)}
-                                title={canDeleteAsStaff ? 'Release this vision (staff)' : undefined}
+                                title={canDeleteAsStaff ? t('vision_release_staff') : undefined}
                                 className="flex items-center gap-1 rounded-full bg-red-500/15 px-4 py-2 text-xs font-bold text-red-300 border border-red-400/30 transition-colors hover:bg-red-500 hover:text-white"
                             >
                                 {canDeleteAsStaff && <SuperDot />}
                                 <Icons.Trash />
-                                <span>{rootOnGuarded ? 'Delete (stray)' : 'Delete'}</span>
+                                <span>{rootOnGuarded ? t('delete_stray') : t('delete')}</span>
                             </button>
                         )}
                         {/* A personal tree's Root Vision is its foundation — the delete is present
@@ -235,7 +235,7 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                             <button
                                 type="button"
                                 disabled
-                                title="This vision is the foundation of your tree and cannot be deleted."
+                                title={t('vision_foundation_note')}
                                 className="flex cursor-not-allowed items-center gap-1 rounded-full border border-red-400/20 bg-red-500/10 px-4 py-2 text-xs font-bold text-red-300/50"
                             >
                                 <Icons.Trash />
@@ -254,22 +254,22 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 justify-center sm:justify-start">
                             <h1 dir="auto" className="min-w-0 break-words text-2xl font-light tracking-wide">{vision.title}</h1>
                             {participantCount > 0 && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-0.5 text-xs text-slate-200">
-                                    <Icons.Users size={12} /> {participantCount} joined
+                                <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-0.5 text-xs text-slate-200 dark:bg-slate-900/15">
+                                    <Icons.Users size={12} /> {t('n_joined').replace('{n}', String(participantCount))}
                                 </span>
                             )}
                             {vision.visibility && vision.visibility !== 'public' && (
-                                <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">{vision.visibility}</span>
+                                <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide dark:bg-slate-900/15">{vision.visibility}</span>
                             )}
                             <BeingQr lid={vision.lid} name={vision.title} savedHref={vision.qr?.href}
                                 canMint={isAuthor}
                                 onMint={(href) => mintBeingQr('visions', vision.id, href)}
-                                className="h-8 w-8 border border-white/15 bg-white/10 text-slate-200 hover:bg-white/25 hover:text-white" />
-                            <LoveButton collection="visions" id={vision.id} initialCount={vision.loveCount || 0} className="rounded-full bg-white/15 px-2 py-1 text-white hover:bg-white/25" />
+                                className="h-8 w-8 border border-white/15 bg-white/10 text-slate-200 hover:bg-white/25 hover:text-white dark:bg-slate-900/10" />
+                            <LoveButton collection="visions" id={vision.id} initialCount={vision.loveCount || 0} className="rounded-full bg-white/15 px-2 py-1 text-white hover:bg-white/25 dark:bg-slate-900/15" />
                             {rootTree && !isRoot && (
                                 <button
                                     onClick={() => onViewTree?.(rootTree)}
-                                    title={`Rooted in ${rootTree.name}`}
+                                    title={`${t('rooted_in')} ${rootTree.name}`}
                                     className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/40 bg-emerald-400/15 px-2.5 py-0.5 text-xs font-medium text-emerald-100 transition-colors hover:bg-emerald-400/30"
                                 >
                                     {rootTree.imageUrl
@@ -279,7 +279,7 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                                 </button>
                             )}
                         </div>
-                        <p className="mt-1 text-xs text-slate-300 text-center sm:text-left">Seeded by {vision.authorId.substring(0, 6)}…</p>
+                        <p className="mt-1 text-xs text-slate-300 text-center sm:text-left">{t('seeded_by')} {vision.authorId.substring(0, 6)}…</p>
                     </div>
                 </div>
             </ProfileHero>
@@ -293,7 +293,7 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                 )}
                 {section === 'about' && (
                     <div>
-                        <SectionTitle title={t('vision')} sub="What this vision is calling towards." />
+                        <SectionTitle title={t('vision')} sub={t('vision_calling_sub')} />
                         {/* Where this vision sits relative to a tree: the tree's OWN root vision is its
                             anchor; any other vision merely roots INTO a tree, connecting to that root. */}
                         {rootTree && (
@@ -307,23 +307,23 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                                         : <span className="flex h-full w-full items-center justify-center text-emerald-500"><Icons.Tree /></span>}
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">{isRoot ? 'Root vision of' : t('rooted_in')}</p>
-                                    <p className="truncate text-lg font-light tracking-wide text-slate-800">{rootTree.name}</p>
-                                    <p className="truncate text-xs text-slate-500">{isRoot ? "This vision is the tree's foundation." : "Connects to this tree's root vision."}</p>
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">{isRoot ? t('root_vision_of') : t('rooted_in')}</p>
+                                    <p className="truncate text-lg font-light tracking-wide text-slate-800 dark:text-slate-100">{rootTree.name}</p>
+                                    <p className="truncate text-xs text-slate-500">{isRoot ? t('vision_is_foundation') : t('vision_connects_root')}</p>
                                 </div>
                                 <span className="shrink-0 text-emerald-600"><Icons.ArrowRight /></span>
                             </button>
                         )}
                         {vision.imageUrl && (
-                            <div className="mb-6 h-64 w-full overflow-hidden rounded-2xl border border-slate-100 bg-amber-50 shadow-sm">
+                            <div className="mb-6 h-64 w-full overflow-hidden rounded-2xl border border-slate-100 bg-amber-50 shadow-sm dark:border-slate-800">
                                 <Picture size={1200} src={vision.imageUrl} alt={vision.title} className="h-full w-full object-cover" />
                             </div>
                         )}
-                        <p dir="auto" className="whitespace-pre-wrap font-serif text-xl leading-relaxed text-slate-700">
+                        <p dir="auto" className="whitespace-pre-wrap font-serif text-xl leading-relaxed text-slate-700 dark:text-slate-200">
                             {vision.body}
                         </p>
                         {vision.link && (
-                            <div className="mt-8 border-t border-slate-100 pt-6">
+                            <div className="mt-8 border-t border-slate-100 pt-6 dark:border-slate-800">
                                 <a href={vision.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 font-medium text-amber-600 transition-colors hover:text-amber-800">
                                     <Icons.Globe />
                                     <span className="break-all">{vision.link}</span>
@@ -334,7 +334,7 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                             scoped host. The mend re-resolves the community grounding the same way
                             createVision did at birth (mendVisionDomain). */}
                         {showsPlaceOfRecord(isAdmin || isSuperAdmin, hostStrictScope) && (
-                            <div className="mt-8 border-t border-slate-100 pt-6 text-sm text-slate-700">
+                            <div className="mt-8 border-t border-slate-100 pt-6 text-sm text-slate-700 dark:text-slate-200 dark:border-slate-800">
                                 <PlaceOfRecord
                                     beingId={vision.id}
                                     domain={vision.domain}
@@ -418,10 +418,10 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
 
                 {section === 'participants' && (
                     <div className="space-y-6">
-                        <SectionTitle title="Participants" sub="The people and trees gathering around this vision." />
+                        <SectionTitle title={t('participants')} sub={t('vision_participants_sub')} />
                         {participantCount > 0 && (
                             <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-900">
-                                <span className="font-bold">{participantCount}</span> {participantCount === 1 ? 'person has' : 'people have'} joined this vision.
+                                {t('vision_joined_count').replace('{n}', String(participantCount))}
                             </div>
                         )}
                         <TreeParticipants entityId={vision.id} currentUserId={currentUserId} myTrees={myTrees} />

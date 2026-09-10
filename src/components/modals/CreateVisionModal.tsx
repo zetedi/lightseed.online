@@ -115,7 +115,7 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
 
         <input 
             dir="auto" 
-            className="block w-full border border-slate-300 p-2 rounded-lg" 
+            className="block w-full border border-slate-300 p-2 rounded-lg dark:border-slate-700" 
             placeholder={t('title')} 
             value={visionTitle} 
             onChange={e=>setVisionTitle(e.target.value)} 
@@ -125,7 +125,7 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
         <textarea 
             dir="auto" 
             rows={3}
-            className="block w-full resize-none overflow-hidden border border-slate-300 p-2 rounded-lg min-h-[76px]" 
+            className="block w-full resize-none overflow-hidden border border-slate-300 p-2 rounded-lg min-h-[76px] dark:border-slate-700" 
             placeholder={t('body')} 
             value={visionBody} 
             onChange={e=>setVisionBody(e.target.value)}
@@ -139,7 +139,7 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
 
         <input 
             dir="ltr" 
-            className="block w-full border border-slate-300 p-2 rounded-lg" 
+            className="block w-full border border-slate-300 p-2 rounded-lg dark:border-slate-700" 
             placeholder={t('webpage')} 
             value={visionLink} 
             onChange={e=>setVisionLink(e.target.value)}
@@ -150,7 +150,7 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
             <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-700"><Icons.Tree /> {t('ground_vision')}</p>
             <label className="block">
                 <span className="mb-1 block text-[11px] font-semibold text-slate-500">{t('vision_rooted_in_tree')}</span>
-                <select value={groundTreeId} onChange={e => setGroundTreeId(e.target.value)} className="block w-full rounded-lg border border-slate-300 bg-white p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <select value={groundTreeId} onChange={e => setGroundTreeId(e.target.value)} className="block w-full rounded-lg border border-slate-300 bg-white p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700">
                     {groundOptions.length === 0 && <option value="">{t('no_tree_plant_first')}</option>}
                     {groundOptions.map(tr => <option key={tr.id} value={tr.id}>{tr.name}</option>)}
                 </select>
@@ -160,7 +160,7 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
                 onChange={setVisionDomain}
                 placeholder={t('vision_domain_ph')}
                 hint={t('vision_domain_hint')}
-                className="block w-full rounded-lg border border-slate-300 bg-white p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="block w-full rounded-lg border border-slate-300 bg-white p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700"
             />
         </div>
 
@@ -170,7 +170,7 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
             <select
                 value={visibility}
                 onChange={e => setVisibility(e.target.value as 'public' | 'node' | 'private')}
-                className="block w-full rounded-lg border border-slate-300 bg-white p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="block w-full rounded-lg border border-slate-300 bg-white p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700"
             >
                 <option value="public">{t('vis_public')}</option>
                 <option value="node">{t('vis_node')}</option>

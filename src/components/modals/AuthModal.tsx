@@ -121,7 +121,7 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly, theme, startMode, gre
           <form onSubmit={handleRequest} className="space-y-3">
             <p className="text-sm text-slate-500">{t('auth_request_intro')}</p>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder={t('auth_your_email')} className={field} />
-            <textarea value={reason} onChange={e => setReason(e.target.value)} placeholder={t('auth_reason_placeholder')} className="min-h-28 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            <textarea value={reason} onChange={e => setReason(e.target.value)} placeholder={t('auth_reason_placeholder')} className="min-h-28 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
             <button type="submit" disabled={busy} style={{ backgroundColor: primary }} className={modalButton('primary', { extra: 'hover:opacity-90' })}>
               {busy ? '…' : t('auth_request_invitation')}
             </button>
@@ -132,7 +132,7 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly, theme, startMode, gre
         <div className="space-y-4">
           {greetName && (
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-              You've been invited to <span className="font-bold">{greetName}</span>. Create your account to step in.
+              {t('auth_greet_invited')} <span className="font-bold">{greetName}</span>. {t('auth_greet_create')}
             </div>
           )}
           {inviteId && inviteValid === false && (
@@ -142,12 +142,12 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly, theme, startMode, gre
             <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{t('auth_invited_as')} <span className="font-bold">{lockedEmail}</span>.</div>
           )}
 
-          <button onClick={handleGoogle} disabled={busy} className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-50">
+          <button onClick={handleGoogle} disabled={busy} className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-50 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700">
             <Icons.GoogleG /> <span>{t('auth_continue_google')}</span>
           </button>
 
           <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-            <div className="h-px flex-1 bg-slate-200" /> {t('auth_or')} <div className="h-px flex-1 bg-slate-200" />
+            <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" /> {t('auth_or')} <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
           </div>
 
           <form onSubmit={handleEmailSubmit} className="space-y-3">
@@ -158,7 +158,7 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly, theme, startMode, gre
             <input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} placeholder={mode === 'signup' ? t('auth_set_password') : t('auth_password')} className={field} />
 
             {mode === 'signup' && (
-              <label className="flex items-start gap-2 text-xs leading-relaxed text-slate-600">
+              <label className="flex items-start gap-2 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
                 <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 rounded text-emerald-600 focus:ring-emerald-500" />
                 <span>
                   {terms.checkbox}{' '}
@@ -168,7 +168,7 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly, theme, startMode, gre
             )}
 
             {mode === 'signup' && !canSignup ? (
-              <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-500">
+              <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-500 dark:bg-slate-900 dark:border-slate-700">
                 <p>{t('auth_invite_only_note')}</p>
                 <button type="button" onClick={() => { setMode('request'); }} className="font-bold" style={{ color: primary }}>{t('auth_request_arrow')}</button>
               </div>

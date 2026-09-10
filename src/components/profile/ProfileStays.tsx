@@ -19,6 +19,9 @@ const statusTone: Record<string, string> = {
   declined: 'bg-slate-100 text-slate-400',
 };
 
+// The stay's standing, spoken: the stored value is an identifier, the chip is a word.
+const STATUS_KEY = { requested: 'requested', accepted: 'accepted', declined: 'offering_status_declined' } as const;
+
 // My Stays — the guest side of the reservation: the beds this being has asked to sleep in. The
 // keeper answers on the bed's own calendar; here the guest watches their requests ripen. Each row
 // resolves its bed on tap (a bed is a Lifetree) so tapping opens the bed's page.
@@ -48,21 +51,21 @@ export const ProfileStays: React.FC<ProfileStaysProps> = ({ uid, onViewTree }) =
     <div>
       <SectionTitle title={t('my_stays')} sub={t('my_stays_sub')} />
       {loading ? (
-        <div className="flex justify-center rounded-2xl border border-slate-100 bg-slate-50/50 py-16"><Loading /></div>
+        <div className="flex justify-center rounded-2xl border border-slate-100 bg-slate-50/50 py-16 dark:bg-slate-900/50 dark:border-slate-800"><Loading /></div>
       ) : stays.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-400">
-          No stays yet; find a bed in the Living menu.
+        <p className="rounded-2xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-400 dark:border-slate-700">
+          {t('no_stays_yet')}
         </p>
       ) : (
         <div className="space-y-2">
           {stays.map(s => (
             <button key={s.id} type="button" onClick={() => open(s)}
-              className="flex w-full items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 text-left shadow-sm transition-colors hover:border-slate-200 hover:bg-slate-50">
+              className="flex w-full items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 text-left shadow-sm transition-colors hover:border-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-800">
               <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-indigo-400 to-violet-500 text-white [&>svg]:h-5 [&>svg]:w-5"><Icons.Moon /></span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="truncate text-sm font-bold text-slate-800">{s.bedName || 'A bed'}</span>
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${statusTone[s.status] || statusTone.declined}`}>{s.status}</span>
+                  <span className="truncate text-sm font-bold text-slate-800 dark:text-slate-100">{s.bedName || t('a_bed')}</span>
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${statusTone[s.status] || statusTone.declined}`}>{t(STATUS_KEY[s.status as keyof typeof STATUS_KEY] || 'offering_status_declined')}</span>
                 </div>
                 <div className="text-xs text-slate-400">{s.fromDate} → {s.toDate} · {s.nights} {t('nights').toLowerCase()}</div>
               </div>

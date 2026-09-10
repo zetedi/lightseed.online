@@ -28,7 +28,7 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved, to }: {
     // the offerer's own trees (fromTreeId), chosen below.
     to?: OfferedTo;
 }) => {
-    const { lightseed, myTrees, activeTree } = useSession();
+    const { lightseed, myTrees, activeTree, publicName } = useSession();
     const standing = (myTrees || []).filter(tr => !(to?.kind === 'tree' && tr.id === to.id));
     const [fromTreeId, setFromTreeId] = useState(() => (activeTree && standing.some(tr => tr.id === activeTree.id) ? activeTree.id : standing[0]?.id) || '');
     const { t } = useLanguage();
@@ -127,7 +127,7 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved, to }: {
                     offeringStatus: 'open' as const,
                 } : {}),
                 authorId: lightseed.uid,
-                authorName: lightseed.displayName || 'A being',
+                authorName: publicName || t('someone'),
                 authorPhoto: lightseed.photoURL || undefined,
             });
             onCreated?.();

@@ -38,9 +38,9 @@ export const NetworkStatus = () => {
                    z-[99]: above modals (98), so an upload's progress is never hidden behind the
                    very form that started it (the offering picker was burying it); below dialogs. */
                 <div className="pointer-events-none fixed bottom-6 left-1/2 z-[99] -translate-x-1/2">
-                    <div className="w-60 rounded-2xl border border-amber-200/80 bg-white/95 px-4 py-3 shadow-xl backdrop-blur">
+                    <div className="w-60 rounded-2xl border border-amber-200/80 bg-white/95 px-4 py-3 shadow-xl backdrop-blur dark:bg-slate-900/95">
                         <div className="mb-2 flex items-center justify-between text-[11px] font-bold">
-                            <span className="text-slate-600">Uploading photo</span>
+                            <span className="text-slate-600 dark:text-slate-300">{t('uploading_photo')}</span>
                             <span className="tabular-nums text-amber-600">{net.uploadPct}%</span>
                         </div>
                         <div className="h-1.5 overflow-hidden rounded-full bg-amber-100">

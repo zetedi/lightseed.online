@@ -89,18 +89,18 @@ export const NodeGrowthTree = ({ community, trees, onViewTree }: NodeGrowthTreeP
   }, [trees, edges]);
 
   const stats: { label: string; value: number; tint: string }[] = [
-    { label: 'Trees', value: model.n, tint: 'text-emerald-300' },
-    { label: 'Pulses', value: model.totalPulses, tint: 'text-sky-300' },
-    { label: 'Links', value: model.totalLinks, tint: 'text-amber-300' },
-    { label: 'Validated', value: model.validated, tint: 'text-yellow-200' },
-    { label: 'Guardians', value: model.totalGuardians, tint: 'text-emerald-200' },
+    { label: t('my_trees'), value: model.n, tint: 'text-emerald-300' },
+    { label: t('pulses'), value: model.totalPulses, tint: 'text-sky-300' },
+    { label: t('stat_links'), value: model.totalLinks, tint: 'text-amber-300' },
+    { label: t('validated_trees'), value: model.validated, tint: 'text-yellow-200' },
+    { label: t('stat_guardians'), value: model.totalGuardians, tint: 'text-emerald-200' },
   ];
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-800 shadow-xl" style={{ background: 'radial-gradient(120% 120% at 50% 35%, #0c1a16 0%, #070d0b 60%, #05080a 100%)' }}>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-white/5 px-5 py-3">
-        <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-emerald-300">The Model</h3>
-        <p className="text-xs text-slate-400">How {community.name} is crystallising: each branch a tree, its weight its growth.</p>
+        <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-emerald-300">{t('the_model')}</h3>
+        <p className="text-xs text-slate-400">{t('growth_tree_sub').replace('{name}', community.name)}</p>
       </div>
 
       {model.n === 0 ? (
@@ -111,7 +111,7 @@ export const NodeGrowthTree = ({ community, trees, onViewTree }: NodeGrowthTreeP
         </div>
       ) : (
         <>
-          <svg viewBox="0 0 800 800" className="h-auto w-full" role="img" aria-label={`${community.name} model growth diagram`}>
+          <svg viewBox="0 0 800 800" className="h-auto w-full" role="img" aria-label={t('growth_diagram_aria').replace('{name}', community.name)}>
             <defs>
               <filter id="ngt-glow" x="-60%" y="-60%" width="220%" height="220%">
                 <feGaussianBlur stdDeviation="7" result="b" />
@@ -143,7 +143,7 @@ export const NodeGrowthTree = ({ community, trees, onViewTree }: NodeGrowthTreeP
             {/* Tree nodes — sized by weight, glowing when validation is lit. Clickable. */}
             {model.nodes.map((nd, i) => (
               <g key={`n${i}`} onClick={() => onViewTree?.(nd.t)} className={onViewTree ? 'cursor-pointer' : ''}>
-                <title>{nd.t.name}: {nd.t.blockHeight || 0} blocks, {nd.links} links{nd.lit ? ', validated' : ''}</title>
+                <title>{t('growth_node_title').replace('{name}', nd.t.name).replace('{blocks}', String(nd.t.blockHeight || 0)).replace('{links}', String(nd.links)) + (nd.lit ? t('growth_node_validated_suffix') : '')}</title>
                 <circle cx={nd.x} cy={nd.y} r={nd.r} fill={nd.color} filter={nd.lit ? 'url(#ngt-glow)' : undefined} fillOpacity={nd.lit ? 1 : 0.85} stroke="#ffffff" strokeOpacity={0.25} strokeWidth={1} />
                 {nd.r > 13 && (
                   <text x={nd.x + (Math.cos(nd.angle) >= 0 ? nd.r + 6 : -(nd.r + 6))} y={nd.y + 4}
@@ -164,7 +164,7 @@ export const NodeGrowthTree = ({ community, trees, onViewTree }: NodeGrowthTreeP
           </svg>
 
           {/* The weight distribution, in numbers. */}
-          <div className="grid grid-cols-5 gap-px border-t border-white/5 bg-white/5">
+          <div className="grid grid-cols-5 gap-px border-t border-white/5 bg-white/5 dark:bg-slate-900/5">
             {stats.map(s => (
               <div key={s.label} className="flex flex-col items-center gap-0.5 px-2 py-3" style={{ background: 'rgba(0,0,0,0.25)' }}>
                 <span className={`font-mono text-lg font-bold tabular-nums ${s.tint}`}>{s.value}</span>
@@ -173,10 +173,10 @@ export const NodeGrowthTree = ({ community, trees, onViewTree }: NodeGrowthTreeP
             ))}
           </div>
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 px-5 py-2.5 text-[11px] text-slate-500">
-            <span className="flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full bg-[#fcd34d]" /> validated</span>
-            <span className="flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full bg-[#38bdf8]" /> nature</span>
-            <span className="flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full bg-[#94a3b8]" /> lifetree</span>
-            <span className="text-slate-600">· node size = weight · branch = chain growth · dots = links</span>
+            <span className="flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full bg-[#fcd34d]" /> {t('validated_trees')}</span>
+            <span className="flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full bg-[#38bdf8]" /> {t('nature')}</span>
+            <span className="flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full bg-[#94a3b8]" /> {t('type_lifetree')}</span>
+            <span className="text-slate-600 dark:text-slate-300">{t('growth_legend_note')}</span>
           </div>
         </>
       )}

@@ -1066,6 +1066,20 @@ service cloud.firestore {
                   .hasOnly(['qr', 'updatedAt'])
            )
 
+        // (h2) ONE STANDING ASK (ring 2026-09-11): a tree's "water me" nudge is rewritten while
+        //      it stands, so a week of thirst is one line that keeps count instead of seven
+        //      identical ones. Narrow on purpose: ONLY a careAlert pulse, ONLY by the hand that
+        //      raised it, ONLY its words and the moment it last spoke — never its thread, its
+        //      audience, its participants or its type, so a nudge can never become a message
+        //      into a circle the author no longer belongs to. It is a nudge, not a chain block
+        //      (previousHash 'WATER_ALERT'), which is why its words may change at all.
+        || (
+             resource.data.get('careAlert', '') == 'watering'
+             && resource.data.authorId == request.auth.uid
+             && request.resource.data.diff(resource.data).affectedKeys()
+                  .hasOnly(['body', 'content', 'createdAt', 'updatedAt'])
+           )
+
         // (i) The offering's lifecycle switch: its AUTHOR may pause or rewake it, a boolean and
         //     nothing else. Pausing hides it from the shared feed; the record itself stays.
         || (

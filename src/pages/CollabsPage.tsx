@@ -22,15 +22,16 @@ import { tabTone, CTA_GLOW, type TabTheme } from '../utils/tabTheme';
 import type { Intelligence } from '../domain/intelligence';
 import type { Community } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
-import { spokenLine } from '../utils/translations';
+import { spokenLine, speak, type TranslationKey } from '../utils/translations';
 
 // Per-provider fallback descriptions, used when an intelligence has no description of its own.
-const PROVIDER_BLURB: Record<string, string> = {
-  anthropic: "Anthropic's Claude: careful, nuanced reasoning over very long contexts, with a constitutional approach to safety.",
-  google: "Google's Gemini: natively multimodal (text, images, audio, video) with strong reasoning and very large context windows.",
-  openai: "OpenAI's GPT: versatile, general-purpose models, strong at coding, writing, and tool use.",
-  deepseek: "DeepSeek: open-weight models with strong reasoning and coding at low cost.",
-  local: "A locally-hosted model running on the node's own compute.",
+// Named by KEY — the words are spoken at render, in the reader's language.
+const PROVIDER_BLURB: Record<string, TranslationKey> = {
+  anthropic: 'provider_blurb_anthropic',
+  google: 'provider_blurb_google',
+  openai: 'provider_blurb_openai',
+  deepseek: 'provider_blurb_deepseek',
+  local: 'provider_blurb_local',
 };
 
 // Providers are rails, not beings. The intelligence itself is the being — it wears its own
@@ -48,9 +49,9 @@ const PROVIDER_BADGE: Record<string, string> = {
 // The default face for any intelligence without its own icon.
 const BEING_GLYPH = '/logos/being.svg';
 
-const AGREEMENT_LABEL: Record<OrgCollab['agreement'], string> = {
-  founder: 'Founders agreed',
-  contract: 'By contract',
+const AGREEMENT_LABEL: Record<OrgCollab['agreement'], TranslationKey> = {
+  founder: 'collab_founder_agreed',
+  contract: 'collab_by_contract',
 };
 
 // Being lists use their own grid map — these are text cards, not image cards.
@@ -111,7 +112,7 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
       const url = await handleImageUpload(file, `collabs/${slugify(draft.name)}_${Date.now()}`);
       setDraft(d => ({ ...d, logoUrl: url }));
     } catch (e: any) {
-      setError(e?.message || 'Could not upload the logo.');
+      setError(speak(e?.message || 'err_image_upload'));
     }
   };
 
@@ -124,7 +125,7 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
       setDraft({ name: '', url: '', blurb: '', logoUrl: '', agreement: 'founder' });
       setAdding(false);
     } catch (e: any) {
-      setError(e?.message || 'Could not add the organisation.');
+      setError(speak(e?.message || 'err_org_add'));
     } finally {
       setBusy(false);
     }
@@ -161,7 +162,7 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
       setGrowingId(null);
       onSelectCommunity?.(created);
     } catch (e: any) {
-      setGrowError(e?.message || 'Could not grow the community.');
+      setGrowError(speak(e?.message || 'err_community_grow'));
     } finally {
       setGrowBusy(false);
     }
@@ -184,7 +185,7 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
       <SectionHeader
-        title="Cocreate"
+        title={t('cocreate')}
         tone={activeTone}
         // The sub-tabs ride the band itself, full width: the same tab grammar as Offerings.
         tabs={
@@ -193,8 +194,8 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
             onChange={(k) => setSubTab(k as 'intelligences' | 'organisations')}
             tone={activeTone}
             tabs={[
-              { key: 'intelligences', label: 'Intelligences', icon: <Icons.Intelligence />, count: list?.length ?? undefined, tone },
-              { key: 'organisations', label: 'Organisations', icon: <Icons.Globe />, count: orgs?.length ?? undefined, tone: ORG_TONE },
+              { key: 'intelligences', label: t('intelligences'), icon: <Icons.Intelligence />, count: list?.length ?? undefined, tone },
+              { key: 'organisations', label: t('organisations'), icon: <Icons.Globe />, count: orgs?.length ?? undefined, tone: ORG_TONE },
             ]}
           />
         }
@@ -204,7 +205,7 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
             <p dir="auto" className="min-w-0 truncate text-sm italic text-white/90">"{quote}"</p>
             {onCopyQuote && (
               <button onClick={onCopyQuote} title={t('copy_quote')} aria-label={t('copy_quote')}
-                className="inline-flex shrink-0 items-center rounded-full bg-white/15 p-1 text-white/80 backdrop-blur transition-colors hover:bg-white/25 hover:text-white">
+                className="inline-flex shrink-0 items-center rounded-full bg-white/15 p-1 text-white/80 backdrop-blur transition-colors hover:bg-white/25 hover:text-white dark:bg-slate-900/15">
                 {quoteCopied ? <span className="px-0.5 text-[10px] font-bold">✓</span> : <Icons.Copy size={13} />}
               </button>
             )}
@@ -214,7 +215,7 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
         toggle={<ViewDensityToggle value={density} onChange={setDensity} />}
         action={canAddOrg && subTab === 'organisations' && !adding ? (
           <button onClick={() => setAdding(true)} className={`rounded-full bg-white/15 px-4 py-1.5 text-sm font-bold text-white backdrop-blur transition-all hover:bg-white/25 active:scale-95 ${CTA_GLOW}`}>
-            <span className="flex items-center gap-1.5"><Icons.Plus /> Add organisation</span>
+            <span className="flex items-center gap-1.5"><Icons.Plus /> {t('add_organisation')}</span>
           </button>
         ) : undefined}
       >
@@ -233,19 +234,19 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
                 return (
                   <div key={intel.id} className={`rounded-lg border border-slate-100 bg-white ${pad} ${POP}`}>
                     <div className="flex items-center justify-between gap-2">
-                      <h4 className="flex min-w-0 items-center gap-2 font-bold text-slate-800">
+                      <h4 className="flex min-w-0 items-center gap-2 font-bold text-slate-800 dark:text-slate-100">
                         {/* The being's own face, with the provider mark as a small badge — never the other way round. */}
                         <span className="relative shrink-0">
-                          <img src={intel.icon || BEING_GLYPH} alt={intel.name} className="h-8 w-8 rounded bg-slate-100/80 p-1.5" />
-                          {badge && <img src={badge} alt={provider} className="absolute -bottom-1 -right-1 h-4 w-4 rounded-sm bg-white p-0.5 shadow-sm ring-1 ring-slate-200" />}
+                          <img src={intel.icon || BEING_GLYPH} alt={intel.name} className="h-8 w-8 rounded bg-slate-100/80 p-1.5 dark:bg-slate-800/80" />
+                          {badge && <img src={badge} alt={provider} className="absolute -bottom-1 -right-1 h-4 w-4 rounded-sm bg-white p-0.5 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900" />}
                         </span>
                         <span className="truncate">{intel.name}</span>
                         {isDefault && <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">{t('default_voice')}</span>}
                         {intel.connected && density !== 'mini' && <span className="shrink-0 rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-700">{t('connected')}</span>}
                       </h4>
-                      {density !== 'mini' && <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500">powered by {provider}</span>}
+                      {density !== 'mini' && <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:bg-slate-800">{t('powered_by').replace('{provider}', provider)}</span>}
                     </div>
-                    <p className={`mt-1 leading-relaxed text-slate-600 ${blurbClamp}`}>{intel.description || PROVIDER_BLURB[intel.provider] || `An intelligence running on ${provider}.`}</p>
+                    <p className={`mt-1 leading-relaxed text-slate-600 ${blurbClamp}`}>{intel.description || (PROVIDER_BLURB[intel.provider] ? t(PROVIDER_BLURB[intel.provider]) : t('intel_running_on').replace('{provider}', provider))}</p>
                   </div>
                 );
               })}
@@ -259,31 +260,31 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
             {canAddOrg && adding && (
               <div className="mb-4 space-y-2.5 rounded-lg border border-violet-100 bg-violet-50/40 p-4">
                 <div className="flex items-start gap-3">
-                  <ImagePicker onImageSelect={handleLogoSelect} loading={uploading} className="flex h-14 w-14 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-dashed border-violet-200 bg-white text-slate-300 transition-colors hover:border-violet-400 hover:text-violet-400">
-                    {draft.logoUrl ? <img src={draft.logoUrl} alt="Logo" className="h-full w-full object-cover" /> : <Icons.Camera />}
+                  <ImagePicker onImageSelect={handleLogoSelect} loading={uploading} className="flex h-14 w-14 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-dashed border-violet-200 bg-white text-slate-300 transition-colors hover:border-violet-400 hover:text-violet-400 dark:bg-slate-900">
+                    {draft.logoUrl ? <img src={draft.logoUrl} alt={t('logo')} className="h-full w-full object-cover" /> : <Icons.Camera />}
                   </ImagePicker>
                   <div className="min-w-0 flex-1 space-y-2.5">
                     <input dir="auto" value={draft.name} onChange={e => setDraft(d => ({ ...d, name: e.target.value }))} placeholder={t('org_name_ph')}
-                      className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-800 outline-none focus:border-violet-300" />
+                      className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-800 outline-none focus:border-violet-300 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700" />
                     <input dir="auto" value={draft.url} onChange={e => setDraft(d => ({ ...d, url: e.target.value }))} placeholder={t('website_optional_ph')}
-                      className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-800 outline-none focus:border-violet-300" />
+                      className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-800 outline-none focus:border-violet-300 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700" />
                   </div>
                 </div>
                 <textarea dir="auto" value={draft.blurb} onChange={e => setDraft(d => ({ ...d, blurb: e.target.value }))} rows={2} placeholder={t('collab_blurb_ph')}
-                  className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-800 outline-none focus:border-violet-300" />
+                  className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-800 outline-none focus:border-violet-300 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700" />
                 <div className="flex flex-wrap items-center gap-2">
                   {(['founder', 'contract'] as const).map(a => (
                     <button key={a} onClick={() => setDraft(d => ({ ...d, agreement: a }))}
                       className={`rounded-full px-3 py-1.5 text-xs font-bold transition-all ${draft.agreement === a ? 'text-white shadow' : 'border border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}`}
                       style={draft.agreement === a ? { backgroundColor: tone } : undefined}>
-                      {AGREEMENT_LABEL[a]}
+                      {t(AGREEMENT_LABEL[a])}
                     </button>
                   ))}
                   <span className="flex-1" />
                   {error && <span className="text-xs text-rose-500">{error}</span>}
                   <button onClick={() => { setAdding(false); setError(null); }} className="rounded-full px-3 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-100">{t('cancel')}</button>
                   <button onClick={handleAdd} disabled={busy || uploading || !draft.name.trim()} className="rounded-full px-4 py-1.5 text-xs font-bold text-white shadow-md transition-all active:scale-95 disabled:opacity-50" style={{ backgroundColor: tone }}>
-                    {busy ? 'Adding…' : 'Add organisation'}
+                    {busy ? t('adding') : t('add_organisation')}
                   </button>
                 </div>
               </div>
@@ -298,14 +299,14 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
                 return (
                 <div key={org.id} className={`rounded-lg border border-slate-100 bg-white ${pad} ${POP}`}>
                   <div className="flex items-center justify-between gap-2">
-                    <h4 className="flex min-w-0 items-center gap-2 font-bold text-slate-800">
+                    <h4 className="flex min-w-0 items-center gap-2 font-bold text-slate-800 dark:text-slate-100">
                       {org.logoUrl
                         ? <img src={org.logoUrl} alt={org.name} className="h-10 w-10 shrink-0 rounded-lg object-cover" />
                         : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-base font-bold text-violet-700">{org.name.charAt(0).toUpperCase()}</span>}
                       {org.url
                         ? <a href={org.url} target="_blank" rel="noopener noreferrer" className="truncate hover:text-violet-700 hover:underline">{org.name}</a>
                         : <span className="truncate">{org.name}</span>}
-                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${org.agreement === 'contract' ? 'bg-violet-100 text-violet-700' : 'bg-emerald-100 text-emerald-700'}`}>{AGREEMENT_LABEL[org.agreement]}</span>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${org.agreement === 'contract' ? 'bg-violet-100 text-violet-700' : 'bg-emerald-100 text-emerald-700'}`}>{t(AGREEMENT_LABEL[org.agreement])}</span>
                     </h4>
                     {isCarer && (
                       <button onClick={() => handleRemove(org)} title={t('remove')} className="relative shrink-0 rounded-full p-1.5 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"><Icons.Trash />{isStaff && org.createdBy !== lightseed?.uid && <SuperDot />}</button>
@@ -315,26 +316,26 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
                   {org.communityId ? (
                     onSelectCommunity && (
                       <button onClick={() => handleVisit(org)} className="mt-2.5 rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white shadow transition-all hover:bg-emerald-700 active:scale-95">
-                        Visit community
+                        {t('visit_community')}
                       </button>
                     )
                   ) : isCarer && growingId !== org.id ? (
                     <button onClick={() => openGrow(org)} className="mt-2.5 rounded-full px-3.5 py-1.5 text-xs font-bold text-white shadow transition-all active:scale-95" style={{ backgroundColor: tone }}>
-                      Grow a community
+                      {t('grow_a_community')}
                     </button>
                   ) : null}
                   {growingId === org.id && !org.communityId && (
                     <div className="mt-2.5 space-y-2 rounded-lg border border-violet-100 bg-violet-50/40 p-3">
                       <input dir="auto" value={grow.name} onChange={e => setGrow(g => ({ ...g, name: e.target.value }))} placeholder={t('community_name_ph')}
-                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 outline-none focus:border-violet-300" />
+                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 outline-none focus:border-violet-300 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700" />
                       <input dir="auto" value={grow.domain} onChange={e => setGrow(g => ({ ...g, domain: e.target.value }))} placeholder={t('domain_ph')}
-                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 outline-none focus:border-violet-300" />
+                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 outline-none focus:border-violet-300 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700" />
                       <div className="flex items-center gap-2">
                         <span className="flex-1 text-xs text-rose-500">{growError}</span>
                         <button onClick={() => setGrowingId(null)} className="rounded-full px-3 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-100">{t('cancel')}</button>
                         <button onClick={() => handleGrow(org)} disabled={growBusy || !grow.name.trim() || !grow.domain.trim()}
                           className="rounded-full px-3.5 py-1.5 text-xs font-bold text-white shadow transition-all active:scale-95 disabled:opacity-50" style={{ backgroundColor: tone }}>
-                          {growBusy ? 'Growing…' : 'Grow'}
+                          {growBusy ? t('growing') : t('grow')}
                         </button>
                       </div>
                     </div>

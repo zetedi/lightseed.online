@@ -4,7 +4,7 @@
 // view (community, lightseed, lifetree, event, vision) titles its sections the same way.
 export const SectionTitle = ({ title, sub }: { title: string; sub?: string }) => (
     <div className="mb-6">
-        <h2 className="text-base sm:text-xl font-bold text-slate-900">{title}</h2>
+        <h2 className="text-base sm:text-xl font-bold text-slate-900 dark:text-slate-50">{title}</h2>
         {sub && <p className="mt-1 text-sm text-slate-500">{sub}</p>}
     </div>
 );

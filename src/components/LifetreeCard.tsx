@@ -74,13 +74,13 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, isInit
                 {tree.isNature ? (
                     <span className="bg-sky-100 text-sky-800 text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center shadow-sm">
                         <Icons.Shield />
-                        <span className="ml-1 text-[9px]">NATURE</span>
+                        <span className="ml-1 text-[9px]">{t('badge_nature')}</span>
                     </span>
                 ) : null}
                 {isGuardian && (
                     <span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center shadow-sm w-fit">
                         <Icons.Shield />
-                        <span className="ml-1 text-[9px]">Guardian</span>
+                        <span className="ml-1 text-[9px]">{t('role_guardian')}</span>
                     </span>
                 )}
             </div>
@@ -91,7 +91,7 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, isInit
                      <button 
                         onClick={triggerUpload} 
                         disabled={uploading}
-                        className="flex items-center gap-1.5 bg-white/95 text-slate-800 px-2.5 py-1 rounded-full shadow-md hover:bg-white hover:text-emerald-700 transition-all active:scale-95"
+                        className="flex items-center gap-1.5 bg-white/95 text-slate-800 px-2.5 py-1 rounded-full shadow-md hover:bg-white hover:text-emerald-700 transition-all active:scale-95 dark:bg-slate-900/95 dark:text-slate-100"
                     >
                         {uploading ? <div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div> : <Icons.Camera />}
                         <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:inline">{t('quick_snap')}</span>
@@ -107,7 +107,7 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, isInit
                  </div>
             ) : null}
 
-            <div className="relative h-36 bg-slate-200 overflow-hidden group">
+            <div className="relative h-36 bg-slate-200 overflow-hidden group dark:bg-slate-800">
                 {tree.latestGrowthUrl || tree.imageUrl || tree.id === 'GENESIS_TREE' ? (
                     <Picture size={480}
                         src={tree.latestGrowthUrl || tree.imageUrl || '/mahameru.svg'}
@@ -137,35 +137,35 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, isInit
                                 <button
                                     type="button"
                                     onClick={(e) => { e.stopPropagation(); onAlertGuardians(tree); }}
-                                    title="Message this tree's guardians"
+                                    title={t('message_guardians')}
                                     className="pointer-events-auto bg-red-500 text-white px-2 py-0.5 rounded-full text-[9px] font-bold animate-pulse hover:bg-red-600 active:scale-95 transition-all"
                                 >
-                                    DANGER · alert guardians
+                                    {t('danger_alert_guardians')}
                                 </button>
                             ) : (
-                                <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-[9px] font-bold animate-pulse">DANGER</span>
+                                <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-[9px] font-bold animate-pulse">{t('danger_badge')}</span>
                             )
                         )}
                         {needsWater && (
-                            <span className="bg-sky-500 text-white px-2 py-0.5 rounded-full text-[9px] font-bold animate-pulse inline-flex items-center gap-1">💧 NEEDS WATER</span>
+                            <span className="bg-sky-500 text-white px-2 py-0.5 rounded-full text-[9px] font-bold animate-pulse inline-flex items-center gap-1">💧 {t('badge_needs_water')}</span>
                         )}
                     </div>
                 </div>
             </div>
             <div className="p-3">
-                <p dir="auto" className="text-slate-600 text-xs font-light italic leading-relaxed truncate">
+                <p dir="auto" className="text-slate-600 text-xs font-light italic leading-relaxed truncate dark:text-slate-300">
                     "{tree.body}"
                 </p>
-                <div className="mt-3 pt-2 border-t border-slate-100 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="mt-3 pt-2 border-t border-slate-100 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
                     <button onClick={(e) => { e.stopPropagation(); onPlayGrowth(tree.id); }} className="flex items-center gap-1 text-[10px] bg-primary/10 hover:bg-primary/20 text-primary px-2 py-1 rounded transition-colors uppercase tracking-wider font-semibold">
                         <Icons.Play />
-                        <span>Growth</span>
+                        <span>{t('growth')}</span>
                     </button>
                     {onReach && (
                         canReach ? (
                             <button onClick={(e) => { e.stopPropagation(); onReach(tree); }} className="flex items-center gap-1 text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-700 px-2 py-1 rounded transition-colors uppercase tracking-wider font-semibold">
                                 <Icons.Reach />
-                                <span>Reach</span>
+                                <span>{t('reach')}</span>
                             </button>
                         ) : (
                             <button
@@ -173,7 +173,7 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, isInit
                                 disabled
                                 onClick={(e) => e.stopPropagation()}
                                 title={t('only_if_validated')}
-                                className="flex items-center gap-1 text-[10px] bg-slate-100 text-slate-400 px-2 py-1 rounded uppercase tracking-wider font-semibold cursor-not-allowed"
+                                className="flex items-center gap-1 text-[10px] bg-slate-100 text-slate-400 px-2 py-1 rounded uppercase tracking-wider font-semibold cursor-not-allowed dark:bg-slate-800"
                             >
                                 <Icons.Eye size={12} />
                                 <span>{t('only_if_validated')}</span>
@@ -187,12 +187,12 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, isInit
                                 onClick={async (e) => {
                                     e.stopPropagation();
                                     const nextValidated = !hasValidationBadge;
-                                    const message = nextValidated ? 'Validate this tree?' : 'Remove validation from this tree?';
-                                    if (await showConfirm(message, { title: 'Validation' })) onValidate(tree.id, nextValidated);
+                                    const message = nextValidated ? 'validate_confirm' : 'unvalidate_confirm';
+                                    if (await showConfirm(message, { title: 'validation_title' })) onValidate(tree.id, nextValidated);
                                 }}
                                 className="text-[10px] bg-primary text-white px-3 py-1.5 rounded-full shadow hover:opacity-90 transition-all uppercase font-bold tracking-wider"
                             >
-                                {hasValidationBadge ? 'Remove Validation' : t('validate_action')}
+                                {hasValidationBadge ? t('remove_validation') : t('validate_action')}
                             </button>
                         )}
                     </div>
@@ -206,7 +206,7 @@ export const LifetreeCard = ({ tree, myActiveTree, isAdmin, isSuperAdmin, isInit
                     <ImageCropModal
                         file={pendingSnap}
                         aspect={1}
-                        title="Frame the growth"
+                        title={t('frame_the_growth')}
                         onCancel={() => setPendingSnap(null)}
                         onConfirm={handleCropped}
                     />

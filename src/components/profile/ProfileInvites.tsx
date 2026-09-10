@@ -29,7 +29,8 @@ interface ProfileInvitesProps {
   // Live allotment — kept in the shell, where the profile listener writes it.
   invitesRemaining: number;
   // Surfaces notices via the shell's shared dialog modal.
-  notify: (message: string) => void;
+  // The snackbar (ui/Toast): a saved setting says so in passing, never in a modal.
+  notify: (message: string, kind?: 'success' | 'error') => void;
 }
 
 // Invitations tab — send network invites, review sent ones, and (superadmin) handle join requests.
@@ -77,7 +78,7 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
   const handleApproveRequest = async (id: string) => {
     setRequestBusyId(id);
     try { await approveInviteRequest(id, uid); setRequestStatusLocal(id, 'approved'); notify(speak('invitation_sent')); }
-    catch (e: any) { notify(e?.message || 'Failed to approve.'); }
+    catch (e: any) { notify(e?.message || t('err_invite_approve'), 'error'); }
     setRequestBusyId(null);
   };
 
@@ -86,12 +87,11 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
     try {
       // A kind rejection — they're welcome to ask again with more context.
       try {
-        await triggerSystemEmail(req.email, 'About your lightseed invitation request',
-          "Thank you for your interest in lightseed. For now, the reason to join wasn't yet clear to us, or didn't feel aligned with the spirit of the network. You are warmly welcome to request again, with a little more about your intention.\n\nWith care,\nthe lightseed stewards", uid);
+        await triggerSystemEmail(req.email, t('invite_reject_subject'), t('invite_reject_body'), uid);
       } catch (mailErr) { console.warn('Kind rejection email failed', mailErr); }
       await declineInviteRequest(req.id);
       setRequestStatusLocal(req.id, 'declined');
-    } catch (e: any) { notify(e?.message || 'Failed to decline.'); }
+    } catch (e: any) { notify(e?.message || t('err_invite_decline'), 'error'); }
     setRequestBusyId(null);
   };
 
@@ -102,18 +102,18 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
     try {
       const outcome = await createNetworkInvite(inviteEmail, uid, inviteMessage, { unlimited: isSuperAdmin });
       if (outcome.alreadyMember) {
-        notify('🌳 That soul is already a member; no invite needed.');
+        notify('🌳 ' + t('invite_already_member'));
       } else {
         refreshSentInvites();
         notify(outcome.alreadyInvited
-          ? 'Already invited. Your intention flew to them anyway; no invite spent.'
+          ? t('invite_already_invited')
           : t('invite_sent'));
         setShowInviteModal(false);
         setInviteEmail('');
         setInviteMessage('');
       }
     } catch (e: any) {
-      notify(e.message || 'Failed to send invite');
+      notify(e.message || t('err_invite_send'), 'error');
     }
     setSendingInvite(false);
   };
@@ -123,13 +123,13 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
       <div>
         <SectionTitle title={t('invitations')} sub={t('invites_sub')} />
         {(!hasTrees && !isSuperAdmin) ? (
-          <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100"><Icons.Tree /></div>
+          <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400 dark:border-slate-700">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800"><Icons.Tree /></div>
             <p className="text-sm">{t('invites_plant_first')}</p>
           </div>
         ) : (
-          <div className="rounded-2xl border border-slate-100 p-5 space-y-3">
-            <p className="text-sm text-slate-500">{t('invites_remaining')}: <span className="font-bold text-emerald-600">{isSuperAdmin ? 'Unlimited' : invitesRemaining}</span></p>
+          <div className="rounded-2xl border border-slate-100 p-5 space-y-3 dark:border-slate-800">
+            <p className="text-sm text-slate-500">{t('invites_remaining')}: <span className="font-bold text-emerald-600">{isSuperAdmin ? t('unlimited') : invitesRemaining}</span></p>
             <p className="text-xs text-slate-400">{t('invites_email_note')}</p>
             <button onClick={() => setShowInviteModal(true)} disabled={!isSuperAdmin && invitesRemaining <= 0} className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-emerald-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"><Icons.UserPlus /> <span>{t('send_invite')}</span></button>
           </div>
@@ -145,15 +145,15 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
           ) : (
             <div className="space-y-2">
               {sentInvites.map(inv => (
-                <div key={inv.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50/60 p-3">
-                  <span className="truncate text-sm font-medium text-slate-800">{inv.email}</span>
-                  <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${inv.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{inv.status === 'accepted' ? 'Joined' : 'Pending'}</span>
+                <div key={inv.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/60">
+                  <span className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">{inv.email}</span>
+                  <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${inv.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{inv.status === 'accepted' ? t('joined') : t('pending')}</span>
                 </div>
               ))}
             </div>
           )}
           {sentHasMore && (
-            <button onClick={loadMoreSentInvites} className="mt-3 w-full rounded-lg border border-slate-200 py-2 text-xs font-bold text-slate-500 hover:bg-slate-50">{t('load_more')}</button>
+            <button onClick={loadMoreSentInvites} className="mt-3 w-full rounded-lg border border-slate-200 py-2 text-xs font-bold text-slate-500 hover:bg-slate-50 dark:border-slate-700">{t('load_more')}</button>
           )}
         </div>
       )}
@@ -166,7 +166,7 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
             <div className="flex items-center gap-3">
               <label className="flex items-center gap-1.5 text-xs text-slate-500">
                 <input type="checkbox" checked={showDeclinedRequests} onChange={e => setShowDeclinedRequests(e.target.checked)} className="h-3.5 w-3.5 rounded text-emerald-600 focus:ring-emerald-500" />
-                Show declined
+                {t('show_declined')}
               </label>
               <button onClick={refreshInviteRequests} className="text-xs font-bold text-slate-400 hover:text-slate-700">{t('refresh')}</button>
             </div>
@@ -174,23 +174,23 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
           {(() => {
             const visible = inviteRequests.filter(r => r.status !== 'declined' || showDeclinedRequests);
             return visible.length === 0 ? (
-              <p className="text-xs text-slate-400">No requests{showDeclinedRequests ? '' : ' to review'}.</p>
+              <p className="text-xs text-slate-400">{showDeclinedRequests ? t('invites_no_requests') : t('invites_no_requests_review')}</p>
             ) : (
               <div className="space-y-2">
                 {visible.map(req => (
-                  <div key={req.id} className="flex flex-col gap-2 rounded-xl border border-slate-100 bg-slate-50/60 p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div key={req.id} className="flex flex-col gap-2 rounded-xl border border-slate-100 bg-slate-50/60 p-3 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800 dark:bg-slate-900/60">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-bold text-slate-800">{req.email}</p>
+                      <p className="truncate text-sm font-bold text-slate-800 dark:text-slate-100">{req.email}</p>
                       {req.reason && <p className="mt-0.5 line-clamp-3 text-xs italic text-slate-500">“{req.reason}”</p>}
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       {req.status === 'pending' ? (
                         <>
-                          <button onClick={() => handleApproveRequest(req.id)} disabled={requestBusyId === req.id} className="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50">{requestBusyId === req.id ? '…' : 'Invite'}</button>
-                          <button onClick={() => handleDeclineRequest(req)} disabled={requestBusyId === req.id} className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50">{t('decline')}</button>
+                          <button onClick={() => handleApproveRequest(req.id)} disabled={requestBusyId === req.id} className="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50">{requestBusyId === req.id ? '…' : t('invite_short')}</button>
+                          <button onClick={() => handleDeclineRequest(req)} disabled={requestBusyId === req.id} className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700">{t('decline')}</button>
                         </>
                       ) : (
-                        <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${req.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>{req.status === 'approved' ? 'Invited' : 'Declined'}</span>
+                        <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${req.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>{req.status === 'approved' ? t('invited') : t('offering_status_declined')}</span>
                       )}
                     </div>
                   </div>
@@ -199,7 +199,7 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
             );
           })()}
           {reqHasMore && (
-            <button onClick={loadMoreInviteRequests} className="mt-3 w-full rounded-lg border border-slate-200 py-2 text-xs font-bold text-slate-500 hover:bg-slate-50">{t('load_more')}</button>
+            <button onClick={loadMoreInviteRequests} className="mt-3 w-full rounded-lg border border-slate-200 py-2 text-xs font-bold text-slate-500 hover:bg-slate-50 dark:border-slate-700">{t('load_more')}</button>
           )}
         </div>
       )}
@@ -213,13 +213,13 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
               required
               type="email"
               placeholder={t('invite_email_placeholder')}
-              className="w-full border border-slate-200 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+              className="w-full border border-slate-200 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none dark:border-slate-700"
               value={inviteEmail}
               onChange={e => setInviteEmail(e.target.value)}
             />
             <textarea
               placeholder={t('invite_message_placeholder')}
-              className="w-full border border-slate-200 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none h-24"
+              className="w-full border border-slate-200 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none h-24 dark:border-slate-700"
               value={inviteMessage}
               onChange={e => setInviteMessage(e.target.value)}
             />

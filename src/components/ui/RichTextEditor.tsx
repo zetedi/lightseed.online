@@ -45,7 +45,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeh
               quill.setSelection((range?.index ?? 0) + 1, 0);
             } catch (e: any) {
               console.error('Image upload failed', e);
-              showAlert(e?.message || 'The image could not be uploaded.');
+              showAlert(e?.message || 'err_upload');
             }
           };
           input.click();
@@ -65,7 +65,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeh
   ], [onImageUpload]);
 
   return (
-    <div className="bg-white rounded-lg overflow-hidden border border-slate-200">
+    <div className="bg-white rounded-lg overflow-hidden border border-slate-200 dark:bg-slate-900 dark:border-slate-700">
       <ReactQuill
         ref={quillRef}
         theme="snow"

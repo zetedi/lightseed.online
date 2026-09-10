@@ -40,6 +40,11 @@ interface TreeDetailsProps {
     // Staff-only: convert a planted lifetree to a guarded (nature) tree, or back —
     // for trees planted with the wrong kind while testing.
     onConvertType?: () => void;
+    // THE OWNER LINE (ring 2026-09-10): the owner's public name when they are not anonymous,
+    // 'anonymous' when they chose to be unnamed, 'nameless' when they simply never wrote a name,
+    // null while it is still being read. The envelope stands beside a name the viewer may reach.
+    ownerLine?: { name: string } | 'anonymous' | 'nameless' | null;
+    onReachOwner?: () => void;
 }
 
 // Details section — the tree's vision, facts (steward/location/GPS/planted/validator/website/
@@ -56,12 +61,16 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
     onRequestDelete,
     onVisibilityChange,
     onConvertType,
+    ownerLine,
+    onReachOwner,
 }) => {
     const { t } = useLanguage();
     const isNature = tree.isNature;
     const hasValidationBadge = isExplicitlyValidatedTree(tree);
     const hasCoordinates = Number.isFinite(tree.latitude) && Number.isFinite(tree.longitude);
-    const fieldClassName = "h-10 w-full max-w-sm rounded border border-slate-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500";
+    // Editable fields: soft corners, and explicit ink on both the day and night grounds (a field
+    // without its own colours went invisible at night).
+    const fieldClassName = "h-10 w-full max-w-sm rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100";
     // Legacy trees stored coordinates as lat/lng.
     const legacy = tree as Lifetree & { lat?: number; lng?: number };
 
@@ -124,7 +133,7 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
     return (
         <div className="space-y-6">
             {/* Vision + details — one card. */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-5">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-5 dark:bg-slate-900 dark:border-slate-800">
                 <div>
                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center">
                         <Icons.Eye />
@@ -133,25 +142,39 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                     {isEditing ? (
                         <textarea
                             dir="auto"
-                            className="w-full h-40 border border-slate-300 rounded p-2 text-lg font-serif italic text-slate-700 leading-relaxed focus:ring-2 focus:ring-emerald-500 outline-none"
+                            className="w-full h-40 border border-slate-300 rounded-xl bg-white p-3 text-lg font-serif italic text-slate-700 leading-relaxed focus:ring-2 focus:ring-emerald-500 outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
                             value={editBody}
                             onChange={(e) => setEditBody(e.target.value)}
                         />
                     ) : (
-                        <p dir="auto" className="text-lg font-serif italic text-slate-700 leading-relaxed">
+                        <p dir="auto" className="text-lg font-serif italic text-slate-700 leading-relaxed dark:text-slate-300">
                             "{tree.body}"
                         </p>
                     )}
                 </div>
 
-                <div className="border-t border-slate-100 pt-5 space-y-4">
+                <div className="border-t border-slate-100 pt-5 dark:border-slate-800 space-y-4">
                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">{t('tree_details')}</h3>
 
-                <div className="flex items-start gap-4 py-2 border-b border-slate-50">
-                    <span className="w-24 shrink-0 text-slate-500 text-sm">{isNature ? t('steward') : 'Owner'}</span>
-                    <span dir="ltr" className="flex-1 text-left text-slate-800 font-mono text-sm">{isNature ? "Nature (System)" : tree.ownerId.substring(0, 10) + "..."}</span>
+                <div className="flex items-start gap-4 py-2 border-b border-slate-50 dark:border-slate-800">
+                    <span className="w-24 shrink-0 text-slate-500 text-sm">{isNature ? t('steward') : t('owner')}</span>
+                    {isNature ? (
+                        <span className="flex-1 text-left text-slate-800 text-sm dark:text-slate-100">{t('nature_system')}</span>
+                    ) : typeof ownerLine === 'object' && ownerLine ? (
+                        <span className="flex flex-1 items-center gap-2 text-left text-slate-800 text-sm dark:text-slate-100">
+                            <span dir="auto">{ownerLine.name}</span>
+                            {onReachOwner && (
+                                <button type="button" onClick={onReachOwner} title={t('reach_owner').replace('{name}', ownerLine.name)} aria-label={t('reach_owner').replace('{name}', ownerLine.name)}
+                                    className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 transition-colors hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 [&>svg]:h-3.5 [&>svg]:w-3.5">
+                                    <Icons.Reach />
+                                </button>
+                            )}
+                        </span>
+                    ) : (
+                        <span className="flex-1 text-left text-slate-400 text-sm italic">{ownerLine === 'anonymous' ? t('anonymous_keeper') : ownerLine === 'nameless' ? t('unnamed_keeper') : '…'}</span>
+                    )}
                 </div>
-                <div className="flex items-center gap-4 py-2 border-b border-slate-50">
+                <div className="flex items-center gap-4 py-2 border-b border-slate-50 dark:border-slate-800">
                     <span className="w-24 shrink-0 text-slate-500 text-sm">{t('location')}</span>
                     {isEditing ? (
                         <input
@@ -162,14 +185,12 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                             placeholder={t('location_name_ph')}
                         />
                     ) : (
-                        <span dir="auto" className="flex-1 text-left text-slate-800 font-mono text-sm">{tree.locationName}</span>
+                        <span dir="auto" className="flex-1 text-left text-slate-800 font-mono text-sm dark:text-slate-100">{tree.locationName}</span>
                     )}
                 </div>
-                <div className="py-2 border-b border-slate-50">
-                    <div className="flex items-start gap-4">
-                    <span className="w-24 shrink-0 pt-2 text-slate-500 text-sm">GPS</span>
+                <div className="py-2 border-b border-slate-50 dark:border-slate-800">
                     {isEditing ? (
-                        <div className="w-full max-w-sm space-y-2">
+                        <div className="space-y-2">
                             {/* Search a place name (Nominatim), or tap the map, or type coords, or GPS. */}
                             <PlaceSearch onPick={(r) => {
                                 setEditLat(r.latitude); setEditLng(r.longitude);
@@ -179,25 +200,30 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                                 value={(Number.isFinite(Number(editLat)) && Number.isFinite(Number(editLng)) && (Number(editLat) || Number(editLng)))
                                     ? { latitude: Number(editLat), longitude: Number(editLng) } : null}
                                 onChange={(c) => { setEditLat(c.latitude); setEditLng(c.longitude); }}
-                                className="h-44 overflow-hidden rounded-xl border border-slate-200"
+                                className="h-44 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700"
                             />
-                            <div className="flex space-x-2 items-center">
-                                <div className="flex-1 flex space-x-2">
-                                    <input type="number" step="any" className={fieldClassName} value={editLat} onChange={e => setEditLat(e.target.value)} placeholder="Lat" />
-                                    <input type="number" step="any" className={fieldClassName} value={editLng} onChange={e => setEditLng(e.target.value)} placeholder="Lng" />
+                            <div className="flex items-center gap-4">
+                                <span className="w-24 shrink-0 text-slate-500 text-sm">GPS</span>
+                                <div className="flex flex-1 items-center space-x-2">
+                                    <div className="flex flex-1 space-x-2">
+                                        <input type="number" step="any" className={fieldClassName} value={editLat} onChange={e => setEditLat(e.target.value)} placeholder={t('lat')} aria-label={t('lat')} />
+                                        <input type="number" step="any" className={fieldClassName} value={editLng} onChange={e => setEditLng(e.target.value)} placeholder={t('lng')} aria-label={t('lng')} />
+                                    </div>
+                                    <button type="button" onClick={handleLocateMe} disabled={isLocating}
+                                        className="bg-emerald-100 text-emerald-600 p-2 rounded-xl hover:bg-emerald-200 disabled:opacity-50 dark:bg-emerald-950/60 dark:text-emerald-300" title={t('use_my_location')} aria-label={t('use_my_location')}>
+                                        {isLocating ? <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div> : <Icons.Loc />}
+                                    </button>
                                 </div>
-                                <button type="button" onClick={handleLocateMe} disabled={isLocating}
-                                    className="bg-emerald-100 text-emerald-600 p-2 rounded hover:bg-emerald-200 disabled:opacity-50" title="Use My Location">
-                                    {isLocating ? <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div> : <Icons.Loc />}
-                                </button>
                             </div>
                         </div>
                     ) : (
-                        <span className="flex-1 pt-2 text-left text-slate-800 font-mono text-sm">{tree.latitude?.toFixed(4)}, {tree.longitude?.toFixed(4)}</span>
+                        <div className="flex items-center gap-4">
+                            <span className="w-24 shrink-0 text-slate-500 text-sm">GPS</span>
+                            <span className="flex-1 text-left text-slate-800 font-mono text-sm dark:text-slate-100">{tree.latitude?.toFixed(4)}, {tree.longitude?.toFixed(4)}</span>
+                        </div>
                     )}
-                    </div>
                 </div>
-                <div className="flex items-center gap-4 py-2 border-b border-slate-50">
+                <div className="flex items-center gap-4 py-2 border-b border-slate-50 dark:border-slate-800">
                     <span className="w-24 shrink-0 text-slate-500 text-sm">{t('planted')}</span>
                     {isEditing ? (
                         <input
@@ -207,25 +233,25 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                             onChange={e => setEditCreatedAt(e.target.value)}
                         />
                     ) : (
-                        <span className="flex-1 text-left text-slate-800 font-mono text-sm">
+                        <span className="flex-1 text-left text-slate-800 font-mono text-sm dark:text-slate-100">
                             {tree.createdAt?.toDate ? tree.createdAt.toDate().toLocaleString() : '—'}
                         </span>
                     )}
                 </div>
                  <div className="flex items-start gap-4 py-2">
                     <span className="w-24 shrink-0 text-slate-500 text-sm">{t('validator')}</span>
-                    <span className="flex-1 text-left text-slate-800 font-mono text-sm">
-                        {isNature ? 'Nature' : hasValidationBadge && tree.validatorId ? `${tree.validatorId.substring(0, 8)}...` : t('unvalidated')}
+                    <span className="flex-1 text-left text-slate-800 font-mono text-sm dark:text-slate-100">
+                        {isNature ? t('nature') : hasValidationBadge && tree.validatorId ? `${tree.validatorId.substring(0, 8)}...` : t('unvalidated')}
                     </span>
                 </div>
                  <div className="flex items-center gap-4 py-2">
                     <span className="w-24 shrink-0 text-slate-500 text-sm">{t('tree_domain_label')}</span>
                     {isEditing ? (
                         <AutocompleteInput
-                            label="Community Hub"
+                            label={t('community_hub')}
                             value={editDomain}
                             onChange={setEditDomain}
-                            placeholder="e.g. mycommunity.com"
+                            placeholder={t('domain_example_ph')}
                             className={fieldClassName}
                         />
                     ) : (
@@ -234,7 +260,7 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                             : <span className="flex-1 text-left text-slate-400 text-sm">—</span>
                     )}
                 </div>
-                <div className="flex flex-col gap-2 py-2 border-t border-slate-50 sm:flex-row sm:items-center sm:gap-4">
+                <div className="flex flex-col gap-2 py-2 border-t border-slate-50 dark:border-slate-800 sm:flex-row sm:items-center sm:gap-4">
                     <span className="w-24 shrink-0 text-slate-500 text-sm">{t('visibility')}</span>
                     {isEditing && canEdit ? (
                         <select value={editVisibility} onChange={e => setEditVisibility(e.target.value as 'public' | 'node' | 'private')} className={fieldClassName}>
@@ -267,34 +293,34 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                             })}
                         </div>
                     ) : (
-                        <span className="flex-1 text-left text-slate-800 text-sm capitalize">{tree.visibility || 'public'}</span>
+                        <span className="flex-1 text-left text-slate-800 text-sm dark:text-slate-100 capitalize">{tree.visibility || 'public'}</span>
                     )}
                 </div>
 
                 {/* Kind — staff can convert a mis-planted tree (lifetree ↔ guarded). */}
                 {onConvertType && (
-                    <div className="flex items-center gap-4 py-2 border-t border-slate-50">
-                        <span className="w-24 shrink-0 text-slate-500 text-sm">Kind</span>
-                        <span className="flex-1 text-left text-slate-800 text-sm">
-                            {(tree.treeType === 'GUARDED' || isNature) ? 'Guarded (nature)' : 'Lifetree'}
+                    <div className="flex items-center gap-4 py-2 border-t border-slate-50 dark:border-slate-800">
+                        <span className="w-24 shrink-0 text-slate-500 text-sm">{t('kind')}</span>
+                        <span className="flex-1 text-left text-slate-800 text-sm dark:text-slate-100">
+                            {(tree.treeType === 'GUARDED' || isNature) ? t('kind_guarded_nature') : t('type_lifetree')}
                         </span>
                         <button
                             type="button"
                             onClick={onConvertType}
                             className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-bold text-sky-700 transition-colors hover:bg-sky-100"
                         >
-                            {(tree.treeType === 'GUARDED' || isNature) ? 'Convert to lifetree' : 'Convert to guarded'}
+                            {(tree.treeType === 'GUARDED' || isNature) ? t('convert_to_lifetree') : t('convert_to_guarded')}
                         </button>
                     </div>
                 )}
 
                 {isEditing && (
-                    <div className="flex space-x-2 mt-4 pt-4 border-t border-slate-100">
+                    <div className="flex space-x-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
                         <button onClick={handleSaveClick} disabled={isSaving} className="flex-1 bg-emerald-600 text-white py-2 rounded-lg text-sm font-bold hover:bg-emerald-700">
-                            {isSaving ? "Saving..." : "Save Changes"}
+                            {isSaving ? t('saving') : t('save_changes')}
                         </button>
-                        <button onClick={handleCancel} disabled={isSaving} className="flex-1 bg-slate-200 text-slate-700 py-2 rounded-lg text-sm font-bold hover:bg-slate-300">
-                            Cancel
+                        <button onClick={handleCancel} disabled={isSaving} className="flex-1 bg-slate-200 text-slate-700 py-2 rounded-lg text-sm font-bold hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
+                            {t('cancel')}
                         </button>
                     </div>
                 )}
@@ -309,14 +335,14 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
             </div>
 
             {hasCoordinates && (
-                <div className="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
+                <div className="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                     <div className="mb-2 flex items-center justify-between">
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Map</h4>
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">{t('map')}</h4>
                         {tree.locationName && <span dir="auto" className="text-xs text-emerald-700">{tree.locationName}</span>}
                     </div>
-                    <div className="overflow-hidden rounded-xl border border-slate-200">
+                    <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
                         <iframe
-                            title={`Map of ${tree.name}`}
+                            title={t('map_of').replace('{name}', tree.name)}
                             src={`https://www.openstreetmap.org/export/embed.html?bbox=${Number(tree.longitude) - 0.01}%2C${Number(tree.latitude) - 0.01}%2C${Number(tree.longitude) + 0.01}%2C${Number(tree.latitude) + 0.01}&layer=mapnik&marker=${Number(tree.latitude)}%2C${Number(tree.longitude)}`}
                             className="h-40 w-full"
                             loading="lazy"

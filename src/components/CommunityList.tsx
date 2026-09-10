@@ -66,11 +66,11 @@ const CommunityCard = ({ community, isGenesis = false, onSelect, standing = 'joi
     return (
       <div onClick={() => onSelect(community)}
         className={`flex cursor-pointer items-center gap-3 rounded-xl border bg-white p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${isGenesis ? 'border-amber-300 ring-2 ring-amber-300/30' : 'border-slate-100'}`}>
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-100 bg-slate-50 text-slate-400">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-100 bg-slate-50 text-slate-400 dark:bg-slate-900 dark:border-slate-800">
           {community.logoUrl ? <Picture size={480} src={community.logoUrl} className="h-full w-full object-cover" alt="" /> : <Icons.Globe />}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-bold text-slate-800">{community.name}{isGenesis && <span className="ml-2 text-[9px] font-black uppercase tracking-wide text-amber-600">Community 0</span>}</p>
+          <p className="truncate text-sm font-bold text-slate-800 dark:text-slate-100">{community.name}{isGenesis && <span className="ml-2 text-[9px] font-black uppercase tracking-wide text-amber-600">{t('community_zero')}</span>}</p>
           {circle
             ? <p className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-violet-600 [&>svg]:h-3 [&>svg]:w-3"><Icons.Venn /> {t('tree_circle_badge')}</p>
             : <p className="truncate font-mono text-[11px] text-slate-400">{community.domain}{verified && <span title={t('domain_verified')} className="ml-1 font-sans font-bold text-emerald-500">✓</span>}</p>}
@@ -116,14 +116,14 @@ const CommunityCard = ({ community, isGenesis = false, onSelect, standing = 'joi
       {!hero && <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent"></div>}
       {isGenesis && (
           <div className="absolute top-4 left-4 z-20 bg-amber-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg flex items-center gap-1 uppercase tracking-tighter">
-              <MahameruAvatar size={14} /> Community 0
+              <MahameruAvatar size={14} /> {t('community_zero')}
           </div>
       )}
       <div className="relative z-10 p-5">
           <div className="mb-2.5 flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/30 bg-white/20 backdrop-blur-md text-white">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/30 bg-white/20 backdrop-blur-md text-white dark:bg-slate-900/20">
                   {community.logoUrl ? (
-                      <Picture size={480} src={community.logoUrl} className="h-full w-full object-cover" alt={`${community.name} logo`} />
+                      <Picture size={480} src={community.logoUrl} className="h-full w-full object-cover" alt={`${community.name} ${t('logo')}`} />
                   ) : (
                       <Icons.Globe />
                   )}
@@ -137,11 +137,11 @@ const CommunityCard = ({ community, isGenesis = false, onSelect, standing = 'joi
           </div>
           <div
               className="text-white/85 text-sm line-clamp-2 mb-3 leading-relaxed overflow-hidden drop-shadow [&_img]:hidden"
-              dangerouslySetInnerHTML={{ __html: community.vision ? sanitizeRichText(community.vision) : 'No vision shared yet.' }}
+              dangerouslySetInnerHTML={{ __html: community.vision ? sanitizeRichText(community.vision) : t('no_vision_shared') }}
           />
           <div className="flex items-center justify-between gap-2">
               <button className="text-white font-bold text-xs uppercase tracking-widest flex items-center gap-1 group-hover:gap-2 transition-all drop-shadow">
-                  View Profile <Icons.ArrowRight size={16} />
+                  {t('view_profile')} <Icons.ArrowRight size={16} />
               </button>
               <StandingMark standing={standing} community={community} onJoin={onJoin} />
           </div>
@@ -182,6 +182,9 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
       : memberIds.has(c.id) ? 'member'
       : requestedIds.has(c.id) ? 'requested'
       : 'joinable';
+  // A standing is an enum in the code and a word on the screen — the word is spoken, never the enum.
+  const standingLabel = (s: CardStanding): string =>
+    s === 'keeper' ? t('keeper_badge') : s === 'member' ? t('member_badge') : s === 'requested' ? t('requested') : t('join');
 
   // Join straight from the card — the same request the community profile sends.
   const handleJoin = async (c: Community) => {
@@ -191,7 +194,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
       setRequestedIds(prev => new Set([...prev, c.id]));
       notify(speak(spokenLine('join_request_sent', { name: c.name })));
     } catch (e: any) {
-      showAlert(e?.message || 'Could not send the join request.');
+      showAlert(e?.message || 'err_join_request');
     }
   };
 
@@ -215,7 +218,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
         if (found.length === 0) showAlert('resonance_no_ground');
       }
     } catch (e: any) {
-      showAlert(e?.message || 'Could not read the resonance.');
+      showAlert(e?.message || 'err_resonance_read');
     }
     setIsMatching(false);
   };
@@ -297,7 +300,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
             <input
               dir="auto"
               type="text"
-              className="block w-full pl-10 pr-3 py-2 border border-emerald-100 rounded-xl leading-5 bg-white/80 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm shadow-sm"
+              className="block w-full pl-10 pr-3 py-2 border border-emerald-100 rounded-xl leading-5 bg-white/80 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm shadow-sm dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-100 dark:placeholder-slate-500"
               placeholder={t('search_communities_ph')}
               value={search}
               onChange={e => setSearch(e.target.value)}
@@ -327,7 +330,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
                 className={`bg-emerald-600 hover:bg-emerald-700 text-white px-3 sm:px-4 py-1.5 rounded-full text-sm font-bold transition-all flex min-w-0 items-center gap-1.5 active:scale-95 disabled:opacity-60 ${CTA_GLOW}`}
               >
                 <Icons.Venn />
-                <span className="truncate">{isMatching ? 'Reading…' : 'Match'}</span>
+                <span className="truncate">{isMatching ? t('reading') : t('match')}</span>
               </button>
             )}
           </div>
@@ -339,13 +342,13 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
             <Loading />
           </div>
         ) : (communities.length === 0 && !genesisCommunity) ? (
-          <div className="bg-white/90 backdrop-blur-sm border border-slate-200 rounded-2xl p-12 md:p-20 text-center flex flex-col items-center shadow-xl animate-in zoom-in-95 duration-700">
-              <div className="mb-8 p-6 bg-slate-50 rounded-full border border-slate-200 text-slate-300 rotate-12 group hover:rotate-0 transition-transform duration-500">
+          <div className="bg-white/90 backdrop-blur-sm border border-slate-200 rounded-2xl p-12 md:p-20 text-center flex flex-col items-center shadow-xl animate-in zoom-in-95 duration-700 dark:border-slate-700 dark:bg-slate-900/90">
+              <div className="mb-8 p-6 bg-slate-50 rounded-full border border-slate-200 text-slate-300 rotate-12 group hover:rotate-0 transition-transform duration-500 dark:bg-slate-900 dark:border-slate-700">
                   <Icons.Globe size={80} />
               </div>
-              <h2 className="text-3xl font-light text-slate-950 mb-4">No Communities Registered</h2>
+              <h2 className="text-3xl font-light text-slate-950 mb-4">{t('no_communities_registered')}</h2>
               <p className="text-slate-500 max-w-md mx-auto mb-10 leading-relaxed">
-                  Be the first to plant a global vision. Communities connect vertical forest nodes into a unified brand and purpose.
+                  {t('no_communities_note')}
               </p>
               {myTrees.length > 0 ? (
                   <button
@@ -370,24 +373,24 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
             <div className="mb-8 space-y-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 animate-in fade-in slide-in-from-top-2">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-amber-600">{t('resonant_from_visions')}</p>
-                <button onClick={() => setMatches(null)} className="shrink-0 text-xs font-medium text-slate-400 transition-colors hover:text-slate-600">Clear</button>
+                <button onClick={() => setMatches(null)} className="shrink-0 text-xs font-medium text-slate-400 transition-colors hover:text-slate-600">{t('clear')}</button>
               </div>
               {matches.map((m, i) => (
-                <div key={m.community.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-100 bg-white p-3 shadow-sm">
+                <div key={m.community.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-100 bg-white p-3 shadow-sm dark:bg-slate-900">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500 text-sm font-black text-white">{i + 1}</span>
                   <button onClick={() => onSelect(m.community)} className="min-w-0 flex-1 text-left">
-                    <span className="block truncate text-sm font-bold text-slate-800 hover:text-amber-700">{m.community.name}</span>
+                    <span className="block truncate text-sm font-bold text-slate-800 hover:text-amber-700 dark:text-slate-100">{m.community.name}</span>
                     <span className="block truncate text-[11px] text-slate-400">
-                      {Math.round(m.score * 100)}% shared ground · {m.shared.join(' · ')}
+                      {t('shared_ground_pct').replace('{n}', String(Math.round(m.score * 100)))} · {m.shared.join(' · ')}
                     </span>
                   </button>
                   {standingOf(m.community) === 'joinable' ? (
                     <button onClick={() => handleJoin(m.community)}
                       className="shrink-0 rounded-full bg-emerald-600 px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-white shadow transition-all hover:bg-emerald-500 active:scale-95">
-                      Join
+                      {t('join')}
                     </button>
                   ) : (
-                    <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-500 capitalize">{standingOf(m.community)}</span>
+                    <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:bg-slate-800">{standingLabel(standingOf(m.community))}</span>
                   )}
                 </div>
               ))}
@@ -421,7 +424,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
                 required
                 value={newName}
                 onChange={e => setNewName(e.target.value)}
-                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700"
                 placeholder={t('community_name_ph')}
               />
             </div>
@@ -432,7 +435,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
                 required
                 value={newDomain}
                 onChange={e => setNewDomain(e.target.value)}
-                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700"
                 placeholder="example.com"
               />
             </div>

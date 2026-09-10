@@ -54,11 +54,11 @@ export const WitnessWaterings: React.FC<WitnessWateringsProps> = ({ treeName, pu
                     const mine = !!currentUserId && p.authorId === currentUserId;
                     const when = p.createdAt?.toMillis ? new Date(p.createdAt.toMillis()).toLocaleDateString() : t('a_watering');
                     return (
-                        <div key={p.id} className="flex items-center gap-3 rounded-xl border border-sky-100 bg-white p-2 shadow-sm">
+                        <div key={p.id} className="flex items-center gap-3 rounded-xl border border-sky-100 bg-white p-2 shadow-sm dark:bg-slate-900">
                             {p.imageUrl
                                 ? <Picture size={480} src={p.imageUrl} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" />
                                 : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-500 [&>svg]:h-5 [&>svg]:w-5"><Icons.Droplet /></span>}
-                            <span className="min-w-0 flex-1 text-xs text-slate-600">
+                            <span className="min-w-0 flex-1 text-xs text-slate-600 dark:text-slate-300">
                                 <span className="block truncate">{when}{p.authorPersonName ? ` · ${p.authorPersonName}` : ''}{p.wateringConfirmation?.note ? ` · ${p.wateringConfirmation.note}` : ''}</span>
                                 <span className="block text-[10px] font-bold uppercase tracking-wide text-sky-500">
                                     {p.wateringConfirmedBy === 'ai' ? t('confirmed_by_ai') : t('awaiting_confirmation')}

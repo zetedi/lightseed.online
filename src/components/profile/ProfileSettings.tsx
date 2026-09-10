@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
-import { setNewsletterSubscription, updateUserProfile, setOnlyValidatedCanReach, deleteUserAccount, logout, fetchAllLifetrees, exportPerson } from '../../services/firebase';
+import { setNewsletterSubscription, updateUserProfile, setOnlyValidatedCanReach, setAnonymous, deleteUserAccount, logout, fetchAllLifetrees, exportPerson } from '../../services/firebase';
 import { fetchMyRays } from '../../services/firebase/light';
 import type { Lifetree } from '../../types';
 import { isLightPathOn, setLightPathOn } from '../PathwayCTA';
@@ -34,6 +34,9 @@ interface ProfileSettingsProps {
   // the change callbacks reflect a successful save back into that shared state.
   onlyValidatedCanReach: boolean;
   onOnlyValidatedChange: (value: boolean) => void;
+  // ANONYMOUS (ring 2026-09-10): the name is spoken by no one; the tree speaks for the being.
+  anonymous: boolean;
+  onAnonymousChange: (value: boolean) => void;
   newsletterSubscribed: boolean;
   onNewsletterChange: (value: boolean) => void;
   // The place whose letter the toggle subscribes to (the host community's canonical domain and name).
@@ -42,7 +45,8 @@ interface ProfileSettingsProps {
   dmEmailNotifications: boolean;
   onDmEmailChange: (value: boolean) => void;
   // Surfaces notices via the shell's shared dialog modal.
-  notify: (message: string) => void;
+  // The snackbar (ui/Toast): a saved setting says so in passing, never in a modal.
+  notify: (message: string, kind?: 'success' | 'error') => void;
 }
 
 // Settings tab — contact privacy, newsletter and email-notification toggles, account deletion.
@@ -51,6 +55,8 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   email,
   onlyValidatedCanReach,
   onOnlyValidatedChange,
+  anonymous,
+  onAnonymousChange,
   newsletterSubscribed,
   onNewsletterChange,
   placeDomain,
@@ -71,11 +77,20 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
     if (!lightseed || togglingPush) return;
     setTogglingPush(true);
     try { setPush(push === 'on' ? await disablePush(lightseed.uid) : await enablePush(lightseed.uid)); }
-    catch { notify(speak('err_generic')); }
+    catch { notify(speak('err_generic'), 'error'); }
     setTogglingPush(false);
   };
   const [exporting, setExporting] = useState(false);
   const [togglingValidatedReach, setTogglingValidatedReach] = useState(false);
+  const [togglingAnonymous, setTogglingAnonymous] = useState(false);
+  const handleAnonymousToggle = async () => {
+    if (togglingAnonymous) return;
+    setTogglingAnonymous(true);
+    const next = !anonymous;
+    try { await setAnonymous(uid, next); onAnonymousChange(next); notify(speak(next ? 'anonymous_on' : 'anonymous_off')); }
+    catch { notify(speak('err_generic'), 'error'); }
+    setTogglingAnonymous(false);
+  };
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showSigningKey, setShowSigningKey] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -106,7 +121,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
     const next = !lightPathOn;
     setLightPathOn(next); // persists + clears dismissals when turning on
     setLightPathOnState(next);
-    notify(next ? 'The Light Path is lit. You will find it on your home page.' : 'The Light Path is off.');
+    notify(next ? t('light_path_lit') : t('light_path_off'));
   };
 
   const handleNewsletterToggle = async () => {
@@ -116,9 +131,9 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
       const nextValue = !newsletterSubscribed;
       await setNewsletterSubscription(uid, email, nextValue, placeDomain);
       onNewsletterChange(nextValue);
-      notify(nextValue ? 'Newsletter subscribed.' : 'Newsletter unsubscribed.');
+      notify(nextValue ? t('newsletter_subscribed') : t('newsletter_unsubscribed'));
     } catch (e: any) {
-      notify(e.message || 'Failed to update newsletter preference.');
+      notify(e.message || t('err_newsletter_pref'), 'error');
     }
     setTogglingNewsletter(false);
   };
@@ -130,11 +145,9 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
       const nextValue = !dmEmailNotifications;
       await updateUserProfile(uid, { emailNotifications: { directMessages: nextValue } });
       onDmEmailChange(nextValue);
-      notify(nextValue
-        ? 'You will be emailed when someone sends you a direct message.'
-        : 'Direct message email notifications turned off.');
+      notify(nextValue ? t('dm_email_on') : t('dm_email_off'));
     } catch (e: any) {
-      notify(e.message || 'Failed to update email notification preference.');
+      notify(e.message || t('err_email_pref'), 'error');
     }
     setTogglingDmEmail(false);
   };
@@ -146,11 +159,9 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
       const nextValue = !onlyValidatedCanReach;
       await setOnlyValidatedCanReach(uid, nextValue);
       onOnlyValidatedChange(nextValue);
-      notify(nextValue
-        ? 'Only validated trees can now send you direct messages.'
-        : 'Anyone can now send you direct messages.');
+      notify(nextValue ? t('reach_validated_only_on') : t('reach_validated_only_off'));
     } catch (e: any) {
-      notify(e.message || 'Failed to update contact privacy.');
+      notify(e.message || t('err_contact_privacy'), 'error');
     }
     setTogglingValidatedReach(false);
   };
@@ -165,12 +176,12 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
     } catch (e: any) {
       console.error('Delete Account Error:', e);
       if (e.message && (e.message.includes('log out') || e.message.includes('recent-login'))) {
-        notify(speak('security_reauth'));
+        notify(speak('security_reauth'), 'error');
         await logout();
         window.location.reload();
         return;
       }
-      notify(e.message);
+      notify(e.message, 'error');
       setIsDeleting(false);
       setShowDeleteConfirm(false);
     }
@@ -179,51 +190,58 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   return (
     <div>
       <SectionTitle title={t('settings_title')} sub={t('settings_sub')} />
-      <div className="rounded-2xl border border-slate-100 divide-y divide-slate-100">
+      <div className="rounded-2xl border border-slate-100 divide-y divide-slate-100 dark:border-slate-800 dark:divide-slate-800">
         <div className="p-4 flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="font-semibold text-slate-800 text-sm">{t('only_validated_can_reach')}</p>
-            <p className="text-xs text-slate-500">{t('only_validated_can_reach_help')}</p>
+            <p className="font-semibold text-slate-800 text-sm dark:text-slate-100">{t('anonymous_toggle')}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{t('anonymous_help')}</p>
+          </div>
+          <Toggle on={anonymous} onClick={handleAnonymousToggle} disabled={togglingAnonymous} />
+        </div>
+        <div className="p-4 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="font-semibold text-slate-800 text-sm dark:text-slate-100">{t('only_validated_can_reach')}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{t('only_validated_can_reach_help')}</p>
           </div>
           <Toggle on={onlyValidatedCanReach} onClick={handleOnlyValidatedToggle} disabled={togglingValidatedReach} />
         </div>
         <div className="p-4 flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="font-semibold text-slate-800 text-sm">{t('newsletter_of_place').replace('{place}', placeName)}</p>
-            <p className="text-xs text-slate-500">A gentle update from the network every few weeks.</p>
+            <p className="font-semibold text-slate-800 text-sm dark:text-slate-100">{t('newsletter_of_place').replace('{place}', placeName)}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{t('newsletter_help')}</p>
           </div>
           <Toggle on={newsletterSubscribed} onClick={handleNewsletterToggle} disabled={togglingNewsletter || !email} />
         </div>
         <div className="p-4 flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="font-semibold text-slate-800 text-sm">{t('dm_email_toggle')}</p>
-            <p className="text-xs text-slate-500">{t('toggle_anytime')}</p>
+            <p className="font-semibold text-slate-800 text-sm dark:text-slate-100">{t('dm_email_toggle')}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{t('toggle_anytime')}</p>
           </div>
           <Toggle on={dmEmailNotifications} onClick={handleDmEmailToggle} disabled={togglingDmEmail || !email} />
         </div>
         <div className="p-4 flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="font-semibold text-slate-800 text-sm">{t('push_toggle')}</p>
-            <p className="text-xs text-slate-500">{push === 'unsupported' ? t('push_unsupported') : push === 'denied' ? t('push_denied') : t('push_note')}</p>
+            <p className="font-semibold text-slate-800 text-sm dark:text-slate-100">{t('push_toggle')}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{push === 'unsupported' ? t('push_unsupported') : push === 'denied' ? t('push_denied') : t('push_note')}</p>
           </div>
           <Toggle on={push === 'on'} onClick={handlePushToggle} disabled={togglingPush || push === 'unsupported' || push === 'denied'} />
         </div>
         <div className="p-4 flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="font-semibold text-slate-800 text-sm">Light Path {lightPathOn ? <span className="ml-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-700">on</span> : <span className="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500">off</span>}</p>
-            <p className="text-xs text-slate-500">{t('lightpath_note')}</p>
+            <p className="font-semibold text-slate-800 text-sm dark:text-slate-100">{t('light_path')} {lightPathOn ? <span className="ml-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">{t('on')}</span> : <span className="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500 dark:bg-slate-800 dark:text-slate-400">{t('off')}</span>}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{t('lightpath_note')}</p>
           </div>
           <Toggle on={lightPathOn} onClick={handleLightPathToggle} />
         </div>
         <div className="p-4 flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="font-semibold text-slate-800 text-sm">{t('signing_key')}</p>
-            <p className="text-xs text-slate-500">{t('signing_key_help')}</p>
+            <p className="font-semibold text-slate-800 text-sm dark:text-slate-100">{t('signing_key')}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{t('signing_key_help')}</p>
           </div>
           <button
             type="button"
             onClick={() => setShowSigningKey(true)}
-            className="rounded-full border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-xs font-bold px-4 py-2 transition-colors whitespace-nowrap"
+            className="rounded-full border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-xs font-bold px-4 py-2 transition-colors whitespace-nowrap dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             {t('edit')}
           </button>
@@ -231,27 +249,27 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
       </div>
       {/* The export ceremony (domain/export): what the privacy words promise, made real —
           a ZIP of this being's records, chains and images, gathered with their own sight. */}
-      <div className="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50/30 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50/30 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 dark:border-emerald-900 dark:bg-emerald-950/30">
         <div>
-          <p className="font-semibold text-emerald-800 text-sm">{t('export_my_data')}</p>
-          <p className="text-xs text-emerald-700/70">{t('export_my_data_note')}</p>
+          <p className="font-semibold text-emerald-800 text-sm dark:text-emerald-200">{t('export_my_data')}</p>
+          <p className="text-xs text-emerald-700/70 dark:text-emerald-300/70">{t('export_my_data_note')}</p>
         </div>
         <button onClick={async () => {
           if (exporting) return;
           setExporting(true);
           try { await exportPerson(uid); notify(t('export_ready')); }
-          catch { notify(t('err_export')); }
+          catch { notify(t('err_export'), 'error'); }
           setExporting(false);
-        }} disabled={exporting} className="rounded-full border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-600 hover:text-white text-xs font-bold px-4 py-2 transition-colors whitespace-nowrap self-start sm:self-auto disabled:opacity-50">
+        }} disabled={exporting} className="rounded-full border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-600 hover:text-white text-xs font-bold px-4 py-2 transition-colors whitespace-nowrap self-start sm:self-auto disabled:opacity-50 dark:border-emerald-800 dark:bg-slate-900 dark:text-emerald-300">
           {exporting ? t('exporting') : t('export')}
         </button>
       </div>
-      <div className="mt-6 rounded-2xl border border-red-100 bg-red-50/40 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="mt-6 rounded-2xl border border-red-100 bg-red-50/40 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 dark:border-red-900 dark:bg-red-950/30">
         <div>
-          <p className="font-semibold text-red-700 text-sm">{t('delete_account')}</p>
-          <p className="text-xs text-red-500/80">{t('delete_account_note')}</p>
+          <p className="font-semibold text-red-700 text-sm dark:text-red-300">{t('delete_account')}</p>
+          <p className="text-xs text-red-500/80 dark:text-red-300/70">{t('delete_account_note')}</p>
         </div>
-        <button onClick={() => { setHeirTree(null); setHeirQuery(''); setLightUnits(null); setShowDeleteConfirm(true); }} className="rounded-full border border-red-200 bg-white text-red-600 hover:bg-red-600 hover:text-white text-xs font-bold px-4 py-2 transition-colors whitespace-nowrap self-start sm:self-auto">{t('delete_account')}</button>
+        <button onClick={() => { setHeirTree(null); setHeirQuery(''); setLightUnits(null); setShowDeleteConfirm(true); }} className="rounded-full border border-red-200 bg-white text-red-600 hover:bg-red-600 hover:text-white text-xs font-bold px-4 py-2 transition-colors whitespace-nowrap self-start sm:self-auto dark:border-red-900 dark:bg-slate-900 dark:text-red-300">{t('delete_account')}</button>
       </div>
 
       {showSigningKey && <SigningKeyModal uid={uid} notify={notify} onClose={() => setShowSigningKey(false)} />}
@@ -267,16 +285,12 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
             {/* The last spend — shown only when there is light to pass on. */}
             {lightUnits !== null && lightUnits > 0 && (
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                <p className="text-sm font-bold text-amber-900">You hold {lightUnits} units of light.</p>
-                <p className="mt-1 text-xs leading-relaxed text-amber-800/90">
-                  Leaving is the last spend. Name an heir below and your light passes to them
-                  (a seventh dissolves into the commons on the way). Name no one and it dissolves
-                  into your communities&apos; glow, or the node&apos;s.
-                </p>
+                <p className="text-sm font-bold text-amber-900">{t('heir_you_hold').replace('{n}', String(lightUnits))}</p>
+                <p className="mt-1 text-xs leading-relaxed text-amber-800/90">{t('heir_last_spend')}</p>
                 {heirTree ? (
-                  <div className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-amber-300 bg-white px-3 py-2">
+                  <div className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-amber-300 bg-white px-3 py-2 dark:bg-slate-900">
                     <span className="min-w-0 truncate text-sm text-amber-900">
-                      Your light goes to <span className="font-bold">{heirTree.name}</span>&apos;s keeper.
+                      {t('heir_light_goes_to').split('{name}')[0]}<span className="font-bold">{heirTree.name}</span>{t('heir_light_goes_to').split('{name}')[1]}
                     </span>
                     <button type="button" onClick={() => setHeirTree(null)} className="shrink-0 text-xs font-bold text-amber-700 underline">{t('change')}</button>
                   </div>
@@ -286,16 +300,16 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                       value={heirQuery}
                       onChange={e => setHeirQuery(e.target.value)}
                       placeholder={t('heir_ph')}
-                      className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-amber-400"
+                      className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-amber-400 dark:bg-slate-900 dark:text-slate-200"
                     />
                     {heirMatches.length > 0 && (
-                      <div className="mt-1 overflow-hidden rounded-lg border border-amber-100 bg-white">
+                      <div className="mt-1 overflow-hidden rounded-lg border border-amber-100 bg-white dark:bg-slate-900">
                         {heirMatches.map(tr => (
                           <button
                             key={tr.id}
                             type="button"
                             onClick={() => { setHeirTree(tr); setHeirQuery(''); }}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-amber-50"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-amber-50 dark:text-slate-200"
                           >
                             {(tr.latestGrowthUrl || tr.imageUrl)
                               ? <Picture size={480} src={tr.latestGrowthUrl || tr.imageUrl} alt="" className="h-6 w-6 rounded-full object-cover" />
@@ -315,7 +329,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
             <div className="flex items-stretch gap-3 pt-1">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-600 px-5 py-3 rounded-xl text-sm font-bold transition-colors"
+                className="shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-600 px-5 py-3 rounded-xl text-sm font-bold transition-colors dark:bg-slate-800 dark:text-slate-300"
               >
                 {t('cancel')}
               </button>

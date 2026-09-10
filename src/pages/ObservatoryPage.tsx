@@ -30,7 +30,7 @@ const TreeColumn = ({ tree, role, who, tone }: { tree: { name: string; imageUrl?
   return (
     <div className="flex min-w-0 flex-col items-center gap-1.5 text-center">
       <TreeAvatar name={tree.name} imageUrl={tree.imageUrl} tone={tone} />
-      <div className="truncate max-w-full font-serif text-base font-semibold text-slate-800">{tree.name}</div>
+      <div className="truncate max-w-full font-serif text-base font-semibold text-slate-800 dark:text-slate-100">{tree.name}</div>
       {who && <div className="truncate max-w-full text-xs text-slate-500">{who}</div>}
       <span className={`rounded-full px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.14em] ${roleClass}`}>{role}</span>
     </div>
@@ -40,7 +40,7 @@ const TreeColumn = ({ tree, role, who, tone }: { tree: { name: string; imageUrl?
 const PulseChip = ({ cap, text, tone }: { cap: string; text?: string; tone: 'sky' | 'emerald' }) => (
   <div className={`min-w-0 rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2.5 ${tone === 'sky' ? 'border-l-[3px] border-l-sky-400' : 'border-l-[3px] border-l-emerald-400'}`}>
     <span className="mb-1 block font-mono text-[9.5px] uppercase tracking-[0.12em] text-slate-400">{cap}</span>
-    <q className="line-clamp-2 font-serif text-[13px] italic text-slate-700">{text || '—'}</q>
+    <q className="line-clamp-2 font-serif text-[13px] italic text-slate-700 dark:text-slate-200">{text || '—'}</q>
   </div>
 );
 
@@ -84,8 +84,8 @@ export const ObservatoryPage = ({
             <p dir="auto" className="min-w-0 truncate text-sm italic text-white/90">"{observatoryQuote}"</p>
             <button
               onClick={onCopyQuote}
-              title="Copy quote" aria-label="Copy quote"
-              className="inline-flex shrink-0 items-center rounded-full bg-white/15 p-1 text-white/80 backdrop-blur transition-colors hover:bg-white/25 hover:text-white"
+              title={t('copy_quote')} aria-label={t('copy_quote')}
+              className="inline-flex shrink-0 items-center rounded-full bg-white/15 p-1 text-white/80 backdrop-blur transition-colors hover:bg-white/25 hover:text-white dark:bg-slate-900/15"
             >
               {quoteCopied ? <span className="px-0.5 text-[10px] font-bold">✓</span> : <Icons.Copy size={13} />}
             </button>
@@ -102,8 +102,8 @@ export const ObservatoryPage = ({
                 {alignments.map(a => (
                   <div key={a.id} className="overflow-hidden rounded-lg border border-slate-200 bg-white text-slate-800 shadow-sm animate-in fade-in slide-in-from-bottom-2 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
                     {/* Header — who's asking, and that it's on you */}
-                    <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
-                      <span className="text-sm font-semibold text-slate-700">{t('alignment_request')}</span>
+                    <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
+                      <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t('alignment_request')}</span>
                       <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">{t('awaiting_you')}</span>
                     </div>
 
@@ -135,7 +135,7 @@ export const ObservatoryPage = ({
                     {/* Accept · Decline · look before deciding */}
                     <div className="flex flex-wrap items-center gap-2.5 px-4 py-4">
                       <button onClick={() => onAcceptAlignment(a.id)} className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-emerald-700 active:scale-95">{t('accept_sync')}</button>
-                      <button onClick={() => onRejectAlignment(a.id)} className="rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-500 transition-all hover:bg-slate-50">{t('decline_alignment')}</button>
+                      <button onClick={() => onRejectAlignment(a.id)} className="rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-500 transition-all hover:bg-slate-50 dark:border-slate-700">{t('decline_alignment')}</button>
                       <span className="flex-1"></span>
                       <button onClick={() => onViewAlignmentTree(a.theirTree.id)} className="truncate text-xs font-bold text-sky-600 transition-colors hover:text-sky-700">{t('visit_tree')} {a.theirTree.name} →</button>
                     </div>
@@ -158,7 +158,9 @@ export const ObservatoryPage = ({
               <button
                 onClick={onRefreshResonance}
                 disabled={isAnalyzingSynergy || !canRefreshResonance}
-                title={!canRefreshResonance ? `Refreshes weekly; about ${Math.max(1, Math.ceil(synergyCooldownLeft / 86400000))} day(s) left` : 'Re-read the field'}
+                title={!canRefreshResonance
+                  ? t('resonance_weekly').replace('{days}', String(Math.max(1, Math.ceil(synergyCooldownLeft / 86400000))))
+                  : t('resonance_reread')}
                 className="inline-flex shrink-0 items-center gap-2 rounded-full bg-amber-500 px-4 py-2 text-xs font-bold text-white shadow transition-all hover:bg-amber-600 active:scale-95 disabled:opacity-50"
               >
                 {isAnalyzingSynergy

@@ -67,36 +67,30 @@ export const ProfileLight = ({ uid }: { uid: string }) => {
                     )}
                     <div className="relative flex h-28 w-28 flex-col items-center justify-center rounded-full border border-amber-200 bg-gradient-to-br from-amber-100 to-amber-50">
                         <span className="text-3xl font-semibold text-amber-600">{total}</span>
-                        <span className="text-[10px] uppercase tracking-wider text-amber-500">units</span>
+                        <span className="text-[10px] uppercase tracking-wider text-amber-500">{t('units')}</span>
                     </div>
                 </div>
                 <p className="mt-2 text-center text-sm font-medium text-amber-700">{spoken(total)}</p>
-                <p className="mt-1 text-center text-xs text-amber-600/70">
-                    Only you can see your light. Glow begins where light circulates in a community.
-                </p>
+                <p className="mt-1 text-center text-xs text-amber-600/70">{t('light_private_note')}</p>
             </div>
 
             {total === 0 ? (
-                <div className="rounded-2xl border border-gray-100 p-6 text-center">
+                <div className="rounded-2xl border border-gray-100 p-6 text-center dark:border-slate-800">
                     <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-amber-50 text-amber-500">
                         <Icons.Sun />
                     </div>
                     <p className="text-sm text-gray-600">{t('no_light')}</p>
-                    <p className="mx-auto mt-1 max-w-sm text-xs text-gray-400">
-                        Light kindles when a guardian witnesses your daily care of a living tree:
-                        water your tree, then a guardian in its Circle presses Witness.
-                        Witnessing another&apos;s care earns you a seventh.
-                    </p>
+                    <p className="mx-auto mt-1 max-w-sm text-xs text-gray-400">{t('light_kindles_note')}</p>
                 </div>
             ) : (
                 <div>
-                    <h3 className="mb-2 px-1 text-sm font-semibold text-gray-700">{t('kindled_from_care')}</h3>
+                    <h3 className="mb-2 px-1 text-sm font-semibold text-gray-700 dark:text-slate-200">{t('kindled_from_care')}</h3>
                     <div className="space-y-2">
                         {rays.map(ray => (
-                            <div key={ray.id} className="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-3">
+                            <div key={ray.id} className="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-3 dark:bg-slate-900 dark:border-slate-800">
                                 <div className="min-w-0">
-                                    <p className="truncate text-sm font-medium text-gray-800">
-                                        {treeNames[ray.treeId] || 'A tree'}
+                                    <p className="truncate text-sm font-medium text-gray-800 dark:text-slate-100">
+                                        {treeNames[ray.treeId] || t('a_tree')}
                                     </p>
                                     <p className="text-xs text-gray-400">{ray.dayKey}</p>
                                 </div>
@@ -106,7 +100,7 @@ export const ProfileLight = ({ uid }: { uid: string }) => {
                                             ? 'bg-amber-50 text-amber-600'
                                             : 'bg-sky-50 text-sky-600'
                                     }`}>
-                                        {ray.role === 'carer' ? 'your care' : 'your witness'}
+                                        {ray.role === 'carer' ? t('ray_your_care') : t('ray_your_witness')}
                                     </span>
                                     <span className="text-sm font-semibold text-amber-600">+{ray.units}</span>
                                 </div>

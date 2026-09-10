@@ -48,7 +48,7 @@ export const ThemeEditor = ({ value, onChange, defaultTheme }: { value: ThemeVal
             <button key={preset.id} type="button" onClick={() => { pick(normalizeTheme(preset)); setExpanded(true); }} className={`w-full rounded-2xl border p-3 text-left transition-all ${active ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}>
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-sm font-bold text-slate-800">{preset.name}</div>
+                  <div className="text-sm font-bold text-slate-800 dark:text-slate-100">{preset.name}</div>
                   <div className="text-[11px] text-slate-500">{preset.description}</div>
                 </div>
                 <div className="flex shrink-0 overflow-hidden rounded-full border border-white shadow-sm">
@@ -65,7 +65,7 @@ export const ThemeEditor = ({ value, onChange, defaultTheme }: { value: ThemeVal
         <button type="button" onClick={() => setExpanded(true)} className={`w-full rounded-2xl border p-3 text-left transition-all ${isCustom ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}>
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-sm font-bold text-slate-800">{t('theme_custom')}</div>
+              <div className="text-sm font-bold text-slate-800 dark:text-slate-100">{t('theme_custom')}</div>
               <div className="text-[11px] text-slate-500">{t('theme_custom_desc')}</div>
             </div>
             <div className="flex shrink-0 overflow-hidden rounded-full border border-white shadow-sm">
@@ -80,14 +80,14 @@ export const ThemeEditor = ({ value, onChange, defaultTheme }: { value: ThemeVal
       {/* Reset to this node's default theme — the theme this profile/community inherits when it
           isn't overridden. Only shown when a default is supplied and the value has drifted from it. */}
       {defaultTheme && !themeEquals(value, defaultTheme) && (
-        <button type="button" onClick={() => pick(normalizeTheme(defaultTheme))} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:border-emerald-300 hover:text-emerald-700">
+        <button type="button" onClick={() => pick(normalizeTheme(defaultTheme))} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:border-emerald-300 hover:text-emerald-700 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700">
           <span aria-hidden>↺</span> {t('theme_reset_default')}
         </button>
       )}
 
       {/* Per-colour pickers appear in custom mode, or once the editor is expanded via a preset. */}
       {(isCustom || expanded) && (
-        <div className="space-y-4 rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
+        <div className="space-y-4 rounded-2xl border border-slate-100 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/60">
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-bold uppercase text-slate-400">{t('theme_mode')}</span>
             {(['light', 'dark'] as const).map(m => (
@@ -101,7 +101,7 @@ export const ThemeEditor = ({ value, onChange, defaultTheme }: { value: ThemeVal
               <div key={key} className="space-y-1">
                 <label className="block space-y-1">
                   <span className="text-[10px] font-bold uppercase text-slate-400">{t(label as any)}</span>
-                  <input type="color" value={(value as any)[key]} onChange={e => { setDrafts(d => ({ ...d, [key]: undefined })); setColor(key, e.target.value); }} className="block h-10 w-full cursor-pointer rounded-lg border border-slate-200 bg-white p-1" />
+                  <input type="color" value={(value as any)[key]} onChange={e => { setDrafts(d => ({ ...d, [key]: undefined })); setColor(key, e.target.value); }} className="block h-10 w-full cursor-pointer rounded-lg border border-slate-200 bg-white p-1 dark:bg-slate-900 dark:border-slate-700" />
                 </label>
                 <input
                   type="text"

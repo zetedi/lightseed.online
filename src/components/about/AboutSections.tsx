@@ -7,6 +7,7 @@ import { Icons } from '../ui/Icons';
 import { Modal } from '../ui/Modal';
 import { subscribeToNewsletter, getGenesisHash } from '../../services/firebase';
 import { useLanguage } from '../../contexts/LanguageContext';
+import type { TranslationKey } from '../../utils/translations';
 
 // Shared "lore" sections that make up the foundational story of the network.
 // They are rendered on every community/node about page (CommunityProfile), so the
@@ -26,81 +27,83 @@ export type YantraSymbolType =
     | 'infinity'
     | 'triskelion';
 
+// The symbol families read into the yantra. Title and description are translation
+// KEYS (the copy lives in the table) — the card speaks them through the hook.
 export const yantraSymbols: Array<{
-    title: string;
-    description: string;
+    titleKey: TranslationKey;
+    descKey: TranslationKey;
     type: YantraSymbolType;
     link: string;
 }> = [
     {
-        title: 'Yin & Yang',
-        description: 'Opposite and contrary forces become complementary, interconnected, and interdependent inside the same field.',
+        titleKey: 'yantra_yinyang_title',
+        descKey: 'yantra_yinyang_desc',
         type: 'yinYang',
         link: 'https://en.wikipedia.org/wiki/Yin_and_yang'
     },
     {
-        title: 'Heart',
-        description: 'The mirrored arcs of the yantra can be read as a heart form, linking the geometry directly with love.',
+        titleKey: 'yantra_heart_title',
+        descKey: 'yantra_heart_desc',
         type: 'heart',
         link: 'https://en.wikipedia.org/wiki/Heart_symbol'
     },
     {
-        title: 'Sun & Consciousness',
-        description: 'The circled dot appears as the bindu: the sun, the center of the center, and awakened consciousness.',
+        titleKey: 'yantra_sun_title',
+        descKey: 'yantra_sun_desc',
         type: 'sun',
         link: 'https://en.wikipedia.org/wiki/Circled_dot'
     },
     {
-        title: 'Seed of Life',
-        description: 'The seven-circle seed pattern implies that all life on Earth and in the Universe is interconnected.',
+        titleKey: 'yantra_seed_title',
+        descKey: 'yantra_seed_desc',
         type: 'seed',
         link: 'https://www.uniguide.com/seed-of-life-number-7-sacred-geometry/'
     },
     {
-        title: 'Hexagram',
-        description: 'Two interwoven triangles suggest Heaven and Earth meeting, with the yantra acting as the shared field between them.',
+        titleKey: 'yantra_hexagram_title',
+        descKey: 'yantra_hexagram_desc',
         type: 'hexagram',
         link: 'https://en.wikipedia.org/wiki/Hexagram'
     },
     {
-        title: 'Shambhala',
-        description: 'The yantra can also be read as a mandalic inner kingdom, a protected spiritual center ordered around one source.',
+        titleKey: 'yantra_shambhala_title',
+        descKey: 'yantra_shambhala_desc',
         type: 'shambhala',
         link: 'https://en.wikipedia.org/wiki/Shambhala'
     },
     {
-        title: 'Sacred Lotus',
-        description: 'Petal-like arcs emerge from the circle intersections, pointing to inner unfolding and the realization of potential.',
+        titleKey: 'yantra_lotus_title',
+        descKey: 'yantra_lotus_desc',
         type: 'lotus',
         link: 'https://en.wikipedia.org/wiki/Sacred_lotus_in_religious_art'
     },
     {
-        title: 'Honeycomb',
-        description: 'Hexagonal order appears naturally in the yantra grid, echoing nature, cooperation, and efficient structure.',
+        titleKey: 'yantra_honeycomb_title',
+        descKey: 'yantra_honeycomb_desc',
         type: 'honeycomb',
         link: 'https://en.wikipedia.org/wiki/Honeycomb'
     },
     {
-        title: 'Overlapping Circles Grid',
-        description: 'The larger construction is itself a circle lattice, connecting the mark to the grid of life, DNA-like patterning, and expansion beyond.',
+        titleKey: 'yantra_grid_title',
+        descKey: 'yantra_grid_desc',
         type: 'grid',
         link: 'https://en.wikipedia.org/wiki/Overlapping_circles_grid'
     },
     {
-        title: 'Tree of Life (Kabbalah)',
-        description: 'A vertical path with balanced side pillars can be traced through the inner nodes, suggesting emanation, ascent, and return.',
+        titleKey: 'yantra_kabbalah_title',
+        descKey: 'yantra_kabbalah_desc',
         type: 'kabbalah',
         link: 'https://en.wikipedia.org/wiki/Tree_of_life_(Kabbalah)'
     },
     {
-        title: 'Infinity',
-        description: 'The left and right loops emerge from the same central field, expressing continuity, recurrence, and the unified flow.',
+        titleKey: 'yantra_infinity_title',
+        descKey: 'yantra_infinity_desc',
         type: 'infinity',
         link: 'https://en.wikipedia.org/wiki/Infinity_symbol'
     },
     {
-        title: 'Triskelion',
-        description: 'Three spiraling arms can be aligned with the yantra around the center, expressing motion, cycles, and living emergence.',
+        titleKey: 'yantra_triskelion_title',
+        descKey: 'yantra_triskelion_desc',
         type: 'triskelion',
         link: 'https://en.wikipedia.org/wiki/Triskelion'
     }
@@ -295,30 +298,33 @@ export const SymbolOverlay = ({ type }: { type: YantraSymbolType }) => {
     }
 };
 
-const SymbolCard = ({ title, description, type, link }: { title: string, description: string, type: YantraSymbolType, link: string, key?: string | number }) => (
-    <div className="flex flex-col md:flex-row gap-6 items-center bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+const SymbolCard = ({ titleKey, descKey, type, link }: { titleKey: TranslationKey, descKey: TranslationKey, type: YantraSymbolType, link: string, key?: string | number }) => {
+    const { t } = useLanguage();
+    return (
+    <div className="flex flex-col md:flex-row gap-6 items-center bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow dark:bg-slate-900 dark:border-slate-800">
         <div className="relative w-40 h-40 shrink-0 rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 via-white to-purple-50 shadow-inner overflow-hidden">
              <div className="absolute inset-4">
                 <SymbolOverlay type={type} />
              </div>
         </div>
         <div>
-            <h3 className="text-amber-600 font-bold uppercase tracking-wider mb-2">{title}</h3>
-            <p className="text-slate-600 text-sm mb-3">{description}</p>
+            <h3 className="text-amber-600 font-bold uppercase tracking-wider mb-2">{t(titleKey)}</h3>
+            <p className="text-slate-600 text-sm mb-3 dark:text-slate-300">{t(descKey)}</p>
             <a href={link} target="_blank" rel="noopener noreferrer" className="text-xs text-slate-400 hover:text-amber-500 flex items-center gap-1 transition-colors">
                 <Icons.Link />
-                <span>Read more</span>
+                <span>{t('read_more')}</span>
             </a>
         </div>
     </div>
-);
+    );
+};
 
-// The founding vision of the network — block 000 of the immutable chain. This is the
-// genesis pulse that every node descends from, so it travels to every about page.
-const GENESIS_TEXT = `The purpose of lightseed is to bring joy. The joy of realizing the bliss of conscious, compassionate, grateful existence by opening a portal to the center of life. By creating a bridge between creator and creation, science and spirituality, virtual and real, nothing and everything. It is designed to intimately connect our inner Self, our culture, our trees and the tree of life, the material and the digital, online world into a sustainable and sustaining circle of unified vibration, sound and light. It aims to merge us into a common flow for all beings to be liberated, wise, strong, courageous and connected. It is rooted in nonviolence, compassion, generosity, gratitude and love. It is blockchain (truthfulness), cloud (global, distributed, resilient), ai (for connecting dreams and technology), regen (nature centric) native. It is an inspiration, an impulse towards a quantum leap in consciousness, a prompt both for human and artificial intelligence for action towards transcending humanity into a new era, a New Earth, Universe and Field with the help of our most important evolutionary sisters and brothers, the trees.`;
+// The founding vision of the network — block 000 of the immutable chain — lives in the
+// translation table as `genesis_text`, so the origin story speaks every language.
 
 // 01 — The Genesis Block: the first, immutable pulse the whole network grows from.
 export const GenesisSection = () => {
+    const { t } = useLanguage();
     // The true on-chain hash of block 000, loaded from the shared genesis tree. Falls
     // back to a placeholder while loading or if the chain isn't reachable.
     const [hash, setHash] = useState<string | null>(null);
@@ -327,24 +333,24 @@ export const GenesisSection = () => {
 
     return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="bg-white p-8 md:p-12 rounded-xl shadow-xl border border-slate-100 relative overflow-hidden">
+        <div className="bg-white p-8 md:p-12 rounded-xl shadow-xl border border-slate-100 relative overflow-hidden dark:bg-slate-900 dark:border-slate-800">
             <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-400 via-purple-500 to-amber-500"></div>
             <div className="absolute -right-10 -bottom-10 opacity-5 pointer-events-none">
                 <Logo width={300} height={300} />
             </div>
 
-            <h2 className="text-center text-xs font-bold text-slate-400 uppercase tracking-[0.3em] mb-8">Genesis Block • 000</h2>
+            <h2 className="text-center text-xs font-bold text-slate-400 uppercase tracking-[0.3em] mb-8">{t('genesis_block_000')}</h2>
 
-            <div className="prose prose-lg prose-slate mx-auto">
-                <p className="font-serif text-base md:text-lg leading-relaxed text-slate-800 text-justify first-letter:text-4xl first-letter:font-bold first-letter:text-purple-900 first-letter:mr-2 first-letter:float-left">
-                    {GENESIS_TEXT}
+            <div className="prose prose-lg prose-slate mx-auto dark:prose-invert">
+                <p className="font-serif text-base md:text-lg leading-relaxed text-slate-800 text-justify first-letter:text-4xl first-letter:font-bold first-letter:text-purple-900 first-letter:mr-2 first-letter:float-left dark:text-slate-100">
+                    {t('genesis_text')}
                 </p>
             </div>
 
-            <div className="mt-12 pt-8 border-t border-slate-100 flex justify-between items-end">
+            <div className="mt-12 pt-8 border-t border-slate-100 flex justify-between items-end dark:border-slate-800">
                 <div>
-                    <p className="text-xs text-slate-400 font-mono" title={hash ?? undefined}>HASH: {shortHash}</p>
-                    <p className="text-xs text-slate-400 font-mono">STATUS: IMMUTABLE</p>
+                    <p className="text-xs text-slate-400 font-mono" title={hash ?? undefined}>{t('genesis_hash_label')} {shortHash}</p>
+                    <p className="text-xs text-slate-400 font-mono">{t('genesis_status_immutable')}</p>
                 </div>
                 <Logo width={32} height={32} className="text-slate-300" />
             </div>
@@ -377,32 +383,32 @@ export const MembershipPathSection = () => {
 
                 <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
                     <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-purple-300 bg-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 text-purple-600 font-bold">1</div>
-                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-xl shadow-md border border-slate-100">
-                        <h3 className="font-bold text-purple-900 mb-2 uppercase tracking-wider text-sm">Resonance</h3>
-                        <p className="text-slate-600 text-sm">{t('path_adopt_note')}</p>
+                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-xl shadow-md border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
+                        <h3 className="font-bold text-purple-900 mb-2 uppercase tracking-wider text-sm">{t('path_phase_resonance')}</h3>
+                        <p className="text-slate-600 text-sm dark:text-slate-300">{t('path_adopt_note')}</p>
                     </div>
                 </div>
 
                 <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
                     <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-purple-300 bg-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 text-purple-600 font-bold">2</div>
-                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-xl shadow-md border border-slate-100">
-                        <h3 className="font-bold text-purple-900 mb-2 uppercase tracking-wider text-sm">Selection</h3>
-                        <p className="text-slate-600 text-sm">{t('path_recommend_note')}</p>
+                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-xl shadow-md border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
+                        <h3 className="font-bold text-purple-900 mb-2 uppercase tracking-wider text-sm">{t('path_phase_selection')}</h3>
+                        <p className="text-slate-600 text-sm dark:text-slate-300">{t('path_recommend_note')}</p>
                     </div>
                 </div>
 
                 <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
                     <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-purple-300 bg-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 text-purple-600 font-bold">3</div>
-                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-xl shadow-md border border-slate-100">
-                        <h3 className="font-bold text-purple-900 mb-2 uppercase tracking-wider text-sm">Nurturing</h3>
-                        <p className="text-slate-600 text-sm">{t('path_pot_note')}</p>
+                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-xl shadow-md border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
+                        <h3 className="font-bold text-purple-900 mb-2 uppercase tracking-wider text-sm">{t('path_phase_nurturing')}</h3>
+                        <p className="text-slate-600 text-sm dark:text-slate-300">{t('path_pot_note')}</p>
                     </div>
                 </div>
 
                 <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
                     <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-emerald-500 bg-emerald-600 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 text-white font-bold">4</div>
                     <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-emerald-50 rounded-xl shadow-md border border-emerald-100">
-                        <h3 className="font-bold text-emerald-900 mb-2 uppercase tracking-wider text-sm">Initiation</h3>
+                        <h3 className="font-bold text-emerald-900 mb-2 uppercase tracking-wider text-sm">{t('path_phase_initiation')}</h3>
                         <p className="text-emerald-800 text-sm">{t('path_transplant_note')}</p>
                     </div>
                 </div>
@@ -419,7 +425,7 @@ export const MembershipPathSection = () => {
             </div>
 
             {showSubModal && (
-                <Modal title="Stay Connected" onClose={() => setShowSubModal(false)}>
+                <Modal title={t('stay_connected')} onClose={() => setShowSubModal(false)}>
                     <form onSubmit={handleSubscribe} className="space-y-6 p-6">
                         <p className="text-slate-500 font-serif italic text-center">{t('transmission_note')}</p>
                         <input
@@ -427,11 +433,11 @@ export const MembershipPathSection = () => {
                             placeholder={t('your_email_ph')}
                             value={email}
                             onChange={e => setEmail(e.target.value)}
-                            className="w-full border-b-2 border-slate-200 p-4 text-center text-lg focus:border-purple-500 outline-none transition-colors"
+                            className="w-full border-b-2 border-slate-200 p-4 text-center text-lg focus:border-purple-500 outline-none transition-colors dark:border-slate-700"
                             required
                         />
                         <button type="submit" disabled={submitting} className="w-full bg-purple-600 text-white py-4 rounded-xl font-bold text-lg shadow-xl hover:bg-purple-700 transition-all">
-                            {submitting ? '...' : 'SUBSCRIBE'}
+                            {submitting ? '...' : t('subscribe')}
                         </button>
                     </form>
                 </Modal>
@@ -452,15 +458,18 @@ const euStarPoints = (cx: number, cy: number, R: number): string => {
     }
     return pts.join(' ');
 };
-export const EuipoMark = ({ size = 52 }: { size?: number }) => (
-    <svg viewBox="0 0 100 100" width={size} height={size} role="img" aria-label="EU intellectual property" className="shrink-0">
+export const EuipoMark = ({ size = 52 }: { size?: number }) => {
+    const { t } = useLanguage();
+    return (
+    <svg viewBox="0 0 100 100" width={size} height={size} role="img" aria-label={t('eu_ip_aria')} className="shrink-0">
         <rect width="100" height="100" rx="14" fill="#003399" />
         {Array.from({ length: 12 }).map((_, i) => {
             const a = (i * 30) * Math.PI / 180;
             return <polygon key={i} points={euStarPoints(50 + 32 * Math.sin(a), 50 - 32 * Math.cos(a), 7)} fill="#FFCC00" />;
         })}
     </svg>
-);
+    );
+};
 
 // The registered trademarks protecting the Lifeseed identity. Linked to EUIPO eSearch (public).
 export const TRADEMARKS = [
@@ -469,38 +478,45 @@ export const TRADEMARKS = [
 ];
 
 // Reusable protection notice — used as its own About tab and inside the Yantra section.
-export const ProtectionNote = ({ compact = false }: { compact?: boolean }) => (
+export const ProtectionNote = ({ compact = false }: { compact?: boolean }) => {
+    const { t } = useLanguage();
+    // The `.seed` wordmark stays a left-to-right literal inside the sentence, so the
+    // note is one key with a {mark} slot rather than two half-sentences.
+    const [before, after] = t('protection_note').split('{mark}');
+    return (
     <div className="flex items-start gap-4 rounded-2xl border border-blue-100 bg-blue-50/50 p-5">
         <EuipoMark size={compact ? 44 : 56} />
         <div className="min-w-0">
-            <h3 className="font-bold text-blue-900">{compact ? 'Protected' : 'Protection'}</h3>
-            <p className="mt-1 text-sm text-slate-600">
-                The Lifeseed yantra and the <span dir="ltr" className="font-semibold">.seed</span> mark are registered trademarks, protected with the European Union Intellectual Property Office (EUIPO).
+            <h3 className="font-bold text-blue-900">{compact ? t('protected') : t('protection')}</h3>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                {before}<span dir="ltr" className="font-semibold">.seed</span>{after}
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
                 {TRADEMARKS.map(tm => (
                     <a key={tm.no} href={tm.url} target="_blank" rel="noopener noreferrer"
-                       className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-white px-3 py-1 text-xs font-mono font-bold text-blue-800 transition-colors hover:bg-blue-100">
+                       className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-white px-3 py-1 text-xs font-mono font-bold text-blue-800 transition-colors hover:bg-blue-100 dark:bg-slate-900">
                         <Icons.ShieldCheck /> {tm.no}
                     </a>
                 ))}
             </div>
         </div>
     </div>
-);
+    );
+};
 
 // A standalone About tab for the protection / trademark info.
-export const ProtectionSection = () => (
+export const ProtectionSection = () => {
+    const { t } = useLanguage();
+    return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="mb-10 text-center max-w-2xl mx-auto">
-            <SectionHeader>Protection</SectionHeader>
-            <Paragraph>
-                The Lifeseed identity is held in trust for the network. The yantra and the .seed wordmark are registered trademarks with the European Union Intellectual Property Office (EUIPO), so the mark stays a symbol that protects the commons rather than one that can be captured.
-            </Paragraph>
+            <SectionHeader>{t('protection')}</SectionHeader>
+            <Paragraph>{t('protection_body')}</Paragraph>
         </div>
         <div className="max-w-2xl mx-auto"><ProtectionNote /></div>
     </div>
-);
+    );
+};
 
 // 04 — The Yantra: the logo / brand and its symbol language.
 export const YantraSection = () => {
@@ -509,19 +525,15 @@ export const YantraSection = () => {
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
 
         <div className="mb-10 text-center max-w-2xl mx-auto">
-            <SectionHeader>The Lifeseed Yantra</SectionHeader>
-            <Paragraph>
-                A Yantra is a geometric diagram, mainly from the Tantric traditions of the Indian religions. It is used for the worship of deities in temples or at home; as an aid in meditation; used for the benefits given by their supposed occult powers based on Hindu astrology and tantric texts. They are also used for adornment of temple floors, due mainly to their aesthetic and symmetric qualities.
-            </Paragraph>
-            <Paragraph className="text-base text-slate-600">
-                A little deeper exploration of the yantra: the symbol families below can be overlapped with the Lifeseed geometry in surprisingly strong alignment. The seven inner circles are half of the main circle, and the seven small inner seeds are one eighth of the main circle.
-            </Paragraph>
+            <SectionHeader>{t('yantra_title')}</SectionHeader>
+            <Paragraph>{t('yantra_what_is')}</Paragraph>
+            <Paragraph className="text-base text-slate-600 dark:text-slate-300">{t('yantra_deeper')}</Paragraph>
             <p className="text-sm text-slate-500 italic">{t('yantra_line')}</p>
         </div>
 
         {/* Large Main Yantra */}
         <div className="relative flex justify-center py-12 mb-10">
-             <div className="relative p-2 rounded-full border-2 border-amber-300 shadow-[0_0_80px_rgba(251,191,36,0.3)] bg-white">
+             <div className="relative p-2 rounded-full border-2 border-amber-300 shadow-[0_0_80px_rgba(251,191,36,0.3)] bg-white dark:bg-slate-900">
                 <Logo width={300} height={300} />
             </div>
         </div>
@@ -532,9 +544,9 @@ export const YantraSection = () => {
         <div className="space-y-4">
             {yantraSymbols.map((symbol) => (
                 <SymbolCard
-                    key={symbol.title}
-                    title={symbol.title}
-                    description={symbol.description}
+                    key={symbol.titleKey}
+                    titleKey={symbol.titleKey}
+                    descKey={symbol.descKey}
                     type={symbol.type}
                     link={symbol.link}
                 />

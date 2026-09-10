@@ -8,6 +8,8 @@ import { sanitizeRichText } from '../utils/sanitize';
 import Logo from '../components/Logo';
 import { parseLandingSections } from '../domain/appearance';
 import { SECTION_COMPONENTS } from '../components/landing/registry';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useSession } from '../contexts/SessionContext';
 
 // The custom landing — an organisation's own webpage on its own domain, with the seed behind
 // it. Signed out it is a quiet face: name, hero, vision, one sign-in button. Signed in, a
@@ -34,6 +36,9 @@ export const CustomLandingPage: React.FC<CustomLandingPageProps> = ({
   onEnterSeed,
   onViewEvent,
 }) => {
+  const { t } = useLanguage();
+  // The name stamped on an event planted from this door obeys the anonymity switch.
+  const { nameAs } = useSession();
   const theme = community.theme || {};
   const primary = theme.primary || '#0f766e';
   const accent = theme.accent || '#eab308';
@@ -85,8 +90,8 @@ export const CustomLandingPage: React.FC<CustomLandingPageProps> = ({
   // authored pages (a food menu, an About, whatever the place needs) — data, not code.
   const pages = community.landingPages || [];
   const menu: { key: Panel; label: string }[] = [
-    { key: 'home', label: 'Home' },
-    { key: 'events', label: 'Events' },
+    { key: 'home', label: t('home') },
+    { key: 'events', label: t('events') },
     ...pages.map(p => ({ key: p.id, label: p.label })),
   ];
   const activePage = pages.find(p => p.id === panel);
@@ -110,7 +115,7 @@ export const CustomLandingPage: React.FC<CustomLandingPageProps> = ({
             /* Signed in: the page's menu lives behind a hamburger. */
             <button
               onClick={() => setMenuOpen(o => !o)}
-              aria-label="Menu"
+              aria-label={t('menu')}
               aria-expanded={menuOpen}
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white shadow-lg transition-transform hover:scale-105 active:scale-95"
               style={{ backgroundColor: primary }}
@@ -125,7 +130,7 @@ export const CustomLandingPage: React.FC<CustomLandingPageProps> = ({
               className="shrink-0 rounded-full px-5 py-2 text-sm font-bold text-white shadow-lg transition-transform hover:scale-105 active:scale-95"
               style={{ backgroundColor: primary }}
             >
-              Sign in
+              {t('sign_in')}
             </button>
           )}
 
@@ -134,7 +139,7 @@ export const CustomLandingPage: React.FC<CustomLandingPageProps> = ({
             {/* Click-away backdrop: any tap outside folds the menu (sign-out included, so no
                 stray dropdown lingers over the auth modal on mobile). */}
             <div className="fixed inset-0 z-20" onClick={() => setMenuOpen(false)} aria-hidden />
-            <nav className="absolute right-5 top-16 z-30 w-44 overflow-hidden rounded-2xl bg-white/95 shadow-2xl backdrop-blur-sm sm:right-8">
+            <nav className="absolute right-5 top-16 z-30 w-44 overflow-hidden rounded-2xl bg-white/95 shadow-2xl backdrop-blur-sm sm:right-8 dark:bg-slate-900/95">
               {menu.map(m => (
                 <button
                   key={m.key}
@@ -147,9 +152,9 @@ export const CustomLandingPage: React.FC<CustomLandingPageProps> = ({
               ))}
               <button
                 onClick={() => { setMenuOpen(false); setPanel('home'); onSignOut(); }}
-                className="flex w-full items-center border-t border-slate-100 px-4 py-3 text-left text-sm font-semibold text-slate-400 transition-colors hover:bg-black/5 hover:text-slate-600"
+                className="flex w-full items-center border-t border-slate-100 px-4 py-3 text-left text-sm font-semibold text-slate-400 transition-colors hover:bg-black/5 hover:text-slate-600 dark:border-slate-800"
               >
-                Sign out
+                {t('sign_out')}
               </button>
             </nav>
             </>
@@ -159,12 +164,12 @@ export const CustomLandingPage: React.FC<CustomLandingPageProps> = ({
         {/* Content sits low — its foot just above the corner seed, mobile and desktop alike. */}
         <main className="flex flex-1 flex-col items-center justify-end px-4 pb-24">
           {panel === 'events' && lightseed ? (
-            <div className="max-h-[70dvh] w-full max-w-3xl overflow-y-auto rounded-3xl bg-white/95 p-4 shadow-2xl backdrop-blur-sm sm:p-6">
+            <div className="max-h-[70dvh] w-full max-w-3xl overflow-y-auto rounded-3xl bg-white/95 p-4 shadow-2xl backdrop-blur-sm sm:p-6 dark:bg-slate-900/95">
               <EventsSection
                 scope="community"
                 canEdit={false}
                 currentUserId={lightseed?.uid}
-                currentUserName={lightseed?.displayName}
+                currentUserName={nameAs()}
                 currentUserPhoto={lightseed?.photoURL}
                 onViewEvent={onViewEvent}
                 loadEvents={loadEvents}
@@ -176,10 +181,10 @@ export const CustomLandingPage: React.FC<CustomLandingPageProps> = ({
             </div>
           ) : activePage && lightseed ? (
             /* One of the community's own pages — rich text in the white box. */
-            <div className="max-h-[70dvh] w-full max-w-3xl overflow-y-auto rounded-3xl bg-white/95 p-5 shadow-2xl backdrop-blur-sm sm:p-7">
+            <div className="max-h-[70dvh] w-full max-w-3xl overflow-y-auto rounded-3xl bg-white/95 p-5 shadow-2xl backdrop-blur-sm sm:p-7 dark:bg-slate-900/95">
               <h2 className="mb-3 text-lg font-bold" style={{ color: primary }}>{activePage.label}</h2>
               <div
-                className="prose prose-slate max-w-none break-words leading-relaxed [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-xl"
+                className="prose prose-slate max-w-none break-words leading-relaxed [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-xl dark:prose-invert"
                 dangerouslySetInnerHTML={{ __html: sanitizeRichText(activePage.html).replace(/&nbsp;| /g, ' ') }}
               />
             </div>
@@ -187,7 +192,7 @@ export const CustomLandingPage: React.FC<CustomLandingPageProps> = ({
             /* SECTIONS FROM THE DATABASE (domain/appearance + the landing registry): the
                components live in the repo and passed the gate; the community composed them
                as data. The white canvas carries them; the hero image stays behind. */
-            <div className="max-h-[80dvh] w-full max-w-4xl overflow-y-auto rounded-3xl bg-white/95 shadow-2xl backdrop-blur-sm">
+            <div className="max-h-[80dvh] w-full max-w-4xl overflow-y-auto rounded-3xl bg-white/95 shadow-2xl backdrop-blur-sm dark:bg-slate-900/95">
               {landingSections.map((section, i) => {
                 const Section = SECTION_COMPONENTS[section.kind];
                 return <Section key={`${section.kind}:${i}`} community={community} props={section.props} lightseed={lightseed} onViewEvent={onViewEvent} />;
@@ -209,9 +214,9 @@ export const CustomLandingPage: React.FC<CustomLandingPageProps> = ({
       {/* The seed in the corner — the door into the full app. */}
       <button
         onClick={onEnterSeed}
-        title="Enter the seed"
-        aria-label="Enter the seed"
-        className="fixed bottom-5 right-5 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-2xl transition-transform hover:scale-110 active:scale-95"
+        title={t('enter_the_seed')}
+        aria-label={t('enter_the_seed')}
+        className="fixed bottom-5 right-5 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-2xl transition-transform hover:scale-110 active:scale-95 dark:bg-slate-900"
         style={{ boxShadow: `0 0 24px ${accent}88, 0 4px 16px rgba(0,0,0,0.25)` }}
       >
         <Logo width={34} height={34} />

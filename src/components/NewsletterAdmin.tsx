@@ -7,6 +7,7 @@ import { getNewsletterDraftData, sendNewsletter } from '../services/firebase';
 import { Loading } from './ui/Loading';
 import { Icons } from './ui/Icons';
 import { Modal, modalButton } from './ui/Modal';
+import { notify } from './ui/Toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import type { Community } from '../types';
 import { speak } from '../utils/translations';
@@ -30,9 +31,8 @@ export const NewsletterAdmin = ({ community, onBack, embedded = false }: { commu
     const [sending, setSending] = useState(false);
     const [subject, setSubject] = useState('');
     const [html, setHtml] = useState('');
-    const [lastSentLabel, setLastSentLabel] = useState('never');
+    const [lastSentLabel, setLastSentLabel] = useState<string | null>(null);
     const [showConfirm, setShowConfirm] = useState(false);
-    const [dialogMessage, setDialogMessage] = useState<string | null>(null);
     const editorRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -46,7 +46,7 @@ export const NewsletterAdmin = ({ community, onBack, embedded = false }: { commu
                 const visionItems = draft.visions.map(vision => `${vision.title} by ${vision.authorId.slice(0, 6)}...`);
                 const pulseItems = draft.pulses.map(pulse => `${pulse.title} by ${pulse.authorName}`);
 
-                setLastSentLabel(formatDate(draft.lastSentAt));
+                setLastSentLabel(draft.lastSentAt ? formatDate(draft.lastSentAt) : null);
                 setSubject(`${placeName} — ${today}`);
                 setHtml(`
 <div style="font-family: Georgia, serif; color: #1f2937; line-height: 1.7; max-width: 760px; margin: 0 auto; padding: 32px;">
@@ -92,11 +92,11 @@ export const NewsletterAdmin = ({ community, onBack, embedded = false }: { commu
         setSending(true);
         try {
             const count = await sendNewsletter({ subject: subject.trim(), html, communityId: community.id });
-            setDialogMessage(speak('newsletter_sent_count', { count }));
+            notify(speak('newsletter_sent_count', { count }));
         } catch (e: any) {
             // The server refuses with a domain key (newsletter_not_keeper, newsletter_no_subscribers) — spoken in the reader's tongue.
             const key = String(e?.message || '').replace(/^.*?(newsletter_[a-z_]+).*$/, '$1');
-            setDialogMessage(key.startsWith('newsletter_') ? speak(key) : (e?.message || speak('err_save_retry')));
+            notify(key.startsWith('newsletter_') ? speak(key) : (e?.message || speak('err_save_retry')), 'error');
         }
         setSending(false);
         setShowConfirm(false);
@@ -118,7 +118,7 @@ export const NewsletterAdmin = ({ community, onBack, embedded = false }: { commu
                             </button>
                         )}
                         <h1 className={`text-3xl font-light ${embedded ? 'text-slate-800' : 'text-white'}`}>{t('newsletter_of_place').replace('{place}', community.name || 'lightseed')}</h1>
-                        <p className={`text-sm ${embedded ? 'text-slate-500' : 'text-emerald-100/80'}`}>Last letter sent: {lastSentLabel}</p>
+                        <p className={`text-sm ${embedded ? 'text-slate-500' : 'text-emerald-100/80'}`}>{t('letter_last_sent').replace('{when}', lastSentLabel ?? t('letter_never'))}</p>
                     </div>
                     <button
                         onClick={() => setShowConfirm(true)}
@@ -126,64 +126,56 @@ export const NewsletterAdmin = ({ community, onBack, embedded = false }: { commu
                         className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2"
                     >
                         <Icons.Send />
-                        <span>{sending ? 'Sending...' : 'Send Newsletter'}</span>
+                        <span>{sending ? t('sending') : t('send_newsletter')}</span>
                     </button>
                 </div>
 
                 <div className="grid gap-6 lg:grid-cols-2">
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4 dark:bg-slate-900 dark:border-slate-700">
                         <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Subject</label>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">{t('letter_subject')}</label>
                             <input
                                 value={subject}
                                 onChange={(e) => setSubject(e.target.value)}
-                                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-700"
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">HTML Letter</label>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">{t('letter_html')}</label>
                             <div className="mb-3 flex flex-wrap gap-2">
-                                <button type="button" onClick={() => runEditorCommand('bold')} className="rounded border border-slate-300 px-2 py-1 text-xs font-bold">B</button>
-                                <button type="button" onClick={() => runEditorCommand('italic')} className="rounded border border-slate-300 px-2 py-1 text-xs italic">I</button>
-                                <button type="button" onClick={() => runEditorCommand('underline')} className="rounded border border-slate-300 px-2 py-1 text-xs underline">U</button>
-                                <button type="button" onClick={() => runEditorCommand('formatBlock', '<h2>')} className="rounded border border-slate-300 px-2 py-1 text-xs">H2</button>
-                                <button type="button" onClick={() => runEditorCommand('insertUnorderedList')} className="rounded border border-slate-300 px-2 py-1 text-xs">UL</button>
-                                <button type="button" onClick={() => runEditorCommand('insertOrderedList')} className="rounded border border-slate-300 px-2 py-1 text-xs">OL</button>
-                                <button type="button" onClick={() => runEditorCommand('formatBlock', '<blockquote>')} className="rounded border border-slate-300 px-2 py-1 text-xs">Quote</button>
-                                <button type="button" onClick={() => runEditorCommand('removeFormat')} className="rounded border border-slate-300 px-2 py-1 text-xs">Clear</button>
+                                <button type="button" onClick={() => runEditorCommand('bold')} className="rounded border border-slate-300 px-2 py-1 text-xs font-bold dark:border-slate-700">B</button>
+                                <button type="button" onClick={() => runEditorCommand('italic')} className="rounded border border-slate-300 px-2 py-1 text-xs italic dark:border-slate-700">I</button>
+                                <button type="button" onClick={() => runEditorCommand('underline')} className="rounded border border-slate-300 px-2 py-1 text-xs underline dark:border-slate-700">U</button>
+                                <button type="button" onClick={() => runEditorCommand('formatBlock', '<h2>')} className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-700">H2</button>
+                                <button type="button" onClick={() => runEditorCommand('insertUnorderedList')} className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-700">UL</button>
+                                <button type="button" onClick={() => runEditorCommand('insertOrderedList')} className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-700">OL</button>
+                                <button type="button" onClick={() => runEditorCommand('formatBlock', '<blockquote>')} className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-700">{t('letter_quote')}</button>
+                                <button type="button" onClick={() => runEditorCommand('removeFormat')} className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-700">{t('letter_clear')}</button>
                             </div>
                             <div
                                 ref={editorRef}
                                 contentEditable
                                 suppressContentEditableWarning
                                 onInput={() => setHtml(editorRef.current?.innerHTML || '')}
-                                className="min-h-[520px] w-full rounded-lg border border-slate-300 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                className="min-h-[520px] w-full rounded-lg border border-slate-300 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-700"
                             />
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4">Preview</h2>
-                        <div className="rounded-xl border border-slate-200 bg-[#fffdf8] p-4 min-h-[520px]" dangerouslySetInnerHTML={preview} />
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 dark:bg-slate-900 dark:border-slate-700">
+                        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4">{t('letter_preview')}</h2>
+                        <div className="rounded-xl border border-slate-200 bg-[#fffdf8] p-4 min-h-[520px] dark:border-slate-700" dangerouslySetInnerHTML={preview} />
                     </div>
                 </div>
             </div>
             {showConfirm && (
-                <Modal title="Confirm Newsletter" onClose={() => setShowConfirm(false)}>
+                <Modal title={t('letter_confirm_title')} onClose={() => setShowConfirm(false)}>
                     <div className="space-y-4">
-                        <p className="text-sm text-slate-600">{t('newsletter_send_confirm')}</p>
+                        <p className="text-sm text-slate-600 dark:text-slate-300">{t('newsletter_send_confirm')}</p>
                         <div className="flex gap-3">
                             <button type="button" onClick={() => setShowConfirm(false)} className={modalButton('secondary', { extra: 'flex-1' })}>{t('cancel')}</button>
                             <button type="button" onClick={handleSend} className={modalButton('primary', { extra: 'flex-1' })}>{t('send')}</button>
                         </div>
-                    </div>
-                </Modal>
-            )}
-            {dialogMessage && (
-                <Modal title="Newsletter" onClose={() => setDialogMessage(null)}>
-                    <div className="space-y-4">
-                        <p className="text-sm text-slate-600">{dialogMessage}</p>
-                        <button type="button" onClick={() => setDialogMessage(null)} className={modalButton('primary')}>{t('close')}</button>
                     </div>
                 </Modal>
             )}

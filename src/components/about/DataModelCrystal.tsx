@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { BEING_NOTE, BOX_ROW, BOX_WIDTH, DATA_MODEL, DATA_RELATIONS, boxHeaderHeight, boxHeight, type ModelEntity } from '../../domain/dataModel';
 import { buildDrawioFile, buildDrawioXml } from '../../utils/drawioExport';
 import { Icons } from '../ui/Icons';
+import { speak } from '../../utils/translations';
 
 // The data model as a crystal — the entities and how they link, drawn from the same definition
 // that generates the draw.io XML. It's the schema (the shape of the seed), not any instance.
@@ -79,15 +80,15 @@ export const DataModelCrystal = () => {
     <div className="overflow-hidden rounded-2xl border border-slate-800 shadow-xl" style={{ background: 'radial-gradient(120% 120% at 50% 30%, #0c1a16 0%, #070d0b 60%, #05080a 100%)' }}>
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 px-5 py-3">
         <div>
-          <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-emerald-300">The Model · Crystal</h3>
-          <p className="text-xs text-slate-400">The data model's shape: {DATA_MODEL.length} entities, {DATA_RELATIONS.length} links. Editable in draw.io.</p>
+          <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-emerald-300">{speak('model_crystal_title')}</h3>
+          <p className="text-xs text-slate-400">{speak('model_crystal_sub', { entities: DATA_MODEL.length, links: DATA_RELATIONS.length })}</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={copy} className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-200 transition-colors hover:bg-white/10">
-            <Icons.Copy size={14} /> {copied ? 'Copied' : 'Copy XML'}
+          <button onClick={copy} className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-200 transition-colors hover:bg-white/10 dark:bg-slate-900/5">
+            <Icons.Copy size={14} /> {copied ? speak('copied') : speak('copy_xml')}
           </button>
           <button onClick={download} className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-700">
-            <Icons.ArrowRight size={14} /> Download .drawio
+            <Icons.ArrowRight size={14} /> {speak('download_drawio')}
           </button>
         </div>
       </div>
@@ -102,7 +103,7 @@ export const DataModelCrystal = () => {
       >
         {/* Fill the container width so large screens don't leave a wide right margin; the
             viewBox keeps the aspect ratio, and minWidth keeps a horizontal scroll on phones. */}
-        <svg viewBox={`${bounds.x} ${bounds.y} ${bounds.w} ${bounds.h}`} className="h-auto w-full" style={{ minWidth: '760px' }} role="img" aria-label="lifeseed data model diagram">
+        <svg viewBox={`${bounds.x} ${bounds.y} ${bounds.w} ${bounds.h}`} className="h-auto w-full" style={{ minWidth: '760px' }} role="img" aria-label={speak('model_diagram_aria')}>
           <defs>
             <marker id="dm-arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
               <path d="M0,0 L8,3 L0,6 Z" fill="#38bdf8" />
@@ -174,9 +175,9 @@ export const DataModelCrystal = () => {
       </div>
 
       <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 border-t border-white/5 px-5 py-2.5 text-[11px] text-slate-500">
-        <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-4 rounded bg-[#38bdf8]" /> reference</span>
-        <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-4 rounded" style={{ background: 'repeating-linear-gradient(90deg,#f59e0b 0 4px,transparent 4px 7px)' }} /> LIN edge</span>
-        <span className="flex items-center gap-1.5"><span className="font-mono font-bold text-[#fcd34d]">bold</span> = document id</span>
+        <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-4 rounded bg-[#38bdf8]" /> {speak('model_legend_reference')}</span>
+        <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-4 rounded" style={{ background: 'repeating-linear-gradient(90deg,#f59e0b 0 4px,transparent 4px 7px)' }} /> {speak('model_legend_lin_edge')}</span>
+        <span className="flex items-center gap-1.5"><span className="font-mono font-bold text-[#fcd34d]">{speak('model_legend_bold')}</span> {speak('model_legend_doc_id')}</span>
         <span className="basis-full text-center italic text-emerald-200/60">{BEING_NOTE}</span>
       </div>
     </div>

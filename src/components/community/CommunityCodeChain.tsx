@@ -69,7 +69,7 @@ export const CommunityCodeChain: React.FC = () => {
     const oldest = commits?.length ? commits[commits.length - 1] : null;
     const root: ChainRoot = {
         name: 'lifeseed',
-        body: 'The seed everything unpacks from',
+        body: t('code_chain_root_body'),
         plantedLabel: oldest ? new Date(oldest.at).toLocaleDateString() : undefined,
         hash: oldest?.sha || null,
     };
@@ -82,8 +82,8 @@ export const CommunityCodeChain: React.FC = () => {
     return (
         <div>
             <SectionTitle
-                title="Code chain"
-                sub="The node's body: code changes are its growth; every deploy carries its own history (Indra's net)."
+                title={t('code_chain')}
+                sub={t('code_chain_sub')}
             />
             {failed ? (
                 <p className="py-10 text-center text-sm text-slate-400">{t('code_chain_unreadable')}</p>
@@ -95,7 +95,7 @@ export const CommunityCodeChain: React.FC = () => {
                     hrefForBlock={(p) => `${REPO_URL}/commit/${p.hash}`}
                     root={root}
                     stats={stats}
-                    emptyText="No commits mirrored yet."
+                    emptyText={t('code_chain_empty')}
                     // Caring the node's body = contributing code — the crown CTA opens the repo.
                     canCare
                     onCare={() => window.open(REPO_URL, '_blank', 'noopener')}

@@ -12,7 +12,7 @@ import { MODAL_BACKDROP, MODAL_PANEL, MODAL_TITLE, MODAL_CLOSE, modalButton } fr
 export const ImageCropModal = ({
     file,
     aspect = 1,
-    title = 'Crop image',
+    title,
     onCancel,
     onConfirm,
 }: {
@@ -174,8 +174,8 @@ export const ImageCropModal = ({
         <div className={`${MODAL_BACKDROP} z-[120] p-4`} onClick={(e) => { e.stopPropagation(); onCancel(); }}>
             <div role="dialog" aria-modal="true" className={`${MODAL_PANEL} max-w-sm p-5`} onClick={e => e.stopPropagation()}>
                 <div className="mb-3 flex items-center justify-between">
-                    <h3 className={`text-sm ${MODAL_TITLE}`}>{title}</h3>
-                    <button type="button" onClick={onCancel} aria-label="Close" className={`${MODAL_CLOSE} [&>svg]:h-5 [&>svg]:w-5`}><Icons.Close /></button>
+                    <h3 className={`text-sm ${MODAL_TITLE}`}>{title || t('crop_image')}</h3>
+                    <button type="button" onClick={onCancel} aria-label={t('close')} className={`${MODAL_CLOSE} [&>svg]:h-5 [&>svg]:w-5`}><Icons.Close /></button>
                 </div>
 
                 <div
@@ -207,7 +207,7 @@ export const ImageCropModal = ({
                     <input
                         type="range" min={1} max={4} step={0.01} value={zoom}
                         onChange={e => applyZoom(parseFloat(e.target.value))}
-                        className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-slate-200 accent-emerald-600"
+                        className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-slate-200 accent-emerald-600 dark:bg-slate-800"
                     />
                 </div>
                 <p className="mt-2 text-center text-[11px] text-slate-400">{t('crop_hint')}</p>

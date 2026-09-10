@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Lifetree, Lightseed, Pulse, ReachAudience } from '../../types';
 import { fetchMyReaches } from '../../services/firebase';
+import { useRefreshSignal } from '../../hooks/useRefreshSignal';
 import { ReachInbox } from '../inspiration/ReachInbox';
 
 interface ProfileReachesProps {
@@ -26,6 +27,9 @@ export const ProfileReaches: React.FC<ProfileReachesProps> = ({
   onConsumeReach,
 }) => {
   const [reaches, setReaches] = useState<Pulse[]>([]);
+  // A watering posts into the guardians' thread from another screen entirely; the bus is how an
+  // open inbox learns of it (the list updates in place, so the reader keeps the thread they are in).
+  const signal = useRefreshSignal(['reaches']);
 
   useEffect(() => {
     let alive = true;
@@ -33,7 +37,7 @@ export const ProfileReaches: React.FC<ProfileReachesProps> = ({
       .then((res) => { if (alive) setReaches(res.items); })
       .catch((e) => console.error('Fetch profile data error', e));
     return () => { alive = false; };
-  }, [lightseed.uid]);
+  }, [lightseed.uid, signal]);
 
   return (
     <ReachInbox

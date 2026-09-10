@@ -33,8 +33,8 @@ export const ResonanceCard = ({ s, isFavorite, onToggleFavorite, onReach, densit
   // ROWS: one line, the pair, the resonance badge, the star.
   if (density === 'rows') {
     return (
-      <div className="flex items-center gap-3 rounded-xl border border-amber-100 bg-white/90 px-3 py-2 shadow-sm">
-        <div className="min-w-0 flex-1 truncate text-sm font-bold text-slate-800">{s.vision1Title} + {s.vision2Title}</div>
+      <div className="flex items-center gap-3 rounded-xl border border-amber-100 bg-white/90 px-3 py-2 shadow-sm dark:bg-slate-900/90">
+        <div className="min-w-0 flex-1 truncate text-sm font-bold text-slate-800 dark:text-slate-100">{s.vision1Title} + {s.vision2Title}</div>
         {badge}
         {star}
       </div>
@@ -44,22 +44,22 @@ export const ResonanceCard = ({ s, isFavorite, onToggleFavorite, onReach, densit
   // MINI: a small card, the pair, the badge, a clamped reasoning; no tree chips or reach buttons.
   if (density === 'mini') {
     return (
-      <div className="flex flex-col gap-1.5 overflow-hidden rounded-xl border border-amber-100 bg-white/90 p-3 shadow-sm">
+      <div className="flex flex-col gap-1.5 overflow-hidden rounded-xl border border-amber-100 bg-white/90 p-3 shadow-sm dark:bg-slate-900/90">
         <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 break-words text-xs font-bold text-slate-800">{s.vision1Title} + {s.vision2Title}</div>
+          <div className="min-w-0 break-words text-xs font-bold text-slate-800 dark:text-slate-100">{s.vision1Title} + {s.vision2Title}</div>
           {star}
         </div>
         {badge}
-        <p className="line-clamp-3 text-[11px] italic text-slate-600">"{s.reasoning}"</p>
+        <p className="line-clamp-3 text-[11px] italic text-slate-600 dark:text-slate-300">"{s.reasoning}"</p>
       </div>
     );
   }
 
   // CARDS: the full pair card (the original).
   return (
-    <div className="overflow-hidden rounded-xl border border-amber-100 bg-white/90 p-4 shadow-sm">
+    <div className="overflow-hidden rounded-xl border border-amber-100 bg-white/90 p-4 shadow-sm dark:bg-slate-900/90">
       <div className="mb-2 flex items-start justify-between gap-2">
-        <div className="min-w-0 break-words text-sm font-bold text-slate-800">{s.vision1Title} + {s.vision2Title}</div>
+        <div className="min-w-0 break-words text-sm font-bold text-slate-800 dark:text-slate-100">{s.vision1Title} + {s.vision2Title}</div>
         <div className="flex shrink-0 items-center gap-1.5">
           <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${tier.badge}`}>{t(tier.labelKey)} · {s.score}%</span>
           {onToggleFavorite && (
@@ -80,22 +80,22 @@ export const ResonanceCard = ({ s, isFavorite, onToggleFavorite, onReach, densit
       {(s.tree1Id || s.tree2Id) && (
         <div className="mb-2 flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
           {s.tree1Id && (
-            <div className="flex w-full min-w-0 items-center gap-1.5 rounded-lg bg-slate-50 px-2 py-1 sm:flex-1">
+            <div className="flex w-full min-w-0 items-center gap-1.5 rounded-lg bg-slate-50 px-2 py-1 sm:flex-1 dark:bg-slate-900">
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 [&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Tree /></span>
-              <span className="truncate text-[11px] font-medium text-slate-700">{s.vision1Title}</span>
+              <span className="truncate text-[11px] font-medium text-slate-700 dark:text-slate-200">{s.vision1Title}</span>
             </div>
           )}
           <span className="hidden shrink-0 text-xs font-bold text-slate-300 sm:inline">+</span>
           {s.tree2Id && (
-            <div className="flex w-full min-w-0 items-center gap-1.5 rounded-lg bg-slate-50 px-2 py-1 sm:flex-1">
+            <div className="flex w-full min-w-0 items-center gap-1.5 rounded-lg bg-slate-50 px-2 py-1 sm:flex-1 dark:bg-slate-900">
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 [&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Tree /></span>
-              <span className="truncate text-[11px] font-medium text-slate-700">{s.vision2Title}</span>
+              <span className="truncate text-[11px] font-medium text-slate-700 dark:text-slate-200">{s.vision2Title}</span>
             </div>
           )}
         </div>
       )}
 
-      <p className="text-xs italic text-slate-600">"{s.reasoning}"</p>
+      <p className="text-xs italic text-slate-600 dark:text-slate-300">"{s.reasoning}"</p>
 
       {reachable && (
         <div className="mt-2.5 flex flex-col items-stretch gap-1.5 border-t border-amber-100 pt-2.5 sm:flex-row sm:flex-wrap sm:items-center">

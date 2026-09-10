@@ -21,7 +21,7 @@ export const ResonanceScan = ({
       <div className="absolute inset-0 z-20" aria-hidden>
         <style>{ORBIT_KEYFRAMES}</style>
         {/* Scrim — hold the content opaque/quiet while it updates. */}
-        <div className="absolute inset-0 bg-white/75 backdrop-blur-[1px]" style={{ borderRadius: radius }} />
+        <div className="absolute inset-0 bg-white/75 backdrop-blur-[1px] dark:bg-slate-900/75" style={{ borderRadius: radius }} />
         {/* The little sun, travelling along the container's border. */}
         <span
           className="absolute left-0 top-0 h-3.5 w-3.5 rounded-full bg-yellow-300"

@@ -618,6 +618,34 @@ describe('the births are bound — every being is born signed by its own hand (r
     await assertSucceeds(updateDoc(doc(db(ALICE), 'persons', ALICE), { uid: ALICE, displayName: 'Alice' }));
   });
 
+  it('a thirsty tree asks once: its own nudge is rewritten, and nothing else about it moves', async () => {
+    // ONE STANDING ASK (ring 2026-09-11). ALICE owns treeA; her tree's "water me" nudge is hers
+    // to rewrite while it stands — words and the moment it last spoke, never its thread.
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'pulses', 'waterAsk'), {
+        type: 'reach', careAlert: 'watering', authorId: ALICE, lifetreeId: 'treeA',
+        threadId: 'grp__treeA__guardians__' + ALICE, participantUids: [ALICE, BOB],
+        audience: 'guardians', isGroup: true, visibility: 'private',
+        body: 'I am thirsty', content: 'I am thirsty', previousHash: 'WATER_ALERT', loveCount: 0, commentCount: 0,
+      });
+    });
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'pulses', 'waterAsk'), { body: '3 days', content: '3 days' }));
+    // not another hand's to rewrite, even a guardian in the same thread
+    await assertFails(updateDoc(doc(db(BOB), 'pulses', 'waterAsk'), { body: 'hush', content: 'hush' }));
+    // and never its thread, its audience or who hears it
+    await assertFails(updateDoc(doc(db(ALICE), 'pulses', 'waterAsk'), { threadId: 'grp__other__guardians__' + ALICE }));
+    await assertFails(updateDoc(doc(db(ALICE), 'pulses', 'waterAsk'), { participantUids: [ALICE, BOB, MALLORY] }));
+    await assertFails(updateDoc(doc(db(ALICE), 'pulses', 'waterAsk'), { careAlert: 'watering', type: 'observation' }));
+  });
+
+  it('anonymity is the person\'s own switch: they set it on their world-readable person, no one else does', async () => {
+    // ANONYMOUS (ring 2026-09-10): persons/{uid}.anonymous + defaultTreeId are the being's own
+    // hand (every reader of a name must see the flag); another being cannot flip it.
+    await assertSucceeds(setDoc(doc(db(ALICE), 'persons', ALICE), { anonymous: true, defaultTreeId: 'treeA' }, { merge: true }));
+    await assertFails(setDoc(doc(db(MALLORY), 'persons', ALICE), { anonymous: false }, { merge: true }));
+    await assertSucceeds(getDoc(doc(db(MALLORY), 'persons', ALICE)));
+  });
+
   it('the hinge: a newborn or backfilled lid must be a real UUIDv7', async () => {
     await assertFails(setDoc(doc(db(CAROL), 'persons', CAROL), { uid: CAROL, lid: 'not-a-lid', displayName: 'Carol' }));
     await env.withSecurityRulesDisabled(async (ctx) => {

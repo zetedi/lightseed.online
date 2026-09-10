@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { translations } from '../src/utils/translations';
 
 // THE ENGLISH GUARD (ring 2026-08-10): after the great sweep, no user-facing string may be born
 // in English inside the code again — the words live in translations.ts (ar+zh complete, held by
@@ -57,5 +58,40 @@ describe('no English is born in the code', () => {
       });
     }
     expect(offenders, `English literals found:\n${offenders.join('\n')}`).toEqual([]);
+  });
+});
+
+// THE OTHER HALF OF THE GUARD (ring 2026-09-10): a seat that carries a KEY is only translated if
+// the key EXISTS. speak() passes an unknown string through untouched, so a mistyped or never-added
+// key ships silently and the reader sees `err_council_voice` where a sentence should stand. This
+// walks the same speaking seats for snake_case literals and demands each one be a real key. It
+// found 18 the day it was written (the i18n sweep's keys, referenced before they were added, and
+// one — err_generic — latent since the offering ring).
+const KEY_SEATS: RegExp[] = [
+  /(?:showAlert|showConfirm|notify|speak)\(\s*(?:[a-zA-Z0-9_.?]+\s*(?:\|\||\?\?)\s*)?['"`]([a-z][a-z0-9_]{3,})['"`]/g,
+  /\b(?:title|confirmText|cancelText):\s*['"`]([a-z][a-z0-9_]{3,})['"`]/g,
+];
+
+describe('a key in a speaking seat is a key that exists', () => {
+  it('every snake_case literal handed to a dialog, a toast or speak() is in the table', () => {
+    const known = new Set(Object.keys(translations.en));
+    const offenders: string[] = [];
+    for (const file of walk(ROOT)) {
+      const rel = file.slice(ROOT.length + 1).replace(/\\/g, '/');
+      if (rel === 'utils/translations.ts') continue;
+      const lines = readFileSync(file, 'utf8').split('\n');
+      lines.forEach((line, i) => {
+        if (isComment(line)) return;
+        for (const re of KEY_SEATS) {
+          for (const m of line.matchAll(re)) {
+            const key = m[1];
+            // A spoken line (`key::{json}`) is parsed by speak(); its key half is what must exist.
+            const bare = key.split('::')[0];
+            if (!known.has(bare)) offenders.push(`${rel}:${i + 1} — '${bare}' is not in translations`);
+          }
+        }
+      });
+    }
+    expect(offenders, `keys referenced but never written:\n${offenders.join('\n')}`).toEqual([]);
   });
 });

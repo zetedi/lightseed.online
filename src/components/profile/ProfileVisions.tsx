@@ -15,7 +15,8 @@ interface ProfileVisionsProps {
   onViewVision: (vision: Vision) => void;
   onCreateVision?: () => void;
   // Surfaces notices via the shell's shared dialog modal.
-  notify: (message: string) => void;
+  // The snackbar (ui/Toast): a saved setting says so in passing, never in a modal.
+  notify: (message: string, kind?: 'success' | 'error') => void;
 }
 
 // Visions tab — created + joined visions, with the AI alignment analysis.
@@ -53,7 +54,7 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
       setSynergies(results);
     } catch (e: any) {
       console.error('AI Analysis Error:', e);
-      notify(speak(e?.message || 'err_analysis'));
+      notify(speak(e?.message || 'err_analysis'), 'error');
     }
     setAnalyzing(false);
   };
@@ -62,7 +63,7 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
     if (visions.length < 2) {
       const data = await getMyVisions(uid);
       if (data.length < 2) {
-        notify(speak('resonance_two_visions'));
+        notify(speak('resonance_two_visions'), 'error');
         return;
       }
       setVisions(data);
@@ -72,7 +73,7 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
     }
   };
 
-  if (loading) return <div className="flex justify-center rounded-2xl border border-slate-100 bg-slate-50/50 py-16"><Loading /></div>;
+  if (loading) return <div className="flex justify-center rounded-2xl border border-slate-100 bg-slate-50/50 py-16 dark:bg-slate-900/50 dark:border-slate-800"><Loading /></div>;
 
   return (
     <div>
@@ -109,14 +110,14 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
           <h4 className="font-bold text-indigo-900 mb-3 flex items-center"><MahameruAvatar size={20} /> <span className="ml-2">{t('alignment_report')}</span></h4>
           <div className="space-y-3">
             {synergies.map((s, i) => (
-              <div key={i} className="bg-white p-3 rounded-lg shadow-sm border border-indigo-100/50">
+              <div key={i} className="bg-white p-3 rounded-lg shadow-sm border border-indigo-100/50 dark:bg-slate-900">
                 <div className="flex justify-between items-start">
-                  <div className="font-medium text-slate-800 text-sm">
+                  <div className="font-medium text-slate-800 text-sm dark:text-slate-100">
                     <span className="text-indigo-600">{s.vision1Title}</span> + <span className="text-indigo-600">{s.vision2Title}</span>
                   </div>
                   <span className="bg-emerald-100 text-emerald-700 text-xs px-2 py-0.5 rounded-full font-bold">{s.score}%</span>
                 </div>
-                <p className="text-xs text-slate-600 mt-2 leading-relaxed">{s.reasoning}</p>
+                <p className="text-xs text-slate-600 mt-2 leading-relaxed dark:text-slate-300">{s.reasoning}</p>
               </div>
             ))}
           </div>
@@ -153,7 +154,7 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
 
         {/* Joined Visions Section */}
         {joinedVisions.length > 0 && (
-          <div className="border-t border-slate-100 pt-6">
+          <div className="border-t border-slate-100 pt-6 dark:border-slate-800">
             <h4 className="text-sm font-bold text-amber-600 uppercase tracking-widest mb-4 flex items-center">
               <Icons.Globe /> <span className="ml-2">{t('joined_visions')}</span>
             </h4>

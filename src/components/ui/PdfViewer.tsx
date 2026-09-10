@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Icons } from './Icons';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // Does this engine paint a PDF inside a frame? Desktop browsers answer through
 // navigator.pdfViewerEnabled; the mobile ones either answer no or paint a single dead page
@@ -15,6 +16,7 @@ const canInline = () => navigator.pdfViewerEnabled !== false && window.matchMedi
 // browser's own engine renders the PDF (no bundled reader); the Download pill keeps the document
 // take-away-able everywhere.
 export const PdfViewer = ({ src, title, onClose }: { src: string; title: string; onClose: () => void }) => {
+    const { t } = useLanguage();
     const [inline, setInline] = useState(canInline);
     useEffect(() => {
         const mq = window.matchMedia(INLINE);
@@ -26,7 +28,7 @@ export const PdfViewer = ({ src, title, onClose }: { src: string; title: string;
     return createPortal(
         <div className="fixed inset-x-0 bottom-0 top-0 z-50 bg-slate-900/90 backdrop-blur-sm sm:top-20">
             <div className="mx-auto h-full w-full max-w-6xl px-2 py-2 sm:px-6 sm:py-6 lg:py-10">
-                <div className="relative flex h-full flex-col rounded-2xl bg-white p-3 pt-12 shadow-2xl sm:p-6 sm:pt-14">
+                <div className="relative flex h-full flex-col rounded-2xl bg-white p-3 pt-12 shadow-2xl sm:p-6 sm:pt-14 dark:bg-slate-900">
                     <p className="absolute left-4 right-40 top-4 truncate text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 sm:left-6 sm:top-5">
                         {title}
                     </p>
@@ -36,24 +38,23 @@ export const PdfViewer = ({ src, title, onClose }: { src: string; title: string;
                             download
                             className="absolute right-14 top-3 z-10 inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] font-bold text-emerald-700 transition-colors hover:bg-emerald-100"
                         >
-                            <Icons.Download size={14} /> Download
+                            <Icons.Download size={14} /> {t('download')}
                         </a>
                     )}
                     <button
                         onClick={onClose}
-                        title="Close"
-                        aria-label="Close the document"
+                        title={t('close')}
+                        aria-label={t('pdf_close_document')}
                         className="absolute right-3 top-3 z-10 rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
                     >
                         <Icons.Close />
                     </button>
                     {inline ? (
-                        <iframe src={src} title={title} className="min-h-0 w-full flex-1 rounded-xl border border-slate-100 bg-slate-50" />
+                        <iframe src={src} title={title} className="min-h-0 w-full flex-1 rounded-xl border border-slate-100 bg-slate-50 dark:bg-slate-900 dark:border-slate-800" />
                     ) : (
-                        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 rounded-xl border border-slate-100 bg-slate-50 px-6 text-center">
+                        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 rounded-xl border border-slate-100 bg-slate-50 px-6 text-center dark:bg-slate-900 dark:border-slate-800">
                             <p className="max-w-xs font-serif text-sm italic leading-relaxed text-slate-500">
-                                This browser cannot hold a document inside a page. Open it in its own
-                                tab, or keep the file.
+                                {t('pdf_no_inline')}
                             </p>
                             <div className="flex flex-col items-stretch gap-3">
                                 <a
@@ -62,14 +63,14 @@ export const PdfViewer = ({ src, title, onClose }: { src: string; title: string;
                                     rel="noreferrer"
                                     className="rounded-full bg-emerald-600 px-6 py-3 text-sm font-bold uppercase tracking-widest text-white shadow transition-colors hover:bg-emerald-700"
                                 >
-                                    Open the document
+                                    {t('pdf_open_document')}
                                 </a>
                                 <a
                                     href={src}
                                     download
-                                    className="inline-flex items-center justify-center gap-2 rounded-full border border-emerald-200 bg-white px-6 py-3 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-50"
+                                    className="inline-flex items-center justify-center gap-2 rounded-full border border-emerald-200 bg-white px-6 py-3 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-50 dark:bg-slate-900"
                                 >
-                                    <Icons.Download size={16} /> Download
+                                    <Icons.Download size={16} /> {t('download')}
                                 </a>
                             </div>
                         </div>

@@ -33,6 +33,8 @@ interface BedProfileProps {
 }
 
 const VIS: Array<Lifetree['visibility']> = ['public', 'node', 'private'];
+// The visibility words: the stored value is an identifier, the option is a word.
+const VIS_CHIP_KEY = { public: 'vis_public_chip', node: 'vis_node_chip', private: 'vis_private_chip' } as const;
 
 export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree, onViewPulse, onUpdate, onDelete }) => {
   const { t } = useLanguage();
@@ -110,7 +112,7 @@ export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree
 
   const sections: BeingSection[] = [
     {
-      key: 'calendar', label: 'Calendar', icon: <Icons.Moon />, render: () => (
+      key: 'calendar', label: t('calendar'), icon: <Icons.Moon />, render: () => (
         <BedCalendar bed={bed} onViewTree={onViewTree} />
       ),
     },
@@ -129,7 +131,7 @@ export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree
       ),
     },
     {
-      key: 'carers', label: 'Circle', icon: <Icons.Venn />, render: () => (
+      key: 'carers', label: t('circle'), icon: <Icons.Venn />, render: () => (
         <TreeCircle
           tree={bed}
           currentUserId={uid}
@@ -148,32 +150,32 @@ export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree
     },
     {
       key: 'details', label: t('bed_details'), icon: <Icons.Info />, render: () => (
-        <div className="space-y-4 rounded-2xl border border-slate-100 bg-white p-6">
+        <div className="space-y-4 rounded-2xl border border-slate-100 bg-white p-6 dark:bg-slate-900 dark:border-slate-800">
           <div>
             <div className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('location')}</div>
-            <div className="mt-1 flex items-center gap-2 text-sm text-slate-700">
+            <div className="mt-1 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
               <span className="text-slate-400 [&>svg]:h-4 [&>svg]:w-4">{housed ? <Icons.Building /> : <Icons.Moon />}</span>
               {housed
-                ? <span>{t('housed')}: {houseName || 'a Light House'}</span>
+                ? <span>{t('housed')}: {houseName || t('a_light_house')}</span>
                 : <span>{t('loose')}{bed.locationName ? `: ${bed.locationName}` : bed.latitude != null ? `: ${bed.latitude.toFixed(3)}, ${bed.longitude?.toFixed(3)}` : ''}</span>}
             </div>
           </div>
           {bed.body && (
             <div>
               <div className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('body')}</div>
-              <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600">{bed.body}</p>
+              <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-300">{bed.body}</p>
             </div>
           )}
           {isOwner && (
-            <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 pt-4">
+            <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
               <label className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('visibility')}</label>
               <select value={vis} onChange={e => changeVisibility(e.target.value as Lifetree['visibility'])}
-                className="rounded-lg border border-slate-200 px-2 py-1 text-sm text-slate-700">
-                {VIS.map(v => <option key={v} value={v}>{v}</option>)}
+                className="rounded-lg border border-slate-200 px-2 py-1 text-sm text-slate-700 dark:text-slate-200 dark:border-slate-700">
+                {VIS.map(v => <option key={v} value={v}>{t(VIS_CHIP_KEY[v as keyof typeof VIS_CHIP_KEY])}</option>)}
               </select>
               <button type="button" onClick={remove} disabled={busy}
                 className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-100 disabled:opacity-50">
-                <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Trash /></span>Release
+                <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Trash /></span>{t('release')}
               </button>
             </div>
           )}
@@ -192,7 +194,7 @@ export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree
         avatar: (
           <div className="relative">
             {heroImg
-              ? <Picture size={480} src={heroImg} alt={bed.name} className="h-16 w-16 rounded-full border-4 border-white bg-white object-cover shadow-xl md:h-24 md:w-24" />
+              ? <Picture size={480} src={heroImg} alt={bed.name} className="h-16 w-16 rounded-full border-4 border-white bg-white object-cover shadow-xl md:h-24 md:w-24 dark:bg-slate-900" />
               : <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-gradient-to-br from-indigo-400 to-violet-500 text-white shadow-xl md:h-24 md:w-24 [&>svg]:h-8 [&>svg]:w-8"><Icons.Moon /></div>}
             {bed.validated && <div className="absolute -bottom-1 -right-1"><ValidationBadge compact /></div>}
           </div>
@@ -206,7 +208,7 @@ export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree
             </span>
             <BeingQr lid={bed.lid} name={bed.name} savedHref={bed.qr?.href} canMint={isOwner}
               onMint={(href) => mintBeingQr('lifetrees', bed.id, href)} className="text-white/70" />
-            <LoveButton collection="lifetrees" id={bed.id} initialCount={bed.loveCount || 0} className="rounded-full bg-white/15 px-2 py-0.5 text-white hover:bg-white/25" />
+            <LoveButton collection="lifetrees" id={bed.id} initialCount={bed.loveCount || 0} className="rounded-full bg-white/15 px-2 py-0.5 text-white hover:bg-white/25 dark:bg-slate-900/15" />
           </>
         ),
       }}

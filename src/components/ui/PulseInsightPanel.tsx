@@ -29,7 +29,7 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
 
     const handleTranslate = async () => {
         if (!activeTree) {
-            setError("You must have an active Lifetree to translate.");
+            setError('translate_need_tree');
             return;
         }
 
@@ -119,30 +119,32 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
                         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
                             {/* The five distinctions (NVC) — legacy single-blob readings fall into
                                 the first layer so old pulses keep rendering. */}
-                            <div className="bg-white/10 p-4 rounded-xl border border-white/20 space-y-2">
+                            <div className="bg-white/10 p-4 rounded-xl border border-white/20 space-y-2 dark:bg-slate-900/10">
                                 <span className="text-xs uppercase tracking-widest text-indigo-300 font-bold">{speak(spokenLine('reading_depth', { depth: pulse.aiInterpretation.depth }))}</span>
                                 {/* Provenance — a persisted reading names its lens (the Carry honesty law). */}
                                 {(pulse.aiInterpretation.readByTreeName || pulse.aiInterpretation.intelligenceName) && (
                                     <p className="text-[10px] text-indigo-200/70">
-                                        read by {pulse.aiInterpretation.readByTreeName || 'a tree'} · through {pulse.aiInterpretation.intelligenceName || 'an intelligence'}
+                                        {t('reading_provenance')
+                                            .replace('{tree}', pulse.aiInterpretation.readByTreeName || t('a_tree_lower'))
+                                            .replace('{intel}', pulse.aiInterpretation.intelligenceName || t('an_intelligence'))}
                                         {pulse.aiInterpretation.readAt ? ` · ${new Date(pulse.aiInterpretation.readAt).toLocaleDateString()}` : ''}
                                     </p>
                                 )}
                                 {([
-                                    ['happened', pulse.aiInterpretation.happened ?? pulse.aiInterpretation.interpretation],
-                                    ['feels', pulse.aiInterpretation.feeling],
-                                    ['may assume · unconfirmed', pulse.aiInterpretation.inference],
-                                    ['needs', pulse.aiInterpretation.need],
-                                    ['asks', pulse.aiInterpretation.asks ?? pulse.aiInterpretation.growthSuggestion],
-                                ] as [string, string | undefined][]).filter(([, v]) => v && v.trim()).map(([label, v]) => (
-                                    <p key={label} className="text-sm font-medium leading-relaxed">
+                                    ['happened', t('nvc_happened'), pulse.aiInterpretation.happened ?? pulse.aiInterpretation.interpretation],
+                                    ['feels', t('nvc_feels'), pulse.aiInterpretation.feeling],
+                                    ['assume', t('nvc_assume'), pulse.aiInterpretation.inference],
+                                    ['needs', t('nvc_needs'), pulse.aiInterpretation.need],
+                                    ['asks', t('nvc_asks'), pulse.aiInterpretation.asks ?? pulse.aiInterpretation.growthSuggestion],
+                                ] as [string, string, string | undefined][]).filter(([, , v]) => v && v.trim()).map(([slot, label, v]) => (
+                                    <p key={slot} className="text-sm font-medium leading-relaxed">
                                         <span className="mr-1 text-[10px] font-bold uppercase tracking-widest text-indigo-300/80">{label}</span> {v}
                                     </p>
                                 ))}
                             </div>
 
                             {pulse.aiInterpretation.alternatives && pulse.aiInterpretation.alternatives.length > 0 && (
-                                <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+                                <div className="bg-white/5 p-4 rounded-xl border border-white/10 dark:bg-slate-900/5">
                                     <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold block mb-2">{t('also_possible')}</span>
                                     <ul className="text-xs text-slate-300 space-y-1 list-disc list-inside pl-4">
                                         {pulse.aiInterpretation.alternatives.map((alt, i) => (
@@ -161,16 +163,14 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
                     ) : (
                         <div className="space-y-6">
                             <p className="text-sm text-indigo-200 font-light">
-                                {tokensOn
-                                    ? 'Use AI tokens (Attention-Energy) to translate this pulse and reveal deeper underlying intent, emotion, or systemic context.'
-                                    : 'Translate this pulse to reveal its deeper underlying intent, emotion, or systemic context.'}
+                                {tokensOn ? t('translate_intro_tokens') : t('translate_intro')}
                             </p>
 
                             {/* Depth = how much of the being's living context the reading draws on
                                 (never how speculative it may get) — see domain/translation. */}
                             <div className="space-y-3">
                                 <div className="flex justify-between text-xs font-bold text-slate-400 uppercase">
-                                    <span>Context Depth</span>
+                                    <span>{t('context_depth')}</span>
                                     <span>{depth} / 4</span>
                                 </div>
                                 <input
@@ -181,20 +181,20 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
                                     className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
                                 />
                                 <div className="text-[10px] text-slate-400 flex justify-between">
-                                    <span>1: Message alone</span>
-                                    <span>4: The subgraph</span>
+                                    <span>{t('depth_1_label')}</span>
+                                    <span>{t('depth_4_label')}</span>
                                 </div>
                             </div>
 
                             {tokensOn && (
                                 <div className="bg-black/20 p-4 rounded-xl border border-white/10 flex items-center justify-between">
                                     <div>
-                                        <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Energy Cost</div>
-                                        <div className="text-lg font-mono font-bold text-amber-400">{depth} AI Tokens</div>
+                                        <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">{t('energy_cost')}</div>
+                                        <div className="text-lg font-mono font-bold text-amber-400">{t('ai_tokens_n').replace('{n}', String(depth))}</div>
                                     </div>
                                     {activeTree && (
                                         <div className="text-right">
-                                            <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Your Balance</div>
+                                            <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">{t('your_balance')}</div>
                                             <div className="text-lg font-mono font-bold text-white">{activeTree.aiTokenBalance || 0}</div>
                                         </div>
                                     )}
@@ -209,7 +209,7 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
                                 className="mx-auto bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-10 py-3 rounded-xl font-bold text-sm shadow-lg shadow-indigo-900/50 transition-all active:scale-95 flex justify-center items-center gap-2"
                             >
                                 {isTranslating ? <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" /> : <Icons.Intelligence />}
-                                {isTranslating ? "Translating..." : "Translate Pulse"}
+                                {isTranslating ? t('translating') : t('translate_pulse')}
                             </button>
 
                             {!activeTree && <p className="text-[10px] text-center text-rose-400">{t('translate_need_tree')}</p>}
@@ -221,20 +221,18 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
             </div>
 
             {/* Immutable chain Ledger info - Repurposed for Memory / Validation */}
-            <div className="bg-white border border-slate-200 p-6 rounded-2xl">
+            <div className="bg-white border border-slate-200 p-6 rounded-2xl dark:bg-slate-900 dark:border-slate-700">
                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center">
                     <Icons.ShieldCheck />
-                    <span className="ml-2">Network Memory</span>
+                    <span className="ml-2">{t('network_memory')}</span>
                 </h3>
                 <div className="space-y-4">
-                    <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-                        <span className="text-sm text-slate-600">Validation Score</span>
+                    <div className="flex justify-between items-center border-b border-slate-100 pb-3 dark:border-slate-800">
+                        <span className="text-sm text-slate-600 dark:text-slate-300">{t('validation_score')}</span>
                         <span className="font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">{pulse.validationScore || pulse.loveCount || 0}</span>
                     </div>
                     <p className="text-xs text-slate-500 italic">
-                        {tokensOn
-                            ? 'Only validated understanding becomes memory. When you validate this pulse, you contribute to community coherence and earn AI tokens.'
-                            : 'Only validated understanding becomes memory. When you validate this pulse, you contribute to community coherence.'}
+                        {tokensOn ? t('memory_note_tokens') : t('memory_note')}
                     </p>
                 </div>
             </div>

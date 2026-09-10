@@ -2,11 +2,13 @@ import { addDoc, serverTimestamp, doc, updateDoc, Timestamp } from 'firebase/fir
 import { httpsCallable } from 'firebase/functions';
 import { type Lifetree } from '../../types';
 import { uuidv7 } from '../../utils/id';
-import { daysOverdue, computeNextDueMillis, wateringAlertedToday, type TreeStage, type WateringSchedule, type WateringAnalysis } from '../../domain/watering';
+import { daysOverdue, computeNextDueMillis, wateringAlertedToday, standingAlertId, type TreeStage, type WateringSchedule, type WateringAnalysis } from '../../domain/watering';
 import { buildGroupThreadId } from '../../utils/reachPermissions';
 import { db, functions, pulsesCollection } from './core';
 import { mintPulse, resolveCircleUids, sendThreadMessage } from './pulses';
 import { uploadImage } from './media';
+import { announce } from '../refreshBus';
+import { myNaming } from './accounts';
 
 // --- Watering: scheduled caring of a (usually guarded) tree -----------------------------
 // Watering is caring made literal. The owner sets a growth stage (potted/planted are cared for on
@@ -76,6 +78,10 @@ const postWateredNotice = async (
                 sender,
                 text,
             });
+            // An open inbox is a mounted view, and this message landed in a thread it is
+            // already showing — tell the bus, or the guardians' thread keeps its stale alert
+            // until the reader leaves the tab and comes back.
+            announce('reaches', tree.id);
         }
     } catch (e) { console.warn('Watered notice could not be posted', e); }
 };
@@ -89,18 +95,21 @@ export const markWateredOffChain = async (
     sender: { uid: string; displayName?: string | null; photoURL?: string | null },
 ) => {
     const now = Date.now();
+    // The witness is named by their public name (domain/publicName): an anonymous being's tree
+    // waters, not the being — the uid beside it stays, so the record is never anonymous to the rules.
+    const naming = await myNaming();
     const intervalDays = tree.watering?.mode === 'scheduled' ? tree.watering?.intervalDays : undefined;
     const update: Record<string, any> = {
         'watering.lastWateredAt': Timestamp.fromMillis(now),
         'watering.lastWateredBy': sender.uid,
-        'watering.lastWateredByName': sender.displayName || '',
+        'watering.lastWateredByName': naming.name || '',
         'watering.overdue': false,
         lastCaredAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
     };
     if (intervalDays) update['watering.nextDueAt'] = Timestamp.fromMillis(computeNextDueMillis(now, intervalDays));
     await updateDoc(doc(db, 'lifetrees', tree.id), update);
-    await postWateredNotice(tree, sender, `💧 ${sender.displayName || 'A guardian'} watered me — thank you!`);
+    await postWateredNotice(tree, sender, `💧 ${naming.name || 'A guardian'} watered me — thank you!`);
 };
 
 // Record a watering: upload proof, mint a GROWTH pulse carrying the `watering` flag + the
@@ -127,11 +136,12 @@ export const recordWatering = async ({
     // block, so the tree can never be left "watered on the chain but still overdue". mintPulse
     // already sets lastCaredAt (GROWTH), so living validation re-lights automatically.
     const now = Date.now();
+    const naming = await myNaming();
     const interval = tree.watering?.mode === 'scheduled' ? tree.watering?.intervalDays : undefined;
     const wateringUpdate: Record<string, any> = {
         'watering.lastWateredAt': Timestamp.fromMillis(now),
         'watering.lastWateredBy': sender.uid,
-        'watering.lastWateredByName': sender.displayName || '',
+        'watering.lastWateredByName': naming.name || '',
         'watering.overdue': false,
     };
     if (interval) wateringUpdate['watering.nextDueAt'] = Timestamp.fromMillis(computeNextDueMillis(now, interval));
@@ -154,12 +164,12 @@ export const recordWatering = async ({
         },
         authorId: sender.uid,
         authorName: tree.name,
-        authorPersonName: sender.displayName || undefined,
+        authorPersonName: naming.personName,
         authorPhoto: tree.imageUrl || sender.photoURL || undefined,
     }, wateringUpdate);
 
     // Let the guardians' thread know — a normal (newest) message clears the blue alert border.
-    await postWateredNotice(tree, sender, `🌱 ${sender.displayName || 'A guardian'} watered me — thank you! (${confirmedBy === 'ai' ? 'confirmed by AI' : 'awaiting confirmation'})`);
+    await postWateredNotice(tree, sender, `🌱 ${naming.name || 'A guardian'} watered me — thank you! (${confirmedBy === 'ai' ? 'confirmed by AI' : 'awaiting confirmation'})`);
 
     return { imageUrl, confirmedBy };
 };
@@ -200,7 +210,7 @@ export const requestStewardship = async (
         },
         fromTree: tree,
         sender,
-        text: `🌿 ${sender.displayName || 'A guardian'} asks to become a steward of ${tree.name}, to help care its care. (The owner can invite from the Circle.)`,
+        text: `🌿 ${(await myNaming()).name || 'A guardian'} asks to become a steward of ${tree.name}, to help care its care. (The owner can invite from the Circle.)`,
     });
 };
 
@@ -237,7 +247,21 @@ export const sendWateringAlert = async (
         'watering.lastAlertAt': serverTimestamp(),
         'watering.alertThreadId': threadId,
     });
-    await addDoc(pulsesCollection, {
+    // ONE STANDING ASK (domain/watering): while the tree's ask still stands, rewrite it — a
+    // week of thirst is one line that keeps count, not seven identical lines. The rewrite is
+    // allowed by the careAlert branch in the rules; if it is refused (an older ask whose author
+    // was someone else, a pruned pulse), we fall through and raise a new ask.
+    const standing = standingAlertId(tree);
+    if (standing) {
+        try {
+            await updateDoc(doc(db, 'pulses', standing), { body: text, content: text, createdAt: serverTimestamp() });
+            await updateDoc(doc(db, 'lifetrees', tree.id), { 'watering.lastAlertAt': serverTimestamp() });
+            announce('reaches', tree.id);
+            return true;
+        } catch { /* the ask could not be rewritten — speak a new one below */ }
+    }
+
+    const alert = await addDoc(pulsesCollection, {
         lid: uuidv7(),
         lifetreeId: tree.id,
         type: 'reach',
@@ -266,6 +290,9 @@ export const sendWateringAlert = async (
         hash: uuidv7(),              // a plain unique id — never chain-verified
         createdAt: serverTimestamp(),
     });
+    // Remember WHICH message the ask is, so the next thirsty day rewrites this one.
+    await updateDoc(doc(db, 'lifetrees', tree.id), { 'watering.alertPulseId': alert.id });
+    announce('reaches', tree.id);
     return true;
 };
 

@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavArrow, NAV_ARROW_PREV_X, NAV_ARROW_NEXT_X } from './NavArrow';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // A responsive, full-width text carousel of reflections — shown to signed-out visitors in place
 // of the home/observatory cards. Auto-advances, but pauses on hover/focus, honours
 // prefers-reduced-motion, supports keyboard (arrows/dots), and swipe on touch. Kept compact so
 // the hero + footer fit one laptop viewport.
 export const QuoteCarousel = ({ quotes, intervalMs = 8000 }: { quotes: string[]; intervalMs?: number }) => {
+  const { t } = useLanguage();
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
   const touchX = useRef<number | null>(null);
@@ -26,7 +28,7 @@ export const QuoteCarousel = ({ quotes, intervalMs = 8000 }: { quotes: string[];
   return (
     <section
       aria-roledescription="carousel"
-      aria-label="Lightseed reflections"
+      aria-label={t('reflections_aria')}
       className="relative w-full rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-sky-50 px-8 py-5 shadow-sm sm:px-10 sm:py-16 dark:border-emerald-900/40 dark:from-slate-900 dark:via-slate-900 dark:to-sky-950/60 dark:shadow-none"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
@@ -55,12 +57,12 @@ export const QuoteCarousel = ({ quotes, intervalMs = 8000 }: { quotes: string[];
 
       {quotes.length > 1 && (
         <>
-          <NavArrow dir="left" label="Previous reflection" onClick={() => go(i - 1)} pos={NAV_ARROW_PREV_X} />
-          <NavArrow dir="right" label="Next reflection" onClick={() => go(i + 1)} pos={NAV_ARROW_NEXT_X} />
+          <NavArrow dir="left" label={t('reflection_prev')} onClick={() => go(i - 1)} pos={NAV_ARROW_PREV_X} />
+          <NavArrow dir="right" label={t('reflection_next')} onClick={() => go(i + 1)} pos={NAV_ARROW_NEXT_X} />
 
           <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:mt-5">
             {quotes.map((_, n) => (
-              <button key={n} onClick={() => go(n)} aria-label={`Reflection ${n + 1}`} aria-current={n === i}
+              <button key={n} onClick={() => go(n)} aria-label={t('reflection_n').replace('{n}', String(n + 1))} aria-current={n === i}
                 className={`h-2 rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${n === i ? 'w-6 bg-emerald-600 dark:bg-emerald-400' : 'w-2 bg-emerald-200 hover:bg-emerald-300 dark:bg-emerald-800 dark:hover:bg-emerald-700'}`} />
             ))}
           </div>

@@ -11,11 +11,12 @@ import { speak, spokenLine } from '../../utils/translations';
 import { WitnessWaterings, awaitingWitness } from './WitnessWaterings';
 
 // The three growth stages, in growing order — a seed in its pot, in the ground but still
-// caredFor, and finally self-sustaining. The first two are watered on a schedule.
-const STAGE_META: { key: TreeStage; label: string; hint: string; icon: React.ReactNode }[] = [
-    { key: 'potted', label: 'Seed in a pot', hint: 'A seed growing in its pot, the most fragile stage.', icon: <Icons.Pot /> },
-    { key: 'planted', label: 'In the ground', hint: 'Planted out, but still needs regular care.', icon: <Icons.Sprout /> },
-    { key: 'self_sustaining', label: 'Self-sustaining', hint: 'Established: no scheduled watering.', icon: <Icons.Tree /> },
+// caredFor, and finally self-sustaining. The first two are watered on a schedule. The words are
+// KEYS: this table lives at module scope, where no hook speaks, so the view says them with t().
+const STAGE_META: { key: TreeStage; labelKey: 'stage_potted' | 'stage_planted' | 'stage_self'; hintKey: 'stage_potted_hint' | 'stage_planted_hint' | 'stage_self_hint'; icon: React.ReactNode }[] = [
+    { key: 'potted', labelKey: 'stage_potted', hintKey: 'stage_potted_hint', icon: <Icons.Pot /> },
+    { key: 'planted', labelKey: 'stage_planted', hintKey: 'stage_planted_hint', icon: <Icons.Sprout /> },
+    { key: 'self_sustaining', labelKey: 'stage_self', hintKey: 'stage_self_hint', icon: <Icons.Tree /> },
 ];
 
 // The tree's or the thrown error's message, falling back when there is none.
@@ -110,9 +111,11 @@ export const TreeCare: React.FC<TreeCareProps> = ({
             onUpdate?.({ watering });
             const iv = watering.intervalDays || 0;
             setWaterMsg(waterStage === 'self_sustaining'
-                ? 'Marked self-sustaining. It grows on its own now.'
-                : `${waterStage === 'potted' ? 'Seed in its pot' : 'In the ground'}: watering every ${iv} day${iv > 1 ? 's' : ''}.`);
-        } catch (e) { setWaterMsg(errMsg(e, 'Could not save the schedule.')); }
+                ? t('water_marked_self')
+                : t('water_schedule_set')
+                    .replace('{stage}', t(waterStage === 'potted' ? 'stage_potted' : 'stage_planted'))
+                    .replace('{n}', String(iv)));
+        } catch (e) { setWaterMsg(errMsg(e, 'err_schedule_save')); }
         setWaterBusy(false);
     };
 
@@ -134,8 +137,8 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                 lastWateredByName: currentUserName || '',
                 ...(iv ? { nextDueAt: Timestamp.fromMillis(computeNextDueMillis(now, iv)) } : {}),
             } });
-            setWaterMsg('Watered today 💧 (kept off the chain).');
-        } catch (e) { setWaterMsg(errMsg(e, 'Could not mark watered.')); }
+            setWaterMsg(t('watered_offchain'));
+        } catch (e) { setWaterMsg(errMsg(e, 'err_watered_mark')); }
         setWaterBusy(false);
     };
     const handleWaterFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -144,9 +147,9 @@ export const TreeCare: React.FC<TreeCareProps> = ({
         if (!file || !currentUserId) return;
         setWaterBusy(true);
         try {
-            setWaterMsg('Reading your photo…');
+            setWaterMsg(t('water_reading_photo'));
             const img = await fileToWebpBase64(file);
-            setWaterMsg('The witness is looking…');
+            setWaterMsg(t('water_witness_looking'));
             const analysis = await analyzeWateringPhoto(img, tree);
             const auto = analysis.watering && (analysis.confidence || 0) >= 70;
             setWaterMsg(auto ? t('water_confirmed_ai') : t('water_recording'));
@@ -162,10 +165,9 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                 ...(iv ? { nextDueAt: Timestamp.fromMillis(computeNextDueMillis(now, iv)) } : {}),
             } });
             onChainRefresh();
-            setWaterMsg(confirmedBy === 'ai'
-                ? `Watered 💧, confirmed by AI. ${analysis.note}`
-                : `Watered 💧, awaiting a guardian to confirm. ${analysis.note}`);
-        } catch (e) { setWaterMsg(errMsg(e, 'Could not record the watering.')); }
+            setWaterMsg(t(confirmedBy === 'ai' ? 'water_done_ai' : 'water_done_awaiting')
+                .replace('{note}', analysis.note || ''));
+        } catch (e) { setWaterMsg(errMsg(e, 'err_watering_record')); }
         setWaterBusy(false);
     };
 
@@ -175,8 +177,8 @@ export const TreeCare: React.FC<TreeCareProps> = ({
         setWaterBusy(true); setWaterMsg(null);
         try {
             await requestStewardship(tree, sender);
-            setWaterMsg('Your ask is with the circle 🌿 The owner can invite you as a steward.');
-        } catch (e) { setWaterMsg(errMsg(e, 'Could not reach the circle.')); }
+            setWaterMsg(t('steward_ask_sent'));
+        } catch (e) { setWaterMsg(errMsg(e, 'err_circle_reach')); }
         setWaterBusy(false);
     };
 
@@ -185,9 +187,9 @@ export const TreeCare: React.FC<TreeCareProps> = ({
         setWaterBusy(true); setWaterMsg(null);
         try {
             const ok = await sendWateringAlert(tree, sender);
-            setWaterMsg(ok ? 'The guardians have been asked to water 💧' : 'No guardians to notify yet. Invite some to the circle.');
+            setWaterMsg(t(ok ? 'guardians_asked_water' : 'guardians_none_notify'));
             if (ok) onUpdate?.({ watering: { ...(tree.watering || {}), overdue: true } });
-        } catch (e) { setWaterMsg(errMsg(e, 'Could not send the reminder.')); }
+        } catch (e) { setWaterMsg(errMsg(e, 'err_reminder_send')); }
         setWaterBusy(false);
     };
 
@@ -195,68 +197,68 @@ export const TreeCare: React.FC<TreeCareProps> = ({
     const stageEmoji = stage === 'potted' ? '🌱' : '💧';
 
     return (
-        <SectionCard title="Watering" icon={<Icons.Droplet />} className={overdue ? 'ring-2 ring-sky-300' : ''}>
+        <SectionCard title={t('watering')} icon={<Icons.Droplet />} className={overdue ? 'ring-2 ring-sky-300' : ''}>
             <div className="mb-4 flex items-start justify-between gap-3">
                 <div className="text-sm text-sky-800/90">
                     {selfSustaining ? (
-                        <p>🌳 Self-sustaining. This tree needs no scheduled watering.</p>
+                        <p>{t('water_self_note')}</p>
                     ) : scheduled ? (
                         overdue ? (
-                            <p className="font-semibold text-sky-700">{stageEmoji} Thirsty: {overByDays > 0 ? `${overByDays} day${overByDays > 1 ? 's' : ''} overdue` : 'watering due today'}.</p>
+                            <p className="font-semibold text-sky-700">{stageEmoji} {t('water_thirsty').replace('{when}', overByDays > 0 ? t('water_days_overdue').replace('{n}', String(overByDays)) : t('water_due_today'))}</p>
                         ) : (
-                            <p>{stageEmoji} {stage === 'potted' ? 'A seed in its pot: next' : 'Next'} watering in {dueInDays} day{dueInDays !== 1 ? 's' : ''}.</p>
+                            <p>{stageEmoji} {t(stage === 'potted' ? 'water_next_potted' : 'water_next').replace('{n}', String(dueInDays))}</p>
                         )
                     ) : (
                         <p>{t('no_schedule')}</p>
                     )}
                     {/* The rhythm, spelled out for readers without the schedule editor. */}
                     {!canManageSchedule && scheduled && !selfSustaining && tree.watering?.intervalDays && (
-                        <p className="mt-1 text-xs text-sky-700/70">Watered every {tree.watering.intervalDays} day{tree.watering.intervalDays !== 1 ? 's' : ''}.</p>
+                        <p className="mt-1 text-xs text-sky-700/70">{t('watered_every_n').replace('{n}', String(tree.watering.intervalDays))}</p>
                     )}
                     {lastWateredLine && <p className="mt-1 text-xs text-sky-700/70">{lastWateredLine}</p>}
                 </div>
                 {/* The primary action sits right beside the status — water this tree now. */}
                 {canWater && !selfSustaining && (
                     <button type="button" onClick={waterOnChain ? handleWaterPick : handleWaterBypass} disabled={waterBusy} className="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-full bg-sky-600 px-4 py-2 text-sm font-bold text-white shadow transition-all hover:bg-sky-700 active:scale-95 disabled:opacity-50">
-                        <Icons.Droplet /> <span className="whitespace-nowrap">I Watered Today</span>
+                        <Icons.Droplet /> <span className="whitespace-nowrap">{t('i_watered_today')}</span>
                     </button>
                 )}
             </div>
 
             {canManageSchedule && (
-                <div className="mb-4 space-y-3 rounded-xl border border-sky-200 bg-white p-4">
+                <div className="mb-4 space-y-3 rounded-xl border border-sky-200 bg-white p-4 dark:bg-slate-900">
                     {/* The growth journey: pot → ground → self-sustaining. Pick where the tree is. */}
-                    <div role="radiogroup" aria-label="Growth stage" className="grid grid-cols-3 gap-2">
+                    <div role="radiogroup" aria-label={t('growth_stage')} className="grid grid-cols-3 gap-2">
                         {STAGE_META.map(s => (
                             <button
                                 key={s.key}
                                 type="button"
                                 role="radio"
                                 aria-checked={waterStage === s.key}
-                                title={s.hint}
+                                title={t(s.hintKey)}
                                 onClick={() => setWaterStage(s.key)}
                                 className={`flex flex-col items-center gap-1.5 rounded-xl border-2 px-2 py-3 text-center transition-all ${waterStage === s.key
                                     ? (s.key === 'self_sustaining' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-sky-500 bg-sky-50 text-sky-700')
                                     : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200 hover:text-slate-500'}`}
                             >
                                 {s.icon}
-                                <span className="text-[10px] font-bold uppercase tracking-wide leading-tight">{s.label}</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wide leading-tight">{t(s.labelKey)}</span>
                             </button>
                         ))}
                     </div>
-                    <p className="text-center text-xs text-slate-500">{STAGE_META.find(s => s.key === waterStage)?.hint}</p>
+                    <p className="text-center text-xs text-slate-500">{(() => { const h = STAGE_META.find(s => s.key === waterStage)?.hintKey; return h ? t(h) : ''; })()}</p>
                     {waterStage !== 'self_sustaining' && (
                         <div className="flex items-center justify-center gap-2 text-sm text-sky-800">
                             <span>{t('water_every')}</span>
                             <div className="inline-flex items-center overflow-hidden rounded-lg border border-sky-200">
-                                <button type="button" aria-label="Fewer days" onClick={() => setWaterInterval(v => Math.max(1, v - 1))} className="px-3 py-1.5 font-bold text-sky-700 hover:bg-sky-50">−</button>
+                                <button type="button" aria-label={t('fewer_days')} onClick={() => setWaterInterval(v => Math.max(1, v - 1))} className="px-3 py-1.5 font-bold text-sky-700 hover:bg-sky-50">−</button>
                                 <span className="w-10 text-center font-bold tabular-nums">{waterInterval}</span>
-                                <button type="button" aria-label="More days" onClick={() => setWaterInterval(v => Math.min(365, v + 1))} className="px-3 py-1.5 font-bold text-sky-700 hover:bg-sky-50">+</button>
+                                <button type="button" aria-label={t('more_days')} onClick={() => setWaterInterval(v => Math.min(365, v + 1))} className="px-3 py-1.5 font-bold text-sky-700 hover:bg-sky-50">+</button>
                             </div>
-                            <span>day{waterInterval !== 1 ? 's' : ''}</span>
+                            <span>{t('days_unit')}</span>
                         </div>
                     )}
-                    <button type="button" onClick={handleSaveSchedule} disabled={waterBusy} className="ml-auto block rounded-lg bg-sky-600 px-8 py-2 text-sm font-bold text-white hover:bg-sky-700 disabled:opacity-50">{waterBusy ? 'Saving…' : 'Save'}</button>
+                    <button type="button" onClick={handleSaveSchedule} disabled={waterBusy} className="ml-auto block rounded-lg bg-sky-600 px-8 py-2 text-sm font-bold text-white hover:bg-sky-700 disabled:opacity-50">{waterBusy ? t('saving') : t('save')}</button>
                 </div>
             )}
 
@@ -269,33 +271,31 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                     <div className="flex flex-wrap items-center gap-3">
                         {/* The water action moved up beside the status; its options stay here —
                             off-chain by default; opting in takes a photo + mints a growth block. */}
-                        <label className="flex cursor-pointer items-center gap-2 text-xs leading-tight text-sky-700/80" title="For waterings worth remembering.">
+                        <label className="flex cursor-pointer items-center gap-2 text-xs leading-tight text-sky-700/80" title={t('water_photo_title')}>
                             <input type="checkbox" checked={waterOnChain} onChange={e => setWaterOnChain(e.target.checked)} className="accent-sky-600" />
                             <span>
                                 <span className="block">{t('add_photo_proof')}</span>
-                                <span className="block">mint a growth block on the tree's chain.</span>
+                                <span className="block">{t('water_photo_mints')}</span>
                             </span>
                         </label>
                         {isOwner && overdue && !wateringAlertedToday(tree) && (
-                            <button type="button" onClick={handleRemindGuardians} disabled={waterBusy} className="inline-flex items-center gap-1 rounded-full border border-sky-300 bg-white px-3 py-2 text-xs font-bold text-sky-700 hover:bg-sky-100 disabled:opacity-50">{t('remind_guardians')} 💧</button>
+                            <button type="button" onClick={handleRemindGuardians} disabled={waterBusy} className="inline-flex items-center gap-1 rounded-full border border-sky-300 bg-white px-3 py-2 text-xs font-bold text-sky-700 hover:bg-sky-100 disabled:opacity-50 dark:bg-slate-900">{t('remind_guardians')} 💧</button>
                         )}
                     </div>
                 </div>
             )}
 
             {canAskStewardship && (
-                <div className="mb-4 rounded-xl border border-sky-100 bg-white/70 p-4">
+                <div className="mb-4 rounded-xl border border-sky-100 bg-white/70 p-4 dark:bg-slate-900/70">
                     <p className="text-xs leading-relaxed text-sky-800/80">
-                        You guard this tree, so you see its care rhythm here. Caring it (watering,
-                        setting the schedule) belongs to its circle: the owner, co-owners and stewards.
-                        If you want to help care it, ask to become a steward.
+                        {t('guard_care_note')}
                     </p>
                     <button
                         type="button"
                         onClick={handleAskStewardship}
                         disabled={waterBusy}
-                        className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-sky-300 bg-white px-4 py-2 text-xs font-bold text-sky-700 hover:bg-sky-50 disabled:opacity-50"
-                    >🌿 Ask to be a steward</button>
+                        className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-sky-300 bg-white px-4 py-2 text-xs font-bold text-sky-700 hover:bg-sky-50 disabled:opacity-50 dark:bg-slate-900"
+                    >🌿 {t('ask_be_steward')}</button>
                 </div>
             )}
 
@@ -312,7 +312,9 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                 />
             )}
 
-            {waterMsg && <p className="mt-3 text-xs text-sky-700">{waterMsg}</p>}
+            {/* speak(): a message may be a thrown KEY (the services throw keys) or an already-
+                spoken sentence — the boundary says the first and passes the second through. */}
+            {waterMsg && <p className="mt-3 text-xs text-sky-700">{speak(waterMsg)}</p>}
         </SectionCard>
     );
 };

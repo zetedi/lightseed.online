@@ -4,6 +4,7 @@ import { marked } from 'marked';
 import { Icons } from '../ui/Icons';
 import { PdfViewer } from '../ui/PdfViewer';
 import { SectionMenu, SectionItem } from '../ui/SectionMenu';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // The White Paper — the root/ documents as a BOOK: a full-screen reader below the page
 // header, chapters down the left side on desktop, the usual horizontal menu on mobile.
@@ -17,16 +18,17 @@ import roadmapMd from '../../../root/ROADMAP.md?raw';
 import questionsMd from '../../../root/QUESTIONS.md?raw';
 import seedMd from '../../../root/SEED.md?raw';
 
+// Chapter names and hints are translation KEYS; the markdown itself is the root as written.
 const PAPERS = [
-    { id: 'genesis', label: 'Genesis', hint: 'the promise', md: genesisMd },
-    { id: 'lin', label: 'LIN', hint: 'what world we are creating', md: linMd },
-    { id: 'architecture', label: 'Architecture', hint: 'how it currently lives', md: architectureMd },
-    { id: 'decisions', label: 'Decisions', hint: 'how it became this way', md: decisionsMd },
-    { id: 'roadmap', label: 'Roadmap', hint: 'where growth is invited next', md: roadmapMd },
-    { id: 'questions', label: 'Questions', hint: 'what we refuse to pretend we know', md: questionsMd },
+    { id: 'genesis', labelKey: 'wp_genesis', hintKey: 'wp_genesis_hint', md: genesisMd },
+    { id: 'lin', labelKey: 'wp_lin', hintKey: 'wp_lin_hint', md: linMd },
+    { id: 'architecture', labelKey: 'wp_architecture', hintKey: 'wp_architecture_hint', md: architectureMd },
+    { id: 'decisions', labelKey: 'wp_decisions', hintKey: 'wp_decisions_hint', md: decisionsMd },
+    { id: 'roadmap', labelKey: 'wp_roadmap', hintKey: 'wp_roadmap_hint', md: roadmapMd },
+    { id: 'questions', labelKey: 'wp_questions', hintKey: 'wp_questions_hint', md: questionsMd },
     // The shadow chapter: the 2025 vision read against the organism it became —
     // "a vision keeps its tree as a shadow, so the two growths can be compared" (LIN).
-    { id: 'seed', label: 'Seed', hint: 'what was dreamed, and what grew', md: seedMd },
+    { id: 'seed', labelKey: 'wp_seed', hintKey: 'wp_seed_hint', md: seedMd },
 ] as const;
 
 // Markdown prose styling via arbitrary variants — no typography plugin needed.
@@ -47,6 +49,7 @@ const PROSE =
     '[&_strong]:font-bold [&_strong]:text-slate-900';
 
 export const WhitePaperSection = () => {
+    const { t } = useLanguage();
     const [open, setOpen] = useState(true); // arriving at the tab opens the book
     const [paper, setPaper] = useState<(typeof PAPERS)[number]['id']>('genesis');
     // A PDF the reader opened from a chapter link — shown in the in-app viewer (reach-card style)
@@ -55,7 +58,7 @@ export const WhitePaperSection = () => {
     const active = PAPERS.find(p => p.id === paper) || PAPERS[0];
     const html = useMemo(() => marked.parse(active.md, { async: false }) as string, [active.md]);
 
-    const chapters: SectionItem[] = PAPERS.map(p => ({ key: p.id, label: p.label }));
+    const chapters: SectionItem[] = PAPERS.map(p => ({ key: p.id, label: t(p.labelKey) }));
 
     // PDF links inside a chapter open the viewer (a plain anchor would leave the app; the viewer
     // keeps the book open underneath and offers Download). Every other link behaves as itself.
@@ -64,44 +67,41 @@ export const WhitePaperSection = () => {
         const href = a?.getAttribute('href');
         if (a && href && href.toLowerCase().endsWith('.pdf')) {
             e.preventDefault();
-            setPdf({ src: href, title: a.textContent || 'Document' });
+            setPdf({ src: href, title: a.textContent || t('document_word') });
         }
     };
 
     return (
         <>
             {/* In-page card — the book's cover; the reader opens over it. */}
-            <div className="rounded-2xl border border-slate-100 bg-white p-8 text-center shadow-sm">
-                <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">The White Paper</p>
-                <p className="mx-auto mt-2 max-w-md font-serif text-sm italic text-slate-500">
-                    The root the seed grows from: six documents every intelligence roots in before
-                    acting, and the seed vision they grew from, laid beside them.
-                </p>
+            <div className="rounded-2xl border border-slate-100 bg-white p-8 text-center shadow-sm dark:bg-slate-900 dark:border-slate-800">
+                <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">{t('white_paper')}</p>
+                <p className="mx-auto mt-2 max-w-md font-serif text-sm italic text-slate-500">{t('white_paper_note')}</p>
                 <button onClick={() => setOpen(true)}
                     className="mt-4 rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-bold uppercase tracking-widest text-white shadow transition-colors hover:bg-emerald-700">
-                    Open the book
+                    {t('open_the_book')}
                 </button>
             </div>
 
             {/* The reader — full screen below the page header: chapters left (desktop),
                 horizontal menu on mobile, one document open at a time. A book. */}
             {open && createPortal(
-                <div className="fixed inset-x-0 bottom-0 top-20 z-50 overflow-hidden bg-slate-50">
+                <div className="fixed inset-x-0 bottom-0 top-20 z-50 overflow-hidden bg-slate-50 dark:bg-slate-900">
                     <div className="mx-auto flex h-full max-w-6xl flex-col gap-3 px-3 py-3 sm:px-4 sm:py-4 lg:flex-row lg:gap-6">
                         <div className="shrink-0 lg:w-60">
                             <div className="mb-2 flex items-center justify-between lg:mb-4">
-                                <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">The White Paper</p>
-                                <button onClick={() => setOpen(false)} title="Close the book" aria-label="Close the book"
-                                    className="rounded-full bg-white p-2 text-slate-400 shadow-sm ring-1 ring-slate-200 transition-colors hover:text-slate-700">
+                                <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">{t('white_paper')}</p>
+                                <button onClick={() => setOpen(false)} title={t('close_the_book')} aria-label={t('close_the_book')}
+                                    className="rounded-full bg-white p-2 text-slate-400 shadow-sm ring-1 ring-slate-200 transition-colors hover:text-slate-700 dark:bg-slate-900">
                                     <Icons.Close />
                                 </button>
                             </div>
                             <SectionMenu items={chapters} active={paper} onSelect={(k) => setPaper(k as typeof paper)} />
                             <p className="mt-3 hidden text-[11px] italic leading-relaxed text-slate-400 lg:block">
-                                {active.hint}. Look into the root; no need for else.
+                                {t('white_paper_hint').replace('{hint}', t(active.hintKey))}
                             </p>
                         </div>
-                        <div className="min-h-0 flex-1 overflow-y-auto rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-10">
+                        <div className="min-h-0 flex-1 overflow-y-auto rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-10 dark:bg-slate-900 dark:border-slate-800">
                             {/* Trusted content: our own repo's root/ markdown, bundled at build time.
                                 The click handler only delegates for anchors already in the content —
                                 keyboard activation reaches those anchors natively. */}

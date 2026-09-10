@@ -65,13 +65,13 @@ export const HearthHero: React.FC<HearthHeroProps> = ({ community, props, lights
         </div>
       )}
 
-      <h2 dir="auto" className="text-3xl font-light tracking-wide text-slate-800 md:text-4xl">{headline}</h2>
+      <h2 dir="auto" className="text-3xl font-light tracking-wide text-slate-800 md:text-4xl dark:text-slate-100">{headline}</h2>
 
       {/* The vision — the community's own property, spoken live, never copied into props. */}
       {visionHtml && (
         <div
           dir="auto"
-          className="prose prose-slate mx-auto mt-4 max-w-xl font-serif text-lg leading-relaxed text-slate-600"
+          className="prose prose-slate mx-auto mt-4 max-w-xl font-serif text-lg leading-relaxed text-slate-600 dark:text-slate-300 dark:prose-invert"
           dangerouslySetInnerHTML={{ __html: visionHtml }}
         />
       )}
@@ -86,13 +86,13 @@ export const HearthHero: React.FC<HearthHeroProps> = ({ community, props, lights
                 key={ev.id}
                 type="button"
                 onClick={() => onViewEvent?.(ev)}
-                className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 p-3 text-left shadow-sm backdrop-blur transition-all hover:shadow-md"
+                className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 p-3 text-left shadow-sm backdrop-blur transition-all hover:shadow-md dark:border-slate-700 dark:bg-slate-900/80"
               >
                 {ev.imageUrl && (
                   <Picture size={480} src={ev.imageUrl} alt="" referrerPolicy="no-referrer" className="h-14 w-14 shrink-0 rounded-xl object-cover" />
                 )}
                 <span className="min-w-0">
-                  <span dir="auto" className="block truncate text-sm font-bold text-slate-800 group-hover:text-slate-900">{ev.title}</span>
+                  <span dir="auto" className="block truncate text-sm font-bold text-slate-800 group-hover:text-slate-900 dark:text-slate-100">{ev.title}</span>
                   {ev.eventDate && (
                     <span className="block text-xs text-slate-500">{new Date(ev.eventDate).toLocaleString()}</span>
                   )}

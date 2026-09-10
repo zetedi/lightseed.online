@@ -29,7 +29,7 @@ export const CovenantProfile = ({ covenantId, currentUserId, onClose, notify }: 
       : { label: t('covenant_status_proposed'), cls: 'bg-amber-100 text-amber-700' };
 
   return (
-    <div className="min-h-screen animate-in fade-in zoom-in-95 duration-300 pb-20 bg-slate-50">
+    <div className="min-h-screen animate-in fade-in zoom-in-95 duration-300 pb-20 bg-slate-50 dark:bg-slate-900">
       <ProfileHero>
         <div className="mb-6 flex items-center justify-between">
           <button onClick={onClose} className="flex items-center gap-2 text-sm font-medium text-white/70 hover:text-white">
@@ -52,7 +52,7 @@ export const CovenantProfile = ({ covenantId, currentUserId, onClose, notify }: 
       </ProfileHero>
 
       <div className="mx-auto mt-6 max-w-3xl px-4 sm:px-6">
-        <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-lg sm:p-6">
+        <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-lg sm:p-6 dark:bg-slate-900 dark:border-slate-800">
           <CovenantPanel covenantId={covenantId} currentUserId={currentUserId} notify={notify} onLoaded={setCovenant} />
         </div>
       </div>

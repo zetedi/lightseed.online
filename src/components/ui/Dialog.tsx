@@ -70,7 +70,7 @@ export const DialogHost = () => {
         >
             <div role="alertdialog" aria-modal="true" onClick={e => e.stopPropagation()} className={`${MODAL_PANEL} max-w-sm p-6`}>
                 {dialog.title && <h3 className={`mb-2 text-base ${MODAL_TITLE}`}>{dialog.title}</h3>}
-                <p className="whitespace-pre-line text-sm leading-relaxed text-slate-600">{dialog.message}</p>
+                <p className="whitespace-pre-line text-sm leading-relaxed text-slate-600 dark:text-slate-300">{dialog.message}</p>
                 <div className="mt-6 flex justify-end gap-3">
                     {dialog.cancelText !== null && (
                         <button type="button" onClick={() => close(false)} className={modalButton('secondary', { full: false })}>{dialog.cancelText}</button>

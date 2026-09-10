@@ -20,6 +20,7 @@ import { notificationOf } from "./push";
 import { defineSecret } from "firebase-functions/params";
 import webpush from "web-push";
 import { judgeOfferingAccept, offeringTwinBlocks, type OfferedToKind } from "./offering";
+import { publicNameOf } from "./publicName";
 import { createBlock, computeCanonicalHash, BLOCK_HASH_VERSION } from "./chain";
 import { FACE_PREVIEW_MAX_BYTES, facePreviewAttempts, facePreviewDoorOf, facePreviewKeyOf, facePreviewUrlOf } from "./facePreview";
 import { getStorage } from "firebase-admin/storage";
@@ -1317,6 +1318,22 @@ export const witnessWatering = onCall({ cors: true }, async (request) => {
 // community), email that community's keeper. Server-side because the keeper's email lives on
 // their private user doc, which the requester can never read. The Members tab is where the
 // keeper accepts or declines; this email just carries the knock to their door.
+// A person's public name from persons/{uid} (world-readable): their own, or — anonymous — the
+// name of their default tree (else the first tree they own). Null when nothing may be said.
+const publicNameByPerson = async (uid: string, person: any | null): Promise<string | null> => {
+    if (!person) return null;
+    let treeName: string | null = null;
+    if (person.anonymous) {
+        const preferred = person.defaultTreeId ? await db.collection("lifetrees").doc(String(person.defaultTreeId)).get() : null;
+        if (preferred?.exists && preferred.data()?.ownerId === uid) treeName = String(preferred.data()?.name || "") || null;
+        if (!treeName) {
+            const first = await db.collection("lifetrees").where("ownerId", "==", uid).limit(1).get();
+            treeName = first.empty ? null : (String(first.docs[0].data()?.name || "") || null);
+        }
+    }
+    return publicNameOf({ displayName: person.displayName, anonymous: !!person.anonymous, treeName });
+};
+
 export const onJoinRequestCreated = onDocumentCreated("links/{linkId}", async (event) => {
     const snap = event.data;
     if (!snap) return;
@@ -1342,7 +1359,8 @@ export const onJoinRequestCreated = onDocumentCreated("links/{linkId}", async (e
         )).slice(0, MAX_KNOCK_RECIPIENTS);
         if (keeperIds.length === 0) return;
 
-        const requester = (personSnap.exists && (personSnap.data() as any)?.displayName) || "Someone";
+        // The requester's PUBLIC name (publicName mirror): anonymous beings are named by their tree.
+        const requester = (await publicNameByPerson(String(link.from), personSnap.exists ? (personSnap.data() as any) : null)) || "Someone";
         const communityName = community.name || "your community";
         const text = `${requester} asked to join ${communityName}.\n\nYou can accept or decline on the community's Members tab.`;
         const html = composeSystemEmailHtml(text, NODE_ORIGIN, `Open ${charter.name}`);
@@ -2270,7 +2288,27 @@ export const checkWateringSchedules = onSchedule({
                     const daysOver = Math.max(0, Math.floor((now - nextDue) / WATER_DAY_MS));
                     const text = waterMeText(tree.name, daysOver, w.stage);
 
-                    await db.collection("pulses").add({
+                    // ONE STANDING ASK (mirrors domain/watering.standingAlertId): while the
+                    // tree's ask stands — raised, and no watering since — rewrite it so a week
+                    // of thirst is one line that keeps count, not seven identical lines.
+                    const standingId = w.alertPulseId
+                        && tsToMs(w.lastAlertAt)
+                        && tsToMs(w.lastWateredAt) <= tsToMs(w.lastAlertAt)
+                        ? String(w.alertPulseId) : null;
+                    if (standingId) {
+                        const standing = await db.collection("pulses").doc(standingId).get();
+                        if (standing.exists) {
+                            await standing.ref.update({
+                                body: text, content: text, createdAt: FieldValue.serverTimestamp(),
+                            });
+                            updates["watering.lastAlertAt"] = FieldValue.serverTimestamp();
+                            updates["watering.alertThreadId"] = threadId;
+                            await docSnap.ref.update(updates);
+                            continue;
+                        }
+                    }
+
+                    const raised = await db.collection("pulses").add({
                         lid: mintLid(), // even a nudge is a pulse, and a pulse is a Being (mirrors the client twin)
                         lifetreeId: docSnap.id,
                         type: "reach",
@@ -2302,6 +2340,7 @@ export const checkWateringSchedules = onSchedule({
 
                     updates["watering.lastAlertAt"] = FieldValue.serverTimestamp();
                     updates["watering.alertThreadId"] = threadId;
+                    updates["watering.alertPulseId"] = raised.id;
                 }
             }
 
@@ -3160,7 +3199,12 @@ export const acceptOffering = onCall({ cors: true }, async (request) => {
 
         // The acceptor's name for the receiver-side block, by the same hand that wrote authorName elsewhere.
         const acceptorSnap = await t.get(db.doc(`users/${acceptorUid}`));
-        const acceptorName = String(acceptorSnap.data()?.displayName || acceptorSnap.data()?.name || (toKind === "tree" ? receiver.name : receiver.title) || "A being");
+        // Anonymous acceptors are named by the being the offering was made to (the tree in context).
+        const acceptorName = publicNameOf({
+            displayName: acceptorSnap.data()?.displayName || acceptorSnap.data()?.name,
+            anonymous: !!acceptorSnap.data()?.anonymous,
+            treeName: toKind === "tree" ? receiver.name : receiver.title,
+        }) || "A being";
 
         const { from, to } = offeringTwinBlocks({
             id: offeringId,

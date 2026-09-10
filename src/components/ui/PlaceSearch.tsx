@@ -37,7 +37,7 @@ export const PlaceSearch = ({ onPick }: { onPick: (r: { latitude: number; longit
           onChange={e => setTerm(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); void search(); } }}
           placeholder={t('place_search_ph')}
-          className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+          className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700"
         />
         <button type="button" onClick={() => void search()} disabled={busy || !term.trim()}
           className="flex shrink-0 items-center gap-1 rounded-xl bg-emerald-100 px-3 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-200 disabled:opacity-50">
@@ -45,11 +45,11 @@ export const PlaceSearch = ({ onPick }: { onPick: (r: { latitude: number; longit
         </button>
       </div>
       {hits.length > 0 && (
-        <div className="absolute z-30 mt-1 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+        <div className="absolute z-30 mt-1 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:bg-slate-900 dark:border-slate-700">
           {hits.map((h, i) => (
             <button key={i} type="button"
               onClick={() => { onPick({ latitude: Number(h.lat), longitude: Number(h.lon), name: h.display_name.split(',')[0] }); setHits([]); setTerm(h.display_name.split(',')[0]); }}
-              className="block w-full truncate px-3 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-emerald-50">
+              className="block w-full truncate px-3 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-emerald-50 dark:text-slate-200">
               {h.display_name}
             </button>
           ))}

@@ -7,11 +7,11 @@ export const TermsModal = ({ onClose }: { onClose: () => void }) => {
   const terms = getTerms(language);
   return (
     <Modal title={terms.title} onClose={onClose}>
-      <div className="max-h-[70vh] space-y-4 overflow-y-auto pr-1 text-sm leading-relaxed text-slate-700">
+      <div className="max-h-[70vh] space-y-4 overflow-y-auto pr-1 text-sm leading-relaxed text-slate-700 dark:text-slate-200">
         <p className="whitespace-pre-line">{terms.intro}</p>
         {terms.sections.map((s, i) => (
           <div key={i}>
-            <h3 className="font-bold text-slate-900">{s.heading}</h3>
+            <h3 className="font-bold text-slate-900 dark:text-slate-50">{s.heading}</h3>
             <p className="mt-1 whitespace-pre-line">{s.body}</p>
           </div>
         ))}

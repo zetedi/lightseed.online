@@ -64,7 +64,7 @@ export const TreeGardens = ({ tree, canManage, host }: { tree: Lifetree; canMana
   if (!canManage && standing.length === 0) return null;
 
   return (
-    <div className="mt-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+    <div className="mt-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm dark:bg-slate-900 dark:border-slate-800">
       <h3 className="flex items-center text-xs font-bold uppercase tracking-wider text-slate-400">
         <Icons.Globe /><span className="ml-2">{t('tree_gardens')}</span>
       </h3>
@@ -88,14 +88,14 @@ export const TreeGardens = ({ tree, canManage, host }: { tree: Lifetree; canMana
       {canManage && (
         <div className="relative mt-3">
           <input dir="auto" value={term} onChange={e => setTerm(e.target.value)} placeholder={t('garden_search_ph')}
-            className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+            className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700" />
           {suggestions.length > 0 && (
-            <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+            <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:bg-slate-900 dark:border-slate-700">
               {suggestions.map(c => (
                 <button key={c.id} type="button" disabled={busy === c.id} onClick={() => stand(c)}
                   className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-emerald-50 disabled:opacity-50">
                   <span className="min-w-0">
-                    <span className="font-bold text-slate-700">{c.name}</span>
+                    <span className="font-bold text-slate-700 dark:text-slate-200">{c.name}</span>
                     <span className="ml-2 font-mono text-[11px] text-slate-400">{c.domain}</span>
                   </span>
                   <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${doorOf(c) === 'open' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>

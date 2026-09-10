@@ -3,6 +3,7 @@ import { Icons } from '../ui/Icons';
 import { SectionTitle } from '../ui/SectionTitle';
 import { getGlow } from '../../services/firebase/light';
 import { RAY_UNITS } from '../../domain/light';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // THE COMMUNITY'S LIGHT — its accumulated GLOW (glow/{communityId}): the commons of light that
 // gathers where care circulates through the community (a prism's share, a departing being's last
@@ -14,6 +15,7 @@ export const CommunityLight = ({ communityId, isKeeper, onGoToCouncil }: {
     isKeeper?: boolean;
     onGoToCouncil?: () => void;
 }) => {
+    const { t } = useLanguage();
     const [units, setUnits] = useState<number | null>(null); // null = loading
     useEffect(() => {
         let alive = true;
@@ -22,10 +24,13 @@ export const CommunityLight = ({ communityId, isKeeper, onGoToCouncil }: {
     }, [communityId]);
 
     const rays = units === null ? 0 : Math.floor(units / RAY_UNITS);
+    // "…through a community decision: …" — the bold phrase sits inside the sentence, so the line
+    // carries a {decision} seat and each tongue places it where its grammar wants it.
+    const [spentPre, spentPost] = t('community_light_p2').split('{decision}');
 
     return (
         <div>
-            <SectionTitle title="Light" sub="The community's commons of light, gathered where care circulates within it." />
+            <SectionTitle title={t('light')} sub={t('community_light_sub')} />
 
             {/* The glow disc — brightens with the light the commons holds. */}
             <div className="rounded-2xl border border-amber-100 bg-amber-50/40 p-6">
@@ -38,28 +43,24 @@ export const CommunityLight = ({ communityId, isKeeper, onGoToCouncil }: {
                     )}
                     <div className="relative flex h-28 w-28 flex-col items-center justify-center rounded-full border border-amber-200 bg-gradient-to-br from-amber-100 to-amber-50">
                         <span className="text-3xl font-semibold text-amber-600">{units === null ? '·' : units}</span>
-                        <span className="text-[10px] uppercase tracking-wider text-amber-500">units</span>
+                        <span className="text-[10px] uppercase tracking-wider text-amber-500">{t('units')}</span>
                     </div>
                 </div>
                 <p className="mt-2 text-center text-sm font-medium text-amber-700">
-                    {units === null ? 'The light is gathering…' : rays > 0 ? `About ${rays} ray${rays === 1 ? '' : 's'} of shared light` : 'No light gathered yet'}
+                    {units === null ? t('light_gathering') : rays > 0 ? t('shared_light_rays').replace('{n}', String(rays)) : t('no_light_gathered')}
                 </p>
             </div>
 
-            <div className="mt-5 flex items-start gap-3 rounded-2xl border border-slate-100 bg-white p-4">
+            <div className="mt-5 flex items-start gap-3 rounded-2xl border border-slate-100 bg-white p-4 dark:bg-slate-900 dark:border-slate-800">
                 <span className="mt-0.5 text-amber-500"><Icons.Sun /></span>
-                <div className="text-sm leading-relaxed text-slate-600">
-                    <p>
-                        This light belongs to the whole community, not to any one keeper. It brightens as
-                        members care for living trees and as light circulates through the community.
-                    </p>
+                <div className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                    <p>{t('community_light_p1')}</p>
                     <p className="mt-2">
-                        It is spent only through a <span className="font-semibold text-slate-800">community decision</span>:
-                        a keeper proposes, the community weighs it, and the light moves by consent, in the open.
+                        {spentPre}<span className="font-semibold text-slate-800 dark:text-slate-100">{t('community_decision')}</span>{spentPost}
                     </p>
                     {isKeeper && onGoToCouncil && (
                         <button onClick={onGoToCouncil} className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100">
-                            <Icons.Venn /> Propose a spend in the Council
+                            <Icons.Venn /> {t('propose_spend_council')}
                         </button>
                     )}
                 </div>

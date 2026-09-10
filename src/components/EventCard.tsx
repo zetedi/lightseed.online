@@ -4,6 +4,8 @@ import { Icons } from './ui/Icons';
 import { LoveButton } from './ui/LoveButton';
 import { firestoreStore } from '../adapters/firestore';
 import type { Community, Pulse } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
+import { spokenLine } from '../utils/translations';
 
 import { Picture } from './ui/Picture';
 // ONE event card, shared by the home hero banner and the Events section (DRY). A solid card, so
@@ -23,6 +25,7 @@ export const EventCard = ({ event, onOpen, community, onOpenCommunity, participa
     className?: string;             // width/shrink for the context (default w-full)
     isDark?: boolean;               // the night theme (prop-driven, like Dashboard's isDark)
 }) => {
+    const { t } = useLanguage();
     // When the caller supplies the count, use it directly; otherwise read the participant links
     // once (the async callback sets state, so no synchronous setState in the effect body).
     const [fetched, setFetched] = useState<number | null>(null);
@@ -43,11 +46,11 @@ export const EventCard = ({ event, onOpen, community, onOpenCommunity, participa
         return Math.ceil((ms - nowMs) / 86400000);
     })();
     const max = event.eventMaxParticipants || 0;
-    const faceName = event.communityName || community?.name || 'Community';
+    const faceName = event.communityName || community?.name || t('community_label');
     const showFace = !!(event.communityId || community);
 
     return (
-        <button onClick={onOpen} className={`group relative flex flex-col overflow-hidden rounded-xl border text-left shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'} ${className ?? 'w-full'}`}>
+        <button onClick={onOpen} className={`group relative flex h-full flex-col self-stretch overflow-hidden rounded-xl border text-left shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'} ${className ?? 'w-full'}`}>
             <div className={`relative aspect-[4/3] w-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
                 {(event.imageUrls?.length || event.imageUrl)
                     ? <CardCarousel images={event.imageUrls?.length ? event.imageUrls : [event.imageUrl!]} alt={event.title} />
@@ -57,12 +60,12 @@ export const EventCard = ({ event, onOpen, community, onOpenCommunity, participa
                 {days !== null && (
                     <span className="absolute left-1.5 top-1.5 flex flex-col items-center rounded-md bg-black/30 px-1.5 py-0.5 leading-tight text-white backdrop-blur-sm">
                         {days === 0 ? (
-                            <span className="text-[10px] font-bold">Today</span>
+                            <span className="text-[10px] font-bold">{t('today')}</span>
                         ) : (
                             <>
-                                <span className="text-[8px] uppercase tracking-wide text-white/75">In</span>
+                                <span className="text-[8px] uppercase tracking-wide text-white/75">{t('countdown_in')}</span>
                                 <span className="text-xs font-bold tabular-nums">{days}</span>
-                                <span className="text-[8px] uppercase tracking-wide text-white/75">{days === 1 ? 'day' : 'days'}</span>
+                                <span className="text-[8px] uppercase tracking-wide text-white/75">{days === 1 ? t('countdown_day') : t('countdown_days')}</span>
                             </>
                         )}
                     </span>
@@ -72,7 +75,7 @@ export const EventCard = ({ event, onOpen, community, onOpenCommunity, participa
                 {(max > 0 || count > 0) && (
                     <span className="absolute right-1.5 top-1.5 flex flex-col items-center rounded-md bg-black/30 px-1.5 py-0.5 leading-tight text-white backdrop-blur-sm">
                         <span className="text-xs font-bold tabular-nums">{max ? `${count}/${max}` : count}</span>
-                        <span className="text-[8px] uppercase tracking-wide text-white/75">{count === 1 && !max ? 'tree' : 'trees'}</span>
+                        <span className="text-[8px] uppercase tracking-wide text-white/75">{count === 1 && !max ? t('tree') : t('trees')}</span>
                     </span>
                 )}
 
@@ -81,7 +84,7 @@ export const EventCard = ({ event, onOpen, community, onOpenCommunity, participa
                     <span
                         role={onOpenCommunity ? 'button' : undefined}
                         tabIndex={onOpenCommunity ? 0 : undefined}
-                        title={`Hosted by ${faceName}`}
+                        title={spokenLine('hosted_by', { name: faceName })}
                         onClick={onOpenCommunity ? (e) => { e.stopPropagation(); onOpenCommunity(); } : undefined}
                         onKeyDown={onOpenCommunity ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onOpenCommunity(); } } : undefined}
                         className={`absolute bottom-1.5 left-1.5 flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-emerald-600 text-[11px] font-bold text-white shadow-md ${onOpenCommunity ? 'transition-transform hover:scale-110' : ''}`}
@@ -100,21 +103,24 @@ export const EventCard = ({ event, onOpen, community, onOpenCommunity, participa
                     collection="pulses"
                     id={event.id}
                     initialCount={event.loveCount || 0}
-                    noun="this event"
+                    noun="love_this_event"
                     className="absolute bottom-1.5 right-1.5 rounded-full px-1.5 py-0.5 text-white"
                     activeClassName="bg-black/30 backdrop-blur-sm"
                     iconClassName="[&>svg]:h-4 [&>svg]:w-4 drop-shadow"
                 />
             </div>
 
-            <div className="flex min-w-0 items-start justify-between gap-2 p-2.5">
+            {/* EVERY CARD ENDS ON ONE LINE (ring 2026-09-11): the row stretches its cards to the
+                tallest, and this block grows into whatever height that leaves — a card whose event
+                said nothing simply ends in quiet space instead of being shorter than its neighbours. */}
+            <div className="flex min-w-0 flex-1 items-start justify-between gap-2 p-2.5">
                 {/* flex-1 so the text column (and the hairline) always fill the card width, even when
                     the title/description are short; otherwise the column shrinks to its content and
                     the separator stops short of the right edge. */}
                 <div className="min-w-0 flex-1">
                     <p className={`truncate text-base font-light tracking-wide ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>{event.title}</p>
                     <p className={`truncate text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        {event.eventDate ? new Date(event.eventDate).toLocaleDateString() : ''}{event.eventLocation ? ` · ${event.eventLocation}` : ''}{max ? ` · max ${max}` : ''}
+                        {event.eventDate ? new Date(event.eventDate).toLocaleDateString() : ''}{event.eventLocation ? ` · ${event.eventLocation}` : ''}{max ? ` · ${t('max_n').replace('{n}', String(max))}` : ''}
                     </p>
                     {/* The event's own words, small, beneath the place; a hairline parts them. */}
                     {(event.content || event.body) && (

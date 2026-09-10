@@ -82,7 +82,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
 }) => {
   const { t } = useLanguage();
   // Session-derived values from context (were prop-drilled from App).
-  const { lightseed, isAdmin, isSuperAdmin } = useSession();
+  const { lightseed, isAdmin, isSuperAdmin, publicName } = useSession();
   const currentUser = lightseed;
   const currentUserId = lightseed?.uid;
   // FULL PEERS (domain/keeperCircle, ring 2026-08-12): a `keeper` link holder edits, deletes
@@ -139,8 +139,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     try {
       await firestoreStore.link(currentUserId, 'join_request', community.id);
       setJoinRequested(true);
-      notify(`🌱 Your request to join ${community.name} is on its way to its keepers.`);
-    } catch (e: any) { showAlert(e?.message || 'Could not send the join request.'); }
+      notify(`🌱 ${spokenLine('join_request_sent', { name: community.name })}`);
+    } catch (e: any) { showAlert(e?.message || 'err_join_request'); }
     setJoining(false);
   };
 
@@ -168,8 +168,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     try {
       await joinCommunityOpen(currentUserId, community.id);
       setMemberByLink(true);
-      notify(`🌿 Welcome to ${community.name}.`);
-    } catch (e: any) { showAlert(e?.message || 'Could not join.'); }
+      notify(spokenLine('welcome_to_community', { name: community.name }));
+    } catch (e: any) { showAlert(e?.message || 'err_join'); }
     setJoining(false);
   };
   // Enter holding an invitation — membership plus the append-only 'invited_by' mark.
@@ -182,18 +182,18 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       expiresAtMs: inviteForHere.expiresAt ? inviteForHere.expiresAt.toMillis() : null,
     }, community.id, door, Date.now());
     if (!verdict.usable) {
-      showAlert(verdict.reason === 'revoked' ? 'This invitation has been revoked.'
-        : verdict.reason === 'expired' ? 'This invitation has expired.'
-        : verdict.reason === 'door_closed' ? 'The door is closed for now; even invitations wait.'
-        : 'This invitation belongs to another community.');
+      showAlert(verdict.reason === 'revoked' ? 'invite_revoked'
+        : verdict.reason === 'expired' ? 'invite_expired'
+        : verdict.reason === 'door_closed' ? 'invite_door_closed'
+        : 'invite_other_community');
       return;
     }
     setJoining(true);
     try {
       const { remembered } = await joinCommunityWithInvite(currentUserId, inviteForHere);
       setMemberByLink(true);
-      notify(remembered ? `🌿 Welcome to ${community.name}. Your arrival is remembered.` : `🌿 Welcome to ${community.name}.`);
-    } catch (e: any) { showAlert(e?.message || 'The door did not open; the invitation may no longer stand.'); }
+      notify(spokenLine(remembered ? 'welcome_remembered' : 'welcome_to_community', { name: community.name }));
+    } catch (e: any) { showAlert(e?.message || 'err_door_not_open'); }
     setJoining(false);
   };
   // The visibility levels this viewer may query at community scope — shared by the events and
@@ -455,12 +455,12 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       // Refresh from Firestore so the view reflects exactly what was persisted.
       const fresh = await getCommunityByDomain(community.domain);
       if (onUpdate) onUpdate(fresh ? { ...fresh } : updates);
-      setStatus('Saved.');
-      notify('🌱 Saved.');
+      setStatus(t('saved'));
+      notify(`🌱 ${t('saved')}`);
       setTimeout(() => setStatus(null), 2500);
     } catch (e) {
       console.error(e);
-      setStatus('Failed to save. Please try again.');
+      setStatus(t('err_save_retry'));
       notify(speak('err_save_retry'), 'error');
     }
     setIsSaving(false);
@@ -490,10 +490,10 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       await updateCommunity(community.id, { logoUrl: url });
       onUpdate?.({ logoUrl: url });
       if (previous && previous !== url) releasePicture(previous);
-      setStatus('Saved');
+      setStatus(t('saved'));
     } catch (e: any) {
       console.error(e);
-      setStatus(e?.message || 'Failed to upload logo.');
+      setStatus(speak(e?.message || 'err_logo_upload'));
       notify(speak('err_upload'), 'error');
     }
     setIsUploadingLogo(false);
@@ -508,10 +508,10 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       await updateCommunity(community.id, { heroImageUrl: url });
       onUpdate?.({ heroImageUrl: url });
       if (previous && previous !== url) releasePicture(previous);
-      setStatus('Saved');
+      setStatus(t('saved'));
     } catch (e: any) {
       console.error(e);
-      setStatus(e?.message || 'Failed to upload hero image.');
+      setStatus(speak(e?.message || 'err_hero_upload'));
       notify(speak('err_upload'), 'error');
     }
     setIsUploadingHero(false);
@@ -524,7 +524,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       setImageUrls(prev => [...prev, url]);
     } catch (e: any) {
       console.error(e);
-      setStatus(e?.message || 'Failed to upload image.');
+      setStatus(speak(e?.message || 'err_image_upload'));
       notify(speak('err_upload'), 'error');
     }
     setIsUploadingImage(false);
@@ -600,7 +600,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   // The community's sections — each `render` closes over this shell's state and handlers.
   const sections: BeingSection[] = [
     {
-      key: 'vision', label: 'Vision', icon: <Icons.Eye />, render: () => (
+      key: 'vision', label: t('vision'), icon: <Icons.Eye />, render: () => (
         <CommunityVision
           community={community}
           canEdit={canEdit}
@@ -619,12 +619,12 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       ),
     },
     {
-      key: 'digital', label: 'Digital Tree', icon: <Icons.Tree />, render: () => (
+      key: 'digital', label: t('digital_tree'), icon: <Icons.Tree />, render: () => (
         <CommunityDigitalTree community={community} onViewPulse={onViewEvent} />
       ),
     },
     {
-      key: 'firsttree', label: 'First Tree', icon: <Icons.Tree />, render: () => (
+      key: 'firsttree', label: t('community_first_tree'), icon: <Icons.Tree />, render: () => (
         <CommunityFirstTree
           community={community}
           firstTree={firstTree}
@@ -636,7 +636,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       ),
     },
     {
-      key: 'lightHouse', label: 'Light Houses', icon: <Icons.Sun />, render: () => (
+      key: 'lightHouse', label: t('light_houses'), icon: <Icons.Sun />, render: () => (
         <CommunityLightHouse
           community={community}
           lightHouses={viewableLightHouses}
@@ -650,7 +650,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
               communityId: community.id,
             });
             announce('lightHouses');
-            notify('🌞 Light House consecrated.');
+            notify(t('lh_consecrated_toast'));
           }}
           onUploadImage={(file) => uploadImage(file, `communities/${community.id}/lightHouses/${file.name}`)}
           onOpen={onViewLightHouse}
@@ -658,13 +658,13 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
           onAdopt={async (s) => {
             await adoptLightHouse(s.id, community.id);
             announce('lightHouses');
-            notify(`${s.name} now holds this community too.`);
+            notify(spokenLine('lh_holds_community_too', { name: s.name }));
           }}
         />
       ),
     },
     {
-      key: 'trees', label: 'Community Trees', icon: <Icons.Tree />, render: () => (
+      key: 'trees', label: t('community_trees'), icon: <Icons.Tree />, render: () => (
         <CommunityTreesTab
           community={community}
           currentUserId={currentUserId}
@@ -677,20 +677,20 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       ),
     },
     {
-      key: 'model', label: 'Growth', icon: <MahameruAvatar size={20} />, render: () => (
+      key: 'model', label: t('growth'), icon: <MahameruAvatar size={20} />, render: () => (
         <div>
-          <SectionTitle title="Growth" sub="How this node is crystallising: its trees weighted by their chain growth, links and pulses." />
+          <SectionTitle title={t('growth')} sub={t('node_growth_sub')} />
           <NodeGrowthTree community={community} trees={domainTrees} onViewTree={onViewTree} />
         </div>
       ),
     },
     {
-      key: 'events', label: 'Events', icon: <Icons.Loc />, render: () => (
+      key: 'events', label: t('events'), icon: <Icons.Loc />, render: () => (
         <CommunityEvents
           community={community}
           canEdit={canEdit}
           currentUserId={currentUserId}
-          currentUserName={currentUser?.displayName}
+          currentUserName={publicName}
           currentUserPhoto={currentUser?.photoURL}
           communityLevels={communityLevels}
           isHost={isHost}
@@ -704,12 +704,12 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       ),
     },
     {
-      key: 'light', label: 'Light', icon: <Icons.Sun />, render: () => (
+      key: 'light', label: t('light'), icon: <Icons.Sun />, render: () => (
         <CommunityLight communityId={community.id} isKeeper={canEdit} onGoToCouncil={() => setSection('council')} />
       ),
     },
     {
-      key: 'members', label: 'Members', icon: <Icons.Users />, render: () => (
+      key: 'members', label: t('members'), icon: <Icons.Users />, render: () => (
         <CommunityMembers community={community} currentUserId={currentUserId} canManage={canEdit || isSteward} isOwner={canEdit} onCommunityUpdate={onUpdate} />
       ),
     },
@@ -719,10 +719,10 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       ),
     },
     {
-      key: 'path', label: 'The Path', icon: <Icons.ArrowRight />, render: () => (
+      key: 'path', label: t('the_path'), icon: <Icons.ArrowRight />, render: () => (
         <div>
-          <SectionTitle title="The Path" sub="From first seed to sovereign node: the onboarding trail, as a ruleset. In time each community will shape its own." />
-          <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
+          <SectionTitle title={t('the_path')} sub={t('the_path_sub')} />
+          <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6 dark:bg-slate-900 dark:border-slate-800">
             <PathOverview />
           </div>
         </div>
@@ -734,10 +734,10 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       key: tab.id, label: tab.label, icon: loreIcons[tab.id], render: () => <LoreSection id={tab.id} />,
     })),
     // The seed communities' own body — the repo's git history drawn as a growth chain, like the lore.
-    ...(isSeedLoreCommunity ? [{ key: 'codechain', label: 'Code chain', icon: <Icons.Hash />, render: () => <CommunityCodeChain /> } satisfies BeingSection] : []),
+    ...(isSeedLoreCommunity ? [{ key: 'codechain', label: t('code_chain'), icon: <Icons.Hash />, render: () => <CommunityCodeChain /> } satisfies BeingSection] : []),
     ...(canEdit ? [
       {
-        key: 'intelligence', label: 'Intelligence', icon: <Icons.Intelligence />, render: () => (
+        key: 'intelligence', label: t('intelligence'), icon: <Icons.Intelligence />, render: () => (
           <CommunityIntelligence community={community} canEdit={canEdit} currentUserId={currentUserId} onUpdate={onUpdate} />
         ),
       },
@@ -748,7 +748,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
         ),
       },
       {
-        key: 'appearance', label: 'Appearance', icon: <Icons.Image />, render: () => (
+        key: 'appearance', label: t('appearance'), icon: <Icons.Image />, render: () => (
           <CommunityAppearance
             community={community}
             editName={editName}
@@ -792,14 +792,14 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       onSectionChange={setSection}
       banner={mayFormCommunity ? (
         <div className="mb-4 rounded-2xl border border-violet-200 bg-violet-50/70 p-4">
-          <p className="text-sm font-bold text-slate-800">{t('circle_form_title')}</p>
+          <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{t('circle_form_title')}</p>
           <p className="mt-1 text-xs leading-relaxed text-slate-500">{t('circle_form_desc')}</p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <input
               value={formName}
               onChange={e => setFormName(e.target.value)}
               placeholder={t('circle_form_name_ph')}
-              className="w-56 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm outline-none focus:border-violet-400"
+              className="w-56 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm outline-none focus:border-violet-400 dark:bg-slate-900 dark:border-slate-700"
             />
             <button onClick={handleFormCommunity} disabled={forming || !formName.trim()}
               className="rounded-full bg-violet-600 px-4 py-1.5 text-xs font-bold text-white transition-colors hover:bg-violet-500 disabled:opacity-50">
@@ -865,12 +865,12 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
               </button>
             )}
             {onEnterCommunityView && (
-              <button onClick={() => onEnterCommunityView(community)} className="flex items-center gap-1 rounded-full border border-amber-300/40 bg-amber-400/15 p-2 text-xs font-bold text-amber-200 transition-colors hover:bg-amber-400 hover:text-white sm:px-4 sm:py-2" title="See the whole site as this community">
+              <button onClick={() => onEnterCommunityView(community)} className="flex items-center gap-1 rounded-full border border-amber-300/40 bg-amber-400/15 p-2 text-xs font-bold text-amber-200 transition-colors hover:bg-amber-400 hover:text-white sm:px-4 sm:py-2" title={t('see_site_as_community')}>
                 <Icons.Eye /><span className="hidden sm:inline">{t('switch_community_view')}</span>
               </button>
             )}
             {canDelete && (
-              <button onClick={handleDelete} disabled={isDeleting} title="Delete community" aria-label="Delete community" className="relative flex items-center gap-1 rounded-full border border-red-400/30 bg-red-500/15 p-2 text-xs font-bold text-red-300 transition-colors hover:bg-red-500 hover:text-white sm:px-4 sm:py-2">
+              <button onClick={handleDelete} disabled={isDeleting} title={t('delete_community')} aria-label={t('delete_community')} className="relative flex items-center gap-1 rounded-full border border-red-400/30 bg-red-500/15 p-2 text-xs font-bold text-red-300 transition-colors hover:bg-red-500 hover:text-white sm:px-4 sm:py-2">
                 <Icons.Trash /><span className="hidden sm:inline">{t('delete')}</span>
                 {currentUserId !== community.ownerId && <SuperDot />}
               </button>
@@ -878,9 +878,9 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
           </>
         ),
         avatar: (
-          <div className="flex h-14 w-14 md:h-20 md:w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-xl">
+          <div className="flex h-14 w-14 md:h-20 md:w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-xl dark:bg-slate-900">
             {logoUrl ? (
-              <Picture size={480} src={logoUrl} className="h-full w-full object-cover" alt={`${community.name} logo`} referrerPolicy="no-referrer" />
+              <Picture size={480} src={logoUrl} className="h-full w-full object-cover" alt={`${community.name} ${t('logo')}`} referrerPolicy="no-referrer" />
             ) : (
               <span className="text-slate-300"><Icons.Globe /></span>
             )}
@@ -894,8 +894,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
               <span className="text-base font-bold text-white">{domainTrees.length}</span>
               <span className="text-xs text-slate-400">{domainTrees.length === 1 ? t('tree') : t('trees')}</span>
             </span>
-            <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-xs text-slate-300">
-              Since {community.createdAt?.toDate ? community.createdAt.toDate().toLocaleDateString() : '—'}
+            <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-xs text-slate-300 dark:bg-slate-900/10">
+              {t('since_date').replace('{date}', community.createdAt?.toDate ? community.createdAt.toDate().toLocaleDateString() : '—')}
             </span>
             {/* A circle wears its own mark; a community with an address wears the address. */}
             {isTreeCircle(community) ? (
@@ -908,7 +908,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                 {isDomainVerified(community) && <span className="font-sans font-bold text-emerald-300">✓</span>}
               </a>
             ) : null}
-            <LoveButton collection="communities" id={community.id} initialCount={community.loveCount || 0} className="rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-white hover:bg-white/20" />
+            <LoveButton collection="communities" id={community.id} initialCount={community.loveCount || 0} className="rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-white hover:bg-white/20 dark:bg-slate-900/10" />
           </>
         ),
       }}

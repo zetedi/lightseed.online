@@ -3,6 +3,7 @@ import { signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPass
 import { httpsCallable } from 'firebase/functions';
 import { type Pulse, type Lifetree, type Vision } from '../../types';
 import { excludeBedTrees } from '../../domain/bed';
+import { publicNameOf } from '../../domain/publicName';
 import { charter } from '../../config/charter';
 import { subscriptionIdOf, isSubscriberEmail, normalizeSubscriberEmail, normalizePlaceDomain } from '../../domain/newsletter';
 import { uuidv7 } from '../../utils/id';
@@ -30,9 +31,59 @@ export const ensurePersonEntity = async (uid: string, displayName?: string | nul
 // alignment request to the human behind the initiating tree. Returns undefined if unknown/empty.
 export const getPersonName = async (uid: string): Promise<string | undefined> => {
     try {
-        const snap = await getDoc(doc(db, 'persons', uid));
-        return snap.exists() ? ((snap.data() as any).displayName || undefined) : undefined;
+        const presence = await getPersonPresence(uid);
+        if (!presence) return undefined;
+        // An anonymous being is named by its tree (domain/publicName): the default tree if it
+        // still stands, else the first it owns. lifetrees are world-readable; persons carries
+        // the defaultTreeId mirror so one read finds the tree.
+        const treeName = presence.anonymous ? await ownedTreeName(uid, presence.defaultTreeId) : null;
+        return publicNameOf({ displayName: presence.displayName, anonymous: presence.anonymous, treeName }) || undefined;
     } catch { return undefined; }
+};
+
+// What persons/{uid} says about how a being wishes to be named (world-readable).
+export interface PersonPresence { displayName: string; anonymous: boolean; defaultTreeId?: string }
+export const getPersonPresence = async (uid: string): Promise<PersonPresence | null> => {
+    const snap = await getDoc(doc(db, 'persons', uid));
+    if (!snap.exists()) return null;
+    const d = snap.data() as any;
+    return { displayName: String(d.displayName || ''), anonymous: !!d.anonymous, defaultTreeId: d.defaultTreeId || undefined };
+};
+
+const ownedTreeName = async (uid: string, defaultTreeId?: string): Promise<string | null> => {
+    if (defaultTreeId) {
+        const t = await getDoc(doc(db, 'lifetrees', defaultTreeId));
+        if (t.exists() && (t.data() as any).ownerId === uid) return String((t.data() as any).name || '') || null;
+    }
+    const first = await getDocs(query(lifetreesCollection, where('ownerId', '==', uid), limit(1)));
+    return first.empty ? null : (String((first.docs[0].data() as any).name || '') || null);
+};
+
+// THE SIGNED-IN BEING'S NAMING (ring 2026-09-10) — for a service that stamps a name without the
+// session at hand. `name` is what the network may say (the tree in context wins over the default
+// tree); `personName` is the being's own name and is ABSENT while they are anonymous, so a seat
+// that shows the person beside the tree (a reach's "(name)", a watering's witness line) simply
+// has nothing to show. One persons read.
+export const myNaming = async (treeName?: string | null): Promise<{ name: string | null; personName?: string }> => {
+    const user = auth.currentUser;
+    if (!user) return { name: null };
+    const presence = await getPersonPresence(user.uid).catch(() => null);
+    const anonymous = !!presence?.anonymous;
+    const displayName = presence?.displayName || user.displayName || '';
+    const tree = treeName || (anonymous ? await ownedTreeName(user.uid, presence?.defaultTreeId).catch(() => null) : null);
+    const name = publicNameOf({ displayName, anonymous, treeName: tree });
+    return anonymous || !displayName ? { name } : { name, personName: displayName };
+};
+
+// The public name alone, for a seat that stamps only authorName.
+export const myPublicName = async (treeName?: string | null): Promise<string | null> =>
+    (await myNaming(treeName)).name;
+
+// ANONYMOUS (ring 2026-09-10): the flag lives on users/{uid} (the settings listener) and is
+// mirrored onto persons/{uid} (world-readable — every reader of a name must be able to see it).
+export const setAnonymous = async (uid: string, value: boolean): Promise<void> => {
+    await setDoc(doc(db, 'users', uid), { anonymous: value, updatedAt: serverTimestamp() }, { merge: true });
+    await setDoc(doc(db, 'persons', uid), { anonymous: value }, { merge: true });
 };
 
 // Create the user's profile document the first time they appear. Direct-message email
@@ -268,6 +319,8 @@ export const renamePerson = async (name: string): Promise<string> => {
     if (!user) throw new Error('err_email_uid');
     await updateProfile(user, { displayName: name });
     await updateUserProfile(user.uid, { displayName: name });
+    // persons/{uid} is the name every other being reads (getPersonName) — it moves too.
+    await setDoc(doc(db, 'persons', user.uid), { displayName: name }, { merge: true }).catch(() => {});
     return name;
 };
 

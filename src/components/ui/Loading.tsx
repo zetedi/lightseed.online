@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react';
+// The /model route renders this outside the LanguageProvider, so the words come from the
+// speaking layer (localStorage-seeded), never the hook.
+import { speak } from '../../utils/translations';
 
 /**
  * The app's waiting animation: a bright little sun travelling an INVISIBLE lemniscate — two
@@ -26,7 +29,7 @@ export const Loading = ({ timeoutMs = 12000, label, size = 80 }: { timeoutMs?: n
     const d = `M ${2 * r} ${r} A ${r} ${r} 0 0 0 0 ${r} A ${r} ${r} 0 0 0 ${2 * r} ${r} A ${r} ${r} 0 0 1 ${4 * r} ${r} A ${r} ${r} 0 0 1 ${2 * r} ${r} Z`;
 
     return (
-        <div className="flex flex-col items-center justify-center gap-4 p-8" aria-label="Loading">
+        <div className="flex flex-col items-center justify-center gap-4 p-8" aria-label={speak('loading')}>
             <style>{`@keyframes lightseed-orbit { from { offset-distance: 0%; } to { offset-distance: 100%; } }`}</style>
             <div className="relative" style={{ width: size, height: size / 2 }}>
                 <span
@@ -40,7 +43,7 @@ export const Loading = ({ timeoutMs = 12000, label, size = 80 }: { timeoutMs?: n
             </div>
             {(label || timedOut) && (
                 <p className="text-[11px] font-medium uppercase tracking-widest text-slate-400">
-                    {timedOut ? 'Taking longer than expected' : label}
+                    {timedOut ? speak('taking_longer') : label}
                 </p>
             )}
         </div>

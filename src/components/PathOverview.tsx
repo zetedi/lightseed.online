@@ -45,7 +45,7 @@ export const PathOverview: React.FC<PathOverviewProps> = ({ current }) => {
               </span>
               <div className={`min-w-0 pb-1 ${done ? 'opacity-60' : ''}`}>
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">{t(`stage_${stage}` as Key)}{here && <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] text-emerald-700">{t('path_you_are_here')}</span>}</p>
-                <p className="text-sm font-bold text-slate-800">{t(`path_${step.key}_label` as Key)}</p>
+                <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{t(`path_${step.key}_label` as Key)}</p>
                 <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{t(`path_${step.key}_desc` as Key)}</p>
               </div>
             </li>
@@ -57,13 +57,13 @@ export const PathOverview: React.FC<PathOverviewProps> = ({ current }) => {
           <span className={`z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-sm ${current === 'sovereign' ? 'border-amber-400 bg-amber-400 text-white' : 'border-amber-200 bg-white text-amber-400'}`}>☀</span>
           <div className="min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-500">{t('stage_sovereign')}</p>
-            <p className="text-sm font-bold text-slate-800">{t('path_summit_label')}</p>
+            <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{t('path_summit_label')}</p>
             <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{t('path_summit_desc')}</p>
           </div>
         </li>
       </ol>
 
-      <p className="mt-6 rounded-xl bg-slate-50 px-4 py-3 text-[11px] leading-relaxed text-slate-400">
+      <p className="mt-6 rounded-xl bg-slate-50 px-4 py-3 text-[11px] leading-relaxed text-slate-400 dark:bg-slate-900">
         {t('path_ruleset_note')}
       </p>
     </div>

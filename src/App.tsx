@@ -149,7 +149,7 @@ const DetailWrapper = ({ children, belowHeader = false }: { children?: React.Rea
 
 const AppContent = () => {
     const { t } = useLanguage();
-    const { lightseed, myTrees, guardedTrees, activeTree, defaultTreeId, setDefaultTree, defaultVisionId, isAdmin, isSuperAdmin, isInitiate, loading: authLoading, refreshTrees } = useSession();
+    const { lightseed, myTrees, guardedTrees, activeTree, defaultTreeId, setDefaultTree, defaultVisionId, publicName, isAdmin, isSuperAdmin, isInitiate, loading: authLoading, refreshTrees } = useSession();
     // The set of trees the signed-in user guards (the LIN, via guardian links) — passed to cards
     // so a card can show its guardian affordance without a per-card read.
     const guardedTreeIds = useMemo(() => new Set(guardedTrees.map(t => t.id)), [guardedTrees]);
@@ -423,7 +423,6 @@ const AppContent = () => {
             setArrivedInvite(invite);
             setSelectedCommunity(community);
         }).catch(() => notify(speak('invite_not_found')));
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot door: runs when auth settles; the path is consumed on first resolution
     }, [authLoading]);
 
     // The ?signin door (domain/ssoDoor) — a mother site's own "sign in" link (theohouse.org's
@@ -585,7 +584,7 @@ const AppContent = () => {
                 body: `Snapped on ${new Date().toLocaleDateString()}`,
                 imageUrl: url,
                 authorId: lightseed.uid,
-                authorName: lightseed.displayName || "Soul",
+                authorName: publicName || t('someone'),
                 authorPhoto: lightseed.photoURL || undefined,
             });
             loadContent(true); 
@@ -632,7 +631,7 @@ const AppContent = () => {
         await growVision(vision, {
             ...data,
             authorId: lightseed.uid,
-            authorName: lightseed.displayName || 'Soul',
+            authorName: publicName || t('someone'),
             authorPhoto: lightseed.photoURL || undefined,
         });
         try {
@@ -646,13 +645,13 @@ const AppContent = () => {
     const [busyLabel, setBusyLabel] = useState<string | null>(null);
     const handleDeleteVisionInApp = async (visionId: string) => {
         if (!(await showConfirm('vision_delete_confirm', { title: 'delete_vision', confirmText: 'delete', danger: true }))) return;
-        setBusyLabel('Releasing the vision…');
+        setBusyLabel(t('vision_releasing'));
         try {
             await deleteVision(visionId);
             setSelectedVision(null);
             loadContent(true);
             setBusyLabel(null);
-            notify('🌱 The vision was released.');
+            notify(t('vision_released_toast'));
         } catch (e: any) {
             setBusyLabel(null);
             showAlert(e?.message || 'err_delete');
@@ -663,7 +662,7 @@ const AppContent = () => {
         try {
             const res = await acceptAlignment(id);
             setAlignments(prev => prev.filter(a => a.id !== id)); // drop the accepted request
-            await showAlert('aligned_toast', 'alignment_title');
+            notify(speak('aligned_toast'));
             // Accepting an alignment also SIGNS its covenant (the canonical 2-party form) — additive:
             // the sync-block above stays, and the alignment gains a cryptographic twin the accepting
             // party signs in their own hand. Best-effort: a missing/unavailable signing key must never
@@ -698,7 +697,7 @@ const AppContent = () => {
         }
         catch(e:any) {
             console.error("Accept Alignment Error:", e);
-            showAlert(e?.message || "Could not complete the alignment.");
+            showAlert(e?.message || 'err_alignment_complete');
         }
     }
     const onRejectAlignment = async (id: string) => {
@@ -859,7 +858,7 @@ const AppContent = () => {
                     {selectedPulse && (
                         <DetailWrapper>
                             {selectedPulse.type === 'event' ? (
-                                <div className="min-h-screen bg-slate-50">
+                                <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
                                     <EventProfile
                                         theme={effectiveTheme}
                                         pulse={selectedPulse}
@@ -871,7 +870,7 @@ const AppContent = () => {
                                     />
                                 </div>
                             ) : (
-                                <PulseDetail pulse={selectedPulse} activeTree={activeTree} onClose={() => setSelectedPulse(null)} backLabel={selectedTree && selectedPulse.lifetreeId === selectedTree.id ? `Back to ${selectedTree.name}` : 'Back'} />
+                                <PulseDetail pulse={selectedPulse} activeTree={activeTree} onClose={() => setSelectedPulse(null)} backLabel={selectedTree && selectedPulse.lifetreeId === selectedTree.id ? t('back_to_name').replace('{name}', selectedTree.name) : t('back')} />
                             )}
                         </DetailWrapper>
                     )}
@@ -928,7 +927,7 @@ const AppContent = () => {
                     onClaimSuperAdmin={async () => {
                         const ok = await claimSuperAdmin(lightseed.uid);
                         if (ok) window.location.reload();
-                        else showAlert('superadmin_claimed');
+                        else notify(speak('superadmin_claimed'));
                     }}
                     onGrantAdmin={async (uid: string) => { await grantAdmin(uid); }}
                     onRevokeAdmin={async (uid: string) => { await revokeAdmin(uid); }}
@@ -1000,7 +999,7 @@ const AppContent = () => {
                     dir="auto"
                     type="text"
                     list="search-suggestions"
-                    className="block w-full pl-10 pr-3 py-2 border border-emerald-100 rounded-xl leading-5 bg-white/80 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm shadow-sm"
+                    className="block w-full pl-10 pr-3 py-2 border border-emerald-100 rounded-xl leading-5 bg-white/80 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm shadow-sm dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-100 dark:placeholder-slate-500"
                     placeholder={t('search_placeholder')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -1026,7 +1025,7 @@ const AppContent = () => {
                                     dir="auto"
                                     type="text"
                                     list="search-suggestions"
-                                    className="block w-full pl-10 pr-3 py-2 border border-white/20 rounded-xl leading-5 bg-white/90 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-white focus:border-white sm:text-sm shadow-sm"
+                                    className="block w-full pl-10 pr-3 py-2 border border-white/20 rounded-xl leading-5 bg-white/90 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-white focus:border-white sm:text-sm shadow-sm dark:bg-slate-900/80 dark:text-slate-100 dark:placeholder-slate-500"
                                     placeholder={t('search_placeholder')}
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -1037,7 +1036,7 @@ const AppContent = () => {
                             </div>
                         }
                         toggle={
-                            <div className="flex shrink-0 items-center rounded-full bg-white/15 p-0.5 backdrop-blur-sm">
+                            <div className="flex shrink-0 items-center rounded-full bg-white/15 p-0.5 backdrop-blur-sm dark:bg-slate-900/15">
                                 <button onClick={() => setViewMode('grid')} title={t('list_view')} aria-pressed={viewMode === 'grid'}
                                     className={`rounded-full p-2 transition-all ${viewMode === 'grid' ? 'bg-white text-slate-800 shadow-sm' : 'text-white/75 hover:text-white'}`}>
                                     <Icons.List />
@@ -1057,7 +1056,7 @@ const AppContent = () => {
                                 >
                                     <Icons.Tree />
                                     <span className="hidden sm:inline">{t('plant_lifetree')}</span>
-                                    <span className="sm:hidden">Plant</span>
+                                    <span className="sm:hidden">{t('path_plant_cta')}</span>
                                 </button>
                                 {myTrees.length > 0 && (
                                     <button
@@ -1125,7 +1124,7 @@ const AppContent = () => {
                             // everyone else signs with their validated tree (peer web of trust).
                             ? validateLifetree(id, (isSuperAdmin || isInitiate) ? lightseed!.uid : activeTree!.id)
                             : unvalidateLifetree(id)
-                        ).then(() => { showAlert(nextValidated ? "Validated!" : "Validation removed."); loadContent(true); }); }}
+                        ).then(() => { notify(speak(nextValidated ? 'validated_toast' : 'validation_removed_toast')); loadContent(true); }); }}
                         onRefresh={() => loadContent(true)}
                     />
                 ) : tab === 'visions' ? (
@@ -1207,8 +1206,8 @@ const AppContent = () => {
                                 // One tone for the whole strip: the active sub-tab's, matching its band below.
                                 tone={tabTone(offeringsSub === 'beds' ? 'beds' : 'offerings', effectiveTheme)}
                                 tabs={[
-                                    { key: 'offerings', label: 'Offerings', icon: <Icons.Exchange /> },
-                                    { key: 'beds', label: 'Beds', icon: <Icons.Moon /> },
+                                    { key: 'offerings', label: t('offerings'), icon: <Icons.Exchange /> },
+                                    { key: 'beds', label: t('beds'), icon: <Icons.Moon /> },
                                 ]}
                             />
                         );
@@ -1222,7 +1221,7 @@ const AppContent = () => {
                             />
                         ) : (
                             <PulseFeedPage
-                                title="Offerings"
+                                title={t('offerings')}
                                 tone={tabTone('offerings', effectiveTheme)}
                                 densityKey="offerings"
                                 searchBox={searchBox}
@@ -1232,7 +1231,7 @@ const AppContent = () => {
                                     </button>
                                 )}
                                 items={filteredData}
-                                emptyText="No offerings yet. Offer a bed or a service to the circle."
+                                emptyText={t('offerings_none_page')}
                                 loadingMore={loadingMore}
                                 lightseed={lightseed}
                                 onMatch={(p: Pulse) => { setSelectedPulse(p); openPulseModal(); }}
@@ -1372,9 +1371,9 @@ const AppContent = () => {
                     <div className="mx-auto max-w-7xl px-4 text-right sm:px-6 lg:px-8">
                         <button
                             onClick={() => setSeedView(false)}
-                            title={`Back to ${landingCommunity.name}`}
-                            aria-label={`Back to ${landingCommunity.name}`}
-                            className="pointer-events-auto relative inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white shadow-xl ring-2 ring-amber-300/70 transition-transform hover:scale-110 active:scale-95"
+                            title={t('back_to_name').replace('{name}', landingCommunity.name)}
+                            aria-label={t('back_to_name').replace('{name}', landingCommunity.name)}
+                            className="pointer-events-auto relative inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white shadow-xl ring-2 ring-amber-300/70 transition-transform hover:scale-110 active:scale-95 dark:bg-slate-900"
                             style={{ transform: 'translateX(calc(50% - 20px))' }}
                         >
                             {landingCommunity.logoUrl
@@ -1393,9 +1392,9 @@ const AppContent = () => {
                         <span className="truncate">{t('viewing_as').replace('{name}', impersonatedCommunity.name)}</span>
                         <button
                             onClick={() => { setImpersonatedCommunity(null); setTab('dashboard'); window.scrollTo(0, 0); }}
-                            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/25 px-2.5 py-0.5 font-bold uppercase tracking-wide hover:bg-white/40"
+                            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/25 px-2.5 py-0.5 font-bold uppercase tracking-wide hover:bg-white/40 dark:bg-slate-900/25"
                         >
-                            <Icons.Close /> Exit community
+                            <Icons.Close /> {t('exit_community')}
                         </button>
                     </div>
                 )}
@@ -1406,9 +1405,9 @@ const AppContent = () => {
                         <span className="truncate">{t('carrying_line').replace('{tree}', carryingTree.name).replace('{name}', lightseed?.displayName || t('you'))}</span>
                         <button
                             onClick={() => setCarryingTree(null)}
-                            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/25 px-2.5 py-0.5 font-bold uppercase tracking-wide hover:bg-white/40"
+                            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/25 px-2.5 py-0.5 font-bold uppercase tracking-wide hover:bg-white/40 dark:bg-slate-900/25"
                         >
-                            <Icons.Close /> Stop carrying
+                            <Icons.Close /> {t('stop_carrying')}
                         </button>
                     </div>
                 )}
@@ -1445,7 +1444,7 @@ const AppContent = () => {
                         appName={impersonatedCommunity?.name || (isSeedShellHost(window.location.hostname) ? '.seed' : config.name)}
                         crownRole={deriveCrownRole(impersonatedCommunity || hostCommunity, dataAuthority)}
                         // An open event names itself in the header (mobile label + tablet centre).
-                        pageLabel={selectedPulse?.type === 'event' ? 'Event' : undefined}
+                        pageLabel={selectedPulse?.type === 'event' ? t('event_chip') : undefined}
                         isNightMode={effectiveIsDark}
                         theme={effectiveTheme}
                         onToggleNightMode={toggleNightMode}
@@ -1492,7 +1491,7 @@ const AppContent = () => {
                                     validated: nextValidated,
                                     validatorId: nextValidated ? ((isSuperAdmin || isInitiate) ? lightseed!.uid : activeTree!.id) : null,
                                 });
-                                showAlert(nextValidated ? "Validated!" : "Validation removed.");
+                                notify(speak(nextValidated ? 'validated_toast' : 'validation_removed_toast'));
                                 loadContent(true);
                             })}
                             onUpdate={(updates: Partial<Lifetree>) => handleTreeUpdate(selectedTree.id, updates)}
@@ -1506,7 +1505,7 @@ const AppContent = () => {
                             carrying={carryingTree?.id === selectedTree.id}
                             onCarry={isSuperAdmin ? setCarryingTree : undefined}
                             isDefaultTree={defaultTreeId === selectedTree.id}
-                            onSetDefault={() => { setDefaultTree(selectedTree.id); showAlert(`${selectedTree.name} is now your default tree.`); }}
+                            onSetDefault={() => { setDefaultTree(selectedTree.id); showAlert(t('default_tree_set_toast').replace('{name}', selectedTree.name)); }}
                             targetUserProfile={{ onlyValidatedCanReach: selectedTree.onlyValidatedCanReach }}
                         />
                         )}
@@ -1583,10 +1582,10 @@ const AppContent = () => {
                     const c = impersonatedCommunity || hostCommunity;
                     return (
                         <a href={home} title={c?.domain}
-                            className="fixed bottom-5 right-5 z-30 flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-white shadow-2xl transition-transform hover:scale-110 active:scale-95">
+                            className="fixed bottom-5 right-5 z-30 flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-white shadow-2xl transition-transform hover:scale-110 active:scale-95 dark:bg-slate-900">
                             {c?.logoUrl
                                 ? <img src={c.logoUrl} alt={c?.name || ''} className="h-full w-full object-cover" />
-                                : <span className="text-slate-600"><Icons.Globe /></span>}
+                                : <span className="text-slate-600 dark:text-slate-300"><Icons.Globe /></span>}
                         </a>
                     );
                 })()}
@@ -1599,7 +1598,7 @@ const AppContent = () => {
 
                 {/* The Path, whole — the Light Path's ruleset with the walker's position lit. */}
                 {showPathOverview && (
-                    <Modal title="The Path" onClose={() => setShowPathOverview(false)}>
+                    <Modal title={t('the_path')} onClose={() => setShowPathOverview(false)}>
                         <div className="max-h-[70vh] overflow-y-auto p-1 pr-2">
                             <PathOverview current={derivePathway(pathwayInput).stage} />
                         </div>
@@ -1618,7 +1617,7 @@ const AppContent = () => {
                         pulse={selectedPulse}
                         activeTree={activeTree}
                         onClose={() => setSelectedPulse(null)}
-                        backLabel={selectedTree && selectedPulse.lifetreeId === selectedTree.id ? `Back to ${selectedTree.name}` : 'Back'}
+                        backLabel={selectedTree && selectedPulse.lifetreeId === selectedTree.id ? t('back_to_name').replace('{name}', selectedTree.name) : t('back')}
                         canEdit={canEditEvent(selectedPulse, { uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin }, { hostCommunity })}
                         onEdit={() => setEditingEvent(selectedPulse)}
                     />
@@ -1719,11 +1718,11 @@ const AppContent = () => {
                         card visibly floats OVER the app; on desktop it centres vertically, so the
                         top and bottom margins are equal. */}
                     <div className="mx-auto w-full max-w-6xl px-2 py-2 sm:flex sm:min-h-full sm:flex-col sm:justify-center sm:px-6 sm:py-6 lg:py-10">
-                        <div className="relative min-h-[calc(100dvh-1rem)] rounded-2xl bg-white p-3 pt-3 shadow-2xl sm:min-h-0 sm:p-6 sm:pt-4">
+                        <div className="relative min-h-[calc(100dvh-1rem)] rounded-2xl bg-white p-3 pt-3 shadow-2xl sm:min-h-0 sm:p-6 sm:pt-4 dark:bg-slate-900">
                             <button
                                 onClick={() => setShowReachModal(false)}
-                                title="Close"
-                                aria-label="Close messages"
+                                title={t('close')}
+                                aria-label={t('close_messages')}
                                 className="absolute right-3 top-3 z-10 rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
                             >
                                 <Icons.Close />

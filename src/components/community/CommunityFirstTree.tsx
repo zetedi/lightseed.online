@@ -44,9 +44,9 @@ export const CommunityFirstTree: React.FC<CommunityFirstTreeProps> = ({
 
   return (
     <div>
-      <SectionTitle title="First Tree" sub="The first lifetree rooted in this community's domain." />
+      <SectionTitle title={t('community_first_tree')} sub={t('community_first_tree_sub')} />
       {!firstTree ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400">
+        <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400 dark:border-slate-700">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-500"><Icons.Tree /></div>
           <p className="text-sm">{t('community_no_tree')}</p>
         </div>
@@ -70,25 +70,25 @@ export const CommunityFirstTree: React.FC<CommunityFirstTreeProps> = ({
 
           <div className="flex flex-wrap items-center gap-2 text-xs">
             {firstTree.locationName && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-slate-600"><Icons.Loc /> {firstTree.locationName}</span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-slate-600 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700"><Icons.Loc /> {firstTree.locationName}</span>
             )}
             {firstTree.validated && (
               <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-bold text-emerald-700">{t('validated')}</span>
             )}
-            <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-slate-600">
-              {firstTreeGuardians} {firstTreeGuardians === 1 ? 'guardian' : 'guardians'}
+            <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-slate-600 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700">
+              {t('guardians_count').replace('{n}', String(firstTreeGuardians))}
             </span>
           </div>
 
           {firstTree.body && (
-            <p className="whitespace-pre-line text-justify font-serif text-lg leading-relaxed text-slate-700">{firstTree.body}</p>
+            <p className="whitespace-pre-line text-justify font-serif text-lg leading-relaxed text-slate-700 dark:text-slate-200">{firstTree.body}</p>
           )}
 
           <div className="flex flex-wrap gap-3 pt-2">
             <GuardianButton tree={firstTree} guardian={guardedTreeIds.has(firstTree.id)} busy={togglingId === firstTree.id} onToggle={onToggleGuardian} />
             {onViewTree && (
-              <button onClick={() => onViewTree(firstTree)} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 shadow-sm transition-colors hover:border-slate-300 hover:text-slate-900">
-                <Icons.ArrowRight /> View full tree
+              <button onClick={() => onViewTree(firstTree)} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 shadow-sm transition-colors hover:border-slate-300 hover:text-slate-900 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700">
+                <Icons.ArrowRight /> {t('view_full_tree')}
               </button>
             )}
           </div>

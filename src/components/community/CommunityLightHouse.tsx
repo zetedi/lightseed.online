@@ -2,6 +2,7 @@ import React from 'react';
 import { Community, LightHouse } from '../../types';
 import { tabTone } from '../../utils/tabTheme';
 import { LightHouseSection, type LightHouseDraft } from '../sections/LightHouseSection';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface CommunityLightHouseProps {
   community: Community;
@@ -18,18 +19,21 @@ interface CommunityLightHouseProps {
 
 // The LightHouses tab — a thin community binding over the entity-generic LightHouseSection:
 // the shell loads and visibility-gates the domain's lightHouses; this supplies headings + accent.
-export const CommunityLightHouse: React.FC<CommunityLightHouseProps> = ({ community, lightHouses, canEdit = false, onCreate, onUploadImage, onOpen, adoptable, onAdopt }) => (
-  <LightHouseSection
-    title="Light Houses"
-    sub="The sacred places that hold this community's lifetrees."
-    lightHouses={lightHouses}
-    emptyMessage="No Light House has been consecrated for this community yet."
-    placeholderColor={community.theme?.primary || tabTone('communities')}
-    canCreate={canEdit}
-    onCreate={onCreate}
-    onUploadImage={onUploadImage}
-    onOpen={onOpen}
-    adoptable={adoptable}
-    onAdopt={onAdopt}
-  />
-);
+export const CommunityLightHouse: React.FC<CommunityLightHouseProps> = ({ community, lightHouses, canEdit = false, onCreate, onUploadImage, onOpen, adoptable, onAdopt }) => {
+  const { t } = useLanguage();
+  return (
+    <LightHouseSection
+      title={t('light_houses')}
+      sub={t('community_lh_sub')}
+      lightHouses={lightHouses}
+      emptyMessage={t('community_lh_empty')}
+      placeholderColor={community.theme?.primary || tabTone('communities')}
+      canCreate={canEdit}
+      onCreate={onCreate}
+      onUploadImage={onUploadImage}
+      onOpen={onOpen}
+      adoptable={adoptable}
+      onAdopt={onAdopt}
+    />
+  );
+};

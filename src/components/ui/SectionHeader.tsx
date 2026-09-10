@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { LeafTexture } from './LeafTexture';
 import { Icons } from './Icons';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // The list-page header band. No title, no icon chip — the reader already knows where they are:
 // the band carries the SAME colour as the active menu item above it (see utils/tabTheme.ts), so on
@@ -26,6 +27,7 @@ export const SectionHeader = ({ title, tone = '#059669', action, footer, toggle,
                                  // tab shares the band's tone, so the two read as one surface
     fg?: string;                 // the band's own text/icon colour (tabFg); dark on the solar gold
 }) => {
+    const { t } = useLanguage();
     const [searchOpen, setSearchOpen] = useState(false);
     const overlayRef = useRef<HTMLDivElement>(null);
     // Focus the input as soon as the overlay opens — the tap meant "I want to type".
@@ -63,7 +65,7 @@ export const SectionHeader = ({ title, tone = '#059669', action, footer, toggle,
                                     tablets on CTA-heavy pages); it hides once the full box unfolds. */}
                                 <button
                                     onClick={() => setSearchOpen(true)}
-                                    title="Search" aria-label="Search"
+                                    title={t('search_btn')} aria-label={t('search_btn')}
                                     className={`flex shrink-0 items-center justify-center rounded-full p-2 backdrop-blur-sm transition-colors ${chipCls} ${hideBp}`}
                                     style={chipStyle}
                                 >
@@ -87,7 +89,7 @@ export const SectionHeader = ({ title, tone = '#059669', action, footer, toggle,
                         <div className="min-w-0 flex-1">{footer}</div>
                         <button
                             onClick={() => setSearchOpen(false)}
-                            title="Close search" aria-label="Close search"
+                            title={t('close_search')} aria-label={t('close_search')}
                             className={`flex shrink-0 items-center justify-center rounded-full p-2 transition-colors ${chipCls}`}
                             style={chipStyle}
                         >

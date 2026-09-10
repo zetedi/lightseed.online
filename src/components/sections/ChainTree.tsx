@@ -60,6 +60,9 @@ interface ChainTreeProps {
     emptyText?: string;
     root?: ChainRoot | null;
     stats?: ChainStats | null;
+    // Hands that act on the whole chain (the export ceremony) — rendered inside the card, at
+    // its foot, on the trailing side: where the exported data itself stands.
+    footer?: React.ReactNode;
 }
 
 // Collapse the middle of a long growth chain into one clickable line.
@@ -77,6 +80,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
     root,
     stats,
     unmint,
+    footer,
 }) => {
     const { t } = useLanguage();
     // The chain can be long, so the middle collapses into a clickable line.
@@ -86,7 +90,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
         return <p className="py-10 text-center text-sm text-slate-400">{t('chain_growing')}</p>;
     }
     if (blocks.length === 0 && !genesisBlock && !root) {
-        return <p className="py-10 text-center text-sm text-slate-400">{emptyText || 'No pulses yet.'}</p>;
+        return <p className="py-10 text-center text-sm text-slate-400">{emptyText || t('no_pulses_yet')}</p>;
     }
 
     const chainCollapsible = blocks.length > COLLAPSE_AT;
@@ -131,7 +135,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                             )}
                             {chainCollapsible && (
                                 <button onClick={() => setChainExpanded(e => !e)} className="relative z-10 text-[11px] font-bold text-emerald-300 hover:text-emerald-200">
-                                    {chainExpanded ? 'Collapse the middle' : `Expand all ${blocks.length} pulses`}
+                                    {chainExpanded ? t('chain_collapse_middle') : t('chain_expand_all').replace('{n}', String(blocks.length))}
                                 </button>
                             )}
                         </div>
@@ -161,7 +165,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                                     <button onClick={() => setChainExpanded(true)}
                                         className="relative z-10 flex w-full items-center justify-center gap-2 rounded-full border-2 border-dashed border-emerald-300 bg-emerald-50/80 py-2.5 text-xs font-bold text-emerald-700 backdrop-blur-sm transition-colors hover:bg-emerald-100 md:max-w-md">
                                         <Icons.List />
-                                        <span>{hiddenChainCount} more pulse{hiddenChainCount !== 1 ? 's' : ''} hidden, tap to expand</span>
+                                        <span>{t('chain_more_hidden').replace('{n}', String(hiddenChainCount))}</span>
                                     </button>
                                 </div>
                             );
@@ -223,14 +227,14 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                                         <div className="p-4 md:p-6 relative z-10">
                                             <div className={`flex items-center gap-2 mb-3 ${isRightSide ? '' : 'md:flex-row-reverse'} flex-row`}>
                                                 {pulseBadge === 'GROWTH' ? (
-                                                    <span className="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold">GROWTH</span>
+                                                    <span className="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold">{t('badge_growth')}</span>
                                                 ) : pulseBadge === 'EVENT' ? (
-                                                    <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 rounded-full font-bold">EVENT</span>
+                                                    <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 rounded-full font-bold">{t('badge_event')}</span>
                                                 ) : (
-                                                    <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 rounded-full font-bold">PULSE</span>
+                                                    <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 rounded-full font-bold">{t('badge_pulse')}</span>
                                                 )}
                                                 {pulse.offeringId && (
-                                                    <span className="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold" title={pulse.offeringRole === 'from' ? 'offered from this chain' : 'accepted on this chain'}>OFFERING ✓</span>
+                                                    <span className="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold" title={pulse.offeringRole === 'from' ? t('offering_from_chain') : t('offering_on_chain')}>{t('badge_offering_done')}</span>
                                                 )}
                                                 {pulse.care === 'watering' && (
                                                     <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-1" title={pulse.wateringConfirmation?.note || ''}>💧 {typeof pulse.wateringConfirmation?.confidence === 'number' ? `${pulse.wateringConfirmation.confidence}%` : ''}{pulse.wateringConfirmedBy === 'guardian' ? ' ✓' : ''}</span>
@@ -245,14 +249,14 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                                             <div className={`flex gap-4 ${isRightSide ? '' : 'md:flex-row-reverse'} flex-row items-start`}>
                                                 {pulseImages.length > 0 && (
                                                     <div className="relative shrink-0">
-                                                        <Picture size={480} src={pulseImages[0]} className="w-16 h-16 rounded-lg object-cover bg-slate-50 border border-slate-100" />
+                                                        <Picture size={480} src={pulseImages[0]} className="w-16 h-16 rounded-lg object-cover bg-slate-50 border border-slate-100 dark:bg-slate-900 dark:border-slate-800" />
                                                         {pulseImages.length > 1 && (
-                                                            <span className="absolute -right-1 -top-1 rounded-full bg-white px-1.5 py-0.5 text-[9px] font-bold text-slate-600 shadow">{pulseImages.length}</span>
+                                                            <span className="absolute -right-1 -top-1 rounded-full bg-white px-1.5 py-0.5 text-[9px] font-bold text-slate-600 shadow dark:bg-slate-900 dark:text-slate-300">{pulseImages.length}</span>
                                                         )}
                                                     </div>
                                                 )}
                                                 <div className="min-w-0 flex-1">
-                                                    <h4 dir="auto" className="font-bold text-slate-800 text-base md:text-lg leading-tight mb-1 md:mb-2 break-words">{pulse.title}</h4>
+                                                    <h4 dir="auto" className="font-bold text-slate-800 text-base md:text-lg leading-tight mb-1 md:mb-2 break-words dark:text-slate-100">{pulse.title}</h4>
                                                     <p dir="auto" className="text-xs text-slate-500 line-clamp-3 break-words">{pulse.body}</p>
                                                     {/* The bridge stays visible downstream: a being's words, a human's hands. */}
                                                     {pulse.carriedByName && <p className="mt-1 text-[10px] italic text-purple-500">🤲 {t('carried_by').replace('{name}', pulse.carriedByName)}</p>}
@@ -261,7 +265,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
 
                                             <div className={`mt-4 pt-2 border-t border-slate-50 flex items-center gap-2 ${isRightSide ? '' : 'md:flex-row-reverse'}`}>
                                                 <span className={`min-w-0 flex-1 text-[9px] font-mono text-slate-300 truncate ${isRightSide ? 'md:text-left' : 'md:text-right'} text-left`}>
-                                                    Hash: {pulse.hash.substring(0, 16)}...
+                                                    {t('hash_label')}: {pulse.hash.substring(0, 16)}...
                                                 </span>
                                                 {/* The newest link's way back — on the leaf's lower OUTSIDE edge. */}
                                                 {unmint?.pulseId === pulse.id && (
@@ -299,7 +303,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                                      <div className="relative h-40 w-full">
                                          <Picture size={1200} src={root.imageUrl} alt={root.name} className="h-full w-full object-cover opacity-90" />
                                          <div className="absolute inset-0 bg-gradient-to-t from-[#5D4037] via-[#5D4037]/40 to-transparent" />
-                                         <span className="absolute left-3 top-3 rounded-full bg-amber-100/90 px-2 py-0.5 text-[10px] font-bold text-amber-900 shadow">🌱 PLANTING</span>
+                                         <span className="absolute left-3 top-3 rounded-full bg-amber-100/90 px-2 py-0.5 text-[10px] font-bold text-amber-900 shadow">🌱 {t('badge_planting')}</span>
                                      </div>
                                  )}
                                  <div className="p-6 text-center">
@@ -330,7 +334,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                             <p className="text-2xl text-white">{stats.blockHeight}</p>
                         </div>
                         <div className="break-all">
-                            <p className="mb-1 text-[10px] uppercase text-slate-500">{t('genesis')} · root</p>
+                            <p className="mb-1 text-[10px] uppercase text-slate-500">{t('genesis')} · {t('chain_root_word')}</p>
                             <p className="text-emerald-500/80" dir="ltr">{stats.genesisHash}</p>
                         </div>
                         <div className="break-all">
@@ -340,6 +344,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                     </div>
                 </div>
             )}
+            {footer && <div className="mt-4 flex justify-end">{footer}</div>}
         </div>
     );
 };

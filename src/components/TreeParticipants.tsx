@@ -56,47 +56,47 @@ export const TreeParticipants = ({ entityId, currentUserId, myTrees = [], maxPar
     return (
         <div className="space-y-6">
             {loading ? (
-                <p className="text-sm text-slate-400">Loading trees…</p>
+                <p className="text-sm text-slate-400">{t('loading_trees')}</p>
             ) : trees.length > 0 ? (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {trees.map(t => (
-                        <div key={t.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
-                            {treeImg(t) ? (
-                                <Picture size={480} src={treeImg(t)} className="h-10 w-10 shrink-0 rounded-full object-cover" alt="" referrerPolicy="no-referrer" />
+                    {trees.map(tree => (
+                        <div key={tree.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+                            {treeImg(tree) ? (
+                                <Picture size={480} src={treeImg(tree)} className="h-10 w-10 shrink-0 rounded-full object-cover" alt="" referrerPolicy="no-referrer" />
                             ) : (
                                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-500"><Icons.Tree /></div>
                             )}
                             <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-bold text-slate-800">{t.name}</p>
-                                {t.shortTitle && <p className="truncate text-xs text-slate-400">{t.shortTitle}</p>}
+                                <p className="truncate text-sm font-bold text-slate-800 dark:text-slate-100">{tree.name}</p>
+                                {tree.shortTitle && <p className="truncate text-xs text-slate-400">{tree.shortTitle}</p>}
                             </div>
-                            {currentUserId && t.ownerId === currentUserId && (
+                            {currentUserId && tree.ownerId === currentUserId && (
                                 <button
-                                    onClick={() => toggle(t, false)}
-                                    disabled={busyId === t.id}
-                                    className="shrink-0 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                                    onClick={() => toggle(tree, false)}
+                                    disabled={busyId === tree.id}
+                                    className="shrink-0 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:border-slate-700"
                                 >
-                                    {busyId === t.id ? '…' : 'Remove'}
+                                    {busyId === tree.id ? '…' : t('remove')}
                                 </button>
                             )}
                         </div>
                     ))}
                 </div>
             ) : (
-                <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-sm text-slate-400">
-                    No trees have joined yet.
+                <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-sm text-slate-400 dark:border-slate-700">
+                    {t('no_trees_joined')}
                 </div>
             )}
 
             {bounded && (
                 <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
-                    {Math.min(trees.length, maxParticipants)} of {maxParticipants} places taken
+                    {t('places_taken').replace('{n}', String(Math.min(trees.length, maxParticipants))).replace('{max}', String(maxParticipants))}
                 </p>
             )}
 
             {currentUserId && addable.length > 0 && full && (
                 <p className="rounded-xl border border-dashed border-amber-200 bg-amber-50/60 p-3 text-xs text-amber-700">
-                    The gathering is full. A place opens when a tree withdraws.
+                    {t('gathering_full')}
                 </p>
             )}
 
@@ -104,14 +104,14 @@ export const TreeParticipants = ({ entityId, currentUserId, myTrees = [], maxPar
                 <div>
                     <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">{t('add_your_tree')}</p>
                     <div className="flex flex-wrap gap-2">
-                        {addable.map(t => (
+                        {addable.map(tree => (
                             <button
-                                key={t.id}
-                                onClick={() => toggle(t, true)}
-                                disabled={busyId === t.id}
+                                key={tree.id}
+                                onClick={() => toggle(tree, true)}
+                                disabled={busyId === tree.id}
                                 className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100 disabled:opacity-50"
                             >
-                                <Icons.Tree /> {busyId === t.id ? '…' : t.name}
+                                <Icons.Tree /> {busyId === tree.id ? '…' : tree.name}
                             </button>
                         ))}
                     </div>

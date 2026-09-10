@@ -55,30 +55,49 @@ export const TreeConnections = ({ tree }: { tree: Lifetree }) => {
 
   // Collapsed until asked — the walk can touch many docs, so it never runs on mere mount
   // (and it is superadmin-only for now; see LifetreeDetail).
+  // The fold is two hands on one row: the NAME opens it, and the chevron keeps the far right of
+  // the row in both states — the corner an eye already goes to for "is this open?".
+  const title = (
+    <button type="button" onClick={() => setRevealed(r => !r)} aria-expanded={revealed}
+      title={revealed ? t('conn_hide') : t('conn_show')}
+      className="flex min-w-0 flex-1 items-center gap-2 text-left text-xs font-bold uppercase tracking-wider text-slate-400 transition-colors hover:text-emerald-600 dark:hover:text-emerald-300">
+      <Icons.Globe />
+      <span className="min-w-0 flex-1">{t('tree_connections')}</span>
+    </button>
+  );
+  const chevron = (
+    <button type="button" onClick={() => setRevealed(r => !r)} aria-expanded={revealed}
+      title={revealed ? t('conn_hide') : t('conn_show')} aria-label={revealed ? t('conn_hide') : t('conn_show')}
+      className="shrink-0 rounded-full p-1 text-slate-400 transition-colors hover:text-emerald-600 dark:hover:text-emerald-300">
+      <span className={`block transition-transform ${revealed ? 'rotate-90' : ''}`} aria-hidden><Icons.ChevronRight size={16} /></span>
+    </button>
+  );
+
   if (!revealed) {
     return (
-      <button type="button" onClick={() => setRevealed(true)}
-        className="flex w-full items-center gap-2 rounded-2xl border border-slate-100 bg-white px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-400 shadow-sm transition-colors hover:border-emerald-200 hover:text-emerald-600">
-        <Icons.Globe /> {t('tree_connections')}
-      </button>
+      <div className="flex w-full items-center gap-2 rounded-2xl border border-slate-100 bg-white px-5 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        {title}
+        {chevron}
+      </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400">{t('tree_connections')}</p>
-        <div className="flex gap-1.5">
+        {title}
+        <div className="flex items-center gap-1.5">
           {depthLabels.map((label, d) => (
             <button key={d} type="button" onClick={() => setDepth(d)}
-              className={`rounded-full border px-3 py-1 text-[11px] font-bold transition-all ${depth === d ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-500 hover:border-emerald-200'}`}>
+              className={`rounded-full border px-3 py-1 text-[11px] font-bold transition-all ${depth === d ? 'border-emerald-400 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300' : 'border-slate-200 bg-white text-slate-500 hover:border-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400'}`}>
               {label}
             </button>
           ))}
+          {chevron}
         </div>
       </div>
       {loading ? <div className="py-8"><Loading /></div> : byDistance.length === 0 ? (
-        <p className="mt-4 rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400">{t('conn_empty')}</p>
+        <p className="mt-4 rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400 dark:border-slate-700">{t('conn_empty')}</p>
       ) : (
         byDistance.map(([d, beings]) => (
           <div key={d} className="mt-4">
@@ -86,7 +105,7 @@ export const TreeConnections = ({ tree }: { tree: Lifetree }) => {
             <div className="mt-1.5 flex flex-wrap gap-1.5">
               {beings.map(b => {
                 const chip = (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 transition-colors hover:border-emerald-300 hover:bg-emerald-50">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 transition-colors hover:border-emerald-300 hover:bg-emerald-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-emerald-950/60">
                     <span aria-hidden>{KIND_GLYPH[b.kind] || '·'}</span>
                     <span className="max-w-[10rem] truncate">{b.name || b.id.slice(0, 8)}</span>
                   </span>

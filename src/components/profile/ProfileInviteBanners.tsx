@@ -83,7 +83,7 @@ export const ProfileInviteBanners: React.FC<ProfileInviteBannersProps> = ({ uid,
               </div>
               <div className="flex shrink-0 gap-2">
                 <button onClick={() => handleAcceptInvite(inv.id)} disabled={inviteBusyId === inv.id} className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow hover:bg-emerald-700 disabled:opacity-50">{inviteBusyId === inv.id ? '…' : t('accept')}</button>
-                <button onClick={() => handleDeclineInvite(inv.id)} disabled={inviteBusyId === inv.id} className="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50">{t('decline')}</button>
+                <button onClick={() => handleDeclineInvite(inv.id)} disabled={inviteBusyId === inv.id} className="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700">{t('decline')}</button>
               </div>
             </div>
           ))}
@@ -104,7 +104,7 @@ export const ProfileInviteBanners: React.FC<ProfileInviteBannersProps> = ({ uid,
               </div>
               <div className="flex shrink-0 gap-2">
                 <button onClick={async () => { try { await respondCommunityTreeInvite(inv, true); setCommunityInvites(prev => prev.filter(i => i.id !== inv.id)); notify(speak(spokenLine('tree_stands_with', { tree: inv.lifetreeName || '', community: inv.communityName || '' }))); } catch (e: any) { notify(speak(e?.message || 'err_accept')); } }} className="rounded-full bg-teal-600 px-4 py-2 text-xs font-bold text-white shadow hover:bg-teal-700">{t('accept')}</button>
-                <button onClick={async () => { try { await respondCommunityTreeInvite(inv, false); setCommunityInvites(prev => prev.filter(i => i.id !== inv.id)); } catch { /* keep */ } }} className="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">{t('decline')}</button>
+                <button onClick={async () => { try { await respondCommunityTreeInvite(inv, false); setCommunityInvites(prev => prev.filter(i => i.id !== inv.id)); } catch { /* keep */ } }} className="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700">{t('decline')}</button>
               </div>
             </div>
           ))}
@@ -136,7 +136,7 @@ export const ProfileInviteBanners: React.FC<ProfileInviteBannersProps> = ({ uid,
                 </button>
                 <button onClick={async () => {
                   try { await declineKeeperInvite(inv.id); setKeeperInvites(prev => prev.filter(i => i.id !== inv.id)); } catch { /* keep */ }
-                }} className="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">
+                }} className="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700">
                   {t('decline')}
                 </button>
               </div>

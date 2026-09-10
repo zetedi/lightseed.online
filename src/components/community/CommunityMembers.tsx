@@ -10,7 +10,7 @@ import { doorOf, communityInviteUrl, inviteStatus, leaveRefusal, type CommunityD
 import { SectionTitle } from '../ui/SectionTitle';
 import { firestoreStore } from '../../adapters/firestore';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { spokenLine } from '../../utils/translations';
+import { spokenLine, type TranslationKey } from '../../utils/translations';
 import {
   getPersonName, updateCommunity,
   mintCommunityInvite, listCommunityInvites, revokeCommunityInvite,
@@ -41,10 +41,11 @@ interface CommunityMembersProps {
   onCommunityUpdate?: (updates: Partial<Community>) => void;
 }
 
-const DOORS: { value: CommunityDoor; label: string; hint: string }[] = [
-  { value: 'open', label: 'Open', hint: 'any signed-in being may step in' },
-  { value: 'invite', label: 'Invitation', hint: 'knock, or arrive holding an invitation' },
-  { value: 'closed', label: 'Closed', hint: 'the community rests; no new members' },
+// The three doors, named by KEY — the words are spoken at render, in the reader's language.
+const DOORS: { value: CommunityDoor; label: TranslationKey; hint: TranslationKey }[] = [
+  { value: 'open', label: 'door_open', hint: 'door_hint_open' },
+  { value: 'invite', label: 'door_invitation', hint: 'door_hint_invite' },
+  { value: 'closed', label: 'door_closed_label', hint: 'door_hint_closed' },
 ];
 
 const resolveNames = async (uids: string[]): Promise<Row[]> =>
@@ -177,13 +178,13 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
       setDoor(next);
       onCommunityUpdate?.({ door: next });
       notify(next === 'open' ? t('door_now_open') : next === 'invite' ? t('door_now_invite') : t('door_now_closed'));
-    } catch (e: any) { showAlert(e?.message || 'Could not change the door.'); }
+    } catch (e: any) { showAlert(e?.message || 'err_door_change'); }
     setDoorBusy(false);
   };
 
   const copyInviteUrl = async (inviteId: string) => {
     const url = communityInviteUrl(window.location.origin, inviteId);
-    try { await navigator.clipboard.writeText(url); notify('🎟 Invitation link copied. Share it to open the door.'); }
+    try { await navigator.clipboard.writeText(url); notify(t('invite_link_copied')); }
     catch { showAlert(url); } // clipboard unavailable: show the link instead
   };
 
@@ -194,7 +195,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
       const invite = await mintCommunityInvite(community.id, currentUserId);
       setInvites(prev => [invite, ...prev]);
       await copyInviteUrl(invite.id);
-    } catch (e: any) { showAlert(e?.message || 'Could not mint the invitation.'); }
+    } catch (e: any) { showAlert(e?.message || 'err_invite_mint'); }
     setMinting(false);
   };
 
@@ -203,7 +204,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
     try {
       await revokeCommunityInvite(invite.id);
       setInvites(prev => prev.map(i => i.id === invite.id ? { ...i, revokedAt: Timestamp.now() } : i));
-    } catch (e: any) { showAlert(e?.message || 'Could not revoke the invitation.'); }
+    } catch (e: any) { showAlert(e?.message || 'err_invite_revoke'); }
   };
 
   const handleAccept = async (uid: string) => {
@@ -212,7 +213,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
       await firestoreStore.link(uid, 'member', community.id);
       await firestoreStore.unlink(uid, 'join_request', community.id);
       await load();
-    } catch (e: any) { showAlert(e?.message || 'Could not accept the request.'); }
+    } catch (e: any) { showAlert(e?.message || 'err_request_accept'); }
     setBusyUid(null);
   };
 
@@ -221,7 +222,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
     try {
       await firestoreStore.unlink(uid, 'join_request', community.id);
       setRequests(prev => prev.filter(r => r.uid !== uid));
-    } catch (e: any) { showAlert(e?.message || 'Could not decline the request.'); }
+    } catch (e: any) { showAlert(e?.message || 'err_request_decline'); }
     setBusyUid(null);
   };
 
@@ -237,7 +238,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
         setStewardUids(prev => { const next = new Set(prev); next.delete(row.uid); return next; });
       }
       setMembers(prev => prev ? prev.filter(m => m.uid !== row.uid) : prev);
-    } catch (e: any) { showAlert(e?.message || 'Could not remove the member.'); }
+    } catch (e: any) { showAlert(e?.message || 'err_member_remove'); }
     setBusyUid(null);
   };
 
@@ -277,8 +278,8 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
         if (make) next.add(row.uid); else next.delete(row.uid);
         return next;
       });
-      notify(make ? `🤲 ${row.name} now keeps the door with you.` : `${row.name} no longer keeps the door.`);
-    } catch (e: any) { showAlert(e?.message || 'Could not change stewardship.'); }
+      notify(spokenLine(make ? 'steward_granted' : 'steward_revoked', { name: row.name }));
+    } catch (e: any) { showAlert(e?.message || 'err_stewardship'); }
     setBusyUid(null);
   };
 
@@ -289,31 +290,30 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
 
   return (
     <div>
-      <SectionTitle title="Members" sub="The people of this community; and, for its keepers, the door itself." />
+      <SectionTitle title={t('members')} sub={t('community_members_sub')} />
 
       {/* The DOOR — owner-set: who may join, and how. Distinct from visibility (who may see). */}
       {isOwner && (
-        <div className="mb-5 rounded-2xl border border-slate-100 bg-white p-4">
+        <div className="mb-5 rounded-2xl border border-slate-100 bg-white p-4 dark:bg-slate-900 dark:border-slate-800">
           <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">{t('the_door')}</p>
           <div className="flex flex-wrap gap-1.5">
             {DOORS.map(d => (
               <button key={d.value} onClick={() => handleDoor(d.value)} disabled={doorBusy}
-                title={d.hint}
+                title={t(d.hint)}
                 className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${door === d.value
                   ? 'bg-emerald-600 text-white'
                   : 'border border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}`}>
-                {d.label}
+                {t(d.label)}
               </button>
             ))}
           </div>
-          <p className="mt-2 text-[11px] italic text-slate-400">{DOORS.find(d => d.value === door)?.hint}.</p>
+          <p className="mt-2 text-[11px] italic text-slate-400">{(() => { const h = DOORS.find(d => d.value === door)?.hint; return h ? t(h) : ''; })()}</p>
           {/* When this community owns the current domain (it is the node here), its door also
               governs SIGN-UP — opening it delegates the front gate to the keeper. */}
           {isThisDomainsNode && (
             <p className="mt-1 text-[11px] italic text-emerald-600">
-              This community is the node for {community.domain}. {door === 'closed'
-                ? 'Sign-up here is closed; only invited people can create an account.'
-                : 'Anyone can create an account here (identity is open); the door still gates who becomes a member.'}
+              {t('node_here_note').replace('{domain}', community.domain || '')}{' '}
+              {door === 'closed' ? t('node_signup_closed') : t('node_signup_open')}
             </p>
           )}
         </div>
@@ -322,14 +322,14 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
       {/* THE COMMUNITY'S LINK (ring 2026-09-09) — its being door, /b/<lid>, with a code to print or
           send: the one link to invite people through. The door decides what a visitor may do there. */}
       {canManage && community.lid && (
-        <div className="mb-5 rounded-2xl border border-slate-100 bg-white p-4">
+        <div className="mb-5 rounded-2xl border border-slate-100 bg-white p-4 dark:bg-slate-900 dark:border-slate-800">
           <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('community_link')}</p>
           <p className="mt-1 text-[11px] text-slate-500">{t('community_link_note')}</p>
-          <div className="mt-2 flex items-center justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-2">
-            <p className="min-w-0 truncate font-mono text-[11px] text-slate-600">{beingUrl(community.lid, window.location.origin)}</p>
+          <div className="mt-2 flex items-center justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-2 dark:bg-slate-900/50 dark:border-slate-800">
+            <p className="min-w-0 truncate font-mono text-[11px] text-slate-600 dark:text-slate-300">{beingUrl(community.lid, window.location.origin)}</p>
             <div className="flex shrink-0 items-center gap-1.5">
               <button onClick={() => { navigator.clipboard?.writeText(beingUrl(community.lid!, window.location.origin)).then(() => notify(t('copied'))).catch(() => {}); }}
-                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500 transition-colors hover:bg-slate-50">
+                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500 transition-colors hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-700">
                 {t('copy')}
               </button>
               <LinkQr url={beingUrl(community.lid, window.location.origin)} title={community.name} />
@@ -340,7 +340,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
 
       {/* Invitations — the shareable keys. Keepers mint and revoke; revocation is a mark. */}
       {canManage && (
-        <div className="mb-5 rounded-2xl border border-slate-100 bg-white p-4">
+        <div className="mb-5 rounded-2xl border border-slate-100 bg-white p-4 dark:bg-slate-900 dark:border-slate-800">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('invitations')}</p>
             <button onClick={handleMintInvite} disabled={minting || door === 'closed'}
@@ -356,9 +356,9 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
               {invites.map(i => {
                 const status = statusOf(i);
                 return (
-                  <div key={i.id} className="flex items-center justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-2">
+                  <div key={i.id} className="flex items-center justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-2 dark:bg-slate-900/50 dark:border-slate-800">
                     <div className="min-w-0">
-                      <p className="truncate font-mono text-[11px] text-slate-600">…/i/{i.id}</p>
+                      <p className="truncate font-mono text-[11px] text-slate-600 dark:text-slate-300">…/i/{i.id}</p>
                       <p className="text-[10px] text-slate-400">
                         {i.createdAt?.toMillis ? new Date(i.createdAt.toMillis()).toLocaleDateString() : ''}
                         {status !== 'live' && <span className="ml-1.5 font-bold uppercase text-red-400">{status}</span>}
@@ -367,12 +367,12 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
                     {status === 'live' && (
                       <div className="flex shrink-0 items-center gap-1.5">
                         <button onClick={() => copyInviteUrl(i.id)}
-                          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500 transition-colors hover:bg-slate-50">
+                          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500 transition-colors hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-700">
                           {t('copy')}
                         </button>
                         <LinkQr url={communityInviteUrl(window.location.origin, i.id)} title={`${community.name} · ${t('invitations')}`} />
                         <button onClick={() => handleRevokeInvite(i)}
-                          className="rounded-lg border border-red-100 bg-white px-2.5 py-1 text-[11px] font-bold text-red-500 transition-colors hover:bg-red-50">
+                          className="rounded-lg border border-red-100 bg-white px-2.5 py-1 text-[11px] font-bold text-red-500 transition-colors hover:bg-red-50 dark:bg-slate-900">
                           {t('revoke')}
                         </button>
                       </div>
@@ -387,11 +387,11 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
 
       {/* The keeper circle — resignation needs company (domain/keeperCircle.canResign). */}
       {viewerIsKeeper && (
-        <div className="mb-5 flex items-center justify-between rounded-2xl border border-slate-100 bg-white p-4">
+        <div className="mb-5 flex items-center justify-between rounded-2xl border border-slate-100 bg-white p-4 dark:bg-slate-900 dark:border-slate-800">
           <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('keepers')} · {keeperUids.size}</p>
           <button onClick={handleResign} disabled={!viewerCanResign}
             title={viewerCanResign ? undefined : t('keeper_last')}
-            className="rounded-full border border-red-100 bg-white px-3.5 py-1.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-40">
+            className="rounded-full border border-red-100 bg-white px-3.5 py-1.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-40 dark:bg-slate-900">
             {t('resign_keeper')}
           </button>
         </div>
@@ -403,9 +403,9 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
           <p className="mb-2 text-xs font-bold uppercase tracking-wider text-violet-700">{t('keeper_requests')}</p>
           <div className="space-y-1.5">
             {keeperAsks.map(r => (
-              <div key={r.uid} className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 border border-violet-100">
+              <div key={r.uid} className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 border border-violet-100 dark:bg-slate-900">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-slate-700">{r.name}</p>
+                  <p className="truncate text-sm font-semibold text-slate-700 dark:text-slate-200">{r.name}</p>
                   <p className="truncate font-mono text-[10px] text-slate-400">{r.uid}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5">
@@ -414,7 +414,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
                     {busyUid === r.uid ? '…' : t('accept')}
                   </button>
                   <button onClick={() => handleDeclineKeeperAsk(r)} disabled={busyUid === r.uid}
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-50">
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:bg-slate-900 dark:border-slate-700">
                     {t('decline')}
                   </button>
                 </div>
@@ -429,9 +429,9 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
           <p className="mb-2 text-xs font-bold uppercase tracking-wider text-amber-700">{t('join_requests')}</p>
           <div className="space-y-1.5">
             {requests.map(r => (
-              <div key={r.uid} className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 border border-amber-100">
+              <div key={r.uid} className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 border border-amber-100 dark:bg-slate-900">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-slate-700">{r.name}</p>
+                  <p className="truncate text-sm font-semibold text-slate-700 dark:text-slate-200">{r.name}</p>
                   <p className="truncate font-mono text-[10px] text-slate-400">{r.uid}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5">
@@ -440,7 +440,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
                     {busyUid === r.uid ? '…' : t('accept')}
                   </button>
                   <button onClick={() => handleDecline(r.uid)} disabled={busyUid === r.uid}
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-50">
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:bg-slate-900 dark:border-slate-700">
                     {t('decline')}
                   </button>
                 </div>
@@ -457,15 +457,15 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
       ) : (
         <div className="space-y-1.5">
           {members.map(m => (
-            <div key={m.uid} className="flex items-center justify-between gap-2 rounded-xl border border-slate-100 bg-white px-4 py-2.5">
+            <div key={m.uid} className="flex items-center justify-between gap-2 rounded-xl border border-slate-100 bg-white px-4 py-2.5 dark:bg-slate-900 dark:border-slate-800">
               <div className="flex min-w-0 items-center gap-3">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600"><Icons.Users size={16} /></span>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-slate-700">
+                  <p className="truncate text-sm font-semibold text-slate-700 dark:text-slate-200">
                     {m.name}
                     {keeperUids.has(m.uid) && <span className="ml-1.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-emerald-700">{t('keeper_badge')}</span>}
-                    {stewardUids.has(m.uid) && <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-amber-700">steward</span>}
-                    {m.uid === currentUserId && !keeperUids.has(m.uid) && <span className="ml-1.5 rounded-full bg-sky-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-sky-700">you</span>}
+                    {stewardUids.has(m.uid) && <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-amber-700">{t('steward')}</span>}
+                    {m.uid === currentUserId && !keeperUids.has(m.uid) && <span className="ml-1.5 rounded-full bg-sky-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-sky-700">{t('you')}</span>}
                   </p>
                   <p className="truncate font-mono text-[10px] text-slate-400">{m.uid}</p>
                 </div>
@@ -473,7 +473,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
               {/* One's own row carries LEAVE, never Remove — leaving is a different verb. */}
               {m.uid === currentUserId && !keeperUids.has(m.uid) && (
                 <button onClick={handleLeave} disabled={busyUid === m.uid}
-                  className="shrink-0 rounded-lg border border-red-100 bg-white px-3 py-1.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50">
+                  className="shrink-0 rounded-lg border border-red-100 bg-white px-3 py-1.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50 dark:bg-slate-900">
                   {t('leave')}
                 </button>
               )}
@@ -486,7 +486,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
                       <span className="rounded-lg border border-emerald-100 bg-emerald-50/50 px-3 py-1.5 text-[10px] font-bold uppercase text-emerald-500">{t('keeper_offer_pending')}</span>
                     ) : (
                       <button onClick={() => handleOfferKeepership(m)} disabled={busyUid === m.uid}
-                        className="rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-xs font-bold text-emerald-600 transition-colors hover:bg-emerald-50 disabled:opacity-50">
+                        className="rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-xs font-bold text-emerald-600 transition-colors hover:bg-emerald-50 disabled:opacity-50 dark:bg-slate-900">
                         {t('offer_keepership')}
                       </button>
                     )
@@ -494,12 +494,12 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
                   {isOwner && (
                     <button onClick={() => handleSteward(m, !stewardUids.has(m.uid))} disabled={busyUid === m.uid}
                       title={stewardUids.has(m.uid) ? t('steward_revoke_hint') : t('steward_grant_hint')}
-                      className="rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-xs font-bold text-amber-600 transition-colors hover:bg-amber-50 disabled:opacity-50">
+                      className="rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-xs font-bold text-amber-600 transition-colors hover:bg-amber-50 disabled:opacity-50 dark:bg-slate-900">
                       {stewardUids.has(m.uid) ? t('unsteward') : t('make_steward')}
                     </button>
                   )}
                   <button onClick={() => handleRemove(m)} disabled={busyUid === m.uid}
-                    className="rounded-lg border border-red-100 bg-white px-3 py-1.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50">
+                    className="rounded-lg border border-red-100 bg-white px-3 py-1.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50 dark:bg-slate-900">
                     {t('remove')}
                   </button>
                 </div>

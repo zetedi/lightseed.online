@@ -221,7 +221,7 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
                         </div>
                         {/* Stats on → a small tree in the corner (the CTA lives at the foot now). */}
                         {showStats && (
-                            <div className="shrink-0 rounded-lg bg-white/10 p-2 backdrop-blur [&>svg]:h-5 [&>svg]:w-5"><Icons.Tree /></div>
+                            <div className="shrink-0 rounded-lg bg-white/10 p-2 backdrop-blur [&>svg]:h-5 [&>svg]:w-5 dark:bg-slate-900/10"><Icons.Tree /></div>
                         )}
                     </div>
 
@@ -229,7 +229,7 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
                         Full counts only when the node opts in; else a minimal T/P/V/A in the corner. */}
                     <div className="space-y-2">
                         {showStats && (
-                            <div className="grid grid-cols-2 bg-white/10 backdrop-blur p-2 rounded-lg border border-white/10">
+                            <div className="grid grid-cols-2 bg-white/10 backdrop-blur p-2 rounded-lg border border-white/10 dark:bg-slate-900/10">
                                 <div className="text-center border-r border-b border-white/10 pb-2">
                                     <span className="block text-[10px] uppercase text-emerald-200">{t('trees')}</span>
                                     <span className="font-bold text-sm">{stats.trees}</span>
@@ -275,7 +275,7 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
                 <div className="relative h-full p-4 flex flex-col justify-between text-white">
                     <div className="flex justify-between items-start">
                         <h2 className="text-sm sm:text-lg font-bold uppercase tracking-widest text-white drop-shadow-md">{t('the_tree')}</h2>
-                        <div className="p-2 bg-white/10 backdrop-blur rounded-lg"><Icons.Tree /></div>
+                        <div className="p-2 bg-white/10 backdrop-blur rounded-lg dark:bg-slate-900/10"><Icons.Tree /></div>
                     </div>
                     {/* The shared Plant CTA — same glowing two-line pill as the signed-in card. */}
                     <PlantCTA color={ctaPrimary} className="self-start sm:group-hover:scale-[1.03]" />
@@ -292,11 +292,11 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
                 <div className="relative h-full p-4 flex flex-col justify-between text-white">
                     <div className="flex justify-between items-start">
                         <h2 className="text-sm sm:text-lg font-bold uppercase tracking-widest text-white drop-shadow-md">{t('the_forest')}</h2>
-                        <div className="p-2 bg-white/10 backdrop-blur rounded-lg"><Icons.Map /></div>
+                        <div className="p-2 bg-white/10 backdrop-blur rounded-lg dark:bg-slate-900/10"><Icons.Map /></div>
                     </div>
                     
                     {showStats && (
-                    <div className="grid grid-cols-2 md:grid-cols-3 bg-white/10 backdrop-blur p-2 rounded-lg border border-white/10">
+                    <div className="grid grid-cols-2 md:grid-cols-3 bg-white/10 backdrop-blur p-2 rounded-lg border border-white/10 dark:bg-slate-900/10">
                         <div className="text-center border-r border-b md:border-b-0 border-white/10 pb-2 md:pb-0">
                             <span className="block text-[10px] uppercase text-emerald-200">{t('trees')}</span>
                             <span className="font-bold text-sm">{networkStats.trees}</span>

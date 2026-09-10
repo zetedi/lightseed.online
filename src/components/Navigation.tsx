@@ -320,7 +320,7 @@ export const Navigation = ({
                     {!isMenuOpen && (() => {
                         const cap = (l: string) => l.charAt(0).toUpperCase() + l.slice(1);
                         const label = pageLabel ? cap(pageLabel)
-                            : activeTab === 'dashboard' ? 'Lifetree Network (LIN)'
+                            : activeTab === 'dashboard' ? t('nav_lin_full')
                             : cap(getTabLabel(activeTab));
                         return (
                             // White letters with a dark-green outline: legible on ANY theme
@@ -338,7 +338,7 @@ export const Navigation = ({
                     })()}
                     <div className="flex items-center gap-3 cursor-pointer group shrink-0" onClick={() => setTab('dashboard')}>
                         <div className={`p-1 rounded-full group-hover:scale-110 transition-transform ${navIsDark ? 'bg-white' : 'bg-slate-50 border border-slate-200'}`} style={{ borderColor: navBorder }}>
-                             {logoUrl ? <Picture size={480} src={logoUrl} className="w-8 h-8 rounded-full object-cover" alt="Logo" /> : <Logo width={32} height={32} />}
+                             {logoUrl ? <Picture size={480} src={logoUrl} className="w-8 h-8 rounded-full object-cover" alt={t('logo')} /> : <Logo width={32} height={32} />}
                         </div>
                         {/* The name renders EXACTLY as the keeper wrote it (the appearance hint promises it) —
                         no forced case: '.seed' is lowercase because it is WRITTEN lowercase. */}
@@ -399,7 +399,7 @@ export const Navigation = ({
                                 <span>{language}</span>
                             </button>
                             {isLangOpen && (
-                                <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-xl border py-2 z-50 text-slate-700">
+                                <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-xl border py-2 z-50 text-slate-700 dark:bg-slate-900 dark:text-slate-200">
                                     {languages.map(l => (
                                         <button key={l.code} onClick={() => { setLanguage(l.code as any); setIsLangOpen(false); }} className={`w-full text-left px-4 py-2 text-sm ${language === l.code ? 'bg-emerald-50 text-emerald-600 font-bold' : 'hover:bg-slate-50'}`}>
                                             {l.name}
@@ -441,7 +441,7 @@ export const Navigation = ({
                                     <Icons.Mail />
                                     {/* Watering needed — blue, top-left */}
                                     {careAlertCount > 0 && (
-                                        <span title="A tree needs watering" className={`absolute -top-1 -left-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-sky-500 px-1 text-[8px] font-black text-white ring-2 ${navIsDark ? 'ring-emerald-950' : 'ring-white'}`}>{careAlertCount > 9 ? '9+' : careAlertCount}</span>
+                                        <span title={t('nav_tree_needs_watering')} className={`absolute -top-1 -left-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-sky-500 px-1 text-[8px] font-black text-white ring-2 ${navIsDark ? 'ring-emerald-950' : 'ring-white'}`}>{careAlertCount > 9 ? '9+' : careAlertCount}</span>
                                     )}
                                     {/* Reaches — red, top-right */}
                                     {reachNotificationsCount > 0 && (
@@ -457,14 +457,14 @@ export const Navigation = ({
                                 <button onClick={onProfile} className="group flex flex-col items-center leading-none">
                                     <span className="relative">
                                         <Picture size={480}
-                                            src={lightseed.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(lightseed.displayName || 'Visitor')}&background=random&color=fff`}
+                                            src={lightseed.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(lightseed.displayName || t('visitor'))}&background=random&color=fff`}
                                             className="w-9 h-9 rounded-full border-2 border-white/20 shadow-md group-hover:border-white transition-all object-cover"
-                                            alt={lightseed.displayName || 'Profile'}
+                                            alt={lightseed.displayName || t('profile')}
                                             referrerPolicy="no-referrer"
                                             onError={(e) => {
                                                 const target = e.target as HTMLImageElement;
                                                 target.onerror = null;
-                                                target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(lightseed.displayName || 'Visitor')}&background=random&color=fff`;
+                                                target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(lightseed.displayName || t('visitor'))}&background=random&color=fff`;
                                             }}
                                         />
                                         {/* DM unread is shown by the letter icon; here we only flag other notifications. */}
@@ -522,9 +522,9 @@ export const Navigation = ({
                             <MobileNavTile tab="forest" {...mobileTileProps} />
                             <MobileNavTile tab="visions" {...mobileTileProps} />
                             <MobileNavTile tab="events" {...mobileTileProps} />
-                            <MobileNavTile tab="offerings" label="Offer" {...mobileTileProps} />
-                            <MobileNavTile tab="collab" label="Cocreate" {...mobileTileProps} />
-                            <MobileNavTile tab="communities" label="Commune" {...mobileTileProps} />
+                            <MobileNavTile tab="offerings" label={t('nav_offer')} {...mobileTileProps} />
+                            <MobileNavTile tab="collab" label={t('cocreate')} {...mobileTileProps} />
+                            <MobileNavTile tab="communities" label={t('nav_commune')} {...mobileTileProps} />
                         </div>
                     </div>
 
@@ -540,7 +540,7 @@ export const Navigation = ({
                                 className="mb-1.5 flex w-full items-center justify-center gap-2 rounded-xl border border-red-300 bg-red-50 py-2 text-xs font-bold text-red-600"
                             >
                                 <span className="[&>svg]:h-4 [&>svg]:w-4"><Icons.Mail /></span>
-                                <span>{reachNotificationsCount} new {reachNotificationsCount === 1 ? 'reach' : 'reaches'}</span>
+                                <span>{t('nav_new_reaches').replace('{n}', String(reachNotificationsCount))}</span>
                             </button>
                         )}
 
@@ -561,8 +561,8 @@ export const Navigation = ({
                             </button>
 
                             {lightseed && (
-                                <button onClick={() => { onProfile(); setIsMenuOpen(false); }} className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white/95 px-3 py-2.5 text-sm font-bold text-slate-700 transition-all hover:bg-white">
-                                    <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-emerald-200 bg-white">
+                                <button onClick={() => { onProfile(); setIsMenuOpen(false); }} className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white/95 px-3 py-2.5 text-sm font-bold text-slate-700 transition-all hover:bg-white dark:bg-slate-900/95 dark:text-slate-200">
+                                    <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-emerald-200 bg-white dark:bg-slate-900">
                                         {activeTreeImage
                                             ? <Picture size={480} src={activeTreeImage} className="h-full w-full object-cover" alt="" referrerPolicy="no-referrer" />
                                             : <span className="text-emerald-500 [&>svg]:h-4 [&>svg]:w-4"><Icons.Tree /></span>}
@@ -579,7 +579,7 @@ export const Navigation = ({
             {showLogoutConfirm && (
                 <Modal title={t('sign_out')} onClose={() => setShowLogoutConfirm(false)}>
                     <div className="space-y-5">
-                        <p className="text-sm text-slate-600">{t('signout_confirm')}</p>
+                        <p className="text-sm text-slate-600 dark:text-slate-300">{t('signout_confirm')}</p>
                         <div className="flex gap-3">
                             <button type="button" onClick={() => setShowLogoutConfirm(false)} className={modalButton('secondary', { extra: 'flex-1' })}>{t('cancel')}</button>
                             <button onClick={() => { setShowLogoutConfirm(false); setIsMenuOpen(false); onLogout(); }} className={modalButton('danger', { extra: 'flex-1' })}>

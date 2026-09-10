@@ -69,7 +69,7 @@ export const PlaceOfRecord = ({ beingId, domain, hostStrictScope, onMend }: Plac
                         onKeyDown={(e) => { if (e.key === 'Enter') void handleSave(); if (e.key === 'Escape') setEdit(null); }}
                         dir="ltr"
                         autoFocus
-                        className="w-56 rounded-lg border border-slate-200 bg-white px-2 py-1 font-mono text-sm outline-none focus:border-emerald-400"
+                        className="w-56 rounded-lg border border-slate-200 bg-white px-2 py-1 font-mono text-sm outline-none focus:border-emerald-400 dark:bg-slate-900 dark:border-slate-700"
                     />
                     <button onClick={() => void handleSave()} disabled={saving} className="rounded-full bg-emerald-600 px-3 py-1 text-xs font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50">
                         {saving ? t('saving') : t('save')}

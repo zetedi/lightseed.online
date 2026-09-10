@@ -20,13 +20,14 @@ import { speak } from '../../utils/translations';
 // without reading anyone's stay. The host additionally sees the real reservations, each wearing the
 // guest's chosen tree. A soft view-hold (domain/hold.ts) whispers when another is choosing.
 
-const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+// Weekday and month names are translation keys — the calendar speaks the viewer's tongue.
+const WEEKDAY_KEYS = ['wd_su', 'wd_mo', 'wd_tu', 'wd_we', 'wd_th', 'wd_fr', 'wd_sa'] as const;
+const MONTH_KEYS = ['month_1', 'month_2', 'month_3', 'month_4', 'month_5', 'month_6', 'month_7', 'month_8', 'month_9', 'month_10', 'month_11', 'month_12'] as const;
 const growth = (s: { guestTreeGrowthUrl?: string }) => s.guestTreeGrowthUrl || '/seed.webp';
 
 export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) => void }> = ({ bed, onViewTree }) => {
   const { t } = useLanguage();
-  const { lightseed, activeTree } = useSession();
+  const { lightseed, activeTree, nameAs } = useSession();
   const uid = lightseed?.uid;
   const isHost = !!uid && bed.ownerId === uid;
   const bump = useRefreshSignal(['beds']);
@@ -84,7 +85,7 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
   const problem = !pick.from
     ? t('arrival') + ' → ' + t('departure')
     : !pick.to
-    ? 'Pick your departure day'
+    ? t('pick_departure_day')
     : ((p => p && speak(p))(stayRequestProblem(pick.from, pick.to, nowMs)) || (rangeFree(pick.from, pick.to) ? null : t('booked')));
 
   const request = async () => {
@@ -95,18 +96,20 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
         bed,
         {
           uid,
-          name: lightseed?.displayName || '',
+          // The guest is named by the public name (domain/publicName) — an anonymous guest
+          // arrives as their tree, and the host still sees the uid the stay is bound to.
+          name: nameAs(activeTree?.name) || '',
           tree: activeTree ? { id: activeTree.id, name: activeTree.name, growthUrl: activeTree.latestGrowthUrl || activeTree.imageUrl || '' } : undefined,
         },
         { fromDate: pick.from, toDate: pick.to, note },
       );
-      notify('🛏️ Your request is in; the keeper will answer.');
+      notify(`🛏️ ${t('stay_requested_toast')}`);
       announce('beds', bed.id);
       setPick({});
       setNote('');
       releaseHold(bed.id, uid).catch(() => {});
     } catch (e) {
-      notify(e instanceof Error ? e.message : 'Could not request the nights.', 'error');
+      notify(e instanceof Error ? e.message : t('err_stay_request'), 'error');
     }
     setBusy(false);
   };
@@ -115,7 +118,7 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
     setBusy(true);
     try {
       await setStayStatus(stay.id, status);
-      notify(status === 'accepted' ? '🛏️ Welcomed.' : 'Declined.');
+      notify(status === 'accepted' ? `🛏️ ${t('stay_welcomed_toast')}` : t('offer_declined_toast'));
       announce('beds', bed.id);
     } catch {
       notify(speak('err_stay_answer'), 'error');
@@ -151,21 +154,22 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
       accepted: 'bg-emerald-100 text-emerald-700',
       declined: 'bg-slate-100 text-slate-400',
     };
-    return <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${map[s]}`}>{s}</span>;
+    const face = s === 'requested' ? t('requested') : s === 'accepted' ? t('accepted') : t('offering_status_declined');
+    return <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${map[s]}`}>{face}</span>;
   };
 
   return (
     <div className="space-y-5">
       {/* The month grid */}
-      <div className="rounded-2xl border border-slate-100 bg-white p-5">
+      <div className="rounded-2xl border border-slate-100 bg-white p-5 dark:bg-slate-900 dark:border-slate-800">
         <div className="mb-4 flex items-center justify-between">
           <button type="button" onClick={() => setYm(addMonths(ym.year, ym.month, -1))}
-            className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Previous month">
+            className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label={t('prev_month')}>
             <span className="inline-block rotate-180 [&>svg]:h-4 [&>svg]:w-4"><Icons.ChevronRight /></span>
           </button>
-          <h3 className="text-sm font-semibold tracking-wide text-slate-700">{MONTHS[ym.month - 1]} {ym.year}</h3>
+          <h3 className="text-sm font-semibold tracking-wide text-slate-700 dark:text-slate-200">{t(MONTH_KEYS[ym.month - 1])} {ym.year}</h3>
           <button type="button" onClick={() => setYm(addMonths(ym.year, ym.month, 1))}
-            className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Next month">
+            className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label={t('next_month')}>
             <span className="inline-block [&>svg]:h-4 [&>svg]:w-4"><Icons.ChevronRight /></span>
           </button>
         </div>
@@ -173,7 +177,7 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
           <p className="mb-2 text-center text-[11px] text-slate-400">{t('stay_tap_nights')}</p>
         )}
         <div className="mb-1 grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase tracking-wide text-slate-300">
-          {WEEKDAYS.map(d => <div key={d}>{d}</div>)}
+          {WEEKDAY_KEYS.map(d => <div key={d}>{t(d)}</div>)}
         </div>
         <div className="grid grid-cols-7 gap-1">
           {weeks.flat().map((cell, i) => {
@@ -216,7 +220,7 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
       {/* Reserve — for any signed-in being, INCLUDING the host reserving their own bed (a
           personal hold; it still rides the request→accept flow, which the host completes). */}
       {uid && (
-        <div className="rounded-2xl border border-slate-100 bg-white p-5">
+        <div className="rounded-2xl border border-slate-100 bg-white p-5 dark:bg-slate-900 dark:border-slate-800">
           {isHost && (
             <p className="mb-3 rounded-lg bg-indigo-50 px-3 py-2 text-xs text-indigo-700">{t('stay_own_bed_note')}</p>
           )}
@@ -225,11 +229,11 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
           )}
           <div className="mb-3 flex items-center justify-between text-sm">
             <span className="text-slate-500">{t('arrival')} → {t('departure')}</span>
-            <span className="font-semibold text-slate-700">{pick.from || '—'} → {pick.to || '—'}</span>
+            <span className="font-semibold text-slate-700 dark:text-slate-200">{pick.from || '—'} → {pick.to || '—'}</span>
           </div>
           <textarea value={note} onChange={e => setNote(e.target.value)} rows={2}
             placeholder={t('stay_word_keeper_ph')}
-            className="mb-3 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400" />
+            className="mb-3 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:text-slate-50" />
           <button type="button" onClick={request} disabled={!!problem || busy}
             className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50">
             {problem || t('request_stay')}
@@ -240,20 +244,20 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
 
       {/* The reservations — host sees every guest's tree; a guest sees their own requests */}
       {uid && stays.length > 0 && (
-        <div className="rounded-2xl border border-slate-100 bg-white p-5">
+        <div className="rounded-2xl border border-slate-100 bg-white p-5 dark:bg-slate-900 dark:border-slate-800">
           <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-400">{isHost ? t('who_stayed') : t('reserve')}</h3>
           <div className="space-y-2">
             {stays.map(s => (
-              <div key={s.id} className="flex items-center gap-3 rounded-xl border border-slate-100 p-2.5">
+              <div key={s.id} className="flex items-center gap-3 rounded-xl border border-slate-100 p-2.5 dark:border-slate-800">
                 {isHost && s.guestTreeId
-                  ? <button type="button" onClick={() => openGuestTree(s)} aria-label={s.guestTreeName || 'guest tree'}
+                  ? <button type="button" onClick={() => openGuestTree(s)} aria-label={s.guestTreeName || t('guest_tree')}
                       className="h-9 w-9 flex-none rounded-full ring-emerald-200 transition-shadow hover:ring-2">
                       <img src={growth(s)} alt="" className="h-9 w-9 rounded-full object-cover" />
                     </button>
                   : <img src={growth(s)} alt="" className="h-9 w-9 flex-none rounded-full object-cover" />}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="truncate text-sm font-medium text-slate-700">{isHost ? (s.guestTreeName || s.guestName || 'A guest') : bed.name}</span>
+                    <span className="truncate text-sm font-medium text-slate-700 dark:text-slate-200">{isHost ? (s.guestTreeName || s.guestName || t('a_guest')) : bed.name}</span>
                     {statusPill(s.status)}
                   </div>
                   <div className="text-xs text-slate-400">{s.fromDate} → {s.toDate} · {s.nights} {t('nights').toLowerCase()}</div>
@@ -263,12 +267,12 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
                     <button type="button" disabled={busy} onClick={() => answer(s, 'accepted')}
                       className="rounded-full bg-emerald-600 px-3 py-1 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50">✓</button>
                     <button type="button" disabled={busy} onClick={() => answer(s, 'declined')}
-                      className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500 hover:bg-slate-200 disabled:opacity-50">✕</button>
+                      className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500 hover:bg-slate-200 disabled:opacity-50 dark:bg-slate-800">✕</button>
                   </div>
                 )}
                 {!isHost && s.status !== 'declined' && (
                   <button type="button" disabled={busy} onClick={() => withdraw(s)}
-                    className="flex-none rounded-full px-2 py-1 text-[11px] text-slate-400 hover:text-rose-500">withdraw</button>
+                    className="flex-none rounded-full px-2 py-1 text-[11px] text-slate-400 hover:text-rose-500">{t('withdraw').toLowerCase()}</button>
                 )}
               </div>
             ))}
@@ -277,8 +281,8 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
       )}
 
       {!uid && (
-        <p className="rounded-2xl border border-slate-100 bg-white p-6 text-center text-sm text-slate-400">
-          Sign in to reserve these nights.
+        <p className="rounded-2xl border border-slate-100 bg-white p-6 text-center text-sm text-slate-400 dark:bg-slate-900 dark:border-slate-800">
+          {t('sign_in_reserve')}
         </p>
       )}
     </div>

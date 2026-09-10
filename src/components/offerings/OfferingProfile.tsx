@@ -67,17 +67,17 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
   const statusTone = { open: 'bg-amber-50 text-amber-700', accepted: 'bg-emerald-50 text-emerald-700', withdrawn: 'bg-slate-100 text-slate-500', declined: 'bg-slate-100 text-slate-500' } as const;
   // The offered-to card: visible in every section (BeingProfile's banner seat).
   const careBanner = status ? (
-    <div className="mx-auto mb-4 max-w-2xl rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
+    <div className="mx-auto mb-4 max-w-2xl rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm dark:bg-slate-900">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{t('offering_offered_to')}</div>
-          <p dir="auto" className="truncate text-sm font-semibold text-slate-800">{offering.offeredToName || (offering.offeredToKind === 'vision' ? 'a vision' : 'a tree')}</p>
+          <p dir="auto" className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{offering.offeredToName || (offering.offeredToKind === 'vision' ? t('a_vision') : t('a_tree'))}</p>
           {offering.offeringFromTreeName && <p className="truncate text-xs text-slate-500">{t('offering_from')} {offering.offeringFromTreeName}</p>}
         </div>
         <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${statusTone[status]}`}>{t(`offering_status_${status}`)}</span>
       </div>
       {(mayAnswer || mayWithdraw) && (
-        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
           {mayAnswer && !confirming && (
             <>
               <button type="button" disabled={busy} onClick={() => setConfirming(true)}
@@ -86,28 +86,28 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
                 <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Sun /></span> {t('offer_accept')}
               </button>
               <button type="button" disabled={busy} onClick={() => answer('decline')}
-                className="rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-50">
+                className="rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700">
                 {t('offer_decline')}
               </button>
             </>
           )}
           {mayAnswer && confirming && (
             <div className="flex w-full flex-wrap items-center gap-2">
-              <p className="mr-auto text-xs font-medium text-slate-600">{t('offer_accept_q')}</p>
+              <p className="mr-auto text-xs font-medium text-slate-600 dark:text-slate-300">{t('offer_accept_q')}</p>
               <button type="button" disabled={busy} onClick={() => answer('accept')}
                 className="rounded-full px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:brightness-110 active:scale-95 disabled:opacity-50"
                 style={{ backgroundColor: tabTone('offerings') }}>
                 {busy ? t('saving') : t('offer_accept_yes')}
               </button>
               <button type="button" disabled={busy} onClick={() => setConfirming(false)}
-                className="rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50">
+                className="rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50 dark:border-slate-700">
                 {t('offer_accept_no')}
               </button>
             </div>
           )}
           {mayWithdraw && (
             <button type="button" disabled={busy} onClick={() => answer('withdraw')}
-              className="rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-50">
+              className="rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700">
               {t('offer_withdraw')}
             </button>
           )}
@@ -128,7 +128,7 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
       await setOfferingActive(offering.id, next);
       setActive(next);
       onUpdate?.({ offeringActive: next });
-      notify(next ? '🌿 The offering stands again.' : 'The offering rests.');
+      notify(next ? '🌿 ' + t('offering_stands_again') : t('offering_rests'));
     } catch {
       showAlert('err_offering_change');
     }
@@ -143,45 +143,45 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
     imageUrl: img || null,
     name: offering.title,
     body: offering.content || offering.body || null,
-    plantedLabel: `${createdLabel}${offering.authorName ? ` · by ${offering.authorName}` : ''}`,
+    plantedLabel: `${createdLabel}${offering.authorName ? ` ${t('by_author').replace('{name}', offering.authorName)}` : ''}`,
     hash: offering.hash,
   };
 
   const sections: BeingSection[] = [
     {
-      key: 'lifecycle', label: 'Lifecycle', icon: <Icons.Leaf />, render: () => (
+      key: 'lifecycle', label: t('lifecycle'), icon: <Icons.Leaf />, render: () => (
         <ChainTree
           blocks={[]}
           loading={false}
           onViewPulse={() => {}}
-          emptyText="The offering's lifecycle will grow here: stays, appreciations, renewals."
+          emptyText={t('offering_lifecycle_empty')}
           root={chainRoot}
         />
       ),
     },
     {
-      key: 'details', label: 'Details', icon: <Icons.Info />, render: () => (
-        <div className="space-y-4 rounded-2xl border border-slate-100 bg-white p-6">
+      key: 'details', label: t('details'), icon: <Icons.Info />, render: () => (
+        <div className="space-y-4 rounded-2xl border border-slate-100 bg-white p-6 dark:bg-slate-900 dark:border-slate-800">
           {(offering.content || offering.body) && (
             <div>
               <div className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('the_offering')}</div>
-              <p dir="auto" className="mt-1 whitespace-pre-wrap text-sm text-slate-600">{offering.content || offering.body}</p>
+              <p dir="auto" className="mt-1 whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-300">{offering.content || offering.body}</p>
             </div>
           )}
 
           <div>
             <div className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('offer_suggested')}</div>
-            <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-700">
+            <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-700 dark:text-slate-200">
               <span className="text-amber-500 [&>svg]:h-4 [&>svg]:w-4"><Icons.Sun /></span>
               {formatLight(offering.offeringAppreciationLight || 0)}
-              <span className="text-xs text-slate-400">· after receiving, never a condition</span>
+              <span className="text-xs text-slate-400">{t('offer_after_receiving')}</span>
             </p>
           </div>
 
           {offering.offeringBedName && (
             <div>
-              <div className="text-xs font-bold uppercase tracking-wide text-slate-400">The bed</div>
-              <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-700">
+              <div className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('offering_bed_label')}</div>
+              <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-700 dark:text-slate-200">
                 <span className="text-indigo-400 [&>svg]:h-4 [&>svg]:w-4"><Icons.Moon /></span>
                 {offering.offeringBedName}
               </p>
@@ -190,7 +190,7 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
 
           {offering.offeringUrl && (
             <div>
-              <div className="text-xs font-bold uppercase tracking-wide text-slate-400">More detail</div>
+              <div className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('more_detail')}</div>
               <a href={offering.offeringUrl} target="_blank" rel="noopener noreferrer"
                 className="mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100">
                 <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Globe /></span>
@@ -201,8 +201,8 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
 
           {offering.authorName && (
             <div>
-              <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Offered by</div>
-              <p className="mt-1 flex items-center gap-2 text-sm text-slate-700">
+              <div className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('offered_by')}</div>
+              <p className="mt-1 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
                 {offering.authorPhoto
                   ? <img src={offering.authorPhoto} alt="" className="h-6 w-6 rounded-full object-cover" referrerPolicy="no-referrer" />
                   : <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 [&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Tree /></span>}
@@ -212,10 +212,10 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
           )}
 
           {isAuthor && (
-            <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
+            <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-800">{active ? 'Standing' : 'Resting'}</p>
-                <p className="text-xs text-slate-500">{active ? 'Others can find this offering in the feed.' : 'Paused: only you see it, its history stays.'}</p>
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{active ? t('offering_standing') : t('offering_resting')}</p>
+                <p className="text-xs text-slate-500">{active ? t('offering_standing_note') : t('offering_resting_note')}</p>
               </div>
               <button
                 type="button"
@@ -239,40 +239,40 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
       className="min-h-screen animate-in fade-in zoom-in-95 duration-300"
       onClose={onClose}
       banner={careBanner}
-      backLabel="Back"
+      backLabel={t('back_forest')}
       hero={{
         imageUrl: img,
         avatar: (
           <div className="relative">
             {img
-              ? <img src={img} alt={offering.title} className="h-16 w-16 rounded-full border-4 border-white bg-white object-cover shadow-xl md:h-24 md:w-24" />
+              ? <img src={img} alt={offering.title} className="h-16 w-16 rounded-full border-4 border-white bg-white object-cover shadow-xl md:h-24 md:w-24 dark:bg-slate-900" />
               : <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white text-white shadow-xl md:h-24 md:w-24 [&>svg]:h-8 [&>svg]:w-8" style={{ backgroundColor: HEART }}>{isBed ? <Icons.Moon /> : <Icons.Drop />}</div>}
           </div>
         ),
         title: offering.title,
-        subtitle: <p className="mt-1 text-sm text-white/60">{isBed ? 'A bed offered through trust' : 'A service offered through trust'}</p>,
+        subtitle: <p className="mt-1 text-sm text-white/60">{isBed ? t('offering_bed_trust') : t('offering_service_trust')}</p>,
         chips: (
           <>
             <span className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white" style={{ backgroundColor: HEART }}>
-              {isBed ? 'Bed' : 'Service'}
+              {isBed ? t('offering_kind_bed') : t('offering_kind_service')}
             </span>
             {!active && (
-              <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white/80">Resting</span>
+              <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white/80 dark:bg-slate-900/20">{t('offering_resting')}</span>
             )}
             {!!offering.offeringAppreciationLight && (
-              <span title="Suggested appreciation after receiving this offering" className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-black text-amber-950">
+              <span title={t('offer_suggested_title')} className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-black text-amber-950">
                 <span className="[&>svg]:h-2.5 [&>svg]:w-2.5"><Icons.Sun /></span> {formatLight(offering.offeringAppreciationLight)}
               </span>
             )}
             {isAuthor && onEdit && (
               <button type="button" onClick={onEdit}
-                className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white transition-colors hover:bg-white/25">
-                <span className="[&>svg]:h-3 [&>svg]:w-3"><Icons.Pencil /></span> Edit
+                className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white transition-colors hover:bg-white/25 dark:bg-slate-900/15">
+                <span className="[&>svg]:h-3 [&>svg]:w-3"><Icons.Pencil /></span> {t('edit')}
               </button>
             )}
             <BeingQr lid={offering.lid} name={offering.title} savedHref={offering.qr?.href} canMint={isAuthor}
               onMint={(href) => mintBeingQr('pulses', offering.id, href)} className="text-white/70" />
-            <LoveButton collection="pulses" id={offering.id} initialCount={offering.loveCount || 0} className="rounded-full bg-white/15 px-2 py-0.5 text-white hover:bg-white/25" />
+            <LoveButton collection="pulses" id={offering.id} initialCount={offering.loveCount || 0} className="rounded-full bg-white/15 px-2 py-0.5 text-white hover:bg-white/25 dark:bg-slate-900/15" />
           </>
         ),
       }}

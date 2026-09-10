@@ -40,7 +40,7 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({ label, val
       />
       {hint && <p className="mt-1.5 ml-1 text-[11px] leading-snug opacity-70">{hint}</p>}
       {show && filtered.length > 0 && (
-        <div className="absolute z-10 w-full mt-1 bg-white border border-slate-100 rounded-2xl shadow-xl overflow-hidden">
+        <div className="absolute z-10 w-full mt-1 bg-white border border-slate-100 rounded-2xl shadow-xl overflow-hidden dark:bg-slate-900 dark:border-slate-800">
           {filtered.map(c => (
             <button 
               key={c.id} 
@@ -48,7 +48,7 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({ label, val
               onClick={() => { onChange(c.domain); setShow(false); }}
               className="w-full text-left px-4 py-3 hover:bg-emerald-50 flex flex-col"
             >
-              <span className="font-bold text-sm text-slate-800">{c.name}</span>
+              <span className="font-bold text-sm text-slate-800 dark:text-slate-100">{c.name}</span>
               <span className="text-xs text-slate-500 font-mono">{c.domain}</span>
             </button>
           ))}

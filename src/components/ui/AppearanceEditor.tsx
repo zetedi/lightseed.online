@@ -65,7 +65,7 @@ export const AppearanceEditor = ({
           {/* Logo badge (+ its own label) and name, overlaid exactly like the real header */}
           <div className="pointer-events-none absolute inset-x-4 bottom-4 z-10 flex items-end gap-4">
             <div className="flex flex-col items-center gap-1">
-              <div className="pointer-events-auto h-16 w-16 shrink-0 overflow-hidden rounded-full border-4 border-white bg-white shadow-xl md:h-20 md:w-20">
+              <div className="pointer-events-auto h-16 w-16 shrink-0 overflow-hidden rounded-full border-4 border-white bg-white shadow-xl md:h-20 md:w-20 dark:bg-slate-900">
                 <ImagePicker onImageSelect={onLogoUpload} loading={uploadingLogo} className="flex h-full w-full cursor-pointer items-center justify-center text-slate-400">
                   {logoUrl ? <img src={logoUrl} className="h-full w-full object-cover" alt="" /> : <Icons.Camera />}
                 </ImagePicker>
@@ -91,14 +91,14 @@ export const AppearanceEditor = ({
           <label className="mb-2 block text-[10px] font-bold uppercase text-slate-400">{t('gallery')}</label>
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
             {imageUrls.map((url, index) => (
-              <div key={url} className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+              <div key={url} className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:bg-slate-900 dark:border-slate-700">
                 <img src={url} className="h-full w-full object-cover" alt="" />
-                <button type="button" onClick={() => onRemoveImage(index)} className="absolute right-1 top-1 rounded-full bg-white/90 p-1 text-red-500 shadow-sm" title={t('remove')}>
+                <button type="button" onClick={() => onRemoveImage(index)} className="absolute right-1 top-1 rounded-full bg-white/90 p-1 text-red-500 shadow-sm dark:bg-slate-900/90" title={t('remove')}>
                   <Icons.Close />
                 </button>
               </div>
             ))}
-            <ImagePicker onImageSelect={onAddImage} loading={uploadingImage} className="flex aspect-square cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 text-slate-400 hover:border-emerald-400 hover:text-emerald-600">
+            <ImagePicker onImageSelect={onAddImage} loading={uploadingImage} className="flex aspect-square cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 text-slate-400 hover:border-emerald-400 hover:text-emerald-600 dark:bg-slate-900 dark:border-slate-700">
               <Icons.Plus />
             </ImagePicker>
           </div>

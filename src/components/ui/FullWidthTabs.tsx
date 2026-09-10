@@ -37,7 +37,7 @@ export const FullWidthTabs = ({ tabs, active, onChange, tone }: {
                         {tb.icon && <span className="[&>svg]:h-4 [&>svg]:w-4">{tb.icon}</span>}
                         <span>{tb.label}</span>
                         {typeof tb.count === 'number' && tb.count > 0 && (
-                            <span className="rounded-full bg-white/20 px-1.5 text-[10px] tabular-nums">{tb.count}</span>
+                            <span className="rounded-full bg-white/20 px-1.5 text-[10px] tabular-nums dark:bg-slate-900/20">{tb.count}</span>
                         )}
                     </span>
                 </button>

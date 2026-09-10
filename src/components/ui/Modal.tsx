@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useId } from 'react';
 import { createPortal } from 'react-dom';
+import { speak } from '../../utils/translations';
 
 // THE ONE MODAL SHELL (ring 2026-09-03) — every dialog in the app wears this skin: the same
 // backdrop, panel, header and close, and the same buttons (modalButton / ModalActions below),
@@ -83,7 +84,7 @@ export const Modal = ({ children, onClose, title, backgroundImage, fullScreenOnM
         >
             <div className={`shrink-0 px-4 py-3 border-b flex justify-between items-center ${backgroundImage ? 'bg-slate-900/90 border-white/10 backdrop-blur-md' : 'bg-slate-50 border-slate-100'}`}>
                 <h3 id={titleId} className={backgroundImage ? 'font-semibold text-emerald-100 drop-shadow-md' : MODAL_TITLE}>{title}</h3>
-                <button type="button" onClick={onClose} aria-label="Close" className={backgroundImage ? 'p-1 rounded-full transition-colors text-white/80 hover:bg-white/20 hover:text-white' : MODAL_CLOSE}>&times;</button>
+                <button type="button" onClick={onClose} aria-label={speak('close')} className={backgroundImage ? 'p-1 rounded-full transition-colors text-white/80 hover:bg-white/20 hover:text-white' : MODAL_CLOSE}>&times;</button>
             </div>
             <div className={`flex-1 overflow-y-auto p-4 ${backgroundImage ? 'bg-slate-900/90 backdrop-blur-md' : ''} ${innerGlow ? 'shadow-[inset_0_0_70px_rgba(16,185,129,0.35)]' : ''}`}>
                 {children}

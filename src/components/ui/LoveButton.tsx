@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Icons } from './Icons';
 import { useSession } from '../../contexts/SessionContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { isBeingLoved, loveBeing, isPulseLoved, lovePulse } from '../../services/firebase';
 
 // The ONE heart. Every being wears the same like: a tree, a bed, a community, a vision, an event,
@@ -19,7 +20,7 @@ export const LoveButton = ({
     activeClassName = '',
     showZero = false,
     inline = false,
-    noun = 'this',
+    noun = 'love_this',
 }: {
     collection: string;          // 'pulses' | 'lifetrees' | 'communities' | 'visions'
     id: string;
@@ -30,9 +31,12 @@ export const LoveButton = ({
     activeClassName?: string;    // extra surface applied ONLY when the count is > 0 (e.g. a badge bg)
     showZero?: boolean;          // show the count even at 0 (the pulse cards do)
     inline?: boolean;            // render a <span role=button> (nests inside a clickable card)
-    noun?: string;               // 'this' | 'this event' for the label
+    // WHAT is loved, as a KEY (never a word): the whole label is one key per kind, because a
+    // sentence assembled from an English verb and a translated noun is a sentence in no language.
+    noun?: 'love_this' | 'love_this_event' | 'love_this_reach';
 }) => {
     const { lightseed } = useSession();
+    const { t } = useLanguage();
     const uid = lightseed?.uid;
     const isPulse = collection === 'pulses';
     const stateKey = `${collection}/${id}/${uid || 'signed-out'}`;
@@ -84,7 +88,7 @@ export const LoveButton = ({
         }
     };
 
-    const title = loved ? 'You love this' : `Love ${noun}`;
+    const title = loved ? t('you_love_this') : t(noun);
     const waiting = !!uid && (!current || current.pending);
     const cls = `inline-flex items-center gap-1 transition-transform hover:scale-110 active:scale-95 ${count > 0 ? activeClassName : ''} ${className}`;
     const body = (

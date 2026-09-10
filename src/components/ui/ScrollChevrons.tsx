@@ -2,6 +2,7 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { NavArrow, NavChevron, NAV_ARROW_PREV_X, NAV_ARROW_NEXT_X, NAV_ARROW_PREV_Y, NAV_ARROW_NEXT_Y } from './NavArrow';
 import { useScrollEdges } from '../../hooks/useScrollEdges';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // A scroll affordance built from the shared NavArrow: a light round chevron shown only when there
 // is more content that way; clicking scrolls a near-page.
@@ -20,6 +21,7 @@ export const ScrollChevrons = ({ scrollRef, axis = 'y', fixed = false }: {
 }) => {
     // Same source the events fade reads (useScrollEdges), so arrow and fade appear together.
     const { canPrev, canNext } = useScrollEdges(scrollRef, axis);
+    const { t } = useLanguage();
 
     const nudge = (dir: 1 | -1) => {
         const s = scrollRef?.current ?? (document.scrollingElement as HTMLElement | null);
@@ -39,8 +41,8 @@ export const ScrollChevrons = ({ scrollRef, axis = 'y', fixed = false }: {
         // seeking attention; the affordance is enough when it just waits there (Zoltán, 2026-07-24).
         const overlay = (
             <div className={`pointer-events-none fixed inset-x-0 bottom-0 z-[90] flex justify-center transition-opacity duration-300 ${canNext ? 'opacity-100' : 'opacity-0'}`}>
-                <button type="button" aria-label="Scroll down" onClick={() => nudge(1)}
-                        className="pointer-events-auto flex h-5 w-11 items-center justify-center rounded-t-full bg-white/60 text-slate-400 shadow-sm ring-1 ring-emerald-100/50 backdrop-blur-sm transition-colors hover:bg-white hover:text-emerald-600">
+                <button type="button" aria-label={t('scroll_down')} onClick={() => nudge(1)}
+                        className="pointer-events-auto flex h-5 w-11 items-center justify-center rounded-t-full bg-white/60 text-slate-400 shadow-sm ring-1 ring-emerald-100/50 backdrop-blur-sm transition-colors hover:bg-white hover:text-emerald-600 dark:bg-slate-900/60">
                     <NavChevron dir="down" small />
                 </button>
             </div>
@@ -54,15 +56,15 @@ export const ScrollChevrons = ({ scrollRef, axis = 'y', fixed = false }: {
     if (axis === 'x') {
         return (
             <>
-                <NavArrow dir="left" label="Scroll back" onClick={() => nudge(-1)} pos={NAV_ARROW_PREV_X} hidden={!canPrev} />
-                <NavArrow dir="right" label="Scroll forward" onClick={() => nudge(1)} pos={NAV_ARROW_NEXT_X} hidden={!canNext} />
+                <NavArrow dir="left" label={t('scroll_back')} onClick={() => nudge(-1)} pos={NAV_ARROW_PREV_X} hidden={!canPrev} />
+                <NavArrow dir="right" label={t('scroll_forward')} onClick={() => nudge(1)} pos={NAV_ARROW_NEXT_X} hidden={!canNext} />
             </>
         );
     }
     return (
         <>
-            <NavArrow dir="up" label="Scroll up" onClick={() => nudge(-1)} pos={NAV_ARROW_PREV_Y} hidden={!canPrev} />
-            <NavArrow dir="down" label="Scroll down" onClick={() => nudge(1)} pos={NAV_ARROW_NEXT_Y} hidden={!canNext} />
+            <NavArrow dir="up" label={t('scroll_up')} onClick={() => nudge(-1)} pos={NAV_ARROW_PREV_Y} hidden={!canPrev} />
+            <NavArrow dir="down" label={t('scroll_down')} onClick={() => nudge(1)} pos={NAV_ARROW_NEXT_Y} hidden={!canNext} />
         </>
     );
 };

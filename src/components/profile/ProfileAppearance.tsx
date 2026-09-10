@@ -23,7 +23,8 @@ interface ProfileAppearanceProps {
   siteHeroUrl: string;
   onSiteHeroUrlChange: (url: string) => void;
   // Surfaces notices via the shell's shared dialog modal.
-  notify: (message: string) => void;
+  // The snackbar (ui/Toast): a saved setting says so in passing, never in a modal.
+  notify: (message: string, kind?: 'success' | 'error') => void;
   // Inherit (ring 2026-08-24): the personal palette rests; every garden dresses the site.
   siteInherit: boolean;
   onSiteInheritChange: (v: boolean) => void;
@@ -72,7 +73,7 @@ export const ProfileAppearance: React.FC<ProfileAppearanceProps> = ({
       await updateUserSiteTheme(uid, { siteInherit: next });
     } catch (e: any) {
       onSiteInheritChange(!next);
-      notify(e?.message || 'Could not save.');
+      notify(e?.message || t('err_save_retry'), 'error');
     }
     setSavingInherit(false);
   };
@@ -89,7 +90,7 @@ export const ProfileAppearance: React.FC<ProfileAppearanceProps> = ({
       await updateUserSiteTheme(uid, { siteTheme: normalizeTheme(siteTheme), siteLogoUrl: url, siteHeroUrl });
       if (previous && previous !== url) releasePicture(previous);
     } catch (e: any) {
-      notify(e.message || 'Failed to upload site logo.');
+      notify(e.message || t('err_logo_upload'), 'error');
     }
     setUploadingSiteLogo(false);
   };
@@ -103,7 +104,7 @@ export const ProfileAppearance: React.FC<ProfileAppearanceProps> = ({
       await updateUserSiteTheme(uid, { siteTheme: normalizeTheme(siteTheme), siteLogoUrl, siteHeroUrl: url });
       if (previous && previous !== url) releasePicture(previous);
     } catch (e: any) {
-      notify(e.message || 'Failed to upload hero image.');
+      notify(e.message || t('err_hero_upload'), 'error');
     }
     setUploadingSiteHero(false);
   };
@@ -124,9 +125,9 @@ export const ProfileAppearance: React.FC<ProfileAppearanceProps> = ({
         siteHeroUrl: '',
       });
       releasePicture(previousLogo); releasePicture(previousHero);
-      toast('Your profile theme has been reset to the node default.');
+      toast(t('theme_reset_toast'));
     } catch (e: any) {
-      notify(e.message || 'Failed to reset theme.');
+      notify(e.message || t('err_theme_reset'), 'error');
     }
     setSavingSiteTheme(false);
   };
@@ -136,10 +137,10 @@ export const ProfileAppearance: React.FC<ProfileAppearanceProps> = ({
       {/* INHERIT FROM THE COMMUNITY (ring 2026-08-24) — the first choice, above every dial:
           while on, the personal palette rests and each garden dresses the site in its own
           colors; the settings below step out of sight rather than lie about applying. */}
-      <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500"><Icons.Globe /></span>
+      <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:bg-slate-900/70 dark:border-slate-700">
+        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500 dark:bg-slate-800"><Icons.Globe /></span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-slate-800">{t('site_inherit')}</p>
+          <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{t('site_inherit')}</p>
           <p className="mt-0.5 text-sm text-slate-500">{t('site_inherit_hint')}</p>
         </div>
         <button
@@ -157,13 +158,13 @@ export const ProfileAppearance: React.FC<ProfileAppearanceProps> = ({
           the old side-by-side layout squeezed it into a nine-line sliver. */}
       <div>
         <div className="flex items-center justify-between gap-3">
-          <h3 className="text-lg font-bold text-slate-800">{t('appearance_theme_title')}</h3>
+          <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">{t('appearance_theme_title')}</h3>
           <div className="flex shrink-0 items-center gap-2">
             <AutosaveMark state={themeSave.state} />
             <button
               onClick={handleResetSiteTheme}
               disabled={savingSiteTheme || uploadingSiteLogo || uploadingSiteHero}
-              className="rounded-xl bg-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-300 disabled:opacity-50"
+              className="rounded-xl bg-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-300 disabled:opacity-50 dark:text-slate-200 dark:bg-slate-800"
             >
               {t('reset')}
             </button>

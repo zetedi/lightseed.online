@@ -6,6 +6,117 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-11 · A thirsty tree asks once** — a tree left unwatered for a week wrote a week of
+identical "water me" lines into its guardians' thread: one nudge a day, each one true, together a
+wall. domain/watering.standingAlertId names the ONE ask that still stands (raised, and no watering
+since); while it stands, both hands rewrite that message with today's count instead of adding
+another — the client's "remind now" and the daily server sweep alike. A watering answers the ask;
+the next thirst speaks anew, and the answered one stays in the thread as it was said. The rewrite
+needed exactly one new rule, kept narrow on purpose: only a careAlert pulse, only by the hand that
+raised it, only its words and the moment it last spoke — never its thread, its audience, its
+participants or its type, so a nudge can never become a message into a circle its author has since
+left. It is a nudge and not a chain block (previousHash 'WATER_ALERT'), which is why its words may
+change at all. REJECTED: deleting the old lines (the thread keeps what was said); a callable to do
+the rewrite (a rule the emulator can prove is smaller than a function).
+
+**2026-09-11 · Three things the night pass got wrong** — walking the shell at night found the
+first pass half-blind, and each miss taught the tool. (1) It ate the whitespace AROUND `${…}`
+inside class strings, gluing class names to interpolations: every marker on the map lost its size
+class and drew as a bare rectangle. HEAD had zero such glued spots, which made the repair exact —
+18 of them, all mine. (2) It could not see a class list INSIDE an interpolation, so a card whose
+ground was written `${isDefault ? 'bg-white' : …}` kept its white while its ink turned to
+near-white: the profile's tree names vanished into their own cards. Worse than turning neither.
+(3) A translucent ground is still a ground: `bg-white/70` slabs (the council's proposal card, the
+sustaining seven) stayed light under dark text. The pass now reads conditionals, answers
+translucency in kind, and adds `dark:prose-invert` where prose lives (the white paper was grey on
+grey with white code chips). Three audits hold the result: no glued interpolation, no light ground
+under night ink, no night ground under day ink — the last one keeps four glass pills that sit on
+photographs in their day colours, which is what glass is for.
+
+**2026-09-11 · Every card ends on one line** — a row of events ended at four different heights,
+because a card is as tall as what its event happened to say. The row already stretched its
+children; the card now fills that height (the words' block grows into it), so a card whose event
+said nothing ends in quiet space instead of standing shorter than its neighbours.
+
+**2026-09-10 · Night reaches the ground, and a confirmation stops asking** — three mends after
+walking the shell at night. THE GROUND: a section can only be legible at night if the card it is
+drawn on turns too — the profile's two shell cards (ProfileLayout) stayed white, so every night
+ink added to a settings row became white-on-white. Both cards now carry their own night, and the
+pass ran over every component and page: 457 class lists gained a night answer, each surface
+keeping ONE answer per property. Two audits hold it: no light ground under night ink, no night
+ground under day ink — the second caught four translucent white pills that sit on photographs
+(a badge over an image, a floating map hand), whose ground is glass and rightly keeps its day
+ink. THE FOLD: the connections chevron returns to the far right of its row, where an eye already
+looks to ask "is this open?" — the name opens it, the chevron says which way it stands. THE
+NOTICE: a confirmation is a snackbar, never a modal. A modal asks the reader to answer; a thing
+that merely happened has nothing to answer, so "Newsletter unsubscribed." stopped raising a
+dialog with a Close button. The profile's six tabs, the letter, and every success alert
+(validated, door claimed, invitation sent, decision enacted, default tree set) now speak in
+passing; failures keep the same voice in red. REJECTED: keeping a modal for the letter's "sent to
+n" report — the letter is already sent, and a count is a report, not a question.
+
+**2026-09-10 · A sieve for one's own pulses, and the trio in one order** — the profile's Pulses
+tab holds everything a being ever emitted, which is exactly why it needs a sieve: domain/pulseKinds
+offers ONLY the kinds actually present in the list (an empty promise is worse than no filter),
+in one canonical order, legacy casing normalised, each named through a typed key so a kind
+without words fails compilation. And the making trio now reads the same everywhere a being looks
+for what it has made: VISIONS · EVENTS · OFFERINGS, with Offerings a tab of its own — everything
+this being has offered, each with its standing (open · taken up · withdrawn · declined). The
+twin blocks a taken-up offering mints on both chains are not offerings themselves, so the list
+stays what was offered, never what it became.
+
+**2026-09-10 · The inbox hears the watering** — a watering posts into the guardians' thread from
+another screen entirely, and the reaches tab fetched once on mount, so an open inbox kept a
+stale "water me" alert until the reader left the tab and came back. The refresh bus gains a
+`reaches` topic; both watering paths and the water-me alert announce it, and the inbox re-reads
+in place (the reader keeps the thread they are in). The alert itself stays gated to at most one
+per UTC day, client and server alike.
+
+**2026-09-10 · A being may be anonymous; its tree speaks for it** — a switch in Settings. On:
+the person's name is spoken by no one; only the name of their closest tree (the default) — or
+the tree they act as in context — stands where a name would. Off: the name shows, in Reach and
+everywhere a hand is stamped. domain/publicName is the law (mirrored in functions):
+publicNameOf never answers the person's name while `anonymous` stands; it answers the tree's,
+or null when there is no tree to speak — and showsPersonName says whether a name may stand
+beside a tree at all. WHERE the two names go: every seat that says WHO did a thing now
+asks the law — authorName on what is minted (growth, events, offerings, care of a light house),
+a reach's face and the person shown beside it (authorPersonName is simply ABSENT while
+anonymous, so the seat has nothing to show), a watering's witness line and the tree's
+lastWateredByName, a light-house witness slot, a stay request's guest. The session computes it
+live (publicName, nameAs(tree)) so a flip changes the next stamp at once; services without the
+session at hand ask myNaming(), one persons read;
+getPersonName — the one reader every other being uses (circle, members, covenant, the knock's
+mail) — honours the flag through persons/{uid}, which now carries `anonymous` and a
+`defaultTreeId` mirror (the being's own hand: a rules test), because users/{uid} is private and
+a name's readers are the world. The tree page gains an OWNER LINE: the owner's name and a reach
+envelope beside it (when the viewer may reach); the line says "an anonymous keeper" for a being
+who chose it and "a keeper who has not written a name" for one who simply never did — the two
+are not the same claim. The tree's own name is the headline already, so anonymity hides the
+line rather than repeating the tree. Pulses
+already minted keep the authorName they were signed with — the chain remembers what was said,
+as they were then called. Also mended on the way: a rename now moves persons.displayName too
+(it had stayed at the sign-in name). REJECTED: a per-pulse anonymity; storing the tree's name
+on the person (renamed trees would lie) — the tree is read by id.
+
+**2026-09-10 · Hands where the data is; night on every surface; a complete voice** — the export
+button stands inside the digital-tree card, at its foot, on the trailing side (ChainTree's
+footer slot): the ceremony belongs beside the data it carries out. The tree's Details card,
+its fields, the connections fold, the section menus, the profile's settings and the search
+fields learn the night: every editable field names its own ground and ink (a field without
+them went invisible at night), fields wear soft corners, the GPS label sits inline with its
+coordinates while the place search and the map stand above them full-width, and the
+connections fold shows its state with a chevron and keeps a breath of space below. And the
+untranslated sweep: every user-facing literal left in the shell moves into the table — Arabic
+and Chinese complete for every key (the translations test keeps the three languages distinct).
+The sweep grew the guard it needed: the English guard only forbade a SENTENCE in a speaking
+seat, so a KEY that was never written passed it — speak() hands an unknown string straight
+through, and the reader sees `err_council_voice` where a sentence should stand. The second half
+of the guard now demands that every snake_case literal handed to a dialog, a toast or speak()
+exists in the table; it found 22 the hour it was written, one of them (err_generic) latent
+since the offering ring.
+
+---
+
 **2026-09-10 · The map fills its box, and the seven nearest return** — two things on the hub's
 map. A grey band below it: Leaflet sizes itself once at creation and paints only that box, and
 the box grew after (fonts, the header, a list→map toggle); a ResizeObserver now tells the map

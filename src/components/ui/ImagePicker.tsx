@@ -3,6 +3,7 @@ import { useRef, useState, ChangeEvent, ReactNode } from 'react';
 import { Icons } from './Icons';
 import { ImageCropModal } from './ImageCropModal';
 import { Loading } from './Loading';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ImagePickerProps {
     onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
@@ -23,6 +24,7 @@ interface ImagePickerProps {
 }
 
 export const ImagePicker = ({ onChange, onImageSelect, previewUrl, loading = false, isDark = false, children, className, aspect = 1, cropTitle, noCrop = false }: ImagePickerProps) => {
+    const { t } = useLanguage();
     const fileInput = useRef<HTMLInputElement>(null);
     // The just-picked file awaiting a crop. While set, the crop modal is shown and we only
     // emit onImageSelect once the user confirms the crop — so cropping happens everywhere
@@ -83,7 +85,7 @@ export const ImagePicker = ({ onChange, onImageSelect, previewUrl, loading = fal
                         <div className={`p-3 rounded-full ${isDark ? 'bg-white/10' : 'bg-slate-100'}`}>
                             <Icons.Camera />
                         </div>
-                        <span className="text-xs font-bold uppercase tracking-wide">Upload Photo</span>
+                        <span className="text-xs font-bold uppercase tracking-wide">{t('upload_photo')}</span>
                     </div>
                 )}
              </div>

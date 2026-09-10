@@ -11,7 +11,8 @@ import { getLightHouseById } from '../services/firebase';
 import type { LightHouse } from '../domain/lightHouse';
 import { EditPill, DeletePill } from './ui/HeroPills';
 import { LoveButton } from './ui/LoveButton';
-import { updateLifetree, setTreeStatus, getPulsesByTreeId, getMyHeadBlock, unmintLastPulse, getLifetreeById, exportTree } from '../services/firebase';
+import { updateLifetree, setTreeStatus, getPulsesByTreeId, getMyHeadBlock, unmintLastPulse, getLifetreeById, exportTree, getPersonPresence } from '../services/firebase';
+import { showsPersonName } from '../domain/publicName';
 import { unmintRefusal, STAFF_OVERRIDABLE_REFUSALS } from '../domain/unmint';
 import { Pulse, type Lifetree } from '../types';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
@@ -66,7 +67,7 @@ const ActionBtn = ({ onClick, disabled, title, color, icon, label }: { onClick?:
 export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, onAlertGuardians, isDefaultTree, onSetDefault, targetUserProfile, initialSection, carrying, onCarry, host }: LifetreeDetailProps) => {
    const { t } = useLanguage();
    // Session-derived values from context (were prop-drilled from App).
-   const { lightseed, activeTree, isAdmin, isSuperAdmin, isInitiate } = useSession();
+   const { lightseed, activeTree, isAdmin, isSuperAdmin, isInitiate, nameAs } = useSession();
    const currentUser = lightseed;
    const currentUserId = lightseed?.uid;
    const myActiveTree = activeTree;
@@ -103,6 +104,24 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const targetProfile = targetUserProfile ?? { onlyValidatedCanReach: tree.onlyValidatedCanReach };
    const canReach = canReachTree({ targetTree: tree, targetUserProfile: targetProfile, myActiveTree, currentUserId, isAdmin, isSuperAdmin });
    const [isEditing, setIsEditing] = useState(false);
+   // THE OWNER LINE (ring 2026-09-10): the owner's public name — null when they are anonymous
+   // or unnamed (domain/publicName), undefined until the person doc has answered.
+   const [ownerLine, setOwnerLine] = useState<{ name: string } | 'anonymous' | 'nameless' | null>(null);
+   useEffect(() => {
+       let live = true;
+       // eslint-disable-next-line react-hooks/set-state-in-effect -- resets the owner line per tree
+       setOwnerLine(null);
+       if (tree.isNature) return;
+       getPersonPresence(tree.ownerId)
+           .then(p => {
+               if (!live) return;
+               if (p && showsPersonName(p)) setOwnerLine({ name: p.displayName });
+               else if (p?.anonymous) setOwnerLine('anonymous');
+               else setOwnerLine('nameless');
+           })
+           .catch(() => { if (live) setOwnerLine(null); });
+       return () => { live = false; };
+   }, [tree.ownerId, tree.isNature]);
    // Deleting asks through the one Dialog (the same confirm every destructive act uses).
    const handleRequestDelete = async () => {
        if (!(await showConfirm('tree_delete_confirm', { title: 'delete_lifetree_title', confirmText: 'delete', danger: true }))) return;
@@ -286,9 +305,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const ACTION_GREEN = 'bg-emerald-600 text-white hover:bg-emerald-700';
    const actionRow = (
                     <>
-                        <ActionBtn onClick={() => onPlayGrowth(tree.id)} title="Play growth" color={ACTION_GREEN} icon={<Icons.Play />} label="Play" />
+                        <ActionBtn onClick={() => onPlayGrowth(tree.id)} title={t('play_growth')} color={ACTION_GREEN} icon={<Icons.Play />} label={t('play')} />
                         {canReach
-                            ? <ActionBtn onClick={() => onReachTree?.(tree)} title="Reach" color={ACTION_GREEN} icon={<Icons.Reach />} label="Reach" />
+                            ? <ActionBtn onClick={() => onReachTree?.(tree)} title={t('reach')} color={ACTION_GREEN} icon={<Icons.Reach />} label={t('reach')} />
                             : <ActionBtn disabled title={t('only_if_validated')} color="bg-white/20 text-white/70" icon={<Icons.Eye />} label={t('only_if_validated')} />}
                         {/* Care is a CARER's hand (owner/co_owner/steward — mirrors isTreeCarer
                             in the rules), not the owner's alone: an invited tender tends. */}
@@ -300,10 +319,10 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                         {isSuperAdmin && (isOwner || isCarer) && onCarry && !isEditing && (
                             <ActionBtn
                                 onClick={() => onCarry(carrying ? null : tree)}
-                                title={carrying ? 'Stop carrying this being\'s voice' : "Carry this being's voice; pulses name you as the carrier"}
+                                title={carrying ? t('carry_stop_title') : t('carry_start_title')}
                                 color={carrying ? `${ACTION_GREEN} ring-2 ring-white/70` : ACTION_GREEN}
                                 icon={<Icons.Intelligence />}
-                                label={carrying ? 'Carrying' : 'Carry a pulse'}
+                                label={carrying ? t('carrying_label') : t('carry_a_pulse')}
                             />
                         )}
                     </>
@@ -325,7 +344,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
            // Digital Tree — the immutable growth chain, rendered by the universal
            // chain renderer (ChainTree). Chain loading stays here so Care can see the
            // growth blocks (pending waterings) and refresh them in place.
-           key: 'digital', label: 'Digital Tree', icon: <Icons.Tree />, render: () => (
+           key: 'digital', label: t('digital_tree'), icon: <Icons.Tree />, render: () => (
                <>
                <ChainTree
                    genesisBlock={genesisBlock}
@@ -345,21 +364,20 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                        busy: unminting,
                        onUnmint: handleUnmintHead,
                    } : null}
-               />
-               {/* The export ceremony (domain/export): the tree and its chain leave as JSON,
-                   seals verbatim, images included — gathered with this hand's own sight. */}
-               {canWater && (
-                   <div className="mt-4 flex justify-end">
+                   // The export ceremony (domain/export): the tree and its chain leave as JSON,
+                   // seals verbatim, images included — gathered with this hand's own sight. It
+                   // stands inside the card, at the foot of the data it carries out.
+                   footer={canWater ? (
                        <button onClick={async () => {
                            if (exporting) return;
                            setExporting(true);
                            try { await exportTree(tree); } catch { showAlert('err_export'); }
                            setExporting(false);
-                       }} disabled={exporting} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-50">
+                       }} disabled={exporting} className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-bold text-slate-300 transition-colors hover:bg-slate-700 hover:text-white disabled:opacity-50">
                            <Icons.ArrowRight size={14} /> {exporting ? t('exporting') : t('export_tree')}
                        </button>
-                   </div>
-               )}
+                   ) : null}
+               />
                </>
            ),
        },
@@ -375,6 +393,8 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                    onSave={handleSave}
                    onCancelEdit={handleCancelEdit}
                    onRequestDelete={handleRequestDelete}
+                   ownerLine={ownerLine}
+                   onReachOwner={canReach && onReachTree && !isOwner ? () => onReachTree(tree) : undefined}
                    onVisibilityChange={async (visibility) => {
                        try {
                            await updateLifetree(tree.id, { visibility });
@@ -390,26 +410,24 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                    onConvertType={(isAdmin || isSuperAdmin) ? async () => {
                        const toGuarded = !(tree.treeType === 'GUARDED' || tree.isNature);
                        if (!(await showConfirm(
-                           toGuarded
-                               ? `Convert ${tree.name} into a GUARDED (nature) tree?`
-                               : `Convert ${tree.name} into a personal LIFETREE?`,
-                           { title: 'Convert tree kind', confirmText: 'Convert' },
+                           t(toGuarded ? 'convert_to_guarded_confirm' : 'convert_to_lifetree_confirm').replace('{name}', tree.name),
+                           { title: 'convert_tree_kind', confirmText: 'convert' },
                        ))) return;
                        try {
                            const updates = { treeType: toGuarded ? 'GUARDED' : 'LIFETREE', isNature: toGuarded } as Partial<Lifetree>;
                            await updateLifetree(tree.id, updates);
                            onUpdate?.(updates);
-                           showAlert(toGuarded ? `${tree.name} now stands as a guarded tree.` : `${tree.name} is a lifetree again.`);
+                           showAlert(t(toGuarded ? 'now_guarded_toast' : 'now_lifetree_toast').replace('{name}', tree.name));
                        } catch (e: any) {
                            console.error(e);
-                           showAlert(e?.message || 'Could not convert the tree.');
+                           showAlert(e?.message || 'err_tree_convert');
                        }
                    } : undefined}
                />
            ),
        },
        {
-           key: 'care', label: 'Care', icon: <Icons.Droplet />, render: () => (
+           key: 'care', label: t('care'), icon: <Icons.Droplet />, render: () => (
                // Carers care; GUARDIANS see the same card read-only (the schedule, the rhythm,
                // the pending witnesses) with a door to ask for stewardship. Outsiders see neither.
                (isOwner || isCarer || isAdmin || isSuperAdmin || isGuardian)
@@ -419,7 +437,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                        tree={tree}
                        growthBlocks={growthBlocks}
                        currentUserId={currentUserId}
-                       currentUserName={currentUser?.displayName}
+                       currentUserName={nameAs(tree.name)}
                        currentUserPhoto={currentUser?.photoURL}
                        isOwner={isOwner}
                        canWater={canWater}
@@ -430,16 +448,16 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                        onChainRefresh={loadChain}
                    />
                    </>
-                   : <p className="rounded-2xl border border-slate-100 bg-white p-6 text-center text-sm text-slate-400">{t('circle_only_care')}</p>
+                   : <p className="rounded-2xl border border-slate-100 bg-white p-6 text-center text-sm text-slate-400 dark:bg-slate-900 dark:border-slate-800">{t('circle_only_care')}</p>
            ),
        },
        {
-           key: 'circle', label: 'Circle', icon: <Icons.Venn />, render: () => (
+           key: 'circle', label: t('circle'), icon: <Icons.Venn />, render: () => (
                <>
                <TreeCircle
                    tree={tree}
                    currentUserId={currentUserId}
-                   currentUserName={currentUser?.displayName}
+                   currentUserName={nameAs(tree.name)}
                    circle={circle}
                    growthBlocks={growthBlocks}
                    canEdit={canEdit}
@@ -456,7 +474,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                <TreeGardens tree={tree} canManage={canEdit} host={host} />
                {/* The longitudinal walk (ring 2026-08-25) — SUPERADMIN-ONLY for now (it is
                    for later); loads lazily, only when opened. */}
-               {isSuperAdmin && <div className="mt-4"><TreeConnections tree={tree} /></div>}
+               {isSuperAdmin && <div className="mt-4 mb-6"><TreeConnections tree={tree} /></div>}
                </>
            ),
        },
@@ -488,12 +506,12 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                             type="button"
                             onClick={() => onAlertGuardians?.()}
                             disabled={!onAlertGuardians}
-                            title="Message this tree's guardians"
+                            title={t('message_guardians')}
                             className="w-full bg-red-600 text-white text-center py-2 font-bold animate-pulse sticky top-0 z-40 transition-colors hover:bg-red-700 disabled:cursor-default"
                         >
                             <div className="flex items-center justify-center space-x-2">
                                 <Icons.Siren />
-                                <span>ALERT: THIS TREE IS IN DANGER{onAlertGuardians ? ' (message guardians)' : ''}</span>
+                                <span>{t('danger_alert_banner')}{onAlertGuardians ? ` ${t('danger_alert_message_guardians')}` : ''}</span>
                                 <Icons.Siren />
                             </div>
                         </button>
@@ -507,7 +525,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     <div className="flex flex-wrap items-center justify-end gap-2">
                         {actionRow}
                         {canEdit && <EditPill onClick={() => { setIsEditing(true); setSection('details'); }} />}
-                        {canDelete && <DeletePill onClick={handleRequestDelete} staffDot={deleteIsStaffOnly} title="Delete tree" />}
+                        {canDelete && <DeletePill onClick={handleRequestDelete} staffDot={deleteIsStaffOnly} title={t('delete_tree_title')} />}
                     </div>
                 ) : undefined,
                 body: (
@@ -515,7 +533,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     {/* Avatar — the latest growth image. */}
                     <div className="relative shrink-0">
                         {heroImg
-                            ? <Picture size={480} src={heroImg} alt={tree.name} className="h-16 w-16 rounded-full border-4 border-white bg-white object-cover shadow-xl md:h-24 md:w-24" />
+                            ? <Picture size={480} src={heroImg} alt={tree.name} className="h-16 w-16 rounded-full border-4 border-white bg-white object-cover shadow-xl md:h-24 md:w-24 dark:bg-slate-900" />
                             /* Mahameru wears the starry sky (Orion); every other imageless tree
                                a plain tree glyph. */
                             : tree.id === 'GENESIS_TREE'
@@ -531,10 +549,10 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                 onClick={async () => {
                                     if (!showValidateAction) return;
                                     const nv = !hasValidationBadge;
-                                    if (await showConfirm(nv ? 'Validate this tree?' : 'Remove validation from this tree?', { title: 'Validation' })) onValidate(tree.id, nv);
+                                    if (await showConfirm(nv ? 'validate_confirm' : 'unvalidate_confirm', { title: 'validation_title' })) onValidate(tree.id, nv);
                                 }}
-                                title={hasValidationBadge ? (showValidateAction ? 'Validated: remove (staff)' : 'Validated') : (showValidateAction ? t('validate_action') : 'Not validated yet')}
-                                aria-label={hasValidationBadge ? 'Validated' : 'Not validated'}
+                                title={hasValidationBadge ? (showValidateAction ? t('validated_remove_staff') : t('validated_trees')) : (showValidateAction ? t('validate_action') : t('not_validated_yet'))}
+                                aria-label={hasValidationBadge ? t('validated_trees') : t('not_validated')}
                                 className={`inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-white shadow-md transition-transform ${hasValidationBadge ? 'bg-emerald-500 text-white' : 'bg-slate-500/90 text-white/85'} ${showValidateAction ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}
                             >
                                 <Icons.ShieldCheck className="h-4 w-4 text-current" />
@@ -545,8 +563,8 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     <div className="min-w-0 flex-1">
                         {isEditing ? (
                             <div className="max-w-md space-y-2">
-                                <input dir="auto" className="w-full border-b border-white/40 bg-white/10 p-1 text-2xl font-light tracking-wide text-white focus:outline-none md:text-3xl" value={editName} onChange={e => setEditName(e.target.value)} placeholder={t('tree_name_ph')} />
-                                <input dir="auto" className="w-full border-b border-white/40 bg-white/10 p-1 text-xs font-bold uppercase tracking-widest text-white focus:outline-none" value={editShortTitle} onChange={e => setEditShortTitle(e.target.value)} placeholder="SHORT TITLE" />
+                                <input dir="auto" className="w-full border-b border-white/40 bg-white/10 p-1 text-2xl font-light tracking-wide text-white focus:outline-none md:text-3xl dark:bg-slate-900/10" value={editName} onChange={e => setEditName(e.target.value)} placeholder={t('tree_name_ph')} />
+                                <input dir="auto" className="w-full border-b border-white/40 bg-white/10 p-1 text-xs font-bold uppercase tracking-widest text-white focus:outline-none dark:bg-slate-900/10" value={editShortTitle} onChange={e => setEditShortTitle(e.target.value)} placeholder={t('short_title')} />
                             </div>
                         ) : (
                             <>
@@ -554,38 +572,40 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                     right — the header stays one compact block, no extra rows. */}
                                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                                     <h1 dir="auto" className="break-words text-2xl font-light tracking-wide md:text-3xl">{tree.name}</h1>
-                                    <button onClick={handleShare} title="Share this tree" className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-bold text-white transition-colors hover:bg-white/25">
-                                        <Icons.Link /> <span>{shared ? 'Copied' : 'Share'}</span>
+                                    <button onClick={handleShare} title={t('share_this_tree')} className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-bold text-white transition-colors hover:bg-white/25 dark:bg-slate-900/15">
+                                        <Icons.Link /> <span>{shared ? t('copied') : t('share')}</span>
                                     </button>
-                                    <LoveButton collection="lifetrees" id={tree.id} initialCount={tree.loveCount || 0} className="rounded-full bg-white/15 px-2 py-0.5 text-white hover:bg-white/25" />
+                                    <LoveButton collection="lifetrees" id={tree.id} initialCount={tree.loveCount || 0} className="rounded-full bg-white/15 px-2 py-0.5 text-white hover:bg-white/25 dark:bg-slate-900/15" />
                                     <BeingQr lid={tree.lid} name={tree.name} savedHref={tree.qr?.href}
                                         canMint={canEdit}
                                         onMint={(href) => mintBeingQr('lifetrees', tree.id, href)}
-                                        className="h-7 w-7 bg-white/15 text-white hover:bg-white/25" />
+                                        className="h-7 w-7 bg-white/15 text-white hover:bg-white/25 dark:bg-slate-900/15" />
                                     {/* Favourite — just a star, beside the QR. Press to make this
                                         your default tree; filled once it is. */}
                                     {isOwner && onSetDefault && (
                                         <button
                                             onClick={() => { if (!isDefaultTree) onSetDefault(); }}
                                             disabled={isDefaultTree}
-                                            title={isDefaultTree ? 'Your default tree' : 'Set as default tree'}
-                                            aria-label={isDefaultTree ? 'Your default tree' : 'Set as default tree'}
+                                            title={isDefaultTree ? t('default_tree_title') : t('set_default_tree')}
+                                            aria-label={isDefaultTree ? t('default_tree_title') : t('set_default_tree')}
                                             className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-transform hover:scale-110 ${isDefaultTree ? 'text-amber-300' : 'text-white/70 hover:text-amber-200'}`}
                                         >
                                             <Icons.Star filled={isDefaultTree} size={17} />
                                         </button>
                                     )}
-                                    {isNature && <span className="inline-flex items-center gap-1 rounded-full border border-white/70 bg-sky-500 px-2 py-0.5 text-[10px] font-bold"><Icons.Shield /> NATURE</span>}
-                                    {isMotherTree && <span className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-black text-amber-950" title={`Holds ${holdingLightHouses.map(x => x.name).join(', ')}`}><Icons.Sun /> MOTHER TREE</span>}
-                                    {tree.visibility && tree.visibility !== 'public' && <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">{tree.visibility}</span>}
+                                    {isNature && <span className="inline-flex items-center gap-1 rounded-full border border-white/70 bg-sky-500 px-2 py-0.5 text-[10px] font-bold"><Icons.Shield /> {t('badge_nature')}</span>}
+                                    {isMotherTree && <span className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-black text-amber-950" title={t('holds_names').replace('{names}', holdingLightHouses.map(x => x.name).join(', '))}><Icons.Sun /> {t('badge_mother_tree')}</span>}
+                                    {tree.visibility && tree.visibility !== 'public' && <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide dark:bg-slate-900/15">{tree.visibility}</span>}
                                 </div>
                                 {tree.shortTitle && <p dir="auto" className="mt-0.5 text-xs font-bold uppercase tracking-widest text-emerald-200">{tree.shortTitle}</p>}
                                 <div className="mt-1.5 flex flex-wrap items-center gap-2">
                                     <span dir="ltr" className="truncate font-mono text-xs text-white/30" title={tree.id}>{tree.id}</span>
                                     {tree.plantedAt && (
                                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] text-emerald-200"
-                                              title={Number.isFinite(tree.plantedLatitude) ? `Planted at ${tree.plantedLatitude?.toFixed(5)}, ${tree.plantedLongitude?.toFixed(5)}${Number.isFinite(tree.plantedAltitudeM) ? ` · ${Math.round(tree.plantedAltitudeM!)} m` : ''}` : 'The real planting moment'}>
-                                            🌱 Planted {new Date(tree.plantedAt.toMillis()).toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' })}
+                                              title={Number.isFinite(tree.plantedLatitude)
+                                                  ? t('planted_at_coords').replace('{coords}', `${tree.plantedLatitude?.toFixed(5)}, ${tree.plantedLongitude?.toFixed(5)}${Number.isFinite(tree.plantedAltitudeM) ? ` · ${Math.round(tree.plantedAltitudeM!)} m` : ''}`)
+                                                  : t('planting_moment')}>
+                                            🌱 {t('planted')} {new Date(tree.plantedAt.toMillis()).toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' })}
                                         </span>
                                     )}
                                 </div>
@@ -600,7 +620,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
             layoutProps={{
                 maxWidth: 'max-w-5xl',
                 overlapClassName: '-mt-10',
-                asideClassName: 'rounded-2xl border border-slate-100 bg-white p-2 shadow-lg lg:sticky lg:top-24',
+                asideClassName: 'rounded-2xl border border-slate-100 bg-white p-2 shadow-lg lg:sticky lg:top-24 dark:border-slate-800 dark:bg-slate-900',
                 mainClassName: 'min-w-0 space-y-6',
             }}
         />

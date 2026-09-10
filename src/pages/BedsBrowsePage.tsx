@@ -28,6 +28,7 @@ interface BedGroup {
 // One bed as a density card — the same shape as the Light House profile's beds tab: the bed's
 // latest growth (or a Moon-lit gradient tile), its name, a truncated welcome, and a chevron.
 const BedCard = ({ bed, onViewTree, density }: { bed: Lifetree; onViewTree: (t: Lifetree) => void; density: ListDensity }) => {
+  const { t } = useLanguage();
   const img = bed.latestGrowthUrl || bed.imageUrl || '';
   const moonTile = (size: string) => (
     <span className={`flex ${size} flex-none items-center justify-center rounded-xl bg-gradient-to-br from-indigo-400 to-violet-500 text-white [&>svg]:h-6 [&>svg]:w-6`}>
@@ -43,8 +44,8 @@ const BedCard = ({ bed, onViewTree, density }: { bed: Lifetree; onViewTree: (t: 
           ? <img src={img} alt={bed.name} className="h-11 w-11 flex-none rounded-lg object-cover" />
           : moonTile('h-11 w-11')}
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-bold text-slate-800">{bed.name}</p>
-          <p className="truncate text-[11px] text-slate-400">{bed.body ? bed.body.slice(0, 80) : 'A place to sleep'}</p>
+          <p className="truncate text-sm font-bold text-slate-800 dark:text-slate-100">{bed.name}</p>
+          <p className="truncate text-[11px] text-slate-400">{bed.body ? bed.body.slice(0, 80) : t('a_place_to_sleep')}</p>
         </div>
         <span className="flex-none text-slate-300 [&>svg]:h-4 [&>svg]:w-4 group-hover:text-slate-500"><Icons.ChevronRight /></span>
       </button>
@@ -61,8 +62,8 @@ const BedCard = ({ bed, onViewTree, density }: { bed: Lifetree; onViewTree: (t: 
             : <span className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-indigo-400 to-violet-500 text-white [&>svg]:h-7 [&>svg]:w-7"><Icons.Moon /></span>}
         </div>
         <div className="min-w-0 flex-1 p-2.5">
-          <p className="truncate text-sm font-bold text-slate-800">{bed.name}</p>
-          <p className="mt-0.5 truncate text-[10px] text-slate-400">{bed.body ? bed.body.slice(0, 40) : 'A place to sleep'}</p>
+          <p className="truncate text-sm font-bold text-slate-800 dark:text-slate-100">{bed.name}</p>
+          <p className="mt-0.5 truncate text-[10px] text-slate-400">{bed.body ? bed.body.slice(0, 40) : t('a_place_to_sleep')}</p>
         </div>
       </button>
     );
@@ -76,8 +77,8 @@ const BedCard = ({ bed, onViewTree, density }: { bed: Lifetree; onViewTree: (t: 
         ? <img src={img} alt={bed.name} className="h-14 w-14 flex-none rounded-xl object-cover" />
         : moonTile('h-14 w-14')}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-bold text-slate-800">{bed.name}</p>
-        <p className="truncate text-[11px] text-slate-400">{bed.body ? bed.body.slice(0, 60) : 'A place to sleep'}</p>
+        <p className="truncate text-sm font-bold text-slate-800 dark:text-slate-100">{bed.name}</p>
+        <p className="truncate text-[11px] text-slate-400">{bed.body ? bed.body.slice(0, 60) : t('a_place_to_sleep')}</p>
       </div>
       <span className="flex-none text-slate-300 [&>svg]:h-4 [&>svg]:w-4 group-hover:text-slate-500"><Icons.ChevronRight /></span>
     </button>
@@ -110,6 +111,8 @@ export const BedsBrowsePage = ({ onViewTree, lightHouseDomain = null, lightHouse
 
   const [groups, setGroups] = useState<BedGroup[]>([]);
   const [loading, setLoading] = useState(true);
+  // The placeholder name for a house this viewer may not read — spoken once, outside the fetch.
+  const elsewhereLabel = t('beds_elsewhere');
   useEffect(() => {
     let alive = true;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- show the loader while the beds refetch (scope/signal change)
@@ -142,7 +145,7 @@ export const BedsBrowsePage = ({ onViewTree, lightHouseDomain = null, lightHouse
         if (!byHouse.has(id)) {
           const house = (bed.lightHouseId && houseOf.get(bed.lightHouseId)) || null;
           byHouse.set(id, {
-            house: house || ({ id, name: 'Elsewhere in the network' } as LightHouse),
+            house: house || ({ id, name: elsewhereLabel } as LightHouse),
             beds: [],
           });
         }
@@ -154,7 +157,7 @@ export const BedsBrowsePage = ({ onViewTree, lightHouseDomain = null, lightHouse
       setLoading(false);
     });
     return () => { alive = false; };
-  }, [lightHouses, bedsSignal, lightHousesPublicOnly, lightHouseDomain]);
+  }, [lightHouses, bedsSignal, lightHousesPublicOnly, lightHouseDomain, elsewhereLabel]);
 
   // Search reads both floors: a house name keeps all its beds; otherwise the bed's own name/body.
   const term = search.trim().toLowerCase();
@@ -188,7 +191,7 @@ export const BedsBrowsePage = ({ onViewTree, lightHouseDomain = null, lightHouse
             <input
               dir="auto"
               type="text"
-              className="block w-full rounded-xl border border-emerald-100 bg-white/80 py-2 pl-10 pr-3 leading-5 text-slate-900 placeholder-slate-400 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 sm:text-sm"
+              className="block w-full rounded-xl border border-emerald-100 bg-white/80 py-2 pl-10 pr-3 leading-5 text-slate-900 placeholder-slate-400 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 sm:text-sm dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-100 dark:placeholder-slate-500"
               placeholder={t('search_beds_ph')}
               value={search}
               onChange={e => setSearch(e.target.value)}
@@ -199,13 +202,13 @@ export const BedsBrowsePage = ({ onViewTree, lightHouseDomain = null, lightHouse
         <ListBox tone={tone}>
           {!lightseed && (
             <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-center text-sm text-amber-700">
-              Sign in to find a place to sleep; beds reach as far as the node, no further.
+              {t('beds_signin_note')}
             </p>
           )}
           {loading ? (
             <div className="flex justify-center py-24"><Loading /></div>
           ) : visibleGroups.length === 0 ? (
-            <p className="py-16 text-center text-slate-500">{term ? 'No beds match your search.' : 'No beds yet.'}</p>
+            <p className="py-16 text-center text-slate-500">{term ? t('no_beds_match') : t('no_beds_yet')}</p>
           ) : (
             <div className="space-y-8">
               {visibleGroups.map(({ house, beds }) => (
@@ -216,13 +219,13 @@ export const BedsBrowsePage = ({ onViewTree, lightHouseDomain = null, lightHouse
                       <img src={house.imageUrl || '/lighthouse.webp'} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-bold text-slate-800">{house.name}</p>
+                      <p className="truncate text-sm font-bold text-slate-800 dark:text-slate-100">{house.name}</p>
                       {(house.locationName || house.domain) && (
                         <p className="truncate text-[11px] text-slate-400">{house.locationName || house.domain}</p>
                       )}
                     </div>
                     <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-700">
-                      {beds.length} {beds.length === 1 ? 'bed' : 'beds'}
+                      {t('beds_count').replace('{n}', String(beds.length))}
                     </span>
                   </div>
                   <div className={densityGridClass(density)}>

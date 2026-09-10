@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { notify } from '../ui/Toast';
 import { Icons } from '../ui/Icons';
 import { showAlert } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -13,14 +14,17 @@ import { SectionMenu } from '../ui/SectionMenu';
 import { INTELLIGENCE_DUTIES, DUTY_LABEL_KEY, dutiesOf, type DutyAssignment, type IntelligenceDuty } from '../../domain/intelligenceDuty';
 import { spokenLine } from '../../utils/translations';
 
+// The model names are brand tokens; only the parenthetical hint speaks — so the label
+// is a translation key that carries the brand name inside it.
 const CLAUDE_MODELS = [
-  { id: 'claude-opus-4-8', label: 'Claude Opus 4.8 (deepest)' },
-  { id: 'claude-sonnet-5', label: 'Claude Sonnet 5 (balanced)' },
-  { id: 'claude-haiku-4-5', label: 'Claude Haiku 4.5 (fast & light)' },
-];
+  { id: 'claude-opus-4-8', labelKey: 'intel_model_opus' },
+  { id: 'claude-sonnet-5', labelKey: 'intel_model_sonnet' },
+  { id: 'claude-haiku-4-5', labelKey: 'intel_model_haiku' },
+] as const;
 
+// Provider names are brands and stay literal; 'local' is an English word and speaks (below).
 const PROVIDER_LABEL: Record<string, string> = {
-  google: 'Google · Gemini', anthropic: 'Anthropic · Claude', openai: 'OpenAI', deepseek: 'DeepSeek', local: 'Local',
+  google: 'Google · Gemini', anthropic: 'Anthropic · Claude', openai: 'OpenAI', deepseek: 'DeepSeek',
 };
 
 /**
@@ -60,7 +64,7 @@ export const IntelligencePanel = ({
   const { t } = useLanguage();
   const [intelligences, setIntelligences] = useState<Intelligence[]>([]);
   const [openSettings, setOpenSettings] = useState<string | null>(null);
-  const [name, setName] = useState(scope === 'community' ? 'Our Claude' : 'Claude');
+  const [name, setName] = useState(scope === 'community' ? t('intel_our_claude') : 'Claude');
   const [model, setModel] = useState('claude-sonnet-5');
   const [apiKey, setApiKey] = useState('');
   const [busy, setBusy] = useState(false);
@@ -85,7 +89,7 @@ export const IntelligencePanel = ({
       await updateIntelligence(intel.id, { enabled: intel.enabled === false });
       refresh();
     } catch (e: any) {
-      showAlert(e?.message || 'Could not change that intelligence.');
+      showAlert(e?.message || 'err_intel_change');
     }
     setTogglingId(null);
   };
@@ -131,7 +135,7 @@ export const IntelligencePanel = ({
       refresh();
       onSelect(intelligenceId!);
     } catch (e: any) {
-      showAlert(e?.message || 'Could not connect Claude.');
+      showAlert(e?.message || 'err_intel_connect');
     }
     setBusy(false);
   };
@@ -141,7 +145,7 @@ export const IntelligencePanel = ({
     try {
       setTest(await testIntelligenceConnection(selectedIntelligenceId));
     } catch (e: any) {
-      setTestError(e?.message || 'The test call failed.');
+      setTestError(e?.message || t('err_intel_test'));
     }
     setTesting(false);
   };
@@ -151,12 +155,12 @@ export const IntelligencePanel = ({
     if (!selectedIntelligenceId || !memText.trim()) return;
     setAddingMem(true);
     try {
-      const name = memText.trim().split('\n')[0].slice(0, 48) || 'Memory';
+      const name = memText.trim().split('\n')[0].slice(0, 48) || t('intel_memory_title');
       await addIntelligenceMemory(selectedIntelligenceId, name, memText.trim());
       setMemText('');
       refresh();
     } catch (e: any) {
-      showAlert(e?.message || 'Could not add to memory.');
+      showAlert(e?.message || 'err_intel_memory_add');
     }
     setAddingMem(false);
   };
@@ -168,10 +172,10 @@ export const IntelligencePanel = ({
     setPromoting(true);
     try {
       await promoteToDefaultVoice(existingClaude);
-      showAlert(`${existingClaude.name} is now the default voice for everyone on the network. Members who haven't picked their own intelligence will speak through it, on this connected key.`);
+      notify(t('intel_default_done').replace('{name}', existingClaude.name));
       refresh();
     } catch (e: any) {
-      showAlert(e?.message || 'Could not set the default voice.');
+      showAlert(e?.message || 'err_intel_default_voice');
     }
     setPromoting(false);
   };
@@ -183,7 +187,7 @@ export const IntelligencePanel = ({
       await disconnectProviderCredential({ scope, ownerId: credentialOwnerId, provider: 'anthropic', intelligenceId: existingClaude.id });
       refresh();
     } catch (e: any) {
-      showAlert(e?.message || 'Could not disconnect.');
+      showAlert(e?.message || 'err_intel_disconnect');
     }
     setBusy(false);
   };
@@ -202,8 +206,8 @@ export const IntelligencePanel = ({
         <summary className="cursor-pointer font-bold text-slate-600 dark:text-slate-300">{t('intel_billing_title')}</summary>
         <ol className="mt-2 list-decimal space-y-1 pl-5">
           <li>{t('intel_step1a')} <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noreferrer" className="font-bold text-emerald-600 underline dark:text-emerald-400">console.anthropic.com → API Keys</a> {t('intel_step1b')}</li>
-          <li>{t('intel_step2a')} <span className="font-semibold">Create Key</span>{t('intel_step2b')} <code className="rounded bg-slate-200 px-1 dark:bg-slate-700">sk-ant-</code>{t('intel_step2c')}</li>
-          <li>{t('intel_step3a')} <span className="font-semibold">Billing</span> {t('intel_step3b')}</li>
+          <li>{t('intel_step2a')} <span className="font-semibold">{t('intel_create_key')}</span>{t('intel_step2b')} <code className="rounded bg-slate-200 px-1 dark:bg-slate-700">sk-ant-</code>{t('intel_step2c')}</li>
+          <li>{t('intel_step3a')} <span className="font-semibold">{t('intel_billing_word')}</span> {t('intel_step3b')}</li>
           <li>{t('intel_step4')}</li>
         </ol>
         <p className="mt-2">{t('intel_billing_body')}</p>
@@ -221,7 +225,7 @@ export const IntelligencePanel = ({
         <label className="space-y-1">
           <span className="text-[10px] font-bold uppercase text-slate-400">{t('intel_model')}</span>
           <select value={model} onChange={e => setModel(e.target.value)} className="h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
-            {CLAUDE_MODELS.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+            {CLAUDE_MODELS.map(m => <option key={m.id} value={m.id}>{t(m.labelKey)}</option>)}
           </select>
         </label>
       </div>
@@ -260,14 +264,14 @@ export const IntelligencePanel = ({
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-sm font-bold text-slate-800 dark:text-slate-100">{intel.name}</span>
               {isListening ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white"><span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />{t('intel_listening')}</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white"><span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse dark:bg-slate-900" />{t('intel_listening')}</span>
               ) : !isEnabled ? (
                 <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500 dark:bg-slate-700 dark:text-slate-300">{t('intel_disabled_badge')}</span>
               ) : (
                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500 dark:bg-slate-800 dark:text-slate-400">{t('intel_enabled_badge')}</span>
               )}
             </div>
-            <div className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">{PROVIDER_LABEL[intel.provider] || intel.provider}{intel.connected ? ` · key ${intel.keyHint || 'set'}` : ''}</div>
+            <div className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">{intel.provider === 'local' ? t('intel_provider_local') : PROVIDER_LABEL[intel.provider] || intel.provider}{intel.connected ? ` · ${t('intel_key_word')} ${intel.keyHint || t('intel_key_set')}` : ''}</div>
             {intel.description && <div className="mt-1 line-clamp-2 text-xs text-slate-400">{intel.description}</div>}
           </div>
           <div className="flex shrink-0 items-center gap-1">

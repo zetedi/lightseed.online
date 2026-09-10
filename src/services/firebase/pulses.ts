@@ -9,6 +9,7 @@ import { isExplicitlyValidatedTree } from '../../utils/validation';
 import { buildThreadId, buildGroupThreadId, reachAudienceLabels } from '../../utils/reachPermissions';
 import { db, auth, toMillis, mapDoc, mapPulse, pulsesCollection } from './core';
 import { announce } from '../refreshBus';
+import { myNaming } from './accounts';
 
 // The visibility levels a plain (viewer-agnostic) list query may request and PROVE to
 // canListPulse: 'public' always, 'node' once signed in. Timelines that pin a communityId or
@@ -362,9 +363,11 @@ export const sendReach = async ({
         throw new Error('err_dm_validated_only');
     }
 
-    // The sender's face: their tree if planted, else themself (the person is the node).
+    // The sender's face: their tree if planted, else themself (the person is the node) — and an
+    // anonymous being is never named beside it (domain/publicName).
     const fromId = fromTree?.id || sender.uid;
-    const fromName = fromTree?.name || sender.displayName || 'A lightseed';
+    const naming = await myNaming(fromTree?.name);
+    const fromName = fromTree?.name || naming.name || 'A lightseed';
     const write = fromTree ? mintPulse : addPersonReach;
 
     const base = {
@@ -380,7 +383,7 @@ export const sendReach = async ({
         ...(mintNotice ? { mintNotice: true } : {}),
         authorId: sender.uid,
         authorName: fromName,
-        authorPersonName: sender.displayName || undefined,
+        authorPersonName: naming.personName,
         authorPhoto: fromTree?.imageUrl || sender.photoURL || undefined,
     };
 
@@ -443,7 +446,8 @@ export const sendThreadMessage = async ({
 }) => {
     const participantUids = Array.from(new Set([sender.uid, ...(thread.participantUids || [])].filter(Boolean)));
     const isGroup = thread.isGroup ?? participantUids.length > 2;
-    const fromName = fromTree?.name || sender.displayName || 'A lightseed';
+    const naming = await myNaming(fromTree?.name);
+    const fromName = fromTree?.name || naming.name || 'A lightseed';
     const write = fromTree ? mintPulse : addPersonReach;
     return write({
         lifetreeId: fromTree?.id || sender.uid,
@@ -466,7 +470,7 @@ export const sendThreadMessage = async ({
         visibility: 'private',
         authorId: sender.uid,
         authorName: fromName,
-        authorPersonName: sender.displayName || undefined,
+        authorPersonName: naming.personName,
         authorPhoto: fromTree?.imageUrl || sender.photoURL || undefined,
     });
 };

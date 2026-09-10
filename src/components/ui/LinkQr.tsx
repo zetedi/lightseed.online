@@ -23,7 +23,7 @@ export const LinkQr = ({ url, title, className = '' }: { url: string; title: str
         <Modal title={title} onClose={() => setOpen(false)}>
           <div className="flex flex-col items-center gap-4 text-center">
             {dataUrl
-              ? <img src={dataUrl} alt={title} className="h-56 w-56 rounded-xl border border-slate-200 shadow-sm" />
+              ? <img src={dataUrl} alt={title} className="h-56 w-56 rounded-xl border border-slate-200 shadow-sm dark:border-slate-700" />
               : <div className="flex h-56 w-56 items-center justify-center text-slate-300">…</div>}
             <p className="break-all font-mono text-[11px] text-slate-400">{url}</p>
           </div>

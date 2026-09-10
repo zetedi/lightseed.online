@@ -42,8 +42,8 @@ export const CommunityIntelligence: React.FC<CommunityIntelligenceProps> = ({ co
         const next = assignDuty(community.intelligenceByDuty as DutyAssignment | undefined, duty, id);
         updateCommunity(community.id, { intelligenceByDuty: next }).then(() => onUpdate?.({ intelligenceByDuty: next })).catch(() => {});
       }}
-      title="Community Intelligence"
-      sub="Choose which intelligences serve this community and which is the default. An intelligence is a participant, never an authority, and always replaceable."
+      title={t('community_intelligence')}
+      sub={t('community_intelligence_sub')}
       panelTitle={t('intel_community_title')}
       panelSubtitle={t('intel_community_sub')}
     />

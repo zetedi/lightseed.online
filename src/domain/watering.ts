@@ -30,6 +30,7 @@ export interface WateringSchedule {
   overdue?: boolean;          // raised by the daily sweep / client check, cleared on watering
   lastAlertAt?: Stamp;    // idempotency: when guardians were last pinged about it
   alertThreadId?: string;     // the guardians group thread the "water me" reach lives in
+  alertPulseId?: string;      // the ONE standing ask, rewritten while it stands (domain: standingAlertId)
 }
 
 // The witness's reading of a watering photo — produced by the AI, or stood in for by a
@@ -124,3 +125,24 @@ export const wateringAlertedToday = (tree: TreeLike, now: number = Date.now()): 
 // Should we raise a fresh "water me" alert right now? Overdue and not yet alerted today.
 export const shouldAlertForWatering = (tree: TreeLike, now: number = Date.now()): boolean =>
   isWateringOverdue(tree, now) && !wateringAlertedToday(tree, now);
+
+// ONE STANDING ASK (ring 2026-09-11). A tree that goes a week unwatered used to leave a week of
+// identical "water me" lines in its guardians' thread — one nudge a day, each one true, together
+// a wall. A thirsty tree asks ONCE and the ask keeps saying today's count: while an ask still
+// stands (raised, and no watering since), the same message is rewritten; a watering answers it,
+// and the next thirst raises a new one.
+//
+// Plain contract — guaranteed: standingAlertId answers the pulse to rewrite, or null when the
+// next ask must be a new message. The answer is null the moment a watering lands after the ask,
+// so an answered ask is never reopened — the thread keeps it as said. Enforced by
+// tests/watering.test.ts; the rewrite itself is allowed by ONE narrow firestore rule (the
+// author of a careAlert may refresh its words), and the daily sweep does the same with the
+// server's hand.
+export const standingAlertId = (tree: TreeLike): string | null => {
+  const w = wateringOf(tree);
+  if (!w?.alertPulseId || !w.lastAlertAt) return null;
+  const raised = toMs(w.lastAlertAt);
+  if (!raised) return null;
+  // A watering after the ask answers it: the next thirst speaks anew.
+  return toMs(w.lastWateredAt) > raised ? null : w.alertPulseId;
+};

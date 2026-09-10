@@ -44,7 +44,7 @@ interface LightHouseProfileProps {
     onViewTree?: (tree: Lifetree) => void;
 }
 
-export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', canEdit = false, editIsStaffOnly = false, onSetVisibility, onDelete, onViewCommunity, onViewTree }: LightHouseProfileProps) => {
+export const LightHouseProfile = ({ lightHouse, onClose, backLabel, canEdit = false, editIsStaffOnly = false, onSetVisibility, onDelete, onViewCommunity, onViewTree }: LightHouseProfileProps) => {
     const { t } = useLanguage();
     const visibility = lightHouseVisibility(lightHouse);
     const [section, setSection] = useState<LightHouseSection>('about');
@@ -68,9 +68,9 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
                 locationName: placeName.trim() || undefined,
             });
             announce('lightHouses', lightHouse.id);
-            notify('🌍 The Light House found its place.');
+            notify(t('lh_place_saved'));
         } catch (e: any) {
-            showAlert(e?.message || 'Could not save the place.');
+            showAlert(e?.message || 'err_lh_place_save');
         }
         setIsSavingPlace(false);
     };
@@ -117,8 +117,8 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
             if (rootTree) await firestoreStore.unlink(lightHouse.id, 'rooted', rootTree.id);
             await firestoreStore.link(lightHouse.id, 'rooted', tree.id);
             setRootTree(tree);
-            notify(`🌳 ${lightHouse.name} is rooted in ${tree.name}, a mother tree now.`);
-        } catch (e: any) { showAlert(e?.message || 'Could not root the Light House.'); }
+            notify(t('lh_rooted_toast').replace('{house}', lightHouse.name).replace('{tree}', tree.name));
+        } catch (e: any) { showAlert(e?.message || 'err_lh_root'); }
         setIsRooting(false);
     };
 
@@ -143,46 +143,46 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
     }, [lightHouse.id, bedsBump, viewerUid]);
 
     const sections: SectionItem[] = [
-        { key: 'about', label: 'About', icon: <Icons.Sun /> },
-        { key: 'tree', label: 'The Tree', icon: <Icons.Tree /> },
-        { key: 'beds', label: `Beds${bedList.length > 0 ? ` (${bedList.length})` : ''}`, icon: <Icons.Moon /> },
-        { key: 'communities', label: `Communities${homes && homes.length > 0 ? ` (${homes.length})` : ''}`, icon: <Icons.Globe /> },
+        { key: 'about', label: t('about'), icon: <Icons.Sun /> },
+        { key: 'tree', label: t('the_tree'), icon: <Icons.Tree /> },
+        { key: 'beds', label: `${t('beds')}${bedList.length > 0 ? ` (${bedList.length})` : ''}`, icon: <Icons.Moon /> },
+        { key: 'communities', label: `${t('communities')}${homes && homes.length > 0 ? ` (${homes.length})` : ''}`, icon: <Icons.Globe /> },
     ];
 
     const handleDelete = async () => {
         if (!onDelete) return;
         if (!(await showConfirm(spokenLine('lh_release_confirm', { name: lightHouse.name || '' }), { title: 'lh_release', confirmText: 'release', danger: true }))) return;
-        try { await onDelete(lightHouse.id); } catch (e: any) { showAlert(e?.message || 'Could not release the Light House.'); }
+        try { await onDelete(lightHouse.id); } catch (e: any) { showAlert(e?.message || 'err_lh_release'); }
     };
 
     return (
-        <div className="min-h-screen animate-in fade-in zoom-in-95 duration-300 pb-20 bg-slate-50">
+        <div className="min-h-screen animate-in fade-in zoom-in-95 duration-300 pb-20 bg-slate-50 dark:bg-slate-900">
             <ProfileHero heroImageUrl={lightHouse.imageUrl || '/lighthouse.webp'}>
                 <div className="flex items-center justify-between mb-6">
                     <button onClick={onClose} className="flex items-center gap-2 text-white/70 hover:text-white text-sm font-medium">
                         <Icons.ArrowLeft />
-                        <span>{backLabel}</span>
+                        <span>{backLabel || t('back')}</span>
                     </button>
                     <div className="flex items-center gap-2">
                         {canEdit && onDelete && (
-                            <button onClick={handleDelete} title="Release this Light House" aria-label="Release this Light House"
+                            <button onClick={handleDelete} title={t('lh_release_this')} aria-label={t('lh_release_this')}
                                 className="relative flex items-center gap-1.5 rounded-full border border-red-400/40 bg-red-500/20 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-red-200 transition-colors hover:bg-red-500 hover:text-white [&>svg]:h-3 [&>svg]:w-3">
-                                <Icons.Trash /> Release
+                                <Icons.Trash /> {t('release')}
                                 {editIsStaffOnly && <SuperDot />}
                             </button>
                         )}
                         <span className="flex items-center gap-1 rounded-full bg-amber-400/20 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-200 [&>svg]:h-3 [&>svg]:w-3">
-                            <Icons.Sun /> Light House
+                            <Icons.Sun /> {t('light_house')}
                         </span>
-                        <span className="rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-200">
+                        <span className="rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-200 dark:bg-slate-900/15">
                             {visibility}
                         </span>
                         <BeingQr lid={lightHouse.lid} name={lightHouse.name} savedHref={lightHouse.qr?.href}
                             canMint={canEdit}
                             onMint={(href) => mintBeingQr('lightHouses', lightHouse.id, href)}
-                            className="h-8 w-8 border border-white/15 bg-white/10 text-slate-200 hover:bg-white/25 hover:text-white" />
+                            className="h-8 w-8 border border-white/15 bg-white/10 text-slate-200 hover:bg-white/25 hover:text-white dark:bg-slate-900/10" />
                         <LoveButton collection="lightHouses" id={lightHouse.id} initialCount={lightHouse.loveCount || 0}
-                            className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-slate-200 hover:bg-white/20" />
+                            className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-slate-200 hover:bg-white/20 dark:bg-slate-900/10" />
                     </div>
                 </div>
                 <div className="flex items-center gap-4 sm:gap-5">
@@ -193,7 +193,7 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
                         <h1 dir="auto" className="min-w-0 break-words text-2xl font-light tracking-wide">{lightHouse.name}</h1>
                         {lightHouse.shortTitle && <p className="mt-1 text-sm font-bold uppercase tracking-widest text-amber-300">{lightHouse.shortTitle}</p>}
                         {lightHouse.locationName && (
-                            <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] text-slate-300">
+                            <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] text-slate-300 dark:bg-slate-900/10">
                                 <Icons.Loc /> {lightHouse.locationName}
                             </p>
                         )}
@@ -206,37 +206,37 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
             >
                 {section === 'about' && (
                     <div className="space-y-6">
-                        <SectionTitle title="About this Light House" sub="The place, its story, and its doors." />
+                        <SectionTitle title={t('lh_about_title')} sub={t('lh_about_sub')} />
                         {/* The founding care and its observation — the ceremony that makes it stand. */}
                         <LightHouseCareCard lightHouse={lightHouse} currentUserId={viewerUid} />
                         {lightHouse.body ? (
-                            <div className="rounded-2xl border border-slate-100 bg-white p-5 sm:p-6 shadow-lg">
-                                <p dir="auto" className="whitespace-pre-line text-justify font-serif text-lg leading-relaxed text-slate-700">{lightHouse.body}</p>
+                            <div className="rounded-2xl border border-slate-100 bg-white p-5 sm:p-6 shadow-lg dark:bg-slate-900 dark:border-slate-800">
+                                <p dir="auto" className="whitespace-pre-line text-justify font-serif text-lg leading-relaxed text-slate-700 dark:text-slate-200">{lightHouse.body}</p>
                             </div>
                         ) : (
-                            <p className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">{t('story_unwritten')}</p>
+                            <p className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400 dark:border-slate-700">{t('story_unwritten')}</p>
                         )}
 
                         {/* The 3D door — step into the Light House's Gaussian-splat scene. */}
                         {lightHouse.splatUrl && (
                             <a href={lightHouse.splatUrl} target="_blank" rel="noopener noreferrer"
                                className="inline-flex items-center gap-2 rounded-full bg-amber-500 px-5 py-2.5 text-sm font-bold text-white shadow transition-colors hover:bg-amber-600">
-                                Enter the Light House in 3D ✦
+                                {t('lh_enter_3d')}
                             </a>
                         )}
 
                         {/* The place — keepers move the Light House with the map's help. */}
                         {canEdit && (
                             <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-5 shadow-sm">
-                                <h3 className="mb-2.5 text-xs font-bold uppercase tracking-wider text-amber-600">The place</h3>
+                                <h3 className="mb-2.5 text-xs font-bold uppercase tracking-wider text-amber-600">{t('lh_the_place')}</h3>
                                 <p className="mb-2 text-[11px] text-slate-500">{t('lh_map_move')}</p>
                                 <LocationPicker value={coords} onChange={setCoords} className="h-56 w-full overflow-hidden rounded-xl border border-amber-100 shadow-inner" />
                                 <div className="mt-3 flex flex-wrap items-center gap-2">
                                     <input value={placeName} onChange={e => setPlaceName(e.target.value)} placeholder={t('lh_place_ph')}
-                                        className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                                        className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-slate-900 dark:border-slate-700" />
                                     <button onClick={savePlace} disabled={!placeDirty || isSavingPlace}
                                         className="rounded-full bg-amber-500 px-5 py-2 text-xs font-bold text-white shadow transition-colors hover:bg-amber-600 disabled:opacity-40">
-                                        {isSavingPlace ? 'Saving…' : 'Save place'}
+                                        {isSavingPlace ? t('saving') : t('lh_save_place')}
                                     </button>
                                 </div>
                             </div>
@@ -262,9 +262,9 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
 
                 {section === 'tree' && (
                     <div>
-                        <SectionTitle title="The Tree" sub="A Light House roots in a tree, never before one. The tree that holds it is a mother tree." />
+                        <SectionTitle title={t('the_tree')} sub={t('lh_tree_sub')} />
                         {!rootLoaded ? (
-                            <p className="py-8 text-center text-sm text-slate-400">Listening…</p>
+                            <p className="py-8 text-center text-sm text-slate-400">{t('lh_listening')}</p>
                         ) : rootTree ? (
                             <div
                                 onClick={onViewTree ? () => onViewTree(rootTree) : undefined}
@@ -273,29 +273,29 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
                             >
                                 <Picture size={480} src={rootTree.latestGrowthUrl || rootTree.imageUrl || '/mahameru.svg'} alt="" className="h-16 w-16 shrink-0 rounded-full border-4 border-amber-300 object-cover bg-[#04070f] shadow" />
                                 <div className="min-w-0 flex-1">
-                                    <p className="truncate text-lg font-light tracking-wide text-slate-800">{rootTree.name}</p>
-                                    <p className="text-[10px] font-black uppercase tracking-wide text-amber-600">☀ Mother tree: this Light House is rooted here</p>
+                                    <p className="truncate text-lg font-light tracking-wide text-slate-800 dark:text-slate-100">{rootTree.name}</p>
+                                    <p className="text-[10px] font-black uppercase tracking-wide text-amber-600">{t('lh_mother_tree_here')}</p>
                                 </div>
                                 <Icons.ArrowRight size={18} className="shrink-0 text-amber-300" />
                             </div>
                         ) : (
-                            <p className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">
-                                This Light House is not rooted in a tree yet.
+                            <p className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400 dark:border-slate-700">
+                                {t('lh_not_rooted')}
                             </p>
                         )}
 
                         {/* The keeper roots (or re-roots) the Light House in one of the domain's trees. */}
                         {canEdit && rootCandidates.length > 0 && (
                             <div className="mt-6 rounded-2xl border border-amber-100 bg-amber-50/50 p-4">
-                                <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-amber-600">{rootTree ? 'Re-root in another tree' : 'Root this Light House in a tree'}</p>
+                                <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-amber-600">{rootTree ? t('lh_reroot') : t('lh_root_in_tree')}</p>
                                 <div className="space-y-2">
-                                    {rootCandidates.filter(t => t.id !== rootTree?.id).map(t => (
-                                        <div key={t.id} className="flex items-center gap-3 rounded-xl border border-amber-100 bg-white p-2.5">
-                                            <Picture size={480} src={t.latestGrowthUrl || t.imageUrl || '/mahameru.svg'} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover bg-[#04070f]" />
-                                            <p className="min-w-0 flex-1 truncate text-sm font-medium text-slate-700">{t.name}</p>
-                                            <button onClick={() => rootIn(t)} disabled={isRooting}
+                                    {rootCandidates.filter(tree => tree.id !== rootTree?.id).map(tree => (
+                                        <div key={tree.id} className="flex items-center gap-3 rounded-xl border border-amber-100 bg-white p-2.5 dark:bg-slate-900">
+                                            <Picture size={480} src={tree.latestGrowthUrl || tree.imageUrl || '/mahameru.svg'} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover bg-[#04070f]" />
+                                            <p className="min-w-0 flex-1 truncate text-sm font-medium text-slate-700 dark:text-slate-200">{tree.name}</p>
+                                            <button onClick={() => rootIn(tree)} disabled={isRooting}
                                                 className="shrink-0 rounded-full bg-amber-500 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-amber-600 disabled:opacity-50">
-                                                {isRooting ? 'Rooting…' : 'Root here'}
+                                                {isRooting ? t('lh_rooting') : t('lh_root_here')}
                                             </button>
                                         </div>
                                     ))}
@@ -307,7 +307,7 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
 
                 {section === 'beds' && (
                     <div className="space-y-6">
-                        <SectionTitle title="Beds" sub="Places to sleep: each a being, with its own page and calendar." />
+                        <SectionTitle title={t('beds')} sub={t('lh_beds_sub')} />
 
                         {bedList.length > 0 ? (
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -315,13 +315,13 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
                                     const img = bed.latestGrowthUrl || bed.imageUrl || '';
                                     return (
                                         <button key={bed.id} type="button" onClick={() => onViewTree?.(bed)}
-                                            className="group flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-3 text-left shadow-sm transition-colors hover:border-slate-200 hover:bg-slate-50">
+                                            className="group flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-3 text-left shadow-sm transition-colors hover:border-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-800">
                                             {img
                                                 ? <Picture size={480} src={img} alt={bed.name} className="h-14 w-14 flex-none rounded-xl object-cover" />
                                                 : <span className="flex h-14 w-14 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-indigo-400 to-violet-500 text-white [&>svg]:h-6 [&>svg]:w-6"><Icons.Moon /></span>}
                                             <div className="min-w-0 flex-1">
-                                                <p className="truncate text-sm font-bold text-slate-800">{bed.name}</p>
-                                                <p className="truncate text-[11px] text-slate-400">{bed.body ? bed.body.slice(0, 60) : 'A place to sleep'}</p>
+                                                <p className="truncate text-sm font-bold text-slate-800 dark:text-slate-100">{bed.name}</p>
+                                                <p className="truncate text-[11px] text-slate-400">{bed.body ? bed.body.slice(0, 60) : t('a_place_to_sleep')}</p>
                                             </div>
                                             <span className="flex-none text-slate-300 [&>svg]:h-4 [&>svg]:w-4 group-hover:text-slate-500"><Icons.ChevronRight /></span>
                                         </button>
@@ -329,13 +329,13 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
                                 })}
                             </div>
                         ) : (
-                            <p className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">{t('no_beds_yet')}</p>
+                            <p className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400 dark:border-slate-700">{t('no_beds_yet')}</p>
                         )}
 
                         {isKeeperViewer && (
                             <button type="button" onClick={() => setShowOfferBed(true)}
                                 className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-white shadow transition-colors hover:bg-emerald-700">
-                                <span className="[&>svg]:h-4 [&>svg]:w-4"><Icons.Plus /></span>Offer a bed
+                                <span className="[&>svg]:h-4 [&>svg]:w-4"><Icons.Plus /></span>{t('offer_a_bed')}
                             </button>
                         )}
 
@@ -348,12 +348,12 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
 
                 {section === 'communities' && (
                     <div>
-                        <SectionTitle title="Communities" sub="The houses this Light House holds: the mirror of each community's Light Houses tab." />
+                        <SectionTitle title={t('communities')} sub={t('lh_communities_sub')} />
                         {homes === null ? (
-                            <p className="py-8 text-center text-sm text-slate-400">Listening…</p>
+                            <p className="py-8 text-center text-sm text-slate-400">{t('lh_listening')}</p>
                         ) : homes.length === 0 ? (
-                            <p className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">
-                                No community has stepped into this Light House yet.
+                            <p className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400 dark:border-slate-700">
+                                {t('lh_no_community')}
                             </p>
                         ) : (
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -362,7 +362,7 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
                                         key={c.id}
                                         onClick={onViewCommunity ? () => onViewCommunity(c) : undefined}
                                         role={onViewCommunity ? 'button' : undefined}
-                                        aria-label={onViewCommunity ? `Open ${c.name}` : undefined}
+                                        aria-label={onViewCommunity ? t('lh_open_community').replace('{name}', c.name) : undefined}
                                         className={`group relative h-36 overflow-hidden rounded-2xl shadow-md ring-1 ring-slate-100 ${onViewCommunity ? 'cursor-pointer transition-shadow hover:shadow-lg' : ''}`}
                                     >
                                         {c.heroImageUrl ? (
@@ -372,7 +372,7 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel = 'Back', can
                                         )}
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/5" />
                                         <div className="absolute bottom-3 left-4 right-4 flex items-center gap-3 text-white">
-                                            <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/30 bg-white/20 backdrop-blur">
+                                            <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/30 bg-white/20 backdrop-blur dark:bg-slate-900/20">
                                                 {c.logoUrl ? <Picture size={480} src={c.logoUrl} className="h-full w-full object-cover" alt="" /> : <Icons.Globe />}
                                             </span>
                                             <span className="min-w-0">

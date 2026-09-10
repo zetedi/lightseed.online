@@ -36,12 +36,12 @@ export const GrowthPlayerModal = ({ treeId, onClose }: { treeId: string, onClose
                 const growth = pulses.filter(p => p.imageUrl).reverse();
                 const out: Frame[] = [];
                 if (tree?.imageUrl) {
-                    out.push({ imageUrl: tree.imageUrl, title: `${tree.name} · Planted`, subtitle: tree.body, createdAt: tree.createdAt, isGenesis: true });
+                    out.push({ imageUrl: tree.imageUrl, title: `${tree.name} · ${speak('planted')}`, subtitle: tree.body, createdAt: tree.createdAt, isGenesis: true });
                 }
                 growth.forEach(p => out.push({
                     imageUrl: p.imageUrl,
                     title: p.title,
-                    subtitle: (p as any).care === 'watering' ? '💧 Watering' : undefined,
+                    subtitle: (p as any).care === 'watering' ? `💧 ${speak('watering')}` : undefined,
                     createdAt: p.createdAt,
                 }));
                 setFrames(out);
@@ -51,7 +51,7 @@ export const GrowthPlayerModal = ({ treeId, onClose }: { treeId: string, onClose
             .catch(err => {
                 if (!alive) return;
                 console.error(err);
-                setError("Failed to load growth images.");
+                setError('err_growth_images');
                 setLoading(false);
             });
 
@@ -84,15 +84,15 @@ export const GrowthPlayerModal = ({ treeId, onClose }: { treeId: string, onClose
     const frameDate = (x: any) => x ? new Date(x?.toMillis?.() ?? x).toLocaleDateString() : '';
 
     return (
-        <Modal title="Growth Evolution" onClose={onClose}>
-            {loading ? <div className="p-10 text-center">Loading Growth...</div> : (
+        <Modal title={t('growth_evolution')} onClose={onClose}>
+            {loading ? <div className="p-10 text-center">{t('growth_loading')}</div> : (
                 error ? <div className="p-10 text-center text-red-500">{speak(error)}</div> :
                 !f ? <div className="p-10 text-center">{t('no_growth_pictures')}</div> :
                 <div className="flex flex-col items-center">
                     <div className="relative w-full">
                         <Picture size={1200} src={f.imageUrl} className="w-full h-64 object-cover rounded-lg shadow-lg mb-4" />
                         {f.isGenesis && (
-                            <span className="absolute left-2 top-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800 shadow">🌱 PLANTING</span>
+                            <span className="absolute left-2 top-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800 shadow">🌱 {t('badge_planting')}</span>
                         )}
                         {/* Replay — appears once the evolution has played through. Same green-on-yellow
                             treatment as the hero Play Growth button. */}
@@ -100,7 +100,7 @@ export const GrowthPlayerModal = ({ treeId, onClose }: { treeId: string, onClose
                             <button
                                 type="button"
                                 onClick={() => setPlayNonce(n => n + 1)}
-                                title="Replay growth"
+                                title={t('growth_replay')}
                                 className="absolute inset-0 mb-4 flex items-center justify-center rounded-lg bg-black/30 transition-colors hover:bg-black/40"
                             >
                                 <span className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-600 text-yellow-300 shadow-lg shadow-emerald-900/40 ring-2 ring-yellow-300/60 transition-transform active:scale-95">

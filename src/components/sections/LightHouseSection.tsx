@@ -57,7 +57,7 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
   title,
   sub,
   lightHouses,
-  emptyMessage = 'No Light House has been consecrated yet.',
+  emptyMessage,
   placeholderColor,
   canCreate = false,
   onCreate,
@@ -103,7 +103,7 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
       setShowForm(false);
       setName(''); setBody(''); setImageUrl(''); setLocationName(''); setSplatUrl(''); setCoords(null); setVisibility('community');
     } catch (e: any) {
-      showAlert(e?.message || 'Could not consecrate the Light House.');
+      showAlert(e?.message || 'err_lh_consecrate');
     }
     setIsSaving(false);
   };
@@ -111,9 +111,9 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
   const form = (
     <div className="mt-4 space-y-3 rounded-2xl border border-amber-100 bg-amber-50/40 p-4 text-left animate-in fade-in slide-in-from-bottom-2">
       <input dir="auto" value={name} onChange={e => setName(e.target.value)} placeholder={t('lh_name_ph')}
-        className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+        className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-slate-900 dark:border-slate-700" />
       <textarea dir="auto" value={body} onChange={e => setBody(e.target.value)} placeholder={t('lh_holds_ph')}
-        className="min-h-[90px] w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+        className="min-h-[90px] w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-slate-900 dark:border-slate-700" />
       {onUploadImage && (
         <ImagePicker
           onImageSelect={async (file) => {
@@ -127,7 +127,7 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
         />
       )}
       <input value={locationName} onChange={e => setLocationName(e.target.value)} placeholder={t('lh_place_ph')}
-        className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+        className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-slate-900 dark:border-slate-700" />
       <div className="space-y-1">
         <div className="flex items-center justify-between">
           <p className="ml-1 text-[11px] text-slate-500">{t('lh_map_tap')}</p>
@@ -141,14 +141,14 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
                 { enableHighAccuracy: true, timeout: 10000 },
               );
             }}
-            className="flex items-center gap-1 rounded-full border border-amber-200 bg-white px-3 py-1 text-[11px] font-bold text-amber-700 transition-colors hover:bg-amber-50 disabled:opacity-50">
+            className="flex items-center gap-1 rounded-full border border-amber-200 bg-white px-3 py-1 text-[11px] font-bold text-amber-700 transition-colors hover:bg-amber-50 disabled:opacity-50 dark:bg-slate-900">
             <Icons.Loc /> {isLocating ? t('locating') : t('locate')}
           </button>
         </div>
         <LocationPicker value={coords} onChange={setCoords} />
       </div>
-      <input value={splatUrl} onChange={e => setSplatUrl(e.target.value)} placeholder="3D scene URL (Gaussian splat viewer, optional)"
-        className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+      <input value={splatUrl} onChange={e => setSplatUrl(e.target.value)} placeholder={t('lh_splat_ph')}
+        className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-slate-900 dark:border-slate-700" />
       <div>
         <p className="ml-1 mb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('lh_kind_label')}</p>
         <div className="flex flex-wrap gap-2">
@@ -167,9 +167,9 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
         <p className="ml-1 mb-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('lh_who_sees')}</p>
         <div className="grid grid-cols-3 gap-2">
           {([
-            { v: 'community', label: 'Community', hint: 'members only (default)' },
-            { v: 'node', label: 'Node', hint: 'anyone signed in' },
-            { v: 'public', label: 'Public', hint: 'the whole world' },
+            { v: 'community', label: t('vis_community_chip'), hint: t('vis_community_hint') },
+            { v: 'node', label: t('vis_node_chip'), hint: t('vis_node_hint') },
+            { v: 'public', label: t('vis_public_chip'), hint: t('vis_public_hint') },
           ] as const).map(o => (
             <button key={o.v} type="button" onClick={() => setVisibility(o.v)}
               className={`rounded-xl border px-2 py-2 text-center transition-all ${visibility === o.v ? 'border-amber-400 bg-amber-100 text-amber-800 ring-1 ring-amber-300' : 'border-slate-200 bg-white text-slate-500 hover:border-amber-200'}`}>
@@ -180,10 +180,10 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
         </div>
       </div>
       <div className="flex gap-2">
-        <button onClick={() => setShowForm(false)} className="flex-1 rounded-xl bg-slate-100 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-200">{t('cancel')}</button>
+        <button onClick={() => setShowForm(false)} className="flex-1 rounded-xl bg-slate-100 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300">{t('cancel')}</button>
         <button onClick={consecrate} disabled={!name.trim() || isSaving}
           className="flex-[2] rounded-xl bg-amber-500 py-2.5 text-sm font-bold text-white shadow transition-colors hover:bg-amber-600 disabled:opacity-50">
-          {isSaving ? 'Consecrating…' : 'Consecrate'}
+          {isSaving ? t('lh_consecrating') : t('lh_consecrate')}
         </button>
       </div>
     </div>
@@ -196,7 +196,7 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
       await onAdopt(s);
       setShowAdopt(false);
     } catch (e: any) {
-      showAlert(e?.message || 'Could not step into the Light House.');
+      showAlert(e?.message || 'err_lh_step_in');
     }
     setAdoptingId(null);
   };
@@ -205,10 +205,10 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
     <div className="mt-4 space-y-2 rounded-2xl border border-amber-100 bg-amber-50/40 p-4 text-left animate-in fade-in slide-in-from-bottom-2">
       <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('lh_open_step')}</p>
       {adoptable.map(s => (
-        <div key={s.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-2.5">
+        <div key={s.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-2.5 dark:bg-slate-900 dark:border-slate-800">
           <Picture size={480} src={s.imageUrl || '/lighthouse.webp'} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover bg-[#04070f]" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold text-slate-800">{s.name}</p>
+            <p className="truncate text-sm font-bold text-slate-800 dark:text-slate-100">{s.name}</p>
             <p className="truncate text-[11px] text-slate-400">{s.locationName || s.domain || ''}</p>
           </div>
           <button onClick={() => stepIn(s)} disabled={adoptingId === s.id}
@@ -217,7 +217,7 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
           </button>
         </div>
       ))}
-      <button onClick={() => setShowAdopt(false)} className="w-full rounded-xl bg-slate-100 py-2 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-200">Close</button>
+      <button onClick={() => setShowAdopt(false)} className="w-full rounded-xl bg-slate-100 py-2 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300">{t('close')}</button>
     </div>
   );
 
@@ -225,12 +225,12 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
     <div className="flex flex-wrap justify-center gap-2">
       {onCreate && !showForm && (
         <button onClick={() => { setShowForm(true); setShowAdopt(false); }} className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-amber-700 transition-colors hover:bg-amber-100">
-          {lightHouses.length === 0 ? 'Consecrate a Light House' : 'Consecrate another'}
+          {lightHouses.length === 0 ? t('lh_consecrate_first') : t('lh_consecrate_another')}
         </button>
       )}
       {onAdopt && adoptable.length > 0 && !showAdopt && (
-        <button onClick={() => { setShowAdopt(true); setShowForm(false); }} className="rounded-full border border-amber-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-widest text-amber-700 transition-colors hover:bg-amber-50">
-          Step into a Light House
+        <button onClick={() => { setShowAdopt(true); setShowForm(false); }} className="rounded-full border border-amber-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-widest text-amber-700 transition-colors hover:bg-amber-50 dark:bg-slate-900">
+          {t('lh_step_into')}
         </button>
       )}
     </div>
@@ -248,9 +248,9 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
     <div>
       <SectionTitle title={title} sub={sub} />
       {lightHouses.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400">
+        <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400 dark:border-slate-700">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-500"><Icons.Sun /></div>
-          <p className="text-sm">{emptyMessage}</p>
+          <p className="text-sm">{emptyMessage || t('lh_none_yet')}</p>
           <div className="mt-4">{keeperActions}</div>
           {canCreate && onCreate && showForm && form}
           {canCreate && onAdopt && showAdopt && adoptPanel}

@@ -13,6 +13,7 @@ import { uuidv7 } from '../../utils/id';
 import { GENESIS_MOMENT_MS, GENESIS_PLACE } from '../../domain/genesis';
 import { oldEmeraldEarthThemeValues } from '../../utils/theme';
 import { auth, db, functions, mapDoc, lifetreesCollection, visionsCollection, lightHousesCollection, pulsesCollection } from './core';
+import { myPublicName, myNaming } from './accounts';
 // getCommunityByDomain lives in ./spaces; trees ↔ spaces is a runtime-safe cycle (both use the
 // import only inside function bodies, so ESM resolves the binding lazily on call).
 import { getCommunityByDomain } from './spaces';
@@ -748,7 +749,7 @@ export const mintLightHouseCare = async (
         visibility: 'public' as const,
         domain,
         authorId: user.uid,
-        authorName: user.displayName || '',
+        authorName: (await myPublicName()) || '',
     };
     const hash = await createBlock(LIGHT_HOUSE_ROOT, payload, Date.now());
     const ref = await addDoc(pulsesCollection, {
@@ -784,8 +785,9 @@ export const witnessLightHouseCare = async (pulseId: string) => {
     const person = await getDoc(doc(db, 'persons', user.uid));
     const lid = (person.data() as { lid?: string } | undefined)?.lid;
     if (!lid) throw new Error('err_no_person');
+    const naming = await myNaming();
     await setDoc(doc(db, 'pulses', pulseId, 'witnesses', user.uid), {
-        uid: user.uid, lid, ...(user.displayName ? { name: user.displayName } : {}), witnessedAt: serverTimestamp(),
+        uid: user.uid, lid, ...(naming.name ? { name: naming.name } : {}), witnessedAt: serverTimestamp(),
     });
 };
 

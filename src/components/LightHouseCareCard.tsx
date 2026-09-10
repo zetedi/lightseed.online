@@ -72,13 +72,13 @@ export const LightHouseCareCard = ({ lightHouse, currentUserId }: { lightHouse: 
           {observed ? t('lh_observed') : t('lh_awaiting_eyes')}
         </span>
       </div>
-      {founding.authorName && <p className="mt-1.5 text-sm text-slate-600">{founding.authorName}</p>}
+      {founding.authorName && <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-300">{founding.authorName}</p>}
       {witnesses.length > 0 && (
         <div className="mt-2.5">
           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{t('lh_observed_by')}</p>
           <div className="mt-1 flex flex-wrap gap-1.5">
             {witnesses.map(w => (
-              <span key={w.uid} title={w.lid} className="rounded-full border border-emerald-200 bg-white px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">
+              <span key={w.uid} title={w.lid} className="rounded-full border border-emerald-200 bg-white px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 dark:bg-slate-900">
                 {w.name || w.lid.slice(0, 8)}
               </span>
             ))}
@@ -95,7 +95,7 @@ export const LightHouseCareCard = ({ lightHouse, currentUserId }: { lightHouse: 
           )}
           {currentUserId && (isKeeper || lightHouse.ownerId === currentUserId) && (
             <button type="button" disabled={busy} onClick={careAgain}
-              className="rounded-full border border-amber-300 bg-white px-4 py-1.5 text-xs font-bold text-amber-700 transition-colors hover:bg-amber-100 disabled:opacity-50">
+              className="rounded-full border border-amber-300 bg-white px-4 py-1.5 text-xs font-bold text-amber-700 transition-colors hover:bg-amber-100 disabled:opacity-50 dark:bg-slate-900">
               🌞 {t('lh_care_act')}
             </button>
           )}

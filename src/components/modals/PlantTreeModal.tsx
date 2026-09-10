@@ -224,7 +224,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
                   <img src={type.image} alt={type.label} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/10" />
                   <div className="relative flex h-full flex-col justify-end p-5 text-white">
-                    <span className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-xl backdrop-blur">{type.icon}</span>
+                    <span className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-xl backdrop-blur dark:bg-slate-900/15">{type.icon}</span>
                     <div className="text-sm font-bold uppercase tracking-widest">{type.label}</div>
                     <div className="mt-1 text-xs opacity-80">{type.desc}</div>
                   </div>
@@ -254,7 +254,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
             </div>
             <div className="flex gap-2 mt-auto pb-4">
               <button onClick={() => setPlantStep(1)} className={modalButton(treeType !== 'GUARDED' ? 'secondary-dark' : 'secondary', { extra: 'flex-1 uppercase tracking-widest' })}>{t('back')}</button>
-              <button onClick={() => setPlantStep(treeType === 'GUARDED' ? 4 : 3)} className={modalButton('primary', { extra: 'flex-[2] uppercase tracking-widest' })}><span>Next</span><span className="sm:hidden animate-bounce"><Icons.ChevronRight className="rotate-90" /></span><span className="hidden sm:inline"><Icons.ChevronRight /></span></button>
+              <button onClick={() => setPlantStep(treeType === 'GUARDED' ? 4 : 3)} className={modalButton('primary', { extra: 'flex-[2] uppercase tracking-widest' })}><span>{t('next')}</span><span className="sm:hidden animate-bounce"><Icons.ChevronRight className="rotate-90" /></span><span className="hidden sm:inline"><Icons.ChevronRight /></span></button>
             </div>
           </div>
         )}
@@ -270,7 +270,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
                 <div className="flex gap-2">
                   <input 
                     dir="auto" 
-                    className="flex-1 border border-white/20 p-3 rounded-xl bg-white/10 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all" 
+                    className="flex-1 border border-white/20 p-3 rounded-xl bg-white/10 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all dark:bg-slate-900/10" 
                     placeholder={t('seed_keywords_ph')} 
                     value={treeSeed} 
                     onChange={e=>setTreeSeed(e.target.value)} 
@@ -293,7 +293,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
             </div>
             <div className="flex gap-2 mt-auto pb-4">
               <button onClick={() => setPlantStep(2)} className={modalButton(treeType !== 'GUARDED' ? 'secondary-dark' : 'secondary', { extra: 'flex-1 uppercase tracking-widest' })}>{t('back')}</button>
-              <button onClick={() => setPlantStep(4)} className={modalButton('primary', { extra: 'flex-[2] uppercase tracking-widest' })}><span>Next</span><span className="sm:hidden animate-bounce"><Icons.ChevronRight className="rotate-90" /></span><span className="hidden sm:inline"><Icons.ChevronRight /></span></button>
+              <button onClick={() => setPlantStep(4)} className={modalButton('primary', { extra: 'flex-[2] uppercase tracking-widest' })}><span>{t('next')}</span><span className="sm:hidden animate-bounce"><Icons.ChevronRight className="rotate-90" /></span><span className="hidden sm:inline"><Icons.ChevronRight /></span></button>
             </div>
           </div>
         )}
@@ -301,8 +301,8 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
         {plantStep === 4 && (
           <div className={`flex-1 flex flex-col gap-6 ${stepAnim}`}>
             <div className={`text-center ${treeType !== 'GUARDED' ? 'text-white' : 'text-slate-800'}`}>
-              <h2 className="text-xl font-bold mb-2">{treeType === 'GUARDED' ? 'A Photo' : 'Imagine'}</h2>
-              <p className="text-sm opacity-70">{treeType === 'GUARDED' ? 'Add a photo of the tree you guard, or skip and simply place it on the map.' : 'Upload a portrait of your tree, or let AI imagine one from your vision.'}</p>
+              <h2 className="text-xl font-bold mb-2">{treeType === 'GUARDED' ? t('plant_step_photo') : t('plant_step_imagine')}</h2>
+              <p className="text-sm opacity-70">{treeType === 'GUARDED' ? t('plant_step_photo_sub') : t('plant_step_imagine_sub')}</p>
             </div>
             <div className="flex-1 flex flex-col gap-3 min-h-[220px]">
               <ImagePicker
@@ -316,7 +316,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
                 type="button"
                 onClick={handleImagine}
                 disabled={isImagining || uploading}
-                className="flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-50 bg-white/10 text-white hover:bg-white/20 border border-white/20"
+                className="flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-50 bg-white/10 text-white hover:bg-white/20 border border-white/20 dark:bg-slate-900/10"
               >
                 {isImagining ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div> : <Icons.Intelligence />}
                 <span>{isImagining ? t('imagining') : t('imagine_ai')}</span>
@@ -325,7 +325,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
             </div>
             <div className="flex gap-2 mt-auto pb-4">
               <button onClick={() => setPlantStep(treeType === 'GUARDED' ? 2 : 3)} className={modalButton(treeType !== 'GUARDED' ? 'secondary-dark' : 'secondary', { extra: 'flex-1 uppercase tracking-widest' })}>{t('back')}</button>
-              <button onClick={() => setPlantStep(5)} className={modalButton('primary', { extra: 'flex-[2] uppercase tracking-widest' })}><span>Next</span><span className="sm:hidden animate-bounce"><Icons.ChevronRight className="rotate-90" /></span><span className="hidden sm:inline"><Icons.ChevronRight /></span></button>
+              <button onClick={() => setPlantStep(5)} className={modalButton('primary', { extra: 'flex-[2] uppercase tracking-widest' })}><span>{t('next')}</span><span className="sm:hidden animate-bounce"><Icons.ChevronRight className="rotate-90" /></span><span className="hidden sm:inline"><Icons.ChevronRight /></span></button>
             </div>
           </div>
         )}
@@ -369,7 +369,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
 
               <div className="space-y-1.5">
                 <p className={`ml-1 text-[11px] ${treeType !== 'GUARDED' ? 'text-white/70' : 'text-slate-500'}`}>
-                  Tap the map to place your tree, or use Locate above.
+                  {t('plant_map_tap')}
                 </p>
                 <LocationPicker value={plantLocation} onChange={setPlantLocation} />
               </div>

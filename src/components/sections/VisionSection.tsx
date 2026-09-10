@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import RichTextEditor from '../ui/RichTextEditor';
 import { SectionTitle } from '../ui/SectionTitle';
 import { Icons } from '../ui/Icons';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { sanitizeRichText } from '../../utils/sanitize';
 
 // Being-generic vision section — any being's "what am I growing towards" (Indra's net).
@@ -45,35 +46,40 @@ export const VisionSection: React.FC<VisionSectionProps> = ({
   isSaving,
   saveDisabled,
   status,
-  title = 'Vision',
+  title,
   sub,
-  placeholder = 'Share your vision...',
-  emptyMessage = 'No vision shared yet.',
+  placeholder,
+  emptyMessage,
   extras,
 }) => {
+  const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
+  // The section's own words when the owner names none — spoken, never born in English here.
+  const heading = title ?? t('vision');
+  const editorPlaceholder = placeholder ?? t('vision_share_ph');
+  const emptyLine = emptyMessage ?? t('no_vision_shared');
   return (
     <div>
-      <SectionTitle title={title} sub={sub} />
+      <SectionTitle title={heading} sub={sub} />
       {canEdit && isEditing ? (
         <>
-          <RichTextEditor value={editValue} onChange={onChange} placeholder={placeholder} />
+          <RichTextEditor value={editValue} onChange={onChange} placeholder={editorPlaceholder} />
           <div className="mt-6 flex items-center gap-3">
             <button onClick={() => { onSave(); setIsEditing(false); }} disabled={saveDisabled} className="rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-700 disabled:opacity-50">
-              {isSaving ? 'Saving...' : 'Save Changes'}
+              {isSaving ? t('saving') : t('save_changes')}
             </button>
-            <button onClick={() => setIsEditing(false)} className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-500 transition-colors hover:bg-slate-50">
-              Cancel
+            <button onClick={() => setIsEditing(false)} className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-500 transition-colors hover:bg-slate-50 dark:border-slate-700">
+              {t('cancel')}
             </button>
             {status && <span className="text-sm text-slate-500">{status}</span>}
           </div>
         </>
       ) : (
         <div>
-          <div className="prose prose-slate max-w-none text-slate-700 leading-relaxed break-words [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg" dangerouslySetInnerHTML={{ __html: vision ? sanitizeRichText(vision) : `<p>${emptyMessage}</p>` }} />
+          <div className="prose prose-slate max-w-none text-slate-700 leading-relaxed break-words [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg dark:text-slate-200 dark:prose-invert" dangerouslySetInnerHTML={{ __html: vision ? sanitizeRichText(vision) : `<p>${emptyLine}</p>` }} />
           {canEdit && (
-            <button onClick={() => setIsEditing(true)} className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-500 transition-colors hover:border-emerald-200 hover:text-emerald-700">
-              <Icons.Pencil /> Edit
+            <button onClick={() => setIsEditing(true)} className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-500 transition-colors hover:border-emerald-200 hover:text-emerald-700 dark:border-slate-700">
+              <Icons.Pencil /> {t('edit')}
             </button>
           )}
         </div>

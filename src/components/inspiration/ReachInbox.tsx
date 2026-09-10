@@ -231,7 +231,7 @@ export const ReachInbox = ({
                                 </button>
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-center justify-between gap-2">
-                                        <span className="truncate font-semibold text-slate-800">
+                                        <span className="truncate font-semibold text-slate-800 dark:text-slate-100">
                                             {thread.partnerName}
                                             {thread.partnerPersonName && thread.partnerPersonName !== thread.partnerName && (
                                                 <span className="ml-1 font-normal text-slate-400">({thread.partnerPersonName})</span>

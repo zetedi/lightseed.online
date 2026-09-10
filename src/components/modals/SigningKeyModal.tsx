@@ -284,10 +284,10 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
 
         {view === 'status' && (
           <>
-            <div className="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
+            <div className="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 dark:bg-slate-900 dark:border-slate-800">
               <span className={`mt-0.5 ${custody === 'stale_device' || custody === 'publish_needed' ? 'text-amber-600' : 'text-emerald-600'} [&>svg]:h-5 [&>svg]:w-5`}><Icons.Key /></span>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-800">
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                   {frozen ? t('signing_frozen')
                     : custody === 'stale_device' ? t('signing_stale_title')
                     : custody === 'publish_needed' ? t('signing_publish_needed')
@@ -320,12 +320,12 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
                 </button>
               )}
               <button type="button" onClick={() => { resetRestoreFlow(); setView('restore'); }} disabled={available === false || frozen}
-                className="w-full rounded-xl border border-slate-200 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+                className="w-full rounded-xl border border-slate-200 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:text-slate-200 dark:border-slate-700">
                 {t('signing_key_restore')}
               </button>
               {custody === 'ready' && !frozen && (
                 <button type="button" onClick={() => { setErr(null); setConfirmedRotate(false); setView('rotate'); }}
-                  className="w-full rounded-xl border border-slate-200 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50">
+                  className="w-full rounded-xl border border-slate-200 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:border-slate-700">
                   {t('signing_rotate')}
                 </button>
               )}
@@ -352,7 +352,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
                   <>
                     <div>
                       <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-red-500">{t('signing_recovery_code')}</p>
-                      <p className="break-all rounded-lg bg-white px-2 py-2 font-mono text-[11px] text-slate-700">{pendingRecovery.recoveryCode}</p>
+                      <p className="break-all rounded-lg bg-white px-2 py-2 font-mono text-[11px] text-slate-700 dark:bg-slate-900 dark:text-slate-200">{pendingRecovery.recoveryCode}</p>
                       <button type="button" onClick={copyRecoveryCode}
                         className="mt-1 text-[11px] font-bold text-red-700 hover:text-red-900">
                         {copied ? t('copied') : t('copy')}
@@ -363,7 +363,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
                     </p>
                     <div className="flex gap-2">
                       <button type="button" onClick={refreshRecovery} disabled={busy}
-                        className="flex-1 rounded-lg border border-red-200 bg-white py-2 text-xs font-bold text-red-700 disabled:opacity-50">
+                        className="flex-1 rounded-lg border border-red-200 bg-white py-2 text-xs font-bold text-red-700 disabled:opacity-50 dark:bg-slate-900">
                         {t('refresh')}
                       </button>
                       <button type="button" onClick={activateRecovery} disabled={busy || pendingRecovery.witnessCount < KEY_RECOVERY_QUORUM}
@@ -397,17 +397,17 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
             </div>
             <ol className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
               {phrase.map((w, i) => (
-                <li key={i} className="flex items-baseline gap-2 rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-1.5">
+                <li key={i} className="flex items-baseline gap-2 rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-1.5 dark:bg-slate-900 dark:border-slate-800">
                   <span className="w-5 shrink-0 text-right text-[10px] font-bold text-slate-400">{i + 1}</span>
-                  <span className="font-mono text-sm text-slate-800">{w}</span>
+                  <span className="font-mono text-sm text-slate-800 dark:text-slate-100">{w}</span>
                 </li>
               ))}
             </ol>
             <button type="button" onClick={copyPhrase}
-              className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-200">
+              className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300">
               <span className="[&>svg]:h-3.5 [&>svg]:w-3.5">{copied ? <Icons.ShieldCheck /> : <Icons.Copy />}</span>{copied ? t('copied') : t('copy')}
             </button>
-            <label className="flex items-start gap-2 text-sm text-slate-700">
+            <label className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200">
               <input type="checkbox" checked={confirmedSaved} onChange={e => setConfirmedSaved(e.target.checked)} className="mt-0.5 h-4 w-4" />
               <span>{t('signing_phrase_confirm')}</span>
             </label>
@@ -425,7 +425,7 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
               <p className="text-xs text-amber-800">{t('signing_rotate_warn')}</p>
             </div>
             {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(err)}</p>}
-            <label className="flex items-start gap-2 text-sm text-slate-700">
+            <label className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200">
               <input type="checkbox" checked={confirmedRotate} onChange={e => setConfirmedRotate(e.target.checked)} className="mt-0.5 h-4 w-4" />
               <span>{t('signing_rotate_confirm')}</span>
             </label>
@@ -448,14 +448,14 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
               <span className="mt-0.5 text-red-600 [&>svg]:h-5 [&>svg]:w-5"><Icons.Shield /></span>
               <p className="text-xs text-red-700">{t('signing_freeze_warn')}</p>
             </div>
-            <label className="block text-xs font-semibold text-slate-600">
+            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300">
               {t('signing_suspected_since')}
               <input type="datetime-local" value={suspectedSince} onChange={e => setSuspectedSince(e.target.value)}
                 max={new Date().toISOString().slice(0, 16)}
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800" />
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 dark:border-slate-700" />
             </label>
             {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(err)}</p>}
-            <label className="flex items-start gap-2 text-sm text-slate-700">
+            <label className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200">
               <input type="checkbox" checked={confirmedFreeze} onChange={e => setConfirmedFreeze(e.target.checked)} className="mt-0.5 h-4 w-4" />
               <span>{t('signing_freeze_confirm')}</span>
             </label>
@@ -474,12 +474,12 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
 
         {view === 'witness' && (
           <>
-            <p className="text-sm text-slate-600">{t('signing_witness_intro')}</p>
+            <p className="text-sm text-slate-600 dark:text-slate-300">{t('signing_witness_intro')}</p>
             <textarea value={witnessCode} onChange={e => {
               setWitnessCode(e.target.value); setWitnessPreview(null); setConfirmedWitness(false); setErr(null);
             }}
               rows={3} autoFocus placeholder={t('signing_recovery_code')}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 font-mono text-sm text-slate-900 placeholder:text-slate-400" />
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 font-mono text-sm text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:text-slate-50" />
             {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(err)}</p>}
             {witnessPreview && (
               <div className="space-y-2 rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-xs text-indigo-900">
@@ -526,10 +526,10 @@ export const SigningKeyModal: React.FC<{ uid: string; onClose: () => void; notif
 
         {view === 'restore' && (
           <>
-            <p className="text-sm text-slate-600">{t('signing_restore_intro')}</p>
+            <p className="text-sm text-slate-600 dark:text-slate-300">{t('signing_restore_intro')}</p>
             <textarea value={restoreInput} onChange={e => { setRestoreInput(e.target.value); setErr(null); }} rows={4} autoFocus
               placeholder={t('signing_restore_placeholder')}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 font-mono text-sm text-slate-900 placeholder:text-slate-400" />
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 font-mono text-sm text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:text-slate-50" />
             {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{speak(err)}</p>}
             <div className="flex gap-3">
               <button type="button" onClick={() => { resetRestoreFlow(); setView('status'); }}

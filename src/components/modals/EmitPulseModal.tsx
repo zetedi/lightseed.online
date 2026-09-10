@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef, FormEvent } from 'react';
 import { showAlert } from "../ui/Dialog";
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useSession } from '../../contexts/SessionContext';
 import { speak } from '../../utils/translations';
 import { Icons } from '../ui/Icons';
 import { Modal, modalButton } from '../ui/Modal';
@@ -51,7 +52,7 @@ const GrowthCard = ({ onClick, disabled, image, icon, title, desc, note, gradien
       : <div className={`absolute inset-0 bg-gradient-to-br ${gradient}`} />}
     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/10" />
     <div className="relative flex h-full flex-col justify-end p-4 text-white">
-      <span className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/15 backdrop-blur">{icon}</span>
+      <span className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/15 backdrop-blur dark:bg-slate-900/15">{icon}</span>
       <div className="text-sm font-bold uppercase tracking-widest">{title}</div>
       <div className="mt-1 text-xs opacity-80">{desc}</div>
       {note && <div className="mt-1.5 text-[10px] font-bold uppercase tracking-wide text-amber-300">{note}</div>}
@@ -80,6 +81,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
   uploadBase64Image
 }) => {
   const { t } = useLanguage();
+  const { nameAs } = useSession();
   // The tree being grown: the explicit target (from its page) or the active tree.
   const growthTree = targetTree || activeTree;
   // A focused target (tree OR vision) jumps straight to its growth; otherwise ask what's growing.
@@ -176,11 +178,11 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
       await onMint({
         lifetreeId,
         type: 'tree_growth',
-        title: pulseTitle.trim() || `${growthTree?.name || 'Tree'} growth`,
+        title: pulseTitle.trim() || t('growth_of').replace('{name}', growthTree?.name || t('the_tree')),
         body: pulseBody,
         imageUrl: finalImageUrl,
         authorId: lightseed.uid,
-        authorName: lightseed.displayName || "Soul",
+        authorName: nameAs(growthTree?.name) || t('someone'),
         authorPhoto: lightseed.photoURL || undefined,
       });
       // Let the caller refresh the tree's latest image / chain after a tree growth.
@@ -225,7 +227,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
   const uploadImage = (file: File) => handleImageUpload(file, `users/${lightseed?.uid}/pulses/${Date.now()}`).then(setPulseImageUrl);
 
   return (
-    <Modal title={matchCandidate ? t('propose_alignment') : (targetTree ? `Grow ${(targetTree as Lifetree).name}` : (targetVision ? `Grow ${targetVision.title}` : t('emit_pulse')))} onClose={onClose}>
+    <Modal title={matchCandidate ? t('propose_alignment') : (targetTree ? t('grow_name').replace('{name}', (targetTree as Lifetree).name) : (targetVision ? t('grow_name').replace('{name}', targetVision.title) : t('emit_pulse')))} onClose={onClose}>
       {matchCandidate ? (
         <form onSubmit={handleAlignment} className="flex flex-col gap-4">
           <div className="bg-sky-50 p-4 rounded text-sky-800">
@@ -243,7 +245,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
             {pageKeys.map(key => {
               if (key === 'choice') return (
                 <Page key="choice">
-                  <p className="mb-3 text-center text-sm text-slate-500">A pulse is a moment of growth. What is growing?</p>
+                  <p className="mb-3 text-center text-sm text-slate-500">{t('pulse_what_growing')}</p>
                   <div className="grid grid-cols-1 gap-3">
                     {/* Vision growth on top. */}
                     <GrowthCard
@@ -252,9 +254,9 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
                       image={myVisions[0]?.imageUrl}
                       gradient="from-amber-500 to-purple-700"
                       icon={<Icons.Intelligence />}
-                      title="Vision Growth"
-                      desc="Inspiration, funding, collaboration: observe a vision growing."
-                      note={myVisions.length === 0 ? 'Create a vision first' : undefined}
+                      title={t('vision_growth')}
+                      desc={t('vision_growth_desc')}
+                      note={myVisions.length === 0 ? t('create_vision_first') : undefined}
                     />
                     <GrowthCard
                       onClick={chooseTree}
@@ -262,9 +264,9 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
                       image={treeImage}
                       gradient="from-emerald-500 to-emerald-800"
                       icon={<Icons.Tree />}
-                      title="Tree Growth"
-                      desc="New leaves, photos, milestones: observe your tree growing."
-                      note={!activeTree ? 'Plant a lifetree first' : undefined}
+                      title={t('tree_growth')}
+                      desc={t('tree_growth_desc')}
+                      note={!activeTree ? t('plant_lifetree_first') : undefined}
                     />
                   </div>
                 </Page>
@@ -274,7 +276,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
                 <Page key="subject">
                   {growthKind === 'tree' || (!growthKind && targetTree) ? (
                     <div className="space-y-3">
-                      <div className="relative h-44 w-full overflow-hidden rounded-2xl border border-emerald-200 bg-slate-100">
+                      <div className="relative h-44 w-full overflow-hidden rounded-2xl border border-emerald-200 bg-slate-100 dark:bg-slate-800">
                         {(pulseImageUrl || treeImage)
                           ? <img src={pulseImageUrl || treeImage} alt={growthTree?.name} className="h-full w-full object-cover" />
                           : <div className="flex h-full items-center justify-center text-slate-300"><Icons.Tree /></div>}
@@ -286,10 +288,10 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
                   ) : growthKind === 'vision' ? (
                     <div className="space-y-3">
                       {/* Large selected vision, above the filmstrip. */}
-                      <div className="relative h-44 w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
+                      <div className="relative h-44 w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 dark:bg-slate-800 dark:border-slate-700">
                         {pulseImageUrl
                           ? <img src={pulseImageUrl} alt={selectedVision?.title} className="h-full w-full object-cover" />
-                          : <div className="flex h-full flex-col items-center justify-center gap-1.5 text-slate-400"><Icons.Eye /><span className="text-xs">{selectedVision ? 'No image yet. Generate or upload one' : 'Pick a vision below'}</span></div>}
+                          : <div className="flex h-full flex-col items-center justify-center gap-1.5 text-slate-400"><Icons.Eye /><span className="text-xs">{selectedVision ? t('no_image_generate_upload') : t('pick_vision_below')}</span></div>}
                         {selectedVision && <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3"><p className="truncate text-sm font-bold text-white drop-shadow">{selectedVision.title}</p></div>}
                       </div>
 
@@ -299,10 +301,10 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
                           <div className="grid grid-cols-2 gap-2">
                             <button type="button" onClick={handleGenerate} disabled={generating} className="inline-flex items-center justify-center gap-1.5 rounded-full bg-slate-900 px-3 py-2.5 text-xs font-bold text-amber-300 transition-colors hover:bg-slate-800 disabled:opacity-50">
                               {generating ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-amber-300/40 border-t-amber-300" /> : <Icons.Intelligence size={16} />}
-                              <span>{generating ? 'Generating…' : (pulseImageUrl ? 'Regenerate' : 'Generate')}</span>
+                              <span>{generating ? t('generating') : (pulseImageUrl ? t('regenerate') : t('generate'))}</span>
                             </button>
-                            <label className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full border border-slate-300 bg-white px-3 py-2.5 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50">
-                              <Icons.Image size={16} /> <span>{uploading ? 'Uploading…' : 'Upload'}</span>
+                            <label className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full border border-slate-300 bg-white px-3 py-2.5 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700">
+                              <Icons.Image size={16} /> <span>{uploading ? t('uploading') : t('upload')}</span>
                               <input type="file" accept="image/*" className="hidden" disabled={uploading} onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(f); }} />
                             </label>
                           </div>
@@ -319,7 +321,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
                               className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 transition-all ${selectedVision?.id === v.id ? 'border-emerald-500 ring-2 ring-emerald-200' : 'border-transparent opacity-80 hover:opacity-100'}`}>
                               {v.imageUrl
                                 ? <img src={v.imageUrl} alt={v.title} className="h-full w-full object-cover" />
-                                : <span className="flex h-full w-full items-center justify-center bg-slate-100 text-slate-300"><Icons.Eye /></span>}
+                                : <span className="flex h-full w-full items-center justify-center bg-slate-100 text-slate-300 dark:bg-slate-800"><Icons.Eye /></span>}
                             </button>
                           ))}
                         </div>
@@ -327,8 +329,9 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
 
                       {/* Growth category + invite a tree (future smart contract). */}
                       <div className="flex flex-wrap gap-2">
-                        {['Inspiration', 'Funding', 'Collaboration', 'Other'].map(c => (
-                          <button key={c} type="button" onClick={() => setGrowthCategory(c)} className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${growthCategory === c ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{c}</button>
+                        {/* The stored category stays the English word (a data value); only its face speaks. */}
+                        {([['Inspiration', 'inspiration'], ['Funding', 'funding'], ['Collaboration', 'collaboration'], ['Other', 'other']] as const).map(([c, label]) => (
+                          <button key={c} type="button" onClick={() => setGrowthCategory(c)} className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${growthCategory === c ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{t(label)}</button>
                         ))}
                       </div>
                       <button type="button" onClick={inviteTree} className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-emerald-300 px-3 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-50">
@@ -344,11 +347,11 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
               return (
                 <Page key="details">
                   <div className="space-y-3">
-                    <input dir="auto" className="block w-full rounded border p-2" placeholder={growthKind === 'tree' ? 'Caption (optional)' : t('title')} value={pulseTitle} onChange={e => setPulseTitle(e.target.value)} />
+                    <input dir="auto" className="block w-full rounded border p-2" placeholder={growthKind === 'tree' ? t('caption_optional') : t('title')} value={pulseTitle} onChange={e => setPulseTitle(e.target.value)} />
                     <textarea
                       dir="auto"
                       className="block min-h-24 w-full rounded border p-2"
-                      placeholder={growthKind === 'vision' ? 'What inspiration, funding or collaboration is growing? (optional)' : `${t('body')} (optional)`}
+                      placeholder={growthKind === 'vision' ? t('vision_growth_body_ph') : t('body_optional')}
                       value={pulseBody}
                       onChange={e => setPulseBody(e.target.value)}
                     />
@@ -368,7 +371,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
           </div>
 
           {/* Walkthrough nav: back · progress dots · next (or mint on the last page). */}
-          <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+          <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3 dark:border-slate-800">
             <button type="button" onClick={() => goToStep(step - 1)} disabled={step === 0}
               className="inline-flex items-center gap-1 text-xs font-bold text-slate-500 transition-colors hover:text-slate-800 disabled:opacity-30">
               <Icons.ArrowLeft /> <span>{t('back')}</span>
@@ -383,7 +386,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
             ) : (
               <button type="button" onClick={() => goToStep(step + 1)} disabled={!canAdvance}
                 className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 transition-colors hover:text-emerald-900 disabled:opacity-30">
-                <span>Next</span> <Icons.ArrowRight size={16} />
+                <span>{t('next')}</span> <Icons.ArrowRight size={16} />
               </button>
             )}
           </div>

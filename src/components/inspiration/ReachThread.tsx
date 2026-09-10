@@ -47,7 +47,7 @@ const MessageLike = ({ pulseId, initialCount }: { pulseId: string; initialCount:
         collection="pulses"
         id={pulseId}
         initialCount={initialCount}
-        noun="this reach"
+        noun="love_this_reach"
         className="px-1 text-slate-400 disabled:opacity-40"
         iconClassName="[&>svg]:h-3.5 [&>svg]:w-3.5"
         countClassName="text-[11px] tabular-nums"
@@ -56,10 +56,10 @@ const MessageLike = ({ pulseId, initialCount }: { pulseId: string; initialCount:
 
 // The audience options offered when starting a reach to a tree. `undefined` is the classic
 // 1:1 message to the owner; the others fan out to a shared group thread with the circle.
-const AUDIENCE_OPTIONS: { value: ReachAudience | undefined; label: string }[] = [
-    { value: undefined, label: 'Owner' },
-    { value: 'guardians', label: 'Guardians' },
-    { value: 'everyone', label: 'Everyone' },
+const AUDIENCE_OPTIONS: { value: ReachAudience | undefined; labelKey: 'role_owner' | 'audience_guardians' | 'audience_everyone' }[] = [
+    { value: undefined, labelKey: 'role_owner' },
+    { value: 'guardians', labelKey: 'audience_guardians' },
+    { value: 'everyone', labelKey: 'audience_everyone' },
 ];
 
 const SunAvatar = () => (
@@ -97,7 +97,7 @@ const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, message: string
 
 export const ReachThread = ({ targetTree = null, groupThread = null, initialAudience, onBack, onOpenTreeById, onOpenCareById }: { targetTree?: Lifetree | null, groupThread?: GroupThreadDescriptor | null, initialAudience?: ReachAudience, onBack?: () => void, onOpenTreeById?: (treeId: string) => void, onOpenCareById?: (treeId: string) => void }) => {
     const { t } = useLanguage();
-    const { lightseed, activeTree, myTrees, isAdmin, isSuperAdmin } = useLifeseed();
+    const { lightseed, activeTree, myTrees, isAdmin, isSuperAdmin, nameAs } = useLifeseed();
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
@@ -194,7 +194,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
 
         // A group thread opened from the inbox.
         if (groupThread) {
-            const greeting = `This is a group reach: everyone in ${groupThread.partnerName} sees these messages.`;
+            const greeting = t('reach_group_greeting').replace('{name}', groupThread.partnerName);
             setMessages([]);
             setInterpretations({});
             setIsTyping(true);
@@ -224,8 +224,8 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
             const partner = selectedTree;
             const myTreeIds = myTrees.map((tree: Lifetree) => tree.id);
             const greeting = audience
-                ? `Mycelial group reach: everyone in ${partner.name}'s ${reachAudienceLabels[audience].toLowerCase()} circle will see this.`
-                : `Mycelial communication ready. Reaches here travel between your active tree and ${partner.name}.`;
+                ? t('reach_group_circle_greeting').replace('{name}', partner.name).replace('{circle}', reachAudienceLabels[audience].toLowerCase())
+                : t('reach_direct_greeting').replace('{name}', partner.name);
             setMessages([]);
             setInterpretations({});
             setIsTyping(true);
@@ -328,7 +328,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
             }, preferredIntelligenceId);
             setInterpretations(prev => ({ ...prev, [index]: result }));
         } catch (e: any) {
-            setInterpretations(prev => ({ ...prev, [index]: { error: e?.message || 'The interpreter could not be reached.' } }));
+            setInterpretations(prev => ({ ...prev, [index]: { error: e?.message || t('err_interpreter') } }));
         }
     };
 
@@ -362,13 +362,13 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
         if (mode === 'tree') {
             // A sender without a tree still speaks — as themself (the person is the node).
             if (!lightseed || (!selectedTree && !groupThread)) {
-                setMessages(prev => [...prev, {role: 'model', text: "Choose a receiving tree before sending a mycelial reach."}]);
+                setMessages(prev => [...prev, {role: 'model', text: t('reach_choose_tree')}]);
                 return;
             }
 
             const mycelialText = input.trim();
             setInput('');
-            setMessages(prev => [...prev, { role: 'user', text: mycelialText, authorId: lightseed.uid, authorName: activeTree?.name || lightseed.displayName || 'You', authorPhoto: activeTree?.imageUrl || lightseed.photoURL || undefined }]);
+            setMessages(prev => [...prev, { role: 'user', text: mycelialText, authorId: lightseed.uid, authorName: activeTree?.name || lightseed.displayName || t('you'), authorPhoto: activeTree?.imageUrl || lightseed.photoURL || undefined }]);
             setIsSending(true);
 
             try {
@@ -397,7 +397,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                 console.error("Reach failed:", error);
                 setMessages(prev => [...prev, {
                     role: 'model',
-                    text: error.message || "The reach could not be sent."
+                    text: error.message || t('err_reach_send')
                 }]);
             }
             setIsSending(false);
@@ -426,18 +426,18 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
 
         try {
             const responsePromise = sendMessageToOracle(userMsg, history, preferredIntelligenceId);
-            const responseText = await withTimeout(responsePromise, 30000, "The reply took too long. Please try again.");
+            const responseText = await withTimeout(responsePromise, 30000, t('err_reply_timeout'));
             setMessages(prev => [...prev, {role: 'model', text: responseText || "..."}]);
         } catch(e: any) {
             console.error("Oracle Error:", e);
-            let msg = "The wind is too strong (Error connecting to AI).";
+            let msg = t('err_wind_too_strong');
 
             if (e.message?.includes("403")) {
-                msg = `Forbidden (403): ${aiName} cannot hear you. Please ensure your API Key is valid.`;
+                msg = t('err_ai_forbidden').replace('{name}', aiName);
             } else if (e.message?.includes("429") || e.code === 'resource-exhausted') {
-                msg = "The spirits are overwhelmed (Rate Limit). Please wait a moment.";
+                msg = t('err_ai_rate_limit');
             } else if (e.message) {
-                msg = `Error: ${e.message}`;
+                msg = t('err_prefix').replace('{msg}', e.message);
             }
 
             setMessages(prev => [...prev, {role: 'model', text: msg}]);
@@ -473,7 +473,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
         const freshMessages = messages.slice(lastMintIdx + 1).filter(m => !m.system);
         if (freshMessages.length === 0) { showAlert('mint_nothing_new'); return; }
 
-        const partnerLabel = groupThread?.partnerName || selectedTree?.name || 'this conversation';
+        const partnerLabel = groupThread?.partnerName || selectedTree?.name || t('this_conversation');
 
         // Tree DM: seal the conversation onto the minter's tree as a PUBLIC record on the
         // immutable chain (a contract on the LIN), then post a notice into the thread so the
@@ -486,7 +486,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
             if (!ok) return;
             setIsMinting(true);
             try {
-                const meName = lightseed.displayName || activeTree.name;
+                const meName = nameAs(activeTree.name) || activeTree.name;
                 const conversationText = freshMessages
                     .map(m => `${m.role === 'user' ? meName : (m.authorPersonName || m.authorName || partnerLabel)}: ${m.text}`)
                     .join('\n\n');
@@ -494,7 +494,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                 await mintPulse({
                     lifetreeId: activeTree.id,
                     type: 'standard',
-                    title: `Minted conversation · ${partnerLabel}`,
+                    title: t('mint_conversation_title').replace('{name}', partnerLabel),
                     body: conversationText,
                     reachTreeId: selectedTree?.id || groupThread?.partnerId,
                     reachTreeName: selectedTree?.name || groupThread?.partnerName,
@@ -503,14 +503,14 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                     authorPhoto: lightseed.photoURL || activeTree.imageUrl,
                 });
                 // The notice in the thread (a system line both sides see).
-                const noticeText = `${meName} minted this conversation to “${activeTree.name}” on the immutable chain.`;
+                const noticeText = t('mint_notice_line').replace('{who}', meName).replace('{tree}', activeTree.name);
                 if (groupThread && threadMeta) {
                     await sendThreadMessage({ thread: { ...threadMeta, isGroup: true }, fromTree: activeTree, sender: lightseed, text: noticeText, mintNotice: true });
                 } else if (selectedTree) {
                     await sendReach({ fromTree: activeTree, toTree: selectedTree, text: noticeText, sender: lightseed, audience, mintNotice: true, isAdmin, isSuperAdmin });
                 }
                 setMessages(prev => [...prev, { role: 'model', system: true, text: noticeText }]);
-                notify("🌿 Conversation minted to the chain.");
+                notify('🌿 ' + t('mint_done_chain'));
             } catch (e: any) {
                 console.error(e);
                 showAlert(e?.message || 'err_mint');
@@ -522,11 +522,11 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
         // Oracle: "Mint Wisdom" — an abstract image + the conversation, on your active tree.
         setIsMinting(true);
         try {
-            const conversationText = messages.map(m => `${m.role === 'user' ? 'Seeker' : aiName}: ${m.text}`).join('\n\n');
+            const conversationText = messages.map(m => `${m.role === 'user' ? t('seeker') : aiName}: ${m.text}`).join('\n\n');
             const summaryPrompt = conversationText.substring(0, 1000);
             await checkAndIncrementAiUsage('image');
             const prompt = `Create an abstract, artistic image representing the essence of this conversation: ${summaryPrompt}. Do not contain any text, words, letters, or typography in the image.`;
-            const imageUrl = await withTimeout(generateImage(prompt), 45000, "The pulse image took too long to generate. Please try minting again.");
+            const imageUrl = await withTimeout(generateImage(prompt), 45000, t('err_image_timeout'));
             let finalImageUrl = "";
             if (imageUrl && imageUrl.startsWith('data:')) {
                 finalImageUrl = await uploadBase64Image(imageUrl, `users/${lightseed.uid}/pulses/ai/${Date.now()}`);
@@ -534,14 +534,14 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
             await mintPulse({
                 lifetreeId: activeTree.id,
                 type: 'standard',
-                title: `${aiName} Wisdom`,
+                title: t('wisdom_title').replace('{name}', aiName),
                 body: conversationText,
                 imageUrl: finalImageUrl,
                 authorId: lightseed.uid,
-                authorName: lightseed.displayName || "Soul",
+                authorName: nameAs(activeTree?.name) || t('soul'),
                 authorPhoto: lightseed.photoURL ?? undefined,
             });
-            notify("🌿 Conversation minted as a Pulse.");
+            notify('🌿 ' + t('mint_done_pulse'));
         } catch (e: any) {
             console.error(e);
             showAlert(e?.message || 'err_mint');
@@ -550,8 +550,8 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
     }
 
     return (
-        <div className="flex-1 flex flex-col h-full bg-white relative">
-            <div className="border-b border-slate-100 bg-white/95 p-4 backdrop-blur-md sticky top-0 z-10">
+        <div className="flex-1 flex flex-col h-full bg-white relative dark:bg-slate-900">
+            <div className="border-b border-slate-100 bg-white/95 p-4 backdrop-blur-md sticky top-0 z-10 dark:border-slate-800 dark:bg-slate-900/95">
                 <div className="flex items-center gap-3">
                     {onBack && (
                         <button onClick={onBack} className="text-slate-400 transition-colors hover:text-slate-600 md:hidden">
@@ -573,7 +573,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                         </div>
                     )}
                     <div className="min-w-0 flex-1">
-                        <div className="truncate font-semibold text-slate-800">
+                        <div className="truncate font-semibold text-slate-800 dark:text-slate-100">
                             {headerName}
                             {!isGroup && partnerPersonName && partnerPersonName !== headerName && (
                                 <span className="ml-1.5 text-xs font-normal text-slate-400">({partnerPersonName})</span>
@@ -623,12 +623,12 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                                 const active = audience === opt.value;
                                 return (
                                     <button
-                                        key={opt.label}
+                                        key={opt.labelKey}
                                         type="button"
                                         onClick={() => setAudience(opt.value)}
                                         className={`rounded-full px-3 py-1 text-[11px] font-bold transition-colors ${active ? 'bg-emerald-600 text-white shadow' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
                                     >
-                                        {opt.label}
+                                        {t(opt.labelKey)}
                                     </button>
                                 );
                             })}
@@ -638,7 +638,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
 
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/50 scroll-smooth">
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/50 scroll-smooth dark:bg-slate-900/50">
                 {audibleMessages.map((m, i) => {
                     // Mint notices (and any system line) render centered — not as a chat bubble.
                     if (m.system) {
@@ -714,14 +714,14 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                             {canInterpret && (() => {
                                 if (interp === 'loading') return (
                                     <div className="flex items-center gap-1.5 px-3 text-[12px] italic text-slate-400">
-                                        <div className="h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-transparent"></div>
-                                        reading between the lines…
+                                        <div className="h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-transparent dark:border-slate-700"></div>
+                                        {t('h2h_reading')}
                                     </div>
                                 );
                                 if (interp && 'error' in interp) return (
                                     <div className="px-3 text-[11.5px] text-red-400">
-                                        <span aria-hidden>✦</span> couldn’t read this: {interp.error}{' '}
-                                        <button onClick={() => revealInterpretation(i, m.text)} className="font-bold underline hover:text-red-500">try again</button>
+                                        <span aria-hidden>✦</span> {t('h2h_read_failed').replace('{error}', interp.error)}{' '}
+                                        <button onClick={() => revealInterpretation(i, m.text)} className="font-bold underline hover:text-red-500">{t('try_again')}</button>
                                     </div>
                                 );
                                 if (interp) {
@@ -730,10 +730,10 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                                     const r = interp as TranslationResponse;
                                     const layers: [string, string | undefined][] = [
                                         ['', r.happened],
-                                        ['feels', r.feeling],
-                                        ['may assume · unconfirmed', r.inference],
-                                        ['needs', r.need],
-                                        ['asks', r.asks],
+                                        [t('h2h_feels'), r.feeling],
+                                        [t('h2h_may_assume'), r.inference],
+                                        [t('h2h_needs'), r.need],
+                                        [t('h2h_asks'), r.asks],
                                     ];
                                     const filled = layers.filter(([, v]) => v && v.trim());
                                     return (
@@ -746,16 +746,16 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                                                 </p>
                                             ))}
                                             {r.alternatives?.[0] && (
-                                                <p className="text-slate-400/80">↳ also possible · {r.alternatives[0]}</p>
+                                                <p className="text-slate-400/80">{t('h2h_also_possible').replace('{text}', r.alternatives[0])}</p>
                                             )}
                                             {/* The reading names its lens — same honesty law as Carry. */}
-                                            <p className="text-[11px] not-italic text-slate-400/60">read through {aiName}</p>
+                                            <p className="text-[11px] not-italic text-slate-400/60">{t('h2h_read_through').replace('{name}', aiName)}</p>
                                         </div>
                                     );
                                 }
                                 return (
                                     <button onClick={() => revealInterpretation(i, m.text)} className="inline-flex items-center gap-1 self-start px-3 text-[11px] font-medium text-slate-400 transition-colors hover:text-emerald-600">
-                                        <span aria-hidden>✦</span> reveal meaning
+                                        <span aria-hidden>✦</span> {t('h2h_reveal')}
                                     </button>
                                 );
                             })()}
@@ -766,7 +766,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                 {isTyping && (
                     <div className="flex justify-start gap-2.5">
                         {incomingAvatar()}
-                        <div className="bg-white border border-emerald-50 rounded-2xl rounded-bl-sm px-4 py-2.5 shadow-sm">
+                        <div className="bg-white border border-emerald-50 rounded-2xl rounded-bl-sm px-4 py-2.5 shadow-sm dark:bg-slate-900">
                             <div className="flex space-x-1.5 items-center h-4">
                                 <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
                                 <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
@@ -780,7 +780,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
             {mode === 'tree' && (
                 <div className="px-5 pt-2 text-center">
                     {showMintInfo && (
-                        <p className="mx-auto mb-1.5 max-w-md rounded-lg border border-slate-100 bg-slate-50/90 px-3 py-2 text-[11px] italic leading-snug text-slate-400 shadow-sm">
+                        <p className="mx-auto mb-1.5 max-w-md rounded-lg border border-slate-100 bg-slate-50/90 px-3 py-2 text-[11px] italic leading-snug text-slate-400 shadow-sm dark:border-slate-800 dark:bg-slate-900/90">
                             {isGroup ? t('mint_info_group') : t('mint_info_direct')}
                         </p>
                     )}
@@ -803,7 +803,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                     🌱 {t('speak_as_self')}
                 </div>
             )}
-            <form onSubmit={handleSend} className="p-4 bg-white border-t border-slate-100 flex space-x-3 items-end sticky bottom-0 z-10">
+            <form onSubmit={handleSend} className="p-4 bg-white border-t border-slate-100 flex space-x-3 items-end sticky bottom-0 z-10 dark:bg-slate-900 dark:border-slate-800">
                 {/* The whole message stays visible while writing: the box grows with the text
                     (up to ~7 lines, then scrolls). Enter sends; Shift+Enter breaks a line. */}
                 <textarea
@@ -819,11 +819,11 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e as unknown as React.FormEvent); }
                     }}
                     placeholder={mode === 'tree'
-                        ? t('reach_send_ph').replace('{from}', activeTree?.name || lightseed?.displayName || t('you')).replace('{to}', headerName)
+                        ? t('reach_send_ph').replace('{from}', activeTree?.name || nameAs() || t('you')).replace('{to}', headerName)
                         : t('reach_ask_ph').replace('{name}', aiName)}
-                    className="flex-1 resize-none overflow-y-auto bg-slate-50 border border-slate-200 rounded-3xl px-6 py-4 text-[15px] leading-snug focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:bg-white transition-all shadow-inner placeholder:text-slate-400 placeholder:italic"
+                    className="flex-1 resize-none overflow-y-auto bg-slate-50 border border-slate-200 rounded-3xl px-6 py-4 text-[15px] leading-snug focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:bg-white transition-all shadow-inner placeholder:text-slate-400 placeholder:italic dark:bg-slate-900 dark:border-slate-700"
                 />
-                <button type="submit" disabled={isTyping || isSending || !input.trim() || (mode === 'tree' && !selectedTree && !groupThread)} title="Send" className="bg-emerald-600 text-white p-4 rounded-full hover:bg-emerald-700 active:scale-95 disabled:opacity-50 transition-all shadow-lg">
+                <button type="submit" disabled={isTyping || isSending || !input.trim() || (mode === 'tree' && !selectedTree && !groupThread)} title={t('send')} className="bg-emerald-600 text-white p-4 rounded-full hover:bg-emerald-700 active:scale-95 disabled:opacity-50 transition-all shadow-lg">
                     {isSending ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Icons.Send />}
                 </button>
             </form>

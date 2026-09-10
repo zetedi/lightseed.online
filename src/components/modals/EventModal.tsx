@@ -32,7 +32,7 @@ export const EventModal = ({
   scope?: PulseScope;
 }) => {
   const { t } = useLanguage();
-  const { personLid } = useSession();
+  const { personLid, publicName } = useSession();
   const isEdit = !!event;
   const [title, setTitle] = useState(event?.title || '');
   const [date, setDate] = useState(event?.eventDate || '');
@@ -54,7 +54,7 @@ export const EventModal = ({
       const url = await handleImageUpload(file, `${folder}/${Date.now()}`);
       if (url) setImageUrls(prev => [...prev, url]);
     } catch (e: any) {
-      showAlert(e?.message || 'Failed to upload image.');
+      showAlert(e?.message || 'err_image_upload');
     }
   };
 
@@ -80,12 +80,12 @@ export const EventModal = ({
       await onCreate(isEdit ? base : {
         ...base,
         authorId: lightseed.uid,
-        authorName: lightseed.displayName || 'Soul',
+        authorName: publicName || t('someone'),
         authorPhoto: lightseed.photoURL || undefined,
       });
       onClose();
     } catch (err: any) {
-      showAlert(err?.message || 'Could not save the event.');
+      showAlert(err?.message || 'err_event_save');
     }
     setSaving(false);
   };
@@ -93,10 +93,10 @@ export const EventModal = ({
   return (
     <Modal title={isEdit ? t('edit_event') : t('create_event')} onClose={onClose}>
       <form onSubmit={submit} className="space-y-3">
-        <input dir="auto" value={title} onChange={e => setTitle(e.target.value)} required placeholder={t('event_title_ph')} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        <input dir="auto" value={title} onChange={e => setTitle(e.target.value)} required placeholder={t('event_title_ph')} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
         <div className="grid gap-3 sm:grid-cols-2">
-          <input type="datetime-local" value={date} onChange={e => setDate(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-          <input dir="auto" value={location} onChange={e => setLocation(e.target.value)} placeholder={t('location')} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          <input type="datetime-local" value={date} onChange={e => setDate(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
+          <input dir="auto" value={location} onChange={e => setLocation(e.target.value)} placeholder={t('location')} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
         </div>
         <input
           type="number"
@@ -105,25 +105,25 @@ export const EventModal = ({
           value={maxParticipants}
           onChange={e => setMaxParticipants(e.target.value)}
           placeholder={t('max_participants_ph')}
-          className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700"
         />
-        <textarea dir="auto" value={body} onChange={e => setBody(e.target.value)} placeholder={t('event_details_ph')} className="min-h-24 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        <textarea dir="auto" value={body} onChange={e => setBody(e.target.value)} placeholder={t('event_details_ph')} className="min-h-24 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
         <label className="block">
           <span className="mb-1 block text-[10px] font-bold uppercase text-slate-400">{t('visibility')}</span>
-          <select value={visibility} onChange={e => setVisibility(e.target.value as PulseVisibility)} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          <select value={visibility} onChange={e => setVisibility(e.target.value as PulseVisibility)} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700">
             {visibilitiesForScope(scope).map(v => <option key={v} value={v}>{t(`vis_${v}` as any)}</option>)}
           </select>
         </label>
         <div className="grid grid-cols-3 gap-2">
           {imageUrls.map((url, index) => (
-            <div key={url} className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+            <div key={url} className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:bg-slate-900 dark:border-slate-700">
               <img src={url} className="h-full w-full object-cover" alt="" />
-              <button type="button" onClick={() => setImageUrls(prev => prev.filter((_, i) => i !== index))} className="absolute right-1 top-1 rounded-full bg-white/90 p-1 text-red-500 shadow-sm" title={t('remove')}>
+              <button type="button" onClick={() => setImageUrls(prev => prev.filter((_, i) => i !== index))} className="absolute right-1 top-1 rounded-full bg-white/90 p-1 text-red-500 shadow-sm dark:bg-slate-900/90" title={t('remove')}>
                 <Icons.Close />
               </button>
             </div>
           ))}
-          <ImagePicker onImageSelect={addImage} loading={uploading} className="flex aspect-square cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-white text-slate-400 hover:border-emerald-400 hover:text-emerald-600">
+          <ImagePicker onImageSelect={addImage} loading={uploading} className="flex aspect-square cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-white text-slate-400 hover:border-emerald-400 hover:text-emerald-600 dark:bg-slate-900 dark:border-slate-700">
             <Icons.Plus />
           </ImagePicker>
         </div>

@@ -22,7 +22,7 @@ interface ProfileEventsProps {
 // as CommunityEvents is its community twin; creation goes through createEvent (standalone), so an
 // event planted here belongs to no community until one gathers around it.
 export const ProfileEvents: React.FC<ProfileEventsProps> = ({ uid, name, photo, placeDomain, onViewEvent }) => {
-  const { personLid } = useSession();
+  const { personLid, publicName } = useSession();
   // Both bindings are memoized — EventsSection's refresh effect keys on loadEvents.
   const loadEvents = useCallback(() => getMyEvents(uid), [uid]);
   const handleCreate = useCallback((draft: EventDraft) => createEvent(placeDomain ? { ...draft, domain: placeDomain } : draft), [placeDomain]);
@@ -33,7 +33,7 @@ export const ProfileEvents: React.FC<ProfileEventsProps> = ({ uid, name, photo, 
       canEdit
       scopeOwnerId={uid}
       currentUserId={uid}
-      currentUserName={name}
+      currentUserName={publicName || name}
       currentUserPhoto={photo}
       onViewEvent={onViewEvent}
       loadEvents={loadEvents}

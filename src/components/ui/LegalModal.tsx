@@ -58,14 +58,14 @@ export const LegalModal = ({ doc, nodeName = 'lightseed', onClose }: { doc: Lega
     const sections = sectionsFor(doc, nodeName, new Date().getFullYear());
     return (
         <Modal title={TITLES[doc]} onClose={onClose} wide fullScreenOnMobile>
-            <div className="space-y-5 text-sm leading-relaxed text-slate-600">
+            <div className="space-y-5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
                 {sections.map(s => (
                     <section key={s.h}>
-                        <h4 className="mb-1 font-bold text-slate-800">{s.h}</h4>
+                        <h4 className="mb-1 font-bold text-slate-800 dark:text-slate-100">{s.h}</h4>
                         {s.p.map((para, i) => <p key={i} className="mb-2">{para}</p>)}
                     </section>
                 ))}
-                <p className="border-t border-slate-100 pt-3 text-xs text-slate-400">
+                <p className="border-t border-slate-100 pt-3 text-xs text-slate-400 dark:border-slate-800">
                     A generic starter text, not legal advice. Each node should review and adapt it before relying on it.
                 </p>
             </div>

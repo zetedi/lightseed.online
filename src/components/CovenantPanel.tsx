@@ -123,7 +123,7 @@ export const CovenantPanel = ({ covenantId, currentUserId, notify, onLoaded }: C
       {covenant.body && (
         <div>
           <SectionTitle title={t('covenant_the_pledge')} sub={t('covenant_the_pledge_sub')} />
-          <q className="block whitespace-pre-wrap font-serif text-base italic leading-relaxed text-slate-700">{covenant.body}</q>
+          <q className="block whitespace-pre-wrap font-serif text-base italic leading-relaxed text-slate-700 dark:text-slate-200">{covenant.body}</q>
         </div>
       )}
 
@@ -148,9 +148,9 @@ export const CovenantPanel = ({ covenantId, currentUserId, notify, onLoaded }: C
           {parties.map(p => {
             const signed = signedUids.has(p.uid);
             return (
-              <li key={p.uid} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3.5 py-2.5">
+              <li key={p.uid} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3.5 py-2.5 dark:bg-slate-900/70 dark:border-slate-800">
                 <div className="min-w-0">
-                  <span className="block truncate text-sm font-semibold text-slate-800">{nameFor(p.uid)}</span>
+                  <span className="block truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{nameFor(p.uid)}</span>
                   {p.role && <span className="text-[11px] uppercase tracking-wide text-slate-400">{p.role}</span>}
                 </div>
                 <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${
@@ -189,7 +189,7 @@ export const CovenantPanel = ({ covenantId, currentUserId, notify, onLoaded }: C
       )}
 
       {/* The chain — genesis, height, seal */}
-      <div className="rounded-xl border border-slate-100 bg-slate-900 px-4 py-3 font-mono text-[11px] text-emerald-300/90">
+      <div className="rounded-xl border border-slate-100 bg-slate-900 px-4 py-3 font-mono text-[11px] text-emerald-300/90 dark:border-slate-800">
         <div className="flex justify-between gap-3"><span className="text-slate-500">{t('genesis')}</span><span className="break-all">{short(covenant.genesisHash)}</span></div>
         <div className="flex justify-between gap-3"><span className="text-slate-500">head</span><span className="break-all">{short(covenant.latestHash)}</span></div>
         <div className="flex justify-between gap-3"><span className="text-slate-500">block</span><span>#{covenant.blockHeight}</span></div>
@@ -201,9 +201,9 @@ export const CovenantPanel = ({ covenantId, currentUserId, notify, onLoaded }: C
           <p className="mb-2 text-xs font-semibold text-amber-800">{t('signing_phrase_warn')}</p>
           <ol className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
             {phrase.map((w, i) => (
-              <li key={i} className="flex items-baseline gap-2 rounded-lg border border-amber-100 bg-white px-2.5 py-1.5">
+              <li key={i} className="flex items-baseline gap-2 rounded-lg border border-amber-100 bg-white px-2.5 py-1.5 dark:bg-slate-900">
                 <span className="w-5 shrink-0 text-right text-[10px] font-bold text-slate-400">{i + 1}</span>
-                <span className="font-mono text-sm text-slate-800">{w}</span>
+                <span className="font-mono text-sm text-slate-800 dark:text-slate-100">{w}</span>
               </li>
             ))}
           </ol>

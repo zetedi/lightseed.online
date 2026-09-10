@@ -27,7 +27,7 @@ export const LifeseedWidget: React.FC<Props> = ({ domain, onClose }) => {
             setTrees(await getTreesByDomain(domain));
         } catch (e: any) {
             console.error(e);
-            setError(e?.message || 'Failed to load trees');
+            setError(e?.message || 'err_load_trees');
         } finally {
             setLoading(false);
         }
@@ -52,20 +52,20 @@ export const LifeseedWidget: React.FC<Props> = ({ domain, onClose }) => {
     };
 
     return (
-        <div className="flex flex-col h-screen bg-white overflow-hidden">
+        <div className="flex flex-col h-screen bg-white overflow-hidden dark:bg-slate-900">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 flex-shrink-0">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 flex-shrink-0 dark:border-slate-800">
                 <div className="flex items-center gap-2">
                     <Logo width={28} height={28} />
                     <div>
-                        <p className="text-xs text-slate-400 leading-none">trees at</p>
-                        <p className="text-sm font-semibold text-emerald-700 leading-tight truncate max-w-[200px]">{domain || 'unknown'}</p>
+                        <p className="text-xs text-slate-400 leading-none">{t('widget_trees_at')}</p>
+                        <p className="text-sm font-semibold text-emerald-700 leading-tight truncate max-w-[200px]">{domain || t('widget_unknown_domain')}</p>
                     </div>
                 </div>
                 <button
                     onClick={handleClose}
                     className="w-7 h-7 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors text-xl leading-none"
-                    aria-label="Close"
+                    aria-label={t('close')}
                 >
                     ×
                 </button>
@@ -74,7 +74,7 @@ export const LifeseedWidget: React.FC<Props> = ({ domain, onClose }) => {
             {/* Tree list */}
             <div className="flex-1 overflow-y-auto">
                 {loading ? (
-                    <div className="flex items-center justify-center h-40 text-slate-400 text-sm">Loading...</div>
+                    <div className="flex items-center justify-center h-40 text-slate-400 text-sm">{t('loading')}</div>
                 ) : error ? (
                     <div className="flex flex-col items-center justify-center h-40 gap-2 text-red-400 text-xs text-center px-6">
                         <p className="font-medium">{t('err_load_trees')}</p>
@@ -90,7 +90,7 @@ export const LifeseedWidget: React.FC<Props> = ({ domain, onClose }) => {
                             rel="noreferrer"
                             className="text-emerald-600 hover:underline text-xs font-medium"
                         >
-                            Plant one on {charter.domain} →
+                            {t('widget_plant_one_on').replace('{domain}', charter.domain)}
                         </a>
                     </div>
                 ) : (
@@ -107,18 +107,18 @@ export const LifeseedWidget: React.FC<Props> = ({ domain, onClose }) => {
                                         <Picture size={480}
                                             src={tree.latestGrowthUrl || tree.imageUrl}
                                             alt={tree.name}
-                                            className="w-14 h-14 rounded-lg object-cover flex-shrink-0 bg-slate-100"
+                                            className="w-14 h-14 rounded-lg object-cover flex-shrink-0 bg-slate-100 dark:bg-slate-800"
                                         />
                                     ) : (
-                                        <div className="w-14 h-14 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                                        <div className="w-14 h-14 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0 dark:bg-slate-800">
                                             <Logo width={28} height={28} />
                                         </div>
                                     )}
                                     <div className="flex-1 min-w-0 py-0.5">
                                         <div className="flex items-center gap-1.5">
-                                            <span className="font-medium text-sm text-slate-800 truncate">{tree.name}</span>
+                                            <span className="font-medium text-sm text-slate-800 truncate dark:text-slate-100">{tree.name}</span>
                                             {tree.status === 'DANGER' && (
-                                                <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" title="In danger" />
+                                                <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" title={t('in_danger')} />
                                             )}
                                         </div>
                                         {tree.shortTitle && <p className="text-xs text-slate-500 truncate mt-0.5">{tree.shortTitle}</p>}
@@ -132,7 +132,7 @@ export const LifeseedWidget: React.FC<Props> = ({ domain, onClose }) => {
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-100 flex-shrink-0">
+            <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-100 flex-shrink-0 dark:border-slate-800">
                 <a
                     href={nodeOrigin}
                     target="_blank"
@@ -148,7 +148,7 @@ export const LifeseedWidget: React.FC<Props> = ({ domain, onClose }) => {
                     rel="noreferrer"
                     className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-full transition-colors font-medium"
                 >
-                    Plant a tree →
+                    {t('widget_plant_a_tree')}
                 </a>
             </div>
         </div>

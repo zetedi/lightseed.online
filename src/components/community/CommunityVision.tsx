@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { notify } from '../ui/Toast';
 import { showAlert, showConfirm } from '../ui/Dialog';
 import { Icons } from '../ui/Icons';
 import { MahameruAvatar } from '../ui/MahameruAvatar';
@@ -148,7 +149,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
       await checkDoorClaim(community.id, door);
       setDoorClaims(prev => prev.filter(c => c.door !== door));
       onUpdate?.({ domainAliases: [...(community.domainAliases || []), door] });
-      showAlert(speak('door_claimed').replace('{door}', door).replace('{name}', community.name));
+      notify(speak('door_claimed').replace('{door}', door).replace('{name}', community.name));
     } catch (err) { showAlert(doorErrorKey(err)); }
     setDoorBusy(null);
   };
@@ -158,7 +159,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
       await grantDoor(community.id, door);
       setDoorClaims(prev => prev.filter(c => c.door !== door));
       onUpdate?.({ domainAliases: [...(community.domainAliases || []), door] });
-      showAlert(speak('door_claimed').replace('{door}', door).replace('{name}', community.name));
+      notify(speak('door_claimed').replace('{door}', door).replace('{name}', community.name));
     } catch (err) { showAlert(doorErrorKey(err)); }
     setDoorBusy(null);
   };
@@ -168,7 +169,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
       await withdrawDoor(community.id, door);
       setDoorClaims(prev => prev.filter(c => c.door !== door));
       onUpdate?.({ domainAliases: (community.domainAliases || []).filter(d => d !== door) });
-      showAlert(speak('door_withdrawn').replace('{door}', door));
+      notify(speak('door_withdrawn').replace('{door}', door));
     } catch (err) { showAlert(doorErrorKey(err)); }
     setDoorBusy(null);
   };
@@ -195,7 +196,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
       const res = await checkDomainVerification(community.id);
       onUpdate?.({ domainVerification: { domain: res.domain, method: 'dns_txt' } });
       setChallenge(null);
-      showAlert(spokenLine('domain_verify_success', { domain: res.domain }));
+      notify(speak(spokenLine('domain_verify_success', { domain: res.domain })));
     } catch (e: unknown) { showAlert(verifyError(e)); }
     setVerifyBusy(false);
   };
@@ -224,12 +225,12 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
   const handleToggleSeal = async (next: boolean) => {
     const confirmed = next
       ? await showConfirm(
-          'Seal this chain? From now on, every new block this node mints is sealed with the canonical, reproducible hash, so anyone can verify the chain end to end. Blocks minted before now keep their original hashes. This is a commitment.',
-          { title: 'Seal the chain', confirmText: 'Seal it' },
+          'chain_seal_confirm',
+          { title: 'chain_seal', confirmText: 'chain_seal_it' },
         )
       : await showConfirm(
-          'Unseal this chain? New blocks return to the legacy hash and can no longer be verified end to end. Blocks already sealed stay sealed.',
-          { title: 'Unseal the chain', confirmText: 'Unseal', danger: true },
+          'chain_unseal_confirm',
+          { title: 'chain_unseal', confirmText: 'chain_unseal_short', danger: true },
         );
     if (!confirmed) return;
     setIsSealing(true);
@@ -238,11 +239,11 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
       await updateCommunity(community.id, { chainLocked: next });
       setChainSealed(next);
       onUpdate?.({ chainLocked: next });
-      setSealStatus(next ? 'Chain sealed.' : 'Chain unsealed.');
+      setSealStatus(next ? t('chain_sealed_toast') : t('chain_unsealed_toast'));
       setTimeout(() => setSealStatus(null), 3000);
     } catch (e) {
       console.error(e);
-      setSealStatus('Could not update the seal. Please try again.');
+      setSealStatus(t('err_chain_seal'));
     }
     setIsSealing(false);
   };
@@ -320,7 +321,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
       setVerifyResult({ sealed, intact, legacy, trees: trees.length });
     } catch (e) {
       console.error(e);
-      setSealStatus('Could not verify right now.');
+      setSealStatus(t('err_chain_verify'));
     }
     setIsVerifying(false);
   };
@@ -332,10 +333,10 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
       {/* The chain seal — this node's commitment to a verifiable chain. Sealed is a public
           mark of integrity (shown to all); sealing is the owner's one-way "big red stamp". */}
       {(chainSealed || canEdit) && (
-        <div className="mt-8 border-t border-slate-100 pt-6">
+        <div className="mt-8 border-t border-slate-100 pt-6 dark:border-slate-800">
           {chainSealed ? (
             <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
-              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-emerald-300"><Icons.ShieldCheck /></span>
+              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-emerald-300 dark:bg-slate-900"><Icons.ShieldCheck /></span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold text-emerald-900">{t('chain_sealed')}</p>
                 <p className="mt-0.5 text-sm text-emerald-800/80">{t('chain_sealed_note')}</p>
@@ -344,17 +345,17 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                 )}
                 {canEdit && (
                   <div className="mt-3">
-                    <button onClick={handleVerify} disabled={isVerifying} className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-white px-4 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100 disabled:opacity-50">
-                      <Icons.ShieldCheck /> {isVerifying ? 'Verifying…' : 'Verify sealed blocks'}
+                    <button onClick={handleVerify} disabled={isVerifying} className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-white px-4 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100 disabled:opacity-50 dark:bg-slate-900">
+                      <Icons.ShieldCheck /> {isVerifying ? t('verifying') : t('chain_verify_sealed')}
                     </button>
                     {verifyResult && (
                       <p className="mt-2 text-xs">
                         {verifyResult.sealed === 0 ? (
-                          <span className="text-emerald-800/70">No sealed blocks yet; the next pulse this node mints will be the first.{verifyResult.legacy > 0 ? ` ${verifyResult.legacy} earlier block${verifyResult.legacy === 1 ? '' : 's'} predate the seal.` : ''}</span>
+                          <span className="text-emerald-800/70">{t('chain_no_sealed_yet')}{verifyResult.legacy > 0 ? ` ${t('chain_legacy_predate').replace('{n}', String(verifyResult.legacy))}` : ''}</span>
                         ) : verifyResult.intact === verifyResult.sealed ? (
-                          <span className="font-semibold text-emerald-700">✓ {verifyResult.sealed} sealed block{verifyResult.sealed === 1 ? '' : 's'} intact across {verifyResult.trees} tree{verifyResult.trees === 1 ? '' : 's'}.{verifyResult.legacy > 0 ? ` (${verifyResult.legacy} legacy, pre-seal.)` : ''}</span>
+                          <span className="font-semibold text-emerald-700">✓ {t('chain_sealed_intact').replace('{n}', String(verifyResult.sealed)).replace('{trees}', String(verifyResult.trees))}{verifyResult.legacy > 0 ? ` ${t('chain_legacy_count').replace('{n}', String(verifyResult.legacy))}` : ''}</span>
                         ) : (
-                          <span className="font-bold text-red-600">⚠ {verifyResult.sealed - verifyResult.intact} of {verifyResult.sealed} sealed block{verifyResult.sealed === 1 ? '' : 's'} failed verification.</span>
+                          <span className="font-bold text-red-600">⚠ {t('chain_seal_failed').replace('{bad}', String(verifyResult.sealed - verifyResult.intact)).replace('{n}', String(verifyResult.sealed))}</span>
                         )}
                       </p>
                     )}
@@ -363,7 +364,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                 <div className="mt-2 flex items-center gap-3">
                   {isSuperAdmin && (
                     <button onClick={() => handleToggleSeal(false)} disabled={isSealing} className="text-xs font-semibold text-emerald-700/70 underline underline-offset-2 hover:text-red-600 disabled:opacity-50">
-                      {isSealing ? 'Working…' : 'Unseal (admin)'}
+                      {isSealing ? t('working') : t('chain_unseal_admin')}
                     </button>
                   )}
                   {sealStatus && <span className="text-xs text-slate-500">{sealStatus}</span>}
@@ -371,14 +372,14 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
               </div>
             </div>
           ) : (
-            <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500"><Icons.Stamp /></span>
+            <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:bg-slate-900/70 dark:border-slate-700">
+              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500 dark:bg-slate-800"><Icons.Stamp /></span>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-slate-800">{t('chain_seal')}</p>
+                <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{t('chain_seal')}</p>
                 <p className="mt-0.5 text-sm text-slate-500">{t('chain_seal_note')}</p>
                 <div className="mt-3 flex items-center gap-3">
                   <button onClick={() => handleToggleSeal(true)} disabled={isSealing} className="inline-flex items-center gap-2 rounded-full bg-red-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-600/20 transition-all hover:bg-red-700 active:scale-95 disabled:opacity-50">
-                    <Icons.Stamp /> {isSealing ? 'Sealing…' : 'Seal this chain'}
+                    <Icons.Stamp /> {isSealing ? t('sealing') : t('chain_seal_this')}
                   </button>
                   {sealStatus && <span className="text-sm text-slate-500">{sealStatus}</span>}
                 </div>
@@ -391,11 +392,11 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
       {/* Tokenisation toggle — turn the AI-token ("Attention-Energy") economy on/off for
           this node, the same way the chain seal is flipped. Owner/admin only. */}
       {canEdit && (
-        <div className="mt-8 border-t border-slate-100 pt-6">
-          <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+        <div className="mt-8 border-t border-slate-100 pt-6 dark:border-slate-800">
+          <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:bg-slate-900/70 dark:border-slate-700">
             <MahameruAvatar size={36} className="mt-0.5" />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold text-slate-800">AI-token economy</p>
+              <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{t('tokens_title')}</p>
               <p className="mt-0.5 text-sm text-slate-500">{t('tokens_note')}</p>
             </div>
             <button
@@ -403,7 +404,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
               disabled={isTogglingTokens}
               role="switch"
               aria-checked={tokenisationOn}
-              title={tokenisationOn ? 'Tokenisation on' : 'Tokenisation off'}
+              title={tokenisationOn ? t('tokens_on_title') : t('tokens_off_title')}
               className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${tokenisationOn ? 'bg-emerald-600' : 'bg-slate-300'}`}
             >
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${tokenisationOn ? 'translate-x-6' : 'translate-x-1'}`} />
@@ -418,13 +419,13 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
           about what it does NOT do: beings already stamped with the old domain keep their
           stamps (their re-homing is the staff mend / a migration, not a side effect). */}
       {canEdit && (
-        <div className="mt-8 border-t border-slate-100 pt-6">
+        <div className="mt-8 border-t border-slate-100 pt-6 dark:border-slate-800">
           {/* THE NAME — shown everywhere exactly as this property says it (the tab title
               included), so the keeper edits it here, at the source. */}
-          <div className="mb-2 flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500"><Icons.Users /></span>
+          <div className="mb-2 flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:bg-slate-900/70 dark:border-slate-700">
+            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500 dark:bg-slate-800"><Icons.Users /></span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold text-slate-800">{t('community_name')}</p>
+              <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{t('community_name')}</p>
               <p className="mt-0.5 text-sm text-slate-500">{t('community_name_hint')}</p>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <input
@@ -432,7 +433,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                   value={nameDraft}
                   onChange={e => setNameDraft(e.target.value)}
                   placeholder={t('community_name_ph')}
-                  className="w-64 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm outline-none focus:border-emerald-400"
+                  className="w-64 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm outline-none focus:border-emerald-400 dark:bg-slate-900 dark:border-slate-700"
                 />
                 <button
                   onClick={handleSaveName}
@@ -443,10 +444,10 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
               </div>
             </div>
           </div>
-          <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500"><Icons.Loc /></span>
+          <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:bg-slate-900/70 dark:border-slate-700">
+            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500 dark:bg-slate-800"><Icons.Loc /></span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold text-slate-800">{t('community_domain')}</p>
+              <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{t('community_domain')}</p>
               <p className="mt-0.5 text-sm text-slate-500">{t('community_domain_hint')}</p>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <input
@@ -454,7 +455,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                   value={domainDraft}
                   onChange={e => setDomainDraft(e.target.value)}
                   placeholder={t('domain_ph')}
-                  className="w-64 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 font-mono text-sm outline-none focus:border-emerald-400"
+                  className="w-64 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 font-mono text-sm outline-none focus:border-emerald-400 dark:bg-slate-900 dark:border-slate-700"
                 />
                 <button
                   onClick={handleSaveDomain}
@@ -475,13 +476,13 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                   </div>
                 ) : !challenge && (
                   <button onClick={handleStartVerification} disabled={verifyBusy || !hasDomain}
-                    className="rounded-full border border-emerald-200 bg-white px-3.5 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-50">
+                    className="rounded-full border border-emerald-200 bg-white px-3.5 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-50 dark:bg-slate-900">
                     {verifyBusy ? '…' : t('domain_verify_start')}
                   </button>
                 )}
                 {challenge && (
                   <div className="mt-2 rounded-xl border border-emerald-100 bg-emerald-50/50 p-3">
-                    <p className="text-xs leading-relaxed text-slate-600">{t('domain_verify_hint')}</p>
+                    <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">{t('domain_verify_hint')}</p>
                     {/* The four fields as a DNS dashboard asks for them — the Name is the bare
                         host label; the provider appends the domain itself. */}
                     <div className="mt-2 space-y-1.5 text-[11px]" dir="ltr">
@@ -493,10 +494,10 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                       ] as const).map(([label, value, copyable]) => (
                         <div key={label} className="flex flex-wrap items-center gap-2">
                           <span className="w-24 shrink-0 font-bold uppercase tracking-wide text-slate-400">{label}</span>
-                          <span className="break-all rounded border border-slate-200 bg-white px-2 py-1 font-mono text-slate-700">{value}</span>
+                          <span className="break-all rounded border border-slate-200 bg-white px-2 py-1 font-mono text-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700">{value}</span>
                           {copyable && (
                             <button onClick={() => navigator.clipboard.writeText(value).catch(() => {})}
-                              className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-slate-500 hover:bg-slate-50">
+                              className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-slate-500 hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-700">
                               {t('copy')}
                             </button>
                           )}
@@ -520,15 +521,15 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
               {/* THE DOORS (ring 2026-09-09, domain/doors) — the hostnames this place also answers
                   at. A keeper claims one by a DNS proof at the door's own name; a face door of this
                   node waits for the steward's grant. The server writes the alias; a client never. */}
-              <div className="mt-5 border-t border-slate-100 pt-4">
+              <div className="mt-5 border-t border-slate-100 pt-4 dark:border-slate-800">
                 <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('doors_title')}</p>
                 <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{t('doors_note')}</p>
                 <div className="mt-2 space-y-1.5">
                   {doorRows(community, doorClaims).map(row => (
-                    <div key={row.door} className="rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-2">
+                    <div key={row.door} className="rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-2 dark:bg-slate-900/50 dark:border-slate-800">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="truncate font-mono text-[11px] text-slate-700">{row.door}</p>
+                          <p className="truncate font-mono text-[11px] text-slate-700 dark:text-slate-200">{row.door}</p>
                           <p className="text-[10px] text-slate-400">{row.state === 'open' ? t('door_state_open') : row.state === 'waiting_grant' ? t('door_state_grant') : t('door_state_waiting')}</p>
                         </div>
                         <div className="flex shrink-0 items-center gap-1.5">
@@ -541,7 +542,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                               className="rounded-full bg-violet-600 px-3 py-1 text-[11px] font-bold text-white transition-colors hover:bg-violet-500 disabled:opacity-50">{doorBusy === row.door ? '…' : t('door_grant')}</button>
                           )}
                           <button onClick={() => handleWithdrawDoor(row.door)} disabled={doorBusy === row.door}
-                            className="rounded-lg border border-red-100 bg-white px-2.5 py-1 text-[11px] font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50">{t('door_withdraw')}</button>
+                            className="rounded-lg border border-red-100 bg-white px-2.5 py-1 text-[11px] font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50 dark:bg-slate-900">{t('door_withdraw')}</button>
                         </div>
                       </div>
                       {row.state === 'waiting_proof' && row.recordValue && (
@@ -554,10 +555,10 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                           ] as const).map(([label, value, copyable]) => (
                             <div key={label} className="flex flex-wrap items-center gap-2">
                               <span className="w-24 shrink-0 font-bold uppercase tracking-wide text-slate-400">{label}</span>
-                              <span className="break-all rounded border border-slate-200 bg-white px-2 py-1 font-mono text-slate-700">{value}</span>
+                              <span className="break-all rounded border border-slate-200 bg-white px-2 py-1 font-mono text-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700">{value}</span>
                               {copyable && (
                                 <button onClick={() => navigator.clipboard.writeText(value).catch(() => {})}
-                                  className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-slate-500 hover:bg-slate-50">{t('copy')}</button>
+                                  className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-slate-500 hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-700">{t('copy')}</button>
                               )}
                             </div>
                           ))}
@@ -569,9 +570,9 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                 </div>
                 <form onSubmit={handleAddDoor} className="mt-2 flex items-center gap-2">
                   <input value={doorDraft} onChange={e => setDoorDraft(e.target.value)} placeholder="seed.example.org" dir="ltr"
-                    className="h-9 min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                    className="h-9 min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
                   <button type="submit" disabled={doorBusy === '+' || !normalizeDoor(doorDraft)}
-                    className="h-9 shrink-0 rounded-full border border-emerald-200 bg-white px-3.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-50">{doorBusy === '+' ? '…' : t('door_add')}</button>
+                    className="h-9 shrink-0 rounded-full border border-emerald-200 bg-white px-3.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-50 dark:bg-slate-900">{doorBusy === '+' ? '…' : t('door_add')}</button>
                 </form>
               </div>
             </div>
@@ -585,7 +586,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                 setExporting(true);
                 try { await exportCommunity(community); } catch { showAlert('err_export'); }
                 setExporting(false);
-              }} disabled={exporting} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-50">
+              }} disabled={exporting} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:bg-slate-900 dark:border-slate-700">
                 {exporting ? t('exporting') : t('export_community')}
               </button>
             </div>
@@ -597,19 +598,19 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
           forest, or show only its own domain? A community choice (Indra's net), for Nodes and
           Hosts alike. Reflects PUBLIC content only; sensitive-to-light content stays local. */}
       {canEdit && hasDomain && (
-        <div className="mt-8 border-t border-slate-100 pt-6">
-          <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500"><Icons.Globe /></span>
+        <div className="mt-8 border-t border-slate-100 pt-6 dark:border-slate-800">
+          <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:bg-slate-900/70 dark:border-slate-700">
+            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500 dark:bg-slate-800"><Icons.Globe /></span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold text-slate-800">{t('reflect_commons')}</p>
-              <p className="mt-0.5 text-sm text-slate-500">Show this backend's public forest here, a window onto every community it holds. While off, {community.domain} shows only its own trees and pulses. Either way, node- and community-only content stays private.</p>
+              <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{t('reflect_commons')}</p>
+              <p className="mt-0.5 text-sm text-slate-500">{t('reflect_commons_note').replace('{domain}', community.domain || '')}</p>
             </div>
             <button
               onClick={() => handleToggleReflect(!reflectsOn)}
               disabled={isTogglingReflect}
               role="switch"
               aria-checked={reflectsOn}
-              title={reflectsOn ? 'Reflecting the commons' : 'Scoped to this domain'}
+              title={reflectsOn ? t('reflect_on_title') : t('reflect_off_title')}
               className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${reflectsOn ? 'bg-emerald-600' : 'bg-slate-300'}`}
             >
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${reflectsOn ? 'translate-x-6' : 'translate-x-1'}`} />
@@ -619,18 +620,18 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
           {/* Strict scope — only offered while scoped (reflect off). Hides even the keeper's own
               off-domain trees, for a clean "this place only" forest. */}
           {!reflectsOn && (
-            <div className="mt-2 flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500"><Icons.Eye /></span>
+            <div className="mt-2 flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:bg-slate-900/70 dark:border-slate-700">
+              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500 dark:bg-slate-800"><Icons.Eye /></span>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-slate-800">{t('strict_scope')}</p>
-                <p className="mt-0.5 text-sm text-slate-500">Show only {community.domain}'s own trees: hide even your own trees from other domains, for a clean single-place forest. No effect while reflecting the commons.</p>
+                <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{t('strict_scope')}</p>
+                <p className="mt-0.5 text-sm text-slate-500">{t('strict_scope_note').replace('{domain}', community.domain || '')}</p>
               </div>
               <button
                 onClick={() => handleToggleStrict(!strictOn)}
                 disabled={isTogglingStrict}
                 role="switch"
                 aria-checked={strictOn}
-                title={strictOn ? 'Strict: this place only' : 'Your own trees still show'}
+                title={strictOn ? t('strict_on_title') : t('strict_off_title')}
                 className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${strictOn ? 'bg-emerald-600' : 'bg-slate-300'}`}
               >
                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${strictOn ? 'translate-x-6' : 'translate-x-1'}`} />
@@ -641,10 +642,10 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
           {/* Seed cradle — the hybrid shape: the living web lives on a subdomain, the domain
               itself is the community's own site, and the portal wears a corner door home. */}
           {(
-            <div className="mt-2 flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500"><Icons.Globe /></span>
+            <div className="mt-2 flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:bg-slate-900/70 dark:border-slate-700">
+              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500 dark:bg-slate-800"><Icons.Globe /></span>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-slate-800">{t('seed_cradle')}</p>
+                <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{t('seed_cradle')}</p>
                 <p className="mt-0.5 text-sm text-slate-500">{t('seed_cradle_hint')}</p>
               </div>
               <button
@@ -673,8 +674,8 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
       isSaving={isSaving}
       saveDisabled={saveDisabled}
       status={status}
-      title="Vision"
-      sub="What this community is growing towards."
+      title={t('vision')}
+      sub={t('community_vision_sub')}
       placeholder={t('community_vision_ph')}
       extras={extras}
     />

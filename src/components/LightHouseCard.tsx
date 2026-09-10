@@ -3,6 +3,9 @@ import { lightHouseVisibility, isLightHouseKind, lightHouseKindKey, type LightHo
 import { useLanguage } from '../contexts/LanguageContext';
 
 import { Picture } from './ui/Picture';
+// The visibility chip speaks: the stored value is an identifier, the badge is a word.
+const VIS_CHIP_KEY = { community: 'vis_community_chip', node: 'vis_node_chip', public: 'vis_public_chip' } as const;
+
 // The Light House's card — the same face in every garden: the community's LightHouses tab
 // and the forest's card view. Golden glow (its map warmth), lighthouse fallback, badges
 // for the 3D door and visibility, name and place over the night.
@@ -19,7 +22,7 @@ export const LightHouseCard = ({ lightHouse, onOpen, placeholderColor, className
     <div
         onClick={onOpen ? () => onOpen(lightHouse) : undefined}
         role={onOpen ? 'button' : undefined}
-        aria-label={onOpen ? `Open ${lightHouse.name}` : undefined}
+        aria-label={onOpen ? t('open_name').replace('{name}', lightHouse.name) : undefined}
         className={`group relative overflow-hidden rounded-2xl shadow-lg ring-1 ring-amber-200/60 ${onOpen ? 'cursor-pointer transition-shadow hover:shadow-xl' : ''} ${className}`}
     >
         {lightHouse.imageUrl ? (
@@ -34,10 +37,10 @@ export const LightHouseCard = ({ lightHouse, onOpen, placeholderColor, className
         <div className="pointer-events-none absolute -inset-8 rounded-full opacity-40" style={{ background: 'radial-gradient(circle, rgba(253,224,71,0.35) 0%, transparent 70%)' }} />
         <div className="absolute right-3 top-3 flex items-center gap-1.5">
             {lightHouse.splatUrl && <span className="rounded-full bg-amber-500/90 px-2 py-0.5 text-[9px] font-bold text-white">3D ✦</span>}
-            <span className="rounded-full bg-black/40 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-100 backdrop-blur">{lightHouseVisibility(lightHouse)}</span>
+            <span className="rounded-full bg-black/40 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-100 backdrop-blur">{t(VIS_CHIP_KEY[lightHouseVisibility(lightHouse)])}</span>
         </div>
         <div className="absolute left-3 top-3">
-            <span className="flex items-center gap-1 rounded-full bg-amber-400/90 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-amber-950 shadow"><Icons.Sun /> {isLightHouseKind(lightHouse.kind) ? kindLabel(lightHouse.kind) : (lightHouse.kind || 'Light House')}</span>
+            <span className="flex items-center gap-1 rounded-full bg-amber-400/90 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-amber-950 shadow"><Icons.Sun /> {isLightHouseKind(lightHouse.kind) ? kindLabel(lightHouse.kind) : (lightHouse.kind || t('light_house'))}</span>
         </div>
         <div className="absolute bottom-4 left-4 right-4 text-white">
             <h3 className="break-words text-lg font-light tracking-wide">{lightHouse.name}</h3>

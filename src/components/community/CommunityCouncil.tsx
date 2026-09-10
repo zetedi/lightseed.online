@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { notify } from '../ui/Toast';
 import { SuperDot } from '../ui/SuperDot';
 import { Icons } from '../ui/Icons';
 import { showAlert, showConfirm } from '../ui/Dialog';
@@ -72,7 +73,7 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
       // A key conflict (stale device / published-but-absent) is the modal's business, not an alert:
       // it shows the custody state and the doors out (restore, or a red-warned deliberate choice).
       if (e instanceof SigningKeyNeedsRestoreError) { setPendingSign(() => run); setShowKey(true); }
-      else showAlert(e?.message || 'Could not record your voice.');
+      else showAlert(e?.message || 'err_council_voice');
     }
     setVotingId(null);
   }, [currentUserId]);
@@ -81,13 +82,13 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
   // public is a deliberate act (proposer / keeper / staff — mirrored in the rules).
   const handleFlipVisibility = async (id: string, currentlyPublic: boolean) => {
     try { await setDecisionVisibility(id, currentlyPublic ? 'community' : 'public'); refreshDecisions(); }
-    catch (e: any) { showAlert(e?.message || 'Could not change the visibility.'); }
+    catch (e: any) { showAlert(e?.message || 'err_visibility'); }
   };
 
   const handleDeleteDecision = async (id: string, title: string) => {
     if (!(await showConfirm(spokenLine('council_delete_confirm', { title }), { title: 'delete_draft', confirmText: 'delete', danger: true }))) return;
     try { await deleteDecision(id); refreshDecisions(); }
-    catch (e: any) { showAlert(e?.message || 'Could not delete the decision.'); }
+    catch (e: any) { showAlert(e?.message || 'err_council_delete'); }
   };
 
   const handlePropose = async () => {
@@ -97,7 +98,7 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
       await createDecision(community, { nature: decNature, title: decTitle.trim(), body: decBody.trim(), proposedBy: currentUserId, mode: decMode });
       setDecTitle(''); setDecBody(''); setDecNature('intention');
       refreshDecisions();
-    } catch (e: any) { showAlert(e?.message || 'Could not propose the decision.'); }
+    } catch (e: any) { showAlert(e?.message || 'err_council_propose'); }
     setProposing(false);
   };
 
@@ -108,7 +109,7 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
     const res = await signDecision({ id });
     if (res.recoveryPhrase) setPhrase(res.recoveryPhrase); // a key was born mid-sign — surface it once
     if (res.outcome === 'listening') showAlert('council_listening_note');
-    else if (res.outcome === 'enacted') showAlert(t('decision_enacted_toast'));
+    else if (res.outcome === 'enacted') notify(t('decision_enacted_toast'));
     refreshDecisions();
   });
 
@@ -117,14 +118,14 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
     if (!(await showConfirm('council_concern_confirm', { title: 'raise_concern', confirmText: 'raise_concern_short' }))) return;
     setVotingId(id);
     try { await raiseConcern(id, currentUserId); refreshDecisions(); }
-    catch (e: any) { showAlert(e?.message || 'Could not raise the concern.'); }
+    catch (e: any) { showAlert(e?.message || 'err_council_concern'); }
     setVotingId(null);
   };
 
   const handleResume = async (id: string) => {
     setVotingId(id);
     try { await resumeDecision(id); refreshDecisions(); }
-    catch (e: any) { showAlert(e?.message || 'Could not resume.'); }
+    catch (e: any) { showAlert(e?.message || 'err_council_resume'); }
     setVotingId(null);
   };
 
@@ -132,7 +133,7 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
     if (!(await showConfirm('council_withdraw_confirm', { title: 'withdraw', confirmText: 'withdraw', danger: true }))) return;
     setVotingId(id);
     try { await withdrawDecision(id); refreshDecisions(); }
-    catch (e: any) { showAlert(e?.message || 'Could not withdraw.'); }
+    catch (e: any) { showAlert(e?.message || 'err_council_withdraw'); }
     setVotingId(null);
   };
 
@@ -152,7 +153,7 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
     }
     let note: string | undefined;
     if (stance === 'block') {
-      const reason = window.prompt('A block is a principled objection that halts unity. What is your concern?');
+      const reason = window.prompt(t('council_block_prompt'));
       if (reason === null) return; // cancelled
       note = reason.trim();
     }
@@ -161,18 +162,16 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
       const outcome = await recordPosition(id, currentUserId, stance, note);
       if (outcome === 'closed') showAlert('err_proposal_settled');
       refreshDecisions();
-    } catch (e: any) { showAlert(e?.message || 'Could not record your position.'); }
+    } catch (e: any) { showAlert(e?.message || 'err_council_position'); }
     setVotingId(null);
   };
 
   const handleDiscern = async (id: string, outcome: 'passed' | 'rejected') => {
-    const msg = outcome === 'passed'
-      ? 'Discern that the meeting is in unity and adopt this proposal? A block would prevent this.'
-      : 'Record that the meeting did not reach unity (not adopted)?';
-    if (!(await showConfirm(msg, { title: outcome === 'passed' ? 'Sense of the meeting: unity' : 'Not in unity', confirmText: outcome === 'passed' ? 'Adopt' : 'Set aside', danger: outcome === 'rejected' }))) return;
+    const msg = outcome === 'passed' ? 'council_discern_unity_confirm' : 'council_discern_no_unity_confirm';
+    if (!(await showConfirm(msg, { title: outcome === 'passed' ? 'council_sense_unity' : 'council_not_in_unity', confirmText: outcome === 'passed' ? 'council_adopt_short' : 'council_set_aside', danger: outcome === 'rejected' }))) return;
     setVotingId(id);
     try { await discernDecision(id, outcome); refreshDecisions(); }
-    catch (e: any) { showAlert(e?.message || 'Could not discern the sense of the meeting.'); }
+    catch (e: any) { showAlert(e?.message || 'err_council_discern'); }
     setVotingId(null);
   };
 
@@ -181,19 +180,19 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
       <SectionTitle title={t('council')} sub={t('council_sub')} />
 
       {currentUserId && (
-        <div className="mb-8 space-y-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
-          <h4 className="text-sm font-bold text-slate-700">{t('propose_decision')}</h4>
-          <input value={decTitle} onChange={e => setDecTitle(e.target.value)} placeholder={t('decision_title_ph')} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        <div className="mb-8 space-y-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-700 dark:bg-slate-900/60">
+          <h4 className="text-sm font-bold text-slate-700 dark:text-slate-200">{t('propose_decision')}</h4>
+          <input value={decTitle} onChange={e => setDecTitle(e.target.value)} placeholder={t('decision_title_ph')} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
           <label className="block space-y-1">
             <span className="text-[10px] font-bold uppercase text-slate-400">{t('decision_nature')}</span>
-            <select value={decNature} onChange={e => setDecNature(e.target.value as DecisionNature)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:max-w-xs">
+            <select value={decNature} onChange={e => setDecNature(e.target.value as DecisionNature)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:max-w-xs dark:bg-slate-900 dark:border-slate-700">
               {DECISION_NATURES.map(n => <option key={n.id} value={n.id}>{t(('nature_' + n.id) as any)} · {n.votes} {t('voices')}</option>)}
             </select>
           </label>
-          <textarea value={decBody} onChange={e => setDecBody(e.target.value)} placeholder={t('decision_body_ph')} className="min-h-20 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          <textarea value={decBody} onChange={e => setDecBody(e.target.value)} placeholder={t('decision_body_ph')} className="min-h-20 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
           <div className="space-y-1.5">
             <span className="text-[10px] font-bold uppercase text-slate-400">{t('council_mode_label')}</span>
-            <div className="flex rounded-full border border-slate-200 bg-white p-0.5 text-xs font-bold w-full sm:max-w-md">
+            <div className="flex rounded-full border border-slate-200 bg-white p-0.5 text-xs font-bold w-full sm:max-w-md dark:bg-slate-900 dark:border-slate-700">
               <button type="button" onClick={() => setDecMode('threshold')} className={`flex-1 rounded-full px-3 py-1.5 transition-colors ${decMode === 'threshold' ? 'bg-emerald-600 text-white shadow' : 'text-slate-500 hover:text-slate-700'}`}>{t('voices')} ({votesRequired(decNature)})</button>
               <button type="button" onClick={() => setDecMode('consensus')} className={`flex-1 rounded-full px-3 py-1.5 transition-colors ${decMode === 'consensus' ? 'bg-emerald-600 text-white shadow' : 'text-slate-500 hover:text-slate-700'}`}>{t('council_mode_consensus')}</button>
             </div>
@@ -216,7 +215,7 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h4 className="text-sm font-bold text-slate-800">{d.title}</h4>
+                      <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100">{d.title}</h4>
                       {/* Circle/public standing + the clerk's controls. */}
                       {(() => {
                         const raw = decisions.find(x => x.id === d.id) as (Decision & { visibility?: string }) | undefined;
@@ -233,10 +232,10 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                             {clerk ? (
                               <button
                                 onClick={() => handleFlipVisibility(d.id, isPublic)}
-                                title={isPublic ? 'Public: click to keep it in the circle' : 'Circle only: click to make it public'}
+                                title={isPublic ? t('council_vis_public_title') : t('council_vis_circle_title')}
                                 className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase transition-colors ${isPublic ? 'bg-sky-600 text-white hover:bg-sky-500' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'}`}
                               >
-                                {isPublic ? 'Public' : 'Circle'}
+                                {isPublic ? t('vis_public_chip') : t('circle')}
                               </button>
                             ) : isPublic && (
                               <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase text-sky-700">{t('vis_public_chip')}</span>
@@ -246,8 +245,8 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                             {(d.isProposer || canEdit) && deletable && (
                               <button
                                 onClick={() => handleDeleteDecision(d.id, d.title)}
-                                title="Delete this draft"
-                                aria-label="Delete this draft"
+                                title={t('delete_draft')}
+                                aria-label={t('delete_draft')}
                                 className="relative rounded-full px-1.5 py-0.5 text-[10px] font-bold text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
                               >
                                 {currentUserId !== community.ownerId && !d.isProposer && <SuperDot />}
@@ -257,12 +256,12 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                           </>
                         );
                       })()}
-                      <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-500">{t(('nature_' + d.nature) as any)}</span>
+                      <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-500 dark:bg-slate-900 dark:border-slate-700">{t(('nature_' + d.nature) as any)}</span>
                       {consensus && <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase text-sky-700">{t('council_consensus_chip')}</span>}
                       {d.passed
                         ? <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">{t('passed')}</span>
                         : d.closed
-                          ? <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600">{t(statusLabelKey(d.status))}</span>
+                          ? <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600 dark:bg-slate-800 dark:text-slate-300">{t(statusLabelKey(d.status))}</span>
                           : consensus
                             ? (d.blocked
                                 ? <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase text-rose-700">{t('council_blocked_chip')}</span>
@@ -300,16 +299,16 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                     {consensus ? (
                       <>
                         <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-bold">
-                          <span className="text-emerald-600">{d.unites} unite</span>
+                          <span className="text-emerald-600">{t('council_unites_count').replace('{n}', String(d.unites))}</span>
                           <span className="text-slate-300">·</span>
-                          <span className="text-slate-500">{d.standAsides} stand aside</span>
+                          <span className="text-slate-500">{t('council_stand_asides_count').replace('{n}', String(d.standAsides))}</span>
                           <span className="text-slate-300">·</span>
-                          <span className={d.blocks ? 'text-rose-600' : 'text-slate-400'}>{d.blocks} block</span>
-                          {d.myStance && <span className="ml-1 rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-500">{t('you').toLowerCase()}: {t(stanceLabelKey(d.myStance)).toLowerCase()}</span>}
+                          <span className={d.blocks ? 'text-rose-600' : 'text-slate-400'}>{t('council_blocks_count').replace('{n}', String(d.blocks))}</span>
+                          {d.myStance && <span className="ml-1 rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-500 dark:bg-slate-800">{t('you').toLowerCase()}: {t(stanceLabelKey(d.myStance)).toLowerCase()}</span>}
                         </div>
                         {d.blocked && (
                           <div className="mt-2 rounded-xl border border-rose-100 bg-rose-50 p-2.5 text-[11px] text-rose-800">
-                            <p className="font-semibold">A block stands; the meeting is not in unity. Care it before adopting.</p>
+                            <p className="font-semibold">{t('council_block_stands_note')}</p>
                             {d.positions.filter(p => p.stance === 'block' && p.note).slice(-3).map((p, i) => <p key={i} className="mt-1 italic">“{p.note}”</p>)}
                           </div>
                         )}
@@ -319,7 +318,7 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                         <div className="mt-2 text-[11px] font-bold text-slate-400">{d.voiceCount} / {d.voicesRequired} {t('voices')}</div>
                         {d.listening && (
                           <div className="mt-2 rounded-xl border border-indigo-100 bg-indigo-50 p-2.5 text-[11px] text-indigo-800">
-                            <p className="font-semibold">A concern was raised. This proposal has entered listening.</p>
+                            <p className="font-semibold">{t('council_concern_raised_note')}</p>
                             {d.concerns.filter(c => c.note).slice(-3).map((c, i) => <p key={i} className="mt-1 italic">“{c.note}”</p>)}
                           </div>
                         )}
@@ -331,9 +330,9 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                       <>
                         {open && currentUserId && (
                           <div className="flex flex-wrap justify-end gap-1.5">
-                            <button onClick={() => handlePosition(d.id, 'unite')} disabled={votingId === d.id} className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${d.myStance === 'unite' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}>Unite</button>
+                            <button onClick={() => handlePosition(d.id, 'unite')} disabled={votingId === d.id} className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${d.myStance === 'unite' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}>{t('stance_unite')}</button>
                             <button onClick={() => handlePosition(d.id, 'stand_aside')} disabled={votingId === d.id} className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${d.myStance === 'stand_aside' ? 'bg-slate-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{t('stance_stand_aside')}</button>
-                            <button onClick={() => handlePosition(d.id, 'block')} disabled={votingId === d.id} className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${d.myStance === 'block' ? 'bg-rose-600 text-white' : 'bg-rose-50 text-rose-600 hover:bg-rose-100'}`}>Block</button>
+                            <button onClick={() => handlePosition(d.id, 'block')} disabled={votingId === d.id} className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${d.myStance === 'block' ? 'bg-rose-600 text-white' : 'bg-rose-50 text-rose-600 hover:bg-rose-100'}`}>{t('stance_block')}</button>
                           </div>
                         )}
                         {open && clerk && (
@@ -385,7 +384,7 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
             // device also HAS a key; resuming on mere presence re-throws the conflict as a bare alert.
             if (run && await readyToSign(currentUserId)) {
               setVotingId('key');
-              try { await run(); } catch (e: any) { showAlert(e?.message || 'Could not record your voice.'); }
+              try { await run(); } catch (e: any) { showAlert(e?.message || 'err_council_voice'); }
               setVotingId(null);
             }
           }}
@@ -398,9 +397,9 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
           <p className="mb-2 text-xs font-semibold text-amber-800">{t('signing_phrase_warn')}</p>
           <ol className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
             {phrase.map((w, i) => (
-              <li key={i} className="flex items-baseline gap-2 rounded-lg border border-amber-100 bg-white px-2.5 py-1.5">
+              <li key={i} className="flex items-baseline gap-2 rounded-lg border border-amber-100 bg-white px-2.5 py-1.5 dark:bg-slate-900">
                 <span className="w-5 shrink-0 text-right text-[10px] font-bold text-slate-400">{i + 1}</span>
-                <span className="font-mono text-sm text-slate-800">{w}</span>
+                <span className="font-mono text-sm text-slate-800 dark:text-slate-100">{w}</span>
               </li>
             ))}
           </ol>

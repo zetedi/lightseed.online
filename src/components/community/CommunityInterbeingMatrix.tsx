@@ -112,11 +112,11 @@ export const CommunityInterbeingMatrix: React.FC<CommunityInterbeingMatrixProps>
 
       {/* A circle has no anchor to show — the box waits until an address is claimed. */}
       {!!anchor.canonicalDomain && (
-      <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+      <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm dark:bg-slate-900">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-emerald-700">{t('interbeing_external_anchor')}</p>
-            <a href={`https://${anchor.canonicalDomain}`} target="_blank" rel="noreferrer" className="mt-1 block font-mono text-sm text-slate-700 hover:text-emerald-700">
+            <a href={`https://${anchor.canonicalDomain}`} target="_blank" rel="noreferrer" className="mt-1 block font-mono text-sm text-slate-700 hover:text-emerald-700 dark:text-slate-200">
               {anchor.canonicalDomain}
             </a>
           </div>
@@ -125,7 +125,7 @@ export const CommunityInterbeingMatrix: React.FC<CommunityInterbeingMatrixProps>
               ✓ {t('domain_verified')} · DNS
             </span>
           ) : (
-            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700">
               {t('interbeing_anchor_self_declared')}
             </span>
           )}
@@ -138,14 +138,14 @@ export const CommunityInterbeingMatrix: React.FC<CommunityInterbeingMatrixProps>
 
       {canManage && (
         <div className="rounded-2xl border border-violet-100 bg-violet-50/40 p-5">
-          <h3 className="font-semibold text-slate-800">{t('interbeing_propose_title')}</h3>
+          <h3 className="font-semibold text-slate-800 dark:text-slate-100">{t('interbeing_propose_title')}</h3>
           <p className="mt-1 text-sm text-slate-500">{t('interbeing_propose_desc').replace('{name}', community.name)}</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
-            <select value={targetId} onChange={event => setTargetId(event.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+            <select value={targetId} onChange={event => setTargetId(event.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700">
               <option value="">{t('interbeing_choose_community')}</option>
               {communities.map(item => <option key={item.id} value={item.id}>{item.name} · {isTreeCircle(item) ? t('tree_circle_badge') : (item.domain || '—')}</option>)}
             </select>
-            <select value={relation} onChange={event => setRelation(event.target.value as InterbeingRelation)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+            <select value={relation} onChange={event => setRelation(event.target.value as InterbeingRelation)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700">
               {INTERBEING_RELATIONS.map(rel => <option key={rel} value={rel}>{t(interbeingRelationKey(rel))}</option>)}
             </select>
             <button onClick={propose} disabled={!targetId || alreadyAttested || !!busyKey} className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50">
@@ -158,9 +158,9 @@ export const CommunityInterbeingMatrix: React.FC<CommunityInterbeingMatrixProps>
 
       <div className="space-y-3">
         {loading ? (
-          <div className="rounded-2xl border border-slate-100 bg-white p-5 text-sm text-slate-500">{t('interbeing_reading')}</div>
+          <div className="rounded-2xl border border-slate-100 bg-white p-5 text-sm text-slate-500 dark:bg-slate-900 dark:border-slate-800">{t('interbeing_reading')}</div>
         ) : rows.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm text-slate-500 dark:bg-slate-900 dark:border-slate-700">
             {t('interbeing_empty')}
           </div>
         ) : rows.map(({ other, rel, state }) => {
@@ -168,11 +168,11 @@ export const CommunityInterbeingMatrix: React.FC<CommunityInterbeingMatrixProps>
           const outgoing = state === 'proposed' || state === 'reciprocal';
           const key = `${other.id}__${rel}`;
           return (
-            <div key={key} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:p-5">
+            <div key={key} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:p-5 dark:bg-slate-900 dark:border-slate-800">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-semibold text-slate-800">{other.name}</h3>
+                    <h3 className="font-semibold text-slate-800 dark:text-slate-100">{other.name}</h3>
                     <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${words.tone}`}>{t(words.key)}</span>
                   </div>
                   <span className="mt-1 flex items-center gap-1.5">
@@ -187,13 +187,13 @@ export const CommunityInterbeingMatrix: React.FC<CommunityInterbeingMatrixProps>
                       <span title={t('domain_verified')} className="shrink-0 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700">✓ DNS</span>
                     )}
                   </span>
-                  <p className="mt-2 text-sm text-slate-600">{t(interbeingRelationKey(rel))}</p>
+                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{t(interbeingRelationKey(rel))}</p>
                 </div>
                 {canManage && (
                   state === 'received' ? (
                     <button onClick={() => write(other.id, rel, true)} disabled={busyKey === key} className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-500 disabled:opacity-50">{t('interbeing_acknowledge')}</button>
                   ) : outgoing ? (
-                    <button onClick={() => write(other.id, rel, false)} disabled={busyKey === key} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50">{t('interbeing_withdraw')}</button>
+                    <button onClick={() => write(other.id, rel, false)} disabled={busyKey === key} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 dark:text-slate-300 dark:border-slate-700">{t('interbeing_withdraw')}</button>
                   ) : null
                 )}
               </div>

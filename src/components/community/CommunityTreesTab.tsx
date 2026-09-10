@@ -3,6 +3,7 @@ import { Community, Lifetree } from '../../types';
 import { fetchAllLifetrees, inviteTreeToCommunity } from '../../services/firebase';
 import { tabTone } from '../../utils/tabTheme';
 import { TreesSection } from '../sections/TreesSection';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface CommunityTreesTabProps {
   community: Community;
@@ -28,6 +29,7 @@ export const CommunityTreesTab: React.FC<CommunityTreesTabProps> = ({
   togglingId,
   onToggleGuardian,
 }) => {
+  const { t } = useLanguage();
   // Both bindings are memoized so the section holds stable scope-bound loaders.
   const searchInvitable = useCallback(async (term: string) => {
     // Provable levels only, or the whole query is rejected the moment one private tree exists
@@ -53,8 +55,8 @@ export const CommunityTreesTab: React.FC<CommunityTreesTabProps> = ({
 
   return (
     <TreesSection
-      title="Community Trees"
-      sub="Lifetrees rooted here or standing with this community. Join a guardianship to help care one."
+      title={t('community_trees')}
+      sub={t('community_trees_sub')}
       currentUserId={currentUserId}
       trees={communityTrees}
       onViewTree={onViewTree}
@@ -63,8 +65,8 @@ export const CommunityTreesTab: React.FC<CommunityTreesTabProps> = ({
       onToggleGuardian={onToggleGuardian}
       searchInvitable={searchInvitable}
       onInvite={handleInvite}
-      noMatchesMessage="No matching trees (already-standing and nature trees are hidden)."
-      emptyMessage="No lifetrees linked to this domain yet."
+      noMatchesMessage={t('trees_no_matches')}
+      emptyMessage={t('no_trees_domain')}
       placeholderColor={community.theme?.primary || tabTone('communities')}
     />
   );

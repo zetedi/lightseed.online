@@ -80,16 +80,16 @@ export const ProfileHistory: React.FC<ProfileHistoryProps> = ({ uid, onViewAlign
         </div>
       )}
 
-      {loading ? <div className="flex justify-center rounded-2xl border border-slate-100 bg-slate-50/50 py-16"><Loading /></div> : (
+      {loading ? <div className="flex justify-center rounded-2xl border border-slate-100 bg-slate-50/50 py-16 dark:bg-slate-900/50 dark:border-slate-800"><Loading /></div> : (
         <div className="space-y-3">
           {history.length === 0 ? <p className="text-slate-400 text-center py-10">{t('no_history')}</p> : history.map((h) => {
             const a = treesById[h.initiatorTreeId];
             const b = treesById[h.targetTreeId];
             const status = h.status === 'ACCEPTED'
-              ? { label: 'Finalised', cls: 'bg-emerald-100 text-emerald-700' }
+              ? { label: t('align_status_finalised'), cls: 'bg-emerald-100 text-emerald-700' }
               : h.status === 'REJECTED'
-                ? { label: 'Declined', cls: 'bg-slate-100 text-slate-500' }
-                : { label: 'Open', cls: 'bg-amber-100 text-amber-700' };
+                ? { label: t('offering_status_declined'), cls: 'bg-slate-100 text-slate-500' }
+                : { label: t('align_status_open'), cls: 'bg-amber-100 text-amber-700' };
             const notes = h.messages?.length || 0;
             const face = (tree: Lifetree | null, ring: string, z: string) => {
               const img = tree?.latestGrowthUrl || tree?.imageUrl;
@@ -98,19 +98,19 @@ export const ProfileHistory: React.FC<ProfileHistoryProps> = ({ uid, onViewAlign
                 : <span className={`flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-slate-200 to-slate-300 text-lg text-white ring-2 ${ring} ring-offset-1 ring-offset-white ${z}`}>{(tree?.name || '·').charAt(0).toUpperCase()}</span>;
             };
             return (
-              <button key={h.id} onClick={() => onViewAlignment?.(h)} className="flex w-full items-center gap-3.5 rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-colors hover:bg-slate-50">
+              <button key={h.id} onClick={() => onViewAlignment?.(h)} className="flex w-full items-center gap-3.5 rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-colors hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-700">
                 {/* The two trees the alignment binds, faces overlapping like the bond itself. */}
                 <span className="flex shrink-0 -space-x-3">
                   {face(a, 'ring-sky-300', 'relative z-10')}
                   {face(b, 'ring-emerald-300', 'relative')}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold text-slate-800">
-                    {a?.name || 'A tree'} ↔ {b?.name || 'a tree'}
+                  <span className="block truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
+                    {a?.name || t('a_tree')} ↔ {b?.name || t('a_tree')}
                   </span>
                   <span className="block text-xs text-slate-500">
                     {h.createdAt ? new Date(h.createdAt.toMillis()).toLocaleDateString() : ''}
-                    {notes > 0 && ` · ${notes} note${notes === 1 ? '' : 's'} in the discussion`}
+                    {notes > 0 && ` ${t('align_notes_count').replace('{n}', String(notes))}`}
                   </span>
                 </span>
                 <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${status.cls}`}>{status.label}</span>

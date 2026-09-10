@@ -23,8 +23,10 @@ export interface ProfileLayoutProps {
     children: React.ReactNode;
 }
 
-const DEFAULT_ASIDE = 'rounded-xl border border-slate-100 bg-white p-2.5 shadow-lg lg:sticky lg:top-24';
-const DEFAULT_MAIN = 'rounded-xl border border-slate-100 bg-white p-4 sm:p-6 shadow-lg min-h-[520px]';
+// Both cards carry their own night (ring 2026-09-10): the shell is the ground every profile
+// section is drawn on, so a section's night ink is only legible once the ground turns with it.
+const DEFAULT_ASIDE = 'rounded-xl border border-slate-100 bg-white p-2.5 shadow-lg lg:sticky lg:top-24 dark:border-slate-800 dark:bg-slate-900';
+const DEFAULT_MAIN = 'rounded-xl border border-slate-100 bg-white p-4 sm:p-6 shadow-lg min-h-[520px] dark:border-slate-800 dark:bg-slate-900';
 
 export const ProfileLayout = ({
     menu,

@@ -105,13 +105,13 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel, canEdit, on
             await vetoGrowthPulse(pulse.id, viewerUid);
             setVetoes(prev => prev.includes(viewerUid) ? prev : [...prev, viewerUid]);
         } catch (e: any) {
-            showAlert(e?.message || 'Could not cast the veto.');
+            showAlert(e?.message || 'err_veto_cast');
         }
         setIsVetoing(false);
     };
 
     return (
-        <div className="min-h-screen animate-in fade-in zoom-in-95 duration-300 pb-20 bg-slate-50">
+        <div className="min-h-screen animate-in fade-in zoom-in-95 duration-300 pb-20 bg-slate-50 dark:bg-slate-900">
             {/* Hero — back button + type/status chips, then avatar + title + meta. */}
             <ProfileHero heroImageUrl={images[0]}>
                 <div className="flex items-center justify-between mb-6">
@@ -144,13 +144,13 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel, canEdit, on
                             </span>
                         )}
                         {/* Type badge — the pulse's kind, worn as the status chip. */}
-                        <span className="flex items-center gap-1 rounded-full bg-white/15 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-200">
+                        <span className="flex items-center gap-1 rounded-full bg-white/15 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-200 dark:bg-slate-900/15">
                             <Icons.Hash /> {pulse.type}
                         </span>
                         <BeingQr lid={pulse.lid} name={pulse.title} savedHref={pulse.qr?.href}
                             canMint={!!viewerUid && (pulse.authorId === viewerUid)}
                             onMint={(href) => mintBeingQr('pulses', pulse.id, href)}
-                            className="h-8 w-8 border border-white/15 bg-white/10 text-slate-200 hover:bg-white/25 hover:text-white" />
+                            className="h-8 w-8 border border-white/15 bg-white/10 text-slate-200 hover:bg-white/25 hover:text-white dark:bg-slate-900/10" />
                     </div>
                 </div>
                 <div className="flex items-center gap-4 sm:gap-5">
@@ -170,11 +170,11 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel, canEdit, on
                         )}
                         {/* Spacetime — the WHEN (date + time) every pulse carries, and the WHERE when it has one. */}
                         <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                            <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 font-mono text-[10px] text-slate-300">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 font-mono text-[10px] text-slate-300 dark:bg-slate-900/10">
                                 {new Date(pulse.createdAt?.toMillis()).toLocaleString()}
                             </span>
                             {pulse.eventLocation && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 font-mono text-[10px] text-slate-300">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 font-mono text-[10px] text-slate-300 dark:bg-slate-900/10">
                                     <Icons.Loc /> {pulse.eventLocation}
                                 </span>
                             )}
@@ -185,9 +185,9 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel, canEdit, on
 
             {/* Body — the pulse itself: images, event/watering context, and the text. */}
             <div className="mx-auto mt-6 max-w-3xl px-4 sm:px-6">
-                <div className="rounded-2xl border border-slate-100 bg-white p-4 sm:p-6 shadow-lg">
+                <div className="rounded-2xl border border-slate-100 bg-white p-4 sm:p-6 shadow-lg dark:bg-slate-900 dark:border-slate-800">
                     {images.length > 0 && (
-                        <div className="relative mb-6 h-96 w-full overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm group">
+                        <div className="relative mb-6 h-96 w-full overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm group dark:bg-slate-900 dark:border-slate-800">
                             <img src={images[activeImageIndex]} alt={pulse.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                             {images.length > 1 && (
                                 <div className="absolute bottom-4 left-4 right-4 flex gap-2 overflow-x-auto rounded-2xl bg-black/30 p-2 backdrop-blur-md">
@@ -208,31 +208,31 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel, canEdit, on
                     {pulse.type === 'event' && (
                         <div className="mb-4 grid gap-2 rounded-2xl border border-sky-100 bg-sky-50 p-4 text-sm text-sky-900">
                             {pulse.eventDate && <div><span className="font-bold">{t('when')}:</span> {new Date(pulse.eventDate).toLocaleString()}</div>}
-                            {pulse.eventLocation && <div><span className="font-bold">Where:</span> {pulse.eventLocation}</div>}
+                            {pulse.eventLocation && <div><span className="font-bold">{t('where')}:</span> {pulse.eventLocation}</div>}
                         </div>
                     )}
                     {pulse.care === 'watering' && (
                         <div className="mb-4 grid gap-1.5 rounded-2xl border border-sky-100 bg-sky-50 p-4 text-sm text-sky-900">
-                            <div className="flex items-center gap-2 font-bold"><Icons.Droplet size={16} /> <span>Watering</span></div>
+                            <div className="flex items-center gap-2 font-bold"><Icons.Droplet size={16} /> <span>{t('watering')}</span></div>
                             {/* The AI's reading — a witness, not the authority. */}
                             {typeof pulse.wateringConfirmation?.confidence === 'number' && (
                                 <div className="text-xs text-sky-800/90">
-                                    <span className="font-semibold">AI reading:</span> {pulse.wateringConfirmation.confidence}% consistent with watering
+                                    <span className="font-semibold">{t('ai_reading')}:</span> {t('water_consistent').replace('{n}', String(pulse.wateringConfirmation.confidence))}
                                     {pulse.wateringConfirmation?.note && <span className="italic">: “{pulse.wateringConfirmation.note}”</span>}
                                 </div>
                             )}
                             {/* The human reading — who says "yes, this was cared for". */}
                             <div className="text-xs text-sky-800/90">
-                                <span className="font-semibold">Cared for:</span>{' '}
+                                <span className="font-semibold">{t('cared_for_label')}:</span>{' '}
                                 {pulse.wateringConfirmedBy === 'guardian'
-                                    ? 'confirmed by a guardian'
+                                    ? t('water_by_guardian')
                                     : pulse.wateringConfirmedBy === 'ai'
-                                        ? 'auto-accepted on the AI reading; a guardian can still confirm'
-                                        : 'awaiting a guardian’s confirmation'}
+                                        ? t('water_auto_ai')
+                                        : t('water_awaiting_guardian')}
                             </div>
                         </div>
                     )}
-                    <p dir="auto" className="text-slate-600 leading-relaxed whitespace-pre-wrap font-serif text-lg">
+                    <p dir="auto" className="text-slate-600 leading-relaxed whitespace-pre-wrap font-serif text-lg dark:text-slate-300">
                         {pulse.content || pulse.body}
                     </p>
                 </div>
@@ -241,23 +241,23 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel, canEdit, on
                 {isGrowthMint && guardians.length > 0 && (
                     <div className={`mt-6 rounded-2xl border p-5 shadow-sm ${vetoed ? 'border-red-200 bg-red-50' : 'border-amber-100 bg-amber-50/50'}`}>
                         <h3 className={`mb-2 flex items-center text-xs font-bold uppercase tracking-wider ${vetoed ? 'text-red-500' : 'text-amber-600'}`}>
-                            <Icons.Shield /><span className="ml-2">Guardians' conscience</span>
+                            <Icons.Shield /><span className="ml-2">{t('guardians_conscience')}</span>
                         </h3>
                         {vetoed ? (
                             <p className="text-sm text-red-700">
-                                This mint was vetoed by guardian consensus. It stands on the chain, marked and discounted.
+                                {t('veto_stands_note')}
                             </p>
                         ) : (
                             <div className="flex flex-wrap items-center gap-3">
                                 <p className="text-sm text-amber-800">
                                     {progress.cast === 0
-                                        ? 'The tree\'s guardians may veto this mint in consensus.'
-                                        : `Veto: ${progress.cast} of ${progress.needed} guardians; it stands only in full agreement.`}
+                                        ? t('veto_may_note')
+                                        : t('veto_progress').replace('{cast}', String(progress.cast)).replace('{needed}', String(progress.needed))}
                                 </p>
                                 {viewerCanVeto && (
                                     <button onClick={handleVeto} disabled={isVetoing}
-                                        className="rounded-full border border-red-300 bg-white px-4 py-1.5 text-xs font-bold text-red-600 transition-colors hover:bg-red-600 hover:text-white disabled:opacity-50">
-                                        {isVetoing ? 'Casting…' : 'Veto this mint'}
+                                        className="rounded-full border border-red-300 bg-white px-4 py-1.5 text-xs font-bold text-red-600 transition-colors hover:bg-red-600 hover:text-white disabled:opacity-50 dark:bg-slate-900">
+                                        {isVetoing ? t('veto_casting') : t('veto_this_mint')}
                                     </button>
                                 )}
                                 {!viewerCanVeto && viewerUid && vetoes.includes(viewerUid) && (

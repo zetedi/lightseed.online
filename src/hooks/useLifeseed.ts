@@ -6,6 +6,7 @@ import { uuidv7 } from '../utils/id';
 import { onAuthChange, getMyLifetrees, getGuardedTrees, getTendedTrees, checkIsAdmin, checkIsSuperAdmin, getSuperAdminUid, claimSuperAdmin, listenToUserProfile, updateUserProfile, ensurePersonEntity, type TendedTree } from '../services/firebase';
 import { getInitiateByUid, type Initiate } from '../domain/initiation';
 import { charter } from '../config/charter';
+import { publicNameOf } from '../domain/publicName';
 import { type Lightseed, type Lifetree } from '../types';
 
 // The keeper's seat is the charter's (node.json), never a name by heart.
@@ -46,6 +47,9 @@ export const useLifeseed = () => {
     const [loading, setLoading] = useState(true);
     // The user's chosen "closest" tree (users/{uid}.defaultTreeId). Drives `activeTree`.
     const [defaultTreeId, setDefaultTreeId] = useState<string | undefined>(undefined);
+    // ANONYMOUS (users/{uid}.anonymous, ring 2026-09-10): the being's name is spoken by no one;
+    // its tree speaks for it. Read live so a flip in Settings changes the next stamp at once.
+    const [anonymous, setAnonymous] = useState(false);
     // The user's chosen default VISION (users/{uid}.defaultVisionId) — the star among visions,
     // mirroring the default tree; the care corner offers it beside the tree when set.
     const [defaultVisionId, setDefaultVisionId] = useState<string | undefined>(undefined);
@@ -138,6 +142,7 @@ export const useLifeseed = () => {
         const unsub = listenToUserProfile(lightseed.uid, (data) => {
             setDefaultTreeId(data?.defaultTreeId || undefined);
             setDefaultVisionId(data?.defaultVisionId || undefined);
+            setAnonymous(!!data?.anonymous);
         });
         return () => unsub();
     }, [lightseed?.uid]);
@@ -161,6 +166,8 @@ export const useLifeseed = () => {
         if (!lightseed?.uid) return;
         setDefaultTreeId(treeId); // optimistic
         await updateUserProfile(lightseed.uid, { defaultTreeId: treeId }).catch(() => {});
+        // Mirrored onto the world-readable person so an anonymous being is named by the right tree.
+        await setDoc(doc(db, 'persons', lightseed.uid), { defaultTreeId: treeId }, { merge: true }).catch(() => {});
     };
 
     // Persist the default vision the same way (starring it again clears the star).
@@ -172,8 +179,14 @@ export const useLifeseed = () => {
 
     // The "closest" tree: the chosen default if it's still one of mine, else the first.
     const activeTree = myTrees.find(t => t.id === defaultTreeId) || (myTrees.length > 0 ? myTrees[0] : null);
+    // The name the network may stamp on what this being does (domain/publicName): its own, or
+    // — anonymous — its closest tree's. Null when nothing may be said; callers fall back to
+    // t('someone'). nameAs(tree) prefers the tree in context over the closest one.
+    const nameAs = (treeName?: string | null) =>
+        publicNameOf({ displayName: lightseed?.displayName, anonymous, treeName: treeName || activeTree?.name });
+    const publicName = nameAs();
     // A rename lands in the session at once (onAuthStateChanged does not fire for a profile edit).
     const setDisplayName = (displayName: string) => setLightseed(prev => prev ? { ...prev, displayName } : prev);
 
-    return { lightseed, personLid, myTrees, guardedTrees, tendedTrees, activeTree, defaultTreeId, setDefaultTree, defaultVisionId, setDefaultVision, isAdmin, isSuperAdmin, superAdminExists, initiate, isInitiate: !!initiate, loading, refreshTrees, setDisplayName };
+    return { lightseed, personLid, myTrees, guardedTrees, tendedTrees, activeTree, defaultTreeId, setDefaultTree, defaultVisionId, setDefaultVision, anonymous, publicName, nameAs, isAdmin, isSuperAdmin, superAdminExists, initiate, isInitiate: !!initiate, loading, refreshTrees, setDisplayName };
 };
