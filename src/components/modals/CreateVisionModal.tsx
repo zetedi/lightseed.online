@@ -1,6 +1,7 @@
 
 import React, { useState, FormEvent } from 'react';
 import { showAlert } from "../ui/Dialog";
+import { normalizeWebLink, webLinkProblem } from '../../domain/webLink';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { Modal, modalButton } from '../ui/Modal';
@@ -75,12 +76,16 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
             finalImageUrl = await uploadBase64Image(visionImageUrl, `users/${lightseed.uid}/visions/ai/${Date.now()}`);
         }
 
+        // What is stored is what will be followed (domain/webLink): a bare host gains its
+        // scheme here, once, rather than every screen guessing later.
+        const linkProblem = webLinkProblem(visionLink);
+        if (linkProblem) { showAlert(linkProblem); setIsSubmitting(false); return; }
         await onCreate({
             lifetreeId: groundTreeId,
             authorId: lightseed.uid,
             title: visionTitle,
             body: visionBody,
-            link: visionLink,
+            link: normalizeWebLink(visionLink) || '',
             imageUrl: finalImageUrl,
             visibility,
             domain: visionDomain.trim() || undefined,

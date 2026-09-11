@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Icons } from './Icons';
+import { OutwardLink } from './OutwardLink';
 import type { Community } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { headerSurface } from '../../domain/themeSurface';
@@ -87,11 +88,11 @@ export const Footer = ({ community, theme, isDark = false }: { community?: Commu
         {links.length > 0 && (
           <div className="flex items-center gap-2">
             {links.map(l => (
-              <a key={l.label} href={l.href} target="_blank" rel="noreferrer" title={l.label} aria-label={l.label}
+              <OutwardLink href={l.href} key={l.label}    title={l.label} aria-label={l.label}
                  className={`flex h-8 w-8 items-center justify-center rounded-full border transition-colors hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${surface.isDark ? 'bg-white/10 hover:bg-white/20 dark:bg-slate-900/10' : 'bg-black/5 hover:bg-black/10'}`}
                  style={{ borderColor: surface.border }}>
                 {l.icon}
-              </a>
+              </OutwardLink>
             ))}
           </div>
         )}

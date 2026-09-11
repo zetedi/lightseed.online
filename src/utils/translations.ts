@@ -1632,7 +1632,9 @@ const baseKeys = {
   no_offerings_yet: "You have offered nothing yet.",
   offered_to: "Offered to {name}",
   footer_already_subscribed: "You receive the letter of {place}.",
-  visions_endeavours: "Visions & Endeavours"
+  visions_endeavours: "Visions & Endeavours",
+  link_not_web: "A link opens on the web: it begins with http:// or https://.",
+  link_not_valid: "That is not an address. Try something like example.org."
 };
 
 const dictionaries = {
@@ -3287,7 +3289,9 @@ const dictionaries = {
     no_offerings_yet: "لم تعرض شيئًا بعد.",
     offered_to: "مُقدَّم إلى {name}",
     footer_already_subscribed: "أنت تتلقّى رسالة {place}.",
-    visions_endeavours: "الرؤى والمساعي"
+    visions_endeavours: "الرؤى والمساعي",
+    link_not_web: "الرابط يفتح على الويب: يبدأ بـ http:// أو https://.",
+    link_not_valid: "هذا ليس عنوانًا. جرّب شيئًا مثل example.org."
   },
   sw: { 
     ...baseKeys, forest: "Msitu", pulses: "Mapigo", visions: "Maono", oracle: "Mtabiri", about: "Kuhusu", explore: "Chunguza", 
@@ -4901,7 +4905,9 @@ const dictionaries = {
     no_offerings_yet: "你还没有供献过什么。",
     offered_to: "供献给 {name}",
     footer_already_subscribed: "你正在接收 {place} 的来信。",
-    visions_endeavours: "愿景与志业"
+    visions_endeavours: "愿景与志业",
+    link_not_web: "链接通向网络：它以 http:// 或 https:// 开头。",
+    link_not_valid: "这不是一个地址。可以试试 example.org 这样的写法。"
   }
 };
 

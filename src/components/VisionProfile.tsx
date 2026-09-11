@@ -10,6 +10,8 @@ import { mintBeingQr } from '../services/firebase/beings';
 import { MahameruAvatar } from './ui/MahameruAvatar';
 import { useLanguage } from '../contexts/LanguageContext';
 import { canJoinVision } from '../domain/policy';
+import { OutwardLink } from './ui/OutwardLink';
+import { linkLabel } from '../domain/webLink';
 import { showsPlaceOfRecord } from '../domain/communityDoor';
 import { PlaceOfRecord } from './ui/PlaceOfRecord';
 import { getLifetreeById, getPulsesByVisionId, getPulsesByTreeId, mendVisionDomain } from '../services/firebase';
@@ -324,10 +326,10 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                         </p>
                         {vision.link && (
                             <div className="mt-8 border-t border-slate-100 pt-6 dark:border-slate-800">
-                                <a href={vision.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 font-medium text-amber-600 transition-colors hover:text-amber-800 dark:text-amber-300">
+                                <OutwardLink href={vision.link} className="inline-flex items-center gap-2 font-medium text-amber-600 transition-colors hover:text-amber-800 dark:text-amber-300">
                                     <Icons.Globe />
-                                    <span className="break-all">{vision.link}</span>
-                                </a>
+                                    <span className="break-all">{linkLabel(vision.link)}</span>
+                                </OutwardLink>
                             </div>
                         )}
                         {/* The place-of-record stamp — staff sight, staff mend; hidden on a strict-

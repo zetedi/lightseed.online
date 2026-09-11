@@ -4,6 +4,7 @@ import { WhitePaperSection } from './WhitePaper';
 import { showAlert } from "../ui/Dialog";
 import Logo from '../Logo';
 import { Icons } from '../ui/Icons';
+import { OutwardLink } from '../ui/OutwardLink';
 import { Modal } from '../ui/Modal';
 import { subscribeToNewsletter, getGenesisHash } from '../../services/firebase';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -310,10 +311,10 @@ const SymbolCard = ({ titleKey, descKey, type, link }: { titleKey: TranslationKe
         <div>
             <h3 className="text-amber-600 font-bold uppercase tracking-wider mb-2 dark:text-amber-300">{t(titleKey)}</h3>
             <p className="text-slate-600 text-sm mb-3 dark:text-slate-300">{t(descKey)}</p>
-            <a href={link} target="_blank" rel="noopener noreferrer" className="text-xs text-slate-400 hover:text-amber-500 flex items-center gap-1 transition-colors">
+            <OutwardLink href={link} className="text-xs text-slate-400 hover:text-amber-500 flex items-center gap-1 transition-colors">
                 <Icons.Link />
                 <span>{t('read_more')}</span>
-            </a>
+            </OutwardLink>
         </div>
     </div>
     );
@@ -493,10 +494,10 @@ export const ProtectionNote = ({ compact = false }: { compact?: boolean }) => {
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
                 {TRADEMARKS.map(tm => (
-                    <a key={tm.no} href={tm.url} target="_blank" rel="noopener noreferrer"
+                    <OutwardLink href={tm.url} key={tm.no}   
                        className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-white px-3 py-1 text-xs font-mono font-bold text-blue-800 transition-colors hover:bg-blue-100 dark:bg-slate-900 dark:border-blue-900 dark:text-blue-200">
                         <Icons.ShieldCheck /> {tm.no}
-                    </a>
+                    </OutwardLink>
                 ))}
             </div>
         </div>

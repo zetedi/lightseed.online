@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { LightHouseCareCard } from './LightHouseCareCard';
 import { Icons } from './ui/Icons';
+import { OutwardLink } from './ui/OutwardLink';
 import { ProfileHero } from './ui/ProfileHero';
 import { ProfileLayout } from './ui/ProfileLayout';
 import { SectionMenu, SectionItem } from './ui/SectionMenu';
@@ -219,10 +220,10 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel, canEdit = fa
 
                         {/* The 3D door — step into the Light House's Gaussian-splat scene. */}
                         {lightHouse.splatUrl && (
-                            <a href={lightHouse.splatUrl} target="_blank" rel="noopener noreferrer"
+                            <OutwardLink href={lightHouse.splatUrl}
                                className="inline-flex items-center gap-2 rounded-full bg-amber-500 px-5 py-2.5 text-sm font-bold text-white shadow transition-colors hover:bg-amber-600">
                                 {t('lh_enter_3d')}
-                            </a>
+                            </OutwardLink>
                         )}
 
                         {/* The place — keepers move the Light House with the map's help. */}

@@ -4,6 +4,7 @@ import { showAlert, showConfirm } from "./ui/Dialog";
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
+import { OutwardLink } from './ui/OutwardLink';
 import { MahameruAvatar } from './ui/MahameruAvatar';
 import { Community, CommunityInvite, Lifetree, Pulse, LightHouse } from '../types';
 import { doorOf, checkInvite } from '../domain/communityDoor';
@@ -903,10 +904,10 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                 <Icons.Venn /> {t('tree_circle_badge')}
               </span>
             ) : community.domain ? (
-              <a href={`https://${community.domain}`} target="_blank" rel="noreferrer" title={isDomainVerified(community) ? t('domain_verified') : undefined} className="inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-0.5 text-xs font-mono text-emerald-300 hover:bg-emerald-400/20">
+              <OutwardLink href={community.domain} title={isDomainVerified(community) ? t('domain_verified') : undefined} className="inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-0.5 text-xs font-mono text-emerald-300 hover:bg-emerald-400/20">
                 <Icons.Globe size={12} /> {community.domain}
                 {isDomainVerified(community) && <span className="font-sans font-bold text-emerald-300">✓</span>}
-              </a>
+              </OutwardLink>
             ) : null}
             <LoveButton collection="communities" id={community.id} initialCount={community.loveCount || 0} className="rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-white hover:bg-white/20 dark:bg-slate-900/10" />
           </>

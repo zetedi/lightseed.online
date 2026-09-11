@@ -10,6 +10,7 @@ import { reachAudienceLabels } from '../../utils/reachPermissions';
 import { CTA_GLOW } from '../../utils/tabTheme';
 import { useLifeseed } from '../../hooks/useLifeseed';
 import { Icons } from '../ui/Icons';
+import { OutwardLink } from '../ui/OutwardLink';
 import { spokenLine } from '../../utils/translations';
 import { isWateringOverdue } from '../../domain/watering';
 import { linkifyParts } from '../../utils/sanitize';
@@ -676,7 +677,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                                     : m.text.split('\n').map((line, j) => (
                                     <span key={j}>
                                         {linkifyParts(line).map((part, k) => part.type === 'link'
-                                            ? <a key={k} href={part.value} rel="noopener noreferrer nofollow" className={`underline underline-offset-2 break-all ${m.role === 'user' ? 'text-emerald-50 hover:text-white' : 'text-emerald-700 hover:text-emerald-900 dark:text-emerald-300'}`}>{part.value}</a>
+                                            ? <OutwardLink key={k} href={part.value} className={`underline underline-offset-2 break-all ${m.role === 'user' ? 'text-emerald-50 hover:text-white' : 'text-emerald-700 hover:text-emerald-900 dark:text-emerald-300'}`}>{part.value}</OutwardLink>
                                             : <span key={k}>{part.value}</span>)}
                                         {j < m.text.split('\n').length - 1 && <br />}
                                     </span>

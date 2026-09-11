@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+
+import { OutwardLink } from '../ui/OutwardLink';
 import type { Community, Link } from '../../types';
 import {
   INTERBEING_RELATIONS,
@@ -116,9 +118,9 @@ export const CommunityInterbeingMatrix: React.FC<CommunityInterbeingMatrixProps>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-300">{t('interbeing_external_anchor')}</p>
-            <a href={`https://${anchor.canonicalDomain}`} target="_blank" rel="noreferrer" className="mt-1 block font-mono text-sm text-slate-700 hover:text-emerald-700 dark:text-slate-200">
+            <OutwardLink href={anchor.canonicalDomain} className="mt-1 block font-mono text-sm text-slate-700 hover:text-emerald-700 dark:text-slate-200">
               {anchor.canonicalDomain}
-            </a>
+            </OutwardLink>
           </div>
           {isDomainVerified(community) ? (
             <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300">
@@ -177,9 +179,9 @@ export const CommunityInterbeingMatrix: React.FC<CommunityInterbeingMatrixProps>
                   </div>
                   <span className="mt-1 flex items-center gap-1.5">
                     {communityDomainAnchor(other).canonicalDomain ? (
-                      <a href={`https://${communityDomainAnchor(other).canonicalDomain}`} target="_blank" rel="noreferrer" className="block truncate font-mono text-xs text-slate-500 hover:text-emerald-700">
+                      <OutwardLink href={communityDomainAnchor(other).canonicalDomain} className="block truncate font-mono text-xs text-slate-500 hover:text-emerald-700">
                         {communityDomainAnchor(other).canonicalDomain}
-                      </a>
+                      </OutwardLink>
                     ) : isTreeCircle(other) ? (
                       <span className="text-[10px] font-bold uppercase tracking-wide text-violet-500">{t('tree_circle_badge')}</span>
                     ) : null}

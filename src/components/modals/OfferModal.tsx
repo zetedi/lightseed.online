@@ -6,6 +6,7 @@ import { ImagePicker } from '../ui/ImagePicker';
 import { useSession } from '../../contexts/SessionContext';
 import { createOffering, updateOffering, uploadImage, getMyBeds } from '../../services/firebase';
 import { offeringProblem, type OfferingKind, type OfferedTo } from '../../domain/offering';
+import { normalizeWebLink, webLinkProblem } from '../../domain/webLink';
 import { formatLight, RAY_UNITS } from '../../domain/light';
 import { tabTone } from '../../utils/tabTheme';
 import type { Lifetree, Pulse } from '../../types';
@@ -84,8 +85,11 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved, to }: {
     const submit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!lightseed || problem || saving) return;
+        const urlProblem = webLinkProblem(url);
+        if (urlProblem) { showAlert(urlProblem); return; }
         setSaving(true);
-        const detailUrl = url.trim();
+        // Stored the way it will be followed (domain/webLink), so a bare host is a door and not a path.
+        const detailUrl = normalizeWebLink(url) || '';
         if (editing && offering) {
             // Retell it: only the fields the rules allow, and offeringUrl cleared honestly when emptied.
             const updates = {

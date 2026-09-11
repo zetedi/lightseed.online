@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { showAlert } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
+import { OutwardLink } from '../ui/OutwardLink';
+import { normalizeHostname, webLinkProblem } from '../../domain/webLink';
 import { SuperDot } from '../ui/SuperDot';
 import { AutocompleteInput } from '../ui/AutocompleteInput';
 import { LocationPicker } from '../ui/LocationPicker';
@@ -109,12 +111,16 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
     };
 
     const handleSaveClick = () => {
+        // A site that is not an address is SAID, never silently dropped — losing what someone
+        // typed is worse than refusing it (domain/webLink).
+        const domainProblem = webLinkProblem(editDomain);
+        if (domainProblem) { showAlert(domainProblem); return; }
         onSave({
             body: editBody,
             latitude: Number(editLat),
             longitude: Number(editLng),
             locationName: editLocationName.trim() || null,
-            domain: editDomain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '') || null,
+            domain: normalizeHostname(editDomain) || null,
             visibility: editVisibility,
             ...(editCreatedAt && { createdAt: new Date(editCreatedAt) }),
         });
@@ -256,7 +262,7 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                         />
                     ) : (
                         tree.domain
-                            ? <a href={`https://${tree.domain}`} target="_blank" rel="noreferrer" className="flex-1 text-left text-emerald-600 text-sm hover:underline font-mono dark:text-emerald-300">{tree.domain}</a>
+                            ? <OutwardLink href={tree.domain} className="flex-1 text-left text-emerald-600 text-sm hover:underline font-mono dark:text-emerald-300" />
                             : <span className="flex-1 text-left text-slate-400 text-sm">—</span>
                     )}
                 </div>

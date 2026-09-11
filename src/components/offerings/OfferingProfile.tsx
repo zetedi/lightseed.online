@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useSession } from '../../contexts/SessionContext';
 import { Icons } from '../ui/Icons';
+import { OutwardLink } from '../ui/OutwardLink';
+import { linkLabel } from '../../domain/webLink';
 import { BeingQr } from '../ui/BeingQr';
 import { LoveButton } from '../ui/LoveButton';
 import { mintBeingQr } from '../../services/firebase/beings';
@@ -191,11 +193,11 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
           {offering.offeringUrl && (
             <div>
               <div className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('more_detail')}</div>
-              <a href={offering.offeringUrl} target="_blank" rel="noopener noreferrer"
+              <OutwardLink href={offering.offeringUrl}
                 className="mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300">
                 <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Globe /></span>
-                <span className="truncate">{offering.offeringUrl.replace(/^https?:\/\//, '')}</span>
-              </a>
+                <span className="truncate">{linkLabel(offering.offeringUrl)}</span>
+              </OutwardLink>
             </div>
           )}
 

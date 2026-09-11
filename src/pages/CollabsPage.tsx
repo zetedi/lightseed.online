@@ -3,6 +3,8 @@ import { Icons } from '../components/ui/Icons';
 import { SuperDot } from '../components/ui/SuperDot';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { ListBox } from '../components/ui/ListBox';
+import { OutwardLink } from '../components/ui/OutwardLink';
+import { normalizeWebLink, webLinkProblem } from '../domain/webLink';
 import { FullWidthTabs } from '../components/ui/FullWidthTabs';
 import { ViewDensityToggle } from '../components/ui/ViewDensityToggle';
 import { ImagePicker } from '../components/ui/ImagePicker';
@@ -117,10 +119,13 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
   };
 
   const handleAdd = async () => {
+    // Stored the way it will be followed (domain/webLink) — a bare host is a door, not a path.
+    const urlProblem = webLinkProblem(draft.url);
+    if (urlProblem) { showAlert(urlProblem); return; }
     if (busy || !draft.name.trim() || !lightseed) return;
     setBusy(true); setError(null);
     try {
-      await addOrgCollab({ ...draft, createdBy: lightseed.uid });
+      await addOrgCollab({ ...draft, url: normalizeWebLink(draft.url) || '', createdBy: lightseed.uid });
       setOrgs(await getOrgCollabs());
       setDraft({ name: '', url: '', blurb: '', logoUrl: '', agreement: 'founder' });
       setAdding(false);
@@ -304,7 +309,7 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
                         ? <img src={org.logoUrl} alt={org.name} className="h-10 w-10 shrink-0 rounded-lg object-cover" />
                         : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-base font-bold text-violet-700 dark:bg-violet-950/40 dark:text-violet-300">{org.name.charAt(0).toUpperCase()}</span>}
                       {org.url
-                        ? <a href={org.url} target="_blank" rel="noopener noreferrer" className="truncate hover:text-violet-700 hover:underline">{org.name}</a>
+                        ? <OutwardLink href={org.url} className="truncate hover:text-violet-700 hover:underline">{org.name}</OutwardLink>
                         : <span className="truncate">{org.name}</span>}
                       <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${org.agreement === 'contract' ? 'bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'}`}>{t(AGREEMENT_LABEL[org.agreement])}</span>
                     </h4>

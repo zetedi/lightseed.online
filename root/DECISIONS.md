@@ -6,6 +6,28 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-11 · A door is absolute, or it is not a door** — a vision's link did not take the
+reader to the vision's site. The cause is one line of HTML being honest: `href="example.com"` is
+a RELATIVE PATH, so the door opened onto our own shell and the visitor never left. Every screen
+had been answering the same three questions on its own, and each answered differently: some
+prefixed `https://${domain}` (so a value pasted WITH its scheme became https://https://…), some
+handed the raw stored value to the browser, and every one of them opened a new tab — including
+doors that lead back into this same shell.
+domain/webLink is the one answer. A stored link is ALWAYS absolute and always http(s): a bare
+host gains the scheme once, at the place it is written, and `javascript:`/`data:`/credentials in
+a host are not doors at all. Where it points decides the tab — another house opens a new one with
+the opener sealed, this house opens where the reader stands, because leaving your own house
+through a new window is not travel. www is a coat, not a name.
+ui/OutwardLink is the one renderer, and normalisation happens at READ time too, so links already
+stored bare start working without a migration. Every edit site now stores what will be followed
+and SAYS what it refuses rather than silently dropping it — losing what someone typed is worse
+than refusing it: a vision's link, an offering's detail door, an organisation's home, a tree's
+site (which keeps a bare host, validated by the same law); a community's address already had its
+own normaliser and keeps it. A guard test (tests/outwardLinks) fails the gate on any hand-written
+anchor whose href is computed, with three named exceptions: the map's Leaflet popup HTML where a
+component cannot go, the QR's data: download, and the in-app /b/ path. It found five the hour it
+was written, including links inside chat messages, which had been opening outward in this tab.
+
 **2026-09-11 · The guard that skipped the forest, and six surfaces the eye found** — the night
 pass had one more silent failure, and it was its own guard: "skip a toggle knob" was written as
 "skip any class list with a translate", so every card that LIFTS on hover was passed over whole —

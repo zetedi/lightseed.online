@@ -1,6 +1,7 @@
 
 import { type Vision } from '../types';
 import { Icons } from './ui/Icons';
+import { OutwardLink } from './ui/OutwardLink';
 import { useLanguage } from '../contexts/LanguageContext';
 import type { ListDensity } from '../hooks/useListDensity';
 
@@ -73,9 +74,9 @@ export const VisionCard = ({ vision, density = 'cards' }: { vision: Vision; dens
                     </div>
 
                     {vision.link && (
-                        <a href={vision.link} target="_blank" rel="noopener noreferrer" className="absolute top-2 right-2 bg-white/90 p-1.5 rounded-full text-amber-600 hover:text-amber-800 hover:scale-110 transition-all shadow-sm z-10 dark:bg-slate-900/90 dark:text-amber-300">
+                        <OutwardLink href={vision.link} className="absolute top-2 right-2 bg-white/90 p-1.5 rounded-full text-amber-600 hover:text-amber-800 hover:scale-110 transition-all shadow-sm z-10 dark:bg-slate-900/90 dark:text-amber-300">
                             <Icons.Globe />
-                        </a>
+                        </OutwardLink>
                     )}
                 </div>
             <div className="flex flex-1 flex-col p-3">
