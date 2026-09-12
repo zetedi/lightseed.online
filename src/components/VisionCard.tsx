@@ -2,6 +2,7 @@
 import { type Vision } from '../types';
 import { Icons } from './ui/Icons';
 import { OutwardLink } from './ui/OutwardLink';
+import { Picture } from './ui/Picture';
 import { useLanguage } from '../contexts/LanguageContext';
 import type { ListDensity } from '../hooks/useListDensity';
 
@@ -20,7 +21,7 @@ export const VisionCard = ({ vision, density = 'cards' }: { vision: Vision; dens
 
     // A small square avatar: the vision's image, or the galaxy.
     const avatar = (size: string) => (
-        <img src={visionImage} alt="" className={`${size} shrink-0 rounded-lg object-cover bg-[#04070f]`} />
+        <Picture src={visionImage} alt="" className={`${size} shrink-0 rounded-lg object-cover bg-[#04070f]`} />
     );
 
     // ROWS — avatar, heading + subtext on one line of the list.
@@ -42,7 +43,7 @@ export const VisionCard = ({ vision, density = 'cards' }: { vision: Vision; dens
         return (
             <div className={`overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900 ${POP}`}>
                 <div className="h-20 overflow-hidden bg-[#04070f]">
-                    <img src={visionImage} alt={heading} className="h-full w-full object-cover" />
+                    <Picture src={visionImage} alt={heading} className="h-full w-full object-cover" />
                 </div>
                 <div className="p-2">
                     <h3 dir="auto" className="truncate text-xs font-semibold text-slate-800 dark:text-slate-100">{heading}</h3>
@@ -57,7 +58,7 @@ export const VisionCard = ({ vision, density = 'cards' }: { vision: Vision; dens
         <div className={`flex h-60 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900 ${POP} group`}>
             {/* The image (or the galaxy) carries the card, heading overlaid. */}
             <div className="relative h-36 shrink-0 bg-[#04070f] overflow-hidden">
-                    <img src={visionImage} alt={heading} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                    <Picture src={visionImage} alt={heading} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
 
                     {/* Author avatar — the soul this vision grows from. */}
                     {vision.authorId && (

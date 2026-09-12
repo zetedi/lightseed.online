@@ -60,8 +60,12 @@ export const useLifeseed = () => {
             console.warn("Auth state took too long to resolve; continuing without blocking the app shell.");
         }, 12000);
 
+        // One count per sign-in: a late answer from a previous session's checks must not paint
+        // its flags over the next one (or over a sign-out).
+        let generation = 0;
         const unsub = onAuthChange(async (user) => {
             window.clearTimeout(authTimeout);
+            const mine = ++generation;
             if (user) {
                 setLightseed({
                     uid: user.uid,
@@ -93,30 +97,27 @@ export const useLifeseed = () => {
                 // The initiated layer: is this account bound to a git-ledger initiate? Best-effort.
                 getInitiateByUid(user.uid).then(setInitiate).catch(() => setInitiate(null));
 
-                // Roles — email-based superadmin takes priority, Firestore checks are best-effort
+                // Roles — email-based superadmin takes priority, Firestore checks are best-effort.
+                // They are OFF the boot path: nothing on first paint needs a staff flag, and the
+                // feed waits for `loading` (App), so awaiting them here cost every reader a whole
+                // round trip before the forest could even be asked for. The email answer is
+                // immediate; the Firestore answers land when they land (staff see their amber dots
+                // a moment later, and the feed re-asks once with staff sight — few and cheap).
                 const emailIsSuperAdmin = user.email === SUPERADMIN_EMAIL;
-                let firestoreSuperAdmin = false;
-                let firestoreAdmin = false;
-                let superAdminUid: string | null = null;
-                try {
-                    [firestoreAdmin, firestoreSuperAdmin, superAdminUid] = await Promise.all([
-                        checkIsAdmin(user.uid),
-                        checkIsSuperAdmin(user.uid),
-                        getSuperAdminUid(),
-                    ]);
-                } catch (e) {
-                    console.warn("Admin check failed (permissions?), falling back to email check", e);
-                }
-
-                const resolvedSuperAdmin = emailIsSuperAdmin || firestoreSuperAdmin;
-                setIsSuperAdmin(resolvedSuperAdmin);
-                setIsAdmin(resolvedSuperAdmin || firestoreAdmin);
-                setSuperAdminExists(!!superAdminUid || emailIsSuperAdmin);
-
-                // Auto-claim Firestore superadmin record for the designated email
-                if (emailIsSuperAdmin && !superAdminUid) {
-                    claimSuperAdmin(user.uid).catch(() => {});
-                }
+                setIsSuperAdmin(emailIsSuperAdmin);
+                setIsAdmin(emailIsSuperAdmin);
+                setSuperAdminExists(emailIsSuperAdmin);
+                Promise.all([checkIsAdmin(user.uid), checkIsSuperAdmin(user.uid), getSuperAdminUid()])
+                    .then(([firestoreAdmin, firestoreSuperAdmin, superAdminUid]) => {
+                        if (mine !== generation) return;
+                        const resolvedSuperAdmin = emailIsSuperAdmin || firestoreSuperAdmin;
+                        setIsSuperAdmin(resolvedSuperAdmin);
+                        setIsAdmin(resolvedSuperAdmin || firestoreAdmin);
+                        setSuperAdminExists(!!superAdminUid || emailIsSuperAdmin);
+                        // Auto-claim Firestore superadmin record for the designated email
+                        if (emailIsSuperAdmin && !superAdminUid) claimSuperAdmin(user.uid).catch(() => {});
+                    })
+                    .catch((e) => console.warn("Admin check failed (permissions?), falling back to email check", e));
             } else {
                 setLightseed(null);
                 setMyTrees([]);

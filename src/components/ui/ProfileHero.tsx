@@ -1,4 +1,5 @@
 import React from 'react';
+import { Picture } from './Picture';
 
 // The shared banner atop every profile-style view (community, lightseed, lifetree, and — next —
 // event and vision). It owns ONLY the outer shell: the slate gradient, the optional hero image +
@@ -45,8 +46,10 @@ export const ProfileHero = ({
         {banner}
         <div className={`relative overflow-hidden bg-gradient-to-b from-slate-800 to-slate-900 text-white ${padding}`} style={style}>
             {heroImageUrl && (
-                <img
+                <Picture
                     src={heroImageUrl}
+                    size={1200}
+                    loading="eager"
                     alt=""
                     referrerPolicy="no-referrer"
                     className={`absolute inset-0 h-full w-full object-cover ${imageClassName}`}

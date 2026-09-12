@@ -1,6 +1,7 @@
 import { Icons } from './Icons';
 import { ImagePicker } from './ImagePicker';
 import { Loading } from './Loading';
+import { Picture } from './Picture';
 import { ThemeEditor, type ThemeValue } from './ThemeEditor';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -67,7 +68,7 @@ export const AppearanceEditor = ({
             <div className="flex flex-col items-center gap-1">
               <div className="pointer-events-auto h-16 w-16 shrink-0 overflow-hidden rounded-full border-4 border-white bg-white shadow-xl md:h-20 md:w-20 dark:bg-slate-900">
                 <ImagePicker onImageSelect={onLogoUpload} loading={uploadingLogo} className="flex h-full w-full cursor-pointer items-center justify-center text-slate-400">
-                  {logoUrl ? <img src={logoUrl} className="h-full w-full object-cover" alt="" /> : <Icons.Camera />}
+                  {logoUrl ? <Picture src={logoUrl} className="h-full w-full object-cover" alt="" /> : <Icons.Camera />}
                 </ImagePicker>
               </div>
               <span className="rounded-full bg-black/40 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white/80 backdrop-blur">{logoLabel || t('logo')}</span>
@@ -92,7 +93,7 @@ export const AppearanceEditor = ({
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
             {imageUrls.map((url, index) => (
               <div key={url} className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:bg-slate-900 dark:border-slate-700">
-                <img src={url} className="h-full w-full object-cover" alt="" />
+                <Picture src={url} className="h-full w-full object-cover" alt="" />
                 <button type="button" onClick={() => onRemoveImage(index)} className="absolute right-1 top-1 rounded-full bg-white/90 p-1 text-red-500 shadow-sm dark:bg-slate-900/90" title={t('remove')}>
                   <Icons.Close />
                 </button>

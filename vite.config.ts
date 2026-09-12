@@ -88,13 +88,23 @@ export default defineConfig(({ mode }) => {
                 urlPattern: /^https:\/\/server\.arcgisonline\.com\/.*\/tile\/.*/i,
                 handler: 'CacheFirst',
                 options: {
-                  cacheName: 'map-tiles',
+                  // v2 (2026-09-12): the first cache admitted status 0 — an OPAQUE response,
+                  // which is what a no-CORS fetch returns whether it succeeded or failed. The
+                  // tile <img> carries crossorigin (so the cache can hold real responses), and
+                  // an opaque body can never satisfy it: the image decodes to nothing and the
+                  // map shows grey. CacheFirst then served those lies for thirty days. Only 200
+                  // is cacheable now, and the name is new so the poisoned entries are abandoned.
+                  cacheName: 'map-tiles-v2',
                   expiration: { maxEntries: 600, maxAgeSeconds: 60 * 60 * 24 * 30, purgeOnQuotaError: true },
-                  cacheableResponse: { statuses: [0, 200] },
+                  cacheableResponse: { statuses: [200] },
                 },
               },
               {
                 // Tree portraits (webp'd on upload): serve cached, refresh in the background.
+                // Status 0 stays admitted HERE on purpose: pictures are plain no-CORS <img>s, so
+                // their responses are opaque and an opaque body satisfies a plain <img>. That holds
+                // only while no storage picture wears crossorigin — the day one does (a canvas
+                // export, a splat), this cache tells the tile lie again. tests/opaqueCache guards it.
                 urlPattern: /^https:\/\/firebasestorage\.googleapis\.com\/.*/i,
                 handler: 'StaleWhileRevalidate',
                 options: {

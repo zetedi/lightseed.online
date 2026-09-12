@@ -188,7 +188,7 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel, canEdit, on
                 <div className="rounded-2xl border border-slate-100 bg-white p-4 sm:p-6 shadow-lg dark:bg-slate-900 dark:border-slate-800">
                     {images.length > 0 && (
                         <div className="relative mb-6 h-96 w-full overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm group dark:bg-slate-900 dark:border-slate-800">
-                            <img src={images[activeImageIndex]} alt={pulse.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                            <Picture src={images[activeImageIndex]} size={1200} loading="eager" alt={pulse.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                             {images.length > 1 && (
                                 <div className="absolute bottom-4 left-4 right-4 flex gap-2 overflow-x-auto rounded-2xl bg-black/30 p-2 backdrop-blur-md">
                                     {images.map((url, index) => (
@@ -197,7 +197,7 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel, canEdit, on
                                             onClick={() => setActiveImageIndex(index)}
                                             className={`h-14 w-14 shrink-0 overflow-hidden rounded-xl border-2 ${activeImageIndex === index ? 'border-white' : 'border-white/30'}`}
                                         >
-                                            <img src={url} className="h-full w-full object-cover" alt="" />
+                                            <Picture src={url} className="h-full w-full object-cover" alt="" />
                                         </button>
                                     ))}
                                 </div>

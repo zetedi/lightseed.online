@@ -50,8 +50,14 @@
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Font trial: Montserrat (was Inter — swap both lines back to revert). -->
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font trial: Montserrat (was Inter — swap the family in both lines to revert). Loaded as a
+         preload that becomes a stylesheet once it lands, so a third-origin CSS file never blocks
+         the first paint; display=swap paints the fallback face meanwhile. -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap"></noscript>
+    <!-- The data hosts the shell speaks to first: a TLS handshake each, started before the bundle asks. -->
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin />
     <!-- Leaflet is bundled (services/leaflet.ts) — loaded lazily the first time a map renders.
          The tile server gets a head start on its TLS handshake instead. -->
     <link rel="preconnect" href="https://server.arcgisonline.com" crossorigin />

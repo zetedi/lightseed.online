@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { generateOracleQuote } from '../services/gemini';
 
 // The oracle quote for the Cocreate (Collabs) header — generated lazily once when the tab is
 // first opened, plus a copy-to-clipboard handler with a 1.5s "copied" pulse. (Moved from the
@@ -9,7 +8,10 @@ export function useObservatoryQuote(tab: string) {
   const [quoteCopied, setQuoteCopied] = useState(false);
 
   useEffect(() => {
-    if (tab === 'collab' && !observatoryQuote) generateOracleQuote().then(setObservatoryQuote).catch(() => {});
+    // The oracle's service arrives with the first ask, not with the shell (App mounts this hook).
+    if (tab === 'collab' && !observatoryQuote) {
+      import('../services/gemini').then(({ generateOracleQuote }) => generateOracleQuote()).then(setObservatoryQuote).catch(() => {});
+    }
   }, [tab, observatoryQuote]);
 
   const copyQuote = () => {

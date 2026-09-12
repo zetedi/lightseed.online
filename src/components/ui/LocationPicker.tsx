@@ -35,7 +35,8 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({ value, onChange,
       const map = L.map(containerRef.current, { zoomControl: true, attributionControl: false }).setView(start, value ? 13 : 2);
       mapRef.current = map;
 
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }).addTo(map);
+      // CORS mode, like every tile layer (see MiniForestMap): one shared cache, no opaque entries.
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, crossOrigin: true }).addTo(map);
 
       if (value) place(L, value.latitude, value.longitude);
 

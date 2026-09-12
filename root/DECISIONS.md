@@ -6,6 +6,71 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-13 · The first paint carries less; SSR is not the lever** — asked how the page could
+load faster ("maybe SSR?"), the honest answer came from measuring the build with its source maps
+rather than from a feeling. The shell's first paint pulled 443 kB gzip of main.js (1,450 kB
+parsed): 277 kB of translations.ts (Arabic 108 + Chinese 76 of it, for every reader), 359 kB of
+Firestore + Storage + webchannel, 181 kB of react-dom — and 96 kB of jszip, the export
+ceremony's zipper, on every first paint of every page. The community profile's chunk weighed
+259 kB gzip because DECISIONS.md itself rides inside it as a JS string (the white paper's ?raw
+import), beside quill for readers who will never edit. And the boot waited on a round trip it
+did not need: useLifeseed awaited the three staff checks (admin, superadmin, superadmin-uid)
+before `loading` fell, and App refuses to ask for the forest until loading has fallen — so
+every reader, staff or not, paid HTML → JS → auth → trees → STAFF → feed. Shipped in one batch:
+jszip and the gemini service arrive with their first ask (own chunks, 30 + 7 kB gzip); the staff
+trio runs beside the boot, the email answer immediate, the Firestore answers when they land
+(a generation count keeps a late answer from painting over the next sign-in); the font
+stylesheet is a preload that becomes a stylesheet when it lands, so a third-origin CSS file
+never blocks the first paint; firestore and firebasestorage get their TLS handshakes before the
+bundle asks; and the twenty seats that still asked for the 1600-px primary (vision cards, the
+community logo in the crown and on landings, pulse and event galleries, the card carousel, the
+profile hero, offering and alignment faces, the editor previews) now ask through <Picture>
+for the @480 or @1200 variant that has stood beside every primary since ring 2026-09-06 — on a
+list of twenty visions, ~500 kB where there were ~5 MB. main.js: 443 → 406 kB gzip
+(1,450 → 1,336 parsed); one round trip fewer before the forest is asked for.
+REJECTED: server-side rendering, and not for lack of a seam (beingPreview already dresses the
+shell's head on the server). SSR does not shrink the bundle — hydration pays all of it, and
+time-to-interactive can worsen; almost every screen is personal and permissioned; and the
+laws of who may see what ARE the Firestore rules, evaluated for the reader's own identity — a
+server renderer reads with the Admin SDK, which sees everything, so SSR means a second mouth
+for every visibility law, exactly the debt ROADMAP names. Named, not done, in order of weight:
+the Arabic and Chinese dictionaries as lazy chunks (185 kB; every non-English dictionary is
+already an override over the English keys, so the shape is ready); the white paper served as
+the files it is (288 kB) rather than a string in a chunk — the constitution at a URL keeps the
+promise better than the constitution inlined; the rich-text editor loaded when someone edits
+(142 kB); react + firebase as a vendor chunk so a one-line change no longer re-downloads the
+whole shell; and, if shared links are the real wish behind "SSR", a small escaped
+above-the-fold block from beingPreview inside #root — the LCP win without a server React.
+The bip39 word list stays: its index is built at module scope in domain/signing, and 17 kB is
+not worth an async domain.
+
+**2026-09-12 · A cache that lies is worse than no cache** — the forest's map went grey in the
+middle: a band of tiles at the top, a sliver at the bottom, nothing between, while the markers
+and the zoom control sat exactly where they belonged. Not a sizing fault (invalidateSize is
+called in five places and the overlays proved the map knew its box), and not the provider (every
+tile answers 200 from the browser). The reader's own service worker was the liar. The tile rule
+admitted `statuses: [0, 200]`, and 0 is an OPAQUE response — what a no-CORS fetch returns whether
+it succeeded or failed. The tile <img> carries `crossorigin` (added so the cache could hold real
+responses at all), and an opaque body can never satisfy it: the image decodes to nothing, the
+tile paints grey, and CacheFirst serves that lie for thirty days. Ninety-one of 225 cached tiles
+were opaque, and the ones at zoom 3 — 4/2, 4/3, 4/4, 4/5 — ARE the world view's middle band, the
+exact grey in the screenshot. Proven live: delete the cache and the same tiles come back `cors`,
+200. So only 200 is cacheable now, the cache has a new name (map-tiles-v2) so the poisoned
+entries are never consulted again, and the old one is deleted at the app's entry — a runtime
+cache is never touched by the precache sweep, so a retired one sits on a reader's disk until
+they clear it by hand. REJECTED: dropping crossOrigin (then nothing can be cached at all);
+a shorter maxAge (it treats the symptom, and thirty days is right for imagery this old).
+The next morning, the HAND that wrote them: three tile layers share the one cache and only the
+forest's (ForestMap) asked in CORS mode; the dashboard's mini map opens at the very same world
+view — `setView([20, 0], 2)` — and flies through zoom 3 on its way to the trees, writing exactly
+4/2…4/5 opaque for the forest map to read next. Filtering status 0 closed the cache to the lie;
+`crossOrigin: true` on all three (MiniForestMap, LocationPicker) closes the writer, and every
+map surface now fills and reads one honest cache. tests/opaqueCache holds both laws: the tile
+cache admits only 200, the retired name never returns, and the only files in src/ that ask for
+CORS mode are the tile layers — because the picture cache still admits 0 on purpose (pictures
+are plain <img>s, and an opaque body satisfies a plain <img>), which is safe exactly as long as
+no picture wears crossorigin.
+
 **2026-09-11 · A door is absolute, or it is not a door** — a vision's link did not take the
 reader to the vision's site. The cause is one line of HTML being honest: `href="example.com"` is
 a RELATIVE PATH, so the door opened onto our own shell and the visitor never left. Every screen

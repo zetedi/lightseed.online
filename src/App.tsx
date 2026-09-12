@@ -63,6 +63,7 @@ import { Loading } from './components/ui/Loading';
 import { NetworkStatus } from './components/ui/NetworkStatus';
 import { EventCard } from './components/EventCard';
 import { OutwardLink } from './components/ui/OutwardLink';
+import { Picture } from './components/ui/Picture';
 import { CareModal } from './components/CareModal';
 import { SectionHeader } from './components/ui/SectionHeader';
 import { FullWidthTabs } from './components/ui/FullWidthTabs';
@@ -1378,9 +1379,9 @@ const AppContent = () => {
                             style={{ transform: 'translateX(calc(50% - 20px))' }}
                         >
                             {landingCommunity.logoUrl
-                                ? <img src={landingCommunity.logoUrl} alt="" className="h-full w-full object-cover" />
+                                ? <Picture src={landingCommunity.logoUrl} alt="" className="h-full w-full object-cover" />
                                 : landingCommunity.heroImageUrl
-                                    ? <img src={landingCommunity.heroImageUrl} alt="" className="h-full w-full object-cover" />
+                                    ? <Picture src={landingCommunity.heroImageUrl} alt="" className="h-full w-full object-cover" />
                                     : <Icons.ArrowLeft />}
                         </button>
                     </div>
@@ -1585,7 +1586,7 @@ const AppContent = () => {
                         <OutwardLink href={home} title={c?.domain}
                             className="fixed bottom-5 right-5 z-30 flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-white shadow-2xl transition-transform hover:scale-110 active:scale-95 dark:bg-slate-900">
                             {c?.logoUrl
-                                ? <img src={c.logoUrl} alt={c?.name || ''} className="h-full w-full object-cover" />
+                                ? <Picture src={c.logoUrl} alt={c?.name || ''} className="h-full w-full object-cover" />
                                 : <span className="text-slate-600 dark:text-slate-300"><Icons.Globe /></span>}
                         </OutwardLink>
                     );

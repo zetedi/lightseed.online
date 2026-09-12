@@ -7,6 +7,7 @@ import { speak } from '../../utils/translations';
 import { Icons } from '../ui/Icons';
 import { Modal, modalButton } from '../ui/Modal';
 import { ImagePicker } from '../ui/ImagePicker';
+import { Picture } from '../ui/Picture';
 import { Pulse, Lightseed, Lifetree, Vision } from '../../types';
 import { getMyVisions } from '../../services/firebase';
 import { generateVisionImage } from '../../services/gemini';
@@ -48,7 +49,7 @@ const GrowthCard = ({ onClick, disabled, image, icon, title, desc, note, gradien
     className={`group relative min-h-[150px] overflow-hidden rounded-2xl border border-white/10 text-left shadow-lg transition-transform ${disabled ? 'cursor-not-allowed opacity-60' : 'hover:scale-[1.02]'}`}
   >
     {image
-      ? <img src={image} alt={title} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
+      ? <Picture src={image} alt={title} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
       : <div className={`absolute inset-0 bg-gradient-to-br ${gradient}`} />}
     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/10" />
     <div className="relative flex h-full flex-col justify-end p-4 text-white">
@@ -278,7 +279,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
                     <div className="space-y-3">
                       <div className="relative h-44 w-full overflow-hidden rounded-2xl border border-emerald-200 bg-slate-100 dark:bg-slate-800 dark:border-emerald-900">
                         {(pulseImageUrl || treeImage)
-                          ? <img src={pulseImageUrl || treeImage} alt={growthTree?.name} className="h-full w-full object-cover" />
+                          ? <Picture src={pulseImageUrl || treeImage} alt={growthTree?.name} className="h-full w-full object-cover" />
                           : <div className="flex h-full items-center justify-center text-slate-300"><Icons.Tree /></div>}
                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3"><p className="truncate text-sm font-bold text-white drop-shadow">{growthTree?.name}</p></div>
                       </div>
@@ -290,7 +291,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
                       {/* Large selected vision, above the filmstrip. */}
                       <div className="relative h-44 w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 dark:bg-slate-800 dark:border-slate-700">
                         {pulseImageUrl
-                          ? <img src={pulseImageUrl} alt={selectedVision?.title} className="h-full w-full object-cover" />
+                          ? <Picture src={pulseImageUrl} alt={selectedVision?.title} className="h-full w-full object-cover" />
                           : <div className="flex h-full flex-col items-center justify-center gap-1.5 text-slate-400"><Icons.Eye /><span className="text-xs">{selectedVision ? t('no_image_generate_upload') : t('pick_vision_below')}</span></div>}
                         {selectedVision && <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3"><p className="truncate text-sm font-bold text-white drop-shadow">{selectedVision.title}</p></div>}
                       </div>
@@ -320,7 +321,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
                             <button key={v.id} type="button" onClick={() => pickVision(v)} title={v.title}
                               className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 transition-all ${selectedVision?.id === v.id ? 'border-emerald-500 ring-2 ring-emerald-200' : 'border-transparent opacity-80 hover:opacity-100'}`}>
                               {v.imageUrl
-                                ? <img src={v.imageUrl} alt={v.title} className="h-full w-full object-cover" />
+                                ? <Picture src={v.imageUrl} alt={v.title} className="h-full w-full object-cover" />
                                 : <span className="flex h-full w-full items-center justify-center bg-slate-100 text-slate-300 dark:bg-slate-800"><Icons.Eye /></span>}
                             </button>
                           ))}

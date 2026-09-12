@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSession } from '../../contexts/SessionContext';
 import { Icons } from '../ui/Icons';
 import { OutwardLink } from '../ui/OutwardLink';
+import { Picture } from '../ui/Picture';
 import { linkLabel } from '../../domain/webLink';
 import { BeingQr } from '../ui/BeingQr';
 import { LoveButton } from '../ui/LoveButton';
@@ -206,7 +207,7 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
               <div className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('offered_by')}</div>
               <p className="mt-1 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
                 {offering.authorPhoto
-                  ? <img src={offering.authorPhoto} alt="" className="h-6 w-6 rounded-full object-cover" referrerPolicy="no-referrer" />
+                  ? <Picture src={offering.authorPhoto} alt="" className="h-6 w-6 rounded-full object-cover" referrerPolicy="no-referrer" />
                   : <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 [&>svg]:h-3.5 [&>svg]:w-3.5 dark:bg-emerald-950/40 dark:text-emerald-300"><Icons.Tree /></span>}
                 {offering.authorName}
               </p>
@@ -247,7 +248,7 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
         avatar: (
           <div className="relative">
             {img
-              ? <img src={img} alt={offering.title} className="h-16 w-16 rounded-full border-4 border-white bg-white object-cover shadow-xl md:h-24 md:w-24 dark:bg-slate-900" />
+              ? <Picture src={img} alt={offering.title} className="h-16 w-16 rounded-full border-4 border-white bg-white object-cover shadow-xl md:h-24 md:w-24 dark:bg-slate-900" />
               : <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white text-white shadow-xl md:h-24 md:w-24 [&>svg]:h-8 [&>svg]:w-8" style={{ backgroundColor: HEART }}>{isBed ? <Icons.Moon /> : <Icons.Drop />}</div>}
           </div>
         ),

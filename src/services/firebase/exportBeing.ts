@@ -1,4 +1,3 @@
-import JSZip from 'jszip';
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { db } from './core';
 import { firestoreStore } from '../../adapters/firestore';
@@ -37,6 +36,8 @@ const buildZip = async (
   imageRecords: readonly unknown[],
   notes: string[] = [],
 ): Promise<void> => {
+  // The zipper arrives only for the ceremony — 96 kB that no first paint should carry.
+  const { default: JSZip } = await import('jszip');
   const zip = new JSZip();
   const entries = imageEntriesOf(imageRecords);
   const missing: string[] = [];

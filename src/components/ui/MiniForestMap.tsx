@@ -49,7 +49,10 @@ export const MiniForestMap = ({ points, className = '' }: { points: MapPoint[]; 
                 dragging: false, scrollWheelZoom: false, doubleClickZoom: false,
                 boxZoom: false, keyboard: false, touchZoom: false, tap: false,
             }).setView([20, 0], 2);
-            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, noWrap: true }).addTo(map);
+            // CORS mode, like the forest map: the three tile layers share ONE worker cache, and a
+            // tile fetched here without it lands opaque — unreadable to the forest's crossorigin
+            // <img> (the grey world band, ring 2026-09-12). Same mode everywhere, one honest cache.
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, noWrap: true, crossOrigin: true }).addTo(map);
             mapRef.current = map; LRef.current = L; layerRef.current = L.layerGroup().addTo(map);
             ro = new ResizeObserver(() => { if (mapRef.current) mapRef.current.invalidateSize(); });
             ro.observe(containerRef.current);

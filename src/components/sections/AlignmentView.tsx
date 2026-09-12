@@ -4,6 +4,7 @@ import { getLifetreeById, getPulseById, getPersonName, postAlignmentNote, getAli
 import { ensureAlignmentCovenant } from '../../services/firebase/covenants';
 import { Icons } from '../ui/Icons';
 import { Loading } from '../ui/Loading';
+import { Picture } from '../ui/Picture';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { SectionTitle } from '../ui/SectionTitle';
 import { BeingProfile, type BeingSection } from '../BeingProfile';
@@ -50,7 +51,7 @@ const PartySide = ({ side, tone, onView }: { side: Side; tone: 'sky' | 'emerald'
   return (
     <button onClick={() => t && onView?.(t)} disabled={!t} className="flex min-w-0 flex-col items-center gap-1.5 text-center disabled:cursor-default">
       {img
-        ? <img src={img} alt="" referrerPolicy="no-referrer" className={`h-20 w-20 rounded-full object-cover ring-2 ${ring} ring-offset-2 ring-offset-white`} />
+        ? <Picture src={img} alt="" referrerPolicy="no-referrer" className={`h-20 w-20 rounded-full object-cover ring-2 ${ring} ring-offset-2 ring-offset-white`} />
         : <div className={`flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br ${bg} text-3xl text-white ring-2 ${ring} ring-offset-2 ring-offset-white`}>{(t?.name || '·').charAt(0).toUpperCase()}</div>}
       <div className="truncate max-w-full text-lg font-semibold text-slate-800 dark:text-slate-100">{t?.name || say('a_tree')}</div>
       {side.ownerName && <div className="truncate max-w-full text-xs text-slate-500">{say('cared_for_by')} {side.ownerName}</div>}
