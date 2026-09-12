@@ -6,6 +6,28 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-13 · A reader carries the language they read** — translations.ts was one 5,000-line
+file: English, then every other tongue spread over it, all ten shipped inside main.js to every
+reader (277 kB minified; Arabic 108 and Chinese 76 of it in source). Now the shell carries
+English alone — it is the fallback every other tongue reads through and the type of every key —
+and each other dictionary is its own file under utils/dictionaries/<lang>.ts, holding only what
+it overrides, fetched as its own chunk the first time a reader chooses it, or at boot for the
+tongue localStorage remembers (the fetch starts in translations.ts before React mounts). ALL
+tongues take this road, the seven small ones too, so a new language is a file and a loader, never
+a heavier first paint: LOADERS is typed against the Language list, so a seat without a file will
+not compile. Mattokki has its own file at last (dictionaries/xnz.ts, `...ar` until a speaker fills
+it), which is the shape the Nubian door always described. What is guaranteed: t() and speak()
+answer English key by key until the words land, exactly the fallback they always had, and React
+looks again once (LanguageContext) — a reader who switches sees English for one round trip on a
+cold cache and nothing at all on a warm one, because the chunks are precached by the worker;
+loadLanguage is idempotent and shares one in-flight promise. The completeness tests grew
+stronger, not weaker: they now read each tongue's OWN file (what it overrides), so a key missing
+from Arabic is a missing key, not English quietly read through the merge. main.js: 406 → 316 kB
+gzip (1,336 → 1,076 parsed); ar 46 kB and zh 43 kB gzip ride only with those who read them.
+REJECTED: a path-templated import (`./dictionaries/${lang}`) — the typed loader map is explicit
+and refuses a tongue without a file; keeping English inside translations.ts — the base is the type,
+and a type source that is also the biggest file in src/ is hard to read as a law.
+
 **2026-09-13 · The first paint carries less; SSR is not the lever** — asked how the page could
 load faster ("maybe SSR?"), the honest answer came from measuring the build with its source maps
 rather than from a feeling. The shell's first paint pulled 443 kB gzip of main.js (1,450 kB

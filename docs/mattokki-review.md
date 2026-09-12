@@ -9,7 +9,7 @@ reads as an invitation and never as a claim.
 
 **How to fill it.** Sit with a speaker, go down the third column, write what they say. Fifteen
 minutes covers the whole first screen. Hand the filled sheet back and the words go into
-`src/utils/translations.ts` under `xnz` (each Mattokki word replaces the Arabic one; anything still
+`src/utils/dictionaries/xnz.ts` (each Mattokki word replaces the Arabic one; anything still
 blank keeps reading Arabic, so a half-filled sheet is already worth shipping).
 
 Two notes for whoever fills it: write it the way the speaker would write it to a friend, not in a

@@ -1,17 +1,20 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { DOMAIN_KEYS, spokenLine, line } from '../src/domain/words';
-import { translations, speak, setActiveLanguage } from '../src/utils/translations';
+import { translations, speak, setActiveLanguage, dictionaryOf, loadLanguage } from '../src/utils/translations';
 
 // The words contract (ring 2026-08-14): the domain owns the manifest of every key its laws
 // speak; the dictionary proves coverage. The compile half lives in translations.ts
 // (DomainKey extends TranslationKey); this is the runtime belt — and the proof that the
 // spoken-line format has one owner shared by both layers.
 
+// The tongues this file reads arrive as their own chunks; fetch them once, up front.
+beforeAll(async () => { await Promise.all([loadLanguage('ar'), loadLanguage('zh')]); });
+
 describe('every word the domain speaks exists in every language', () => {
   for (const lang of ['en', 'ar', 'zh'] as const) {
     it(`${lang} covers the whole manifest`, () => {
       for (const key of DOMAIN_KEYS) {
-        expect(translations[lang][key], `${lang} is missing '${key}'`).toBeTruthy();
+        expect(dictionaryOf(lang)[key], `${lang} is missing '${key}'`).toBeTruthy();
       }
     });
   }

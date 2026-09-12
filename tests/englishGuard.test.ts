@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { translations } from '../src/utils/translations';
 
 // THE ENGLISH GUARD (ring 2026-08-10): after the great sweep, no user-facing string may be born
-// in English inside the code again — the words live in translations.ts (ar+zh complete, held by
+// in English inside the code again — the words live in utils/dictionaries/ (ar+zh complete, held by
 // translations.test.ts), and the code carries KEYS. This test walks src/ and fails on the
 // patterns the sweep converted: a sentence-cased literal handed to the dialog, the toast, or a
 // placeholder. A key is snake_case and lowercase, so ANY capitalised literal in these seats is a
@@ -78,7 +78,7 @@ describe('a key in a speaking seat is a key that exists', () => {
     const offenders: string[] = [];
     for (const file of walk(ROOT)) {
       const rel = file.slice(ROOT.length + 1).replace(/\\/g, '/');
-      if (rel === 'utils/translations.ts') continue;
+      if (rel === 'utils/translations.ts' || rel.startsWith('utils/dictionaries/')) continue;
       const lines = readFileSync(file, 'utf8').split('\n');
       lines.forEach((line, i) => {
         if (isComment(line)) return;

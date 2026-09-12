@@ -1,10 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { LIGHT_HOUSE_KINDS, isLightHouseKind, lightHouseKindKey, lightHouseKindDescKey } from '../src/domain/lightHouse';
-import { translations } from '../src/utils/translations';
+import { dictionaryOf, loadLanguage } from '../src/utils/translations';
 
 // The kinds a Light House may be consecrated as (ring 2026-08-21) — a registry with its
 // words in every tongue, extensible by adding to BOTH (the DOMAIN_KEYS manifest holds the
 // mirror true at compile time; this test holds the spoken words present at run time).
+
+// The tongues this file reads arrive as their own chunks; fetch them once, up front.
+beforeAll(async () => { await Promise.all([loadLanguage('ar'), loadLanguage('zh')]); });
 
 describe('light house kinds — the registry and its words', () => {
   it('the three founding kinds stand, in order', () => {
@@ -21,7 +24,7 @@ describe('light house kinds — the registry and its words', () => {
 
   it('every kind speaks a label and a description in the completed tongues', () => {
     for (const lang of ['en', 'ar', 'zh'] as const) {
-      const dict = translations[lang] as Record<string, string>;
+      const dict = dictionaryOf(lang) as Record<string, string>;
       for (const k of LIGHT_HOUSE_KINDS) {
         expect(dict[lightHouseKindKey(k)], `${lang}: ${k} label`).toBeTruthy();
         expect(dict[lightHouseKindDescKey(k)], `${lang}: ${k} description`).toBeTruthy();

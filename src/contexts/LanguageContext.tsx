@@ -1,11 +1,11 @@
 
-import { createContext, useContext, useState, ReactNode } from 'react';
-import { translations, Language, setActiveLanguage } from '../utils/translations';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { type Language, type TranslationKey, translations, dictionaryOf, isLanguage, isLanguageLoaded, loadLanguage, setActiveLanguage } from '../utils/translations';
 
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (key: keyof typeof translations['en']) => string;
+  t: (key: TranslationKey) => string;
   isRTL: boolean;
 }
 
@@ -17,10 +17,20 @@ export const LanguageProvider = ({ children }: { children?: ReactNode }) => {
   // Lazy initializer: the stored language is readable synchronously, no effect needed.
   const [language, setLanguageState] = useState<Language>(() => {
       const stored = localStorage.getItem('lifeseed_lang');
-      const lang = stored && translations[stored as Language] ? (stored as Language) : 'en';
+      const lang = isLanguage(stored) ? stored : 'en';
       setActiveLanguage(lang); // the speaking layer (imperative dialogs, spoken errors) follows
       return lang;
   });
+
+  // A tongue's words are their own chunk (ring 2026-09-13). Until they land, t() reads English
+  // key by key through dictionaryOf; `arrived` only asks React to look again once they have.
+  const [, setArrived] = useState(0);
+  useEffect(() => {
+      if (isLanguageLoaded(language)) return;
+      let live = true;
+      loadLanguage(language).then(() => { if (live) setArrived(n => n + 1); }).catch(() => {});
+      return () => { live = false; };
+  }, [language]);
 
   const setLanguage = (lang: Language) => {
       setLanguageState(lang);
@@ -28,8 +38,8 @@ export const LanguageProvider = ({ children }: { children?: ReactNode }) => {
       localStorage.setItem('lifeseed_lang', lang);
   }
 
-  const t = (key: keyof typeof translations['en']) => {
-    return translations[language][key] || translations['en'][key];
+  const t = (key: TranslationKey) => {
+    return dictionaryOf(language)[key] || translations.en[key];
   };
 
   // Mattokki reads right-to-left while its strings are still the Arabic ones underneath; when the

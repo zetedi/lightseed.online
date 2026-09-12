@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, beforeAll } from 'vitest';
 import {
   communityDomainAnchor,
   INTERBEING_RELATIONS,
@@ -7,11 +7,14 @@ import {
   interbeingRelationState,
   type InterbeingRelation,
 } from '../src/domain/interbeingMatrix';
-import { translations } from '../src/utils/translations';
+import { dictionaryOf, loadLanguage } from '../src/utils/translations';
 
 const relation = 'collaborates_with' satisfies InterbeingRelation;
 const edge = (from: string, to: string): { from: string; to: string; rel: InterbeingRelation } =>
   ({ from, to, rel: relation });
+
+// The tongues this file reads arrive as their own chunks; fetch them once, up front.
+beforeAll(async () => { await Promise.all([loadLanguage('ar'), loadLanguage('zh')]); });
 
 describe('the Interbeing Matrix', () => {
   it('derives a proposal from one community attestation', () => {
@@ -42,7 +45,7 @@ describe('the Interbeing Matrix', () => {
 
   it('keeps relation words in every completed tongue, outside the domain', () => {
     for (const lang of ['en', 'ar', 'zh'] as const) {
-      const dict = translations[lang] as Record<string, string>;
+      const dict = dictionaryOf(lang) as Record<string, string>;
       for (const rel of INTERBEING_RELATIONS) {
         expect(dict[interbeingRelationKey(rel)], `${lang}: ${rel} label`).toBeTruthy();
         expect(dict[interbeingRelationDescKey(rel)], `${lang}: ${rel} description`).toBeTruthy();

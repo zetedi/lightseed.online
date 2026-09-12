@@ -1,5 +1,5 @@
-import { describe, it, expect, afterEach } from 'vitest';
-import { speak, setActiveLanguage, getActiveLanguage, isTranslationKey, translations } from '../src/utils/translations';
+import { describe, it, expect, afterEach, beforeAll } from 'vitest';
+import { speak, setActiveLanguage, getActiveLanguage, isTranslationKey, dictionaryOf, loadLanguage } from '../src/utils/translations';
 
 // THE SPEAKING LAYER — the one boundary that lets the domain and the services carry KEYS
 // instead of English ("no more English in the code", 2026-08-10). A key says itself in the
@@ -8,13 +8,16 @@ import { speak, setActiveLanguage, getActiveLanguage, isTranslationKey, translat
 
 afterEach(() => setActiveLanguage('en'));
 
+// The tongues this file reads arrive as their own chunks; fetch them once, up front.
+beforeAll(async () => { await Promise.all([loadLanguage('ar'), loadLanguage('zh'), loadLanguage('es')]); });
+
 describe('speak', () => {
   it('a key says itself in the active language, and follows a change', () => {
     expect(speak('cancel')).toBe('Cancel');
     setActiveLanguage('ar');
-    expect(speak('cancel')).toBe(translations.ar.cancel);
+    expect(speak('cancel')).toBe(dictionaryOf('ar').cancel);
     setActiveLanguage('zh');
-    expect(speak('cancel')).toBe(translations.zh.cancel);
+    expect(speak('cancel')).toBe(dictionaryOf('zh').cancel);
     expect(getActiveLanguage()).toBe('zh');
   });
 
@@ -31,7 +34,7 @@ describe('speak', () => {
   });
 
   it('a language whose dictionary misses a key falls back to English rather than silence', () => {
-    setActiveLanguage('es'); // Spanish spreads baseKeys — every key resolves, worst case English
+    setActiveLanguage('es'); // Spanish overrides a handful of keys — every other resolves to English
     expect(speak('ok').length).toBeGreaterThan(0);
   });
 
