@@ -6,6 +6,18 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-13 · The editor arrives when someone edits** — Quill and its stylesheet (142 kB
+minified, 63 kB gzip) rode with every community and vision page because ui/RichTextEditor was a
+static import in the vision section and the appearance editor; readers, who never open an
+editor, paid for it on every visit. The heavy half is now ui/RichTextEditorQuill, reached only
+through ui/RichTextEditor — the same file name and props every caller already used, now a lazy
+seam: a quiet box of the editor's height while the chunk lands (instant on a warm cache, the
+chunk is precached by the worker), then the editor. Callers did not change. tests/lazyEditor
+holds the door: react-quill is imported in exactly one file, and that file is reached by no
+static import anywhere. Community chunk 113 → 50 kB gzip. Not walked in a browser tonight —
+editing needs a signed-in hand — but the seam is React's own lazy/Suspense, the props are the
+one exported type, and the gate proves both halves compile against it.
+
 **2026-09-13 · The constitution at an address** — the white paper carried the root/ documents
 as `?raw` imports: 288 kB of DECISIONS.md alone, inlined as a JavaScript string inside the
 community profile's chunk, so every reader of a community page downloaded the whole book to see

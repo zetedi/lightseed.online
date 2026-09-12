@@ -1,83 +1,24 @@
-import React, { useMemo, useRef } from 'react';
-import ReactQuill from 'react-quill-new';
-import 'react-quill-new/dist/quill.snow.css';
-import { showAlert } from './Dialog';
+import React, { Suspense, lazy } from 'react';
+import type { RichTextEditorProps } from './RichTextEditorQuill';
+import { useLanguage } from '../../contexts/LanguageContext';
 
-interface RichTextEditorProps {
-  value: string;
-  onChange: (content: string) => void;
-  placeholder?: string;
-  readOnly?: boolean;
-  // When provided, the toolbar gains an image button. The file is uploaded through this
-  // callback (→ Storage) and embedded by URL — never base64, which would balloon the
-  // document past Firestore's 1MB doc limit after a photo or two.
-  onImageUpload?: (file: File) => Promise<string>;
-}
+// THE EDITOR ARRIVES WHEN SOMEONE EDITS (ring 2026-09-13). Quill and its stylesheet weigh
+// 142 kB, and they used to ride with every community and vision page — for readers, who never
+// open an editor. This seam is the only door to the Quill module: the same props, a quiet box
+// of the editor's height while the chunk lands (instant on a warm cache, precached by the
+// worker), then the editor itself. Callers import THIS file; tests/lazyEditor holds the door.
+const Quill = lazy(() => import('./RichTextEditorQuill'));
 
-const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeholder, readOnly = false, onImageUpload }) => {
-  const quillRef = useRef<ReactQuill>(null);
-
-  // Quill re-initialises when `modules` changes identity — memoize, or every parent render
-  // rebuilds the editor (and eats the focus). Read-only = no toolbar: the controls belong to
-  // editing only, so a displayed value shows as clean prose, not a chrome-wrapped editor.
-  const modules = useMemo(() => ({
-    toolbar: readOnly ? false : {
-      container: [
-        [{ 'header': [1, 2, 3, false] }],
-        ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-        onImageUpload ? ['link', 'image', 'clean'] : ['link', 'clean'],
-      ],
-      handlers: onImageUpload ? {
-        image: () => {
-          const input = document.createElement('input');
-          input.type = 'file';
-          input.accept = 'image/*';
-          input.onchange = async () => {
-            const file = input.files?.[0];
-            if (!file) return;
-            try {
-              const url = await onImageUpload(file);
-              const quill = quillRef.current?.getEditor();
-              if (!quill) return;
-              const range = quill.getSelection(true);
-              quill.insertEmbed(range?.index ?? quill.getLength(), 'image', url, 'user');
-              quill.setSelection((range?.index ?? 0) + 1, 0);
-            } catch (e: any) {
-              console.error('Image upload failed', e);
-              showAlert(e?.message || 'err_upload');
-            }
-          };
-          input.click();
-        },
-      } : {},
-    },
-  }), [onImageUpload, readOnly]);
-
-  // Quill 2 (react-quill-new) registers only 'list' — 'bullet' is a toolbar value, not a
-  // separate format, so listing it here throws "Cannot register 'bullet'".
-  const formats = useMemo(() => [
-    'header',
-    'bold', 'italic', 'underline', 'strike', 'blockquote',
-    'list',
-    'link',
-    ...(onImageUpload ? ['image'] : []),
-  ], [onImageUpload]);
-
+const RichTextEditor: React.FC<RichTextEditorProps> = (props) => {
+  const { t } = useLanguage();
   return (
-    <div className="bg-white rounded-lg overflow-hidden border border-slate-200 dark:bg-slate-900 dark:border-slate-700">
-      <ReactQuill
-        ref={quillRef}
-        theme="snow"
-        value={value}
-        onChange={onChange}
-        modules={modules}
-        formats={formats}
-        placeholder={placeholder}
-        readOnly={readOnly}
-        className={readOnly ? 'ql-read-only' : ''}
-      />
-    </div>
+    <Suspense fallback={
+      <div className="min-h-[14rem] rounded-lg border border-slate-200 bg-white p-4 text-sm italic text-slate-400 dark:bg-slate-900 dark:border-slate-700">
+        {t('loading')}
+      </div>
+    }>
+      <Quill {...props} />
+    </Suspense>
   );
 };
 
