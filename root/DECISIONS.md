@@ -6,6 +6,24 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-13 · The constitution at an address** — the white paper carried the root/ documents
+as `?raw` imports: 288 kB of DECISIONS.md alone, inlined as a JavaScript string inside the
+community profile's chunk, so every reader of a community page downloaded the whole book to see
+a door. The promise behind the bundling — "the deployed node carries the constitution it grew
+from" — is kept BETTER by files: every root/*.md is now emitted into the deploy at
+/root/<NAME>.md (vite.config rootPapers; the same middleware in dev), and the book fetches a
+chapter when it is opened. domain/whitePaper names the chapters and the door, and refuses
+anything the server does not declare as text — the shell's catch-all rewrite answers a missing
+path with index.html, and HTML must never be read as a chapter (proven on the preview: a real
+chapter answers text/markdown, a missing one text/html). Hosting serves /root/** no-cache so the
+text is always the deploy's own; the worker keeps a StaleWhileRevalidate copy (root-papers) so
+the book opens offline after a first reading, as it did when it rode in the bundle. The rendered
+markdown is sanitized now (sanitizeDocumentHtml, DOMPurify defaults — tables and code kept,
+scripts and handlers stripped, no `target`) — trusted by origin, sanitized anyway. Community
+chunk 259 → 113 kB gzip. REJECTED: a generated public/root/ written by prebuild (a second copy
+to keep in step; the plugin reads the one root/); precaching the .md files (400 kB in every
+install for a page most readers open once — a runtime copy after the first reading is enough).
+
 **2026-09-13 · A reader carries the language they read** — translations.ts was one 5,000-line
 file: English, then every other tongue spread over it, all ten shipped inside main.js to every
 reader (277 kB minified; Arabic 108 and Chinese 76 of it in source). Now the shell carries

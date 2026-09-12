@@ -19,6 +19,13 @@ export const sanitizeRichText = (dirty?: string | null): string =>
     ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|\/|#)/i,
   });
 
+// A DOCUMENT rendered from markdown (the white paper: our own root/ files, served by this very
+// deploy). Trusted by origin, sanitized anyway — DOMPurify's defaults keep what prose needs
+// (headings, lists, tables, code, links) and strip scripts, handlers and unsafe URLs; no
+// `target`, so a link can never be a reverse-tabnabbing vector.
+export const sanitizeDocumentHtml = (dirty?: string | null): string =>
+  DOMPurify.sanitize(dirty ?? '', { ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|\/|#)/i });
+
 // Plain text destined for an HTML string (marker labels, popup names/bodies). Escapes the five
 // HTML-significant characters so the value can never break out of text or an attribute context.
 export const escapeHtml = (value: unknown): string =>

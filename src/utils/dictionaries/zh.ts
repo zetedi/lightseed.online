@@ -1404,6 +1404,7 @@ const zh = {
   yantra_triskelion_desc: "三条螺旋之臂可绕中心与央特罗对齐，表达运动、循环与活生生的涌现。",
   white_paper: "白皮书",
   white_paper_note: "种子生长其上的根：每一个智能在行动之前都要扎根其中的六份文献，以及它们由之生长的那份种子愿景，并置一处。",
+  white_paper_unavailable: "无法获取这一章。请检查网络连接，然后再试一次。",
   open_the_book: "打开这本书",
   close_the_book: "合上这本书",
   white_paper_hint: "{hint}。看向根；此外无需其他。",

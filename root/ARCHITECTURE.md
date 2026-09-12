@@ -133,9 +133,12 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
   receive server time at rest. Routine rotation is old/new cross-signed in a
   callable; account access may only freeze; recovery activation requires three
   current witness signatures rooted in initiation or validated lifetrees.
-- **The White Paper**: the About page bundles these exact root/ documents at
-  build time (`?raw` imports); the deployed node carries the constitution it
-  grew from, inspectable by anyone it serves.
+- **The White Paper**: every root/*.md is served by the deploy itself at
+  `/root/<NAME>.md` (vite.config `rootPapers`; `domain/whitePaper` names the
+  chapters and refuses anything not declared as text), fetched by the About page
+  when a chapter is opened and kept by the worker for offline reading; the
+  deployed node carries the constitution it grew from at an address anyone it
+  serves can open.
 - **The gate**: `npm run check` = tsc + eslint + vitest (unit), `npm run test:rules`
   = emulator suite. Deploy: `npm run build && firebase deploy --only
   hosting[,firestore:rules,functions]`. The firebase CLI is Homebrew-owned.

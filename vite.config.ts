@@ -1,6 +1,7 @@
 
 import path from 'path';
-import { defineConfig, loadEnv } from 'vite';
+import { createReadStream, existsSync, readdirSync, readFileSync } from 'fs';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import charter from './src/config/charter.json';
@@ -12,6 +13,30 @@ process.env.VITE_NODE_SHORT = charter.shortName;
 process.env.VITE_NODE_TAGLINE = charter.tagline;
 process.env.VITE_NODE_DESCRIPTION = charter.description;
 process.env.VITE_NODE_ORIGIN = `https://${charter.domain}`;
+
+// THE ROOT AS FILES (ring 2026-09-13). Every root/*.md is served at /root/<NAME>.md — by this
+// middleware in dev, emitted beside the shell in the build — so the deployed node carries the
+// constitution it grew from at an address anyone it serves can open, and the white paper
+// fetches a chapter when it is read instead of carrying 290 kB inside a script.
+// src/domain/whitePaper names the chapters and the door; firebase.json serves /root/** no-cache.
+const rootPapers = (rootDir: string): Plugin => ({
+    name: 'lightseed:root-papers',
+    configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+            const m = /^\/root\/([A-Z_]+\.md)$/.exec((req.url || '').split('?')[0]);
+            const file = m ? path.join(rootDir, m[1]) : null;
+            if (!file || !existsSync(file)) return next();
+            res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+            res.setHeader('Cache-Control', 'no-cache');
+            createReadStream(file).pipe(res);
+        });
+    },
+    generateBundle() {
+        for (const name of readdirSync(rootDir).filter((n) => /^[A-Z_]+\.md$/.test(n))) {
+            this.emitFile({ type: 'asset', fileName: `root/${name}`, source: readFileSync(path.join(rootDir, name)) });
+        }
+    },
+});
 
 export default defineConfig(({ mode }) => {
     const cwd = (process as any).cwd();
@@ -51,6 +76,7 @@ export default defineConfig(({ mode }) => {
       },
       plugins: [
         react(),
+        rootPapers(path.resolve(cwd, 'root')),
         // PWA: installable app + offline shell. The service worker precaches the built shell
         // (fingerprinted js/css/html + small images). Live data stays live — Firestore/Storage
         // requests are not cached. 'prompt': a fresh deploy surfaces the UpdateToast ("a new
@@ -82,6 +108,18 @@ export default defineConfig(({ mode }) => {
             // /u/* (the unsubscribe Cloud Function rewrite), or the SSO door (its own page).
             navigateFallbackDenylist: [/^\/__\//, /^\/u\//, /^\/sso\.html/],
             runtimeCaching: [
+              {
+                // The constitution (/root/*.md): read from the copy, refreshed behind it, so the
+                // book opens offline after a first reading. Served no-cache by hosting, so the
+                // refresh is always the deploy's own text.
+                urlPattern: /\/root\/[A-Z_]+\.md$/,
+                handler: 'StaleWhileRevalidate',
+                options: {
+                  cacheName: 'root-papers',
+                  expiration: { maxEntries: 12, maxAgeSeconds: 60 * 60 * 24 * 30 },
+                  cacheableResponse: { statuses: [200] },
+                },
+              },
               {
                 // Satellite tiles: pan/zoom and repeat visits hit the local copy first;
                 // imagery this old doesn't change under our feet.

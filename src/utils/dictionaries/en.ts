@@ -1432,6 +1432,7 @@ const en = {
   yantra_triskelion_desc: "Three spiraling arms can be aligned with the yantra around the center, expressing motion, cycles, and living emergence.",
   white_paper: "The White Paper",
   white_paper_note: "The root the seed grows from: six documents every intelligence roots in before acting, and the seed vision they grew from, laid beside them.",
+  white_paper_unavailable: "This chapter could not be fetched. Check the connection, then try again.",
   open_the_book: "Open the book",
   close_the_book: "Close the book",
   white_paper_hint: "{hint}. Look into the root; no need for else.",
