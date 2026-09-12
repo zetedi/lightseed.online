@@ -72,6 +72,24 @@ export default defineConfig(({ mode }) => {
             main: path.resolve(cwd, 'index.html'),
             sso: path.resolve(cwd, 'sso.html'),
           },
+          output: {
+            // THE VENDORS KEEP THEIR OWN NAMES (ring 2026-09-13). React and Firebase change
+            // when we upgrade them, not when a line of App.tsx moves; in one chunk with the
+            // shell, every deploy re-sent all of them to every returning reader. Each vendor
+            // is its own chunk now, so its hash holds still across our edits and the worker's
+            // precache keeps it. Firestore and Storage are split from the rest of Firebase on
+            // purpose: the SSO door only needs app + auth + functions, and must never inherit
+            // the forest's database through a shared vendor chunk. The thin `firebase/<x>`
+            // re-exports ride with the package they re-export, or they would drag it along.
+            manualChunks(id: string) {
+              if (!id.includes('node_modules/')) return undefined;
+              if (/node_modules\/(?:react|react-dom|scheduler)\//.test(id)) return 'vendor-react';
+              if (/node_modules\/(?:@firebase\/(?:firestore|webchannel-wrapper)|firebase\/firestore)\//.test(id)) return 'vendor-firestore';
+              if (/node_modules\/(?:@firebase\/storage|firebase\/storage)\//.test(id)) return 'vendor-storage';
+              if (/node_modules\/(?:@firebase|firebase)\//.test(id)) return 'vendor-firebase';
+              return undefined;
+            },
+          },
         },
       },
       plugins: [

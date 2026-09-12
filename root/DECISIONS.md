@@ -6,6 +6,23 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-13 · The vendors keep their own names** — every deploy re-sent React and Firebase to
+every returning reader, because they were minified into main.js with the shell: a moved line
+in App.tsx gave main a new hash, and the new hash carried 316 kB gzip of which perhaps 160 were
+ours. manualChunks now names four vendor chunks — vendor-react (61 kB gzip), vendor-firebase
+(37: app, auth, functions), vendor-firestore (81), vendor-storage (11) — and main is 163 kB of
+our own code. The total a first visit downloads is unchanged (353 kB before and after; this
+ring buys nothing for a stranger); what changes is the second deploy: the vendor hashes hold
+still across our edits — proven by building twice around a real change to index.tsx: main
+moved, all four vendors identical — so the worker's precache keeps them and a returning reader
+fetches only what we wrote. Firestore and Storage are split from the rest of Firebase on
+purpose: the SSO door (sso.html, iframed by a mother site) loads vendor-firebase alone, and
+must never inherit the forest's database through a shared chunk — checked in the built
+sso.html, which preloads sso + ssoDoor + vendor-firebase and nothing else. The thin
+`firebase/<x>` re-exports are routed with the package they re-export, or they would drag it
+along. REJECTED: one `vendor` chunk for everything under node_modules (the SSO door would carry
+Firestore); leaving react-dom in main (it is a third of the shell and changes once a season).
+
 **2026-09-13 · The editor arrives when someone edits** — Quill and its stylesheet (142 kB
 minified, 63 kB gzip) rode with every community and vision page because ui/RichTextEditor was a
 static import in the vision section and the appearance editor; readers, who never open an
