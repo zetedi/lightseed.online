@@ -6,6 +6,20 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-13 · The editor at night** — the keeper opened the appearance editor after dark and
+found a toolbar of shadows: Quill's snow theme is painted for a white page (icons stroked #444,
+a placeholder in black at 60 %, #ccc borders, a white dropdown and link tooltip), and none of it
+is written in classes, so the night pass — which reads class lists — never saw it. The answer
+lives in src/index.css under `[data-mode="dark"]`: every colour snow names is answered with the
+shell's own night palette (slate ground and ink, emerald for the hovered and active, the picker
+and the link tooltip as night cards), each rule exactly one attribute more specific than the
+snow rule it answers, so the order the stylesheets arrive in — snow rides with the lazy editor
+chunk, after the shell's — can never decide. Day is untouched. Walked in a browser without a
+signed-in hand: a throwaway harness in the built output (deleted after) loaded the shell's own
+built stylesheet and Quill with the same toolbar under data-mode="dark" — toolbar, heading
+dropdown, prose with link and quote, and the link tooltip all read at night. REJECTED: a Tailwind pass over Quill's DOM (its classes are not
+ours to write); a dark theme of Quill's own (there is none — snow and bubble are both day).
+
 **2026-09-13 · The vendors keep their own names** — every deploy re-sent React and Firebase to
 every returning reader, because they were minified into main.js with the shell: a moved line
 in App.tsx gave main a new hash, and the new hash carried 316 kB gzip of which perhaps 160 were

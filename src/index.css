@@ -52,3 +52,66 @@ body,
   height: 0;
   display: none;
 }
+
+/* THE EDITOR AT NIGHT (ring 2026-09-13). Quill's snow theme is painted for a white page —
+   icons stroked #444, a placeholder in black at 60%, #ccc borders, a white dropdown and link
+   tooltip — and none of it is written in classes the night pass can read. Under data-mode="dark"
+   every colour snow names is answered here with the shell's own night palette (slate for ground
+   and ink, emerald for the active and hovered), each rule one attribute more specific than the
+   snow rule it answers, so the order the stylesheets arrive in (snow rides with the lazy editor
+   chunk) can never decide. Day is untouched. */
+[data-mode="dark"] .ql-toolbar.ql-snow,
+[data-mode="dark"] .ql-container.ql-snow { border-color: #334155; }
+[data-mode="dark"] .ql-toolbar.ql-snow { background-color: #0f172a; }
+[data-mode="dark"] .ql-container.ql-snow { background-color: #0f172a; }
+[data-mode="dark"] .ql-editor { color: #e2e8f0; }
+[data-mode="dark"] .ql-editor.ql-blank::before { color: #64748b; }
+[data-mode="dark"] .ql-snow .ql-stroke,
+[data-mode="dark"] .ql-snow .ql-stroke-miter { stroke: #cbd5e1; }
+[data-mode="dark"] .ql-snow .ql-fill,
+[data-mode="dark"] .ql-snow .ql-stroke.ql-fill { fill: #cbd5e1; }
+[data-mode="dark"] .ql-snow .ql-picker { color: #cbd5e1; }
+/* Hovered, focused, active: emerald, the shell's own hand. */
+[data-mode="dark"] .ql-snow.ql-toolbar button:hover,
+[data-mode="dark"] .ql-snow.ql-toolbar button:focus,
+[data-mode="dark"] .ql-snow.ql-toolbar button.ql-active,
+[data-mode="dark"] .ql-snow.ql-toolbar .ql-picker-label:hover,
+[data-mode="dark"] .ql-snow.ql-toolbar .ql-picker-label.ql-active,
+[data-mode="dark"] .ql-snow.ql-toolbar .ql-picker-item:hover,
+[data-mode="dark"] .ql-snow.ql-toolbar .ql-picker-item.ql-selected,
+[data-mode="dark"] .ql-snow.ql-toolbar button:hover:not(.ql-active) { color: #6ee7b7; }
+[data-mode="dark"] .ql-snow.ql-toolbar button:hover .ql-stroke,
+[data-mode="dark"] .ql-snow.ql-toolbar button:focus .ql-stroke,
+[data-mode="dark"] .ql-snow.ql-toolbar button.ql-active .ql-stroke,
+[data-mode="dark"] .ql-snow.ql-toolbar .ql-picker-label:hover .ql-stroke,
+[data-mode="dark"] .ql-snow.ql-toolbar .ql-picker-label.ql-active .ql-stroke,
+[data-mode="dark"] .ql-snow.ql-toolbar .ql-picker-item:hover .ql-stroke,
+[data-mode="dark"] .ql-snow.ql-toolbar .ql-picker-item.ql-selected .ql-stroke,
+[data-mode="dark"] .ql-snow.ql-toolbar button:hover:not(.ql-active) .ql-stroke,
+[data-mode="dark"] .ql-snow.ql-toolbar button:hover .ql-stroke-miter,
+[data-mode="dark"] .ql-snow.ql-toolbar button.ql-active .ql-stroke-miter { stroke: #6ee7b7; }
+[data-mode="dark"] .ql-snow.ql-toolbar button:hover .ql-fill,
+[data-mode="dark"] .ql-snow.ql-toolbar button:focus .ql-fill,
+[data-mode="dark"] .ql-snow.ql-toolbar button.ql-active .ql-fill,
+[data-mode="dark"] .ql-snow.ql-toolbar .ql-picker-label:hover .ql-fill,
+[data-mode="dark"] .ql-snow.ql-toolbar .ql-picker-label.ql-active .ql-fill,
+[data-mode="dark"] .ql-snow.ql-toolbar .ql-picker-item:hover .ql-fill,
+[data-mode="dark"] .ql-snow.ql-toolbar .ql-picker-item.ql-selected .ql-fill,
+[data-mode="dark"] .ql-snow.ql-toolbar button:hover:not(.ql-active) .ql-fill,
+[data-mode="dark"] .ql-snow.ql-toolbar button:hover .ql-stroke.ql-fill,
+[data-mode="dark"] .ql-snow.ql-toolbar button.ql-active .ql-stroke.ql-fill { fill: #6ee7b7; }
+/* The heading picker, open and closed. */
+[data-mode="dark"] .ql-snow .ql-picker.ql-expanded .ql-picker-label,
+[data-mode="dark"] .ql-toolbar.ql-snow .ql-picker.ql-expanded .ql-picker-label { color: #cbd5e1; border-color: #334155; }
+[data-mode="dark"] .ql-snow .ql-picker.ql-expanded .ql-picker-label .ql-stroke { stroke: #cbd5e1; }
+[data-mode="dark"] .ql-snow .ql-picker.ql-expanded .ql-picker-label .ql-fill { fill: #cbd5e1; }
+[data-mode="dark"] .ql-snow .ql-picker-options,
+[data-mode="dark"] .ql-toolbar.ql-snow .ql-picker.ql-expanded .ql-picker-options { background-color: #1e293b; border-color: #334155; box-shadow: rgba(0, 0, 0, 0.5) 0 2px 8px; }
+[data-mode="dark"] .ql-snow .ql-picker-options .ql-picker-item { color: #e2e8f0; }
+/* The link tooltip (edit / remove) and what the text itself carries. */
+[data-mode="dark"] .ql-snow .ql-tooltip { background-color: #1e293b; border-color: #334155; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); color: #e2e8f0; }
+[data-mode="dark"] .ql-snow .ql-tooltip input[type=text] { background-color: #0f172a; border-color: #334155; color: #e2e8f0; }
+[data-mode="dark"] .ql-snow .ql-tooltip a.ql-action::after { border-right-color: #334155; }
+[data-mode="dark"] .ql-snow a { color: #6ee7b7; }
+[data-mode="dark"] .ql-snow .ql-editor blockquote { border-left-color: #475569; }
+[data-mode="dark"] .ql-editor td { border-color: #475569; }
