@@ -513,7 +513,7 @@ const zh = {
   lh_kind_label: "类型", lh_kind_all: "全部",
   lh_kind_temple: "圣殿", lh_kind_temple_desc: "以修行为核心的殿堂。",
   lh_kind_ashram: "静修院", lh_kind_ashram_desc: "共同生活与服务之家——劳作与修行同在一个屋檐下。",
-  lh_kind_sanctuary: "庇护所", lh_kind_sanctuary_desc: "安歇、疗愈与宁静之所。",
+  lh_kind_sanctuary: "庇护所", lh_kind_sanctuary_desc: "安歇、疗愈与宁静之所。", lh_kind_garden: "花园", lh_kind_garden_desc: "生长之所——以照料植物为中心：药草、食物，以及长成树木的种子。",
   lh_place_ph: "地名（如克里特的橄榄园）",
   lh_map_tap: "点击地图放置光之屋；它将在森林中于此发光。",
   lh_who_sees: "谁可以看见", lh_open_step: "可步入的光之屋",

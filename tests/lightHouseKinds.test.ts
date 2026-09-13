@@ -10,8 +10,8 @@ import { dictionaryOf, loadLanguage } from '../src/utils/translations';
 beforeAll(async () => { await Promise.all([loadLanguage('ar'), loadLanguage('zh')]); });
 
 describe('light house kinds — the registry and its words', () => {
-  it('the three founding kinds stand, in order', () => {
-    expect([...LIGHT_HOUSE_KINDS]).toEqual(['temple', 'ashram', 'sanctuary']);
+  it('the founding kinds stand in order, Garden after them (ring 2026-09-14)', () => {
+    expect([...LIGHT_HOUSE_KINDS]).toEqual(['temple', 'ashram', 'sanctuary', 'garden']);
   });
 
   it('isLightHouseKind narrows honestly — unknown kinds stay plain strings', () => {

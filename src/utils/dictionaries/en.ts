@@ -508,7 +508,7 @@ const en = {
   lh_kind_label: "Kind", lh_kind_all: "All",
   lh_kind_temple: "Temple", lh_kind_temple_desc: "A house of devotion — practice at its center.",
   lh_kind_ashram: "Ashram", lh_kind_ashram_desc: "A house of shared living and service — work and practice under one roof.",
-  lh_kind_sanctuary: "Sanctuary", lh_kind_sanctuary_desc: "A house of shelter — rest, healing, and quiet.",
+  lh_kind_sanctuary: "Sanctuary", lh_kind_sanctuary_desc: "A house of shelter — rest, healing, and quiet.", lh_kind_garden: "Garden", lh_kind_garden_desc: "A house of growing — plants tended at its center: medicine, food, seeds becoming trees.",
   lh_place_ph: "Place name (e.g. The Olive Grove, Crete)",
   lh_map_tap: "Tap the map to place the Light House; it will glow there in the forest.",
   lh_who_sees: "Who may see it", lh_open_step: "Light Houses open to step into",

@@ -21,7 +21,7 @@ import { Picture } from '../ui/Picture';
 export interface LightHouseDraft {
   name: string;
   body: string;
-  // temple | ashram | sanctuary (domain LIGHT_HOUSE_KINDS) — optional: a Light House may
+  // temple | ashram | sanctuary | garden (domain LIGHT_HOUSE_KINDS) — optional: a Light House may
   // simply be a Light House.
   kind?: string;
   imageUrl?: string;

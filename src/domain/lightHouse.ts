@@ -11,11 +11,12 @@ export type LightHouseVisibility = 'community' | 'node' | 'public';
 
 // THE KINDS a Light House may be consecrated as (ring 2026-08-21) — a REGISTRY, like the
 // section kinds: Temple (devotion at the center), Ashram (shared living and service),
-// Sanctuary (shelter and rest). EXTENSIBLE by adding here + the words in translations.ts
+// Sanctuary (shelter and rest), Garden (growing at the center; ring 2026-09-14).
+// EXTENSIBLE by adding here + the words in translations.ts
 // (the DOMAIN_KEYS manifest holds the mirror true at compile time). `kind` stays a plain
 // string on the doc so an older client never chokes on a kind minted after it shipped;
 // isLightHouseKind narrows, and unknown kinds still filter/display by their raw name.
-export const LIGHT_HOUSE_KINDS = ['temple', 'ashram', 'sanctuary'] as const;
+export const LIGHT_HOUSE_KINDS = ['temple', 'ashram', 'sanctuary', 'garden'] as const;
 export type LightHouseKind = (typeof LIGHT_HOUSE_KINDS)[number];
 export const isLightHouseKind = (k: unknown): k is LightHouseKind =>
   typeof k === 'string' && (LIGHT_HOUSE_KINDS as readonly string[]).includes(k);

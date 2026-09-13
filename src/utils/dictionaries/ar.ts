@@ -515,7 +515,7 @@ const ar = {
   lh_kind_label: "النوع", lh_kind_all: "الكل",
   lh_kind_temple: "معبد", lh_kind_temple_desc: "بيت للتعبّد — الممارسة في مركزه.",
   lh_kind_ashram: "أشرم", lh_kind_ashram_desc: "بيت للعيش المشترك والخدمة — العمل والممارسة تحت سقف واحد.",
-  lh_kind_sanctuary: "ملاذ", lh_kind_sanctuary_desc: "بيت للاحتماء — راحة وشفاء وسكينة.",
+  lh_kind_sanctuary: "ملاذ", lh_kind_sanctuary_desc: "بيت للاحتماء — راحة وشفاء وسكينة.", lh_kind_garden: "حديقة", lh_kind_garden_desc: "بيت للنموّ — نباتات تُرعى في قلبه: دواء وغذاء وبذور تصير أشجارًا.",
   lh_place_ph: "اسم المكان (مثل بستان الزيتون، كريت)",
   lh_map_tap: "انقر الخريطة لتضع بيت النور؛ سيتوهج هناك في الغابة.",
   lh_who_sees: "من يراه", lh_open_step: "بيوت نور مفتوحة للدخول",

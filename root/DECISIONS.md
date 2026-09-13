@@ -6,6 +6,22 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-14 · A Light House may be a Garden** — Enlightened Nations asked to register four kinds
+of planting: life trees, spirals, four seeds with crystals from the Nahuales, and medicine
+gardens. Read against the root each is already something: trees are lifetrees; a ceremony is
+an event pulse on the chain where it happened (crystals are its content, not beings — a
+planting on lightseed is something that can be tended and can be lost); a spiral and a
+medicine garden are PLACES, and a place is a Light House rooted in a mother tree. What the kind
+registry lacked was a house whose center is growing. GARDEN joins Temple, Ashram and Sanctuary
+(domain/lightHouse LIGHT_HOUSE_KINDS, the two words in words.ts and en/ar/zh, the registry
+test). Nothing on the doc changes: kind stays a plain string, older clients show it by name.
+REJECTED: "spiral" as a kind (a form, not a purpose — the kinds name what happens in a house;
+a spiral is a garden named Spiral); "healing garden" (an instance spelled as an archetype;
+Sanctuary already carries healing); a category field on lifetrees (a taxonomy that would not
+stop growing, and herbs as lifetrees would spend country citizenships on rosemary).
+
+---
+
 **2026-09-13 · A tree's name is edited the way a person's is; the dropdown breathes** — two
 things the keeper's eye found in the same evening. The tree's name was a bare underline
 inside the whole-tree edit mode, saved with everything else; the person's name has had, since

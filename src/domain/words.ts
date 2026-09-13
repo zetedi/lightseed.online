@@ -30,7 +30,7 @@ export const DOMAIN_KEYS = [
   'appearance_unknown_kind', 'appearance_bad_props',
   // lightHouse — the kinds a Light House may be consecrated as (domain/lightHouse)
   'lh_kind_temple', 'lh_kind_temple_desc', 'lh_kind_ashram', 'lh_kind_ashram_desc',
-  'lh_kind_sanctuary', 'lh_kind_sanctuary_desc',
+  'lh_kind_sanctuary', 'lh_kind_sanctuary_desc', 'lh_kind_garden', 'lh_kind_garden_desc',
   // interbeingMatrix — typed community-to-community attestations
   'interbeing_collaborates_with', 'interbeing_collaborates_with_desc',
   'interbeing_recognises', 'interbeing_recognises_desc',
