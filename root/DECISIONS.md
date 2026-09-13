@@ -6,6 +6,22 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-13 · A tree's name is edited the way a person's is; the dropdown breathes** — two
+things the keeper's eye found in the same evening. The tree's name was a bare underline
+inside the whole-tree edit mode, saved with everything else; the person's name has had, since
+ring 2026-09-07, a pencil at its corner, Enter and Escape, a law and a toast. ui/EditableName
+is that editor with its law and hand handed in — ProfileName wears the person's
+(domain/personName, renamePerson), the tree's hero wears the tree's (domain/treeName, which
+IS the person's law re-exported, held equal by test; updateLifetree, announced on the bus).
+The name left the edit form; the short title stays there, saved with the rest. Not walked
+in a browser (renaming needs a signed-in hand); the component is the one ProfileName has
+worn for a week, unchanged in shape. And the editor's wrapper rounded its corners with
+overflow-hidden, which also clipped the heading dropdown at the box's edge: the corners are
+Quill's own now (index.css) and the open list rides above what follows — walked in the
+harness: all four headings, clear of the box, over the paragraph beneath. REJECTED: a tree-name
+law of its own (two answers to "is this a name" would drift); an autosaving name (a name
+is committed with Enter, the way a person's is).
+
 **2026-09-13 · The editor at night** — the keeper opened the appearance editor after dark and
 found a toolbar of shadows: Quill's snow theme is painted for a white page (icons stroked #444,
 a placeholder in black at 60 %, #ccc borders, a white dropdown and link tooltip), and none of it

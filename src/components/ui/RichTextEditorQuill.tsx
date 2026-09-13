@@ -67,7 +67,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, placeh
   ], [onImageUpload]);
 
   return (
-    <div className="bg-white rounded-lg overflow-hidden border border-slate-200 dark:bg-slate-900 dark:border-slate-700">
+    // No overflow-hidden: it clipped the heading dropdown at the box's edge. The corners are
+    // rounded on Quill's own toolbar and container instead (index.css).
+    <div className="bg-white rounded-lg border border-slate-200 dark:bg-slate-900 dark:border-slate-700">
       <ReactQuill
         ref={quillRef}
         theme="snow"

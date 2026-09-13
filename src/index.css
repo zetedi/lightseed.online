@@ -53,6 +53,13 @@ body,
   display: none;
 }
 
+/* THE EDITOR'S CORNERS (ring 2026-09-13). The wrapper used to round its corners with
+   overflow-hidden, which also clipped the heading dropdown at the box's edge. The corners
+   are Quill's own now, and the open dropdown rides above what follows. */
+.ql-toolbar.ql-snow { border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem; }
+.ql-container.ql-snow { border-bottom-left-radius: 0.5rem; border-bottom-right-radius: 0.5rem; }
+.ql-snow .ql-picker.ql-expanded .ql-picker-options { z-index: 30; }
+
 /* THE EDITOR AT NIGHT (ring 2026-09-13). Quill's snow theme is painted for a white page —
    icons stroked #444, a placeholder in black at 60%, #ccc borders, a white dropdown and link
    tooltip — and none of it is written in classes the night pass can read. Under data-mode="dark"

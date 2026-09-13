@@ -29,6 +29,8 @@ import { TreeConnections } from './lifetree/TreeConnections';
 import { TreeDetails, type TreeDetailsUpdates } from './lifetree/TreeDetails';
 
 import { Picture } from './ui/Picture';
+import { EditableName } from './ui/EditableName';
+import { TREE_NAME_MAX, normalizeTreeName, treeNameProblem } from '../domain/treeName';
 import { OfferingsTo } from './offerings/OfferingsTo';
 interface LifetreeDetailProps {
     tree: Lifetree;
@@ -127,8 +129,13 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
        if (!(await showConfirm('tree_delete_confirm', { title: 'delete_lifetree_title', confirmText: 'delete', danger: true }))) return;
        onDelete?.();
    };
-   // The hero owns the name/title edits; TreeDetails owns the rest and one Save writes both.
-   const [editName, setEditName] = useState(tree.name);
+   // The NAME is edited in place, the same way a person's is (ui/EditableName wearing
+   // domain/treeName; ring 2026-09-13) — saved on its own, no edit mode needed. The hero still
+   // owns the short-title edit; TreeDetails owns the rest and one Save writes those together.
+   const renameTree = async (next: string) => {
+       await updateLifetree(tree.id, { name: next });
+       onUpdate?.({ name: next });
+   };
    const [editShortTitle, setEditShortTitle] = useState(tree.shortTitle || '');
    const [isSaving, setIsSaving] = useState(false);
 
@@ -224,7 +231,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
        try {
            // `createdAt` arrives as a JS Date (Firestore stores it as a Timestamp on write) and
            // null clears locationName/domain — hence the cast to the tree's shape.
-           const updates = { name: editName, shortTitle: editShortTitle, ...details } as unknown as Partial<Lifetree>;
+           const updates = { shortTitle: editShortTitle, ...details } as unknown as Partial<Lifetree>;
            await updateLifetree(tree.id, updates);
            if (onUpdate) onUpdate(updates);
            setIsEditing(false);
@@ -235,10 +242,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
        setIsSaving(false);
    };
 
-   // TreeDetails resets its own fields; the shell resets the hero's pair and leaves edit mode.
+   // TreeDetails resets its own fields; the shell resets the hero's short title and leaves edit mode.
    const handleCancelEdit = () => {
        setIsEditing(false);
-       setEditName(tree.name);
        setEditShortTitle(tree.shortTitle || '');
    };
 
@@ -563,15 +569,20 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     <div className="min-w-0 flex-1">
                         {isEditing ? (
                             <div className="max-w-md space-y-2">
-                                <input dir="auto" className="w-full border-b border-white/40 bg-white/10 p-1 text-2xl font-light tracking-wide text-white focus:outline-none md:text-3xl dark:bg-slate-900/10" value={editName} onChange={e => setEditName(e.target.value)} placeholder={t('tree_name_ph')} />
+                                <h1 dir="auto" className="break-words text-2xl font-light tracking-wide md:text-3xl">
+                                    <EditableName name={tree.name} canEdit={canEdit} placeholderKey="tree_name_ph" savedKey="tree_name_saved" max={TREE_NAME_MAX} normalize={normalizeTreeName} problemOf={treeNameProblem} onSave={renameTree} />
+                                </h1>
                                 <input dir="auto" className="w-full border-b border-white/40 bg-white/10 p-1 text-xs font-bold uppercase tracking-widest text-white focus:outline-none dark:bg-slate-900/10" value={editShortTitle} onChange={e => setEditShortTitle(e.target.value)} placeholder={t('short_title')} />
                             </div>
                         ) : (
                             <>
                                 {/* Share rides beside the name; Delete waits at the section's far
-                                    right — the header stays one compact block, no extra rows. */}
+                                    right — the header stays one compact block, no extra rows. The
+                                    name itself carries its pencil (EditableName), as a person's does. */}
                                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                                    <h1 dir="auto" className="break-words text-2xl font-light tracking-wide md:text-3xl">{tree.name}</h1>
+                                    <h1 dir="auto" className="break-words text-2xl font-light tracking-wide md:text-3xl">
+                                        <EditableName name={tree.name} canEdit={canEdit} placeholderKey="tree_name_ph" savedKey="tree_name_saved" max={TREE_NAME_MAX} normalize={normalizeTreeName} problemOf={treeNameProblem} onSave={renameTree} />
+                                    </h1>
                                     <button onClick={handleShare} title={t('share_this_tree')} className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-bold text-white transition-colors hover:bg-white/25 dark:bg-slate-900/15">
                                         <Icons.Link /> <span>{shared ? t('copied') : t('share')}</span>
                                     </button>
