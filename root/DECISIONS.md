@@ -6,6 +6,29 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-14 · What the regen tokens taught: representatives, not inventories** — Zoltán's
+answer to Enlightened Nations named the three ways earlier regenerative-token endeavours
+died, and this ring keeps them where a year from now the next "credit" request will find
+them. TAXONOMY: every kind admitted invites the next (spiral, mandala, labyrinth; ruda, sage,
+rosemary), until the registry describes shapes and species instead of purposes and the map
+becomes a catalogue nobody tends. DILUTION: when anything placed in soil counts as a
+planting, a planting stops meaning anything; the line is *a planting on lightseed is
+something that can be tended and can be lost*. DOUBLE ISSUANCE / DOUBLE SPENDING: the same
+living thing counted twice, or a credit minted for a thing that was never watered. How the
+model already answers each: one living thing is one being with one lid (never recycled,
+never renamed, never derived) and one append-only chain, so there is nothing to count twice;
+standing is validation by care, not a mint, and it dims when care stops; light is kindled
+only by witnessed care bounded by the tended being's own rhythms, and it fades by spreading,
+so nothing can be issued twice or hoarded; love has no economic side effect; a Light House
+begins with a living thing. So we do not keep an inventory of every plant and every shape.
+We keep REPRESENTATIVES of the forests, gardens, parks and playgrounds, few enough to be
+known, and let the event, the name, the place, the care, the intention, the resonance and
+reality differentiate them. REJECTED: pre-registering Park and Playground as kinds (the
+registry accepts a kind minted later; each waits for its first real one, as Garden did);
+any kind, field or token whose meaning is not a purpose enacted in a place.
+
+---
+
 **2026-09-14 · A Light House may be a Garden** — Enlightened Nations asked to register four kinds
 of planting: life trees, spirals, four seeds with crystals from the Nahuales, and medicine
 gardens. Read against the root each is already something: trees are lifetrees; a ceremony is
