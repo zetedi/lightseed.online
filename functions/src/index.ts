@@ -23,7 +23,7 @@ import { judgeOfferingAccept, offeringTwinBlocks, type OfferedToKind } from "./o
 import { publicNameOf } from "./publicName";
 import { mailVoiceOf, dressMailText, type MailVoice, type MailVoiceSource } from "./mailVoice";
 import { createBlock, computeCanonicalHash, BLOCK_HASH_VERSION } from "./chain";
-import { FACE_PREVIEW_MAX_BYTES, facePreviewAttempts, facePreviewDoorOf, facePreviewKeyOf, facePreviewUrlOf } from "./facePreview";
+import { FACE_PREVIEW_MAX_BYTES, facePreviewAttempts, facePreviewDoorOf, facePreviewKeyOf, facePreviewUrlOf, sharePlaceNameOf, shareTitleOf } from "./facePreview";
 import { getStorage } from "firebase-admin/storage";
 import { onObjectFinalized } from "firebase-functions/v2/storage";
 import { IMAGE_VARIANT_SIZES, IMAGE_VARIANT_QUALITY, imageVariantKeyOf, isDerivedImagePath, storageObjectOf } from "./imageVariant";
@@ -2769,6 +2769,8 @@ interface PublicBeingCard {
     name: string;
     body: string;
     image?: string;
+    // The ground the being stands on (its `domain` stamp) — names the PLACE on the card.
+    domain?: string;
     // Present only for a public Light House — becomes a JSON-LD Place block.
     place?: { latitude?: number; longitude?: number };
 }
@@ -2791,6 +2793,7 @@ const findPublicBeingByLid = async (lid: string): Promise<PublicBeingCard | null
             name: String(t.name || ""),
             body: String(t.body || ""),
             image: (t.latestGrowthUrl || t.imageUrl || undefined) as string | undefined,
+            domain: String(t.domain || ""),
         };
     }
 
@@ -2802,6 +2805,7 @@ const findPublicBeingByLid = async (lid: string): Promise<PublicBeingCard | null
             name: String(h.name || ""),
             body: String(h.body || ""),
             image: (h.imageUrl || undefined) as string | undefined,
+            domain: String(h.domain || ""),
             place: {
                 latitude: typeof h.latitude === "number" ? h.latitude : undefined,
                 longitude: typeof h.longitude === "number" ? h.longitude : undefined,
@@ -2817,6 +2821,7 @@ const findPublicBeingByLid = async (lid: string): Promise<PublicBeingCard | null
             name: String(v.title || ""),
             body: String(v.body || ""),
             image: (v.imageUrl || undefined) as string | undefined,
+            domain: String(v.domain || ""),
         };
     }
 
@@ -2832,6 +2837,7 @@ const findPublicBeingByLid = async (lid: string): Promise<PublicBeingCard | null
             name: String(pu.title || ""),
             body: String(pu.body || pu.content || ""),
             image: ((pu.imageUrls || [])[0] || pu.imageUrl || undefined) as string | undefined,
+            domain: String(pu.domain || ""),
         };
     }
 
@@ -2848,10 +2854,11 @@ const setBetween = (html: string, re: RegExp, value: string): string =>
 // escaped here, once, at the boundary.
 const swapHeadMeta = (
     shell: string,
-    raw: { title: string; description: string; image: string; url: string; card?: "summary" },
+    raw: { title: string; siteName?: string; description: string; image: string; url: string; card?: "summary" },
     placeLd?: object,
 ): string => {
     const title = escapeHtmlFull(raw.title);
+    const siteName = raw.siteName ? escapeHtmlFull(raw.siteName) : null;
     const description = escapeHtmlFull(raw.description);
     const image = escapeHtmlFull(raw.image);
     const url = escapeHtmlFull(raw.url);
@@ -2863,6 +2870,7 @@ const swapHeadMeta = (
     for (const [prop, value] of [
         ["og:title", title], ["og:description", description],
         ["og:url", url], ["og:image", image], ["og:image:alt", title],
+        ...(siteName ? ([["og:site_name", siteName]] as const) : []),
     ] as const) {
         out = setBetween(out, new RegExp(`(<meta property="${prop}" content=")[^"]*(")`), value);
     }
@@ -2915,7 +2923,11 @@ export const beingPreview = onRequest(async (req, res) => {
         const being = lid ? await findPublicBeingByLid(lid) : null;
         if (!being || !being.name) { res.status(200).send(shell); return; } // generic card
 
-        const description = truncate160(collapseWhitespace(being.body)) || `${being.name} — a living being on Lightseed.`;
+        // THE CARD NAMES ITS PLACE (ring 2026-09-14): the community rooted at the being's
+        // domain (name, else bare domain); the node only for its own ground.
+        const place = being.domain ? await placeOfDomain(being.domain) : null;
+        const placeName = sharePlaceNameOf(place, charter.name);
+        const description = truncate160(collapseWhitespace(being.body)) || `${being.name} — a living being on ${placeName}.`;
         // The being's own photo rides as its FACE PREVIEW (/face/<door>.jpg, below): a small,
         // honest JPEG every crawler will fetch, never the stored original (2–28 MB).
         const own = being.image && /^https?:\/\//.test(being.image) ? being.image : null;
@@ -2933,7 +2945,8 @@ export const beingPreview = onRequest(async (req, res) => {
         } : undefined;
 
         res.status(200).send(swapHeadMeta(shell, {
-            title: `${being.name} — Lightseed`,
+            title: shareTitleOf(being.name, place, charter.name),
+            siteName: placeName,
             description,
             image,
             url,

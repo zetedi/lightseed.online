@@ -59,3 +59,13 @@ export const facePreviewKeyOf = (lid: string, source: string): string =>
 // The address the share card points at; ?v= is the digest, so a new photo is a new URL.
 export const facePreviewUrlOf = (host: string, door: string, source: string): string =>
   `https://${host}/face/${door}.jpg?v=${facePreviewDigestOf(source)}`;
+
+// THE SHARE CARD NAMES ITS PLACE (ring 2026-09-14). A shared door's title is the being's
+// name and, after the dash, the PLACE the being stands in — the community rooted at the
+// being's domain (its name; its bare domain while it has none), and the node only for a
+// being of the node's own ground. Before this every card said "— Lightseed", whatever
+// garden the event was in. Pure: the lookup of the place is the server's.
+export const sharePlaceNameOf = (place: { name?: string | null; domain?: string | null } | null | undefined, nodeName: string): string =>
+  (place?.name || '').trim() || (place?.domain || '').trim() || nodeName;
+export const shareTitleOf = (name: string, place: { name?: string | null; domain?: string | null } | null | undefined, nodeName: string): string =>
+  `${name} — ${sharePlaceNameOf(place, nodeName)}`;

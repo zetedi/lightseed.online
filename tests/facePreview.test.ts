@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   FACE_PREVIEW_MAX_EDGE, FACE_PREVIEW_MAX_BYTES, FACE_PREVIEW_EDGES, FACE_PREVIEW_QUALITIES,
   facePreviewAttempts, facePreviewDoorOf, facePreviewDigestOf, facePreviewKeyOf, facePreviewUrlOf,
+  sharePlaceNameOf, shareTitleOf,
 } from '../src/domain/facePreview';
 import {
   FACE_PREVIEW_MAX_EDGE as SERVER_MAX_EDGE,
@@ -11,6 +12,7 @@ import {
   facePreviewDigestOf as serverFacePreviewDigestOf,
   facePreviewKeyOf as serverFacePreviewKeyOf,
   facePreviewUrlOf as serverFacePreviewUrlOf,
+  sharePlaceNameOf as serverSharePlaceNameOf, shareTitleOf as serverShareTitleOf,
 } from '../functions/src/facePreview';
 
 // FACE PREVIEW. A shared door hands crawlers a small, honest JPEG of the being's own
@@ -70,6 +72,21 @@ describe('the digest, key and URL — a new photo is a new address', () => {
     const d = facePreviewDigestOf(FIRE);
     expect(facePreviewKeyOf(LID, FIRE)).toBe(`previews/${LID}/${d}.jpg`);
     expect(facePreviewUrlOf('seed.theohouse.org', DOOR, FIRE)).toBe(`https://seed.theohouse.org/face/${DOOR}.jpg?v=${d}`);
+  });
+});
+
+describe('the share card names its place (ring 2026-09-14)', () => {
+  it('the community at the being\'s domain, by name; its bare domain while unnamed; the node for its own ground', () => {
+    expect(shareTitleOf('Ancestral Wisdom Summit', { name: 'Enlightened Nations', domain: 'seed.enlightenednations.org' }, 'lightseed')).toBe('Ancestral Wisdom Summit — Enlightened Nations');
+    expect(shareTitleOf('A tree', { domain: 'garden.example.org' }, 'lightseed')).toBe('A tree — garden.example.org');
+    expect(shareTitleOf('A tree', null, 'lightseed')).toBe('A tree — lightseed');
+    expect(sharePlaceNameOf({ name: '   ', domain: ' ' }, 'lightseed')).toBe('lightseed');
+  });
+  it('the functions mirror answers the same', () => {
+    for (const place of [{ name: 'Enlightened Nations', domain: 'x' }, { domain: 'y.org' }, null]) {
+      expect(serverShareTitleOf('E', place, 'n')).toBe(shareTitleOf('E', place, 'n'));
+      expect(serverSharePlaceNameOf(place, 'n')).toBe(sharePlaceNameOf(place, 'n'));
+    }
   });
 });
 

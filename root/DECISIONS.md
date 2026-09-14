@@ -6,6 +6,19 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-14 · The share card names its place** — Zoltán shared an event from the Enlightened
+Nations door and the card read "Ancestral Wisdom Summit — Lightseed": the /b/ preview wrote
+the node's name by heart after every being, whatever garden it stood in. The card now names
+the PLACE: the community rooted at the being's own `domain` stamp (its name; its bare domain
+while it has none), and the node only for a being of the node's own ground — the same
+placeOfDomain the letters use. og:site_name says the same, and the fallback description
+("a living being on …") too. Law: sharePlaceNameOf / shareTitleOf in domain/facePreview,
+mirrored in functions, held equal by test. REJECTED: the request host as the place (a link
+shared from any door must name where the being IS, not where it was copied); the raw domain
+when a name exists (a card is read by a person).
+
+---
+
 **2026-09-14 · The palette reaches the page, and a letter speaks in the voice of its place** —
 Enlightened Nations brought their branding: text in Deep Taupe (#504243), ground in Sand
 (#FEF8F3), blues, greens, warm accents, two signature tones. Their keeper had already set the
