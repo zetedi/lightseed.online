@@ -66,8 +66,10 @@ export function useSiteTheme(params: {
   };
   const effectiveIsDark = effectiveTheme.mode === 'dark';
   // THE PALETTE REACHES THE PAGE (ring 2026-09-14): the viewed community's dial, else the
-  // host's; a personal palette never reaches (the person's site keeps the shell's text).
-  const paletteReach = impersonatedCommunity ? paletteReaches(impersonatedCommunity) : (!personalActive && paletteReaches(config));
+  // host's — unless a PERSONAL palette is what the page wears (a signed-in hand with a site
+  // theme of its own and no inherit): a personal palette never reaches.
+  const personalThemeActive = !!(personalActive && personalSiteTheme);
+  const paletteReach = impersonatedCommunity ? paletteReaches(impersonatedCommunity) : (!personalThemeActive && paletteReaches(config));
 
   useEffect(() => {
     // effectiveTheme is a fresh object literal every render (always truthy), so the effect keys
